@@ -91,7 +91,8 @@ pub(super) fn card_menu(vm: &CorkboardViewModel, card: &CorkboardCard) -> impl W
 
     PopoverIconButton::new(IconButton::more())
         .bare()
-        .content(list)
+        // Trap Tab inside the anchored overlay, as every popover must.
+        .content(FocusScope::new(TraversalScopePolicy::Cycle).child(list))
 }
 
 /// What "Insert …" on a card creates — the model's default recommendation for it

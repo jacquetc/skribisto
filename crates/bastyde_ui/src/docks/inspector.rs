@@ -15,8 +15,8 @@ use std::rc::Rc;
 use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, DateEdit, DockOpenLocation, DockSide, DockWidget, DockWidgetId, HStack,
-    Padding, PopoverButton, TextWidget, Toggle, VStack,
+    Button, ButtonVariant, DateEdit, DockOpenLocation, DockSide, DockWidget, DockWidgetId,
+    FocusScope, HStack, Padding, PopoverButton, TextWidget, Toggle, TraversalScopePolicy, VStack,
 };
 use jiff::civil::Date;
 
@@ -181,7 +181,11 @@ impl Widget for Inspector {
                         PopoverButton::new(
                             Button::new(tr!(inspector_promote())).variant(ButtonVariant::Tinted),
                         )
-                        .content(promote_menu(outline, key)),
+                        // Trap Tab inside the anchored overlay, as every popover must.
+                        .content(
+                            FocusScope::new(TraversalScopePolicy::Cycle)
+                                .child(promote_menu(outline, key)),
+                        ),
                     );
                 }
                 // Tags, and — only for story-bible material — the other names this item

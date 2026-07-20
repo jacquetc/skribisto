@@ -18,8 +18,8 @@ use bastyde::core::BindingLevel;
 use bastyde::core::color_prop::ColorProp;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    FixedSize, HStack, IconButton, IconButtonSize, MenuItem, MenuList, Padding, PopoverIconButton,
-    ProgressBar, Spacer, SpinBox, TextWidget, VStack,
+    FixedSize, FocusScope, HStack, IconButton, IconButtonSize, MenuItem, MenuList, Padding,
+    PopoverIconButton, ProgressBar, Spacer, SpinBox, TextWidget, TraversalScopePolicy, VStack,
 };
 
 use crate::icons::session;
@@ -73,7 +73,10 @@ impl SessionStatusItem {
                     .tooltip(tr!(session_configure())),
             )
             .show_disclosure_caret(false)
-            .content(configure_form(&vm)),
+            // Trap Tab inside the anchored overlay, as every popover must. This one holds
+            // real inputs (the two spin boxes), so without it Tab walks out of the open
+            // form and into the status bar behind it mid-edit.
+            .content(FocusScope::new(TraversalScopePolicy::Cycle).child(configure_form(&vm))),
         );
 
         // Play/pause. The icon is chosen from `running` (bound at Rebuild) rather than via

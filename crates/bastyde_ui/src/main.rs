@@ -37,6 +37,7 @@ mod trash;
 mod export;
 mod binder;
 mod panels;
+mod a11y;
 mod app;
 mod app_ids;
 mod backup;

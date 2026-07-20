@@ -24,7 +24,10 @@ use bastyde::core::accesskit::Role;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::widgets::tooltip::TooltipContent;
-use bastyde::widgets::{IconButton, IconWidget, MenuItem, MenuList, PopoverIconButton, Wrap};
+use bastyde::widgets::{
+    FocusScope, IconButton, IconWidget, MenuItem, MenuList, PopoverIconButton,
+    TraversalScopePolicy, Wrap,
+};
 
 use crate::widgets::{Pill, PillTooltip};
 
@@ -305,7 +308,8 @@ impl Widget for LanguagePillField {
         // panel chrome the popover would otherwise wrap it in.
         let add_button = PopoverIconButton::new(IconButton::add().tooltip(tr!(lang_pill_add())))
             .bare()
-            .content(menu);
+            // Trap Tab inside the anchored overlay, as every popover must.
+            .content(FocusScope::new(TraversalScopePolicy::Cycle).child(menu));
         flow = flow.child(add_button);
 
         let id = ctx.add(flow.access_role(Role::List).access_label(tr!(lang_pill_list())));

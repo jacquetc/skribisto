@@ -24,8 +24,8 @@ use std::rc::Rc;
 
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, Divider, Expand, HStack, IconButton, IconWidget, MenuItem, MenuList, PopoverIconButton,
-    Repeater, ScrollArea, Spacer, TextWidget, VStack,
+    Button, Divider, Expand, FocusScope, HStack, IconButton, IconWidget, MenuItem, MenuList,
+    PopoverIconButton, Repeater, ScrollArea, Spacer, TextWidget, TraversalScopePolicy, VStack,
 };
 
 use skribisto_model::{CreateType, SubRoleExt};
@@ -358,7 +358,8 @@ fn row_menu(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
 
     PopoverIconButton::new(IconButton::more())
         .bare()
-        .content(list)
+        // Trap Tab inside the anchored overlay, as every popover must.
+        .content(FocusScope::new(TraversalScopePolicy::Cycle).child(list))
 }
 
 /// What "Insert …" on this row will actually create — the model's default

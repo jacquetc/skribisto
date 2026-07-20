@@ -26,10 +26,10 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::{
-    BuiltInIcons, Button, ButtonVariant, Center, ColorEdit, Expand, FixedSize, HStack, IconButton,
-    IconLocation, IconWidget, ListView, MaxSize, MenuItem, MenuList, MinSize, Padding, Panel,
-    PopoverButton, RectWidget, SearchField, Spacer, Switcher, TextInput, TextWidget, Toast, Toggle,
-    VStack, ValidationState,
+    BuiltInIcons, Button, ButtonVariant, Center, ColorEdit, Expand, FixedSize, FocusScope, HStack,
+    IconButton, IconLocation, IconWidget, ListView, MaxSize, MenuItem, MenuList, MinSize, Padding,
+    Panel, PopoverButton, RectWidget, SearchField, Spacer, Switcher, TextInput, TextWidget, Toast,
+    Toggle, TraversalScopePolicy, VStack, ValidationState,
 };
 
 use crate::models::TagRow;
@@ -207,7 +207,8 @@ fn preset_button(vm: &TagsViewModel) -> impl Widget {
         Button::new(tr!(settings_tags_apply_preset())).variant(ButtonVariant::Plain),
     )
     .bare()
-    .content(menu)
+    // Trap Tab inside the anchored overlay, as every popover must.
+    .content(FocusScope::new(TraversalScopePolicy::Cycle).child(menu))
 }
 
 /// Filter + live count on the left, Import…/Export… pushed to the right — the same shape as
@@ -512,7 +513,8 @@ fn empty_state(vm: &TagsViewModel) -> impl Widget {
                         .variant(ButtonVariant::Filled),
                 )
                 .bare()
-                .content(menu),
+                // Trap Tab inside the anchored overlay, as every popover must.
+                .content(FocusScope::new(TraversalScopePolicy::Cycle).child(menu)),
             ),
     )
 }

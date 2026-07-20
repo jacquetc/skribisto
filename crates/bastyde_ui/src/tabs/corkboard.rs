@@ -26,9 +26,9 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::{
     Badge, Breadcrumb, BreadcrumbItem, ButtonVariant, Center, DragTransferMode, Expand, FixedSize,
-    GridSizing, GridView, HStack, IconButton, IconWidget, MenuItem, MenuList, Padding, Panel,
-    PopoverIconButton, SearchField, Segment, SegmentedControl, Slider, Spacer, SplitButton,
-    TextInput, TextWidget, TileContext, VStack,
+    FocusScope, GridSizing, GridView, HStack, IconButton, IconWidget, MenuItem, MenuList, Padding,
+    Panel, PopoverIconButton, SearchField, Segment, SegmentedControl, Slider, Spacer, SplitButton,
+    TextInput, TextWidget, TileContext, TraversalScopePolicy, VStack,
 };
 
 // `WidgetEvent`, `Key`, `PointerButton`, `EventResponse` and the `WidgetBuilder`
