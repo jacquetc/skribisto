@@ -310,6 +310,7 @@ corkboard-new = New
 overview-col-title = Title
 overview-col-type = Type
 overview-col-label = Label
+overview-col-tags = Tags
 overview-col-own-words = Words
 overview-col-total-words = Total
 overview-row-count = { $count ->

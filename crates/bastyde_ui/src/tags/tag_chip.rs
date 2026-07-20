@@ -72,6 +72,10 @@ const RING_WIDTH: f32 = 1.0;
 pub const MAX_VISIBLE_STREAM: usize = 5;
 pub const MAX_VISIBLE_CORKBOARD: usize = 4;
 pub const MAX_VISIBLE_EDITOR: usize = 8;
+/// The Overview's table cell is the tightest of the four surfaces — a fixed-width column
+/// competing with five others in a pane that may be half a split window — so it shows the
+/// fewest dots before collapsing to the overflow count.
+pub const MAX_VISIBLE_OVERVIEW: usize = 3;
 
 /// The dots themselves, from resolved rows — no view-model, no popover.
 ///

@@ -57,7 +57,8 @@ pub use installed_dictionaries_model::{
 };
 pub use open_docs::{OpenDoc, OpenDocsStore};
 pub use overview_rows_model::{
-    COL_LABEL, COL_OWN_WORDS, COL_TITLE, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow,
+    COL_LABEL, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters,
+    OverviewRow,
     OverviewRowsModel,
 };
 pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};

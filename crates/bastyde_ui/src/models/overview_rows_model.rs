@@ -56,6 +56,7 @@ pub const COL_TYPE: &str = "type";
 pub const COL_LABEL: &str = "label";
 pub const COL_OWN_WORDS: &str = "own_words";
 pub const COL_TOTAL_WORDS: &str = "total_words";
+pub const COL_TAGS: &str = "tags";
 
 /// One row of the Overview table: a single `BinderItem` in the container's subtree.
 ///
@@ -82,9 +83,11 @@ pub struct OverviewRow {
     /// This row's own words plus every descendant's — the bottom-up fold. Correct even
     /// while the row is collapsed, which is the entire point of showing it.
     pub total_words: usize,
-    /// TAGS COLUMN SEAM — always empty in this build. Tags are being implemented in a
-    /// parallel worktree; this field and the marker in `tabs/overview/columns.rs`
-    /// reserve the shape so landing them is additive. Do not populate it here.
+    /// The item's tags, by `Tag` id — rendered as the dot row every other view uses.
+    ///
+    /// Carried on the row rather than fetched per cell: the tag ids arrive free with the
+    /// `BinderItemDto` the loader already reads, and a per-cell lookup would issue one
+    /// backend read per visible row per rebuild.
     pub tags: Vec<u64>,
 }
 
@@ -697,7 +700,7 @@ mod rows {
                         label: it.label.clone(),
                         own_words,
                         total_words: 0, // filled by the fold below
-                        tags: Vec::new(),
+                        tags: it.tags.clone(),
                     },
                     // Rebase onto the container: its direct children are depth 0, since
                     // the container's own row is not in the table.
@@ -776,6 +779,7 @@ mod rows {
         label: &str,
         own_words: Option<usize>,
         depth: usize,
+        tags: &[u64],
     ) -> TreeRow<Uuid, OverviewRow> {
         // Distinct per row: `fixture_uid` is deterministic, so the same mock row keeps
         // the same identity across refreshes (a fresh `new_uid()` per call would make
@@ -792,7 +796,7 @@ mod rows {
                 label: label.to_string(),
                 own_words,
                 total_words: 0, // filled by the fold below
-                tags: Vec::new(),
+                tags: tags.to_vec(),
             },
             depth,
         )
@@ -810,30 +814,30 @@ mod rows {
             // Book One (101) — a part holding a chapter folder and a flat chapter, then
             // a loose chapter. Two levels deep, so the fold has something to fold.
             101 => vec![
-                row(102, Item, BinderItemSubRole::BookBegin, "Opening", "1st plot point", None, 0),
-                row(103, Item, Scene, "Scene at dawn", "", Some(412), 0),
-                row(301, Folder, Part, "Part One — Arrival", "", None, 0),
-                row(104, Folder, ChapterScene, "Chapter Two", "rising action", Some(90), 1),
-                row(201, Item, Scene, "Scene 1", "opening beat", Some(1180), 2),
-                row(202, Item, Scene, "Scene 2", "", Some(640), 2),
-                row(203, Item, Note, "First night", "", None, 2),
-                row(302, Item, ChapterScene, "Into the Dark", "", Some(755), 1),
-                row(303, Item, Scene, "The light returns", "", Some(300), 1),
-                row(105, Item, ChapterScene, "Confrontation", "", Some(1502), 0),
+                row(102, Item, BinderItemSubRole::BookBegin, "Opening", "1st plot point", None, 0, &[]),
+                row(103, Item, Scene, "Scene at dawn", "", Some(412), 0, &[]),
+                row(301, Folder, Part, "Part One — Arrival", "", None, 0, &[]),
+                row(104, Folder, ChapterScene, "Chapter Two", "rising action", Some(90), 1, &[]),
+                row(201, Item, Scene, "Scene 1", "opening beat", Some(1180), 2, &[1, 2]),
+                row(202, Item, Scene, "Scene 2", "", Some(640), 2, &[3]),
+                row(203, Item, Note, "First night", "", None, 2, &[]),
+                row(302, Item, ChapterScene, "Into the Dark", "", Some(755), 1, &[]),
+                row(303, Item, Scene, "The light returns", "", Some(300), 1, &[]),
+                row(105, Item, ChapterScene, "Confrontation", "", Some(1502), 0, &[1]),
             ],
             // Part One (301) — its two chapters, one of them a folder with scenes.
             301 => vec![
-                row(104, Folder, ChapterScene, "Chapter Two", "rising action", Some(90), 0),
-                row(201, Item, Scene, "Scene 1", "opening beat", Some(1180), 1),
-                row(202, Item, Scene, "Scene 2", "", Some(640), 1),
-                row(203, Item, Note, "First night", "", None, 1),
-                row(302, Item, ChapterScene, "Into the Dark", "", Some(755), 0),
+                row(104, Folder, ChapterScene, "Chapter Two", "rising action", Some(90), 0, &[]),
+                row(201, Item, Scene, "Scene 1", "opening beat", Some(1180), 1, &[1, 2]),
+                row(202, Item, Scene, "Scene 2", "", Some(640), 1, &[3]),
+                row(203, Item, Note, "First night", "", None, 1, &[]),
+                row(302, Item, ChapterScene, "Into the Dark", "", Some(755), 0, &[]),
             ],
             // A chapter folder (104) — its own scenes, one level.
             104 => vec![
-                row(201, Item, Scene, "Scene 1", "opening beat", Some(1180), 0),
-                row(202, Item, Scene, "Scene 2", "", Some(640), 0),
-                row(203, Item, Note, "First night", "", None, 0),
+                row(201, Item, Scene, "Scene 1", "opening beat", Some(1180), 0, &[1, 2]),
+                row(202, Item, Scene, "Scene 2", "", Some(640), 0, &[3]),
+                row(203, Item, Note, "First night", "", None, 0, &[]),
             ],
             // Anything else (including a genuinely empty container) shows nothing.
             _ => Vec::new(),

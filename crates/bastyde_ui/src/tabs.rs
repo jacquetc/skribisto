@@ -9,7 +9,8 @@
 //! editor: a writing item (Scene / ChapterScene / Note) opens the dual-pane
 //! editor; a title-bearing item (Chapter / Part / BookBegin) opens a heading form;
 //! a structural folder (Book / Part / Chapter) opens a **container** tab with a
-//! `SegmentedControl` (Synopsis now; Corkboard/Overview later); a contentless row
+//! `SegmentedControl` (its own page, the manuscript streams, Corkboard and Overview);
+//! a contentless row
 //! (BookEnd / Text) opens a placeholder. What several combinations share — the
 //! composite pane bodies and the low-level editor primitives — lives in
 //! [`shared`]. One [`ContentTab`] payload type carries them all.
@@ -927,6 +928,70 @@ mod tests {
                 b.width > 0.0 && b.height > 0.0,
                 "Folder/{sub_role:?}: the Overview table laid out to zero size ({b:?})"
             );
+        }
+    }
+
+    /// The tags column reaches the table, and renders dots only for rows that have tags.
+    ///
+    /// The Overview was the last view showing binder rows that did not surface tags (the
+    /// stream, corkboard and editor all did), because its column was reserved as an inert
+    /// seam while tags were built in a parallel worktree. This pins that the seam is
+    /// actually wired, not merely still reserved.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn the_overview_shows_tag_dots_for_tagged_rows_only() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            101,
+            &Folder,
+            &Book,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.segment.set(5); // the Book's Overview
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let id = tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
+
+        // The fixture tags scenes 201 and 202 and leaves the rest untagged, so a correctly
+        // wired column mounts *some* dot rows but not one per row.
+        let mut dot_rows = 0;
+        count_containing(&tree, id, "TagDotsRow", &mut dot_rows);
+        assert!(
+            dot_rows > 0,
+            "no TagDotsRow in the Overview - the tags column is not wired"
+        );
+        let rows = {
+            use bastyde::data::TreeDataSource;
+            tab.overview()
+                .expect("a Book has an Overview")
+                .rows()
+                .visible_count()
+        };
+        assert!(
+            dot_rows < rows,
+            "every one of the {rows} rows mounted a dot row ({dot_rows}); an untagged row \
+             must render an empty cell, or the column stops distinguishing tagged from not"
+        );
+    }
+
+    /// Count nodes at/under `root` whose type name contains `needle`.
+    fn count_containing(tree: &WidgetTree, root: WidgetId, needle: &str, n: &mut usize) {
+        if tree
+            .widget_type_name(root)
+            .is_some_and(|t| t.contains(needle))
+        {
+            *n += 1;
+        }
+        for c in tree.children(root) {
+            count_containing(tree, c, needle, n);
         }
     }
 

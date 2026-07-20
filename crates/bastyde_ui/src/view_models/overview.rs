@@ -449,6 +449,16 @@ impl OverviewViewModel {
         self.inner.edit_text.set(String::new());
     }
 
+    /// Replace an item's tags — what the row's tag-dot picker commits.
+    ///
+    /// Through `SingleBinderItem::set_tags`, the same writer the Corkboard and the editor
+    /// use, so a tag set from any of the three is one edit and one undo entry.
+    pub fn set_tags(&self, item_id: u64, tags: &[u64]) {
+        let probe = SingleBinderItem::new(self.inner.app_ctx.clone());
+        probe.set_id(Some(item_id));
+        let _ = probe.set_tags(tags, self.stack());
+    }
+
     fn set_label(&self, item_id: u64, label: &str) {
         if let Some(it) = binder_ops::item_dto(&self.inner.app_ctx, item_id) {
             let mut dto = binder_ops::update_item_dto(&it);

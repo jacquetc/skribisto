@@ -3,9 +3,10 @@
 
 //! The Overview table's columns.
 //!
-//! Five in v1: **Title** (the tree column — twist, indent, icon), **Type**, **Label**,
-//! **Own words** and **Total words**. Title and Label are editable in place; the three
-//! derived columns are read-only, because a word count is not something you type.
+//! Six: **Title** (the tree column — twist, indent, icon), **Type**, **Label**, **Tags**,
+//! **Own words** and **Total words**. Title and Label are editable in place; Tags is
+//! edited through its own picker; the derived columns are read-only, because a word count
+//! is not something you type.
 //!
 //! Every column id is a constant from `crate::models`, beside the comparator it selects —
 //! a column whose id drifted from its comparator would render fine and silently stop
@@ -17,23 +18,27 @@ use super::*;
 use bastyde::widgets::{
     CellContext, Column, ColumnWidth, PinnedSide, TableAlignment, TextInput, TruncationPolicy,
 };
+use std::rc::Rc;
+
 use uuid::Uuid;
 
-use crate::models::{COL_LABEL, COL_OWN_WORDS, COL_TITLE, COL_TOTAL_WORDS, COL_TYPE};
+use crate::models::{COL_LABEL, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_WORDS, COL_TYPE};
 
 /// Build the column set for a table bound to `vm`.
 ///
 /// **The widths are a budget, not preferences.** The table has no horizontal scrolling
 /// yet, so a column that doesn't fit is a column that is *clipped* — and the first
 /// casualty is the trailing one, which is `Total`, the number the writer most wants. The
-/// three fixed columns therefore cost 240 dp between them and the two flexible ones carry
-/// low minimums, so the whole set still fits an editor pane in a split window (~610 dp)
-/// with the outline and inspector docks open. Widen any of them and check that case.
+/// four fixed columns therefore cost 312 dp between them and the two flexible ones carry
+/// low minimums (120 + 72), so the whole set still fits an editor pane in a split window
+/// (~610 dp) with the outline and inspector docks open. Widen any of them and check that
+/// case — the margin is now thin.
 pub(super) fn overview_columns(vm: &OverviewViewModel) -> Vec<Column<OverviewRow>> {
     vec![
         title_column(vm),
         type_column(vm),
         label_column(vm),
+        tags_column(vm),
         own_words_column(vm),
         total_words_column(vm),
     ]
@@ -149,6 +154,54 @@ fn label_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     .truncation(TruncationPolicy::Ellipsis)
 }
 
+/// **Tags** — the row's tags as the same coloured dot row the stream, corkboard and
+/// editor use ([`TagDotsRow`](crate::tags::TagDotsRow)). Hover inspects one, click opens
+/// the picker for all of them.
+///
+/// Dots rather than named chips, for the same reason as everywhere outside the Inspector:
+/// away from the place you *manage* tags, the job is passive awareness — noticing a scene
+/// is still a draft without having asked — and a table row has no width to spend on names.
+///
+/// **Not sortable.** A set of dots has no natural order: by count is not a question anyone
+/// asks, and by "first tag" would depend on an order the writer never chose. Finding
+/// tagged rows is a filter question, not a sort one.
+///
+/// The per-cell `Signal` is created here rather than owned by the view-model — the
+/// opposite of [`cell_editor`]'s buffer, and deliberately. This one *mirrors committed
+/// state*: the picker's commit writes through to the backend and the resulting reload
+/// re-seeds it from the truth, so a rebuild re-seeding it is correct. The edit buffer
+/// holds **uncommitted input**, which a rebuild would destroy.
+fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
+    let vm = vm.clone();
+    Column::new(COL_TAGS, tr!(overview_col_tags()), move |row: &OverviewRow, _cx| {
+        if row.tags.is_empty() {
+            // An untagged row gets an empty cell, not an empty dot row — the whole point
+            // of the column is that a glance distinguishes tagged from untagged.
+            return with_row_menu(&vm, row, TextWidget::new(lit!(String::new())));
+        }
+        let value = Signal::new(row.tags.clone());
+        let set: crate::tags::tag_pill_field::SetTags = {
+            let vm = vm.clone();
+            let item_id = row.item_id;
+            let mirror = value.clone();
+            Rc::new(move |ids: Vec<u64>, _ctx| {
+                vm.set_tags(item_id, &ids);
+                mirror.set(ids); // optimistic; the reload re-seeds from the backend
+            })
+        };
+        Box::new(crate::tags::TagDotsRow::new(
+            value,
+            set,
+            crate::tags::tag_chip::MAX_VISIBLE_OVERVIEW,
+        ))
+    })
+    .width(ColumnWidth::Fixed(72.0))
+    // The dot row caps itself at MAX_VISIBLE_OVERVIEW and shows its own overflow
+    // count, so there is nothing for the column to elide - an ellipsis after the
+    // dots would read as one more glyph rather than as truncation.
+    .truncation(TruncationPolicy::None)
+}
+
 /// **Own words** — this row's own prose only.
 ///
 /// Blank (not `0`) when the row carries no prose at all: a Part has nothing to count,
@@ -178,10 +231,6 @@ fn total_words_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     .sortable(true)
 }
 
-// TAGS COLUMN SEAM: the tags column belongs here, after Label. `OverviewRow::tags` is
-// already carried (always empty in this build) so adding it is additive — a `Column` with
-// a chip renderer over `row.tags`, plus a comparator in `overview_rows_model`. Tags are
-// being implemented in a parallel worktree; do not populate the field from here.
 
 /// A right-aligned count, or a muted dash when there is nothing to count.
 fn word_cell(words: Option<usize>) -> impl Widget {
