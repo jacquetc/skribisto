@@ -155,7 +155,10 @@ impl Default for WorkspaceLayoutFile {
 impl Versioned for WorkspaceLayoutFile {
     /// **v2** re-keyed the persisted tabs from stream ordinals to durable
     /// `BinderItem.uid`s (see [`PaneLayout::tabs`]).
-    const CURRENT_VERSION: u32 = 2;
+    ///
+    /// **v3** drops the persisted dock arrangement so the Format dock reaches
+    /// projects saved before it existed (see [`migrator`]).
+    const CURRENT_VERSION: u32 = 3;
     fn version(&self) -> u32 {
         self.version
     }
@@ -176,6 +179,20 @@ impl Versioned for WorkspaceLayoutFile {
 /// splitter and focused pane all survive, and the next close re-captures the tabs by uid.
 /// Translating wrongly — reopening a *neighbour* of each tab — is the failure this whole
 /// change exists to remove, so dropping is the honest option.
+///
+/// **v2 → v3 drops the persisted dock arrangement**, for a related reason. A saved
+/// arrangement is an exported blob listing the docks that existed when it was written, and
+/// `import_state` restores exactly that — so a dock added later is simply never mounted,
+/// and the Format dock would stay invisible to every project the user had already opened.
+/// Re-asserting it after the import is not an option either: `close_dock` *removes* a dock
+/// from the layout, so "absent" is indistinguishable from "the user closed it", and
+/// re-opening would silently overrule that choice every launch.
+///
+/// Dropping the arrangement makes each project fall back to the default docks once, which
+/// now include Format. The cost is one launch on which a customised dock layout returns to
+/// the default; tabs, splitter and focused pane are untouched, and the next close
+/// re-captures the arrangement. Cheap at alpha, and honest — the alternative is a feature
+/// nobody with an existing project can find.
 fn migrator() -> Migrator<WorkspaceLayoutFile> {
     Migrator::new().step(1, |mut raw| {
         if let Some(projects) = raw
@@ -188,6 +205,16 @@ fn migrator() -> Migrator<WorkspaceLayoutFile> {
                         t.remove("tabs");
                         t.remove("selected");
                     }
+                }
+            }
+        }
+        Ok(raw)
+    })
+    .step(2, |mut raw| {
+        if let Some(projects) = raw.get_mut("projects").and_then(|p| p.as_array_mut()) {
+            for project in projects.iter_mut() {
+                if let Some(t) = project.as_table_mut() {
+                    t.remove("docks");
                 }
             }
         }

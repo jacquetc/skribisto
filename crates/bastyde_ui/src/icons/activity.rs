@@ -35,6 +35,15 @@ pub fn trash_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/trash.svg"))
 }
 
+/// The Format activity icon: a capital A over a baseline rule.
+///
+/// Deliberately a *type* glyph rather than another panel outline — it shares the
+/// trailing rail with the Inspector, and two side-panel silhouettes there would
+/// be indistinguishable at rail size.
+pub fn format_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/format.svg"))
+}
+
 /// The Inspector activity icon: a right side-panel glyph.
 pub fn inspector_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/inspector.svg"))

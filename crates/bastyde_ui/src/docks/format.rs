@@ -45,7 +45,7 @@ pub fn format_dock(vm: FormatViewModel, dock_id: DockWidgetId) -> DockWidget {
     DockWidget::new(dock_id, tr!(format_dock_title()), move |_id| {
         FormatDock::new(vm.clone())
     })
-    .icon(crate::icons::activity::inspector_icon)
+    .icon(crate::icons::activity::format_icon)
     .default_location(DockOpenLocation::side(DockSide::Trailing))
 }
 

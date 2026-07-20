@@ -145,6 +145,10 @@ impl FormatSurface {
 /// they are invoked. `None` when nothing formattable is focused.
 type ResolveEditor = Rc<dyn Fn() -> Option<EditorHandle>>;
 
+/// Reports what kind of text currently has focus. Injected by `App`, which is
+/// the only layer that can see both the pane/tab structure and the editors.
+type ResolveSurface = Rc<dyn Fn() -> FormatSurface>;
+
 /// One gate per control group, for the dock to hang `visible_when` on.
 ///
 /// The dock **hides** groups that do not apply rather than greying them out: a
@@ -194,8 +198,11 @@ pub struct FormatViewModel {
     /// How to find the current editor. Called fresh on every command and every
     /// [`Self::refresh`] — see the module docs on handle staleness.
     resolve: ResolveEditor,
-    /// Which groups apply. Written by `App` as focus moves; read by the dock to
-    /// decide what to show and by the menu to decide what to enable.
+    /// How to classify what has focus, when `App` has wired it. Absent in tests,
+    /// where [`Self::set_surface`] is driven directly.
+    resolve_surface: Option<ResolveSurface>,
+    /// Which groups apply. Read by the dock to decide what to show and by the
+    /// menu to decide what to enable.
     surface: Signal<FormatSurface>,
 
     bold: Signal<bool>,
@@ -251,6 +258,7 @@ impl FormatViewModel {
     pub fn new(resolve: ResolveEditor) -> Self {
         Self {
             resolve,
+            resolve_surface: None,
             surface: Signal::new(FormatSurface::None),
             bold: Signal::new(false),
             italic: Signal::new(false),
@@ -269,6 +277,14 @@ impl FormatViewModel {
             group_visible: GroupVisibility::new(FormatSurface::None),
             last_seen: Rc::new(Cell::new((0, 0))),
         }
+    }
+
+    /// Wire live surface classification. Without this the surface only changes
+    /// when something calls [`Self::set_surface`], which is what the headless
+    /// tests do; with it, [`Self::refresh`] reclassifies every frame.
+    pub fn with_surface_resolver(mut self, resolve: ResolveSurface) -> Self {
+        self.resolve_surface = Some(resolve);
+        self
     }
 
     // ── The current editor ────────────────────────────────────────────────
@@ -351,6 +367,14 @@ impl FormatViewModel {
     /// document. When no editor is focused the mirrors are cleared, so a stale
     /// "bold" never lingers over an empty state.
     pub fn refresh(&self) {
+        // Reclassified before the version gate below, and on every frame rather
+        // than only when the caret moves: focus can move between editors — or
+        // out of them entirely — without the document changing at all, and the
+        // dock would otherwise keep showing the previous surface's groups.
+        if let Some(resolve) = &self.resolve_surface {
+            self.set_surface(resolve());
+        }
+
         let Some(handle) = self.handle() else {
             self.clear_mirrors();
             return;
