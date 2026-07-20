@@ -135,6 +135,21 @@ pub struct OverviewRowsModel {
     /// when it is trashed out from under an open tab, so the empty state can say so
     /// instead of offering a "＋ New" that would silently fail.
     container_present: Signal<bool>,
+    /// **The authoritative expand set**, held outside the slice.
+    ///
+    /// `TreeDataSlice::build` rebuilds its own expanded set from the incoming rows and
+    /// drops every key that is not among them (`expanded.retain(|k| row_pos.contains_key(k))`).
+    /// That is right for the slice — it cannot expand a row it does not have — but it
+    /// means **any re-source that narrows the rows silently forgets state**, and search
+    /// narrows the rows on every keystroke. Expand a chapter, search for something that
+    /// filters it out, clear the box: the slice has pruned it, and the chapter comes back
+    /// collapsed.
+    ///
+    /// So the slice's set is treated as a *projection* of this one. Every user toggle
+    /// writes here too, and every reload re-applies this set (unioned with whatever the
+    /// slice decided, so `set_expand_new_nodes` still gets to auto-expand genuinely new
+    /// rows).
+    remembered: Rc<RefCell<HashSet<Uuid>>>,
     /// Keeps the filter-signal observers alive for the model's lifetime.
     _filters: Rc<Vec<ObserverHandle>>,
     /// One-shot guard so `wire` subscribes to backend events only once.
@@ -157,6 +172,7 @@ impl OverviewRowsModel {
         let scope_contents: Rc<RefCell<HashSet<u64>>> = Rc::new(RefCell::new(HashSet::new()));
         // Optimistic until the first load says otherwise — a fresh tab is not "gone".
         let container_present = Signal::new(true);
+        let remembered: Rc<RefCell<HashSet<Uuid>>> = Rc::new(RefCell::new(HashSet::new()));
 
         {
             let ctx = ctx.clone();
@@ -214,9 +230,10 @@ impl OverviewRowsModel {
         let resource: Rc<dyn Fn()> = {
             let slice = slice.clone();
             let f = filters.clone();
+            let remembered = remembered.clone();
             Rc::new(move || {
                 slice.set_all_expanded(row_search::needle(&f.query.get()).is_some());
-                slice.reload();
+                reload_preserving(&slice, &remembered);
             })
         };
         let observers = vec![
@@ -238,6 +255,7 @@ impl OverviewRowsModel {
             slice,
             scope_contents,
             container_present,
+            remembered,
             _filters: Rc::new(observers),
             subscribed: Rc::new(Cell::new(false)),
         }
@@ -312,9 +330,9 @@ impl OverviewRowsModel {
             .set_reorder(move |dragged, target, place| commit(dragged, target, place));
     }
 
-    /// Re-source the rows (real: from the backend / mock: a fixture).
+    /// Re-source the rows, preserving the writer's expand state across the re-source.
     pub fn reload(&self) {
-        self.slice.reload();
+        reload_preserving(&self.slice, &self.remembered);
     }
 
     /// Resolve a uid to its live store id — the bridge every command call crosses.
@@ -341,18 +359,40 @@ impl OverviewRowsModel {
         self.slice.expanded_keys()
     }
 
-    /// Apply a remembered expanded set.
+    /// Apply a remembered expanded set (the persistence restore).
     pub fn set_expanded_uids(&self, uids: &[Uuid]) {
+        *self.remembered.borrow_mut() = uids.iter().copied().collect();
         self.slice.set_expanded_keys(uids);
     }
 
     pub fn expand_all(&self) {
         self.slice.expand_all();
+        *self.remembered.borrow_mut() = self.slice.expanded_keys().into_iter().collect();
     }
 
     pub fn collapse_all(&self) {
         self.slice.collapse_all();
+        // Cleared outright, not intersected with the visible rows: "collapse all" is a
+        // statement about the container, and a row hidden by a filter must not come back
+        // expanded just because it was not on screen when the writer said so.
+        self.remembered.borrow_mut().clear();
     }
+}
+
+/// Re-source, then restore the expand state the re-source pruned.
+///
+/// The union with the slice's own post-reload set is what keeps
+/// `set_expand_new_nodes(true)` working: a genuinely new row is not in `remembered`, but
+/// the slice has just auto-expanded it, and `set_expanded_keys` **replaces** rather than
+/// merges — so restoring `remembered` alone would collapse every newly created scene.
+/// Folding the union back into `remembered` is what makes that auto-expansion stick.
+fn reload_preserving(slice: &TreeDataSlice<Uuid, OverviewRow>, remembered: &RefCell<HashSet<Uuid>>) {
+    slice.reload();
+    let mut union = remembered.borrow().clone();
+    union.extend(slice.expanded_keys());
+    let keys: Vec<Uuid> = union.iter().copied().collect();
+    slice.set_expanded_keys(&keys);
+    *remembered.borrow_mut() = union;
 }
 
 /// Apply the search filter and the sort to a freshly loaded row set.
@@ -571,6 +611,13 @@ impl TreeDataSource for OverviewRowsModel {
     }
 
     fn set_expanded(&self, key: &Uuid, expanded: bool) {
+        // Mirror every toggle into the authoritative set — this is the write that makes
+        // the slice's own set a projection rather than the truth.
+        if expanded {
+            self.remembered.borrow_mut().insert(*key);
+        } else {
+            self.remembered.borrow_mut().remove(key);
+        }
         self.slice.set_expanded(key, expanded);
     }
 
@@ -1141,7 +1188,7 @@ mod mock_tests {
     }
 
     /// The same, but keeping the filters so a test can drive search / sort.
-    fn model_with(container: u64, filters: OverviewFilters) -> OverviewRowsModel {
+    pub(super) fn model_with(container: u64, filters: OverviewFilters) -> OverviewRowsModel {
         let m = OverviewRowsModel::new(
             Rc::new(AppContext::new()),
             Signal::new(Some(1)),
@@ -1244,6 +1291,47 @@ mod mock_tests {
             "the reveal override must not leak into the captured set"
         );
         assert_eq!(m.slice.expanded_keys().len(), quiet.len());
+    }
+
+    /// **An expanded row that a search filters out must come back expanded.**
+    ///
+    /// `TreeDataSlice::build` drops every expand key absent from the incoming rows, and a
+    /// search narrows the rows — so without an authoritative set held outside the slice,
+    /// expanding a chapter and then searching for something that excludes it silently
+    /// collapses it. Found by probing after an earlier "simplification" removed the
+    /// snapshot the outline uses; the reveal override is non-destructive, but the source
+    /// filtering it runs alongside is not.
+    #[test]
+    fn an_expanded_row_filtered_out_by_a_search_comes_back_expanded() {
+        let filters = OverviewFilters::new();
+        let m = model_with(101, filters.clone());
+        let chapter = common::uid::fixture_uid(104);
+        assert!(m.is_expanded(&chapter), "the chapter starts expanded");
+
+        // "Confrontation" matches row 105 only — the chapter is filtered out entirely.
+        filters.query.set("Confrontation".to_string());
+        filters.query.set(String::new());
+
+        assert!(
+            m.is_expanded(&chapter),
+            "the chapter was pruned by the search's row filter and never restored"
+        );
+    }
+
+    /// The converse: a row the writer collapsed must NOT come back expanded after a
+    /// search filters it out and returns it — the remembered set has to forget on
+    /// collapse, not just remember on expand.
+    #[test]
+    fn a_collapsed_row_filtered_out_by_a_search_comes_back_collapsed() {
+        let filters = OverviewFilters::new();
+        let m = model_with(101, filters.clone());
+        let chapter = common::uid::fixture_uid(104);
+        m.set_expanded(&chapter, false);
+
+        filters.query.set("Confrontation".to_string());
+        filters.query.set(String::new());
+
+        assert!(!m.is_expanded(&chapter));
     }
 
     /// A collapse made **while searching** must survive clearing the box.
@@ -1387,3 +1475,4 @@ mod mock_tests {
         assert_eq!(m.item_id_of(&common::uid::fixture_uid(9999)), None);
     }
 }
+

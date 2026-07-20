@@ -22,6 +22,7 @@
 //! injected [`CommitMove`] closure and the slice re-reads itself.
 
 use std::cell::{Cell, RefCell};
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use bastyde::core::ObserverHandle;
@@ -103,6 +104,26 @@ pub struct TreeFilters {
 #[derive(Clone)]
 pub struct BinderBinderItemsTreeModel {
     slice: TreeDataSlice<BinderTreeKey, TreeNode>,
+    /// **The authoritative expand set**, held outside the slice.
+    ///
+    /// `TreeDataSlice::build` drops every expand key absent from the incoming rows. That
+    /// is right for the slice, but this tree re-sources with a *narrower* row set in two
+    /// routine situations — a binder-scope switch, and every keystroke of a search — so
+    /// the slice's own set forgets state constantly:
+    ///
+    /// * switch to another binder and back, and the first binder returns fully collapsed
+    ///   (its keys were pruned while it was off-screen);
+    /// * expand a chapter, search for something that filters it out, clear the box, and
+    ///   the chapter comes back collapsed.
+    ///
+    /// The first used to be papered over with `expand_all()` on every scope change, which
+    /// traded a forgotten tree for a *destroyed* one — every collapse the writer had made
+    /// was discarded. The second used to be papered over by snapshotting on search entry
+    /// and restoring on exit, which discarded any collapse made *during* the search.
+    ///
+    /// Both are the same bug, so both get the same fix: the slice's set is a projection of
+    /// this one. Toggles write here; every reload re-applies it.
+    remembered: Rc<RefCell<HashSet<BinderTreeKey>>>,
     /// Keeps the filter-signal observers alive for the model's lifetime — an
     /// `ObserverHandle` unsubscribes on drop. Shared across clones so the last
     /// clone standing owns them.
@@ -165,58 +186,30 @@ impl BinderBinderItemsTreeModel {
                 p => Some(p),
             },
         });
-        slice.reload();
+        let remembered: Rc<RefCell<HashSet<BinderTreeKey>>> = Rc::new(RefCell::new(HashSet::new()));
+        reload_preserving(&slice, &remembered);
 
-        // Live re-source on any filter change, with expand handling.
+        // Live re-source on any filter change.
         //
-        // The reveal override (`set_all_expanded`) tracks the SEARCH query ONLY —
-        // a binder-scoped view is a normal, collapsible tree, so we must NOT force
-        // the override there (it would make the expand/collapse chevrons dead: the
-        // toggle flips the per-row state but the override keeps every row shown).
+        // The reveal override (`set_all_expanded`) tracks the SEARCH query ONLY — a
+        // binder-scoped view is a normal, collapsible tree, and forcing the override
+        // there would make its chevrons dead (the toggle flips the per-row state but the
+        // override keeps every row shown).
         //
-        // Search: on entering, snapshot the collapse state and reveal every match
-        // (so a match is never hidden under a collapsed ancestor); on leaving,
-        // drop the reveal and restore the snapshot exactly.
+        // Everything else is handled by `remembered` + `reload_preserving`: a scope
+        // switch, a search that filters rows out, and a search cleared again all
+        // re-source with a different row set, and the restore puts back whatever that
+        // re-source pruned. No snapshot, and emphatically no `expand_all()`.
         //
-        // Binder scope (no search): `TreeDataSlice::build` prunes the expand state
-        // of rows that left the view, so a binder would otherwise return collapsed
-        // after a round-trip. We `expand_all()` the freshly-sourced subtree — a
-        // *persistent* expand, so the chevrons stay fully functional afterwards.
-        //
-        // Cycle-safe (cf. `install_reorder`): the closure captures the slice +
-        // signals + snapshot, never `self`. The observer handles (in `_filters`)
-        // own the closure.
-        let saved_expand: Rc<RefCell<Option<Vec<BinderTreeKey>>>> = Rc::new(RefCell::new(None));
+        // Cycle-safe (cf. `install_reorder`): the closure captures the slice + signals +
+        // the remembered set, never `self`. The observer handles (in `_filters`) own it.
         let resource: Rc<dyn Fn()> = {
             let slice = slice.clone();
             let f = filters.clone();
-            let saved = saved_expand.clone();
+            let remembered = remembered.clone();
             Rc::new(move || {
-                let searching = !f.query.get().trim().is_empty();
-                let was_searching = saved.borrow().is_some();
-                match (was_searching, searching) {
-                    (false, true) => {
-                        // Entering search: snapshot, then reveal every match.
-                        *saved.borrow_mut() = Some(slice.expanded_keys());
-                        slice.set_all_expanded(true);
-                        slice.reload();
-                    }
-                    (true, true) => slice.reload(), // still searching (query/scope changed)
-                    (true, false) => {
-                        // Leaving search: drop the reveal, re-source, restore state.
-                        let snapshot = saved.borrow_mut().take().unwrap_or_default();
-                        slice.set_all_expanded(false);
-                        slice.reload();
-                        slice.set_expanded_keys(&snapshot);
-                    }
-                    (false, false) => {
-                        // A binder-scope change with no active search: re-source and
-                        // expand the newly-shown subtree so the switched-to binder
-                        // isn't left collapsed by `build`'s expand-state pruning.
-                        slice.reload();
-                        slice.expand_all();
-                    }
-                }
+                slice.set_all_expanded(!f.query.get().trim().is_empty());
+                reload_preserving(&slice, &remembered);
             })
         };
         let observers = vec![
@@ -236,6 +229,7 @@ impl BinderBinderItemsTreeModel {
 
         Self {
             slice,
+            remembered,
             _filters: Rc::new(observers),
             subscribed: Rc::new(Cell::new(false)),
         }
@@ -310,7 +304,7 @@ impl BinderBinderItemsTreeModel {
     /// Re-source the rows for the open Work (real: from the backend / mock:
     /// static) and reproject. The data seam is the only real/mock difference.
     pub fn reload(&self) {
-        self.slice.reload();
+        reload_preserving(&self.slice, &self.remembered);
     }
 }
 
@@ -365,6 +359,13 @@ impl TreeDataSource for BinderBinderItemsTreeModel {
     }
 
     fn set_expanded(&self, key: &BinderTreeKey, expanded: bool) {
+        // Mirror every toggle into the authoritative set — this is the write that makes
+        // the slice's own set a projection rather than the truth.
+        if expanded {
+            self.remembered.borrow_mut().insert(*key);
+        } else {
+            self.remembered.borrow_mut().remove(key);
+        }
         self.slice.set_expanded(key, expanded);
     }
 
@@ -379,6 +380,26 @@ impl TreeDataSource for BinderBinderItemsTreeModel {
     fn accept_drop(&self, commit: DropCommit<'_, BinderTreeKey>) -> bool {
         self.slice.accept_drop(commit)
     }
+}
+
+/// Re-source, then restore the expand state the re-source pruned.
+///
+/// The union with the slice's own post-reload set is what keeps
+/// `set_expand_new_nodes(true)` working: a genuinely new row is not in `remembered`, but
+/// the slice has just auto-expanded it, and `set_expanded_keys` **replaces** rather than
+/// merges — so restoring `remembered` alone would collapse every newly created scene.
+/// Folding the union back in is what makes that auto-expansion stick, and is also what
+/// expands a binder the writer is visiting for the first time (all of its rows are new).
+fn reload_preserving(
+    slice: &TreeDataSlice<BinderTreeKey, TreeNode>,
+    remembered: &RefCell<HashSet<BinderTreeKey>>,
+) {
+    slice.reload();
+    let mut union = remembered.borrow().clone();
+    union.extend(slice.expanded_keys());
+    let keys: Vec<BinderTreeKey> = union.iter().copied().collect();
+    slice.set_expanded_keys(&keys);
+    *remembered.borrow_mut() = union;
 }
 
 // ── The row-source seam: the only real/mock difference ──────────────────────
@@ -641,6 +662,78 @@ mod tests {
         assert_eq!(m.visible_count(), 2);
         m.set_expanded(&BinderTreeKey::Item(101), true);
         assert_eq!(m.visible_count(), 12);
+    }
+
+    /// **Switching binder scope and back must preserve the writer's collapses.**
+    ///
+    /// `TreeDataSlice::build` prunes expand keys absent from the incoming rows, so
+    /// leaving a binder used to forget everything about it; the old workaround was
+    /// `expand_all()` on every scope change, which did not merely forget the state — it
+    /// destroyed it, throwing away every collapse the writer had made.
+    #[test]
+    fn a_collapse_survives_leaving_a_binder_and_coming_back() {
+        let (m, f) = model_with_filters();
+        f.binder.set(Some(1)); // Manuscript: binder + 11 items
+        assert_eq!(m.visible_count(), 12);
+
+        m.set_expanded(&BinderTreeKey::Item(101), false); // collapse "Book One"
+        assert_eq!(m.visible_count(), 2);
+
+        f.binder.set(Some(2)); // away to Notes …
+        f.binder.set(Some(1)); // … and back
+
+        assert_eq!(
+            m.visible_count(),
+            2,
+            "Book One must still be collapsed; `expand_all()` used to blow this open"
+        );
+        assert!(!m.is_expanded(&BinderTreeKey::Item(101)));
+    }
+
+    /// …and a binder visited for the **first** time still opens expanded, which is what
+    /// `set_expand_new_nodes(true)` is for. The restore must not defeat it.
+    #[test]
+    fn a_binder_visited_for_the_first_time_opens_expanded() {
+        let (m, f) = model_with_filters();
+        f.binder.set(Some(1));
+        assert_eq!(m.visible_count(), 12, "every row of Manuscript is showing");
+    }
+
+    /// **An expanded row that a search filters out must come back expanded.**
+    ///
+    /// A search narrows the row set, so `build` prunes it. This used to be papered over
+    /// by snapshotting on entry and restoring on exit — which then discarded any collapse
+    /// made *during* the search (pinned by the test below).
+    #[test]
+    fn an_expanded_row_filtered_out_by_a_search_comes_back_expanded() {
+        let (m, f) = model_with_filters();
+        f.binder.set(Some(1));
+        assert!(m.is_expanded(&BinderTreeKey::Item(101)), "Book One starts open");
+
+        // "Random idea" lives in the Notes binder, so nothing under Book One matches and
+        // the whole subtree is filtered away.
+        f.query.set("Random idea".to_string());
+        f.query.set(String::new());
+
+        assert!(
+            m.is_expanded(&BinderTreeKey::Item(101)),
+            "Book One was pruned by the search's row filter and never restored"
+        );
+    }
+
+    /// A collapse made **while a search is active** must survive clearing it — the
+    /// failure mode of the snapshot-and-restore this replaced.
+    #[test]
+    fn a_collapse_made_during_a_search_survives_clearing_it() {
+        let (m, f) = model_with_filters();
+        f.binder.set(Some(1));
+        f.query.set("Scene".to_string());
+        m.set_expanded(&BinderTreeKey::Item(101), false);
+        f.query.set(String::new());
+        assert!(
+            !m.is_expanded(&BinderTreeKey::Item(101)),
+            "clearing the search resurrected a collapse the writer made during it"
+        );
     }
 
     #[test]
