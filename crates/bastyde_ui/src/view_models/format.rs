@@ -147,6 +147,11 @@ pub struct FormatViewModel {
     italic: Signal<bool>,
     underline: Signal<bool>,
     strikethrough: Signal<bool>,
+    /// Superscript and subscript are one tri-state property in the document,
+    /// mirrored as two signals because the toolbar shows two buttons. They are
+    /// never both true.
+    superscript: Signal<bool>,
+    subscript: Signal<bool>,
     blockquote: Signal<bool>,
     /// The caret sits inside a table, so the row/column commands are meaningful.
     in_table: Signal<bool>,
@@ -182,6 +187,8 @@ impl FormatViewModel {
             italic: Signal::new(false),
             underline: Signal::new(false),
             strikethrough: Signal::new(false),
+            superscript: Signal::new(false),
+            subscript: Signal::new(false),
             blockquote: Signal::new(false),
             in_table: Signal::new(false),
             heading: Signal::new(0),
@@ -215,6 +222,12 @@ impl FormatViewModel {
     }
     pub fn strikethrough(&self) -> Signal<bool> {
         self.strikethrough.clone()
+    }
+    pub fn superscript(&self) -> Signal<bool> {
+        self.superscript.clone()
+    }
+    pub fn subscript(&self) -> Signal<bool> {
+        self.subscript.clone()
     }
     pub fn blockquote(&self) -> Signal<bool> {
         self.blockquote.clone()
@@ -291,6 +304,8 @@ impl FormatViewModel {
         set_if_changed(&self.italic, handle.is_italic());
         set_if_changed(&self.underline, handle.is_underline());
         set_if_changed(&self.strikethrough, handle.is_strikethrough());
+        set_if_changed(&self.superscript, handle.is_superscript());
+        set_if_changed(&self.subscript, handle.is_subscript());
         set_if_changed(&self.blockquote, handle.is_in_blockquote());
         set_if_changed(&self.in_table, handle.is_in_table());
         set_if_changed(&self.heading, handle.get_heading_level() as usize);
@@ -305,6 +320,8 @@ impl FormatViewModel {
         set_if_changed(&self.italic, false);
         set_if_changed(&self.underline, false);
         set_if_changed(&self.strikethrough, false);
+        set_if_changed(&self.superscript, false);
+        set_if_changed(&self.subscript, false);
         set_if_changed(&self.blockquote, false);
         set_if_changed(&self.in_table, false);
         set_if_changed(&self.heading, 0);
@@ -316,10 +333,7 @@ impl FormatViewModel {
     // ── Character marks ───────────────────────────────────────────────────
     //
     // Each runs the real command then re-syncs, so the mirrors carry the
-    // editor's answer rather than an assumption. Superscript and subscript are
-    // absent on purpose: `MergeTextFormatDto` does not carry
-    // `vertical_alignment`, so applying them today succeeds and changes
-    // nothing. They arrive with that upstream fix, not before.
+    // editor's answer rather than an assumption.
 
     pub fn toggle_bold(&self) {
         self.with_editor(|h| h.toggle_bold());
@@ -334,6 +348,18 @@ impl FormatViewModel {
         self.with_editor(|h| h.toggle_strikethrough());
     }
 
+    /// Raise the selection. Turning superscript on clears subscript — the
+    /// document holds one property, and both buttons lit would be a lie.
+    pub fn toggle_superscript(&self) {
+        self.with_editor(|h| h.toggle_superscript());
+    }
+
+    /// Lower the selection. The mirror image of
+    /// [`toggle_superscript`](Self::toggle_superscript).
+    pub fn toggle_subscript(&self) {
+        self.with_editor(|h| h.toggle_subscript());
+    }
+
     /// Strip formatting back to plain prose.
     ///
     /// Clears the four character marks over the selection, then flattens the
@@ -346,47 +372,64 @@ impl FormatViewModel {
     /// Each property is read before it is written, so clearing already-clean
     /// text neither pushes undo entries nor marks the document modified.
     ///
-    /// Three things it does **not** clear, each because the API cannot:
-    /// list membership (`outdent` bottoms out at depth 0 and the real primitive
-    /// is not public), font family (no layer can express "unset" — `None` means
-    /// "leave unchanged" everywhere), and superscript/subscript (unreachable,
-    /// as above). The tooltip says so rather than implying a clean sweep.
+    /// The whole sweep is **one undo entry**. A writer who clears a heading
+    /// that was also bold and centred means one action, and should not have to
+    /// press Ctrl+Z five times to get back — worse, a single press would
+    /// otherwise leave the paragraph half-cleared.
     ///
-    /// Each cleared property is its own undo entry until
-    /// `begin_edit_block`/`end_edit_block` reach `EditorHandle`; wrapping this
-    /// body in that pair is the whole change when they do.
+    /// One thing it does **not** clear: font family. No layer can express
+    /// "unset" — `None` means "leave unchanged" at every level down to the DTO,
+    /// so the closest available move would pin the run to a literal family
+    /// rather than restoring it to the editor's typography default, which is
+    /// worse than leaving it alone. The tooltip says so rather than implying a
+    /// clean sweep. (See the tri-state work in the plan; it is the fix.)
     pub fn clear_formatting(&self) {
         let Some(handle) = self.handle() else {
             return;
         };
 
-        if handle.is_bold() {
-            handle.set_bold(false);
-        }
-        if handle.is_italic() {
-            handle.set_italic(false);
-        }
-        if handle.is_underline() {
-            handle.set_underline(false);
-        }
-        if handle.is_strikethrough() {
-            handle.set_strikethrough(false);
-        }
-        if handle.get_heading_level() != 0 {
-            handle.set_heading_level(0);
-        }
-        if handle.get_alignment() != Alignment::Left {
-            handle.set_alignment(Alignment::Left);
-        }
-        // Depth is not queryable, so unwrap one level at a time and bound the
-        // loop — a command that cannot make progress must still terminate.
-        let mut unwrapped = 0;
-        while handle.is_in_blockquote() && unwrapped < MAX_BLOCKQUOTE_UNWRAP {
-            handle.decrease_blockquote_depth();
-            unwrapped += 1;
-        }
+        handle.edit_block(|| {
+            if handle.is_bold() {
+                handle.set_bold(false);
+            }
+            if handle.is_italic() {
+                handle.set_italic(false);
+            }
+            if handle.is_underline() {
+                handle.set_underline(false);
+            }
+            if handle.is_strikethrough() {
+                handle.set_strikethrough(false);
+            }
+            if handle.is_superscript() || handle.is_subscript() {
+                handle.set_superscript(false);
+            }
+            if handle.get_heading_level() != 0 {
+                handle.set_heading_level(0);
+            }
+            if handle.get_alignment() != Alignment::Left {
+                handle.set_alignment(Alignment::Left);
+            }
+            handle.remove_from_list();
+            // Depth is not queryable, so unwrap one level at a time and bound
+            // the loop — a command that cannot make progress must still
+            // terminate.
+            let mut unwrapped = 0;
+            while handle.is_in_blockquote() && unwrapped < MAX_BLOCKQUOTE_UNWRAP {
+                handle.decrease_blockquote_depth();
+                unwrapped += 1;
+            }
+        });
 
         self.sync_now();
+    }
+
+    /// Take the caret's block out of its list, leaving a plain paragraph.
+    ///
+    /// Distinct from [`outdent`](Self::outdent), which steps one nesting level
+    /// and deliberately stops at the outermost rather than destroying the list.
+    pub fn remove_from_list(&self) {
+        self.with_editor(|h| h.remove_from_list());
     }
 
     // ── Block structure ───────────────────────────────────────────────────
@@ -515,15 +558,23 @@ mod tests {
     /// assert against the document directly. No `WidgetTree` — the whole point
     /// of keeping the resolver injectable.
     fn vm_over(text: &str) -> (FormatViewModel, RichTextEditor) {
+        let (vm, editor, _doc) = vm_over_doc(text);
+        (vm, editor)
+    }
+
+    /// The document as well, for the assertions `EditorHandle` cannot express —
+    /// list membership has no `is_in_list()` query, so it has to be read off
+    /// the block itself.
+    fn vm_over_doc(text: &str) -> (FormatViewModel, RichTextEditor, TextDocument) {
         let doc = TextDocument::new();
         doc.set_markdown(text)
             .expect("parse")
             .wait()
             .expect("import");
-        let editor = RichTextEditor::editor(doc);
+        let editor = RichTextEditor::editor(doc.clone());
         let handle = editor.handle();
         let vm = FormatViewModel::new(Rc::new(move || Some(handle.clone())));
-        (vm, editor)
+        (vm, editor, doc)
     }
 
     /// A view-model with nothing focused.
@@ -651,6 +702,101 @@ mod tests {
         assert_eq!(handle.get_alignment(), Alignment::Left, "alignment reset");
         assert!(!vm.bold().get(), "and the mirrors followed");
         assert_eq!(vm.heading().get(), 0);
+    }
+
+    #[test]
+    fn superscript_and_subscript_are_mutually_exclusive_in_the_mirrors() {
+        let (vm, editor) = vm_over("H2O");
+        editor.handle().select_range(1, 2);
+        vm.sync_now();
+
+        vm.toggle_subscript();
+        assert!(vm.subscript().get() && !vm.superscript().get());
+
+        vm.toggle_superscript();
+        assert!(
+            vm.superscript().get() && !vm.subscript().get(),
+            "one property, two buttons — both lit would be a lie about the document"
+        );
+
+        vm.toggle_superscript();
+        assert!(!vm.superscript().get() && !vm.subscript().get());
+    }
+
+    #[test]
+    fn clear_formatting_is_a_single_undo_entry() {
+        // A writer clearing a bold, centred heading means one action. Without
+        // the edit block this took five Ctrl+Z presses, and the first one left
+        // the paragraph half-cleared.
+        let (vm, editor) = vm_over("Hello world");
+        let handle = editor.handle();
+        editor.select_all();
+        handle.set_bold(true);
+        handle.set_italic(true);
+        handle.set_heading_level(2);
+        handle.set_alignment(Alignment::Center);
+        vm.sync_now();
+
+        vm.clear_formatting();
+        assert!(!handle.is_bold() && handle.get_heading_level() == 0);
+
+        handle.undo();
+        vm.sync_now();
+        assert!(handle.is_bold(), "one undo restores the marks");
+        assert!(handle.is_italic(), "...all of them");
+        assert_eq!(handle.get_heading_level(), 2, "...and the block format too");
+        assert_eq!(handle.get_alignment(), Alignment::Center);
+    }
+
+    #[test]
+    fn clear_formatting_takes_the_block_out_of_a_list() {
+        // `outdent` bottoms out at depth 0 by design, so before
+        // `remove_from_list` existed a cleared paragraph stayed a list item.
+        let (vm, editor, doc) = vm_over_doc("item");
+        let handle = editor.handle();
+        handle.insert_list(false);
+        vm.sync_now();
+        assert!(
+            doc.block_at_position(0).expect("block").list().is_some(),
+            "precondition: the block is a list item"
+        );
+
+        vm.clear_formatting();
+        assert!(
+            doc.block_at_position(0).expect("block").list().is_none(),
+            "clearing formatting must leave a plain paragraph"
+        );
+    }
+
+    #[test]
+    fn remove_from_list_is_reachable_on_its_own() {
+        // The dock offers it as its own control, not only via clear-formatting.
+        let (vm, editor, doc) = vm_over_doc("item");
+        editor.handle().insert_list(true);
+        assert!(doc.block_at_position(0).expect("block").list().is_some());
+
+        vm.remove_from_list();
+        assert!(doc.block_at_position(0).expect("block").list().is_none());
+
+        // Outside a list it is a no-op, not an error.
+        vm.remove_from_list();
+        assert!(doc.block_at_position(0).expect("block").list().is_none());
+    }
+
+    #[test]
+    fn clear_formatting_flattens_superscript() {
+        let (vm, editor) = vm_over("E=mc2");
+        let handle = editor.handle();
+        handle.select_range(4, 5);
+        vm.toggle_superscript();
+        assert!(vm.superscript().get());
+
+        vm.clear_formatting();
+        assert!(
+            !handle.is_superscript(),
+            "superscript is a character mark and goes with the rest"
+        );
+        assert!(!vm.superscript().get());
     }
 
     #[test]
