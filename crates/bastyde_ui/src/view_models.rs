@@ -25,6 +25,9 @@
 //!     Full Chapter/Part/Book row list and the row mutations).
 //!   * [`outline`] — `OutlineViewModel`: single-instance live state (owns the
 //!     `DockingModel` + tree model).
+//!   * [`format`] — `FormatViewModel`: single-instance live state (owns the
+//!     formatting mirrors shared by the format dock, the Format menu and the
+//!     editor's context-menu row).
 //!   * [`settings`] — `SettingsViewModel`: store-backed facade over persisted UI
 //!     settings.
 //!   * [`welcome`] — `WelcomeViewModel`: store-backed facade for the start screen.
@@ -54,6 +57,7 @@ mod editors;
 mod export;
 mod export_styles;
 mod find;
+mod format;
 mod import_plume;
 mod long_op;
 mod new_work;
@@ -93,6 +97,7 @@ pub use editors::{EditorsViewModel, Side};
 pub use export::{ExportViewModel, format_label, scope_label};
 pub use export_styles::ExportStylesViewModel;
 pub use find::FindViewModel;
+pub use format::{ALIGN_CENTER, ALIGN_LEFT, ALIGN_OTHER, FormatSurface, FormatViewModel};
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;
