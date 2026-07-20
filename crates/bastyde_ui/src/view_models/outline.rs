@@ -1534,6 +1534,138 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
             );
         }
 
+        /// The other half of the rename story: `a_rename_reaches_both_homes_of_the_title`
+        /// calls `rename` directly with a freshly-resolved key; this drives the **actual**
+        /// context-menu wiring end to end — `begin_rename` (the `MenuItem`'s
+        /// `on_activate_fn`) presenting the `InputDialog`, then its `on_result` closure
+        /// firing *later* (after layout, after a `SetValue`/`Click` round trip) and
+        /// resolving `key` again through the same live tree model.
+        ///
+        /// Guards the three things `BinderTreeKey`'s uid re-keying put at risk: the
+        /// dialog actually appears (a modal request is queued), it's pre-filled with the
+        /// row's current title, and the deferred `on_result` still finds the row and
+        /// applies the edit rather than silently no-oping.
+        #[test]
+        fn the_rename_dialog_appears_and_a_submitted_title_actually_renames() {
+            use bastyde::core::ModalContent;
+            use bastyde::core::accessibility::widget_id_to_node_id;
+            use bastyde::core::widget_id::WidgetId;
+            use bastyde::core::widget_tree::WidgetTree;
+            use bastyde::i18n::lit;
+            use bastyde::widgets::Button;
+
+            let (outline, binder) = seed();
+            let item = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                0,
+                0,
+            );
+            let key = key_of(&outline, item);
+
+            // Mirrors `binder_context_menu`'s "Rename" `MenuItem` exactly:
+            // `.on_activate_fn(move |ctx| rename.begin_rename(key, ctx))`.
+            let vm = outline.clone();
+            let mut tree = WidgetTree::new().with_theme(intui::light());
+            let trigger = tree.add(
+                Button::new(lit!("rename")).on_activate_fn(move |ctx| vm.begin_rename(key, ctx)),
+            );
+            tree.layout(SizeProposal::exact(420.0, 60.0));
+
+            tree.dispatch_event(WidgetEvent::AccessAction {
+                action: bastyde::core::accesskit::Action::Click,
+                target: Some(trigger),
+                target_node: widget_id_to_node_id(trigger),
+                data: None,
+            });
+
+            assert!(
+                tree.has_pending_modal_requests(),
+                "the dialog must appear: begin_rename must queue a modal request"
+            );
+            let request = tree.drain_pending_modal_requests().pop().unwrap().request;
+            let ModalContent::Deferred(builder) = request.content else {
+                panic!("InputDialog must present as deferred content");
+            };
+            let content_id = builder(&mut tree);
+            tree.layout(SizeProposal::exact(420.0, 180.0));
+
+            // Collect descendants by type name — locale-independent, unlike hunting the
+            // OK/Cancel buttons by their translated label.
+            fn collect(tree: &WidgetTree, root: WidgetId, needle: &str, out: &mut Vec<WidgetId>) {
+                if tree.widget_type_name(root).is_some_and(|t| t.contains(needle)) {
+                    out.push(root);
+                }
+                for c in tree.children(root) {
+                    collect(tree, c, needle, out);
+                }
+            }
+
+            let mut fields = Vec::new();
+            collect(&tree, content_id, "TextInputField", &mut fields);
+            let field = *fields
+                .first()
+                .expect("the InputDialog must mount its text field");
+            {
+                let update = tree.sync_accessibility();
+                let field_node = widget_id_to_node_id(field);
+                let value = update
+                    .nodes
+                    .iter()
+                    .find(|(id, _)| *id == field_node)
+                    .and_then(|(_, n)| n.value());
+                assert_eq!(
+                    value,
+                    Some("Item/Scene"),
+                    "begin_rename must read the row's current title via node_of and \
+                     pre-fill the dialog with it"
+                );
+            }
+
+            // Overwrite the pre-filled title (proving the field is live), the
+            // AT-driven equivalent of selecting all and typing.
+            tree.dispatch_event(WidgetEvent::AccessAction {
+                action: bastyde::core::accesskit::Action::SetValue,
+                target: Some(field),
+                target_node: widget_id_to_node_id(field),
+                data: Some(bastyde::core::accesskit::ActionData::Value(
+                    "Renamed Scene".into(),
+                )),
+            });
+
+            // The field's edit is debounced onto its outer `Signal<String>` via a
+            // frame-tick effect (`TextInputField`'s doc comment: "frames are
+            // demand-driven"), so the OK button's `text_for_ok.get()` won't see it
+            // until a frame actually ticks.
+            tree.request_frame();
+            tree.tick_animations(std::time::Duration::from_millis(16));
+            tree.layout(SizeProposal::exact(420.0, 180.0));
+
+            let mut buttons = Vec::new();
+            collect(&tree, content_id, "Button", &mut buttons);
+            // Footer order is Cancel, then OK (`InputDialogBody::build`) — the last
+            // Button is OK.
+            let ok = *buttons
+                .last()
+                .expect("the InputDialog must mount its OK/Cancel buttons");
+
+            tree.dispatch_event(WidgetEvent::AccessAction {
+                action: bastyde::core::accesskit::Action::Click,
+                target: Some(ok),
+                target_node: widget_id_to_node_id(ok),
+                data: None,
+            });
+
+            assert_eq!(
+                outline.item_dto(item).unwrap().title,
+                "Renamed Scene",
+                "the on_result closure must resolve the key later, through the live tree \
+                 model, and actually apply the rename"
+            );
+        }
+
         /// The headline of this feature: outline in bare folders, then declare what each
         /// one is. A plain folder carries only a synopsis, which every folder type allows,
         /// so every one of these conversions is lossless.

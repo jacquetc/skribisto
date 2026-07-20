@@ -78,6 +78,24 @@ impl Widget for OverviewTable {
                 None => table.clear_sort(),
             }
         }
+        // Seed the **editing cell** the same way, and for the same reason.
+        //
+        // `CellContext::is_editing` — the only thing the cell delegates consult to swap
+        // in an editor — is computed from the *widget's* own `editing_cell`, addressed by
+        // (row index, display column). The view-model addresses the edit by (uid, column
+        // id), because a durable key is what survives the re-sources this table does
+        // constantly. Nothing bridged the two, so "Rename" set the view-model's intent and
+        // no cell ever noticed: the menu item did nothing at all.
+        //
+        // It has to be re-seeded on **every** build, not once: this widget rebuilds
+        // whenever the edit cursor moves, and each rebuild constructs a brand-new
+        // `TreeTableView` whose `editing_cell` starts at `None`. That is exactly why the
+        // sort seed above exists too.
+        if let Some((uid, col_id)) = self.vm.editing_cell().get()
+            && let Some(row) = self.vm.rows().flat_index_of(&uid)
+        {
+            table.begin_edit(row, &col_id);
+        }
 
         let activate_vm = self.vm.clone();
         let edit_vm = self.vm.clone();
@@ -117,17 +135,21 @@ impl Widget for OverviewTable {
                     root: None,
                 })
             })
-            // Delete trashes the selection, F2 renames the first selected row. Attached
-            // last: these are `WidgetBuilder` hooks, so no table-specific call may follow.
+            // Delete trashes the selection. Attached last: this is a `WidgetBuilder`
+            // hook, so no table-specific call may follow.
+            //
+            // **F2 is deliberately not handled here.** The table's own key handler already
+            // implements it (`EditTrigger::F2OrTypeOrDoubleClick` is the default): it sets
+            // the widget's `editing_cell` and fires `on_cell_edit_request`, which is wired
+            // above into `begin_edit`. A second F2 handler would not override that —
+            // bastyde fires the external and the widget's own handler *both*, with no
+            // short-circuit on `Handled` — it would only run a second, different action
+            // (rename the first *selected* row rather than the focused cell) on top.
             .on_key(move |ev, _ctx| match ev {
                 WidgetEvent::KeyDown {
                     key: Key::Delete, ..
                 } => {
                     keys_vm.trash_selected();
-                    EventResponse::Handled
-                }
-                WidgetEvent::KeyDown { key: Key::F2, .. } => {
-                    keys_vm.begin_rename_selected();
                     EventResponse::Handled
                 }
                 _ => EventResponse::Ignored,

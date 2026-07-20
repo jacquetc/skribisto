@@ -409,13 +409,6 @@ impl OverviewViewModel {
         }
     }
 
-    /// Edit the first selected row's title — F2 and the menu's "Rename".
-    pub fn begin_rename_selected(&self) {
-        if let Some(uid) = self.first_selected() {
-            self.begin_edit(uid, crate::models::COL_TITLE);
-        }
-    }
-
     pub fn cancel_edit(&self) {
         if self.inner.editing.get().is_some() {
             self.inner.editing.set(None);
@@ -706,19 +699,6 @@ impl OverviewViewModel {
         }
     }
 
-    // ── internals ────────────────────────────────────────────────────────────
-
-    /// The first selected row **in display order** — "first" must mean what the writer
-    /// sees, and a `HashSet`'s iteration order is arbitrary.
-    fn first_selected(&self) -> Option<Uuid> {
-        let selected = self.inner.selection.selected_keys();
-        if selected.is_empty() {
-            return None;
-        }
-        (0..self.inner.rows.visible_count())
-            .filter_map(|i| self.inner.rows.key_at(i))
-            .find(|k| selected.contains(k))
-    }
 }
 
 #[cfg(test)]
@@ -801,19 +781,6 @@ mod tests {
             "outside the selection → that row alone, selection untouched"
         );
         assert_eq!(vm.selection().count(), 2, "and the selection is not disturbed");
-    }
-
-    /// "First selected" is the first in **display** order, not whatever the selection
-    /// set happens to iterate first — otherwise F2 renames an arbitrary row.
-    #[cfg(feature = "mocks")]
-    #[test]
-    fn first_selected_follows_display_order() {
-        let vm = vm_for(101).unwrap();
-        let early = common::uid::fixture_uid(103); // "Scene at dawn", row 2
-        let late = common::uid::fixture_uid(105); // "Confrontation", last row
-        // Selected late-first, to make an insertion-ordered answer visibly wrong.
-        vm.selection().select_keys([late, early], false);
-        assert_eq!(vm.first_selected(), Some(early));
     }
 
     /// The inline-edit cursor is one cell at a time, and cancelling clears it.

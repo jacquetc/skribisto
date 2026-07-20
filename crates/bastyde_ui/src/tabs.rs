@@ -995,6 +995,158 @@ mod tests {
         }
     }
 
+    /// F2 opens the editor on the **focused cell**, and does so exactly once.
+    ///
+    /// The table used to carry its own F2 handler on top of the one
+    /// `TreeTableView` already implements (`EditTrigger::F2OrTypeOrDoubleClick`
+    /// is the default, and both editable columns opt in). Bastyde fires the
+    /// external handler and the widget's own with no short-circuit on
+    /// `Handled`, so both ran: the widget's opened the *focused* cell, mine
+    /// opened the first *selected* row. When those disagree the second call
+    /// commits and closes the first one's edit before opening its own — the
+    /// user gets the wrong row, or a stray undo entry, depending on ordering.
+    ///
+    /// So the duplicate is gone and this pins what remains: the surviving
+    /// handler is the widget's, and it works.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn f2_opens_the_editor_on_the_focused_cell() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        use bastyde::data::TreeDataSource;
+        use bastyde::widgets::TreeTableView;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            101,
+            &Folder,
+            &Book,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.segment.set(5);
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let root = tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
+
+        fn find(tree: &WidgetTree, id: WidgetId, needle: &str) -> Option<WidgetId> {
+            if tree.widget_type_name(id).is_some_and(|t| t.contains(needle)) {
+                return Some(id);
+            }
+            tree.children(id)
+                .into_iter()
+                .find_map(|c| find(tree, c, needle))
+        }
+        let table = find(&tree, root, "TreeTableView").expect("the Overview mounts a TreeTableView");
+
+        tree.focus(table);
+        tree.widget_as_any(table)
+            .unwrap()
+            .downcast_ref::<TreeTableView<crate::models::OverviewRow>>()
+            .expect("the table is keyed by OverviewRow")
+            .set_focused_cell(0, 0);
+
+        let vm = tab.overview().unwrap().clone();
+        // `Option::None` spelled out: the `BinderItemSubRole::*` glob above puts a
+        // `None` *variant* in scope, which is what a bare `None` would resolve to.
+        assert_eq!(
+            vm.editing_cell().get(),
+            Option::None,
+            "nothing is being edited yet"
+        );
+
+        tree.press_key(Key::F2, Modifiers::NONE);
+
+        let (uid, col) = vm
+            .editing_cell()
+            .get()
+            .expect("F2 must open an editor; removing the app-side handler must not have \
+                     taken the only working one with it");
+        assert_eq!(col, crate::models::COL_TITLE, "F2 edits the focused column");
+        assert_eq!(
+            Some(uid),
+            vm.rows().key_at(0),
+            "F2 edits the focused row, not merely some row"
+        );
+    }
+
+    /// "Rename" must actually open the cell editor.
+    ///
+    /// The view-model addresses an edit by `(uid, col_id)` — a durable key, because this
+    /// table re-sources constantly — while `CellContext::is_editing`, the only thing the
+    /// cell delegates consult, is the *widget's* `(row, display_pos)`. Nothing bridged the
+    /// two, so the menu item set the intent and no cell ever noticed: it did nothing at
+    /// all, silently, with no error anywhere.
+    ///
+    /// Differential on purpose. The header carries a `SearchField`, which is itself a
+    /// `TextInput`, so an absolute count would pass on the broken code; only the change
+    /// across `begin_edit` is the cell editor.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn renaming_an_overview_row_mounts_a_cell_editor() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            101,
+            &Folder,
+            &Book,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.segment.set(5);
+
+        // The pane is rebuilt at each step rather than mutated: the editing signal is
+        // bound at `BindingLevel::Rebuild`, so a rebuild is exactly what the framework
+        // does, and a fresh `TreeTableView` (with a fresh, empty `editing_cell`) is the
+        // condition the seed has to survive.
+        let inputs = |tab: &ContentTab| {
+            let mut tree = crate::test_support::tree_with_events(&ctx);
+            let id = tree.add_boxed(tab_pane(tab));
+            tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
+            let mut n = 0;
+            count_containing(&tree, id, "TextInput", &mut n);
+            n
+        };
+
+        let idle = inputs(&tab);
+
+        let vm = tab.overview().unwrap().clone();
+        let uid = common::uid::fixture_uid(201);
+        vm.begin_edit(uid, crate::models::COL_TITLE);
+        let editing = inputs(&tab);
+        assert!(
+            editing > idle,
+            "begin_edit set the view-model's editing signal but no cell editor mounted \
+             ({idle} -> {editing} TextInputs)"
+        );
+
+        // Seeded from the row it targets, not left blank — an editor that opens empty
+        // would silently clear the title on commit.
+        assert!(
+            !vm.edit_buffer().text.get().is_empty(),
+            "the open editor was not seeded with the row's title"
+        );
+
+        // ...and it closes again. Without this the mount could be a one-way latch that
+        // never returns the table to its normal cells.
+        vm.cancel_edit();
+        assert_eq!(
+            inputs(&tab),
+            idle,
+            "cancelling the edit left the cell editor mounted"
+        );
+    }
+
     /// A Book's bar carries the extra "Pace" segment, so its Overview sits one further
     /// along than a Chapter's or a Part's. Pinned because the index above is a magic
     /// number that only the bar's construction order justifies.
