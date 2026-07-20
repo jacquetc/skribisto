@@ -308,8 +308,11 @@ fn assemble(
         if !w.title.is_empty() {
             push_heading(&mut out, 1, &w.title, work_rtl);
         }
-        if !w.author_name.is_empty() {
-            push_para(&mut out, &w.author_name, work_rtl);
+        // The author's name is *data*, never markup — escaped so a name that
+        // happens to start like a list marker survives intact. "A. Writer"
+        // reached the page as "Writer" until this was added.
+        if !w.author_name.trim().is_empty() {
+            push_para(&mut out, &escape_block_leading(w.author_name.trim()), work_rtl);
         }
     }
 
@@ -661,10 +664,35 @@ fn push_scene_break(
     }
 }
 
-/// Escape a leading Djot block-special character so a one-line glyph is a plain paragraph.
+/// Escape a leading Djot block marker so the line is read as a plain paragraph.
+///
+/// Two different families of marker can hijack the start of a line, and they need
+/// *different* escapes — a backslash only escapes punctuation in Djot, so putting one
+/// in front of a letter or digit leaves a literal backslash on the page:
+///
+/// * a **single special character** (`#` heading, `>` quote, `*`/`-`/`+` bullet, …).
+///   Escape the character itself: `\* Star` → `* Star`.
+/// * a **two-character list marker** — an alphanumeric followed by `.` or `)`, which
+///   Djot reads as an ordered list (numeric `1.`, alphabetic `A.`, roman `i.`).
+///   Escape the *punctuation*, not the leading character: `A\. Writer` → `A. Writer`,
+///   whereas `\A. Writer` renders the backslash literally and `A. Writer` silently
+///   loses the `A.` — the marker is consumed and only "Writer" survives.
+///
+/// That second family is why an author named "A. Writer" reached the compiled title
+/// page as "Writer". The digit case was mishandled the same way in the opposite
+/// direction: `\1.` printed a visible backslash instead of escaping anything.
 fn escape_block_leading(s: &str) -> String {
-    match s.chars().next() {
-        Some(c) if "#*-_+>~:|=`".contains(c) || c.is_ascii_digit() => format!("\\{s}"),
+    let mut chars = s.chars();
+    match (chars.next(), chars.next()) {
+        // Ordered-list marker: escape the `.`/`)` that makes it one.
+        (Some(c), Some(p)) if c.is_alphanumeric() && (p == '.' || p == ')') => {
+            let mut out = String::with_capacity(s.len() + 1);
+            out.push(c);
+            out.push('\\');
+            out.push_str(&s[c.len_utf8()..]);
+            out
+        }
+        (Some(c), _) if "#*-_+>~:|=`".contains(c) => format!("\\{s}"),
         _ => s.to_string(),
     }
 }
@@ -990,6 +1018,99 @@ mod tests {
             !txt.contains("* * *"),
             "the marker itself must be consumed, not printed: {txt}"
         );
+    }
+
+    // ── the author on the compiled title page ──
+
+    /// A book exported with a title-page preset carries the writer's name.
+    /// The whole point of storing `author_name`: it must reach the page.
+    #[test]
+    fn a_title_page_preset_prints_the_author_under_the_title() {
+        let g = flat_book();
+        let p = preset("manuscript-shunn");
+        assert!(p.book_title_page, "fixture preset must have a title page");
+        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(txt.contains("A. Writer"), "the author must appear: {txt}");
+        assert!(txt.contains("My Novel"), "the title must appear: {txt}");
+        assert!(
+            txt.find("My Novel") < txt.find("A. Writer"),
+            "the author belongs under the title: {txt}"
+        );
+    }
+
+    /// The name is **optional**, and blank must mean "omit" — not an empty line
+    /// where a name would be, and not the string "Untitled" or similar.
+    #[test]
+    fn an_empty_author_is_omitted_from_the_title_page() {
+        let mut g = flat_book();
+        g.work.author_name = String::new();
+        let p = preset("manuscript-shunn");
+        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(txt.contains("My Novel"), "the title still appears: {txt}");
+        assert!(
+            !txt.contains("A. Writer"),
+            "a cleared author must not linger: {txt}"
+        );
+    }
+
+    /// An author whose name starts like an ordered-list marker must survive.
+    /// "A. Writer" reached the page as "Writer": Djot read `A.` as an alphabetic
+    /// list marker and consumed it. A backslash before the *letter* does not fix
+    /// it (Djot only escapes punctuation, so `\A.` prints the backslash) — the
+    /// `.` is what must be escaped.
+    #[test]
+    fn an_author_named_like_a_list_marker_is_not_eaten() {
+        for name in ["A. Writer", "1. Writer", "i. Writer", "J.R.R. Writer"] {
+            let mut g = flat_book();
+            g.work.author_name = name.to_string();
+            let p = preset("manuscript-shunn");
+            let txt =
+                render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+            assert!(
+                txt.contains(name),
+                "the author {name:?} must appear verbatim, got: {txt}"
+            );
+            assert!(
+                !txt.contains('\\'),
+                "no escape may leak onto the page for {name:?}: {txt}"
+            );
+        }
+    }
+
+    /// The escape helper itself, per marker family — a backslash belongs before
+    /// punctuation only.
+    #[test]
+    fn block_leading_escapes_pick_the_right_character() {
+        // Single special character: escape it directly.
+        assert_eq!(escape_block_leading("* Star"), "\\* Star");
+        assert_eq!(escape_block_leading("# Sharp"), "\\# Sharp");
+        // Ordered-list markers: escape the punctuation, not the alphanumeric.
+        assert_eq!(escape_block_leading("A. Writer"), "A\\. Writer");
+        assert_eq!(escape_block_leading("1. Thing"), "1\\. Thing");
+        assert_eq!(escape_block_leading("i) Roman"), "i\\) Roman");
+        // Nothing special: left alone.
+        assert_eq!(escape_block_leading("Plain name"), "Plain name");
+    }
+
+    /// The running header degrades sensibly rather than printing a stray
+    /// separator when only one of the two halves is set.
+    #[test]
+    fn the_running_header_handles_a_missing_author_or_title() {
+        assert_eq!(
+            manuscript_header("My Novel", "A. Writer").as_deref(),
+            Some("A. Writer / MY NOVEL")
+        );
+        assert_eq!(
+            manuscript_header("My Novel", "  ").as_deref(),
+            Some("MY NOVEL"),
+            "no author: no leading separator"
+        );
+        assert_eq!(
+            manuscript_header("", "A. Writer").as_deref(),
+            Some("A. Writer"),
+            "no title: no trailing separator"
+        );
+        assert_eq!(manuscript_header("", "").as_deref(), None);
     }
 
     #[test]
