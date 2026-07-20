@@ -836,25 +836,72 @@ fn the_v4_list_form_parses_unchanged() {
     );
 }
 
-/// The shipped v2 fixture — a real project written long before this change — opens, and its
-/// language survives as a list.
+/// The shipped v2 fixture — a real project written long before this change — opens through
+/// the real read path, and its language survives as a list.
 ///
-/// The hand-written RON above proves the deserializer in isolation; this proves the whole
-/// read path on a file nobody wrote for the test, through the v2 → v3 → v4 migration chain.
-/// If the two ever disagree, it is this one to trust.
+/// `read_bundle` migrates internally (reader.rs), so this asserts the *post-migration* state:
+/// a v2 project arrives fully current. An earlier version of this test called
+/// `migrate_bundle` afterwards and asserted "before migration", which was never true and
+/// would have passed even if the split had been moved into the migration step — breaking
+/// `read_manifest_only`, which does not migrate. That path is covered separately below.
+const FIXTURE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../resources/test/skribisto_test_project.skrib"
+);
+
 #[test]
 fn the_shipped_v2_fixture_opens_and_keeps_its_language() {
-    let fixture = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../resources/test/skribisto_test_project.skrib"
+    let bundle = read_bundle(FIXTURE).expect("a v2 project must still open");
+    assert_eq!(
+        bundle.manifest.format_version, FORMAT_VERSION,
+        "read_bundle migrates, so what comes back is current"
     );
-    let mut bundle = read_bundle(fixture).expect("a v2 project must still open");
     assert_eq!(
         bundle.manifest.work.dict_language,
         vec!["fr".to_string()],
-        "the v2 string \"fr\" must arrive as a one-element list"
+        "the v2 string \"fr\" arrives as a one-element list"
     );
-    migration::migrate_bundle(&mut bundle).expect("v2 must migrate to current");
-    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
-    assert_eq!(bundle.manifest.work.dict_language, vec!["fr".to_string()]);
+}
+
+/// …and `peek_manifest`, which deliberately does **not** migrate, parses the same
+/// v2 string.
+///
+/// This is the path the backup sniff and the retention scan take over many files. If the
+/// string-to-list split ever moved out of the deserializer and into `migrate_bundle`, this
+/// is the test that would fail — the one above would not.
+#[test]
+fn peek_manifest_parses_a_v2_language_without_migrating() {
+    let manifest = peek_manifest(FIXTURE).expect("the manifest must parse unmigrated");
+    assert_eq!(manifest.format_version, 2, "deliberately not migrated");
+    assert_eq!(manifest.work.dict_language, vec!["fr".to_string()]);
+}
+
+/// A malformed value says what was expected instead of naming an internal enum.
+///
+/// The exploded-folder shape is meant to be hand-edited and diffed, so a typo there has to
+/// be legible. `#[serde(untagged)]` reported every such value as "data did not match any
+/// variant of untagged enum Either", which tells the writer nothing.
+#[test]
+fn a_malformed_language_names_what_was_expected() {
+    let bad = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        author_name: "A",
+        dict_language: 42,
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    )"#;
+    let err = ron::from_str::<WorkFile>(bad).expect_err("42 is not a language");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("language tags"),
+        "the error should say what was expected, got: {msg}"
+    );
+    assert!(
+        !msg.contains("untagged"),
+        "and should not leak an internal enum, got: {msg}"
+    );
 }

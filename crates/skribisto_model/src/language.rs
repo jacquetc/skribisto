@@ -78,16 +78,51 @@ pub fn tags_in_binder(
     out: &mut HashMap<EntityId, Vec<String>>,
 ) {
     for item in items {
-        let effective = if !item.dict_language.is_empty() {
+        // "Has a language" must mean the same thing here as it does in the pill field and
+        // the Inspector, both of which ignore blanks. Testing `Vec::is_empty()` instead let
+        // an item holding `[""]` count as tagged, so it stopped inheriting the Work's
+        // language while the UI still showed it as inheriting — the displayed language and
+        // the one actually used for folding would disagree.
+        let effective = if has_tags(&item.dict_language) {
             &item.dict_language
         } else {
             work_language
         };
 
-        if !effective.is_empty() {
-            out.insert(item.id, effective.to_vec());
+        // Stored already filtered, so nothing downstream has to re-derive it and the map
+        // never carries a blank that a later reader might trust.
+        let tags: Vec<String> = all(effective).map(String::from).collect();
+        if !tags.is_empty() {
+            out.insert(item.id, tags);
         }
     }
+}
+
+/// Whether a list names at least one real language, ignoring blanks.
+///
+/// The one place "does this have a language?" is decided, so the pill field, the Inspector
+/// and [`tags_in_binder`] cannot answer it differently — which they did, and which made an
+/// item holding `[""]` stop inheriting while still *looking* like it inherited.
+pub fn has_tags(tags: &[String]) -> bool {
+    all(tags).next().is_some()
+}
+
+/// Split the pre-list, space-separated form into a real list.
+///
+/// The legacy grammar has exactly three homes left — the pre-v4 bundle deserializer, the
+/// legacy SQLite loader, and this function they both call. Keeping it in one place is the
+/// point: the whole change was about not restating "split on whitespace" everywhere.
+pub fn parse_legacy_list(s: &str) -> Vec<String> {
+    s.split_whitespace().map(String::from).collect()
+}
+
+/// Syntactic canonicalisation of **one** tag toward BCP-47: `en_US` → `en-US`.
+///
+/// Split out from [`canonicalize`] because the dictionary registry resolves one token at a
+/// time and had started inlining the rule rather than routing a single string through the
+/// list helper — two copies of the same rule, one of them silent.
+pub fn canonicalize_tag(tag: &str) -> String {
+    tag.trim().replace('_', "-")
 }
 
 /// The **primary** language of a tag list — the first tag, the one search folds under.
@@ -118,7 +153,7 @@ pub fn all(tags: &[String]) -> impl Iterator<Item = &str> {
 /// requires the registry's `system_basenames`, which lives in the UI layer. A caller that
 /// wants the full resolution runs this first, then a registry lookup.
 pub fn canonicalize(tags: &[String]) -> Vec<String> {
-    all(tags).map(|t| t.replace('_', "-")).collect()
+    all(tags).map(canonicalize_tag).collect()
 }
 
 /// Every distinct language tag a project actually *uses*, for the missing-dictionary scan.
@@ -181,10 +216,8 @@ mod tests {
     use common::entities::BinderItemSubRole;
 
     /// The tests still *read* as space-separated lists, which is how a writer thinks of
-    /// them; only the storage changed. This is the one place that translation happens.
-    fn tags(s: &str) -> Vec<String> {
-        s.split_whitespace().map(String::from).collect()
-    }
+    /// them; only the storage changed.
+    use super::parse_legacy_list as tags;
 
     fn item(id: EntityId, sub_role: BinderItemSubRole, dict_language: &str) -> BinderItem {
         BinderItem {
@@ -292,6 +325,43 @@ mod tests {
         let got = resolve("tr", &[scene(1, ""), book(2, ""), scene(3, "")]);
         assert_eq!(got.len(), 3);
         assert!(got.values().all(|t| *t == tags("tr")));
+    }
+
+    /// The bug the blank guard exists to prevent, at the level where it *changes behaviour*
+    /// rather than merely degrading: an item holding a blank must still inherit.
+    ///
+    /// Testing `Vec::is_empty()` here let `[""]` count as tagged, so the item resolved to
+    /// `[""]` — untailored — while `LanguagePillField` and the Inspector, which both ignore
+    /// blanks, went on showing the writer the inherited language. The displayed language and
+    /// the one used for folding disagreed.
+    #[test]
+    fn an_item_holding_only_a_blank_still_inherits() {
+        let mut blank = scene(1, "");
+        blank.dict_language = vec![String::new(), "  ".to_string()];
+        let got = resolve("fr-FR", &[blank]);
+        assert_eq!(
+            got[&1],
+            tags("fr-FR"),
+            "a blank is not a language, so the Work's must still reach the item"
+        );
+    }
+
+    /// The resolved map is stored already filtered, so no later reader can trust a blank.
+    #[test]
+    fn the_resolved_map_never_carries_a_blank() {
+        let mut mixed = scene(1, "");
+        mixed.dict_language = vec!["fr-FR".to_string(), String::new()];
+        let got = resolve("en-US", &[mixed]);
+        assert_eq!(got[&1], tags("fr-FR"));
+    }
+
+    /// `has_tags` is the single answer to "does this have a language", so the three call
+    /// sites cannot drift apart again.
+    #[test]
+    fn has_tags_ignores_blanks() {
+        assert!(!has_tags(&[]));
+        assert!(!has_tags(&[String::new(), "   ".to_string()]));
+        assert!(has_tags(&tags("fr-FR")));
     }
 
     /// The hazard the list shape introduces that the string never could: a real `Vec` can

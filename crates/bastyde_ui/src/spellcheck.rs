@@ -923,10 +923,8 @@ impl Drop for SpellSession {
 
 #[cfg(test)]
 mod tests {
-    /// The tests still read as space-separated lists — only the storage changed.
-    fn tags(s: &str) -> Vec<String> {
-        s.split_whitespace().map(String::from).collect()
-    }
+    /// Space-separated in the tests, a list in storage — one parser, shared.
+    use skribisto_model::language::parse_legacy_list as tags;
 
     use super::*;
 

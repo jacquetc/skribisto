@@ -432,11 +432,13 @@ fn assemble(
 fn flatten<'a>(req: &'a RenderRequest) -> Vec<Row<'a>> {
     let want: std::collections::HashSet<u64> = req.include.iter().copied().collect();
     let mut rows = Vec::new();
+    // `tags_in_binder` speaks lists; the renderer speaks one tag per row. Built once,
+    // outside the loop, and via the shared parser so an empty work language yields no
+    // tags rather than a list holding one empty string.
+    let work_langs = language::parse_legacy_list(req.work_lang);
     for bwi in &req.gathered.binders {
         let items: Vec<BinderItem> = bwi.items.iter().map(|iwc| iwc.item.clone()).collect();
         let mut langs = std::collections::HashMap::new();
-        // `tags_in_binder` speaks lists; the renderer speaks one tag per row.
-        let work_langs = vec![req.work_lang.to_string()];
         language::tags_in_binder(&work_langs, &items, &mut langs);
         for iwc in &bwi.items {
             if want.contains(&iwc.item.id) && iwc.item.activated {
@@ -805,7 +807,9 @@ mod tests {
                 id,
                 role: BinderItemRole::Item,
                 sub_role,
-                dict_language: vec![lang.to_string()],
+                // Split, not wrapped: `iwc(.., "", ..)` must mean "no language, so
+                // inherit" — wrapping made it `[""]`, which reads as tagged.
+                dict_language: language::parse_legacy_list(lang),
                 is_exportable: true,
                 activated: true,
                 ..Default::default()
@@ -820,7 +824,7 @@ mod tests {
                 id: 1,
                 title: "My Novel".into(),
                 author_name: "A. Writer".into(),
-                dict_language: vec![work_lang.to_string()],
+                dict_language: language::parse_legacy_list(work_lang),
                 ..Default::default()
             },
             tags: vec![],

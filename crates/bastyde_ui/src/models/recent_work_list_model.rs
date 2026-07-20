@@ -517,7 +517,7 @@ mod imp {
                     is_folder: false,
                     template_kind: NewWorkTemplate::Novel,
                     labels: vec![],
-                    language: "en".to_string(),
+                    language: vec!["en".to_string()],
                     chapter_scene_mode: false,
                 },
             )

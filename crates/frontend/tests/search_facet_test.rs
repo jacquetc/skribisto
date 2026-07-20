@@ -69,7 +69,7 @@ fn ctx_with_one_of_each() -> (AppContext, Vec<(BinderItemSubRole, u64)>) {
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,
             labels: vec![],
-            language: "fr-FR".to_string(),
+            language: vec!["fr-FR".to_string()],
             chapter_scene_mode: false,
         },
     )

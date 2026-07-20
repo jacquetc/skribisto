@@ -48,7 +48,7 @@ fn record_progress_snapshot_upserts_by_day() {
             is_folder: false,
             template_kind: NewWorkTemplate::None,
             labels: vec![],
-            language: "en-US".into(),
+            language: vec!["en-US".to_string()],
             chapter_scene_mode: false,
         },
     )

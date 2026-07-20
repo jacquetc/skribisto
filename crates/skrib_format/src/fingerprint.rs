@@ -14,6 +14,13 @@ use super::bundle::*;
 
 /// Content fingerprint (blake3 hex) of `bundle`, insensitive to timestamps and
 /// to whether the bundle has been marked as a backup.
+///
+/// It hashes the *serialized* form, so a change to any field's on-disk shape changes every
+/// project's fingerprint once. `dict_language` becoming a list (format v4) did exactly that:
+/// the first open after upgrading takes one backup of every project even where nothing was
+/// edited. That is a one-off and arguably honest — the content really did change shape — but
+/// it is a visible behaviour change in the backup layer, so it belongs in the release notes
+/// rather than surprising someone reading skip-if-unchanged.
 pub fn content_fingerprint(bundle: &WorkBundle) -> String {
     let mut b = bundle.clone();
     strip_volatile(&mut b);

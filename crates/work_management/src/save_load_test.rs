@@ -731,7 +731,7 @@ fn new_work(db: &DbContext, hub: &Arc<EventHub>, path: &str, is_folder: bool, t:
             is_folder,
             template_kind: t,
             labels: labels(),
-            language: "en-US".to_string(),
+            language: vec!["en-US".to_string()],
             chapter_scene_mode: false,
         },
     )

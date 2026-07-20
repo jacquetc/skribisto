@@ -27,7 +27,7 @@
 //! A `.skrib` written by the old C++ app (or its SQLite upgrader) can hold a value that is
 //! not a registry id: an underscore form (`en_US`), an editorial basename (`de_DE_frami`), or
 //! a merged label (`fr-classique+reforme1990`). [`resolve_token`] maps such a token to a
-//! registry id via [`skribisto_model::language::canonicalize`] (the syntactic part) plus a
+//! registry id via [`skribisto_model::language::canonicalize_tag`] (the syntactic part) plus a
 //! `system_basenames` lookup (the part that needs *this* catalogue). Unresolvable tokens are
 //! surfaced as-is, never silently rewritten — see [`crate::spellcheck::language_pill_field`].
 
@@ -136,9 +136,7 @@ pub fn resolve_token(raw: &str) -> Option<&'static str> {
     if let Some(e) = by_id(raw) {
         return Some(e.id.as_str());
     }
-    // Per-token by contract, so canonicalise the token directly rather than routing one
-    // string through the list helper.
-    let canon = raw.trim().replace('_', "-");
+    let canon = skribisto_model::language::canonicalize_tag(raw);
     if let Some(e) = by_id(&canon) {
         return Some(e.id.as_str());
     }

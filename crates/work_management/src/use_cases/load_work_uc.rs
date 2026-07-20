@@ -697,7 +697,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         author_name: p.author.clone(),
         // The legacy DB stores one space-separated string — split it here, exactly as the
         // pre-v4 bundle deserializer does, so both legacy paths agree.
-        dict_language: p.dict_language.split_whitespace().map(String::from).collect(),
+        dict_language: skribisto_model::language::parse_legacy_list(&p.dict_language),
         // Carry the legacy id through; empty → minted at `materialize`.
         unique_id: p.unique_id.clone(),
         ..Default::default()

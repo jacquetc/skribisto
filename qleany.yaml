@@ -692,6 +692,7 @@ features:
         is_list: true
       - name: language
         type: string
+        is_list: true
       - name: chapter_scene_mode
         type: boolean
 - name: export_management

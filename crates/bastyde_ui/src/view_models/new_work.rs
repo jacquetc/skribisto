@@ -40,7 +40,8 @@ use crate::shell::windows::ProjectWindowFactory;
 /// and passed in, in the exact order `work_management`'s `TemplateLabels::from_list`
 /// reads them: `[Manuscript, Notes, Research, Notebook, Chapter, Scene, Note]`.
 /// `language` is a locale tag (e.g. `"en-US"`) that becomes the new work's
-/// `dict_language`.
+/// `dict_language`. Parsed through the shared helper so an unset choice yields no tags
+/// rather than a list holding one empty string.
 pub(crate) fn new_work_dto(
     file_name: String,
     is_folder: bool,
@@ -61,7 +62,7 @@ pub(crate) fn new_work_dto(
             tr!(new_work_scene()).into(),
             tr!(new_work_note()).into(),
         ],
-        language,
+        language: skribisto_model::language::parse_legacy_list(&language),
         chapter_scene_mode,
     }
 }
@@ -433,7 +434,7 @@ mod tests {
         assert_eq!(dto.file_name, "~/Books/tidewrack");
         assert!(dto.is_folder);
         assert_eq!(dto.template_kind, NewWorkTemplate::EmptyNovel);
-        assert_eq!(dto.language, "fr-FR");
+        assert_eq!(dto.language, vec!["fr-FR".to_string()]);
         assert_eq!(dto.labels.len(), 7);
         assert!(dto.chapter_scene_mode);
     }

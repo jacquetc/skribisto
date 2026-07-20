@@ -48,21 +48,38 @@ fn tags_or_legacy_string<'de, D>(d: D) -> Result<Vec<String>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    use serde::Deserialize;
+    use std::fmt;
 
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum Either {
-        List(Vec<String>),
-        /// Pre-v4: one space-separated string, the grammar `skribisto_model::language`
-        /// used to parse by hand.
-        Legacy(String),
+    struct TagsOrString;
+
+    impl<'de> serde::de::Visitor<'de> for TagsOrString {
+        type Value = Vec<String>;
+
+        // A hand-written visitor rather than `#[serde(untagged)]`: untagged reports every
+        // malformed value as "data did not match any variant of untagged enum", and the
+        // exploded-folder shape is meant to be hand-edited and diffed. A typo there deserves
+        // to say what was expected.
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            f.write_str("a list of language tags, or (before format v4) one space-separated string")
+        }
+
+        fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
+            Ok(skribisto_model::language::parse_legacy_list(s))
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: serde::de::SeqAccess<'de>,
+        {
+            let mut out = Vec::with_capacity(seq.size_hint().unwrap_or(0));
+            while let Some(tag) = seq.next_element::<String>()? {
+                out.push(tag);
+            }
+            Ok(out)
+        }
     }
 
-    Ok(match Either::deserialize(d)? {
-        Either::List(v) => v,
-        Either::Legacy(s) => s.split_whitespace().map(String::from).collect(),
-    })
+    d.deserialize_any(TagsOrString)
 }
 
 

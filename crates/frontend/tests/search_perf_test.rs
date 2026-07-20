@@ -54,7 +54,7 @@ fn big_manuscript() -> AppContext {
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,
             labels: vec![],
-            language: "fr-FR".to_string(),
+            language: vec!["fr-FR".to_string()],
             chapter_scene_mode: false,
         },
     )
