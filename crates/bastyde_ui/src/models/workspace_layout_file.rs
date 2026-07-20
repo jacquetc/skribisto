@@ -139,6 +139,19 @@ pub struct WorkspaceLayoutFile {
     pub projects: Vec<PerProjectLayout>,
 }
 
+/// A file with no `version` key is assumed already current, so **no migration
+/// runs for it**.
+///
+/// That is the long-standing behaviour and it stays, because the two cases it
+/// conflates are indistinguishable from here: a hand-edited current file and a
+/// legacy one written before the field existed. Assuming *old* instead would
+/// re-run every step against files that are already correct, which for v1 means
+/// silently dropping their tab lists.
+///
+/// The cost is now user-visible rather than theoretical: such a file keeps its
+/// stale `docks` blob, so a dock added later (Format, in v3) never appears for
+/// it. If that is ever reported, the fix is a repair pass keyed on content —
+/// "no `docks` entry mentions the format dock" — not a change to this default.
 fn default_version() -> u32 {
     WorkspaceLayoutFile::CURRENT_VERSION
 }
@@ -194,32 +207,30 @@ impl Versioned for WorkspaceLayoutFile {
 /// re-captures the arrangement. Cheap at alpha, and honest — the alternative is a feature
 /// nobody with an existing project can find.
 fn migrator() -> Migrator<WorkspaceLayoutFile> {
-    Migrator::new().step(1, |mut raw| {
-        if let Some(projects) = raw
-            .get_mut("projects")
-            .and_then(|p| p.as_array_mut())
-        {
-            for project in projects.iter_mut() {
-                for pane in ["primary", "secondary"] {
-                    if let Some(t) = project.get_mut(pane).and_then(|p| p.as_table_mut()) {
-                        t.remove("tabs");
-                        t.remove("selected");
+    Migrator::new()
+        .step(1, |mut raw| {
+            if let Some(projects) = raw.get_mut("projects").and_then(|p| p.as_array_mut()) {
+                for project in projects.iter_mut() {
+                    for pane in ["primary", "secondary"] {
+                        if let Some(t) = project.get_mut(pane).and_then(|p| p.as_table_mut()) {
+                            t.remove("tabs");
+                            t.remove("selected");
+                        }
                     }
                 }
             }
-        }
-        Ok(raw)
-    })
-    .step(2, |mut raw| {
-        if let Some(projects) = raw.get_mut("projects").and_then(|p| p.as_array_mut()) {
-            for project in projects.iter_mut() {
-                if let Some(t) = project.as_table_mut() {
-                    t.remove("docks");
+            Ok(raw)
+        })
+        .step(2, |mut raw| {
+            if let Some(projects) = raw.get_mut("projects").and_then(|p| p.as_array_mut()) {
+                for project in projects.iter_mut() {
+                    if let Some(t) = project.as_table_mut() {
+                        t.remove("docks");
+                    }
                 }
             }
-        }
-        Ok(raw)
-    })
+            Ok(raw)
+        })
 }
 
 /// Persistent workspace-layout service. `SettingsFile` is `Clone` (shares the
@@ -322,7 +333,8 @@ impl WorkspaceLayoutService {
     /// Drop `work_uid`'s entry (project deleted / no longer wanted). No-op if absent.
     #[cfg_attr(not(test), allow(dead_code))]
     pub fn forget(&self, work_uid: &str) -> Result<(), SettingsFileError> {
-        self.file.mutate(|f| f.projects.retain(|p| p.work_uid != work_uid))
+        self.file
+            .mutate(|f| f.projects.retain(|p| p.work_uid != work_uid))
     }
 
     pub fn flush_now(&self) -> Result<(), SettingsFileError> {
@@ -429,7 +441,10 @@ selected = 9
         s.set(open1).unwrap();
         s.set(open2).unwrap();
         assert_eq!(s.file.borrow().projects.len(), 1, "one row per file path");
-        assert!(s.get("uid-open-1").is_none(), "the earlier open's orphan row is gone");
+        assert!(
+            s.get("uid-open-1").is_none(),
+            "the earlier open's orphan row is gone"
+        );
         assert!(s.get("uid-open-2").is_some());
     }
 
@@ -455,7 +470,11 @@ selected = 9
         assert_eq!(f.projects.len(), MAX_PROJECTS, "bounded at the cap");
         // Oldest evicted, newest kept.
         assert!(f.projects.iter().all(|p| p.work_uid != "uid-0"));
-        assert!(f.projects.iter().any(|p| p.work_uid == format!("uid-{}", MAX_PROJECTS + 19)));
+        assert!(
+            f.projects
+                .iter()
+                .any(|p| p.work_uid == format!("uid-{}", MAX_PROJECTS + 19))
+        );
     }
 
     #[test]
@@ -472,7 +491,11 @@ selected = 9
         s.set(a2).unwrap();
 
         assert_eq!(s.get("uid-A").unwrap().primary.tabs, vec![u(42)]);
-        assert_eq!(s.get("uid-B").unwrap().primary.tabs, vec![u(3), u(7), u(1)], "B untouched");
+        assert_eq!(
+            s.get("uid-B").unwrap().primary.tabs,
+            vec![u(3), u(7), u(1)],
+            "B untouched"
+        );
         assert_eq!(s.file.borrow().projects.len(), 2, "no duplicate row for A");
     }
 
@@ -550,8 +573,15 @@ leading = 12345
         assert!(good.docks.is_none());
         // The bad-docks row still loads; only its docks dropped to None.
         let bad = s.get("uid-bad-docks").expect("bad-docks row still loaded");
-        assert_eq!(bad.primary.tabs, vec![u(2)], "tabs survive an unreadable docks blob");
-        assert!(bad.docks.is_none(), "unreadable docks blob -> None, not a load failure");
+        assert_eq!(
+            bad.primary.tabs,
+            vec![u(2)],
+            "tabs survive an unreadable docks blob"
+        );
+        assert!(
+            bad.docks.is_none(),
+            "unreadable docks blob -> None, not a load failure"
+        );
     }
 
     #[test]

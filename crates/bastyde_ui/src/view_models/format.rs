@@ -73,6 +73,15 @@ pub const ALIGN_OTHER: usize = 2;
 /// here. Deeper than this in a manuscript is a corrupt document, not a style.
 const MAX_BLOCKQUOTE_UNWRAP: usize = 16;
 
+/// The "nothing compared yet" value for [`FormatViewModel`]'s change gate.
+///
+/// Deliberately unreachable rather than `(0, 0)`: a freshly-focused editor
+/// reports version 0 with the caret at 0, so a zero sentinel *matches* and the
+/// gate skips the one sync that mattered — leaving the dock showing plain text
+/// over a document that opens bold, or the previous editor's state after a
+/// switch between two documents that happen to agree on both numbers.
+const NEVER_SEEN: (u64, usize) = (u64::MAX, usize::MAX);
+
 /// What the caret is sitting in, and therefore which control groups make sense.
 ///
 /// This is about the *kind* of text, not about which widget holds focus: the
@@ -90,6 +99,17 @@ pub enum FormatSurface {
     /// A synopsis box or a corkboard card. Real prose, so the character marks
     /// and lists apply; but a synopsis is not chapter-structured, so headings,
     /// alignment, blockquote, tables and scene breaks do not.
+    ///
+    /// **Not yet reachable from live focus.** `App` classifies from
+    /// `EditorsViewModel::focused_prose_handle`, which resolves only a tab's
+    /// *main prose* editor — `writing_column` is the sole caller of
+    /// `attach_handle`, and the synopsis editor's handle is retained nowhere.
+    /// So with the caret in a synopsis the dock reports [`Self::None`] and shows
+    /// its empty state instead of this. Reaching it needs a synopsis attach
+    /// point on `ContentTab`, populated on every `synopsis_editor` rebuild the
+    /// way `writing_column` populates the find one. The variant, its gates and
+    /// its tests are kept because that wiring is the next step, not a
+    /// hypothetical — but nothing here should be read as working today.
     Synopsis,
     /// Nothing formattable has focus — the binder, a dock, the title field
     /// (a plain `TextInput`, not a rich editor). The dock shows its empty
@@ -145,9 +165,13 @@ impl FormatSurface {
 /// they are invoked. `None` when nothing formattable is focused.
 type ResolveEditor = Rc<dyn Fn() -> Option<EditorHandle>>;
 
-/// Reports what kind of text currently has focus. Injected by `App`, which is
-/// the only layer that can see both the pane/tab structure and the editors.
-type ResolveSurface = Rc<dyn Fn() -> FormatSurface>;
+/// Classifies what kind of text has focus. Injected by `App`, which is the only
+/// layer that can see both the pane/tab structure and the editors.
+///
+/// Takes the already-resolved handle rather than looking it up again: resolving
+/// one walks the focused pane's tab list, and this runs on every pumped frame —
+/// i.e. continuously while the writer types. One walk per frame, not two.
+type ResolveSurface = Rc<dyn Fn(Option<&EditorHandle>) -> FormatSurface>;
 
 /// One gate per control group, for the dock to hang `visible_when` on.
 ///
@@ -239,7 +263,8 @@ pub struct FormatViewModel {
     group_visible: GroupVisibility,
 
     /// Last `(format_version, cursor_position)` seen by [`Self::refresh`], so a
-    /// per-frame call is nearly free when nothing has moved.
+    /// per-frame call is nearly free when nothing has moved. [`NEVER_SEEN`]
+    /// when the mirrors hold nothing worth comparing against.
     last_seen: Rc<Cell<(u64, usize)>>,
 }
 
@@ -275,7 +300,7 @@ impl FormatViewModel {
             can_undo: Signal::new(false),
             can_redo: Signal::new(false),
             group_visible: GroupVisibility::new(FormatSurface::None),
-            last_seen: Rc::new(Cell::new((0, 0))),
+            last_seen: Rc::new(Cell::new(NEVER_SEEN)),
         }
     }
 
@@ -371,11 +396,12 @@ impl FormatViewModel {
         // than only when the caret moves: focus can move between editors — or
         // out of them entirely — without the document changing at all, and the
         // dock would otherwise keep showing the previous surface's groups.
+        let handle = self.handle();
         if let Some(resolve) = &self.resolve_surface {
-            self.set_surface(resolve());
+            self.set_surface(resolve(handle.as_ref()));
         }
 
-        let Some(handle) = self.handle() else {
+        let Some(handle) = handle else {
             self.clear_mirrors();
             return;
         };
@@ -427,7 +453,7 @@ impl FormatViewModel {
     }
 
     fn clear_mirrors(&self) {
-        self.last_seen.set((0, 0));
+        self.last_seen.set(NEVER_SEEN);
         set_if_changed(&self.bold, false);
         set_if_changed(&self.italic, false);
         set_if_changed(&self.underline, false);
@@ -476,15 +502,19 @@ impl FormatViewModel {
 
     /// Strip formatting back to plain prose.
     ///
-    /// Clears the four character marks over the selection, then flattens the
-    /// caret's blocks: heading to normal, alignment to left, blockquote
-    /// unwrapped to depth zero. Without a selection the character half is
-    /// inherently a no-op — there is no range to re-format — so this degrades
-    /// to the block half, which is still worth having with the caret parked in
-    /// a centred H2.
+    /// Clears the six character marks over the selection, then flattens the
+    /// caret's blocks: heading to normal, alignment to left, list membership
+    /// dropped, blockquote unwrapped to depth zero. Without a selection the
+    /// character half is inherently a no-op — there is no range to re-format —
+    /// so this degrades to the block half, which is still worth having with the
+    /// caret parked in a centred H2.
     ///
-    /// Each property is read before it is written, so clearing already-clean
-    /// text neither pushes undo entries nor marks the document modified.
+    /// Every property is read before it is written, so clearing already-clean
+    /// text neither pushes undo entries nor marks the document modified — with
+    /// one exception: list membership, which `EditorHandle` offers no query for
+    /// (`is_in_list` does not exist, unlike `is_in_blockquote`). That one call
+    /// is therefore unconditional, and clearing an already-plain paragraph may
+    /// cost one no-op entry. Guard it as soon as a query exists.
     ///
     /// The whole sweep is **one undo entry**. A writer who clears a heading
     /// that was also bold and centred means one action, and should not have to
@@ -499,6 +529,7 @@ impl FormatViewModel {
     /// clean sweep. (See the tri-state work in the plan; it is the fix.)
     pub fn clear_formatting(&self) {
         let Some(handle) = self.handle() else {
+            self.clear_mirrors();
             return;
         };
 
@@ -638,6 +669,11 @@ impl FormatViewModel {
     /// menu that outlived the editor it was opened over.
     fn with_editor(&self, command: impl FnOnce(&EditorHandle)) {
         let Some(handle) = self.handle() else {
+            // Not simply `return`. `IconButton::toggle` flips its bound signal
+            // *before* the activation closure runs, so leaving here would strand
+            // that flip: the button would sit lit, claiming a formatting that
+            // was never applied and that nothing later corrects.
+            self.clear_mirrors();
             return;
         };
         command(&handle);

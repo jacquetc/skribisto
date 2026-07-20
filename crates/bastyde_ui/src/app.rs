@@ -697,14 +697,14 @@ impl Widget for App {
                 crate::view_models::FormatViewModel::new(Rc::new(move || {
                     target.focused_prose_handle()
                 }))
-                .with_surface_resolver(Rc::new(move || {
+                .with_surface_resolver(Rc::new(move |handle| {
                     use crate::view_models::FormatSurface;
                     // Live keyboard focus, not "which tab is selected". The dock
                     // shows what the caret is in; clicking into the binder or a
                     // dock genuinely leaves nothing to format, and the dock says
                     // so. (Its own buttons are `focusable(false)`, so pressing
                     // one never blurs the editor out from under itself.)
-                    let Some(handle) = classify.focused_prose_handle() else {
+                    let Some(handle) = handle else {
                         return FormatSurface::None;
                     };
                     if !handle.focused_signal().get() {

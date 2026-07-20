@@ -13,8 +13,8 @@
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
 
-use crate::intents::AppIntent;
 use crate::panels::import_plume::ImportPlumePanel;
+use crate::intents::AppIntent;
 use crate::settings::SettingsPanel;
 use crate::view_models::{ImportPlumeViewModel, PendingSwitch};
 
@@ -31,8 +31,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let switch = deps.project_switch.clone();
         ctx.register_action_global(
-            Action::new("work.new")
-                .on_invoke(move |_i, c| switch.request(c, PendingSwitch::NewWork)),
+            Action::new("work.new").on_invoke(move |_i, c| switch.request(c, PendingSwitch::NewWork)),
         );
     }
 

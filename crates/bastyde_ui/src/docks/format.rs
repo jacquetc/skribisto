@@ -25,8 +25,9 @@
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    DockOpenLocation, DockSide, DockWidget, DockWidgetId, GroupHeader, IconButton, IconWidget,
-    MenuItem, MenuList, Padding, PopoverIconButton, ScrollArea, TextWidget, VStack, Wrap,
+    Center, DockOpenLocation, DockSide, DockWidget, DockWidgetId, GroupHeader, IconButton,
+    IconWidget, MenuItem, MenuList, Padding, PopoverIconButton, ScrollArea, TextWidget, VStack,
+    Wrap,
 };
 
 use crate::icons::format as glyph;
@@ -102,6 +103,12 @@ fn toggle_button(
 /// view-model must not be imported here. The intent bus is the sanctioned route
 /// for exactly that link, and it means the dock button, the Format menu item and
 /// Ctrl+Shift+Enter all reach one command instead of three copies of it.
+///
+/// Unlike the other two constructors this one does **not** request a frame.
+/// `send_intent` only queues — the framework dispatches after this handler
+/// returns — so a frame requested here could be spent before the edit lands.
+/// The repaint belongs with the edit: `insert_scene_break` focuses the editor
+/// once its paragraph is in, which is what schedules the draw.
 fn intent_button(
     icon: IconWidget,
     tooltip: impl Into<bastyde::i18n::LocalizedString>,
@@ -111,10 +118,7 @@ fn intent_button(
         .toolbar()
         .focusable(false)
         .tooltip(tooltip)
-        .on_activate_fn(move |ctx| {
-            ctx.send_intent(Intent::new(intent));
-            ctx.request_frame();
-        })
+        .on_activate_fn(move |ctx| ctx.send_intent(Intent::new(intent)))
 }
 
 /// The heading picker: a glyph that opens the seven levels.
@@ -133,11 +137,18 @@ fn heading_picker(vm: &FormatViewModel) -> PopoverIconButton {
         (5, tr!(format_heading_5())),
         (6, tr!(format_heading_6())),
     ] {
-        let vm = vm.clone();
-        list = list.item(MenuItem::new(label).on_activate_fn(move |ctx| {
-            vm.set_heading(level);
-            ctx.request_frame();
-        }));
+        let vm2 = vm.clone();
+        list = list.item(
+            // The levels are mutually exclusive, and `heading` is already
+            // mirrored as the index the caret sits at — so the picker shows
+            // where you are, not just where you can go.
+            MenuItem::new(label)
+                .radio(level, vm.heading())
+                .on_activate_fn(move |ctx| {
+                    vm2.set_heading(level);
+                    ctx.request_frame();
+                }),
+        );
     }
     PopoverIconButton::new(
         IconButton::new(glyph::heading())
@@ -150,6 +161,13 @@ fn heading_picker(vm: &FormatViewModel) -> PopoverIconButton {
 }
 
 /// One labelled group: a header over a flowing row, gated as a unit.
+///
+/// The gap to the next group is *inside* the gate, as bottom padding, rather
+/// than `spacing` on the enclosing `VStack`. A `VStack` reserves its spacing
+/// between every registered child including the dormant ones, so putting the
+/// gap out there left a 10px void for each hidden group — measured at 92px of
+/// content for an empty state whose placeholder and padding account for ~36.
+/// Carried by the group, the gap disappears exactly when the group does.
 fn group(
     visible: Signal<bool>,
     header: impl Into<bastyde::i18n::LocalizedString>,
@@ -157,10 +175,12 @@ fn group(
 ) -> VisibleWhen {
     VisibleWhen::new(
         visible,
-        VStack::new()
-            .spacing(BUTTON_GAP)
-            .child(GroupHeader::new(header))
-            .child(controls),
+        Padding::new(0.0, 0.0, GROUP_GAP, 0.0).child(
+            VStack::new()
+                .spacing(BUTTON_GAP)
+                .child(GroupHeader::new(header))
+                .child(controls),
+        ),
     )
 }
 
@@ -406,12 +426,12 @@ fn controls(vm: &FormatViewModel) -> Padding {
     // nothing formattable focused, every group above is hidden anyway.
     let empty = VisibleWhen::new(
         g.empty.clone(),
-        TextWidget::new(tr!(format_panel_empty())).color(TextRole::Secondary),
+        Center::new().child(TextWidget::new(tr!(format_panel_empty())).color(TextRole::Secondary)),
     );
 
     Padding::uniform(DOCK_PADDING).child(
         VStack::new()
-            .spacing(GROUP_GAP)
+            .spacing(0.0)
             .child(empty)
             .child(history)
             .child(marks)
@@ -538,6 +558,32 @@ mod tests {
             empty < synopsis,
             "with nothing focused every group hides and only the placeholder \
              remains: {empty} vs {synopsis}"
+        );
+    }
+
+    /// A hidden group must leave no trace, not merely no buttons.
+    ///
+    /// The gap between groups is bottom padding *inside* each gate rather than
+    /// `spacing` on the enclosing `VStack`, because a `VStack` reserves spacing
+    /// between every registered child — dormant ones included. With the gap
+    /// outside, the empty state measured 92px for a placeholder and padding
+    /// worth ~32: six hidden groups were each still holding a 10px void open.
+    /// This pins the tight value so that regression is visible.
+    #[test]
+    fn a_hidden_group_leaves_no_gap_behind() {
+        let vm = vm();
+        vm.set_surface(FormatSurface::None);
+        let mut tree = WidgetTree::new();
+        let id = tree.add(controls(&vm));
+        tree.layout(SizeProposal {
+            width: Some(300.0),
+            height: None,
+        });
+        let h = tree.bounds(id).height;
+        assert!(
+            h < 2.0 * DOCK_PADDING + 30.0,
+            "the empty state is one line of text inside {DOCK_PADDING}px padding; \
+             {h}px means hidden groups are still reserving their spacing"
         );
     }
 

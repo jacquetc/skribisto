@@ -28,10 +28,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_shortcut_global(
         Shortcut::new("format.scene_break")
             .name("Insert Scene Break")
-            .primary(KeyStroke::new(
-                Key::Enter,
-                Modifiers::CTRL | Modifiers::SHIFT,
-            ))
+            .primary(KeyStroke::new(Key::Enter, Modifiers::CTRL | Modifiers::SHIFT))
             .build(),
     );
     ctx.register_shortcut_global(

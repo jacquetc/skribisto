@@ -103,10 +103,9 @@ pub(in crate::app) fn install(
         ctx,
         save_as_vm,
         &[
-            (
-                LongOperationEvent::Completed,
-                |v: &SaveAsViewModel, c, e| v.on_long_op_completed(c, e),
-            ),
+            (LongOperationEvent::Completed, |v: &SaveAsViewModel, c, e| {
+                v.on_long_op_completed(c, e)
+            }),
             (LongOperationEvent::Failed, |v, c, e| {
                 v.on_long_op_failed(c, e)
             }),
