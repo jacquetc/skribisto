@@ -16,7 +16,8 @@
 //! are simply never fired, because nothing in a headless test mutates the store on a
 //! background thread.
 
-use std::any::Any;
+use std::any::{Any, TypeId};
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -24,6 +25,7 @@ use bastyde::core::event_source::{
     AppEventPoster, EventSourceAdapter, SubscriptionId, TreeAppContext,
 };
 use bastyde::core::widget_tree::WidgetTree;
+use bastyde::settings::SettingsStore;
 
 use frontend::{AppContext, EventHubClient};
 
@@ -43,12 +45,41 @@ impl AppEventPoster for NullPoster {
 /// Pass the same `AppContext` the widgets under test were built against, so their
 /// subscriptions land on the store they read.
 pub(crate) fn tree_with_events(app_ctx: &Rc<AppContext>) -> WidgetTree {
+    tree_with_events_and_state(app_ctx, HashMap::new())
+}
+
+/// As [`tree_with_events`], plus a throwaway [`SettingsStore`] in `app_state`.
+///
+/// `ctx.settings()` **panics** when no store is registered, so any widget that reads
+/// a preference while building — the search preview reads its column width — cannot
+/// be laid out by `tree_with_events` alone. The store is backed by a per-test temp
+/// file (never the user's real settings) and left behind on disk, exactly as the
+/// view-model tests' own temp stores are.
+pub(crate) fn tree_with_settings(app_ctx: &Rc<AppContext>) -> WidgetTree {
+    use std::sync::atomic::{AtomicU32, Ordering};
+    static N: AtomicU32 = AtomicU32::new(0);
+    let n = N.fetch_add(1, Ordering::Relaxed);
+    let path = std::env::temp_dir().join(format!(
+        "skribisto_test_support_settings_{}_{n}.toml",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_file(&path);
+    let store = SettingsStore::open(path).expect("open temp settings store");
+
+    let mut state: HashMap<TypeId, Box<dyn Any>> = HashMap::new();
+    state.insert(TypeId::of::<SettingsStore>(), Box::new(store));
+    tree_with_events_and_state(app_ctx, state)
+}
+
+fn tree_with_events_and_state(
+    app_ctx: &Rc<AppContext>,
+    state: HashMap<TypeId, Box<dyn Any>>,
+) -> WidgetTree {
     let mut tree = WidgetTree::new();
     let client = EventHubClient::new(&app_ctx.event_hub);
     let adapter = EventSourceAdapter::new(crate::EventHubSource { client });
-    tree.set_app_context(Rc::new(TreeAppContext::with_source_and_poster(
-        adapter,
-        Arc::new(NullPoster),
-    )));
+    tree.set_app_context(Rc::new(
+        TreeAppContext::with_source_and_poster(adapter, Arc::new(NullPoster)).with_app_state(state),
+    ));
     tree
 }

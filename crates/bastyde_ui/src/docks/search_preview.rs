@@ -197,13 +197,29 @@ impl Widget for PreviewBody {
                 // stays readable (Settings ▸ preview width). Flowing (intrinsic
                 // height, inner scroll off) inside an outer `ScrollArea` — the same
                 // shape the scene tabs use — so the band scrolls a long paragraph.
+                //
+                // `min_lines` is what *makes* it flowing, and it is load-bearing:
+                // with neither `min_lines` nor `max_lines` the editor is **greedy**,
+                // and `centered`'s `CenterColumnFlowing` measures its child
+                // width-only — so a greedy editor fell through to `RichTextEditor`'s
+                // `proposal.height.unwrap_or(100.0)` and pinned the band at 100 px of
+                // text: dragging the dock taller revealed only empty surface, and
+                // (inner scroll off, 100 px of content in the outer `ScrollArea`)
+                // everything past the fourth line was unreachable.
                 let width =
                     crate::view_models::SettingsViewModel::new(ctx.settings()).preview_width();
                 let editor = RichTextEditor::editor(prose.doc.clone())
                     .style(SeamlessEditorStyle)
                     .on_change(open_doc.mark_dirty_fn())
                     .content_padding_symmetric(8.0, 8.0)
-                    .v_scroll_policy(ScrollPolicy::AlwaysOff);
+                    .min_lines(1)
+                    .v_scroll_policy(ScrollPolicy::AlwaysOff)
+                    // The preview holds the whole document, not just the matched
+                    // paragraph, and it is laid out at full document height — so
+                    // window the render to the visible clip, exactly as the scene
+                    // tabs do, or previewing a match in a 13k-word scene would
+                    // rasterize every row of it on each paint.
+                    .window_to_clip(true);
                 // The preview is another live view of a shared document. Feed its caret and drive
                 // the doc's spell session's per-frame recompute — otherwise an edit here would
                 // never re-tick the squiggles (stale), and the caret word wouldn't be exempt,
@@ -337,4 +353,155 @@ fn empty_state(vm: &SearchReplaceViewModel, has_doc: bool) -> impl Widget {
                 ),
         ),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+    use bastyde::prelude::SizeProposal;
+    use frontend::AppContext;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+    use std::rc::Rc;
+
+    use crate::app_ids::AppIds;
+    use crate::models::{OpenDocsStore, SearchResultsModel, SearchSettingsService};
+    use bastyde::widgets::DockingModel;
+
+    /// A view-model whose preview holds `paragraphs` paragraphs of scene prose.
+    fn vm_previewing(paragraphs: usize) -> (Rc<AppContext>, SearchReplaceViewModel) {
+        let app_ctx = Rc::new(AppContext::new());
+        let ids = AppIds::new();
+        let vm = SearchReplaceViewModel::new(
+            app_ctx.clone(),
+            ids,
+            SearchResultsModel::new(app_ctx.clone(), Signal::new(None)),
+            SearchSettingsService::in_memory_default(),
+            OpenDocsStore::new(app_ctx.clone()),
+            DockingModel::new(),
+            DockWidgetId::fresh(),
+            DockWidgetId::fresh(),
+        );
+        let doc = Rc::new(OpenDoc::build(
+            &app_ctx,
+            1,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            Signal::new(0),
+        ));
+        let _ = doc
+            .main
+            .as_ref()
+            .expect("a scene has main prose")
+            .doc
+            .set_djot_sync(&"The rain had not stopped since Tuesday.\n\n".repeat(paragraphs));
+        vm.preview_signal().set(Some(doc));
+        vm.preview_field_signal().set(Some(MatchField::Body));
+        (app_ctx, vm)
+    }
+
+    fn find(tree: &WidgetTree, id: WidgetId, needle: &str) -> Option<WidgetId> {
+        if tree
+            .widget_type_name(id)
+            .is_some_and(|t| t.contains(needle))
+        {
+            return Some(id);
+        }
+        tree.children(id)
+            .into_iter()
+            .find_map(|c| find(tree, c, needle))
+    }
+
+    /// The height of the editor's text body inside a preview dock laid out at
+    /// `dock_height`.
+    fn editor_body_height(paragraphs: usize, dock_height: f32) -> f32 {
+        let (ctx, vm) = vm_previewing(paragraphs);
+        let mut tree = crate::test_support::tree_with_settings(&ctx);
+        let root = tree.add(PreviewBody::new(vm));
+        tree.layout(SizeProposal::exact(900.0, dock_height));
+        let body = find(&tree, root, "RichTextEditorBody")
+            .expect("the preview mounts a rich text editor over the previewed document");
+        tree.bounds(body).height
+    }
+
+    /// One line of the embedded font, measured the way an intrinsic editor reports
+    /// it — the floor `min_lines(1)` puts under the preview.
+    fn one_line() -> f32 {
+        let mut tree = WidgetTree::new();
+        let root = tree
+            .add(RichTextEditor::editor(bastyde::text_document::TextDocument::new()).min_lines(1));
+        tree.layout(SizeProposal::with_width(900.0));
+        let body = find(&tree, root, "RichTextEditorBody").expect("a rich text editor has a body");
+        tree.bounds(body).height
+    }
+
+    /// The preview editor must size **intrinsically** (`min_lines`), never greedily.
+    ///
+    /// It was greedy — neither `min_lines` nor `max_lines` — and
+    /// [`centered`](crate::tabs::shared::editor::centered)'s `CenterColumnFlowing`
+    /// measures its child **width-only**, so the editor fell straight through to
+    /// `RichTextEditor`'s `proposal.height.unwrap_or(100.0)` fallback and the band
+    /// was pinned at 100 px of text forever. Dragging the dock taller revealed only
+    /// empty surface, and with `ScrollPolicy::AlwaysOff` inside and 100 px of content
+    /// in the outer `ScrollArea`, everything past the fourth line was unreachable.
+    ///
+    /// **What this can and cannot see.** The editor shapes its document in `paint`
+    /// (`engine.layout_full`), not in `layout_response`, so headless layout always
+    /// reports the `min_lines` floor rather than the real content height — bastyde's
+    /// own intrinsic-sizing tests measure empty documents for the same reason. What
+    /// is provable here is the *mode*, which is exactly what regressed: an intrinsic
+    /// editor reports one line, a greedy one reports the 100 px fallback. Growth with
+    /// the prose then follows from the mode.
+    #[test]
+    fn the_preview_editor_is_intrinsic_not_the_greedy_100px_fallback() {
+        let h = editor_body_height(40, 400.0);
+        let line = one_line();
+        assert!(
+            line > 0.0,
+            "the embedded font must report a line height, got {line:.1}px"
+        );
+        assert!(
+            (h - line).abs() < 1.0,
+            "the preview editor must measure one line ({line:.1}px) under headless \
+             layout — the `min_lines(1)` floor of an intrinsic editor. Got {h:.1}px; \
+             ~100px means it is greedy again and `CenterColumnFlowing`'s width-only \
+             proposal pinned it to the fallback."
+        );
+    }
+
+    /// The editor must not take its height from the *dock*: it is intrinsic, and the
+    /// dock's height only decides how much of it the outer `ScrollArea` shows. If the
+    /// editor tracked the dock instead, a short band would clip the scene rather than
+    /// scroll it.
+    #[test]
+    fn the_preview_editor_does_not_follow_the_dock_height() {
+        let tall = editor_body_height(40, 800.0);
+        let short = editor_body_height(40, 120.0);
+        assert!(
+            (tall - short).abs() < 1.0,
+            "the previewed scene measures {tall:.1}px in an 800px dock but {short:.1}px \
+             in a 120px one — the editor must size to its content, and the ScrollArea \
+             scroll it"
+        );
+    }
+
+    /// The band's scrolling shell, on the other hand, *must* fill the dock — that is
+    /// what turns an over-tall editor into something the writer can scroll rather
+    /// than a clipped stub.
+    #[test]
+    fn the_band_fills_the_dock_so_a_tall_scene_can_scroll() {
+        let (ctx, vm) = vm_previewing(40);
+        let mut tree = crate::test_support::tree_with_settings(&ctx);
+        let root = tree.add(PreviewBody::new(vm));
+        tree.layout(SizeProposal::exact(900.0, 400.0));
+        let scroll = find(&tree, root, "ScrollArea").expect("the preview band scrolls");
+        let bounds = tree.bounds(scroll);
+        assert!(
+            (bounds.height - 400.0).abs() < 1.0 && (bounds.width - 900.0).abs() < 1.0,
+            "the ScrollArea must fill the 900x400 dock, got {:.1}x{:.1}",
+            bounds.width,
+            bounds.height
+        );
+    }
 }

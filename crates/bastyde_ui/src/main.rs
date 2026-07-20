@@ -51,10 +51,10 @@ mod spellcheck;
 mod tags;
 mod widgets;
 mod tabs;
-// Gated on `mocks` as well as `test`: its only consumers today are the mocks-gated
-// pane tests (a pane needs fixture rows to render). Widen the gate the day a
-// real-backend test needs an event source.
-#[cfg(all(test, feature = "mocks"))]
+// The pane tests that need fixture rows are mocks-gated, but the search preview's
+// layout tests build their own `OpenDoc`, so they run on the real backend too —
+// and both need an event source. Hence the plain `test` gate.
+#[cfg(test)]
 mod test_support;
 mod tooltip_registry;
 mod version;
