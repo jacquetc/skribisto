@@ -25,9 +25,9 @@
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Center, DockOpenLocation, DockSide, DockWidget, DockWidgetId, GroupHeader, IconButton,
-    IconWidget, MenuItem, MenuList, Padding, PopoverIconButton, ScrollArea, TextWidget, VStack,
-    Wrap,
+    Center, DockOpenLocation, DockSide, DockWidget, DockWidgetId, FocusScope, GroupHeader,
+    IconButton, IconWidget, MenuItem, MenuList, Padding, PopoverIconButton, ScrollArea, TextWidget,
+    TraversalScopePolicy, VStack, Wrap,
 };
 
 use crate::icons::format as glyph;
@@ -157,7 +157,8 @@ fn heading_picker(vm: &FormatViewModel) -> PopoverIconButton {
             .tooltip(tr!(format_heading())),
     )
     .bare()
-    .content(list)
+    // Trap Tab inside the anchored overlay, as every popover must.
+    .content(FocusScope::new(TraversalScopePolicy::Cycle).child(list))
 }
 
 /// One labelled group: a header over a flowing row, gated as a unit.
