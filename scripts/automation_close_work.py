@@ -5,7 +5,7 @@
 """Drive a live Skribisto and verify that **closing a dirty work saves before it
 closes** — the deferred-close path, end to end.
 
-Closing is not synchronous. `work.close` (File ▸ Close Work, Ctrl+W, the window's
+Closing is not synchronous. `work.close` (Work ▸ Close Work, Ctrl+W, the window's
 X) runs the unsaved-changes guard; choosing **Save** does not close anything — it
 arms `pending_exit`, asks `EditorsViewModel` for a disk save, and remembers the
 edit *sequence* that save will cover. The close performs only once a
@@ -25,7 +25,7 @@ sibling automation_unsaved_guard.py drives the *switch* door (New Work), which
 shares the guard but not the deferred close.
 
   1. load a scratch copy of an example, type into a scene → the work is dirty
-  2. File ▸ Close Work                                    → the guard appears
+  2. Work ▸ Close Work                                    → the guard appears
   3. Save                                                 → the close is armed,
                                                             not performed
   4. wait                                                 → the Launcher replaces
@@ -267,13 +267,13 @@ if isinstance(res, dict) and res.get("isError"):
 time.sleep(0.8)
 print("  typed into the scene — the work is now dirty")
 
-# ── 2. File ▸ Close Work → the guard must appear ──────────────────────────────
+# ── 2. Work ▸ Close Work → the guard must appear ──────────────────────────────
 ham = s.find_exact("Menu", role="Button")
 if not ham:
     fail("no title-bar 'Menu' (hamburger) button in the AT tree", s.app, s.mcp, s.log)
 click(ham)
 time.sleep(0.6)
-fm = s.find_exact("File", role="MenuItem")
+fm = s.find_exact("Work", role="MenuItem")
 if not fm:
     fail("the 'File' menu did not open", s.app, s.mcp, s.log)
 click(fm)

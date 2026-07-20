@@ -12,3 +12,4 @@ pub(crate) mod welcome;
 pub(crate) mod new_work;
 pub(crate) mod import_plume;
 pub(crate) mod license;
+pub(crate) mod about;

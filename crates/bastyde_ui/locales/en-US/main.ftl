@@ -4,8 +4,8 @@
 # Skribisto: UI strings (source locale).
 # A single `&` marks the keyboard mnemonic of a menu label; `&&` is a literal `&`.
 
-## Menu bar: File
-menu-file = &File
+## Menu bar: Work
+menu-work = &Work
 menu-new-work = &New Work
 menu-open-work = &Open Work…
 menu-import-from = &Import from
@@ -37,6 +37,7 @@ menu-format = F&ormat
 menu-scene-break = Insert scene brea&k
 menu-major-scene-break = Insert &major scene break
 menu-tools = &Tools
+menu-help = &Help
 
 ## Binder context menu
 ctx-add = &Add
@@ -1106,3 +1107,13 @@ menu-format-table-col-delete = Delete &Column
 menu-format-table-remove = &Remove Table
 menu-format-undo = U&ndo
 menu-format-redo = &Redo
+
+## About panel
+
+menu-about = &About Skribisto…
+about-title = About Skribisto
+about-version = Version { $version }
+about-tagline = A novel-writing app for long-form fiction, written in Rust with the Bastyde toolkit.
+about-license = Released under the GNU General Public License, version 3.
+about-copyright = © 2026 Cyril Jacquet
+about-close = Close

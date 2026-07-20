@@ -110,7 +110,7 @@ CHAPTER1 = "Chapter 1"                 # fixture data, not localized
 LEGACY_TAGS = {"A", "B", "very looooooooooong tag"}   # fixture data
 
 MENU_BTN = ("menu", "menu")                       # a11y-builtin-menu (identical both locales)
-MENU_FILE = ("file", "fichier")                   # menu-file: "&File" / "&Fichier" (mnemonic stripped)
+MENU_WORK = ("work", "œuvre")                   # menu-work: "&Work" / "Œ&uvre" (mnemonic stripped)
 MENU_SETTINGS = ("settings", "paramètres")        # menu-settings: "S&ettings" / "&Paramètres"
 SETTINGS_DONE = ("done", "terminé")               # settings-done
 SETTINGS_RESET = ("reset to defaults", "réinitialiser")  # settings-reset
@@ -779,7 +779,7 @@ try:
     key(s, "Enter", settle=0.4)
     cur = focused_node(s)
     if not (cur and cur.get("role") == "MenuItem"
-            and any(v in text_of(cur).strip().lower() for v in MENU_FILE)):
+            and any(v in text_of(cur).strip().lower() for v in MENU_WORK)):
         fail(f"opening the hamburger did not land focus on the File trigger; focus is "
              f"now role={cur.get('role') if cur else None} text={text_of(cur)!r}", s)
     print(f"  bar revealed, 'File' trigger auto-focused: {text_of(cur)!r}")

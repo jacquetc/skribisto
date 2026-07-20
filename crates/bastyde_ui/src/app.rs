@@ -1699,6 +1699,13 @@ impl Widget for App {
                 );
             }));
         }
+        // `app.about` — Help ▸ About. Global (not `register_action`) because the
+        // title-bar menu renders in an overlay that is a *sibling* of `App`, so a
+        // plain action would never be on the intent's source-widget → root path.
+        // Fired by name only, so it needs no `AppIntent` variant.
+        ctx.register_action_global(
+            Action::new("app.about").on_invoke(|_i, c| crate::panels::about::present_about(c)),
+        );
         let active_item = editors.active_item();
         let split_active = editors.split_active();
 

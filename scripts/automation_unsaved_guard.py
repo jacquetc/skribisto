@@ -18,12 +18,12 @@ New Work is the only one whose confirmation isn't a native OS file dialog the
 bridge cannot see:
 
   1. load a scratch copy of an example, type into a scene  → the work is dirty
-  2. File ▸ New Work                                       → the *guard* appears,
+  2. Work ▸ New Work                                       → the *guard* appears,
                                                              NOT the New Work form
   3. Cancel                                                → project still open,
                                                              work still dirty
                                                              (nothing destroyed)
-  4. File ▸ New Work again, then Discard                   → the guard steps aside
+  4. Work ▸ New Work again, then Discard                   → the guard steps aside
                                                              and the New Work form
                                                              finally appears
 
@@ -280,10 +280,10 @@ def save_item_disabled():
         fail("no title-bar 'Menu' (hamburger) button in the AT tree", s.app, s.mcp, s.log)
     click(ham)
     time.sleep(0.6)
-    file_menu = s.find_exact("File", role="MenuItem")
-    if not file_menu:
+    work_menu = s.find_exact("Work", role="MenuItem")
+    if not work_menu:
         fail("the 'File' menu did not open", s.app, s.mcp, s.log)
-    click(file_menu)
+    click(work_menu)
     time.sleep(0.7)
     item = s.find_exact("Save", role="MenuItem")
     if not item:
@@ -373,7 +373,7 @@ def wait_dialog(timeout=8):
 
 
 def new_work_command():
-    """Fire the New Work command through **File ▸ New Work** and wait for whatever
+    """Fire the New Work command through **Work ▸ New Work** and wait for whatever
     it produces — the guard, or (the bug) the New Work form.
 
     The menu, not Ctrl+N: a synthetic `inject_key` only reaches the app's global
@@ -389,10 +389,10 @@ def new_work_command():
         fail("no title-bar 'Menu' (hamburger) button in the AT tree", s.app, s.mcp, s.log)
     click(ham)
     time.sleep(0.6)
-    file_menu = s.find_exact("File", role="MenuItem")
-    if not file_menu:
+    work_menu = s.find_exact("Work", role="MenuItem")
+    if not work_menu:
         fail("the 'File' menu did not open", s.app, s.mcp, s.log)
-    click(file_menu)
+    click(work_menu)
     time.sleep(0.7)
     item = next((n for n in s.nodes()
                  if n.get("role") == "MenuItem" and "new work" in (n.get("label") or "").lower()),

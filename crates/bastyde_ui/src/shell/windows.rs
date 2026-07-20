@@ -440,7 +440,7 @@ impl ProjectWindowFactory {
                         let menu_save_as = save_as_vm.clone();
                         let menu_backup_mode = backup_mode.clone();
                         let menu_unsaved = unsaved.clone();
-                        let menu = MenuModel::new().menu(tr!(menu_file()), move |m| {
+                        let menu = MenuModel::new().menu(tr!(menu_work()), move |m| {
                             let file_ctx = menu_ctx.clone();
                             let folder_ctx = menu_ctx.clone();
                             let folder_work = menu_work.clone();
@@ -900,6 +900,13 @@ impl ProjectWindowFactory {
                                     .intent("spellcheck.toggle")
                                     .shortcut("spellcheck.toggle"),
                             )
+                        })
+                        // Help sits last, as it does on every desktop platform.
+                        // "About" is fired by name only (no payload), so it needs
+                        // no `AppIntent` variant — just the global action that
+                        // `App::build` registers.
+                        .menu(tr!(menu_help()), |m| {
+                            m.item(MenuEntry::new(tr!(menu_about())).intent("app.about"))
                         });
                         let menubar = MenuBar::from_model(menu)
                             .collapse_policy(CollapsePolicy::Always)
@@ -1080,10 +1087,16 @@ mod tests {
     const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
         (
             "menu bar",
-            &["menu-file", "menu-view", "menu-format", "menu-tools"],
+            &[
+                "menu-work",
+                "menu-view",
+                "menu-format",
+                "menu-tools",
+                "menu-help",
+            ],
         ),
         (
-            "File",
+            "Work",
             &[
                 "menu-new-work",
                 "menu-open-work",
@@ -1100,12 +1113,12 @@ mod tests {
                 "menu-quit",
             ],
         ),
-        ("File > Import from", &["menu-import-plume"]),
+        ("Work > Import from", &["menu-import-plume"]),
         // The export scopes are labelled from `ExportScopeKind` at runtime and
         // deliberately carry no mnemonics; they are listed so the table stays a
         // complete picture of the menu, and the uniqueness check skips them.
         (
-            "File > Export",
+            "Work > Export",
             &[
                 "menu-export-book",
                 "menu-export-part",
@@ -1194,6 +1207,7 @@ mod tests {
             ],
         ),
         ("Tools", &["menu-spellcheck"]),
+        ("Help", &["menu-about"]),
     ];
 
     /// Every locale whose menu labels carry mnemonics, as the `.ftl` source.

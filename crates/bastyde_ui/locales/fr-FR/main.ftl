@@ -4,8 +4,8 @@
 # Skribisto: chaînes de l'interface (français).
 # Un simple « & » marque le mnémonique d'un libellé de menu ; « && » est un « & » littéral.
 
-## Barre de menus: Fichier
-menu-file = &Fichier
+## Barre de menus: Œuvre
+menu-work = Œ&uvre
 menu-new-work = &Nouvelle œuvre
 menu-open-work = &Ouvrir une œuvre…
 menu-import-from = &Importer depuis
@@ -37,6 +37,7 @@ menu-format = Fo&rmat
 menu-scene-break = Insérer un &saut de scène
 menu-major-scene-break = Insérer un saut de scène &majeur
 menu-tools = &Outils
+menu-help = A&ide
 
 ## Menu contextuel du classeur
 ctx-add = &Ajouter
@@ -1108,3 +1109,13 @@ menu-format-table-col-delete = Supprimer la &colonne
 menu-format-table-remove = Supprimer le &tableau
 menu-format-undo = A&nnuler
 menu-format-redo = &Rétablir
+
+## Fenêtre « À propos »
+
+menu-about = À &propos de Skribisto…
+about-title = À propos de Skribisto
+about-version = Version { $version }
+about-tagline = Une application d'écriture de romans pour la fiction longue, écrite en Rust avec la boîte à outils Bastyde.
+about-license = Distribué sous la Licence publique générale GNU, version 3.
+about-copyright = © 2026 Cyril Jacquet
+about-close = Fermer

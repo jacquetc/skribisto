@@ -5,7 +5,7 @@
 """Drive a live Skribisto via the bastyde automation MCP bridge and verify that the
 "Save" affordances are disabled while there is nothing to save.
 
-A freshly-loaded project is clean, so File ▸ Save must be greyed out (and the
+A freshly-loaded project is clean, so Work ▸ Save must be greyed out (and the
 `editor.save` action / Ctrl+S inert). Typing one character into a scene marks the
 work unsaved, so the very same menu item must go live. Then Ctrl+S saves and it
 must fall back to disabled.
@@ -204,15 +204,15 @@ def save_item_disabled(shot=None):
         fail("no title-bar 'Menu' (hamburger) button in the AT tree", s.app, s.mcp, s.log)
     click(ham)
     time.sleep(0.6)
-    file_menu = s.find_exact("File", role="MenuItem")
-    if not file_menu:
+    work_menu = s.find_exact("Work", role="MenuItem")
+    if not work_menu:
         print("  labels:", " | ".join(x for x in s.labels() if x)[:400])
         fail("the 'File' menu did not open", s.app, s.mcp, s.log)
-    click(file_menu)
+    click(work_menu)
     time.sleep(0.7)
     item = s.find_exact("Save", role="MenuItem")
     if not item:
-        print("  File menu labels:",
+        print("  Work menu labels:",
               " | ".join(n.get("label") or "" for n in s.nodes()
                          if n.get("role") == "MenuItem")[:400])
         fail("no 'Save' item in the open File menu", s.app, s.mcp, s.log)
@@ -237,7 +237,7 @@ def block_count(node_id):
 
 
 # ── 1. Freshly loaded ⇒ clean ⇒ Save must be disabled ─────────────────────────
-print("== clean project: File ▸ Save must be greyed out ==")
+print("== clean project: Work ▸ Save must be greyed out ==")
 disabled = save_item_disabled(shot="/tmp/save-item-clean.png")
 print(f"  Save item: disabled={disabled}")
 if not disabled:
@@ -265,7 +265,7 @@ if isinstance(res, dict) and res.get("isError"):
     fail("type_text on the writing editor failed", s.app, s.mcp, s.log)
 time.sleep(1.2)
 
-print("== dirty project: File ▸ Save must be enabled ==")
+print("== dirty project: Work ▸ Save must be enabled ==")
 disabled = save_item_disabled(shot="/tmp/save-item-dirty.png")
 print(f"  Save item: disabled={disabled}")
 if disabled:
