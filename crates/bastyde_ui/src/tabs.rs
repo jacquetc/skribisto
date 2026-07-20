@@ -46,6 +46,7 @@ use crate::view_models::{EditorTypography, EditorTypographySet, PaceViewModel, S
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
 // (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
+pub(crate) mod corkboard;
 mod folder_book;
 mod folder_chapter_scene;
 mod folder_none;
@@ -58,7 +59,6 @@ mod item_note;
 mod item_part;
 mod item_scene;
 mod item_text;
-pub(crate) mod corkboard;
 pub(crate) mod overview;
 pub(crate) mod pace;
 pub(crate) mod shared;
@@ -128,6 +128,16 @@ pub struct ContentTab {
     /// prose field to search. Persisted on the tab so it survives tab rebuilds
     /// (its `FindSession` + query outlive the widget tree it draws into).
     find: Option<crate::view_models::FindViewModel>,
+    /// This tab's **synopsis** editor handle, re-attached on every build the way
+    /// the prose one is (a tab rebuild mints a fresh editor and a fresh handle).
+    ///
+    /// It does not live on `find` beside the prose handle, even though that type
+    /// admits owning "the prose editor of this tab": a synopsis has no find
+    /// banner, so a tab with only a synopsis would have no `FindViewModel` to
+    /// hang it on. Unifying the two under one owner is worth doing, but not by
+    /// giving `find` a back-reference to this tab — the `stream` field above
+    /// records what closing that particular `Rc` cycle costs.
+    synopsis_handle: Rc<RefCell<Option<bastyde::widgets::rich_text::EditorHandle>>>,
     /// Selected segment for the folder container's `SegmentedControl` — per-tab
     /// (each pane keeps its own segment).
     pub segment: Signal<usize>,
@@ -449,6 +459,7 @@ impl ContentTab {
             overview,
             ids,
             find,
+            synopsis_handle: Rc::new(RefCell::new(None)),
             segment,
             column_width,
             show_synopsis,
@@ -471,6 +482,18 @@ impl ContentTab {
     /// main prose field (Scene / ChapterScene / Note).
     pub fn find(&self) -> Option<&crate::view_models::FindViewModel> {
         self.find.as_ref()
+    }
+
+    /// The sink the synopsis editor re-attaches its handle to on every build.
+    pub fn synopsis_handle_sink(
+        &self,
+    ) -> Rc<RefCell<Option<bastyde::widgets::rich_text::EditorHandle>>> {
+        self.synopsis_handle.clone()
+    }
+
+    /// This tab's synopsis editor handle, if one is currently built.
+    pub fn synopsis_handle(&self) -> Option<bastyde::widgets::rich_text::EditorHandle> {
+        self.synopsis_handle.borrow().clone()
     }
 
     /// The `BinderItem` this tab edits.
@@ -766,7 +789,10 @@ mod tests {
             first_of_type(&tree, id, "Banner").is_some(),
             "a trashed tab must render the Trash banner"
         );
-        assert!(tree.bounds(id).width > 0.0, "trashed tab laid out to zero width");
+        assert!(
+            tree.bounds(id).width > 0.0,
+            "trashed tab laid out to zero width"
+        );
     }
 
     /// The three folder containers (Book / Part / Chapter) render a `SegmentedControl`

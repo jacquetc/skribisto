@@ -18,21 +18,21 @@
 //! no editable prose (a title / label).
 
 use bastyde::core::binding::BindingLevel;
-use bastyde::core::widget::WidgetPlacement;
 use bastyde::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
+use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::tokens::HAlignment;
-use bastyde::widgets::{
-    Button, ButtonVariant, Center, DockOpenLocation, DockSide, DockWidget, DockWidgetId, FocusScope,
-    IconLocation, Padding, ScrollArea, TextWidget, TraversalScopePolicy, VStack,
-};
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
+use bastyde::widgets::{
+    Button, ButtonVariant, Center, DockOpenLocation, DockSide, DockWidget, DockWidgetId,
+    FocusScope, IconLocation, Padding, ScrollArea, TextWidget, TraversalScopePolicy, VStack,
+};
 
 use frontend::common::entities::MatchField;
 
 use crate::models::OpenDoc;
 use crate::tabs::ProseField;
-use crate::view_models::SearchReplaceViewModel;
+use crate::view_models::{EditorKind, FormatViewModel, SearchReplaceViewModel};
 
 /// An editor that paints **no background of its own**, so it sits flush on the
 /// dock's surface (rather than reading as a floating card dropped onto it).
@@ -75,6 +75,10 @@ struct PreviewBody {
     /// release it on a doc-switch rebuild (the effects tear down but never fire `on_blur`) and on
     /// drop — otherwise a stale caret reader would pin a frozen exemption for that document.
     spell_view: Option<(std::rc::Rc<crate::spellcheck::SpellSession>, WidgetId)>,
+    /// The formatting registry this preview's editor is announced to, and under
+    /// which id. Withdrawn on a doc-switch rebuild and on drop, so the Format
+    /// dock and menu can never act through a preview that is no longer shown.
+    format_view: Option<(FormatViewModel, WidgetId)>,
 }
 
 impl PreviewBody {
@@ -84,6 +88,7 @@ impl PreviewBody {
             child_id: None,
             find: std::rc::Rc::new(std::cell::RefCell::new(None)),
             spell_view: None,
+            format_view: None,
         }
     }
 
@@ -152,6 +157,9 @@ impl Drop for PreviewBody {
         if let Some((spell, token)) = self.spell_view.take() {
             spell.on_blur(token);
         }
+        if let Some((format, token)) = self.format_view.take() {
+            format.unregister(token);
+        }
     }
 }
 
@@ -174,13 +182,16 @@ impl Widget for PreviewBody {
         // Release the spell session this preview fed on the previous build. A doc-switch rebuild
         // tears the caret effects down but never fires `on_blur`, so do it here (and on drop);
         // the current document is re-wired below.
+        if let Some((old, tok)) = self.format_view.take() {
+            old.unregister(tok);
+        }
         if let Some((old, tok)) = self.spell_view.take() {
             old.on_blur(tok);
         }
         let doc = self.vm.preview_signal().get();
         let field = self.vm.preview_field_signal().get();
         let child: Box<dyn Widget> = match doc.as_ref().and_then(|d| editable_field(d, field)) {
-            Some((open_doc, prose, spell)) => {
+            Some((open_doc, prose, spell, kind)) => {
                 self.install_find_highlight(ctx, &prose.doc);
                 // Cap the editor's width like a scene column, so a wide paragraph
                 // stays readable (Settings ▸ preview width). Flowing (intrinsic
@@ -201,6 +212,17 @@ impl Widget for PreviewBody {
                     let handle = editor.handle();
                     let token = crate::tabs::shared::editor::wire_spell(ctx, &handle, spell);
                     self.spell_view = Some((spell.clone(), token));
+                }
+                // The preview band is a real editing surface — it writes through to
+                // the shared document — so the formatting surfaces must reach it too.
+                // Registered here rather than through `TypographyBoundEditor` (which
+                // this editor deliberately does not use: it carries the seamless
+                // style and the preview's own width, not a tab's typography), on the
+                // same release-on-rebuild-and-drop discipline as `spell_view` above.
+                if let Some(format) = ctx.app_state::<FormatViewModel>().cloned() {
+                    let self_id = ctx.self_id();
+                    format.register(self_id, editor.handle(), kind);
+                    self.format_view = Some((format, self_id));
                 }
                 Box::new(
                     ScrollArea::new().child(
@@ -256,20 +278,31 @@ fn editable_field(
     std::rc::Rc<OpenDoc>,
     &ProseField,
     Option<std::rc::Rc<crate::spellcheck::SpellSession>>,
+    EditorKind,
 )> {
     // Pair the resolved prose field with ITS spell session (main vs synopsis), honouring the same
-    // fallback, so the preview drives the right document's squiggles.
-    let (prose, spell) = match field {
+    // fallback, so the preview drives the right document's squiggles. The kind rides along for the
+    // formatting registry — the fallbacks mean the *matched* field is not always the field shown,
+    // so it has to be read off the branch actually taken.
+    let (prose, spell, kind) = match field {
         Some(MatchField::Synopsis) => match open_doc.synopsis.as_ref() {
-            Some(p) => (p, open_doc.spell_synopsis()),
-            None => (open_doc.main.as_ref()?, open_doc.spell_main()),
+            Some(p) => (p, open_doc.spell_synopsis(), EditorKind::Synopsis),
+            None => (
+                open_doc.main.as_ref()?,
+                open_doc.spell_main(),
+                EditorKind::Prose,
+            ),
         },
         _ => match open_doc.main.as_ref() {
-            Some(p) => (p, open_doc.spell_main()),
-            None => (open_doc.synopsis.as_ref()?, open_doc.spell_synopsis()),
+            Some(p) => (p, open_doc.spell_main(), EditorKind::Prose),
+            None => (
+                open_doc.synopsis.as_ref()?,
+                open_doc.spell_synopsis(),
+                EditorKind::Synopsis,
+            ),
         },
     };
-    Some((open_doc.clone(), prose, spell))
+    Some((open_doc.clone(), prose, spell, kind))
 }
 
 /// The empty state. With a result selected but no editable prose, a plain note.

@@ -97,7 +97,9 @@ pub use editors::{EditorsViewModel, Side};
 pub use export::{ExportViewModel, format_label, scope_label};
 pub use export_styles::ExportStylesViewModel;
 pub use find::FindViewModel;
-pub use format::{ALIGN_CENTER, ALIGN_LEFT, ALIGN_OTHER, FormatSurface, FormatViewModel};
+pub use format::{
+    ALIGN_CENTER, ALIGN_LEFT, ALIGN_OTHER, EditorKind, FormatSurface, FormatViewModel,
+};
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;

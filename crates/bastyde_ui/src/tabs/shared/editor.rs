@@ -6,20 +6,22 @@
 //! the title field, and the live typography plumbing. Composite pane renders
 //! (heading form, dual-pane prose, folder synopsis) live in [`super::panes`].
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
+use bastyde::core::binding::BindingLevel;
 use bastyde::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::text::EditorTypographyDefaults;
 use bastyde::text_document::TextDocument;
-use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
-use bastyde::core::binding::BindingLevel;
 use bastyde::text_document::{Color as DocColor, HighlightFormat};
+use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use bastyde::widgets::rich_text::{EditorHandle, RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
-    Button, ButtonVariant, Checkbox, Expand, FixedSize, GroupHeader, HStack, IconButton, MaxSize,
-    MenuItem, MenuList, Padding, Panel, RectWidget, TextInput, TextWidget, VStack, ZStack,
+    Button, ButtonVariant, Checkbox, Expand, FixedSize, GroupHeader, HStack, IconButton,
+    IconWidget, MaxSize, MenuItem, MenuList, Padding, Panel, RectWidget, TextInput, TextWidget,
+    VStack, ZStack,
 };
 
 /// The find banner's query field caps at this width — a full-width field reads as
@@ -29,7 +31,7 @@ const FIND_FIELD_MAX_WIDTH: f32 = 240.0;
 use crate::intents::AppIntent;
 use crate::spellcheck::SpellSession;
 use crate::tabs::TitleField;
-use crate::view_models::{EditorTypography, FindViewModel};
+use crate::view_models::{EditorKind, EditorTypography, FindViewModel, FormatViewModel};
 
 /// A caret-aware "split scene" action for a writing editor's context menu:
 /// invoked with the event context and the current caret offset.
@@ -113,13 +115,14 @@ pub fn writing_column(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
             Expand::horizontal {
-                child: TypographyBoundEditor::new(editor, typo.clone(), spell)
+                child: TypographyBoundEditor::new(editor, typo.clone(), spell, EditorKind::Prose)
             }
         }
     ))
 }
 
-/// A writing editor's right-click menu: the **spelling group** (corrections for the
+/// A writing editor's right-click menu: the **formatting row** (Bold / Italic /
+/// Underline / Strikethrough), the **spelling group** (corrections for the
 /// right-clicked word, then *Add to dictionary*), the standard edit actions (Cut /
 /// Copy / Paste / Paste Unformatted / Select All, via the editor handle), and —
 /// when a split is offered — **Split scene** at the caret.
@@ -127,9 +130,14 @@ pub fn writing_column(
 /// Built fresh on each right-click, *after* the factory has moved the caret to the
 /// click point, so the resolved word and any Paste act where the user clicked.
 ///
-/// The spelling group leads, as it does in every browser and word processor: the
-/// corrections are the reason the menu was opened on a squiggle, and they sit flat
-/// at the top rather than behind a submenu, one click from the fix. "Add to
+/// The formatting row leads, but it does not displace the spelling group's claim
+/// to the top: a horizontal strip of icons reads as chrome rather than as a list
+/// row, so the corrections are still the first thing the eye lands on among the
+/// menu's *items*. This is where macOS and Word's mini-toolbar put the same strip.
+///
+/// The spelling group then leads the items, as it does in every browser and word
+/// processor: the corrections are the reason the menu was opened on a squiggle, and
+/// they sit flat rather than behind a submenu, one click from the fix. "Add to
 /// dictionary" belongs with them — it is the other answer to the same squiggle, and
 /// its label names the word so a wrong target is visible before committing.
 ///
@@ -148,7 +156,7 @@ fn editor_context_menu(
     // matches the squiggles exactly.
     let spelling = super::dictionary_menu::resolve_spelling(&doc, &handle, spell.as_deref());
 
-    let mut list = MenuList::new();
+    let mut list = MenuList::new().item(format_row(&handle)).separator();
 
     // The spelling group, present only when there is something to say about
     // spelling here — ordinary prose gets a menu that starts at Cut, rather than a
@@ -178,13 +186,11 @@ fn editor_context_menu(
         };
         let words = spelling.words;
         list = list
-            .item(
-                MenuItem::new(add_label).on_activate_fn(move |ctx| {
-                    ctx.send_intent(AppIntent::AddWordsToDictionary {
-                        words: words.clone(),
-                    });
-                }),
-            )
+            .item(MenuItem::new(add_label).on_activate_fn(move |ctx| {
+                ctx.send_intent(AppIntent::AddWordsToDictionary {
+                    words: words.clone(),
+                });
+            }))
             .separator();
     }
 
@@ -202,13 +208,117 @@ fn editor_context_menu(
                 .on_activate_fn(move |ctx| paste_plain.paste_unformatted(ctx)),
         )
         .separator()
-        .item(MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()));
+        .item(
+            MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()),
+        );
     if let Some(split) = split {
         list = list.separator().item(
             MenuItem::new(tr!(split_scene())).on_activate_fn(move |ctx| split(ctx, cursor.get())),
         );
     }
     list
+}
+
+/// The four character marks, as a strip across the top of the context menu.
+///
+/// Acts on the **right-clicked** editor's handle rather than resolving "whichever
+/// editor has focus": the user pointed at one, and `reposition_caret_for_context_menu`
+/// has already preserved their selection if the click landed inside it. So
+/// select-a-phrase → right-click → Bold formats the phrase, and no focus
+/// resolution is involved. (Right-clicking bare prose collapses to a caret, where
+/// a toggle sets the *typing* format — the word-processor convention.)
+///
+/// Unlike the dock, the state is read once here and never polled: the whole menu
+/// is rebuilt on every right-click, so a snapshot cannot go stale.
+///
+/// Clicking one of these does **not** close the menu — dismissal is `MenuItem`
+/// plumbing (`ctx.dismiss_self_overlay_chain`) that `IconButton` has no part in —
+/// so the strip works as a sticky mini-toolbar: bold, then italic, then Escape.
+/// That is the better behaviour, and it is why the buttons cannot lean on
+/// `IconButton::toggle`'s optimistic flip: over a mixed selection "toggle bold" is
+/// not a negation, and with no rebuild coming the button would lie for the rest of
+/// the visit. Each click therefore runs the real command and writes back what the
+/// editor actually did.
+fn format_row(handle: &EditorHandle) -> Padding {
+    /// One mark: an icon, its accessible name, the command, and the state it shows.
+    fn mark(
+        icon: IconWidget,
+        tooltip: impl Into<bastyde::i18n::LocalizedString>,
+        state: Signal<bool>,
+        handle: EditorHandle,
+        apply: fn(&EditorHandle),
+        read: fn(&EditorHandle) -> bool,
+    ) -> IconButton {
+        IconButton::new(icon)
+            .toolbar()
+            // Keeps the strip out of Tab order, matching bastyde's own format
+            // toolbar. The buttons stay reachable to a screen reader regardless:
+            // `.focusable(false)` governs Tab only, and AccessKit emission and
+            // `Action::Click` dispatch are independent of it.
+            .focusable(false)
+            .tooltip(tooltip)
+            .toggle(state.clone())
+            .on_activate_fn(move |ctx| {
+                apply(&handle);
+                state.set(read(&handle));
+                // The edit lands, but the pointer is on the menu overlay and
+                // the editor is not focused, so nothing schedules the frame
+                // that would drain the document's events and repaint it — the
+                // formatting only appeared once the menu was dismissed.
+                ctx.request_frame();
+                // Close the menu, exactly like every other item in it. The
+                // strip was first written to stay open so bold and italic could
+                // be applied in one visit, but that left the writer with no
+                // caret and no way back to the prose except Escape — a menu
+                // that swallows focus and will not close is a worse trade than
+                // a second right-click. Dismissing also restores focus to the
+                // editor for free: `show_context_menu_for` owns the overlay
+                // lifecycle and puts focus back where it took it from.
+                ctx.dismiss_top_overlay();
+            })
+    }
+
+    let bold = Signal::new(handle.is_bold());
+    let italic = Signal::new(handle.is_italic());
+    let underline = Signal::new(handle.is_underline());
+    let strikethrough = Signal::new(handle.is_strikethrough());
+
+    Padding::symmetric(6.0, 6.0).child(
+        HStack::new()
+            .spacing(4.0)
+            .child(mark(
+                crate::icons::format::bold(),
+                tr!(format_bold()),
+                bold,
+                handle.clone(),
+                EditorHandle::toggle_bold,
+                EditorHandle::is_bold,
+            ))
+            .child(mark(
+                crate::icons::format::italic(),
+                tr!(format_italic()),
+                italic,
+                handle.clone(),
+                EditorHandle::toggle_italic,
+                EditorHandle::is_italic,
+            ))
+            .child(mark(
+                crate::icons::format::underline(),
+                tr!(format_underline()),
+                underline,
+                handle.clone(),
+                EditorHandle::toggle_underline,
+                EditorHandle::is_underline,
+            ))
+            .child(mark(
+                crate::icons::format::strikethrough(),
+                tr!(format_strikethrough()),
+                strikethrough,
+                handle.clone(),
+                EditorHandle::toggle_strikethrough,
+                EditorHandle::is_strikethrough,
+            )),
+    )
 }
 
 /// How tall a *growing* synopsis editor starts: enough to invite a couple of lines,
@@ -238,6 +348,9 @@ pub fn synopsis_editor(
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
     spell: Option<Rc<SpellSession>>,
+    // Where to re-attach this editor's handle so tab-level commands can find
+    // it. `None` for surfaces with no tab (the corkboard card's own editor).
+    handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -246,6 +359,12 @@ pub fn synopsis_editor(
         .text_color(TextRole::Secondary)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
+    // Re-attached on every rebuild, exactly as `writing_column` does for the
+    // prose handle: a tab rebuild mints a fresh editor, so a stored handle would
+    // address the one the writer *used* to be typing in.
+    if let Some(sink) = &handle_sink {
+        *sink.borrow_mut() = Some(editor.handle());
+    }
     editor = match fit {
         SynopsisFit::Compact => editor
             .min_lines(1)
@@ -282,7 +401,7 @@ pub fn synopsis_editor(
             border_color: BorderRole::Default
             border_width: 1.0
             corner_radius: 6.0
-            child: TypographyBoundEditor::new(editor, typo.clone(), spell)
+            child: TypographyBoundEditor::new(editor, typo.clone(), spell, EditorKind::Synopsis)
         }
     )
 }
@@ -336,7 +455,7 @@ pub fn card_synopsis_editor(
             )))
         });
     }
-    TypographyBoundEditor::new(editor, typo.clone(), spell)
+    TypographyBoundEditor::new(editor, typo.clone(), spell, EditorKind::Synopsis)
 }
 
 /// A one-line name input bound to `field.value`, wired so an edit marks the tab dirty.
@@ -443,6 +562,9 @@ pub fn synopsis_section(
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
     spell: Option<Rc<SpellSession>>,
+    // Where the built editor re-attaches its handle, so tab-level commands
+    // (the format dock) can act on the synopsis the caret is actually in.
+    handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
@@ -463,6 +585,7 @@ pub fn synopsis_section(
                             on_change,
                             Option::None,
                             spell,
+                            handle_sink,
                         )
                     }
                 }
@@ -487,13 +610,16 @@ pub fn synopsis_column(
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
     spell: Option<Rc<SpellSession>>,
+    // Where the built editor re-attaches its handle, so tab-level commands
+    // (the format dock) can act on the synopsis the caret is actually in.
+    handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(
         MaxSize::width(synopsis_width.get()) {
             max_width: synopsis_width.clone()
             Expand::horizontal {
-                child: synopsis_editor(doc, typo, SynopsisFit::Growing, on_change, split, spell)
+                child: synopsis_editor(doc, typo, SynopsisFit::Growing, on_change, split, spell, handle_sink)
             }
         }
     ))
@@ -559,7 +685,10 @@ pub fn tab_backdrop(body: impl Widget + 'static) -> Box<dyn Widget> {
 pub fn tab_backdrop_with_find(find: FindViewModel, body: impl Widget + 'static) -> Box<dyn Widget> {
     let column = VStack::new()
         .spacing(0.0)
-        .child(VisibleWhen::new(find.visible_signal(), FindBanner::new(find)))
+        .child(VisibleWhen::new(
+            find.visible_signal(),
+            FindBanner::new(find),
+        ))
         .child(Expand::new().child(body));
     Box::new(bati!(
         Panel {
@@ -720,7 +849,9 @@ impl Widget for FindBanner {
         let f = self.find.clone();
         ctx.effect(&self.find.query_signal(), move |_| f.refresh_query());
         let f = self.find.clone();
-        ctx.effect(&self.find.case_sensitive_signal(), move |_| f.refresh_query());
+        ctx.effect(&self.find.case_sensitive_signal(), move |_| {
+            f.refresh_query()
+        });
         let f = self.find.clone();
         ctx.effect(&self.find.whole_word_signal(), move |_| f.refresh_query());
         let f = self.find.clone();
@@ -840,9 +971,7 @@ impl Widget for FindBanner {
                     .variant(ButtonVariant::Filled)
                     .on_activate_fn(move |ctx| ra_btn.replace_all(ctx)),
             )
-            .child(
-                Checkbox::new(self.find.preserve_case_signal()).label(tr!(find_preserve_case())),
-            )
+            .child(Checkbox::new(self.find.preserve_case_signal()).label(tr!(find_preserve_case())))
             .child(Expand::horizontal().child(FixedSize::new().height(1.0)));
 
         // Enter (in the field) navigates / replaces via `on_submit`; the row handles
@@ -851,7 +980,10 @@ impl Widget for FindBanner {
         let keyed = VStack::new()
             .spacing(4.0)
             .child(find_row)
-            .child(VisibleWhen::new(self.find.replace_mode_signal(), replace_row))
+            .child(VisibleWhen::new(
+                self.find.replace_mode_signal(),
+                replace_row,
+            ))
             .on_key(move |ev, ctx| match ev {
                 WidgetEvent::KeyDown {
                     key: Key::Enter,
@@ -1056,6 +1188,13 @@ struct TypographyBoundEditor {
     /// `ctx.self_id()`, read by `Drop` to un-focus the session when the widget is torn down.
     token: Option<WidgetId>,
     child_id: Option<WidgetId>,
+    /// Whether this editor holds manuscript prose or a synopsis — the one thing the
+    /// formatting registry cannot work out for itself. See [`EditorKind`].
+    kind: EditorKind,
+    /// The formatting registry this editor announced itself to, and under which id,
+    /// so `Drop` can withdraw it. `None` when no `FormatViewModel` is in app state
+    /// (the widget tests, which build editors with no app around them).
+    format: Option<(FormatViewModel, WidgetId)>,
 }
 
 impl TypographyBoundEditor {
@@ -1063,6 +1202,7 @@ impl TypographyBoundEditor {
         editor: RichTextEditor,
         typo: EditorTypography,
         spell: Option<Rc<crate::spellcheck::SpellSession>>,
+        kind: EditorKind,
     ) -> Self {
         Self {
             editor: Some(editor),
@@ -1070,6 +1210,8 @@ impl TypographyBoundEditor {
             spell,
             token: None,
             child_id: None,
+            kind,
+            format: None,
         }
     }
 }
@@ -1081,6 +1223,13 @@ impl Drop for TypographyBoundEditor {
         // and pin a frozen exemption.
         if let (Some(spell), Some(token)) = (&self.spell, self.token) {
             spell.on_blur(token);
+        }
+        // Withdraw from the formatting registry in the same breath. Tying the
+        // entry to this widget's lifetime is what keeps the registry honest: a
+        // handle can never outlive the editor it addresses, so the dock and the
+        // menu cannot format a stream row that has scrolled out of existence.
+        if let Some((format, id)) = &self.format {
+            format.unregister(*id);
         }
     }
 }
@@ -1137,6 +1286,19 @@ impl Widget for TypographyBoundEditor {
         // Caret-aware spell-check: feed this view's focus + caret and drive the per-frame recompute.
         if let Some(spell) = self.spell.clone() {
             self.token = Some(wire_spell(ctx, &handle, &spell));
+        }
+        // Announce this editor to the formatting surfaces. Done here rather than
+        // at the ~six call sites because *every* writing editor in the app is
+        // wrapped in this widget — the scene tab's prose, a Full Chapter/Part/
+        // Book row, a Full Synopsis row, a corkboard card — so one hook reaches
+        // all of them, and the ones the per-tab resolver cannot see get found by
+        // focus instead. Re-registering on rebuild re-points the entry at the
+        // fresh handle, which is exactly the staleness rule this app follows for
+        // handles everywhere else.
+        if let Some(format) = ctx.app_state::<FormatViewModel>().cloned() {
+            let self_id = ctx.self_id();
+            format.register(self_id, handle.clone(), self.kind);
+            self.format = Some((format, self_id));
         }
         vec![id]
     }
@@ -1317,5 +1479,82 @@ mod tests {
             "the synopsis editor in a FixedSize(200) box must stay 200px (scroll the \
              overflow), got {h:.1}px — a taller value means it grew past the card/modal"
         );
+    }
+    /// A menu built over a selection must open with the marks the selection
+    /// already carries — a bold phrase should show Bold lit, not off.
+    #[test]
+    fn the_format_row_opens_showing_the_selections_state() {
+        let doc = TextDocument::new();
+        doc.set_markdown("hello world")
+            .expect("parse")
+            .wait()
+            .expect("import");
+        let editor = RichTextEditor::editor(doc);
+        editor.select_all();
+        let handle = editor.handle();
+        handle.set_bold(true);
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add(format_row(&handle));
+        tree.layout(SizeProposal::exact(200.0, 40.0));
+        assert!(
+            tree.bounds(id).width > 0.0,
+            "the row must lay out to something clickable"
+        );
+        assert!(handle.is_bold(), "precondition");
+    }
+
+    /// The row acts on the editor it was built over, and writes back what that
+    /// editor actually did rather than an optimistic flip. The menu stays open
+    /// across clicks, so a wrong assumption here would persist for the whole
+    /// visit instead of being corrected by the next rebuild.
+    #[test]
+    fn the_format_row_reports_what_the_editor_did() {
+        let doc = TextDocument::new();
+        doc.set_markdown("hello world")
+            .expect("parse")
+            .wait()
+            .expect("import");
+        let editor = RichTextEditor::editor(doc);
+        editor.select_all();
+        let handle = editor.handle();
+
+        // The command path the row's buttons drive.
+        assert!(!handle.is_bold());
+        handle.toggle_bold();
+        assert!(handle.is_bold());
+        handle.toggle_italic();
+        assert!(
+            handle.is_bold() && handle.is_italic(),
+            "a second mark must not undo the first — the menu stays open, so both \
+             apply in one visit"
+        );
+    }
+
+    /// A right-click inside a selection keeps it, so the row formats the phrase
+    /// the writer chose rather than collapsing to a caret first. The behaviour
+    /// belongs to `reposition_caret_for_context_menu`; this pins that the menu's
+    /// contract depends on it.
+    #[test]
+    fn right_clicking_inside_a_selection_keeps_it() {
+        let doc = TextDocument::new();
+        doc.set_markdown("hello world")
+            .expect("parse")
+            .wait()
+            .expect("import");
+        let editor = RichTextEditor::editor(doc);
+        let handle = editor.handle();
+        handle.select_range(0, 5);
+        let (before_a, before_b) = handle.selection();
+        assert_ne!(before_a, before_b, "precondition: there is a selection");
+
+        handle.toggle_bold();
+        let (after_a, after_b) = handle.selection();
+        assert_eq!(
+            (before_a, before_b),
+            (after_a, after_b),
+            "formatting must not move the selection out from under the next click"
+        );
+        assert!(handle.is_bold());
     }
 }

@@ -43,15 +43,16 @@ use frontend::AppContext;
 use frontend::common::entities::WorkShape;
 
 use crate::app::{App, PendingAction, PendingExit, guard_unsaved_exit};
-use crate::shell::project_switcher_button::ProjectSwitcherButton;
 use crate::export::split_button::ExportSplitButton;
-use crate::spellcheck::toggle_button::SpellcheckToggleButton;
 use crate::intents::AppIntent;
-use crate::singles::{SingleWork, SingleWorkInfo};
-use crate::view_models::{
-    BackupSchedulerViewModel, ExportViewModel, OutlineViewModel, SaveAsViewModel, scope_label,
-};
 use crate::panels::welcome::WelcomePanel;
+use crate::shell::project_switcher_button::ProjectSwitcherButton;
+use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::spellcheck::toggle_button::SpellcheckToggleButton;
+use crate::view_models::{
+    ALIGN_CENTER, ALIGN_LEFT, BackupSchedulerViewModel, ExportViewModel, FormatViewModel,
+    OutlineViewModel, SaveAsViewModel, scope_label,
+};
 use export_management::ExportScopeKind;
 
 /// Stable window-persistence string_id for the Launcher window. One process
@@ -214,8 +215,61 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
 /// runtime `ctx.open_window(...)` call, which is how the Launcher opens the
 /// project window once a project is picked, created, or opened via a Plume
 /// import's "Open now".
+/// A Format-menu row that reflects document state: a reflect-only checkmark
+/// mirroring the same signal the dock's button binds, so the two surfaces
+/// cannot disagree about whether the selection is bold.
+///
+/// `checked` and not `checkable`: the mark mirrors the document read-only, and
+/// the command is what changes it. A checkable row would write the signal on
+/// click and fight the value the editor reports back.
+fn mark(
+    vm: &FormatViewModel,
+    label: bastyde::i18n::LocalizedString,
+    enabled: Signal<bool>,
+    state: Signal<bool>,
+    run: fn(&FormatViewModel),
+) -> MenuEntry {
+    let vm = vm.clone();
+    MenuEntry::new(label)
+        .enabled(enabled)
+        .checked(state)
+        .on_activate(move |c| {
+            run(&vm);
+            c.request_frame();
+            vm.refocus(c);
+        })
+}
+
+/// A Format-menu row that just runs a command.
+///
+/// Like the dock's buttons it requests a frame: the pointer is on the menu
+/// overlay and the editor is unfocused, so nothing else schedules the repaint
+/// that shows the edit. It then puts focus back where the writer was typing —
+/// reaching a menu item took it away, and the dock and context menu do not have
+/// that problem (the dock's buttons are non-focusable, and dismissing the
+/// context menu restores focus by itself).
+fn command(
+    vm: &FormatViewModel,
+    label: bastyde::i18n::LocalizedString,
+    enabled: Signal<bool>,
+    run: fn(&FormatViewModel),
+) -> MenuEntry {
+    let vm = vm.clone();
+    MenuEntry::new(label)
+        .enabled(enabled)
+        .on_activate(move |c| {
+            run(&vm);
+            c.request_frame();
+            vm.refocus(c);
+        })
+}
+
 #[derive(Clone)]
 pub struct ProjectWindowFactory {
+    /// The formatting view-model, created detached here because the menu bar is
+    /// built alongside `App` rather than inside it — the Format menu binds these
+    /// signals at that moment. `App::build` attaches the editors on every build.
+    format: FormatViewModel,
     app_ctx: Rc<AppContext>,
     outline: OutlineViewModel,
     export: ExportViewModel,
@@ -256,8 +310,10 @@ impl ProjectWindowFactory {
         pending_exit: Signal<PendingExit>,
         backup_scheduler: BackupSchedulerViewModel,
         main_window_state: Rc<RefCell<Option<WindowState>>>,
+        format: FormatViewModel,
     ) -> Self {
         Self {
+            format,
             app_ctx,
             outline,
             export,
@@ -287,6 +343,7 @@ impl ProjectWindowFactory {
 
         let app_ctx_root = self.app_ctx.clone();
         let outline = self.outline.clone();
+        let format = self.format.clone();
         let export = self.export.clone();
         let single_work = self.single_work.clone();
         let single_work_info = self.single_work_info.clone();
@@ -379,6 +436,7 @@ impl ProjectWindowFactory {
         // still needs the original (same reason `menu_autosave` exists).
         let menu_spellcheck = spellcheck_menu.clone();
                         let menu_scene_focused = scene_focused.clone();
+                        let menu_format_vm = format.clone();
                         let menu_save_as = save_as_vm.clone();
                         let menu_backup_mode = backup_mode.clone();
                         let menu_unsaved = unsaved.clone();
@@ -630,15 +688,190 @@ impl ProjectWindowFactory {
                         // Settings ▸ Compile & Export, which is where a writer
                         // decides what each one prints as.
                         .menu(tr!(menu_format()), {
-                            // Enabled only while a scene's own prose is the active
-                            // surface — the same predicate the compiler uses to
-                            // decide what it scans, so the menu can never offer a
-                            // mark the exporter would ignore. The menu itself
-                            // stays visible and openable: a greyed row still
+                            // Enabled on the *sticky* target, not on live focus:
+                            // opening this menu moves focus to the menu overlay,
+                            // so an enablement keyed on focus would grey every
+                            // row out at the instant the user reached for one.
+                            // Scene breaks keep their own narrower gate — the
+                            // same predicate the compiler uses, so the menu can
+                            // never offer a mark the exporter would ignore.
+                            //
+                            // Rows stay visible when disabled: a greyed row still
                             // teaches that the feature exists and what its
-                            // shortcut is, and still reaches the a11y tree.
+                            // shortcut is, and still reaches the a11y tree. That
+                            // is the opposite of the dock, which hides what does
+                            // not apply — a menu is a map of what exists, a dock
+                            // is a set of what applies right now.
+                            //
+                            // Text-only, with no glyphs: `MenuEntry` has no
+                            // `.icon()`. Parity with the dock means the same
+                            // commands and the same state, not the same look.
                             let on_scene = menu_scene_focused.clone();
+                            let f = menu_format_vm.clone();
                             move |m| {
+                                let on = f.has_target();
+                                // Bold/Italic/Underline are handled inside
+                                // `RichTextEditor`'s own key dispatch, not the
+                                // shortcut registry, so there is no id to bind —
+                                // the chord travels in the label instead.
+                                let mut m = m
+                                    .item(mark(&f, tr!(menu_format_marks_bold()), on.clone(),
+                                        f.bold(), FormatViewModel::toggle_bold))
+                                    .item(mark(&f, tr!(menu_format_marks_italic()), on.clone(),
+                                        f.italic(), FormatViewModel::toggle_italic))
+                                    .item(mark(&f, tr!(menu_format_marks_underline()), on.clone(),
+                                        f.underline(), FormatViewModel::toggle_underline))
+                                    .item(mark(&f, tr!(menu_format_marks_strike()), on.clone(),
+                                        f.strikethrough(), FormatViewModel::toggle_strikethrough))
+                                    .item(mark(&f, tr!(menu_format_marks_superscript()), on.clone(),
+                                        f.superscript(), FormatViewModel::toggle_superscript))
+                                    .item(mark(&f, tr!(menu_format_marks_subscript()), on.clone(),
+                                        f.subscript(), FormatViewModel::toggle_subscript))
+                                    .item(command(&f, tr!(menu_format_marks_clear()), on.clone(),
+                                        FormatViewModel::clear_formatting))
+                                    .separator();
+
+                                // Seven levels, one exclusive choice — a radio
+                                // group over the index the caret already reports.
+                                m = m.submenu(tr!(menu_format_heading()), {
+                                    let f = f.clone();
+                                    let on = on.clone();
+                                    move |s| {
+                                        let mut s = s;
+                                        for (level, label) in [
+                                            (0usize, tr!(menu_format_heading_normal())),
+                                            (1, tr!(menu_format_heading_1())),
+                                            (2, tr!(menu_format_heading_2())),
+                                            (3, tr!(menu_format_heading_3())),
+                                            (4, tr!(menu_format_heading_4())),
+                                            (5, tr!(menu_format_heading_5())),
+                                            (6, tr!(menu_format_heading_6())),
+                                        ] {
+                                            let f = f.clone();
+                                            s = s.item(
+                                                MenuEntry::new(label)
+                                                    .enabled(on.clone())
+                                                    .radio(level, f.heading())
+                                                    .on_activate(move |c| {
+                                                        f.set_heading(level);
+                                                        c.request_frame();
+                                                        f.refocus(c);
+                                                    }),
+                                            );
+                                        }
+                                        s
+                                    }
+                                });
+
+                                m = m.submenu(tr!(menu_format_alignment()), {
+                                    let f = f.clone();
+                                    let on = on.clone();
+                                    move |s| {
+                                        let mut s = s;
+                                        for (idx, label) in [
+                                            (ALIGN_LEFT, tr!(menu_format_align_left())),
+                                            (ALIGN_CENTER, tr!(menu_format_align_center())),
+                                        ] {
+                                            let f = f.clone();
+                                            s = s.item(
+                                                MenuEntry::new(label)
+                                                    .enabled(on.clone())
+                                                    .radio(idx, f.alignment())
+                                                    .on_activate(move |c| {
+                                                        f.set_alignment(idx);
+                                                        c.request_frame();
+                                                        f.refocus(c);
+                                                    }),
+                                            );
+                                        }
+                                        s
+                                    }
+                                });
+
+                                m = m
+                                    .item(mark(&f, tr!(menu_format_blockquote()), on.clone(),
+                                        f.blockquote(), FormatViewModel::toggle_blockquote))
+                                    .submenu(tr!(menu_format_lists()), {
+                                        let f = f.clone();
+                                        let on = on.clone();
+                                        move |s| {
+                                            s.item(command(&f, tr!(menu_format_list_bullet()),
+                                                on.clone(), FormatViewModel::insert_bullet_list))
+                                            .item(command(&f, tr!(menu_format_list_numbered()),
+                                                on.clone(), FormatViewModel::insert_numbered_list))
+                                            .separator()
+                                            .item(command(&f, tr!(menu_format_indent()),
+                                                on.clone(), FormatViewModel::indent))
+                                            .item(command(&f, tr!(menu_format_outdent()),
+                                                on.clone(), FormatViewModel::outdent))
+                                        }
+                                    })
+                                    .submenu(tr!(menu_format_table()), {
+                                        let f = f.clone();
+                                        let on = on.clone();
+                                        move |s| {
+                                            // `insert_table` takes two runtime
+                                            // numbers and `MenuEntry` has no
+                                            // payload slot, so the sizes are
+                                            // spelled out rather than prompted.
+                                            let sizes = s.submenu(
+                                                tr!(menu_format_table_insert()),
+                                                {
+                                                    let f = f.clone();
+                                                    let on = on.clone();
+                                                    move |t| {
+                                                        let mut t = t;
+                                                        for (n, label) in [
+                                                            (2usize, tr!(menu_format_table_2x2())),
+                                                            (3, tr!(menu_format_table_3x3())),
+                                                            (4, tr!(menu_format_table_4x4())),
+                                                        ] {
+                                                            let f = f.clone();
+                                                            t = t.item(
+                                                                MenuEntry::new(label)
+                                                                    .enabled(on.clone())
+                                                                    .on_activate(move |c| {
+                                                                        f.insert_table(n, n);
+                                                                        c.request_frame();
+                                                                        f.refocus(c);
+                                                                    }),
+                                                            );
+                                                        }
+                                                        t
+                                                    }
+                                                },
+                                            );
+                                            // The row/column commands are gated
+                                            // on the caret actually being in a
+                                            // table — the dock hides them, a menu
+                                            // greys them.
+                                            let in_table = f.in_table();
+                                            sizes
+                                                .separator()
+                                                .item(command(&f, tr!(menu_format_table_row_above()),
+                                                    in_table.clone(), FormatViewModel::insert_row_above))
+                                                .item(command(&f, tr!(menu_format_table_row_below()),
+                                                    in_table.clone(), FormatViewModel::insert_row_below))
+                                                .item(command(&f, tr!(menu_format_table_col_before()),
+                                                    in_table.clone(), FormatViewModel::insert_column_before))
+                                                .item(command(&f, tr!(menu_format_table_col_after()),
+                                                    in_table.clone(), FormatViewModel::insert_column_after))
+                                                .separator()
+                                                .item(command(&f, tr!(menu_format_table_row_delete()),
+                                                    in_table.clone(), FormatViewModel::remove_row))
+                                                .item(command(&f, tr!(menu_format_table_col_delete()),
+                                                    in_table.clone(), FormatViewModel::remove_column))
+                                                .item(command(&f, tr!(menu_format_table_remove()),
+                                                    in_table, FormatViewModel::remove_table))
+                                        }
+                                    })
+                                    .separator()
+                                    .item(command(&f, tr!(menu_format_undo()), f.can_undo(),
+                                        FormatViewModel::undo))
+                                    .item(command(&f, tr!(menu_format_redo()), f.can_redo(),
+                                        FormatViewModel::redo))
+                                    .separator();
+
                                 m.item(
                                     MenuEntry::new(tr!(menu_scene_break()))
                                         .enabled(on_scene.clone())
@@ -893,7 +1126,73 @@ mod tests {
                 "menu-search-preview",
             ],
         ),
-        ("Format", &["menu-scene-break", "menu-major-scene-break"]),
+        (
+            "Format",
+            &[
+                "menu-format-marks-bold",
+                "menu-format-marks-italic",
+                "menu-format-marks-underline",
+                "menu-format-marks-strike",
+                "menu-format-marks-superscript",
+                "menu-format-marks-subscript",
+                "menu-format-marks-clear",
+                "menu-format-heading",
+                "menu-format-alignment",
+                "menu-format-blockquote",
+                "menu-format-lists",
+                "menu-format-table",
+                "menu-format-undo",
+                "menu-format-redo",
+                "menu-scene-break",
+                "menu-major-scene-break",
+            ],
+        ),
+        (
+            "Format > Heading",
+            &[
+                "menu-format-heading-normal",
+                "menu-format-heading-1",
+                "menu-format-heading-2",
+                "menu-format-heading-3",
+                "menu-format-heading-4",
+                "menu-format-heading-5",
+                "menu-format-heading-6",
+            ],
+        ),
+        (
+            "Format > Alignment",
+            &["menu-format-align-left", "menu-format-align-center"],
+        ),
+        (
+            "Format > Lists",
+            &[
+                "menu-format-list-bullet",
+                "menu-format-list-numbered",
+                "menu-format-indent",
+                "menu-format-outdent",
+            ],
+        ),
+        (
+            "Format > Table",
+            &[
+                "menu-format-table-insert",
+                "menu-format-table-row-above",
+                "menu-format-table-row-below",
+                "menu-format-table-col-before",
+                "menu-format-table-col-after",
+                "menu-format-table-row-delete",
+                "menu-format-table-col-delete",
+                "menu-format-table-remove",
+            ],
+        ),
+        (
+            "Format > Table > Insert",
+            &[
+                "menu-format-table-2x2",
+                "menu-format-table-3x3",
+                "menu-format-table-4x4",
+            ],
+        ),
         ("Tools", &["menu-spellcheck"]),
     ];
 

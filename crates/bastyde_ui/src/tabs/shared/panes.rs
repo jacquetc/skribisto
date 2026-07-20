@@ -84,6 +84,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 tab.mark_dirty_fn(),
                 Option::None,
                 tab.open_doc.spell_synopsis(),
+                Some(tab.synopsis_handle_sink()),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -149,6 +150,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
                 &tab.typography.synopsis,
                 tab.mark_dirty_fn(),
                 tab.open_doc.spell_synopsis(),
+                Some(tab.synopsis_handle_sink()),
             ),
         ));
     }
@@ -230,6 +232,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 tab.mark_dirty_fn(),
                 Option::None,
                 tab.open_doc.spell_synopsis(),
+                Some(tab.synopsis_handle_sink()),
             ));
     }
     tab_backdrop(ScrollArea::new().child(col.child(vspace(28.0))))
@@ -280,6 +283,7 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
                 tab.mark_dirty_fn(),
                 Option::None,
                 tab.open_doc.spell_synopsis(),
+                Some(tab.synopsis_handle_sink()),
             ));
     }
     ScrollArea::new().child(col.child(vspace(28.0)))

@@ -16,9 +16,9 @@ use std::time::Instant;
 
 use bastyde::data::ListModel;
 use bastyde::prelude::*; // Signal, tr!, lit!
+use bastyde::widgets::{Orientation, PaneDescriptor, SplitterModel, TabHandle, TabId, TabInfo};
 use skribisto_model::SubRoleExt;
 use skribisto_model::scene_break::{self, SceneBreakTier};
-use bastyde::widgets::{Orientation, PaneDescriptor, SplitterModel, TabHandle, TabId, TabInfo};
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
@@ -291,7 +291,11 @@ impl EditorsViewModel {
     /// therefore a handle) but the compiler never scans notes for markers, so
     /// inserting one there would write a mark the exporter silently ignores —
     /// an action that appears to work and does nothing.
-    pub fn insert_scene_break(&self, tier: SceneBreakTier, ctx: &mut bastyde::prelude::EventContext) {
+    pub fn insert_scene_break(
+        &self,
+        tier: SceneBreakTier,
+        ctx: &mut bastyde::prelude::EventContext,
+    ) {
         if !self.focused_carries_scene() {
             return;
         }
@@ -350,9 +354,43 @@ impl EditorsViewModel {
             .unwrap_or(false)
     }
 
-    /// The `FindViewModel` of the focused pane's active tab — `None` when nothing
-    /// is open there or the active tab has no main prose field.
-    fn focused_find(&self) -> Option<crate::view_models::FindViewModel> {
+    /// The editor the formatting surfaces act on, what kind of text it holds,
+    /// and whether it currently has keyboard focus.
+    ///
+    /// The focus flag is reported rather than used as a filter, because the two
+    /// surfaces need different answers from one walk. The dock wants *live*
+    /// focus — click into the binder and there is nothing to format, so it says
+    /// so. The Format menu cannot: opening it moves focus to the menu overlay,
+    /// so a menu that resolved its target the dock's way would disable every
+    /// item at the instant the user reached for one, and its commands would
+    /// find nothing to act on. The menu therefore keeps acting on the tab's
+    /// editor whether or not it holds focus this instant.
+    ///
+    /// Prefers the tab's prose editor, falling back to its synopsis. `None` for
+    /// a stream row's synopsis or a corkboard card: those build many editors per
+    /// tab, so no single per-tab handle can say which one. Those are not
+    /// unreachable — they register themselves with `FormatViewModel`, which
+    /// prefers whichever registered editor holds focus over this answer.
+    pub fn format_target(&self) -> Option<(bastyde::widgets::rich_text::EditorHandle, bool, bool)> {
+        self.with_focused_tab(|tab| {
+            let prose = tab.find().and_then(|f| f.editor_handle());
+            let synopsis = tab.synopsis_handle();
+            // Whichever holds focus wins; with neither focused the prose editor
+            // is the tab's primary surface and the better default.
+            if let Some(h) = &synopsis
+                && h.focused_signal().get()
+            {
+                return Some((h.clone(), true, true));
+            }
+            if let Some(h) = &prose {
+                return Some((h.clone(), false, h.focused_signal().get()));
+            }
+            synopsis.map(|h| (h, true, false))
+        })
+    }
+
+    /// Run `read` against the focused pane's active `ContentTab`.
+    fn with_focused_tab<R>(&self, read: impl Fn(&ContentTab) -> Option<R>) -> Option<R> {
         let side = self.focused_side.get();
         let pane = self.pane(side);
         let tab_id = pane.selected.get()?;
@@ -360,15 +398,19 @@ impl EditorsViewModel {
             pane.tabs
                 .with_item(i, |h| {
                     if h.id == tab_id {
-                        h.payload
-                            .downcast_ref::<ContentTab>()
-                            .and_then(|t| t.find().cloned())
+                        h.payload.downcast_ref::<ContentTab>().and_then(&read)
                     } else {
                         None
                     }
                 })
                 .flatten()
         })
+    }
+
+    /// The `FindViewModel` of the focused pane's active tab — `None` when nothing
+    /// is open there or the active tab has no main prose field.
+    fn focused_find(&self) -> Option<crate::view_models::FindViewModel> {
+        self.with_focused_tab(|t| t.find().cloned())
     }
 
     // ── Open ────────────────────────────────────────────────────────────────
@@ -388,9 +430,13 @@ impl EditorsViewModel {
         let sub_role = doc.sub_role.clone();
         // A trashed item can be open (from the trash dock) — tint its tab icon
         // warning-orange, reactively (flips live on trash/restore, no rebuild).
-        let icon_color = doc
-            .trashed
-            .map(|t| if *t { TextRole::Warning } else { TextRole::Primary });
+        let icon_color = doc.trashed.map(|t| {
+            if *t {
+                TextRole::Warning
+            } else {
+                TextRole::Primary
+            }
+        });
         let tab = ContentTab::new(
             self.app_ctx.clone(),
             self.ids.clone(),

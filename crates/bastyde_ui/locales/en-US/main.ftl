@@ -34,7 +34,7 @@ menu-outline = &Outline
 menu-search = &Search in Project
 menu-search-preview = Search &Preview
 menu-format = F&ormat
-menu-scene-break = Insert &scene break
+menu-scene-break = Insert scene brea&k
 menu-major-scene-break = Insert &major scene break
 menu-tools = &Tools
 
@@ -420,6 +420,12 @@ menu-copy = Copy
 menu-paste = Paste
 menu-paste-unformatted = Paste Unformatted
 menu-select-all = Select All
+# Tooltips on the editor context menu's formatting row. Icon-only buttons, so
+# the tooltip is their only accessible name — not decoration.
+format-bold = Bold
+format-italic = Italic
+format-underline = Underline
+format-strikethrough = Strikethrough
 
 ## Binder / recents
 binder = Binder
@@ -1019,3 +1025,84 @@ settings-styles-digits-western = Western (0–9)
 settings-styles-digits-eastern-arabic = Eastern Arabic (٠–٩)
 settings-styles-direction-ltr = Left to right
 settings-styles-direction-rtl = Right to left
+
+## Format dock
+format-dock-title = Format
+format-panel-empty = Place your cursor in a scene, note, or synopsis to see formatting options.
+# Group headers.
+format-group-history = History
+format-group-marks = Text
+format-group-block = Paragraph
+format-group-lists = Lists
+format-group-tables = Table
+format-group-breaks = Scene breaks
+# Button tooltips. Icon-only buttons, so each tooltip is that button's only
+# accessible name — not decoration.
+format-undo = Undo
+format-redo = Redo
+format-superscript = Superscript
+format-subscript = Subscript
+format-clear = Clear formatting
+format-heading = Heading level
+format-heading-normal = Normal text
+format-heading-1 = Heading 1
+format-heading-2 = Heading 2
+format-heading-3 = Heading 3
+format-heading-4 = Heading 4
+format-heading-5 = Heading 5
+format-heading-6 = Heading 6
+format-align-left = Align left
+format-align-center = Centre
+format-blockquote = Blockquote
+format-list-bullet = Bulleted list
+format-list-numbered = Numbered list
+format-indent = Indent
+format-outdent = Outdent
+format-table-insert = Insert table
+format-table-row-above = Insert row above
+format-table-row-below = Insert row below
+format-table-col-before = Insert column before
+format-table-col-after = Insert column after
+format-table-row-delete = Delete row
+format-table-col-delete = Delete column
+format-table-remove = Remove table
+
+## Menu: Format
+menu-format-marks-bold = Bol&d
+menu-format-marks-italic = &Italic
+menu-format-marks-underline = &Underline
+menu-format-marks-strike = &Strikethrough
+menu-format-marks-superscript = Su&perscript
+menu-format-marks-subscript = Su&bscript
+menu-format-marks-clear = &Clear Formatting
+menu-format-heading = &Heading
+menu-format-heading-normal = &Normal Text
+menu-format-heading-1 = Heading &1
+menu-format-heading-2 = Heading &2
+menu-format-heading-3 = Heading &3
+menu-format-heading-4 = Heading &4
+menu-format-heading-5 = Heading &5
+menu-format-heading-6 = Heading &6
+menu-format-alignment = &Alignment
+menu-format-align-left = Align &Left
+menu-format-align-center = &Centre
+menu-format-blockquote = Block&quote
+menu-format-lists = &Lists
+menu-format-list-bullet = &Bulleted List
+menu-format-list-numbered = &Numbered List
+menu-format-indent = &Indent
+menu-format-outdent = &Outdent
+menu-format-table = &Table
+menu-format-table-insert = &Insert Table
+menu-format-table-2x2 = &2 x 2
+menu-format-table-3x3 = &3 x 3
+menu-format-table-4x4 = &4 x 4
+menu-format-table-row-above = Insert Row Abo&ve
+menu-format-table-row-below = Insert Row Belo&w
+menu-format-table-col-before = Insert Co&lumn Before
+menu-format-table-col-after = Insert Column Af&ter
+menu-format-table-row-delete = &Delete Row
+menu-format-table-col-delete = Delete &Column
+menu-format-table-remove = &Remove Table
+menu-format-undo = U&ndo
+menu-format-redo = &Redo

@@ -46,7 +46,13 @@ pub(super) fn synopsis_editor(
     let on_change = open_doc.mark_dirty_fn();
     let split = synopsis_split_fn(vm, card);
     let spell = open_doc.spell_synopsis();
-    crate::tabs::shared::editor::card_synopsis_editor(doc, vm.synopsis_typo(), on_change, split, spell)
+    crate::tabs::shared::editor::card_synopsis_editor(
+        doc,
+        vm.synopsis_typo(),
+        on_change,
+        split,
+        spell,
+    )
 }
 
 /// A card's vertical layout: `top` (header + optional status label) and `bottom`
@@ -122,8 +128,11 @@ impl Widget for CardColumn {
             ctx.add_boxed(self.middle.take().expect("built once")),
             ctx.add_boxed(self.bottom.take().expect("built once")),
         ];
-        self.total
-            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Relayout);
+        self.total.bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Relayout,
+        );
         self.ids.clone()
     }
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
@@ -231,7 +240,11 @@ impl Widget for CardSynopsis {
 /// Open the synopsis in a roomier modal editor over the **same** shared document as
 /// the inline card editor — the card holds it open, so this is the very same
 /// `OpenDoc` and edits reflect in both instantly.
-pub(super) fn present_synopsis_modal(vm: &CorkboardViewModel, card: &CorkboardCard, ctx: &mut EventContext) {
+pub(super) fn present_synopsis_modal(
+    vm: &CorkboardViewModel,
+    card: &CorkboardCard,
+    ctx: &mut EventContext,
+) {
     let vm = vm.clone();
     let card = card.clone();
     ctx.present_modal(

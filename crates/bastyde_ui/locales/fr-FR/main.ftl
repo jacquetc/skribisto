@@ -421,6 +421,12 @@ menu-copy = Copier
 menu-paste = Coller
 menu-paste-unformatted = Coller sans mise en forme
 menu-select-all = Tout sélectionner
+# Infobulles de la rangée de mise en forme du menu contextuel. Boutons sans
+# libellé : l'infobulle est leur seul nom accessible, pas une décoration.
+format-bold = Gras
+format-italic = Italique
+format-underline = Souligné
+format-strikethrough = Barré
 
 ## Classeur / récents
 binder = Classeur
@@ -1021,3 +1027,84 @@ settings-styles-digits-western = Occidentaux (0–9)
 settings-styles-digits-eastern-arabic = Arabes orientaux (٠–٩)
 settings-styles-direction-ltr = De gauche à droite
 settings-styles-direction-rtl = De droite à gauche
+
+## Dock de mise en forme
+format-dock-title = Mise en forme
+format-panel-empty = Placez le curseur dans une scène, une note ou un synopsis pour voir les options de mise en forme.
+# En-têtes de groupe.
+format-group-history = Historique
+format-group-marks = Texte
+format-group-block = Paragraphe
+format-group-lists = Listes
+format-group-tables = Tableau
+format-group-breaks = Sauts de scène
+# Infobulles des boutons. Boutons sans libellé : l'infobulle est leur seul nom
+# accessible, pas une décoration.
+format-undo = Annuler
+format-redo = Rétablir
+format-superscript = Exposant
+format-subscript = Indice
+format-clear = Effacer la mise en forme
+format-heading = Niveau de titre
+format-heading-normal = Texte normal
+format-heading-1 = Titre 1
+format-heading-2 = Titre 2
+format-heading-3 = Titre 3
+format-heading-4 = Titre 4
+format-heading-5 = Titre 5
+format-heading-6 = Titre 6
+format-align-left = Aligner à gauche
+format-align-center = Centrer
+format-blockquote = Citation
+format-list-bullet = Liste à puces
+format-list-numbered = Liste numérotée
+format-indent = Augmenter le retrait
+format-outdent = Diminuer le retrait
+format-table-insert = Insérer un tableau
+format-table-row-above = Insérer une ligne au-dessus
+format-table-row-below = Insérer une ligne en dessous
+format-table-col-before = Insérer une colonne avant
+format-table-col-after = Insérer une colonne après
+format-table-row-delete = Supprimer la ligne
+format-table-col-delete = Supprimer la colonne
+format-table-remove = Supprimer le tableau
+
+## Menu : Format
+menu-format-marks-bold = &Gras
+menu-format-marks-italic = &Italique
+menu-format-marks-underline = S&ouligné
+menu-format-marks-strike = &Barré
+menu-format-marks-superscript = E&xposant
+menu-format-marks-subscript = In&dice
+menu-format-marks-clear = &Effacer la mise en forme
+menu-format-heading = &Titre
+menu-format-heading-normal = Texte &normal
+menu-format-heading-1 = Titre &1
+menu-format-heading-2 = Titre &2
+menu-format-heading-3 = Titre &3
+menu-format-heading-4 = Titre &4
+menu-format-heading-5 = Titre &5
+menu-format-heading-6 = Titre &6
+menu-format-alignment = &Alignement
+menu-format-align-left = Aligner à &gauche
+menu-format-align-center = &Centrer
+menu-format-blockquote = &Citation
+menu-format-lists = &Listes
+menu-format-list-bullet = Liste à &puces
+menu-format-list-numbered = Liste &numérotée
+menu-format-indent = &Augmenter le retrait
+menu-format-outdent = &Diminuer le retrait
+menu-format-table = Tablea&u
+menu-format-table-insert = &Insérer un tableau
+menu-format-table-2x2 = &2 x 2
+menu-format-table-3x3 = &3 x 3
+menu-format-table-4x4 = &4 x 4
+menu-format-table-row-above = Insérer une ligne au-&dessus
+menu-format-table-row-below = Insérer une ligne en des&sous
+menu-format-table-col-before = Insérer une colonne a&vant
+menu-format-table-col-after = Insérer une colonne a&près
+menu-format-table-row-delete = Supprimer la &ligne
+menu-format-table-col-delete = Supprimer la &colonne
+menu-format-table-remove = Supprimer le &tableau
+menu-format-undo = A&nnuler
+menu-format-redo = &Rétablir

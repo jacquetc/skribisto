@@ -43,7 +43,11 @@ pub(super) struct StatCards {
 
 impl StatCards {
     pub(super) fn new(vm: PaceViewModel, today: NaiveDate) -> Self {
-        Self { vm, today, root: None }
+        Self {
+            vm,
+            today,
+            root: None,
+        }
     }
 }
 
@@ -89,7 +93,12 @@ impl Widget for StatCards {
             ));
         }
         if let Some(r) = vm.words_per_writing_day(today) {
-            cf = cf.child(stat_card(&big, commafy(r), tr!(pace_card_rate()), TextRole::Accent));
+            cf = cf.child(stat_card(
+                &big,
+                commafy(r),
+                tr!(pace_card_rate()),
+                TextRole::Accent,
+            ));
         }
         if vm.end().get().is_some() {
             cf = cf.child(stat_card(

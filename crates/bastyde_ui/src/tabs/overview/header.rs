@@ -45,9 +45,11 @@ fn expand_collapse_buttons(vm: &OverviewViewModel) -> impl Widget {
         // label — see the framework's own `a11y_builtin_*` helpers), so these are named
         // for a screen reader by the same call.
         .child(
-            IconButton::new(IconWidget::from_svg_icon(res!("assets/icons/expand-all.svg")))
-                .tooltip(tr!(overview_expand_all()))
-                .on_activate_fn(move |_| expand.expand_all()),
+            IconButton::new(IconWidget::from_svg_icon(res!(
+                "assets/icons/expand-all.svg"
+            )))
+            .tooltip(tr!(overview_expand_all()))
+            .on_activate_fn(move |_| expand.expand_all()),
         )
         .child(
             IconButton::new(IconWidget::from_svg_icon(res!(

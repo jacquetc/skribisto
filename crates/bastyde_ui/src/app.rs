@@ -48,8 +48,8 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, DeferredResume, EditorsViewModel,
-    ExportViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel,
-    SaveAsViewModel, SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision,
+    ExportViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
+    SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision,
     unsaved_decision,
 };
 
@@ -184,7 +184,9 @@ pub fn close_work_and_return_to_launcher(app_ctx: &Rc<AppContext>, ctx: &mut Eve
     // subscriber could no longer translate a tab into its persistable ordinal.
     capture_workspace_layout(ctx);
     let _ = work_management_commands::close_work(app_ctx);
-    ctx.open_window(crate::shell::windows::launcher_window_config(app_ctx.clone()));
+    ctx.open_window(crate::shell::windows::launcher_window_config(
+        app_ctx.clone(),
+    ));
     ctx.close_window_forced();
 }
 
@@ -236,7 +238,8 @@ fn capture_tree_expansion(ctx: &mut EventContext) {
     let (Some(expansion), Some(editors)) = (
         ctx.app_state::<crate::view_models::TreeExpansionViewModel>()
             .cloned(),
-        ctx.app_state::<crate::view_models::EditorsViewModel>().cloned(),
+        ctx.app_state::<crate::view_models::EditorsViewModel>()
+            .cloned(),
     ) else {
         return;
     };
@@ -481,6 +484,8 @@ pub struct App {
     /// Stable id for the trailing Inspector dock (created once so a rebuild keeps
     /// the same dock in the `DockingModel`).
     inspector_dock: DockWidgetId,
+    /// Stable id for the trailing Format dock (Inspector's neighbour).
+    format_dock: DockWidgetId,
     /// Stable id for the bottom search-preview dock.
     preview_dock: DockWidgetId,
     /// Stable id for the leading search & replace dock.
@@ -545,6 +550,7 @@ impl App {
             // *Stable* ids (not `fresh()`) so the per-work dock-layout restore
             // can match these docks across launches — see `crate::docks` docs.
             inspector_dock: DockWidgetId::from_raw(crate::docks::INSPECTOR_DOCK_ID),
+            format_dock: DockWidgetId::from_raw(crate::docks::FORMAT_DOCK_ID),
             preview_dock: DockWidgetId::from_raw(crate::docks::PREVIEW_DOCK_ID),
             search_dock: DockWidgetId::from_raw(crate::docks::SEARCH_DOCK_ID),
             search: None,
@@ -669,6 +675,70 @@ impl Widget for App {
                 )
             })
             .clone();
+
+        // The formatting view-model is created in `main` (the menu bar needs its
+        // signals before `EditorsViewModel` exists) and re-pointed at the
+        // editors here, on every build — idempotent, exactly like the
+        // workspace-layout view-model's `set_editors`.
+        let format = ctx
+            .app_state::<crate::view_models::FormatViewModel>()
+            .cloned()
+            .expect("FormatViewModel registered in main");
+        {
+            let target = editors.clone();
+            format.attach(Rc::new(move || {
+                use crate::view_models::FormatSurface;
+                // One walk answers both halves, at deliberately different
+                // strictnesses.
+                //
+                // The *target* is sticky: it stays the tab's editor whether or
+                // not it holds focus this instant. Opening the Format menu moves
+                // focus to the menu overlay, so a target gated on live focus
+                // would vanish exactly when the user reached for a command.
+                //
+                // The *surface* is live: click into the binder and there is
+                // genuinely nothing to format, so the dock drops to its empty
+                // state rather than offering controls for a caret that is no
+                // longer anywhere. (The dock's own buttons are
+                // `focusable(false)`, so pressing one never blurs the editor out
+                // from under itself.)
+                let Some((handle, is_synopsis, focused)) = target.format_target() else {
+                    return (None, FormatSurface::None);
+                };
+                if !focused {
+                    return (Some(handle), FormatSurface::None);
+                }
+                if is_synopsis {
+                    return (Some(handle), FormatSurface::Synopsis);
+                }
+                // The same predicate the compiler uses to decide what it scans,
+                // so the dock cannot offer a scene break where the exporter
+                // would ignore one.
+                let surface = if target.focused_carries_scene() {
+                    FormatSurface::Scene
+                } else {
+                    FormatSurface::Note
+                };
+                (Some(handle), surface)
+            }));
+        }
+
+        // Pull the focused editor's formatting into the mirrors once per frame,
+        // here rather than in the dock: the Format menu binds the same signals,
+        // and the dock is only one of two trailing rail tabs — driven from
+        // there, the menu's checkmarks would freeze whenever the user switched
+        // the rail to the Inspector.
+        //
+        // Deliberately not an effect on the editor's `format_version`: that
+        // signal is written from inside the editor's own `state.borrow_mut()`
+        // and observers fire synchronously there, so reading the state back
+        // would panic on an already-borrowed cell. A frame tick fires outside
+        // any borrow, and `refresh` short-circuits when nothing has moved.
+        {
+            let format = format.clone();
+            let tick = ctx.frame_tick();
+            ctx.effect(&tick, move |_| format.refresh());
+        }
 
         // Hand the editors to the per-work workspace-layout restore. It was created
         // in `main` (before any `ctx.settings()`), so it starts editor-less and is
@@ -801,7 +871,9 @@ impl Widget for App {
                 .get_or_insert_with(|| {
                     let model =
                         crate::models::TrashTreeModel::new(app_ctx.clone(), ids.work_id.clone());
-                    crate::view_models::TrashViewModel::new(app_ctx, ids, model, docking, trash_dock)
+                    crate::view_models::TrashViewModel::new(
+                        app_ctx, ids, model, docking, trash_dock,
+                    )
                 })
                 .clone()
         };
@@ -912,7 +984,10 @@ impl Widget for App {
         }
         // The tag palette, same reasoning: one wired instance behind the Inspector's tag
         // section, the Settings pane and every chip in the app.
-        if let Some(tags) = ctx.app_state::<crate::view_models::TagsViewModel>().cloned() {
+        if let Some(tags) = ctx
+            .app_state::<crate::view_models::TagsViewModel>()
+            .cloned()
+        {
             tags.wire(ctx);
         }
         // Backup scheduler + settings (registered in `main`). The scheduler drives
@@ -1128,8 +1203,9 @@ impl Widget for App {
                     // instead. Keyed by durable uid, so what was written is what is read
                     // — no translation against the freshly re-minted store ids.
                     if backup.is_none()
-                        && let Some(expansion) =
-                            c.app_state::<crate::view_models::TreeExpansionViewModel>().cloned()
+                        && let Some(expansion) = c
+                            .app_state::<crate::view_models::TreeExpansionViewModel>()
+                            .cloned()
                     {
                         let remembered = expansion.outline_expanded();
                         if !remembered.is_empty() {
@@ -1414,9 +1490,8 @@ impl Widget for App {
         {
             use crate::view_models::IntervalTick;
             use std::time::{Duration, Instant};
-            let countdown = crate::view_models::IntervalCountdown::new(
-                backup_scheduler.completed_epoch(),
-            );
+            let countdown =
+                crate::view_models::IntervalCountdown::new(backup_scheduler.completed_epoch());
             let wake = ctx.wake_at_handle();
             let scheduler = backup_scheduler.clone();
             let tick = ctx.frame_tick();
@@ -1785,6 +1860,10 @@ impl Widget for App {
                 active_item,
                 self.inspector_dock,
             ))
+            .dock(crate::docks::format::format_dock(
+                format.clone(),
+                self.format_dock,
+            ))
             .dock(crate::docks::search::search_dock(
                 search.clone(),
                 self.search_dock,
@@ -1827,6 +1906,18 @@ impl Widget for App {
                 self.inspector_dock,
                 DockOpenLocation::side(DockSide::Trailing),
             );
+            // Format joins it as a second rail tab rather than a second side.
+            // Inspector answers "what is this item", Format answers "how does
+            // this text read" — same trailing rail, one visible at a time,
+            // because a writer wants one question answered at a time and the
+            // 300px side has no room to stack both.
+            docking.open_dock(
+                self.format_dock,
+                DockOpenLocation::side(DockSide::Trailing).new_tab(),
+            );
+            // Inspector is the one that starts showing: it is the older habit,
+            // and Format is reachable in one click on the rail.
+            docking.reveal_dock(self.inspector_dock);
             // Mount the bottom preview band, then hide it: it is the transient
             // search-preview band, always hidden at start (a result click reveals it
             // thereafter). `open_dock` makes its side visible as a side effect, so the

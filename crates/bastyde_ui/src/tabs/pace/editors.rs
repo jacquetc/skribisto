@@ -89,20 +89,28 @@ impl Widget for HolidayEditor {
                     return;
                 };
                 // A DateRange carries both ends; a single-day holiday is start == end.
-                let end = if r.end == r.start { None } else { Some(jiff_to_naive(r.end)) };
+                let end = if r.end == r.start {
+                    None
+                } else {
+                    Some(jiff_to_naive(r.end))
+                };
                 vm.add_holiday(text, jiff_to_naive(r.start), end);
                 label.set(String::new());
                 range.set(None);
             })
         };
-        let add_row = HStack::new()
-            .spacing(8.0)
-            .child(
-                Expand::horizontal()
-                    .child(TextInput::new(self.label.clone()).placeholder(tr!(pace_holiday_label()))),
-            )
-            .child(FixedSize::new().width(220.0).child(DateRangeEdit::new(self.range.clone())))
-            .child(add);
+        let add_row =
+            HStack::new()
+                .spacing(8.0)
+                .child(Expand::horizontal().child(
+                    TextInput::new(self.label.clone()).placeholder(tr!(pace_holiday_label())),
+                ))
+                .child(
+                    FixedSize::new()
+                        .width(220.0)
+                        .child(DateRangeEdit::new(self.range.clone())),
+                )
+                .child(add);
         col = col.child(vspace(4.0)).child(add_row);
 
         self.root = Some(ctx.add(col));
