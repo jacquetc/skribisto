@@ -37,7 +37,11 @@ pub struct TagRow {
 }
 
 /// Sort key: case-insensitive, then exact, so equal-fold names keep a deterministic order.
-fn sort_rows(rows: &mut [TagRow]) {
+///
+/// `pub` so chip renderers restoring palette order after an id-keyed lookup use
+/// *this* comparator rather than restating it — the ordering is load-bearing (it is what
+/// makes `status/…` cluster), so two spellings of it would be two orderings.
+pub fn sort_rows(rows: &mut [TagRow]) {
     rows.sort_by(|a, b| {
         a.name
             .to_lowercase()
@@ -90,7 +94,7 @@ mod imp {
     use frontend::direct_access::{CreateBinderTagDto, UpdateBinderTagDto};
     use frontend::tag_management::ImportTagsDto;
 
-    use super::{TagRow, build_lookup, name_key, sort_rows};
+    use super::{TagRow, build_lookup, sort_rows};
 
     struct Inner {
         model: ListModel<TagRow>,

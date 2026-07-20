@@ -48,7 +48,7 @@ pub use binder_list_model::{BinderListModel, BinderRow};
 pub use binder_stream::{BinderItemRef, ordered_binder_items};
 pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
 pub use dict_word_list_model::{DictWordListModel, DictWordRow};
-pub use work_tags_list_model::{TagRow, WorkTagsListModel, name_key};
+pub use work_tags_list_model::{TagRow, WorkTagsListModel, colliding_name, name_key, sort_rows};
 pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
 pub use examples_list_model::ExamplesListModel;
 pub use export_styles_file::ExportStylesService;

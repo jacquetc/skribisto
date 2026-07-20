@@ -434,16 +434,29 @@ impl Widget for ChipDots {
         );
 
         let assigned = self.value.get();
-        // Palette order (alphabetical), not assignment order, so the same set of tags always
-        // looks the same wherever it is shown. Ids with no palette row are skipped rather
-        // than drawn as a placeholder: that only happens mid-delete, and a phantom dot would
-        // outlive the tag.
-        let rows: Vec<TagRow> = self
-            .vm
-            .rows()
-            .into_iter()
-            .filter(|t| assigned.contains(&t.id))
+        // Resolve through the id → row map, not by scanning the palette.
+        //
+        // `WorkTagsListModel::lookup_signal` exists for exactly this, is rebuilt once per
+        // mutation, and documents itself as what "every chip on every stream row and
+        // corkboard card resolves its tag through". It was reaching `TagsViewModel` and
+        // stopping — nothing called it, the compiler said so, and this renderer was calling
+        // `rows()`, which *clones the whole palette* (`snapshot` clones every row's three
+        // Strings) and then filters. Per chip, per rebuild, on every row of a stream. That
+        // is the O(rows × tags) scan the map was built to avoid, with a full clone on top.
+        //
+        // Ids with no palette row are skipped rather than drawn as a placeholder: that only
+        // happens mid-delete, and a phantom dot would outlive the tag.
+        let lookup = self.vm.lookup_signal().get();
+        let mut rows: Vec<TagRow> = assigned
+            .iter()
+            .filter_map(|id| lookup.get(id).cloned())
             .collect();
+        // Palette order (alphabetical), not assignment order, so the same set of tags always
+        // looks the same wherever it is shown. A HashMap has no order, so this has to be
+        // restored explicitly — through the model's own comparator, since the ordering is
+        // load-bearing (it is what makes `status/…` cluster) and a second spelling of it
+        // would be a second ordering.
+        crate::models::sort_rows(&mut rows);
         if rows.is_empty() {
             self.root_child = None;
             return Vec::new();
@@ -694,6 +707,37 @@ mod tests {
     }
 
     /// A cap of zero would render an overflow cell and nothing else, which reads as broken.
+    /// The dots come out in palette order whatever order the ids were assigned in.
+    ///
+    /// This used to fall out for free: the renderer scanned the already-sorted palette and
+    /// kept the ids it recognised. It now resolves through the id → row *map* — which is
+    /// what the map was built for, and what stops every chip from cloning the whole palette
+    /// — and a `HashMap` has no order at all, so the ordering has to be restored explicitly.
+    /// Without this test that regression is invisible in a unit run and shows up as dots
+    /// that shuffle between two rows carrying the same tags.
+    #[test]
+    fn dots_follow_palette_order_not_assignment_order() {
+        let mut rows = vec![
+            tag(3, "status/draft", "#00f", false),
+            tag(1, "character", "#f00", true),
+            tag(2, "place", "#0f0", true),
+        ];
+        crate::models::sort_rows(&mut rows);
+        let names: Vec<&str> = rows.iter().map(|r| r.name.as_str()).collect();
+        assert_eq!(
+            names,
+            vec!["character", "place", "status/draft"],
+            "the shared comparator sorts case-insensitively by name"
+        );
+
+        // And the row announces them in that order — the row label is the one place the
+        // names exist as text, so it is where the order is observable.
+        assert_eq!(
+            TagChipRow::new(rows, 8).row_label(),
+            "character, place, status/draft",
+        );
+    }
+
     #[test]
     fn a_zero_cap_still_shows_one_dot() {
         let mut tree = WidgetTree::new();
