@@ -253,9 +253,19 @@ impl NewWorkUseCase {
             &labels,
             dto.chapter_scene_mode,
         ) {
+            // A real uid per row, NOT the `Default` nil.
+            //
+            // `BinderTreeKey` is `Binder(uid)` / `Item(uid)`, and `TreeDataSlice` builds
+            // its parent→children map keyed by that. Leaving these nil gave every binder
+            // and every item in a new project the SAME key, so the child list of that one
+            // key contained its own row and `flatten_node` recursed until the stack
+            // overflowed — creating a project from the Launcher aborted the process
+            // outright. Reading a project back was never affected, because `heal_uid`
+            // replaces a nil uid on load; only freshly minted, never-saved rows were.
             let binder = uow.create_orphan_binder(&Binder {
                 created_at: now,
                 updated_at: now,
+                uid: common::uid::new_uid(),
                 name: tb.name,
                 activated: tb.activated,
                 ..Default::default()
@@ -277,6 +287,7 @@ impl NewWorkUseCase {
                 let item = uow.create_orphan_binder_item(&BinderItem {
                     created_at: now,
                     updated_at: now,
+                    uid: common::uid::new_uid(),
                     title: ti.title,
                     role: ti.role,
                     sub_role: ti.sub_role,

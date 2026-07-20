@@ -793,6 +793,71 @@ fn new_work_novel_builds_full_tree() {
     assert!(b.binders[2].items.is_empty());
 }
 
+/// Every binder and item a new project mints must carry its OWN uid.
+///
+/// `new_work_mints_distinct_ids` above checks only the Work's `unique_id`, which left the
+/// per-item uids untested — and they are what the UI keys by. `BinderTreeKey` is
+/// `Binder(uid)` / `Item(uid)`, and `TreeDataSlice` builds its parent→children map keyed
+/// by that. Give forty items one shared uid and they collapse onto a single key whose
+/// child list contains its own row, so `flatten_node` — which has no cycle guard —
+/// recurses until the stack overflows and the process aborts.
+///
+/// That is not hypothetical: it is what "create a new project from the Launcher" did,
+/// reproduced under gdb with ~32k frames of `flatten_node(idx=2)` calling itself.
+///
+/// Reading a project back is immune because `heal_uid` replaces a nil uid on load, which
+/// is exactly why the checked-in fixture opens fine and only a *freshly created,
+/// never-saved* project crashed.
+#[test]
+fn new_work_gives_every_binder_and_item_its_own_uid() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    // The Novel template, because it is the one that mints many rows — the shape where a
+    // shared uid actually produces a cycle rather than merely a duplicate.
+    new_work(
+        &db,
+        &hub,
+        dir.path().join("Uids.skrib").to_str().unwrap(),
+        false,
+        NewWorkTemplate::Novel,
+    );
+    let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
+
+    let mut seen: std::collections::HashMap<uuid::Uuid, usize> = std::collections::HashMap::new();
+    let mut nil = Vec::new();
+    for bundled in &b.binders {
+        let rows = std::iter::once((bundled.binder.name.clone(), bundled.binder.uid)).chain(
+            bundled
+                .items
+                .iter()
+                .map(|i| (i.item.title.clone(), i.item.uid)),
+        );
+        for (what, uid) in rows {
+            if uid.is_nil() {
+                nil.push(what);
+            }
+            *seen.entry(uid).or_default() += 1;
+        }
+    }
+
+    assert!(
+        nil.is_empty(),
+        "{} row(s) were minted with a nil uid, e.g. {:?}",
+        nil.len(),
+        &nil[..nil.len().min(5)]
+    );
+    let worst = seen.values().copied().max().unwrap_or(0);
+    assert_eq!(
+        worst, 1,
+        "uids must be unique across a new project — {} distinct uid(s) cover {} rows, and one \
+         uid is shared by {worst} of them",
+        seen.len(),
+        seen.values().sum::<usize>(),
+    );
+}
+
 #[test]
 fn new_work_folder_shape_is_honored() {
     let dir = tempfile::tempdir().unwrap();
