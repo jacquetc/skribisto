@@ -183,7 +183,7 @@ mod imp {
         /// with no mirrored `Content` row, so a plain read-modify-write — but the **full** DTO
         /// (`update_binder_item` replaces every scalar, so a partial one would blank the
         /// title/role/sub_role/indent). Undoable on `stack`.
-        pub fn set_dict_language(&self, tags: &str, stack: Option<u64>) -> anyhow::Result<()> {
+        pub fn set_dict_language(&self, tags: &[String], stack: Option<u64>) -> anyhow::Result<()> {
             let Some(id) = self.inner.id.get() else {
                 anyhow::bail!("SingleBinderItem: no id");
             };
@@ -191,7 +191,7 @@ mod imp {
                 anyhow::bail!("SingleBinderItem: item {id} not loaded");
             };
             let mut dto = update_dto(&it);
-            dto.dict_language = tags.to_string();
+            dto.dict_language = tags.to_vec();
             dto.updated_at = chrono::Utc::now();
             binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
             self.refresh();
@@ -507,9 +507,9 @@ mod imp {
             Ok(())
         }
 
-        pub fn set_dict_language(&self, tags: &str, _stack: Option<u64>) -> anyhow::Result<()> {
+        pub fn set_dict_language(&self, tags: &[String], _stack: Option<u64>) -> anyhow::Result<()> {
             if let Some(mut d) = self.inner.dto.get() {
-                d.dict_language = tags.to_string();
+                d.dict_language = tags.to_vec();
                 self.inner.dto.set(Some(d));
             }
             Ok(())

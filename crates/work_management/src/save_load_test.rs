@@ -75,7 +75,7 @@ fn item(
             indent: 0,
             word_count_goal: 500,
             char_count_goal: 2000,
-            dict_language: "en-US".into(),
+            dict_language: vec!["en-US".to_string()],
             // Derived from `id` so every item's aliases are distinct: `materialize`
             // rebuilds each item under a fresh id and remaps by `item_map`, so a
             // mis-assignment that handed one item another's aliases would be invisible
@@ -107,7 +107,7 @@ fn sample_bundle() -> WorkBundle {
         updated_at: ts(),
         title: "The Lighthouse".into(),
         author_name: "Jane".into(),
-        dict_language: "en-US".into(),
+        dict_language: vec!["en-US".to_string()],
         unique_id: "the-lighthouse-uid".into(),
         // Non-default so the round-trip actually exercises chapter_mode persistence.
         chapter_mode: common::entities::ChapterMode::Flat,
@@ -277,7 +277,7 @@ struct NormTag {
 struct Norm {
     title: String,
     author: String,
-    lang: String,
+    lang: Vec<String>,
     unique_id: String,
     tags: Vec<NormTag>,
     words: Vec<String>,
@@ -763,7 +763,7 @@ fn new_work_novel_builds_full_tree() {
     // Title derived from the file stem.
     assert_eq!(b.manifest.work.title, "My Novel");
     // The chosen default language is persisted as the work's dict_language.
-    assert_eq!(b.manifest.work.dict_language, "en-US");
+    assert_eq!(b.manifest.work.dict_language, vec!["en-US".to_string()]);
     // Not saved as a folder.
     assert_eq!(b.manifest.shape, ShapeTag::Zip);
 

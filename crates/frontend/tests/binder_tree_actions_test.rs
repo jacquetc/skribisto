@@ -1480,7 +1480,7 @@ fn split_scene_carries_dict_language_but_not_aliases() {
         &fx.ctx,
         Some(fx.setup),
         &frontend::direct_access::UpdateBinderItemDto {
-            dict_language: "fr-FR".into(),
+            dict_language: vec!["fr-FR".to_string()],
             ..frontend::direct_access::UpdateBinderItemDto::from(dto)
         },
     )
@@ -1504,7 +1504,7 @@ fn split_scene_carries_dict_language_but_not_aliases() {
     let new_scene = order(&fx.ctx, fx.binder2)[1];
     assert_eq!(
         item(&fx.ctx, new_scene).dict_language,
-        "fr-FR",
+        vec!["fr-FR".to_string()],
         "the new half is the same prose in the same language"
     );
     assert!(

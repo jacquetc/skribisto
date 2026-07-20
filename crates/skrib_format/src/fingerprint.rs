@@ -104,7 +104,7 @@ mod tests {
                     updated_at: updated.into(),
                     title: title.into(),
                     author_name: "A".into(),
-                    dict_language: "en".into(),
+                    dict_language: vec!["en".to_string()],
                     tag_ids: vec![],
                     dict_word_ids: vec![],
                     unique_id: "uid-1".into(),

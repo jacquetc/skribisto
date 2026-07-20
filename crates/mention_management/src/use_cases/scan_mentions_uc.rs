@@ -182,7 +182,7 @@ fn run_scan(
         .iter()
         .flat_map(|b| b.items.iter().map(|i| i.item.clone()))
         .collect();
-    let mut lang: HashMap<EntityId, String> = HashMap::new();
+    let mut lang: HashMap<EntityId, Vec<String>> = HashMap::new();
     language::tags_in_binder(&g.work.dict_language, &all_items, &mut lang);
 
     // (owner, target) -> the hits found, so repeated mentions of one name collapse to one
@@ -196,7 +196,7 @@ fn run_scan(
                 continue;
             }
             let locale = FoldLocale::from_tag(language::primary(
-                lang.get(&owner.id).map(String::as_str).unwrap_or_default(),
+                lang.get(&owner.id).map(Vec::as_slice).unwrap_or_default(),
             ));
             for c in iwc.contents.iter().filter(|c| c.activated && is_prose(&c.role)) {
                 if c.data.is_empty() {

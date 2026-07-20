@@ -286,7 +286,7 @@ impl RunSearchUseCase {
             // stream. Done once per binder rather than per item, and through the same
             // function `replace_in_project` uses, so a rename cannot find a word under one
             // set of rules and rewrite it under another.
-            let mut tags: HashMap<EntityId, String> = HashMap::new();
+            let mut tags: HashMap<EntityId, Vec<String>> = HashMap::new();
             crate::language::tags_in_binder(&work.dict_language, &items, &mut tags);
 
             for item in &items {

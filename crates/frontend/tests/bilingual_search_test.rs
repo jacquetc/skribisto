@@ -64,14 +64,14 @@ fn search(query: &str) -> RunSearchDto {
 /// Give the Work a language.
 fn set_work_language(ctx: &AppContext, tag: &str) {
     let mut work = work_commands::get_all_work(ctx).unwrap().pop().unwrap();
-    work.dict_language = tag.to_string();
+    work.dict_language = tag.split_whitespace().map(String::from).collect();
     work_commands::update_work(ctx, None, &work.into()).expect("update_work");
 }
 
 /// Tag one item with its own language.
 fn set_item_language(ctx: &AppContext, item: &BinderItemDto, tag: &str) {
     let mut item = item.clone();
-    item.dict_language = tag.to_string();
+    item.dict_language = tag.split_whitespace().map(String::from).collect();
     binder_item_commands::update_binder_item(ctx, None, &item.into()).expect("update_binder_item");
 }
 
@@ -250,7 +250,7 @@ fn an_items_title_is_folded_under_the_items_own_language() {
     binder_item_commands::update_binder_item(&ctx, None, &fr.into()).unwrap();
     let mut tr = turkish.clone();
     tr.title = "Ilse döndü".to_string();
-    tr.dict_language = "tr-TR".to_string();
+    tr.dict_language = "tr-TR".split_whitespace().map(String::from).collect();
     binder_item_commands::update_binder_item(&ctx, None, &tr.into()).unwrap();
 
     let titles_only = RunSearchDto {

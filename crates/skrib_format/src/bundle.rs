@@ -32,7 +32,39 @@ use std::collections::BTreeMap;
 /// cross-links) instead of by a position that every load renumbers. Also
 /// `#[serde(default)]`; `migration::step_v2_to_v3` mints the empties, which is
 /// the first real step the migration chain has ever had to run.
-pub const FORMAT_VERSION: u32 = 3;
+pub const FORMAT_VERSION: u32 = 4;
+
+/// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
+///
+/// A type change cannot be handled by [`migration`](crate::migration): that runs *after*
+/// serde has parsed the bundle, and a v3 file would fail to parse before it ever got there.
+/// So the tolerance lives in the deserializer, and the migration step only advances the
+/// stamp — the same division `step_v1_to_v2` already uses for a field healed elsewhere.
+///
+/// This is not back-compatibility for its own sake: without it every project written before
+/// this change becomes unopenable, and the list is the *only* record of which dictionaries a
+/// writer chose.
+fn tags_or_legacy_string<'de, D>(d: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Either {
+        List(Vec<String>),
+        /// Pre-v4: one space-separated string, the grammar `skribisto_model::language`
+        /// used to parse by hand.
+        Legacy(String),
+    }
+
+    Ok(match Either::deserialize(d)? {
+        Either::List(v) => v,
+        Either::Legacy(s) => s.split_whitespace().map(String::from).collect(),
+    })
+}
+
 
 /// The shape recorded in `project.skrib` (informational; the real shape is the
 /// physical layout). Mirrors `common::entities::WorkShape`.
@@ -84,7 +116,8 @@ pub struct WorkFile {
     pub updated_at: String,
     pub title: String,
     pub author_name: String,
-    pub dict_language: String,
+    #[serde(default, deserialize_with = "tags_or_legacy_string")]
+    pub dict_language: Vec<String>,
     pub tag_ids: Vec<u64>,
     pub dict_word_ids: Vec<u64>,
     /// Stable project identity (UUID v4, or a preserved legacy id). Added in v2;
@@ -270,7 +303,8 @@ pub struct BinderItemFile {
     pub indent: i64,
     pub word_count_goal: i64,
     pub char_count_goal: i64,
-    pub dict_language: String,
+    #[serde(default, deserialize_with = "tags_or_legacy_string")]
+    pub dict_language: Vec<String>,
     /// Other names this item answers to in prose, matched alongside its title by the
     /// mention index. Purely additive, so an existing `items.ron` reads back with an
     /// empty vector (`parses_a_bundle_written_before_these_fields_existed` covers it).

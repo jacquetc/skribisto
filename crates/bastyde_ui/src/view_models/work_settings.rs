@@ -72,13 +72,13 @@ impl WorkSettingsViewModel {
 
     // ── Default language ─────────────────────────────────────────────────────
 
-    /// The project's default spell-check language list (a `dict_language` tag string).
-    pub fn dict_language(&self) -> Signal<String> {
+    /// The project's default spell-check language list.
+    pub fn dict_language(&self) -> Signal<Vec<String>> {
         self.work.dict_language()
     }
 
     /// Replace the language list, and persist.
-    pub fn set_dict_language(&self, languages: String) {
+    pub fn set_dict_language(&self, languages: Vec<String>) {
         self.work.set_dict_language(languages);
         self.work.save(self.stack.get());
     }

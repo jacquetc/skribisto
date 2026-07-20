@@ -579,7 +579,7 @@ impl ExportViewModel {
             // The preview shows the assembled document; the *format* only matters at write
             // time, so any value works here.
             format: CFormat::Html,
-            work_lang: &work_lang,
+            work_lang: skribisto_model::language::primary(&work_lang),
             explicit_selection: self.is_explicit(),
         };
         render_preview_document(&req).ok()

@@ -220,6 +220,7 @@ entities:
     type: string
   - name: dict_language
     type: string
+    is_list: true
   - name: unique_id
     type: string
   - name: chapter_mode
@@ -414,6 +415,7 @@ entities:
     type: integer
   - name: dict_language
     type: string
+    is_list: true
   # Other names this item answers to in prose ("Lizzy", "Miss Bennet" for a note
   # titled "Elizabeth Bennet"). Read by the mention index, which matches an item's
   # title *and* its aliases against scene/synopsis/note text. Only meaningful on

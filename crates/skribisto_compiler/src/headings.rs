@@ -22,8 +22,8 @@ pub enum Level {
 /// The structural word for a level in a language (primary BCP-47 subtag). Unknown
 /// languages fall back to English.
 pub fn word(lang: &str, level: Level) -> &'static str {
-    let primary = skribisto_model::language::primary(lang);
-    let base = primary.split('-').next().unwrap_or("");
+    // One tag in, by contract — the caller resolves the primary from the list.
+    let base = lang.trim().split('-').next().unwrap_or("");
     match (base, level) {
         ("fr", Level::Book) => "Livre",
         ("fr", Level::Part) => "Partie",

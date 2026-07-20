@@ -115,7 +115,7 @@ pub fn build_bundle(
         updated_at: info.updated_at.clone().unwrap_or_else(|| b.now.clone()),
         title,
         author_name: String::new(),
-        dict_language: String::new(),
+        dict_language: Vec::new(),
         tag_ids: b.tags.iter().map(|t| t.file_id).collect(),
         dict_word_ids: dict.iter().map(|d| d.file_id).collect(),
         unique_id: new_unique_id(),
@@ -791,7 +791,7 @@ impl<'a> Builder<'a> {
                     indent,
                     word_count_goal: 0,
                     char_count_goal: 0,
-                    dict_language: String::new(),
+                    dict_language: Vec::new(),
                     // `make_item` is the single item constructor — it builds both ordinary
                     // tree items AND the story-bible objects (see the `for obj in
                     // &group.objs` loop), and it is those objects that carry Plume's

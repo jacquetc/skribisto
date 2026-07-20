@@ -233,7 +233,9 @@ impl NewWorkUseCase {
             created_at: now,
             updated_at: now,
             title: title.clone(),
-            dict_language: dto.language.clone(),
+            // One language is chosen at creation; an empty choice means no tag at all rather
+            // than a list holding one empty string.
+            dict_language: dto.language.split_whitespace().map(String::from).collect(),
             unique_id: skrib_format::new_unique_id(),
             // The per-project chapter storage mode — same source as the template's
             // per-chapter encoding, so the Create menu keeps matching the book.

@@ -491,7 +491,7 @@ mod tests {
                 updated_at: String::new(),
                 title: "T".into(),
                 author_name: String::new(),
-                dict_language: String::new(),
+                dict_language: Vec::new(),
                 tag_ids: vec![],
                 dict_word_ids: vec![],
                 unique_id: uid.into(),

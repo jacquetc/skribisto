@@ -181,13 +181,14 @@ impl ReplaceInProjectUseCase {
             //   * what the preserved case IS. The untailored uppercase of `i` is `I`, which
             //     in Turkish is the capital of the *other* letter — so `ilk` would become
             //     `ILK` where the prose needs `İLK`.
-            let tag = languages
+            let tags = languages
                 .get(&row.binder_item_id)
                 .cloned()
                 .unwrap_or_default();
-            // `dict_language` is a tag *list* now; folding is monolingual, so fold under the
-            // primary (first) tag — the language the scene is chiefly written in.
-            let locale = FoldLocale::from_tag(crate::language::primary(&tag));
+            // Folding is monolingual, so fold under the primary (first) tag — the language
+            // the scene is chiefly written in. `FindOptions` takes the same single tag.
+            let tag = crate::language::primary(&tags).to_string();
+            let locale = FoldLocale::from_tag(&tag);
 
             // The same criteria, in the two shapes the two surfaces take: `find_opts` for a
             // parsed `BatchDocument`, `opts` for a plain string (a title, a label).
@@ -339,7 +340,7 @@ impl ReplaceInProjectUseCase {
     fn resolve_languages(
         uow: &mut Box<dyn ReplaceInProjectUnitOfWorkTrait>,
         work: &Work,
-    ) -> Result<HashMap<EntityId, String>> {
+    ) -> Result<HashMap<EntityId, Vec<String>>> {
         let mut tags = HashMap::new();
         let binder_ids = uow.get_work_relationship(&work.id, &WorkRelationshipField::Binders)?;
         for binder in uow.get_binder_multi(&binder_ids)?.into_iter().flatten() {

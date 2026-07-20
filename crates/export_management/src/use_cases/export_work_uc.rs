@@ -123,7 +123,9 @@ fn run_export(
     let preset: skribisto_compiler::Preset = serde_json::from_str(&dto.preset_json)
         .map_err(|e| anyhow!("invalid export style: {e}"))?;
 
-    let work_lang = g.work.dict_language.clone();
+    // The compiler renders in one language: the primary. Resolved here, at the boundary,
+    // rather than leaving a list to be flattened somewhere downstream.
+    let work_lang = skribisto_model::language::primary(&g.work.dict_language).to_string();
     // An explicit selection (Export Scene / Export Note, or the Choose… checkbox tree) keeps
     // note items regardless of the preset's `include_notes`; a swept structural scope honours
     // the toggle.

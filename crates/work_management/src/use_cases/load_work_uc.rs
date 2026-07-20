@@ -695,7 +695,9 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         updated_at: now,
         title: p.title.clone(),
         author_name: p.author.clone(),
-        dict_language: p.dict_language.clone(),
+        // The legacy DB stores one space-separated string — split it here, exactly as the
+        // pre-v4 bundle deserializer does, so both legacy paths agree.
+        dict_language: p.dict_language.split_whitespace().map(String::from).collect(),
         // Carry the legacy id through; empty → minted at `materialize`.
         unique_id: p.unique_id.clone(),
         ..Default::default()

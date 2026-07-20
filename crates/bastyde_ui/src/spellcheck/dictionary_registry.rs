@@ -136,7 +136,9 @@ pub fn resolve_token(raw: &str) -> Option<&'static str> {
     if let Some(e) = by_id(raw) {
         return Some(e.id.as_str());
     }
-    let canon = skribisto_model::language::canonicalize(raw);
+    // Per-token by contract, so canonicalise the token directly rather than routing one
+    // string through the list helper.
+    let canon = raw.trim().replace('_', "-");
     if let Some(e) = by_id(&canon) {
         return Some(e.id.as_str());
     }

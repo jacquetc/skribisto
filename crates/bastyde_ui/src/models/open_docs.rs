@@ -212,7 +212,7 @@ impl OpenDoc {
     /// session, which recomputes immediately; `None` (nothing installed/active) clears the
     /// squiggles — the degrade path. Only the two prose fields carry a session; the title/subtitle
     /// are plain `Signal<String>`.
-    pub fn attach_spell(&self, spell: &SpellcheckService, tags: &str, color: Color) {
+    pub fn attach_spell(&self, spell: &SpellcheckService, tags: &[String], color: Color) {
         let checker = spell.build_checker(tags);
         if let Some(s) = &self.spell_main {
             s.set_checker(checker.clone(), color);
@@ -258,7 +258,7 @@ struct Inner {
     /// The open project, for resolving each item's effective language (its own tag, else
     /// the Work's). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
-    work_lang: RefCell<String>,
+    work_lang: RefCell<Vec<String>>,
     /// The memoised [`language_map`](OpenDocsStore::language_map), with the binder
     /// [fingerprint](LangFingerprint) it was built from.
     ///
@@ -267,7 +267,7 @@ struct Inner {
     /// freshly-built doc, so a container stream opening one document per row paid that
     /// whole-project walk once per row — O(rows × items). Cached, the walk happens once
     /// per structural change instead.
-    lang_cache: RefCell<Option<(LangFingerprint, HashMap<u64, String>)>>,
+    lang_cache: RefCell<Option<(LangFingerprint, HashMap<u64, Vec<String>>)>>,
 }
 
 /// What the cached language map is keyed on: the open work, its default language, and
@@ -291,7 +291,7 @@ type LangFingerprint = u64;
 
 /// Fingerprint the inputs the language map is derived from that are cheap to read:
 /// the work, its default language, and the ordered item ids of every binder.
-fn fingerprint_of(work_id: Option<u64>, work_lang: &str, shape: &[Vec<u64>]) -> LangFingerprint {
+fn fingerprint_of(work_id: Option<u64>, work_lang: &[String], shape: &[Vec<u64>]) -> LangFingerprint {
     let mut hasher = DefaultHasher::new();
     work_id.hash(&mut hasher);
     work_lang.hash(&mut hasher);
@@ -318,7 +318,7 @@ impl OpenDocsStore {
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
                 synopsis_visible: Cell::new(true),
                 work_id: Cell::new(None),
-                work_lang: RefCell::new(String::new()),
+                work_lang: RefCell::new(Vec::new()),
                 lang_cache: RefCell::new(None),
             }),
         }
@@ -383,7 +383,7 @@ impl OpenDocsStore {
     /// Point the store at the open project's default language, for the effective-language
     /// resolution. Called on `LoadWork`/`NewWork`; does not itself re-attach (the caller pairs
     /// it with [`attach_all`](Self::attach_all) once personal words are also loaded).
-    pub fn set_project_language(&self, work_id: Option<u64>, work_lang: String) {
+    pub fn set_project_language(&self, work_id: Option<u64>, work_lang: Vec<String>) {
         self.inner.work_id.set(work_id);
         *self.inner.work_lang.borrow_mut() = work_lang;
         // A different project (or default language) resolves every item differently.
@@ -412,7 +412,7 @@ impl OpenDocsStore {
             .map(|e| e.doc.clone())
             .collect();
         // Resolve every doc's tags under one borrow of the map, then attach outside it.
-        let attachments: Vec<(Rc<OpenDoc>, String)> = self.with_language_map(|map| {
+        let attachments: Vec<(Rc<OpenDoc>, Vec<String>)> = self.with_language_map(|map| {
             docs.into_iter()
                 .map(|doc| {
                     let tags = map
@@ -461,12 +461,12 @@ impl OpenDocsStore {
 
     /// The effective language list of one item (its own tag, else the Work's), for the
     /// Inspector's placeholder. Falls back to the Work's default.
-    pub fn effective_language(&self, item_id: u64) -> String {
+    pub fn effective_language(&self, item_id: u64) -> Vec<String> {
         self.language_for(item_id)
     }
 
     /// One item's effective language list, read through the cached map.
-    fn language_for(&self, item_id: u64) -> String {
+    fn language_for(&self, item_id: u64) -> Vec<String> {
         self.with_language_map(|map| map.get(&item_id).cloned())
             .unwrap_or_else(|| self.inner.work_lang.borrow().clone())
     }
@@ -485,7 +485,7 @@ impl OpenDocsStore {
     /// Passes the map by reference rather than returning it: a clone would be one
     /// `String` allocation per item on every call, which is most of what the cache is
     /// here to avoid.
-    fn with_language_map<R>(&self, f: impl FnOnce(&HashMap<u64, String>) -> R) -> R {
+    fn with_language_map<R>(&self, f: impl FnOnce(&HashMap<u64, Vec<String>>) -> R) -> R {
         let shape = self.binder_shape();
         let fingerprint = fingerprint_of(
             self.inner.work_id.get(),
@@ -536,7 +536,7 @@ impl OpenDocsStore {
     ///
     /// The expensive half: one `BinderItem` fetched and cloned per item. Called only when
     /// [`binder_shape`](Self::binder_shape) says the project changed.
-    fn build_language_map(&self, shape: &[Vec<u64>]) -> HashMap<u64, String> {
+    fn build_language_map(&self, shape: &[Vec<u64>]) -> HashMap<u64, Vec<String>> {
         let mut map = HashMap::new();
         if self.inner.work_id.get().is_none() {
             return map;
@@ -754,6 +754,11 @@ impl OpenDocsStore {
 
 #[cfg(test)]
 mod tests {
+    /// The tests still read as space-separated lists — only the storage changed.
+    fn tags(s: &str) -> Vec<String> {
+        s.split_whitespace().map(String::from).collect()
+    }
+
     use super::*;
 
     /// The language cache is only as good as what its fingerprint distinguishes. It is
@@ -762,48 +767,48 @@ mod tests {
     /// inherits — must change the fingerprint.
     #[test]
     fn fingerprint_distinguishes_every_structural_change() {
-        let base = fingerprint_of(Some(1), "en-US", &[vec![10, 11, 12]]);
+        let base = fingerprint_of(Some(1), &tags("en-US"), &[vec![10, 11, 12]]);
 
         assert_eq!(
             base,
-            fingerprint_of(Some(1), "en-US", &[vec![10, 11, 12]]),
+            fingerprint_of(Some(1), &tags("en-US"), &[vec![10, 11, 12]]),
             "same shape must reuse the cache"
         );
         assert_ne!(
             base,
-            fingerprint_of(Some(2), "en-US", &[vec![10, 11, 12]]),
+            fingerprint_of(Some(2), &tags("en-US"), &[vec![10, 11, 12]]),
             "a different work resolves every item differently"
         );
         assert_ne!(
             base,
-            fingerprint_of(Some(1), "fr-FR", &[vec![10, 11, 12]]),
+            fingerprint_of(Some(1), &tags("fr-FR"), &[vec![10, 11, 12]]),
             "the work's default language is the fallback for every item"
         );
         assert_ne!(
             base,
-            fingerprint_of(Some(1), "en-US", &[vec![10, 11, 12, 13]]),
+            fingerprint_of(Some(1), &tags("en-US"), &[vec![10, 11, 12, 13]]),
             "a created item"
         );
         assert_ne!(
             base,
-            fingerprint_of(Some(1), "en-US", &[vec![10, 12]]),
+            fingerprint_of(Some(1), &tags("en-US"), &[vec![10, 12]]),
             "a removed item"
         );
         // The load-bearing one: a move keeps the same ids, so only *order* betrays it —
         // and order is exactly what decides which Book an item inherits from.
         assert_ne!(
             base,
-            fingerprint_of(Some(1), "en-US", &[vec![12, 11, 10]]),
+            fingerprint_of(Some(1), &tags("en-US"), &[vec![12, 11, 10]]),
             "a reorder can change which Book an item sits under"
         );
         assert_ne!(
             base,
-            fingerprint_of(Some(1), "en-US", &[vec![10, 11], vec![12]]),
+            fingerprint_of(Some(1), &tags("en-US"), &[vec![10, 11], vec![12]]),
             "the same ids split across two binders is a different shape"
         );
         assert_ne!(
             base,
-            fingerprint_of(None, "en-US", &[vec![10, 11, 12]]),
+            fingerprint_of(None, &tags("en-US"), &[vec![10, 11, 12]]),
             "no open project"
         );
     }

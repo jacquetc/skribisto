@@ -36,7 +36,7 @@ pub(in crate::settings) fn work_language_pane(
             let value = vm.dict_language();
             let set: crate::spellcheck::language_pill_field::SetLanguages = {
                 let vm = vm.clone();
-                Rc::new(move |new: String, _c| vm.set_dict_language(new))
+                Rc::new(move |new: Vec<String>, _c| vm.set_dict_language(new))
             };
             // The Work is the root of the inheritance chain — nothing to inherit from.
             base.full_width(crate::spellcheck::language_pill_field::LanguagePillField::new(

@@ -570,7 +570,7 @@ impl SpellcheckService {
     }
 
     /// The active (non-muted, installed) dictionaries for a tag list, primary first, deduped.
-    fn active_dicts(&self, tags: &str) -> Vec<Arc<spellbook::Dictionary>> {
+    fn active_dicts(&self, tags: &[String]) -> Vec<Arc<spellbook::Dictionary>> {
         let mut out = Vec::new();
         let mut seen = HashSet::new();
         for tag in language::all(tags) {
@@ -590,7 +590,7 @@ impl SpellcheckService {
 
     /// Build a [`SpellChecker`] for a document's tag list, or `None` when nothing is
     /// active/installed (the caller then clears its session — the degrade path).
-    pub fn build_checker(&self, tags: &str) -> Option<SpellChecker> {
+    pub fn build_checker(&self, tags: &[String]) -> Option<SpellChecker> {
         // The master switch, checked first: every document's checker is built here, so one
         // early return turns spell-check off everywhere — squiggles, `is_misspelled`, and the
         // context menu's corrections alike — without loading a dictionary or walking a tag.
@@ -923,6 +923,11 @@ impl Drop for SpellSession {
 
 #[cfg(test)]
 mod tests {
+    /// The tests still read as space-separated lists — only the storage changed.
+    fn tags(s: &str) -> Vec<String> {
+        s.split_whitespace().map(String::from).collect()
+    }
+
     use super::*;
 
     // ── the master switch (Settings ▸ Spelling / the title-bar toggle / F7) ──
@@ -972,13 +977,13 @@ mod tests {
     #[test]
     fn build_checker_short_circuits_when_disabled_and_resumes_when_re_enabled() {
         let svc = service_with_tiny_dict();
-        assert!(svc.build_checker("en-US").is_some(), "on by default");
+        assert!(svc.build_checker(&tags("en-US")).is_some(), "on by default");
 
         svc.set_enabled(false);
-        assert!(svc.build_checker("en-US").is_none(), "off — no checker at all");
+        assert!(svc.build_checker(&tags("en-US")).is_none(), "off — no checker at all");
 
         svc.set_enabled(true);
-        let checker = svc.build_checker("en-US").expect("back on");
+        let checker = svc.build_checker(&tags("en-US")).expect("back on");
         assert!(checker.misspelled("helo"), "and it checks again");
     }
 
@@ -990,7 +995,7 @@ mod tests {
         assert!(!svc.is_muted("en-US"), "precondition: nothing muted");
         svc.set_enabled(false);
         assert!(
-            svc.build_checker("en-US").is_none(),
+            svc.build_checker(&tags("en-US")).is_none(),
             "an installed, unmuted language is still not checked when the switch is off"
         );
     }

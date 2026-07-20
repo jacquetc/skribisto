@@ -665,7 +665,7 @@ impl OutlineViewModel {
     /// **empty** `tags` is a legitimate value to push: it clears the descendants back to
     /// inheriting the Work's language, which is the only way to undo an over-broad apply
     /// without visiting each child.
-    pub fn apply_dict_language_to_subtree(&self, item_id: u64, tags: &str) {
+    pub fn apply_dict_language_to_subtree(&self, item_id: u64, tags: &[String]) {
         let descendants = self.subtree_descendants(item_id);
         if descendants.is_empty() {
             return;
@@ -1032,6 +1032,10 @@ pub(crate) fn apply_move(
 
 #[cfg(test)]
 mod tests {
+    fn tags(s: &str) -> Vec<String> {
+        s.split_whitespace().map(String::from).collect()
+    }
+
     use super::*;
     #[cfg(feature = "mocks")]
     use bastyde::data::TreeDataSource; // brings `visible_count` into scope
@@ -1592,7 +1596,7 @@ mod tests {
             (book, chapter, scene, outsider)
         }
 
-        fn lang_of(outline: &OutlineViewModel, id: u64) -> String {
+        fn lang_of(outline: &OutlineViewModel, id: u64) -> Vec<String> {
             outline.item_dto(id).map(|d| d.dict_language).unwrap_or_default()
         }
 
@@ -1601,14 +1605,14 @@ mod tests {
             let (outline, binder) = seed();
             let (book, chapter, scene, outsider) = seed_tree(&outline, binder);
 
-            outline.apply_dict_language_to_subtree(chapter, "tr-TR");
+            outline.apply_dict_language_to_subtree(chapter, &tags("tr-TR"));
 
-            assert_eq!(lang_of(&outline, scene), "tr-TR", "the descendant is written");
-            assert_eq!(lang_of(&outline, book), "", "an ancestor is untouched");
-            assert_eq!(lang_of(&outline, outsider), "", "a non-descendant is untouched");
+            assert_eq!(lang_of(&outline, scene), tags("tr-TR"), "the descendant is written");
+            assert_eq!(lang_of(&outline, book), tags(""), "an ancestor is untouched");
+            assert_eq!(lang_of(&outline, outsider), tags(""), "a non-descendant is untouched");
             assert_eq!(
                 lang_of(&outline, chapter),
-                "",
+                tags(""),
                 "the item itself is untouched — the pill field beside the button owns that"
             );
         }
@@ -1622,18 +1626,18 @@ mod tests {
             let (_book, chapter, scene, _outsider) = seed_tree(&outline, binder);
             let stack = outline.stack();
 
-            outline.apply_dict_language_to_subtree(chapter, "tr-TR");
-            assert_eq!(lang_of(&outline, scene), "tr-TR");
+            outline.apply_dict_language_to_subtree(chapter, &tags("tr-TR"));
+            assert_eq!(lang_of(&outline, scene), tags("tr-TR"));
 
             undo_redo_commands::undo(&outline.app_ctx, stack).unwrap();
             assert_eq!(
                 lang_of(&outline, scene),
-                "",
+                tags(""),
                 "one undo reverses the whole apply, not just the last descendant"
             );
 
             undo_redo_commands::redo(&outline.app_ctx, stack).unwrap();
-            assert_eq!(lang_of(&outline, scene), "tr-TR", "and redo puts it back");
+            assert_eq!(lang_of(&outline, scene), tags("tr-TR"), "and redo puts it back");
         }
 
         /// An empty list is a legitimate value to push: it resets the subtree to inheriting
@@ -1643,11 +1647,11 @@ mod tests {
         fn an_empty_list_resets_descendants_to_the_work_language() {
             let (outline, binder) = seed();
             let (_book, chapter, scene, _outsider) = seed_tree(&outline, binder);
-            outline.apply_dict_language_to_subtree(chapter, "tr-TR");
-            assert_eq!(lang_of(&outline, scene), "tr-TR");
+            outline.apply_dict_language_to_subtree(chapter, &tags("tr-TR"));
+            assert_eq!(lang_of(&outline, scene), tags("tr-TR"));
 
-            outline.apply_dict_language_to_subtree(chapter, "");
-            assert_eq!(lang_of(&outline, scene), "", "cleared back to inheriting");
+            outline.apply_dict_language_to_subtree(chapter, &tags(""));
+            assert_eq!(lang_of(&outline, scene), tags(""), "cleared back to inheriting");
 
             // And the resolver then hands it the Work's language — the two halves meeting.
             let items = vec![frontend::common::entities::BinderItem {
@@ -1656,8 +1660,8 @@ mod tests {
                 ..Default::default()
             }];
             let mut out = HashMap::new();
-            skribisto_model::language::tags_in_binder("en-US", &items, &mut out);
-            assert_eq!(out[&scene], "en-US");
+            skribisto_model::language::tags_in_binder(&tags("en-US"), &items, &mut out);
+            assert_eq!(out[&scene], tags("en-US"));
         }
 
         /// A leaf has no subtree, so the button is never offered — and the call is inert if
@@ -1667,8 +1671,8 @@ mod tests {
             let (outline, binder) = seed();
             let (_book, _chapter, scene, _outsider) = seed_tree(&outline, binder);
             assert!(outline.subtree_descendants(scene).is_empty(), "the button's own gate");
-            outline.apply_dict_language_to_subtree(scene, "tr-TR");
-            assert_eq!(lang_of(&outline, scene), "", "an inert call writes nothing");
+            outline.apply_dict_language_to_subtree(scene, &tags("tr-TR"));
+            assert_eq!(lang_of(&outline, scene), tags(""), "an inert call writes nothing");
         }
     }
 }

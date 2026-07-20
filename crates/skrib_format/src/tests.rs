@@ -67,7 +67,7 @@ fn sample_inputs() -> (
         updated_at: now,
         title: "My Novel".into(),
         author_name: "Jane".into(),
-        dict_language: "en-US".into(),
+        dict_language: vec!["en-US".to_string()],
         unique_id: "test-unique-id-abc".into(),
         chapter_mode: common::entities::ChapterMode::Flat,
         tags: vec![10, 11],
@@ -148,7 +148,7 @@ fn sample_inputs() -> (
             indent: (i % 3) as i64,
             word_count_goal: 1000,
             char_count_goal: 5000,
-            dict_language: "en-US".into(),
+            dict_language: vec!["en-US".to_string()],
             // One item carries multi-word aliases and the rest carry none, so the
             // round-trip covers both the populated and the empty case. Multi-word is
             // the point of `Vec<String>`: a space-separated string could not hold
@@ -744,4 +744,117 @@ fn parses_a_bundle_written_before_these_fields_existed() {
     assert_eq!(items[0].tag_ids, vec![10]);
     // ...and the new field defaults rather than failing the parse.
     assert!(items[0].aliases.is_empty());
+}
+
+// ── dict_language: the pre-v4 string form (format v4) ───────────────────────
+
+/// A project written before `dict_language` became a list must still open.
+///
+/// This is the one guarantee standing between the change and every existing project being
+/// unopenable, and it cannot be covered by the round-trip tests above: those always write
+/// with the current code, so they only ever produce the list form. A type change also cannot
+/// be handled by `migration`, which runs *after* serde — a v3 file would fail to parse long
+/// before reaching it. So the tolerance lives in the deserializer, and this pins it with RON
+/// hand-written to match exactly what an older build emitted.
+#[test]
+fn a_pre_v4_space_separated_language_still_parses_as_a_list() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "Old Novel",
+        author_name: "A",
+        dict_language: "fr-FR en-US",
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "abc",
+    )"#;
+    let w: WorkFile = ron::from_str(old).expect("a pre-v4 work must still parse");
+    assert_eq!(
+        w.dict_language,
+        vec!["fr-FR".to_string(), "en-US".to_string()],
+        "the space-separated grammar is split into the list it always meant"
+    );
+}
+
+/// A single tag — by far the common case — becomes a one-element list, not one element
+/// containing a space-padded string.
+#[test]
+fn a_pre_v4_single_language_becomes_one_element() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        author_name: "A",
+        dict_language: "  fr-FR  ",
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    )"#;
+    let w: WorkFile = ron::from_str(old).expect("must parse");
+    assert_eq!(w.dict_language, vec!["fr-FR".to_string()]);
+}
+
+/// An untagged pre-v4 project yields no tags at all, rather than one empty string — which
+/// would make `primary` return "" while looking like a real entry.
+#[test]
+fn a_pre_v4_empty_language_yields_no_tags() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        author_name: "A",
+        dict_language: "",
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    )"#;
+    let w: WorkFile = ron::from_str(old).expect("must parse");
+    assert!(w.dict_language.is_empty());
+}
+
+/// …and the current form round-trips as itself.
+#[test]
+fn the_v4_list_form_parses_unchanged() {
+    let current = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        author_name: "A",
+        dict_language: ["fr-FR", "en-US"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    )"#;
+    let w: WorkFile = ron::from_str(current).expect("must parse");
+    assert_eq!(
+        w.dict_language,
+        vec!["fr-FR".to_string(), "en-US".to_string()]
+    );
+}
+
+/// The shipped v2 fixture — a real project written long before this change — opens, and its
+/// language survives as a list.
+///
+/// The hand-written RON above proves the deserializer in isolation; this proves the whole
+/// read path on a file nobody wrote for the test, through the v2 → v3 → v4 migration chain.
+/// If the two ever disagree, it is this one to trust.
+#[test]
+fn the_shipped_v2_fixture_opens_and_keeps_its_language() {
+    let fixture = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../resources/test/skribisto_test_project.skrib"
+    );
+    let mut bundle = read_bundle(fixture).expect("a v2 project must still open");
+    assert_eq!(
+        bundle.manifest.work.dict_language,
+        vec!["fr".to_string()],
+        "the v2 string \"fr\" must arrive as a one-element list"
+    );
+    migration::migrate_bundle(&mut bundle).expect("v2 must migrate to current");
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+    assert_eq!(bundle.manifest.work.dict_language, vec!["fr".to_string()]);
 }

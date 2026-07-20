@@ -341,7 +341,7 @@ impl Widget for Inspector {
                     let stack = self.outline.ids().stack_id.get();
                     let set: crate::spellcheck::language_pill_field::SetLanguages = {
                         let value = value.clone();
-                        Rc::new(move |new: String, _c| {
+                        Rc::new(move |new: Vec<String>, _c| {
                             let _ = item_probe.set_dict_language(&new, stack);
                             value.set(new);
                         })
@@ -373,7 +373,7 @@ impl Widget for Inspector {
                                 .variant(ButtonVariant::Plain)
                                 .on_activate_fn(move |_c| {
                                     let raw = value.get();
-                                    let tags = if raw.trim().is_empty() {
+                                    let tags = if raw.iter().all(|t| t.trim().is_empty()) {
                                         placeholder.clone()
                                     } else {
                                         raw

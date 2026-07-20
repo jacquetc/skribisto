@@ -30,7 +30,7 @@ mod imp {
         id: Cell<Option<u64>>,
         title: Signal<String>,
         author_name: Signal<String>,
-        dict_language: Signal<String>,
+        dict_language: Signal<Vec<String>>,
         chapter_mode: Signal<ChapterMode>,
         /// The stable per-project UUID (`Work.unique_id`). Read-only here — it is
         /// the key the backup settings/retention correlate a project on. Empty
@@ -58,7 +58,7 @@ mod imp {
                     id: Cell::new(None),
                     title: Signal::new(String::new()),
                     author_name: Signal::new(String::new()),
-                    dict_language: Signal::new(String::new()),
+                    dict_language: Signal::new(Vec::new()),
                     chapter_mode: Signal::new(ChapterMode::default()),
                     unique_id: Signal::new(String::new()),
                     loading_status: Signal::new(LoadingStatus::Unloaded),
@@ -111,7 +111,7 @@ mod imp {
         pub fn author_name(&self) -> Signal<String> {
             self.inner.author_name.clone()
         }
-        pub fn dict_language(&self) -> Signal<String> {
+        pub fn dict_language(&self) -> Signal<Vec<String>> {
             self.inner.dict_language.clone()
         }
         pub fn chapter_mode(&self) -> Signal<ChapterMode> {
@@ -141,7 +141,7 @@ mod imp {
             self.mark_dirty();
             self.inner.author_name.set(v);
         }
-        pub fn set_dict_language(&self, v: String) {
+        pub fn set_dict_language(&self, v: Vec<String>) {
             self.mark_dirty();
             self.inner.dict_language.set(v);
         }
@@ -220,7 +220,7 @@ mod imp {
             self.inner.is_refreshing.set(true);
             self.inner.title.set(String::new());
             self.inner.author_name.set(String::new());
-            self.inner.dict_language.set(String::new());
+            self.inner.dict_language.set(Vec::new());
             self.inner.chapter_mode.set(ChapterMode::default());
             self.inner.unique_id.set(String::new());
             self.inner.is_refreshing.set(false);
@@ -252,7 +252,7 @@ mod imp {
         id: Cell<Option<u64>>,
         title: Signal<String>,
         author_name: Signal<String>,
-        dict_language: Signal<String>,
+        dict_language: Signal<Vec<String>>,
         chapter_mode: Signal<ChapterMode>,
         unique_id: Signal<String>,
         loading_status: Signal<LoadingStatus>,
@@ -274,7 +274,7 @@ mod imp {
                     id: Cell::new(Some(1)),
                     title: Signal::new("Mock Work".to_string()),
                     author_name: Signal::new("Mock Author".to_string()),
-                    dict_language: Signal::new("en".to_string()),
+                    dict_language: Signal::new(vec!["en".to_string()]),
                     chapter_mode: Signal::new(ChapterMode::default()),
                     unique_id: Signal::new("mock-work-uid-1".to_string()),
                     loading_status: Signal::new(LoadingStatus::Loaded),
@@ -298,7 +298,7 @@ mod imp {
         pub fn author_name(&self) -> Signal<String> {
             self.inner.author_name.clone()
         }
-        pub fn dict_language(&self) -> Signal<String> {
+        pub fn dict_language(&self) -> Signal<Vec<String>> {
             self.inner.dict_language.clone()
         }
         pub fn chapter_mode(&self) -> Signal<ChapterMode> {
@@ -323,7 +323,7 @@ mod imp {
         pub fn set_author_name(&self, v: String) {
             self.inner.author_name.set(v);
         }
-        pub fn set_dict_language(&self, v: String) {
+        pub fn set_dict_language(&self, v: Vec<String>) {
             self.inner.dict_language.set(v);
         }
         pub fn set_chapter_mode(&self, v: ChapterMode) {

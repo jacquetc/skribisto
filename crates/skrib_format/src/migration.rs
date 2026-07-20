@@ -41,6 +41,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
         match bundle.manifest.format_version {
             1 => step_v1_to_v2(bundle),
             2 => step_v2_to_v3(bundle),
+            3 => step_v3_to_v4(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -54,6 +55,14 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
 /// step (or meeting a partially-migrated bundle) never re-mints and never
 /// breaks an existing reference. v1 bundles pass through here too — they are
 /// missing the field for the same reason v2 ones are.
+/// v3 → v4 turned `dict_language` from a space-separated string into a real list.
+///
+/// The split itself happens in the deserializer (`bundle::tags_or_legacy_string`), because a
+/// type change has to be tolerated at *parse* time — this chain runs afterwards, and a v3
+/// file would never reach it. So this arm only advances the stamp, exactly as v1 → v2 does
+/// for a field healed elsewhere. It still has to exist: a version with no arm fails loudly.
+fn step_v3_to_v4(_bundle: &mut WorkBundle) {}
+
 fn step_v2_to_v3(bundle: &mut WorkBundle) {
     for bb in &mut bundle.binders {
         bb.binder.uid = common::uid::heal_uid(bb.binder.uid);

@@ -115,10 +115,13 @@ pub fn render_to_file(
             let w = &req.gathered.work;
             // The book's language drives the EPUB `dc:language` + reading direction; fall back
             // to the work-level language when the document carries none.
-            let lang = if w.dict_language.trim().is_empty() {
+            // `dc:language` takes ONE tag. Cloning the field wholesale used to emit
+            // "fr-FR en-US" for a bilingual work; the list type made that visible.
+            let primary = skribisto_model::language::primary(&w.dict_language);
+            let lang = if primary.is_empty() {
                 req.work_lang.to_string()
             } else {
-                w.dict_language.clone()
+                primary.to_string()
             };
             let opts = EpubExportOptions {
                 title: w.title.clone(),
@@ -133,10 +136,13 @@ pub fn render_to_file(
         ExportFormat::Pdf => {
             let out = path.to_string_lossy().into_owned();
             let w = &req.gathered.work;
-            let lang = if w.dict_language.trim().is_empty() {
+            // `dc:language` takes ONE tag. Cloning the field wholesale used to emit
+            // "fr-FR en-US" for a bilingual work; the list type made that visible.
+            let primary = skribisto_model::language::primary(&w.dict_language);
+            let lang = if primary.is_empty() {
                 req.work_lang.to_string()
             } else {
-                w.dict_language.clone()
+                primary.to_string()
             };
             // Effective languages of the included rows (computed once by `assemble`) drive
             // which RTL faces to embed.
@@ -429,12 +435,15 @@ fn flatten<'a>(req: &'a RenderRequest) -> Vec<Row<'a>> {
     for bwi in &req.gathered.binders {
         let items: Vec<BinderItem> = bwi.items.iter().map(|iwc| iwc.item.clone()).collect();
         let mut langs = std::collections::HashMap::new();
-        language::tags_in_binder(req.work_lang, &items, &mut langs);
+        // `tags_in_binder` speaks lists; the renderer speaks one tag per row.
+        let work_langs = vec![req.work_lang.to_string()];
+        language::tags_in_binder(&work_langs, &items, &mut langs);
         for iwc in &bwi.items {
             if want.contains(&iwc.item.id) && iwc.item.activated {
                 let lang = langs
                     .get(&iwc.item.id)
-                    .cloned()
+                    .map(|l| language::primary(l).to_string())
+                    .filter(|l| !l.is_empty())
                     .unwrap_or_else(|| req.work_lang.to_string());
                 rows.push(Row { item: &iwc.item, contents: &iwc.contents, lang });
             }
@@ -796,7 +805,7 @@ mod tests {
                 id,
                 role: BinderItemRole::Item,
                 sub_role,
-                dict_language: lang.to_string(),
+                dict_language: vec![lang.to_string()],
                 is_exportable: true,
                 activated: true,
                 ..Default::default()
@@ -811,7 +820,7 @@ mod tests {
                 id: 1,
                 title: "My Novel".into(),
                 author_name: "A. Writer".into(),
-                dict_language: work_lang.into(),
+                dict_language: vec![work_lang.to_string()],
                 ..Default::default()
             },
             tags: vec![],

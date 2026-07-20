@@ -38,28 +38,28 @@ use skribisto_model::language;
 
 /// A writer for a new `dict_language` list — the caller persists it (and mirrors it into the
 /// `value` signal). Takes an `EventContext` so it can run a backend command.
-pub type SetLanguages = Rc<dyn Fn(String, &mut EventContext)>;
+pub type SetLanguages = Rc<dyn Fn(Vec<String>, &mut EventContext)>;
 
 /// The pill-flow language field.
 pub struct LanguagePillField {
     /// The current list (a local mirror the caller keeps in sync with the backend).
-    value: Signal<String>,
+    value: Signal<Vec<String>>,
     /// Persist a new list.
     set: SetLanguages,
     /// The mute state + a version signal to rebuild the checks on.
     spell: SpellcheckService,
     /// When `value` is empty, the list inherited from the Book/Work (shown, and materialised on
     /// the first edit). `None` for the Work-level field, which inherits from nothing.
-    inherited: Option<String>,
+    inherited: Option<Vec<String>>,
     root_child: Option<WidgetId>,
 }
 
 impl LanguagePillField {
     pub fn new(
-        value: Signal<String>,
+        value: Signal<Vec<String>>,
         set: SetLanguages,
         spell: SpellcheckService,
-        inherited: Option<String>,
+        inherited: Option<Vec<String>>,
     ) -> Self {
         Self {
             value,
@@ -130,21 +130,21 @@ fn pill_detail(tag: &str, user_names: &HashMap<String, String>) -> String {
     }
 }
 
-/// The list with `tag` removed (whitespace-normalised).
-fn without(list: &str, tag: &str) -> String {
-    language::all(list)
-        .filter(|t| *t != tag)
-        .collect::<Vec<_>>()
-        .join(" ")
+/// The list with `tag` removed.
+///
+/// Used to split a string and re-join it. Now that the field *is* a list, both of these are
+/// the operation they always meant — which is the whole point of the change.
+fn without(list: &[String], tag: &str) -> Vec<String> {
+    list.iter().filter(|t| *t != tag).cloned().collect()
 }
 
-/// The list with `tag` appended if absent (whitespace-normalised).
-fn with(list: &str, tag: &str) -> String {
-    let mut tags: Vec<&str> = language::all(list).collect();
-    if !tags.contains(&tag) {
-        tags.push(tag);
+/// The list with `tag` appended if absent.
+fn with(list: &[String], tag: &str) -> Vec<String> {
+    let mut tags = list.to_vec();
+    if !tags.iter().any(|t| t == tag) {
+        tags.push(tag.to_string());
     }
-    tags.join(" ")
+    tags
 }
 
 impl Widget for LanguagePillField {
@@ -191,7 +191,7 @@ impl Widget for LanguagePillField {
             .collect();
 
         let raw = self.value.get();
-        let effective = if raw.trim().is_empty() {
+        let effective: Vec<String> = if raw.iter().all(|t| t.trim().is_empty()) {
             self.inherited.clone().unwrap_or_default()
         } else {
             raw

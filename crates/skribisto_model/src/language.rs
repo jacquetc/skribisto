@@ -73,61 +73,60 @@ use common::types::EntityId;
 /// missing entry as "untailored" is correct, and it keeps the map small (the overwhelmingly
 /// common case is a manuscript with no language tags at all).
 pub fn tags_in_binder(
-    work_language: &str,
+    work_language: &[String],
     items: &[BinderItem],
-    out: &mut HashMap<EntityId, String>,
+    out: &mut HashMap<EntityId, Vec<String>>,
 ) {
     for item in items {
         let effective = if !item.dict_language.is_empty() {
-            item.dict_language.as_str()
+            &item.dict_language
         } else {
             work_language
         };
 
         if !effective.is_empty() {
-            out.insert(item.id, effective.to_string());
+            out.insert(item.id, effective.to_vec());
         }
     }
 }
 
 /// The **primary** language of a tag list — the first tag, the one search folds under.
 ///
-/// Empty when the list is empty. Whitespace-tolerant (a stray double space or a trailing
-/// space never yields an empty primary while a real tag remains).
-pub fn primary(tags: &str) -> &str {
-    tags.split_whitespace().next().unwrap_or("")
+/// Empty when the list is empty. Skips blank entries: the list is a real `Vec` now, but a
+/// writer can still leave an empty string in it through the UI, and a blank primary while a
+/// real tag remains would silently untailor the fold.
+pub fn primary(tags: &[String]) -> &str {
+    tags.iter()
+        .map(String::as_str)
+        .find(|t| !t.trim().is_empty())
+        .unwrap_or("")
 }
 
-/// **Every** tag in a list, in order, skipping empty gaps — the set spell-check accepts.
-///
-/// A single-tag value yields one element; the empty string yields none.
-pub fn all(tags: &str) -> impl Iterator<Item = &str> {
-    tags.split_whitespace()
+/// **Every** non-blank tag in a list, in order — the set spell-check accepts.
+pub fn all(tags: &[String]) -> impl Iterator<Item = &str> {
+    tags.iter()
+        .map(String::as_str)
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
 }
 
-/// Best-effort *syntactic* canonicalisation of one legacy tag toward BCP-47: underscores
-/// become hyphens (`en_US` → `en-US`, `de_DE_frami` → `de-DE-frami`), applied per token so a
-/// list is canonicalised whole.
+/// Best-effort *syntactic* canonicalisation of legacy tags toward BCP-47: underscores become
+/// hyphens (`en_US` → `en-US`, `de_DE_frami` → `de-DE-frami`), applied per tag.
 ///
 /// This is deliberately only the part that needs **no registry** — mapping an editorial
 /// basename like `de-DE-frami` or a merged `fr-classique+reforme1990` to a real dictionary id
 /// requires the registry's `system_basenames`, which lives in the UI layer. A caller that
 /// wants the full resolution runs this first, then a registry lookup.
-pub fn canonicalize(tags: &str) -> String {
-    all(tags)
-        .map(|t| t.replace('_', "-"))
-        .collect::<Vec<_>>()
-        .join(" ")
+pub fn canonicalize(tags: &[String]) -> Vec<String> {
+    all(tags).map(|t| t.replace('_', "-")).collect()
 }
 
 /// Every distinct language tag a project actually *uses*, for the missing-dictionary scan.
 ///
-/// Resolves each item's effective tag through [`tags_in_binder`] (so inheritance is honoured)
-/// and unions the individual tags across every item's whole list, plus the Work's own list.
-/// Operates on **one binder's** items in document order — a multi-binder caller extends one
-/// set across binders (`BTreeSet` unions for free), exactly as the search use case walks
-/// Work → Binders → BinderItems.
-pub fn effective_languages(work_language: &str, items: &[BinderItem]) -> BTreeSet<String> {
+/// Resolves each item's effective list through [`tags_in_binder`] (so inheritance is
+/// honoured) and unions them, plus the Work's own list. Operates on **one binder's** items —
+/// a multi-binder caller extends one set across binders (`BTreeSet` unions for free).
+pub fn effective_languages(work_language: &[String], items: &[BinderItem]) -> BTreeSet<String> {
     let mut map = HashMap::new();
     tags_in_binder(work_language, items, &mut map);
 
@@ -181,11 +180,17 @@ mod tests {
     use super::*;
     use common::entities::BinderItemSubRole;
 
+    /// The tests still *read* as space-separated lists, which is how a writer thinks of
+    /// them; only the storage changed. This is the one place that translation happens.
+    fn tags(s: &str) -> Vec<String> {
+        s.split_whitespace().map(String::from).collect()
+    }
+
     fn item(id: EntityId, sub_role: BinderItemSubRole, dict_language: &str) -> BinderItem {
         BinderItem {
             id,
             sub_role,
-            dict_language: dict_language.to_string(),
+            dict_language: tags(dict_language),
             ..BinderItem::default()
         }
     }
@@ -198,9 +203,9 @@ mod tests {
         item(id, BinderItemSubRole::Book, dict_language)
     }
 
-    fn resolve(work: &str, items: &[BinderItem]) -> HashMap<EntityId, String> {
+    fn resolve(work: &str, items: &[BinderItem]) -> HashMap<EntityId, Vec<String>> {
         let mut out = HashMap::new();
-        tags_in_binder(work, items, &mut out);
+        tags_in_binder(&tags(work), items, &mut out);
         out
     }
 
@@ -208,7 +213,7 @@ mod tests {
     #[test]
     fn an_items_own_tag_wins() {
         let got = resolve("fr-FR", &[book(1, "de-DE"), scene(2, "tr-TR")]);
-        assert_eq!(got[&2], "tr-TR");
+        assert_eq!(got[&2], tags("tr-TR"));
     }
 
     /// **A Book no longer supplies a language to anything but itself.** An untagged scene
@@ -230,10 +235,10 @@ mod tests {
                 scene(4, "tr-TR"),//   …Turkish only because it says so (post "apply to children")
             ],
         );
-        assert_eq!(got[&1], "fr-FR");
-        assert_eq!(got[&2], "tr-TR", "the Book's own tag is its own");
-        assert_eq!(got[&3], "fr-FR", "no implicit scope: the Work's language wins");
-        assert_eq!(got[&4], "tr-TR", "an explicit tag is honoured");
+        assert_eq!(got[&1], tags("fr-FR"));
+        assert_eq!(got[&2], tags("tr-TR"), "the Book's own tag is its own");
+        assert_eq!(got[&3], tags("fr-FR"), "no implicit scope: the Work's language wins");
+        assert_eq!(got[&4], tags("tr-TR"), "an explicit tag is honoured");
     }
 
     /// Every container behaves alike. A chapter folder's tag reaches nothing on its own —
@@ -243,10 +248,10 @@ mod tests {
     fn a_chapter_folder_and_a_book_scope_identically_which_is_to_say_not_at_all() {
         let chapter = item(2, BinderItemSubRole::ChapterScene, "de-DE");
         let got = resolve("fr-FR", &[book(1, "tr-TR"), chapter, scene(3, "")]);
-        assert_eq!(got[&1], "tr-TR");
-        assert_eq!(got[&2], "de-DE");
+        assert_eq!(got[&1], tags("tr-TR"));
+        assert_eq!(got[&2], tags("de-DE"));
         assert_eq!(
-            got[&3], "fr-FR",
+            got[&3], tags("fr-FR"),
             "neither the Book nor the chapter folder reaches the scene"
         );
     }
@@ -266,11 +271,11 @@ mod tests {
     #[test]
     fn separate_binders_fold_into_one_map_without_interfering() {
         let mut out = HashMap::new();
-        tags_in_binder("fr-FR", &[book(1, "tr-TR"), scene(2, "")], &mut out);
-        tags_in_binder("fr-FR", &[scene(3, "")], &mut out);
-        assert_eq!(out[&1], "tr-TR");
-        assert_eq!(out[&2], "fr-FR");
-        assert_eq!(out[&3], "fr-FR");
+        tags_in_binder(&tags("fr-FR"), &[book(1, "tr-TR"), scene(2, "")], &mut out);
+        tags_in_binder(&tags("fr-FR"), &[scene(3, "")], &mut out);
+        assert_eq!(out[&1], tags("tr-TR"));
+        assert_eq!(out[&2], tags("fr-FR"));
+        assert_eq!(out[&3], tags("fr-FR"));
     }
 
     /// No tags anywhere: nothing to record, and a caller reading a missing entry as
@@ -286,41 +291,52 @@ mod tests {
     fn the_work_language_reaches_every_item() {
         let got = resolve("tr", &[scene(1, ""), book(2, ""), scene(3, "")]);
         assert_eq!(got.len(), 3);
-        assert!(got.values().all(|t| t == "tr"));
+        assert!(got.values().all(|t| *t == tags("tr")));
+    }
+
+    /// The hazard the list shape introduces that the string never could: a real `Vec` can
+    /// hold an empty element. The UI's pill field can leave one behind, and a blank primary
+    /// while a real tag remains would silently untailor the fold — the exact class of bug the
+    /// old `split_whitespace` grammar made impossible by construction.
+    #[test]
+    fn a_blank_entry_never_becomes_the_primary() {
+        let list = vec![String::new(), "  ".to_string(), "tr-TR".to_string()];
+        assert_eq!(primary(&list), "tr-TR");
+        assert_eq!(all(&list).collect::<Vec<_>>(), vec!["tr-TR"]);
+        assert_eq!(canonicalize(&list), vec!["tr-TR"]);
     }
 
     /// The primary is the first tag; a single-tag list is its own primary.
     #[test]
     fn primary_is_the_first_tag() {
-        assert_eq!(primary("fr-FR"), "fr-FR");
-        assert_eq!(primary("fr-FR en-US la"), "fr-FR");
-        assert_eq!(primary(""), "");
-        assert_eq!(primary("  fr-FR  en-US "), "fr-FR", "whitespace-tolerant");
+        assert_eq!(primary(&tags("fr-FR")), "fr-FR");
+        assert_eq!(primary(&tags("fr-FR en-US la")), "fr-FR");
+        assert_eq!(primary(&tags("")), "");
+        assert_eq!(primary(&tags("  fr-FR  en-US ")), "fr-FR", "whitespace-tolerant");
     }
 
     /// `all` yields every tag, and nothing for the empty string.
     #[test]
     fn all_yields_every_tag() {
-        assert_eq!(all("fr-FR en-US la").collect::<Vec<_>>(), ["fr-FR", "en-US", "la"]);
-        assert_eq!(all("fr-FR").collect::<Vec<_>>(), ["fr-FR"]);
-        assert!(all("").next().is_none());
-        assert!(all("   ").next().is_none());
+        assert_eq!(all(&tags("fr-FR en-US la")).collect::<Vec<_>>(), ["fr-FR", "en-US", "la"]);
+        assert_eq!(all(&tags("fr-FR")).collect::<Vec<_>>(), ["fr-FR"]);
+        assert!(all(&tags("")).next().is_none());
+        assert!(all(&tags("   ")).next().is_none());
     }
 
     /// Syntactic canonicalisation flips underscores to hyphens, per token.
     #[test]
     fn canonicalize_hyphenates_underscores() {
-        assert_eq!(canonicalize("en_US"), "en-US");
-        assert_eq!(canonicalize("de_DE_frami"), "de-DE-frami");
-        assert_eq!(canonicalize("fr-FR en_US"), "fr-FR en-US");
-        assert_eq!(canonicalize(""), "");
+        assert_eq!(canonicalize(&tags("en_US")), tags("en-US"));
+        assert_eq!(canonicalize(&tags("de_DE_frami")), tags("de-DE-frami"));
+        assert_eq!(canonicalize(&tags("fr-FR en_US")), tags("fr-FR en-US"));
+        assert_eq!(canonicalize(&tags("")), tags(""));
     }
 
     /// The scan collects the distinct union across a project's whole list per item.
     #[test]
     fn effective_languages_unions_the_lists() {
-        let got = effective_languages(
-            "fr-FR",
+        let got = effective_languages(&tags("fr-FR"),
             &[
                 scene(1, ""),               // the Work's fr-FR
                 book(2, "de-DE en-US"),     // a bilingual book — for itself
@@ -338,7 +354,7 @@ mod tests {
     /// An untagged project with a Work language still names that language for install.
     #[test]
     fn effective_languages_includes_the_bare_work_language() {
-        let got = effective_languages("fr-FR", &[scene(1, ""), scene(2, "")]);
+        let got = effective_languages(&tags("fr-FR"), &[scene(1, ""), scene(2, "")]);
         assert_eq!(got, ["fr-FR"].into_iter().map(str::to_string).collect());
     }
 

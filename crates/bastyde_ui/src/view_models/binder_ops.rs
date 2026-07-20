@@ -410,7 +410,7 @@ mod tests {
             indent: 3,
             word_count_goal: 1200,
             char_count_goal: 6000,
-            dict_language: "fr-FR".into(),
+            dict_language: vec!["fr-FR".to_string()],
             // A list of primitives, not a relationship: it *is* a scalar as far as the
             // patch DTO is concerned and must survive, or renaming an item would wipe
             // the aliases the mention index depends on.
@@ -443,7 +443,7 @@ mod tests {
         assert_eq!(out.indent, 3);
         assert_eq!(out.word_count_goal, 1200);
         assert_eq!(out.char_count_goal, 6000);
-        assert_eq!(out.dict_language, "fr-FR");
+        assert_eq!(out.dict_language, vec!["fr-FR".to_string()]);
         assert_eq!(out.aliases, vec!["Lizzy", "Miss Bennet"]);
     }
 
