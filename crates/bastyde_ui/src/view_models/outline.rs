@@ -411,10 +411,7 @@ impl OutlineViewModel {
         let BinderTreeKey::Item(item_id) = key else {
             return Vec::new();
         };
-        let Some(dto) = self.item_dto(item_id) else {
-            return Vec::new();
-        };
-        skribisto_model::promote_targets(&dto.role, &dto.sub_role)
+        binder_ops::promote_targets_of(&self.app_ctx, item_id)
     }
 
     /// The content roles whose text `key` would **lose** by becoming `target` (empty
@@ -428,46 +425,21 @@ impl OutlineViewModel {
         let BinderTreeKey::Item(item_id) = key else {
             return Vec::new();
         };
-        let (target_role, target_sub_role) = target.combo();
-        let content_ids = binder_item_commands::get_binder_item_relationship(
-            &self.app_ctx,
-            &item_id,
-            &BinderItemRelationshipField::Contents,
-        )
-        .unwrap_or_default();
-        let non_empty: Vec<ContentRole> =
-            content_commands::get_content_multi(&self.app_ctx, &content_ids)
-                .unwrap_or_default()
-                .into_iter()
-                .flatten()
-                .filter(|c| !c.data.trim().is_empty())
-                .map(|c| c.role)
-                .collect();
-        skribisto_model::promote_content_loss(&target_role, &target_sub_role, &non_empty)
+        binder_ops::promote_content_loss(&self.app_ctx, item_id, target)
     }
 
     /// The number of child items that block converting `key` into `target` — non-zero
     /// only when a container would become a leaf (a chapter folder → a flat chapter)
     /// while it still holds items. The caller shows a "move or trash them first" prompt.
+    /// Located through the backend (`binder_ops`), **not** through this outline's tree.
+    /// The tree only holds what the current binder scope and search leave visible, and an
+    /// item it cannot see used to answer `0` — which reads as "nothing blocks this" and
+    /// waved through exactly the conversion the guard exists to stop.
     pub fn demote_blocked_children(&self, key: BinderTreeKey, target: PromoteTarget) -> usize {
         let BinderTreeKey::Item(item_id) = key else {
             return 0;
         };
-        let Some(dto) = self.item_dto(item_id) else {
-            return 0;
-        };
-        // Only a container → leaf conversion is gated on emptiness.
-        if !(dto.role == BinderItemRole::Folder && target.combo().0 == BinderItemRole::Item) {
-            return 0;
-        }
-        let Some(binder) = self.model.binder_of(&key) else {
-            return 0;
-        };
-        let (order, meta) = self.ordered_meta(binder);
-        let Some(pos) = order.iter().position(|&x| x == item_id) else {
-            return 0;
-        };
-        placement::subtree_end(&order, &meta, pos, dto.indent) - (pos + 1)
+        binder_ops::demote_blocked_children(&self.app_ctx, &self.ids, item_id, target)
     }
 
     /// Convert a binder item to `target` (undoable). The use case re-validates the
@@ -478,11 +450,7 @@ impl OutlineViewModel {
         let BinderTreeKey::Item(item_id) = key else {
             return;
         };
-        let dto = PromoteDto {
-            item_id,
-            target: target.code(),
-        };
-        if binder_item_management_commands::promote(&self.app_ctx, self.stack(), &dto).is_ok() {
+        if binder_ops::promote(&self.app_ctx, &self.ids, item_id, target) {
             self.reload();
         }
     }

@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Shared binder plumbing for the three item-editing view-models.
+//! Shared binder plumbing for the item-editing view-models.
 //!
-//! [`OutlineViewModel`](super::OutlineViewModel), [`StreamViewModel`](super::StreamViewModel)
-//! and [`CorkboardViewModel`](super::CorkboardViewModel) are three views over the *same*
-//! ordered `Binder.binder_items` stream, so they each need the same handful of backend
+//! [`OutlineViewModel`](super::OutlineViewModel), [`StreamViewModel`](super::StreamViewModel),
+//! [`CorkboardViewModel`](super::CorkboardViewModel) and
+//! [`OverviewViewModel`](super::OverviewViewModel) are four views over the *same* ordered
+//! `Binder.binder_items` stream, so they each need the same handful of backend
 //! round-trips: find the binder owning an item, read its order + `(indent, sub_role)` map,
-//! create the model's recommended neighbour, move one item relative to another, and patch a
-//! single scalar field back. Before this module each of them carried its own copy — the
-//! bodies had gone byte-identical, which meant an ordering fix had to be applied three times
-//! or not at all.
+//! create the model's recommended neighbour, move one item relative to another, patch a
+//! single scalar field back, and answer the two questions that gate a type conversion.
+//! Before this module each of them carried its own copy — the bodies had gone
+//! byte-identical, which meant an ordering fix had to be applied three times or not at all.
 //!
 //! **Why free functions rather than a trait or a base type.** The three view-models reach
 //! their handles differently (`StreamViewModel`/`CorkboardViewModel` hold an `Rc<Inner>`, so
@@ -30,9 +31,11 @@ use bastyde::text_document::{MoveMode, TextDocument};
 use frontend::AppContext;
 use frontend::binder_item_management::{MoveDto, MovePlace};
 use frontend::commands::{
-    binder_commands, binder_item_commands, binder_item_management_commands, work_commands,
+    binder_commands, binder_item_commands, binder_item_management_commands, content_commands,
+    work_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
+use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::direct_access::{BinderItemDto, CreateBinderItemDto, UpdateBinderItemDto};
@@ -171,6 +174,98 @@ pub(crate) fn move_relative(
             move_place: place,
         },
     );
+}
+
+// ── Type conversion ("Convert to ▸") and its two guards ──────────────────────
+//
+// Both guards are *presentation*: the `promote` use case re-validates everything and
+// refuses a lossy or illegal conversion on its own. They exist so the refusal arrives as
+// an explanation the writer can act on, instead of a menu item that quietly does nothing.
+
+/// The content roles whose text `item_id` would **lose** by becoming `target` (empty rows
+/// never count). Non-empty means the conversion must be refused: a chapter holding prose
+/// cannot become a Part, which has nowhere to put it.
+pub(crate) fn promote_content_loss(
+    app_ctx: &AppContext,
+    item_id: u64,
+    target: skribisto_model::PromoteTarget,
+) -> Vec<ContentRole> {
+    let (target_role, target_sub_role) = target.combo();
+    let content_ids = binder_item_commands::get_binder_item_relationship(
+        app_ctx,
+        &item_id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .unwrap_or_default();
+    let non_empty: Vec<ContentRole> = content_commands::get_content_multi(app_ctx, &content_ids)
+        .unwrap_or_default()
+        .into_iter()
+        .flatten()
+        .filter(|c| !c.data.trim().is_empty())
+        .map(|c| c.role)
+        .collect();
+    skribisto_model::promote_content_loss(&target_role, &target_sub_role, &non_empty)
+}
+
+/// The number of child items that block converting `item_id` into `target` — non-zero
+/// only when a container would become a leaf (a chapter folder → a flat chapter) while it
+/// still holds items. The caller shows a "move or trash them first" prompt.
+///
+/// Locates the item through [`locate`] — i.e. by walking the *backend's* binders — rather
+/// than through any one view's tree. A view-scoped lookup answers `0` for an item its
+/// tree is not currently showing (filtered by a search, scoped to another binder), and
+/// `0` here reads as "nothing blocks this", silently waving through the very conversion
+/// the guard exists to stop.
+pub(crate) fn demote_blocked_children(
+    app_ctx: &AppContext,
+    ids: &AppIds,
+    item_id: u64,
+    target: skribisto_model::PromoteTarget,
+) -> usize {
+    let Some(dto) = item_dto(app_ctx, item_id) else {
+        return 0;
+    };
+    // Only a container → leaf conversion is gated on emptiness.
+    if !(dto.role == BinderItemRole::Folder && target.combo().0 == BinderItemRole::Item) {
+        return 0;
+    }
+    let Some((_binder, order, pos)) = locate(app_ctx, ids, item_id) else {
+        return 0;
+    };
+    let meta = item_meta(app_ctx, &order);
+    placement::subtree_end(&order, &meta, pos, dto.indent) - (pos + 1)
+}
+
+/// Convert `item_id` to `target` (undoable), reporting whether it took. The use case
+/// re-validates the target against the item's current type, so this is safe to call even
+/// from a stale menu; the demote-empty guard is the caller's job.
+pub(crate) fn promote(
+    app_ctx: &AppContext,
+    ids: &AppIds,
+    item_id: u64,
+    target: skribisto_model::PromoteTarget,
+) -> bool {
+    binder_item_management_commands::promote(
+        app_ctx,
+        ids.stack_id.get(),
+        &frontend::binder_item_management::PromoteDto {
+            item_id,
+            target: target.code(),
+        },
+    )
+    .is_ok()
+}
+
+/// Every type `item_id` may become — the rows of the "Convert to ▸" submenu. Empty when
+/// the item is gone or its type has no paired alternative.
+pub(crate) fn promote_targets_of(
+    app_ctx: &AppContext,
+    item_id: u64,
+) -> Vec<skribisto_model::PromoteTarget> {
+    match item_dto(app_ctx, item_id) {
+        Some(dto) => skribisto_model::promote_targets(&dto.role, &dto.sub_role),
+        None => Vec::new(),
+    }
 }
 
 // ── Pure helpers ─────────────────────────────────────────────────────────────
