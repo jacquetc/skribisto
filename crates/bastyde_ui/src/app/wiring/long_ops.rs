@@ -189,6 +189,26 @@ pub(in crate::app) fn install(
             let i = index.clone();
             ctx.subscribe_event(Origin::WorkManagement(event), move |_e: &Event| i.rescan());
         }
+        // The alias table changing is what makes a roster appear at all, so those events
+        // rescan straight away rather than waiting for a save. A tag gaining its story-bible
+        // flag, or an item gaining a tag or an alias, is a deliberate act — and the writer is
+        // looking at the Inspector when they do it.
+        for ev in [
+            frontend::common::event::EntityEvent::Created,
+            frontend::common::event::EntityEvent::Updated,
+            frontend::common::event::EntityEvent::Removed,
+        ] {
+            for entity in [
+                frontend::common::event::DirectAccessEntity::BinderTag(ev.clone()),
+                frontend::common::event::DirectAccessEntity::BinderItem(ev.clone()),
+            ] {
+                let i = index.clone();
+                ctx.subscribe_event(Origin::DirectAccess(entity), move |_e: &Event| i.rescan());
+            }
+        }
+        // Prose changes only reach the index on a save, and are throttled — autosave fires
+        // every few seconds. The scene being *written* does not wait for this: the Inspector
+        // rescans the focused item's own prose live (see `MentionIndex::roster_for`).
         {
             let i = index.clone();
             ctx.subscribe_event(

@@ -783,6 +783,22 @@ features:
         enum_values:
         - Empty
         - "Found(Vec<MentionHit>)"
+      # The alias table the scan matched against, carried back so the UI can rescan the
+      # focused item's own prose live -- against exactly the same names -- without a
+      # second full pass. Same escape hatch as `hits`: `entity` declares the row type,
+      # `table` carries the Vec of it.
+      - name: entity
+        type: enum
+        enum_name: MentionEntity
+        enum_values:
+        - Empty
+        - "Discoverable { id: EntityId, title: String, aliases: Vec<String> }"
+      - name: table
+        type: enum
+        enum_name: MentionTable
+        enum_values:
+        - Empty
+        - "Entities(Vec<MentionEntity>)"
 - name: progress_management
   use_cases:
   # Read-only pass over the open Work: sum SceneText prose of every

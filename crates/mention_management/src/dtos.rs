@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 pub struct MentionScanResultDto {
     pub row: MentionHit,
     pub hits: MentionHits,
+    pub entity: MentionEntity,
+    pub table: MentionTable,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
@@ -33,4 +35,22 @@ pub enum MentionHits {
     #[default]
     Empty,
     Found(Vec<MentionHit>),
+}
+
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum MentionEntity {
+    #[default]
+    Empty,
+    Discoverable {
+        id: EntityId,
+        title: String,
+        aliases: Vec<String>,
+    },
+}
+
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum MentionTable {
+    #[default]
+    Empty,
+    Entities(Vec<MentionEntity>),
 }

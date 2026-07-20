@@ -38,7 +38,7 @@ use bastyde::prelude::Signal;
 use frontend::AppContext;
 use frontend::commands::mention_management_commands;
 use frontend::common::event::Event;
-use frontend::mention_management::{MentionHit, MentionHits};
+use frontend::mention_management::{MentionEntity, MentionHit, MentionHits, MentionTable};
 use skribisto_model::mentions::{self, DiscoverableEntity};
 use bastyde::text_document::matching::FoldLocale;
 
@@ -119,8 +119,17 @@ impl MentionIndex {
         self.inner.version.clone()
     }
 
-    /// Scan now, unconditionally — the project just opened or was created.
+    /// Scan now, skipping only if one is already running.
+    ///
+    /// Used for the events that change *who is discoverable* — a tag gaining or losing its
+    /// story-bible flag, an item's tags or aliases being edited. Those are rare, deliberate
+    /// actions, and they are exactly the moment a writer expects the roster to appear, so
+    /// they are not throttled: the save-path throttle below exists for autosave storms, and
+    /// applying it here meant marking a tag discoverable did nothing visible for a minute.
     pub fn rescan(&self) {
+        if self.inner.active.borrow().is_some() {
+            return;
+        }
         self.fire();
     }
 
@@ -197,6 +206,20 @@ impl MentionIndex {
                 by_target.entry(target_id).or_default().push(row);
             }
         }
+        // The alias table the scan used, so the live rescan of the focused item matches
+        // against exactly the same names. Without this the two halves of the index would
+        // disagree about who is discoverable.
+        if let MentionTable::Entities(entities) = res.table {
+            *self.inner.table.borrow_mut() = entities
+                .into_iter()
+                .filter_map(|e| match e {
+                    MentionEntity::Discoverable { id, title, aliases } => {
+                        Some(DiscoverableEntity { id, title, aliases })
+                    }
+                    MentionEntity::Empty => None,
+                })
+                .collect();
+        }
         *self.inner.by_owner.borrow_mut() = by_owner;
         *self.inner.by_target.borrow_mut() = by_target;
         self.inner.version.set(self.inner.version.get() + 1);
@@ -205,12 +228,6 @@ impl MentionIndex {
     /// A long operation failed or was cancelled — clear our marker if it was ours.
     pub fn on_failed_or_cancelled(&self, event: &Event) {
         let _ = self.take_if_ours(event);
-    }
-
-    /// Replace the alias table the live rescan matches against. Called with the batch's own
-    /// table so both halves of the index agree on who is discoverable.
-    pub fn set_table(&self, table: Vec<DiscoverableEntity>) {
-        *self.inner.table.borrow_mut() = table;
     }
 
     /// Who this item mentions — the batch's answer, or a live rescan of `prose` when the

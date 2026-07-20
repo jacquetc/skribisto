@@ -18,7 +18,7 @@
 // Modelled on `count_words_uc`: same `gather`, same `TreeReader` impl, same long-operation
 // shape. The real logic is `fold_mentions`, kept free of the store so it is unit-testable.
 use crate::MentionScanResultDto;
-use crate::dtos::{MentionHit, MentionHits};
+use crate::dtos::{MentionEntity, MentionHit, MentionHits, MentionTable};
 use anyhow::{Result, anyhow};
 use common::database::QueryUnitOfWork;
 use common::entities::{Binder, BinderItem, BinderTag, Content, ContentRole, Work};
@@ -267,11 +267,24 @@ fn run_scan(
     // Deterministic order so the UI does not reshuffle between identical scans.
     hits.sort_by(|a, b| key_of(a).cmp(&key_of(b)));
 
+    // The table rides back with the hits so the UI can rescan the focused item's own prose
+    // against exactly the same names, live, without a second full pass.
+    let entities: Vec<MentionEntity> = table
+        .iter()
+        .map(|e| MentionEntity::Discoverable {
+            id: e.id,
+            title: e.title.clone(),
+            aliases: e.aliases.clone(),
+        })
+        .collect();
+
     Ok((
         work_id,
         MentionScanResultDto {
             row: MentionHit::Empty,
             hits: MentionHits::Found(hits),
+            entity: MentionEntity::Empty,
+            table: MentionTable::Entities(entities),
         },
     ))
 }
