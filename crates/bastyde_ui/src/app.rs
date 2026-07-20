@@ -486,9 +486,6 @@ pub struct App {
     inspector_dock: DockWidgetId,
     /// Stable id for the trailing Format dock (Inspector's neighbour).
     format_dock: DockWidgetId,
-    /// The formatting feature's shared view-model, created once on first build
-    /// because its editor resolver closes over [`editors`](Self::editors).
-    format: Option<crate::view_models::FormatViewModel>,
     /// Stable id for the bottom search-preview dock.
     preview_dock: DockWidgetId,
     /// Stable id for the leading search & replace dock.
@@ -554,7 +551,6 @@ impl App {
             // can match these docks across launches — see `crate::docks` docs.
             inspector_dock: DockWidgetId::from_raw(crate::docks::INSPECTOR_DOCK_ID),
             format_dock: DockWidgetId::from_raw(crate::docks::FORMAT_DOCK_ID),
-            format: None,
             preview_dock: DockWidgetId::from_raw(crate::docks::PREVIEW_DOCK_ID),
             search_dock: DockWidgetId::from_raw(crate::docks::SEARCH_DOCK_ID),
             search: None,
@@ -680,46 +676,69 @@ impl Widget for App {
             })
             .clone();
 
-        // The formatting view-model, wired to the editors it formats. `App`
-        // injects both closures rather than the two view-models importing each
-        // other — peers stay unaware of one another and the dependency graph
-        // stays a DAG (see `crate::view_models`).
+        // The formatting view-model is created in `main` (the menu bar needs its
+        // signals before `EditorsViewModel` exists) and re-pointed at the
+        // editors here, on every build — idempotent, exactly like the
+        // workspace-layout view-model's `set_editors`.
+        let format = ctx
+            .app_state::<crate::view_models::FormatViewModel>()
+            .cloned()
+            .expect("FormatViewModel registered in main");
+        {
+            let target = editors.clone();
+            format.attach(Rc::new(move || {
+                use crate::view_models::FormatSurface;
+                // One walk answers both halves, at deliberately different
+                // strictnesses.
+                //
+                // The *target* is sticky: it stays the tab's editor whether or
+                // not it holds focus this instant. Opening the Format menu moves
+                // focus to the menu overlay, so a target gated on live focus
+                // would vanish exactly when the user reached for a command.
+                //
+                // The *surface* is live: click into the binder and there is
+                // genuinely nothing to format, so the dock drops to its empty
+                // state rather than offering controls for a caret that is no
+                // longer anywhere. (The dock's own buttons are
+                // `focusable(false)`, so pressing one never blurs the editor out
+                // from under itself.)
+                let Some((handle, is_synopsis, focused)) = target.format_target() else {
+                    return (None, FormatSurface::None);
+                };
+                if !focused {
+                    return (Some(handle), FormatSurface::None);
+                }
+                if is_synopsis {
+                    return (Some(handle), FormatSurface::Synopsis);
+                }
+                // The same predicate the compiler uses to decide what it scans,
+                // so the dock cannot offer a scene break where the exporter
+                // would ignore one.
+                let surface = if target.focused_carries_scene() {
+                    FormatSurface::Scene
+                } else {
+                    FormatSurface::Note
+                };
+                (Some(handle), surface)
+            }));
+        }
+
+        // Pull the focused editor's formatting into the mirrors once per frame,
+        // here rather than in the dock: the Format menu binds the same signals,
+        // and the dock is only one of two trailing rail tabs — driven from
+        // there, the menu's checkmarks would freeze whenever the user switched
+        // the rail to the Inspector.
         //
-        // `focused_prose_handle` resolves the target on every call rather than
-        // handing over a stored handle: `RichTextEditor::construct()` mints a
-        // fresh editor state on rebuild, and a theme or locale switch is enough
-        // to trigger one.
-        let format = self
-            .format
-            .get_or_insert_with(|| {
-                let target = editors.clone();
-                crate::view_models::FormatViewModel::new(Rc::new(move || {
-                    use crate::view_models::FormatSurface;
-                    // One walk answers both halves: which editor to act on, and
-                    // what kind of text it holds. Keyed on live keyboard focus,
-                    // not "which tab is selected" — clicking into the binder or
-                    // a dock genuinely leaves nothing to format, and the dock
-                    // says so rather than acting on whatever it touched last.
-                    // (Its own buttons are `focusable(false)`, so pressing one
-                    // never blurs the editor out from under itself.)
-                    let Some((handle, is_synopsis)) = target.focused_format_target() else {
-                        return (None, FormatSurface::None);
-                    };
-                    if is_synopsis {
-                        return (Some(handle), FormatSurface::Synopsis);
-                    }
-                    // The same predicate the compiler uses to decide what it
-                    // scans, so the dock cannot offer a scene break where the
-                    // exporter would ignore one.
-                    let surface = if target.focused_carries_scene() {
-                        FormatSurface::Scene
-                    } else {
-                        FormatSurface::Note
-                    };
-                    (Some(handle), surface)
-                }))
-            })
-            .clone();
+        // Deliberately not an effect on the editor's `format_version`: that
+        // signal is written from inside the editor's own `state.borrow_mut()`
+        // and observers fire synchronously there, so reading the state back
+        // would panic on an already-borrowed cell. A frame tick fires outside
+        // any borrow, and `refresh` short-circuits when nothing has moved.
+        {
+            let format = format.clone();
+            let tick = ctx.frame_tick();
+            ctx.effect(&tick, move |_| format.refresh());
+        }
 
         // Hand the editors to the per-work workspace-layout restore. It was created
         // in `main` (before any `ctx.settings()`), so it starts editor-less and is

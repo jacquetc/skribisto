@@ -444,19 +444,11 @@ fn controls(vm: &FormatViewModel) -> Padding {
 
 impl Widget for FormatDock {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Pull the editor's state into the mirrors once per frame.
+        // No refresh tick here: it lives in `App`, because the Format menu binds
+        // the same mirrors and this dock is only one of two trailing rail tabs.
+        // Driven from here, every checkmark in the menu would freeze the moment
+        // the user switched the rail to the Inspector.
         //
-        // Deliberately not an effect on the editor's `format_version`: that
-        // signal is written from inside the editor's own `state.borrow_mut()`
-        // and observers fire synchronously there, so reading the state back
-        // would panic on an already-borrowed cell. A frame tick fires outside
-        // any borrow, and `refresh` short-circuits when nothing has moved.
-        {
-            let vm = self.vm.clone();
-            let tick = ctx.frame_tick();
-            ctx.effect(&tick, move |_| vm.refresh());
-        }
-
         // The ScrollArea is what gives `Wrap` its bounded width; without it the
         // rows would report their widest single line and never break.
         let padded = ctx.add(controls(&self.vm));

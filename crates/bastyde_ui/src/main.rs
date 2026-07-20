@@ -687,6 +687,11 @@ fn main() {
     // a later runtime `ctx.open_window(...)` (from the Launcher, or the
     // Close-Work → Launcher path) build an identical window. See
     // `windows.rs`.
+    // Created here, not in `App`: the menu bar is built alongside the app widget
+    // rather than inside it, so the Format menu needs these signals before
+    // `EditorsViewModel` exists. `App::build` attaches the editors on every
+    // build — the same shape as the workspace-layout view-model.
+    let format_vm = crate::view_models::FormatViewModel::detached();
     let project_factory = windows::ProjectWindowFactory::new(
         app_ctx.clone(),
         outline.clone(),
@@ -702,6 +707,7 @@ fn main() {
         pending_exit.clone(),
         backup_scheduler.clone(),
         main_window_state.clone(),
+        format_vm.clone(),
     );
 
     // ── Decide the initial window: launcher-window model ────────────────
@@ -766,6 +772,7 @@ fn main() {
         .app_state(spellcheck.clone())
         .app_state(dictionaries.clone())
         .app_state(tags_vm.clone())
+        .app_state(format_vm.clone())
         .app_state(single_work.clone())
         .app_state(single_work_info.clone())
         .app_state(outline.clone())

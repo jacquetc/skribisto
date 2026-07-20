@@ -354,27 +354,36 @@ impl EditorsViewModel {
             .unwrap_or(false)
     }
 
-    /// The editor the formatting surfaces should act on, and whether it is the
-    /// tab's synopsis rather than its main prose.
+    /// The editor the formatting surfaces act on, what kind of text it holds,
+    /// and whether it currently has keyboard focus.
     ///
-    /// Prefers the prose editor when both exist, and only returns an editor that
-    /// actually holds keyboard focus — clicking into the binder or a dock leaves
-    /// nothing to format, and the dock says so rather than acting on whatever it
-    /// touched last. One walk of the focused pane's tab list serves both answers.
+    /// The focus flag is reported rather than used as a filter, because the two
+    /// surfaces need different answers from one walk. The dock wants *live*
+    /// focus — click into the binder and there is nothing to format, so it says
+    /// so. The Format menu cannot: opening it moves focus to the menu overlay,
+    /// so a menu that resolved its target the dock's way would disable every
+    /// item at the instant the user reached for one, and its commands would
+    /// find nothing to act on. The menu therefore keeps acting on the tab's
+    /// editor whether or not it holds focus this instant.
     ///
-    /// `None` for a stream row's synopsis or a corkboard card: those build many
-    /// editors per tab, so no single per-tab handle can say which one.
-    pub fn focused_format_target(
-        &self,
-    ) -> Option<(bastyde::widgets::rich_text::EditorHandle, bool)> {
+    /// Prefers the tab's prose editor, falling back to its synopsis. `None` for
+    /// a stream row's synopsis or a corkboard card: those build many editors per
+    /// tab, so no single per-tab handle can say which one.
+    pub fn format_target(&self) -> Option<(bastyde::widgets::rich_text::EditorHandle, bool, bool)> {
         self.with_focused_tab(|tab| {
-            if let Some(prose) = tab.find().and_then(|f| f.editor_handle())
-                && prose.focused_signal().get()
+            let prose = tab.find().and_then(|f| f.editor_handle());
+            let synopsis = tab.synopsis_handle();
+            // Whichever holds focus wins; with neither focused the prose editor
+            // is the tab's primary surface and the better default.
+            if let Some(h) = &synopsis
+                && h.focused_signal().get()
             {
-                return Some((prose, false));
+                return Some((h.clone(), true, true));
             }
-            let synopsis = tab.synopsis_handle()?;
-            synopsis.focused_signal().get().then_some((synopsis, true))
+            if let Some(h) = &prose {
+                return Some((h.clone(), false, h.focused_signal().get()));
+            }
+            synopsis.map(|h| (h, true, false))
         })
     }
 

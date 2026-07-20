@@ -467,6 +467,7 @@ mod tests {
             Signal::new(PendingExit::None),
             backup_scheduler,
             Rc::new(RefCell::new(None)),
+            crate::view_models::FormatViewModel::detached(),
         )
     }
 

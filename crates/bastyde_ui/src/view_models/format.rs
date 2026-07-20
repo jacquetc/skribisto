@@ -46,7 +46,7 @@
 //! the command and requests the frame together, rather than repeating the pair
 //! at every call site where one can be forgotten.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use bastyde::prelude::Signal;
@@ -212,7 +212,14 @@ impl GroupVisibility {
 pub struct FormatViewModel {
     /// How to find the current editor. Called fresh on every command and every
     /// [`Self::refresh`] — see the module docs on handle staleness.
-    resolve: ResolveTarget,
+    /// How to find the editor and classify it. Wired by `App` on every build —
+    /// the view-model is created before `EditorsViewModel` exists, because the
+    /// menu bar is built alongside `App` rather than inside it and needs these
+    /// signals at that moment. Same shape as `WorkspaceLayoutViewModel`, which
+    /// starts editor-less and is re-pointed on each build.
+    ///
+    /// Inert until then: no target, nothing to format, every group hidden.
+    resolve: Rc<RefCell<Option<ResolveTarget>>>,
     /// Which groups apply. Read by the dock to decide what to show and by the
     /// menu to decide what to enable.
     surface: Signal<FormatSurface>,
@@ -241,6 +248,13 @@ pub struct FormatViewModel {
     align_center: Signal<bool>,
     can_undo: Signal<bool>,
     can_redo: Signal<bool>,
+    /// Whether there is an editor to act on at all — the Format menu's
+    /// enablement.
+    ///
+    /// Tracks the *sticky* target, not [`Self::surface`]: opening the menu
+    /// blurs the editor, so an enablement keyed on live focus would grey out
+    /// every item at the instant the user reached for one.
+    has_target: Signal<bool>,
 
     /// Per-group visibility, pushed by [`Self::set_surface`].
     ///
@@ -269,8 +283,16 @@ impl FormatViewModel {
     /// must walk to the currently-focused editor rather than returning a stored
     /// handle. `App` wires it to `EditorsViewModel::focused_prose_handle`.
     pub fn new(resolve: ResolveTarget) -> Self {
+        let vm = Self::detached();
+        vm.attach(resolve);
+        vm
+    }
+
+    /// A view-model with nothing to format yet. `App` calls [`Self::attach`]
+    /// once the editors exist.
+    pub fn detached() -> Self {
         Self {
-            resolve,
+            resolve: Rc::new(RefCell::new(None)),
             surface: Signal::new(FormatSurface::None),
             bold: Signal::new(false),
             italic: Signal::new(false),
@@ -286,6 +308,7 @@ impl FormatViewModel {
             align_center: Signal::new(false),
             can_undo: Signal::new(false),
             can_redo: Signal::new(false),
+            has_target: Signal::new(false),
             group_visible: GroupVisibility::new(FormatSurface::None),
             last_seen: Rc::new(Cell::new(NEVER_SEEN)),
         }
@@ -294,8 +317,23 @@ impl FormatViewModel {
     // ── The current editor ────────────────────────────────────────────────
 
     /// The editor to act on right now, or `None`.
+    /// Point this view-model at the editors. Idempotent — `App` calls it on
+    /// every build, and re-pointing is the whole intent.
+    pub fn attach(&self, resolve: ResolveTarget) {
+        *self.resolve.borrow_mut() = Some(resolve);
+    }
+
+    /// The current target and what kind of text it is. `(None, None)` before
+    /// `App` has attached a resolver.
+    fn target(&self) -> (Option<EditorHandle>, FormatSurface) {
+        match self.resolve.borrow().as_ref() {
+            Some(resolve) => resolve(),
+            None => (None, FormatSurface::None),
+        }
+    }
+
     fn handle(&self) -> Option<EditorHandle> {
-        (self.resolve)().0
+        self.target().0
     }
 
     // ── Signals the views bind to ─────────────────────────────────────────
@@ -345,6 +383,10 @@ impl FormatViewModel {
     pub fn can_redo(&self) -> Signal<bool> {
         self.can_redo.clone()
     }
+    /// Whether any editor is available to format — see [`Self::has_target`].
+    pub fn has_target(&self) -> Signal<bool> {
+        self.has_target.clone()
+    }
 
     /// The current surface. `App` is the only writer — it knows which pane and
     /// which tab the focus landed in; this view-model deliberately does not.
@@ -375,8 +417,9 @@ impl FormatViewModel {
         // than only when the caret moves: focus can move between editors — or
         // out of them entirely — without the document changing at all, and the
         // dock would otherwise keep showing the previous surface's groups.
-        let (handle, surface) = (self.resolve)();
+        let (handle, surface) = self.target();
         self.set_surface(surface);
+        set_if_changed(&self.has_target, handle.is_some());
 
         let Some(handle) = handle else {
             self.clear_mirrors();
