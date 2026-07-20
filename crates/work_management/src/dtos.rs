@@ -66,6 +66,7 @@ pub struct NewWorkDto {
     pub labels: Vec<String>,
     pub language: Vec<String>,
     pub chapter_scene_mode: bool,
+    pub author_name: String,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]

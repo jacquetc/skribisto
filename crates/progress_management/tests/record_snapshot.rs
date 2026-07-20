@@ -49,6 +49,7 @@ fn record_progress_snapshot_upserts_by_day() {
             template_kind: NewWorkTemplate::None,
             labels: vec![],
             language: vec!["en-US".to_string()],
+            author_name: String::new(),
             chapter_scene_mode: false,
         },
     )

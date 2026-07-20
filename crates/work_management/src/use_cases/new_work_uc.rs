@@ -233,6 +233,9 @@ impl NewWorkUseCase {
             created_at: now,
             updated_at: now,
             title: title.clone(),
+            // Optional — an empty name is a legal, common state (the New Work
+            // field may simply be left blank), and the compiler omits it.
+            author_name: dto.author_name.clone(),
             dict_language: dto.language.clone(),
             unique_id: skrib_format::new_unique_id(),
             // The per-project chapter storage mode — same source as the template's

@@ -48,6 +48,7 @@ pub(crate) fn new_work_dto(
     template_kind: NewWorkTemplate,
     language: String,
     chapter_scene_mode: bool,
+    author_name: String,
 ) -> NewWorkDto {
     NewWorkDto {
         file_name,
@@ -64,6 +65,8 @@ pub(crate) fn new_work_dto(
         ],
         language: skribisto_model::language::parse_legacy_list(&language),
         chapter_scene_mode,
+        // Optional: an empty string is the ordinary "not set" state, not an error.
+        author_name,
     }
 }
 
@@ -189,6 +192,9 @@ fn current_locale_tag() -> Option<String> {
 pub struct NewWorkViewModel {
     /// The work's display name (drives the filename slug).
     name: Signal<String>,
+    /// The author's name, written to the manifest and used by the compiler for
+    /// the title page and the exported metadata. Optional — blank is normal.
+    author: Signal<String>,
     /// Format segment: `0` = single `.skrib` file, `1` = bundle folder.
     format_idx: Signal<usize>,
     /// The containing folder chosen via the file picker.
@@ -215,6 +221,7 @@ impl NewWorkViewModel {
     pub fn new(app_ctx: Rc<AppContext>) -> Self {
         Self {
             name: Signal::new(String::new()),
+            author: Signal::new(String::new()),
             format_idx: Signal::new(0),
             location: Signal::new(default_location()),
             language: Signal::new(current_locale_tag()),
@@ -231,6 +238,7 @@ impl NewWorkViewModel {
     pub fn new_for_launcher(app_ctx: Rc<AppContext>, factory: ProjectWindowFactory) -> Self {
         Self {
             name: Signal::new(String::new()),
+            author: Signal::new(String::new()),
             format_idx: Signal::new(0),
             location: Signal::new(default_location()),
             language: Signal::new(current_locale_tag()),
@@ -244,6 +252,9 @@ impl NewWorkViewModel {
     // ── Signal accessors (bound by the view) ───────────────────────────────
     pub fn name(&self) -> Signal<String> {
         self.name.clone()
+    }
+    pub fn author(&self) -> Signal<String> {
+        self.author.clone()
     }
     pub fn format_idx(&self) -> Signal<usize> {
         self.format_idx.clone()
@@ -320,6 +331,9 @@ impl NewWorkViewModel {
             template_from_index(self.template_idx.get()),
             self.language.get().unwrap_or_default(),
             self.chapter_scene.get(),
+            // Trimmed so a field containing only spaces reads as unset rather
+            // than putting whitespace on the title page.
+            self.author.get().trim().to_string(),
         )
     }
 
@@ -357,6 +371,39 @@ impl NewWorkViewModel {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The author typed into the New Work form must reach the DTO — otherwise the
+    /// field is decorative and every project starts unattributed.
+    #[test]
+    fn the_author_field_reaches_the_new_work_dto() {
+        let dto = new_work_dto(
+            "/tmp/x.skrib".into(),
+            false,
+            NewWorkTemplate::Novel,
+            "en-US".into(),
+            false,
+            "A. Writer".into(),
+        );
+        assert_eq!(dto.author_name, "A. Writer");
+    }
+
+    /// The name is optional. Left blank — or filled with only spaces, which the
+    /// view-model trims — it must arrive empty rather than as whitespace that
+    /// would print as a blank line on the title page.
+    #[test]
+    fn an_unset_author_arrives_empty() {
+        for typed in ["", "   "] {
+            let dto = new_work_dto(
+                "/tmp/x.skrib".into(),
+                false,
+                NewWorkTemplate::Novel,
+                "en-US".into(),
+                false,
+                typed.trim().to_string(),
+            );
+            assert_eq!(dto.author_name, "", "{typed:?} must arrive as unset");
+        }
+    }
 
     #[test]
     fn slug_sanitizes_forbidden_chars() {

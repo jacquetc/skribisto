@@ -109,6 +109,10 @@ enum Pane {
     /// Per-project tag palette (under the open Work's section). Appended last for the same
     /// reason — its tree position is chosen in `build_tree`, not by this number.
     WorkTags,
+    /// Per-project author name (under the open Work's section). Appended last, same rule —
+    /// it is shown *first* in the tree, but that is `build_tree`'s business, not this
+    /// number's: renumbering here would re-point every later `Switcher` slot.
+    WorkAuthor,
 }
 
 impl Pane {
@@ -137,6 +141,7 @@ impl Pane {
             Pane::WorkLanguage => tr!(settings_page_language()),
             Pane::WorkDictionary => tr!(settings_page_personal_dictionary()),
             Pane::WorkTags => tr!(settings_page_tags()),
+            Pane::WorkAuthor => tr!(settings_page_author()),
             Pane::Spellcheck => tr!(settings_page_spellcheck()),
         }
     }
@@ -566,25 +571,31 @@ impl SettingsPanel {
         let mut work_node: Option<NodeId> = None;
         if work_title.is_some() {
             let wk = model.insert_root(6, Node::Section(Sec::Work));
+            // Author leads the section: it is the one field about the *book* rather
+            // than about how the app handles it.
+            nodes.insert(
+                Pane::WorkAuthor,
+                model.insert_child(wk, 0, Node::Page(Pane::WorkAuthor)),
+            );
             nodes.insert(
                 Pane::WorkStructure,
-                model.insert_child(wk, 0, Node::Page(Pane::WorkStructure)),
+                model.insert_child(wk, 1, Node::Page(Pane::WorkStructure)),
             );
             nodes.insert(
                 Pane::WorkLanguage,
-                model.insert_child(wk, 1, Node::Page(Pane::WorkLanguage)),
+                model.insert_child(wk, 2, Node::Page(Pane::WorkLanguage)),
             );
             nodes.insert(
                 Pane::WorkBackup,
-                model.insert_child(wk, 2, Node::Page(Pane::WorkBackup)),
+                model.insert_child(wk, 3, Node::Page(Pane::WorkBackup)),
             );
             nodes.insert(
                 Pane::WorkDictionary,
-                model.insert_child(wk, 3, Node::Page(Pane::WorkDictionary)),
+                model.insert_child(wk, 4, Node::Page(Pane::WorkDictionary)),
             );
             nodes.insert(
                 Pane::WorkTags,
-                model.insert_child(wk, 4, Node::Page(Pane::WorkTags)),
+                model.insert_child(wk, 5, Node::Page(Pane::WorkTags)),
             );
             work_node = Some(wk);
         }
@@ -670,7 +681,8 @@ impl SettingsPanel {
             | Pane::WorkLanguage
             | Pane::WorkBackup
             | Pane::WorkDictionary
-            | Pane::WorkTags => work_node,
+            | Pane::WorkTags
+            | Pane::WorkAuthor => work_node,
             Pane::Keymap => None,
         };
         if let Some(sec) = section_of(self.selected_pane.get()) {
@@ -824,6 +836,18 @@ impl Widget for SettingsPanel {
             None => Box::new(empty_pane(
                 None,
                 tr!(settings_page_language()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+        let author_pane: Box<dyn Widget> = match &work_vm {
+            Some(vm) => Box::new(panes::work_author::work_author_pane(
+                ctx,
+                vm,
+                work_title.clone(),
+            )),
+            None => Box::new(empty_pane(
+                None,
+                tr!(settings_page_author()),
                 res!("assets/icons/binder/book.svg"),
             )),
         };
@@ -1059,6 +1083,7 @@ impl Widget for SettingsPanel {
             (Pane::WorkDictionary, dictionary_pane),
             (Pane::Spellcheck, Box::new(panes::spellcheck::spellcheck_pane(&vm))),
             (Pane::WorkTags, tags_pane),
+            (Pane::WorkAuthor, author_pane),
         ];
         if let Some((slot, (pane, _))) =
             panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)
@@ -1256,6 +1281,8 @@ mod tests {
             Pane::WorkLanguage,
             Pane::WorkDictionary,
             Pane::Spellcheck,
+            Pane::WorkTags,
+            Pane::WorkAuthor,
         ];
         for (i, pane) in all.iter().enumerate() {
             assert_eq!(

@@ -70,6 +70,29 @@ impl WorkSettingsViewModel {
         self.work.save(self.stack.get());
     }
 
+    // ── Author ───────────────────────────────────────────────────────────────
+
+    /// The writer's name, as it appears on the compiled title page and in the
+    /// exported metadata (EPUB `dc:creator`, DOCX `creator`, the PDF author).
+    pub fn author_name(&self) -> Signal<String> {
+        self.work.author_name()
+    }
+
+    /// Replace the author name, and persist.
+    ///
+    /// Trimmed, and a no-op when unchanged — the pane commits on blur/submit, so
+    /// tabbing through the field without editing it must not queue an undo entry
+    /// and a disk save. Empty is a legal value: the name is optional, and clearing
+    /// it must be as saveable as setting it.
+    pub fn set_author_name(&self, name: String) {
+        let name = name.trim().to_string();
+        if self.work.author_name().get() == name {
+            return;
+        }
+        self.work.set_author_name(name);
+        self.work.save(self.stack.get());
+    }
+
     // ── Default language ─────────────────────────────────────────────────────
 
     /// The project's default spell-check language list.

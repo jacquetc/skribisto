@@ -70,6 +70,7 @@ fn ctx_with_one_of_each() -> (AppContext, Vec<(BinderItemSubRole, u64)>) {
             template_kind: NewWorkTemplate::EmptyNovel,
             labels: vec![],
             language: vec!["fr-FR".to_string()],
+            author_name: String::new(),
             chapter_scene_mode: false,
         },
     )

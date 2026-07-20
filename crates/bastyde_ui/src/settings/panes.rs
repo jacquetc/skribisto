@@ -34,6 +34,7 @@ pub(super) mod goals;
 pub(super) mod spellcheck;
 pub(super) mod typography;
 pub(super) mod user_dictionary;
+pub(super) mod work_author;
 pub(super) mod work_language;
 pub(super) mod work_structure;
 pub(super) mod work_tags;

@@ -55,6 +55,7 @@ fn big_manuscript() -> AppContext {
             template_kind: NewWorkTemplate::EmptyNovel,
             labels: vec![],
             language: vec!["fr-FR".to_string()],
+            author_name: String::new(),
             chapter_scene_mode: false,
         },
     )

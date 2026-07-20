@@ -187,6 +187,7 @@ fn work_management_new(ctx: &AppContext, dir: &std::path::Path) {
             template_kind: NewWorkTemplate::EmptyNovel,
             labels: vec![],
             language: vec!["en-US".to_string()],
+            author_name: String::new(),
             chapter_scene_mode: false,
         },
     )

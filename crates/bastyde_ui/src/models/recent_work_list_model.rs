@@ -518,7 +518,8 @@ mod imp {
                     template_kind: NewWorkTemplate::Novel,
                     labels: vec![],
                     language: vec!["en".to_string()],
-                    chapter_scene_mode: false,
+                    author_name: String::new(),
+            chapter_scene_mode: false,
                 },
             )
             .unwrap();

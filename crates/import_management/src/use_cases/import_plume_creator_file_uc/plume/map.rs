@@ -114,6 +114,14 @@ pub fn build_bundle(
         created_at: info.created_at.clone().unwrap_or_else(|| b.now.clone()),
         updated_at: info.updated_at.clone().unwrap_or_else(|| b.now.clone()),
         title,
+        // Empty because there is nothing to carry over: the Plume Creator format has
+        // no author field anywhere — not in `info` (whose `plume-information` element
+        // holds only the project name, paths, dates and text styles), not in `tree`,
+        // not in `attendance`. Verified against real v0.3 projects. The writer sets
+        // their name afterwards in Settings ▸ Work ▸ Author.
+        //
+        // This is *not* the same as the legacy SQLite `.skrib` path, which does have a
+        // `t_author` column and does carry it over (`load_work_uc`).
         author_name: String::new(),
         dict_language: Vec::new(),
         tag_ids: b.tags.iter().map(|t| t.file_id).collect(),

@@ -141,6 +141,11 @@ impl NewWorkPanel {
                     .placeholder(tr!(new_work_name_placeholder()))
                     .validation(vm.name_validation()),
             )
+            // ── Author (optional — no validation; blank is a normal state) ──
+            .line(
+                Self::field_label(tr!(new_work_author())),
+                TextInput::new(vm.author()).placeholder(tr!(new_work_author_placeholder())),
+            )
             // ── Format: two selectable cards + the "convert later" note ────
             .line(
                 Self::field_label(tr!(new_work_format())),

@@ -732,10 +732,60 @@ fn new_work(db: &DbContext, hub: &Arc<EventHub>, path: &str, is_folder: bool, t:
             template_kind: t,
             labels: labels(),
             language: vec!["en-US".to_string()],
+            author_name: String::new(),
             chapter_scene_mode: false,
         },
     )
     .expect("new_work");
+}
+
+/// The author supplied at creation must reach the `Work` entity and then the
+/// saved manifest. Before this was wired, `new_work_uc` built its `Work` with
+/// `..Default::default()`, so the name was accepted by the dialog and silently
+/// dropped on the way to disk.
+#[test]
+fn new_work_persists_the_author_to_the_manifest() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    work_management_controller::new_work(
+        &db,
+        &hub,
+        &NewWorkDto {
+            file_name: dir.path().join("Authored.skrib").to_str().unwrap().to_string(),
+            is_folder: false,
+            template_kind: NewWorkTemplate::Novel,
+            labels: labels(),
+            language: vec!["en-US".to_string()],
+            author_name: "A. Writer".to_string(),
+            chapter_scene_mode: false,
+        },
+    )
+    .expect("new_work");
+
+    let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    assert_eq!(b.manifest.work.author_name, "A. Writer");
+}
+
+/// An empty author is a legal, common state — it must round-trip as empty
+/// rather than failing or acquiring a placeholder.
+#[test]
+fn new_work_without_an_author_round_trips_empty() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    new_work(
+        &db,
+        &hub,
+        dir.path().join("Anon.skrib").to_str().unwrap(),
+        false,
+        NewWorkTemplate::Novel,
+    );
+
+    let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    assert_eq!(b.manifest.work.author_name, "");
 }
 
 #[test]
