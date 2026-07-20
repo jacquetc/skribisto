@@ -101,7 +101,11 @@ ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
 MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from automation_fixture import SCRATCH  # noqa: E402  (needs sys.path set first)
+from automation_fixture import SCRATCH, assert_no_running_instance  # noqa: E402
+
+# Before anything else: a live instance would swallow this launch (see the
+# helper's docstring) and every later failure would name the wrong cause.
+assert_no_running_instance()
 
 # No `.skrib` fixture is opened here — this probe CREATES a project, so
 # `working_copy()` doesn't apply. It owns and cleans up its own scratch
@@ -273,6 +277,27 @@ class Session:
             if substr.lower() in joined:
                 return True
             time.sleep(0.4)
+        return False
+
+    def wait_role(self, role, timeout=20):
+        """Poll until a node of `role` exists. Returns True, or False on timeout.
+
+        A modal is NOT queryable the instant its opening click returns. Measured
+        on the New Work modal: `invoke_action(click)` answers in 0.0s, then
+        `snapshot_tree` times out for ~4-6s while the overlay animates, and only
+        then reports the modal — 196 nodes including the `Form` landmark.
+
+        A one-shot check after a fixed `sleep(0.8)` therefore reports "the modal
+        did not open" for a modal that opens perfectly a few seconds later. That
+        cost a full diagnostic detour chasing a `Form`-landmark regression that
+        does not exist. Same failure shape `wait_for_load` exists to prevent, one
+        level in: wait for the thing, never sleep-and-hope.
+        """
+        end = time.time() + timeout
+        while time.time() < end:
+            if any(n.get("role") == role for n in self.nodes()):
+                return True
+            time.sleep(0.5)
         return False
 
     def list_windows(self):
@@ -625,8 +650,7 @@ if not new_work_btn:
 res, _ = s.call("invoke_action", {"node": new_work_btn["id"], "action": "click"})
 if isinstance(res, dict) and res.get("isError"):
     click(s, new_work_btn.get("bounds") or {})
-time.sleep(0.8)
-if not any(n.get("role") == "Form" for n in s.nodes()):
+if not s.wait_role("Form", timeout=30):
     dump(s, "New Work modal did not open")
     fail("the New Work modal did not open (no Form landmark)", s)
 print("  New Work modal open.")

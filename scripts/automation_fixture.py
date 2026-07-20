@@ -24,14 +24,16 @@ So: `working_copy()` hands back a throwaway in the scratchpad, and probes open
 
 import os
 import shutil
+import subprocess
 import tempfile
 
 #: Session scratchpad when one is set, else the system temp dir. Never inside the repo.
-SCRATCH = os.environ.get(
-    "SKRIBISTO_AUTOMATION_SCRATCH",
-    "/tmp/claude-1000/-home-cyril-Devel-skribisto--claude-worktrees-tags/"
-    "b56517fd-f8b4-4a4f-8219-e7d54b9af7e3/scratchpad",
-)
+#:
+#: The fallback is deliberately generic. An earlier version hard-coded one session's
+#: scratchpad path, which stops existing the moment that session ends — so every later
+#: run silently fell through to the temp dir anyway, while the dead path sat in the
+#: source looking authoritative. Set `SKRIBISTO_AUTOMATION_SCRATCH` to steer it.
+SCRATCH = os.environ.get("SKRIBISTO_AUTOMATION_SCRATCH", tempfile.gettempdir())
 
 
 def wait_for_load(nodes_fn, markers, timeout=30.0, interval=0.5):
@@ -57,6 +59,44 @@ def wait_for_load(nodes_fn, markers, timeout=30.0, interval=0.5):
                 return True
         _t.sleep(interval)
     return False
+
+
+def assert_no_running_instance(binary=None):
+    """Refuse to launch while another instance of the same build is up.
+
+    Skribisto runs one process per project behind an open-registry lock, and a
+    second launch HANDS OFF to the existing instance and exits. A probe that
+    launches into that situation still scrapes a `bridge socket = ...` line out
+    of its log — belonging to a process which is on its way out — and then every
+    single call times out. The probe reports "the modal did not open" or "the
+    fixture did not load", naming a symptom several layers from the cause.
+
+    That happened three runs in a row here, and the diagnosis (a `Form` landmark
+    that had supposedly regressed) was entirely wrong: the landmark was fine, the
+    probe was talking to a corpse. Failing loudly up front costs one line and
+    saves that whole detour.
+
+    Deliberately does NOT kill anything. The match is on this worktree's debug
+    binary, which is also what `run-app` launches, so a stray instance may well
+    be the operator's own session with unsaved work in it.
+    """
+    binary = binary or os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "target", "debug", "skribisto",
+    )
+    try:
+        out = subprocess.run(["pgrep", "-af", binary], capture_output=True, text=True).stdout
+    except (OSError, subprocess.SubprocessError):
+        return  # pgrep unavailable: not worth failing the probe over
+    live = [l for l in out.splitlines() if l.strip()]
+    if live:
+        listing = "\n  ".join(live)
+        raise RuntimeError(
+            f"another instance of {binary} is already running:\n  {listing}\n"
+            "Launching now would hand off to it and exit, and every bridge call "
+            "would time out. Close it (or `pkill -f target/debug/skribisto` if it "
+            "is a probe leftover and you have nothing unsaved) and re-run."
+        )
 
 
 def _make_writable(path):

@@ -406,17 +406,61 @@ def select_segment(name):
     checking first — a run that happened to start on the target segment is
     harmless to re-click, but skipping the click on a wrong guess is not.
     """
-    seg = find(s, name)
-    if not seg:
-        s.dump(f"no {name!r} segment")
-        fail(f"the container offers no {name!r} segment "
-             f"({CONTAINER!r} must be a Folder/ChapterScene)", s)
-    click(s, seg.get("bounds") or {})
-    s.settle()
-    # A stream builds a live editor per child and the corkboard lays out
-    # cards; a short wait here reported "no dots" against a pane that had not
-    # finished building.
-    time.sleep(3.0)
+    for attempt in range(3):
+        seg = find(s, name)
+        if not seg:
+            s.dump(f"no {name!r} segment")
+            fail(f"the container offers no {name!r} segment "
+                 f"({CONTAINER!r} must be a Folder/ChapterScene)", s)
+        click(s, seg.get("bounds") or {})
+        s.settle()
+        # A stream builds a live editor per child and the corkboard lays out
+        # cards; a short wait here reported "no dots" against a pane that had not
+        # finished building.
+        time.sleep(3.0)
+        if segment_selected(name):
+            return
+        print(f"    (segment {name[0]!r} not selected after attempt {attempt + 1}, retrying)")
+
+    # Verifying matters more than it looks. When the click silently failed, the
+    # pane kept showing whatever segment was remembered from a previous run — and
+    # the probe went on to measure THAT pane's dot row and blame the wrong
+    # surface. It reported "corkboard: expected 5 hit-cells, got 6" while the
+    # screenshot showed Full Synopsis selected and a perfectly correct stream row
+    # (5 dots + "+1"). The measurement was right; the pane was not the one asked
+    # for. A wrong-pane failure must never be reported as a cap regression.
+    s.dump(f"segment {name!r} would not select")
+    s.shot("/tmp/overflow-segment-fail.png")
+    fail(f"could not select the {name[0]!r} segment after 3 attempts; segment "
+         f"states now: {segment_states()}", s)
+
+
+def segment_states():
+    """Every node whose text matches one of the known segment names, with
+    whatever selection flag it carries — for diagnostics when a click is lost."""
+    known = [SEG for SEG in (CORKBOARD_SEG, STREAM_SEG) if SEG]
+    out = []
+    for n in s.nodes():
+        t = text_of(n).strip()
+        low = t.lower()
+        if any(any(v in low for v in variants) for variants in known):
+            out.append((t, n.get("role"), n.get("selected"), n.get("toggled")))
+    return out
+
+
+def segment_selected(name):
+    """True when the segment named `name` reports itself selected.
+
+    A `SegmentedControl` marks the active segment with the AT `selected` flag;
+    some roles use `toggled` instead, so accept either rather than pinning one
+    and silently never matching.
+    """
+    for n in s.nodes():
+        low = text_of(n).strip().lower()
+        if any(v in low for v in name):
+            if n.get("selected") is True or n.get("toggled") is True:
+                return True
+    return False
 
 
 def tag_pill_names():
@@ -450,6 +494,30 @@ def tag_pill_names():
     return out
 
 
+def picker_field_now():
+    """The picker's filter field as it exists *right now*, or None.
+
+    Always re-locate; never cache the id. The `query` signal is bound at
+    `BindingLevel::Rebuild`, so every keystroke replaces the whole `TagPicker`
+    subtree and the previous id refers to a destroyed node.
+    """
+    dlg = next((n for n in s.nodes()
+                if n.get("role") == "Dialog"
+                and any(v in (n.get("label") or "").lower() for v in ADD_A_TAG)), None)
+    if not dlg:
+        return None
+    db = dlg.get("bounds") or {}
+    x0, y0 = db.get("x", 0), db.get("y", 0)
+    x1, y1 = x0 + db.get("width", 0), y0 + db.get("height", 0) + 400
+    for n in s.nodes():
+        if n.get("role") != "TextInput":
+            continue
+        b = n.get("bounds") or {}
+        if x0 - 8 <= b.get("x", -1) <= x1 and y0 - 8 <= b.get("y", -1) <= y1:
+            return n
+    return None
+
+
 def create_tag(name):
     """Type `name` into the "+" popover's filter field and click its
     "Create …" row.
@@ -473,20 +541,7 @@ def create_tag(name):
     # scope-to-the-owning-panel rule that fixed the Inspector false pass.
     field = None
     for _ in range(15):
-        dlg = next((n for n in s.nodes()
-                    if n.get("role") == "Dialog"
-                    and any(v in (n.get("label") or "").lower() for v in ADD_A_TAG)), None)
-        if dlg:
-            db = dlg.get("bounds") or {}
-            x0, y0 = db.get("x", 0), db.get("y", 0)
-            x1, y1 = x0 + db.get("width", 0), y0 + db.get("height", 0) + 400
-            for n in s.nodes():
-                if n.get("role") != "TextInput":
-                    continue
-                b = n.get("bounds") or {}
-                if x0 - 8 <= b.get("x", -1) <= x1 and y0 - 8 <= b.get("y", -1) <= y1:
-                    field = n
-                    break
+        field = picker_field_now()
         if field:
             break
         time.sleep(0.3)
@@ -518,7 +573,13 @@ def create_tag(name):
     if not create:
         # Distinguish "the text never landed" from "the row is named something
         # else": these need opposite fixes and look identical in a dump.
-        now = next((n for n in s.nodes() if n.get("id") == field["id"]), None)
+        #
+        # Re-LOCATE the field rather than re-reading `field["id"]`. Typing changes
+        # the picker's `query`, which is bound at `BindingLevel::Rebuild`, so the
+        # whole subtree — the TextInput included — is replaced and the pre-typing
+        # id no longer exists. Reading it back reported `None` every time, which
+        # reads as "the text never landed" even on runs where it landed perfectly.
+        now = picker_field_now()
         print(f"    field now holds {(now or {}).get('value')!r} (typed {name!r})")
         dlg = next((n for n in s.nodes()
                     if n.get("role") == "Dialog"
@@ -539,15 +600,42 @@ def create_tag(name):
         s.dump(f"no create row for {name!r}")
         fail(f"the picker offers no 'Create' row for {name!r} "
              f"(typed into field id={field['id']})", s)
-    # `invoke_action` rather than a synthesised pointer click: a near-miss
-    # click lands on the neighbouring row and ticks or opens a tooltip on the
-    # wrong tag, leaving the popover open with nothing created — which looks
-    # exactly like "creation silently did nothing".
-    res, _ = s.call("invoke_action", {"node": create["id"], "action": "click"})
-    if isinstance(res, dict) and res.get("isError"):
-        click(s, create.get("bounds") or {})
+    # A synthesised pointer click, NOT `invoke_action(click)`.
+    #
+    # The Create row is an `HStack` carrying `access_role(Role::Button)` and an
+    # `on_tap`. `access_role` only changes what the node *claims* to be; it
+    # registers no AccessKit Click handler, and bastyde only wires one for stock
+    # widgets (`Button`, `IconButton`). So `invoke_action(click)` returns success
+    # and does absolutely nothing — the create silently never happens, and the
+    # next iteration reports "no Create row" for a picker that is working. That
+    # cost two full runs to see, because the no-op is indistinguishable from
+    # success in the response.
+    #
+    # The near-miss worry that argued for `invoke_action` does not apply here:
+    # the Create row's neighbours are a Toggle and a static hint, not other tag
+    # rows, and the row is the full width of the popover.
+    before = tag_pill_names() or []
+    click(s, create.get("bounds") or {})
     s.settle()
     time.sleep(1.0)
+
+    # Verify rather than assume, and verify against the INSPECTOR's pills, not the
+    # picker's rows: the popover closes on a create, so any check that reads the
+    # picker's own list necessarily finds nothing and reports failure on a create
+    # that worked perfectly.
+    #
+    # Verifying at all matters because `vm.create()` returns an `Option` and the
+    # click path is silent on failure — which is how three "created and assigned"
+    # lines printed for tags that were never created, and the run then failed two
+    # steps later naming the wrong cause.
+    for _ in range(12):
+        now = tag_pill_names() or []
+        if any(n.lower() == name.lower() for n in now):
+            return
+        time.sleep(0.3)
+    s.dump(f"create had no effect for {name!r}")
+    fail(f"clicking Create for {name!r} did not put it on the item "
+         f"(pills before={sorted(before)}, after={sorted(tag_pill_names() or [])})", s)
 
 
 def overflow_cells_in_box(row):
