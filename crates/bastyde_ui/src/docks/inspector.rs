@@ -248,6 +248,79 @@ impl Widget for Inspector {
                             )
                             .child(crate::tags::AliasPillField::new(alias_value, set_aliases));
                     }
+
+                    // The mention index, in both directions. Hidden entirely when the
+                    // project has no discoverable tags: nothing has been asked to be found,
+                    // so an empty "Mentioned here" would be a section about nothing.
+                    if let Some(index) = ctx.app_state::<crate::view_models::MentionIndex>().cloned()
+                        && !discoverable.is_empty()
+                    {
+                        index.changed_signal().bind_to(
+                            ctx.self_id(),
+                            ctx.binding_registry(),
+                            BindingLevel::Rebuild,
+                        );
+
+                        let open: crate::tags::mention_list::OpenTarget =
+                            Rc::new(move |item_id, title, c: &mut EventContext| {
+                                c.send_intent(crate::intents::AppIntent::OpenItemToSide {
+                                    item_id,
+                                    title,
+                                });
+                            });
+
+                        // The focused item's own prose, when it is open in a tab — so the
+                        // roster follows what is being written instead of waiting for a save.
+                        // `peek` never opens anything: an item with no tab simply falls back
+                        // to the last batch.
+                        let prose = ctx
+                            .app_state::<crate::models::OpenDocsStore>()
+                            .and_then(|docs| docs.peek(d.id))
+                            .and_then(|doc| doc.main.as_ref().and_then(|m| m.doc.to_djot().ok()));
+                        let roster = index.roster_for(d.id, prose.as_deref());
+                        if !roster.is_empty() {
+                            let pin_probe = SingleBinderItem::new(self.app_ctx.clone());
+                            pin_probe.set_id(Some(d.id));
+                            let existing = d.references.clone();
+                            let pin: crate::tags::mention_list::PinReference =
+                                Rc::new(move |target, _c| {
+                                    let mut next = existing.clone();
+                                    if !next.contains(&target) {
+                                        next.push(target);
+                                    }
+                                    let _ = pin_probe.set_references(&next, stack);
+                                });
+                            col = col
+                                .child(
+                                    TextWidget::new(tr!(mentions_roster()))
+                                        .style(TextStyleRole::Tiny)
+                                        .color(TextRole::Secondary),
+                                )
+                                .child(crate::tags::MentionList::new(
+                                    roster,
+                                    Some(pin),
+                                    open.clone(),
+                                ));
+                        }
+
+                        // Backlinks, on a discoverable item: where this character is written
+                        // about. No pin here — pinning is a statement about the *mentioning*
+                        // item, and this list is looking the other way.
+                        if tag_value.get().iter().any(|id| discoverable.contains(id)) {
+                            let backlinks = index.backlinks_for(d.id);
+                            if !backlinks.is_empty() {
+                                col = col
+                                    .child(
+                                        TextWidget::new(tr!(mentions_backlinks()))
+                                            .style(TextStyleRole::Tiny)
+                                            .color(TextRole::Secondary),
+                                    )
+                                    .child(crate::tags::MentionList::new(
+                                        backlinks, None, open,
+                                    ));
+                            }
+                        }
+                    }
                 }
 
                 // Per-item language override (Step 9): the pill field over this item's own

@@ -526,6 +526,9 @@ fn main() {
     // charts. Registered as app-state so `App::build` can route the save +
     // `count_words` long-operation events to it (and a future manual "recount").
     let progress_recorder = ProgressRecorder::new(app_ctx.clone(), ids.clone());
+    // One instance app-wide: every roster and backlink list resolves through it, so a
+    // second would mean a second scan and two answers.
+    let mention_index = view_models::MentionIndex::new(app_ctx.clone(), ids.clone());
     // The Import-Plume view-model is a singleton (form + in-flight job + progress
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
@@ -768,6 +771,7 @@ fn main() {
         .app_state(outline.clone())
         .app_state(workspace_layout.clone())
         .app_state(tree_expansion.clone())
+        .app_state(mention_index.clone())
         .app_state(progress_recorder.clone())
         .app_state(import_plume.clone())
         .app_state(export.clone())

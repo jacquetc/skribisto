@@ -30,6 +30,7 @@ pub mod handling_app_lifecycle_commands;
 pub mod import_management_commands;
 // Hand-written, feature-agnostic (long-operation cancellation by operation id).
 pub mod long_operation_commands;
+pub mod mention_management_commands;
 pub mod progress_management_commands;
 pub mod search_management_commands;
 pub mod tag_management_commands;

@@ -179,4 +179,35 @@ pub(in crate::app) fn install(
             });
         }
     }
+    // The mention index's cadence. Same shape as the progress recorder above, with one
+    // difference: it also fires on Load and New. That recorder deliberately does not — a
+    // historical word-count point should not be recorded for a project merely opened — but
+    // an index is live state, and a roster that stays empty until the first save would make
+    // the feature look broken on every project you open.
+    if let Some(index) = ctx.app_state::<crate::view_models::MentionIndex>().cloned() {
+        for event in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
+            let i = index.clone();
+            ctx.subscribe_event(Origin::WorkManagement(event), move |_e: &Event| i.rescan());
+        }
+        {
+            let i = index.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::SaveWork),
+                move |_e: &Event| i.rescan_throttled(),
+            );
+        }
+        {
+            let i = index.clone();
+            ctx.subscribe_event(
+                Origin::LongOperation(LongOperationEvent::Completed),
+                move |e: &Event| i.on_completed(e),
+            );
+        }
+        for event in [LongOperationEvent::Failed, LongOperationEvent::Cancelled] {
+            let i = index.clone();
+            ctx.subscribe_event(Origin::LongOperation(event), move |e: &Event| {
+                i.on_failed_or_cancelled(e)
+            });
+        }
+    }
 }

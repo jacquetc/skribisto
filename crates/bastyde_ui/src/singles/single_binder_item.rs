@@ -245,6 +245,26 @@ mod imp {
         /// `view_models::binder_ops::update_item_dto`). Writing the junction directly is
         /// also already undoable — `set_binder_item_relationship` is backed by
         /// `UndoableSetRelationshipUseCase`, which stores the before-list itself.
+        /// Persist the item's confirmed references — the story-bible entries a writer has
+        /// pinned. Same relationship write as `set_tags`, and undoable on the same stack: a
+        /// pin is an edit, and mis-pinning must be one Ctrl+Z.
+        pub fn set_references(&self, item_ids: &[u64], stack: Option<u64>) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            binder_item_commands::set_binder_item_relationship(
+                &self.inner.ctx,
+                stack,
+                &frontend::direct_access::BinderItemRelationshipDto {
+                    id,
+                    field: frontend::common::direct_access::binder_item::BinderItemRelationshipField::References,
+                    right_ids: item_ids.to_vec(),
+                },
+            )?;
+            self.refresh();
+            Ok(())
+        }
+
         pub fn set_tags(&self, tag_ids: &[u64], stack: Option<u64>) -> anyhow::Result<()> {
             let Some(id) = self.inner.id.get() else {
                 anyhow::bail!("SingleBinderItem: no id");
@@ -480,6 +500,10 @@ mod imp {
                 d.sub_title = sub_title.to_string();
                 self.inner.dto.set(Some(d));
             }
+            Ok(())
+        }
+
+        pub fn set_references(&self, _item_ids: &[u64], _stack: Option<u64>) -> anyhow::Result<()> {
             Ok(())
         }
 

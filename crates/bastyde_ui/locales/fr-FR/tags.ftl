@@ -95,3 +95,12 @@ tags-chip-more = { $n ->
     [one] 1 étiquette de plus
    *[other] { $n } étiquettes de plus
 }
+
+## La distribution de la bible et les rétroliens
+mentions-roster = Mentionnés ici
+mentions-backlinks = Mentionné dans
+mentions-pin = Conserver { $name } sur cet élément
+mentions-hit-count = { $n ->
+    [one] une fois
+   *[other] { $n } fois
+}

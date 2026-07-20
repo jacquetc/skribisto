@@ -94,3 +94,12 @@ tags-chip-more = { $n ->
     [one] 1 more tag
    *[other] { $n } more tags
 }
+
+## The story-bible roster and backlinks
+mentions-roster = Mentioned here
+mentions-backlinks = Mentioned in
+mentions-pin = Keep { $name } on this item
+mentions-hit-count = { $n ->
+    [one] once
+   *[other] { $n } times
+}

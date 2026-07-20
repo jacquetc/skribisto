@@ -9,12 +9,14 @@
 
 pub mod alias_pill_field;
 pub mod contrast;
+pub mod mention_list;
 pub mod presets;
 pub mod tag_chip;
 pub mod tag_pill_field;
 pub mod tag_tooltip;
 
 pub use alias_pill_field::AliasPillField;
+pub use mention_list::MentionList;
 pub use presets::Preset;
 pub use tag_chip::{TagChipRow, TagDotsRow};
 pub use tag_pill_field::TagPillField;

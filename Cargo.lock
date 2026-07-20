@@ -5643,6 +5643,7 @@ dependencies = [
  "skribisto-export-management",
  "skribisto-handling-app-lifecycle",
  "skribisto-import-management",
+ "skribisto-mention-management",
  "skribisto-model",
  "skribisto-progress-management",
  "skribisto-search-management",
