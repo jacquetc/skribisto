@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Insert table — a 3x3 grid, the size the command inserts -->
+  <path d="M6.2 2.6 V13.4"/>
+  <path d="M9.8 2.6 V13.4"/>
+  <path d="M2.6 6.2 H13.4"/>
+  <path d="M2.6 9.8 H13.4"/>
+  <rect x="2.6" y="2.6" width="10.8" height="10.8" rx="1.2"/>
+</svg>

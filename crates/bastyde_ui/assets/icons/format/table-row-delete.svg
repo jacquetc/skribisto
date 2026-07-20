@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Delete row — the struck-out row is the one that goes -->
+  <path d="M3 8 H13"/>
+  <path d="M6.8 4.8 L9.2 7.2"/>
+  <path d="M9.2 4.8 L6.8 7.2"/>
+  <rect x="3" y="4" width="10" height="8" rx="1.1"/>
+</svg>

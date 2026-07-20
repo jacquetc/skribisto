@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Redo — undo's mirror, curling clockwise -->
+  <path d="M10 3.8 L12.8 6.6 L10 9.4"/>
+  <path d="M12.8 6.6 H6.6 a3 3 0 0 0 0 6 H9"/>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Remove table — a grid struck through, matching spellcheck-off's diagonal -->
+  <path d="M8 3 V13"/>
+  <path d="M3 8 H13"/>
+  <path d="M2.4 13.9 L13.6 2.6"/>
+  <rect x="3" y="3" width="10" height="10" rx="1.1"/>
+</svg>

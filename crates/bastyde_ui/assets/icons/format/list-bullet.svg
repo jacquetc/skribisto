@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Bulleted list — three dot-led lines -->
+  <path d="M6.2 4 H13"/>
+  <path d="M6.2 8 H13"/>
+  <path d="M6.2 12 H13"/>
+  <circle cx="3.4" cy="4" r="0.9"/>
+  <circle cx="3.4" cy="8" r="0.9"/>
+  <circle cx="3.4" cy="12" r="0.9"/>
+</svg>
