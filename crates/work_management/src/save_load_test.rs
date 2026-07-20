@@ -440,7 +440,7 @@ fn store_to_bundle(db: &DbContext, hub: &Arc<EventHub>, out: &std::path::Path) -
 fn legacy_load_preserves_unique_id() {
     let fixture = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../resources/test/skribisto_test_project.skrib"
+        "/../../resources/test/skribisto_legacy_v2.skrib"
     );
     let dir = tempfile::tempdir().unwrap();
     let db = DbContext::new().unwrap();
@@ -469,7 +469,7 @@ fn legacy_load_preserves_unique_id() {
 fn legacy_load_preserves_word_and_char_count_goals() {
     let fixture = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../resources/test/skribisto_test_project.skrib"
+        "/../../resources/test/skribisto_legacy_v2.skrib"
     );
     let dir = tempfile::tempdir().unwrap();
     // The fixture is read-only in the repo — copy it so we can inject goal rows.

@@ -5693,6 +5693,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "skribisto-mention-management"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-macros",
+ "skribisto-model",
+ "skribisto-skrib-format",
+ "text-document",
+ "uuid",
+]
+
+[[package]]
 name = "skribisto-model"
 version = "0.0.1"
 dependencies = [

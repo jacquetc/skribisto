@@ -13,7 +13,8 @@
 use common::event::{
     AllEvent, BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event,
     ExportManagementEvent, HandlingAppLifecycleEvent, ImportManagementEvent, LongOperationEvent,
-    Origin, ProgressManagementEvent, SearchManagementEvent, TagManagementEvent,
+    MentionManagementEvent, Origin, ProgressManagementEvent, SearchManagementEvent,
+    TagManagementEvent,
     TrashManagementEvent, UndoRedoEvent,
     WorkManagementEvent,
 };
@@ -99,6 +100,7 @@ pub enum FlatEventKind {
     TrashManagementRestoreItemsTo,
     TrashManagementDeleteTrashEntries,
 
+    MentionManagementScanMentions,
     TagManagementImportTags,
 
     BinderItemManagementDuplicate,
@@ -284,6 +286,9 @@ impl From<Event> for FlatEvent {
                 TrashManagementEvent::DeleteTrashEntries => {
                     FlatEventKind::TrashManagementDeleteTrashEntries
                 }
+            },
+            Origin::MentionManagement(fe) => match fe {
+                MentionManagementEvent::ScanMentions => FlatEventKind::MentionManagementScanMentions,
             },
             Origin::TagManagement(fe) => match fe {
                 TagManagementEvent::ImportTags => FlatEventKind::TagManagementImportTags,

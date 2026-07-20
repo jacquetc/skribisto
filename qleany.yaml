@@ -746,6 +746,43 @@ features:
         type: integer
       - name: output_path
         type: string
+- name: mention_management
+  use_cases:
+  # Read-only pass over the open Work: match every discoverable item's title and
+  # aliases against the prose of every activated Scene/Synopsis/Note. Writes
+  # nothing -- detection must never touch entities, dirty the project or push an
+  # undo entry. Modelled on count_words (QueryUnitOfWork, long operation), and
+  # scoped to the single open Work, so no dto_in.
+  - name: scan_mentions
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_out:
+      name: MentionScanResultDto
+      fields:
+      # One flat hit list. A hit is (owner, target): a scene's roster is the hits
+      # whose owner is that scene, an item's backlinks are the hits whose target is
+      # that item -- two views over one list, rather than two row kinds to keep in
+      # step. `is_list` cannot take an enum, so the Vec rides inside a complex
+      # variant; `row` exists to declare the row type that `hits` then references.
+      - name: row
+        type: enum
+        enum_name: MentionHit
+        enum_values:
+        - Empty
+        - "Found { owner_id: EntityId, target_id: EntityId, title: String, matched_name: String, is_title_match: bool, hit_count: i64, is_confirmed: bool, evidence: String }"
+      - name: hits
+        type: enum
+        enum_name: MentionHits
+        enum_values:
+        - Empty
+        - "Found(Vec<MentionHit>)"
 - name: progress_management
   use_cases:
   # Read-only pass over the open Work: sum SceneText prose of every
