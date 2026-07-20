@@ -257,9 +257,21 @@ fn format_row(handle: &EditorHandle) -> Padding {
             .focusable(false)
             .tooltip(tooltip)
             .toggle(state.clone())
-            .on_activate_fn(move |_ctx| {
+            .on_activate_fn(move |ctx| {
                 apply(&handle);
                 state.set(read(&handle));
+                // The edit lands, but the pointer is on the menu overlay and
+                // the editor is not focused, so nothing schedules the frame
+                // that would drain the document's events and repaint it — the
+                // formatting only appeared once the menu was dismissed.
+                //
+                // `request_frame` rather than `handle.focus(ctx)` (which is
+                // what `insert_scene_break` does for the same symptom): that
+                // menu is closing anyway and wants the caret back in the prose,
+                // whereas this strip is meant to stay open so bold and italic
+                // can be applied in one visit. Pulling focus out of the menu to
+                // force a repaint would defeat the point of it.
+                ctx.request_frame();
             })
     }
 
