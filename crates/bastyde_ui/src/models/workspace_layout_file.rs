@@ -38,6 +38,7 @@ use std::time::Duration;
 use bastyde::settings::{AppPaths, Migrator, SettingsFile, SettingsFileError, Versioned};
 use bastyde::widgets::{DockLayoutState, SplitterState};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// Accepted for call-site stability only. `SettingsFile`'s writes are a
 /// synchronous locked read-modify-write — there is no debounce to configure
@@ -53,15 +54,20 @@ const MAX_PROJECTS: usize = 128;
 /// One editor pane's persisted tabs.
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct PaneLayout {
-    /// The flat, binder-major ordinals of the open items, in tab order. An ordinal
-    /// is the item's index in the work's ordered binder-item stream (see the module
-    /// docs on why position rather than store id).
+    /// The open items' **durable uids** (`BinderItem.uid`), in tab order.
+    ///
+    /// This was a list of *ordinals* — positions in the work's flat binder-item stream —
+    /// through v1, because nothing about a `BinderItem` was stable enough to key by. A
+    /// position is not an identity: anything inserted, removed or moved in the binder
+    /// between capture and the next open shifted every later ordinal, so the desk
+    /// silently reopened a neighbour of each tab the writer had left open. `.skrib` v3's
+    /// `uid` survives a save → load, so v2 stores that instead.
     #[serde(default)]
-    pub tabs: Vec<usize>,
-    /// The ordinal of the selected tab (one of [`Self::tabs`]), or `None` when the
-    /// pane is empty.
+    pub tabs: Vec<Uuid>,
+    /// The uid of the selected tab (one of [`Self::tabs`]), or `None` when the pane is
+    /// empty.
     #[serde(default)]
-    pub selected: Option<usize>,
+    pub selected: Option<Uuid>,
 }
 
 impl PaneLayout {
@@ -147,13 +153,46 @@ impl Default for WorkspaceLayoutFile {
 }
 
 impl Versioned for WorkspaceLayoutFile {
-    const CURRENT_VERSION: u32 = 1;
+    /// **v2** re-keyed the persisted tabs from stream ordinals to durable
+    /// `BinderItem.uid`s (see [`PaneLayout::tabs`]).
+    const CURRENT_VERSION: u32 = 2;
     fn version(&self) -> u32 {
         self.version
     }
     fn set_version(&mut self, v: u32) {
         self.version = v;
     }
+}
+
+/// The migrator for `workspace.toml`.
+///
+/// **v1 → v2 drops every persisted tab list.** v1 stored stream *ordinals*; v2 stores
+/// durable uids, and the two cannot be translated here — an ordinal only means anything
+/// against the item stream of a *loaded* project, which a settings migration does not
+/// have (and there is one file for every project the user has ever opened, not one).
+///
+/// So the tabs are cleared and everything else in the row is kept. The user-visible cost
+/// is exactly one launch on which the remembered open tabs do not come back; the docks,
+/// splitter and focused pane all survive, and the next close re-captures the tabs by uid.
+/// Translating wrongly — reopening a *neighbour* of each tab — is the failure this whole
+/// change exists to remove, so dropping is the honest option.
+fn migrator() -> Migrator<WorkspaceLayoutFile> {
+    Migrator::new().step(1, |mut raw| {
+        if let Some(projects) = raw
+            .get_mut("projects")
+            .and_then(|p| p.as_array_mut())
+        {
+            for project in projects.iter_mut() {
+                for pane in ["primary", "secondary"] {
+                    if let Some(t) = project.get_mut(pane).and_then(|p| p.as_table_mut()) {
+                        t.remove("tabs");
+                        t.remove("selected");
+                    }
+                }
+            }
+        }
+        Ok(raw)
+    })
 }
 
 /// Persistent workspace-layout service. `SettingsFile` is `Clone` (shares the
@@ -172,14 +211,14 @@ impl WorkspaceLayoutService {
     /// `delay` is accepted for call-site stability but has no effect (writes are a
     /// synchronous locked read-modify-write, no debounce).
     pub fn open_with_delay(paths: &AppPaths, _delay: Duration) -> Result<Self, SettingsFileError> {
-        let file = SettingsFile::load(paths.config_file("workspace"), Migrator::new())?;
+        let file = SettingsFile::load(paths.config_file("workspace"), migrator())?;
         Ok(Self { file })
     }
 
     /// Open at an explicit path — used by tests.
     #[cfg_attr(not(test), allow(dead_code))]
     pub fn open_at(path: std::path::PathBuf, _delay: Duration) -> Result<Self, SettingsFileError> {
-        let file = SettingsFile::load(path, Migrator::new())?;
+        let file = SettingsFile::load(path, migrator())?;
         Ok(Self { file })
     }
 
@@ -189,12 +228,12 @@ impl WorkspaceLayoutService {
     pub fn in_memory_default() -> Self {
         let path =
             std::env::temp_dir().join(format!("skribisto-workspace-{}.toml", std::process::id()));
-        SettingsFile::load(path, Migrator::new())
+        SettingsFile::load(path, migrator())
             .map(|file| Self { file })
             .unwrap_or_else(|_| {
                 let file = SettingsFile::load(
                     std::path::PathBuf::from(".skribisto-workspace.toml"),
-                    Migrator::new(),
+                    migrator(),
                 )
                 .expect("in-memory workspace layout fallback");
                 Self { file }
@@ -273,23 +312,63 @@ mod tests {
         WorkspaceLayoutService::open_at(dir.join("workspace.toml"), Duration::ZERO).unwrap()
     }
 
+    fn u(n: u128) -> Uuid {
+        Uuid::from_u128(n)
+    }
+
     fn sample(uid: &str) -> PerProjectLayout {
         PerProjectLayout {
             work_uid: uid.to_string(),
             // Distinct paths per uid — a real project is one file (dedup-by-path).
             last_path: format!("/x/{uid}.skrib"),
             primary: PaneLayout {
-                tabs: vec![3, 7, 1],
-                selected: Some(7),
+                tabs: vec![u(3), u(7), u(1)],
+                selected: Some(u(7)),
             },
             secondary: PaneLayout {
-                tabs: vec![9],
-                selected: Some(9),
+                tabs: vec![u(9)],
+                selected: Some(u(9)),
             },
             focus_secondary: false,
             editor_splitter: None,
             docks: Some(DockLayoutState::default()),
         }
+    }
+
+    /// A v1 file's ordinal tab lists are **dropped**, not translated — an ordinal only
+    /// means something against a loaded project's item stream, which a settings migration
+    /// does not have. Everything else in the row survives, so the user loses exactly one
+    /// launch's remembered tabs rather than reopening the wrong items forever.
+    #[test]
+    fn the_v1_migration_drops_ordinal_tabs_and_keeps_the_rest() {
+        let d = tempdir().unwrap();
+        let path = d.path().join("workspace.toml");
+        std::fs::write(
+            &path,
+            r#"version = 1
+[[projects]]
+work_uid = "uid-A"
+last_path = "/x/a.skrib"
+focus_secondary = true
+[projects.primary]
+tabs = [3, 7, 1]
+selected = 7
+[projects.secondary]
+tabs = [9]
+selected = 9
+"#,
+        )
+        .unwrap();
+
+        let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+        let got = s.get("uid-A").expect("the row survived the migration");
+        assert!(
+            got.primary.tabs.is_empty() && got.primary.selected.is_none(),
+            "v1 ordinals cannot be translated, so they are dropped"
+        );
+        assert!(got.secondary.tabs.is_empty());
+        assert_eq!(got.last_path, "/x/a.skrib", "the rest of the row is kept");
+        assert!(got.focus_secondary, "including the focused pane");
     }
 
     #[test]
@@ -303,9 +382,9 @@ mod tests {
         // Reopen from disk — the layout survived the TOML round-trip.
         let s = svc(d.path());
         let got = s.get("uid-A").expect("entry present");
-        assert_eq!(got.primary.tabs, vec![3, 7, 1]);
-        assert_eq!(got.primary.selected, Some(7));
-        assert_eq!(got.secondary.tabs, vec![9]);
+        assert_eq!(got.primary.tabs, vec![u(3), u(7), u(1)]);
+        assert_eq!(got.primary.selected, Some(u(7)));
+        assert_eq!(got.secondary.tabs, vec![u(9)]);
         assert!(got.docks.is_some());
     }
 
@@ -361,12 +440,12 @@ mod tests {
 
         // Overwrite A with a different desk.
         let mut a2 = sample("uid-A");
-        a2.primary.tabs = vec![42];
-        a2.primary.selected = Some(42);
+        a2.primary.tabs = vec![u(42)];
+        a2.primary.selected = Some(u(42));
         s.set(a2).unwrap();
 
-        assert_eq!(s.get("uid-A").unwrap().primary.tabs, vec![42]);
-        assert_eq!(s.get("uid-B").unwrap().primary.tabs, vec![3, 7, 1], "B untouched");
+        assert_eq!(s.get("uid-A").unwrap().primary.tabs, vec![u(42)]);
+        assert_eq!(s.get("uid-B").unwrap().primary.tabs, vec![u(3), u(7), u(1)], "B untouched");
         assert_eq!(s.file.borrow().projects.len(), 2, "no duplicate row for A");
     }
 
@@ -419,18 +498,18 @@ mod tests {
         std::fs::write(
             &path,
             r#"
-version = 1
+version = 2
 
 [[projects]]
 work_uid = "uid-good"
 [projects.primary]
-tabs = [1, 4]
-selected = 4
+tabs = ["00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000004"]
+selected = "00000000-0000-0000-0000-000000000004"
 
 [[projects]]
 work_uid = "uid-bad-docks"
 [projects.primary]
-tabs = [2]
+tabs = ["00000000-0000-0000-0000-000000000002"]
 [projects.docks]
 this_is_not = "a valid DockLayoutState"
 leading = 12345
@@ -440,11 +519,11 @@ leading = 12345
         let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
         // The good row is untouched.
         let good = s.get("uid-good").expect("good row present");
-        assert_eq!(good.primary.tabs, vec![1, 4]);
+        assert_eq!(good.primary.tabs, vec![u(1), u(4)]);
         assert!(good.docks.is_none());
         // The bad-docks row still loads; only its docks dropped to None.
         let bad = s.get("uid-bad-docks").expect("bad-docks row still loaded");
-        assert_eq!(bad.primary.tabs, vec![2], "tabs survive an unreadable docks blob");
+        assert_eq!(bad.primary.tabs, vec![u(2)], "tabs survive an unreadable docks blob");
         assert!(bad.docks.is_none(), "unreadable docks blob -> None, not a load failure");
     }
 
@@ -456,12 +535,13 @@ leading = 12345
         let path = d.path().join("workspace.toml");
         std::fs::write(
             &path,
-            "version = 1\n\n[[projects]]\nwork_uid = \"uid-A\"\n[projects.primary]\ntabs = [0, 2]\n",
+            "version = 2\n\n[[projects]]\nwork_uid = \"uid-A\"\n[projects.primary]\n\
+             tabs = [\"00000000-0000-0000-0000-000000000001\"]\n",
         )
         .unwrap();
         let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
         let got = s.get("uid-A").unwrap();
-        assert_eq!(got.primary.tabs, vec![0, 2]);
+        assert_eq!(got.primary.tabs, vec![u(1)]);
         assert_eq!(got.primary.selected, None);
         assert!(!got.focus_secondary);
         assert!(got.docks.is_none());

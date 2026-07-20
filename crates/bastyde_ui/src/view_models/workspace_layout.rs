@@ -42,9 +42,12 @@ use bastyde::widgets::{DockLayoutState, DockSide, DockingModel};
 
 use frontend::AppContext;
 
+use uuid::Uuid;
+
 use crate::app_ids::AppIds;
 use crate::models::{
-    PaneLayout, PerProjectLayout, WorkspaceLayoutService, ordered_binder_items, uid_is_usable,
+    BinderItemRef, PaneLayout, PerProjectLayout, WorkspaceLayoutService, ordered_binder_items,
+    uid_is_usable,
 };
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{EditorsViewModel, Side};
@@ -139,13 +142,13 @@ impl WorkspaceLayoutViewModel {
             return;
         }
 
-        // item id → ordinal (position in the flat, binder-major item stream).
+        // item id → durable uid. Persisting the *uid* means a restored tab reopens the
+        // item the writer actually had open, whatever moved in the binder meanwhile.
         let order = self.ordered_items();
-        let index_of: HashMap<u64, usize> =
-            order.iter().enumerate().map(|(i, (id, _))| (*id, i)).collect();
+        let uid_of: HashMap<u64, Uuid> = order.iter().map(|r| (r.id, r.uid)).collect();
         let pane = |side| PaneLayout {
-            tabs: to_ordinals(&index_of, &editors.tab_item_ids(side)),
-            selected: editors.selected_item(side).and_then(|id| index_of.get(&id).copied()),
+            tabs: to_uids(&uid_of, &editors.tab_item_ids(side)),
+            selected: editors.selected_item(side).and_then(|id| uid_of.get(&id).copied()),
         };
         let split_active = editors.split_active().get();
 
@@ -204,15 +207,14 @@ impl WorkspaceLayoutViewModel {
             return; // no saved layout: default docks (above) + the empty desk close_all left
         };
 
-        // ordinal → (item id, title) in the freshly-loaded project. Resolve BOTH
-        // panes up front: a saved ordinal can be stale (its item removed between
-        // capture and this load — the "persist by position" tradeoff), and the
-        // split / focus decisions below must key off what actually resolved, not the
-        // persisted list length, or an all-stale side pane would show up empty.
+        // uid → (item id, title) in the freshly-loaded project. Resolve BOTH panes up
+        // front: a saved uid can still be stale (its item was trashed or deleted between
+        // capture and this load), and the split / focus decisions below must key off what
+        // actually resolved, not the persisted list length, or an all-stale side pane
+        // would show up empty.
         let order = self.ordered_items();
-        let resolve = |ord: usize| -> Option<(u64, String)> { order.get(ord).cloned() };
-        let primary_tabs = resolve_ordinals(&order, &rec.primary.tabs);
-        let secondary_tabs = resolve_ordinals(&order, &rec.secondary.tabs);
+        let primary_tabs = resolve_uids(&order, &rec.primary.tabs);
+        let secondary_tabs = resolve_uids(&order, &rec.secondary.tabs);
 
         for (id, title) in &primary_tabs {
             editors.open_in(Side::Primary, *id, title);
@@ -231,14 +233,15 @@ impl WorkspaceLayoutViewModel {
 
         // Re-select the tabs that were selected (open_in leaves the last-opened one
         // selected; override to the persisted choice).
-        if let Some(ord) = rec.primary.selected
-            && let Some((id, _)) = resolve(ord)
+        let resolve_one = |uid: Uuid| order.iter().find(|r| r.uid == uid).map(|r| r.id);
+        if let Some(uid) = rec.primary.selected
+            && let Some(id) = resolve_one(uid)
         {
             editors.select_item(Side::Primary, id);
         }
         if split
-            && let Some(ord) = rec.secondary.selected
-            && let Some((id, _)) = resolve(ord)
+            && let Some(uid) = rec.secondary.selected
+            && let Some(id) = resolve_one(uid)
         {
             editors.select_item(Side::Secondary, id);
         }
@@ -256,9 +259,9 @@ impl WorkspaceLayoutViewModel {
 
     // ── Backend enumeration ─────────────────────────────────────────────────────
 
-    /// The open project's binder items as `(item_id, title)`, in the flat,
-    /// binder-major stream order (through Layer A). Empty when no project is open.
-    fn ordered_items(&self) -> Vec<(u64, String)> {
+    /// The open project's binder items in the flat, binder-major stream order (through
+    /// Layer A). Empty when no project is open.
+    fn ordered_items(&self) -> Vec<BinderItemRef> {
         match self.ids.work_id.get() {
             Some(work_id) => ordered_binder_items(&self.app_ctx, work_id),
             None => Vec::new(),
@@ -266,18 +269,35 @@ impl WorkspaceLayoutViewModel {
     }
 }
 
-// ── Pure ordinal translation (headless-testable) ────────────────────────────────
+// ── Pure uid translation (headless-testable) ────────────────────────────────────
+//
+// This used to persist **ordinals** — an item's position in the flat stream — because
+// nothing about a `BinderItem` was durable enough to key by. That made a restore
+// positional: anything inserted, removed or moved in the binder between capture and the
+// next open shifted every later ordinal, so the desk reopened a *neighbour* of each tab
+// the writer had left open, silently and with no way to tell. `BinderItem.uid` (`.skrib`
+// v3) is stable across a save → load, so a restore now reopens the item itself.
 
-/// Item ids → their ordinals in the stream, dropping any not present (a tab whose
-/// item left the binder since capture).
-fn to_ordinals(index_of: &HashMap<u64, usize>, ids: &[u64]) -> Vec<usize> {
-    ids.iter().filter_map(|id| index_of.get(id).copied()).collect()
+/// Item ids → their durable uids, dropping any not present (a tab whose item left the
+/// binder since capture) and any still nil-identified (a pre-v3 item not yet healed).
+fn to_uids(uid_of: &HashMap<u64, Uuid>, ids: &[u64]) -> Vec<Uuid> {
+    ids.iter()
+        .filter_map(|id| uid_of.get(id).copied())
+        .filter(|uid| !uid.is_nil())
+        .collect()
 }
 
-/// Ordinals → their `(id, title)` in the stream, dropping any out of range (a
-/// stale ordinal whose position no longer exists).
-fn resolve_ordinals(order: &[(u64, String)], ords: &[usize]) -> Vec<(u64, String)> {
-    ords.iter().filter_map(|&o| order.get(o).cloned()).collect()
+/// Uids → their `(id, title)` in the stream, dropping any that no longer resolve (the
+/// item was trashed or deleted since capture).
+fn resolve_uids(order: &[BinderItemRef], uids: &[Uuid]) -> Vec<(u64, String)> {
+    uids.iter()
+        .filter_map(|uid| {
+            order
+                .iter()
+                .find(|r| r.uid == *uid)
+                .map(|r| (r.id, r.title.clone()))
+        })
+        .collect()
 }
 
 /// Decide the side pane's visibility + the focused pane from what actually
@@ -297,39 +317,83 @@ fn split_and_focus(secondary_count: usize, want_focus_secondary: bool) -> (bool,
 mod tests {
     use super::*;
 
-    fn stream() -> Vec<(u64, String)> {
+    fn u(n: u128) -> Uuid {
+        Uuid::from_u128(n)
+    }
+
+    fn stream() -> Vec<BinderItemRef> {
         vec![
-            (10, "A".into()),
-            (20, "B".into()),
-            (30, "C".into()),
-            (40, "D".into()),
+            BinderItemRef { id: 10, uid: u(10), title: "A".into() },
+            BinderItemRef { id: 20, uid: u(20), title: "B".into() },
+            BinderItemRef { id: 30, uid: u(30), title: "C".into() },
+            BinderItemRef { id: 40, uid: u(40), title: "D".into() },
         ]
     }
 
-    #[test]
-    fn ordinals_round_trip_through_the_stream() {
-        let order = stream();
-        let index_of: HashMap<u64, usize> =
-            order.iter().enumerate().map(|(i, (id, _))| (*id, i)).collect();
-        // capture: item ids → ordinals (tab order preserved).
-        let ords = to_ordinals(&index_of, &[30, 10, 40]);
-        assert_eq!(ords, vec![2, 0, 3]);
-        // restore: ordinals → the same ids, same order.
-        let resolved: Vec<u64> = resolve_ordinals(&order, &ords).into_iter().map(|(id, _)| id).collect();
-        assert_eq!(resolved, vec![30, 10, 40]);
+    fn uid_map(order: &[BinderItemRef]) -> HashMap<u64, Uuid> {
+        order.iter().map(|r| (r.id, r.uid)).collect()
     }
 
     #[test]
-    fn a_removed_item_drops_from_capture_and_a_stale_ordinal_drops_from_restore() {
+    fn uids_round_trip_through_the_stream() {
         let order = stream();
-        let index_of: HashMap<u64, usize> =
-            order.iter().enumerate().map(|(i, (id, _))| (*id, i)).collect();
-        // An open tab for an item no longer in the stream (99) is dropped at capture.
-        assert_eq!(to_ordinals(&index_of, &[20, 99, 40]), vec![1, 3]);
-        // An ordinal past the (now shorter) stream is dropped at restore.
+        // capture: item ids → uids (tab order preserved).
+        let uids = to_uids(&uid_map(&order), &[30, 10, 40]);
+        assert_eq!(uids, vec![u(30), u(10), u(40)]);
+        // restore: uids → the same ids, same order.
         let resolved: Vec<u64> =
-            resolve_ordinals(&order, &[1, 7, 3]).into_iter().map(|(id, _)| id).collect();
-        assert_eq!(resolved, vec![20, 40]);
+            resolve_uids(&order, &uids).into_iter().map(|(id, _)| id).collect();
+        assert_eq!(resolved, vec![30, 10, 40]);
+    }
+
+    /// A tab whose item left the binder drops at capture; a saved uid that no longer
+    /// resolves drops at restore. Neither shifts the surviving entries.
+    #[test]
+    fn a_removed_item_drops_from_capture_and_a_stale_uid_drops_from_restore() {
+        let order = stream();
+        assert_eq!(
+            to_uids(&uid_map(&order), &[20, 99, 40]),
+            vec![u(20), u(40)],
+            "item 99 is not in the binder"
+        );
+        let resolved: Vec<u64> = resolve_uids(&order, &[u(20), u(999), u(40)])
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(resolved, vec![20, 40], "uid 999 no longer exists");
+    }
+
+    /// A nil uid is never captured: a pre-v3 item that has not been healed yet has no
+    /// identity, and persisting one would make every such item look like the same tab.
+    #[test]
+    fn a_nil_uid_is_not_captured() {
+        let order = vec![
+            BinderItemRef { id: 10, uid: Uuid::nil(), title: "unhealed".into() },
+            BinderItemRef { id: 20, uid: u(20), title: "B".into() },
+        ];
+        assert_eq!(to_uids(&uid_map(&order), &[10, 20]), vec![u(20)]);
+    }
+
+    /// **The reason for the whole re-key.** Inserting an item ahead of the open tabs
+    /// shifts every later *ordinal*, so the ordinal scheme restored a neighbour of each
+    /// tab. Uids are unaffected: the same items reopen, whatever moved.
+    #[test]
+    fn an_insertion_before_the_open_tabs_does_not_shift_what_reopens() {
+        let captured = to_uids(&uid_map(&stream()), &[30, 40]);
+
+        // Next session: a new item was inserted at the front of the stream.
+        let mut shifted = vec![BinderItemRef { id: 5, uid: u(5), title: "new".into() }];
+        shifted.extend(stream());
+
+        let reopened: Vec<u64> = resolve_uids(&shifted, &captured)
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(
+            reopened,
+            vec![30, 40],
+            "the same items reopen; under ordinals these would have been 20 and 30"
+        );
     }
 
     #[test]

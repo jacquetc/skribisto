@@ -44,7 +44,7 @@ pub use binder_binder_items_tree_model::{
     BinderBinderItemsTreeModel, BinderTreeKey, CommitMove, TreeFilters, TreeNode,
 };
 pub use binder_list_model::{BinderListModel, BinderRow};
-pub use binder_stream::ordered_binder_items;
+pub use binder_stream::{BinderItemRef, ordered_binder_items};
 pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
 pub use dict_word_list_model::{DictWordListModel, DictWordRow};
 pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
