@@ -21,7 +21,8 @@ use bastyde::core::accesskit::Role;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    IconButton, Padding, Panel, PopoverIconButton, TextInput, TextWidget, VStack, Wrap,
+    FocusScope, IconButton, Padding, Panel, PopoverIconButton, TextInput, TextWidget,
+    TraversalScopePolicy, VStack, Wrap,
 };
 
 use crate::widgets::Pill;
@@ -91,12 +92,18 @@ impl Widget for AliasPillField {
         flow = flow.child(
             PopoverIconButton::new(IconButton::add().tooltip(tr!(tags_alias_add())))
                 .bare()
-                .content(AliasEntry {
+                // // Tab must cycle *inside* the popover. Without a `FocusScope` the overlay opens
+        // with focus still in the window behind it, so Tab walks straight out into the
+        // toolbar and neither the filter field nor the rows can be reached at all — a
+        // keyboard-only writer can open this and do nothing with it (WCAG 2.1.1). Same
+        // trap `ProjectSwitcherButton` documents and guards with a test; this is that
+        // pattern, not a new idea.
+                .content(FocusScope::new(TraversalScopePolicy::Cycle).child(AliasEntry {
                     draft: self.draft.clone(),
                     value: self.value.clone(),
                     set: self.set.clone(),
                     root_child: None,
-                }),
+                })),
         );
 
         let id = ctx.add(

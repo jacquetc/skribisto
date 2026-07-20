@@ -24,8 +24,9 @@ use bastyde::core::accesskit::Role;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Divider, HStack, IconButton, IconWidget, MaxSize, Padding, Panel, PopoverIconButton,
-    ScrollArea, TextInput, TextWidget, Toggle, VStack, Wrap,
+    Divider, FocusScope, HStack, IconButton, IconWidget, MaxSize, Padding, Panel,
+    PopoverIconButton, ScrollArea, TextInput, TextWidget, Toggle, TraversalScopePolicy, VStack,
+    Wrap,
 };
 
 use crate::models::{TagRow, name_key};
@@ -124,12 +125,19 @@ impl Widget for TagPillField {
         // `.bare()` + an explicit panel: `PopoverIconButton`'s own chrome is skipped and this
         // call site supplies it, because the picker itself is now bare so that
         // `TagDotsRow` can drop it straight into a `Popover`, which brings its own surface.
+        // // Tab must cycle *inside* the popover. Without a `FocusScope` the overlay opens
+        // with focus still in the window behind it, so Tab walks straight out into the
+        // toolbar and neither the filter field nor the rows can be reached at all — a
+        // keyboard-only writer can open this and do nothing with it (WCAG 2.1.1). Same
+        // trap `ProjectSwitcherButton` documents and guards with a test; this is that
+        // pattern, not a new idea.
         let picker = Panel::new()
-            .child(Padding::uniform(8.0).child(TagPicker::new(
+            .child(FocusScope::new(TraversalScopePolicy::Cycle).child(
+                Padding::uniform(8.0).child(TagPicker::new(
                 self.value.clone(),
                 self.set.clone(),
                 self.vm.clone(),
-            )))
+            ))))
             .access_role(Role::Dialog)
             .access_label(tr!(tags_pill_add()));
         flow = flow.child(
@@ -391,17 +399,40 @@ impl Widget for TagPickRow {
                 .add_child(check_id)
                 .child(swatch(contrast::parse(&self.tag.color)))
                 .child(TextWidget::new(lit!(self.tag.name.clone())))
+                // Role, name and selected go on the SAME node that is focusable -- the
+                // pattern `MentionList`'s rows already use. They used to live on the widget's
+                // own `accessibility()`, which is the row's OUTER node, while `.focusable`
+                // sat here: keyboard focus therefore landed on an unnamed GenericContainer
+                // and a screen reader announced nothing identifying the row. Merging the
+                // subtree instead was worse -- it prunes descendants, so the focused node
+                // vanished from the AT tree entirely.
+                .access_role(Role::ListBoxOption)
+                .access_label(lit!(self.tag.name.clone()))
+                .access_customize({
+                    let checked = self.checked;
+                    move |b| b.set_selected(checked)
+                })
                 .focusable(true)
-                .on_tap(move |_e, c| on_toggle(c)),
+                .on_tap({
+                    let on_toggle = on_toggle.clone();
+                    move |_e, c| on_toggle(c)
+                })
+                // `on_tap` is pointer-only, so without this the row is Tab-reachable and
+                // completely inert -- which is still WCAG 2.1.1: reaching a control you
+                // cannot operate is not keyboard access. Enter and Space both tick, the
+                // two keys a listbox option is expected to answer to.
+                .on_key(move |ev, c| {
+                    if let WidgetEvent::KeyDown { key, .. } = ev
+                        && matches!(key, Key::Enter | Key::Space)
+                    {
+                        on_toggle(c);
+                        return EventResponse::Handled;
+                    }
+                    EventResponse::Ignored
+                }),
         );
         self.root_child = Some(id);
         vec![id]
-    }
-
-    fn accessibility(&self, builder: &mut bastyde::core::accessibility::AccessNodeBuilder) {
-        builder.set_role(Role::ListBoxOption);
-        builder.set_name(self.tag.name.clone());
-        builder.set_selected(self.checked);
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {

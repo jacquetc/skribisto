@@ -133,7 +133,23 @@ impl Widget for MentionList {
                 line.access_role(Role::ListItem)
                     .access_label(lit!(row.title.clone()))
                     .focusable(true)
-                    .on_tap(move |_e, c| open(target, title.clone(), c)),
+                    .on_tap({
+                        let open = open.clone();
+                        let title = title.clone();
+                        move |_e, c| open(target, title.clone(), c)
+                    })
+                    // Same reason as the tag picker's rows: `on_tap` never fires from the
+                    // keyboard, so a roster entry was Tab-reachable and inert. Enter opens
+                    // the mentioned item, which is what clicking it does.
+                    .on_key(move |ev, c| {
+                        if let WidgetEvent::KeyDown { key, .. } = ev
+                            && matches!(key, Key::Enter | Key::Space)
+                        {
+                            open(target, title.clone(), c);
+                            return EventResponse::Handled;
+                        }
+                        EventResponse::Ignored
+                    }),
             );
 
             // The evidence. Omitted for a confirmed reference the prose never names — there
