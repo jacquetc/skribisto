@@ -896,6 +896,7 @@ dependencies = [
  "toml 0.8.23",
  "unicode-segmentation",
  "ureq",
+ "uuid",
  "windows 0.61.3",
  "winresource",
  "zip 0.6.6",

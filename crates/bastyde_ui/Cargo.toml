@@ -58,6 +58,12 @@ binder_ordering = { workspace = true }
 # backup scheduler, backups list, and open-a-backup flow.
 skrib_format = { workspace = true }
 common = { workspace = true }
+# The durable per-row identity (`BinderItem.uid` / `Binder.uid`) is a real
+# `uuid::Uuid`, and the Overview table keys its tree — and, later, its persisted
+# expand state — on it. Naming the crate here lets the UI hold the typed value
+# instead of stringifying it at the boundary; it is already in the tree via
+# `common`, so this adds a name, not a dependency.
+uuid = { workspace = true }
 # The export compiler (Preset schema + built-in styles + one-TextDocument assembly)
 # drives the Export panel's live preview *client-side* — the same code path the
 # `export_work` long op runs, so preview and committed export cannot diverge.

@@ -58,6 +58,7 @@ mod item_part;
 mod item_scene;
 mod item_text;
 pub(crate) mod corkboard;
+pub(crate) mod overview;
 pub(crate) mod pace;
 pub(crate) mod shared;
 
@@ -115,6 +116,11 @@ pub struct ContentTab {
     /// The Corkboard view-model — `Some` only for a folder container (Chapter /
     /// Part / Book), gated on the same [`StreamLevel::for_container`] as `stream`.
     corkboard: Option<crate::view_models::CorkboardViewModel>,
+    /// The Overview view-model — `Some` for every container that offers the segment,
+    /// gated on [`skribisto_model::overview_capable`]. That is a **wider** gate than the
+    /// stream's and the corkboard's: a `Folder/Note` has no manuscript extent, so it has
+    /// no stream, but it does have a subtree worth tabulating.
+    overview: Option<crate::view_models::OverviewViewModel>,
     /// The app's entity ids — needed for the undo stack when a name field commits.
     ids: AppIds,
     /// The per-editor find banner (Ctrl+F) — `Some` only when this tab has a main
@@ -405,6 +411,19 @@ impl ContentTab {
                     )
                 },
             );
+        // The Overview gates on `overview_capable`, which is deliberately *not* the
+        // stream's gate — a notes folder gets a table but no stream. Built before
+        // `stream` consumes `app_ctx`. It reuses the corkboard's counting-method setting
+        // rather than introducing a second one: "how a word is counted" is one answer per
+        // project, not one per view.
+        let overview = crate::view_models::OverviewViewModel::new(
+            app_ctx.clone(),
+            ids.clone(),
+            open_doc.item_id,
+            &open_doc.role,
+            &open_doc.sub_role,
+            corkboard_defaults.counting_method.clone(),
+        );
         let stream = StreamViewModel::new(
             app_ctx,
             ids.clone(),
@@ -426,6 +445,7 @@ impl ContentTab {
             stream,
             pace,
             corkboard,
+            overview,
             ids,
             find,
             segment,
@@ -439,6 +459,11 @@ impl ContentTab {
     /// The Corkboard view-model — `Some` only for a folder container.
     pub fn corkboard(&self) -> Option<&crate::view_models::CorkboardViewModel> {
         self.corkboard.as_ref()
+    }
+
+    /// The Overview view-model — `Some` for every Overview-capable container.
+    pub fn overview(&self) -> Option<&crate::view_models::OverviewViewModel> {
+        self.overview.as_ref()
     }
 
     /// The per-editor find banner's view-model — `Some` only when the tab has a
@@ -764,6 +789,173 @@ mod tests {
         }
     }
 
+    /// A **notes folder** is segmented too, now that it offers an Overview of its
+    /// contents. It used to be a bare synopsis page with no bar at all, so this pins the
+    /// bar's existence, not only its size.
+    #[test]
+    fn a_notes_folder_lays_out_its_two_segment_bar() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Folder,
+            &Note,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+        let bar = first_of_type(&tree, id, "SegmentedControl")
+            .expect("Folder/Note has no SegmentedControl in its tree");
+        let b = tree.bounds(bar);
+        assert!(
+            b.width > 0.0 && b.height > 0.0,
+            "the notes folder's segmented bar laid out to zero size ({b:?})"
+        );
+    }
+
+    /// The Overview view-model exists for exactly the containers that offer the segment
+    /// — a **wider** set than the stream's, because a notes folder has a subtree but no
+    /// manuscript extent.
+    ///
+    /// `ContentTab` and `skribisto_model::overview_capable` must agree: a tab that built
+    /// no view-model would render the segment's pane as an empty `VStack`, which looks
+    /// like a bug in the table rather than a gate that said no.
+    #[test]
+    fn the_overview_view_model_matches_the_model_gate() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let combos = [
+            (Item, Scene),
+            (Item, ChapterScene),
+            (Item, Note),
+            (Item, Part),
+            (Item, BookBegin),
+            (Item, BookEnd),
+            (Item, Text),
+            (Folder, None),
+            (Folder, ChapterScene),
+            (Folder, Part),
+            (Folder, Book),
+            (Folder, Note),
+        ];
+        for (role, sub_role) in combos {
+            let tab = tab_for(
+                &ctx,
+                1,
+                &role,
+                &sub_role,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
+                &AppIds::new(),
+            );
+            assert_eq!(
+                tab.overview().is_some(),
+                skribisto_model::overview_capable(&role, &sub_role),
+                "{role:?}/{sub_role:?}: the tab and the model disagree about the Overview"
+            );
+        }
+    }
+
+    /// The Overview segment **mounts and lays out** — the positional
+    /// `SegmentedControl` ↔ `Switcher` contract, end to end.
+    ///
+    /// The two are matched by index, not by name, so a segment added without its child
+    /// (or in the wrong order) does not fail to compile: it silently shows the *previous*
+    /// view under the new label. Selecting the last index and finding a real table is
+    /// what proves the pairing.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn the_overview_segment_mounts_a_table() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        // (sub_role, the Overview's index in that container's bar)
+        for (sub_role, overview_index) in [(ChapterScene, 4), (Part, 4), (Book, 5), (Note, 1)] {
+            let tab = tab_for(
+                &ctx,
+                101, // the mock Book container — its fixture subtree has rows
+                &Folder,
+                &sub_role,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
+                &AppIds::new(),
+            );
+            tab.segment.set(overview_index);
+            // The Overview pane subscribes to backend events in its wiring child, so it
+            // needs a tree that has an event source (see `crate::test_support`).
+            let mut tree = crate::test_support::tree_with_events(&ctx);
+            let id = tree.add_boxed(tab_pane(&tab));
+            tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+            let table = first_containing(&tree, id, "TreeTableView").unwrap_or_else(|| {
+                panic!(
+                    "Folder/{sub_role:?} segment {overview_index} mounted no TreeTableView — \
+                     the segment and its Switcher child have drifted out of step"
+                )
+            });
+            let b = tree.bounds(table);
+            assert!(
+                b.width > 0.0 && b.height > 0.0,
+                "Folder/{sub_role:?}: the Overview table laid out to zero size ({b:?})"
+            );
+        }
+    }
+
+    /// A Book's bar carries the extra "Pace" segment, so its Overview sits one further
+    /// along than a Chapter's or a Part's. Pinned because the index above is a magic
+    /// number that only the bar's construction order justifies.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn only_a_book_has_the_extra_pace_segment() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let segments = |sub_role: BinderItemSubRole| {
+            let tab = tab_for(
+                &ctx,
+                101,
+                &Folder,
+                &sub_role,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
+                &AppIds::new(),
+            );
+            let mut tree = WidgetTree::new();
+            let id = tree.add_boxed(tab_pane(&tab));
+            tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+            let bar = first_of_type(&tree, id, "SegmentedControl").expect("a bar");
+            tree.children(bar).len()
+        };
+        let chapter = segments(ChapterScene);
+        assert_eq!(
+            segments(Part),
+            chapter,
+            "a Part and a Chapter offer the same views"
+        );
+        assert_eq!(
+            segments(Book),
+            chapter + 1,
+            "a Book adds Pace, which is why its Overview index is one higher"
+        );
+    }
+
     /// Switching a container's view persists it per type, and a newly-opened tab of
     /// the same type inherits it — the whole "remember last view" chain: the built
     /// tab's `RememberSegment` effect writes `EditorViewMemory` on a segment change,
@@ -876,6 +1068,22 @@ mod tests {
         assert_eq!(mem.initial(&ChapterScene), 2);
         a.segment.set(0); // A switches back → its switch wins in turn
         assert_eq!(mem.initial(&ChapterScene), 0);
+    }
+
+    /// First node at/under `root` whose type name *contains* `needle` (DFS pre-order).
+    ///
+    /// Separate from [`first_of_type`] because a generic widget's `type_name` carries its
+    /// parameters (`TreeTableView<..::OverviewRow>`), so a suffix match never fires on one.
+    fn first_containing(tree: &WidgetTree, root: WidgetId, needle: &str) -> Option<WidgetId> {
+        if tree
+            .widget_type_name(root)
+            .is_some_and(|n| n.contains(needle))
+        {
+            return Some(root);
+        }
+        tree.children(root)
+            .into_iter()
+            .find_map(|c| first_containing(tree, c, needle))
     }
 
     /// First node at/under `root` whose fully-qualified type name ends with `suffix`

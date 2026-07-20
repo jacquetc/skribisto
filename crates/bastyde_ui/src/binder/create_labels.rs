@@ -18,7 +18,7 @@ use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*; // tr!
 
 use crate::tooltip_registry as tt;
-use frontend::common::entities::ContentRole;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use skribisto_model::{CreateType, PromoteTarget, Relation};
 
 /// The human label for a logical [`CreateType`] — the SplitButton title text and
@@ -53,6 +53,35 @@ pub fn promote_target_label(target: PromoteTarget) -> LocalizedString {
         T::FlatChapter => tr!(promote_flat_chapter()),
         T::Scene => tr!(create_scene()),
         T::Note => tr!(create_note()),
+    }
+}
+
+/// The human name of an item's **type**, for the Overview table's Type column.
+///
+/// Answers "what is this row, structurally?" — so both encodings of a chapter read
+/// "Chapter". That is the opposite of the "Convert to ▸" menu
+/// ([`promote_target_label`]), which is precisely where the writer chooses *between* the
+/// two encodings and so must name them apart. The distinction they draw is visible here
+/// anyway: a chapter folder has a twist and children, a flat chapter does not.
+///
+/// Mirrors `skribisto_model::COMBINATIONS` — every valid pair has a name. An invalid pair
+/// cannot occur (the matrix rejects it at creation), so the fallback exists only to keep
+/// the function total.
+pub fn item_type_label(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> LocalizedString {
+    use BinderItemRole::{Folder, Item};
+    use BinderItemSubRole as S;
+    match (role, sub_role) {
+        (_, S::Book) => tr!(create_book()),
+        (_, S::BookBegin) => tr!(type_book_start()),
+        (_, S::BookEnd) => tr!(create_book_end()),
+        (_, S::Part) => tr!(create_part()),
+        (_, S::ChapterScene) => tr!(create_chapter()),
+        (_, S::Scene) => tr!(create_scene()),
+        (Folder, S::Note) => tr!(create_note_folder()),
+        (Item, S::Note) => tr!(create_note()),
+        (_, S::Text) => tr!(type_text()),
+        (Folder, S::None) => tr!(create_folder()),
+        _ => tr!(create_folder()),
     }
 }
 

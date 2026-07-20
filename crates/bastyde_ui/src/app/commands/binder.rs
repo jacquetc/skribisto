@@ -62,6 +62,19 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         }));
     }
     {
+        // Reveal an item in the outline — fired from the Overview table, which knows the
+        // item but deliberately holds no reference to the outline view-model. `App` is
+        // the mediator, so the view-model graph stays a DAG.
+        let outline = deps.outline.clone();
+        ctx.register_action_global(Action::new("binder.reveal_in_outline").on_invoke(
+            move |i, _c| {
+                if let Some(AppIntent::RevealInOutline { item_id }) = AppIntent::from_intent(i) {
+                    outline.reveal_item(crate::models::BinderTreeKey::Item(*item_id));
+                }
+            },
+        ));
+    }
+    {
         let outline = deps.outline.clone();
         ctx.register_action_global(
             Action::new("binder.indent").on_invoke(move |_i, _c| outline.indent_selected()),

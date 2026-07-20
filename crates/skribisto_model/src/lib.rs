@@ -193,6 +193,28 @@ pub fn counts_prose(role: &Role, sub_role: &SubRole) -> bool {
     content_allowed(role, sub_role, &SceneText)
 }
 
+/// Whether this `(role, sub_role)` gets an **Overview** table — the dense, sortable
+/// outliner of everything under a container.
+///
+/// Deliberately *not* [`compile::StreamLevel::for_container`], which answers a different
+/// question ("does this container host a manuscript stream?") and returns `None` for a
+/// notes folder. A `Folder/Note` has no manuscript extent, so it has no stream — but it
+/// still holds a subtree worth tabulating, so it does get an Overview.
+///
+/// `Folder/None` is excluded: a plain grouping folder is an organisational bag with no
+/// structural meaning, and its synopsis-only page is the whole of it.
+///
+/// Only folder containers qualify — a *leaf* has no subtree to tabulate, whatever its
+/// sub-role, so the flat `Item/ChapterScene` encoding of a chapter is excluded exactly as
+/// it is from the stream.
+pub fn overview_capable(role: &Role, sub_role: &SubRole) -> bool {
+    *role == Role::Folder
+        && matches!(
+            sub_role,
+            SubRole::ChapterScene | SubRole::Part | SubRole::Book | SubRole::Note
+        )
+}
+
 /// Validate a complete item: the `(role, sub_role)` must be a known combination
 /// and every present content role must be permitted by it.
 pub fn validate_item(
@@ -784,6 +806,64 @@ mod tests {
     #[test]
     fn the_matrix_has_twelve_combinations() {
         assert_eq!(COMBINATIONS.len(), 12);
+    }
+
+    /// The Overview table is offered by exactly the four folder containers — and by no
+    /// leaf, whatever its sub-role, since a leaf has no subtree to tabulate.
+    ///
+    /// The truth table is spelled out over the *whole* matrix rather than spot-checked, so
+    /// a thirteenth combination cannot quietly inherit an answer nobody chose: a new row
+    /// fails here until someone decides which side of the line it falls on.
+    #[test]
+    fn overview_is_offered_by_the_four_folder_containers_only() {
+        let expected = |role: &Role, sub_role: &SubRole| {
+            matches!(
+                (role, sub_role),
+                (Role::Folder, SubRole::ChapterScene)
+                    | (Role::Folder, SubRole::Part)
+                    | (Role::Folder, SubRole::Book)
+                    | (Role::Folder, SubRole::Note)
+            )
+        };
+        for c in COMBINATIONS {
+            assert_eq!(
+                overview_capable(&c.role, &c.sub_role),
+                expected(&c.role, &c.sub_role),
+                "{:?}/{:?} disagrees about offering an Overview",
+                c.role,
+                c.sub_role
+            );
+        }
+        // The two exclusions that are decisions, not accidents — pinned by name so
+        // flipping either has to be deliberate.
+        assert!(
+            !overview_capable(&Role::Folder, &SubRole::None),
+            "a plain grouping folder has no structure to tabulate"
+        );
+        assert!(
+            !overview_capable(&Role::Item, &SubRole::ChapterScene),
+            "the flat chapter encoding is a leaf — it has no subtree"
+        );
+    }
+
+    /// Overview is **not** the stream predicate. The two answer different questions and
+    /// differ on exactly one combination: a notes folder has no manuscript extent (no
+    /// stream) but does hold a subtree (an Overview). Pinned because reaching for
+    /// `StreamLevel::for_container` here is the obvious wrong shortcut.
+    #[test]
+    fn overview_and_stream_differ_only_on_the_notes_folder() {
+        for c in COMBINATIONS {
+            let overview = overview_capable(&c.role, &c.sub_role);
+            let stream = compile::StreamLevel::for_container(&c.role, &c.sub_role).is_some();
+            let differs = (c.role == Role::Folder) && (c.sub_role == SubRole::Note);
+            assert_eq!(
+                overview != stream,
+                differs,
+                "{:?}/{:?}: overview={overview} stream={stream}",
+                c.role,
+                c.sub_role
+            );
+        }
     }
 
     /// **Every** combination has a search facet. A thirteenth row added to the matrix without

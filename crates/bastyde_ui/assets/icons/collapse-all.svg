@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Collapse all — chevrons closing toward a centre line (the inverse of expand-all) -->
+  <path d="M5.4 3L8 5.6 10.6 3"/>
+  <path d="M5.4 13L8 10.4 10.6 13"/>
+  <path d="M3 8h10"/>
+</svg>

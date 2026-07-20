@@ -46,6 +46,10 @@ ctx-rename = &Renommer
 ctx-duplicate = &Dupliquer
 ctx-trash = Mettre à la &corbeille
 ctx-open-to-side = Ouvrir &sur le côté
+ctx-open = &Ouvrir
+ctx-reveal-in-outline = Afficher dans le &plan
+ctx-move-up = Déplacer vers le &haut
+ctx-move-down = Déplacer vers le &bas
 
 ## Recommandations de création: libellés de types (titre du SplitButton + Ajouter ▸)
 create-book = Livre
@@ -56,6 +60,9 @@ create-note = Note
 create-note-folder = Dossier de notes
 create-folder = Dossier
 create-book-end = Fin du livre
+# Item-type names for the Overview's Type column (the rest reuse the create-* nouns).
+type-book-start = Début du livre
+type-text = Texte
 
 ## Recommandations de création: indication de placement en fin de ligne
 placement-inside = à l’intérieur
@@ -299,6 +306,25 @@ corkboard-search-placeholder = Filtrer les cartes…
 corkboard-empty-title = Rien ici pour l'instant
 corkboard-empty-hint = Utilisez « ＋ Nouveau » ci-dessus pour ajouter le premier élément.
 corkboard-new = Nouveau
+
+## Overview (the container's contents as a sortable table)
+overview-col-title = Titre
+overview-col-type = Type
+overview-col-label = Étiquette
+overview-col-own-words = Mots
+overview-col-total-words = Total
+overview-row-count = { $count ->
+    [one] { $count } ligne
+   *[other] { $count } lignes
+}
+overview-search-placeholder = Filtrer les lignes…
+overview-expand-all = Tout déplier
+overview-collapse-all = Tout replier
+overview-table-label = Contenu
+overview-empty-title = Rien pour l’instant
+overview-gone-title = Ce conteneur n’existe plus
+overview-gone-hint = Il a été mis à la corbeille. Restaurez-le, ou fermez cet onglet.
+overview-empty-hint = Utilisez « ＋ Nouveau » ci-dessus pour ajouter le premier élément.
 corkboard-grid-label = Cartes du tableau
 corkboard-rename-field = Renommer l’élément
 corkboard-expand-synopsis = Agrandir le synopsis
@@ -331,6 +357,7 @@ drop-open-to-side = Ouvrir sur le côté
 segment-chapter = Chapitre
 segment-part = Partie
 segment-book = Livre
+segment-notes = Notes
 segment-pace = Rythme
 pace-placeholder = Le planificateur de rythme apparaît ici.
 # Planificateur de rythme

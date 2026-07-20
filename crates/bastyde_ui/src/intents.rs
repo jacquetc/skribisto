@@ -89,6 +89,16 @@ pub enum AppIntent {
         anchor_item_id: Option<u64>,
     },
 
+    /// Reveal a binder item in the outline dock: show the dock and select the row.
+    /// Fired from the Overview table's context menu ("where does this sit in the
+    /// project?"), carrying the item id rather than relying on any shared selection.
+    ///
+    /// Over the bus rather than the Overview holding an `OutlineViewModel`, for the same
+    /// reason as `work.open_path`: peer view-models do not import each other, so `App`
+    /// mediates and the graph stays a DAG.
+    #[name = "binder.reveal_in_outline"]
+    RevealInOutline { item_id: u64 },
+
     /// Rename the selected binder/item (presents an input dialog).
     #[name = "binder.rename"]
     Rename,

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Expand all — chevrons opening away from a centre line -->
+  <path d="M5.4 5.6L8 3l2.6 2.6"/>
+  <path d="M5.4 10.4L8 13l2.6-2.6"/>
+  <path d="M3 8h10"/>
+</svg>

@@ -27,8 +27,10 @@ mod examples_list_model;
 mod export_styles_file;
 mod installed_dictionaries_model;
 mod open_docs;
+mod overview_rows_model;
 mod pace_model;
 mod recent_work_list_model;
+mod row_search;
 mod search_results_model;
 mod search_settings_file;
 mod stats_model;
@@ -51,6 +53,10 @@ pub use installed_dictionaries_model::{
     DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
 };
 pub use open_docs::{OpenDoc, OpenDocsStore};
+pub use overview_rows_model::{
+    COL_LABEL, COL_OWN_WORDS, COL_TITLE, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow,
+    OverviewRowsModel,
+};
 pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};
 pub use recent_work_list_model::RecentWorkListModel;
 pub use search_results_model::SearchResultsModel;

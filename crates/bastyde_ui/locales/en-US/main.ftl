@@ -46,6 +46,10 @@ ctx-rename = &Rename
 ctx-duplicate = &Duplicate
 ctx-trash = Move to &Trash
 ctx-open-to-side = Open to the &Side
+ctx-open = &Open
+ctx-reveal-in-outline = Reveal in Out&line
+ctx-move-up = Move &Up
+ctx-move-down = Move Dow&n
 
 ## Create recommendations: logical type labels (SplitButton title + Add ▸ rows)
 create-book = Book
@@ -56,6 +60,9 @@ create-note = Note
 create-note-folder = Note folder
 create-folder = Folder
 create-book-end = End of Book
+# Item-type names for the Overview's Type column (the rest reuse the create-* nouns).
+type-book-start = Book start
+type-text = Text
 
 ## Create recommendations: trailing placement hint on each row
 placement-inside = inside
@@ -298,6 +305,25 @@ corkboard-search-placeholder = Filter cards…
 corkboard-empty-title = Nothing here yet
 corkboard-empty-hint = Use “＋ New” above to add the first one.
 corkboard-new = New
+
+## Overview (the container's contents as a sortable table)
+overview-col-title = Title
+overview-col-type = Type
+overview-col-label = Label
+overview-col-own-words = Words
+overview-col-total-words = Total
+overview-row-count = { $count ->
+    [one] { $count } row
+   *[other] { $count } rows
+}
+overview-search-placeholder = Filter rows…
+overview-expand-all = Expand all
+overview-collapse-all = Collapse all
+overview-table-label = Contents
+overview-empty-title = Nothing here yet
+overview-gone-title = This container is gone
+overview-gone-hint = It was moved to the Trash. Restore it, or close this tab.
+overview-empty-hint = Use “＋ New” above to add the first one.
 corkboard-grid-label = Corkboard cards
 corkboard-rename-field = Rename item
 corkboard-expand-synopsis = Expand synopsis
@@ -331,6 +357,7 @@ segment-chapter = Chapter
 segment-part = Part
 segment-book = Book
 segment-pace = Pace
+segment-notes = Notes
 pace-placeholder = The Pace planner appears here.
 # Pace planner
 pace-empty-title = Plan this book's pace

@@ -242,13 +242,23 @@ pub fn placeholder(_tab: &ContentTab) -> Box<dyn Widget> {
     ))
 }
 
-/// A synopsis-only folder body (Folder/None, Folder/Note): a plain grouping / notes
-/// folder, which the matrix gives *only* a synopsis — so there is nothing to segment,
-/// and no stream (it has no manuscript extent).
+/// A synopsis-only folder body (Folder/None): a plain grouping folder, which the matrix
+/// gives *only* a synopsis — so there is nothing to segment, and no stream (it has no
+/// manuscript extent).
 ///
 /// Its synopsis is the page, not a footnote to one, so it grows with its content like
 /// any other primary writing surface.
+///
+/// A **notes** folder used to share this body; it now gets
+/// [`folder_synopsis_with_overview`] instead, because it does have a subtree to tabulate.
 pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
+    tab_backdrop(folder_synopsis_body(tab))
+}
+
+/// The synopsis page itself, without the tab backdrop — so it can be either a whole tab
+/// body ([`folder_synopsis_only`]) or one segment of one
+/// ([`folder_synopsis_with_overview`]), which owns the backdrop for the pair.
+fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
     let mut col = VStack::new().spacing(8.0).child(vspace(12.0));
     if let Some(s) = tab.synopsis() {
         col = col
@@ -266,7 +276,41 @@ pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
                 tab.open_doc.spell_synopsis(),
             ));
     }
-    tab_backdrop(ScrollArea::new().child(col.child(vspace(28.0))))
+    ScrollArea::new().child(col.child(vspace(28.0)))
+}
+
+/// A **notes folder**'s body: its own synopsis page, plus an Overview of what it holds.
+///
+/// Two segments, not five. A notes folder has no manuscript extent — the compiler never
+/// walks into it — so Full Chapter / Full Part / Full Synopsis and the Corkboard (which
+/// is a view *of* a manuscript stream) would all be empty by construction. What it does
+/// have is a subtree: a research folder with thirty notes in it is exactly the thing you
+/// want tabulated. So it gets the one segment that applies.
+///
+/// This is why [`skribisto_model::overview_capable`] is not
+/// `StreamLevel::for_container` — they disagree here, and only here.
+pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
+    let bar = SegmentedControl::new(tab.segment.clone())
+        .segment(Segment::new(tr!(segment_notes())))
+        .segment(Segment::new(tr!(overview())));
+    let content = Switcher::new(tab.segment.clone())
+        .child(folder_synopsis_body(tab))
+        .child_boxed(crate::tabs::overview::overview_pane(tab));
+
+    let col = VStack::new()
+        .spacing(8.0)
+        .child(vspace(10.0))
+        .child(centered(bar, &tab.column_width))
+        .child(Expand::new().child(content));
+    // Remembered per type, exactly like the five-segment containers: reopening a notes
+    // folder returns to whichever of its two views you last used.
+    Box::new(RememberSegment {
+        segment: tab.segment.clone(),
+        memory: tab.view_memory.clone(),
+        sub_role: tab.sub_role().clone(),
+        child: Some(tab_backdrop(col)),
+        child_id: None,
+    })
 }
 
 /// The body every folder container shares: a `SegmentedControl` over
@@ -279,13 +323,14 @@ pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
 ///    *and everything inside it*, as one continuous manuscript;
 /// 3. **Full Synopsis** — the same rows, showing each one's synopsis instead;
 ///
-/// plus Corkboard and Overview as 🚧 future segments (FEATURES.md), shown disabled.
+/// 4. the **Corkboard** — the same rows as index cards;
+/// 5. the **Overview** — the same rows as a sortable table.
 ///
 /// The pairing reads as "this one" vs "this one and all of it": `Chapter` /
 /// `Full Chapter`.
 ///
-/// The `Switcher` mounts only the child at the selected index; the two disabled
-/// segments have no child, and an out-of-range selection mounts nothing (no panic).
+/// The `Switcher` mounts only the child at the selected index, and an out-of-range
+/// selection mounts nothing (no panic).
 pub fn folder_segmented(
     tab: &ContentTab,
     own_label: impl Into<LocalizedString>,
@@ -308,11 +353,14 @@ pub fn folder_segmented(
         bar = bar.segment(Segment::new(label));
         content = content.child_boxed(pane);
     }
-    // Corkboard is a real segment now; its Switcher child must sit at the same
-    // positional index (Overview stays a disabled placeholder).
+    // Corkboard and Overview are both real segments now; each Switcher child must sit at
+    // the same positional index as its segment — the two are matched by position, not by
+    // name, so a segment added without its child (or vice versa) silently shifts every
+    // later view by one.
     bar = bar.segment(Segment::new(tr!(corkboard())));
     content = content.child_boxed(crate::tabs::corkboard::corkboard_pane(tab));
-    let bar = bar.segment(Segment::new(tr!(overview())).disabled(true));
+    let bar = bar.segment(Segment::new(tr!(overview())));
+    let content = content.child_boxed(crate::tabs::overview::overview_pane(tab));
 
     let col = VStack::new()
         .spacing(8.0)
