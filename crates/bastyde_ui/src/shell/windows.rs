@@ -822,4 +822,191 @@ mod tests {
             "id suffix must be lowercase/uppercase hex, got {hex:?}"
         );
     }
+
+    // ── Menu mnemonics ────────────────────────────────────────────────────
+    //
+    // A mnemonic must be unique *within* one keyboard namespace, and each open
+    // menu is its own namespace — `Alt+F` opens File, and `F` may then address
+    // an item inside it without ambiguity. So the check is per-scope, not
+    // global, and the same letter may be reused freely across scopes.
+    //
+    // The menu bar itself is the scope that bites hardest: `MenuBar::build`
+    // fills a `HashMap<char, usize>` behind a `debug_assert!`, so a duplicate
+    // there is a debug-build panic, and in release the later entry silently
+    // wins and the earlier menu becomes unreachable by keyboard. That is not
+    // hypothetical — fr-FR shipped `F&ormat` against `&Outils` (both `O`)
+    // until this test was written.
+    //
+    // Translators pick mnemonics per language, so a locale that reads clean in
+    // English can collide in French. Every supported locale is checked.
+
+    /// Menu scopes, mirroring the `MenuModel` built in
+    /// [`ProjectWindow::window_config`]. Add an entry to that menu, add its
+    /// key here — an unlisted key is simply unchecked, which is the one
+    /// failure mode this table has.
+    const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[
+        (
+            "menu bar",
+            &["menu-file", "menu-view", "menu-format", "menu-tools"],
+        ),
+        (
+            "File",
+            &[
+                "menu-new-work",
+                "menu-open-work",
+                "menu-import-from",
+                "menu-export",
+                "menu-save",
+                "menu-save-as-file",
+                "menu-save-as-folder",
+                "menu-backup",
+                "menu-backups-list",
+                "menu-close-work",
+                "menu-welcome",
+                "menu-settings",
+                "menu-quit",
+            ],
+        ),
+        ("File > Import from", &["menu-import-plume"]),
+        // The export scopes are labelled from `ExportScopeKind` at runtime and
+        // deliberately carry no mnemonics; they are listed so the table stays a
+        // complete picture of the menu, and the uniqueness check skips them.
+        (
+            "File > Export",
+            &[
+                "menu-export-book",
+                "menu-export-part",
+                "menu-export-chapter",
+                "menu-export-scene",
+                "menu-export-note",
+                "menu-export-folder",
+                "menu-export-choose",
+                "menu-export-none",
+            ],
+        ),
+        (
+            "View",
+            &[
+                "menu-outline",
+                "menu-search",
+                "menu-trash",
+                "menu-search-preview",
+            ],
+        ),
+        ("Format", &["menu-scene-break", "menu-major-scene-break"]),
+        ("Tools", &["menu-spellcheck"]),
+    ];
+
+    /// Every locale whose menu labels carry mnemonics, as the `.ftl` source.
+    /// Mirrors the `compile_in` list in `main.rs`.
+    const MENU_LOCALES: &[(&str, &str)] = &[
+        ("en-US", include_str!("../../locales/en-US/main.ftl")),
+        ("fr-FR", include_str!("../../locales/fr-FR/main.ftl")),
+    ];
+
+    /// The mnemonic a label declares, lower-cased to match `MenuBar`'s own
+    /// `key_lower` table. `&&` is an escaped literal ampersand and is skipped,
+    /// per the convention documented at the top of each `.ftl`.
+    fn mnemonic_of(label: &str) -> Option<char> {
+        let mut chars = label.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c != '&' {
+                continue;
+            }
+            match chars.peek() {
+                Some('&') => {
+                    chars.next();
+                }
+                Some(&marked) => return marked.to_lowercase().next().or(Some(marked)),
+                None => return None,
+            }
+        }
+        None
+    }
+
+    /// `key = value` pairs from one `.ftl`. Continuation lines are indented and
+    /// comments start with `#`, so both are skipped; menu labels are always
+    /// single-line, which is all this needs to see.
+    fn ftl_labels(ftl: &str) -> std::collections::HashMap<&str, &str> {
+        ftl.lines()
+            .filter(|line| !line.starts_with('#') && !line.starts_with(char::is_whitespace))
+            .filter_map(|line| line.split_once(" = "))
+            .map(|(key, value)| (key.trim(), value.trim()))
+            .collect()
+    }
+
+    #[test]
+    fn menu_mnemonics_are_unique_within_every_scope_and_locale() {
+        let mut collisions = Vec::new();
+
+        for (locale, ftl) in MENU_LOCALES {
+            let labels = ftl_labels(ftl);
+
+            for (scope, keys) in MENU_MNEMONIC_SCOPES {
+                let mut claimed: std::collections::HashMap<char, &str> =
+                    std::collections::HashMap::new();
+
+                for key in *keys {
+                    let label = labels.get(key).unwrap_or_else(|| {
+                        panic!(
+                            "{locale}: `{key}` is listed in MENU_MNEMONIC_SCOPES \
+                             but absent from main.ftl"
+                        )
+                    });
+                    // No mnemonic is legitimate (see the export scopes above).
+                    let Some(mnemonic) = mnemonic_of(label) else {
+                        continue;
+                    };
+                    if let Some(previous) = claimed.insert(mnemonic, key) {
+                        collisions.push(format!(
+                            "{locale} / {scope}: '{mnemonic}' is claimed by both \
+                             `{previous}` and `{key}`"
+                        ));
+                    }
+                }
+            }
+        }
+
+        assert!(
+            collisions.is_empty(),
+            "menu mnemonics must be unique within a scope:\n  {}",
+            collisions.join("\n  ")
+        );
+    }
+
+    #[test]
+    fn every_menu_bar_entry_declares_a_mnemonic() {
+        // A top-level menu with no mnemonic is unreachable by `Alt+letter`,
+        // which for the Format menu is the whole keyboard path to the
+        // formatting commands.
+        let bar = MENU_MNEMONIC_SCOPES
+            .iter()
+            .find(|(scope, _)| *scope == "menu bar")
+            .expect("the menu-bar scope is listed")
+            .1;
+
+        for (locale, ftl) in MENU_LOCALES {
+            let labels = ftl_labels(ftl);
+            for key in bar {
+                let label = labels[key];
+                assert!(
+                    mnemonic_of(label).is_some(),
+                    "{locale}: menu-bar entry `{key}` = {label:?} declares no mnemonic"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn mnemonic_of_reads_markers_and_skips_escaped_ampersands() {
+        assert_eq!(mnemonic_of("&Fichier"), Some('f'));
+        assert_eq!(mnemonic_of("Fo&rmat"), Some('r'));
+        assert_eq!(mnemonic_of("E&xporter"), Some('x'));
+        // An escaped ampersand is literal text, not a marker.
+        assert_eq!(mnemonic_of("Search && Replace"), None);
+        assert_eq!(mnemonic_of("Search && &Replace"), Some('r'));
+        assert_eq!(mnemonic_of("no marker here"), None);
+        // A trailing lone '&' marks nothing.
+        assert_eq!(mnemonic_of("dangling &"), None);
+    }
 }
