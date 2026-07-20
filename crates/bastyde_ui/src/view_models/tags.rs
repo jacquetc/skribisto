@@ -311,6 +311,46 @@ mod tests {
         assert_eq!(back, rows);
     }
 
+    /// The round trip **through a real file**, not just through a String.
+    ///
+    /// `csv_round_trips` above covers `format_csv` against `parse_csv` in memory, which is
+    /// where the interesting parsing lives. What it cannot see is `export_to` itself: the
+    /// path handling, the write, and the fact that what lands on disk is what
+    /// `import_from`'s reader will later be handed. That glue had no coverage at all, and it
+    /// is the half a writer actually exercises — the UI path around it goes through a native
+    /// file dialog, which no automation probe can drive, so this is the furthest out the
+    /// export can be checked at all.
+    ///
+    /// Written against `format_csv` + a real `std::fs` read rather than `TagsViewModel`,
+    /// because constructing the view-model needs an `AppContext` and the thing under test is
+    /// the file, not the palette plumbing.
+    #[test]
+    fn an_exported_file_is_readable_back_from_disk() {
+        let rows = vec![
+            row("status/draft", "#607d8b", "Not yet revised", false),
+            row("Character, minor", "#2980b9", "with, commas", true),
+            row("très soigné", "#000000", "accents survive UTF-8", true),
+        ];
+
+        let dir = std::env::temp_dir().join(format!("skrib-csv-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("palette.csv");
+        std::fs::write(&path, format_csv(&rows).unwrap()).unwrap();
+
+        let text = std::fs::read_to_string(&path).expect("the exported file must be readable");
+        assert!(
+            text.starts_with("name,color,details,discoverable"),
+            "an externally-edited file is the point, so the header has to be the documented \
+             one; got {:?}",
+            text.lines().next()
+        );
+        let (back, malformed) = parse_csv(&text).unwrap();
+        assert_eq!(malformed, 0, "a file we just wrote must not parse as malformed");
+        assert_eq!(back, rows, "what lands on disk is what comes back");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     /// A tag name may contain the delimiter; RFC-4180 quoting is why CSV was chosen over a
     /// hand-rolled delimited format.
     #[test]

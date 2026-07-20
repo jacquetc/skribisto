@@ -107,6 +107,19 @@ impl TagChipRow {
             .collect::<Vec<_>>()
             .join(", ")
     }
+
+    /// How many dots are drawn, and which tags the "+N" cell is hiding.
+    ///
+    /// Split out of `build` so the claim can be tested. "The overflow cell names what it is
+    /// hiding, so the count is not a dead end" is the whole reason the cell carries a
+    /// tooltip, and it was previously computed inline inside a closure — reachable only by
+    /// opening a real tooltip on a live app, which is to say untested. An off-by-one here
+    /// produces a "+2" that names three tags, or names the wrong two, and nothing catches it.
+    fn split_at_cap(&self) -> (usize, Vec<String>) {
+        let shown = self.tags.len().min(self.max_visible);
+        let hidden = self.tags[shown..].iter().map(|t| t.name.clone()).collect();
+        (shown, hidden)
+    }
 }
 
 impl std::fmt::Debug for TagChipRow {
@@ -123,7 +136,7 @@ impl Widget for TagChipRow {
         // zones for hover (the tap still works there, since it belongs to the row).
         let mut row = HStack::new().spacing(0.0);
 
-        let shown = self.tags.len().min(self.max_visible);
+        let (shown, rest) = self.split_at_cap();
         for tag in self.tags.iter().take(shown) {
             let cell = ctx.add(dot_cell(tag));
             // Per dot, so hovering one never shows another's. `tag_tooltip_body` omits the
@@ -139,9 +152,8 @@ impl Widget for TagChipRow {
             row = row.add_child(cell);
         }
 
-        let hidden = self.tags.len().saturating_sub(shown);
+        let hidden = rest.len();
         if hidden > 0 {
-            let rest: Vec<String> = self.tags[shown..].iter().map(|t| t.name.clone()).collect();
             let label = tr!(tags_chip_more(n = hidden as i64));
             let cell = ctx.add(
                 MinSize::new(HIT, HIT).child(
@@ -650,6 +662,43 @@ mod tests {
             b.width >= HIT - 0.51,
             "the overflow cell is a hit target too, got {}",
             b.width
+        );
+    }
+
+    /// The "+N" cell names **exactly** the tags it is hiding — no more, no fewer, in order.
+    ///
+    /// This is what stops the count being a dead end, and it is the one part of the overflow
+    /// that a live probe cannot easily reach (it needs a real tooltip on a real hover, on an
+    /// item carrying more tags than any surface's cap). An off-by-one here yields a "+2" that
+    /// lists three names, or lists the wrong two, and the cell that exists to explain itself
+    /// quietly misleads instead.
+    #[test]
+    fn the_overflow_cell_names_exactly_the_hidden_tags() {
+        let tags: Vec<TagRow> = (1..=6)
+            .map(|i| tag(i, &format!("t{i}"), "#2e7d32", false))
+            .collect();
+
+        // The corkboard's cap: 4 shown, 2 hidden.
+        let (shown, hidden) = TagChipRow::new(tags.clone(), MAX_VISIBLE_CORKBOARD).split_at_cap();
+        assert_eq!(shown, 4);
+        assert_eq!(
+            hidden,
+            vec!["t5".to_string(), "t6".to_string()],
+            "the hidden list is the tail, in palette order — not the head, and not resorted"
+        );
+
+        // The stream's cap on the same tags: one fewer hidden. Proves the split follows the
+        // cap it is given rather than a constant.
+        let (shown, hidden) = TagChipRow::new(tags.clone(), MAX_VISIBLE_STREAM).split_at_cap();
+        assert_eq!(shown, 5);
+        assert_eq!(hidden, vec!["t6".to_string()]);
+
+        // Under the editor's cap nothing is hidden, so no cell and nothing to name.
+        let (shown, hidden) = TagChipRow::new(tags, MAX_VISIBLE_EDITOR).split_at_cap();
+        assert_eq!(shown, 6);
+        assert!(
+            hidden.is_empty(),
+            "with room for every tag there is no overflow cell to explain"
         );
     }
 
