@@ -684,6 +684,35 @@ fn migrating_a_v1_bundle_walks_the_whole_chain() {
     }
 }
 
+/// A `work.ron` written before `author_name` existed must still parse.
+///
+/// `author_name` was added to `WorkFile` without `#[serde(default)]`, unlike every
+/// other additive field on that struct — which made it *required*, so every project
+/// saved before it landed became unopenable. Nothing caught it because the four
+/// hand-written "this is what an older build emitted" fixtures below had each been
+/// given an `author_name:` line an old file could not possibly contain.
+///
+/// The failure is a parse error, not a migration gap: serde runs before
+/// `migration`, so a manifest that will not deserialize never reaches a step that
+/// could heal it. That is why the fix is `default`, not a version bump.
+#[test]
+fn a_work_written_before_author_name_existed_still_parses() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "Old Novel",
+        dict_language: ["fr-FR"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "abc",
+    )"#;
+    let w: WorkFile = ron::from_str(old).expect("a work.ron without author_name must still parse");
+    assert_eq!(w.title, "Old Novel");
+    // Absent means unset, which is a legal state — the field is optional.
+    assert_eq!(w.author_name, "");
+}
+
 /// A bundle written before `details`/`discoverable`/`aliases` existed must still parse.
 ///
 /// The round-trip tests above always write with the current code, so they can never
@@ -763,7 +792,6 @@ fn a_pre_v4_space_separated_language_still_parses_as_a_list() {
         created_at: "2023-11-14T22:13:20Z",
         updated_at: "2023-11-14T22:13:20Z",
         title: "Old Novel",
-        author_name: "A",
         dict_language: "fr-FR en-US",
         tag_ids: [],
         dict_word_ids: [],
@@ -786,7 +814,6 @@ fn a_pre_v4_single_language_becomes_one_element() {
         created_at: "2023-11-14T22:13:20Z",
         updated_at: "2023-11-14T22:13:20Z",
         title: "T",
-        author_name: "A",
         dict_language: "  fr-FR  ",
         tag_ids: [],
         dict_word_ids: [],
@@ -805,7 +832,6 @@ fn a_pre_v4_empty_language_yields_no_tags() {
         created_at: "2023-11-14T22:13:20Z",
         updated_at: "2023-11-14T22:13:20Z",
         title: "T",
-        author_name: "A",
         dict_language: "",
         tag_ids: [],
         dict_word_ids: [],
@@ -900,7 +926,6 @@ fn peek_manifest_parses_a_pre_v4_language_without_migrating() {
         created_at: "2023-11-14T22:13:20Z",
         updated_at: "2023-11-14T22:13:20Z",
         title: "T",
-        author_name: "A",
         dict_language: "fr-FR en-US",
         tag_ids: [],
         dict_word_ids: [],

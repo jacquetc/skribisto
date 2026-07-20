@@ -132,6 +132,16 @@ pub struct WorkFile {
     pub created_at: String,
     pub updated_at: String,
     pub title: String,
+    /// The writer's name, for the compiled title page and the exported metadata.
+    /// Optional — an empty string means "not set" and is omitted downstream.
+    ///
+    /// `#[serde(default)]` like every other additive field here: without it a
+    /// manifest written before this field existed fails to *deserialize*, which
+    /// happens before [`migration`](crate::migration) ever runs, so no migration
+    /// step could rescue it. It carries no version bump for the same reason
+    /// `unique_id` and `chapter_flat` carry none — a purely additive optional
+    /// field costs older readers nothing.
+    #[serde(default)]
     pub author_name: String,
     #[serde(default, deserialize_with = "tags_or_legacy_string")]
     pub dict_language: Vec<String>,
