@@ -246,10 +246,18 @@ def binder_rows():
 
 
 def find(sub, role=None):
-    sub = sub.lower()
+    """First node whose label contains any of `sub` (a string or a tuple).
+
+    Takes variants because the app follows the *system* locale: an English-only
+    selector finds nothing on a French desktop and reports it as a missing
+    control, which is the same shape as a genuine regression. Every call site
+    below passes both spellings, keyed to the ftl entry named in the comment.
+    """
+    subs = (sub,) if isinstance(sub, str) else tuple(sub)
+    subs = tuple(x.lower() for x in subs)
     for n in s.nodes():
         lab = (n.get("label") or "").lower()
-        if sub in lab and (role is None or n.get("role") == role):
+        if any(x in lab for x in subs) and (role is None or n.get("role") == role):
             return n
     return None
 
@@ -341,7 +349,7 @@ s.settle()
 time.sleep(1.2)
 print(f"  opened {scene_name!r}")
 
-add = find("add a tag", role="Button")
+add = find(("add a tag", "ajouter une étiquette"), role="Button")
 if not add:
     s.dump("no Inspector tag field")
     fail("the Inspector shows no 'Add a tag' button", s.app, s.mcp, s.log)
@@ -363,7 +371,8 @@ s.call("type_text", {"node": field["id"], "text": TAG})
 s.settle()
 time.sleep(0.8)
 
-create = find(f'create "{TAG}"') or find("create")
+create = (find((f'create "{TAG}"', f'créer « {TAG} »'))
+          or find(("create", "créer")))
 if not create:
     s.dump("no create row")
     fail("the picker offers no 'Create' row for a new name", s.app, s.mcp, s.log)
@@ -427,7 +436,7 @@ if not container:
 click(container.get("bounds") or {})
 s.settle()
 time.sleep(1.6)
-if not find("corkboard"):
+if not find(("corkboard", "tableau d'affichage")):
     s.dump("no segmented control")
     fail(f"{CONTAINER!r} offers no Stream/Corkboard segments — it must be a Folder whose "
          "sub_role is Book/Part/ChapterScene", s.app, s.mcp, s.log)
@@ -453,7 +462,7 @@ def select_segment(name):
 
 # "Full Chapter" is the manuscript stream: the container's own text followed by
 # each child's row header and prose.
-select_segment("full chapter")
+select_segment(("full chapter", "chapitre complet"))
 
 # The stream is the chapter's whole prose, so the tagged scene's row header is
 # usually below the fold.
@@ -468,7 +477,7 @@ print(f"  stream row header: {(row.get('value') or '')!r} "
       f"({b.get('width', 0):.0f}x{b.get('height', 0):.0f} dp)")
 s.shot("/tmp/chips-stream.png")
 
-select_segment("corkboard")
+select_segment(("corkboard", "tableau d'affichage"))
 pane = content_pane()
 row = scroll_for_dot_row(pane) if pane else dot_row()
 if not row:
