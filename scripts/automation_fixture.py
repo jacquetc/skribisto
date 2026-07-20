@@ -34,6 +34,45 @@ SCRATCH = os.environ.get(
 )
 
 
+def wait_for_load(nodes_fn, markers, timeout=30.0, interval=0.5):
+    """Poll `nodes_fn()` until any of `markers` appears in a node's label or value.
+
+    Returns True on success, False on timeout.
+
+    A single snapshot taken straight after the bridge connects is not enough: the
+    legacy SQLite fixture is migrated on open, and the binder is populated some
+    way after the window first answers. Checking once reports "the fixture did
+    not load" for a project that loads perfectly a second later — a false failure
+    that costs a 40-second launch to diagnose. Every probe should wait rather
+    than sleep-and-hope.
+    """
+    import time as _t
+    if isinstance(markers, str):
+        markers = (markers,)
+    deadline = _t.time() + timeout
+    while _t.time() < deadline:
+        for n in nodes_fn():
+            text = ((n.get("value") or "") + " " + (n.get("label") or "")).lower()
+            if any(m.lower() in text for m in markers):
+                return True
+        _t.sleep(interval)
+    return False
+
+
+def _make_writable(path):
+    """Give the owner write permission, for a file or a whole tree."""
+    def w(p):
+        try:
+            os.chmod(p, os.stat(p).st_mode | 0o200)
+        except OSError:
+            pass
+    w(path)
+    if os.path.isdir(path):
+        for root, dirs, files in os.walk(path):
+            for n in dirs + files:
+                w(os.path.join(root, n))
+
+
 def working_copy(src, label="fixture"):
     """Copy `src` into the scratchpad and return the copy's path.
 
@@ -59,6 +98,12 @@ def working_copy(src, label="fixture"):
         shutil.copytree(src, dst)
     else:
         shutil.copy2(src, dst)
+
+    # `copy2` preserves the source's mode, and the checked-in fixture is kept
+    # read-only precisely so a stray write to it fails loudly. Without this the
+    # protection would follow the copy and the app would fail to save into its
+    # own scratch project — a confusing failure a long way from its cause.
+    _make_writable(dst)
 
     # Belt and braces: if this ever returns a path inside the repo, the probe is
     # about to do the exact thing this module exists to prevent.
