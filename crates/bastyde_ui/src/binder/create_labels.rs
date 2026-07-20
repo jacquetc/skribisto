@@ -37,6 +37,39 @@ pub fn recommendation_label(create_type: CreateType) -> LocalizedString {
     }
 }
 
+/// The **title** a freshly created row is given, per type — "New chapter" for a
+/// chapter, "New scene" for a scene, and so on, rather than one generic "New Item"
+/// for everything that is not a folder.
+///
+/// This is the one place in the create vocabulary that produces *data*, not chrome.
+/// An entity title is persisted to the `.skrib` file and is the writer's to edit, so
+/// it must be resolved to an owned `String` **once, at creation time**, in whatever
+/// language is active then — and never re-translated afterwards. Switching the app to
+/// French must not silently retitle chapters the writer created in English, any more
+/// than it should retitle ones they named themselves.
+///
+/// That is why this returns a `LocalizedString` and the caller resolves it
+/// immediately (`.into()`): the boundary between chrome and data is exactly the
+/// `create_item_at` call. Contrast [`recommendation_label`], which stays localized all
+/// the way to the widget precisely because a menu label *is* chrome.
+///
+/// `EndOfBook` reuses the type name: it is a singleton structural marker the writer
+/// does not name, so "New end of book" would be noise.
+pub fn default_title(create_type: CreateType) -> LocalizedString {
+    match create_type {
+        CreateType::Book => tr!(new_item_book()),
+        CreateType::Part => tr!(new_item_part()),
+        CreateType::Chapter => tr!(new_item_chapter()),
+        // Reuses the key `split_scene` already writes (`corkboard.rs` / `stream.rs`),
+        // so a scene born from a split and one born from Create read the same.
+        CreateType::Scene => tr!(new_scene_title()),
+        CreateType::Note => tr!(new_item_note()),
+        CreateType::NoteFolder => tr!(new_item_note_folder()),
+        CreateType::Folder => tr!(new_item_folder()),
+        CreateType::EndOfBook => tr!(create_book_end()),
+    }
+}
+
 /// The label for a promote target — the rows of the "Convert to ▸" submenu.
 ///
 /// Unlike the Create menu (which hides the two chapter encodings behind one "Chapter"),

@@ -65,6 +65,17 @@ create-book-end = Fin du livre
 type-book-start = Début du livre
 type-text = Texte
 
+## Création: le titre par défaut d'une nouvelle ligne.
+## Donnée, et non habillage — résolu une seule fois à la création puis propriété
+## de l'auteur, si bien que changer de langue ne renomme jamais l'existant.
+## (Une scène réutilise « new-scene-title », partagé avec la division de scène.)
+new-item-book = Nouveau livre
+new-item-part = Nouvelle partie
+new-item-chapter = Nouveau chapitre
+new-item-note = Nouvelle note
+new-item-note-folder = Nouveau dossier de notes
+new-item-folder = Nouveau dossier
+
 ## Recommandations de création: indication de placement en fin de ligne
 placement-inside = à l’intérieur
 placement-after = après

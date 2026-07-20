@@ -65,6 +65,17 @@ create-book-end = End of Book
 type-book-start = Book start
 type-text = Text
 
+## Create: the default title a new row is given.
+## Data, not chrome — resolved once at creation and then owned by the writer,
+## so switching language never retitles anything already created.
+## (A scene reuses `new-scene-title`, shared with split-scene.)
+new-item-book = New Book
+new-item-part = New Part
+new-item-chapter = New Chapter
+new-item-note = New Note
+new-item-note-folder = New Note Folder
+new-item-folder = New Folder
+
 ## Create recommendations: trailing placement hint on each row
 placement-inside = inside
 placement-after = after

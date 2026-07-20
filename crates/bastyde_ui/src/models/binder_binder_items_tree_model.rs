@@ -393,6 +393,27 @@ impl BinderBinderItemsTreeModel {
         self.slice.set_expanded_keys(keys);
     }
 
+    /// Expand every ancestor of `key`, so a row that exists but is buried under a
+    /// collapsed parent becomes visible.
+    ///
+    /// Needed because a container with no children has no twist to open and is
+    /// therefore never in the expanded set: give it its *first* child and the child
+    /// is real, selected, and invisible. Walks upward rather than expanding one
+    /// level, since a create can land several levels below anything open.
+    ///
+    /// Goes through `set_expanded`, so each step mirrors into the authoritative
+    /// `remembered` set exactly like a manual toggle — which is what makes the
+    /// expansion survive into `tree_expansion.toml` instead of being forgotten on
+    /// the next reload.
+    pub fn expand_ancestors(&self, key: &BinderTreeKey) {
+        use bastyde::data::TreeDataSource;
+        let mut cur = self.parent(key);
+        while let Some(p) = cur {
+            self.set_expanded(&p, true);
+            cur = self.parent(&p);
+        }
+    }
+
     /// A `Weak` to one of this model's own allocations — a test hook for proving the
     /// model actually drops (i.e. that nothing it installed holds it alive).
     #[cfg(all(test, feature = "mocks"))]

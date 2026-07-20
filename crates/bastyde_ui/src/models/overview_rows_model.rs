@@ -290,8 +290,9 @@ impl OverviewRowsModel {
         use DirectAccessEntity::BinderItem;
         use EntityEvent::{Created, Removed, Updated};
         // Structural + metadata changes: any of these can add, drop, move or rename a row.
+        // `Created` is handled separately below — it is the one origin that must also
+        // open the way to the new row, not merely re-source.
         let origins = [
-            Origin::DirectAccess(BinderItem(Created)),
             Origin::DirectAccess(BinderItem(Updated)),
             Origin::DirectAccess(BinderItem(Removed)),
             Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
@@ -309,6 +310,33 @@ impl OverviewRowsModel {
         for origin in origins {
             let me = self.clone();
             ctx.subscribe_event(origin, move |_e: &Event| me.reload());
+        }
+        // A create must also *reveal*: give a childless container its first child and
+        // the row exists but sits under a parent that, having had nothing to show, was
+        // never expanded. Reload first so the row is in the tree, then walk up from it.
+        //
+        // The event carries store ids, which are re-minted by every `load_work`, so the
+        // id is resolved back through `ids_by_uid` to the durable uid this tree keys on.
+        {
+            let me = self.clone();
+            ctx.subscribe_event(
+                Origin::DirectAccess(BinderItem(Created)),
+                move |e: &Event| {
+                    me.reload();
+                    let Some(&id) = e.ids.first() else {
+                        return;
+                    };
+                    let uid = me
+                        .ids_by_uid
+                        .borrow()
+                        .iter()
+                        .find(|(_, store_id)| **store_id == id)
+                        .map(|(uid, _)| *uid);
+                    if let Some(uid) = uid {
+                        me.expand_ancestors(&uid);
+                    }
+                },
+            );
         }
         // Prose edits move the numbers, so the word columns would otherwise go stale the
         // moment the writer types in a scene with the Overview open beside it. Scoped to
@@ -392,6 +420,26 @@ impl OverviewRowsModel {
     #[cfg(all(test, feature = "mocks"))]
     pub fn weak_probe(&self) -> std::rc::Weak<RefCell<HashSet<u64>>> {
         Rc::downgrade(&self.scope_contents)
+    }
+
+    /// Expand every ancestor of `uid` — the Overview's half of the same guarantee
+    /// the outline makes in
+    /// [`BinderBinderItemsTreeModel::expand_ancestors`](crate::models::BinderBinderItemsTreeModel::expand_ancestors).
+    ///
+    /// The two trees keep *separate* expand state (both persisted in
+    /// `tree_expansion.toml`), so expanding a parent in the outline leaves the same
+    /// parent shut here. A first child created from the Overview's own Create button
+    /// would otherwise land invisibly in this table too.
+    ///
+    /// Goes through `set_expanded` so each step mirrors into `remembered` and the
+    /// expansion survives the next reload.
+    pub fn expand_ancestors(&self, uid: &Uuid) {
+        use bastyde::data::TreeDataSource;
+        let mut cur = self.parent(uid);
+        while let Some(p) = cur {
+            self.set_expanded(&p, true);
+            cur = self.parent(&p);
+        }
     }
 
     pub fn expand_all(&self) {

@@ -283,8 +283,26 @@ impl OutlineViewModel {
     }
 
     /// Bring the outline forward AND select a row ("reveal in outline").
+    ///
+    /// Expands the row's ancestors first: selecting a row inside a collapsed
+    /// parent moves an invisible cursor, which reads to the writer as nothing
+    /// having happened at all.
     pub fn reveal_item(&self, key: BinderTreeKey) {
         self.show();
+        self.select_in_place(key);
+    }
+
+    /// Expand a row's ancestors and select it, **without** bringing the outline
+    /// forward — the half of [`reveal_item`] that a create wants.
+    ///
+    /// Creation is not always an outline gesture: the same `AppIntent::NewItem`
+    /// path serves the Corkboard and Overview header buttons, and popping the
+    /// outline dock open because the writer added a scene from the corkboard is
+    /// an interruption they did not ask for. Expanding and selecting is enough —
+    /// if the outline is on screen, the new row is visible in it; if it is not,
+    /// nothing forces it into view.
+    pub fn select_in_place(&self, key: BinderTreeKey) {
+        self.model.expand_ancestors(&key);
         self.selection.select(key);
     }
 
@@ -318,42 +336,17 @@ impl OutlineViewModel {
 
     // ── actions (each: backend command on the undo stack, then reload) ──
 
-    /// Create a new item/folder at the insertion point derived from selection.
-    /// A "folder" is just `role = Folder`; there is no separate `new_folder`.
-    pub fn new_item(&self, role: BinderItemRole, sub_role: BinderItemSubRole) {
-        let anchor = self.selection.selected_keys().first().copied();
-        self.create_item(anchor, role, sub_role);
-    }
-
-    /// Create a new item/folder anchored at a specific row (context-menu entry —
-    /// does not touch the selection, so it never opens an editor).
-    pub fn new_item_at(
-        &self,
-        anchor: BinderTreeKey,
-        role: BinderItemRole,
-        sub_role: BinderItemSubRole,
-    ) {
-        self.create_item(Some(anchor), role, sub_role);
-    }
-
-    fn create_item(
-        &self,
-        anchor: Option<BinderTreeKey>,
-        role: BinderItemRole,
-        sub_role: BinderItemSubRole,
-    ) {
-        if skribisto_model::validate_item(&role, &sub_role, &[]).is_err() {
-            return;
-        }
-        let Some((binder, index, indent)) = self.insertion_point(anchor) else {
-            return;
-        };
-        self.create_item_at(binder, index, indent, role, sub_role);
-    }
-
     /// The shared create tail: build the DTO and run the undoable create command,
-    /// then reload. Both `create_item` (legacy anchor logic) and `add_recommended`
-    /// (relation-aware) funnel through this so the DTO/undo/reload stay in one place.
+    /// then reload and reveal what was just made.
+    ///
+    /// `title` is passed in already resolved rather than derived from `role` here:
+    /// the caller knows the logical `CreateType` (Chapter, Scene, Note…), which
+    /// `role` alone cannot recover — `Folder` covers books, parts, chapters and note
+    /// folders alike. See [`create_labels::default_title`].
+    ///
+    /// Revealing is not cosmetic. Creating the *first* child of a container puts the
+    /// new row under a parent that, having had no children, has never been expanded —
+    /// so without this the write succeeds and the writer sees nothing happen.
     fn create_item_at(
         &self,
         binder: u64,
@@ -361,13 +354,10 @@ impl OutlineViewModel {
         indent: i64,
         role: BinderItemRole,
         sub_role: BinderItemSubRole,
+        title: String,
     ) {
-        let title = match role {
-            BinderItemRole::Folder => "New Folder",
-            BinderItemRole::Item => "New Item",
-        };
         let dto = CreateBinderItemDto {
-            title: title.to_string(),
+            title,
             role,
             sub_role,
             activated: true,
@@ -375,16 +365,20 @@ impl OutlineViewModel {
             indent,
             ..Default::default()
         };
-        if binder_item_commands::create_binder_item(
+        if let Ok(created) = binder_item_commands::create_binder_item(
             &self.app_ctx,
             self.stack(),
             &dto,
             binder,
             index as i32,
-        )
-        .is_ok()
-        {
+        ) {
+            // Reload first: the row must exist in the tree before its ancestors can
+            // be walked, and `expand_ancestors` resolves the chain through the model.
+            //
+            // `select_in_place`, not `reveal_item` — a create fired from the
+            // Corkboard or Overview must not yank the outline dock open.
             self.reload();
+            self.select_in_place(BinderTreeKey::Item(created.uid));
         }
     }
 
@@ -429,7 +423,10 @@ impl OutlineViewModel {
         let Some((binder, index, indent)) = self.insertion_point_for(anchor, rec.relation) else {
             return;
         };
-        self.create_item_at(binder, index, indent, role, sub_role);
+        // Resolve the localized default to owned data here — this call is the
+        // chrome/data boundary (see `create_labels::default_title`).
+        let title: String = crate::binder::create_labels::default_title(rec.create_type).into();
+        self.create_item_at(binder, index, indent, role, sub_role, title);
     }
 
     // ── promote / demote (convert a binder item to its paired type) ──
@@ -1699,6 +1696,187 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
                 let dto = outline.item_dto(f).unwrap();
                 assert_eq!(dto.role, BinderItemRole::Folder);
                 assert_eq!(dto.sub_role, want, "promoting to {target:?}");
+            }
+        }
+
+        // ── the created row is named for its type, and is actually visible ──
+
+        use bastyde::data::TreeDataSource;
+
+        /// Every creatable type gets its own default title. The bug this pins:
+        /// the title used to be derived from `role` alone, which cannot tell a
+        /// chapter from a book from a note folder — they are all `Folder` — so
+        /// six of the eight types came out as the same "New Folder".
+        #[test]
+        fn a_created_row_is_titled_for_its_type_not_generically() {
+            let mut seen: Vec<String> = Vec::new();
+            for create_type in [
+                CreateType::Book,
+                CreateType::Part,
+                CreateType::Chapter,
+                CreateType::Scene,
+                CreateType::Note,
+                CreateType::NoteFolder,
+                CreateType::Folder,
+            ] {
+                let (outline, binder) = seed();
+                outline.add_recommended(None, &rec(create_type, Relation::Child));
+                let created = order_of(&outline, binder);
+                assert_eq!(created.len(), 1, "{create_type:?} must create exactly one row");
+                let title = outline.item_dto(created[0]).unwrap().title;
+                assert!(
+                    !title.is_empty(),
+                    "{create_type:?} must not be created untitled"
+                );
+                // The row carries this type's own default, resolved to data at
+                // creation — not a title derived from `role`, which collapses six
+                // distinct types onto one string.
+                let want: String =
+                    crate::binder::create_labels::default_title(create_type).into();
+                assert_eq!(
+                    title, want,
+                    "{create_type:?} must be titled from its own vocabulary"
+                );
+                assert_ne!(
+                    title, "New Item",
+                    "{create_type:?} still falls back to the old generic title"
+                );
+                seen.push(title);
+            }
+            // Distinct types must read distinctly — otherwise "adapt the name to the
+            // type" is satisfied only in the letter.
+            let mut unique = seen.clone();
+            unique.sort();
+            unique.dedup();
+            assert_eq!(
+                unique.len(),
+                seen.len(),
+                "each type needs its own title, got duplicates in {seen:?}"
+            );
+        }
+
+        /// The reported bug: creating the **first** child of a container left the
+        /// parent collapsed, so the new row was real, selected, and invisible.
+        /// A container with no children has never been expanded — there was no
+        /// twist to open — so nothing put it in the expanded set.
+        #[test]
+        fn creating_a_first_child_expands_the_parent_that_had_none() {
+            let (outline, binder) = seed();
+            let chapter = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::ChapterScene,
+                0,
+                0,
+            );
+            let chapter_key = key_of(&outline, chapter);
+            assert!(
+                !outline.model.is_expanded(&chapter_key),
+                "precondition: a childless container starts collapsed"
+            );
+
+            outline.add_recommended(Some(chapter_key), &rec(CreateType::Scene, Relation::Child));
+
+            assert!(
+                outline.model.is_expanded(&chapter_key),
+                "the parent must be expanded so its first child is visible"
+            );
+            // …and the new row is what the writer is now pointed at.
+            let scene = *order_of(&outline, binder)
+                .iter()
+                .find(|id| **id != chapter)
+                .expect("the scene must exist");
+            assert_eq!(
+                outline.selection.selected_keys().first().copied(),
+                Some(key_of(&outline, scene)),
+                "the newly created row must be selected"
+            );
+        }
+
+        /// Creating must not drag the outline dock open. The same create path
+        /// serves the Corkboard and Overview header buttons, so forcing the dock
+        /// forward on every create interrupts a writer who is working elsewhere.
+        /// Expanding + selecting is the whole job; showing is `reveal_item`'s.
+        #[test]
+        fn creating_selects_without_forcing_the_outline_open() {
+            let (outline, binder) = seed();
+            let chapter = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::ChapterScene,
+                0,
+                0,
+            );
+            outline.hide();
+            assert!(
+                !outline.is_visible().get(),
+                "precondition: the outline is hidden"
+            );
+
+            outline.add_recommended(
+                Some(key_of(&outline, chapter)),
+                &rec(CreateType::Scene, Relation::Child),
+            );
+
+            assert!(
+                !outline.is_visible().get(),
+                "a create must not pop the outline open"
+            );
+            assert!(
+                outline.model.is_expanded(&key_of(&outline, chapter)),
+                "…but the parent must still be expanded"
+            );
+        }
+
+        /// Expansion must reach *every* ancestor, not just the immediate parent —
+        /// a create can land several levels below anything currently open.
+        #[test]
+        fn revealing_opens_the_whole_ancestor_chain() {
+            let (outline, binder) = seed();
+            let book = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Book,
+                0,
+                0,
+            );
+            let part = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Part,
+                1,
+                1,
+            );
+            let chapter = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::ChapterScene,
+                2,
+                2,
+            );
+            for k in [
+                key_of(&outline, book),
+                key_of(&outline, part),
+                key_of(&outline, chapter),
+            ] {
+                outline.model.set_expanded(&k, false);
+            }
+
+            outline.add_recommended(
+                Some(key_of(&outline, chapter)),
+                &rec(CreateType::Scene, Relation::Child),
+            );
+
+            for (id, what) in [(book, "book"), (part, "part"), (chapter, "chapter")] {
+                assert!(
+                    outline.model.is_expanded(&key_of(&outline, id)),
+                    "the {what} ancestor must be expanded too"
+                );
             }
         }
     }
