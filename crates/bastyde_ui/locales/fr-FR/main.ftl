@@ -421,6 +421,12 @@ menu-copy = Copier
 menu-paste = Coller
 menu-paste-unformatted = Coller sans mise en forme
 menu-select-all = Tout sélectionner
+# Infobulles de la rangée de mise en forme du menu contextuel. Boutons sans
+# libellé : l'infobulle est leur seul nom accessible, pas une décoration.
+format-bold = Gras
+format-italic = Italique
+format-underline = Souligné
+format-strikethrough = Barré
 
 ## Classeur / récents
 binder = Classeur

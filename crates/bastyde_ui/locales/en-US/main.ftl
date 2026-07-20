@@ -420,6 +420,12 @@ menu-copy = Copy
 menu-paste = Paste
 menu-paste-unformatted = Paste Unformatted
 menu-select-all = Select All
+# Tooltips on the editor context menu's formatting row. Icon-only buttons, so
+# the tooltip is their only accessible name — not decoration.
+format-bold = Bold
+format-italic = Italic
+format-underline = Underline
+format-strikethrough = Strikethrough
 
 ## Binder / recents
 binder = Binder
