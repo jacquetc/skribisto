@@ -125,7 +125,7 @@ impl Widget for TagPillField {
         // `.bare()` + an explicit panel: `PopoverIconButton`'s own chrome is skipped and this
         // call site supplies it, because the picker itself is now bare so that
         // `TagDotsRow` can drop it straight into a `Popover`, which brings its own surface.
-        // // Tab must cycle *inside* the popover. Without a `FocusScope` the overlay opens
+        // Tab must cycle *inside* the popover. Without a `FocusScope` the overlay opens
         // with focus still in the window behind it, so Tab walks straight out into the
         // toolbar and neither the filter field nor the rows can be reached at all — a
         // keyboard-only writer can open this and do nothing with it (WCAG 2.1.1). Same
@@ -315,6 +315,19 @@ impl Widget for TagPicker {
                     .color(TextRole::Secondary)
                     .style(TextStyleRole::Tiny),
             );
+            // Shared by the pointer and the keyboard path below, so the two cannot drift
+            // into doing different things.
+            let new_name = name.clone();
+            let create: Rc<dyn Fn(&mut EventContext)> = Rc::new(move |c: &mut EventContext| {
+                if let Some(id) = vm.create(&new_name, QUICK_CREATE_COLOR, "", discoverable.get()) {
+                    let mut next = value.get();
+                    next.push(id);
+                    value.set(next.clone());
+                    set(next, c);
+                }
+                query.set(String::new());
+                discoverable.set(false);
+            });
             col = col.child(
                 HStack::new()
                     .spacing(6.0)
@@ -323,20 +336,23 @@ impl Widget for TagPicker {
                     .access_role(Role::Button)
                     .access_label(tr!(tags_pill_create(name = name.clone())))
                     .focusable(true)
-                    .on_tap(move |_e, c| {
-                        if let Some(id) = vm.create(
-                            &name,
-                            QUICK_CREATE_COLOR,
-                            "",
-                            discoverable.get(),
-                        ) {
-                            let mut next = value.get();
-                            next.push(id);
-                            value.set(next.clone());
-                            set(next, c);
+                    .on_tap({
+                        let create = create.clone();
+                        move |_e, c| create(c)
+                    })
+                    // `on_tap` is pointer-only. Without this the row announces itself as a
+                    // Button, takes focus, and then does nothing on Enter — the same defect
+                    // the picker's tag rows had, one widget over. It is also the only way to
+                    // create a tag from this popover, so a keyboard-only writer who types a
+                    // new name here has no way to commit it (WCAG 2.1.1).
+                    .on_key(move |ev, c| {
+                        if let WidgetEvent::KeyDown { key, .. } = ev
+                            && matches!(key, Key::Enter | Key::Space)
+                        {
+                            create(c);
+                            return EventResponse::Handled;
                         }
-                        query.set(String::new());
-                        discoverable.set(false);
+                        EventResponse::Ignored
                     }),
             );
         }

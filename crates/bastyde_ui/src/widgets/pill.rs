@@ -324,6 +324,35 @@ impl Widget for Pill {
         if let Some(on_activate) = self.on_activate.clone() {
             pill = pill.on_tap(move |_e, c| on_activate(c));
         }
+        // `on_tap` is pointer-only, so everything above is unreachable without a mouse even
+        // though the chip is a focus stop — it takes focus, draws its ring, and then answers
+        // no key at all (WCAG 2.1.1 asks for reach *and* operate).
+        //
+        // Delete/Backspace stands in for the `×`, which is deliberately not a focus stop (see
+        // the comment on it above). That is the conventional chip idiom, and without it a
+        // keyboard-only writer cannot remove a language or a tag at all — the `×` is the only
+        // affordance that does it.
+        let activate = self.on_activate.clone();
+        let remove = self.on_remove.clone();
+        if activate.is_some() || remove.is_some() {
+            pill = pill.on_key(move |ev, c| {
+                if let WidgetEvent::KeyDown { key, .. } = ev {
+                    if let Some(f) = &activate
+                        && matches!(key, Key::Enter | Key::Space)
+                    {
+                        f(c);
+                        return EventResponse::Handled;
+                    }
+                    if let Some(f) = &remove
+                        && matches!(key, Key::Delete | Key::Backspace)
+                    {
+                        f(c);
+                        return EventResponse::Handled;
+                    }
+                }
+                EventResponse::Ignored
+            });
+        }
 
         let id = ctx.add(pill);
 
@@ -415,6 +444,7 @@ mod tests {
     use super::*;
     use bastyde::core::widget_tree::WidgetTree;
     use bastyde::widgets::IconWidget;
+    use std::cell::Cell;
 
 
     /// The visible chip's height, i.e. what `place_children` actually placed. The `Pill`
@@ -520,6 +550,65 @@ mod tests {
         // the removable one must be at least as tall/wide in its natural size. The invariant
         // that matters is simply that both lay out without panicking and hug their content.
         assert!(without_x > 0.0 && with_x > 0.0);
+    }
+
+    /// Focus the pill and send one key, reporting whether each callback fired.
+    ///
+    /// Focus goes through `first_focusable_descendant` rather than the pill's own id: the
+    /// `Pill` widget is the tree root here and is not itself the focus stop — the chip it
+    /// builds is. Focusing the root would send the key to a node with no handler and every
+    /// case below would read "did not fire" for the same uninformative reason.
+    fn press_on_pill(key: Key) -> (bool, bool) {
+        let activated = Rc::new(Cell::new(false));
+        let removed = Rc::new(Cell::new(false));
+        let (a, r) = (activated.clone(), removed.clone());
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(
+            Pill::new("abc", lit!("abc"))
+                .on_activate(move |_| a.set(true))
+                .on_remove(lit!("Remove abc"), move |_| r.set(true)),
+        ));
+        tree.layout(SizeProposal::exact(400.0, 40.0));
+        let stop = tree
+            .first_focusable_descendant(id)
+            .expect("a pill is a focus stop");
+        tree.focus(stop);
+        tree.press_key(key, Modifiers::NONE);
+        (activated.get(), removed.get())
+    }
+
+    /// A pill takes focus and draws a focus ring, so a keyboard user is told it is
+    /// interactive. Until this test it then answered no key at all: `on_tap` is
+    /// pointer-only, so Enter did nothing and the `×` — deliberately not a focus stop —
+    /// was unreachable. Reachable but not operable is exactly what WCAG 2.1.1 forbids,
+    /// and it applied to every language pill and every tag pill in the app.
+    #[test]
+    fn enter_and_space_activate_a_pill() {
+        for key in [Key::Enter, Key::Space] {
+            let (activated, removed) = press_on_pill(key);
+            assert!(activated, "{key:?} should activate the pill");
+            assert!(!removed, "{key:?} must not also remove it");
+        }
+    }
+
+    /// Delete/Backspace stands in for the `×`. Without it the only way to take a language
+    /// or a tag off an item is to hover the chip and hit a 16 dp target with a pointer.
+    #[test]
+    fn delete_and_backspace_remove_a_pill() {
+        for key in [Key::Delete, Key::Backspace] {
+            let (activated, removed) = press_on_pill(key);
+            assert!(removed, "{key:?} should remove the pill");
+            assert!(!activated, "{key:?} must not also activate it");
+        }
+    }
+
+    /// The handler must not swallow keys it has no business with, or a pill inside a
+    /// scrollable list would eat the arrow keys that scroll it.
+    #[test]
+    fn an_unrelated_key_does_nothing_to_a_pill() {
+        let (activated, removed) = press_on_pill(Key::ArrowDown);
+        assert!(!activated && !removed, "ArrowDown must be left alone");
     }
 
     /// The leading slot is always laid out; only its paint changes. If it were collapsed out
