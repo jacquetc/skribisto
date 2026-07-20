@@ -73,7 +73,7 @@ impl Widget for CreateSplitButton {
         // recommendation). A dropdown pick must NOT promote/replace it — the title
         // has to keep tracking the *selection*, which a create doesn't change.
         let mut btn = SplitButton::new_static()
-            .variant(ButtonVariant::Tinted)
+            .variant(ButtonVariant::Filled)
             .icon(add_icon());
 
         for rec in &recs {
