@@ -1025,3 +1025,44 @@ settings-styles-digits-western = Western (0–9)
 settings-styles-digits-eastern-arabic = Eastern Arabic (٠–٩)
 settings-styles-direction-ltr = Left to right
 settings-styles-direction-rtl = Right to left
+
+## Format dock
+format-dock-title = Format
+format-panel-empty = Place your cursor in a scene, note, or synopsis to see formatting options.
+# Group headers.
+format-group-history = History
+format-group-marks = Text
+format-group-block = Paragraph
+format-group-lists = Lists
+format-group-tables = Table
+format-group-breaks = Scene breaks
+# Button tooltips. Icon-only buttons, so each tooltip is that button's only
+# accessible name — not decoration.
+format-undo = Undo
+format-redo = Redo
+format-superscript = Superscript
+format-subscript = Subscript
+format-clear = Clear formatting
+format-heading = Heading level
+format-heading-normal = Normal text
+format-heading-1 = Heading 1
+format-heading-2 = Heading 2
+format-heading-3 = Heading 3
+format-heading-4 = Heading 4
+format-heading-5 = Heading 5
+format-heading-6 = Heading 6
+format-align-left = Align left
+format-align-center = Centre
+format-blockquote = Blockquote
+format-list-bullet = Bulleted list
+format-list-numbered = Numbered list
+format-indent = Indent
+format-outdent = Outdent
+format-table-insert = Insert table
+format-table-row-above = Insert row above
+format-table-row-below = Insert row below
+format-table-col-before = Insert column before
+format-table-col-after = Insert column after
+format-table-row-delete = Delete row
+format-table-col-delete = Delete column
+format-table-remove = Remove table

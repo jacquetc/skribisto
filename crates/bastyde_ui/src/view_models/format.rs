@@ -32,6 +32,19 @@
 //! Peer view-models are not imported here (see the DAG rule in
 //! [`crate::view_models`]) — `App` injects the editor resolver, which keeps this
 //! type headless-testable against a plain `RichTextEditor` with no `WidgetTree`.
+//!
+//! **Every surface must call `ctx.request_frame()` after invoking a command.**
+//! The commands here deliberately take no `EventContext`: threading one through
+//! would cost the headless testability above, since an `EventContext` cannot be
+//! built outside a live tree. But an edit made while the pointer is on a dock
+//! button or a menu overlay leaves the editor unfocused, and under bastyde's
+//! draw-when-needed contract nothing then schedules the frame that drains the
+//! document's events and repaints — the formatting simply does not appear.
+//! This is not hypothetical; it shipped once in the context-menu row.
+//!
+//! So each surface funnels its buttons through one local constructor that runs
+//! the command and requests the frame together, rather than repeating the pair
+//! at every call site where one can be forgotten.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -132,6 +145,48 @@ impl FormatSurface {
 /// they are invoked. `None` when nothing formattable is focused.
 type ResolveEditor = Rc<dyn Fn() -> Option<EditorHandle>>;
 
+/// One gate per control group, for the dock to hang `visible_when` on.
+///
+/// The dock **hides** groups that do not apply rather than greying them out: a
+/// synopsis has no headings and no tables, and eleven dead buttons teach a
+/// writer nothing. Contrast the Format menu, which keeps its rows and disables
+/// them — a menu is a map of what exists, a dock is a set of what applies.
+#[derive(Clone, Debug)]
+pub struct GroupVisibility {
+    pub history: Signal<bool>,
+    pub marks: Signal<bool>,
+    pub block: Signal<bool>,
+    pub lists: Signal<bool>,
+    pub tables: Signal<bool>,
+    pub scene_breaks: Signal<bool>,
+    /// The placeholder replaces the controls entirely.
+    pub empty: Signal<bool>,
+}
+
+impl GroupVisibility {
+    fn new(surface: FormatSurface) -> Self {
+        Self {
+            history: Signal::new(surface.shows_history()),
+            marks: Signal::new(surface.shows_marks()),
+            block: Signal::new(surface.shows_block()),
+            lists: Signal::new(surface.shows_lists()),
+            tables: Signal::new(surface.shows_tables()),
+            scene_breaks: Signal::new(surface.shows_scene_breaks()),
+            empty: Signal::new(surface.is_empty()),
+        }
+    }
+
+    fn apply(&self, surface: FormatSurface) {
+        set_if_changed(&self.history, surface.shows_history());
+        set_if_changed(&self.marks, surface.shows_marks());
+        set_if_changed(&self.block, surface.shows_block());
+        set_if_changed(&self.lists, surface.shows_lists());
+        set_if_changed(&self.tables, surface.shows_tables());
+        set_if_changed(&self.scene_breaks, surface.shows_scene_breaks());
+        set_if_changed(&self.empty, surface.is_empty());
+    }
+}
+
 /// The state and command surface behind the format dock, the Format menu and
 /// the context-menu row. Cloneable; every clone shares one set of signals.
 #[derive(Clone)]
@@ -157,10 +212,24 @@ pub struct FormatViewModel {
     in_table: Signal<bool>,
     /// `0` = normal paragraph, `1..=6` = H1..H6. Doubles as the radio index.
     heading: Signal<usize>,
-    /// [`ALIGN_LEFT`], [`ALIGN_CENTER`] or [`ALIGN_OTHER`].
+    /// [`ALIGN_LEFT`], [`ALIGN_CENTER`] or [`ALIGN_OTHER`]. The menu's radio
+    /// group binds to this directly.
     alignment: Signal<usize>,
+    /// The same value as two booleans, because `IconButton::toggle` wants a
+    /// `Signal<bool>` per button. Both false when the block carries an
+    /// alignment Skribisto does not offer — see [`ALIGN_OTHER`].
+    align_left: Signal<bool>,
+    align_center: Signal<bool>,
     can_undo: Signal<bool>,
     can_redo: Signal<bool>,
+
+    /// Per-group visibility, pushed by [`Self::set_surface`].
+    ///
+    /// Plain signals rather than maps over [`Self::surface`] for the same
+    /// reason the mirrors are: `visible_when` takes a `Prop`, which *observes*,
+    /// and observing a derived signal panics. Deriving these would look tidier
+    /// and blow up the first time a group changed.
+    group_visible: GroupVisibility,
 
     /// Last `(format_version, cursor_position)` seen by [`Self::refresh`], so a
     /// per-frame call is nearly free when nothing has moved.
@@ -193,8 +262,11 @@ impl FormatViewModel {
             in_table: Signal::new(false),
             heading: Signal::new(0),
             alignment: Signal::new(ALIGN_LEFT),
+            align_left: Signal::new(true),
+            align_center: Signal::new(false),
             can_undo: Signal::new(false),
             can_redo: Signal::new(false),
+            group_visible: GroupVisibility::new(FormatSurface::None),
             last_seen: Rc::new(Cell::new((0, 0))),
         }
     }
@@ -241,6 +313,12 @@ impl FormatViewModel {
     pub fn alignment(&self) -> Signal<usize> {
         self.alignment.clone()
     }
+    pub fn align_left(&self) -> Signal<bool> {
+        self.align_left.clone()
+    }
+    pub fn align_center(&self) -> Signal<bool> {
+        self.align_center.clone()
+    }
     pub fn can_undo(&self) -> Signal<bool> {
         self.can_undo.clone()
     }
@@ -251,9 +329,16 @@ impl FormatViewModel {
     /// The current surface. `App` is the only writer — it knows which pane and
     /// which tab the focus landed in; this view-model deliberately does not.
     pub fn set_surface(&self, surface: FormatSurface) {
-        if self.surface.get() != surface {
-            self.surface.set(surface);
+        if self.surface.get() == surface {
+            return;
         }
+        self.surface.set(surface);
+        self.group_visible.apply(surface);
+    }
+
+    /// Per-group visibility gates for the dock. See [`GroupVisibility`].
+    pub fn groups(&self) -> &GroupVisibility {
+        &self.group_visible
     }
 
     // ── Mirroring editor state ────────────────────────────────────────────
@@ -309,7 +394,10 @@ impl FormatViewModel {
         set_if_changed(&self.blockquote, handle.is_in_blockquote());
         set_if_changed(&self.in_table, handle.is_in_table());
         set_if_changed(&self.heading, handle.get_heading_level() as usize);
-        set_if_changed(&self.alignment, alignment_index(&handle.get_alignment()));
+        let alignment = alignment_index(&handle.get_alignment());
+        set_if_changed(&self.alignment, alignment);
+        set_if_changed(&self.align_left, alignment == ALIGN_LEFT);
+        set_if_changed(&self.align_center, alignment == ALIGN_CENTER);
         set_if_changed(&self.can_undo, handle.can_undo().get());
         set_if_changed(&self.can_redo, handle.can_redo().get());
     }
@@ -326,6 +414,8 @@ impl FormatViewModel {
         set_if_changed(&self.in_table, false);
         set_if_changed(&self.heading, 0);
         set_if_changed(&self.alignment, ALIGN_LEFT);
+        set_if_changed(&self.align_left, true);
+        set_if_changed(&self.align_center, false);
         set_if_changed(&self.can_undo, false);
         set_if_changed(&self.can_redo, false);
     }

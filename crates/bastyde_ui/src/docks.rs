@@ -34,8 +34,11 @@ pub const INSPECTOR_DOCK_ID: u64 = DOCK_ID_BASE + 3;
 pub const PREVIEW_DOCK_ID: u64 = DOCK_ID_BASE + 4;
 /// The trash panel (leading rail, third tab).
 pub const TRASH_DOCK_ID: u64 = DOCK_ID_BASE + 5;
+/// The trailing Format dock — the manuscript's formatting controls.
+pub const FORMAT_DOCK_ID: u64 = DOCK_ID_BASE + 6;
 
 pub mod create_split_button;
+pub mod format;
 pub mod inspector;
 pub mod outline;
 pub mod search;
