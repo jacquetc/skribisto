@@ -219,25 +219,30 @@ impl OverviewViewModel {
 
     /// Inject the drag-reorder commit.
     ///
-    /// **Cycle-safety:** the closure captures `app_ctx`, the ids and the *model* — never
-    /// `self`. Capturing the view-model would close the loop model → closure → vm →
-    /// model, the `Rc` cycle the design deliberately avoids (mirrors
-    /// `OutlineViewModel::install_reorder`).
+    /// **Cycle-safety.** The closure captures `app_ctx`, the app ids, and the model's
+    /// uid → store-id **map** — never `self`, and never the model itself.
+    ///
+    /// Capturing the model looks harmless and is not: `set_reorder` stores this closure
+    /// inside the slice's `Rc<Inner>`, and the model holds that same slice, so the
+    /// closure would keep alive the allocation that owns it. Every container tab ever
+    /// opened would leak its whole table. (Pinned by `leak_probe`, which found it.)
     fn install_reorder(&self) {
         let app_ctx = self.inner.app_ctx.clone();
         let ids = self.inner.ids.clone();
-        let rows = self.inner.rows.clone();
+        let ids_by_uid = self.inner.rows.ids_by_uid();
         self.inner
             .rows
             .set_reorder(Rc::new(move |dragged: Uuid, target: Uuid, place| {
                 // The tree is keyed by durable uid; the backend speaks store ids. A uid
                 // whose row vanished between drag-start and drop resolves to `None` and
                 // the move is refused rather than applied to the wrong item.
-                let (Some(item_id), Some(target_id)) =
-                    (rows.item_id_of(&dragged), rows.item_id_of(&target))
+                let map = ids_by_uid.borrow();
+                let (Some(&item_id), Some(&target_id)) =
+                    (map.get(&dragged), map.get(&target))
                 else {
                     return false;
                 };
+                drop(map);
                 let move_place = match place {
                     DropPosition::Before => MovePlace::Before,
                     DropPosition::After => MovePlace::After,
@@ -952,6 +957,41 @@ mod tests {
             vm.rows().visible_count(),
             3,
             "a refused move changes nothing"
+        );
+    }
+}
+
+#[cfg(all(test, feature = "mocks"))]
+mod leaks {
+    use super::*;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+
+    /// **The rows model must actually drop when the tab closes.**
+    ///
+    /// `set_reorder` stores its closure inside the slice's `Rc<Inner>`, and the model
+    /// holds that slice — so a closure capturing the *model* keeps alive the allocation
+    /// that owns it, and every container tab ever opened leaks its whole table. The
+    /// closure captures the uid → id map instead, which references nothing.
+    #[test]
+    fn the_rows_model_drops_with_its_view_model() {
+        let vm = OverviewViewModel::new(
+            Rc::new(AppContext::new()),
+            AppIds::new(),
+            101,
+            &BinderItemRole::Folder,
+            &BinderItemSubRole::Book,
+            Signal::new(CountingMethodSetting::default()),
+        )
+        .unwrap();
+        vm.install_reorder();
+        // Probe the *model*, not the view-model: the hypothesised cycle is
+        // slice.inner -> reorder closure -> OverviewRowsModel -> slice.inner.
+        let weak = vm.rows().weak_probe();
+        drop(vm);
+        assert!(
+            weak.upgrade().is_none(),
+            "LEAK: the rows model outlived its own drop — the reorder closure the slice \
+             owns is holding the model that holds the slice"
         );
     }
 }

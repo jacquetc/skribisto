@@ -249,13 +249,16 @@ fn binder_tree(
         })
 }
 
-/// Reconstruct a row's `BinderTreeKey` from its `TreeNode` (the `from_source`
-/// delegate gives the node + flat metadata, not the key).
+/// Reconstruct a row's `BinderTreeKey` from its `TreeNode` (the `from_source` delegate
+/// gives the node + flat metadata, not the key).
+///
+/// The node carries its own `uid` precisely so this stays a field read rather than a tree
+/// lookup — the delegate runs for every realized row on every rebuild.
 fn key_of(node: &TreeNode) -> BinderTreeKey {
     if node.kind == "binder" {
-        BinderTreeKey::Binder(node.binder_id.unwrap_or(0))
+        BinderTreeKey::Binder(node.uid)
     } else {
-        BinderTreeKey::Item(node.item_id.unwrap_or(0))
+        BinderTreeKey::Item(node.uid)
     }
 }
 

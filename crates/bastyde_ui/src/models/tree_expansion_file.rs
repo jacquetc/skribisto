@@ -70,6 +70,13 @@ pub struct PerProjectTreeExpansion {
     /// One entry per container whose Overview has remembered state.
     #[serde(default)]
     pub folders: Vec<FolderExpansionState>,
+    /// The **outline** dock's expanded rows — binder rows and item rows in one flat set,
+    /// which is why `Binder` needed a uid of its own alongside `BinderItem`.
+    ///
+    /// Not keyed by container like [`Self::folders`]: the outline is one tree over the
+    /// whole project, not one per container.
+    #[serde(default)]
+    pub outline_expanded: Vec<crate::models::BinderTreeKey>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -241,7 +248,60 @@ impl TreeExpansionService {
         })
     }
 
+    /// The outline's remembered expanded rows for a project.
+    pub fn outline(&self, work_uid: &str) -> Vec<crate::models::BinderTreeKey> {
+        if !super::uid_is_usable(work_uid) {
+            return Vec::new();
+        }
+        self.file
+            .borrow()
+            .projects
+            .iter()
+            .find(|p| p.work_uid == work_uid)
+            .map(|p| p.outline_expanded.clone())
+            .unwrap_or_default()
+    }
 
+    /// Record the outline's expanded rows.
+    ///
+    /// Separate from [`set_folders`](Self::set_folders) so a project with an outline but
+    /// no open container tabs still persists, and vice versa — but both land in the same
+    /// project row, so the file stays one row per project.
+    pub fn set_outline(
+        &self,
+        work_uid: &str,
+        last_path: &str,
+        expanded: &[crate::models::BinderTreeKey],
+    ) -> Result<(), SettingsFileError> {
+        if !super::uid_is_usable(work_uid) {
+            return Ok(());
+        }
+        let mut expanded = expanded.to_vec();
+        expanded.truncate(MAX_EXPANDED_PER_FOLDER);
+        self.file.mutate(|f| {
+            f.version = TreeExpansionFile::CURRENT_VERSION;
+            let pos = match f.projects.iter().position(|p| p.work_uid == work_uid) {
+                Some(pos) => pos,
+                None => {
+                    f.projects.push(PerProjectTreeExpansion {
+                        work_uid: work_uid.to_string(),
+                        ..Default::default()
+                    });
+                    f.projects.len() - 1
+                }
+            };
+            f.projects[pos].last_path = last_path.to_string();
+            f.projects[pos].outline_expanded = expanded;
+            // Touch order, as in `set_folders`: the row just written is the newest, so
+            // the cap can never evict the project in use.
+            let row = f.projects.remove(pos);
+            f.projects.push(row);
+            let len = f.projects.len();
+            if len > MAX_PROJECTS {
+                f.projects.drain(0..len - MAX_PROJECTS);
+            }
+        })
+    }
 }
 
 #[cfg(test)]

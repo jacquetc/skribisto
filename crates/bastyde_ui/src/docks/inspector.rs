@@ -173,7 +173,7 @@ impl Widget for Inspector {
                     .child(TextWidget::new(lit!(d.title.clone())).style(TextStyleRole::BodyBold));
                 // The headline affordance: convert this item to another type. A folder
                 // can become any other kind of folder, so it is a menu, not a button.
-                let key = BinderTreeKey::Item(d.id);
+                let key = BinderTreeKey::Item(d.uid);
                 let targets = self.outline.promote_targets_of(key);
                 if !targets.is_empty() {
                     let outline = self.outline.clone();

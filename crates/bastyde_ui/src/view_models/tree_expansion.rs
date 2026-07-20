@@ -67,6 +67,25 @@ impl TreeExpansionViewModel {
         }
     }
 
+    /// The outline's remembered expanded rows, for it to apply on load.
+    pub fn outline_expanded(&self) -> Vec<crate::models::BinderTreeKey> {
+        match self.work_uid() {
+            Some(uid) => self.service.outline(&uid),
+            None => Vec::new(),
+        }
+    }
+
+    /// Persist the outline's expanded rows.
+    pub fn capture_outline(&self, expanded: &[crate::models::BinderTreeKey]) {
+        let Some(work_uid) = self.work_uid() else {
+            return;
+        };
+        let path = crate::current_project_path(&self.app_ctx).unwrap_or_default();
+        if let Err(e) = self.service.set_outline(&work_uid, &path, expanded) {
+            eprintln!("skribisto: could not persist outline expansion: {e}");
+        }
+    }
+
     /// Persist every open container's expand state in **one** write.
     ///
     /// `folders` is `(container uid, expanded uids)` — gathered by `App` from the open

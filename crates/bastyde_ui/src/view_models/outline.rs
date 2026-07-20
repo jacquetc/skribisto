@@ -17,16 +17,15 @@ use bastyde::widgets::{DockOpenLocation, DockSide, DockWidgetId, DockingModel, I
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_commands, binder_item_commands, binder_item_management_commands, content_commands,
+    binder_commands, binder_item_commands, binder_item_management_commands,
     trash_management_commands, undo_redo_commands, work_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
-use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, UpdateBinderDto};
 
-use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace, PromoteDto};
+use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 
 use skribisto_model::{PromoteTarget, Recommendation, Relation, SubRoleExt};
@@ -141,8 +140,25 @@ impl OutlineViewModel {
     fn install_reorder(&self) {
         let app_ctx = self.app_ctx.clone();
         let stack_id = self.ids.stack_id.clone();
+        // Capture the uid → id **map**, never the model: the slice owns this closure, so
+        // capturing the model would capture the slice that owns it and leak the tree.
+        let ids_by_uid = self.model.ids_by_uid();
         let commit: CommitMove = Rc::new(move |dragged, target, place| {
-            apply_move(&app_ctx, stack_id.get(), dragged, target, place).is_ok()
+            let map = ids_by_uid.borrow();
+            let (Some(&item_id), Some(&target_id)) = (map.get(&dragged), map.get(&target)) else {
+                return false; // a row that left the tree between drag-start and drop
+            };
+            let target_is_binder = matches!(target, BinderTreeKey::Binder(_));
+            drop(map);
+            apply_move(
+                &app_ctx,
+                stack_id.get(),
+                item_id,
+                target_id,
+                target_is_binder,
+                place,
+            )
+            .is_ok()
         });
         self.model.set_reorder(commit);
     }
@@ -152,6 +168,24 @@ impl OutlineViewModel {
     pub fn model(&self) -> BinderBinderItemsTreeModel {
         self.model.clone()
     }
+    /// The live store id behind an **item** key — `None` for a binder key, or for a row
+    /// that has left the tree. Every command site goes through here, because a durable
+    /// key names a row rather than an id and the row may be gone.
+    pub fn item_id_of(&self, key: BinderTreeKey) -> Option<u64> {
+        self.model.item_id_of(&key)
+    }
+
+    /// The key addressing a live item id — for callers that arrive holding an id (an
+    /// intent payload, a freshly created row) rather than a key.
+    pub fn key_for_item(&self, item_id: u64) -> Option<BinderTreeKey> {
+        self.model.key_for_item(item_id)
+    }
+
+    /// The key addressing a live binder id.
+    pub fn key_for_binder(&self, binder_id: u64) -> Option<BinderTreeKey> {
+        self.model.key_for_binder(binder_id)
+    }
+
     pub fn selection(&self) -> KeyedSelectionModel<BinderTreeKey> {
         self.selection.clone()
     }
@@ -368,14 +402,16 @@ impl OutlineViewModel {
     /// top-level set (Book first). Applies the live BookEnd gating.
     pub fn recommendations_for_key(&self, anchor: Option<BinderTreeKey>) -> Vec<Recommendation> {
         match anchor {
-            Some(BinderTreeKey::Item(i)) => match self.item_dto(i) {
-                Some(dto) => {
-                    let mut recs = skribisto_model::recommendations(&dto.role, &dto.sub_role);
-                    self.gate_book_end(i, &mut recs);
-                    recs
+            Some(key @ BinderTreeKey::Item(_)) => {
+                match self.model.item_id_of(&key).and_then(|i| Some((i, self.item_dto(i)?))) {
+                    Some((i, dto)) => {
+                        let mut recs = skribisto_model::recommendations(&dto.role, &dto.sub_role);
+                        self.gate_book_end(i, &mut recs);
+                        recs
+                    }
+                    None => skribisto_model::recommendations_root(),
                 }
-                None => skribisto_model::recommendations_root(),
-            },
+            }
             _ => skribisto_model::recommendations_root(),
         }
     }
@@ -408,7 +444,7 @@ impl OutlineViewModel {
 
     /// Every type `key` may be converted to, in menu order. Empty when it has none.
     pub fn promote_targets_of(&self, key: BinderTreeKey) -> Vec<PromoteTarget> {
-        let BinderTreeKey::Item(item_id) = key else {
+        let Some(item_id) = self.model.item_id_of(&key) else {
             return Vec::new();
         };
         binder_ops::promote_targets_of(&self.app_ctx, item_id)
@@ -422,7 +458,7 @@ impl OutlineViewModel {
         key: BinderTreeKey,
         target: PromoteTarget,
     ) -> Vec<ContentRole> {
-        let BinderTreeKey::Item(item_id) = key else {
+        let Some(item_id) = self.model.item_id_of(&key) else {
             return Vec::new();
         };
         binder_ops::promote_content_loss(&self.app_ctx, item_id, target)
@@ -436,7 +472,7 @@ impl OutlineViewModel {
     /// item it cannot see used to answer `0` — which reads as "nothing blocks this" and
     /// waved through exactly the conversion the guard exists to stop.
     pub fn demote_blocked_children(&self, key: BinderTreeKey, target: PromoteTarget) -> usize {
-        let BinderTreeKey::Item(item_id) = key else {
+        let Some(item_id) = self.model.item_id_of(&key) else {
             return 0;
         };
         binder_ops::demote_blocked_children(&self.app_ctx, &self.ids, item_id, target)
@@ -447,7 +483,7 @@ impl OutlineViewModel {
     /// text, so this is safe to call even from a stale menu. The demote-empty guard is
     /// the caller's job (`demote_blocked_children`); this trusts it.
     pub fn promote(&self, key: BinderTreeKey, target: PromoteTarget) {
-        let BinderTreeKey::Item(item_id) = key else {
+        let Some(item_id) = self.model.item_id_of(&key) else {
             return;
         };
         if binder_ops::promote(&self.app_ctx, &self.ids, item_id, target) {
@@ -482,7 +518,10 @@ impl OutlineViewModel {
     pub fn rename(&self, key: BinderTreeKey, title: &str) {
         let ctx = &*self.app_ctx;
         match key {
-            BinderTreeKey::Binder(b) => {
+            BinderTreeKey::Binder(_) => {
+                let Some(b) = self.model.binder_of(&key) else {
+                    return;
+                };
                 if let Some(binder) = self.binder_dto(b) {
                     let dto = UpdateBinderDto {
                         id: b,
@@ -496,7 +535,10 @@ impl OutlineViewModel {
                     let _ = binder_commands::update_binder(ctx, self.stack(), &dto);
                 }
             }
-            BinderTreeKey::Item(i) => {
+            BinderTreeKey::Item(_) => {
+                let Some(i) = self.model.item_id_of(&key) else {
+                    return;
+                };
                 // Through the single, so the title `Content` row follows the entity field.
                 // A tree rename that wrote only `BinderItem.title` would leave the
                 // manuscript compiling the old chapter title — the mirror image of the
@@ -536,12 +578,14 @@ impl OutlineViewModel {
         }
         // Whole binders.
         for key in sel {
-            if let BinderTreeKey::Binder(b) = key {
+            if matches!(key, BinderTreeKey::Binder(_))
+                && let Some(b) = self.model.binder_of(key)
+            {
                 let _ = trash_management_commands::trash_binder(
                     ctx,
                     stack,
                     &TrashBinderDto {
-                        binder_id: *b as i64,
+                        binder_id: b as i64,
                     },
                 );
             }
@@ -549,10 +593,10 @@ impl OutlineViewModel {
         // Items, grouped by their origin binder.
         let mut by_binder: HashMap<u64, Vec<i64>> = HashMap::new();
         for key in sel {
-            if let BinderTreeKey::Item(i) = key
+            if let Some(i) = self.model.item_id_of(key)
                 && let Some(b) = self.model.binder_of(key)
             {
-                by_binder.entry(b).or_default().push(*i as i64);
+                by_binder.entry(b).or_default().push(i as i64);
             }
         }
         for (binder, ids) in by_binder {
@@ -575,7 +619,7 @@ impl OutlineViewModel {
     /// itself), in document order. Empty for a leaf — the Inspector uses that to decide
     /// whether to offer "Apply to children".
     pub fn subtree_descendants(&self, item_id: u64) -> Vec<u64> {
-        let Some(binder) = self.model.binder_of(&BinderTreeKey::Item(item_id)) else {
+        let Some((binder, _, _)) = binder_ops::locate(&self.app_ctx, &self.ids, item_id) else {
             return Vec::new();
         };
         let (order, meta) = self.ordered_meta(binder);
@@ -657,7 +701,11 @@ impl OutlineViewModel {
             // Show the new binder (this re-sources the tree so its row exists),
             // then rename it in place — `begin_rename` reads the row's name.
             self.set_binder_filter(Some(binder.id));
-            self.begin_rename(BinderTreeKey::Binder(binder.id), ctx);
+            // The filter change re-sourced the tree, so the new binder now has a row —
+            // and therefore a key.
+            if let Some(key) = self.model.key_for_binder(binder.id) {
+                self.begin_rename(key, ctx);
+            }
         }
     }
 
@@ -666,7 +714,9 @@ impl OutlineViewModel {
     /// displayed binder, revert to "all binders" so the tree isn't left filtered
     /// to a now-trashed binder.
     pub fn trash_binder(&self, id: u64) {
-        self.trash_keys(&[BinderTreeKey::Binder(id)]);
+        if let Some(key) = self.model.key_for_binder(id) {
+            self.trash_keys(&[key]);
+        }
         if self.filters.binder.get() == Some(id) {
             self.set_binder_filter(None);
         }
@@ -681,12 +731,11 @@ impl OutlineViewModel {
     /// Duplicate the given keys' item subtrees (binder keys ignored). Used by the
     /// context menu (operates on the right-clicked row, not the selection).
     pub fn duplicate_keys(&self, keys: &[BinderTreeKey]) {
+        // `item_id_of` returns `None` for a binder key and for a row that has left the
+        // tree, so the filter covers both without a separate match.
         let item_ids: Vec<u64> = keys
             .iter()
-            .filter_map(|k| match k {
-                BinderTreeKey::Item(i) => Some(*i),
-                _ => None,
-            })
+            .filter_map(|k| self.model.item_id_of(k))
             .collect();
         if item_ids.is_empty() {
             return;
@@ -702,7 +751,28 @@ impl OutlineViewModel {
     /// Move one dragged item relative to a target (drag-drop and keyboard moves
     /// share the same `apply_move` helper).
     pub fn move_item(&self, dragged: BinderTreeKey, target: BinderTreeKey, place: DropPosition) {
-        if apply_move(&self.app_ctx, self.stack(), dragged, target, place).is_ok() {
+        let Some(item_id) = self.model.item_id_of(&dragged) else {
+            return; // only items move, and only ones still in the tree
+        };
+        let target_is_binder = matches!(target, BinderTreeKey::Binder(_));
+        let target_id = if target_is_binder {
+            self.model.binder_of(&target)
+        } else {
+            self.model.item_id_of(&target)
+        };
+        let Some(target_id) = target_id else {
+            return;
+        };
+        if apply_move(
+            &self.app_ctx,
+            self.stack(),
+            item_id,
+            target_id,
+            target_is_binder,
+            place,
+        )
+        .is_ok()
+        {
             self.reload();
         }
     }
@@ -720,9 +790,10 @@ impl OutlineViewModel {
     fn insertion_point(&self, anchor: Option<BinderTreeKey>) -> Option<(u64, usize, i64)> {
         let ctx = &*self.app_ctx;
         match anchor {
-            Some(BinderTreeKey::Binder(b)) => Some((b, 0, 0)),
-            Some(BinderTreeKey::Item(i)) => {
-                let binder = self.model.binder_of(&BinderTreeKey::Item(i))?;
+            Some(key @ BinderTreeKey::Binder(_)) => Some((self.model.binder_of(&key)?, 0, 0)),
+            Some(key @ BinderTreeKey::Item(_)) => {
+                let i = self.model.item_id_of(&key)?;
+                let binder = self.model.binder_of(&key)?;
                 let order = binder_commands::get_binder_relationship(
                     ctx,
                     &binder,
@@ -758,12 +829,16 @@ impl OutlineViewModel {
         relation: Relation,
     ) -> Option<(u64, usize, i64)> {
         match anchor {
-            Some(BinderTreeKey::Binder(b)) => match relation {
-                Relation::Child => Some((b, 0, 0)),
-                _ => Some((b, self.ordered_meta(b).0.len(), 0)),
-            },
-            Some(BinderTreeKey::Item(i)) => {
-                let binder = self.model.binder_of(&BinderTreeKey::Item(i))?;
+            Some(key @ BinderTreeKey::Binder(_)) => {
+                let b = self.model.binder_of(&key)?;
+                match relation {
+                    Relation::Child => Some((b, 0, 0)),
+                    _ => Some((b, self.ordered_meta(b).0.len(), 0)),
+                }
+            }
+            Some(key @ BinderTreeKey::Item(_)) => {
+                let i = self.model.item_id_of(&key)?;
+                let binder = self.model.binder_of(&key)?;
                 let (order, meta) = self.ordered_meta(binder);
                 let pos = order.iter().position(|&x| x == i)?;
                 let (anchor_indent, _) = *meta.get(&i)?;
@@ -837,7 +912,8 @@ impl OutlineViewModel {
         if !recs.iter().any(|r| r.create_type.closes_book()) {
             return;
         }
-        let Some(binder) = self.model.binder_of(&BinderTreeKey::Item(anchor_item)) else {
+        let Some((binder, _, _)) = binder_ops::locate(&self.app_ctx, &self.ids, anchor_item)
+        else {
             return;
         };
         let (order, meta) = self.ordered_meta(binder);
@@ -872,10 +948,7 @@ impl OutlineViewModel {
             .selection
             .selected_keys()
             .iter()
-            .filter_map(|k| match k {
-                BinderTreeKey::Item(i) => Some(*i),
-                _ => None,
-            })
+            .filter_map(|k| self.model.item_id_of(k))
             .collect();
         if items.is_empty() {
             return;
@@ -886,7 +959,7 @@ impl OutlineViewModel {
             let _ = undo_redo_commands::begin_composite(ctx, stack);
         }
         for i in items {
-            let Some(binder) = self.model.binder_of(&BinderTreeKey::Item(i)) else {
+            let Some((binder, _, _)) = binder_ops::locate(ctx, &self.ids, i) else {
                 continue;
             };
             let Ok(order) = binder_commands::get_binder_relationship(
@@ -935,18 +1008,11 @@ impl OutlineViewModel {
 pub(crate) fn apply_move(
     ctx: &AppContext,
     stack: Option<u64>,
-    dragged: BinderTreeKey,
-    target: BinderTreeKey,
+    item_id: u64,
+    target_id: u64,
+    target_is_binder: bool,
     place: DropPosition,
 ) -> anyhow::Result<()> {
-    let item_id = match dragged {
-        BinderTreeKey::Item(i) => i,
-        BinderTreeKey::Binder(_) => anyhow::bail!("only items can be moved"),
-    };
-    let (target_id, target_is_binder) = match target {
-        BinderTreeKey::Binder(b) => (b, true),
-        BinderTreeKey::Item(i) => (i, false),
-    };
     let move_place = match place {
         DropPosition::Before => MovePlace::Before,
         DropPosition::After => MovePlace::After,
@@ -1042,6 +1108,9 @@ mod tests {
     // ignores `work_id` and re-sources a static fixture instead. ──
     #[cfg(not(feature = "mocks"))]
     mod recommend {
+        use frontend::commands::content_commands;
+        use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+
         use super::*;
 
         /// Seed an empty Work + Binder; return a VM wired to it (reloaded) and the
@@ -1074,6 +1143,26 @@ mod tests {
         }
 
         /// Append an item to `binder` at `index` (sequential = append) and reload.
+        /// The tree key for a seeded item.
+        ///
+        /// The seed writes straight to the backend, so the tree has to re-source before
+        /// the row (and therefore its key) exists — production gets that re-source from
+        /// the `BinderItem(Created)` event, which a headless test has no source for.
+        /// The tree key for a seeded binder.
+        pub(super) fn binder_key_of(outline: &OutlineViewModel, binder_id: u64) -> BinderTreeKey {
+            outline.reload();
+            outline
+                .key_for_binder(binder_id)
+                .expect("the seeded binder must have a row in the tree")
+        }
+
+        pub(super) fn key_of(outline: &OutlineViewModel, item_id: u64) -> BinderTreeKey {
+            outline.reload();
+            outline
+                .key_for_item(item_id)
+                .expect("the seeded item must have a row in the tree")
+        }
+
         pub(super) fn seed_item(
             outline: &OutlineViewModel,
             binder: u64,
@@ -1134,7 +1223,7 @@ mod tests {
                 0,
             );
             outline.add_recommended(
-                Some(BinderTreeKey::Item(book)),
+                Some(key_of(&outline, book)),
                 &rec(CreateType::Chapter, Relation::Child),
             );
             let new = *order_of(&outline, binder).last().unwrap();
@@ -1173,7 +1262,7 @@ mod tests {
             );
 
             outline.add_recommended(
-                Some(BinderTreeKey::Item(book)),
+                Some(key_of(&outline, book)),
                 &rec(CreateType::Chapter, Relation::Child),
             );
 
@@ -1215,7 +1304,7 @@ mod tests {
             );
 
             outline.add_recommended(
-                Some(BinderTreeKey::Item(chapter)),
+                Some(key_of(&outline, chapter)),
                 &rec(CreateType::Chapter, Relation::Sibling),
             );
 
@@ -1265,7 +1354,7 @@ mod tests {
             // Anchored on a deep scene: a new Chapter should start after the whole
             // enclosing chapter, at the chapter's own indent — not nested in it.
             outline.add_recommended(
-                Some(BinderTreeKey::Item(s1)),
+                Some(key_of(&outline, s1)),
                 &rec(CreateType::Chapter, Relation::ParentSibling),
             );
 
@@ -1295,7 +1384,7 @@ mod tests {
                 1,
             );
 
-            let recs = outline.recommendations_for_key(Some(BinderTreeKey::Item(book)));
+            let recs = outline.recommendations_for_key(Some(key_of(&outline, book)));
             assert!(
                 recs.iter().all(|r| r.create_type != CreateType::EndOfBook),
                 "End of Book should be hidden when the book already has one"
@@ -1307,7 +1396,7 @@ mod tests {
             let (outline, binder) = seed();
             let expected = skribisto_model::recommendations_root();
             assert_eq!(
-                outline.recommendations_for_key(Some(BinderTreeKey::Binder(binder))),
+                outline.recommendations_for_key(Some(binder_key_of(&outline, binder))),
                 expected
             );
             assert_eq!(outline.recommendations_for_key(None), expected);
@@ -1324,7 +1413,7 @@ mod tests {
                 0,
                 0,
             );
-            outline.promote(BinderTreeKey::Item(scene), PromoteTarget::Note);
+            outline.promote(key_of(&outline, scene), PromoteTarget::Note);
             let dto = outline.item_dto(scene).unwrap();
             assert_eq!(dto.role, BinderItemRole::Item);
             assert_eq!(dto.sub_role, BinderItemSubRole::Note);
@@ -1341,7 +1430,7 @@ mod tests {
                 0,
                 0,
             );
-            outline.promote(BinderTreeKey::Item(cs), PromoteTarget::ChapterFolder);
+            outline.promote(key_of(&outline, cs), PromoteTarget::ChapterFolder);
             let dto = outline.item_dto(cs).unwrap();
             assert_eq!(dto.role, BinderItemRole::Folder);
             assert_eq!(dto.sub_role, BinderItemSubRole::ChapterScene);
@@ -1378,7 +1467,7 @@ mod tests {
             // is blocked...
             assert_eq!(
                 outline.demote_blocked_children(
-                    BinderTreeKey::Item(chapter),
+                    key_of(&outline, chapter),
                     PromoteTarget::FlatChapter
                 ),
                 2
@@ -1386,14 +1475,14 @@ mod tests {
             // ...but becoming another *folder* is not: nothing is being collapsed.
             assert_eq!(
                 outline.demote_blocked_children(
-                    BinderTreeKey::Item(chapter),
+                    key_of(&outline, chapter),
                     PromoteTarget::PartFolder
                 ),
                 0
             );
             // A leaf scene has no container to empty.
             assert_eq!(
-                outline.demote_blocked_children(BinderTreeKey::Item(s1), PromoteTarget::Note),
+                outline.demote_blocked_children(key_of(&outline, s1), PromoteTarget::Note),
                 0
             );
         }
@@ -1418,7 +1507,7 @@ mod tests {
                 0,
             );
 
-            outline.rename(BinderTreeKey::Item(ch), "The Long Road");
+            outline.rename(key_of(&outline, ch), "The Long Road");
 
             // The entity field the tree and the tab read...
             assert_eq!(outline.item_dto(ch).unwrap().title, "The Long Road");
@@ -1468,11 +1557,11 @@ mod tests {
                 );
                 assert!(
                     outline
-                        .promote_targets_of(BinderTreeKey::Item(f))
+                        .promote_targets_of(key_of(&outline, f))
                         .contains(&target),
                     "a plain folder must offer {target:?}"
                 );
-                outline.promote(BinderTreeKey::Item(f), target);
+                outline.promote(key_of(&outline, f), target);
                 let dto = outline.item_dto(f).unwrap();
                 assert_eq!(dto.role, BinderItemRole::Folder);
                 assert_eq!(dto.sub_role, want, "promoting to {target:?}");

@@ -296,10 +296,12 @@ struct TrashRestoreTargetResolver {
 
 impl TrashRestoreTargetResolver {
     fn resolve(&self, key: BinderTreeKey) -> (u64, Option<u64>, DropPosition) {
-        match key {
-            BinderTreeKey::Binder(b) => (b, None, DropPosition::Into),
-            BinderTreeKey::Item(i) => {
-                let binder = self.model.binder_of(&key).unwrap_or(0);
+        // Both arms resolve through the tree now: the key names a row by durable uid, so
+        // the live store ids live on the node rather than in the key itself.
+        let binder = self.model.binder_of(&key).unwrap_or(0);
+        match self.model.item_id_of(&key) {
+            None => (binder, None, DropPosition::Into), // a binder row (or a vanished one)
+            Some(i) => {
                 let pos = if self.model.node_is_folder(&key) {
                     DropPosition::Into
                 } else {

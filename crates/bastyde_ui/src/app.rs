@@ -240,6 +240,14 @@ fn capture_tree_expansion(ctx: &mut EventContext) {
     ) else {
         return;
     };
+    // The outline is one tree over the whole project, so it is captured on its own
+    // rather than per container.
+    if let Some(outline) = ctx
+        .app_state::<crate::view_models::OutlineViewModel>()
+        .cloned()
+    {
+        expansion.capture_outline(&outline.model().expanded_keys());
+    }
     let mut folders: Vec<(uuid::Uuid, Vec<uuid::Uuid>)> = Vec::new();
     for side in [
         crate::view_models::Side::Primary,
@@ -1093,6 +1101,8 @@ impl Widget for App {
             // won't contain it; re-mounting it after restore keeps the trash panel
             // reachable in every project (and it re-saves with trash thereafter).
             let trash_docking = outline.docking();
+            // The outline's tree model, for re-applying its remembered chevrons below.
+            let outline_model = outline.model();
             let trash_dock = self.trash_dock;
             let outline_dock = outline.dock_id();
             ctx.subscribe_event_with_ctx(
@@ -1111,6 +1121,20 @@ impl Widget for App {
                     // has already re-seeded the ids/singles and cleared the old tabs.
                     if let Some(layout) = &workspace_layout {
                         layout.restore(backup.is_some());
+                    }
+                    // …and the outline's remembered chevrons, from the same moment and
+                    // for the same reason: a backup shares its source project's uid, so
+                    // its saved expansion is the *source's* and it gets the default tree
+                    // instead. Keyed by durable uid, so what was written is what is read
+                    // — no translation against the freshly re-minted store ids.
+                    if backup.is_none()
+                        && let Some(expansion) =
+                            c.app_state::<crate::view_models::TreeExpansionViewModel>().cloned()
+                    {
+                        let remembered = expansion.outline_expanded();
+                        if !remembered.is_empty() {
+                            outline_model.set_expanded_keys(&remembered);
+                        }
                     }
                     // Ensure the trash dock survives restoring a pre-trash layout.
                     // `open_dock` selects the new tab, so re-reveal the outline to

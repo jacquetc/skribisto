@@ -26,7 +26,7 @@
 //! having one copy of.
 
 use std::cell::{Cell, RefCell};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use bastyde::core::ObserverHandle;
@@ -135,6 +135,14 @@ pub struct OverviewRowsModel {
     /// when it is trashed out from under an open tab, so the empty state can say so
     /// instead of offering a "＋ New" that would silently fail.
     container_present: Signal<bool>,
+    /// uid → live store id for the rows currently loaded, refreshed on every source run.
+    ///
+    /// Exists so the drag-reorder closure can resolve a key without holding **this
+    /// model**. `set_reorder` stores that closure inside the slice's `Rc<Inner>`, so a
+    /// closure capturing the model would capture the slice that owns it — a reference
+    /// cycle, and the whole table (rows, contents, expand set) would leak once per
+    /// container tab ever opened. This map references nothing, so capturing it is free.
+    ids_by_uid: Rc<RefCell<HashMap<Uuid, u64>>>,
     /// **The authoritative expand set**, held outside the slice.
     ///
     /// `TreeDataSlice::build` rebuilds its own expanded set from the incoming rows and
@@ -173,6 +181,7 @@ impl OverviewRowsModel {
         // Optimistic until the first load says otherwise — a fresh tab is not "gone".
         let container_present = Signal::new(true);
         let remembered: Rc<RefCell<HashSet<Uuid>>> = Rc::new(RefCell::new(HashSet::new()));
+        let ids_by_uid: Rc<RefCell<HashMap<Uuid, u64>>> = Rc::new(RefCell::new(HashMap::new()));
 
         {
             let ctx = ctx.clone();
@@ -181,12 +190,18 @@ impl OverviewRowsModel {
             let method = counting_method.clone();
             let scope = scope_contents.clone();
             let present = container_present.clone();
+            let ids = ids_by_uid.clone();
             slice.set_source(move || {
                 let loaded = rows::load(&ctx, &work_id, container_id, method.get());
                 *scope.borrow_mut() = loaded.in_scope;
                 if present.get() != loaded.container_present {
                     present.set(loaded.container_present);
                 }
+                *ids.borrow_mut() = loaded
+                    .rows
+                    .iter()
+                    .map(|r| (r.key, r.item.item_id))
+                    .collect();
                 shape(loaded.rows, &f)
             });
         }
@@ -255,6 +270,7 @@ impl OverviewRowsModel {
             slice,
             scope_contents,
             container_present,
+            ids_by_uid,
             remembered,
             _filters: Rc::new(observers),
             subscribed: Rc::new(Cell::new(false)),
@@ -324,6 +340,12 @@ impl OverviewRowsModel {
         ids.iter().any(|id| scope.contains(id))
     }
 
+    /// The uid → store-id map for the loaded rows, for a caller that must resolve keys
+    /// without holding this model (see [`Self::ids_by_uid`]).
+    pub fn ids_by_uid(&self) -> Rc<RefCell<HashMap<Uuid, u64>>> {
+        self.ids_by_uid.clone()
+    }
+
     /// Inject the reorder command. On a successful move the slice re-sources itself.
     pub fn set_reorder(&self, commit: CommitMove) {
         self.slice
@@ -363,6 +385,13 @@ impl OverviewRowsModel {
     pub fn set_expanded_uids(&self, uids: &[Uuid]) {
         *self.remembered.borrow_mut() = uids.iter().copied().collect();
         self.slice.set_expanded_keys(uids);
+    }
+
+    /// A `Weak` to one of this model's own allocations — a test hook for proving the
+    /// model actually drops (i.e. that nothing it installed holds it alive).
+    #[cfg(all(test, feature = "mocks"))]
+    pub fn weak_probe(&self) -> std::rc::Weak<RefCell<HashSet<u64>>> {
+        Rc::downgrade(&self.scope_contents)
     }
 
     pub fn expand_all(&self) {

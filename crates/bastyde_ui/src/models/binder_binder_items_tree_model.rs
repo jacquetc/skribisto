@@ -22,7 +22,7 @@
 //! injected [`CommitMove`] closure and the slice re-reads itself.
 
 use std::cell::{Cell, RefCell};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use bastyde::core::ObserverHandle;
@@ -38,13 +38,26 @@ use frontend::common::event::{
 
 use frontend::AppContext;
 use frontend::common::entities::BinderItemSubRole;
+use uuid::Uuid;
 
-/// Stable per-row identity. Binders and items share the row space but live in
-/// disjoint id namespaces in the backend, so the key is tagged.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+/// **Durable** per-row identity, by `uid` — not by store id.
+///
+/// `EntityId` is a position in an ephemeral `HashMap` that `load_work` re-mints on every
+/// open, so a key built from one is only meaningful until the next load. Anything that
+/// outlives a re-source — the expand set, a persisted selection — keyed by store id would
+/// re-attach to whatever rows happened to inherit those numbers.
+///
+/// Still **tagged**, because binders and items are separate entities: two rows could
+/// legitimately carry the same uuid without being the same thing, and a `Binder` is never
+/// a valid target for an item command.
+///
+/// The consequence every consumer pays: resolving a key to the store id a command needs
+/// is a *lookup that can fail* (the row left the tree). That is the honest shape — a
+/// durable key names a thing, not a slot.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum BinderTreeKey {
-    Binder(u64),
-    Item(u64),
+    Binder(Uuid),
+    Item(Uuid),
 }
 
 /// One node in the navigation tree. Shared by both variants. `PartialEq` powers
@@ -65,10 +78,13 @@ pub struct TreeNode {
     pub item_id: Option<u64>,
     /// The owning `Binder` id (`Some` for binder rows and item rows alike).
     pub binder_id: Option<u64>,
+    /// The row's **durable** uid — the same value its [`BinderTreeKey`] carries. Held on
+    /// the node too so a delegate handed only a node can rebuild the key without a lookup.
+    pub uid: Uuid,
 }
 
 impl TreeNode {
-    pub fn binder(name: String, binder_id: u64) -> Self {
+    pub fn binder(name: String, binder_id: u64, uid: Uuid) -> Self {
         Self {
             title: name,
             label: String::new(),
@@ -76,6 +92,7 @@ impl TreeNode {
             sub_role: BinderItemSubRole::default(),
             item_id: None,
             binder_id: Some(binder_id),
+            uid,
         }
     }
 }
@@ -104,6 +121,14 @@ pub struct TreeFilters {
 #[derive(Clone)]
 pub struct BinderBinderItemsTreeModel {
     slice: TreeDataSlice<BinderTreeKey, TreeNode>,
+    /// uid → live store id for the rows currently loaded, refreshed on every source run.
+    ///
+    /// Exists so the drag-reorder closure can resolve a key without holding the **model**.
+    /// The slice owns that closure (`set_reorder` stores it in the slice's `Rc<Inner>`),
+    /// so a closure capturing the model would capture the slice that owns it — a
+    /// reference cycle that leaks the entire tree. This map references nothing, so
+    /// capturing it is free.
+    ids_by_uid: Rc<RefCell<HashMap<BinderTreeKey, u64>>>,
     /// **The authoritative expand set**, held outside the slice.
     ///
     /// `TreeDataSlice::build` drops every expand key absent from the incoming rows. That
@@ -138,6 +163,9 @@ impl BinderBinderItemsTreeModel {
         // New nodes (e.g. a freshly-created scene) appear expanded; the user's
         // later collapses survive reloads (the slice tracks a `seen` set).
         slice.set_expand_new_nodes(true);
+        let remembered: Rc<RefCell<HashSet<BinderTreeKey>>> = Rc::new(RefCell::new(HashSet::new()));
+        let ids_by_uid: Rc<RefCell<HashMap<BinderTreeKey, u64>>> =
+            Rc::new(RefCell::new(HashMap::new()));
         // The row source: binder-scoped rows from the backend (the real/mock
         // seam, see the `rows` modules), then — when a query is active — a live
         // text filter. `KeepAncestors` keeps a match's parent binder/folders so
@@ -146,6 +174,7 @@ impl BinderBinderItemsTreeModel {
             let ctx = ctx.clone();
             let work_id = work_id.clone();
             let f = filters.clone();
+            let ids = ids_by_uid.clone();
             slice.set_source(move || {
                 let q = f.query.get();
                 let searching = !q.trim().is_empty();
@@ -157,6 +186,16 @@ impl BinderBinderItemsTreeModel {
                     f.binder.get()
                 };
                 let rows = rows::load(&ctx, &work_id, scope);
+                *ids.borrow_mut() = rows
+                    .iter()
+                    .filter_map(|r| {
+                        let id = match r.key {
+                            BinderTreeKey::Binder(_) => r.item.binder_id,
+                            BinderTreeKey::Item(_) => r.item.item_id,
+                        }?;
+                        Some((r.key, id))
+                    })
+                    .collect();
                 if !searching {
                     return rows;
                 }
@@ -186,7 +225,6 @@ impl BinderBinderItemsTreeModel {
                 p => Some(p),
             },
         });
-        let remembered: Rc<RefCell<HashSet<BinderTreeKey>>> = Rc::new(RefCell::new(HashSet::new()));
         reload_preserving(&slice, &remembered);
 
         // Live re-source on any filter change.
@@ -229,6 +267,7 @@ impl BinderBinderItemsTreeModel {
 
         Self {
             slice,
+            ids_by_uid,
             remembered,
             _filters: Rc::new(observers),
             subscribed: Rc::new(Cell::new(false)),
@@ -267,6 +306,12 @@ impl BinderBinderItemsTreeModel {
         }
     }
 
+    /// The uid → store-id map for the loaded rows, for a caller that must resolve keys
+    /// without holding this model (see [`Self::ids_by_uid`]).
+    pub fn ids_by_uid(&self) -> Rc<RefCell<HashMap<BinderTreeKey, u64>>> {
+        self.ids_by_uid.clone()
+    }
+
     /// Inject the reorder command (`dragged, target, position -> applied`). On a
     /// successful move the slice re-sources itself.
     pub fn set_reorder(&self, commit: CommitMove) {
@@ -285,6 +330,38 @@ impl BinderBinderItemsTreeModel {
         self.slice.with_key(key, |n| (n.item_id, n.title.clone()))
     }
 
+    /// The live store id behind an **item** key — what every command takes.
+    ///
+    /// `None` for a binder key, and for a key whose row has left the tree (trashed,
+    /// filtered out, or belonging to a project that is no longer open). Callers treat
+    /// that as "there is nothing to act on", which is what it means.
+    pub fn item_id_of(&self, key: &BinderTreeKey) -> Option<u64> {
+        self.slice.with_key(key, |n| n.item_id).flatten()
+    }
+
+    /// The key for a loaded item id — the reverse lookup, for callers that arrive holding
+    /// an id (an intent payload, a freshly created row) and need to address the tree.
+    ///
+    /// Searches the **loaded** rows, not the visible ones: an item inside a collapsed
+    /// folder is still a row of this tree, and a caller asking "what is the key for this
+    /// id" is not asking "is it on screen".
+    pub fn key_for_item(&self, item_id: u64) -> Option<BinderTreeKey> {
+        self.ids_by_uid
+            .borrow()
+            .iter()
+            .find(|(k, v)| matches!(k, BinderTreeKey::Item(_)) && **v == item_id)
+            .map(|(k, _)| *k)
+    }
+
+    /// The key for a loaded binder id.
+    pub fn key_for_binder(&self, binder_id: u64) -> Option<BinderTreeKey> {
+        self.ids_by_uid
+            .borrow()
+            .iter()
+            .find(|(k, v)| matches!(k, BinderTreeKey::Binder(_)) && **v == binder_id)
+            .map(|(k, _)| *k)
+    }
+
     /// True when `key` is a folder-kind item row (drop-target resolution: a drop
     /// lands *into* a folder, *after* a leaf).
     pub fn node_is_folder(&self, key: &BinderTreeKey) -> bool {
@@ -294,11 +371,33 @@ impl BinderBinderItemsTreeModel {
     }
 
     /// The owning binder id for any key.
+    ///
+    /// A binder key names the binder by uid, so even that arm is a lookup now — the
+    /// store id lives on the node, not in the key.
     pub fn binder_of(&self, key: &BinderTreeKey) -> Option<u64> {
-        match key {
-            BinderTreeKey::Binder(id) => Some(*id),
-            BinderTreeKey::Item(_) => self.slice.with_key(key, |n| n.binder_id).flatten(),
-        }
+        self.slice.with_key(key, |n| n.binder_id).flatten()
+    }
+
+    /// The expanded set, by durable key — what expand-state persistence stores.
+    ///
+    /// Reads the **authoritative** set, not the slice's projection of it: the slice's is
+    /// pruned to whatever rows the current scope and search leave, so capturing that
+    /// would forget every binder the writer is not looking at right now.
+    pub fn expanded_keys(&self) -> Vec<BinderTreeKey> {
+        self.remembered.borrow().iter().copied().collect()
+    }
+
+    /// Apply a persisted expanded set.
+    pub fn set_expanded_keys(&self, keys: &[BinderTreeKey]) {
+        *self.remembered.borrow_mut() = keys.iter().copied().collect();
+        self.slice.set_expanded_keys(keys);
+    }
+
+    /// A `Weak` to one of this model's own allocations — a test hook for proving the
+    /// model actually drops (i.e. that nothing it installed holds it alive).
+    #[cfg(all(test, feature = "mocks"))]
+    pub fn weak_probe(&self) -> std::rc::Weak<RefCell<HashMap<BinderTreeKey, u64>>> {
+        Rc::downgrade(&self.ids_by_uid)
     }
 
     /// Re-source the rows for the open Work (real: from the backend / mock:
@@ -445,8 +544,8 @@ mod rows {
                 continue; // trashed binders are hidden
             }
             rows.push(TreeRow::new(
-                BinderTreeKey::Binder(binder_id),
-                TreeNode::binder(binder.name, binder_id),
+                BinderTreeKey::Binder(binder.uid),
+                TreeNode::binder(binder.name, binder_id, binder.uid),
                 0,
             ));
 
@@ -471,7 +570,7 @@ mod rows {
                 }
                 .to_string();
                 rows.push(TreeRow::new(
-                    BinderTreeKey::Item(it.id),
+                    BinderTreeKey::Item(it.uid),
                     TreeNode {
                         title: it.title,
                         label: it.label,
@@ -479,6 +578,7 @@ mod rows {
                         sub_role: it.sub_role,
                         item_id: Some(it.id),
                         binder_id: Some(binder_id),
+                        uid: it.uid,
                     },
                     (it.indent.max(0) as usize) + 1,
                 ));
@@ -509,7 +609,7 @@ mod rows {
         depth: usize,
     ) -> TreeRow<BinderTreeKey, TreeNode> {
         TreeRow::new(
-            BinderTreeKey::Item(id),
+            BinderTreeKey::Item(common::uid::fixture_uid(id)),
             TreeNode {
                 title: title.to_string(),
                 label: label.to_string(),
@@ -517,6 +617,7 @@ mod rows {
                 sub_role,
                 item_id: Some(id),
                 binder_id: Some(binder),
+                uid: common::uid::fixture_uid(id),
             },
             depth,
         )
@@ -534,8 +635,10 @@ mod rows {
         use BinderItemSubRole::{Book, BookBegin, ChapterScene, Note, Part, Scene, Text};
         let rows = vec![
             TreeRow::new(
-                BinderTreeKey::Binder(1),
-                TreeNode::binder("Manuscript".into(), 1),
+                // Binder uids come from a namespace the item fixtures do not use, so a
+                // binder row and an item row can never collide on a key.
+                BinderTreeKey::Binder(common::uid::fixture_uid(9_001)),
+                TreeNode::binder("Manuscript".into(), 1, common::uid::fixture_uid(9_001)),
                 0,
             ),
             item(101, 1, "Book One", "the setup", "folder", Book, 1),
@@ -561,8 +664,8 @@ mod rows {
             item(303, 1, "The light returns", "", "item", Scene, 3),
             item(105, 1, "Confrontation", "", "item", ChapterScene, 2),
             TreeRow::new(
-                BinderTreeKey::Binder(2),
-                TreeNode::binder("Notes".into(), 2),
+                BinderTreeKey::Binder(common::uid::fixture_uid(9_002)),
+                TreeNode::binder("Notes".into(), 2, common::uid::fixture_uid(9_002)),
                 0,
             ),
             item(106, 2, "Character sketch", "wants freedom", "item", Note, 1),
@@ -658,9 +761,9 @@ mod tests {
         f.binder.set(Some(1)); // Manuscript: binder + 11 items, expanded → 12
         assert_eq!(m.visible_count(), 12);
         // Collapse "Book One" — the whole book is its subtree (10 rows).
-        m.set_expanded(&BinderTreeKey::Item(101), false);
+        m.set_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101)), false);
         assert_eq!(m.visible_count(), 2);
-        m.set_expanded(&BinderTreeKey::Item(101), true);
+        m.set_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101)), true);
         assert_eq!(m.visible_count(), 12);
     }
 
@@ -676,7 +779,7 @@ mod tests {
         f.binder.set(Some(1)); // Manuscript: binder + 11 items
         assert_eq!(m.visible_count(), 12);
 
-        m.set_expanded(&BinderTreeKey::Item(101), false); // collapse "Book One"
+        m.set_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101)), false); // collapse "Book One"
         assert_eq!(m.visible_count(), 2);
 
         f.binder.set(Some(2)); // away to Notes …
@@ -687,7 +790,7 @@ mod tests {
             2,
             "Book One must still be collapsed; `expand_all()` used to blow this open"
         );
-        assert!(!m.is_expanded(&BinderTreeKey::Item(101)));
+        assert!(!m.is_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101))));
     }
 
     /// …and a binder visited for the **first** time still opens expanded, which is what
@@ -708,7 +811,7 @@ mod tests {
     fn an_expanded_row_filtered_out_by_a_search_comes_back_expanded() {
         let (m, f) = model_with_filters();
         f.binder.set(Some(1));
-        assert!(m.is_expanded(&BinderTreeKey::Item(101)), "Book One starts open");
+        assert!(m.is_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101))), "Book One starts open");
 
         // "Random idea" lives in the Notes binder, so nothing under Book One matches and
         // the whole subtree is filtered away.
@@ -716,7 +819,7 @@ mod tests {
         f.query.set(String::new());
 
         assert!(
-            m.is_expanded(&BinderTreeKey::Item(101)),
+            m.is_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101))),
             "Book One was pruned by the search's row filter and never restored"
         );
     }
@@ -728,10 +831,10 @@ mod tests {
         let (m, f) = model_with_filters();
         f.binder.set(Some(1));
         f.query.set("Scene".to_string());
-        m.set_expanded(&BinderTreeKey::Item(101), false);
+        m.set_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101)), false);
         f.query.set(String::new());
         assert!(
-            !m.is_expanded(&BinderTreeKey::Item(101)),
+            !m.is_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101))),
             "clearing the search resurrected a collapse the writer made during it"
         );
     }
@@ -739,17 +842,17 @@ mod tests {
     #[test]
     fn collapsing_a_folder_hides_its_subtree() {
         let m = model();
-        m.set_expanded(&BinderTreeKey::Item(101), false); // "Book One" (10 descendants)
+        m.set_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101)), false); // "Book One" (10 descendants)
         assert_eq!(m.visible_count(), 5);
-        m.set_expanded(&BinderTreeKey::Item(101), true);
+        m.set_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101)), true);
         assert_eq!(m.visible_count(), 15);
     }
 
     #[test]
     fn binders_cannot_drag_items_can() {
         let m = model();
-        assert_eq!(m.drag(&BinderTreeKey::Binder(1)), DragEligibility::NoDrag);
-        assert_eq!(m.drag(&BinderTreeKey::Item(102)), DragEligibility::CanDrag);
+        assert_eq!(m.drag(&BinderTreeKey::Binder(common::uid::fixture_uid(9_001))), DragEligibility::NoDrag);
+        assert_eq!(m.drag(&BinderTreeKey::Item(common::uid::fixture_uid(102))), DragEligibility::CanDrag);
     }
 
     #[test]
@@ -757,9 +860,9 @@ mod tests {
         let m = model();
         let q = DropQuery {
             source: DragSource::SameView {
-                key: BinderTreeKey::Item(102),
+                key: BinderTreeKey::Item(common::uid::fixture_uid(102)),
             },
-            target: BinderTreeKey::Item(106),
+            target: BinderTreeKey::Item(common::uid::fixture_uid(106)),
             position: DropPosition::Before,
         };
         assert_eq!(m.can_accept(&q), DropResponse::Accept);
@@ -770,9 +873,9 @@ mod tests {
         let m = model();
         let q = DropQuery {
             source: DragSource::SameView {
-                key: BinderTreeKey::Item(102),
+                key: BinderTreeKey::Item(common::uid::fixture_uid(102)),
             },
-            target: BinderTreeKey::Item(103), // a leaf item
+            target: BinderTreeKey::Item(common::uid::fixture_uid(103)), // a leaf item
             position: DropPosition::Into,
         };
         assert_eq!(
@@ -787,9 +890,9 @@ mod tests {
         // Drag the "Book One" folder onto its own child → cycle.
         let q = DropQuery {
             source: DragSource::SameView {
-                key: BinderTreeKey::Item(101),
+                key: BinderTreeKey::Item(common::uid::fixture_uid(101)),
             },
-            target: BinderTreeKey::Item(102),
+            target: BinderTreeKey::Item(common::uid::fixture_uid(102)),
             position: DropPosition::Into,
         };
         assert_eq!(m.can_accept(&q), DropResponse::Reject);
@@ -800,22 +903,38 @@ mod tests {
         let m = model();
         // node_of: item → (Some(id), title); binder → (None, name).
         assert_eq!(
-            m.node_of(&BinderTreeKey::Item(102)),
+            m.node_of(&BinderTreeKey::Item(common::uid::fixture_uid(102))),
             Some((Some(102), "Opening".to_string()))
         );
         assert_eq!(
-            m.node_of(&BinderTreeKey::Binder(1)),
+            m.node_of(&BinderTreeKey::Binder(common::uid::fixture_uid(9_001))),
             Some((None, "Manuscript".to_string()))
         );
         // binder_of resolves an item to its owning binder, and a binder to itself.
-        assert_eq!(m.binder_of(&BinderTreeKey::Item(105)), Some(1));
-        assert_eq!(m.binder_of(&BinderTreeKey::Binder(2)), Some(2));
+        assert_eq!(m.binder_of(&BinderTreeKey::Item(common::uid::fixture_uid(105))), Some(1));
+        assert_eq!(m.binder_of(&BinderTreeKey::Binder(common::uid::fixture_uid(9_002))), Some(2));
+    }
+
+    /// **The tree model must actually drop.** Same hazard as the Overview's: the slice
+    /// owns the reorder closure, so a closure holding the model would hold the slice that
+    /// holds it. The outline's closure captures the uid → id map and the free
+    /// `apply_move`, never the model or the view-model.
+    #[test]
+    fn the_model_drops_once_its_reorder_is_installed() {
+        let m = model();
+        m.set_reorder(Rc::new(|_a, _b, _p| true));
+        let weak = m.weak_probe();
+        drop(m);
+        assert!(
+            weak.upgrade().is_none(),
+            "the tree model outlived its own drop — something it installed holds it"
+        );
     }
 
     #[test]
     fn contains_tracks_membership() {
         let m = model();
-        assert!(m.contains(&BinderTreeKey::Item(101)));
-        assert!(!m.contains(&BinderTreeKey::Item(999)));
+        assert!(m.contains(&BinderTreeKey::Item(common::uid::fixture_uid(101))));
+        assert!(!m.contains(&BinderTreeKey::Item(common::uid::fixture_uid(999))));
     }
 }

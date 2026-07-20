@@ -22,9 +22,11 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             }) = AppIntent::from_intent(i)
             {
                 // `None` anchors on the current Outline selection; a corkboard passes its
-                // drilled-into container id explicitly.
+                // drilled-into container id explicitly. The intent carries a store id, so
+                // it is resolved to the tree's durable key here — and an anchor whose row
+                // has left the tree falls back to the selection rather than to nothing.
                 outline.add_recommended(
-                    anchor_item_id.map(crate::models::BinderTreeKey::Item),
+                    anchor_item_id.and_then(|id| outline.key_for_item(id)),
                     &skribisto_model::Recommendation {
                         create_type: *create_type,
                         relation: *relation,
@@ -68,8 +70,10 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let outline = deps.outline.clone();
         ctx.register_action_global(Action::new("binder.reveal_in_outline").on_invoke(
             move |i, _c| {
-                if let Some(AppIntent::RevealInOutline { item_id }) = AppIntent::from_intent(i) {
-                    outline.reveal_item(crate::models::BinderTreeKey::Item(*item_id));
+                if let Some(AppIntent::RevealInOutline { item_id }) = AppIntent::from_intent(i)
+                    && let Some(key) = outline.key_for_item(*item_id)
+                {
+                    outline.reveal_item(key);
                 }
             },
         ));
