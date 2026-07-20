@@ -836,22 +836,35 @@ fn the_v4_list_form_parses_unchanged() {
     );
 }
 
-/// The shipped v2 fixture — a real project written long before this change — opens through
-/// the real read path, and its language survives as a list.
+/// The shipped fixture — a real project written long before this change — opens through the
+/// real read path, and its pre-v4 language survives as a list.
 ///
 /// `read_bundle` migrates internally (reader.rs), so this asserts the *post-migration* state:
-/// a v2 project arrives fully current. An earlier version of this test called
+/// an old project arrives fully current. An earlier version of this test called
 /// `migrate_bundle` afterwards and asserted "before migration", which was never true and
 /// would have passed even if the split had been moved into the migration step — breaking
-/// `read_manifest_only`, which does not migrate. That path is covered separately below.
+/// `peek_manifest`, which does not migrate. That path is covered separately below.
+///
+/// Note what this deliberately does **not** assert: the fixture's on-disk `format_version`.
+/// That number moves whenever the app legitimately re-saves the project (it went 2 → 3
+/// exactly that way), and a test pinning it fails for a reason that has nothing to do with
+/// what it checks. What matters is that whatever version ships, it opens and arrives current.
 const FIXTURE: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../resources/test/skribisto_test_project.skrib"
 );
 
 #[test]
-fn the_shipped_v2_fixture_opens_and_keeps_its_language() {
-    let bundle = read_bundle(FIXTURE).expect("a v2 project must still open");
+fn the_shipped_fixture_opens_and_keeps_its_language() {
+    let on_disk = peek_manifest(FIXTURE).expect("the fixture must have a readable manifest");
+    assert!(
+        on_disk.format_version < FORMAT_VERSION,
+        "this fixture earns its keep by being OLD — at v{} it no longer exercises migration, \
+         so either keep an older copy or retire this test",
+        on_disk.format_version
+    );
+
+    let bundle = read_bundle(FIXTURE).expect("an old project must still open");
     assert_eq!(
         bundle.manifest.format_version, FORMAT_VERSION,
         "read_bundle migrates, so what comes back is current"
@@ -859,21 +872,55 @@ fn the_shipped_v2_fixture_opens_and_keeps_its_language() {
     assert_eq!(
         bundle.manifest.work.dict_language,
         vec!["fr".to_string()],
-        "the v2 string \"fr\" arrives as a one-element list"
+        "the pre-v4 string \"fr\" arrives as a one-element list"
     );
 }
 
-/// …and `peek_manifest`, which deliberately does **not** migrate, parses the same
-/// v2 string.
+/// …and `peek_manifest`, which deliberately does **not** migrate, still gets a usable list.
 ///
 /// This is the path the backup sniff and the retention scan take over many files. If the
-/// string-to-list split ever moved out of the deserializer and into `migrate_bundle`, this
-/// is the test that would fail — the one above would not.
+/// string-to-list split ever moved out of the deserializer and into `migrate_bundle`, this is
+/// the test that would fail — the one above would not.
+///
+/// It writes its own manifest rather than reading the shipped project, because the property
+/// under test is "peek does not migrate", and borrowing a shared file to check that couples
+/// the test to a version number that legitimately changes underneath it.
 #[test]
-fn peek_manifest_parses_a_v2_language_without_migrating() {
-    let manifest = peek_manifest(FIXTURE).expect("the manifest must parse unmigrated");
-    assert_eq!(manifest.format_version, 2, "deliberately not migrated");
-    assert_eq!(manifest.work.dict_language, vec!["fr".to_string()]);
+fn peek_manifest_parses_a_pre_v4_language_without_migrating() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Old Novel");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(
+        root.join(crate::shape::MANIFEST_NAME),
+        r#"ProjectManifest(
+    format_version: 2,
+    shape: Folder,
+    work: WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "T",
+        author_name: "A",
+        dict_language: "fr-FR en-US",
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "",
+    ),
+    binder_order: [],
+)"#,
+    )
+    .unwrap();
+
+    let manifest = peek_manifest(root.to_str().unwrap()).expect("must parse unmigrated");
+    assert_eq!(
+        manifest.format_version, 2,
+        "peek must report what is on disk, not bump it"
+    );
+    assert_eq!(
+        manifest.work.dict_language,
+        vec!["fr-FR".to_string(), "en-US".to_string()],
+        "the split happens at parse time, so a caller that never migrates still gets a list"
+    );
 }
 
 /// A malformed value says what was expected instead of naming an internal enum.
