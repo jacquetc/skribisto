@@ -49,7 +49,11 @@ import time
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
 MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
-FIXTURE = f"{ROOT}/resources/test/skribisto_test_project.skrib"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from automation_fixture import working_copy
+
+# A throwaway copy — see `automation_fixture`.
+FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "chips")
 
 # The one container in the fixture that renders Stream/Corkboard, and a scene
 # inside it. Named rather than discovered: the structure is fixed and known,

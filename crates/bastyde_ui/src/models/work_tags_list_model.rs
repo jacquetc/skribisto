@@ -52,6 +52,23 @@ pub fn name_key(name: &str) -> String {
     name.trim().to_lowercase()
 }
 
+/// The row whose name collides with `candidate`, ignoring case and surrounding space,
+/// excluding `exclude` (a tag being renamed never collides with itself).
+///
+/// A free function beside [`name_key`] and [`sort_rows`], not a method, because the real
+/// and mock `imp` both need it and both had their own verbatim copy — two chances for the
+/// duplicate-name warning to behave differently in the app than in every test that covers
+/// it, which is the one place the difference would never be noticed.
+pub fn colliding_name(rows: &[TagRow], candidate: &str, exclude: Option<u64>) -> Option<String> {
+    let key = name_key(candidate);
+    if key.is_empty() {
+        return None;
+    }
+    rows.iter()
+        .find(|r| Some(r.id) != exclude && name_key(&r.name) == key)
+        .map(|r| r.name.clone())
+}
+
 fn build_lookup(rows: &[TagRow]) -> HashMap<u64, TagRow> {
     rows.iter().map(|r| (r.id, r.clone())).collect()
 }
@@ -172,14 +189,7 @@ mod imp {
         /// The row whose name collides with `candidate`, ignoring case and surrounding
         /// space, excluding `exclude` (the tag being renamed never collides with itself).
         pub fn colliding_name(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {
-            let key = name_key(candidate);
-            if key.is_empty() {
-                return None;
-            }
-            self.rows()
-                .into_iter()
-                .find(|r| Some(r.id) != exclude && name_key(&r.name) == key)
-                .map(|r| r.name)
+            super::colliding_name(&self.rows(), candidate, exclude)
         }
 
         /// Create one tag under `owner_id`. `None` when no project is open or the write
@@ -412,14 +422,7 @@ mod imp {
         }
 
         pub fn colliding_name(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {
-            let key = name_key(candidate);
-            if key.is_empty() {
-                return None;
-            }
-            self.rows()
-                .into_iter()
-                .find(|r| Some(r.id) != exclude && name_key(&r.name) == key)
-                .map(|r| r.name)
+            super::colliding_name(&self.rows(), candidate, exclude)
         }
 
         pub fn create(
@@ -554,5 +557,65 @@ mod tests {
         assert_eq!(name_key("  CHARACTER  "), "character");
         assert_eq!(name_key("character"), name_key("Character"));
         assert_eq!(name_key("   "), "");
+    }
+
+    /// The palette behind the duplicate-name warning tests, shaped like the fixture the
+    /// live probe uses: a one-letter tag whose case is what makes the check interesting.
+    fn palette() -> Vec<TagRow> {
+        vec![r(1, "A"), r(2, "B"), r(3, "very looooooooooong tag")]
+    }
+
+    /// Typing a name that already exists must warn — this is the whole point of the
+    /// feature, and it is what the settings pane's add field and every inline rename bind
+    /// to. Duplicates stay *legal*; this only decides whether the writer is told.
+    #[test]
+    fn an_exact_name_collides() {
+        assert_eq!(colliding_name(&palette(), "B", None).as_deref(), Some("B"));
+    }
+
+    /// The case-insensitive half, stated separately because it is the one a naive
+    /// implementation gets wrong and the one the live probe exercises: tag "A" exists, the
+    /// writer types "a".
+    #[test]
+    fn a_differently_cased_name_collides_and_reports_the_existing_spelling() {
+        assert_eq!(
+            colliding_name(&palette(), "a", None).as_deref(),
+            Some("A"),
+            "the warning names the tag as it is actually spelled, not as it was typed"
+        );
+    }
+
+    #[test]
+    fn surrounding_space_does_not_hide_a_collision() {
+        assert_eq!(colliding_name(&palette(), "  b  ", None).as_deref(), Some("B"));
+    }
+
+    /// Renaming a tag must not warn that it collides with itself — that would fire on
+    /// every keystroke of every rename that did not change the name.
+    #[test]
+    fn a_tag_never_collides_with_itself() {
+        assert_eq!(colliding_name(&palette(), "A", Some(1)), None);
+        // …but it still collides with a *different* row of the same name.
+        let mut two = palette();
+        two.push(r(4, "a"));
+        assert_eq!(colliding_name(&two, "A", Some(1)).as_deref(), Some("a"));
+    }
+
+    #[test]
+    fn a_novel_name_does_not_collide() {
+        assert_eq!(colliding_name(&palette(), "character", None), None);
+    }
+
+    /// Blank is not a collision. Without this the add field would warn the instant it was
+    /// cleared, and every empty inline rename would sit permanently warned.
+    #[test]
+    fn a_blank_candidate_never_collides() {
+        assert_eq!(colliding_name(&palette(), "", None), None);
+        assert_eq!(colliding_name(&palette(), "   ", None), None);
+    }
+
+    #[test]
+    fn an_empty_palette_has_nothing_to_collide_with() {
+        assert_eq!(colliding_name(&[], "anything", None), None);
     }
 }

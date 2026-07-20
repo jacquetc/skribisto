@@ -23,12 +23,13 @@ exactly like the feature being broken.
 
 import json, os, re, select, subprocess, tempfile, time, base64
 SK="./target/debug/skribisto"; MCP="/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
-import shutil
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from automation_fixture import working_copy
+
 # NEVER open the checked-in fixture in a probe that saves: Ctrl+S below writes the
 # project, and an earlier run of this script silently modified the repo's copy.
-_src="./resources/test/skribisto_test_project.skrib"
-FX=tempfile.NamedTemporaryFile(suffix=".skrib", delete=False).name
-shutil.copy(_src, FX)
+FX = working_copy("./resources/test/skribisto_test_project.skrib", "mentions")
 log=tempfile.NamedTemporaryFile(suffix=".log",delete=False).name
 app=subprocess.Popen([SK,FX],stdout=open(log,"w"),stderr=subprocess.STDOUT)
 sock=tok=None; d=time.time()+25

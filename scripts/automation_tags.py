@@ -59,9 +59,22 @@ import time
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
 MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
-LEGACY = f"{ROOT}/resources/test/skribisto_test_project.skrib"
+# A throwaway copy, never the checked-in fixture — this probe saves. See
+# `automation_fixture` for the three incidents that rule comes from.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from automation_fixture import working_copy
+
+LEGACY = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "tags")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name
+
+# The app follows the *system* locale, so a probe written against English labels
+# fails on a French desktop with "no such row" — which reads exactly like a broken
+# selector. Every user-visible string this probe matches on lives here, in both
+# locales, and the matchers below take these tuples.
+SEC_WORK = ("work", "\u0153uvre", "oeuvre")     # settings-sec-work
+PAGE_TAGS = ("tags", "\u00e9tiquettes")          # settings-page-tags
+SW_BIBLE = ("story bible", "bible narrative")   # settings-tags-discoverable
 
 
 def fail(msg, app=None, mcp=None, log=None):
@@ -360,8 +373,34 @@ def open_settings():
     return False
 
 
-def select_page(target, anchor="keymap", steps=12):
-    """Select a rail page by walking down to it from a visible anchor row.
+def page_reached(target):
+    """The breadcrumb if the panel is showing `target`, else None.
+
+    `target` is a tuple of accepted names (one per locale); a bare string is
+    accepted too. Taking a tuple matters — an earlier version compared a string
+    against the tuple the caller passed, which is silently never equal, so the
+    walk arrived and the check said it had not.
+
+    Deliberately not `breadcrumb()[-1] in target`. The breadcrumb is "every node
+    with role Link", so any link *inside the pane* — an explainer, a "learn
+    more" — becomes the last element and the check fails on a page that is
+    plainly open. Matching any crumb is safe here because a page name never
+    collides with its own parent section (`Œuvre: test` ▸ `Étiquettes`).
+    """
+    names = (target,) if isinstance(target, str) else tuple(target)
+    crumb = breadcrumb()
+    if crumb and any(c and c.strip().lower() in names for c in crumb):
+        return crumb
+    # Second, independent signal: the rail row itself, when the tree reports
+    # selection. Costs nothing and covers a breadcrumb that has not repainted.
+    row = rail_node(names, exact=True)
+    if row and row.get("selected"):
+        return crumb or list(names[:1])
+    return None
+
+
+def select_page(target, anchor="keymap", steps=14, anchor_node=None):
+    """Select a rail page by walking to it from a visible anchor row.
 
     Pointer-clicking the target's reported bounds does not work, and the reason
     is worth stating: a row far enough down the rail is laid out *below the
@@ -371,24 +410,45 @@ def select_page(target, anchor="keymap", steps=12):
 
     Keyboard navigation sidesteps it entirely, because bastyde scrolls the
     focused row into view (`scroll_focused_into_view`). So: click a row that
-    *is* visible to put focus in the tree, then press Down until the breadcrumb
-    says we have arrived, letting the tree do the scrolling.
+    *is* visible to put focus in the tree, then step until we arrive, letting
+    the tree do the scrolling.
+
+    Two things this used to get wrong, both of which reported a reachable page
+    as unreachable:
+
+      * It walked **Down only**. `anchor` is a fixed guess about tree order, so
+        a target above it could never be reached — indistinguishable from the
+        page not existing. It now tries both directions, re-anchoring between.
+      * It clicked the anchor unconditionally. The panel remembers its last page
+        between launches, so a run could *start* on the target and the first
+        click would leave it.
+
+    And a third, which is why `anchor_node` exists: the default anchor was the
+    English page name "keymap", so on a French desktop `rail_node` found nothing
+    and this returned None before pressing a single key — reported as "could not
+    select the page" when the page was sitting right there. Prefer passing a row
+    the caller has *already located*; the name lookup is only a fallback.
     """
-    a = rail_node((anchor,), exact=True)
+    got = page_reached(target)
+    if got:
+        return got
+
+    a = anchor_node or rail_node((anchor,) if isinstance(anchor, str) else anchor, exact=True)
     if not a:
         return None
-    pointer_click(a.get("bounds") or {})
-    s.settle()
-    time.sleep(0.5)
-    for _ in range(steps):
-        crumb = breadcrumb()
-        if crumb and crumb[-1].strip().lower() == target:
-            return crumb
-        s.call("inject_key", {"key": "Down"})
+
+    for key in ("Down", "Up"):
+        pointer_click(a.get("bounds") or {})
         s.settle()
-        time.sleep(0.35)
-    crumb = breadcrumb()
-    return crumb if crumb and crumb[-1].strip().lower() == target else None
+        time.sleep(0.5)
+        for _ in range(steps):
+            got = page_reached(target)
+            if got:
+                return got
+            s.call("inject_key", {"key": key})
+            s.settle()
+            time.sleep(0.35)
+    return page_reached(target)
 
 
 # ── 1. Settings ▸ Work ▸ Tags ────────────────────────────────────────────────
@@ -399,13 +459,13 @@ if not open_settings():
 print("Settings open.")
 
 print("\n== find the Work section ==")
-work = rail_node(("work:",))
+work = rail_node(SEC_WORK)
 if not work:
     s.dump("no Work section in the rail")
-    fail("the rail has no 'Work: <name>' section", s.app, s.mcp, s.log)
+    fail(f"the rail has no Work section (looked for {SEC_WORK})", s.app, s.mcp, s.log)
 print(f"  found {work.get('label')!r} at y={(work.get('bounds') or {}).get('y')}")
 
-tags_row = rail_node(("tags",), exact=True)
+tags_row = rail_node(PAGE_TAGS, exact=True)
 if not tags_row:
     # Only needed if the section ever ships collapsed; tap the chevron once (a
     # second tap would toggle it back).
@@ -413,7 +473,7 @@ if not tags_row:
     for _ in range(12):
         s.settle()
         time.sleep(0.4)
-        tags_row = rail_node(("tags",), exact=True)
+        tags_row = rail_node(PAGE_TAGS, exact=True)
         if tags_row:
             break
 if not tags_row:
@@ -423,7 +483,7 @@ print(f"  Tags row at y={(tags_row.get('bounds') or {}).get('y')} "
       f"(below the viewport — keyboard nav will scroll it in)")
 
 print("\n== select the Tags page ==")
-crumb = select_page("tags")
+crumb = select_page(PAGE_TAGS, anchor_node=work)
 if not crumb:
     s.dump("Tags page never selected")
     s.shot("/tmp/tags-pane-fail.png")
@@ -467,22 +527,39 @@ print("  legacy colours intact: #FFFAFA, #FF0000, #000000")
 
 # Every button must be fully inside the pane: "Export…" was previously clipped
 # off the right edge by a toolbar that overflowed.
+#
+# The pane's own controls are named EXACTLY, not by substring. The settings panel
+# is an overlay, so the main window's widgets are still in the AT tree behind it,
+# and a substring match on "export" also catches the toolbar's "Exporter le
+# livre" — which sits outside the pane by design and duly reported a 14px
+# "overflow" that did not exist. (Same trap `rail_node`'s x<280 bound exists to
+# avoid, one layer along.)
+PANE_BUTTONS = ("import…", "importer…", "export…", "exporter…",
+                "apply a preset…", "appliquer un préréglage…",
+                "add tag", "ajouter")
 pane_right = max((n.get("bounds") or {}).get("x", 0) + (n.get("bounds") or {}).get("width", 0)
                  for n in s.nodes()
                  if (n.get("bounds") or {}).get("x", 0) > 280
                  and n.get("role") == "Label")
+checked = 0
 for n in s.nodes():
     b = n.get("bounds") or {}
     lab = (n.get("label") or "").strip().lower()
     if n.get("role") != "Button" or b.get("x", 0) <= 280:
         continue
-    if any(v in lab for v in ("import", "export", "apply a preset", "add tag")):
+    if lab in PANE_BUTTONS:
+        checked += 1
         right = b.get("x", 0) + b.get("width", 0)
         if right > pane_right + 2:
             s.shot("/tmp/tags-clip-fail.png")
             fail(f"{lab!r} overflows the pane (right={right:.0f} > {pane_right:.0f})",
                  s.app, s.mcp, s.log)
-print("  toolbar fits: no button clipped at the pane's right edge")
+# Without this the check passes loudest when it matches nothing at all — a
+# renamed control would silently turn the clipping guard into a no-op.
+if checked < 3:
+    fail(f"only {checked} pane buttons matched {PANE_BUTTONS} — the labels moved, "
+         f"so this clipping check was about to prove nothing", s.app, s.mcp, s.log)
+print(f"  toolbar fits: {checked} pane buttons, none clipped at the right edge")
 
 s.shot("/tmp/tags-settings-pane.png")
 
@@ -490,9 +567,10 @@ s.shot("/tmp/tags-settings-pane.png")
 print("\n== story-bible rich tooltip ==")
 switch = next((n for n in s.nodes()
                if n.get("role") == "Switch"
-               and "story bible" in (n.get("label") or "").lower()), None)
+               and any(v in (n.get("label") or "").lower() for v in SW_BIBLE)), None)
 if not switch:
-    fail("no Story bible switch on any tag row", s.app, s.mcp, s.log)
+    fail(f"no story-bible switch on any tag row (looked for {SW_BIBLE})",
+         s.app, s.mcp, s.log)
 
 b = switch.get("bounds") or {}
 cx, cy = b["x"] + b.get("width", 0) / 2, b["y"] + b.get("height", 0) / 2
@@ -523,34 +601,62 @@ s.shot("/tmp/tags-story-bible-tooltip.png")
 
 # ── 3. The duplicate-name warning (case-insensitive, non-blocking) ───────────
 print("\n== duplicate-name warning ==")
-# The add field is the pane's topmost TextInput. It cannot be found by its
-# placeholder (not exposed to AT) nor by its value (empty, like every details
-# field), so position is the only stable handle.
+# Reset what the previous check deliberately left behind. It dwelled a tooltip
+# into its *sticky* state, and a sticky tooltip is a Dialog that takes focus —
+# so typing here would go to it, not to the add field. Move the pointer away and
+# press Escape before touching anything.
+s.call("inject_pointer", {"x": 40, "y": 400, "action": "move"})
+time.sleep(0.3)
+s.call("inject_key", {"key": "Escape"})
+s.settle()
+time.sleep(0.6)
+# The add field carries no placeholder or value in the AT tree, so it has to be
+# found by position — but "topmost TextInput below the breadcrumb" is not a sound
+# handle and was picking the wrong widget entirely: a stray TextInput at x=384
+# sits *outside* the settings modal (whose content starts at x≈450), and the
+# main window's own breadcrumb Links share the y range used to exclude it. The
+# probe typed into that stray, the AT value dutifully changed, and the pane's
+# real field stayed empty — reported as "the warning is broken".
 #
-# The bound must be the breadcrumb, not just `x > 280`: the main window is still
-# behind the modal and its editor exposes a title TextInput at y≈99, which sorts
-# first and is a *live rename field*. An earlier version of this script typed
-# into it and silently renamed a binder item instead of testing anything.
-crumb_y = min((n.get("bounds") or {}).get("y", 0)
-              for n in s.nodes() if n.get("role") == "Link")
-inputs = sorted((n for n in s.nodes()
-                 if n.get("role") == "TextInput"
-                 and (n.get("bounds") or {}).get("x", 0) > 280
-                 and (n.get("bounds") or {}).get("y", 0) > crumb_y),
-                key=lambda n: (n.get("bounds") or {}).get("y", 0))
-add_field = inputs[0] if inputs else None
+# Anchor on meaning instead: the add field is the TextInput sharing a row with
+# the "Add tag" button. That button has a label, in both locales, so the handle
+# survives both a re-layout and a translation.
+add_btn = next((n for n in s.nodes()
+                if n.get("role") == "Button"
+                and (n.get("label") or "").strip().lower() in ("add tag", "ajouter")), None)
+if not add_btn:
+    fail("no Add-tag button — cannot locate the add row", s.app, s.mcp, s.log)
+btn_b = add_btn.get("bounds") or {}
+add_field = next((n for n in s.nodes()
+                  if n.get("role") == "TextInput"
+                  and abs((n.get("bounds") or {}).get("y", -999) - btn_b.get("y", 0)) < 12
+                  and (n.get("bounds") or {}).get("x", 0) < btn_b.get("x", 0)), None)
 if not add_field:
-    fail("no add-tag field to type into", s.app, s.mcp, s.log)
+    fail(f"no TextInput on the add row (button at y={btn_b.get('y')})",
+         s.app, s.mcp, s.log)
 # Guard the guard: the add field starts empty. If it holds text, we have latched
 # onto some other input and are about to overwrite real content.
 if (add_field.get("value") or "").strip():
     fail(f"expected an empty add-tag field, got one holding "
          f"{add_field.get('value')!r} — refusing to type into it", s.app, s.mcp, s.log)
 
+# Focus first, then type. Without the focus call `type_text` updates the node's
+# AccessKit value but the text never reaches the widget's signal — so the field
+# renders empty, the validation effect never runs, and the AT tree reports the
+# text as present. That combination reads exactly like "the warning is broken",
+# which is what it was mistaken for; the screenshot showed an empty field while
+# the tree said 'a'. `automation_search.py` had it right all along.
+s.call("invoke_action", {"node": add_field["id"], "action": "focus"})
+time.sleep(0.3)
 s.call("type_text", {"node": add_field["id"], "text": "a"})
 s.settle()
-time.sleep(0.5)
+time.sleep(0.8)
 if not has_any(("already exists", "existe déjà")):
+    # Say whether the text even landed. "No warning" and "nothing was typed" look
+    # identical in a label dump, and they need opposite fixes.
+    now = next((n for n in s.nodes() if n.get("id") == add_field["id"]), None)
+    print(f"  add field now holds {(now or {}).get('value')!r} "
+          f"(typed 'a'; a warning is expected because tag 'A' exists)")
     print("  labels:", joined()[:900])
     s.shot("/tmp/tags-dup-fail.png")
     fail("typing an existing name (different case) raised no warning", s.app, s.mcp, s.log)
@@ -611,6 +717,35 @@ if not binder_rows:
     fail("could not find the binder tree", s.app, s.mcp, s.log)
 print(f"  walking {len(binder_rows)} binder rows")
 
+def inspector_texts():
+    """Exact texts from the **Inspector column only**.
+
+    Scoping matters more than it looks. `exact_texts()` reads the whole tree, and
+    the Settings pane that was just closed can still contribute nodes \u2014 so the
+    unscoped check matched all three tag names on the *first* row it clicked and
+    reported "Inspector shows all three tags on 'Sol'". Sol carries no tags at
+    all; the fixture attaches them to "1.1 Zeus". The screenshot showed an empty
+    \u00c9tiquettes section directly under a passing assertion.
+
+    The column is located from its own section header rather than a hardcoded x,
+    so a resized or repositioned Inspector does not silently widen the scope
+    back out.
+    """
+    header = next((n for n in s.nodes()
+                   if node_text(n).strip().lower() in ("tags", "\u00e9tiquettes")
+                   and (n.get("bounds") or {}).get("x", 0) > 600), None)
+    if not header:
+        return set()
+    left = (header.get("bounds") or {}).get("x", 0) - 20
+    out = set()
+    for n in s.nodes():
+        if (n.get("bounds") or {}).get("x", -1) >= left:
+            t = node_text(n).strip().lower()
+            if t:
+                out.add(t)
+    return out
+
+
 found_on = None
 for n in binder_rows:
     pointer_click(n.get("bounds") or {})
@@ -618,10 +753,11 @@ for n in binder_rows:
     time.sleep(0.5)
     # Bail loudly if a click took the project down rather than selecting a row:
     # every later assertion would otherwise be measuring the Welcome screen.
-    if has_any(("works", "examples")) and not has_any(("binder", "classeur")):
+    if (has_any(("works", "examples", "\u0153uvres", "exemples"))
+            and not has_any(("binder", "classeur"))):
         s.shot("/tmp/tags-inspector-fail.png")
         fail(f"clicking {(n.get('label') or '')!r} closed the project", s.app, s.mcp, s.log)
-    if LEGACY_TAGS_SET <= exact_texts():
+    if LEGACY_TAGS_SET <= inspector_texts():
         found_on = (n.get("label") or "").strip()
         break
 
@@ -629,16 +765,38 @@ if not found_on:
     s.dump("no binder item showed the tags")
     s.shot("/tmp/tags-inspector-fail.png")
     fail("no binder item shows its three tags in the Inspector", s.app, s.mcp, s.log)
+# The fixture attaches all three tags to exactly one item. Naming it here means a
+# future fixture edit that moves them fails loudly instead of quietly passing on
+# whichever row happened to match.
+if found_on.lower() != "1.1 zeus":
+    fail(f"the tags showed on {found_on!r}, but the fixture attaches them to '1.1 Zeus' \u2014 "
+         f"either the fixture changed or the Inspector is showing another item's tags",
+         s.app, s.mcp, s.log)
 print(f"  Inspector shows all three tags on {found_on!r}")
 s.shot("/tmp/tags-inspector.png")
 
 # ── A tag pill's composite tooltip renders on the tooltip surface ────────────
 print("\n== tag pill tooltip ==")
+# Match on `node_text` (label *or* value) rather than `label` alone: a Label-role
+# node carries its text in `value`, and which of the two a pill uses is an
+# implementation detail this probe should not be pinned to.
+LONG_TAG = "very looooooooooong tag"
+# Either role is correct for a removable pill and bastyde reports ListBoxOption
+# in a pill row; pinning one spelling of it tests the framework, not the feature.
+PILL_ROLES = ("ListItem", "ListBoxOption")
 pill = next((n for n in s.nodes()
-             if n.get("role") == "ListItem"
-             and (n.get("label") or "").strip().lower() == "very looooooooooong tag"), None)
+             if n.get("role") in PILL_ROLES
+             and node_text(n).strip().lower() == LONG_TAG), None)
 if not pill:
-    fail("no tag pill to hover in the Inspector", s.app, s.mcp, s.log)
+    # Say what *does* carry the text, so the next reader fixes the selector
+    # instead of re-deriving where the pill went.
+    carriers = [f"role={n.get('role')} label={n.get('label')!r} value={n.get('value')!r}"
+                for n in s.nodes() if LONG_TAG in node_text(n).lower()]
+    print("  nodes carrying the tag name:")
+    for c in carriers[:8]:
+        print(f"    {c}")
+    fail(f"no tag pill in roles {PILL_ROLES} ({len(carriers)} nodes carry the name)",
+         s.app, s.mcp, s.log)
 b = pill.get("bounds") or {}
 cx, cy = b["x"] + b.get("width", 0) / 2, b["y"] + b.get("height", 0) / 2
 s.call("inject_pointer", {"x": cx - 200, "y": cy, "action": "move"})
