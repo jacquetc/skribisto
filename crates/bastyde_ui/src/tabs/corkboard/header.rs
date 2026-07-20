@@ -231,14 +231,14 @@ impl Widget for CorkboardCreateButton {
             .icon(add_icon());
         for rec in &recs {
             let placement =
-                recommendation_placement(Some(anchor_title.as_str()), rec.relation).resolve_now();
+                recommendation_placement(Some(anchor_title.as_str()), rec.relation);
             let create_type = rec.create_type;
             let relation = rec.relation;
             let vm = self.vm.clone();
             btn = btn.item(
                 MenuItem::new(recommendation_label(rec.create_type))
                     .icon(crate::binder::icons::create_type_icon(rec.create_type))
-                    .shortcut_label(placement)
+                    .trailing_hint(placement)
                     .rich_tooltip(recommendation_tooltip_key(rec.create_type))
                     .on_activate_fn(move |ctx| {
                         vm.fire_create(

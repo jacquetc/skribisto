@@ -415,11 +415,11 @@ fn add_recommendations_menu(outline: OutlineViewModel, key: BinderTreeKey) -> Me
         // Trailing "where it lands" hint + the shared registered type explainer
         // (identical to the header SplitButton row).
         let placement =
-            recommendation_placement(anchor_title.as_deref(), rec.relation).resolve_now();
+            recommendation_placement(anchor_title.as_deref(), rec.relation);
         menu = menu.item(
             MenuItem::new(recommendation_label(rec.create_type))
                 .icon(crate::binder::icons::create_type_icon(rec.create_type))
-                .shortcut_label(placement)
+                .trailing_hint(placement)
                 .rich_tooltip(recommendation_tooltip_key(rec.create_type))
                 .on_activate_fn(move |_| vm.add_recommended(Some(key), &rec_owned)),
         );

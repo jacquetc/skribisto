@@ -81,14 +81,21 @@ impl Widget for CreateSplitButton {
             let key = recommendation_tooltip_key(rec.create_type);
             // Placement now lives inline on the row's trailing slot (always
             // visible), so the rich tooltip is the pure type explainer.
+            //
+            // Kept as a `LocalizedString` — do NOT `.resolve_now()` it. It goes
+            // to `trailing_hint`, not `shortcut_label`: the former re-resolves
+            // on a live locale switch (a resolved `String` would freeze the hint
+            // in whatever language was active when this button was last built),
+            // and it reaches AT as a *description* instead of being announced as
+            // a keyboard chord. The same pairing holds at all five create sites.
             let placement =
-                recommendation_placement(anchor_title.as_deref(), rec.relation).resolve_now();
+                recommendation_placement(anchor_title.as_deref(), rec.relation);
             let create_type = rec.create_type;
             let relation = rec.relation;
             btn = btn.item(
                 MenuItem::new(label)
                     .icon(crate::binder::icons::create_type_icon(rec.create_type))
-                    .shortcut_label(placement)
+                    .trailing_hint(placement)
                     .rich_tooltip(key)
                     .on_activate_fn(move |ctx| {
                         ctx.send_intent(AppIntent::NewItem {

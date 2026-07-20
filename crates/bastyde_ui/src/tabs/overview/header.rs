@@ -124,13 +124,13 @@ impl Widget for OverviewCreateButton {
             .icon(IconWidget::from_svg_icon(res!("assets/icons/add.svg")).icon_size(14.0));
         for rec in &recs {
             let placement =
-                recommendation_placement(Some(anchor_title.as_str()), rec.relation).resolve_now();
+                recommendation_placement(Some(anchor_title.as_str()), rec.relation);
             let rec_owned = *rec;
             let vm = self.vm.clone();
             btn = btn.item(
                 MenuItem::new(recommendation_label(rec.create_type))
                     .icon(crate::binder::icons::create_type_icon(rec.create_type))
-                    .shortcut_label(placement)
+                    .trailing_hint(placement)
                     .rich_tooltip(recommendation_tooltip_key(rec.create_type))
                     .on_activate_fn(move |ctx| vm.fire_create(ctx, rec_owned, None)),
             );
