@@ -43,7 +43,7 @@ pub struct ExampleEntry {
 /// The bundled examples. One today — add further entries here.
 const EXAMPLES: &[ExampleEntry] = &[ExampleEntry {
     title: "Starforgers",
-    blurb: "A bundled example novel — a tour of the writing model.",
+    blurb: "by Ken McConnell",
     file_name: "Starforgers.skrib",
     bytes: include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
