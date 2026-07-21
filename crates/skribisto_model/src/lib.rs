@@ -499,8 +499,9 @@ impl PromoteTarget {
 ///
 /// **A folder may become any other kind of folder** — that is the point: the writer
 /// drafts an outline in plain folders and then declares "this one is a chapter, that
-/// one is a part". A chapter folder additionally demotes to the flat chapter it is the
-/// container form of; Scene and Note remain a pair.
+/// one is a part". The same freedom, narrower, applies to the leaves: a chapter folder
+/// demotes to the flat chapter it is the container form of, a Scene rises to that flat
+/// chapter (and back), and Scene ↔ Note remain a pair.
 ///
 /// The list never contains the item's current type. It says nothing about whether the
 /// conversion is *safe* — a container becoming a leaf needs an empty folder
@@ -528,9 +529,13 @@ pub fn promote_targets(role: &Role, sub_role: &SubRole) -> Vec<PromoteTarget> {
         (Folder, S::Part) => vec![T::ChapterFolder, T::BookFolder, T::NoteFolder, T::Folder],
         (Folder, S::Book) => vec![T::ChapterFolder, T::PartFolder, T::NoteFolder, T::Folder],
         (Folder, S::Note) => vec![T::ChapterFolder, T::PartFolder, T::BookFolder, T::Folder],
-        // Leaves: the chapter's two encodings, and the Scene ↔ Note pair.
-        (Item, S::ChapterScene) => vec![T::ChapterFolder],
-        (Item, S::Scene) => vec![T::Note],
+        // Leaves: the chapter's two encodings, the Scene ↔ Note pair, and Scene ↔ the
+        // flat chapter. A writer who drafts in scenes and then decides one of them *is*
+        // the chapter should not have to retype it: the prose carries straight over
+        // (both allow `SceneText` + `SynopsisText`), so the raise is lossless. The way
+        // back only costs a chapter title, if one was actually written.
+        (Item, S::ChapterScene) => vec![T::ChapterFolder, T::Scene],
+        (Item, S::Scene) => vec![T::FlatChapter, T::Note],
         (Item, S::Note) => vec![T::Scene],
         _ => Vec::new(),
     }
@@ -1222,6 +1227,50 @@ mod tests {
         assert_eq!(
             remap_content(&Role::Item, &SubRole::Scene, &NoteText),
             Some(SceneText)
+        );
+    }
+
+    /// A scene the writer decides *is* a chapter converts in place, keeping its prose —
+    /// both types carry `SceneText` + `SynopsisText`, so nothing is remapped and nothing
+    /// is lost. The way back is offered too; it only costs a chapter title, and only if
+    /// one was written.
+    #[test]
+    fn a_scene_becomes_a_flat_chapter_without_losing_its_prose() {
+        use PromoteTarget as T;
+        assert!(promote_targets(&Role::Item, &SubRole::Scene).contains(&T::FlatChapter));
+        assert!(promote_targets(&Role::Item, &SubRole::ChapterScene).contains(&T::Scene));
+
+        assert!(
+            promote_content_loss(
+                &Role::Item,
+                &SubRole::ChapterScene,
+                &[SceneText, SynopsisText]
+            )
+            .is_empty(),
+            "a flat chapter keeps everything a scene can hold"
+        );
+        for c in [SceneText, SynopsisText] {
+            assert_eq!(
+                remap_content(&Role::Item, &SubRole::ChapterScene, &c),
+                Some(c.clone()),
+                "{c:?} must survive the raise unchanged"
+            );
+        }
+
+        // Coming back down, a scene has no title role at all — so a chapter that was
+        // actually named cannot silently drop it.
+        assert_eq!(
+            promote_content_loss(
+                &Role::Item,
+                &SubRole::Scene,
+                &[ChapterTitle, SceneText, SynopsisText]
+            ),
+            vec![ChapterTitle]
+        );
+        // ...but an unnamed one (the caller only passes non-empty roles) converts cleanly.
+        assert!(
+            promote_content_loss(&Role::Item, &SubRole::Scene, &[SceneText, SynopsisText])
+                .is_empty()
         );
     }
 
