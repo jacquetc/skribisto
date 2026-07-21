@@ -31,7 +31,7 @@ serde_json = "1.0"
 chrono = { workspace = true }
 uuid = { workspace = true }
 # Legacy `.skrib` SQLite reading/backup (still used directly by load_work's legacy path).
-rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+rusqlite = { version = "0.40.1", features = ["bundled", "backup"] }
 
 [dev-dependencies]
 # Only the save/load round-trip test writes to a scratch dir directly.

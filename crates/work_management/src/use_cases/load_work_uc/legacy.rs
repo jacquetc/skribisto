@@ -171,7 +171,7 @@ pub fn read_project(path: &str) -> Result<LegacyProject> {
     // touched. `restore` also validates that the file is a real SQLite database.
     let mut conn = Connection::open_in_memory().context("opening in-memory database")?;
     conn.restore(
-        rusqlite::DatabaseName::Main,
+        rusqlite::MAIN_DB,
         path,
         None::<fn(rusqlite::backup::Progress)>,
     )
