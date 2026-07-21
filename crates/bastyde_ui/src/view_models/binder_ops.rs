@@ -209,7 +209,8 @@ pub(crate) fn promote_content_loss(
 
 /// The number of child items that block converting `item_id` into `target` — non-zero
 /// only when a container would become a leaf (a chapter folder → a flat chapter) while it
-/// still holds items. The caller shows a "move or trash them first" prompt.
+/// still holds **live** items. Trashed descendants do not block: the prompt the caller
+/// shows offers trashing as one of the two ways out, so it must accept the result.
 ///
 /// Locates the item through [`locate`] — i.e. by walking the *backend's* binders — rather
 /// than through any one view's tree. A view-scoped lookup answers `0` for an item its
@@ -233,7 +234,18 @@ pub(crate) fn demote_blocked_children(
         return 0;
     };
     let meta = item_meta(app_ctx, &order);
-    placement::subtree_end(&order, &meta, pos, dto.indent) - (pos + 1)
+    let end = placement::subtree_end(&order, &meta, pos, dto.indent);
+    let span = &order[pos + 1..end];
+    // The span is topological, so it still counts *trashed* descendants: `activated =
+    // !trashed` and a trashed row keeps its slot and indent in the binder order. Counting
+    // the raw span therefore blocked a chapter the writer had already emptied — while the
+    // prompt was telling them to "move or trash them first". Only live rows block.
+    match binder_item_commands::get_binder_item_multi(app_ctx, span) {
+        Ok(items) => items.into_iter().flatten().filter(|it| it.activated).count(),
+        // A failed read must not answer `0`: that reads as "nothing blocks this" and waves
+        // through the conversion this guard exists to stop. Fall back to the whole span.
+        Err(_) => span.len(),
+    }
 }
 
 /// Convert `item_id` to `target` (undoable), reporting whether it took. The use case

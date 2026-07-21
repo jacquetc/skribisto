@@ -1486,6 +1486,132 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
             );
         }
 
+        /// A trashed child is not "in" the chapter any more — `activated = !trashed` and a
+        /// trashed row keeps its slot and indent in the binder order, so counting the raw
+        /// subtree span made the guard block a chapter the writer had already emptied. The
+        /// prompt itself says "move or trash them", so trashing them all must unblock it.
+        #[test]
+        fn trashed_children_do_not_block_the_demote() {
+            let (outline, binder) = seed();
+            let chapter = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::ChapterScene,
+                0,
+                0,
+            );
+            let s1 = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+                1,
+            );
+            let s2 = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+                2,
+            );
+            let blocked =
+                |o: &OutlineViewModel| o.demote_blocked_children(key_of(o, chapter), PromoteTarget::FlatChapter);
+            assert_eq!(blocked(&outline), 2);
+
+            // Trash one: the other still blocks, and the count is now honest about it.
+            outline.trash_keys(&[key_of(&outline, s1)]);
+            assert_eq!(blocked(&outline), 1);
+
+            // Trash the last one: the chapter is empty as far as the writer is concerned,
+            // so the conversion goes through.
+            outline.trash_keys(&[key_of(&outline, s2)]);
+            assert_eq!(blocked(&outline), 0);
+
+            // And it really converts — the guard was the only thing standing in the way.
+            outline.promote(key_of(&outline, chapter), PromoteTarget::FlatChapter);
+            let dto = outline.item_dto(chapter).unwrap();
+            assert_eq!(dto.role, BinderItemRole::Item);
+        }
+
+        /// The other half of letting trashed children through the demote guard: those rows
+        /// keep their indent, so the chapter they were nested in is now a *leaf* sitting
+        /// right above them. Restoring one in place would strand a live row nested under a
+        /// leaf — silently, since nothing else re-checks that. `restore_items` must instead
+        /// report it `orphaned` and leave it indexed, which is what makes the trash dock
+        /// open its destination picker.
+        #[test]
+        fn restoring_into_a_demoted_chapter_is_reported_orphaned() {
+            let (outline, binder) = seed();
+            let chapter = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::ChapterScene,
+                0,
+                0,
+            );
+            let scene = seed_item(
+                &outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+                1,
+            );
+            outline.trash_keys(&[key_of(&outline, scene)]);
+
+            let work_id = outline.ids.work_id.get().unwrap();
+            let infos = || {
+                work_commands::get_work_relationship(
+                    &outline.app_ctx,
+                    &work_id,
+                    &WorkRelationshipField::TrashInfos,
+                )
+                .unwrap()
+            };
+            let restore = || {
+                trash_management_commands::restore_items(
+                    &outline.app_ctx,
+                    None,
+                    &frontend::trash_management::RestoreItemsDto {
+                        trash_info_ids: infos().iter().map(|&x| x as i64).collect(),
+                    },
+                )
+                .unwrap()
+            };
+
+            // While the chapter is still a folder, the scene restores in place as before.
+            let res = restore();
+            assert!(!res.orphaned, "a live folder is a valid place to restore into");
+            assert_eq!(res.restored_count, 1);
+            assert!(outline.item_dto(scene).unwrap().activated);
+            assert!(infos().is_empty(), "a consumed TrashInfo is unlinked");
+
+            // Now trash it again and collapse the chapter under it.
+            outline.trash_keys(&[key_of(&outline, scene)]);
+            outline.promote(key_of(&outline, chapter), PromoteTarget::FlatChapter);
+            assert_eq!(outline.item_dto(chapter).unwrap().role, BinderItemRole::Item);
+
+            let res = restore();
+            assert!(
+                res.orphaned,
+                "the chapter is a leaf now — the scene has nowhere to be restored *into*"
+            );
+            assert_eq!(res.restored_count, 0);
+            assert!(
+                !outline.item_dto(scene).unwrap().activated,
+                "it must stay trashed rather than come back nested under a leaf"
+            );
+            assert_eq!(
+                infos().len(),
+                1,
+                "its TrashInfo stays indexed — that is what drives the destination picker"
+            );
+        }
+
         /// An item's name has two homes: `BinderItem.title`, which the outline tree and
         /// the tab show, and a title `Content` row, which compiles into the manuscript.
         /// **Renaming through either door must reach both.**

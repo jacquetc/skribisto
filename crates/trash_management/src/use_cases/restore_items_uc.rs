@@ -4,7 +4,10 @@
 // Custom implementation: restore trashed entities indexed by the given
 // TrashInfos. A TrashedBinder reactivates the binder and all its items; a
 // TrashedBinderItem reactivates the item and its contiguous subtree in place.
-// If a trashed item's binder no longer exists, it is reported `orphaned`.
+// An item is reported `orphaned` — left indexed, for the caller to re-home
+// through restore_items_to — when its binder no longer exists, or when the row
+// it was nested in is no longer a Folder (its container was collapsed to a leaf
+// while it sat in the trash).
 // The restored TrashInfos are unlinked from System.trash_infos.
 //
 // Undoable via a Root-scoped snapshot/restore (the op spans the Work trunk +
@@ -16,7 +19,7 @@ use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{Binder, BinderItem, Work};
+use common::entities::{Binder, BinderItem, BinderItemRole, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
@@ -126,8 +129,25 @@ impl RestoreItemsUseCase {
                             &BinderRelationshipField::BinderItems,
                         )?;
                         let mut indent: HashMap<EntityId, i64> = HashMap::new();
+                        let mut role: HashMap<EntityId, BinderItemRole> = HashMap::new();
                         for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
                             indent.insert(it.id, it.indent);
+                            role.insert(it.id, it.role);
+                        }
+                        // Only a *Folder* may hold nested rows. The container this item
+                        // sat in can have been collapsed to a leaf while the item was in
+                        // the trash — the demote guard counts only live children, so
+                        // trashing them all is precisely what unblocks that conversion.
+                        // Reactivating in place would then strand a live row nested under
+                        // a leaf, so report it orphaned instead and leave its TrashInfo
+                        // indexed: the caller opens the destination picker, and
+                        // `restore_items_to` re-indents it onto a real parent.
+                        let nested_under_a_leaf = parent_of(&order, &indent, item_id)
+                            .and_then(|p| role.get(&p))
+                            .is_some_and(|r| *r != BinderItemRole::Folder);
+                        if nested_under_a_leaf {
+                            orphaned = true;
+                            continue;
                         }
                         let subtree = subtree_of(&order, &indent, item_id);
                         reactivate(uow.as_ref(), &subtree)?;
@@ -180,6 +200,26 @@ fn reactivate(uow: &dyn RestoreItemsUnitOfWorkTrait, ids: &[EntityId]) -> Result
         uow.update_binder_item_multi(&updated)?;
     }
     Ok(())
+}
+
+/// The row `root` is nested inside: the nearest one before it in binder order with a
+/// strictly smaller indent. `None` for a top-level row — nothing shallower precedes it,
+/// which is always a valid place to sit.
+///
+/// The model has no parent pointers; containment is encoded by position + indent alone,
+/// so this walk *is* "who is my parent".
+fn parent_of(
+    order: &[EntityId],
+    indent: &HashMap<EntityId, i64>,
+    root: EntityId,
+) -> Option<EntityId> {
+    let pos = order.iter().position(|&x| x == root)?;
+    let root_indent = *indent.get(&root).unwrap_or(&0);
+    order[..pos]
+        .iter()
+        .rev()
+        .find(|id| *indent.get(id).unwrap_or(&0) < root_indent)
+        .copied()
 }
 
 /// The contiguous subtree rooted at `root` (root plus following items whose
