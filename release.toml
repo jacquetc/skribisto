@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+allow-branch = ["master"]
+shared-version = true
+consolidate-commits = true
+publish = false
+tag-name = "v{{version}}"
+pre-release-commit-message = "chore: release v{{version}}"
