@@ -229,6 +229,8 @@ entities:
     enum_values:
       - Folder
       - Flat
+  - name: custom_replacement_rules_enabled
+    type: boolean
   - name: binders
     type: entity
     entity: Binder
@@ -246,6 +248,11 @@ entities:
   - name: dict_words
     type: entity
     entity: DictWord
+    relationship: one_to_many
+    strong: true
+  - name: text_replacement_rules
+    type: entity
+    entity: TextReplacementRule
     relationship: one_to_many
     strong: true
   - name: trash_infos
@@ -486,6 +493,16 @@ entities:
   - name: word
     type: string
   undoable: true
+- name: TextReplacementRule
+  inherits_from: EntityBase
+  fields:
+  - name: trigger
+    type: string
+  - name: replacement
+    type: string
+  - name: enabled
+    type: boolean
+  undoable: true
 features:
 - name: work_management
   use_cases:
@@ -503,6 +520,7 @@ features:
     - BinderTag
     - Content
     - DictWord
+    - TextReplacementRule
     undoable: false
     dto_in:
       name: LoadWorkDto
@@ -517,6 +535,7 @@ features:
     - BinderTag
     - Content
     - DictWord
+    - TextReplacementRule
     - TrashInfo
     - WorkInfo
     undoable: false
@@ -542,6 +561,7 @@ features:
     - BinderTag
     - Content
     - DictWord
+    - TextReplacementRule
     - TrashInfo
     - WorkInfo
     undoable: false
@@ -567,6 +587,7 @@ features:
     - BinderTag
     - Content
     - DictWord
+    - TextReplacementRule
     - TrashInfo
     - WorkInfo
     undoable: false
@@ -654,6 +675,7 @@ features:
     - BinderTag
     - Content
     - DictWord
+    - TextReplacementRule
     - TrashInfo
     - WorkInfo
     - Search
