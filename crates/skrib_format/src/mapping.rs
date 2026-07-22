@@ -291,7 +291,14 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
             ChapterMode::Folder
         },
         custom_replacement_rules_enabled: m.work.custom_replacement_rules_enabled,
-        ..Default::default()
+        // Empty by design: `LoadedWork` carries the children in its own ordered
+        // vectors, and `materialize` wires the real store ids on afterwards.
+        binders: Vec::new(),
+        tags: Vec::new(),
+        dict_words: Vec::new(),
+        text_replacement_rules: Vec::new(),
+        trash_infos: Vec::new(),
+        paces: Vec::new(),
     };
 
     let tags = bundle
@@ -344,14 +351,14 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
     for bb in &bundle.binders {
         let binder = Binder {
             id: bb.binder.file_id,
-            // Explicit, NOT left to `..Default::default()`: an empty uid here
-            // would collapse every row onto one key downstream.
+            // An empty uid here would collapse every row onto one key downstream.
             uid: bb.binder.uid,
             created_at: parse_dt(&bb.binder.created_at)?,
             updated_at: parse_dt(&bb.binder.updated_at)?,
             name: bb.binder.name.clone(),
             activated: bb.binder.activated,
-            ..Default::default()
+            // Empty by design: `LoadedBinder.items` carries the order.
+            binder_items: Vec::new(),
         };
 
         let mut items = Vec::with_capacity(bb.items.len());
@@ -393,7 +400,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
             items.push(LoadedItem {
                 item: BinderItem {
                     id: f.file_id,
-                    // Explicit, NOT left to `..Default::default()` — see above.
+                    // See the binder above.
                     uid: f.uid,
                     created_at: parse_dt(&f.created_at)?,
                     updated_at: parse_dt(&f.updated_at)?,
@@ -409,10 +416,12 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                     word_count_goal: f.word_count_goal,
                     char_count_goal: f.char_count_goal,
                     dict_language: f.dict_language.clone(),
-                    // Must be set explicitly: the `..Default::default()` below would
-                    // otherwise swallow it silently and aliases would never load.
                     aliases: f.aliases.clone(),
-                    ..Default::default()
+                    // Empty by design: `LoadedItem` carries the contents and the tag
+                    // ids, and cross-item `references` are collected separately above.
+                    contents: Vec::new(),
+                    references: Vec::new(),
+                    tags: Vec::new(),
                 },
                 contents,
                 tag_ids: f.tag_ids.clone(),

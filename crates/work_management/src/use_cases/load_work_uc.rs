@@ -272,15 +272,23 @@ struct Materialized {
 
 /// Materialise the Work subtree (lossless: every scalar field, content row,
 /// ordering and M2M link is preserved; file ids are remapped to fresh store ids).
+///
+/// # No `..Default::default()` anywhere in this file
+///
+/// Every entity literal here spells out all of its fields. That is a deliberate
+/// rule, not a style: the struct-update fallback turns "a field was forgotten"
+/// from a compile error into silent data loss, and it had already done exactly
+/// that to `chapter_mode` — a project saved with flat chapters came back with
+/// folder chapters on the next load, for as long as flat chapters had existed,
+/// and no test failed because the round-trip projection did not compare the
+/// field either. Two other fields (`uid`, `aliases`) carry comments recording
+/// the same near-miss.
+///
+/// So: when a field is added to any entity below, the compiler stops here and
+/// makes someone decide what the loader should do with it. Fields that really
+/// are meant to start empty say so with an explicit value and a reason.
 fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result<Materialized> {
     let lw = &loaded.work;
-    // Every field spelled out, with **no** `..Default::default()`. That fallback is
-    // what silently dropped `chapter_mode` here for as long as flat chapters have
-    // existed: a project saved in Flat mode came back as Folder on the next load,
-    // and nothing failed — `save_load_test`'s fixture sets Flat, but its `norm`
-    // projection never compared it. Listing the fields makes the compiler, rather
-    // than a reader, notice the next one that is added.
-    //
     // The relationship vectors are deliberately empty: `create_orphan_*` makes the
     // rows, and the ids are wired on afterwards by `set_work_relationship`.
     let work = uow.create_orphan_work(&Work {
@@ -318,7 +326,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             color: t.color.clone(),
             details: t.details.clone(),
             discoverable: t.discoverable,
-            ..Default::default()
+            id: 0,
         })?;
         tag_map.insert(t.id, created.id);
         tag_ids.push(created.id);
@@ -331,7 +339,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             created_at: w.created_at,
             updated_at: w.updated_at,
             word: w.word.clone(),
-            ..Default::default()
+            id: 0,
         })?;
         dict_word_ids.push(created.id);
     }
@@ -345,7 +353,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             trigger: r.trigger.clone(),
             replacement: r.replacement.clone(),
             enabled: r.enabled,
-            ..Default::default()
+            id: 0,
         })?;
         text_replacement_rule_ids.push(created.id);
     }
@@ -358,16 +366,17 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
 
     for lb in &loaded.binders {
         let created_binder = uow.create_orphan_binder(&Binder {
-            // Carried explicitly: `..Default::default()` below would otherwise
-            // drop the uid the format just supplied, so every row would land in
-            // the store with an empty identity. Minting when empty is the final
-            // backstop for any load path that failed to provide one.
+            // Minting when empty is the final backstop for any load path that
+            // failed to supply a uid; without one every row would land in the
+            // store sharing a single empty identity.
             uid: common::uid::heal_uid(lb.binder.uid),
             created_at: lb.binder.created_at,
             updated_at: lb.binder.updated_at,
             name: lb.binder.name.clone(),
             activated: lb.binder.activated,
-            ..Default::default()
+            id: 0,
+            // Wired afterwards by `set_binder_relationship`, once the items exist.
+            binder_items: Vec::new(),
         })?;
         binder_map.insert(lb.binder.id, created_binder.id);
 
@@ -381,7 +390,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
                     activated: c.activated,
                     role: c.role.clone(),
                     data: c.data.clone(),
-                    ..Default::default()
+                    id: 0,
                 })?;
                 content_ids.push(created_content.id);
             }
@@ -404,11 +413,15 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
                 word_count_goal: i.word_count_goal,
                 char_count_goal: i.char_count_goal,
                 dict_language: i.dict_language.clone(),
-                // Must be explicit: `..Default::default()` below would silently swallow
-                // it, and the aliases would be dropped on every load with nothing to
-                // show for it. (`save_load_round_trip_through_store` covers this.)
+                // Covered by `save_load_round_trip_through_store`: aliases were
+                // dropped on every load once, with nothing on screen to show for it.
                 aliases: i.aliases.clone(),
-                ..Default::default()
+                id: 0,
+                // All three are wired afterwards by `set_binder_item_relationship`,
+                // once the contents exist and the file ids have been remapped.
+                contents: Vec::new(),
+                references: Vec::new(),
+                tags: Vec::new(),
             })?;
 
             if !content_ids.is_empty() {
@@ -476,7 +489,11 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             updated_at: t.updated_at,
             trashed_at: t.trashed_at,
             origin_binder_id: origin,
-            ..Default::default()
+            id: 0,
+            // The trashed entity is attached afterwards by `set_trash_info_relationship`
+            // — exactly one of the two, once the file ids have been remapped.
+            trashed_binder: None,
+            trashed_binder_item: None,
         })?;
         if let Some(b) = t.trashed_binder.and_then(|b| binder_map.get(&b).copied()) {
             uow.set_trash_info_relationship(
@@ -511,7 +528,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
                 label: h.label.clone(),
                 start_date: h.start_date,
                 end_date: h.end_date,
-                ..Default::default()
+                id: 0,
             })?;
             holiday_ids.push(created.id);
         }
@@ -523,7 +540,10 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
                 label: ms.label.clone(),
                 target_date: ms.target_date,
                 target_word_count: ms.target_word_count,
-                ..Default::default()
+                id: 0,
+                // Weak back-link, wired just below through `item_map`; an id that no
+                // longer resolves is simply left unset.
+                target_item: None,
             })?;
             if let Some(it) = ms.target_item.and_then(|i| item_map.get(&i).copied()) {
                 uow.set_milestone_relationship(
@@ -541,7 +561,11 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             end_date: lp.end_date,
             weekday_mask: lp.weekday_mask,
             active: lp.active,
-            ..Default::default()
+            id: 0,
+            // Book back-link and both child collections are wired after creation.
+            book_item: None,
+            holidays: Vec::new(),
+            milestones: Vec::new(),
         })?;
         if let Some(bi) = lp.book_item.and_then(|i| item_map.get(&i).copied()) {
             uow.set_pace_relationship(&pace.id, &PaceRelationshipField::BookItem, &[bi])?;
@@ -603,9 +627,9 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             day: s.day,
             total_word_count: s.total_word_count,
             total_char_count: s.total_char_count,
+            id: 0,
             book_item_ids: book_ids,
             book_word_counts: book_counts,
-            ..Default::default()
         })?;
         progress_snapshot_ids.push(created.id);
     }
@@ -632,9 +656,12 @@ fn create_trunk(
         Some(system) => system.id,
         None => {
             uow.create_orphan_system(&System {
+                id: 0,
                 created_at: now,
                 updated_at: now,
-                ..Default::default()
+                // Both fill up as projects are opened; a fresh System owns nothing.
+                recent_works: Vec::new(),
+                work_infos: Vec::new(),
             })?
             .id
         }
@@ -646,7 +673,7 @@ fn create_trunk(
         title: loaded.work.title.clone(),
         last_opened_at: now,
         absolute_path: loaded.absolute_path.clone(),
-        ..Default::default()
+        id: 0,
     })?;
     // Append to the existing recents rather than replacing them — the list
     // accumulates across opens (`close_work` leaves `RecentWork` rows in place).
@@ -670,16 +697,40 @@ fn create_trunk(
     // surface rebuilt per session, not persisted state. (The *parameters* that must
     // survive a restart live in the UI's `search.toml`, not here.)
     let search = uow.create_orphan_search(&Search {
+        id: 0,
         created_at: now,
         updated_at: now,
-        ..Default::default()
+        // A blank search row, every field at rest. It is deliberately NOT a
+        // usable search: the scope flags are all false, so this row would match
+        // nothing as it stands. That is correct — the UI pushes the writer's real
+        // parameters (restored from `search.toml`) before anything is ever run,
+        // and seeding a scope here would silently override what they had chosen.
+        // Written out so that adding a facet forces that decision at this line
+        // instead of defaulting it out of sight.
+        query: String::new(),
+        case_sensitive: false,
+        whole_word: false,
+        diacritic_sensitive: false,
+        facets: Vec::new(),
+        search_body: false,
+        search_titles: false,
+        search_synopsis: false,
+        search_labels: false,
+        include_trashed: false,
+        truncated: false,
+        results: Vec::new(),
     })?;
     let work_info = uow.create_orphan_work_info(&WorkInfo {
         created_at: now,
         updated_at: now,
         file_name: Some(file_name.to_string()),
         shape: work_shape,
-        ..Default::default()
+        id: 0,
+        // All three are wired just below: the Work it describes, the Search
+        // created above, and the snapshots materialised from the bundle.
+        work: None,
+        search: 0,
+        progress_snapshots: Vec::new(),
     })?;
     // Per-open-Work session info: link under System.work_infos and point it at
     // its Work (the multi-Work discriminator).
@@ -713,9 +764,12 @@ fn create_trunk(
         Some(root) => root.id,
         None => {
             uow.create_orphan_root(&Root {
+                id: 0,
                 created_at: now,
                 updated_at: now,
-                ..Default::default()
+                // Both wired afterwards: one System, and the open Works under it.
+                system: 0,
+                works: Vec::new(),
             })?
             .id
         }
@@ -751,7 +805,17 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         dict_language: skribisto_model::language::parse_legacy_list(&p.dict_language),
         // Carry the legacy id through; empty → minted at `materialize`.
         unique_id: p.unique_id.clone(),
-        ..Default::default()
+        // A legacy project predates both of these: it has no chapter-mode concept
+        // (folder chapters are the only shape it can express) and no lexicon.
+        chapter_mode: common::entities::ChapterMode::Folder,
+        custom_replacement_rules_enabled: false,
+        // `LoadedWork` carries the children in its own ordered vectors.
+        binders: Vec::new(),
+        tags: Vec::new(),
+        dict_words: Vec::new(),
+        text_replacement_rules: Vec::new(),
+        trash_infos: Vec::new(),
+        paces: Vec::new(),
     };
 
     let mut tag_map: HashMap<i64, u64> = HashMap::new();
@@ -859,7 +923,15 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     indent: it.indent,
                     word_count_goal: it.word_count_goal,
                     char_count_goal: it.char_count_goal,
-                    ..Default::default()
+                    // The legacy format has none of these: no per-item language,
+                    // no aliases. Its favourites flag is not carried either.
+                    is_favorite: false,
+                    dict_language: Vec::new(),
+                    aliases: Vec::new(),
+                    // Carried beside the item, in `LoadedItem`.
+                    contents: Vec::new(),
+                    references: Vec::new(),
+                    tags: Vec::new(),
                 },
                 contents,
                 tag_ids,
@@ -875,7 +947,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                 updated_at: now,
                 name: b.name.clone(),
                 activated: b.activated,
-                ..Default::default()
+                // Carried beside the binder, in `LoadedBinder`.
+                binder_items: Vec::new(),
             },
             items,
         });
