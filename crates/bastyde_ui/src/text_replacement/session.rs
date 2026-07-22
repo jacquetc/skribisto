@@ -6,8 +6,20 @@
 //!
 //! One session per open document, held beside the document itself and shared by
 //! every editor showing it (a scene's prose and its synopsis get their own).
-//! [`TextReplacementSession::on_text_changed`] is called from the editor's
-//! `on_change`, after the document has already changed.
+//!
+//! ## Driven from the frame tick, NOT from `on_change`
+//!
+//! [`TextReplacementSession::tick`] runs from a frame-tick effect, exactly as
+//! [`SpellSession`](crate::spellcheck::SpellSession) does, and notices an edit by
+//! comparing the document's revision against the last one it saw.
+//!
+//! It must not run from the editor's `on_change`. That callback is invoked from
+//! inside `frame_loop::tick`, which holds a `borrow_mut` on the editor's state
+//! for its whole duration — so **every** `EditorHandle` method panics there:
+//! `cursor_position`, `has_selection`, `is_composing`, `replace_range`. Doing the
+//! work from `on_change` crashed the app on the first character typed. A frame
+//! tick fires after that borrow is released, which is why the spell session has
+//! always been wired this way.
 //!
 //! ## Why the caret has to have moved forward
 //!
@@ -95,8 +107,11 @@ pub struct TextReplacementSession {
     compiled_from: Cell<(u64, bool)>,
     pending: RefCell<Option<PendingRevert>>,
     suppressed: RefCell<Option<Suppressed>>,
-    /// Caret position at the previous callback; `None` until the first one.
+    /// Caret position at the previous tick; `None` until the first one.
     last_caret: Cell<Option<usize>>,
+    /// Document revision at the previous tick. Most frames change nothing, so
+    /// this is the early-out that keeps the per-frame cost to one field read.
+    last_revision: Cell<Option<u64>>,
     /// Set while this session is itself mutating the document, so the change
     /// notification that mutation provokes cannot re-enter the machine. The
     /// revision check would catch a re-entrant call anyway, but only after it
@@ -120,21 +135,30 @@ impl TextReplacementSession {
             pending: RefCell::new(None),
             suppressed: RefCell::new(None),
             last_caret: Cell::new(None),
+            last_revision: Cell::new(None),
             applying: Cell::new(false),
         })
     }
 
-    /// The editor's `on_change`, after the document has changed.
-    pub fn on_text_changed(&self, handle: &EditorHandle, doc: &TextDocument) {
-        // Our own edit, notifying us back. Nothing to decide.
+    /// One frame. Cheap and safe to call unconditionally — it returns
+    /// immediately unless the document actually changed since the last tick.
+    ///
+    /// Called from a frame-tick effect (see `tabs::shared::editor`), never from
+    /// `on_change`; see the module documentation for why that distinction is
+    /// load-bearing rather than stylistic.
+    pub fn tick(&self, handle: &EditorHandle, doc: &TextDocument) {
+        // Our own edit, coming back around. Nothing to decide.
         if self.applying.get() {
             return;
         }
+        // The early-out: nothing has been typed since the last frame.
+        let revision = doc.content_revision();
+        if self.last_revision.replace(Some(revision)) == Some(revision) {
+            return;
+        }
         // Mid-composition text is provisional — a Japanese or Korean writer is
-        // still choosing characters, and expanding one out from under them
-        // would break the IME's own editing model. Bastyde already withholds
-        // `on_change` while a preedit is up; this is the belt to that braces,
-        // since the session is also reachable from a rebuilt editor.
+        // still choosing characters, and expanding one out from under them would
+        // break the IME's own editing model.
         if handle.is_composing() {
             return;
         }
@@ -219,6 +243,7 @@ impl TextReplacementSession {
             key: pending.typed.to_lowercase(),
         });
         self.last_caret.set(Some(handle.cursor_position()));
+        self.last_revision.set(Some(doc.content_revision()));
         true
     }
 
@@ -268,6 +293,7 @@ impl TextReplacementSession {
             revision: doc.content_revision(),
         });
         self.last_caret.set(Some(handle.cursor_position()));
+        self.last_revision.set(Some(doc.content_revision()));
     }
 
     /// Whether a fire at `span_start` for `typed` is the one a revert just
@@ -378,7 +404,7 @@ mod tests {
 /// cannot reach.
 ///
 /// Everything here goes through the same `EditorHandle` the writing surfaces
-/// hand `on_text_changed`, over a real `RichTextEditor` in a laid-out
+/// hand `tick`, over a real `RichTextEditor` in a laid-out
 /// `WidgetTree` (the shape `tabs::shared::dictionary_menu`'s tests established).
 /// This is what actually proves the feature works: the pure engine tests say a
 /// rule *matches*, and these say the document *changes*.
@@ -435,7 +461,7 @@ mod live_editor_tests {
     ) {
         for c in s.chars() {
             handle.insert_text(&c.to_string());
-            session.on_text_changed(handle, doc);
+            session.tick(handle, doc);
         }
     }
 
@@ -502,7 +528,7 @@ mod live_editor_tests {
         // The delimiter the expansion re-added is what Backspace removes.
         let end = handle.cursor_position();
         handle.replace_range(end - 1, end, "");
-        session.on_text_changed(&handle, &doc);
+        session.tick(&handle, &doc);
         assert_eq!(plain(&doc), "I saw btw");
     }
 
@@ -514,7 +540,7 @@ mod live_editor_tests {
         type_text(&handle, &doc, &session, "I saw btw ");
         let end = handle.cursor_position();
         handle.replace_range(end - 1, end, "");
-        session.on_text_changed(&handle, &doc);
+        session.tick(&handle, &doc);
         assert_eq!(plain(&doc), "I saw btw");
 
         type_text(&handle, &doc, &session, " ");
@@ -533,7 +559,7 @@ mod live_editor_tests {
         type_text(&handle, &doc, &session, "I saw btw ");
         let end = handle.cursor_position();
         handle.replace_range(end - 1, end, "");
-        session.on_text_changed(&handle, &doc);
+        session.tick(&handle, &doc);
         type_text(&handle, &doc, &session, " and btw ");
         assert!(
             plain(&doc).ends_with("and by the way "),
@@ -549,9 +575,9 @@ mod live_editor_tests {
         let (doc, handle, session, _tree) = editor("say btw x ");
         // Put the caret after the "x " and delete the "x", leaving "say btw  ".
         handle.select_range(9, 9);
-        session.on_text_changed(&handle, &doc); // seed the caret baseline
+        session.tick(&handle, &doc); // seed the caret baseline
         handle.replace_range(8, 9, "");
-        session.on_text_changed(&handle, &doc);
+        session.tick(&handle, &doc);
         assert!(
             !plain(&doc).contains("by the way"),
             "a deletion must not fire a rule, got {:?}",

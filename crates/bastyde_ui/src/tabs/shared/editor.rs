@@ -34,28 +34,28 @@ use crate::tabs::TitleField;
 use crate::text_replacement::TextReplacementSession;
 use crate::view_models::{EditorKind, EditorTypography, FindViewModel, FormatViewModel};
 
-/// Install `on_change` on `editor`, with the document's replace-while-typing
-/// session composed in behind it.
+/// Drive a document's replace-while-typing session from the frame tick.
 ///
-/// The session runs **after** the tab's own dirty-marking, and needs the
-/// editor's handle — which only exists once the editor does. That is why the
-/// three writing surfaces set their `on_change` through this rather than in
-/// their builder chain: the composition cannot be expressed before the widget
-/// it reads back from.
-fn on_change_with_replacements(
-    editor: RichTextEditor,
+/// Deliberately NOT from the editor's `on_change`. That callback runs inside
+/// `frame_loop::tick`, which holds a `borrow_mut` on the editor's state for its
+/// whole duration, so every `EditorHandle` method panics there — the first
+/// character typed took the app down with "RefCell already mutably borrowed".
+/// A frame-tick effect runs after that borrow is released, which is exactly how
+/// [`wire_spell`] has always driven the spell session.
+///
+/// The session notices an edit by comparing the document revision, so this costs
+/// one field read on the frames where nothing was typed.
+fn wire_replacements(
+    ctx: &mut BuildContext,
+    handle: &EditorHandle,
     doc: &TextDocument,
-    on_change: impl Fn() + 'static,
-    replacement: Option<Rc<TextReplacementSession>>,
-) -> RichTextEditor {
-    let handle = editor.handle();
+    session: &Rc<TextReplacementSession>,
+) {
+    let session = session.clone();
+    let handle = handle.clone();
     let doc = doc.clone();
-    editor.on_change(move || {
-        on_change();
-        if let Some(session) = &replacement {
-            session.on_text_changed(&handle, &doc);
-        }
-    })
+    let tick = ctx.frame_tick();
+    ctx.effect(&tick, move |_| session.tick(&handle, &doc));
 }
 
 /// A caret-aware "split scene" action for a writing editor's context menu:
@@ -99,6 +99,7 @@ pub fn writing_column(
 ) -> CenterColumnFlowing {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
+        .on_change(on_change)
         .content_padding_symmetric(8.0, 12.0)
         .min_lines(min_lines)
         .v_scroll_policy(ScrollPolicy::AlwaysOff)
@@ -109,7 +110,6 @@ pub fn writing_column(
         .window_to_clip(true)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
-    editor = on_change_with_replacements(editor, doc, on_change, replacement);
     // Hand this editor's handle to the find banner so it can select + scroll the
     // current match into view. Re-attached on every rebuild (a fresh widget each
     // time); the handle just re-points at the same underlying editor state.
@@ -141,7 +141,13 @@ pub fn writing_column(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
             Expand::horizontal {
-                child: TypographyBoundEditor::new(editor, typo.clone(), spell, EditorKind::Prose)
+                child: TypographyBoundEditor::new(
+                    editor,
+                    typo.clone(),
+                    spell,
+                    replacement.map(|s| (doc.clone(), s)),
+                    EditorKind::Prose,
+                )
             }
         }
     ))
@@ -381,11 +387,11 @@ pub fn synopsis_editor(
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
+        .on_change(on_change)
         .content_padding_symmetric(6.0, 30.0)
         .text_color(TextRole::Secondary)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
-    editor = on_change_with_replacements(editor, doc, on_change, replacement);
     // Re-attached on every rebuild, exactly as `writing_column` does for the
     // prose handle: a tab rebuild mints a fresh editor, so a stored handle would
     // address the one the writer *used* to be typing in.
@@ -428,7 +434,13 @@ pub fn synopsis_editor(
             border_color: BorderRole::Default
             border_width: 1.0
             corner_radius: 6.0
-            child: TypographyBoundEditor::new(editor, typo.clone(), spell, EditorKind::Synopsis)
+            child: TypographyBoundEditor::new(
+                editor,
+                typo.clone(),
+                spell,
+                replacement.map(|s| (doc.clone(), s)),
+                EditorKind::Synopsis,
+            )
         }
     )
 }
@@ -462,11 +474,11 @@ pub fn card_synopsis_editor(
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
+        .on_change(on_change)
         .content_padding_symmetric(4.0, 8.0)
         .v_scroll_policy(ScrollPolicy::Auto)
         .typography_defaults(typo_defaults(&typo))
         .zoom(typo.size.get());
-    editor = on_change_with_replacements(editor, &doc, on_change, replacement);
     {
         let handle = editor.handle();
         let cursor = editor.cursor_position_signal();
@@ -483,7 +495,13 @@ pub fn card_synopsis_editor(
             )))
         });
     }
-    TypographyBoundEditor::new(editor, typo.clone(), spell, EditorKind::Synopsis)
+    TypographyBoundEditor::new(
+        editor,
+        typo.clone(),
+        spell,
+        replacement.map(|s| (doc.clone(), s)),
+        EditorKind::Synopsis,
+    )
 }
 
 /// A one-line name input bound to `field.value`, wired so an edit marks the tab dirty.
@@ -1226,6 +1244,10 @@ struct TypographyBoundEditor {
     /// editor feeds it this view's focus + caret; `None` disables the wiring (e.g. a read-only or
     /// non-prose surface).
     spell: Option<Rc<crate::spellcheck::SpellSession>>,
+    /// This document and its replace-while-typing session, when the project has a
+    /// lexicon. Paired because the session reads the document it belongs to, and
+    /// this wrapper is the only place holding both plus a `BuildContext`.
+    replacement: Option<(TextDocument, Rc<TextReplacementSession>)>,
     /// This editor's stable identity as the spell session's "view" — set in `build` from
     /// `ctx.self_id()`, read by `Drop` to un-focus the session when the widget is torn down.
     token: Option<WidgetId>,
@@ -1244,12 +1266,14 @@ impl TypographyBoundEditor {
         editor: RichTextEditor,
         typo: EditorTypography,
         spell: Option<Rc<crate::spellcheck::SpellSession>>,
+        replacement: Option<(TextDocument, Rc<TextReplacementSession>)>,
         kind: EditorKind,
     ) -> Self {
         Self {
             editor: Some(editor),
             typo,
             spell,
+            replacement,
             token: None,
             child_id: None,
             kind,
@@ -1328,6 +1352,11 @@ impl Widget for TypographyBoundEditor {
         // Caret-aware spell-check: feed this view's focus + caret and drive the per-frame recompute.
         if let Some(spell) = self.spell.clone() {
             self.token = Some(wire_spell(ctx, &handle, &spell));
+        }
+        // Replace-while-typing, on the same footing and for the same reason: the
+        // work needs the handle, so it cannot run from `on_change`.
+        if let Some((doc, replacement)) = self.replacement.clone() {
+            wire_replacements(ctx, &handle, &doc, &replacement);
         }
         // Announce this editor to the formatting surfaces. Done here rather than
         // at the ~six call sites because *every* writing editor in the app is
