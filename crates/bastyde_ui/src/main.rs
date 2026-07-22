@@ -283,6 +283,31 @@ pub const REMEMBER_VIEW_KEY: &str = "editor.remember_view";
 pub const REMEMBER_VIEW_DEFAULT: bool = true;
 /// Keep the caret line vertically centred while typing.
 pub const TYPEWRITER_KEY: &str = "editor.typewriter_scroll";
+
+// ── Smart punctuation, application-level ────────────────────────────────────
+//
+// The default tier. A project that has not taken the override in
+// Work ▸ Punctuation follows these, which is what `override_app_default: false`
+// on its row means.
+//
+// Dashes, the ellipsis and curled quotes default **on**: that is what "smart
+// punctuation" means to a writer, it is what Word, LibreOffice and Scrivener all
+// do out of the box, and every one of them is reversible with a single Ctrl+Z on
+// the keystroke that fired it.
+//
+// Pre-punctuation spacing defaults **off** even though it is equally correct for
+// French. It inserts an *invisible* character, so a writer who has not asked for
+// it would see their file change in ways they cannot see on screen — and unlike
+// the others it applies to one language only.
+pub const PUNCT_DASHES_KEY: &str = "editor.punctuation.dashes";
+pub const PUNCT_DASHES_DEFAULT: bool = true;
+pub const PUNCT_ELLIPSIS_KEY: &str = "editor.punctuation.ellipsis";
+pub const PUNCT_ELLIPSIS_DEFAULT: bool = true;
+pub const PUNCT_QUOTES_KEY: &str = "editor.punctuation.quotes";
+pub const PUNCT_QUOTES_DEFAULT: bool = true;
+pub const PUNCT_QUOTE_STYLE_KEY: &str = "editor.punctuation.quote_style";
+pub const PUNCT_SPACING_KEY: &str = "editor.punctuation.pre_punctuation_spacing";
+pub const PUNCT_SPACING_DEFAULT: bool = false;
 pub const TYPEWRITER_DEFAULT: bool = true;
 /// Highlight the sentence the caret is in.
 pub const HIGHLIGHT_SENTENCE_KEY: &str = "editor.highlight_sentence";

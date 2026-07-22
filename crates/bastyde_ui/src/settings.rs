@@ -95,6 +95,9 @@ enum Pane {
     WorkStructure,
     /// Per-project "Work: `<name>` ▸ Punctuation" — the smart-punctuation house style.
     WorkPunctuation,
+    /// Application-level "Editor ▸ Punctuation" — the tier every project follows
+    /// unless it takes an override of its own.
+    Punctuation,
     /// General backup ("Copies de secours") policy (under Backup & Sync).
     Backup,
     /// Per-project backup override (under the open Work's section).
@@ -142,6 +145,7 @@ impl Pane {
             Pane::Keymap => tr!(settings_page_keymap()),
             Pane::WorkStructure => tr!(settings_page_structure()),
             Pane::WorkPunctuation => tr!(settings_page_punctuation()),
+            Pane::Punctuation => tr!(settings_page_punctuation()),
             Pane::Backup => tr!(settings_page_backup()),
             Pane::WorkBackup => tr!(settings_page_work_backup()),
             Pane::WorkLanguage => tr!(settings_page_language()),
@@ -531,13 +535,19 @@ impl SettingsPanel {
             Pane::EditorBehavior,
             model.insert_child(ed, 3, Node::Page(Pane::EditorBehavior)),
         );
+        // Beside Editor Behavior: the other set of switches that change what
+        // happens as the writer types, rather than how the page looks.
+        nodes.insert(
+            Pane::Punctuation,
+            model.insert_child(ed, 4, Node::Page(Pane::Punctuation)),
+        );
         nodes.insert(
             Pane::Goals,
-            model.insert_child(ed, 4, Node::Page(Pane::Goals)),
+            model.insert_child(ed, 5, Node::Page(Pane::Goals)),
         );
         nodes.insert(
             Pane::Corkboard,
-            model.insert_child(ed, 5, Node::Page(Pane::Corkboard)),
+            model.insert_child(ed, 6, Node::Page(Pane::Corkboard)),
         );
 
         let sp = model.insert_root(2, Node::Section(Sec::Spelling));
@@ -691,6 +701,7 @@ impl SettingsPanel {
             | Pane::SynopsisTypography
             | Pane::NotesTypography
             | Pane::EditorBehavior
+            | Pane::Punctuation
             | Pane::Goals
             | Pane::Corkboard => Some(ed),
             Pane::Spellcheck | Pane::Dictionaries => Some(sp),
@@ -1153,6 +1164,10 @@ impl Widget for SettingsPanel {
             ),
             (Pane::WorkStructure, structure_pane),
             (Pane::WorkPunctuation, punctuation_pane),
+            (
+                Pane::Punctuation,
+                Box::new(panes::punctuation::punctuation_pane(ctx, &vm)),
+            ),
             (Pane::Backup, backup_pane),
             (Pane::WorkBackup, work_backup_pane),
             (Pane::WorkLanguage, language_pane),
@@ -1357,6 +1372,7 @@ mod tests {
             Pane::Keymap,
             Pane::WorkStructure,
             Pane::WorkPunctuation,
+            Pane::Punctuation,
             Pane::Backup,
             Pane::WorkBackup,
             Pane::WorkLanguage,

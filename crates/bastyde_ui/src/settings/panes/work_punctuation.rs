@@ -19,14 +19,14 @@ use super::super::*;
 /// other three exist for the books that deliberately depart from their
 /// language's convention, which is common enough in Italian (three co-existing
 /// systems) that leaving it to the locale alone would be wrong.
-const QUOTE_STYLES: [QuoteStyle; 4] = [
+pub(in crate::settings) const QUOTE_STYLES: [QuoteStyle; 4] = [
     QuoteStyle::LocaleDefault,
     QuoteStyle::CurlyDouble,
     QuoteStyle::Guillemets,
     QuoteStyle::LowHigh,
 ];
 
-fn quote_style_label(style: &QuoteStyle) -> bastyde::i18n::LocalizedString {
+pub(in crate::settings) fn quote_style_label(style: &QuoteStyle) -> bastyde::i18n::LocalizedString {
     match style {
         QuoteStyle::LocaleDefault => tr!(settings_quote_style_locale()),
         QuoteStyle::CurlyDouble => tr!(settings_quote_style_curly()),
@@ -47,7 +47,7 @@ fn quote_style_label(style: &QuoteStyle) -> bastyde::i18n::LocalizedString {
 ///
 /// Built as data (`lit!`), not a translated string: it is glyphs, and the same
 /// glyphs whatever the interface language.
-fn language_sample(langs: &[String], style: &QuoteStyle) -> String {
+pub(in crate::settings) fn language_sample(langs: &[String], style: &QuoteStyle) -> String {
     let tag = skribisto_model::language::primary(langs);
     let ruleset = ruleset_for(tag);
     let quotes = match style {

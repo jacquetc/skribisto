@@ -47,24 +47,34 @@ use crate::settings::SettingsPanel;
 use crate::singles::{SingleSmartPunctuation, SingleWork, SingleWorkInfo};
 use crate::text_replacement::typography::SmartPunctuationFlags;
 
-/// The punctuation rules in force for the open project.
+/// The punctuation rules in force for the open project — the two tiers resolved
+/// into the one flag set the editor sessions run.
 ///
-/// `override_app_default` off means "follow the application preference". There
-/// is no application-level punctuation preference yet — that is the second tier
-/// of the design and is not built — so following it currently means substituting
-/// nothing. The distinction is kept rather than collapsed because it is what the
-/// stored row means, and the day the app tier lands this function is the single
-/// place that changes.
-fn punctuation_flags(sp: &SingleSmartPunctuation) -> SmartPunctuationFlags {
-    if !sp.override_app_default().get() {
-        return SmartPunctuationFlags::all_off();
+/// `override_app_default` off means "follow the application preference", which
+/// is now a real thing to follow rather than a synonym for off. On means this
+/// project departs from it, and the row's own five values win outright — not
+/// merged with the app tier, because a house style is a whole system (Italian
+/// picks one of three; French adds a space its neighbours do not) and a
+/// half-inherited one belongs to no language at all.
+fn punctuation_flags(
+    sp: &SingleSmartPunctuation,
+    app: &SettingsViewModel,
+) -> SmartPunctuationFlags {
+    if sp.override_app_default().get() {
+        return SmartPunctuationFlags {
+            dashes: sp.dashes().get(),
+            ellipsis: sp.ellipsis().get(),
+            quotes: sp.quotes().get(),
+            quote_style: sp.quote_style().get(),
+            pre_punctuation_spacing: sp.pre_punctuation_spacing().get(),
+        };
     }
     SmartPunctuationFlags {
-        dashes: sp.dashes().get(),
-        ellipsis: sp.ellipsis().get(),
-        quotes: sp.quotes().get(),
-        quote_style: sp.quote_style().get(),
-        pre_punctuation_spacing: sp.pre_punctuation_spacing().get(),
+        dashes: app.punct_dashes().get(),
+        ellipsis: app.punct_ellipsis().get(),
+        quotes: app.punct_quotes().get(),
+        quote_style: app.punct_quote_style().get(),
+        pre_punctuation_spacing: app.punct_spacing().get(),
     }
 }
 use crate::tabs::{ContentTab, tab_pane};
@@ -1017,23 +1027,37 @@ impl Widget for App {
         {
             let docs = spell_docs.clone();
             let sp = smart_punctuation.clone();
+            let app = settings.clone();
             let push = move || {
-                docs.set_punctuation(Some(punctuation_flags(&sp)));
+                docs.set_punctuation(Some(punctuation_flags(&sp, &app)));
             };
-            // One effect per flag: `ctx.effect` takes a single signal, and the
-            // five are independent switches rather than one compound value.
+            // One effect per flag: `ctx.effect` takes a single signal, and these
+            // are independent switches rather than one compound value.
+            //
+            // Both tiers are observed. The app-level ones matter even while a
+            // project holds the override: it can be dropped at any moment, and
+            // the flags it falls back to have to be current when it is.
             for signal in [
                 smart_punctuation.override_app_default(),
                 smart_punctuation.dashes(),
                 smart_punctuation.ellipsis(),
                 smart_punctuation.quotes(),
                 smart_punctuation.pre_punctuation_spacing(),
+                settings.punct_dashes(),
+                settings.punct_ellipsis(),
+                settings.punct_quotes(),
+                settings.punct_spacing(),
             ] {
                 let push = push.clone();
                 ctx.effect(&signal, move |_| push());
             }
-            let push_style = push.clone();
-            ctx.effect(&smart_punctuation.quote_style(), move |_| push_style());
+            for signal in [
+                smart_punctuation.quote_style(),
+                settings.punct_quote_style(),
+            ] {
+                let push = push.clone();
+                ctx.effect(&signal, move |_| push());
+            }
         }
 
         // The project-lifecycle view-model: the shared Load/New/Close sequence, which was
@@ -2284,6 +2308,79 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ctx: &mut EventContext) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The two-tier punctuation resolution, which is the whole point of
+    /// `override_app_default` being a stored flag rather than an implied one.
+    ///
+    /// Driven through real handles rather than a reimplementation of the rule:
+    /// a test that restated the `if` would pass no matter which way round it
+    /// was written.
+    #[test]
+    fn a_project_without_an_override_follows_the_application_preference() {
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let sp = SingleSmartPunctuation::new(ctx);
+        let app = settings_vm_for_test();
+
+        // The app tier says dashes on, spacing off.
+        app.punct_dashes().set(true);
+        app.punct_spacing().set(false);
+        app.punct_quote_style()
+            .set(frontend::common::entities::QuoteStyle::Guillemets);
+
+        // The project disagrees on every count — and must be ignored while its
+        // override is off.
+        sp.set_override_app_default(false);
+        sp.set_dashes(false);
+        sp.set_pre_punctuation_spacing(true);
+        sp.set_quote_style(frontend::common::entities::QuoteStyle::LowHigh);
+
+        let f = punctuation_flags(&sp, &app);
+        assert!(f.dashes, "the app tier decides");
+        assert!(!f.pre_punctuation_spacing);
+        assert_eq!(
+            f.quote_style,
+            frontend::common::entities::QuoteStyle::Guillemets
+        );
+    }
+
+    /// And with the override on, the project's own row wins outright — not
+    /// merged with the app tier. A house style is a whole system; a
+    /// half-inherited one belongs to no language at all.
+    #[test]
+    fn an_overriding_project_wins_outright() {
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let sp = SingleSmartPunctuation::new(ctx);
+        let app = settings_vm_for_test();
+
+        app.punct_dashes().set(true);
+        app.punct_ellipsis().set(true);
+
+        sp.set_override_app_default(true);
+        sp.set_dashes(false);
+        sp.set_ellipsis(false);
+
+        let f = punctuation_flags(&sp, &app);
+        assert!(!f.dashes, "the project decides, even to switch a rule OFF");
+        assert!(
+            !f.ellipsis,
+            "an app-level rule is not inherited through an override"
+        );
+    }
+
+    /// A throwaway store, so these read the real signal plumbing rather than a
+    /// stand-in for it.
+    fn settings_vm_for_test() -> SettingsViewModel {
+        use std::sync::atomic::{AtomicU32, Ordering};
+        static N: AtomicU32 = AtomicU32::new(0);
+        let n = N.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "skribisto_punct_tier_{}_{n}.toml",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        let store = bastyde::settings::SettingsStore::open(path).expect("open temp store");
+        SettingsViewModel::new(&store)
+    }
 
     /// The four states the Save affordances gate on. Nothing to save, or a
     /// read-only backup window → disabled.
