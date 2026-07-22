@@ -44,7 +44,7 @@ use bastyde::widgets::{
 };
 
 use crate::app_ids::AppIds;
-use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::singles::{SingleSmartPunctuation, SingleWork, SingleWorkInfo};
 use crate::view_models::{
     BackupSettingsViewModel, EditorTypography, SettingsViewModel, WorkSettingsViewModel,
 };
@@ -93,6 +93,8 @@ enum Pane {
     Keymap,
     /// Per-project "Work: `<name>` ▸ Structure" — chapter mode (folder vs flat).
     WorkStructure,
+    /// Per-project "Work: `<name>` ▸ Punctuation" — the smart-punctuation house style.
+    WorkPunctuation,
     /// General backup ("Copies de secours") policy (under Backup & Sync).
     Backup,
     /// Per-project backup override (under the open Work's section).
@@ -139,6 +141,7 @@ impl Pane {
             Pane::ExportFormats => tr!(settings_page_export()),
             Pane::Keymap => tr!(settings_page_keymap()),
             Pane::WorkStructure => tr!(settings_page_structure()),
+            Pane::WorkPunctuation => tr!(settings_page_punctuation()),
             Pane::Backup => tr!(settings_page_backup()),
             Pane::WorkBackup => tr!(settings_page_work_backup()),
             Pane::WorkLanguage => tr!(settings_page_language()),
@@ -607,6 +610,12 @@ impl SettingsPanel {
                 Pane::WorkTextReplacements,
                 model.insert_child(wk, 6, Node::Page(Pane::WorkTextReplacements)),
             );
+            // Next to the lexicon: the other thing that rewrites prose as it is
+            // typed, and the other one that travels inside the `.skrib`.
+            nodes.insert(
+                Pane::WorkPunctuation,
+                model.insert_child(wk, 7, Node::Page(Pane::WorkPunctuation)),
+            );
             work_node = Some(wk);
         }
         // The dynamic section label needs the title inside the row closure.
@@ -688,6 +697,7 @@ impl SettingsPanel {
             Pane::Autosave | Pane::Backup => Some(bk),
             Pane::ExportFormats => Some(ce),
             Pane::WorkStructure
+            | Pane::WorkPunctuation
             | Pane::WorkLanguage
             | Pane::WorkBackup
             | Pane::WorkDictionary
@@ -830,9 +840,11 @@ impl Widget for SettingsPanel {
         let work_title = work.as_ref().map(|w| w.title().get()).unwrap_or_default();
         // The two Work pages edit the *entity*, not the settings store, so they go through
         // their own view-model rather than calling `SingleWork::set_*` + `save` from a pane.
+        let punctuation = ctx.app_state::<SingleSmartPunctuation>().cloned();
         let work_vm = work
             .as_ref()
-            .map(|w| WorkSettingsViewModel::new(w.clone(), stack.clone()));
+            .zip(punctuation.as_ref())
+            .map(|(w, p)| WorkSettingsViewModel::new(w.clone(), p.clone(), stack.clone()));
         let structure_pane: Box<dyn Widget> = match &work_vm {
             Some(vm) => Box::new(panes::work_structure::work_structure_pane(
                 ctx,
@@ -842,6 +854,18 @@ impl Widget for SettingsPanel {
             None => Box::new(empty_pane(
                 None,
                 tr!(settings_page_structure()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+        let punctuation_pane: Box<dyn Widget> = match &work_vm {
+            Some(vm) => Box::new(panes::work_punctuation::work_punctuation_pane(
+                ctx,
+                vm,
+                work_title.clone(),
+            )),
+            None => Box::new(empty_pane(
+                None,
+                tr!(settings_page_punctuation()),
                 res!("assets/icons/binder/book.svg"),
             )),
         };
@@ -1128,6 +1152,7 @@ impl Widget for SettingsPanel {
                 )),
             ),
             (Pane::WorkStructure, structure_pane),
+            (Pane::WorkPunctuation, punctuation_pane),
             (Pane::Backup, backup_pane),
             (Pane::WorkBackup, work_backup_pane),
             (Pane::WorkLanguage, language_pane),
@@ -1331,6 +1356,7 @@ mod tests {
             Pane::ExportFormats,
             Pane::Keymap,
             Pane::WorkStructure,
+            Pane::WorkPunctuation,
             Pane::Backup,
             Pane::WorkBackup,
             Pane::WorkLanguage,

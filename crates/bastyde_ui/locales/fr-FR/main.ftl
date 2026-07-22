@@ -1171,3 +1171,19 @@ about-tagline = Une application d'écriture de romans pour la fiction longue, é
 about-license = Distribué sous la Licence publique générale GNU, version 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Fermer
+
+# ── Work ▸ Punctuation — le style typographique du projet ───────────────────
+settings-page-punctuation = Ponctuation
+settings-group-punctuation = Ponctuation intelligente
+settings-punctuation-override = Donner à ce projet ses propres règles de ponctuation
+settings-punctuation-override-hint = Désactivé : le projet suit la préférence de l'application. Ces règles voyagent dans le .skrib : un co-auteur qui ouvre le fichier écrit avec la même typographie.
+settings-punctuation-dashes = Transformer -- en tiret demi-cadratin, --- en cadratin
+settings-punctuation-ellipsis = Transformer ... en points de suspension
+settings-punctuation-quotes = Courber les guillemets et les apostrophes
+settings-quote-style = Guillemets
+settings-quote-style-locale = Défaut de la langue
+settings-quote-style-curly = « Courbes » (“…”)
+settings-quote-style-guillemets = «Chevrons»
+settings-quote-style-low-high = „Bas-haut“
+settings-punctuation-spacing = Espace avant ; : ! ? et »
+settings-punctuation-spacing-hint = La typographie française place une espace fine insécable avant ; ! ? et une espace insécable avant :. Ne s'applique qu'au texte écrit en français.

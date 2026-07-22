@@ -23,20 +23,34 @@
 
 use bastyde::prelude::Signal;
 
+use frontend::common::entities::QuoteStyle;
 use skribisto_model::ChapterMode;
 
-use crate::singles::SingleWork;
+use crate::singles::{SingleSmartPunctuation, SingleWork};
 
 /// Cloneable handle over the open `Work` plus its undo stack.
 #[derive(Clone)]
 pub struct WorkSettingsViewModel {
     work: SingleWork,
+    /// The project's punctuation house style. A sibling entity rather than a
+    /// field of `Work`, so it saves through its own handle — and on the same
+    /// undo stack, so flipping a switch by accident comes back with Ctrl+Z like
+    /// any other project edit.
+    punctuation: SingleSmartPunctuation,
     stack: Signal<Option<u64>>,
 }
 
 impl WorkSettingsViewModel {
-    pub fn new(work: SingleWork, stack: Signal<Option<u64>>) -> Self {
-        Self { work, stack }
+    pub fn new(
+        work: SingleWork,
+        punctuation: SingleSmartPunctuation,
+        stack: Signal<Option<u64>>,
+    ) -> Self {
+        Self {
+            work,
+            punctuation,
+            stack,
+        }
     }
 
     // ── Chapter encoding ─────────────────────────────────────────────────────
@@ -104,5 +118,80 @@ impl WorkSettingsViewModel {
     pub fn set_dict_language(&self, languages: Vec<String>) {
         self.work.set_dict_language(languages);
         self.work.save(self.stack.get());
+    }
+
+    // ── Punctuation house style ──────────────────────────────────────────────
+
+    /// Whether this project overrides the application's punctuation preference.
+    ///
+    /// While false the five switches below are inert — kept, not cleared, so
+    /// turning the override back on restores what the writer had configured
+    /// rather than making them set it all up again.
+    pub fn punctuation_override(&self) -> Signal<bool> {
+        self.punctuation.override_app_default()
+    }
+    pub fn smart_dashes(&self) -> Signal<bool> {
+        self.punctuation.dashes()
+    }
+    pub fn smart_ellipsis(&self) -> Signal<bool> {
+        self.punctuation.ellipsis()
+    }
+    pub fn smart_quotes(&self) -> Signal<bool> {
+        self.punctuation.quotes()
+    }
+    pub fn quote_style(&self) -> Signal<QuoteStyle> {
+        self.punctuation.quote_style()
+    }
+    pub fn pre_punctuation_spacing(&self) -> Signal<bool> {
+        self.punctuation.pre_punctuation_spacing()
+    }
+
+    /// Write one punctuation switch and persist.
+    ///
+    /// Every setter here carries the same no-op guard as `set_flat_chapters`,
+    /// and for the same reason: the pane drives these from effects over mirrored
+    /// signals, which fire on every rebuild. Without the guard, merely opening
+    /// Settings would queue six undo entries and six disk saves.
+    pub fn set_punctuation_override(&self, on: bool) {
+        if self.punctuation.override_app_default().get() == on {
+            return;
+        }
+        self.punctuation.set_override_app_default(on);
+        self.punctuation.save(self.stack.get());
+    }
+    pub fn set_smart_dashes(&self, on: bool) {
+        if self.punctuation.dashes().get() == on {
+            return;
+        }
+        self.punctuation.set_dashes(on);
+        self.punctuation.save(self.stack.get());
+    }
+    pub fn set_smart_ellipsis(&self, on: bool) {
+        if self.punctuation.ellipsis().get() == on {
+            return;
+        }
+        self.punctuation.set_ellipsis(on);
+        self.punctuation.save(self.stack.get());
+    }
+    pub fn set_smart_quotes(&self, on: bool) {
+        if self.punctuation.quotes().get() == on {
+            return;
+        }
+        self.punctuation.set_quotes(on);
+        self.punctuation.save(self.stack.get());
+    }
+    pub fn set_quote_style(&self, style: QuoteStyle) {
+        if self.punctuation.quote_style().get() == style {
+            return;
+        }
+        self.punctuation.set_quote_style(style);
+        self.punctuation.save(self.stack.get());
+    }
+    pub fn set_pre_punctuation_spacing(&self, on: bool) {
+        if self.punctuation.pre_punctuation_spacing().get() == on {
+            return;
+        }
+        self.punctuation.set_pre_punctuation_spacing(on);
+        self.punctuation.save(self.stack.get());
     }
 }

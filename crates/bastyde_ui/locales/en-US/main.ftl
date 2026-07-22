@@ -1167,3 +1167,19 @@ about-tagline = A novel-writing app for long-form fiction, written in Rust with 
 about-license = Released under the GNU General Public License, version 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Close
+
+# ── Work ▸ Punctuation — the project's typographic house style ──────────────
+settings-page-punctuation = Punctuation
+settings-group-punctuation = Smart punctuation
+settings-punctuation-override = Give this project its own punctuation rules
+settings-punctuation-override-hint = Off: the project follows the application preference. These rules travel inside the .skrib, so a co-author opening the file writes with the same typography.
+settings-punctuation-dashes = Turn -- into an en dash, --- into an em dash
+settings-punctuation-ellipsis = Turn ... into an ellipsis
+settings-punctuation-quotes = Curl quotation marks and apostrophes
+settings-quote-style = Quotation marks
+settings-quote-style-locale = Language default
+settings-quote-style-curly = “Curly”
+settings-quote-style-guillemets = «Guillemets»
+settings-quote-style-low-high = „Low-high“
+settings-punctuation-spacing = Space before ; : ! ? and »
+settings-punctuation-spacing-hint = French typography sets a narrow no-break space before ; ! ? and a full one before :. It applies only to text written in French.
