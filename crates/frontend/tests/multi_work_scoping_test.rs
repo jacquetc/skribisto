@@ -480,11 +480,11 @@ fn scan_mentions_only_scans_the_requested_work() {
     let scan = |work_id: EntityId| {
         let op = mention_management_commands::scan_mentions(&ctx, &ScanMentionsDto { work_id })
             .expect("start scan");
-        let finished = ctx
-            .long_operation_manager
-            .lock()
-            .unwrap()
-            .wait_for_operation(&op, Some(std::time::Duration::from_secs(30)));
+        // Take the completion signal and release the manager lock before blocking — waiting
+        // while holding it would stall every other operation query for the scan's whole
+        // duration (see the qleany 1.9.0 migration guide's long-operation section).
+        let completion = ctx.long_operation_manager.lock().unwrap().completion_signal();
+        let finished = completion.wait_for(&op, Some(std::time::Duration::from_secs(30)));
         assert!(finished, "scan must complete");
         mention_management_commands::get_scan_mentions_result(&ctx, &op)
             .expect("get result")
@@ -548,11 +548,11 @@ fn count_words_only_counts_the_requested_work() {
     let count = |work_id: EntityId| {
         let op = progress_management_commands::count_words(&ctx, &CountWordsDto { work_id })
             .expect("start count");
-        let finished = ctx
-            .long_operation_manager
-            .lock()
-            .unwrap()
-            .wait_for_operation(&op, Some(std::time::Duration::from_secs(30)));
+        // Take the completion signal and release the manager lock before blocking — waiting
+        // while holding it would stall every other operation query for the count's whole
+        // duration (see the qleany 1.9.0 migration guide's long-operation section).
+        let completion = ctx.long_operation_manager.lock().unwrap().completion_signal();
+        let finished = completion.wait_for(&op, Some(std::time::Duration::from_secs(30)));
         assert!(finished);
         progress_management_commands::get_count_words_result(&ctx, &op)
             .expect("get result")

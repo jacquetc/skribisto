@@ -204,12 +204,11 @@ fn work_management_new(ctx: &AppContext, dir: &std::path::Path) {
 fn scan(fx: &Fixture) -> Vec<MentionHit> {
     let id = mention_management_commands::scan_mentions(&fx.ctx, &ScanMentionsDto { work_id: fx.work })
         .expect("start scan");
-    let finished = fx
-        .ctx
-        .long_operation_manager
-        .lock()
-        .unwrap()
-        .wait_for_operation(&id, Some(std::time::Duration::from_secs(30)));
+    // Take the completion signal and release the manager lock before blocking — waiting
+    // while holding it would stall every other operation query for the scan's whole
+    // duration (see the qleany 1.9.0 migration guide's long-operation section).
+    let completion = fx.ctx.long_operation_manager.lock().unwrap().completion_signal();
+    let finished = completion.wait_for(&id, Some(std::time::Duration::from_secs(30)));
     assert!(finished, "the scan did not finish within 30s");
 
     let dto = mention_management_commands::get_scan_mentions_result(&fx.ctx, &id)

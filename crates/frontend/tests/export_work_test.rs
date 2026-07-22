@@ -59,18 +59,16 @@ fn export_work_writes_the_whole_project_to_html() {
 
     let op_id = export_management_commands::export_work(&ctx, &dto).expect("export_work dispatch");
 
-    // Poll the long op to completion (it runs on its own thread), with a timeout.
-    let mut result = None;
-    for _ in 0..500 {
-        if let Some(r) =
-            export_management_commands::get_export_work_result(&ctx, &op_id).expect("export result")
-        {
-            result = Some(r);
-            break;
-        }
-        std::thread::sleep(Duration::from_millis(20));
-    }
-    let result = result.expect("export_work should complete within the timeout");
+    // Take the completion signal and release the manager lock before blocking — waiting
+    // while holding it would stall every other operation query for the export's whole
+    // duration (see the qleany 1.9.0 migration guide's long-operation section).
+    let completion = ctx.long_operation_manager.lock().unwrap().completion_signal();
+    let finished = completion.wait_for(&op_id, Some(Duration::from_secs(10)));
+    assert!(finished, "export_work should complete within the timeout");
+
+    let result = export_management_commands::get_export_work_result(&ctx, &op_id)
+        .expect("export result")
+        .expect("a finished export has a result");
 
     assert!(result.exported_count > 0, "some items should have been exported");
     assert_eq!(result.output_path, dto.output_path);

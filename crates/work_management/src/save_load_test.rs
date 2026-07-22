@@ -1533,16 +1533,13 @@ fn panicking_long_operation_is_reported_failed_not_stuck() {
 
     let mgr = LongOperationManager::new();
     let id = mgr.start_operation(Panicky);
-    // Wait for the background thread to settle.
-    for _ in 0..300 {
-        if !matches!(
-            mgr.get_operation_status(&id),
-            Some(OperationStatus::Running)
-        ) {
-            break;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(10));
-    }
+    // Wait for the background thread to settle via the completion signal instead of
+    // polling on a sleep loop — a panicking operation still publishes its id last,
+    // after settling to `Failed` (see the qleany 1.9.0 migration guide's long-operation
+    // section: "A panicking operation is now observable").
+    let completion = mgr.completion_signal();
+    let finished = completion.wait_for(&id, Some(std::time::Duration::from_secs(3)));
+    assert!(finished, "the panicking operation should settle within the timeout");
     assert!(
         matches!(
             mgr.get_operation_status(&id),
