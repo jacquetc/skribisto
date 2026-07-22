@@ -308,6 +308,11 @@ pub const PUNCT_QUOTES_DEFAULT: bool = true;
 pub const PUNCT_QUOTE_STYLE_KEY: &str = "editor.punctuation.quote_style";
 pub const PUNCT_SPACING_KEY: &str = "editor.punctuation.pre_punctuation_spacing";
 pub const PUNCT_SPACING_DEFAULT: bool = false;
+pub const PUNCT_DIALOGUE_KEY: &str = "editor.punctuation.dialogue_marker";
+/// Off, like the spacing rule: it rewrites the *shape* of a line rather than one
+/// glyph inside it, and it is wrong outright in the languages that quote their
+/// dialogue instead of dashing it.
+pub const PUNCT_DIALOGUE_DEFAULT: bool = false;
 pub const TYPEWRITER_DEFAULT: bool = true;
 /// Highlight the sentence the caret is in.
 pub const HIGHLIGHT_SENTENCE_KEY: &str = "editor.highlight_sentence";

@@ -353,6 +353,12 @@ pub struct SmartPunctuationFlags {
     pub quotes: bool,
     pub quote_style: QuoteStyle,
     pub pre_punctuation_spacing: bool,
+    /// Open a paragraph typed as `- ` with the locale's dialogue dash.
+    ///
+    /// Unlike the four above this is a *paragraph* rule: it can only fire at the
+    /// start of a paragraph, so it needs to know where that is. See
+    /// [`TypographyEngine::check_paragraph`].
+    pub dialogue_marker: bool,
 }
 
 impl SmartPunctuationFlags {
@@ -366,6 +372,7 @@ impl SmartPunctuationFlags {
             quotes: false,
             quote_style: QuoteStyle::LocaleDefault,
             pre_punctuation_spacing: false,
+            dialogue_marker: false,
         }
     }
 }
@@ -384,6 +391,10 @@ impl Default for SmartPunctuationFlags {
             quotes: true,
             quote_style: QuoteStyle::LocaleDefault,
             pre_punctuation_spacing: false,
+            // Off with the spacing rule, and for a related reason: it rewrites
+            // the *shape* of a line rather than one glyph inside it, and it is
+            // wrong outright in the languages that quote their dialogue.
+            dialogue_marker: false,
         }
     }
 }
@@ -400,11 +411,90 @@ pub struct Fired {
     pub typed: String,
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// The paragraph/clause subsystem
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Everything above decides from the few characters behind the caret. These two
+// rules cannot: a dialogue dash is only a dialogue dash at the *start of a
+// paragraph*, and Spanish's `¿` has to be inserted where the **clause** began,
+// which can be most of a line back and is not where the caret is.
+//
+// One subsystem for both, rather than a state machine per locale, because they
+// need the same thing — the text of the current paragraph up to the caret — and
+// that is exactly what `TextCursor::position_in_block()` bounds for free. Asking
+// for `text_before(position_in_block())` cannot read past the paragraph start,
+// so there is no scanning for newlines and no risk of a rule reaching into the
+// paragraph above.
+
+/// Spanish opens a question with `¿` and an exclamation with `¡`.
+const SPANISH_INVERTED: &[(char, char)] = &[('?', '\u{00BF}'), ('!', '\u{00A1}')];
+
+/// Whether `tag` writes its questions and exclamations with an opening mark.
+///
+/// Spanish and Asturian; **not** Catalan, Galician or Portuguese, which are
+/// neighbours that do not do this. Getting that wrong would insert a character
+/// no reader of those languages expects.
+fn uses_inverted_marks(tag: &str) -> bool {
+    let primary = tag
+        .split(['-', '_'])
+        .next()
+        .unwrap_or("")
+        .trim()
+        .to_ascii_lowercase();
+    primary == "es" || primary == "ast"
+}
+
+/// Where the clause containing the caret began, as a character offset into
+/// `block_before` (the paragraph up to the caret).
+///
+/// Scans back to the last clause boundary, then forward again over the things
+/// that sit *outside* a clause but before its first word — whitespace, an
+/// opening quotation mark, a dialogue dash. The inverted mark belongs after
+/// those, not before them: a Spanish line of dialogue reads `—¿Qué?`, never
+/// `¿—Qué?`.
+///
+/// `,` and `;` count as boundaries because Spanish genuinely re-opens mid
+/// sentence — *Si puedes, ¿vienes?* — which is the case that makes this need a
+/// clause scan at all rather than a sentence one.
+///
+/// `chars` is the paragraph up to the caret **excluding the mark just typed**.
+/// That exclusion is load-bearing: `?` is itself a clause boundary, so scanning
+/// with it included finds it, reports the clause as starting after it, and every
+/// question resolves to an empty clause that never fires.
+fn clause_start(chars: &[char]) -> usize {
+    let boundary = chars
+        .iter()
+        .rposition(|c| matches!(c, '.' | '?' | '!' | ',' | ';' | ':' | '\u{2026}'))
+        .map(|i| i + 1)
+        .unwrap_or(0);
+    let mut start = boundary;
+    while start < chars.len() {
+        let c = chars[start];
+        // An existing `¿`/`¡` is deliberately NOT skipped. Skipping it puts the
+        // clause start after it, so the already-opened guard below never sees
+        // one and a writer who typed their own mark gets a second: `¿¿Vienes?`.
+        let skippable = c.is_whitespace()
+            || matches!(
+                c,
+                LAQUO | LEFT_DOUBLE | LOW_DOUBLE | LEFT_SINGLE | LSAQUO | EM_DASH | EN_DASH
+            );
+        if !skippable {
+            break;
+        }
+        start += 1;
+    }
+    start
+}
+
 /// The compiled per-document typography rules.
 #[derive(Clone, Debug)]
 pub struct TypographyEngine {
     ruleset: &'static TypographyRuleset,
     mirrored: &'static [(char, char)],
+    /// Kept for the paragraph rules, which gate on the language itself rather
+    /// than on anything the ruleset table carries.
+    locale: String,
     flags: SmartPunctuationFlags,
     quotes: QuoteSystem,
 }
@@ -428,6 +518,7 @@ impl TypographyEngine {
         Self {
             ruleset,
             mirrored: mirrored_for(locale),
+            locale: locale.to_string(),
             flags,
             quotes,
         }
@@ -529,6 +620,63 @@ impl TypographyEngine {
                 // right matters more than the rare one.
                 return Some(fired(1, RIGHT_SINGLE.to_string(), "'"));
             }
+        }
+
+        None
+    }
+
+    /// The paragraph-aware rules: the two that cannot decide from the tail.
+    ///
+    /// `block_before` is the current paragraph up to the caret — bounded by
+    /// `position_in_block()`, so it can never reach into the paragraph above.
+    /// Offsets in the returned [`Fired`] are counted back from the caret exactly
+    /// as the stateless rules' are, so the caller applies both the same way.
+    pub fn check_paragraph(&self, block_before: &str) -> Option<Fired> {
+        let chars: Vec<char> = block_before.chars().collect();
+        let last = *chars.last()?;
+
+        // ── A dialogue dash opens the paragraph ──────────────────────────────
+        //
+        // `- ` and nothing else before it. Deliberately the whole paragraph so
+        // far: a hyphen anywhere else is a hyphen, and a rule that fired on
+        // "well - " mid-line would mangle ordinary prose.
+        if self.flags.dialogue_marker
+            && let Some(dash) = self.ruleset.dialogue_dash
+            && chars.len() == 2
+            && chars[0] == '-'
+            && last == ' '
+        {
+            return Some(fired(2, format!("{dash}\u{00A0}"), "- "));
+        }
+
+        // ── Spanish opens its questions and exclamations ─────────────────────
+        //
+        // Not behind a flag, for the same reason Arabic's mirrored marks are
+        // not: writing `¿` is what writing the language *is*. Omitting it is a
+        // spelling error in Spanish, not a stylistic choice — so the switch that
+        // would turn it off is the language selector.
+        if uses_inverted_marks(&self.locale)
+            && let Some(&(_, opening)) = SPANISH_INVERTED.iter().find(|(c, _)| *c == last)
+        {
+            let start = clause_start(&chars[..chars.len() - 1]);
+            let clause: String = chars[start..].iter().collect();
+            // Already opened — the writer typed it, or this fired earlier in the
+            // same clause. Re-opening would stack `¿¿`.
+            if clause.starts_with(opening) {
+                return None;
+            }
+            // An empty clause is a bare `?` with nothing to ask; leave it.
+            if clause.chars().count() <= 1 {
+                return None;
+            }
+            // ONE replacement spanning the whole clause, not an insertion at
+            // `start`: `replace_range` leaves the caret after the text it wrote,
+            // so inserting at a distant point would drag the caret back there
+            // mid-sentence. Rewriting the clause with the mark prepended leaves
+            // the caret after the `?`, where the writer left it — and is one
+            // undo entry rather than two.
+            let replace_chars = chars.len() - start;
+            return Some(fired(replace_chars, format!("{opening}{clause}"), &clause));
         }
 
         None
@@ -835,6 +983,7 @@ mod tests {
             quotes: false,
             quote_style: QuoteStyle::LocaleDefault,
             pre_punctuation_spacing: false,
+            dialogue_marker: false,
         };
         let e = TypographyEngine::new("fr-FR", off);
         assert!(e.check("wait...").is_none());
@@ -870,6 +1019,7 @@ mod tests {
                 quotes: false,
                 quote_style: QuoteStyle::LocaleDefault,
                 pre_punctuation_spacing: false,
+                dialogue_marker: false,
             },
         );
         assert_eq!(ar.check("كيف?").expect("still fires").replacement, "؟");

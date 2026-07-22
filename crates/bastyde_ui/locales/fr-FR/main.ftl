@@ -1189,3 +1189,5 @@ settings-punctuation-spacing = Espace avant ; : ! ? et »
 settings-punctuation-spacing-hint = La typographie française place une espace fine insécable avant ; ! ? et une espace insécable avant :. Ne s'applique qu'au texte écrit en français.
 settings-punctuation-sample = Votre langue donne
 settings-punctuation-app-hint = Ce que fait chaque projet, sauf s'il adopte ses propres règles dans Projet ▸ Ponctuation.
+settings-punctuation-dialogue = Ouvrir un paragraphe saisi « - » par un tiret de dialogue
+settings-punctuation-dialogue-hint = Pour les langues qui marquent le dialogue par un tiret plutôt que par des guillemets — français, espagnol, russe et d'autres. Ne se déclenche qu'en tout début de paragraphe.

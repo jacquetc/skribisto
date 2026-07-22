@@ -136,6 +136,10 @@ pub(in crate::settings) fn work_punctuation_pane(
         let vm = vm.clone();
         move |v| vm.set_pre_punctuation_spacing(v)
     });
+    let dialogue = bridge(ctx, vm.dialogue_marker(), {
+        let vm = vm.clone();
+        move |v| vm.set_dialogue_marker(v)
+    });
 
     // The quote-style control, bridged the same way but over an index.
     let style_entity = vm.quote_style();
@@ -213,13 +217,13 @@ pub(in crate::settings) fn work_punctuation_pane(
                 .label(tr!(settings_punctuation_spacing()))
                 .enabled(over.clone()),
         )
-        .full_width(hint(tr!(settings_punctuation_spacing_hint())));
-
-    // NOTE: the entity also carries `dialogue_marker`, and this pane deliberately
-    // does not offer it. A dialogue dash has to know that a paragraph just began,
-    // which the stateless rules cannot; it waits on the shared paragraph/clause
-    // subsystem. A switch that persisted a preference nothing acts on would read
-    // as a broken feature rather than an unbuilt one.
+        .full_width(hint(tr!(settings_punctuation_spacing_hint())))
+        .full_width(
+            Checkbox::new(dialogue)
+                .label(tr!(settings_punctuation_dialogue()))
+                .enabled(over.clone()),
+        )
+        .full_width(hint(tr!(settings_punctuation_dialogue_hint())));
 
     pane_frame(
         crumb(

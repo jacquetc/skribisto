@@ -227,6 +227,13 @@ impl TextReplacementSession {
         if self.try_fire(handle, doc, caret) {
             return;
         }
+        // Paragraph rules before the stateless ones. They know strictly more —
+        // a dialogue dash has to be the whole paragraph so far, Spanish's `¿`
+        // spans back to where the clause began — so when both could match, the
+        // one with more context is the one that should decide.
+        if self.try_paragraph(handle, doc, caret) {
+            return;
+        }
         self.try_typography(handle, doc, caret);
     }
 
@@ -407,6 +414,40 @@ impl TextReplacementSession {
             typed: fired.typed,
             revision: doc.content_revision(),
         });
+        self.last_caret.set(Some(handle.cursor_position()));
+        self.last_revision.set(Some(doc.content_revision()));
+        true
+    }
+
+    /// The paragraph-aware rules — a dialogue dash, Spanish's opening marks.
+    ///
+    /// Reads the current paragraph up to the caret, bounded by
+    /// `position_in_block()`. That bound is the whole reason this is cheap and
+    /// safe: it cannot reach into the paragraph above, so there is no scanning
+    /// for newlines, and the read is proportional to the line rather than the
+    /// document.
+    ///
+    /// No pending revert, for the same reason [`try_typography`] leaves none:
+    /// these substitute rather than swallow, so Backspace should delete what is
+    /// there and Ctrl+Z restores the literal in one step.
+    ///
+    /// [`try_typography`]: Self::try_typography
+    fn try_paragraph(&self, handle: &EditorHandle, doc: &TextDocument, caret: usize) -> bool {
+        let in_block = doc.cursor_at(caret).position_in_block();
+        if in_block == 0 {
+            return false;
+        }
+        let Some(block_before) = text_before(doc, caret, in_block) else {
+            return false;
+        };
+        let fired = self.typography.borrow().check_paragraph(&block_before);
+        let Some(fired) = fired else {
+            return false;
+        };
+        let Some(span_start) = caret.checked_sub(fired.replace_chars) else {
+            return false;
+        };
+        self.apply(|| handle.replace_range(span_start, caret, &fired.replacement));
         self.last_caret.set(Some(handle.cursor_position()));
         self.last_revision.set(Some(doc.content_revision()));
         true
@@ -971,6 +1012,132 @@ mod live_editor_tests {
         punctuate(&session, "fr-CA");
         type_text(&handle, &doc, &session, "il dit \"");
         assert_eq!(plain(&doc), "il dit \u{00AB}");
+    }
+
+    // ── The paragraph/clause subsystem ───────────────────────────────────────
+
+    fn spanish(session: &TextReplacementSession) {
+        session.set_locale("es-ES");
+        session.set_punctuation(Some(SmartPunctuationFlags::default()));
+    }
+
+    /// **The rule that cannot work from the tail.** Spanish opens a question
+    /// where the *clause* began, which is most of a line behind the caret.
+    #[test]
+    fn spanish_opens_its_question_at_the_start_of_the_clause() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "Que hora es?");
+        assert_eq!(plain(&doc), "\u{00BF}Que hora es?");
+        assert_eq!(
+            handle.cursor_position(),
+            "\u{00BF}Que hora es?".chars().count(),
+            "the caret stays after the `?` — it must NOT jump back to the mark"
+        );
+    }
+
+    #[test]
+    fn spanish_opens_an_exclamation_too() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "Que bien!");
+        assert_eq!(plain(&doc), "\u{00A1}Que bien!");
+    }
+
+    /// The case that makes this a *clause* scan and not a sentence one: Spanish
+    /// re-opens mid sentence.
+    #[test]
+    fn spanish_reopens_after_a_comma_mid_sentence() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "Si puedes, vienes?");
+        assert_eq!(plain(&doc), "Si puedes, \u{00BF}vienes?");
+    }
+
+    /// A second question in the same paragraph opens its own clause, not the
+    /// first one again.
+    #[test]
+    fn a_second_question_opens_its_own_clause() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "Vienes? Cuando?");
+        assert_eq!(plain(&doc), "\u{00BF}Vienes? \u{00BF}Cuando?");
+    }
+
+    /// A writer who typed the mark themselves must not get a second one.
+    #[test]
+    fn an_already_opened_question_is_left_alone() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "\u{00BF}Vienes?");
+        assert_eq!(plain(&doc), "\u{00BF}Vienes?");
+    }
+
+    /// Neighbours that do NOT invert. Catalan and Portuguese sit next to Spanish
+    /// in the locale table and share its guillemets — inserting `¿` into either
+    /// would be a character no reader of them expects.
+    #[test]
+    fn the_neighbouring_languages_do_not_invert() {
+        for locale in ["ca", "pt-PT", "pt-BR", "fr-FR", "it-IT", "en-US"] {
+            let (doc, handle, session, _tree) = editor("");
+            session.set_locale(locale);
+            session.set_punctuation(Some(SmartPunctuationFlags::default()));
+            type_text(&handle, &doc, &session, "Que tal?");
+            assert_eq!(plain(&doc), "Que tal?", "{locale} must not invert");
+        }
+    }
+
+    /// The dialogue dash opens a paragraph typed as `- `.
+    #[test]
+    fn a_dialogue_dash_opens_the_paragraph() {
+        let (doc, handle, session, _tree) = editor("");
+        session.set_locale("fr-FR");
+        session.set_punctuation(Some(SmartPunctuationFlags {
+            dialogue_marker: true,
+            ..SmartPunctuationFlags::default()
+        }));
+        type_text(&handle, &doc, &session, "- ");
+        assert_eq!(plain(&doc), "\u{2014}\u{00A0}");
+    }
+
+    /// And a hyphen anywhere else is a hyphen. A rule that fired mid-line would
+    /// mangle ordinary prose, which is why it matches the whole paragraph so far
+    /// rather than just the two characters behind the caret.
+    #[test]
+    fn a_hyphen_mid_paragraph_is_left_alone() {
+        let (doc, handle, session, _tree) = editor("");
+        session.set_locale("fr-FR");
+        session.set_punctuation(Some(SmartPunctuationFlags {
+            dialogue_marker: true,
+            ..SmartPunctuationFlags::default()
+        }));
+        type_text(&handle, &doc, &session, "eh bien - ");
+        assert_eq!(plain(&doc), "eh bien - ");
+    }
+
+    /// The dialogue dash IS behind a flag, unlike Spanish's marks — it is a
+    /// convention some books follow and others do not, where writing `¿` is
+    /// simply writing the language.
+    #[test]
+    fn the_dialogue_dash_is_off_unless_asked_for() {
+        let (doc, handle, session, _tree) = editor("");
+        session.set_locale("fr-FR");
+        session.set_punctuation(Some(SmartPunctuationFlags::default()));
+        type_text(&handle, &doc, &session, "- ");
+        assert_eq!(plain(&doc), "- ", "default is off");
+    }
+
+    /// A language with no dialogue dash in its table gets none even when asked.
+    #[test]
+    fn a_language_without_a_dialogue_dash_gets_none() {
+        let (doc, handle, session, _tree) = editor("");
+        session.set_locale("en-US");
+        session.set_punctuation(Some(SmartPunctuationFlags {
+            dialogue_marker: true,
+            ..SmartPunctuationFlags::default()
+        }));
+        type_text(&handle, &doc, &session, "- ");
+        assert_eq!(plain(&doc), "- ");
     }
 
     /// With the project's master switch off, nothing expands at all.

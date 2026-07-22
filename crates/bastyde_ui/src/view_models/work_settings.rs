@@ -145,6 +145,9 @@ impl WorkSettingsViewModel {
     pub fn pre_punctuation_spacing(&self) -> Signal<bool> {
         self.punctuation.pre_punctuation_spacing()
     }
+    pub fn dialogue_marker(&self) -> Signal<bool> {
+        self.punctuation.dialogue_marker()
+    }
 
     /// Write one punctuation switch and persist.
     ///
@@ -192,6 +195,13 @@ impl WorkSettingsViewModel {
             return;
         }
         self.punctuation.set_pre_punctuation_spacing(on);
+        self.punctuation.save(self.stack.get());
+    }
+    pub fn set_dialogue_marker(&self, on: bool) {
+        if self.punctuation.dialogue_marker().get() == on {
+            return;
+        }
+        self.punctuation.set_dialogue_marker(on);
         self.punctuation.save(self.stack.get());
     }
 }

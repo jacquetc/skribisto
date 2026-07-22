@@ -1185,3 +1185,5 @@ settings-punctuation-spacing = Space before ; : ! ? and »
 settings-punctuation-spacing-hint = French typography sets a narrow no-break space before ; ! ? and a full one before :. It applies only to text written in French.
 settings-punctuation-sample = Your language gives
 settings-punctuation-app-hint = What every project does unless it takes rules of its own in Work ▸ Punctuation.
+settings-punctuation-dialogue = Open a paragraph typed as "- " with a dialogue dash
+settings-punctuation-dialogue-hint = For languages that mark speech with a dash rather than quotation marks — French, Spanish, Russian and others. It only fires at the very start of a paragraph.

@@ -67,6 +67,7 @@ fn punctuation_flags(
             quotes: sp.quotes().get(),
             quote_style: sp.quote_style().get(),
             pre_punctuation_spacing: sp.pre_punctuation_spacing().get(),
+            dialogue_marker: sp.dialogue_marker().get(),
         };
     }
     SmartPunctuationFlags {
@@ -75,6 +76,7 @@ fn punctuation_flags(
         quotes: app.punct_quotes().get(),
         quote_style: app.punct_quote_style().get(),
         pre_punctuation_spacing: app.punct_spacing().get(),
+        dialogue_marker: app.punct_dialogue().get(),
     }
 }
 use crate::tabs::{ContentTab, tab_pane};

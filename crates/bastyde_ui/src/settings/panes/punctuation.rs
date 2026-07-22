@@ -89,7 +89,9 @@ pub(in crate::settings) fn punctuation_pane(
             .text(sample),
         )
         .full_width(Checkbox::new(vm.punct_spacing()).label(tr!(settings_punctuation_spacing())))
-        .full_width(hint(tr!(settings_punctuation_spacing_hint())));
+        .full_width(hint(tr!(settings_punctuation_spacing_hint())))
+        .full_width(Checkbox::new(vm.punct_dialogue()).label(tr!(settings_punctuation_dialogue())))
+        .full_width(hint(tr!(settings_punctuation_dialogue_hint())));
 
     pane_frame(
         crumb(
