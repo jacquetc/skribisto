@@ -37,6 +37,8 @@
 //! Triggers match case-insensitively, and the replacement follows the case the
 //! writer typed — Word's three-state rule. See [`apply_case`].
 
+use skribisto_model::casing;
+
 use crate::models::TextReplacementRuleRow;
 
 /// A fired rule: what to remove and what to put in its place.
@@ -76,6 +78,14 @@ pub struct TextReplacementEngine {
     rules: Vec<Rule>,
     /// Character count of the longest trigger; 0 when there are no rules.
     longest: usize,
+    /// The BCP-47 tag every case operation is resolved against.
+    ///
+    /// Turkish and Azeri need it: they treat the dotted and dotless I as
+    /// different letters, so a default `to_lowercase` both mis-folds the trigger
+    /// key (leaving a combining dot that never compares equal to a typed `i`)
+    /// and mis-cases the replacement. See [`skribisto_model::casing`]. Empty is
+    /// "no locale", which is exactly the default mapping.
+    locale: String,
 }
 
 impl TextReplacementEngine {
@@ -88,6 +98,13 @@ impl TextReplacementEngine {
     /// for a lexicon that arrived from disk (a hand-edited `.skrib`, or an
     /// import that predates the check).
     pub fn from_rules(rows: &[TextReplacementRuleRow]) -> Self {
+        Self::from_rules_for_locale(rows, "")
+    }
+
+    /// As [`from_rules`](Self::from_rules), for a document written in `locale`
+    /// (a BCP-47 tag; `""` for none). The locale decides how triggers are folded
+    /// for matching and how case is propagated onto the replacement.
+    pub fn from_rules_for_locale(rows: &[TextReplacementRuleRow], locale: &str) -> Self {
         let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
         let mut rules: Vec<Rule> = Vec::new();
         for row in rows {
@@ -98,7 +115,7 @@ impl TextReplacementEngine {
             if trimmed.is_empty() {
                 continue;
             }
-            let key = trimmed.to_lowercase();
+            let key = casing::fold_key(trimmed, locale);
             if !seen.insert(key.clone()) {
                 continue;
             }
@@ -110,7 +127,7 @@ impl TextReplacementEngine {
         }
         rules.sort_by(|a, b| b.key_chars.cmp(&a.key_chars).then_with(|| a.key.cmp(&b.key)));
         let longest = rules.first().map(|r| r.key_chars).unwrap_or(0);
-        Self { rules, longest }
+        Self { rules, longest, locale: locale.to_string() }
     }
 
     /// Whether there is anything to match at all. The session skips the whole
@@ -163,7 +180,7 @@ impl TextReplacementEngine {
             }
             let start = typed.len() - rule.key_chars;
             let candidate: String = typed[start..].iter().collect();
-            if candidate.to_lowercase() != rule.key {
+            if casing::fold_key(&candidate, &self.locale) != rule.key {
                 continue;
             }
             // The trigger has to START a word too, or "fumbl " would expand a
@@ -174,7 +191,7 @@ impl TextReplacementEngine {
             }
             return Some(Fired {
                 trigger_chars: rule.key_chars,
-                replacement: apply_case(&rule.replacement, &candidate),
+                replacement: apply_case(&rule.replacement, &candidate, &self.locale),
                 typed: candidate,
             });
         }
@@ -204,13 +221,13 @@ fn is_delimiter(c: char) -> bool {
 /// That is correct everywhere except Turkish, where `I` should lowercase to `ı`
 /// rather than `i`; locale-tailored casing belongs with the typography rules
 /// rather than here, where it would need a locale this engine is not given.
-fn apply_case(replacement: &str, typed: &str) -> String {
+fn apply_case(replacement: &str, typed: &str, locale: &str) -> String {
     if replacement.chars().any(char::is_uppercase) {
         return replacement.to_string();
     }
     match classify(typed) {
-        TypedCase::Capitalized => capitalize_first(replacement),
-        TypedCase::Upper => replacement.to_uppercase(),
+        TypedCase::Capitalized => casing::capitalize_first(replacement, locale),
+        TypedCase::Upper => casing::to_uppercase(replacement, locale),
         TypedCase::AsTyped => replacement.to_string(),
     }
 }
@@ -242,18 +259,6 @@ fn classify(typed: &str) -> TypedCase {
         return TypedCase::Capitalized;
     }
     TypedCase::AsTyped
-}
-
-/// Uppercase the first character, leaving the rest alone.
-///
-/// Goes through `to_uppercase()` rather than an ASCII shortcut because one
-/// character can uppercase into several (German `ß` → `SS`).
-fn capitalize_first(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        None => String::new(),
-        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-    }
 }
 
 #[cfg(test)]
@@ -366,13 +371,64 @@ mod tests {
         assert_eq!(fire(&e, "a -- ").unwrap().replacement, "—");
     }
 
-    /// `capitalize_first` must go through Unicode uppercasing, not an ASCII
-    /// shortcut — one character can become two.
+    /// Unicode expansion still applies to the replacement — one character can
+    /// uppercase into two. (`capitalize_first` itself now lives in
+    /// `skribisto_model::casing` and is tested exhaustively there; this is the
+    /// engine-level proof that the path reaches it.)
     #[test]
     fn capitalizing_handles_a_character_that_uppercases_into_two() {
-        assert_eq!(capitalize_first("ßeta"), "SSeta");
-        assert_eq!(capitalize_first("étoile"), "Étoile");
-        assert_eq!(capitalize_first(""), "");
+        let e = engine(&[rule("bt", "ßeta")]);
+        assert_eq!(fire(&e, "Bt ").unwrap().replacement, "SSeta");
+    }
+
+    // ── Turkish: the dotted/dotless I ───────────────────────────────────────
+
+    /// Turkish treats the dotted and dotless I as different letters, so a
+    /// default `to_lowercase` leaves a combining dot on `İ` that never compares
+    /// equal to a typed `i` — the trigger would silently never match. The
+    /// engine folds through the locale to close that.
+    #[test]
+    fn a_turkish_trigger_matches_across_both_capital_is() {
+        let e = TextReplacementEngine::from_rules_for_locale(
+            &[rule("ist", "İstanbul")],
+            "tr-TR",
+        );
+        assert_eq!(fire(&e, "ist ").unwrap().replacement, "İstanbul");
+        assert_eq!(
+            fire(&e, "İST ").unwrap().replacement,
+            "İstanbul",
+            "the dotted capital must fold to the same key as `i`"
+        );
+    }
+
+    /// Case propagation follows the locale too: an all-lowercase replacement
+    /// shouted in Turkish gains DOTTED capitals.
+    ///
+    /// And the negative half is the more interesting one. Shouting `ii` in
+    /// Turkish is `İİ`, not `II` — `II` is the uppercase of the *dotless* `ıı`,
+    /// a different word — so `II` must NOT fire this rule. Under the default
+    /// mapping it would, which is precisely the silent mis-expansion the
+    /// tailoring exists to prevent.
+    #[test]
+    fn turkish_case_propagation_uses_the_dotted_capital() {
+        let e = TextReplacementEngine::from_rules_for_locale(&[rule("ii", "iyi")], "tr");
+        assert_eq!(fire(&e, "İİ ").unwrap().replacement, "İYİ");
+        assert_eq!(fire(&e, "İi ").unwrap().replacement, "İyi");
+        assert_eq!(
+            fire(&e, "II "),
+            None,
+            "`II` is the uppercase of `ıı` in Turkish — a different word"
+        );
+    }
+
+    /// And the tailoring must NOT leak anywhere else — applying it to English
+    /// would be its own bug.
+    #[test]
+    fn the_turkish_tailoring_does_not_leak_into_other_locales() {
+        let e = TextReplacementEngine::from_rules_for_locale(&[rule("ii", "iyi")], "en-US");
+        assert_eq!(fire(&e, "II ").unwrap().replacement, "IYI");
+        let d = engine(&[rule("ii", "iyi")]);
+        assert_eq!(fire(&d, "II ").unwrap().replacement, "IYI", "no locale = default");
     }
 
     // ── Longest match wins ──────────────────────────────────────────────────

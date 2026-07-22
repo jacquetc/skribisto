@@ -24,6 +24,7 @@ use common::entities::ContentRole::*;
 
 /// Which language a scene is written in: the per-item → Work resolution chain,
 /// plus the `dict_language` tag-list grammar shared by search folding and spell-checking.
+pub mod casing;
 pub mod language;
 pub mod mentions;
 
