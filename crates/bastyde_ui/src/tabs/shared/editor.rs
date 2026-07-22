@@ -86,6 +86,13 @@ pub const HEADING_PROSE_MIN_LINES: u32 = 1;
 /// (`AlwaysOff`); the scene tab's outer `ScrollArea` scrolls the whole page.
 /// [`CenterColumnFlowing`] gives it a bounded width (so it wraps at the column
 /// cap) but takes its intrinsic height (so the page grows with the prose).
+// Many parameters, and each is a distinct thing this surface has to be handed:
+// the document, its typography, the dirty callback, and the optional sessions
+// (find, spell, replace-while-typing) it drives. Bundling them into a config
+// struct would add a type whose only job is to be destructured immediately,
+// and would hide which call sites opt into which session — the thing worth
+// seeing at a glance. Allowed rather than restructured.
+#[allow(clippy::too_many_arguments)]
 pub fn writing_column(
     doc: &TextDocument,
     column_width: &Signal<f32>,
@@ -373,6 +380,13 @@ pub enum SynopsisFit {
 /// The bordered synopsis editor box (caller sizes/centres it). User edits flip the
 /// tab's dirty flag via `on_change`. `split` adds the caret-aware "Split scene" action
 /// to its context menu — in a Full Synopsis stream the synopsis is the text being cut.
+// Many parameters, and each is a distinct thing this surface has to be handed:
+// the document, its typography, the dirty callback, and the optional sessions
+// (find, spell, replace-while-typing) it drives. Bundling them into a config
+// struct would add a type whose only job is to be destructured immediately,
+// and would hide which call sites opt into which session — the thing worth
+// seeing at a glance. Allowed rather than restructured.
+#[allow(clippy::too_many_arguments)]
 pub fn synopsis_editor(
     doc: &TextDocument,
     typo: &EditorTypography,
@@ -464,6 +478,13 @@ pub fn synopsis_editor(
 /// `Expand` measures its child with an unspecified height (a ~100 px fallback), so
 /// the editor never learns the box and overflows — vertically centered, scrollbar
 /// pinned. Both call sites (the card and the modal) wrap this in a `FixedSize`.
+// Many parameters, and each is a distinct thing this surface has to be handed:
+// the document, its typography, the dirty callback, and the optional sessions
+// (find, spell, replace-while-typing) it drives. Bundling them into a config
+// struct would add a type whose only job is to be destructured immediately,
+// and would hide which call sites opt into which session — the thing worth
+// seeing at a glance. Allowed rather than restructured.
+#[allow(clippy::too_many_arguments)]
 pub fn card_synopsis_editor(
     doc: TextDocument,
     typo: EditorTypography,
@@ -651,6 +672,8 @@ pub fn synopsis_section(
 /// [`CenterColumnFlowing`], *not* an `HStack` + `Spacer` — an alignment widget measures
 /// its child with an **unbounded** proposal, so the `MaxSize` would report its full cap
 /// and the editor would never wrap or shrink to fit.
+// Same shape as the builders above — see the note on `writing_column`.
+#[allow(clippy::too_many_arguments)]
 pub fn synopsis_column(
     doc: &TextDocument,
     column_width: &Signal<f32>,
@@ -1546,7 +1569,12 @@ mod frame_loop_tests {
 
     /// A real writing column over a real document, with the session wired the
     /// way the app wires it — through `writing_column`, not by hand.
-    fn column() -> (TextDocument, EditorHandle, Rc<TextReplacementSession>, WidgetTree) {
+    fn column() -> (
+        TextDocument,
+        EditorHandle,
+        Rc<TextReplacementSession>,
+        WidgetTree,
+    ) {
         let doc = TextDocument::new();
         let ctx = Rc::new(AppContext::new());
         let work = SingleWork::new(ctx.clone());
@@ -1581,7 +1609,9 @@ mod frame_loop_tests {
         let mut tree = WidgetTree::new();
         tree.add(col);
         tree.layout(SizeProposal::exact(900.0, 600.0));
-        let handle = find.editor_handle().expect("writing_column attached its handle");
+        let handle = find
+            .editor_handle()
+            .expect("writing_column attached its handle");
         (doc, handle, session, tree)
     }
 

@@ -125,9 +125,17 @@ impl TextReplacementEngine {
                 replacement: row.replacement.clone(),
             });
         }
-        rules.sort_by(|a, b| b.key_chars.cmp(&a.key_chars).then_with(|| a.key.cmp(&b.key)));
+        rules.sort_by(|a, b| {
+            b.key_chars
+                .cmp(&a.key_chars)
+                .then_with(|| a.key.cmp(&b.key))
+        });
         let longest = rules.first().map(|r| r.key_chars).unwrap_or(0);
-        Self { rules, longest, locale: locale.to_string() }
+        Self {
+            rules,
+            longest,
+            locale: locale.to_string(),
+        }
     }
 
     /// Whether there is anything to match at all. The session skips the whole
@@ -389,10 +397,7 @@ mod tests {
     /// engine folds through the locale to close that.
     #[test]
     fn a_turkish_trigger_matches_across_both_capital_is() {
-        let e = TextReplacementEngine::from_rules_for_locale(
-            &[rule("ist", "İstanbul")],
-            "tr-TR",
-        );
+        let e = TextReplacementEngine::from_rules_for_locale(&[rule("ist", "İstanbul")], "tr-TR");
         assert_eq!(fire(&e, "ist ").unwrap().replacement, "İstanbul");
         assert_eq!(
             fire(&e, "İST ").unwrap().replacement,
@@ -428,7 +433,11 @@ mod tests {
         let e = TextReplacementEngine::from_rules_for_locale(&[rule("ii", "iyi")], "en-US");
         assert_eq!(fire(&e, "II ").unwrap().replacement, "IYI");
         let d = engine(&[rule("ii", "iyi")]);
-        assert_eq!(fire(&d, "II ").unwrap().replacement, "IYI", "no locale = default");
+        assert_eq!(
+            fire(&d, "II ").unwrap().replacement,
+            "IYI",
+            "no locale = default"
+        );
     }
 
     // ── Longest match wins ──────────────────────────────────────────────────
@@ -523,14 +532,8 @@ mod tests {
     #[test]
     fn a_non_latin_trigger_fires_and_propagates_case() {
         let e = engine(&[rule("привет", "здравствуйте")]);
-        assert_eq!(
-            fire(&e, "привет ").unwrap().replacement,
-            "здравствуйте"
-        );
-        assert_eq!(
-            fire(&e, "Привет ").unwrap().replacement,
-            "Здравствуйте"
-        );
+        assert_eq!(fire(&e, "привет ").unwrap().replacement, "здравствуйте");
+        assert_eq!(fire(&e, "Привет ").unwrap().replacement, "Здравствуйте");
     }
 
     /// A CJK full stop is punctuation, so it fires the rule; a CJK ideograph is

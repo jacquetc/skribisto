@@ -36,15 +36,18 @@ use std::time::Duration;
 use bastyde::prelude::*;
 use bastyde::widgets::Toast;
 
-use crate::spellcheck::dictionary_registry::{self, DictionaryEntry, Source};
 use crate::models::{DictionarySettingsService, InstalledDictionariesModel, license_hash};
+use crate::spellcheck::dictionary_registry::{self, DictionaryEntry, Source};
 
 /// One toast surface for the whole download activity, updated in place by id.
 const DICT_TOAST_ID: &str = "dict.download";
 
 /// A short User-Agent so a raw-file host (GitHub, grammalecte) sees a named client.
 fn user_agent() -> String {
-    format!("Skribisto/{} (dictionary downloader)", env!("CARGO_PKG_VERSION"))
+    format!(
+        "Skribisto/{} (dictionary downloader)",
+        env!("CARGO_PKG_VERSION")
+    )
 }
 
 use crate::spellcheck::downloaded_dictionaries_dir as dictionaries_dir;
@@ -180,7 +183,9 @@ impl DictionariesViewModel {
         if !self.has_accepted(id) {
             // A caller that reached here without the licence modal (a bug, or a future scripted
             // path) is refused, not silently served.
-            ctx.show_toast(Toast::warning(tr!(dict_accept_first(name = display_of(id)))));
+            ctx.show_toast(Toast::warning(tr!(dict_accept_first(
+                name = display_of(id)
+            ))));
             return;
         }
         self.inner.queue.borrow_mut().push_back(id.to_string());
@@ -343,7 +348,9 @@ impl DictionariesViewModel {
     }
 
     fn bump_changed(&self) {
-        self.inner.changed.set(self.inner.changed.get().wrapping_add(1));
+        self.inner
+            .changed
+            .set(self.inner.changed.get().wrapping_add(1));
     }
 
     fn set_downloading(&self, id: &str, on: bool) {
@@ -371,10 +378,7 @@ fn display_of(id: &str) -> String {
 /// Pure over an `is_installed` predicate so it is unit-testable without a filesystem. A tag is
 /// "missing" only when it resolves to a **known, downloadable** registry id that isn't
 /// installed — an unrecognised tag names no dictionary to offer.
-pub fn missing_from(
-    tags: &BTreeSet<String>,
-    is_installed: impl Fn(&str) -> bool,
-) -> Vec<String> {
+pub fn missing_from(tags: &BTreeSet<String>, is_installed: impl Fn(&str) -> bool) -> Vec<String> {
     let mut out = Vec::new();
     let mut seen = BTreeSet::new();
     for tag in tags {
@@ -555,13 +559,19 @@ mod tests {
         std::fs::create_dir_all(&dest).unwrap();
 
         copy_pair("fr-x", &aff_src, &dic_src, &dest).unwrap();
-        assert_eq!(std::fs::read(dest.join("fr-x.aff")).unwrap(), b"SET UTF-8\n");
+        assert_eq!(
+            std::fs::read(dest.join("fr-x.aff")).unwrap(),
+            b"SET UTF-8\n"
+        );
         assert_eq!(std::fs::read(dest.join("fr-x.dic")).unwrap(), b"1\nhello\n");
 
         // A missing .dic source: the read fails before any write, so nothing lands.
         let bad = copy_pair("gg-x", &aff_src, &dir.join("nope.dic"), &dest);
         assert!(bad.is_err());
-        assert!(!dest.join("gg-x.aff").exists(), "nothing written on a source read error");
+        assert!(
+            !dest.join("gg-x.aff").exists(),
+            "nothing written on a source read error"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 

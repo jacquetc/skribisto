@@ -16,7 +16,10 @@ use super::super::*;
 /// changes — Reset — back into the picker). Self-populates from the shared
 /// typesetter's real font database, including the bundled writing serifs, so
 /// every offered name renders.
-pub(in crate::settings) fn font_picker(ctx: &mut BuildContext, persisted: Signal<String>) -> impl Widget {
+pub(in crate::settings) fn font_picker(
+    ctx: &mut BuildContext,
+    persisted: Signal<String>,
+) -> impl Widget {
     let selection: Signal<Option<String>> = Signal::new(Some(persisted.get()));
     {
         let selection = selection.clone();

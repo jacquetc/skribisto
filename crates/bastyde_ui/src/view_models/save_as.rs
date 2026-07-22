@@ -217,7 +217,10 @@ impl SaveAsViewModel {
                 // This window now points at the freshly-written output path with
                 // no `LoadWork`/`CloseWork` in between, so drop whatever claim it
                 // held before (T1-5's `replace_claim`, not a bare additive `claim`).
-                crate::shell::open_registry::replace_claim(&output_path, &self.single_work.title().get());
+                crate::shell::open_registry::replace_claim(
+                    &output_path,
+                    &self.single_work.title().get(),
+                );
                 ctx.show_toast(Toast::success(tr!(saved_as(target = output_path))));
             }
             Err(e) => {

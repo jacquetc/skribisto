@@ -22,7 +22,11 @@ use text_document::{DjotImportOptions, djot_to_plain_text};
 const SCENES: usize = 4000;
 
 fn scene_prose(i: usize) -> String {
-    let hit = if i % 10 == 0 { "Aurélien" } else { "Elena" };
+    let hit = if i.is_multiple_of(10) {
+        "Aurélien"
+    } else {
+        "Elena"
+    };
     format!(
         "{hit} traversa la forêt où l'ombre s'étirait entre les *hêtres*, et le vent \
          portait l'odeur du sel. Elle songeait à la _promesse_ faite au bord de l'eau, \

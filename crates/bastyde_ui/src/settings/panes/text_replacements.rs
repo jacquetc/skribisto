@@ -23,7 +23,7 @@ use bastyde::tokens::{BorderRole, SurfaceRole};
 use bastyde::widgets::{
     BuiltInIcons, Button, ButtonVariant, Center, Expand, FixedSize, HStack, IconButton,
     IconLocation, IconWidget, ListView, MaxSize, MinSize, Padding, Panel, SearchField, Spacer,
-    Switcher, TextInput, TextWidget, Toast, Toggle, ValidationState, VStack,
+    Switcher, TextInput, TextWidget, Toast, Toggle, VStack, ValidationState,
 };
 
 use crate::models::TextReplacementRuleRow;
@@ -115,13 +115,16 @@ fn active_body(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> im
     }
 
     let list_vm = vm.clone();
-    let list = ListView::from_source(filtered, move |_i, row: &TextReplacementRuleRow, _selected| {
-        Box::new(RuleRowView {
-            vm: list_vm.clone(),
-            row: row.clone(),
-            root_child: None,
-        })
-    })
+    let list = ListView::from_source(
+        filtered,
+        move |_i, row: &TextReplacementRuleRow, _selected| {
+            Box::new(RuleRowView {
+                vm: list_vm.clone(),
+                row: row.clone(),
+                root_child: None,
+            })
+        },
+    )
     .auto_item_height(46.0);
 
     let empty_idx = {
@@ -167,9 +170,9 @@ fn add_row(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> impl W
         let validation = validation.clone();
         ctx.effect(&trigger, move |typed| {
             validation.set(match vm.duplicate_trigger(typed, None) {
-                Some(existing) => ValidationState::Warning(tr!(settings_text_repl_duplicate(
-                    trigger = existing
-                ))),
+                Some(existing) => {
+                    ValidationState::Warning(tr!(settings_text_repl_duplicate(trigger = existing)))
+                }
                 None => ValidationState::None,
             });
         });
@@ -220,7 +223,9 @@ fn add_row(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> impl W
 
     let can_add = {
         let vm = vm.clone();
-        trigger.zip(&vm.changed_signal()).map(move |(t, _)| vm.can_add(t))
+        trigger
+            .zip(&vm.changed_signal())
+            .map(move |(t, _)| vm.can_add(t))
     };
     let add_btn = Button::new(tr!(settings_text_repl_add()))
         .variant(ButtonVariant::Filled)
@@ -229,7 +234,11 @@ fn add_row(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> impl W
 
     HStack::new()
         .spacing(10.0)
-        .child(FixedSize::new().width(TRIGGER_FIELD_WIDTH).child(trigger_field))
+        .child(
+            FixedSize::new()
+                .width(TRIGGER_FIELD_WIDTH)
+                .child(trigger_field),
+        )
         .child(TextWidget::new(lit!("→")).color(TextRole::Secondary))
         .child(Expand::horizontal().child(replacement_field))
         .child(add_btn)
@@ -249,7 +258,11 @@ fn toolbar_row(vm: &TextReplacementRulesViewModel, query: Signal<String>) -> imp
             MaxSize::width(FILTER_FIELD_MAX_WIDTH)
                 .child(SearchField::new(query).placeholder(tr!(settings_text_repl_filter()))),
         )
-        .child(TextWidget::new(lit!("")).text(count).color(TextRole::Secondary))
+        .child(
+            TextWidget::new(lit!(""))
+                .text(count)
+                .color(TextRole::Secondary),
+        )
         .child(Expand::horizontal().child(Spacer::new()))
         .child(import_button(vm))
         .child(export_button(vm))
@@ -264,7 +277,7 @@ fn import_button(vm: &TextReplacementRulesViewModel) -> impl Widget {
             let vm = vm.clone();
             let req = FileDialogRequest::pick_file()
                 .title(tr!(settings_text_repl_import()))
-                .add_filter(&tr!(settings_text_repl_csv_filter()).resolve_now(), &["csv"]);
+                .add_filter(tr!(settings_text_repl_csv_filter()).resolve_now(), &["csv"]);
             let _ = ctx.pick_file(req, move |res, c| {
                 if let FileDialogResult::File(Some(path)) = res {
                     match vm.import_from(&path) {
@@ -296,7 +309,7 @@ fn export_button(vm: &TextReplacementRulesViewModel) -> impl Widget {
             let req = FileDialogRequest::save_file()
                 .title(tr!(settings_text_repl_export()))
                 .default_file_name("text-replacements.csv".to_string())
-                .add_filter(&tr!(settings_text_repl_csv_filter()).resolve_now(), &["csv"]);
+                .add_filter(tr!(settings_text_repl_csv_filter()).resolve_now(), &["csv"]);
             let _ = ctx.save_file(req, move |res, c| {
                 if let FileDialogResult::Saved(Some(mut path)) = res {
                     if path.extension().and_then(|e| e.to_str()) != Some("csv") {
@@ -332,7 +345,9 @@ struct RuleRowView {
 
 impl std::fmt::Debug for RuleRowView {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("RuleRowView").field("trigger", &self.row.trigger).finish()
+        f.debug_struct("RuleRowView")
+            .field("trigger", &self.row.trigger)
+            .finish()
     }
 }
 
@@ -366,7 +381,11 @@ impl Widget for RuleRowView {
             let sig = trigger.clone();
             let commit = move || {
                 let typed = sig.get();
-                let current = vm.rows().into_iter().find(|r| r.id == id).map(|r| r.trigger);
+                let current = vm
+                    .rows()
+                    .into_iter()
+                    .find(|r| r.id == id)
+                    .map(|r| r.trigger);
                 if current.as_deref() == Some(typed.as_str()) {
                     return;
                 }
@@ -395,7 +414,11 @@ impl Widget for RuleRowView {
             let sig = replacement.clone();
             let commit = move || {
                 let typed = sig.get();
-                let current = vm.rows().into_iter().find(|r| r.id == id).map(|r| r.replacement);
+                let current = vm
+                    .rows()
+                    .into_iter()
+                    .find(|r| r.id == id)
+                    .map(|r| r.replacement);
                 // Blank IS meaningful here — it makes the rule delete the trigger outright.
                 if current.as_deref() != Some(typed.as_str()) {
                     vm.set_replacement(id, &typed);
@@ -414,7 +437,11 @@ impl Widget for RuleRowView {
         {
             let vm = self.vm.clone();
             ctx.effect(&enabled, move |on| {
-                let current = vm.rows().into_iter().find(|r| r.id == id).map(|r| r.enabled);
+                let current = vm
+                    .rows()
+                    .into_iter()
+                    .find(|r| r.id == id)
+                    .map(|r| r.enabled);
                 if current != Some(*on) {
                     vm.set_rule_enabled(id, *on);
                 }
@@ -431,12 +458,16 @@ impl Widget for RuleRowView {
             let trigger_label = self.row.trigger.clone();
             IconButton::clear()
                 .embedded()
-                .tooltip(tr!(settings_text_repl_delete(trigger = trigger_label.clone())))
+                .tooltip(tr!(settings_text_repl_delete(
+                    trigger = trigger_label.clone()
+                )))
                 .on_activate_fn(move |c| {
                     vm.delete(&[id]);
                     c.show_toast(
-                        Toast::info(tr!(settings_text_repl_deleted(trigger = trigger_label.clone())))
-                            .id("text_repl.deleted"),
+                        Toast::info(tr!(settings_text_repl_deleted(
+                            trigger = trigger_label.clone()
+                        )))
+                        .id("text_repl.deleted"),
                     );
                 })
         };
@@ -481,7 +512,6 @@ fn empty_state() -> impl Widget {
         ),
     )
 }
-
 
 /// Headless layout tests for the pane and its rows.
 ///
@@ -599,7 +629,10 @@ mod tests {
         use bastyde::core::accesskit::Role;
         let (ctx, vm) = vm(enabled);
         let mut tree = crate::test_support::tree_with_settings(&ctx);
-        tree.add(PaneHost { vm: Some(vm), root_child: None });
+        tree.add(PaneHost {
+            vm: Some(vm),
+            root_child: None,
+        });
         tree.layout(SizeProposal::exact(760.0, 520.0));
         let update = tree.sync_accessibility();
         update
@@ -624,7 +657,10 @@ mod tests {
         use bastyde::core::accesskit::Role;
         let (ctx, vm) = vm(true);
         let mut tree = crate::test_support::tree_with_settings(&ctx);
-        tree.add(PaneHost { vm: Some(vm.clone()), root_child: None });
+        tree.add(PaneHost {
+            vm: Some(vm.clone()),
+            root_child: None,
+        });
         tree.layout(SizeProposal::exact(760.0, 520.0));
 
         let inputs = |tree: &mut bastyde::core::widget_tree::WidgetTree| {
@@ -634,7 +670,10 @@ mod tests {
                 .filter(|(_, n)| n.role() == Role::TextInput)
                 .count()
         };
-        assert!(inputs(&mut tree) >= 2, "starts on, so the add row is present");
+        assert!(
+            inputs(&mut tree) >= 2,
+            "starts on, so the add row is present"
+        );
 
         vm.set_enabled(false);
         tree.layout(SizeProposal::exact(760.0, 520.0));

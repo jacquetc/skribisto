@@ -13,7 +13,10 @@ use super::super::*;
 /// counts with `Auto`) and whether the status bar shows characters beside words.
 /// The 4-variant method is bridged to the `RadioGroup`'s `usize` selection with two
 /// guarded effects — the shape `work_structure_pane` uses for `ChapterMode`.
-pub(in crate::settings) fn goals_pane(ctx: &mut BuildContext, vm: &SettingsViewModel) -> impl Widget {
+pub(in crate::settings) fn goals_pane(
+    ctx: &mut BuildContext,
+    vm: &SettingsViewModel,
+) -> impl Widget {
     let method = vm.counting_method();
     let index: Signal<usize> = Signal::new(method_to_index(method.get()));
     {
@@ -44,16 +47,14 @@ pub(in crate::settings) fn goals_pane(ctx: &mut BuildContext, vm: &SettingsViewM
             RadioGroup::new()
                 .radio(RadioButton::new(0, index.clone()).label(tr!(settings_counting_auto())))
                 .radio(
-                    RadioButton::new(1, index.clone())
-                        .label(tr!(settings_counting_whitespace())),
+                    RadioButton::new(1, index.clone()).label(tr!(settings_counting_whitespace())),
                 )
                 .radio(
                     RadioButton::new(2, index.clone())
                         .label(tr!(settings_counting_unicode_words())),
                 )
                 .radio(
-                    RadioButton::new(3, index.clone())
-                        .label(tr!(settings_counting_cjk_hybrid())),
+                    RadioButton::new(3, index.clone()).label(tr!(settings_counting_cjk_hybrid())),
                 ),
         )
         .full_width(hint(tr!(settings_counting_hint())))

@@ -397,7 +397,11 @@ impl OutlineViewModel {
     pub fn recommendations_for_key(&self, anchor: Option<BinderTreeKey>) -> Vec<Recommendation> {
         match anchor {
             Some(key @ BinderTreeKey::Item(_)) => {
-                match self.model.item_id_of(&key).and_then(|i| Some((i, self.item_dto(i)?))) {
+                match self
+                    .model
+                    .item_id_of(&key)
+                    .and_then(|i| Some((i, self.item_dto(i)?)))
+                {
                     Some((i, dto)) => {
                         let mut recs = skribisto_model::recommendations(&dto.role, &dto.sub_role);
                         self.gate_book_end(i, &mut recs);
@@ -909,8 +913,7 @@ impl OutlineViewModel {
         if !recs.iter().any(|r| r.create_type.closes_book()) {
             return;
         }
-        let Some((binder, _, _)) = binder_ops::locate(&self.app_ctx, &self.ids, anchor_item)
-        else {
+        let Some((binder, _, _)) = binder_ops::locate(&self.app_ctx, &self.ids, anchor_item) else {
             return;
         };
         let (order, meta) = self.ordered_meta(binder);
@@ -1028,9 +1031,7 @@ pub(crate) fn apply_move(
 }
 
 #[cfg(test)]
-mod tests {    /// Space-separated in the tests, a list in storage — one parser, shared.
-    use skribisto_model::language::parse_legacy_list as tags;
-
+mod tests {
     use super::*;
     #[cfg(feature = "mocks")]
     use bastyde::data::TreeDataSource; // brings `visible_count` into scope
@@ -1465,18 +1466,14 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
             // The chapter folder holds two scenes, so collapsing it into a flat chapter
             // is blocked...
             assert_eq!(
-                outline.demote_blocked_children(
-                    key_of(&outline, chapter),
-                    PromoteTarget::FlatChapter
-                ),
+                outline
+                    .demote_blocked_children(key_of(&outline, chapter), PromoteTarget::FlatChapter),
                 2
             );
             // ...but becoming another *folder* is not: nothing is being collapsed.
             assert_eq!(
-                outline.demote_blocked_children(
-                    key_of(&outline, chapter),
-                    PromoteTarget::PartFolder
-                ),
+                outline
+                    .demote_blocked_children(key_of(&outline, chapter), PromoteTarget::PartFolder),
                 0
             );
             // A leaf scene has no container to empty.
@@ -1517,8 +1514,9 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
                 1,
                 2,
             );
-            let blocked =
-                |o: &OutlineViewModel| o.demote_blocked_children(key_of(o, chapter), PromoteTarget::FlatChapter);
+            let blocked = |o: &OutlineViewModel| {
+                o.demote_blocked_children(key_of(o, chapter), PromoteTarget::FlatChapter)
+            };
             assert_eq!(blocked(&outline), 2);
 
             // Trash one: the other still blocks, and the count is now honest about it.
@@ -1585,7 +1583,10 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
 
             // While the chapter is still a folder, the scene restores in place as before.
             let res = restore();
-            assert!(!res.orphaned, "a live folder is a valid place to restore into");
+            assert!(
+                !res.orphaned,
+                "a live folder is a valid place to restore into"
+            );
             assert_eq!(res.restored_count, 1);
             assert!(outline.item_dto(scene).unwrap().activated);
             assert!(infos().is_empty(), "a consumed TrashInfo is unlinked");
@@ -1593,7 +1594,10 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
             // Now trash it again and collapse the chapter under it.
             outline.trash_keys(&[key_of(&outline, scene)]);
             outline.promote(key_of(&outline, chapter), PromoteTarget::FlatChapter);
-            assert_eq!(outline.item_dto(chapter).unwrap().role, BinderItemRole::Item);
+            assert_eq!(
+                outline.item_dto(chapter).unwrap().role,
+                BinderItemRole::Item
+            );
 
             let res = restore();
             assert!(
@@ -1718,7 +1722,10 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
             // Collect descendants by type name — locale-independent, unlike hunting the
             // OK/Cancel buttons by their translated label.
             fn collect(tree: &WidgetTree, root: WidgetId, needle: &str, out: &mut Vec<WidgetId>) {
-                if tree.widget_type_name(root).is_some_and(|t| t.contains(needle)) {
+                if tree
+                    .widget_type_name(root)
+                    .is_some_and(|t| t.contains(needle))
+                {
                     out.push(root);
                 }
                 for c in tree.children(root) {
@@ -1848,7 +1855,11 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
                 let (outline, binder) = seed();
                 outline.add_recommended(None, &rec(create_type, Relation::Child));
                 let created = order_of(&outline, binder);
-                assert_eq!(created.len(), 1, "{create_type:?} must create exactly one row");
+                assert_eq!(
+                    created.len(),
+                    1,
+                    "{create_type:?} must create exactly one row"
+                );
                 let title = outline.item_dto(created[0]).unwrap().title;
                 assert!(
                     !title.is_empty(),
@@ -1857,8 +1868,7 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
                 // The row carries this type's own default, resolved to data at
                 // creation — not a title derived from `role`, which collapses six
                 // distinct types onto one string.
-                let want: String =
-                    crate::binder::create_labels::default_title(create_type).into();
+                let want: String = crate::binder::create_labels::default_title(create_type).into();
                 assert_eq!(
                     title, want,
                     "{create_type:?} must be titled from its own vocabulary"
@@ -2017,21 +2027,57 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
     mod apply_language {
         use super::recommend::{seed, seed_item};
         use super::*;
+        /// Space-separated in the tests, a list in storage — one parser, shared.
+        /// Scoped to this module: it is the only one that uses it, and at the
+        /// `tests` level it read as unused under `--features mocks`, where the
+        /// module is compiled out.
+        use skribisto_model::language::parse_legacy_list as tags;
         use std::collections::HashMap;
 
         /// Book > Chapter > Scene, plus an outsider after the chapter's subtree, so the
         /// blast radius is observable in both directions.
         fn seed_tree(outline: &OutlineViewModel, binder: u64) -> (u64, u64, u64, u64) {
-            let book = seed_item(outline, binder, BinderItemRole::Folder, BinderItemSubRole::Book, 0, 0);
-            let chapter = seed_item(outline, binder, BinderItemRole::Folder, BinderItemSubRole::ChapterScene, 1, 1);
-            let scene = seed_item(outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 2, 2);
+            let book = seed_item(
+                outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::Book,
+                0,
+                0,
+            );
+            let chapter = seed_item(
+                outline,
+                binder,
+                BinderItemRole::Folder,
+                BinderItemSubRole::ChapterScene,
+                1,
+                1,
+            );
+            let scene = seed_item(
+                outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                2,
+                2,
+            );
             // A sibling scene back at the Book's level — NOT part of the chapter's subtree.
-            let outsider = seed_item(outline, binder, BinderItemRole::Item, BinderItemSubRole::Scene, 1, 3);
+            let outsider = seed_item(
+                outline,
+                binder,
+                BinderItemRole::Item,
+                BinderItemSubRole::Scene,
+                1,
+                3,
+            );
             (book, chapter, scene, outsider)
         }
 
         fn lang_of(outline: &OutlineViewModel, id: u64) -> Vec<String> {
-            outline.item_dto(id).map(|d| d.dict_language).unwrap_or_default()
+            outline
+                .item_dto(id)
+                .map(|d| d.dict_language)
+                .unwrap_or_default()
         }
 
         #[test]
@@ -2041,9 +2087,21 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
 
             outline.apply_dict_language_to_subtree(chapter, &tags("tr-TR"));
 
-            assert_eq!(lang_of(&outline, scene), tags("tr-TR"), "the descendant is written");
-            assert_eq!(lang_of(&outline, book), tags(""), "an ancestor is untouched");
-            assert_eq!(lang_of(&outline, outsider), tags(""), "a non-descendant is untouched");
+            assert_eq!(
+                lang_of(&outline, scene),
+                tags("tr-TR"),
+                "the descendant is written"
+            );
+            assert_eq!(
+                lang_of(&outline, book),
+                tags(""),
+                "an ancestor is untouched"
+            );
+            assert_eq!(
+                lang_of(&outline, outsider),
+                tags(""),
+                "a non-descendant is untouched"
+            );
             assert_eq!(
                 lang_of(&outline, chapter),
                 tags(""),
@@ -2071,7 +2129,11 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
             );
 
             undo_redo_commands::redo(&outline.app_ctx, stack).unwrap();
-            assert_eq!(lang_of(&outline, scene), tags("tr-TR"), "and redo puts it back");
+            assert_eq!(
+                lang_of(&outline, scene),
+                tags("tr-TR"),
+                "and redo puts it back"
+            );
         }
 
         /// An empty list is a legitimate value to push: it resets the subtree to inheriting
@@ -2085,7 +2147,11 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
             assert_eq!(lang_of(&outline, scene), tags("tr-TR"));
 
             outline.apply_dict_language_to_subtree(chapter, &tags(""));
-            assert_eq!(lang_of(&outline, scene), tags(""), "cleared back to inheriting");
+            assert_eq!(
+                lang_of(&outline, scene),
+                tags(""),
+                "cleared back to inheriting"
+            );
 
             // And the resolver then hands it the Work's language — the two halves meeting.
             let items = vec![frontend::common::entities::BinderItem {
@@ -2104,9 +2170,16 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
         fn a_leaf_has_no_descendants_and_the_call_is_a_noop() {
             let (outline, binder) = seed();
             let (_book, _chapter, scene, _outsider) = seed_tree(&outline, binder);
-            assert!(outline.subtree_descendants(scene).is_empty(), "the button's own gate");
+            assert!(
+                outline.subtree_descendants(scene).is_empty(),
+                "the button's own gate"
+            );
             outline.apply_dict_language_to_subtree(scene, &tags("tr-TR"));
-            assert_eq!(lang_of(&outline, scene), tags(""), "an inert call writes nothing");
+            assert_eq!(
+                lang_of(&outline, scene),
+                tags(""),
+                "an inert call writes nothing"
+            );
         }
     }
 }

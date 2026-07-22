@@ -81,10 +81,10 @@ impl ProgressRecorder {
         if self.inner.active.borrow().is_some() {
             return;
         }
-        if let Some(last) = self.inner.last_fire.get() {
-            if last.elapsed() < THROTTLE {
-                return;
-            }
+        if let Some(last) = self.inner.last_fire.get()
+            && last.elapsed() < THROTTLE
+        {
+            return;
         }
         self.fire();
     }

@@ -80,7 +80,9 @@ impl LicensePanel {
 
 impl std::fmt::Debug for LicensePanel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("LicensePanel").field("id", &self.id).finish()
+        f.debug_struct("LicensePanel")
+            .field("id", &self.id)
+            .finish()
     }
 }
 
@@ -90,18 +92,16 @@ impl Widget for LicensePanel {
         let display = entry
             .map(|e| e.display_name.clone())
             .unwrap_or_else(|| self.id.clone());
-        let license_name = entry
-            .map(|e| e.license_name.clone())
-            .unwrap_or_default();
+        let license_name = entry.map(|e| e.license_name.clone()).unwrap_or_default();
         let text = entry
             .and_then(|e| dictionary_registry::license_text(&e.license_asset))
             .unwrap_or("This dictionary's licence text is unavailable.");
 
         // The scrollable licence body — a plain, wrapping, read-only text block.
-        let body = ScrollArea::new()
-            .child(Padding::symmetric(16.0, 18.0).child(
-                TextWidget::new(lit!(text.to_string())).style(TextStyleRole::Small),
-            ));
+        let body = ScrollArea::new().child(
+            Padding::symmetric(16.0, 18.0)
+                .child(TextWidget::new(lit!(text.to_string())).style(TextStyleRole::Small)),
+        );
 
         // The footer buttons depend on the mode. Both arms are an `HStack` so the `child:`
         // slot below sees one concrete widget type.

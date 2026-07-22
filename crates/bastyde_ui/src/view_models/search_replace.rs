@@ -41,7 +41,9 @@ use frontend::search_management::{ReplaceInProjectDto, ReplaceInProjectResultDto
 use skribisto_model::SearchFacet;
 
 use crate::app_ids::AppIds;
-use crate::models::{OpenDoc, OpenDocsStore, SearchPrefs, SearchResultsModel, SearchSettingsService};
+use crate::models::{
+    OpenDoc, OpenDocsStore, SearchPrefs, SearchResultsModel, SearchSettingsService,
+};
 
 /// How long the query/options must be quiet before a search runs — search runs
 /// synchronously on the UI thread, so a burst of keystrokes must collapse into
@@ -524,7 +526,9 @@ impl SearchReplaceViewModel {
         )?;
         // Record the replacement in history now that it actually ran.
         let (uid, path, _title) = self.project_ident();
-        let _ = self.settings.push_replacement(&uid, &path, &dto.replacement);
+        let _ = self
+            .settings
+            .push_replacement(&uid, &path, &dto.replacement);
         self.reload_suggestions(&uid);
         Ok(result)
     }
@@ -674,7 +678,11 @@ impl SearchReplaceViewModel {
             return;
         }
         let (uid, path, title) = self.project_ident();
-        if self.settings.set_override(&uid, &path, &title, prefs.clone()).is_ok() {
+        if self
+            .settings
+            .set_override(&uid, &path, &title, prefs.clone())
+            .is_ok()
+        {
             *self.last_persisted.borrow_mut() = Some(prefs);
         }
     }
@@ -761,10 +769,16 @@ mod tests {
         assert_eq!(dto.query, "Aurélien");
         assert!(dto.case_sensitive && dto.diacritic_sensitive && dto.include_trashed);
         assert!(!dto.whole_word && !dto.search_body && !dto.search_synopsis);
-        assert!(dto.search_titles && dto.search_labels, "untouched scopes stay on");
+        assert!(
+            dto.search_titles && dto.search_labels,
+            "untouched scopes stay on"
+        );
         assert_eq!(
             dto.facets,
-            vec![SearchFacet::Scene.code() as i64, SearchFacet::Note.code() as i64],
+            vec![
+                SearchFacet::Scene.code() as i64,
+                SearchFacet::Note.code() as i64
+            ],
             "facet codes are sorted for a stable persisted order"
         );
     }
@@ -778,7 +792,10 @@ mod tests {
         assert_eq!(vm.facet_codes(), vec![SearchFacet::Chapter.code() as i64]);
         vm.toggle_facet(SearchFacet::Chapter);
         assert!(!vm.is_facet_on(SearchFacet::Chapter));
-        assert!(vm.facet_codes().is_empty(), "unticking the last chip = no filter again");
+        assert!(
+            vm.facet_codes().is_empty(),
+            "unticking the last chip = no filter again"
+        );
     }
 
     #[test]
@@ -801,10 +818,16 @@ mod tests {
         vm.truncated.set(false);
         // (mock results model ships 3 rows, all included)
         #[cfg(feature = "mocks")]
-        assert!(vm.can_replace_all(), "a complete scan with results enables it");
+        assert!(
+            vm.can_replace_all(),
+            "a complete scan with results enables it"
+        );
 
         vm.truncated.set(true);
-        assert!(!vm.can_replace_all(), "a truncated scan disables Replace All");
+        assert!(
+            !vm.can_replace_all(),
+            "a truncated scan disables Replace All"
+        );
     }
 
     #[test]

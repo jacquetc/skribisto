@@ -74,10 +74,10 @@ mod imp {
             ctx.subscribe_event(
                 Origin::DirectAccess(DirectAccessEntity::Content(EntityEvent::Updated)),
                 move |event: &Event| {
-                    if let Some(id) = s.inner.scene_id.get() {
-                        if event.ids.contains(&id) {
-                            s.reload();
-                        }
+                    if let Some(id) = s.inner.scene_id.get()
+                        && event.ids.contains(&id)
+                    {
+                        s.reload();
                     }
                 },
             );

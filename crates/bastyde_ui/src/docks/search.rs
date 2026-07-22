@@ -263,7 +263,11 @@ fn status_line(vm: SearchReplaceViewModel) -> impl Widget {
                 ))
                 .resolve_now()
             } else {
-                tr!(search_count(matches = *matches as i64, items = *items as i64)).resolve_now()
+                tr!(search_count(
+                    matches = *matches as i64,
+                    items = *items as i64
+                ))
+                .resolve_now()
             }
         });
 
@@ -283,7 +287,10 @@ fn results_list(vm: SearchReplaceViewModel) -> impl Widget {
     ListView::new(model.clone(), move |_i, row: &SearchResultDto, _sel| {
         let result_id = row.id;
         let is_selected = selected.map(move |s| *s == Some(result_id));
-        let snippet = format!("{}{}{}", row.snippet_before, row.snippet_match, row.snippet_after);
+        let snippet = format!(
+            "{}{}{}",
+            row.snippet_before, row.snippet_match, row.snippet_after
+        );
         let trailing = HStack::new()
             .spacing(6.0)
             .child(

@@ -282,6 +282,17 @@ impl Widget for PreviewBody {
     }
 }
 
+/// The document, prose field, spell session and editor kind a preview row
+/// resolved to. They travel together because the *matched* field is not always
+/// the field shown (see the fallbacks below), so re-deriving any one of them
+/// downstream would risk disagreeing with the others.
+type PreviewTarget<'a> = (
+    std::rc::Rc<OpenDoc>,
+    &'a ProseField,
+    Option<std::rc::Rc<crate::spellcheck::SpellSession>>,
+    EditorKind,
+);
+
 /// The editable prose field to preview for a match, and the doc that owns it (for
 /// the dirty hook). A synopsis match shows the synopsis; everything else (body,
 /// and title/label matches, which have no rich field of their own) shows the main
@@ -290,12 +301,7 @@ impl Widget for PreviewBody {
 fn editable_field(
     open_doc: &std::rc::Rc<OpenDoc>,
     field: Option<MatchField>,
-) -> Option<(
-    std::rc::Rc<OpenDoc>,
-    &ProseField,
-    Option<std::rc::Rc<crate::spellcheck::SpellSession>>,
-    EditorKind,
-)> {
+) -> Option<PreviewTarget<'_>> {
     // Pair the resolved prose field with ITS spell session (main vs synopsis), honouring the same
     // fallback, so the preview drives the right document's squiggles. The kind rides along for the
     // formatting registry — the fallbacks mean the *matched* field is not always the field shown,

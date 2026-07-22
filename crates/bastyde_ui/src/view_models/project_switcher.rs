@@ -55,7 +55,11 @@ impl SwitcherSections {
 /// Pure over its inputs, so the dedup rule is testable without a registry, a filesystem or a
 /// widget tree. `entries` comes from `open_registry::scan()`, `recents` from the recents
 /// model, `my_pid` from `open_registry::my_pid()`.
-pub fn sections(entries: Vec<OpenEntry>, recents: &[RecentWorkDto], my_pid: u32) -> SwitcherSections {
+pub fn sections(
+    entries: Vec<OpenEntry>,
+    recents: &[RecentWorkDto],
+    my_pid: u32,
+) -> SwitcherSections {
     let open: Vec<OpenRow> = entries
         .into_iter()
         .map(|e| OpenRow {
@@ -153,7 +157,11 @@ mod tests {
     /// path, not by "is it mine".
     #[test]
     fn a_peer_windows_project_is_also_dropped_from_recent() {
-        let s = sections(vec![entry(99, "/novel.skrib")], &[recent("/novel.skrib")], 10);
+        let s = sections(
+            vec![entry(99, "/novel.skrib")],
+            &[recent("/novel.skrib")],
+            10,
+        );
         assert!(s.recent.is_empty());
         assert!(!s.open[0].is_self);
     }

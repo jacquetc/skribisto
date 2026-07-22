@@ -40,8 +40,8 @@ use uuid::Uuid;
 use frontend::AppContext;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{
-    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event, Origin, TrashManagementEvent,
-    WorkManagementEvent,
+    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event, Origin,
+    TrashManagementEvent, WorkManagementEvent,
 };
 use skribisto_model::counting::CountingMethodSetting;
 
@@ -463,7 +463,10 @@ impl OverviewRowsModel {
 /// the slice has just auto-expanded it, and `set_expanded_keys` **replaces** rather than
 /// merges — so restoring `remembered` alone would collapse every newly created scene.
 /// Folding the union back into `remembered` is what makes that auto-expansion stick.
-fn reload_preserving(slice: &TreeDataSlice<Uuid, OverviewRow>, remembered: &RefCell<HashSet<Uuid>>) {
+fn reload_preserving(
+    slice: &TreeDataSlice<Uuid, OverviewRow>,
+    remembered: &RefCell<HashSet<Uuid>>,
+) {
     slice.reload();
     let mut union = remembered.borrow().clone();
     union.extend(slice.expanded_keys());
@@ -479,7 +482,10 @@ fn reload_preserving(slice: &TreeDataSlice<Uuid, OverviewRow>, remembered: &RefC
 /// **per sibling group** — `TreeRowFilter::sort` reorders children within each parent and
 /// never flattens the hierarchy, because a book whose scenes were globally sorted by word
 /// count would no longer be a book.
-fn shape(rows: Vec<TreeRow<Uuid, OverviewRow>>, filters: &OverviewFilters) -> Vec<TreeRow<Uuid, OverviewRow>> {
+fn shape(
+    rows: Vec<TreeRow<Uuid, OverviewRow>>,
+    filters: &OverviewFilters,
+) -> Vec<TreeRow<Uuid, OverviewRow>> {
     let needle = row_search::needle(&filters.query.get());
     let sort = filters.sort.get();
     if needle.is_none() && sort.is_none() {
@@ -753,13 +759,17 @@ mod rows {
             return gone(true);
         };
         let flat = flat_items(ctx, work_id);
-        let Subtree::Found { rows: subtree, base } = subtree_of(
+        let Subtree::Found {
+            rows: subtree,
+            base,
+        } = subtree_of(
             &flat,
             container_id,
             |(_, it)| it.id,
             |(_, it)| it.indent,
             |(binder, _)| *binder,
-        ) else {
+        )
+        else {
             return gone(false);
         };
         if subtree.is_empty() {
@@ -938,28 +948,109 @@ mod rows {
             // Book One (101) — a part holding a chapter folder and a flat chapter, then
             // a loose chapter. Two levels deep, so the fold has something to fold.
             101 => vec![
-                row(102, Item, BinderItemSubRole::BookBegin, "Opening", "1st plot point", None, 0, &[]),
+                row(
+                    102,
+                    Item,
+                    BinderItemSubRole::BookBegin,
+                    "Opening",
+                    "1st plot point",
+                    None,
+                    0,
+                    &[],
+                ),
                 row(103, Item, Scene, "Scene at dawn", "", Some(412), 0, &[]),
                 row(301, Folder, Part, "Part One — Arrival", "", None, 0, &[]),
-                row(104, Folder, ChapterScene, "Chapter Two", "rising action", Some(90), 1, &[]),
-                row(201, Item, Scene, "Scene 1", "opening beat", Some(1180), 2, &[1, 2]),
+                row(
+                    104,
+                    Folder,
+                    ChapterScene,
+                    "Chapter Two",
+                    "rising action",
+                    Some(90),
+                    1,
+                    &[],
+                ),
+                row(
+                    201,
+                    Item,
+                    Scene,
+                    "Scene 1",
+                    "opening beat",
+                    Some(1180),
+                    2,
+                    &[1, 2],
+                ),
                 row(202, Item, Scene, "Scene 2", "", Some(640), 2, &[3]),
                 row(203, Item, Note, "First night", "", None, 2, &[]),
-                row(302, Item, ChapterScene, "Into the Dark", "", Some(755), 1, &[]),
+                row(
+                    302,
+                    Item,
+                    ChapterScene,
+                    "Into the Dark",
+                    "",
+                    Some(755),
+                    1,
+                    &[],
+                ),
                 row(303, Item, Scene, "The light returns", "", Some(300), 1, &[]),
-                row(105, Item, ChapterScene, "Confrontation", "", Some(1502), 0, &[1]),
+                row(
+                    105,
+                    Item,
+                    ChapterScene,
+                    "Confrontation",
+                    "",
+                    Some(1502),
+                    0,
+                    &[1],
+                ),
             ],
             // Part One (301) — its two chapters, one of them a folder with scenes.
             301 => vec![
-                row(104, Folder, ChapterScene, "Chapter Two", "rising action", Some(90), 0, &[]),
-                row(201, Item, Scene, "Scene 1", "opening beat", Some(1180), 1, &[1, 2]),
+                row(
+                    104,
+                    Folder,
+                    ChapterScene,
+                    "Chapter Two",
+                    "rising action",
+                    Some(90),
+                    0,
+                    &[],
+                ),
+                row(
+                    201,
+                    Item,
+                    Scene,
+                    "Scene 1",
+                    "opening beat",
+                    Some(1180),
+                    1,
+                    &[1, 2],
+                ),
                 row(202, Item, Scene, "Scene 2", "", Some(640), 1, &[3]),
                 row(203, Item, Note, "First night", "", None, 1, &[]),
-                row(302, Item, ChapterScene, "Into the Dark", "", Some(755), 0, &[]),
+                row(
+                    302,
+                    Item,
+                    ChapterScene,
+                    "Into the Dark",
+                    "",
+                    Some(755),
+                    0,
+                    &[],
+                ),
             ],
             // A chapter folder (104) — its own scenes, one level.
             104 => vec![
-                row(201, Item, Scene, "Scene 1", "opening beat", Some(1180), 0, &[1, 2]),
+                row(
+                    201,
+                    Item,
+                    Scene,
+                    "Scene 1",
+                    "opening beat",
+                    Some(1180),
+                    0,
+                    &[1, 2],
+                ),
                 row(202, Item, Scene, "Scene 2", "", Some(640), 0, &[3]),
                 row(203, Item, Note, "First night", "", None, 0, &[]),
             ],
@@ -1002,11 +1093,11 @@ mod tests {
         //         │            └ scene(2) = 200
         //         └ scene(1)             = 50
         let mut rows = vec![
-            r(1, None, 0),        // part
-            r(2, Some(10), 1),    // chapter folder, own prose
-            r(3, Some(100), 2),   // scene
-            r(4, Some(200), 2),   // scene
-            r(5, Some(50), 1),    // scene directly under the part
+            r(1, None, 0),      // part
+            r(2, Some(10), 1),  // chapter folder, own prose
+            r(3, Some(100), 2), // scene
+            r(4, Some(200), 2), // scene
+            r(5, Some(50), 1),  // scene directly under the part
         ];
         fold_totals(&mut rows);
         let totals: Vec<usize> = rows.iter().map(|r| r.item.total_words).collect();
@@ -1024,7 +1115,10 @@ mod tests {
         let mut rows = vec![r(1, None, 0), r(2, Some(7), 1)];
         fold_totals(&mut rows);
         assert_eq!(rows[0].item.total_words, 7);
-        assert_eq!(rows[0].item.own_words, None, "and reports no prose of its own");
+        assert_eq!(
+            rows[0].item.own_words, None,
+            "and reports no prose of its own"
+        );
     }
 
     #[test]
@@ -1046,7 +1140,10 @@ mod tests {
         ];
         fold_totals(&mut rows);
         assert_eq!(rows[0].item.total_words, 7, "1 + 2 + 4");
-        assert_eq!(rows[3].item.total_words, 8, "the sibling keeps only its own");
+        assert_eq!(
+            rows[3].item.total_words, 8,
+            "the sibling keeps only its own"
+        );
     }
 
     // ── the subtree slice ────────────────────────────────────────────────────
@@ -1146,7 +1243,11 @@ mod tests {
         };
         assert_eq!(base, 1, "part 1 sits at indent 1");
         let depths: Vec<i64> = rows.iter().map(|t| t.2 - base - 1).collect();
-        assert_eq!(depths, vec![0, 1, 1, 0], "chapter, its 2 scenes, flat chapter");
+        assert_eq!(
+            depths,
+            vec![0, 1, 1, 0],
+            "chapter, its 2 scenes, flat chapter"
+        );
     }
 
     // ── sort comparators ─────────────────────────────────────────────────────
@@ -1165,7 +1266,10 @@ mod tests {
     fn title_sorts_case_insensitively() {
         let cmp = comparator(COL_TITLE);
         assert_eq!(
-            cmp(&row_for("apple", "", None, 0), &row_for("Banana", "", None, 0)),
+            cmp(
+                &row_for("apple", "", None, 0),
+                &row_for("Banana", "", None, 0)
+            ),
             std::cmp::Ordering::Less,
             "lowercase 'apple' must precede 'Banana' — a raw byte compare would not"
         );
@@ -1455,11 +1559,7 @@ mod mock_tests {
         filters
             .sort
             .set(Some((COL_TITLE.to_string(), SortDirection::Descending)));
-        assert_eq!(
-            m.visible_count(),
-            10,
-            "sorting hides nothing"
-        );
+        assert_eq!(m.visible_count(), 10, "sorting hides nothing");
         assert_eq!(
             m.parent(&scene1),
             Some(chapter),
@@ -1475,9 +1575,10 @@ mod mock_tests {
         let chapter = common::uid::fixture_uid(104);
         m.set_expanded(&chapter, false);
         let collapsed = m.visible_count();
-        filters
-            .sort
-            .set(Some((COL_TOTAL_WORDS.to_string(), SortDirection::Ascending)));
+        filters.sort.set(Some((
+            COL_TOTAL_WORDS.to_string(),
+            SortDirection::Ascending,
+        )));
         assert_eq!(
             m.visible_count(),
             collapsed,
@@ -1552,4 +1653,3 @@ mod mock_tests {
         assert_eq!(m.item_id_of(&common::uid::fixture_uid(9999)), None);
     }
 }
-

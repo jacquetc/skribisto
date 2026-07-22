@@ -191,8 +191,8 @@ impl TagsViewModel {
 
     /// Import a palette from a `.csv`. One undo step for the whole file.
     pub fn import_from(&self, path: &Path) -> Result<TagImportSummary> {
-        let text = std::fs::read_to_string(path)
-            .with_context(|| format!("reading {}", path.display()))?;
+        let text =
+            std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
         let (rows, malformed) = parse_csv(&text)?;
         let mut summary = self.import_rows(rows);
         summary.malformed = malformed;
@@ -222,7 +222,7 @@ pub fn format_csv(rows: &[TagRow]) -> Result<String> {
         .context("writing CSV row")?;
     }
     let bytes = w.into_inner().context("finishing CSV")?;
-    Ok(String::from_utf8(bytes).context("CSV is not UTF-8")?)
+    String::from_utf8(bytes).context("CSV is not UTF-8")
 }
 
 /// Parse a palette CSV, returning the usable rows and a count of the malformed ones.
@@ -273,7 +273,12 @@ pub fn parse_csv(text: &str) -> Result<(Vec<TagRow>, usize)> {
             },
             details: record.get(2).unwrap_or_default().trim().to_string(),
             discoverable: matches!(
-                record.get(3).unwrap_or_default().trim().to_lowercase().as_str(),
+                record
+                    .get(3)
+                    .unwrap_or_default()
+                    .trim()
+                    .to_lowercase()
+                    .as_str(),
                 "true" | "yes" | "1"
             ),
         });
@@ -345,7 +350,10 @@ mod tests {
             text.lines().next()
         );
         let (back, malformed) = parse_csv(&text).unwrap();
-        assert_eq!(malformed, 0, "a file we just wrote must not parse as malformed");
+        assert_eq!(
+            malformed, 0,
+            "a file we just wrote must not parse as malformed"
+        );
         assert_eq!(back, rows, "what lands on disk is what comes back");
 
         let _ = std::fs::remove_dir_all(&dir);
@@ -373,9 +381,12 @@ mod tests {
 
     #[test]
     fn a_repeated_name_within_one_file_is_counted_once() {
-        let (rows, malformed) =
-            parse_csv("name,color\nplace,#00a\nPLACE,#0a0\n").unwrap();
-        assert_eq!(rows.len(), 1, "the second is a duplicate, case-insensitively");
+        let (rows, malformed) = parse_csv("name,color\nplace,#00a\nPLACE,#0a0\n").unwrap();
+        assert_eq!(
+            rows.len(),
+            1,
+            "the second is a duplicate, case-insensitively"
+        );
         assert_eq!(malformed, 1);
     }
 

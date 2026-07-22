@@ -139,7 +139,8 @@ impl Widget for ImportPlumePanel {
         // Build the form first so its first focusable descendant can be captured
         // for `initial_focus_hint` (see the note there).
         let form_id = ctx.add(self.form());
-        self.first_field.set(ctx.first_focusable_descendant(form_id));
+        self.first_field
+            .set(ctx.first_focusable_descendant(form_id));
 
         let body = ScrollArea::new().child(Padding::symmetric(20.0, 22.0).child_id(form_id));
 

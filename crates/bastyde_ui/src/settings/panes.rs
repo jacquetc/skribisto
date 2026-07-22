@@ -24,8 +24,8 @@
 //! the feature directories their view-models live in.
 
 pub(super) mod appearance;
-pub(super) mod backup;
 pub(super) mod autosave;
+pub(super) mod backup;
 pub(super) mod corkboard;
 pub(super) mod dictionaries;
 pub(super) mod editor_behavior;

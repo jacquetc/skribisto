@@ -860,7 +860,7 @@ impl FormatViewModel {
             DIR_LTR => self.with_editor(|h| h.set_direction(TextDirection::LeftToRight)),
             DIR_RTL => self.with_editor(|h| h.set_direction(TextDirection::RightToLeft)),
             DIR_AUTO => self.with_editor(|h| h.clear_direction()),
-            _ => return,
+            _ => (),
         }
     }
 

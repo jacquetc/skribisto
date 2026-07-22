@@ -57,7 +57,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let editors = deps.editors.clone();
         ctx.register_action_global(Action::new("editor.open_item_to_side").on_invoke(
             move |i, _c| {
-                if let Some(AppIntent::OpenItemToSide { item_id, title }) = AppIntent::from_intent(i)
+                if let Some(AppIntent::OpenItemToSide { item_id, title }) =
+                    AppIntent::from_intent(i)
                 {
                     editors.open_to_side(*item_id, title);
                 }
@@ -70,20 +71,22 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // only a **global** action reaches it. The resulting `DictWord(Created)` event drives the
     // live squiggle refresh (the subscription in `App::build`); here we just create the
     // entities and toast.
-    ctx.register_action_global(Action::new("editor.add_to_dictionary").on_invoke(move |i, c| {
-        let Some(AppIntent::AddWordsToDictionary { words }) = AppIntent::from_intent(i) else {
-            return;
-        };
-        let Some(vm) = c
-            .app_state::<crate::view_models::UserDictionaryViewModel>()
-            .cloned()
-        else {
-            return;
-        };
-        let sample = words.first().cloned();
-        let ids = vm.add_words(words);
-        vm.added_toast(c, ids, sample);
-    }));
+    ctx.register_action_global(
+        Action::new("editor.add_to_dictionary").on_invoke(move |i, c| {
+            let Some(AppIntent::AddWordsToDictionary { words }) = AppIntent::from_intent(i) else {
+                return;
+            };
+            let Some(vm) = c
+                .app_state::<crate::view_models::UserDictionaryViewModel>()
+                .cloned()
+            else {
+                return;
+            };
+            let sample = words.first().cloned();
+            let ids = vm.add_words(words);
+            vm.added_toast(c, ids, sample);
+        }),
+    );
 
     // Ctrl+S: flush every editor to the store, then save the project to disk. Gated on
     // `can_save` (dirty && !backup mode) at *both* ends: the shortcut stops matching the

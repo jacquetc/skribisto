@@ -249,7 +249,11 @@ mod imp {
         pub fn remove_all(&self, ids: &[u64], stack_id: Option<u64>) {
             let existing: std::collections::HashSet<u64> =
                 self.rows().into_iter().map(|r| r.id).collect();
-            let present: Vec<u64> = ids.iter().copied().filter(|id| existing.contains(id)).collect();
+            let present: Vec<u64> = ids
+                .iter()
+                .copied()
+                .filter(|id| existing.contains(id))
+                .collect();
             if present.is_empty() {
                 return;
             }
@@ -278,8 +282,10 @@ mod imp {
                 return rows.iter().map(|r| r.trigger.clone()).collect();
             };
             let existing = self.rows();
-            let mut seen: std::collections::HashSet<String> =
-                existing.iter().map(|r| super::trigger_key(&r.trigger)).collect();
+            let mut seen: std::collections::HashSet<String> = existing
+                .iter()
+                .map(|r| super::trigger_key(&r.trigger))
+                .collect();
             let mut skipped = Vec::new();
             let now = chrono::Utc::now();
             let mut dtos = Vec::new();
@@ -297,17 +303,17 @@ mod imp {
                     enabled: r.enabled,
                 });
             }
-            if !dtos.is_empty() {
-                if let Err(e) = text_replacement_rule_commands::create_text_replacement_rule_multi(
+            if !dtos.is_empty()
+                && let Err(e) = text_replacement_rule_commands::create_text_replacement_rule_multi(
                     &self.inner.ctx,
                     stack_id,
                     &dtos,
                     owner,
                     -1,
-                ) {
-                    eprintln!("text replacements: import failed: {e}");
-                    return rows.iter().map(|r| r.trigger.clone()).collect();
-                }
+                )
+            {
+                eprintln!("text replacements: import failed: {e}");
+                return rows.iter().map(|r| r.trigger.clone()).collect();
             }
             skipped
         }
@@ -453,8 +459,11 @@ mod imp {
         }
 
         pub fn remove_all(&self, ids: &[u64], _stack_id: Option<u64>) {
-            let keep: Vec<TextReplacementRuleRow> =
-                self.rows().into_iter().filter(|r| !ids.contains(&r.id)).collect();
+            let keep: Vec<TextReplacementRuleRow> = self
+                .rows()
+                .into_iter()
+                .filter(|r| !ids.contains(&r.id))
+                .collect();
             self.replace(keep);
         }
 
@@ -468,7 +477,9 @@ mod imp {
             let mut skipped = Vec::new();
             for r in rows {
                 if r.trigger.trim().is_empty()
-                    || current.iter().any(|e| trigger_key(&e.trigger) == trigger_key(&r.trigger))
+                    || current
+                        .iter()
+                        .any(|e| trigger_key(&e.trigger) == trigger_key(&r.trigger))
                 {
                     skipped.push(r.trigger.clone());
                     continue;

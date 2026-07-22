@@ -31,9 +31,7 @@ use bastyde::prelude::{BuildContext, Signal};
 use bastyde::text_document::Color;
 
 use frontend::AppContext;
-use frontend::commands::{
-    binder_commands, binder_item_commands, content_commands, work_commands,
-};
+use frontend::commands::{binder_commands, binder_item_commands, content_commands, work_commands};
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
@@ -43,12 +41,12 @@ use frontend::direct_access::ContentDto;
 
 use crate::singles::SingleBinderItem;
 use crate::spellcheck::{SpellSession, SpellcheckService};
-use crate::text_replacement::TextReplacementSession;
-use crate::text_replacement::typography::SmartPunctuationFlags;
-use crate::view_models::TextReplacementRulesViewModel;
 use crate::tabs::{
     ProseField, ProseKind, TitleField, TitlePart, prose_field, prose_kind_for, title_field,
 };
+use crate::text_replacement::TextReplacementSession;
+use crate::text_replacement::typography::SmartPunctuationFlags;
+use crate::view_models::TextReplacementRulesViewModel;
 
 /// One open item's live editing state, shared by every view showing that item.
 pub struct OpenDoc {
@@ -308,6 +306,10 @@ struct Entry {
     refs: usize,
 }
 
+/// Every open item's resolved language tags, valid for one structural
+/// fingerprint — recomputed whenever that fingerprint moves.
+type LangCache = (LangFingerprint, HashMap<u64, Vec<String>>);
+
 struct Inner {
     open: RefCell<HashMap<u64, Entry>>,
     app_ctx: Rc<AppContext>,
@@ -343,7 +345,7 @@ struct Inner {
     /// freshly-built doc, so a container stream opening one document per row paid that
     /// whole-project walk once per row — O(rows × items). Cached, the walk happens once
     /// per structural change instead.
-    lang_cache: RefCell<Option<(LangFingerprint, HashMap<u64, Vec<String>>)>>,
+    lang_cache: RefCell<Option<LangCache>>,
 }
 
 /// What the cached language map is keyed on: the open work, its default language, and
@@ -367,7 +369,11 @@ type LangFingerprint = u64;
 
 /// Fingerprint the inputs the language map is derived from that are cheap to read:
 /// the work, its default language, and the ordered item ids of every binder.
-fn fingerprint_of(work_id: Option<u64>, work_lang: &[String], shape: &[Vec<u64>]) -> LangFingerprint {
+fn fingerprint_of(
+    work_id: Option<u64>,
+    work_lang: &[String],
+    shape: &[Vec<u64>],
+) -> LangFingerprint {
     let mut hasher = DefaultHasher::new();
     work_id.hash(&mut hasher);
     work_lang.hash(&mut hasher);
@@ -396,7 +402,7 @@ impl OpenDocsStore {
                 synopsis_visible: Cell::new(true),
                 work_id: Cell::new(None),
                 work_lang: RefCell::new(Vec::new()),
-            punctuation: RefCell::new(None),
+                punctuation: RefCell::new(None),
                 lang_cache: RefCell::new(None),
             }),
         }
@@ -712,7 +718,11 @@ impl OpenDocsStore {
     /// read-only consumer (the status-bar word count) that must not perturb the
     /// open/release lifecycle the editor panes own. `None` if the item isn't open.
     pub fn peek(&self, item_id: u64) -> Option<Rc<OpenDoc>> {
-        self.inner.open.borrow().get(&item_id).map(|e| e.doc.clone())
+        self.inner
+            .open
+            .borrow()
+            .get(&item_id)
+            .map(|e| e.doc.clone())
     }
 
     /// Open item `item_id`, building its [`OpenDoc`] the first time and reusing it
@@ -894,7 +904,8 @@ impl OpenDocsStore {
 }
 
 #[cfg(test)]
-mod tests {    /// Space-separated in the tests, a list in storage — one parser, shared.
+mod tests {
+    /// Space-separated in the tests, a list in storage — one parser, shared.
     use skribisto_model::language::parse_legacy_list as tags;
 
     use super::*;

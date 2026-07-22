@@ -43,7 +43,9 @@ use bastyde::widgets::{Center, MinSize, Padding, RectWidget, TextWidget, ZStack}
 const DWELL_PROMOTION: Duration = Duration::from_secs(2);
 
 /// What (if anything) a pill shows on hover.
+#[derive(Default)]
 pub enum PillTooltip {
+    #[default]
     None,
     /// A single line. Cheapest tier; no dwell promotion, no keyboard reachability — right
     /// for a fixed action label, wrong for anything a reader needs time with.
@@ -57,12 +59,6 @@ pub enum PillTooltip {
         body: Box<dyn Widget>,
         access_label: LocalizedString,
     },
-}
-
-impl Default for PillTooltip {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 /// Width cap for the app's composite tooltips.
@@ -111,6 +107,9 @@ pub fn attach_labelled_composite_tooltip(
 ///
 /// Construct with [`Pill::new`], then add only what the feature needs. A pill with no
 /// `on_remove` simply has no `×` (and reserves no space for one).
+/// A pill's click handler — activation or removal.
+type PillAction = Rc<dyn Fn(&mut EventContext)>;
+
 pub struct Pill {
     display: String,
     /// Optional leading glyph — the spellcheck check, or nothing. Always laid out when
@@ -129,14 +128,16 @@ pub struct Pill {
     a11y_label: LocalizedString,
     hover: Signal<bool>,
     focused: Signal<bool>,
-    on_activate: Option<Rc<dyn Fn(&mut EventContext)>>,
-    on_remove: Option<Rc<dyn Fn(&mut EventContext)>>,
+    on_activate: Option<PillAction>,
+    on_remove: Option<PillAction>,
     root_child: Option<WidgetId>,
 }
 
 impl std::fmt::Debug for Pill {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Pill").field("display", &self.display).finish()
+        f.debug_struct("Pill")
+            .field("display", &self.display)
+            .finish()
     }
 }
 
@@ -445,7 +446,6 @@ mod tests {
     use bastyde::core::widget_tree::WidgetTree;
     use bastyde::widgets::IconWidget;
     use std::cell::Cell;
-
 
     /// The visible chip's height, i.e. what `place_children` actually placed. The `Pill`
     /// widget itself is the test's root and so is handed the window-sized proposal whatever

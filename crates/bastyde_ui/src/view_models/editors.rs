@@ -795,9 +795,7 @@ impl EditorsViewModel {
     /// still in the store, still dirty — so nothing is lost by not retrying behind
     /// the user's back; the caller reports it.
     pub fn on_save_failed(&self, event: &Event) -> Option<String> {
-        let Some(op_id) = event_id(event) else {
-            return None;
-        };
+        let op_id = event_id(event)?;
         if !self.queue.borrow_mut().failed(&op_id) {
             return None;
         }

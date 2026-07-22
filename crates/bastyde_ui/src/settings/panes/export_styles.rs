@@ -23,7 +23,7 @@ use bastyde::data::ListModel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     Badge, Button, ButtonVariant, ComboBox, FixedSize, FontPicker, FormLayout, GroupHeader, HStack,
-    ListView, MaxSize, MinSize, Padding, Segment, SegmentedControl, Spacer, StandardListItem, TextInput,
+    ListView, MaxSize, Padding, Segment, SegmentedControl, Spacer, StandardListItem, TextInput,
     TextWidget, Toast, Toggle, VStack,
 };
 
@@ -45,7 +45,11 @@ struct StyleRow {
 }
 
 fn row_of(p: &Preset) -> StyleRow {
-    StyleRow { id: p.id.clone(), name: p.name.clone(), subtitle: p.font_family.clone() }
+    StyleRow {
+        id: p.id.clone(),
+        name: p.name.clone(),
+        subtitle: p.font_family.clone(),
+    }
 }
 
 /// The whole Export-Formats pane body. The caller wraps it in `pane_frame`.
@@ -113,7 +117,9 @@ pub fn export_styles_pane(ctx: &mut BuildContext, vm: &ExportStylesViewModel) ->
         // `width: None`, which collapses the rows to the left. `MaxSize` caps
         // the height and leaves the width to fill; each list scrolls internally.
         .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(200.0).child(builtin_list)))
-        .child(Padding::new(14.0, 0.0, 0.0, 0.0).child(GroupHeader::new(tr!(settings_styles_user()))))
+        .child(
+            Padding::new(14.0, 0.0, 0.0, 0.0).child(GroupHeader::new(tr!(settings_styles_user()))),
+        )
         .child(Padding::symmetric(6.0, 4.0).child(toolbar))
         .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(150.0).child(user_list)))
         .child(
@@ -177,7 +183,11 @@ fn user_row(
             .variant(ButtonVariant::Plain)
             .on_activate_fn(move |_c| vm.remove(&id))
     };
-    let trailing = HStack::new().spacing(6.0).child(edit).child(export).child(delete);
+    let trailing = HStack::new()
+        .spacing(6.0)
+        .child(edit)
+        .child(export)
+        .child(delete);
 
     // Highlight the row currently loaded in the editor.
     let id_hl = id.clone();
@@ -193,10 +203,14 @@ fn user_row(
 
 // ── JSON import / export (file dialogs) ──
 
-fn present_import(ctx: &mut EventContext, vm: ExportStylesViewModel, selected: Signal<Option<String>>) {
+fn present_import(
+    ctx: &mut EventContext,
+    vm: ExportStylesViewModel,
+    selected: Signal<Option<String>>,
+) {
     let req = FileDialogRequest::pick_file()
         .title(tr!(settings_styles_import()))
-        .add_filter(&tr!(settings_styles_json_filter()).resolve_now(), &["json"]);
+        .add_filter(tr!(settings_styles_json_filter()).resolve_now(), &["json"]);
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {
             match vm.import_from(&path) {
@@ -226,7 +240,7 @@ fn present_export(ctx: &mut EventContext, vm: ExportStylesViewModel, id: &str, n
     let req = FileDialogRequest::save_file()
         .title(tr!(settings_styles_export()))
         .default_file_name(default_name)
-        .add_filter(&tr!(settings_styles_json_filter()).resolve_now(), &["json"]);
+        .add_filter(tr!(settings_styles_json_filter()).resolve_now(), &["json"]);
     let _ = ctx.save_file(req, move |res, ectx| {
         if let FileDialogResult::Saved(Some(path)) = res {
             let mut target = path.clone();
@@ -260,7 +274,11 @@ fn slugify(name: &str) -> String {
         .map(|c| if c.is_alphanumeric() { c } else { '-' })
         .collect();
     let trimmed = s.trim_matches('-').to_string();
-    if trimmed.is_empty() { "export-style".to_string() } else { trimmed }
+    if trimmed.is_empty() {
+        "export-style".to_string()
+    } else {
+        trimmed
+    }
 }
 
 // ── The style editor (reactive on the selection) ──
@@ -275,7 +293,11 @@ struct StyleEditor {
 
 impl StyleEditor {
     fn new(vm: ExportStylesViewModel, selected: Signal<Option<String>>) -> Self {
-        Self { vm, selected, child_id: None }
+        Self {
+            vm,
+            selected,
+            child_id: None,
+        }
     }
 }
 
@@ -373,7 +395,7 @@ fn break_combo(
             apply(p, v);
         }
     });
-    ComboBox::from_items(breaks, sig, |s| scene_break_label(s)).rich_tooltip(tip)
+    ComboBox::from_items(breaks, sig, scene_break_label).rich_tooltip(tip)
 }
 
 /// The full parameter sheet for a preset, as a composite-tooltip body.
@@ -402,12 +424,27 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
     };
 
     let pairs: Vec<(LocalizedString, LocalizedString)> = vec![
-        (tr!(settings_styles_sheet_font()), lit!(format!("{} {} pt", p.font_family, num(p.font_size_pt)))),
-        (tr!(settings_styles_field_spacing()), spacing_label(p.line_spacing)),
-        (tr!(settings_styles_sheet_indent()), lit!(format!("{}\u{2033}", num(p.first_line_indent_in)))),
-        (tr!(settings_styles_sheet_para_spacing()), lit!(format!("{} pt", num(p.paragraph_spacing_pt)))),
+        (
+            tr!(settings_styles_sheet_font()),
+            lit!(format!("{} {} pt", p.font_family, num(p.font_size_pt))),
+        ),
+        (
+            tr!(settings_styles_field_spacing()),
+            spacing_label(p.line_spacing),
+        ),
+        (
+            tr!(settings_styles_sheet_indent()),
+            lit!(format!("{}\u{2033}", num(p.first_line_indent_in))),
+        ),
+        (
+            tr!(settings_styles_sheet_para_spacing()),
+            lit!(format!("{} pt", num(p.paragraph_spacing_pt))),
+        ),
         (tr!(settings_styles_field_justify()), yes_no(p.justify)),
-        (tr!(settings_styles_sheet_page()), page_size_label(p.page_size)),
+        (
+            tr!(settings_styles_sheet_page()),
+            page_size_label(p.page_size),
+        ),
         (
             tr!(settings_styles_sheet_margins()),
             lit!(format!(
@@ -418,14 +455,35 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
                 num(p.margin.left_in)
             )),
         ),
-        (tr!(settings_styles_sheet_title_page()), yes_no(p.book_title_page)),
-        (tr!(settings_styles_field_chapters()), heading_label(&p.chapter_heading)),
-        (tr!(settings_styles_field_parts()), heading_label(&p.part_heading)),
-        (tr!(settings_styles_field_scene_break()), scene_break_label(&p.scene_break)),
-        (tr!(settings_styles_field_major_scene_break()), scene_break_label(&p.major_scene_break)),
+        (
+            tr!(settings_styles_sheet_title_page()),
+            yes_no(p.book_title_page),
+        ),
+        (
+            tr!(settings_styles_field_chapters()),
+            heading_label(&p.chapter_heading),
+        ),
+        (
+            tr!(settings_styles_field_parts()),
+            heading_label(&p.part_heading),
+        ),
+        (
+            tr!(settings_styles_field_scene_break()),
+            scene_break_label(&p.scene_break),
+        ),
+        (
+            tr!(settings_styles_field_major_scene_break()),
+            scene_break_label(&p.major_scene_break),
+        ),
         (tr!(settings_styles_field_notes()), yes_no(p.include_notes)),
-        (tr!(settings_styles_field_synopses()), yes_no(p.include_synopses)),
-        (tr!(settings_styles_field_scene_titles()), yes_no(p.include_scene_titles)),
+        (
+            tr!(settings_styles_field_synopses()),
+            yes_no(p.include_synopses),
+        ),
+        (
+            tr!(settings_styles_field_scene_titles()),
+            yes_no(p.include_scene_titles),
+        ),
         (
             tr!(settings_styles_sheet_heading_language()),
             match &p.heading_language {
@@ -433,19 +491,26 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
                 HeadingLanguage::Fixed(l) => lit!(l.clone()),
             },
         ),
-        (tr!(settings_styles_sheet_digits()), digit_style_label(p.digit_style)),
-        (tr!(settings_styles_sheet_direction()), direction_label(p.direction)),
+        (
+            tr!(settings_styles_sheet_digits()),
+            digit_style_label(p.digit_style),
+        ),
+        (
+            tr!(settings_styles_sheet_direction()),
+            direction_label(p.direction),
+        ),
         (
             tr!(settings_styles_sheet_formats()),
             if p.formats.is_empty() {
                 tr!(settings_styles_sheet_all_formats())
             } else {
-                lit!(p
-                    .formats
-                    .iter()
-                    .map(|f| format_label(*f).resolve_now())
-                    .collect::<Vec<_>>()
-                    .join(", "))
+                lit!(
+                    p.formats
+                        .iter()
+                        .map(|f| format_label(*f).resolve_now())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
             },
         ),
     ];
@@ -544,7 +609,8 @@ fn scene_break_label(sb: &SceneBreak) -> LocalizedString {
 
 impl Widget for StyleEditor {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.selected.bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.selected
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
         let Some(id) = self.selected.get() else {
             let hint = Padding::symmetric(20.0, 4.0).child(
@@ -593,14 +659,14 @@ impl Widget for StyleEditor {
                 p.chapter_heading = v;
             }
         });
-        let chapter_box = ComboBox::from_items(schemes.clone(), chapter, |s| heading_label(s));
+        let chapter_box = ComboBox::from_items(schemes.clone(), chapter, heading_label);
         let part = Signal::new(Some(preset.part_heading));
         bind_field(ctx, &self.vm, &id, &part, |p, v| {
             if let Some(v) = v {
                 p.part_heading = v;
             }
         });
-        let part_box = ComboBox::from_items(schemes, part, |s| heading_label(s));
+        let part_box = ComboBox::from_items(schemes, part, heading_label);
 
         // Scene break, per tier. The author decides *where* a break goes by
         // marking it in the prose; these decide only what each tier prints as.
@@ -651,7 +717,9 @@ impl Widget for StyleEditor {
         let synopses = Signal::new(preset.include_synopses);
         bind_field(ctx, &self.vm, &id, &synopses, |p, v| p.include_synopses = v);
         let scene_titles = Signal::new(preset.include_scene_titles);
-        bind_field(ctx, &self.vm, &id, &scene_titles, |p, v| p.include_scene_titles = v);
+        bind_field(ctx, &self.vm, &id, &scene_titles, |p, v| {
+            p.include_scene_titles = v
+        });
 
         let form = FormLayout::new()
             .label(tr!(settings_styles_editor_title()))
@@ -661,10 +729,19 @@ impl Widget for StyleEditor {
                 field_label(tr!(settings_styles_field_name())),
                 TextInput::new(name).placeholder(tr!(settings_styles_field_name())),
             )
-            .line(field_label(tr!(settings_field_typeface())), font_picker(ctx, font))
-            .line(field_label(tr!(settings_styles_field_chapters())), chapter_box)
+            .line(
+                field_label(tr!(settings_field_typeface())),
+                font_picker(ctx, font),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_chapters())),
+                chapter_box,
+            )
             .line(field_label(tr!(settings_styles_field_parts())), part_box)
-            .line(field_label(tr!(settings_styles_field_scene_break())), break_box)
+            .line(
+                field_label(tr!(settings_styles_field_scene_break())),
+                break_box,
+            )
             .line(
                 field_label(tr!(settings_styles_field_major_scene_break())),
                 major_break_box,
@@ -723,5 +800,7 @@ impl Widget for StyleEditor {
 
 /// A dimmed form-row label — mirrors `settings_panel`'s `field_label`.
 fn field_label(text: LocalizedString) -> TextWidget {
-    TextWidget::new(text).style(TextStyleRole::Small).color(TextRole::Secondary)
+    TextWidget::new(text)
+        .style(TextStyleRole::Small)
+        .color(TextRole::Secondary)
 }

@@ -246,7 +246,10 @@ impl FindViewModel {
 
     /// The current match count (reads the session directly).
     fn count_now(&self) -> usize {
-        self.session.borrow().as_ref().map_or(0, |fs| fs.match_count())
+        self.session
+            .borrow()
+            .as_ref()
+            .map_or(0, |fs| fs.match_count())
     }
 
     // ── in-editor replace ────────────────────────────────────────────────────
@@ -386,7 +389,11 @@ mod tests {
         vm.query_signal().set("the".into());
         vm.refresh_query();
         assert_eq!(vm.count_signal().get(), 3, "three `the`s");
-        assert_eq!(vm.current_signal().get(), 1, "first match is current (1-based)");
+        assert_eq!(
+            vm.current_signal().get(),
+            1,
+            "first match is current (1-based)"
+        );
     }
 
     #[test]
@@ -415,7 +422,11 @@ mod tests {
         assert_eq!(vm.count_signal().get(), 2);
         vm.close();
         assert!(!vm.visible_signal().get(), "closing hides the banner");
-        assert_eq!(vm.count_signal().get(), 0, "closing clears the highlighting + count");
+        assert_eq!(
+            vm.count_signal().get(),
+            0,
+            "closing clears the highlighting + count"
+        );
     }
 
     #[test]
@@ -465,9 +476,17 @@ mod tests {
         vm.ensure_session(fmt(), fmt());
         vm.query_signal().set("cat".into());
         vm.refresh_query();
-        assert_eq!(vm.count_signal().get(), 3, "substring: matches inside `category` too");
+        assert_eq!(
+            vm.count_signal().get(),
+            3,
+            "substring: matches inside `category` too"
+        );
         vm.whole_word_signal().set(true);
         vm.refresh_query();
-        assert_eq!(vm.count_signal().get(), 2, "whole-word drops the one inside `category`");
+        assert_eq!(
+            vm.count_signal().get(),
+            2,
+            "whole-word drops the one inside `category`"
+        );
     }
 }

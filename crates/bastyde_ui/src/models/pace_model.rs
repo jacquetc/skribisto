@@ -92,7 +92,7 @@ mod imp {
 
     use crate::app_ids::AppIds;
 
-    use super::{DailyCount, HolidayRow, MilestoneRow, PaceState, MON_TO_FRI};
+    use super::{DailyCount, HolidayRow, MON_TO_FRI, MilestoneRow, PaceState};
 
     /// UTC midnight for a calendar day - the on-disk convention (`record_progress_snapshot`
     /// truncates to UTC midnight, so dates round-trip through the same instant).
@@ -136,7 +136,10 @@ mod imp {
                     .unwrap_or_default()
                     .into_iter()
                     .filter_map(|s| {
-                        let pos = s.book_item_ids.iter().position(|&id| id == self.book_item_id)?;
+                        let pos = s
+                            .book_item_ids
+                            .iter()
+                            .position(|&id| id == self.book_item_id)?;
                         Some(DailyCount {
                             date: s.day.date_naive(),
                             words: *s.book_word_counts.get(pos)?,
@@ -321,7 +324,8 @@ mod imp {
                 .filter(|&id| id != milestone_id)
                 .collect();
             self.set_children(pace.id, PaceRelationshipField::Milestones, ids);
-            let _ = milestone_commands::remove_milestone(&self.app_ctx, self.stack(), &milestone_id);
+            let _ =
+                milestone_commands::remove_milestone(&self.app_ctx, self.stack(), &milestone_id);
         }
 
         // ── internals ──
@@ -394,7 +398,12 @@ mod imp {
 
         /// `set_relationship` replaces the whole ordered list (verified in
         /// `pace_controller::set_relationship`).
-        fn set_children(&self, pace_id: u64, field: PaceRelationshipField, right_ids: Vec<EntityId>) {
+        fn set_children(
+            &self,
+            pace_id: u64,
+            field: PaceRelationshipField,
+            right_ids: Vec<EntityId>,
+        ) {
             let dto = PaceRelationshipDto {
                 id: pace_id,
                 field,
@@ -416,7 +425,7 @@ mod imp {
 
     use crate::app_ids::AppIds;
 
-    use super::{DailyCount, HolidayRow, MilestoneRow, PaceState, MON_TO_FRI};
+    use super::{DailyCount, HolidayRow, MON_TO_FRI, MilestoneRow, PaceState};
 
     /// Fabricated Book pace state for the `mocks` build: a Mon–Fri schedule
     /// running from a month ago to two months out, an 80k goal, ~a month of
@@ -529,7 +538,10 @@ mod imp {
         }
 
         pub fn remove_holiday(&self, holiday_id: u64) {
-            self.state.borrow_mut().holidays.retain(|h| h.id != holiday_id);
+            self.state
+                .borrow_mut()
+                .holidays
+                .retain(|h| h.id != holiday_id);
         }
 
         pub fn add_milestone(

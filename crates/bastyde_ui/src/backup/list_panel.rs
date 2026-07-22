@@ -19,7 +19,6 @@
 //! main-thread async executor's `spawn_blocking`, with a loading state shown
 //! meanwhile — never inline in `build()` or an event handler.
 
-
 use bastyde::core::styles::PanelVariant;
 use bastyde::prelude::*;
 
@@ -30,7 +29,6 @@ use bastyde::widgets::{
     MessageBoxButtons, Padding, Panel, Spacer, StandardButton, StandardListItem, Switcher,
     TextWidget, VStack,
 };
-
 
 const CARD_W: f32 = 680.0;
 const CARD_H: f32 = 520.0;
@@ -132,19 +130,19 @@ impl Widget for BackupsListPanel {
         // Loading / empty-state / list, re-derived whenever either the loading
         // flag or the list content changes.
         let idx_model = model.clone();
-        let switch_index =
-            self.vm
-                .loading()
-                .zip(&self.vm.epoch())
-                .map(move |(loading, _epoch)| {
-                    if *loading {
-                        0usize
-                    } else if idx_model.is_empty() {
-                        1usize
-                    } else {
-                        2usize
-                    }
-                });
+        let switch_index = self
+            .vm
+            .loading()
+            .zip(&self.vm.epoch())
+            .map(move |(loading, _epoch)| {
+                if *loading {
+                    0usize
+                } else if idx_model.is_empty() {
+                    1usize
+                } else {
+                    2usize
+                }
+            });
         let body = Switcher::new(switch_index)
             .child(
                 Padding::symmetric(24.0, 40.0).child(
@@ -317,5 +315,4 @@ mod tests {
             );
         }
     }
-
 }

@@ -507,7 +507,11 @@ mod imp {
             Ok(())
         }
 
-        pub fn set_dict_language(&self, tags: &[String], _stack: Option<u64>) -> anyhow::Result<()> {
+        pub fn set_dict_language(
+            &self,
+            tags: &[String],
+            _stack: Option<u64>,
+        ) -> anyhow::Result<()> {
             if let Some(mut d) = self.inner.dto.get() {
                 d.dict_language = tags.to_vec();
                 self.inner.dto.set(Some(d));

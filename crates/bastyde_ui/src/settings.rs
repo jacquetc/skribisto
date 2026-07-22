@@ -959,7 +959,8 @@ impl Widget for SettingsPanel {
         // Present in the Switcher regardless, an empty placeholder when no project is
         // open (same as the other Work panes).
         let tags_pane: Box<dyn Widget> = match (
-            ctx.app_state::<crate::view_models::TagsViewModel>().cloned(),
+            ctx.app_state::<crate::view_models::TagsViewModel>()
+                .cloned(),
             &work,
         ) {
             (Some(tvm), Some(w)) if w.id().is_some() => {
@@ -1113,7 +1114,10 @@ impl Widget for SettingsPanel {
                 Box::new(panes::corkboard::corkboard_pane(ctx, &vm)),
             ),
             (Pane::Dictionaries, dictionaries_pane),
-            (Pane::Autosave, Box::new(panes::autosave::autosave_pane(&vm))),
+            (
+                Pane::Autosave,
+                Box::new(panes::autosave::autosave_pane(&vm)),
+            ),
             (Pane::ExportFormats, export_styles_pane),
             (
                 Pane::Keymap,
@@ -1128,7 +1132,10 @@ impl Widget for SettingsPanel {
             (Pane::WorkBackup, work_backup_pane),
             (Pane::WorkLanguage, language_pane),
             (Pane::WorkDictionary, dictionary_pane),
-            (Pane::Spellcheck, Box::new(panes::spellcheck::spellcheck_pane(&vm))),
+            (
+                Pane::Spellcheck,
+                Box::new(panes::spellcheck::spellcheck_pane(&vm)),
+            ),
             (Pane::WorkTags, tags_pane),
             (Pane::WorkAuthor, author_pane),
             (Pane::WorkTextReplacements, text_replacements_pane),

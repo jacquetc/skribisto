@@ -308,6 +308,9 @@ mod tests {
             BackupsListViewModel::display_name("/a/b/novel-20260101-120000.skrib"),
             "novel-20260101-120000.skrib"
         );
-        assert_eq!(BackupsListViewModel::display_name("novel.skrib"), "novel.skrib");
+        assert_eq!(
+            BackupsListViewModel::display_name("novel.skrib"),
+            "novel.skrib"
+        );
     }
 }

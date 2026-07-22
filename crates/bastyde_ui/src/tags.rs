@@ -18,5 +18,5 @@ pub mod tag_tooltip;
 pub use alias_pill_field::AliasPillField;
 pub use mention_list::MentionList;
 pub use presets::Preset;
-pub use tag_chip::{TagChipRow, TagDotsRow};
+pub use tag_chip::TagDotsRow;
 pub use tag_pill_field::TagPillField;

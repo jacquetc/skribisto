@@ -217,13 +217,8 @@ mod imp {
                 details: details.to_string(),
                 discoverable,
             };
-            match binder_tag_commands::create_binder_tag(
-                &self.inner.ctx,
-                stack_id,
-                &dto,
-                owner,
-                -1,
-            ) {
+            match binder_tag_commands::create_binder_tag(&self.inner.ctx, stack_id, &dto, owner, -1)
+            {
                 Ok(created) => Some(created.id),
                 Err(e) => {
                     eprintln!("tags: create failed: {e}");
@@ -277,7 +272,11 @@ mod imp {
         pub fn remove_all(&self, ids: &[u64], stack_id: Option<u64>) {
             let existing: std::collections::HashSet<u64> =
                 self.rows().into_iter().map(|r| r.id).collect();
-            let present: Vec<u64> = ids.iter().copied().filter(|id| existing.contains(id)).collect();
+            let present: Vec<u64> = ids
+                .iter()
+                .copied()
+                .filter(|id| existing.contains(id))
+                .collect();
             if present.is_empty() {
                 return;
             }
@@ -382,10 +381,22 @@ mod imp {
             // A palette shaped like the Basic preset: a status ladder that demonstrates
             // the `status/…` clustering, two flags, and the discoverable taxonomy.
             let mut rows = vec![
-                row(1, "status/draft", "#607d8b", "Written, not yet revised", false),
+                row(
+                    1,
+                    "status/draft",
+                    "#607d8b",
+                    "Written, not yet revised",
+                    false,
+                ),
                 row(2, "status/finished", "#27ae60", "", false),
                 row(3, "status/outline", "#95a5a6", "", false),
-                row(4, "needs research", "#f39c12", "Check this before publishing", false),
+                row(
+                    4,
+                    "needs research",
+                    "#f39c12",
+                    "Check this before publishing",
+                    false,
+                ),
                 row(5, "character", "#2980b9", "A person in the story", true),
                 row(6, "place", "#8e44ad", "", true),
             ];
@@ -479,20 +490,16 @@ mod imp {
             let mut skipped = Vec::new();
             for r in rows {
                 if r.name.trim().is_empty()
-                    || current.iter().any(|e| name_key(&e.name) == name_key(&r.name))
+                    || current
+                        .iter()
+                        .any(|e| name_key(&e.name) == name_key(&r.name))
                 {
                     skipped.push(r.name.clone());
                     continue;
                 }
                 let id = self.inner.next_id.get();
                 self.inner.next_id.set(id + 1);
-                current.push(row(
-                    id,
-                    r.name.trim(),
-                    &r.color,
-                    &r.details,
-                    r.discoverable,
-                ));
+                current.push(row(id, r.name.trim(), &r.color, &r.details, r.discoverable));
             }
             self.replace(current);
             skipped
@@ -591,7 +598,10 @@ mod tests {
 
     #[test]
     fn surrounding_space_does_not_hide_a_collision() {
-        assert_eq!(colliding_name(&palette(), "  b  ", None).as_deref(), Some("B"));
+        assert_eq!(
+            colliding_name(&palette(), "  b  ", None).as_deref(),
+            Some("B")
+        );
     }
 
     /// Renaming a tag must not warn that it collides with itself — that would fire on

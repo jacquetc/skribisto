@@ -84,6 +84,10 @@ pub struct TypographyRuleset {
     /// state — but recorded per locale because the data is the hard part to get
     /// right and Russian inverts what Polish does, so a later reader must not
     /// guess it from the primary pair.
+    #[allow(
+        dead_code,
+        reason = "recorded per locale ahead of the nesting rule that will read it — see the doc comment"
+    )]
     pub secondary_quotes: QuoteSystem,
     /// Punctuation that takes a space *before* it, and which space character.
     ///
@@ -97,14 +101,11 @@ pub struct TypographyRuleset {
     /// Recorded here, applied by the paragraph-aware subsystem rather than by
     /// [`TypographyEngine`] — a dialogue dash is meaningless without knowing a
     /// paragraph just began.
+    #[allow(
+        dead_code,
+        reason = "applied by the paragraph-aware subsystem, which is not built yet"
+    )]
     pub dialogue_dash: Option<char>,
-    /// ASCII punctuation this locale writes with its own glyph.
-    ///
-    /// Only ever non-empty for Arabic-script locales. Gated on
-    /// [`language::uses_arabic_script`] rather than on `is_rtl`, because Hebrew
-    /// is right-to-left and keeps the ASCII marks — mirroring off `is_rtl` would
-    /// corrupt Hebrew prose.
-    pub mirrored_punctuation: &'static [(char, char)],
 }
 
 // ── Glyph names, so the table below reads as prose rather than as code points ──
@@ -166,7 +167,6 @@ const DEFAULT_RULESET: TypographyRuleset = TypographyRuleset {
     },
     pre_punctuation: NO_SPACING,
     dialogue_dash: None,
-    mirrored_punctuation: NO_MIRRORING,
 };
 
 /// Shorthand for a row that differs from [`DEFAULT_RULESET`] only in the fields
@@ -177,7 +177,6 @@ const fn ruleset(
     secondary: QuoteSystem,
     pre_punctuation: &'static [(char, char)],
     dialogue_dash: Option<char>,
-    mirrored_punctuation: &'static [(char, char)],
 ) -> TypographyRuleset {
     TypographyRuleset {
         tag,
@@ -185,7 +184,6 @@ const fn ruleset(
         secondary_quotes: secondary,
         pre_punctuation,
         dialogue_dash,
-        mirrored_punctuation,
     }
 }
 
@@ -234,7 +232,7 @@ const PAIR_POLISH: QuoteSystem = QuoteSystem::Paired {
 /// `de-CH` finds its guillemets while `de-BE` falls back to the German row.
 const RULESETS: &[TypographyRuleset] = &[
     // ── English ──────────────────────────────────────────────────────────────
-    ruleset("en", PAIR_CURLY, PAIR_SINGLE_CURLY, NO_SPACING, None, NO_MIRRORING),
+    ruleset("en", PAIR_CURLY, PAIR_SINGLE_CURLY, NO_SPACING, None),
     // ── French: the one locale with pre-punctuation spacing ──────────────────
     ruleset(
         "fr",
@@ -242,34 +240,50 @@ const RULESETS: &[TypographyRuleset] = &[
         PAIR_CURLY,
         FRENCH_SPACING,
         Some(EM_DASH),
-        NO_MIRRORING,
     ),
     // ── German: „…“, except Switzerland, where it is officially prohibited ───
-    ruleset("de", PAIR_LOW_HIGH, PAIR_SINGLE_LOW_HIGH, NO_SPACING, None, NO_MIRRORING),
+    ruleset("de", PAIR_LOW_HIGH, PAIR_SINGLE_LOW_HIGH, NO_SPACING, None),
     ruleset(
         "de-CH",
         PAIR_GUILLEMET,
         PAIR_SINGLE_GUILLEMET,
         NO_SPACING,
         None,
-        NO_MIRRORING,
     ),
     // ── Iberian and Italian ──────────────────────────────────────────────────
-    ruleset("es", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH), NO_MIRRORING),
-    ruleset("ca", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH), NO_MIRRORING),
+    ruleset("es", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH)),
+    ruleset("ca", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH)),
     // Italian genuinely has three co-existing systems; guillemets are the
     // literary default and the house-style override covers the other two.
-    ruleset("it", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH), NO_MIRRORING),
+    ruleset("it", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH)),
     // Portugal and Brazil diverge on quotes and agree on the travessão.
-    ruleset("pt", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH), NO_MIRRORING),
-    ruleset("pt-BR", PAIR_CURLY, PAIR_SINGLE_CURLY, NO_SPACING, Some(EM_DASH), NO_MIRRORING),
+    ruleset("pt", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH)),
+    ruleset(
+        "pt-BR",
+        PAIR_CURLY,
+        PAIR_SINGLE_CURLY,
+        NO_SPACING,
+        Some(EM_DASH),
+    ),
     // ── Dutch ────────────────────────────────────────────────────────────────
-    ruleset("nl", PAIR_CURLY, PAIR_SINGLE_CURLY, NO_SPACING, None, NO_MIRRORING),
+    ruleset("nl", PAIR_CURLY, PAIR_SINGLE_CURLY, NO_SPACING, None),
     // ── Slavic ───────────────────────────────────────────────────────────────
     // Polish opens low and closes high-right — NOT the German pair.
-    ruleset("pl", PAIR_POLISH, PAIR_SINGLE_LOW_HIGH, NO_SPACING, Some(EM_DASH), NO_MIRRORING),
+    ruleset(
+        "pl",
+        PAIR_POLISH,
+        PAIR_SINGLE_LOW_HIGH,
+        NO_SPACING,
+        Some(EM_DASH),
+    ),
     // Russian nests the reverse of Polish: guillemets outside, low-high inside.
-    ruleset("ru", PAIR_GUILLEMET, PAIR_LOW_HIGH, NO_SPACING, Some(EM_DASH), NO_MIRRORING),
+    ruleset(
+        "ru",
+        PAIR_GUILLEMET,
+        PAIR_LOW_HIGH,
+        NO_SPACING,
+        Some(EM_DASH),
+    ),
     // ── Swedish: the same glyph both ends ────────────────────────────────────
     ruleset(
         "sv",
@@ -277,20 +291,18 @@ const RULESETS: &[TypographyRuleset] = &[
         QuoteSystem::Symmetric(RIGHT_SINGLE),
         NO_SPACING,
         Some(EM_DASH),
-        NO_MIRRORING,
     ),
     // ── Turkish: double quotes, em-dash dialogue, and explicitly NO French
     //    spacing — porting that rule across would be an actual error here. ────
-    ruleset("tr", PAIR_CURLY, PAIR_SINGLE_CURLY, NO_SPACING, Some(EM_DASH), NO_MIRRORING),
-    // ── Arabic: the punctuation-mirroring row ────────────────────────────────
     ruleset(
-        "ar",
-        PAIR_GUILLEMET,
+        "tr",
         PAIR_CURLY,
+        PAIR_SINGLE_CURLY,
         NO_SPACING,
         Some(EM_DASH),
-        ARABIC_MIRRORING,
     ),
+    // ── Arabic: the punctuation-mirroring row ────────────────────────────────
+    ruleset("ar", PAIR_GUILLEMET, PAIR_CURLY, NO_SPACING, Some(EM_DASH)),
 ];
 
 /// The ruleset for `tag`, most-specific match first, never failing.
@@ -484,20 +496,19 @@ impl TypographyEngine {
         // writer typed before it. Only an ASCII space is consumed: if the
         // preceding character is already a no-break space the rule has already
         // run, and re-firing would loop.
-        if self.flags.pre_punctuation_spacing {
-            if let Some(&(_, space)) = self
+        if self.flags.pre_punctuation_spacing
+            && let Some(&(_, space)) = self
                 .ruleset
                 .pre_punctuation
                 .iter()
                 .find(|(mark, _)| *mark == last)
-            {
-                let mut chars = before.chars().rev();
-                let _mark = chars.next();
-                if chars.next() == Some(' ') {
-                    let typed: String = [' ', last].iter().collect();
-                    let replacement: String = [space, last].iter().collect();
-                    return Some(fired(2, replacement, &typed));
-                }
+        {
+            let mut chars = before.chars().rev();
+            let _mark = chars.next();
+            if chars.next() == Some(' ') {
+                let typed: String = [' ', last].iter().collect();
+                let replacement: String = [space, last].iter().collect();
+                return Some(fired(2, replacement, &typed));
             }
         }
 
@@ -573,7 +584,11 @@ mod tests {
     #[test]
     fn a_region_falls_back_to_its_language_but_an_exact_row_wins() {
         assert_eq!(ruleset_for("fr-CA").tag, "fr", "no fr-CA row, inherit fr");
-        assert_eq!(ruleset_for("de-AT").tag, "de", "Austria uses the German row");
+        assert_eq!(
+            ruleset_for("de-AT").tag,
+            "de",
+            "Austria uses the German row"
+        );
         assert_eq!(ruleset_for("de-CH").tag, "de-CH", "Switzerland has its own");
         assert_eq!(ruleset_for("pt-BR").tag, "pt-BR");
         assert_eq!(ruleset_for("pt-PT").tag, "pt");
@@ -628,7 +643,10 @@ mod tests {
         assert_eq!(f.replace_chars, 3);
         assert_eq!(f.replacement, "…");
         assert_eq!(f.typed, "...");
-        assert!(en().check("wait..").is_none(), "two dots are not an ellipsis");
+        assert!(
+            en().check("wait..").is_none(),
+            "two dots are not an ellipsis"
+        );
     }
 
     /// Typing three hyphens has to reach an em dash even though the engine

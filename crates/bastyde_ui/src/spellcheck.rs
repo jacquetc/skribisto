@@ -33,10 +33,10 @@
 //! to UTF-8 before handing the strings to spellbook. A dictionary that still fails to parse is
 //! simply absent (cached as `None`), never a crash.
 
-pub(crate) mod toggle_button;
-pub(crate) mod dictionary_registry;
 pub(crate) mod add_dictionary_panel;
+pub(crate) mod dictionary_registry;
 pub(crate) mod language_pill_field;
+pub(crate) mod toggle_button;
 
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
@@ -117,10 +117,10 @@ fn detect_encoding(aff_bytes: &[u8]) -> &'static encoding_rs::Encoding {
     // `SET` and the label are ASCII, so a lossy decode of the head is safe to scan.
     let head = String::from_utf8_lossy(&aff_bytes[..aff_bytes.len().min(1024)]);
     for line in head.lines() {
-        if let Some(rest) = line.strip_prefix("SET ") {
-            if let Some(enc) = encoding_rs::Encoding::for_label(rest.trim().as_bytes()) {
-                return enc;
-            }
+        if let Some(rest) = line.strip_prefix("SET ")
+            && let Some(enc) = encoding_rs::Encoding::for_label(rest.trim().as_bytes())
+        {
+            return enc;
         }
     }
     encoding_rs::UTF_8
@@ -311,8 +311,7 @@ impl SpellChecker {
     /// a unit test has no business depending on.
     pub(crate) fn for_tests(dic_words: &[&str], personal: &[&str]) -> Self {
         let dic = format!("{}\n{}\n", dic_words.len(), dic_words.join("\n"));
-        let dict =
-            spellbook::Dictionary::new("SET UTF-8\n", &dic).expect("tiny dictionary parses");
+        let dict = spellbook::Dictionary::new("SET UTF-8\n", &dic).expect("tiny dictionary parses");
         Self {
             dicts: vec![Arc::new(dict)],
             personal: personal.iter().map(|s| s.to_string()).collect(),
@@ -627,6 +626,9 @@ impl Default for SpellcheckService {
 /// read **live** at recompute time (via the closure a focused view supplies): the editor batches a
 /// printable keystroke a frame behind the caret signal, so a value pushed earlier would be stale
 /// exactly when a just-typed space should reveal the word.
+/// Reads the focused editor's caret offset on demand.
+type CaretProbe = Rc<dyn Fn() -> usize>;
+
 pub struct SpellSession {
     doc: TextDocument,
     session: SessionId,
@@ -651,7 +653,7 @@ pub struct SpellSession {
     /// caret exempts a word; `None` = no view focused = nothing exempt. The reader is a closure so
     /// a headless test can inject a caret without a mounted editor (production reads
     /// `EditorHandle::cursor_position`).
-    focused: RefCell<Option<(WidgetId, Rc<dyn Fn() -> usize>)>>,
+    focused: RefCell<Option<(WidgetId, CaretProbe)>>,
     /// Every misspelling in the document, exemption **not** applied — the cache a caret move
     /// re-filters instead of re-scanning.
     all_ranges: RefCell<Vec<RangeHighlight>>,
@@ -885,7 +887,8 @@ impl SpellSession {
         }
         self.last_exempt.set(exempt);
         #[cfg(test)]
-        self.exemption_recomputes.set(self.exemption_recomputes.get() + 1);
+        self.exemption_recomputes
+            .set(self.exemption_recomputes.get() + 1);
         // Exempt **at most one** word — the first the caret falls in. This matters only where two
         // misspelled words touch with no separator (adjacent CJK / Hiragana characters, which
         // UAX#29 splits into one-char tokens): a caret on the shared boundary is inclusive-in both,
@@ -919,7 +922,6 @@ impl Drop for SpellSession {
         self.doc.remove_session(self.session);
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -978,7 +980,10 @@ mod tests {
         assert!(svc.build_checker(&tags("en-US")).is_some(), "on by default");
 
         svc.set_enabled(false);
-        assert!(svc.build_checker(&tags("en-US")).is_none(), "off — no checker at all");
+        assert!(
+            svc.build_checker(&tags("en-US")).is_none(),
+            "off — no checker at all"
+        );
 
         svc.set_enabled(true);
         let checker = svc.build_checker(&tags("en-US")).expect("back on");
@@ -1006,7 +1011,10 @@ mod tests {
         let svc = SpellcheckService::new();
         svc.set_enabled(false);
         svc.clear();
-        assert!(!svc.is_enabled(), "the switch is app-wide, not project state");
+        assert!(
+            !svc.is_enabled(),
+            "the switch is app-wide, not project state"
+        );
     }
 
     /// Char offsets are correct through accented text (a byte offset would be wrong here).
@@ -1023,7 +1031,10 @@ mod tests {
     fn word_positions_keeps_apostrophes() {
         let straight: Vec<&str> = word_positions("don't").iter().map(|(_, _, w)| *w).collect();
         assert_eq!(straight, ["don't"]);
-        let curly: Vec<&str> = word_positions("l\u{2019}auteur").iter().map(|(_, _, w)| *w).collect();
+        let curly: Vec<&str> = word_positions("l\u{2019}auteur")
+            .iter()
+            .map(|(_, _, w)| *w)
+            .collect();
         assert_eq!(curly, ["l\u{2019}auteur"]);
     }
 
@@ -1069,8 +1080,14 @@ mod tests {
             personal: HashSet::new(),
         };
         let got = hl.suggest("helo");
-        assert!(got.contains(&"hello".to_string()), "expected 'hello' in {got:?}");
-        assert!(got.len() <= MAX_SUGGESTIONS, "capped at {MAX_SUGGESTIONS}: {got:?}");
+        assert!(
+            got.contains(&"hello".to_string()),
+            "expected 'hello' in {got:?}"
+        );
+        assert!(
+            got.len() <= MAX_SUGGESTIONS,
+            "capped at {MAX_SUGGESTIONS}: {got:?}"
+        );
         // Nothing alphabetic is not correctable.
         assert!(hl.suggest("123").is_empty(), "a number has no corrections");
     }
@@ -1115,7 +1132,10 @@ mod tests {
             dicts: vec![Arc::new(dict)],
             personal,
         };
-        assert!(hl.misspelled("skribisto"), "precondition: exact-case matching flags it");
+        assert!(
+            hl.misspelled("skribisto"),
+            "precondition: exact-case matching flags it"
+        );
         assert_eq!(
             hl.suggest("skribisto").first().map(String::as_str),
             Some("Skribisto"),
@@ -1167,7 +1187,11 @@ mod tests {
             got.contains(&"Helios".to_string()),
             "the 2-edit personal word keeps its reserved slot, got {got:?}"
         );
-        assert_eq!(got.len(), MAX_SUGGESTIONS, "and the list is still full: {got:?}");
+        assert_eq!(
+            got.len(),
+            MAX_SUGGESTIONS,
+            "and the list is still full: {got:?}"
+        );
         assert_eq!(
             got.last().map(String::as_str),
             Some("Helios"),
@@ -1237,7 +1261,11 @@ mod tests {
             MAX_SUGGESTIONS,
             "the collided slot is refilled from the dictionary, got {got:?}"
         );
-        assert_eq!(got.iter().filter(|w| *w == "aaa").count(), 1, "and not duplicated");
+        assert_eq!(
+            got.iter().filter(|w| *w == "aaa").count(),
+            1,
+            "and not duplicated"
+        );
     }
 
     /// The dictionary is never pulled past the budget — the early-exit that keeps a second
@@ -1265,7 +1293,11 @@ mod tests {
     fn the_typed_word_is_never_its_own_correction() {
         let dict = vec!["helo".to_string(), "hello".to_string()];
         let got = merge_suggestions("helo", vec![(0, "helo".into())], dict.into_iter());
-        assert_eq!(got, ["hello"], "the input is dropped from every source: {got:?}");
+        assert_eq!(
+            got,
+            ["hello"],
+            "the input is dropped from every source: {got:?}"
+        );
     }
 
     /// Ties are ordered deterministically — `personal` is a `HashSet`, and a menu that reshuffles
@@ -1274,15 +1306,26 @@ mod tests {
     fn personal_suggestions_are_stable_across_runs() {
         let dict = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
         // Three terms all exactly one edit from "Xan" — the tie the HashSet would shuffle.
-        let personal: HashSet<String> = ["Xen", "Xin", "Xon"].iter().map(|s| s.to_string()).collect();
+        let personal: HashSet<String> = ["Xen", "Xin", "Xon"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
         let hl = SpellChecker {
             dicts: vec![Arc::new(dict)],
             personal,
         };
         let first = hl.suggest("Xan");
-        assert_eq!(first, ["Xen", "Xin", "Xon"], "equal-distance ties sort alphabetically");
+        assert_eq!(
+            first,
+            ["Xen", "Xin", "Xon"],
+            "equal-distance ties sort alphabetically"
+        );
         for _ in 0..5 {
-            assert_eq!(hl.suggest("Xan"), first, "the order must not vary between calls");
+            assert_eq!(
+                hl.suggest("Xan"),
+                first,
+                "the order must not vary between calls"
+            );
         }
     }
 
@@ -1350,7 +1393,10 @@ mod tests {
         let dic = dir.join("ok.dic");
         std::fs::write(&aff, "SET UTF-8\n").unwrap();
         std::fs::write(&dic, "1\nhello\n").unwrap();
-        assert!(validate_dictionary_files(&aff, &dic).is_ok(), "a real pair validates");
+        assert!(
+            validate_dictionary_files(&aff, &dic).is_ok(),
+            "a real pair validates"
+        );
 
         // A missing file is a read error, not a panic.
         assert!(validate_dictionary_files(&dir.join("nope.aff"), &dic).is_err());
@@ -1358,7 +1404,10 @@ mod tests {
         // A .dic whose count line is nonsense fails to parse (spellbook rejects it).
         let bad = dir.join("bad.dic");
         std::fs::write(&bad, "not-a-count\n\0\0garbage").unwrap();
-        assert!(validate_dictionary_files(&aff, &bad).is_err(), "garbage is rejected");
+        assert!(
+            validate_dictionary_files(&aff, &bad).is_err(),
+            "garbage is rejected"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -1397,7 +1446,12 @@ mod tests {
     }
 
     fn starts(session: &SpellSession) -> Vec<usize> {
-        session.last_ranges.borrow().iter().map(|r| r.start).collect()
+        session
+            .last_ranges
+            .borrow()
+            .iter()
+            .map(|r| r.start)
+            .collect()
     }
 
     #[test]
@@ -1407,7 +1461,11 @@ mod tests {
         let caret = Rc::new(Cell::new(2usize)); // inside "helo" [0,4]
         focus_at(&session, &caret);
         session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
-        assert_eq!(starts(&session), vec![5], "caret word exempt; only wrld (char 5) flagged");
+        assert_eq!(
+            starts(&session),
+            vec![5],
+            "caret word exempt; only wrld (char 5) flagged"
+        );
     }
 
     #[test]
@@ -1415,7 +1473,11 @@ mod tests {
         let doc = tiny_doc("helo wrld");
         let session = SpellSession::new(&doc);
         session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
-        assert_eq!(starts(&session), vec![0, 5], "no exemption without a focused caret");
+        assert_eq!(
+            starts(&session),
+            vec![0, 5],
+            "no exemption without a focused caret"
+        );
     }
 
     #[test]
@@ -1425,7 +1487,11 @@ mod tests {
         let caret = Rc::new(Cell::new(4usize)); // the END of "helo" [0,4] — still typing it
         focus_at(&session, &caret);
         session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
-        assert_eq!(starts(&session), vec![5], "inclusive end keeps the just-typed word exempt");
+        assert_eq!(
+            starts(&session),
+            vec![5],
+            "inclusive end keeps the just-typed word exempt"
+        );
     }
 
     #[test]
@@ -1437,13 +1503,25 @@ mod tests {
         let session = SpellSession::new(&doc);
         let fmt = || spell_format(Color::rgb(220, 50, 50));
         *session.all_ranges.borrow_mut() = vec![
-            RangeHighlight { start: 0, length: 1, format: fmt() },
-            RangeHighlight { start: 1, length: 1, format: fmt() },
+            RangeHighlight {
+                start: 0,
+                length: 1,
+                format: fmt(),
+            },
+            RangeHighlight {
+                start: 1,
+                length: 1,
+                format: fmt(),
+            },
         ];
         let caret = Rc::new(Cell::new(1usize));
         focus_at(&session, &caret);
         session.apply_exemption(true); // forced: `all_ranges` was poked in directly
-        assert_eq!(starts(&session), vec![1], "only the first touching word is exempt, not both");
+        assert_eq!(
+            starts(&session),
+            vec![1],
+            "only the first touching word is exempt, not both"
+        );
     }
 
     #[test]
@@ -1458,7 +1536,11 @@ mod tests {
         caret.set(6); // move into "wrld" [5,9]
         session.on_caret(WidgetId::default());
         session.tick();
-        assert_eq!(starts(&session), vec![0], "now helo is flagged and wrld exempt");
+        assert_eq!(
+            starts(&session),
+            vec![0],
+            "now helo is flagged and wrld exempt"
+        );
     }
 
     /// The B2-M0 fast path: a caret move that stays inside the same exempted word must not
@@ -1515,11 +1597,17 @@ mod tests {
             session.all_ranges.borrow().is_empty(),
             "a hidden pane does not tokenise on set_checker"
         );
-        assert!(session.last_ranges.borrow().is_empty(), "and nothing is pushed");
+        assert!(
+            session.last_ranges.borrow().is_empty(),
+            "and nothing is pushed"
+        );
 
         // A tick while still hidden stays a no-op (and must not consume the owed rebuild).
         session.tick();
-        assert!(session.all_ranges.borrow().is_empty(), "still nothing while hidden");
+        assert!(
+            session.all_ranges.borrow().is_empty(),
+            "still nothing while hidden"
+        );
 
         // Shown again → the next tick performs the deferred rebuild.
         session.set_active(true);
@@ -1536,11 +1624,18 @@ mod tests {
         let doc = tiny_doc("hello"); // correct → nothing flagged
         let session = SpellSession::new(&doc);
         session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
-        assert!(session.last_ranges.borrow().is_empty(), "correct prose has no squiggle");
+        assert!(
+            session.last_ranges.borrow().is_empty(),
+            "correct prose has no squiggle"
+        );
 
         doc.set_plain_text("helo").unwrap(); // now misspelled — fires an offset-moving event
         session.tick();
-        assert_eq!(starts(&session), vec![0], "the edit is picked up on the tick");
+        assert_eq!(
+            starts(&session),
+            vec![0],
+            "the edit is picked up on the tick"
+        );
     }
 
     #[test]
@@ -1563,7 +1658,11 @@ mod tests {
         let doc = tiny_doc("hello\nwrld"); // block 2 ("wrld") starts one past block 1 ("hello")
         let session = SpellSession::new(&doc);
         session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
-        assert_eq!(starts(&session), vec![6], "wrld sits at char 6 (5 + the 1-char block gap)");
+        assert_eq!(
+            starts(&session),
+            vec![6],
+            "wrld sits at char 6 (5 + the 1-char block gap)"
+        );
     }
 
     #[test]
@@ -1573,7 +1672,10 @@ mod tests {
         session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
         assert!(!session.last_ranges.borrow().is_empty());
         session.set_checker(None, Color::rgb(220, 50, 50)); // degrade
-        assert!(session.last_ranges.borrow().is_empty(), "no checker → no ranges, session kept");
+        assert!(
+            session.last_ranges.borrow().is_empty(),
+            "no checker → no ranges, session kept"
+        );
     }
 
     #[test]
@@ -1583,6 +1685,10 @@ mod tests {
         session.set_checker(Some(en_checker()), Color::rgb(220, 50, 50));
         let before = session.last_ranges.borrow().clone();
         session.tick(); // nothing dirty
-        assert_eq!(*session.last_ranges.borrow(), before, "an idle tick changes nothing");
+        assert_eq!(
+            *session.last_ranges.borrow(),
+            before,
+            "an idle tick changes nothing"
+        );
     }
 }

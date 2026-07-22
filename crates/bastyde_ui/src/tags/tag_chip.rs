@@ -30,14 +30,12 @@
 //! Tooltips are unaffected either way: they hang off `PointerMove` hit-testing
 //! (`tooltip_pointer_enter` on the raw target), not off the gesture arena.
 
-use std::rc::Rc;
-
 use bastyde::core::BindingLevel;
 use bastyde::core::accesskit::Role;
+use bastyde::core::overlay::TooltipPlacement;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::tokens::{BorderRole, CornerRadius};
-use bastyde::core::overlay::TooltipPlacement;
 use bastyde::widgets::{
     Center, FocusScope, HStack, MinSize, Popover, RectWidget, TextWidget, TraversalScopePolicy,
     ZStack,
@@ -283,7 +281,9 @@ struct FixedDot {
 
 impl std::fmt::Debug for FixedDot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("FixedDot").field("size", &self.size).finish()
+        f.debug_struct("FixedDot")
+            .field("size", &self.size)
+            .finish()
     }
 }
 

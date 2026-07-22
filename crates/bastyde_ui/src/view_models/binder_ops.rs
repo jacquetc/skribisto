@@ -241,7 +241,11 @@ pub(crate) fn demote_blocked_children(
     // the raw span therefore blocked a chapter the writer had already emptied — while the
     // prompt was telling them to "move or trash them first". Only live rows block.
     match binder_item_commands::get_binder_item_multi(app_ctx, span) {
-        Ok(items) => items.into_iter().flatten().filter(|it| it.activated).count(),
+        Ok(items) => items
+            .into_iter()
+            .flatten()
+            .filter(|it| it.activated)
+            .count(),
         // A failed read must not answer `0`: that reads as "nothing blocks this" and waves
         // through the conversion this guard exists to stop. Fall back to the whole span.
         Err(_) => span.len(),
@@ -463,7 +467,9 @@ mod tests {
     #[test]
     fn split_djot_cuts_at_the_caret() {
         let doc = TextDocument::new();
-        doc.cursor().insert_text("Hello world");
+        doc.cursor()
+            .insert_text("Hello world")
+            .expect("seed the document");
 
         let (before, after) = split_djot(&doc, 5).expect("split");
         assert_eq!(before.trim(), "Hello");
@@ -477,7 +483,9 @@ mod tests {
     #[test]
     fn split_djot_refuses_a_boundary_split() {
         let doc = TextDocument::new();
-        doc.cursor().insert_text("Hello");
+        doc.cursor()
+            .insert_text("Hello")
+            .expect("seed the document");
 
         assert!(split_djot(&doc, 0).is_err(), "nothing before the caret");
         assert!(split_djot(&doc, 5).is_err(), "nothing after the caret");

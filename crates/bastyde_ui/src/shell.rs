@@ -10,8 +10,8 @@
 //! the title-bar control that ties them together. [`windows`] builds the two window kinds
 //! (Launcher and project).
 
-pub(crate) mod windows;
-pub(crate) mod project_switcher_button;
-pub(crate) mod open_registry;
 pub(crate) mod ipc;
+pub(crate) mod open_registry;
 pub(crate) mod process;
+pub(crate) mod project_switcher_button;
+pub(crate) mod windows;

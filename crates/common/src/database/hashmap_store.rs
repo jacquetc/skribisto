@@ -681,12 +681,15 @@ pub(crate) fn delete_from_backward_junction(
     let mut jn = junction.write().unwrap();
     let keys: Vec<EntityId> = jn.keys().copied().collect();
     for k in keys {
-        if let Some(right_ids) = jn.get(&k) {
-            if right_ids.contains(id) {
-                let filtered: Vec<EntityId> =
-                    right_ids.iter().copied().filter(|eid| eid != id).collect();
-                jn.insert(k, filtered);
-            }
+        // A let-chain rather than nested ifs: clippy's `collapsible_if` rejects
+        // the nested form under `-D warnings`, and the generated crates are
+        // edition 2024, so the chain is available.
+        if let Some(right_ids) = jn.get(&k)
+            && right_ids.contains(id)
+        {
+            let filtered: Vec<EntityId> =
+                right_ids.iter().copied().filter(|eid| eid != id).collect();
+            jn.insert(k, filtered);
         }
     }
 }
@@ -779,7 +782,10 @@ pub(crate) fn reconcile_backref_list(
     let mut work: Vec<EntityId> = live_list
         .iter()
         .copied()
-        .filter(|x| !(scope.contains(x) && !snap_member_set.contains(x)))
+        // De Morgan'd from `!(in_scope && !in_snapshot)`: same rule, stated the
+        // way clippy's `nonminimal_bool` wants it, and arguably plainer — keep
+        // anything outside the scope, plus anything the snapshot still holds.
+        .filter(|x| !scope.contains(x) || snap_member_set.contains(x))
         .collect();
 
     // Re-insert missing scope ids at their snapshot-relative position (count of snapshot

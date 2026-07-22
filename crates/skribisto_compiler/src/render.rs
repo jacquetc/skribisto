@@ -105,7 +105,11 @@ pub fn render_to_file(
         }
         ExportFormat::Docx => {
             let out = path.to_string_lossy().into_owned();
-            let opts = docx_options(req.preset, &req.gathered.work.title, &req.gathered.work.author_name);
+            let opts = docx_options(
+                req.preset,
+                &req.gathered.work.title,
+                &req.gathered.work.author_name,
+            );
             doc.to_docx_with_options(&out, opts)?
                 .wait()
                 .map_err(|e| anyhow!("writing DOCX '{out}': {e:#}"))?;
@@ -272,14 +276,17 @@ fn assemble(
     req: &RenderRequest,
     progress: &dyn Fn(f32),
     cancel: &AtomicBool,
-) -> Result<(TextDocument, RenderStats, std::collections::BTreeSet<String>)> {
+) -> Result<(
+    TextDocument,
+    RenderStats,
+    std::collections::BTreeSet<String>,
+)> {
     let rows = flatten(req);
     let preset = req.preset;
 
     // The effective languages of the included rows — the PDF arm uses these to decide which
     // RTL faces to embed, so it needn't re-flatten the tree just to recompute them.
-    let langs: std::collections::BTreeSet<String> =
-        rows.iter().map(|r| r.lang.clone()).collect();
+    let langs: std::collections::BTreeSet<String> = rows.iter().map(|r| r.lang.clone()).collect();
 
     // Heading levels are dense over the structural levels actually present, so a
     // chapter-only export starts at h1 and a book+chapter export (no parts) uses h1/h2.
@@ -312,7 +319,11 @@ fn assemble(
         // happens to start like a list marker survives intact. "A. Writer"
         // reached the page as "Writer" until this was added.
         if !w.author_name.trim().is_empty() {
-            push_para(&mut out, &escape_block_leading(w.author_name.trim()), work_rtl);
+            push_para(
+                &mut out,
+                &escape_block_leading(w.author_name.trim()),
+                work_rtl,
+            );
         }
     }
 
@@ -382,29 +393,31 @@ fn assemble(
 
         // 2. The main prose (a scene's SceneText, a note's NoteText) — appended verbatim
         //    since it is already Djot.
-        if let Some(role) = main_prose_role(&row.item.sub_role) {
-            if let Some(prose) = content_of(row.contents, role) {
-                // Only a scene's own prose is scanned for break markers. A
-                // marker typed into a Note is just literal text — the model is
-                // about scene flow.
-                let scan = row.item.sub_role.carries_scene();
-                // A scene whose whole prose is a single break marker emits no
-                // prose at all, so it must not be counted as an emitted item —
-                // the marker is furniture, and the row contributed nothing.
-                let (w, emitted) = push_prose(&mut out, prose, row_rtl, preset, scan, &mut pending_attrs);
-                words += w;
-                contributed |= emitted;
-            }
+        if let Some(role) = main_prose_role(&row.item.sub_role)
+            && let Some(prose) = content_of(row.contents, role)
+        {
+            // Only a scene's own prose is scanned for break markers. A
+            // marker typed into a Note is just literal text — the model is
+            // about scene flow.
+            let scan = row.item.sub_role.carries_scene();
+            // A scene whose whole prose is a single break marker emits no
+            // prose at all, so it must not be counted as an emitted item —
+            // the marker is furniture, and the row contributed nothing.
+            let (w, emitted) =
+                push_prose(&mut out, prose, row_rtl, preset, scan, &mut pending_attrs);
+            words += w;
+            contributed |= emitted;
         }
 
         // 3. The synopsis, if the preset keeps it.
-        if preset.include_synopses {
-            if let Some(syn) = content_of(row.contents, ContentRole::SynopsisText) {
-                // A synopsis is commentary, not the scene's prose — never
-                // scanned for markers, and its words are not the manuscript's.
-                let (_, emitted) = push_prose(&mut out, syn, row_rtl, preset, false, &mut pending_attrs);
-                contributed |= emitted;
-            }
+        if preset.include_synopses
+            && let Some(syn) = content_of(row.contents, ContentRole::SynopsisText)
+        {
+            // A synopsis is commentary, not the scene's prose — never
+            // scanned for markers, and its words are not the manuscript's.
+            let (_, emitted) =
+                push_prose(&mut out, syn, row_rtl, preset, false, &mut pending_attrs);
+            contributed |= emitted;
         }
 
         if contributed {
@@ -425,7 +438,14 @@ fn assemble(
         doc.set_text_direction(dir)?;
     }
 
-    Ok((doc, RenderStats { items: emitted_items, words }, langs))
+    Ok((
+        doc,
+        RenderStats {
+            items: emitted_items,
+            words,
+        },
+        langs,
+    ))
 }
 
 /// Flatten the frozen tree into the included rows, in document order, each with its
@@ -450,7 +470,11 @@ fn flatten<'a>(req: &'a RenderRequest) -> Vec<Row<'a>> {
                     .map(|l| language::primary(l).to_string())
                     .filter(|l| !l.is_empty())
                     .unwrap_or_else(|| req.work_lang.to_string());
-                rows.push(Row { item: &iwc.item, contents: &iwc.contents, lang });
+                rows.push(Row {
+                    item: &iwc.item,
+                    contents: &iwc.contents,
+                    lang,
+                });
             }
         }
     }
@@ -547,7 +571,7 @@ fn push_prose(
         cursor += b.len() + 2;
     }
     let mut run_start: Option<usize> = None;
-    let mut flush = |out: &mut String, range: Option<(usize, usize)>, pending: &mut Vec<String>| {
+    let flush = |out: &mut String, range: Option<(usize, usize)>, pending: &mut Vec<String>| {
         let Some((a, b)) = range else { return false };
         let text = trimmed[a..b.min(trimmed.len())].trim_end();
         if text.trim().is_empty() {
@@ -733,7 +757,6 @@ impl Counters {
     }
 }
 
-
 fn level_of(sr: &BinderItemSubRole) -> Option<Level> {
     if sr.opens_book() {
         Some(Level::Book)
@@ -774,12 +797,16 @@ fn content_of(contents: &[Content], role: ContentRole) -> Option<&str> {
 /// The item's own title content (ChapterTitle / PartTitle / BookTitle), falling back to the
 /// binder-tree title.
 fn title_of<'a>(row: &'a Row) -> Option<&'a str> {
-    for role in [ContentRole::ChapterTitle, ContentRole::PartTitle, ContentRole::BookTitle] {
+    for role in [
+        ContentRole::ChapterTitle,
+        ContentRole::PartTitle,
+        ContentRole::BookTitle,
+    ] {
         if let Some(t) = content_of(row.contents, role) {
             return Some(t);
         }
     }
-    (!row.item.title.is_empty()).then(|| row.item.title.as_str())
+    (!row.item.title.is_empty()).then_some(row.item.title.as_str())
 }
 
 fn heading_text(
@@ -794,7 +821,9 @@ fn heading_text(
     match scheme {
         HeadingScheme::None => None,
         HeadingScheme::Numbered => Some(numbered()),
-        HeadingScheme::TitleOnly => title_of(row).map(str::to_string).or_else(|| Some(numbered())),
+        HeadingScheme::TitleOnly => title_of(row)
+            .map(str::to_string)
+            .or_else(|| Some(numbered())),
         HeadingScheme::NumberAndTitle => Some(match title_of(row) {
             Some(t) => format!("{} — {t}", numbered()),
             None => numbered(),
@@ -826,7 +855,13 @@ mod tests {
     use crate::preset::builtin_presets;
 
     fn c(id: u64, role: ContentRole, data: &str) -> Content {
-        Content { id, activated: true, role, data: data.to_string(), ..Default::default() }
+        Content {
+            id,
+            activated: true,
+            role,
+            data: data.to_string(),
+            ..Default::default()
+        }
     }
 
     fn iwc(id: u64, sub_role: SR, lang: &str, contents: Vec<Content>) -> ItemWithContents {
@@ -862,7 +897,13 @@ mod tests {
             trash_infos: vec![],
             paces: vec![],
             progress_snapshots: vec![],
-            binders: vec![BinderWithItems { binder: Binder { id: 10, ..Default::default() }, items }],
+            binders: vec![BinderWithItems {
+                binder: Binder {
+                    id: 10,
+                    ..Default::default()
+                },
+                items,
+            }],
             work_info: None,
         }
     }
@@ -875,7 +916,12 @@ mod tests {
     fn flat_book() -> Gathered {
         gathered(
             vec![
-                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    100,
+                    SR::BookBegin,
+                    "en",
+                    vec![c(1, ContentRole::BookTitle, "My Novel")],
+                ),
                 iwc(
                     101,
                     SR::ChapterScene,
@@ -896,8 +942,20 @@ mod tests {
         )
     }
 
-    fn req<'a>(g: &'a Gathered, include: &'a [u64], p: &'a Preset, f: ExportFormat) -> RenderRequest<'a> {
-        RenderRequest { gathered: g, include, preset: p, format: f, work_lang: "en", explicit_selection: false }
+    fn req<'a>(
+        g: &'a Gathered,
+        include: &'a [u64],
+        p: &'a Preset,
+        f: ExportFormat,
+    ) -> RenderRequest<'a> {
+        RenderRequest {
+            gathered: g,
+            include,
+            preset: p,
+            format: f,
+            work_lang: "en",
+            explicit_selection: false,
+        }
     }
 
     #[test]
@@ -906,11 +964,17 @@ mod tests {
         let p = preset("neutral");
         let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
         assert!(html.contains("My Novel"), "book title: {html}");
-        assert!(html.contains("Chapter 1 — Storms"), "chapter heading: {html}");
+        assert!(
+            html.contains("Chapter 1 — Storms"),
+            "chapter heading: {html}"
+        );
         assert!(html.contains("The wind rose over the hills."), "{html}");
         assert!(html.contains("She walked on into the dark."), "{html}");
         // The prose must NOT become a heading.
-        assert!(!html.contains("<h2>The wind"), "prose leaked into a heading: {html}");
+        assert!(
+            !html.contains("<h2>The wind"),
+            "prose leaked into a heading: {html}"
+        );
     }
 
     #[test]
@@ -936,7 +1000,10 @@ mod tests {
         let g = flat_book();
         let p = preset("manuscript-fr");
         let html = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Html)).unwrap();
-        assert!(html.contains("Chapter 1"), "content-language heading: {html}");
+        assert!(
+            html.contains("Chapter 1"),
+            "content-language heading: {html}"
+        );
         assert!(!html.contains("Chapitre 1"));
     }
 
@@ -957,12 +1024,20 @@ mod tests {
     #[test]
     fn an_arabic_work_sets_rtl_direction() {
         let g = gathered(
-            vec![iwc(200, SR::Scene, "ar", vec![c(9, ContentRole::SceneText, "نص عربي هنا.")])],
+            vec![iwc(
+                200,
+                SR::Scene,
+                "ar",
+                vec![c(9, ContentRole::SceneText, "نص عربي هنا.")],
+            )],
             "ar",
         );
         let p = preset("neutral");
         let html = render_to_string(&req(&g, &[200], &p, ExportFormat::Html)).unwrap();
-        assert!(html.contains("rtl"), "RTL direction should reach the HTML: {html}");
+        assert!(
+            html.contains("rtl"),
+            "RTL direction should reach the HTML: {html}"
+        );
     }
 
     /// `flat_book`, but the second scene's prose opens with an author-placed
@@ -970,7 +1045,12 @@ mod tests {
     fn book_with_marker(marker: &str) -> Gathered {
         gathered(
             vec![
-                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    100,
+                    SR::BookBegin,
+                    "en",
+                    vec![c(1, ContentRole::BookTitle, "My Novel")],
+                ),
                 iwc(
                     101,
                     SR::ChapterScene,
@@ -1004,9 +1084,16 @@ mod tests {
         let mut p = preset("neutral");
         p.scene_break = SceneBreak::Glyph("###".to_string());
         p.major_scene_break = SceneBreak::Glyph("+++".to_string());
-        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
-        assert!(!txt.contains("###"), "no marker, so no break may appear: {txt}");
-        assert!(!txt.contains("+++"), "no marker, so no break may appear: {txt}");
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(
+            !txt.contains("###"),
+            "no marker, so no break may appear: {txt}"
+        );
+        assert!(
+            !txt.contains("+++"),
+            "no marker, so no break may appear: {txt}"
+        );
     }
 
     #[test]
@@ -1014,8 +1101,12 @@ mod tests {
         let g = book_with_marker("\\* \\* \\*");
         let mut p = preset("neutral");
         p.scene_break = SceneBreak::Glyph("###".to_string());
-        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
-        assert!(txt.contains("###"), "the marker must render as the glyph: {txt}");
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(
+            txt.contains("###"),
+            "the marker must render as the glyph: {txt}"
+        );
         assert!(
             !txt.contains("* * *"),
             "the marker itself must be consumed, not printed: {txt}"
@@ -1031,7 +1122,8 @@ mod tests {
         let g = flat_book();
         let p = preset("manuscript-shunn");
         assert!(p.book_title_page, "fixture preset must have a title page");
-        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
         assert!(txt.contains("A. Writer"), "the author must appear: {txt}");
         assert!(txt.contains("My Novel"), "the title must appear: {txt}");
         assert!(
@@ -1047,7 +1139,8 @@ mod tests {
         let mut g = flat_book();
         g.work.author_name = String::new();
         let p = preset("manuscript-shunn");
-        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
         assert!(txt.contains("My Novel"), "the title still appears: {txt}");
         assert!(
             !txt.contains("A. Writer"),
@@ -1183,7 +1276,10 @@ mod tests {
             let g = book_with_marker(marker);
             let txt =
                 render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
-            assert!(txt.contains(expected), "marker {marker:?} → {expected:?}: {txt}");
+            assert!(
+                txt.contains(expected),
+                "marker {marker:?} → {expected:?}: {txt}"
+            );
         }
     }
 
@@ -1194,7 +1290,8 @@ mod tests {
         let g = book_with_marker("He was \\*emphatic\\* about it.");
         let mut p = preset("neutral");
         p.scene_break = SceneBreak::Glyph("###".to_string());
-        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
         assert!(txt.contains("emphatic"), "prose must survive: {txt}");
         assert!(!txt.contains("###"), "prose must not become a break: {txt}");
     }
@@ -1383,7 +1480,10 @@ mod tests {
         )
         .unwrap();
         assert!(path.exists(), "epub file should be written");
-        assert!(std::fs::metadata(&path).unwrap().len() > 0, "epub should be non-empty");
+        assert!(
+            std::fs::metadata(&path).unwrap().len() > 0,
+            "epub should be non-empty"
+        );
         assert!(stats.items >= 2);
         let _ = std::fs::remove_file(&path);
     }
@@ -1401,7 +1501,10 @@ mod tests {
         )
         .unwrap();
         assert!(path.exists(), "docx file should be written");
-        assert!(std::fs::metadata(&path).unwrap().len() > 0, "docx should be non-empty");
+        assert!(
+            std::fs::metadata(&path).unwrap().len() > 0,
+            "docx should be non-empty"
+        );
         assert!(stats.items >= 2);
         let _ = std::fs::remove_file(&path);
     }
@@ -1411,9 +1514,13 @@ mod tests {
         let mut g = flat_book();
         g.binders[0].items[2].item.activated = false; // scene 102 trashed
         let p = preset("neutral");
-        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
         assert!(txt.contains("The wind rose"));
-        assert!(!txt.contains("She walked on"), "trashed scene must be excluded: {txt}");
+        assert!(
+            !txt.contains("She walked on"),
+            "trashed scene must be excluded: {txt}"
+        );
     }
 
     fn titled(mut iwc: ItemWithContents, title: &str) -> ItemWithContents {
@@ -1425,7 +1532,12 @@ mod tests {
     fn book_with_note() -> Gathered {
         gathered(
             vec![
-                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    100,
+                    SR::BookBegin,
+                    "en",
+                    vec![c(1, ContentRole::BookTitle, "My Novel")],
+                ),
                 iwc(
                     101,
                     SR::ChapterScene,
@@ -1435,7 +1547,12 @@ mod tests {
                         c(3, ContentRole::SceneText, "The wind rose over the hills."),
                     ],
                 ),
-                iwc(102, SR::Note, "en", vec![c(4, ContentRole::NoteText, "Research: local weather.")]),
+                iwc(
+                    102,
+                    SR::Note,
+                    "en",
+                    vec![c(4, ContentRole::NoteText, "Research: local weather.")],
+                ),
             ],
             "en",
         )
@@ -1446,20 +1563,33 @@ mod tests {
         let g = book_with_note();
         let mut p = preset("neutral"); // include_notes = false
         // Swept into a whole-book export: the note is dropped by default.
-        let txt = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
         assert!(txt.contains("The wind rose"), "{txt}");
-        assert!(!txt.contains("Research"), "a swept note must be dropped by default: {txt}");
+        assert!(
+            !txt.contains("Research"),
+            "a swept note must be dropped by default: {txt}"
+        );
         // The preset keeps notes → included.
         p.include_notes = true;
-        let with = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
-        assert!(with.contains("Research"), "include_notes should keep the note: {with}");
+        let with =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(
+            with.contains("Research"),
+            "include_notes should keep the note: {with}"
+        );
         // An explicit pick (Export Note / a checked item) overrides the toggle being off.
         p.include_notes = false;
         let ids = [102u64];
-        let explicit =
-            RenderRequest { explicit_selection: true, ..req(&g, &ids, &p, ExportFormat::PlainText) };
+        let explicit = RenderRequest {
+            explicit_selection: true,
+            ..req(&g, &ids, &p, ExportFormat::PlainText)
+        };
         let only = render_to_string(&explicit).unwrap();
-        assert!(only.contains("Research"), "an explicit note pick overrides the toggle: {only}");
+        assert!(
+            only.contains("Research"),
+            "an explicit note pick overrides the toggle: {only}"
+        );
     }
 
     #[test]
@@ -1467,11 +1597,21 @@ mod tests {
         let g = gathered(
             vec![
                 titled(
-                    iwc(300, SR::Scene, "en", vec![c(1, ContentRole::SceneText, "Alpha prose.")]),
+                    iwc(
+                        300,
+                        SR::Scene,
+                        "en",
+                        vec![c(1, ContentRole::SceneText, "Alpha prose.")],
+                    ),
                     "Opening",
                 ),
                 titled(
-                    iwc(301, SR::Scene, "en", vec![c(2, ContentRole::SceneText, "Closing prose.")]),
+                    iwc(
+                        301,
+                        SR::Scene,
+                        "en",
+                        vec![c(2, ContentRole::SceneText, "Closing prose.")],
+                    ),
                     "Ending",
                 ),
             ],
@@ -1479,12 +1619,21 @@ mod tests {
         );
         let mut p = preset("neutral"); // include_scene_titles = false
         let without = render_to_string(&req(&g, &[300, 301], &p, ExportFormat::Html)).unwrap();
-        assert!(!without.contains("Opening"), "scene titles must not leak when off: {without}");
+        assert!(
+            !without.contains("Opening"),
+            "scene titles must not leak when off: {without}"
+        );
         // Turned on: the titles head each scene (h1 here — no structural levels present).
         p.include_scene_titles = true;
         let with = render_to_string(&req(&g, &[300, 301], &p, ExportFormat::Html)).unwrap();
-        assert!(with.contains("Opening") && with.contains("Ending"), "scene titles: {with}");
-        assert!(with.contains("<h1"), "scene titles head at h1 with no structural levels: {with}");
+        assert!(
+            with.contains("Opening") && with.contains("Ending"),
+            "scene titles: {with}"
+        );
+        assert!(
+            with.contains("<h1"),
+            "scene titles head at h1 with no structural levels: {with}"
+        );
     }
 
     #[test]
@@ -1503,7 +1652,12 @@ mod tests {
                         c(2, ContentRole::SynopsisText, "A synopsis line."),
                     ],
                 ),
-                iwc(101, SR::Scene, "en", vec![c(3, ContentRole::SceneText, "Start of two.")]),
+                iwc(
+                    101,
+                    SR::Scene,
+                    "en",
+                    vec![c(3, ContentRole::SceneText, "Start of two.")],
+                ),
             ],
             "en",
         );
@@ -1582,7 +1736,11 @@ mod tests {
                 100,
                 SR::Scene,
                 "ar",
-                vec![c(1, ContentRole::SceneText, "\u{0623}.\n\n\\* \\* \\*\n\n\u{0628}.")],
+                vec![c(
+                    1,
+                    ContentRole::SceneText,
+                    "\u{0623}.\n\n\\* \\* \\*\n\n\u{0628}.",
+                )],
             )],
             "ar",
         );
@@ -1621,7 +1779,6 @@ mod tests {
         );
     }
 
-
     #[test]
     fn every_builtin_preset_exports_every_format_with_both_tiers() {
         // The end-to-end guard: a manuscript carrying both tiers must survive the
@@ -1629,14 +1786,23 @@ mod tests {
         // renderer — under every regional style we ship, not just in unit tests.
         let g = gathered(
             vec![
-                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    100,
+                    SR::BookBegin,
+                    "en",
+                    vec![c(1, ContentRole::BookTitle, "My Novel")],
+                ),
                 iwc(
                     101,
                     SR::ChapterScene,
                     "en",
                     vec![
                         c(2, ContentRole::ChapterTitle, "Storms"),
-                        c(3, ContentRole::SceneText, "The wind rose.\n\n\\* \\* \\*\n\nShe waited."),
+                        c(
+                            3,
+                            ContentRole::SceneText,
+                            "The wind rose.\n\n\\* \\* \\*\n\nShe waited.",
+                        ),
                     ],
                 ),
                 iwc(
@@ -1694,18 +1860,25 @@ mod tests {
         }
     }
 
-
     #[test]
     fn empty_prose_emits_no_block_separator() {
         // A Scene whose SceneText row exists but holds only whitespace must add
         // nothing at all to the assembled Djot — not even a bare separator.
         let g = gathered(
-            vec![iwc(100, SR::Scene, "en", vec![c(1, ContentRole::SceneText, "   \n\n  ")])],
+            vec![iwc(
+                100,
+                SR::Scene,
+                "en",
+                vec![c(1, ContentRole::SceneText, "   \n\n  ")],
+            )],
             "en",
         );
         let p = preset("neutral");
         let out = render_to_string(&req(&g, &[100], &p, ExportFormat::Djot)).unwrap();
-        assert!(out.trim().is_empty(), "empty prose must emit nothing: {out:?}");
+        assert!(
+            out.trim().is_empty(),
+            "empty prose must emit nothing: {out:?}"
+        );
     }
 
     #[test]
@@ -1730,5 +1903,4 @@ mod tests {
             "an already-spaced preset must not get the full extra gap"
         );
     }
-
 }

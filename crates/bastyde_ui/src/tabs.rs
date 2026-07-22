@@ -1060,14 +1060,18 @@ mod tests {
         tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
 
         fn find(tree: &WidgetTree, id: WidgetId, needle: &str) -> Option<WidgetId> {
-            if tree.widget_type_name(id).is_some_and(|t| t.contains(needle)) {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|t| t.contains(needle))
+            {
                 return Some(id);
             }
             tree.children(id)
                 .into_iter()
                 .find_map(|c| find(tree, c, needle))
         }
-        let table = find(&tree, root, "TreeTableView").expect("the Overview mounts a TreeTableView");
+        let table =
+            find(&tree, root, "TreeTableView").expect("the Overview mounts a TreeTableView");
 
         tree.focus(table);
         tree.widget_as_any(table)
@@ -1087,11 +1091,10 @@ mod tests {
 
         tree.press_key(Key::F2, Modifiers::NONE);
 
-        let (uid, col) = vm
-            .editing_cell()
-            .get()
-            .expect("F2 must open an editor; removing the app-side handler must not have \
-                     taken the only working one with it");
+        let (uid, col) = vm.editing_cell().get().expect(
+            "F2 must open an editor; removing the app-side handler must not have \
+                     taken the only working one with it",
+        );
         assert_eq!(col, crate::models::COL_TITLE, "F2 edits the focused column");
         assert_eq!(
             Some(uid),

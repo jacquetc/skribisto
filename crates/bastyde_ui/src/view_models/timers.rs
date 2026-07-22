@@ -232,7 +232,10 @@ mod tests {
         t.arm(now + Duration::from_secs(1));
         t.arm(now + Duration::from_secs(5));
         // The first deadline is gone — this is what makes the autosave a debounce.
-        assert_eq!(t.poll(now + Duration::from_secs(2)), Tick::Sleep(now + Duration::from_secs(5)));
+        assert_eq!(
+            t.poll(now + Duration::from_secs(2)),
+            Tick::Sleep(now + Duration::from_secs(5))
+        );
     }
 
     // ── AutosaveCountdown ────────────────────────────────────────────────────
@@ -259,7 +262,10 @@ mod tests {
         let later = now + Duration::from_secs(1);
         a.on_mutation(later, true);
 
-        assert_eq!(a.tick(now + AUTOSAVE_DEBOUNCE, true), (false, Some(later + AUTOSAVE_DEBOUNCE)));
+        assert_eq!(
+            a.tick(now + AUTOSAVE_DEBOUNCE, true),
+            (false, Some(later + AUTOSAVE_DEBOUNCE))
+        );
         assert_eq!(a.tick(later + AUTOSAVE_DEBOUNCE, true), (true, None));
     }
 
@@ -299,7 +305,10 @@ mod tests {
         let every = Duration::from_secs(3600);
         let c = IntervalCountdown::new(0);
 
-        assert_eq!(c.tick(now, Some(every), 0), IntervalTick::Sleep(now + every));
+        assert_eq!(
+            c.tick(now, Some(every), 0),
+            IntervalTick::Sleep(now + every)
+        );
         assert_eq!(
             c.tick(now + Duration::from_secs(60), Some(every), 0),
             IntervalTick::Sleep(now + every)
@@ -356,9 +365,15 @@ mod tests {
         let c = IntervalCountdown::new(0);
 
         c.tick(now, Some(every), 0);
-        assert_eq!(c.tick(now + Duration::from_secs(60), None, 0), IntervalTick::Disarmed);
+        assert_eq!(
+            c.tick(now + Duration::from_secs(60), None, 0),
+            IntervalTick::Disarmed
+        );
 
         let back = now + Duration::from_secs(120);
-        assert_eq!(c.tick(back, Some(every), 0), IntervalTick::Sleep(back + every));
+        assert_eq!(
+            c.tick(back, Some(every), 0),
+            IntervalTick::Sleep(back + every)
+        );
     }
 }

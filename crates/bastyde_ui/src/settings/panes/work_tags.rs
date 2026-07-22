@@ -128,9 +128,9 @@ fn add_row(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
         let validation = validation.clone();
         ctx.effect(&text, move |typed| {
             validation.set(match vm.duplicate_name(typed, None) {
-                Some(existing) => ValidationState::Warning(tr!(settings_tags_duplicate(
-                    name = existing
-                ))),
+                Some(existing) => {
+                    ValidationState::Warning(tr!(settings_tags_duplicate(name = existing)))
+                }
                 None => ValidationState::None,
             });
         });
@@ -146,7 +146,9 @@ fn add_row(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
                 return;
             }
             if vm.create(&name, DEFAULT_NEW_COLOR, "", false).is_some() {
-                ctx.show_toast(Toast::info(tr!(settings_tags_added(name = name.clone()))).id("tags.added"));
+                ctx.show_toast(
+                    Toast::info(tr!(settings_tags_added(name = name.clone()))).id("tags.added"),
+                );
             }
             text.set(String::new());
             validation.set(ValidationState::None);
@@ -203,12 +205,10 @@ fn preset_button(vm: &TagsViewModel) -> impl Widget {
         }));
     }
 
-    PopoverButton::new(
-        Button::new(tr!(settings_tags_apply_preset())).variant(ButtonVariant::Plain),
-    )
-    .bare()
-    // Trap Tab inside the anchored overlay, as every popover must.
-    .content(FocusScope::new(TraversalScopePolicy::Cycle).child(menu))
+    PopoverButton::new(Button::new(tr!(settings_tags_apply_preset())).variant(ButtonVariant::Plain))
+        .bare()
+        // Trap Tab inside the anchored overlay, as every popover must.
+        .content(FocusScope::new(TraversalScopePolicy::Cycle).child(menu))
 }
 
 /// Filter + live count on the left, Import…/Export… pushed to the right — the same shape as
@@ -226,7 +226,11 @@ fn toolbar_row(vm: &TagsViewModel, query: Signal<String>) -> impl Widget {
             MaxSize::width(FILTER_FIELD_MAX_WIDTH)
                 .child(SearchField::new(query).placeholder(tr!(settings_tags_filter()))),
         )
-        .child(TextWidget::new(lit!("")).text(count).color(TextRole::Secondary))
+        .child(
+            TextWidget::new(lit!(""))
+                .text(count)
+                .color(TextRole::Secondary),
+        )
         .child(Expand::horizontal().child(Spacer::new()))
         .child(import_button(vm))
         .child(export_button(vm))
@@ -241,25 +245,25 @@ fn import_button(vm: &TagsViewModel) -> impl Widget {
             let vm = vm.clone();
             let req = FileDialogRequest::pick_file()
                 .title(tr!(settings_tags_import()))
-                .add_filter(&tr!(settings_tags_csv_filter()).resolve_now(), &["csv"]);
+                .add_filter(tr!(settings_tags_csv_filter()).resolve_now(), &["csv"]);
             let _ = ctx.pick_file(req, move |res, c| {
-                    if let FileDialogResult::File(Some(path)) = res {
-                        match vm.import_from(&path) {
-                            Ok(s) => {
-                                c.show_toast(
-                                    Toast::info(tr!(settings_tags_imported(
-                                        added = s.added as i64,
-                                        skipped = (s.duplicates + s.malformed) as i64
-                                    )))
-                                    .id("tags.imported"),
-                                );
-                            }
-                            Err(e) => {
-                                c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("tags.error"));
-                            }
+                if let FileDialogResult::File(Some(path)) = res {
+                    match vm.import_from(&path) {
+                        Ok(s) => {
+                            c.show_toast(
+                                Toast::info(tr!(settings_tags_imported(
+                                    added = s.added as i64,
+                                    skipped = (s.duplicates + s.malformed) as i64
+                                )))
+                                .id("tags.imported"),
+                            );
+                        }
+                        Err(e) => {
+                            c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("tags.error"));
                         }
                     }
-                });
+                }
+            });
         })
 }
 
@@ -273,25 +277,25 @@ fn export_button(vm: &TagsViewModel) -> impl Widget {
             let req = FileDialogRequest::save_file()
                 .title(tr!(settings_tags_export()))
                 .default_file_name("tags.csv".to_string())
-                .add_filter(&tr!(settings_tags_csv_filter()).resolve_now(), &["csv"]);
+                .add_filter(tr!(settings_tags_csv_filter()).resolve_now(), &["csv"]);
             let _ = ctx.save_file(req, move |res, c| {
-                    if let FileDialogResult::Saved(Some(mut path)) = res {
-                        if path.extension().and_then(|e| e.to_str()) != Some("csv") {
-                            path.set_extension("csv");
+                if let FileDialogResult::Saved(Some(mut path)) = res {
+                    if path.extension().and_then(|e| e.to_str()) != Some("csv") {
+                        path.set_extension("csv");
+                    }
+                    match vm.export_to(&path) {
+                        Ok(n) => {
+                            c.show_toast(
+                                Toast::info(tr!(settings_tags_exported(n = n as i64)))
+                                    .id("tags.exported"),
+                            );
                         }
-                        match vm.export_to(&path) {
-                            Ok(n) => {
-                                c.show_toast(
-                                    Toast::info(tr!(settings_tags_exported(n = n as i64)))
-                                        .id("tags.exported"),
-                                );
-                            }
-                            Err(e) => {
-                                c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("tags.error"));
-                            }
+                        Err(e) => {
+                            c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("tags.error"));
                         }
                     }
-                });
+                }
+            });
         })
 }
 
@@ -310,7 +314,9 @@ struct TagRowView {
 
 impl std::fmt::Debug for TagRowView {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TagRowView").field("name", &self.row.name).finish()
+        f.debug_struct("TagRowView")
+            .field("name", &self.row.name)
+            .finish()
     }
 }
 
@@ -379,7 +385,11 @@ impl Widget for TagRowView {
             let sig = details.clone();
             let commit = move || {
                 let typed = sig.get();
-                let current = vm.rows().into_iter().find(|r| r.id == id).map(|r| r.details);
+                let current = vm
+                    .rows()
+                    .into_iter()
+                    .find(|r| r.id == id)
+                    .map(|r| r.details);
                 // Blank IS meaningful here — it clears the description.
                 if current.as_deref() != Some(typed.as_str()) {
                     vm.set_details(id, &typed);
@@ -400,7 +410,11 @@ impl Widget for TagRowView {
         {
             let vm = self.vm.clone();
             ctx.effect(&discoverable, move |on| {
-                let current = vm.rows().into_iter().find(|r| r.id == id).map(|r| r.discoverable);
+                let current = vm
+                    .rows()
+                    .into_iter()
+                    .find(|r| r.id == id)
+                    .map(|r| r.discoverable);
                 if current != Some(*on) {
                     vm.set_discoverable(id, *on);
                 }
@@ -509,8 +523,7 @@ fn empty_state(vm: &TagsViewModel) -> impl Widget {
             .child(TextWidget::new(tr!(settings_tags_empty())).color(TextRole::Secondary))
             .child(
                 PopoverButton::new(
-                    Button::new(tr!(settings_tags_apply_preset()))
-                        .variant(ButtonVariant::Filled),
+                    Button::new(tr!(settings_tags_apply_preset())).variant(ButtonVariant::Filled),
                 )
                 .bare()
                 // Trap Tab inside the anchored overlay, as every popover must.

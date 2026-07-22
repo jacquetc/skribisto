@@ -37,7 +37,12 @@ struct Inner {
 
 impl ExportStylesViewModel {
     pub fn new(service: ExportStylesService) -> Self {
-        Self { inner: Rc::new(Inner { service, changed: Signal::new(0) }) }
+        Self {
+            inner: Rc::new(Inner {
+                service,
+                changed: Signal::new(0),
+            }),
+        }
     }
 
     // ── read handles ──
@@ -95,7 +100,11 @@ impl ExportStylesViewModel {
         copy.builtin = false;
         copy.source = Some(base.id.clone());
         copy.name = format!("{} {copy_suffix}", base.name);
-        let stored = self.inner.service.add_fresh(copy, &format!("{}-copy", base.id)).ok()?;
+        let stored = self
+            .inner
+            .service
+            .add_fresh(copy, &format!("{}-copy", base.id))
+            .ok()?;
         self.bump();
         Some(stored)
     }
@@ -117,11 +126,15 @@ impl ExportStylesViewModel {
     /// Import a single preset from a JSON file, storing it as a new user style (fresh id on
     /// collision, `builtin = false`). Returns the stored preset.
     pub fn import_from(&self, path: &Path) -> anyhow::Result<Preset> {
-        let text = std::fs::read_to_string(path)
-            .with_context(|| format!("reading {}", path.display()))?;
+        let text =
+            std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
         let preset: Preset =
             serde_json::from_str(&text).context("this file is not a valid export style (JSON)")?;
-        let preferred = if preset.id.trim().is_empty() { "imported-style" } else { &preset.id };
+        let preferred = if preset.id.trim().is_empty() {
+            "imported-style"
+        } else {
+            &preset.id
+        };
         let stored = self
             .inner
             .service
@@ -152,8 +165,10 @@ mod tests {
         use std::sync::atomic::{AtomicU64, Ordering};
         static N: AtomicU64 = AtomicU64::new(0);
         let n = N.fetch_add(1, Ordering::Relaxed);
-        let path = std::env::temp_dir()
-            .join(format!("skribisto-stylesvm-{}-{n}.toml", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "skribisto-stylesvm-{}-{n}.toml",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&path);
         ExportStylesViewModel::new(ExportStylesService::open_at(path).unwrap())
     }
@@ -169,7 +184,10 @@ mod tests {
         assert!(copy.name.ends_with("(copy)"));
         assert_ne!(copy.id, base.id);
         assert_eq!(vm.user_presets().len(), 1);
-        assert!(vm.changed_signal().get() > before, "a mutation bumps changed");
+        assert!(
+            vm.changed_signal().get() > before,
+            "a mutation bumps changed"
+        );
         // all_presets unions built-ins with the new user copy.
         assert_eq!(vm.all_presets().len(), vm.builtin_presets().len() + 1);
         assert!(vm.is_builtin(&base.id) && !vm.is_builtin(&copy.id));
@@ -178,15 +196,25 @@ mod tests {
     #[test]
     fn json_export_then_import_round_trips() {
         let vm = vm();
-        let path = std::env::temp_dir().join(format!("skribisto-style-export-{}.json", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "skribisto-style-export-{}.json",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&path);
-        let base = vm.builtin_presets().into_iter().find(|p| p.id == "manuscript-fr").unwrap();
+        let base = vm
+            .builtin_presets()
+            .into_iter()
+            .find(|p| p.id == "manuscript-fr")
+            .unwrap();
 
         vm.export_to(&path, &base.id).expect("export");
         let imported = vm.import_from(&path).expect("import");
         assert!(!imported.builtin, "an imported style is editable");
         assert_eq!(imported.font_family, base.font_family);
-        assert_eq!(imported.scene_break, base.scene_break, "data-enum field survives JSON");
+        assert_eq!(
+            imported.scene_break, base.scene_break,
+            "data-enum field survives JSON"
+        );
         // Importing the same id again dodges the collision.
         let again = vm.import_from(&path).expect("second import");
         assert_ne!(again.id, imported.id);

@@ -174,8 +174,13 @@ impl TextReplacementRulesViewModel {
             return;
         };
         f(&mut row);
-        self.list
-            .update(id, &row.trigger, &row.replacement, row.enabled, self.stack());
+        self.list.update(
+            id,
+            &row.trigger,
+            &row.replacement,
+            row.enabled,
+            self.stack(),
+        );
     }
 
     /// Delete rules in one undoable step. Missing ids are a safe no-op (a
@@ -188,11 +193,14 @@ impl TextReplacementRulesViewModel {
 
     /// Import a lexicon from a `.csv`. One undo step for the whole file.
     pub fn import_from(&self, path: &Path) -> Result<TextReplacementImportSummary> {
-        let text = std::fs::read_to_string(path)
-            .with_context(|| format!("reading {}", path.display()))?;
+        let text =
+            std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
         let (rows, malformed) = parse_csv(&text)?;
         if rows.is_empty() {
-            return Ok(TextReplacementImportSummary { malformed, ..Default::default() });
+            return Ok(TextReplacementImportSummary {
+                malformed,
+                ..Default::default()
+            });
         }
         let requested = rows.len();
         let skipped = self
@@ -227,7 +235,7 @@ pub fn format_csv(rows: &[TextReplacementRuleRow]) -> Result<String> {
         .context("writing CSV row")?;
     }
     let bytes = w.into_inner().context("finishing CSV")?;
-    Ok(String::from_utf8(bytes).context("CSV is not UTF-8")?)
+    String::from_utf8(bytes).context("CSV is not UTF-8")
 }
 
 /// Parse a lexicon CSV, returning the usable rows and a count of the
@@ -326,7 +334,11 @@ mod tests {
     fn a_repeated_trigger_within_one_file_is_counted_once() {
         let (rows, malformed) =
             parse_csv("trigger,replacement\nbtw,by the way\nBTW,by the way2\n").unwrap();
-        assert_eq!(rows.len(), 1, "the second is a duplicate, case-insensitively");
+        assert_eq!(
+            rows.len(),
+            1,
+            "the second is a duplicate, case-insensitively"
+        );
         assert_eq!(malformed, 1);
     }
 

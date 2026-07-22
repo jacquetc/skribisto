@@ -7,7 +7,7 @@
 //! The tree *widget* itself is a dock ([`crate::docks::outline`]); what lives here is
 //! everything that dock and the corkboard both reach for.
 
+pub(crate) mod create_labels;
 pub(crate) mod icons;
 pub(crate) mod placement;
 pub(crate) mod switcher_button;
-pub(crate) mod create_labels;

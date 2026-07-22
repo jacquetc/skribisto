@@ -42,7 +42,10 @@ use crate::view_models::OutlineViewModel;
 /// `export::compute_applicable`.
 fn live_item_metas(ctx: &AppContext) -> Vec<ItemMeta> {
     let mut out = Vec::new();
-    let Some(work) = work_commands::get_all_work(ctx).ok().and_then(|w| w.into_iter().next()) else {
+    let Some(work) = work_commands::get_all_work(ctx)
+        .ok()
+        .and_then(|w| w.into_iter().next())
+    else {
         return out;
     };
     let Ok(binder_ids) =
@@ -196,7 +199,9 @@ impl Widget for Inspector {
                 // right item after focus moves on. The two writers differ underneath though:
                 // `set_tags` writes a relationship (already undoable on its own), while
                 // `set_aliases` is a scalar patch — see `SingleBinderItem`.
-                if let Some(tags_vm) = ctx.app_state::<crate::view_models::TagsViewModel>().cloned()
+                if let Some(tags_vm) = ctx
+                    .app_state::<crate::view_models::TagsViewModel>()
+                    .cloned()
                 {
                     let stack = self.outline.ids().stack_id.get();
 
@@ -256,7 +261,8 @@ impl Widget for Inspector {
                     // The mention index, in both directions. Hidden entirely when the
                     // project has no discoverable tags: nothing has been asked to be found,
                     // so an empty "Mentioned here" would be a section about nothing.
-                    if let Some(index) = ctx.app_state::<crate::view_models::MentionIndex>().cloned()
+                    if let Some(index) =
+                        ctx.app_state::<crate::view_models::MentionIndex>().cloned()
                         && !discoverable.is_empty()
                     {
                         index.changed_signal().bind_to(
@@ -294,17 +300,15 @@ impl Widget for Inspector {
                                     }
                                     let _ = pin_probe.set_references(&next, stack);
                                 });
-                            col = col
-                                .child(
+                            col =
+                                col.child(
                                     TextWidget::new(tr!(mentions_roster()))
                                         .style(TextStyleRole::Tiny)
                                         .color(TextRole::Secondary),
                                 )
-                                .child(crate::tags::MentionList::new(
-                                    roster,
-                                    Some(pin),
-                                    open.clone(),
-                                ));
+                                .child(
+                                    crate::tags::MentionList::new(roster, Some(pin), open.clone()),
+                                );
                         }
 
                         // Backlinks, on a discoverable item: where this character is written
@@ -319,9 +323,7 @@ impl Widget for Inspector {
                                             .style(TextStyleRole::Tiny)
                                             .color(TextRole::Secondary),
                                     )
-                                    .child(crate::tags::MentionList::new(
-                                        backlinks, None, open,
-                                    ));
+                                    .child(crate::tags::MentionList::new(backlinks, None, open));
                             }
                         }
                     }
@@ -332,7 +334,9 @@ impl Widget for Inspector {
                 // declares none of its own. Nothing inherits from a container — an item's tag
                 // reaches only that item (see `skribisto_model::language`) — so "Apply to
                 // children" beside it is the *only* way a language spreads down a subtree.
-                if let Some(spell) = ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned()
+                if let Some(spell) = ctx
+                    .app_state::<crate::spellcheck::SpellcheckService>()
+                    .cloned()
                 {
                     let inherited = ctx
                         .app_state::<crate::models::OpenDocsStore>()
@@ -351,13 +355,19 @@ impl Widget for Inspector {
                         })
                     };
                     col = col
-                        .child(TextWidget::new(tr!(inspector_dict_language())).style(TextStyleRole::Tiny).color(TextRole::Secondary))
-                        .child(crate::spellcheck::language_pill_field::LanguagePillField::new(
-                            value.clone(),
-                            set,
-                            spell,
-                            inherited.clone(),
-                        ));
+                        .child(
+                            TextWidget::new(tr!(inspector_dict_language()))
+                                .style(TextStyleRole::Tiny)
+                                .color(TextRole::Secondary),
+                        )
+                        .child(
+                            crate::spellcheck::language_pill_field::LanguagePillField::new(
+                                value.clone(),
+                                set,
+                                spell,
+                                inherited.clone(),
+                            ),
+                        );
                     // Push this language down the subtree, one undo step (shown only when the
                     // item actually has a subtree — the same gate the export toggle uses).
                     //
@@ -430,7 +440,10 @@ impl Widget for Inspector {
                 // Pace timeline, set right where the writer plans the section. A milestone
                 // only makes sense for a compile-stream Part or Chapter, and only inside a
                 // Book — so gate on the sub_role, then resolve the enclosing Book head.
-                if matches!(d.sub_role, BinderItemSubRole::Part | BinderItemSubRole::ChapterScene) {
+                if matches!(
+                    d.sub_role,
+                    BinderItemSubRole::Part | BinderItemSubRole::ChapterScene
+                ) {
                     let metas = live_item_metas(&self.app_ctx);
                     if let Some(book_id) = metas
                         .iter()

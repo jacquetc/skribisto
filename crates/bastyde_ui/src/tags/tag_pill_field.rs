@@ -132,12 +132,11 @@ impl Widget for TagPillField {
         // trap `ProjectSwitcherButton` documents and guards with a test; this is that
         // pattern, not a new idea.
         let picker = Panel::new()
-            .child(FocusScope::new(TraversalScopePolicy::Cycle).child(
-                Padding::uniform(8.0).child(TagPicker::new(
-                self.value.clone(),
-                self.set.clone(),
-                self.vm.clone(),
-            ))))
+            .child(
+                FocusScope::new(TraversalScopePolicy::Cycle).child(Padding::uniform(8.0).child(
+                    TagPicker::new(self.value.clone(), self.set.clone(), self.vm.clone()),
+                )),
+            )
             .access_role(Role::Dialog)
             .access_label(tr!(tags_pill_add()));
         flow = flow.child(
@@ -146,7 +145,10 @@ impl Widget for TagPillField {
                 .content(picker),
         );
 
-        let id = ctx.add(flow.access_role(Role::List).access_label(tr!(tags_pill_list())));
+        let id = ctx.add(
+            flow.access_role(Role::List)
+                .access_label(tr!(tags_pill_list())),
+        );
         self.root_child = Some(id);
         vec![id]
     }

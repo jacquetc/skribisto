@@ -10,9 +10,6 @@
 use super::smart_punctuation_repository::SmartPunctuationTable;
 use super::smart_punctuation_repository::SmartPunctuationTableRO;
 use crate::entities::SmartPunctuation;
-use crate::error::RepositoryError;
-use crate::types::EntityId;
-
 crate::impl_leaf_entity_table!(
     entity: SmartPunctuation,
     entity_name: "smart_punctuation",

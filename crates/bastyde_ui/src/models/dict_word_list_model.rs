@@ -130,8 +130,12 @@ mod imp {
 
         /// Exact-case membership (the dedup + validation test).
         pub fn contains(&self, word: &str) -> bool {
-            (0..self.inner.model.len())
-                .any(|i| self.inner.model.with_item(i, |r| r.word == word).unwrap_or(false))
+            (0..self.inner.model.len()).any(|i| {
+                self.inner
+                    .model
+                    .with_item(i, |r| r.word == word)
+                    .unwrap_or(false)
+            })
         }
 
         pub fn len(&self) -> usize {
@@ -182,9 +186,14 @@ mod imp {
         /// (a stale toast Undo after a manual delete).
         pub fn remove_all(&self, ids: &[u64], stack_id: Option<u64>) {
             let present: Vec<u64> = {
-                let existing: std::collections::HashSet<u64> =
-                    snapshot(&self.inner.model).into_iter().map(|r| r.id).collect();
-                ids.iter().copied().filter(|id| existing.contains(id)).collect()
+                let existing: std::collections::HashSet<u64> = snapshot(&self.inner.model)
+                    .into_iter()
+                    .map(|r| r.id)
+                    .collect();
+                ids.iter()
+                    .copied()
+                    .filter(|id| existing.contains(id))
+                    .collect()
             };
             if present.is_empty() {
                 return;
@@ -252,9 +261,18 @@ mod imp {
     impl DictWordListModel {
         pub fn new(_ctx: Rc<AppContext>) -> Self {
             let mut rows = vec![
-                DictWordRow { id: 1, word: "Bastyde".to_string() },
-                DictWordRow { id: 2, word: "Gandalf".to_string() },
-                DictWordRow { id: 3, word: "Skribisto".to_string() },
+                DictWordRow {
+                    id: 1,
+                    word: "Bastyde".to_string(),
+                },
+                DictWordRow {
+                    id: 2,
+                    word: "Gandalf".to_string(),
+                },
+                DictWordRow {
+                    id: 3,
+                    word: "Skribisto".to_string(),
+                },
             ];
             sort_rows(&mut rows);
             Self {
@@ -303,7 +321,10 @@ mod imp {
             for w in words {
                 let id = self.inner.next_id.get();
                 self.inner.next_id.set(id + 1);
-                rows.push(DictWordRow { id, word: w.clone() });
+                rows.push(DictWordRow {
+                    id,
+                    word: w.clone(),
+                });
                 ids.push(id);
             }
             sort_rows(&mut rows);

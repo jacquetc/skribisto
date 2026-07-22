@@ -71,9 +71,12 @@ fn execute(vm: &SearchReplaceViewModel, ctx: &mut EventContext) {
             let undo_touched = touched.clone();
             let mut toast = Toast::success(tr!(search_replace_done_title()))
                 .body(done_body(occurrences, items, skipped))
-                .action(ToastAction::primary(tr!(search_replace_undo()), move |ctx| {
-                    undo(&vm_undo, &undo_touched, ctx);
-                }));
+                .action(ToastAction::primary(
+                    tr!(search_replace_undo()),
+                    move |ctx| {
+                        undo(&vm_undo, &undo_touched, ctx);
+                    },
+                ));
             // Keep it up a little longer than a default toast — the Undo is the
             // only path back, so the writer must have time to reach for it.
             toast = toast.id("search-replace-result");

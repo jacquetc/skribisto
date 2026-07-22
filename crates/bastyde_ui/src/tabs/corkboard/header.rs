@@ -230,8 +230,7 @@ impl Widget for CorkboardCreateButton {
             .variant(ButtonVariant::Tinted)
             .icon(add_icon());
         for rec in &recs {
-            let placement =
-                recommendation_placement(Some(anchor_title.as_str()), rec.relation);
+            let placement = recommendation_placement(Some(anchor_title.as_str()), rec.relation);
             let create_type = rec.create_type;
             let relation = rec.relation;
             let vm = self.vm.clone();

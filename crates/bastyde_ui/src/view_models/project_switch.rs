@@ -121,6 +121,11 @@ pub fn unsaved_decision(unsaved: bool, backup_mode: bool, autosave: bool) -> Uns
     }
 }
 
+/// Start a save, returning its long-operation id when one was begun.
+type SaveHook = Rc<dyn Fn() -> Option<u64>>;
+/// Put the New Work form on screen.
+type NewWorkFormHook = Rc<dyn Fn(&mut EventContext)>;
+
 #[derive(Clone)]
 pub struct ProjectSwitchViewModel {
     app_ctx: Rc<AppContext>,
@@ -140,11 +145,11 @@ pub struct ProjectSwitchViewModel {
     /// will cover (`EditorsViewModel::request_save`). Installed by `App::build`,
     /// which is where the editors are created; a no-op until then, and in headless
     /// tests.
-    save_hook: Rc<RefCell<Rc<dyn Fn() -> Option<u64>>>>,
+    save_hook: Rc<RefCell<SaveHook>>,
     /// Put the New Work form on screen (`App::build` presents the modal). A view
     /// concern, injected — this view-model owns *when* the form may appear, not
     /// what it looks like.
-    new_work_form_hook: Rc<RefCell<Rc<dyn Fn(&mut EventContext)>>>,
+    new_work_form_hook: Rc<RefCell<NewWorkFormHook>>,
 }
 
 impl ProjectSwitchViewModel {

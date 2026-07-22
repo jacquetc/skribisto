@@ -20,5 +20,4 @@ pub mod engine;
 pub mod session;
 pub mod typography;
 
-pub use engine::{Fired, TextReplacementEngine};
 pub use session::TextReplacementSession;

@@ -20,9 +20,7 @@ pub(in crate::settings) fn spellcheck_pane(vm: &SettingsViewModel) -> impl Widge
         .label_gap(16.0)
         .row_spacing(12.0)
         .full_width(group(tr!(settings_group_spellcheck())))
-        .full_width(
-            Toggle::new(vm.spellcheck_enabled()).label(tr!(settings_spellcheck_enabled())),
-        )
+        .full_width(Toggle::new(vm.spellcheck_enabled()).label(tr!(settings_spellcheck_enabled())))
         .full_width(hint(tr!(settings_spellcheck_hint())));
 
     pane_frame(

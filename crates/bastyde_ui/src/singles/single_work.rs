@@ -202,10 +202,7 @@ mod imp {
                 dict_language: self.inner.dict_language.get(),
                 unique_id: existing.unique_id,
                 chapter_mode: self.inner.chapter_mode.get(),
-                custom_replacement_rules_enabled: self
-                    .inner
-                    .custom_replacement_rules_enabled
-                    .get(),
+                custom_replacement_rules_enabled: self.inner.custom_replacement_rules_enabled.get(),
             };
             match work_commands::update_work(ctx, stack_id, &dto) {
                 Ok(_) => {

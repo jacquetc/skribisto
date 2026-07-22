@@ -146,7 +146,13 @@ mod source {
                 continue;
             }
             let also_system = system_resolved.contains(&key);
-            rows.push(row_for(aff, dic, DictOrigin::Downloaded, also_system, user_names));
+            rows.push(row_for(
+                aff,
+                dic,
+                DictOrigin::Downloaded,
+                also_system,
+                user_names,
+            ));
         }
 
         for dir in system_dirs() {
@@ -163,7 +169,9 @@ mod source {
 
     // The dictionary directories (our download dir + the OS system dirs) have one definition,
     // shared with the loader in `crate::spellcheck`.
-    use crate::spellcheck::{downloaded_dictionaries_dir as downloaded_dir, system_dictionary_dirs as system_dirs};
+    use crate::spellcheck::{
+        downloaded_dictionaries_dir as downloaded_dir, system_dictionary_dirs as system_dirs,
+    };
 
     /// Every `<stem>.aff` in `dir` that has a sibling `<stem>.dic`, as `(aff, dic)` paths.
     fn pairs_in(dir: &Path) -> Vec<(PathBuf, PathBuf)> {
@@ -292,7 +300,10 @@ mod source {
                 false,
                 &shadowing,
             );
-            assert_eq!(row.display_name, "My English", "user name overrides the catalogue name");
+            assert_eq!(
+                row.display_name, "My English",
+                "user name overrides the catalogue name"
+            );
 
             // A SYSTEM-tier file that merely shares a basename with a user code keeps its own
             // identity — a user record only ever names a file in the download dir.
@@ -303,8 +314,14 @@ mod source {
                 false,
                 &names,
             );
-            assert_ne!(sys.display_name, "My French", "user names don't leak onto system rows");
-            assert!(!sys.matched, "an unrecognised system basename stays unmatched");
+            assert_ne!(
+                sys.display_name, "My French",
+                "user names don't leak onto system rows"
+            );
+            assert!(
+                !sys.matched,
+                "an unrecognised system basename stays unmatched"
+            );
 
             // An unknown custom code with no record still falls back to "(system)".
             let orphan = row_for(
@@ -355,7 +372,7 @@ mod source {
 
 #[cfg(all(test, not(feature = "mocks")))]
 mod tests {
-    use super::*;
+
     use std::io::Write;
 
     /// A dictionary in the data dir and its symlink alias in a system dir dedupe to one row —

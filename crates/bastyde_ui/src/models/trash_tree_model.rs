@@ -25,7 +25,9 @@ use bastyde::data::{
 use bastyde::prelude::{BuildContext, Signal};
 use frontend::AppContext;
 use frontend::common::entities::BinderItemSubRole;
-use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin, TrashManagementEvent};
+use frontend::common::event::{
+    DirectAccessEntity, EntityEvent, Event, Origin, TrashManagementEvent,
+};
 
 /// Stable per-row identity. A root is keyed by its **TrashInfo** id (the handle
 /// every action needs); a cascade row by its **BinderItem** id (globally unique).
@@ -317,7 +319,7 @@ mod rows {
             .flatten()
             .collect();
         // Newest first.
-        infos.sort_by(|a, b| b.trashed_at.cmp(&a.trashed_at));
+        infos.sort_by_key(|i| std::cmp::Reverse(i.trashed_at));
 
         let binder_ids =
             work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
@@ -435,7 +437,12 @@ mod rows {
 
     use super::{TrashNode, TrashRootKind, TrashTreeKey};
 
-    fn desc(id: u64, title: &str, sub_role: BinderItemSubRole, depth: usize) -> TreeRow<TrashTreeKey, TrashNode> {
+    fn desc(
+        id: u64,
+        title: &str,
+        sub_role: BinderItemSubRole,
+        depth: usize,
+    ) -> TreeRow<TrashTreeKey, TrashNode> {
         TreeRow::new(
             TrashTreeKey::Descendant(id),
             TrashNode {

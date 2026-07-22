@@ -98,6 +98,9 @@ mod tests {
         assert_eq!((jd.year(), jd.month(), jd.day()), (2026, 7, 16));
         assert_eq!(jiff_to_naive(jd), nd);
         assert_eq!(naive_to_jiff_opt(None), None);
-        assert_eq!(naive_to_jiff(NaiveDate::from_ymd_opt(40000, 1, 1).unwrap()), None);
+        assert_eq!(
+            naive_to_jiff(NaiveDate::from_ymd_opt(40000, 1, 1).unwrap()),
+            None
+        );
     }
 }

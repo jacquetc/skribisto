@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 # Étiquettes — la palette du projet, la section de l'inspecteur et les préréglages.
 # Les NOMS des étiquettes des préréglages sont traduits volontairement : les préréglages
 # sont générés dans le code plutôt que livrés comme données, précisément pour qu'un projet

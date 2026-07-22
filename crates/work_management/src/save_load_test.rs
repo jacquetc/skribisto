@@ -82,7 +82,7 @@ fn item(
             // if every fixture row carried the same vector. Odd ids stay empty to cover
             // the absent case, and one entry is multi-word because that is the whole
             // point of `Vec<String>` over a space-separated field.
-            aliases: if id % 2 == 0 {
+            aliases: if id.is_multiple_of(2) {
                 vec![format!("Alias{id}"), format!("Miss Bennet {id}")]
             } else {
                 Vec::new()
@@ -772,7 +772,11 @@ fn paces_survive_a_save_load_round_trip() {
     .expect("load bundle with a pace");
 
     let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
-    assert_eq!(out.paces.len(), 1, "the pace must round-trip through the store");
+    assert_eq!(
+        out.paces.len(),
+        1,
+        "the pace must round-trip through the store"
+    );
     let p = &out.paces[0];
     assert_eq!(p.weekday_mask, 31);
     assert!(p.active);
@@ -785,7 +789,10 @@ fn paces_survive_a_save_load_round_trip() {
     assert_eq!(p.milestones[0].label, "Act I done");
     assert_eq!(p.milestones[0].target_word_count, Some(20_000));
     // Weak back-links survive (ids are reassigned by the store, so just assert they resolve).
-    assert!(p.book_item.is_some(), "book_item must resolve after id remap");
+    assert!(
+        p.book_item.is_some(),
+        "book_item must resolve after id remap"
+    );
     assert!(
         p.milestones[0].target_item.is_some(),
         "milestone target_item must resolve after id remap"
@@ -833,12 +840,18 @@ fn progress_snapshots_survive_a_double_round_trip() {
     work_management_controller::load_work(
         &db1,
         &hub1,
-        &LoadWorkDto { file_name: a.to_str().unwrap().to_string() },
+        &LoadWorkDto {
+            file_name: a.to_str().unwrap().to_string(),
+        },
     )
     .unwrap();
     let b_path = dir.path().join("B");
     let bundle_b = store_to_bundle(&db1, &hub1, &b_path);
-    assert_eq!(bundle_b.progress_snapshots.len(), 2, "first save must keep both days");
+    assert_eq!(
+        bundle_b.progress_snapshots.len(),
+        2,
+        "first save must keep both days"
+    );
 
     // Cycle 2: load B (a *fresh* store + WorkInfo) → save → assert still intact.
     let db2 = DbContext::new().unwrap();
@@ -865,7 +878,10 @@ fn progress_snapshots_survive_a_double_round_trip() {
     assert_eq!(days[0].total_word_count, 1200);
     assert_eq!(days[0].total_char_count, Some(6800));
     assert_eq!(days[0].book_word_counts, vec![1200]);
-    assert!(days[0].book_item_ids.len() == 1, "the per-Book id must remap and survive");
+    assert!(
+        days[0].book_item_ids.len() == 1,
+        "the per-Book id must remap and survive"
+    );
     assert!(days[1].day.starts_with("2020-05-02"));
     assert_eq!(days[1].total_word_count, 1850);
     assert_eq!(days[1].total_char_count, None);
@@ -955,7 +971,12 @@ fn new_work_persists_the_author_to_the_manifest() {
         &db,
         &hub,
         &NewWorkDto {
-            file_name: dir.path().join("Authored.skrib").to_str().unwrap().to_string(),
+            file_name: dir
+                .path()
+                .join("Authored.skrib")
+                .to_str()
+                .unwrap()
+                .to_string(),
             is_folder: false,
             template_kind: NewWorkTemplate::Novel,
             labels: labels(),
@@ -1102,7 +1123,8 @@ fn new_work_gives_every_binder_and_item_its_own_uid() {
     );
     let worst = seen.values().copied().max().unwrap_or(0);
     assert_eq!(
-        worst, 1,
+        worst,
+        1,
         "uids must be unique across a new project — {} distinct uid(s) cover {} rows, and one \
          uid is shared by {worst} of them",
         seen.len(),

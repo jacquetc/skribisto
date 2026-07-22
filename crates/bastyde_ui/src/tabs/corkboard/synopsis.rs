@@ -42,7 +42,7 @@ pub(super) fn synopsis_editor(
         .synopsis
         .as_ref()
         .map(|f| f.doc.clone())
-        .unwrap_or_else(bastyde::text_document::TextDocument::new);
+        .unwrap_or_default();
     let on_change = open_doc.mark_dirty_fn();
     let split = synopsis_split_fn(vm, card);
     let spell = open_doc.spell_synopsis();

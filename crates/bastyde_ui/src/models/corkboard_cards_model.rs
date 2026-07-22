@@ -382,10 +382,10 @@ mod imp {
                     .map(|it| (it.id, it))
                     .collect();
             for id in item_ids {
-                if let Some(it) = by_id.get(&id) {
-                    if it.activated {
-                        out.push(it.clone());
-                    }
+                if let Some(it) = by_id.get(&id)
+                    && it.activated
+                {
+                    out.push(it.clone());
                 }
             }
         }
@@ -536,7 +536,10 @@ mod imp {
             let ids: Vec<u64> = cards.iter().map(|c| c.item_id).collect();
             assert_eq!(ids, vec![2, 3, 4, 5]);
             let folder = &cards[0];
-            assert!(folder.is_container, "the chapter-folder is kept in flat mode");
+            assert!(
+                folder.is_container,
+                "the chapter-folder is kept in flat mode"
+            );
             assert_eq!(folder.child_count, 2, "and still reports its scene count");
             assert!(
                 cards[1..].iter().all(|c| !c.is_container),
@@ -579,22 +582,19 @@ mod imp {
         // Tag ids point at the mock palette in `WorkTagsListModel`: 1 = status/draft,
         // 4 = needs research, 5 = character (discoverable). Given so the mock corkboard
         // actually renders a dot row, including the discoverable ring and an overflow cell.
-        let card = |item_id,
+        let card =
+            |item_id, role, sub_role, title: &str, is_container, child_count, tags: &[u64]| {
+                CorkboardCard {
+                    item_id,
                     role,
                     sub_role,
-                    title: &str,
+                    title: title.to_string(),
+                    label: String::new(),
                     is_container,
                     child_count,
-                    tags: &[u64]| CorkboardCard {
-            item_id,
-            role,
-            sub_role,
-            title: title.to_string(),
-            label: String::new(),
-            is_container,
-            child_count,
-            tags: tags.to_vec(),
-        };
+                    tags: tags.to_vec(),
+                }
+            };
         match (container_id, nested) {
             // The chapter-folder's own scenes.
             (104, _) => vec![
@@ -604,13 +604,29 @@ mod imp {
             ],
             // A part, nested: its chapters.
             (301, true) => vec![
-                card(104, Folder, ChapterScene, "The Keeper", true, 3, &[1, 4, 5, 6, 2, 3]),
+                card(
+                    104,
+                    Folder,
+                    ChapterScene,
+                    "The Keeper",
+                    true,
+                    3,
+                    &[1, 4, 5, 6, 2, 3],
+                ),
                 card(302, Item, ChapterScene, "The ferry", false, 0, &[4]),
             ],
             // A part, flat: every descendant — the chapter-folder (kept for its own
             // synopsis) plus every leaf under it.
             (301, false) => vec![
-                card(104, Folder, ChapterScene, "The Keeper", true, 3, &[1, 4, 5, 6, 2, 3]),
+                card(
+                    104,
+                    Folder,
+                    ChapterScene,
+                    "The Keeper",
+                    true,
+                    3,
+                    &[1, 4, 5, 6, 2, 3],
+                ),
                 card(201, Item, Scene, "Into the Dark", false, 0, &[1, 5]),
                 card(202, Item, Scene, "The light returns", false, 0, &[2]),
                 card(203, Item, Note, "First night", false, 0, &[]),

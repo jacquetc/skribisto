@@ -132,10 +132,7 @@ impl TreeExpansionService {
     /// Open at an explicit path. Test-only: production reaches the file through
     /// [`open`](Self::open) (the config dir) or [`in_memory_default`](Self::in_memory_default).
     #[cfg(test)]
-    pub fn open_at(
-        path: std::path::PathBuf,
-        _delay: Duration,
-    ) -> Result<Self, SettingsFileError> {
+    pub fn open_at(path: std::path::PathBuf, _delay: Duration) -> Result<Self, SettingsFileError> {
         let file = SettingsFile::load(path, Migrator::new())?;
         Ok(Self { file })
     }
@@ -146,8 +143,10 @@ impl TreeExpansionService {
     /// which is also why every call site can register this unconditionally rather than
     /// carrying an `Option` around.
     pub fn in_memory_default() -> Self {
-        let path = std::env::temp_dir()
-            .join(format!("skribisto-tree-expansion-{}.toml", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "skribisto-tree-expansion-{}.toml",
+            std::process::id()
+        ));
         SettingsFile::load(path, Migrator::new())
             .map(|file| Self { file })
             .unwrap_or_else(|_| {
@@ -395,7 +394,9 @@ mod tests {
     fn the_per_container_expanded_set_is_capped() {
         let dir = tempdir().unwrap();
         let s = svc(dir.path());
-        let many: Vec<Uuid> = (0..(MAX_EXPANDED_PER_FOLDER as u128 + 50)).map(uid).collect();
+        let many: Vec<Uuid> = (0..(MAX_EXPANDED_PER_FOLDER as u128 + 50))
+            .map(uid)
+            .collect();
         s.set_folders("w", "", &[(uid(9999), many)]).unwrap();
         assert_eq!(s.expanded("w", uid(9999)).len(), MAX_EXPANDED_PER_FOLDER);
     }

@@ -163,10 +163,7 @@ impl TextReplacementSession {
             // preference, and exactly wrong here: it would substitute
             // punctuation in the window between the document opening and its
             // settings resolving, in a project that may want none.
-            typography: RefCell::new(TypographyEngine::new(
-                "",
-                SmartPunctuationFlags::all_off(),
-            )),
+            typography: RefCell::new(TypographyEngine::new("", SmartPunctuationFlags::all_off())),
             punctuation: RefCell::new(None),
             compiled_punctuation: RefCell::new(None),
             pending: RefCell::new(None),
@@ -201,15 +198,18 @@ impl TextReplacementSession {
         }
 
         let caret = handle.cursor_position();
-        let advanced = self.last_caret.replace(Some(caret)).is_some_and(|p| caret > p);
+        let advanced = self
+            .last_caret
+            .replace(Some(caret))
+            .is_some_and(|p| caret > p);
 
         // A pending revert outlives only the fire's own echo. The first change
         // that moves the document past it is the writer's, and is the one — the
         // only one — that may revert.
-        if let Some(pending) = self.take_pending_if_settled(doc) {
-            if self.try_revert(handle, doc, &pending, caret) {
-                return;
-            }
+        if let Some(pending) = self.take_pending_if_settled(doc)
+            && self.try_revert(handle, doc, &pending, caret)
+        {
+            return;
         }
 
         if !advanced || handle.has_selection().get() {
@@ -534,7 +534,10 @@ mod tests {
     /// writer who reverted "BTW" must not have "btw" re-expand at that spot.
     #[test]
     fn the_suppression_key_is_case_insensitive() {
-        let s = Suppressed { span_start: 4, key: "btw".into() };
+        let s = Suppressed {
+            span_start: 4,
+            key: "btw".into(),
+        };
         assert_eq!(s.key, "BTW".to_lowercase());
     }
 
@@ -585,7 +588,14 @@ mod live_editor_tests {
     ///
     /// The `WidgetTree` is returned and must be kept alive — the handle reads
     /// the editor's state, and the tree owns the editor.
-    fn editor(text: &str) -> (TextDocument, EditorHandle, Rc<TextReplacementSession>, WidgetTree) {
+    fn editor(
+        text: &str,
+    ) -> (
+        TextDocument,
+        EditorHandle,
+        Rc<TextReplacementSession>,
+        WidgetTree,
+    ) {
         let doc = TextDocument::new();
         doc.set_plain_text(text).unwrap();
         let ed = RichTextEditor::editor(doc.clone());

@@ -82,10 +82,10 @@ impl Widget for AliasPillField {
                 })
             };
             flow = flow.child(
-                Pill::new(alias.clone(), lit!(alias.clone())).on_remove(
-                    tr!(tags_alias_remove(name = alias.clone())),
-                    move |c| on_remove(c),
-                ),
+                Pill::new(alias.clone(), lit!(alias.clone()))
+                    .on_remove(tr!(tags_alias_remove(name = alias.clone())), move |c| {
+                        on_remove(c)
+                    }),
             );
         }
 
@@ -93,17 +93,19 @@ impl Widget for AliasPillField {
             PopoverIconButton::new(IconButton::add().tooltip(tr!(tags_alias_add())))
                 .bare()
                 // // Tab must cycle *inside* the popover. Without a `FocusScope` the overlay opens
-        // with focus still in the window behind it, so Tab walks straight out into the
-        // toolbar and neither the filter field nor the rows can be reached at all — a
-        // keyboard-only writer can open this and do nothing with it (WCAG 2.1.1). Same
-        // trap `ProjectSwitcherButton` documents and guards with a test; this is that
-        // pattern, not a new idea.
-                .content(FocusScope::new(TraversalScopePolicy::Cycle).child(AliasEntry {
-                    draft: self.draft.clone(),
-                    value: self.value.clone(),
-                    set: self.set.clone(),
-                    root_child: None,
-                })),
+                // with focus still in the window behind it, so Tab walks straight out into the
+                // toolbar and neither the filter field nor the rows can be reached at all — a
+                // keyboard-only writer can open this and do nothing with it (WCAG 2.1.1). Same
+                // trap `ProjectSwitcherButton` documents and guards with a test; this is that
+                // pattern, not a new idea.
+                .content(
+                    FocusScope::new(TraversalScopePolicy::Cycle).child(AliasEntry {
+                        draft: self.draft.clone(),
+                        value: self.value.clone(),
+                        set: self.set.clone(),
+                        root_child: None,
+                    }),
+                ),
         );
 
         let id = ctx.add(
@@ -177,14 +179,11 @@ impl Widget for AliasEntry {
                 draft.set(String::new());
             });
 
-        let col = VStack::new()
-            .spacing(4.0)
-            .child(field)
-            .child(
-                TextWidget::new(tr!(tags_alias_hint()))
-                    .style(TextStyleRole::Tiny)
-                    .color(TextRole::Secondary),
-            );
+        let col = VStack::new().spacing(4.0).child(field).child(
+            TextWidget::new(tr!(tags_alias_hint()))
+                .style(TextStyleRole::Tiny)
+                .color(TextRole::Secondary),
+        );
 
         let id = ctx.add(
             Panel::new()

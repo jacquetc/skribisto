@@ -667,7 +667,7 @@ impl<'a> Builder<'a> {
     /// A Plume separator becomes a scene-break marker in the *preceding* scene's
     /// prose, so it needs neither a binder slot nor a name of its own — hence the
     /// narrower signature than its `emit_*` siblings.
-    fn emit_separator(&mut self, node: &PlumeNode, out: &mut Vec<BundledItem>) {
+    fn emit_separator(&mut self, node: &PlumeNode, out: &mut [BundledItem]) {
         if !self.text_djot(node.number).is_empty()
             || !self.synopsis_djot(node.number).is_empty()
             || !self.note_djot(node.number).is_empty()
@@ -1159,8 +1159,7 @@ mod tests {
     #[test]
     fn one_distinct_badge_per_scene_is_free_text() {
         // 5 distinct over 5 items: nothing is reused, so these are per-scene notes.
-        let counts: HashMap<String, usize> =
-            (0..5).map(|i| (format!("note {i}"), 1)).collect();
+        let counts: HashMap<String, usize> = (0..5).map(|i| (format!("note {i}"), 1)).collect();
         assert!(!badges_look_like_a_vocabulary(&counts));
     }
 
@@ -1168,8 +1167,7 @@ mod tests {
     fn too_many_distinct_values_is_free_text_however_often_reused() {
         // 13 distinct, each used 10 times: reuse is high, but no author keeps a
         // thirteen-state workflow — this is a project using badges as a notes field.
-        let counts: HashMap<String, usize> =
-            (0..13).map(|i| (format!("v{i}"), 10)).collect();
+        let counts: HashMap<String, usize> = (0..13).map(|i| (format!("v{i}"), 10)).collect();
         assert!(!badges_look_like_a_vocabulary(&counts));
     }
 
@@ -1301,7 +1299,10 @@ mod tests {
         );
 
         let draft = tag(&m, "draft");
-        assert!(!draft.discoverable, "a workflow state is not story-bible material");
+        assert!(
+            !draft.discoverable,
+            "a workflow state is not story-bible material"
+        );
         assert_eq!(item(&m, "A").tag_ids, vec![draft.file_id]);
         assert_eq!(
             item(&m, "A").label,

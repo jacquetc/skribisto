@@ -95,13 +95,13 @@ pub use backup_settings::BackupSettingsViewModel;
 pub use backups_list::{BackupRow, BackupsListViewModel};
 pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};
 pub use corkboard::CorkboardViewModel;
-pub use dictionaries::{DictionariesViewModel, InstallDictError, missing_from};
+pub use dictionaries::{DictionariesViewModel, InstallDictError};
 pub use editors::{EditorsViewModel, Side};
 pub use export::{ExportViewModel, format_label, scope_label};
 pub use export_styles::ExportStylesViewModel;
 pub use find::FindViewModel;
 pub use format::{
-    ALIGN_CENTER, ALIGN_LEFT, ALIGN_OTHER, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,
+    ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,
     FormatViewModel,
 };
 pub use import_plume::ImportPlumeViewModel;
@@ -124,12 +124,12 @@ pub use settings::{
     CorkboardDefaults, EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel,
 };
 pub use stream::{SplitFlavour, StreamViewModel};
-pub use tags::{TagImportSummary, TagsViewModel};
-pub use text_replacement_rules::{TextReplacementImportSummary, TextReplacementRulesViewModel};
+pub use tags::TagsViewModel;
+pub use text_replacement_rules::TextReplacementRulesViewModel;
 pub(crate) use timers::{AutosaveCountdown, IntervalCountdown, IntervalTick};
 pub use trash::TrashViewModel;
 pub use tree_expansion::TreeExpansionViewModel;
-pub use user_dictionary::{ImportSummary, UserDictionaryViewModel};
+pub use user_dictionary::UserDictionaryViewModel;
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 pub use word_count_status::{CountDisplay, count_display};
 pub use work_settings::WorkSettingsViewModel;

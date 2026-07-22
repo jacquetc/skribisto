@@ -12,7 +12,10 @@ use super::super::*;
 /// **Theme** and **Interface text size** (both relocated here from the old
 /// Manuscript pane, where "Editor theme"/"Text size" were misnomers for
 /// app-wide controls), and the "show welcome at startup" preference.
-pub(in crate::settings) fn appearance_pane(vm: &SettingsViewModel, scale: Signal<f32>) -> impl Widget {
+pub(in crate::settings) fn appearance_pane(
+    vm: &SettingsViewModel,
+    scale: Signal<f32>,
+) -> impl Widget {
     let form = FormLayout::new()
         .label(tr!(settings_page_appearance()))
         .label_gap(16.0)

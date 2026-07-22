@@ -63,16 +63,13 @@ pub fn daily_deltas(history: &[DailyCount]) -> Vec<DailyDelta> {
 /// The current writing streak: consecutive calendar days ending at `today` on
 /// which the writer actually wrote (a delta with `words_written > 0`).
 ///
-/// A calendar gap - no snapshot that day (a weekend, or the app was not opened)
-/// - breaks the streak exactly like a zero-word day: the streak is "did you
-/// write", not "were you scheduled to".
+/// A calendar gap (no snapshot that day — a weekend, or the app was not
+/// opened) breaks the streak exactly like a zero-word day: the streak is "did
+/// you write", not "were you scheduled to".
 pub fn streak(deltas: &[DailyDelta], today: NaiveDate) -> u32 {
     let mut count = 0;
     let mut day = today;
-    while deltas
-        .iter()
-        .any(|d| d.date == day && d.words_written > 0)
-    {
+    while deltas.iter().any(|d| d.date == day && d.words_written > 0) {
         count += 1;
         let Some(prev) = day.pred_opt() else { break };
         day = prev;
@@ -309,10 +306,10 @@ impl PaceViewModel {
         ctx.subscribe_event(
             Origin::DirectAccess(BinderItem(Updated)),
             move |event: &Event| {
-                if let Some(inner) = weak.upgrade() {
-                    if event.ids.contains(&inner.book_item_id) {
-                        PaceViewModel { inner }.reload();
-                    }
+                if let Some(inner) = weak.upgrade()
+                    && event.ids.contains(&inner.book_item_id)
+                {
+                    PaceViewModel { inner }.reload();
                 }
             },
         );
@@ -398,7 +395,12 @@ impl PaceViewModel {
             return 0;
         };
         let from = effective_start(today, self.inner.start.get());
-        writing_days_left(from, end, self.inner.weekday_mask.get(), &self.holiday_ranges())
+        writing_days_left(
+            from,
+            end,
+            self.inner.weekday_mask.get(),
+            &self.holiday_ranges(),
+        )
     }
 
     /// The daily rate needed to hit the goal by the deadline, or `None` when no
@@ -436,7 +438,12 @@ impl PaceViewModel {
     /// The recorded cumulative Book word count per day - the progression chart's
     /// "actual" line, ascending by date.
     pub fn actual_series(&self) -> Vec<(NaiveDate, i64)> {
-        self.inner.history.get().iter().map(|d| (d.date, d.words)).collect()
+        self.inner
+            .history
+            .get()
+            .iter()
+            .map(|d| (d.date, d.words))
+            .collect()
     }
 
     /// Words actually written each day (the rise since the previous recorded day)
@@ -528,7 +535,9 @@ impl PaceViewModel {
         self.reload();
     }
     pub fn add_milestone(&self, label: String, target_date: NaiveDate, target_words: Option<i64>) {
-        self.inner.model.add_milestone(label, target_date, target_words);
+        self.inner
+            .model
+            .add_milestone(label, target_date, target_words);
         self.reload();
     }
     pub fn remove_milestone(&self, milestone_id: u64) {
@@ -555,7 +564,9 @@ mod tests {
     }
 
     fn counts(days: &[(NaiveDate, i64)]) -> Vec<DailyCount> {
-        days.iter().map(|&(date, words)| DailyCount { date, words }).collect()
+        days.iter()
+            .map(|&(date, words)| DailyCount { date, words })
+            .collect()
     }
 
     #[test]
@@ -571,7 +582,10 @@ mod tests {
         assert_eq!(deltas.len(), 4, "the first day is the baseline, no delta");
         assert_eq!(deltas[0].words_written, 700);
         assert_eq!(deltas[1].words_written, 0);
-        assert_eq!(deltas[2].words_written, 0, "a shrink counts as zero written");
+        assert_eq!(
+            deltas[2].words_written, 0,
+            "a shrink counts as zero written"
+        );
         assert_eq!(deltas[3].words_written, 700);
     }
 
@@ -579,11 +593,11 @@ mod tests {
     fn streak_counts_back_to_the_first_gap_or_zero() {
         // Wrote Mon, Tue, Wed; flat Thu; wrote Fri. Streak on Fri = 1 (Thu breaks it).
         let deltas = daily_deltas(&counts(&[
-            (d(2026, 7, 13), 100),  // Mon baseline
-            (d(2026, 7, 14), 300),  // Tue +200
-            (d(2026, 7, 15), 500),  // Wed +200
-            (d(2026, 7, 16), 500),  // Thu +0
-            (d(2026, 7, 17), 900),  // Fri +400
+            (d(2026, 7, 13), 100), // Mon baseline
+            (d(2026, 7, 14), 300), // Tue +200
+            (d(2026, 7, 15), 500), // Wed +200
+            (d(2026, 7, 16), 500), // Thu +0
+            (d(2026, 7, 17), 900), // Fri +400
         ]));
         assert_eq!(streak(&deltas, d(2026, 7, 17)), 1);
         // A missing calendar day breaks it too: no Thu entry at all.
@@ -592,7 +606,11 @@ mod tests {
             (d(2026, 7, 14), 300),
             (d(2026, 7, 17), 900), // Fri, skipping Wed/Thu
         ]));
-        assert_eq!(streak(&gapped, d(2026, 7, 17)), 1, "a calendar gap ends the streak");
+        assert_eq!(
+            streak(&gapped, d(2026, 7, 17)),
+            1,
+            "a calendar gap ends the streak"
+        );
         // Three straight writing days.
         let run = daily_deltas(&counts(&[
             (d(2026, 7, 14), 100),
@@ -618,7 +636,10 @@ mod tests {
             end: d(2026, 7, 15),
         }];
         assert!(!is_scheduled_day(d(2026, 7, 15), mon_fri, &hol), "holiday");
-        assert!(is_scheduled_day(d(2026, 7, 14), mon_fri, &hol), "Tue still on");
+        assert!(
+            is_scheduled_day(d(2026, 7, 14), mon_fri, &hol),
+            "Tue still on"
+        );
     }
 
     const MON_TO_FRI_TEST: i64 = 0b0001_1111;
@@ -661,10 +682,7 @@ mod tests {
         // 10 scheduled days (two Mon–Fri weeks), goal 1000 → 100/day.
         let start = d(2026, 7, 13); // Mon
         let end = d(2026, 7, 24); // Fri (two weeks later)
-        assert_eq!(
-            writing_days_in_range(start, end, MON_TO_FRI_TEST, &[]),
-            10
-        );
+        assert_eq!(writing_days_in_range(start, end, MON_TO_FRI_TEST, &[]), 10);
         // "By" Wed the 15th = end of Tue = 2 elapsed scheduled days → 200 expected.
         let exp = expected_words_by(d(2026, 7, 15), start, end, MON_TO_FRI_TEST, &[], 1000);
         assert_eq!(exp, 200);
@@ -676,7 +694,10 @@ mod tests {
             0
         );
         // No scheduled days → 0, never a divide-by-zero.
-        assert_eq!(expected_words_by(d(2026, 7, 15), start, end, 0, &[], 1000), 0);
+        assert_eq!(
+            expected_words_by(d(2026, 7, 15), start, end, 0, &[], 1000),
+            0
+        );
     }
 
     #[test]
@@ -700,7 +721,10 @@ mod tests {
             1000
         );
         // No goal / no scheduled days → 0, never a divide-by-zero.
-        assert_eq!(target_cumulative(end, start, end, MON_TO_FRI_TEST, &[], 0), 0);
+        assert_eq!(
+            target_cumulative(end, start, end, MON_TO_FRI_TEST, &[], 0),
+            0
+        );
         assert_eq!(target_cumulative(end, start, end, 0, &[], 1000), 0);
     }
 
