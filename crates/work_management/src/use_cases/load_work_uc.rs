@@ -274,13 +274,22 @@ struct Materialized {
 /// ordering and M2M link is preserved; file ids are remapped to fresh store ids).
 fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result<Materialized> {
     let lw = &loaded.work;
+    // Every field spelled out, with **no** `..Default::default()`. That fallback is
+    // what silently dropped `chapter_mode` here for as long as flat chapters have
+    // existed: a project saved in Flat mode came back as Folder on the next load,
+    // and nothing failed — `save_load_test`'s fixture sets Flat, but its `norm`
+    // projection never compared it. Listing the fields makes the compiler, rather
+    // than a reader, notice the next one that is added.
+    //
+    // The relationship vectors are deliberately empty: `create_orphan_*` makes the
+    // rows, and the ids are wired on afterwards by `set_work_relationship`.
     let work = uow.create_orphan_work(&Work {
+        id: 0,
         created_at: lw.created_at,
         updated_at: lw.updated_at,
         title: lw.title.clone(),
         author_name: lw.author_name.clone(),
         dict_language: lw.dict_language.clone(),
-        custom_replacement_rules_enabled: lw.custom_replacement_rules_enabled,
         // Single heal point for every load (legacy + new-format): preserve the
         // source's stable id, or mint a fresh one when it has none.
         unique_id: if lw.unique_id.is_empty() {
@@ -288,7 +297,14 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
         } else {
             lw.unique_id.clone()
         },
-        ..Default::default()
+        chapter_mode: lw.chapter_mode.clone(),
+        custom_replacement_rules_enabled: lw.custom_replacement_rules_enabled,
+        binders: Vec::new(),
+        tags: Vec::new(),
+        dict_words: Vec::new(),
+        text_replacement_rules: Vec::new(),
+        trash_infos: Vec::new(),
+        paces: Vec::new(),
     })?;
 
     // Tags (file id -> new id).

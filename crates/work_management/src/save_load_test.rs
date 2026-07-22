@@ -282,6 +282,10 @@ struct Norm {
     author: String,
     lang: Vec<String>,
     unique_id: String,
+    /// Compared, not merely set: `sample_bundle` deliberately uses the non-default
+    /// `Flat`, but for as long as this field was missing from the projection the
+    /// round trip silently reverted it to `Folder` and every test still passed.
+    chapter_flat: bool,
     tags: Vec<NormTag>,
     words: Vec<String>,
     binders: Vec<NormBinder>,
@@ -353,6 +357,7 @@ fn norm(b: &WorkBundle) -> Norm {
         author: b.manifest.work.author_name.clone(),
         lang: b.manifest.work.dict_language.clone(),
         unique_id: b.manifest.work.unique_id.clone(),
+        chapter_flat: b.manifest.work.chapter_flat,
         tags,
         words,
         binders,
