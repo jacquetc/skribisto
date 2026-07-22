@@ -576,6 +576,13 @@ impl OpenDocsStore {
         if let Some(vm) = self.inner.text_replacements.borrow().clone() {
             doc.attach_replacements(&vm);
             doc.set_replacement_locale(&self.language_for(doc.item_id));
+            // The project's punctuation rules too, and for the same reason the
+            // locale is set here: this is the path a doc opened *after* the
+            // project loaded takes, and it does not go through `attach_all`.
+            // Without this a scene opened mid-session substituted nothing at
+            // all, while the scenes already open when the project loaded did —
+            // the kind of split behaviour that reads as the feature being flaky.
+            doc.set_punctuation(self.inner.punctuation.borrow().clone());
         }
         let Some(spell) = self.inner.spell.borrow().clone() else {
             return;

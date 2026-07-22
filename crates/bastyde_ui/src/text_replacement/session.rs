@@ -925,6 +925,54 @@ mod live_editor_tests {
         assert_eq!(plain(&doc), "wait... by the way ");
     }
 
+    /// **The document's language picks the quotation marks**, through the same
+    /// live editor a writer types into.
+    ///
+    /// This is the test that answers "does it adapt to the project's language,
+    /// or is it really just English and French?" — every row here is a locale
+    /// the ruleset table carries, and each opens with its own glyph. Dashes and
+    /// the ellipsis are deliberately absent: they are locale-independent, which
+    /// is exactly why the feature can *look* English-only until someone types a
+    /// quotation mark.
+    #[test]
+    fn the_documents_language_picks_the_quotation_marks() {
+        for (locale, want) in [
+            ("en-US", "\u{201C}"), // “
+            ("fr-FR", "\u{00AB}"), // «
+            ("de-DE", "\u{201E}"), // „
+            ("de-CH", "\u{00AB}"), // « — Switzerland departs from German
+            ("es-ES", "\u{00AB}"),
+            ("it-IT", "\u{00AB}"),
+            ("pt-PT", "\u{00AB}"),
+            ("pt-BR", "\u{201C}"), // Brazil departs from Portugal
+            ("nl-NL", "\u{201C}"),
+            ("pl-PL", "\u{201E}"),
+            ("ru-RU", "\u{00AB}"),
+            ("sv-SE", "\u{201D}"), // ” at BOTH ends
+            ("tr-TR", "\u{201C}"),
+            ("ar", "\u{00AB}"),
+        ] {
+            let (doc, handle, session, _tree) = editor("");
+            punctuate(&session, locale);
+            type_text(&handle, &doc, &session, "x \"");
+            assert_eq!(
+                plain(&doc),
+                format!("x {want}"),
+                "{locale} must open its quotation with {want}"
+            );
+        }
+    }
+
+    /// A region with no row of its own inherits its language's typography
+    /// rather than falling back to English — `fr-CA` is French.
+    #[test]
+    fn an_unlisted_region_inherits_its_language() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "fr-CA");
+        type_text(&handle, &doc, &session, "il dit \"");
+        assert_eq!(plain(&doc), "il dit \u{00AB}");
+    }
+
     /// With the project's master switch off, nothing expands at all.
     #[test]
     fn the_master_switch_off_disables_every_rule() {
