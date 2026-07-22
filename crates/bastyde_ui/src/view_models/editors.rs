@@ -97,6 +97,11 @@ pub struct EditorsViewModel {
     /// owned here. See [`SaveStateViewModel`]'s module docs for why a per-window
     /// copy of any of this is a bug the moment a second window exists.
     save_state: SaveStateViewModel,
+    /// Threaded into every `ContentTab` (its Overview pane's remembered chevron
+    /// expansion) — see `view_models::overview::OverviewViewModel::restore_expansion`'s
+    /// doc for why this moved from an `OverviewViewModel`-local `ctx.app_state`
+    /// lookup to a constructor-threaded handle (Scope C fix).
+    tree_expansion: crate::view_models::TreeExpansionViewModel,
 }
 
 impl EditorsViewModel {
@@ -114,6 +119,7 @@ impl EditorsViewModel {
         save_state: SaveStateViewModel,
         // Shared with the title-bar's Format menu — see `scene_focused_signal`.
         scene_focused: Signal<bool>,
+        tree_expansion: crate::view_models::TreeExpansionViewModel,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -148,6 +154,7 @@ impl EditorsViewModel {
             docs,
             backup_mode,
             save_state,
+            tree_expansion,
         }
     }
 
@@ -418,6 +425,7 @@ impl EditorsViewModel {
             self.typography.clone(),
             self.view_memory.clone(),
             self.corkboard_defaults.clone(),
+            self.tree_expansion.clone(),
         );
         let tab_title = if title.is_empty() {
             tr!(untitled())
@@ -918,6 +926,7 @@ impl EditorsViewModel {
                     self.typography.clone(),
                     self.view_memory.clone(),
                     self.corkboard_defaults.clone(),
+                    self.tree_expansion.clone(),
                 );
                 let caption = if it.title.is_empty() {
                     tr!(untitled())
@@ -1056,6 +1065,11 @@ mod tests {
     fn editors_with(app_ctx: Rc<AppContext>, save_state: SaveStateViewModel) -> EditorsViewModel {
         let ids = AppIds::new();
         let docs = OpenDocsStore::new(app_ctx.clone());
+        let tree_expansion = crate::view_models::TreeExpansionViewModel::new(
+            app_ctx.clone(),
+            ids.clone(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        );
         EditorsViewModel::new(
             app_ctx,
             Signal::new(700.0),
@@ -1068,6 +1082,7 @@ mod tests {
             Signal::new(false),
             save_state,
             Signal::new(false),
+            tree_expansion,
         )
     }
 
@@ -1112,6 +1127,12 @@ mod tests {
         // One shared `OpenDocsStore` (Tier 2) — as it would be for two windows
         // onto the same Work.
         let docs = OpenDocsStore::new(app_ctx.clone());
+        let ids_a = AppIds::new();
+        let tree_expansion_a = crate::view_models::TreeExpansionViewModel::new(
+            app_ctx.clone(),
+            ids_a.clone(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        );
         let window_a = EditorsViewModel::new(
             app_ctx.clone(),
             Signal::new(700.0),
@@ -1119,11 +1140,18 @@ mod tests {
             test_typography(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
-            AppIds::new(),
+            ids_a,
             docs.clone(),
             Signal::new(false),
             save_state.clone(),
             Signal::new(false),
+            tree_expansion_a,
+        );
+        let ids_b = AppIds::new();
+        let tree_expansion_b = crate::view_models::TreeExpansionViewModel::new(
+            app_ctx.clone(),
+            ids_b.clone(),
+            crate::models::TreeExpansionService::in_memory_default(),
         );
         let window_b = EditorsViewModel::new(
             app_ctx.clone(),
@@ -1132,11 +1160,12 @@ mod tests {
             test_typography(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
-            AppIds::new(),
+            ids_b,
             docs.clone(),
             Signal::new(false),
             save_state,
             Signal::new(false),
+            tree_expansion_b,
         );
 
         // Window A has item 1 in its primary pane and item 2 in its side pane;

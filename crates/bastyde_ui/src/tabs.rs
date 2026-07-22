@@ -267,6 +267,11 @@ pub fn tab_for(
         typography,
         view_memory,
         crate::view_models::CorkboardDefaults::detached(),
+        crate::view_models::TreeExpansionViewModel::new(
+            ctx.clone(),
+            ids.clone(),
+            crate::models::TreeExpansionService::in_memory_default(),
+        ),
     )
 }
 
@@ -400,6 +405,7 @@ impl ContentTab {
         typography: EditorTypographySet,
         view_memory: crate::view_models::EditorViewMemory,
         corkboard_defaults: crate::view_models::CorkboardDefaults,
+        tree_expansion: crate::view_models::TreeExpansionViewModel,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
         // the stream (Book only). Built first, so it can borrow `app_ctx` before
@@ -442,6 +448,7 @@ impl ContentTab {
             &open_doc.role,
             &open_doc.sub_role,
             corkboard_defaults.counting_method.clone(),
+            tree_expansion.clone(),
         );
         let stream = StreamViewModel::new(
             app_ctx,

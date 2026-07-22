@@ -179,7 +179,16 @@ impl Widget for OpenProjectsMenu {
 
         // Which project belongs in which section is derived (and tested) in
         // `view_models::project_switcher`; this build only renders the answer.
-        let split = vm::sections(open_registry::scan(), &recents, open_registry::my_pid());
+        // `my_path` (THIS window's own open project, never a stale/other
+        // window's) is what lets `is_self` tell a sibling in-process Work
+        // apart from this window's own — see `sections`'s doc.
+        let my_path = single_work_info.file_name().get();
+        let split = vm::sections(
+            open_registry::scan(),
+            &recents,
+            open_registry::my_pid(),
+            my_path.as_deref(),
+        );
         let has_open = !split.open.is_empty();
         let has_recent = !split.recent.is_empty();
 

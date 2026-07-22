@@ -195,7 +195,7 @@ pub fn close_work_and_return_to_launcher(
     // explicitly for the identical reason `ids` is (see the comment just below):
     // `ctx.app_state::<WorkspaceLayoutViewModel>()` can only ever answer with
     // whichever window built `main`'s bootstrap session.
-    capture_workspace_layout(workspace_layout, ctx);
+    capture_workspace_layout(workspace_layout);
     // Phase 0 (backend): `close_work` now takes a `CloseWorkDto{work_id}` — the
     // caller names which Work to close rather than the backend picking one.
     // Resolved from `ids` — the **calling window's own** `AppIds`, passed in
@@ -208,9 +208,20 @@ pub fn close_work_and_return_to_launcher(
     if let Some(work_id) = ids.work_id.get() {
         let _ = work_management_commands::close_work(app_ctx, &CloseWorkDto { work_id });
     }
-    ctx.open_window(crate::shell::windows::launcher_window_config(
-        app_ctx.clone(),
-    ));
+    // Scope E fix: with M Works open, a DIFFERENT window's own close-to-launcher
+    // may already have opened the Launcher (bastyde's `WindowManager::create_window`
+    // has no string-id dedup of its own — it just overwrites `string_to_id`, so a
+    // second `open_window` with the same `.id(LAUNCHER_WINDOW_ID)` would spawn a
+    // SECOND, orphaned Launcher window, violating "the Launcher is the one
+    // singleton window"). Reuse and focus the existing one if it's already open.
+    match ctx.find_window(crate::shell::windows::LAUNCHER_WINDOW_ID) {
+        Some(existing) => ctx.focus_window(existing),
+        None => {
+            ctx.open_window(crate::shell::windows::launcher_window_config(
+                app_ctx.clone(),
+            ));
+        }
+    }
     ctx.close_window_forced();
 }
 
@@ -234,7 +245,7 @@ pub fn quit_app(
 ) {
     // Persist the desk before the store is torn down — see
     // [`close_work_and_return_to_launcher`].
-    capture_workspace_layout(workspace_layout, ctx);
+    capture_workspace_layout(workspace_layout);
     // See `close_work_and_return_to_launcher`'s identical comment above.
     if let Some(work_id) = ids.work_id.get() {
         let _ = work_management_commands::close_work(app_ctx, &CloseWorkDto { work_id });
@@ -250,64 +261,60 @@ pub fn quit_app(
 /// session — reading it here would capture window 1's desk again, on every window's
 /// close/quit, and never the closing/quitting window's own). Called at each "leave
 /// the project" door while its store is still alive.
+///
+/// **Scope C fix — no longer takes `ctx`.** `workspace_layout.capture()` and
+/// `workspace_layout.capture_tree_expansion()` (see the latter's own doc for why
+/// it moved here from a free function) both read entirely off this Tier-2
+/// view-model's own injected/held state; neither ever needed an `EventContext`.
 pub(crate) fn capture_workspace_layout(
     workspace_layout: &crate::view_models::WorkspaceLayoutViewModel,
-    ctx: &mut EventContext,
 ) {
     workspace_layout.capture();
-    capture_tree_expansion(ctx);
+    workspace_layout.capture_tree_expansion();
 }
 
-/// Persist every open container tab's Overview expand state, in one batched write.
+/// Close `work_id`'s backend subtree — the window's own OUTGOING Work — right
+/// before an in-place replace (New Work / Open Work / the switcher's "Open
+/// here" / the import toast's "Open now") swaps in a different one. `work_id`
+/// is `None` when nothing was open yet (a no-op).
 ///
-/// Shares the desk's doors rather than having its own: both answer "the writer is leaving
-/// this project", both need the store alive to read, and a second set of call sites would
-/// be a second set of places to forget.
+/// Phase 2 deliberately removed `load_work`'s/`new_work`'s own "close every
+/// other open Work" sweep from the backend (`load_work_uc.rs`/`new_work_uc.rs`)
+/// so two DIFFERENT Works can coexist in two windows. Nothing then closed the
+/// SAME window's own outgoing Work for an in-place replace — every ordinary
+/// New-Work-after-a-project-is-open / Open-Work-after-a-project-is-open action
+/// silently leaked that Work's whole backend subtree (`Work`/`WorkInfo`/
+/// `Binder`/`BinderItem`/`Content`/`DictWord`/…, never freed for the rest of
+/// the process's life) and its `SpellcheckService` personal-word/mute map
+/// entry (dropped only by `ProjectLifecycleViewModel::on_close`, which only a
+/// real `CloseWork` event drives — an in-place switch fires none on its own).
 ///
-/// **`App` gathers the tabs, not the view-model.** The tabs belong to
-/// `EditorsViewModel`, and `TreeExpansionViewModel` is its peer — peers do not import each
-/// other, so the mediation happens here. This is also why no registry of live Overviews is
-/// needed: the open tabs already are that list.
-fn capture_tree_expansion(ctx: &mut EventContext) {
-    let (Some(expansion), Some(editors)) = (
-        ctx.app_state::<crate::view_models::TreeExpansionViewModel>()
-            .cloned(),
-        ctx.app_state::<crate::view_models::EditorsViewModel>()
-            .cloned(),
-    ) else {
-        return;
-    };
-    // The outline is one tree over the whole project, so it is captured on its own
-    // rather than per container.
-    if let Some(outline) = ctx
-        .app_state::<crate::view_models::OutlineViewModel>()
-        .cloned()
-    {
-        expansion.capture_outline(&outline.model().expanded_keys());
+/// Calling `close_work` here is what supplies that missing `CloseWork`.
+/// **The caller must resolve `work_id` from the window's OWN `AppIds`
+/// (`ids.work_id.get()`), captured before anything re-points it** — never
+/// `ctx.app_state::<AppIds>()`, which is one process-wide slot fixed at
+/// builder time from the *first* window's session (see
+/// `close_work_and_return_to_launcher`'s identical warning about
+/// `ctx.app_state::<AppIds>()`): with a second Work open in a second window,
+/// that slot answers with the WRONG window's `work_id`,
+/// and closing it would tear a sibling window's live, untouched Work out from
+/// under it. Every call site today reaches this from inside that window's own
+/// `App::build` (`commands::CommandDeps::ids` / `NewWorkViewModel`'s own
+/// `ids`), where the correct, per-window `AppIds` is already at hand.
+///
+/// While `work_id` still names the outgoing Work, the ordinary guarded
+/// `CloseWork` subscriber (`is_event_for_my_work`, in `App::build`) matches
+/// and runs `ProjectLifecycleViewModel::on_close` exactly as a real close
+/// would — releasing the open-registry claim, clearing this Work's
+/// spell-check entry, and unpointing the tree/tabs/singles — before the
+/// caller's own `load_work`/`new_work` seeds them again for the new Work.
+/// `WorkRegistry`'s session/undo-stack bookkeeping is untouched by this (by
+/// design — see `on_close`'s own doc): that half already runs from
+/// `register_window`'s replace path once the new `LoadWork`/`NewWork` lands.
+pub(crate) fn close_outgoing_work(app_ctx: &Rc<AppContext>, work_id: Option<u64>) {
+    if let Some(work_id) = work_id {
+        let _ = work_management_commands::close_work(app_ctx, &CloseWorkDto { work_id });
     }
-    let mut folders: Vec<(uuid::Uuid, Vec<uuid::Uuid>)> = Vec::new();
-    for side in [
-        crate::view_models::Side::Primary,
-        crate::view_models::Side::Secondary,
-    ] {
-        let tabs = editors.tabs(side);
-        for i in 0..tabs.len() {
-            let snapshot = tabs.with_item(i, |h| {
-                h.payload
-                    .downcast_ref::<crate::tabs::ContentTab>()
-                    .and_then(|t| t.overview())
-                    .and_then(|o| o.expansion_snapshot())
-            });
-            // The same container can be open in both panes; its two Overviews share a
-            // container uid, so keep the first and let the write stay idempotent.
-            if let Some(Some((container, expanded))) = snapshot
-                && !folders.iter().any(|(c, _)| *c == container)
-            {
-                folders.push((container, expanded));
-            }
-        }
-    }
-    expansion.capture(&folders);
 }
 
 /// Perform `outcome` immediately — `close_work_and_return_to_launcher` for
@@ -430,6 +437,45 @@ pub(crate) fn guard_unsaved_exit(
     }
 }
 
+/// Every OTHER currently-open Work's title that still has unsaved edits — the
+/// input to `app.quit`'s "you have other unsaved projects open" refusal.
+///
+/// **Scope E — accounting for every dirty Work on Quit, per the design doc's
+/// §9 q1 recommendation of ONE dialog naming every dirty Work, not just the
+/// quitting window's own.** With M Works open, `app.quit` used to guard only
+/// the ONE window it was invoked from (`guard_unsaved_exit`, unchanged, still
+/// below) — a sibling window's own unsaved edits were never asked about, and
+/// closing only the invoking window doesn't even terminate the process while
+/// another remains open. Actually orchestrating a save-then-close across
+/// EVERY open window is a much bigger feature this phase does not build (it
+/// would need forcing an arbitrary *other* window closed, which
+/// `EventContext::close_window_by_id`'s own doc says is guarded — "equivalent
+/// to `close_window` when `id` is the current window's id" — for any other
+/// id, so it would just re-open THAT window's own close guard/dialog, not
+/// collapse into the one aggregated dialog the design doc asks for; a real
+/// fix needs a `close_window_forced`-by-id bastyde does not expose today).
+/// So instead: Quit safely REFUSES and names every other dirty Work when one
+/// exists, rather than silently discarding it or silently doing nothing —
+/// accounting for it by making it impossible to lose unnoticed. The user
+/// switches to that Work's own window and saves/closes it there (where the
+/// existing, correct single-Work guard already applies), then quits again.
+/// THIS window's own Work is unaffected and still goes through
+/// `guard_unsaved_exit` exactly as before.
+///
+/// A backup-mode Work is excluded: Save is off there, so its "unsaved" can
+/// never reach disk regardless — the same reasoning `unsaved_decision`'s own
+/// `PromptDiscardOnly` branch already applies to THIS window's Work.
+fn other_dirty_work_titles(registry: &WorkRegistry, my_work_id: Option<u64>) -> Vec<String> {
+    registry
+        .open_work_ids()
+        .into_iter()
+        .filter(|&id| Some(id) != my_work_id)
+        .filter_map(|id| registry.session_for(id))
+        .filter(|s| s.unsaved.get() && !s.backup_mode.get())
+        .map(|s| s.single_work.title().get())
+        .collect()
+}
+
 /// Convert a theme colour role to the `text_document` colour a highlight span carries. Used to
 /// paint spell-check squiggles in the theme's `text_error` role — a semantic role, not a hex
 /// literal, so light/dark both work.
@@ -446,6 +492,7 @@ fn spell_underline_color(c: bastyde::tokens::Color) -> bastyde::text_document::C
 fn offer_missing_dictionaries(
     docs: &crate::models::OpenDocsStore,
     dictionaries: &crate::view_models::DictionariesViewModel,
+    session: &WorkSession,
     ctx: &mut EventContext,
 ) {
     let missing = dictionaries.missing_for(&docs.project_languages());
@@ -454,18 +501,22 @@ fn offer_missing_dictionaries(
     }
     dictionaries.set_highlight(missing.clone());
     let n = missing.len() as i64;
+    let session = session.clone();
     ctx.show_toast(
         bastyde::widgets::Toast::info(tr!(dict_missing_toast(count = n)))
             .id("dict.missing")
             .action(bastyde::widgets::ToastAction::primary(
                 tr!(dict_missing_action()),
                 move |c| {
+                    let session = session.clone();
                     c.present_modal(
-                        ModalRequest::deferred(|t| t.add(SettingsPanel::open_to_dictionaries()))
-                            .presentation(ModalPresentation::InTree)
-                            .title("Settings")
-                            .size(920, 620)
-                            .close_behavior(ModalCloseBehavior::Manual),
+                        ModalRequest::deferred(move |t| {
+                            t.add(SettingsPanel::open_to_dictionaries(session))
+                        })
+                        .presentation(ModalPresentation::InTree)
+                        .title("Settings")
+                        .size(920, 620)
+                        .close_behavior(ModalCloseBehavior::Manual),
                     );
                 },
             )),
@@ -513,6 +564,21 @@ pub struct App {
     /// instances every window used to share.
     save_as_vm: SaveAsViewModel,
     restore_vm: crate::view_models::BackupRestoreViewModel,
+    /// Scope D — window titles. The live `"{Work title} — Skribisto"` string
+    /// (see `shell::windows::window_title_text`'s doc), built once in
+    /// `ProjectWindowFactory::window_config` alongside `session` and already
+    /// bound to the drawn custom title bar there. `App::build` pushes every
+    /// change to `ctx.window()`'s OS-level title too (see the effect near the
+    /// top of `build`), so the taskbar/Alt-Tab/KWin-visible title and the
+    /// drawn one never drift apart.
+    title_text: Signal<String>,
+    /// Scope D — this window's own "which window on its Work am I" ordinal
+    /// (see `sessions::WorkRegistry::register_window`'s doc). Starts at `1`
+    /// (the only value reachable today — Phase 3 does not yet ship
+    /// `AttachExisting`) and is written with the real assigned value by the
+    /// `LoadWork`/`NewWork` subscribers in `build`, the moment `work_id` — and
+    /// so this window's place among any siblings on it — becomes known.
+    window_ordinal: Signal<usize>,
     /// Plain mirror of the persisted autosave setting, read by the title-bar menu
     /// (outside `App`) to hide the manual "Save" item. `App::build` mirrors the
     /// store-backed setting into it.
@@ -616,6 +682,8 @@ impl App {
         registry: WorkRegistry,
         save_as_vm: SaveAsViewModel,
         restore_vm: crate::view_models::BackupRestoreViewModel,
+        title_text: Signal<String>,
+        window_ordinal: Signal<usize>,
     ) -> Self {
         Self {
             app_ctx,
@@ -625,6 +693,8 @@ impl App {
             registry,
             save_as_vm,
             restore_vm,
+            title_text,
+            window_ordinal,
             autosave_menu,
             spellcheck_menu,
             scene_focused,
@@ -865,6 +935,21 @@ impl Widget for App {
         // this same window up by once it is confirmed gone.
         let window_id = ctx.window().map(|w| w.id());
 
+        // Scope D — window titles. Push every change of this window's live
+        // title text (`Self::title_text`, already bound to the drawn custom
+        // title bar in `shell::windows`) to the OS-level title too, via
+        // `WindowState::title()` — its own doc: an app-side `.set()` here
+        // round-trips through the window manager into a real OS window-title
+        // call, the half a KWin rule (matching a window by its title text)
+        // actually needs. A no-op in a headless/off-screen build context
+        // (`ctx.window()` is `None` there — same guard as `window_id` above).
+        if let Some(window) = ctx.window() {
+            let os_title = window.title().clone();
+            ctx.effect(&self.title_text, move |t: &String| {
+                os_title.set(t.clone());
+            });
+        }
+
         // The Tier-2 per-open-Work bundle — see `sessions::WorkSession`'s module
         // doc and this struct's own field doc for why `App::build` reads these
         // straight off `session` instead of doing its own `ctx.app_state::<T>()`
@@ -906,6 +991,7 @@ impl Widget for App {
                     backup_mode_for_editors,
                     save_state_for_editors,
                     scene_focused_for_editors,
+                    session.tree_expansion.clone(),
                 )
             })
             .clone();
@@ -983,6 +1069,9 @@ impl Widget for App {
         let workspace_layout = Some(session.workspace_layout.clone());
         if let Some(layout) = &workspace_layout {
             layout.set_editors(editors.clone());
+            // Same idempotent re-point, for `capture_tree_expansion`'s own use of
+            // this window's outline (Scope C fix — see that method's doc).
+            layout.set_outline(self.outline.clone());
         }
 
         // ── Spell-checking wiring (Step 6). `docs` above was moved into the editors VM, so
@@ -1316,10 +1405,15 @@ impl Widget for App {
         }));
         project_switch.set_new_work_form_hook(Rc::new({
             let app_ctx = self.app_ctx.clone();
+            // THIS window's own `AppIds` — so "Create Work" (`NewWorkViewModel::create`)
+            // closes THIS window's own outgoing Work, never `ctx.app_state::<AppIds>()`'s
+            // stale, first-window-wins slot. See `close_outgoing_work`'s doc.
+            let ids = ids.clone();
             move |c: &mut EventContext| {
                 let app_ctx = app_ctx.clone();
+                let ids = ids.clone();
                 c.present_modal(
-                    ModalRequest::deferred(move |t| t.add(NewWorkPanel::new(app_ctx)))
+                    ModalRequest::deferred(move |t| t.add(NewWorkPanel::new(app_ctx, ids)))
                         .presentation(ModalPresentation::InTree)
                         .title("New Work")
                         .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
@@ -1342,6 +1436,8 @@ impl Widget for App {
         let command_deps = commands::CommandDeps {
             app_ctx: self.app_ctx.clone(),
             ids: session.ids.clone(),
+            session: session.clone(),
+            registry: self.registry.clone(),
             outline: outline.clone(),
             editors: editors.clone(),
             trash: trash.clone(),
@@ -1413,6 +1509,12 @@ impl Widget for App {
             let editors_for_teardown = editors.clone();
             let app_ctx_for_teardown = self.app_ctx.clone();
             let backup_scheduler_for_teardown = backup_scheduler.clone();
+            // Scope D — window titles: written with whatever ordinal
+            // `register_window` actually assigns below, so `window_title_text`
+            // (built in `shell::windows`, over this very `Signal`) recomputes
+            // reactively the instant this window's Work — and its place among
+            // any siblings on it — is known.
+            let window_ordinal_for_load = self.window_ordinal.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |event: &Event| {
@@ -1448,12 +1550,13 @@ impl Widget for App {
                                 window_id,
                                 my_ids.stack_id.get(),
                             );
-                            registry_for_load.register_window(
+                            let ordinal = registry_for_load.register_window(
                                 window_id,
                                 work_id,
                                 stack_teardown,
                                 window_teardown,
                             );
+                            window_ordinal_for_load.set(ordinal);
                         }
                     }
                 },
@@ -1484,6 +1587,7 @@ impl Widget for App {
             let outline_model = outline.model();
             let trash_dock = self.trash_dock;
             let outline_dock = outline.dock_id();
+            let session_for_nudge = session.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |e: &Event, c: &mut EventContext| {
@@ -1584,11 +1688,13 @@ impl Widget for App {
                                 if let Some(p) = path.as_deref() {
                                     backup_settings.mark_nudged(&uid, p);
                                 }
+                                let session_for_action = session_for_nudge.clone();
                                 c.show_toast(Toast::warning(tr!(backup_nudge_text())).action(
-                                    ToastAction::primary(tr!(backup_nudge_action()), |c| {
+                                    ToastAction::primary(tr!(backup_nudge_action()), move |c| {
+                                        let session_for_action = session_for_action.clone();
                                         c.present_modal(
-                                            ModalRequest::deferred(|t| {
-                                                t.add(SettingsPanel::open_to_backup())
+                                            ModalRequest::deferred(move |t| {
+                                                t.add(SettingsPanel::open_to_backup(session_for_action))
                                             })
                                             .presentation(ModalPresentation::InTree)
                                             .title("Settings")
@@ -1640,6 +1746,9 @@ impl Widget for App {
             let editors_for_teardown = editors.clone();
             let app_ctx_for_teardown = self.app_ctx.clone();
             let backup_scheduler_for_teardown = backup_scheduler.clone();
+            // Scope D — window titles: see the identical LoadWork subscriber's
+            // `window_ordinal_for_load` doc above.
+            let window_ordinal_for_new = self.window_ordinal.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::NewWork),
                 move |event: &Event| {
@@ -1660,12 +1769,13 @@ impl Widget for App {
                                 window_id,
                                 my_ids.stack_id.get(),
                             );
-                            registry_for_new.register_window(
+                            let ordinal = registry_for_new.register_window(
                                 window_id,
                                 work_id,
                                 stack_teardown,
                                 window_teardown,
                             );
+                            window_ordinal_for_new.set(ordinal);
                         }
                     }
                 },
@@ -1687,11 +1797,12 @@ impl Widget for App {
             let docs = spell_docs.clone();
             let dictionaries = dictionaries.clone();
             let my_ids = session.ids.clone();
+            let session_for_toast = session.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::WorkManagement(event),
                 move |e: &Event, c: &mut EventContext| {
                     if my_ids.is_event_for_my_work(&e.ids) {
-                        offer_missing_dictionaries(&docs, &dictionaries, c)
+                        offer_missing_dictionaries(&docs, &dictionaries, &session_for_toast, c)
                     }
                 },
             );
@@ -2585,7 +2696,12 @@ fn abandon_deferred(
 /// unsaved edits without a word. The guard runs *after* the pick and *after* the
 /// backup sniff, so neither cancelling the picker nor choosing a backup (which
 /// opens in its own process, leaving this project alone) prompts about anything.
-fn open_work_flow(switch: ProjectSwitchViewModel, ctx: &mut EventContext) {
+///
+/// `ids` is THIS window's own `AppIds` — read (`.work_id.get()`) only at the
+/// final `switch.request` call below, not snapshotted here, so the outgoing Work
+/// it names is whatever is actually open in this window at that (later, async)
+/// moment, not whatever was open when the picker was first invoked.
+fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventContext) {
     let req = FileDialogRequest::pick_file()
         .title("Open Skribisto work")
         .add_filter("Skribisto work", &["skrib"]);
@@ -2593,6 +2709,7 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ctx: &mut EventContext) {
         if let FileDialogResult::File(Some(path)) = res {
             let file = path.to_string_lossy().into_owned();
             let switch = switch.clone();
+            let ids = ids.clone();
             let file_for_check = file.clone();
             ectx.spawn_local_with(
                 async move {
@@ -2610,7 +2727,11 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ctx: &mut EventContext) {
                         }));
                         return;
                     }
-                    switch.request(ectx2, PendingSwitch::OpenWork(file.clone()));
+                    switch.request(
+                        ectx2,
+                        PendingSwitch::OpenWork(file.clone()),
+                        ids.work_id.get(),
+                    );
                 },
             )
             .detach();
@@ -2664,6 +2785,38 @@ mod tests {
         assert!(!can.get());
     }
 
+    /// Phase 3 regression: `backup_mode` used to be one process-wide `Signal`
+    /// shared by every open Work (see `sessions::WorkSession`'s module doc's
+    /// "Phase 3 correction" section). Entering backup mode in Work A's window
+    /// must leave Work B's own `can_save` (hence its Save menu item, Ctrl+S,
+    /// and `editor.save`) fully enabled — this is the "backup-mode on Work A
+    /// leaves Work B writable" guarantee the migration exists to restore.
+    #[test]
+    fn backup_mode_on_one_work_never_disables_saving_on_another() {
+        let session_a = crate::sessions::WorkSession::for_test();
+        let session_b = crate::sessions::WorkSession::for_test();
+        // Both Works have unsaved edits. `unsaved` is ALSO per-Work now (Scope
+        // E's own fix, `WorkSession::unsaved`) — using plain local `Signal`s
+        // here instead keeps this test isolated to what it actually names:
+        // `backup_mode`.
+        let unsaved_a = Signal::new(true);
+        let unsaved_b = Signal::new(true);
+
+        let can_save_a = can_save(&unsaved_a, &session_a.backup_mode);
+        let can_save_b = can_save(&unsaved_b, &session_b.backup_mode);
+        assert!(can_save_a.get(), "Work A starts writable");
+        assert!(can_save_b.get(), "Work B starts writable");
+
+        // Work A opens a backup file — enters backup mode.
+        session_a.backup_mode.set(true);
+
+        assert!(!can_save_a.get(), "Work A's Save must now be disabled");
+        assert!(
+            can_save_b.get(),
+            "Work B must stay writable — a sibling Work's backup mode must never disable it"
+        );
+    }
+
     /// The shortcut and the action must *both* follow the signal — the keystroke
     /// and the intent are two independent entry points into `save_to_disk`.
     #[test]
@@ -2691,5 +2844,66 @@ mod tests {
         backup_mode.set(true);
         assert!(!shortcut.is_enabled(), "Ctrl+S inert in backup mode");
         assert!(!action.is_enabled(), "editor.save inert in backup mode");
+    }
+
+    // ── `other_dirty_work_titles` (Scope E — app.quit's multi-Work accounting) ──
+
+    #[test]
+    fn other_dirty_work_titles_is_empty_with_only_this_window_open() {
+        let reg = WorkRegistry::new();
+        let mine = crate::sessions::WorkSession::for_test();
+        mine.ids.work_id.set(Some(1));
+        mine.unsaved.set(true);
+        reg.register(1, mine);
+
+        assert!(
+            other_dirty_work_titles(&reg, Some(1)).is_empty(),
+            "this window's own dirty Work must never appear in the OTHER-Works list"
+        );
+    }
+
+    #[test]
+    fn other_dirty_work_titles_excludes_mine_clean_and_backup_mode_works() {
+        let reg = WorkRegistry::new();
+
+        let mine = crate::sessions::WorkSession::for_test();
+        mine.ids.work_id.set(Some(1));
+        mine.unsaved.set(true); // dirty, but it's MY OWN Work — must never appear
+        reg.register(1, mine);
+
+        let clean = crate::sessions::WorkSession::for_test();
+        clean.ids.work_id.set(Some(2)); // unsaved stays false
+        reg.register(2, clean);
+
+        let backup = crate::sessions::WorkSession::for_test();
+        backup.ids.work_id.set(Some(3));
+        backup.unsaved.set(true);
+        backup.backup_mode.set(true); // dirty, but Save is off here — excluded
+        reg.register(3, backup);
+
+        let dirty_other = crate::sessions::WorkSession::for_test();
+        dirty_other.ids.work_id.set(Some(4));
+        dirty_other.unsaved.set(true);
+        reg.register(4, dirty_other);
+
+        let others = other_dirty_work_titles(&reg, Some(1));
+        assert_eq!(
+            others.len(),
+            1,
+            "only Work 4 qualifies: not mine, dirty, and not in backup mode"
+        );
+    }
+
+    #[test]
+    fn other_dirty_work_titles_with_no_work_of_my_own_still_finds_others() {
+        // This window hasn't finished its own Load/New yet (`my_work_id = None`) —
+        // a sibling Work's own dirty edits must still be reported.
+        let reg = WorkRegistry::new();
+        let sibling = crate::sessions::WorkSession::for_test();
+        sibling.ids.work_id.set(Some(9));
+        sibling.unsaved.set(true);
+        reg.register(9, sibling);
+
+        assert_eq!(other_dirty_work_titles(&reg, None).len(), 1);
     }
 }

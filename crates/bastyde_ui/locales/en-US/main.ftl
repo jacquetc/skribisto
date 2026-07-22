@@ -472,6 +472,12 @@ dialog-new-scene = New scene
 close-work-question = Save changes before closing the work?
 quit-question = Save changes before quitting?
 unsaved-changes = This work has unsaved changes.
+# Shown by Quit when another open Work (not this window's own) still has
+# unsaved edits — the design's "one dialog listing every dirty Work" (see
+# app::commands::file's `app.quit` action). Quit is refused until those are
+# saved or closed from their own window.
+quit-other-works-dirty-title = Other open works have unsaved changes
+quit-other-works-dirty-text = Quitting would leave unsaved changes in: { $list }. Switch to each and save or close it, then quit again.
 # Replacing the open work in this window (New Work, Open Work, "Open here", the
 # import toast's "Open now"), the same guard as closing, since the open work is
 # closed either way.

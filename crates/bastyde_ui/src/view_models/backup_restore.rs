@@ -290,10 +290,15 @@ impl BackupRestoreViewModel {
         }
 
         // Update WorkInfo (mirrors SaveAsViewModel) so the window points at the
-        // restored file with the right shape.
+        // restored file with the right shape. `cur.file_name`, read here before
+        // this update overwrites it, is THIS window's own previous claim — the
+        // backup's path (or an earlier restored path) — captured for the
+        // release-then-claim pair below. See the Phase-3 fix note there.
+        let mut previous_path: Option<String> = None;
         if let Some(id) = pending.work_info_id
             && let Ok(Some(cur)) = work_info_commands::get_work_info(&self.app_ctx, &id)
         {
+            previous_path = cur.file_name.clone();
             let dto = UpdateWorkInfoDto {
                 id,
                 created_at: cur.created_at,
@@ -310,11 +315,19 @@ impl BackupRestoreViewModel {
 
         // Leave backup mode: this window is now the live restored project. It
         // was holding a claim on the *backup's* path (or an earlier restored
-        // path) with no `LoadWork`/`CloseWork` in between, so drop that first
-        // (T1-5's `replace_claim`, not a bare additive `claim`).
+        // path) with no `LoadWork`/`CloseWork` in between, so release THIS
+        // window's own previous claim (`previous_path`, captured above) and
+        // claim the new one. NOT `replace_claim`/`release_all()` (T1-5's
+        // original choice): with a second Work open in a second window,
+        // dropping every claim the whole *process* holds would silently
+        // un-claim that sibling's untouched, still-open project too — see
+        // `project_lifecycle::claim`'s doc for the identical Phase-3 fix.
         self.backup_mode.set(false);
         self.backup_context.set(None);
-        crate::shell::open_registry::replace_claim(&pending.target, &self.single_work.title().get());
+        if let Some(prev) = previous_path.as_deref() {
+            crate::shell::open_registry::release(prev);
+        }
+        crate::shell::open_registry::claim(&pending.target, &self.single_work.title().get());
 
         let msg = match &pending.safety_backup_path {
             Some(p) => tr!(backup_restored_with_safety(path = p.clone())),
@@ -440,6 +453,80 @@ fn atomic_replace(temp: &Path, target: &Path, as_folder: bool) -> std::io::Resul
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    // ── Phase 3: cross-Work isolation ────────────────────────────────────────
+    //
+    // `BackupRestoreViewModel` is minted fresh per window from that window's
+    // own `WorkSession` (see `shell::windows::ProjectWindowFactory::window_config`),
+    // sourcing `ids`/`single_work`/`backup_mode`/`backup_context` off the
+    // session instead of a shared, process-wide signal (see `WorkSession`'s
+    // module doc). These tests prove the seam that would silently leak if
+    // that fix were ever reverted: a restore vm built for one Work can never
+    // resolve a different Work's id/title, and a Work that never opened a
+    // backup never sees another Work's `backup_context`.
+
+    fn restore_vm_for(
+        session: &crate::sessions::WorkSession,
+        work_id: u64,
+    ) -> BackupRestoreViewModel {
+        session.ids.work_id.set(Some(work_id));
+        BackupRestoreViewModel::new(
+            Rc::new(AppContext::new()),
+            session.ids.clone(),
+            session.single_work.clone(),
+            session.backup_mode.clone(),
+            session.backup_context.clone(),
+        )
+    }
+
+    #[test]
+    fn a_restore_vm_never_resolves_a_different_works_id_or_backup_context() {
+        let session_a = crate::sessions::WorkSession::for_test();
+        let session_b = crate::sessions::WorkSession::for_test();
+        let restore_a = restore_vm_for(&session_a, 1);
+        let restore_b = restore_vm_for(&session_b, 2);
+
+        // Work A opened a backup; Work B never did.
+        session_a.backup_context.set(Some(BackupContext {
+            path: "/tmp/a.skrib".to_string(),
+            backup_of: Some("/tmp/a-original.skrib".to_string()),
+            backup_created_at: None,
+            authoritative: true,
+        }));
+
+        assert!(
+            restore_a.backup_context.get().is_some(),
+            "Work A's own restore vm must see the backup it opened"
+        );
+        assert!(
+            restore_b.backup_context.get().is_none(),
+            "Work B's restore vm must never see Work A's backup_context — it never opened one, \
+             so its own `begin()` returns immediately and can never write over Work A's original"
+        );
+        assert_ne!(
+            restore_a.ids.work_id.get(),
+            restore_b.ids.work_id.get(),
+            "each restore vm must resolve its own Work's id, never a sibling's — this is what \
+             `do_restore` puts into the SaveAsDto that ultimately names the write target"
+        );
+    }
+
+    #[test]
+    fn flipping_one_works_backup_mode_never_flips_a_siblings() {
+        let session_a = crate::sessions::WorkSession::for_test();
+        let session_b = crate::sessions::WorkSession::for_test();
+        let restore_a = restore_vm_for(&session_a, 1);
+        let restore_b = restore_vm_for(&session_b, 2);
+
+        restore_a.backup_mode.set(true);
+
+        assert!(restore_a.backup_mode.get());
+        assert!(
+            !restore_b.backup_mode.get(),
+            "Work B must stay writable (Save enabled, no banner) while only Work A is in \
+             backup mode — the exact regression a shared, process-wide backup_mode caused"
+        );
+    }
 
     #[test]
     fn safety_copy_duplicates_a_zip_file_beside_it() {

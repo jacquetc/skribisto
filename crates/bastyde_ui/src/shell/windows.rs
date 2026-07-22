@@ -97,6 +97,42 @@ pub fn window_id_for(project: &str) -> String {
     format!("work-{}", &blake3::hash(canon.as_bytes()).to_hex()[..16])
 }
 
+/// Scope D — window titles. A reactive `"{Work title} — Skribisto"` (falling
+/// back to plain `"Skribisto"` before a Work has finished loading/creating),
+/// with a `" (Window N)"` suffix once `ordinal` says this window is not the
+/// sole one showing its Work.
+///
+/// **Design goal: a STABLE, distinguishable string.** On Wayland a client
+/// cannot position its own toplevel — pinning the binder window to a second
+/// monitor is done with a KWin window rule keyed on the title text. So this
+/// must (a) always name the Work the window shows, (b) never collide with a
+/// sibling window on the *same* Work, and (c) never change identity out from
+/// under an already-matched KWin rule just because some OTHER window closed.
+/// `ordinal` (see `WorkRegistry::register_window`'s doc) is exactly that: a
+/// number assigned once per window and never renumbered/reused for as long as
+/// that window is open, so "Window 2" always means the same physical window
+/// even after "Window 1" closes. `ordinal == 1` never shows a suffix at all —
+/// today's only reachable case (Phase 3 does not yet ship `AttachExisting`,
+/// the second-window-on-one-Work action), so no window anyone can currently
+/// open ever shows a suffix; the mechanism is ready the moment it does.
+fn window_title_text(
+    single_work: &crate::singles::SingleWork,
+    ordinal: &Signal<usize>,
+) -> Signal<String> {
+    single_work.title().zip(ordinal).map(|(title, ord)| {
+        let base = if title.trim().is_empty() {
+            "Skribisto".to_string()
+        } else {
+            format!("{title} — Skribisto")
+        };
+        if *ord > 1 {
+            format!("{base} (Window {ord})")
+        } else {
+            base
+        }
+    })
+}
+
 /// The Launcher window: the Welcome UI hosted as a real top-level window
 /// (not a modal), reusing [`WelcomePanel`]/`WelcomeViewModel` verbatim — no
 /// duplicated recents/examples UI.
@@ -289,12 +325,16 @@ pub struct ProjectWindowFactory {
     /// every window this factory builds (as it always was pre-migration).
     /// `App::build` re-`attach`es it on every build, so with two
     /// simultaneously-open project windows, whichever one built most recently
-    /// wins the Format dock's live target — the same last-writer-wins shape as
-    /// `SaveAsViewModel`/`BackupRestoreViewModel`/`ProjectSwitchViewModel`
-    /// below. Fixing it needs `FormatViewModel` threaded through
-    /// `EditorsViewModel` and every tab/dock factory that reaches it via
-    /// `ctx.app_state`, which is materially larger than Phase 2's scope
-    /// (Work-scoped *data* isolation); flagged for a follow-up.
+    /// wins the Format dock's live target — the same last-writer-wins shape
+    /// `SaveAsViewModel`/`BackupRestoreViewModel`/`ProjectSwitchViewModel` used
+    /// to share (Phase 3 fixed the first two — each now reads its Work's own
+    /// `backup_mode`/`backup_context` off `WorkSession`, and is itself minted
+    /// fresh per window — see `WorkSession`'s module doc; `ProjectSwitchViewModel`
+    /// remains a known, disclosed Tier-1 gap, unrelated to backup state).
+    /// Fixing `FormatViewModel` needs it threaded through `EditorsViewModel`
+    /// and every tab/dock factory that reaches it via `ctx.app_state`, which is
+    /// materially larger than Phase 2's scope (Work-scoped *data* isolation);
+    /// flagged for a follow-up.
     format: FormatViewModel,
     app_ctx: Rc<AppContext>,
     registry: WorkRegistry,
@@ -302,7 +342,17 @@ pub struct ProjectWindowFactory {
     /// pre-built session) so every call to [`Self::window_config`] can mint a
     /// **fresh** `WorkSession` for the Work that window is about to load/create
     /// (Phase 2: a second simultaneously-open Work must never share the first
-    /// window's `AppIds`/singles/tag palette/dictionary/undo stack).
+    /// window's `AppIds`/singles/tag palette/dictionary/undo stack). Notably
+    /// absent: `backup_mode`/`backup_context`/`unsaved` — Phase 3 moved those
+    /// from a caller-supplied pair here to being minted *inside*
+    /// `WorkSession::new` itself (see its module doc), so this factory no
+    /// longer holds them at all; [`Self::window_config`] reads them straight
+    /// off the freshly-built `session` instead. Also notably absent:
+    /// `pending_exit` — the OPPOSITE fix, from a shared field here to a fresh
+    /// `Signal::new(PendingExit::None)` minted per call, exactly like
+    /// `scene_focused` below — it names a *window's* own close/quit
+    /// resumption, not the Work's data, so it must never be shared even
+    /// between two windows on the SAME Work.
     spellcheck: SpellcheckService,
     backup_settings: BackupSettingsViewModel,
     workspace_layout_service: WorkspaceLayoutService,
@@ -311,10 +361,6 @@ pub struct ProjectWindowFactory {
     /// Plain mirror of the master spell-check switch — the title-bar toggle's icon and
     /// the View ▸ Check spelling checkmark read it. `App::build` keeps it in sync.
     spellcheck_menu: Signal<bool>,
-    backup_mode: Signal<bool>,
-    backup_context: Signal<Option<crate::backup::BackupContext>>,
-    unsaved: Signal<bool>,
-    pending_exit: Signal<PendingExit>,
     /// Shared handle to the *current* project window's `WindowState`, so IPC
     /// "raise" events (see `ipc.rs`) can focus it directly without a
     /// `WindowManager` id lookup (which misses while that window is
@@ -336,10 +382,6 @@ impl ProjectWindowFactory {
         tree_expansion_service: TreeExpansionService,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
-        backup_mode: Signal<bool>,
-        backup_context: Signal<Option<crate::backup::BackupContext>>,
-        unsaved: Signal<bool>,
-        pending_exit: Signal<PendingExit>,
         main_window_state: Rc<RefCell<Option<WindowState>>>,
         format: FormatViewModel,
     ) -> Self {
@@ -353,10 +395,6 @@ impl ProjectWindowFactory {
             tree_expansion_service,
             autosave_menu,
             spellcheck_menu,
-            backup_mode,
-            backup_context,
-            unsaved,
-            pending_exit,
             main_window_state,
         }
     }
@@ -403,7 +441,6 @@ impl ProjectWindowFactory {
             ids.clone(),
             self.spellcheck.clone(),
             outline.docking(),
-            self.backup_mode.clone(),
             self.backup_settings.clone(),
             self.workspace_layout_service.clone(),
             self.tree_expansion_service.clone(),
@@ -411,6 +448,13 @@ impl ProjectWindowFactory {
         let registry = self.registry.clone();
         let single_work = session.single_work.clone();
         let single_work_info = session.single_work_info.clone();
+        // Scope D — window titles. `1` until `App::build`'s own `LoadWork`/
+        // `NewWork` subscriber calls `WorkRegistry::register_window` and
+        // writes back whatever ordinal it was actually assigned (see
+        // `window_title_text`'s doc for why `1` never shows a suffix, and
+        // `App::new`'s `window_ordinal` parameter for the write-back).
+        let window_ordinal: Signal<usize> = Signal::new(1);
+        let title_text = window_title_text(&single_work, &window_ordinal);
         let autosave_menu = self.autosave_menu.clone();
         let spellcheck_menu = self.spellcheck_menu.clone();
         // Per WINDOW, not per process: unlike `spellcheck_menu` (a global
@@ -418,8 +462,11 @@ impl ProjectWindowFactory {
         // has focused. A process-wide one would let a second project window
         // grey out this window's Format menu.
         let scene_focused = Signal::new(false);
-        let backup_mode = self.backup_mode.clone();
-        let backup_context = self.backup_context.clone();
+        // Sourced from `session`, never a `self` field (Phase 3): a second
+        // simultaneously-open Work must never share this Work's backup-mode
+        // flag/details — see `WorkSession`'s module doc.
+        let backup_mode = session.backup_mode.clone();
+        let backup_context = session.backup_context.clone();
         // Fresh per window (Phase 2), like `session`/`outline`/`export` above:
         // bound to *this* window's own `ids`/`single_work`, so a Save-As or
         // backup-restore from this window always targets this window's own
@@ -438,8 +485,16 @@ impl ProjectWindowFactory {
             backup_mode.clone(),
             backup_context.clone(),
         );
-        let unsaved = self.unsaved.clone();
-        let pending_exit = self.pending_exit.clone();
+        // Sourced from `session`, never a `self` field (Scope E, same fix as
+        // `backup_mode`/`backup_context` above): a second, simultaneously-open
+        // Work must never share this Work's dirty-state flag — see
+        // `WorkSession::unsaved`'s doc.
+        let unsaved = session.unsaved.clone();
+        // Fresh per WINDOW, never a `self`/`session` field: this names a
+        // *window's* own deferred close/quit, not the Work's data — even two
+        // windows on the SAME Work must each resolve their own close
+        // independently. See `ProjectWindowFactory`'s field doc.
+        let pending_exit: Signal<PendingExit> = Signal::new(PendingExit::None);
         let backup_scheduler = session.backup_scheduler.clone();
         let main_window_state = self.main_window_state.clone();
         // Clones for the caller (see this method's doc) — the originals are
@@ -451,7 +506,13 @@ impl ProjectWindowFactory {
 
         let config = WindowConfig::new()
             .id(id)
-            .title("Skribisto")
+            // A snapshot baseline only: at this instant the Work hasn't
+            // finished loading/creating yet, so `title_text` (its live value)
+            // is still the generic fallback anyway. `App::build`'s own effect
+            // (see its `window_ordinal`/`title_text` fields) pushes every
+            // later change to `state.title()` reactively — see
+            // `window_title_text`'s doc.
+            .title(title_text.get())
             .size(1200, 800)
             .min_size(800, 600)
             .decorations(DecorationsMode::CustomChrome)
@@ -1083,6 +1144,9 @@ impl ProjectWindowFactory {
                                         Expand::horizontal {
                                             Center {
                                                 TextWidget::new(lit!("Skribisto")) {
+                                                    // Scope D — live, per-Work, sibling-disambiguating
+                                                    // title (see `window_title_text`'s doc).
+                                                    text: title_text.clone()
                                                     style: theme.typography.body_bold.clone()
                                                     color: TextRole::Primary
                                                 }
@@ -1094,7 +1158,7 @@ impl ProjectWindowFactory {
                             }
                         )))
                     }
-                    None => tree.add(TextWidget::new(lit!("Skribisto"))),
+                    None => tree.add(TextWidget::new(lit!("Skribisto")).text(title_text.clone())),
                 };
 
                 let body = tree.add(Expand::new().child(App::new(
@@ -1113,6 +1177,8 @@ impl ProjectWindowFactory {
                     registry.clone(),
                     save_as_vm.clone(),
                     restore_vm.clone(),
+                    title_text.clone(),
+                    window_ordinal.clone(),
                 )));
                 let inner =
                     tree.add(VStack::new().spacing(0.0).add_child(title_bar).add_child(body));

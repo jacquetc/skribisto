@@ -50,6 +50,21 @@
 //! `TreeExpansionViewModel` move here as whole instances; splitting their
 //! Tier-3 `DockingModel`/`EditorsViewModel`-reference half out is future work
 //! the design doc flags but does not schedule for Phase 1.
+//!
+//! **Phase 3 correction — `backup_mode`/`backup_context` are minted here, not
+//! passed in.** Through Phase 2 these were a *caller-supplied* `Signal<bool>`/
+//! `Signal<Option<BackupContext>>` pair, constructed once in `main.rs` and
+//! threaded unchanged into every window `ProjectWindowFactory` built — a
+//! Tier-1 pair doing Tier-2 duty. With two Works open, loading/creating/
+//! closing a project in one window (each of which writes
+//! `backup_mode.set(..)`/`backup_context.set(..)` — see
+//! `ProjectLifecycleViewModel::on_new`/`on_close`) silently flipped the
+//! *other* window's backup-mode flag too: clearing its banner and
+//! re-enabling Save on what was still, semantically, a read-only backup.
+//! Whether a Work was opened from a backup is exactly as per-Work as
+//! `save_state`/`tags`, so this struct now constructs a fresh pair per
+//! `WorkSession` — `WorkSession::new` no longer takes `backup_mode` as a
+//! parameter at all.
 
 use std::rc::Rc;
 
@@ -59,6 +74,7 @@ use bastyde::widgets::DockingModel;
 use frontend::AppContext;
 
 use crate::app_ids::AppIds;
+use crate::backup::BackupContext;
 use crate::models::{
     DictWordListModel, OpenDocsStore, TreeExpansionService, WorkTagsListModel,
     WorkspaceLayoutService,
@@ -96,6 +112,35 @@ pub struct WorkSession {
     pub workspace_layout: WorkspaceLayoutViewModel,
     pub tree_expansion: TreeExpansionViewModel,
     pub open_docs: OpenDocsStore,
+    /// `true` while a *backup file* is open under this Work (Save + auto-backup
+    /// off; the file is read-only, the content is still editable). Minted fresh
+    /// here — see the module doc's "Phase 3 correction" section — never passed
+    /// in, so a second, simultaneously-open Work always gets its own flag.
+    pub backup_mode: Signal<bool>,
+    /// The open backup's details (drives the permanent banner + restore), or
+    /// `None` for a normal project. Fresh per `WorkSession`, same reasoning as
+    /// `backup_mode`.
+    pub backup_context: Signal<Option<BackupContext>>,
+    /// `true` while this Work has edits not yet written to disk — derived
+    /// (`dirty_seq > saved_seq`, both read off `save_state`) by an effect
+    /// `App::build` installs against THIS field, not a signal it owns itself.
+    ///
+    /// **Scope E fix.** Through Phase 2 this was a *caller-supplied*
+    /// `Signal<bool>`, constructed once in `main.rs` and threaded unchanged
+    /// into every window `ProjectWindowFactory` built — the exact same
+    /// Tier-1-doing-Tier-2-duty shape `backup_mode`/`backup_context` had
+    /// before their own Phase-3 fix (see this struct's module doc). Every
+    /// window's own recompute effect wrote into the SAME shared signal
+    /// (`app.rs`'s own comment on that effect used to read "every window
+    /// derives the identical `unsaved` from the identical pair" — true only
+    /// when there is truly one Work; false the moment a second, independent
+    /// Work opens), so one Work's edits landing/saving could silently flip
+    /// another Work's Save affordance and close-guard decision. A second
+    /// window on the SAME Work (Phase 3's `AttachExisting`) is meant to
+    /// share one `unsaved` — that is genuinely Tier 2 — so this lives here,
+    /// not per-window like `pending_exit` (see that field's own doc for why
+    /// IT moved the other way).
+    pub unsaved: Signal<bool>,
 }
 
 impl WorkSession {
@@ -118,11 +163,18 @@ impl WorkSession {
         ids: AppIds,
         spellcheck: SpellcheckService,
         docking: DockingModel,
-        backup_mode: Signal<bool>,
         backup_settings: BackupSettingsViewModel,
         workspace_layout_service: WorkspaceLayoutService,
         tree_expansion_service: TreeExpansionService,
     ) -> Self {
+        // Fresh per Work — see the module doc's "Phase 3 correction" section.
+        // Never a caller-supplied parameter: a second, simultaneously-open Work
+        // must never share this Work's backup-mode flag/details.
+        let backup_mode = Signal::new(false);
+        let backup_context: Signal<Option<BackupContext>> = Signal::new(None);
+        // Fresh per Work — see `Self::unsaved`'s own doc (Scope E fix).
+        let unsaved = Signal::new(false);
+
         let single_work = SingleWork::new(app_ctx.clone());
         let single_work_info = SingleWorkInfo::new(app_ctx.clone());
 
@@ -151,6 +203,7 @@ impl WorkSession {
             single_work_info.clone(),
             ids.clone(),
             backup_mode.clone(),
+            tree_expansion.clone(),
         );
 
         let backup_scheduler = BackupSchedulerViewModel::new(
@@ -160,7 +213,7 @@ impl WorkSession {
             backup_settings,
             single_work.clone(),
             single_work_info.clone(),
-            backup_mode,
+            backup_mode.clone(),
         );
 
         Self {
@@ -176,6 +229,9 @@ impl WorkSession {
             workspace_layout,
             tree_expansion,
             open_docs,
+            backup_mode,
+            backup_context,
+            unsaved,
         }
     }
 
@@ -192,10 +248,85 @@ impl WorkSession {
             AppIds::new(),
             SpellcheckService::new(),
             DockingModel::new(),
-            Signal::new(false),
             BackupSettingsViewModel::new(crate::models::BackupSettingsService::in_memory_default()),
             WorkspaceLayoutService::in_memory_default(),
             TreeExpansionService::in_memory_default(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The regression this Phase-3 fix closes: two simultaneously-open Works
+    /// must never share a `backup_mode`/`backup_context` identity. Before this
+    /// fix, `WorkSession::new` took a caller-supplied `Signal<bool>` that every
+    /// window shared — flipping one Work's flag silently flipped every other
+    /// open Work's too.
+    #[test]
+    fn each_session_gets_its_own_backup_mode_signal() {
+        let a = WorkSession::for_test();
+        let b = WorkSession::for_test();
+
+        a.backup_mode.set(true);
+        assert!(a.backup_mode.get(), "Work A's own flag must reflect its own write");
+        assert!(
+            !b.backup_mode.get(),
+            "Work B's backup_mode must be untouched by Work A's write — a fresh Signal, not a shared one"
+        );
+    }
+
+    #[test]
+    fn each_session_gets_its_own_backup_context_signal() {
+        let a = WorkSession::for_test();
+        let b = WorkSession::for_test();
+
+        let bc = BackupContext {
+            path: "/tmp/a.skrib".to_string(),
+            backup_of: Some("/tmp/original.skrib".to_string()),
+            backup_created_at: None,
+            authoritative: true,
+        };
+        a.backup_context.set(Some(bc.clone()));
+
+        assert_eq!(a.backup_context.get(), Some(bc));
+        assert_eq!(
+            b.backup_context.get(),
+            None,
+            "Work B's backup_context must stay None — it never opened a backup"
+        );
+    }
+
+    /// Scope E: two simultaneously-open Works must never share an `unsaved`
+    /// identity either — the same class of bug `backup_mode`/`backup_context`
+    /// had before their own fix (see `Self::unsaved`'s doc).
+    #[test]
+    fn each_session_gets_its_own_unsaved_signal() {
+        let a = WorkSession::for_test();
+        let b = WorkSession::for_test();
+
+        a.unsaved.set(true);
+        assert!(a.unsaved.get(), "Work A's own flag must reflect its own write");
+        assert!(
+            !b.unsaved.get(),
+            "Work B's unsaved must be untouched by Work A's write — a fresh Signal, not a shared one"
+        );
+    }
+
+    /// Every clone of the *same* session must still share one identity (the
+    /// whole point of bundling these as `Signal`s on a cloneable struct) — the
+    /// fix is "one pair per Work", not "one pair per clone".
+    #[test]
+    fn clones_of_the_same_session_share_one_backup_mode_identity() {
+        let a = WorkSession::for_test();
+        let a_clone = a.clone();
+
+        a_clone.backup_mode.set(true);
+
+        assert!(
+            a.backup_mode.get(),
+            "a clone of the same session must share the same Signal, not a copy"
+        );
     }
 }

@@ -135,10 +135,15 @@ fn lock_path_for(pid: u32, project_path: &str) -> Option<PathBuf> {
 }
 
 /// Claim `path` as open by this process, in addition to any claims already
-/// held — opening a second project does *not* drop the first. Callers that want
-/// today's "swap the one open project" behaviour (no `CloseWork` is emitted when
-/// one project replaces another in the same window) should use
-/// [`replace_claim`] instead.
+/// held — opening a second project does *not* drop the first. A window
+/// replacing its own previous project in place (Load/New/Save-As/Restore, no
+/// `CloseWork` in between) should [`release`] its own previous path first,
+/// then call this — never [`release_all`], which drops every claim the whole
+/// *process* holds, including a sibling window's untouched, still-open Work
+/// (see `view_models::project_lifecycle::ProjectLifecycleViewModel::claim`'s
+/// doc — this crate used to have a `replace_claim` helper doing exactly that
+/// blanket release; it was Phase 3's own migration bug and was removed once
+/// its three call sites were fixed to the release-then-claim pair instead).
 pub fn claim(path: &str, title: &str) {
     let canon = canonical(path);
     let Some(lock) = lock_path_for(my_pid(), path) else {
@@ -158,20 +163,10 @@ pub fn claim(path: &str, title: &str) {
     }
 }
 
-/// Release every claim this process currently holds, then claim `path`. This is
-/// the behaviour today's single-project-per-window call sites want: loading a
-/// *different* project into the same window (no `CloseWork` fires in between)
-/// must drop the old claim, not accumulate it. Once multiple projects can be
-/// open in one window, those call sites move to plain [`claim`] /
-/// [`release`].
-pub fn replace_claim(path: &str, title: &str) {
-    release_all();
-    claim(path, title);
-}
-
 /// Release this process's claim on `path`, if any. Leaves every other claim this
 /// process holds untouched. Idempotent — safe to call on `CloseWork` and again
-/// at shutdown.
+/// at shutdown, and it is the right way to drop a WINDOW's own previous claim
+/// before it claims a new path in place (see [`claim`]'s doc).
 pub fn release(path: &str) {
     let canon = canonical(path);
     let lock = CLAIMED.with(|c| c.borrow_mut().remove(&canon));
@@ -180,8 +175,11 @@ pub fn release(path: &str) {
     }
 }
 
-/// Release every claim this process holds (process exit, or "swap the single
-/// open project" via [`replace_claim`]).
+/// Release every claim this process holds — process exit only. Never call this
+/// to "swap the one open project": with two Works open in two windows of one
+/// process, it would drop a sibling window's untouched, still-open Work's
+/// claim too. Use [`release`] (this window's own previous path) + [`claim`]
+/// (its new one) instead.
 pub fn release_all() {
     let locks: Vec<PathBuf> = CLAIMED.with(|c| c.borrow_mut().drain().map(|(_, l)| l).collect());
     for lock in locks {

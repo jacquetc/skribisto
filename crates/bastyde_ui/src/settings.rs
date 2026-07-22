@@ -43,8 +43,7 @@ use bastyde::widgets::{
     Switcher, TextScaleControl, TextWidget, ThemeSwitcher, Toggle, TreeView, VStack,
 };
 
-use crate::app_ids::AppIds;
-use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::sessions::WorkSession;
 use crate::view_models::{
     BackupSettingsViewModel, EditorTypography, SettingsViewModel, WorkSettingsViewModel,
 };
@@ -450,30 +449,49 @@ pub struct SettingsPanel {
     /// tree selection + the content `Switcher`). Defaults to Editor ▸ Scene.
     selected_pane: Signal<Pane>,
     root_child: Option<WidgetId>,
+    /// The Tier-2 bundle for the Work the OPENING window shows — never
+    /// resolved via `ctx.app_state::<SingleWork/SingleWorkInfo/AppIds/
+    /// TagsViewModel/UserDictionaryViewModel>()` any more (Phase 3 fix).
+    ///
+    /// **Why this was a bug**: `ctx.app_state::<T>()` is one process-wide slot
+    /// per type (confirmed against `bastyde-app`'s `app_state_registry`, a
+    /// single `HashMap<TypeId, Box<dyn Any>>` for the whole process), seeded
+    /// once from the FIRST window's session in `main.rs`'s bootstrap and never
+    /// updated thereafter. With a second Work open in a second window,
+    /// `SettingsPanel::build()` used to silently read/write the FIRST Work's
+    /// structure, language, author, backup override, tags and personal
+    /// dictionary — regardless of which window's Settings the user actually
+    /// opened. Every call site now threads the opening window's own
+    /// `WorkSession` (available at each of the three construction sites:
+    /// `app::commands::file`'s `app.settings` action via `CommandDeps::session`,
+    /// and `app.rs`'s two toast call sites via `self.session`), the same
+    /// pattern `SaveAsViewModel`/`BackupRestoreViewModel` already use.
+    session: WorkSession,
 }
 
 impl SettingsPanel {
-    pub fn new() -> Self {
-        Self::opening_at(Pane::SceneTypography)
+    pub fn new(session: WorkSession) -> Self {
+        Self::opening_at(Pane::SceneTypography, session)
     }
 
     /// Open straight to Spelling ▸ Dictionaries — the target of the "install the
     /// missing dictionaries" toast (`offer_missing_dictionaries`). The tree seeds
     /// its selection to that page and expands the owning section on open.
-    pub fn open_to_dictionaries() -> Self {
-        Self::opening_at(Pane::Dictionaries)
+    pub fn open_to_dictionaries(session: WorkSession) -> Self {
+        Self::opening_at(Pane::Dictionaries, session)
     }
 
     /// Open straight to Backup & Sync ▸ Backup — the target of the
     /// "no backups configured" nudge toast.
-    pub fn open_to_backup() -> Self {
-        Self::opening_at(Pane::Backup)
+    pub fn open_to_backup(session: WorkSession) -> Self {
+        Self::opening_at(Pane::Backup, session)
     }
 
-    fn opening_at(pane: Pane) -> Self {
+    fn opening_at(pane: Pane, session: WorkSession) -> Self {
         Self {
             selected_pane: Signal::new(pane),
             root_child: None,
+            session,
         }
     }
 
@@ -563,9 +581,10 @@ impl SettingsPanel {
 
         // The open project's own section (multi-project-ready): shown only when a
         // Work is open, labelled "Work: `<title>`" — for now its single page is
-        // Structure (the chapter mode). Read through the shared `SingleWork`.
-        let work_title = ctx
-            .app_state::<SingleWork>()
+        // Structure (the chapter mode). Read through THIS window's own
+        // `WorkSession::single_work` (never `ctx.app_state`, see this struct's
+        // `session` field doc).
+        let work_title = Some(&self.session.single_work)
             .filter(|w| w.id().is_some())
             .map(|w| w.title().get());
         let mut work_node: Option<NodeId> = None;
@@ -801,14 +820,14 @@ impl Widget for SettingsPanel {
         // only while something differs from the factory defaults.
         let not_defaults = build_not_defaults(&theme_sig, &locale_sig, &scale, &vm);
 
-        // The open project (shared handle) backs the "Work: `<name>` ▸ Structure"
-        // page. When no project is open, the page is present in the Switcher but
-        // its tree node isn't shown, so it renders an empty placeholder.
-        let work = ctx.app_state::<SingleWork>().cloned();
-        let stack = ctx
-            .app_state::<AppIds>()
-            .map(|i| i.stack_id.clone())
-            .unwrap_or_else(|| Signal::new(None));
+        // The OPENING WINDOW's own Work (never `ctx.app_state`, see this struct's
+        // `session` field doc) backs the "Work: `<name>` ▸ Structure" page. When
+        // no project is open yet, the page is present in the Switcher but its
+        // tree node isn't shown, so it renders an empty placeholder — same
+        // `w.id().is_some()` gate as before, just sourced from this window's own
+        // session instead of a process-wide `app_state` slot.
+        let work = Some(self.session.single_work.clone());
+        let stack = self.session.ids.stack_id.clone();
         let work_title = work.as_ref().map(|w| w.title().get()).unwrap_or_default();
         // The two Work pages edit the *entity*, not the settings store, so they go through
         // their own view-model rather than calling `SingleWork::set_*` + `save` from a pane.
@@ -832,6 +851,7 @@ impl Widget for SettingsPanel {
                 ctx,
                 vm,
                 work_title.clone(),
+                self.session.open_docs.clone(),
             )),
             None => Box::new(empty_pane(
                 None,
@@ -913,9 +933,11 @@ impl Widget for SettingsPanel {
         let work_backup_pane: Box<dyn Widget> = match (&backup_vm, &work) {
             (Some(vm), Some(w)) if w.id().is_some() => {
                 let uid = w.unique_id().get();
-                let path = ctx
-                    .app_state::<SingleWorkInfo>()
-                    .and_then(|wi| wi.file_name().get())
+                let path = self
+                    .session
+                    .single_work_info
+                    .file_name()
+                    .get()
                     .unwrap_or_default();
                 let title = w.title().get();
                 Box::new(pane_frame(
@@ -937,13 +959,12 @@ impl Widget for SettingsPanel {
             )),
         };
 
-        // Work ▸ Tags — the per-project palette manager, over the shared `TagsViewModel`.
-        // Present in the Switcher regardless, an empty placeholder when no project is
-        // open (same as the other Work panes).
-        let tags_pane: Box<dyn Widget> = match (
-            ctx.app_state::<crate::view_models::TagsViewModel>().cloned(),
-            &work,
-        ) {
+        // Work ▸ Tags — the per-project palette manager, over THIS WINDOW's own
+        // `WorkSession::tags` (never `ctx.app_state::<TagsViewModel>()`, which
+        // would resolve to whichever Work's session registered it first).
+        // Present in the Switcher regardless, an empty placeholder when no
+        // project is open (same as the other Work panes).
+        let tags_pane: Box<dyn Widget> = match (Some(self.session.tags.clone()), &work) {
             (Some(tvm), Some(w)) if w.id().is_some() => {
                 let title = w.title().get();
                 Box::new(pane_frame(
@@ -965,12 +986,13 @@ impl Widget for SettingsPanel {
             )),
         };
 
-        // Work ▸ Personal dictionary — the per-project word-list manager, over the
-        // shared `UserDictionaryViewModel`. Present in the Switcher regardless, an
-        // empty placeholder when no project is open (same as the other Work panes).
+        // Work ▸ Personal dictionary — the per-project word-list manager, over
+        // THIS WINDOW's own `WorkSession::user_dictionary` (never
+        // `ctx.app_state::<UserDictionaryViewModel>()`, same reasoning as
+        // `tags_pane` above). Present in the Switcher regardless, an empty
+        // placeholder when no project is open (same as the other Work panes).
         let dictionary_pane: Box<dyn Widget> = match (
-            ctx.app_state::<crate::view_models::UserDictionaryViewModel>()
-                .cloned(),
+            Some(self.session.user_dictionary.clone()),
             &work,
         ) {
             (Some(vm), Some(w)) if w.id().is_some() => {

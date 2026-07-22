@@ -209,6 +209,16 @@ pub struct NewWorkViewModel {
     /// non-manuscript templates. Defaults to `false` (the classic layout).
     chapter_scene: Signal<bool>,
     app_ctx: Rc<AppContext>,
+    /// THIS window's own id-only Work state — `Some` only alongside
+    /// `launcher_factory: None` (an already-open project really does have one).
+    /// Read (`.work_id.get()`) at [`Self::create`] time to close the outgoing
+    /// Work before replacing it — never `ctx.app_state::<AppIds>()`, which is
+    /// one process-wide slot fixed at builder time from the *first* window's
+    /// session (see `crate::app::close_outgoing_work`'s doc): with a second
+    /// Work open in a second window, that slot would name the WRONG window's
+    /// Work, and closing it would tear a sibling window's live, untouched Work
+    /// out from under it.
+    ids: Option<crate::app_ids::AppIds>,
     /// `Some` when presented from the Launcher: "Create Work" defers to a
     /// freshly-opened project window instead of creating in place. `None`
     /// when presented from an already-open project (File ▸ New Work).
@@ -217,8 +227,11 @@ pub struct NewWorkViewModel {
 
 #[allow(dead_code)]
 impl NewWorkViewModel {
-    /// For `NewWorkPanel::new` — presented over an already-open project.
-    pub fn new(app_ctx: Rc<AppContext>) -> Self {
+    /// For `NewWorkPanel::new` — presented over an already-open project. `ids`
+    /// is THIS window's own `AppIds` — see the field's own doc for why
+    /// [`Self::create`] must resolve the outgoing Work through it rather than
+    /// `ctx.app_state`.
+    pub fn new(app_ctx: Rc<AppContext>, ids: crate::app_ids::AppIds) -> Self {
         Self {
             name: Signal::new(String::new()),
             author: Signal::new(String::new()),
@@ -228,13 +241,14 @@ impl NewWorkViewModel {
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
             app_ctx,
+            ids: Some(ids),
             launcher_factory: None,
         }
     }
 
     /// For `NewWorkPanel::new_for_launcher` — presented from the Launcher, no
-    /// project open yet. `factory` builds the project window that "Create
-    /// Work" opens once the form is submitted.
+    /// project open yet (so there is nothing to close). `factory` builds the
+    /// project window that "Create Work" opens once the form is submitted.
     pub fn new_for_launcher(app_ctx: Rc<AppContext>, factory: ProjectWindowFactory) -> Self {
         Self {
             name: Signal::new(String::new()),
@@ -245,6 +259,7 @@ impl NewWorkViewModel {
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
             app_ctx,
+            ids: None,
             launcher_factory: Some(factory),
         }
     }
@@ -339,9 +354,19 @@ impl NewWorkViewModel {
 
     /// "Create Work".
     ///
-    /// Already in a project window (`launcher_factory` is `None`): create the
-    /// work in place, then dismiss. On failure the toast surfaces the error
-    /// and the dialog stays open to retry.
+    /// Already in a project window (`launcher_factory` is `None`): close the
+    /// open project's own backend subtree — `crate::app::close_outgoing_work`,
+    /// see its doc — then create the new work in place, then dismiss. This is
+    /// the actual point of no return (the unsaved-changes guard already
+    /// resolved before this form was ever shown, and Cancel up to this exact
+    /// click leaves the outgoing project untouched), so closing it right here,
+    /// immediately before `new_work`, never leaves the window showing nothing
+    /// for longer than this one synchronous call. On failure the toast
+    /// surfaces the error and the dialog stays open to retry — the outgoing
+    /// project is already closed by then (its file on disk is unaffected; the
+    /// unsaved-changes guard already saved or discarded anything in memory
+    /// before offering this form), so a retry creates fresh rather than
+    /// resuming a still-open one.
     ///
     /// From the Launcher (`launcher_factory` is `Some`): don't touch the
     /// backend here — open a project window carrying this DTO as its
@@ -349,17 +374,22 @@ impl NewWorkViewModel {
     /// its `NewWork` subscription is live), then close the Launcher. There is
     /// no synchronous failure to report inline in this path; a creation error
     /// there is `eprintln!`-only (see `App::build`), matching the argv/Open
-    /// path's existing error handling.
+    /// path's existing error handling. Nothing is open in the Launcher window,
+    /// so there is nothing to close.
     pub fn create(&self, ctx: &mut EventContext) {
         match &self.launcher_factory {
-            None => match work_management_commands::new_work(&self.app_ctx, &self.dto()) {
-                Ok(()) => ctx.dismiss_modal(),
-                Err(e) => {
-                    ctx.show_toast(Toast::error(tr!(could_not_create_work(
-                        error = e.to_string()
-                    ))));
+            None => {
+                let outgoing_work_id = self.ids.as_ref().and_then(|ids| ids.work_id.get());
+                crate::app::close_outgoing_work(&self.app_ctx, outgoing_work_id);
+                match work_management_commands::new_work(&self.app_ctx, &self.dto()) {
+                    Ok(()) => ctx.dismiss_modal(),
+                    Err(e) => {
+                        ctx.show_toast(Toast::error(tr!(could_not_create_work(
+                            error = e.to_string()
+                        ))));
+                    }
                 }
-            },
+            }
             Some(factory) => {
                 // The returned `InitialWindowState` is only kept by `main.rs`'s
                 // very first window (see `window_config`'s doc) — every later
@@ -461,7 +491,7 @@ mod tests {
 
     #[test]
     fn target_path_recomputes_on_change() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()));
+        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
         let path = vm.target_path();
         vm.location().set("~/Books".into());
         vm.name().set("Tidewrack".into());
@@ -473,7 +503,7 @@ mod tests {
 
     #[test]
     fn dto_carries_form_choices() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()));
+        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
         vm.location().set("~/Books".into());
         vm.name().set("Tidewrack".into());
         vm.format_idx().set(1); // bundle
@@ -492,7 +522,7 @@ mod tests {
 
     #[test]
     fn chapter_scene_applies_only_to_manuscript_templates() {
-        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()));
+        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
         let applicable = vm.chapter_scene_applicable();
         // Manuscript templates (Empty Novel / Light Novel / Novel).
         for idx in [1, 2, 3] {

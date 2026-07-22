@@ -50,7 +50,7 @@ use crate::models::{
     uid_is_usable,
 };
 use crate::singles::{SingleWork, SingleWorkInfo};
-use crate::view_models::{EditorsViewModel, Side};
+use crate::view_models::{EditorsViewModel, OutlineViewModel, Side, TreeExpansionViewModel};
 
 /// Per-work desk persistence (editor tabs + dock layout). Cloneable handle —
 /// registered as `app_state` so the close/switch doors and `App::build` reach the
@@ -70,6 +70,19 @@ pub struct WorkspaceLayoutViewModel {
     /// Injected once `App::build` has created the editors (they need
     /// `ctx.settings()`); `None` until then.
     editors: Rc<RefCell<Option<EditorsViewModel>>>,
+    /// Injected once `App::build` has the window's own `OutlineViewModel` at hand
+    /// (mirrors `editors`'s own injection — see [`Self::set_outline`]). Used by
+    /// [`Self::capture_tree_expansion`] to persist the outline's own chevron state
+    /// alongside every open container tab's Overview.
+    outline: Rc<RefCell<Option<OutlineViewModel>>>,
+    /// This Work's own tree-expansion service (Tier 2 — see its own module doc),
+    /// bundled in here so [`Self::capture_tree_expansion`] can be reached from
+    /// every "leaving the project" door with a single `WorkspaceLayoutViewModel`
+    /// argument, exactly like [`Self::capture`] already is. Scope C fix: this used
+    /// to be resolved separately via `ctx.app_state::<TreeExpansionViewModel>()`
+    /// at each door, which silently answered with whichever Work's session
+    /// registered first — see `capture_tree_expansion`'s own doc for the full story.
+    tree_expansion: TreeExpansionViewModel,
     /// The pristine dock arrangement, snapshotted once on first build — the state a
     /// project with no saved layout is reset to (so switching to an unconfigured
     /// project doesn't inherit the previous one's docks).
@@ -86,6 +99,7 @@ impl WorkspaceLayoutViewModel {
         single_work_info: SingleWorkInfo,
         ids: AppIds,
         backup_mode: Signal<bool>,
+        tree_expansion: TreeExpansionViewModel,
     ) -> Self {
         Self {
             app_ctx,
@@ -96,6 +110,8 @@ impl WorkspaceLayoutViewModel {
             ids,
             backup_mode,
             editors: Rc::new(RefCell::new(None)),
+            outline: Rc::new(RefCell::new(None)),
+            tree_expansion,
             default_docks: Rc::new(RefCell::new(None)),
         }
     }
@@ -103,6 +119,12 @@ impl WorkspaceLayoutViewModel {
     /// Hand the editors view-model over, once `App::build` has created it.
     pub fn set_editors(&self, editors: EditorsViewModel) {
         *self.editors.borrow_mut() = Some(editors);
+    }
+
+    /// Hand this window's own `OutlineViewModel` over — mirrors [`Self::set_editors`].
+    /// Called once from `App::build`, alongside it.
+    pub fn set_outline(&self, outline: OutlineViewModel) {
+        *self.outline.borrow_mut() = Some(outline);
     }
 
     /// Record the pristine dock arrangement (first build only) — the reset target
@@ -164,6 +186,60 @@ impl WorkspaceLayoutViewModel {
         if let Err(e) = self.service.set(record) {
             eprintln!("skribisto: workspace layout capture failed: {e}");
         }
+    }
+
+    /// Persist every open container tab's Overview expand state, plus the outline's
+    /// own, in one batched write. Shares this Work's "leaving the project" doors
+    /// with [`Self::capture`] rather than having its own — both need the store
+    /// alive to read, and a second set of call sites would be a second set of
+    /// places to forget (see `app::capture_workspace_layout`, which calls both
+    /// together). A no-op before `App::build` has injected `editors`/`outline`
+    /// (see [`Self::set_editors`]/[`Self::set_outline`]) — the same guard
+    /// [`Self::capture`] already applies to `editors` alone.
+    ///
+    /// **Scope C fix.** This used to be a free function in `app.rs` resolving
+    /// `TreeExpansionViewModel`/`EditorsViewModel`/`OutlineViewModel` via
+    /// `ctx.app_state::<T>()` — every one of them Tier 2 (per-open-Work), so the
+    /// lookup silently answered with whichever Work's session registered first.
+    /// Worse, `EditorsViewModel` was never registered as `app_state` at all
+    /// anywhere in the crate (confirmed by grep) — so that lookup always failed
+    /// and this capture was a complete, silent no-op for every Work, not merely a
+    /// misrouted one. Now a method on the Tier-2 `WorkspaceLayoutViewModel`
+    /// itself, using the same injected `editors`/`outline` cells `capture` already
+    /// relies on, so every "leaving the project" door reaches the right Work's
+    /// data through one argument, exactly like `capture` does.
+    pub fn capture_tree_expansion(&self) {
+        let Some(editors) = self.editors.borrow().clone() else {
+            return;
+        };
+        let Some(outline) = self.outline.borrow().clone() else {
+            return;
+        };
+        // The outline is one tree over the whole project, so it is captured on its
+        // own rather than per container.
+        self.tree_expansion
+            .capture_outline(&outline.model().expanded_keys());
+        let mut folders: Vec<(Uuid, Vec<Uuid>)> = Vec::new();
+        for side in [Side::Primary, Side::Secondary] {
+            let tabs = editors.tabs(side);
+            for i in 0..tabs.len() {
+                let snapshot = tabs.with_item(i, |h| {
+                    h.payload
+                        .downcast_ref::<crate::tabs::ContentTab>()
+                        .and_then(|t| t.overview())
+                        .and_then(|o| o.expansion_snapshot())
+                });
+                // The same container can be open in both panes; its two Overviews
+                // share a container uid, so keep the first and let the write stay
+                // idempotent.
+                if let Some(Some((container, expanded))) = snapshot
+                    && !folders.iter().any(|(c, _)| *c == container)
+                {
+                    folders.push((container, expanded));
+                }
+            }
+        }
+        self.tree_expansion.capture(&folders);
     }
 
     // ── Restore ───────────────────────────────────────────────────────────────
@@ -332,6 +408,34 @@ mod tests {
 
     fn uid_map(order: &[BinderItemRef]) -> HashMap<u64, Uuid> {
         order.iter().map(|r| (r.id, r.uid)).collect()
+    }
+
+    /// Scope C regression guard: `capture_tree_expansion` must never panic when
+    /// called before `App::build` has injected `editors`/`outline` (every "leaving
+    /// the project" door calls `capture_workspace_layout`, which calls both
+    /// `capture()` and `capture_tree_expansion()` unconditionally) — it must stay
+    /// a safe, silent no-op, exactly as `capture()` already is before `editors` is
+    /// injected.
+    #[test]
+    fn capture_tree_expansion_is_a_safe_no_op_before_editors_and_outline_are_injected() {
+        let app_ctx = Rc::new(AppContext::new());
+        let ids = AppIds::new();
+        let layout = WorkspaceLayoutViewModel::new(
+            app_ctx.clone(),
+            crate::models::WorkspaceLayoutService::in_memory_default(),
+            bastyde::widgets::DockingModel::new(),
+            SingleWork::new(app_ctx.clone()),
+            SingleWorkInfo::new(app_ctx.clone()),
+            ids.clone(),
+            Signal::new(false),
+            TreeExpansionViewModel::new(
+                app_ctx,
+                ids,
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+        );
+        // Neither `set_editors` nor `set_outline` has been called yet.
+        layout.capture_tree_expansion();
     }
 
     #[test]

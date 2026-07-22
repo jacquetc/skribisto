@@ -534,13 +534,16 @@ fn main() {
         })
         .unwrap_or_else(models::ExportStylesService::in_memory_default);
     let export_styles = view_models::ExportStylesViewModel::new(export_styles_service);
-    // Backup-mode state: `backup_mode` is true while a *backup file* is open in
-    // this window (Save + auto-backup off; the file is read-only, the content is
-    // still editable). `backup_context` carries the open backup's details (drives
-    // the permanent banner + restore). Created here so the title-bar menu can read
-    // `backup_mode` (to hide Save / Back up now); `App::build` sets them on load.
-    let backup_mode = Signal::new(false);
-    let backup_context: Signal<Option<backup::BackupContext>> = Signal::new(None);
+    // Backup-mode state (`backup_mode` true while a *backup file* is open — Save
+    // + auto-backup off, the file read-only, the content still editable;
+    // `backup_context` carries the open backup's details, driving the permanent
+    // banner + restore) is **not** constructed here any more (Phase 3): it used
+    // to be one process-wide `Signal` pair threaded unchanged into every window,
+    // which let one Work's backup-mode flag leak into a second, simultaneously-
+    // open Work's window. `WorkSession::new` now mints a fresh pair per Work —
+    // see its module doc — so the title-bar menu / `App` read theirs off
+    // `session.backup_mode`/`session.backup_context` instead (see
+    // `ProjectWindowFactory::window_config`).
     // Backup ("Copies de secours") settings — opened eagerly here (before any
     // project loads) so the on-open/on-close/interval hooks and the scheduler see
     // it. Degrades to a throwaway temp file if the config dir is unavailable,
@@ -562,10 +565,17 @@ fn main() {
     // outside `App`, so `App::build` mirrors the persisted key into this plain signal.
     // Seeded from the store so a launch with it off never flashes the "on" icon.
     let spellcheck_menu = Signal::new(spellcheck_init);
-    // Exit-guard state shared between the window close guard / Close Work menu and
-    // `App` (which maintains `unsaved` and performs the deferred close on save).
-    let unsaved = Signal::new(false);
-    let pending_exit = Signal::new(PendingExit::None);
+    // `unsaved` (exit-guard state shared between the window close guard / Close
+    // Work menu and `App`) and `pending_exit` (a deferred close/quit awaiting an
+    // in-flight save) are **not** constructed here any more (Scope E): both used
+    // to be one process-wide `Signal` threaded unchanged into every window —
+    // the same shape `backup_mode`/`backup_context` had before their own
+    // Phase-3 fix. `unsaved` is genuinely Tier 2 (per-Work — two windows on the
+    // SAME Work should agree on its dirty state), so it now lives on
+    // `WorkSession` (see its own doc); `pending_exit` is genuinely Tier 3
+    // (per-WINDOW — even two windows on the SAME Work must resolve their own
+    // close/quit independently), so `ProjectWindowFactory::window_config` mints
+    // a fresh one per window instead (see its own doc).
     // The save-tracking state (`dirty_seq`/`saved_seq`/`saving` + the `SaveQueue`)
     // for the open Work now lives on `session.save_state` — the seed this whole
     // `WorkSession` bundle grew from (see its module doc). `App::build` reads it
@@ -576,17 +586,21 @@ fn main() {
     // The *switch* guard — the same unsaved-changes prompt for the four commands
     // that replace this window's project in place without going through a close
     // (New Work, Open Work, the switcher's "Open here", the import toast's "Open
-    // now"); all four used to destroy unsaved edits silently. Built here because
-    // it guards on the same `unsaved`/`backup_mode`/autosave signals as the close
-    // guard, and registered as app-state so the two doors outside `App` (the
-    // switcher popover, the import toast) reach it. `App::build` installs its
-    // save + New-Work-form hooks (both need the editors / the widget tree).
-    let project_switch = ProjectSwitchViewModel::new(
-        app_ctx.clone(),
-        unsaved.clone(),
-        backup_mode.clone(),
-        autosave_menu.clone(),
-    );
+    // now"); all four used to destroy unsaved edits silently. It guards on the
+    // same `unsaved`/`backup_mode`/autosave signals as the close guard, and is
+    // registered as app-state so the two doors outside `App` (the switcher
+    // popover, the import toast) reach it. `App::build` installs its save +
+    // New-Work-form hooks (both need the editors / the widget tree).
+    //
+    // Its `backup_mode` handle is now sourced from `initial_state.session` (see
+    // below), not a process-wide local — `WorkSession::new` mints a fresh
+    // `backup_mode` per Work (Phase 3) and there is no such thing as "the"
+    // backup-mode signal before a Work exists. `ProjectSwitchViewModel` itself
+    // stays a single, Tier-1 shared instance — a known, disclosed Phase-3
+    // boundary (see its own module doc) unrelated to this fix, so it is
+    // constructed after `initial_state` is available, alongside the other
+    // Tier-2-via-`app_state` registrations that already read off the first
+    // window's session.
     // If the requested project is already open in another live instance, raise
     // that instance (forwarding our launch activation token for a real Wayland
     // raise) and exit instead of opening a duplicate window.
@@ -630,10 +644,6 @@ fn main() {
         tree_expansion_service,
         autosave_menu.clone(),
         spellcheck_menu.clone(),
-        backup_mode.clone(),
-        backup_context.clone(),
-        unsaved.clone(),
-        pending_exit.clone(),
         main_window_state.clone(),
         format_vm.clone(),
     );
@@ -693,13 +703,28 @@ fn main() {
                 throwaway_ids,
                 spellcheck.clone(),
                 bastyde::widgets::DockingModel::new(),
-                Signal::new(false),
                 backup_settings.clone(),
                 WorkspaceLayoutService::in_memory_default(),
                 TreeExpansionService::in_memory_default(),
             ),
         }
     });
+
+    // The switch guard (see the doc where `autosave_menu` is constructed
+    // above) — built here, now that `initial_state` exists, so its
+    // `unsaved`/`backup_mode` handles are a real Work's (Scope E/Phase 3:
+    // `WorkSession::new` mints a fresh pair per Work; there is no
+    // process-wide one any more). `ProjectSwitchViewModel` itself is still a
+    // single, Tier-1 shared instance — this only fixes *which* Work's
+    // `unsaved`/`backup_mode` it reads, the same way every other
+    // Tier-2-via-`app_state` registration below reads off the first window's
+    // session.
+    let project_switch = ProjectSwitchViewModel::new(
+        app_ctx.clone(),
+        initial_state.session.unsaved.clone(),
+        initial_state.session.backup_mode.clone(),
+        autosave_menu.clone(),
+    );
 
     BastydeAppBuilder::new()
         .theme(theme)

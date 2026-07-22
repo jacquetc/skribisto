@@ -47,6 +47,11 @@ use super::WorkSession;
 struct Entry {
     session: WorkSession,
     refcount: usize,
+    /// The ordinal [`register_window`](WorkRegistry::register_window) will hand
+    /// out to the *next* window that attaches to this Work — see
+    /// [`WorkRegistry::next_window_ordinal`]'s doc for why this counts up
+    /// monotonically rather than tracking "how many windows are open right now".
+    next_ordinal: usize,
 }
 
 /// The Work-session-scoped half of teardown: delete `work_id`'s undo/redo
@@ -84,6 +89,11 @@ pub type WindowTeardown = Rc<dyn Fn()>;
 /// once the window itself is confirmed gone ([`WindowTeardown`]).
 struct WindowEntry {
     work_id: u64,
+    /// This window's fixed "which window on `work_id` am I" number (Scope D —
+    /// window titles). Assigned once, the first time this `window_id` binds to
+    /// this particular `work_id`, and never reassigned/renumbered afterward —
+    /// see [`WorkRegistry::register_window`]'s doc.
+    ordinal: usize,
     stack_teardown: StackTeardown,
     window_teardown: WindowTeardown,
 }
@@ -148,6 +158,7 @@ impl WorkRegistry {
             .or_insert(Entry {
                 session,
                 refcount: 1,
+                next_ordinal: 1,
             });
     }
 
@@ -203,9 +214,51 @@ impl WorkRegistry {
     /// Every currently-open Work's id — the query `ProjectSwitcher`/`app.quit`'s
     /// dirty-Works sweep will use (Phase 3). Exercised by this module's own
     /// tests today.
-    #[allow(dead_code)] // Phase 3's ProjectSwitcher / app.quit sweep
     pub fn open_work_ids(&self) -> Vec<u64> {
         self.sessions.borrow().keys().copied().collect()
+    }
+
+    /// How many windows are currently attached to `work_id` (its live
+    /// refcount) — `0` for an unregistered/unknown id. Scope D (window
+    /// titles): a window whose Work has more than one window open must
+    /// disambiguate itself; `0`/`1` never need a suffix. The title itself
+    /// disambiguates via each window's own [`register_window`](Self::register_window)-assigned
+    /// `ordinal` instead (stable per-window, unlike this live count — see
+    /// `shell::windows::window_title_text`'s doc), so nothing calls this
+    /// today; kept as the query a future "N windows open on this Work" UI
+    /// affordance (e.g. the in-process ProjectSwitcher listing flagged in the
+    /// migration report) will want, backed by tests now rather than later.
+    #[allow(dead_code)] // see doc above; exercised by this module's own tests today
+    pub fn window_count_for(&self, work_id: u64) -> usize {
+        self.sessions
+            .borrow()
+            .get(&work_id)
+            .map(|e| e.refcount)
+            .unwrap_or(0)
+    }
+
+    /// Hand out the next unused ordinal for a window newly attaching to
+    /// `work_id` — a monotonically increasing, never-reused "which window on
+    /// this Work am I" number (window 1 stays "1" for its whole lifetime even
+    /// after window 2 closes; a later window 3 gets "3", not "2" again). This
+    /// is deliberate: the design doc (§8) wants a *stable* per-window title —
+    /// a KWin rule matches a window by title text, so a title that could
+    /// change identity on a sibling's close (renumbering "2" of {1,2} down to
+    /// "1" once window 1 closes, say) would silently break that binding.
+    /// `1` for a `work_id` this registry has never seen (safe default — the
+    /// only real caller always calls this right after `register`/`attach`,
+    /// which is itself always called before `register_window`, so this path
+    /// is a defensive fallback, not the normal one).
+    fn next_window_ordinal(&self, work_id: u64) -> usize {
+        let mut sessions = self.sessions.borrow_mut();
+        match sessions.get_mut(&work_id) {
+            Some(entry) => {
+                let ordinal = entry.next_ordinal;
+                entry.next_ordinal += 1;
+                ordinal
+            }
+            None => 1,
+        }
     }
 
     // ── Window → Work bookkeeping ────────────────────────────────────────────
@@ -247,17 +300,34 @@ impl WorkRegistry {
     /// refcount an extra time, and the `unregister` here exactly cancels that
     /// extra bump, so `is_last` can only ever be `true` when no window (this
     /// one included) still shows that Work.
+    /// Returns this window's [`WindowEntry::ordinal`] for `work_id` — the
+    /// stable "which window on this Work am I" number Scope D's window titles
+    /// read (see [`next_window_ordinal`](Self::next_window_ordinal)'s doc). A
+    /// window re-registering the SAME `work_id` it already showed (e.g. a
+    /// reload) keeps its existing ordinal rather than being handed a fresh
+    /// one; a window binding to a work_id for the first time — whether it has
+    /// never registered before, or it is switching in place from a different
+    /// Work — gets the next free one for its NEW `work_id`.
     pub fn register_window(
         &self,
         window_id: BastydeWindowId,
         work_id: u64,
         stack_teardown: StackTeardown,
         window_teardown: WindowTeardown,
-    ) {
+    ) -> usize {
+        let reused_ordinal = self
+            .windows
+            .borrow()
+            .get(&window_id)
+            .filter(|e| e.work_id == work_id)
+            .map(|e| e.ordinal);
+        let ordinal = reused_ordinal.unwrap_or_else(|| self.next_window_ordinal(work_id));
+
         let previous = self.windows.borrow_mut().insert(
             window_id,
             WindowEntry {
                 work_id,
+                ordinal,
                 stack_teardown,
                 window_teardown,
             },
@@ -266,6 +336,7 @@ impl WorkRegistry {
             let is_last = self.unregister(previous.work_id);
             (previous.stack_teardown)(is_last);
         }
+        ordinal
     }
 
     /// bastyde's `on_removed` hook fired for `window_id`: this window is really
@@ -561,5 +632,92 @@ mod tests {
         // The window finally closes for real — now it really is last.
         reg.remove_window(BastydeWindowId::new(1));
         assert!(reg.session_for(1).is_none());
+    }
+
+    // ── Window ordinal (Scope D — window titles) ─────────────────────────
+
+    #[test]
+    fn window_count_for_reports_zero_for_an_unregistered_work() {
+        let reg = WorkRegistry::new();
+        assert_eq!(reg.window_count_for(404), 0);
+    }
+
+    #[test]
+    fn the_first_window_on_a_work_gets_ordinal_one() {
+        let reg = WorkRegistry::new();
+        reg.register(1, fixture_session());
+        let ordinal =
+            reg.register_window(BastydeWindowId::new(1), 1, Rc::new(|_| {}), inert_window_teardown());
+        assert_eq!(ordinal, 1);
+        assert_eq!(reg.window_count_for(1), 1);
+    }
+
+    #[test]
+    fn a_second_window_attaching_to_the_same_work_gets_the_next_ordinal() {
+        let reg = WorkRegistry::new();
+        reg.register(1, fixture_session());
+        reg.attach(1).expect("a second window attaches to the same Work");
+        let first =
+            reg.register_window(BastydeWindowId::new(1), 1, Rc::new(|_| {}), inert_window_teardown());
+        let second =
+            reg.register_window(BastydeWindowId::new(2), 1, Rc::new(|_| {}), inert_window_teardown());
+        assert_eq!(first, 1);
+        assert_eq!(second, 2, "the second window must never reuse window 1's ordinal");
+        assert_eq!(reg.window_count_for(1), 2);
+    }
+
+    #[test]
+    fn ordinals_are_never_reused_once_a_lower_numbered_sibling_closes() {
+        let reg = WorkRegistry::new();
+        reg.register(1, fixture_session());
+        reg.attach(1).expect("a second window attaches");
+        reg.register_window(BastydeWindowId::new(1), 1, Rc::new(|_| {}), inert_window_teardown());
+        reg.register_window(BastydeWindowId::new(2), 1, Rc::new(|_| {}), inert_window_teardown());
+
+        // Window 1 (ordinal 1) closes; window 2 (ordinal 2) stays open.
+        reg.remove_window(BastydeWindowId::new(1));
+        assert!(reg.session_for(1).is_some(), "window 2 keeps Work 1 open");
+
+        // A third window now attaches to the still-open Work 1.
+        reg.attach(1).expect("a third window attaches to the still-open Work");
+        let third =
+            reg.register_window(BastydeWindowId::new(3), 1, Rc::new(|_| {}), inert_window_teardown());
+        assert_eq!(
+            third, 3,
+            "a fresh window must never be handed a closed sibling's old ordinal — a title \
+             a KWin rule matched against must stay stable for the window it named"
+        );
+    }
+
+    #[test]
+    fn reloading_the_same_work_in_place_keeps_its_ordinal() {
+        let reg = WorkRegistry::new();
+        reg.register(1, fixture_session());
+        let first =
+            reg.register_window(BastydeWindowId::new(1), 1, Rc::new(|_| {}), inert_window_teardown());
+
+        reg.register(1, fixture_session());
+        let reloaded =
+            reg.register_window(BastydeWindowId::new(1), 1, Rc::new(|_| {}), inert_window_teardown());
+
+        assert_eq!(first, reloaded, "reloading the same Work in place must not renumber this window");
+    }
+
+    #[test]
+    fn switching_in_place_to_a_different_work_gets_that_works_own_ordinal() {
+        let reg = WorkRegistry::new();
+        reg.register(1, fixture_session());
+        reg.register_window(BastydeWindowId::new(1), 1, Rc::new(|_| {}), inert_window_teardown());
+
+        // A second, unrelated window is already the "second" window on Work 2.
+        reg.register(2, fixture_session());
+        reg.attach(2).expect("a second window attaches to Work 2");
+        reg.register_window(BastydeWindowId::new(2), 2, Rc::new(|_| {}), inert_window_teardown());
+
+        // Window 1 now switches, in place, onto Work 2 — it becomes Work 2's
+        // second window, not a reuse of its own former ordinal on Work 1.
+        let switched =
+            reg.register_window(BastydeWindowId::new(1), 2, Rc::new(|_| {}), inert_window_teardown());
+        assert_eq!(switched, 2, "window 1 must be numbered against Work 2's own window count, not Work 1's");
     }
 }

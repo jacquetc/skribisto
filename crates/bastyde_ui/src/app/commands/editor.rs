@@ -31,6 +31,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let enabled = SettingsViewModel::new(ctx.settings()).spellcheck_enabled();
         let docs = deps.spell_docs.clone();
         let dicts = deps.dictionaries.clone();
+        let session = deps.session.clone();
         ctx.register_action_global(Action::new("spellcheck.toggle").on_invoke(
             move |_i, c: &mut EventContext| {
                 let now_on = !enabled.get();
@@ -39,7 +40,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 // symptom this switch exists to end: a silent absence of squiggles.
                 // `offer_missing_dictionaries` otherwise only ever fires on Load/New.
                 if now_on {
-                    offer_missing_dictionaries(&docs, &dicts, c);
+                    offer_missing_dictionaries(&docs, &dicts, &session, c);
                 }
             },
         ));

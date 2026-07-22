@@ -54,15 +54,34 @@ impl SwitcherSections {
 ///
 /// Pure over its inputs, so the dedup rule is testable without a registry, a filesystem or a
 /// widget tree. `entries` comes from `open_registry::scan()`, `recents` from the recents
-/// model, `my_pid` from `open_registry::my_pid()`.
-pub fn sections(entries: Vec<OpenEntry>, recents: &[RecentWorkDto], my_pid: u32) -> SwitcherSections {
+/// model, `my_pid` from `open_registry::my_pid()`, `my_path` from the CALLING window's own
+/// `SingleWorkInfo::file_name()` (already canonicalized the same way `open_registry` claims
+/// are — see the module doc — so a plain string comparison is enough).
+///
+/// **`is_self` is "this window's own open path", never "any entry from my process"** — the
+/// Phase-3 fix. Before it, `is_self = e.pid == my_pid` was correct for one project per process,
+/// but with two in-process Works sharing one `my_pid()`, every entry from this process —
+/// including a SIBLING window's different, still-open Work — was marked `is_self` and its row
+/// went inert (`if is_self { return; }` in `project_switcher_button.rs`), so clicking it did
+/// nothing instead of raising that other window. `my_path` being `None` (this window hasn't
+/// finished its own Load/New yet) marks nothing as self, rather than guessing.
+pub fn sections(
+    entries: Vec<OpenEntry>,
+    recents: &[RecentWorkDto],
+    my_pid: u32,
+    my_path: Option<&str>,
+) -> SwitcherSections {
+    let my_canon = my_path.map(process::canon);
     let open: Vec<OpenRow> = entries
         .into_iter()
-        .map(|e| OpenRow {
-            is_self: e.pid == my_pid,
-            pid: e.pid,
-            path: e.path,
-            title: e.title,
+        .map(|e| {
+            let is_self = e.pid == my_pid && my_canon.as_deref() == Some(e.path.as_str());
+            OpenRow {
+                is_self,
+                pid: e.pid,
+                path: e.path,
+                title: e.title,
+            }
         })
         .collect();
 
@@ -129,10 +148,45 @@ mod tests {
     }
 
     #[test]
-    fn this_window_is_marked_and_the_others_are_not() {
-        let s = sections(vec![entry(10, "/a.skrib"), entry(20, "/b.skrib")], &[], 10);
-        assert!(s.open[0].is_self, "pid 10 is us");
-        assert!(!s.open[1].is_self);
+    fn this_windows_own_open_path_is_marked_and_the_others_are_not() {
+        let s = sections(
+            vec![entry(10, "/a.skrib"), entry(10, "/b.skrib")],
+            &[],
+            10,
+            Some("/a.skrib"),
+        );
+        assert!(s.open[0].is_self, "this window's own path is us");
+        assert!(
+            !s.open[1].is_self,
+            "a sibling in-process Work at a different path must never be marked self, \
+             even though it shares this window's own pid"
+        );
+    }
+
+    /// The regression this Phase-3 fix closes: with two Works open in ONE process (sharing one
+    /// `my_pid`), `is_self` must key on THIS window's own open path, never on pid alone — or a
+    /// sibling window's different, still-open Work would be marked self and its row would go
+    /// inert instead of raising it.
+    #[test]
+    fn a_sibling_in_process_work_sharing_this_pid_is_never_marked_self() {
+        let s = sections(
+            vec![entry(10, "/mine.skrib"), entry(10, "/siblings.skrib")],
+            &[],
+            10,
+            Some("/mine.skrib"),
+        );
+        let mine = s.open.iter().find(|r| r.path == "/mine.skrib").unwrap();
+        let sibling = s.open.iter().find(|r| r.path == "/siblings.skrib").unwrap();
+        assert!(mine.is_self);
+        assert!(!sibling.is_self);
+    }
+
+    /// Before this window has finished its own Load/New, `my_path` is `None` — nothing should
+    /// be guessed as self.
+    #[test]
+    fn no_open_path_yet_marks_nothing_as_self() {
+        let s = sections(vec![entry(10, "/a.skrib")], &[], 10, None);
+        assert!(!s.open[0].is_self);
     }
 
     /// The whole point of the split: a project already open somewhere must not also appear
@@ -143,6 +197,7 @@ mod tests {
             vec![entry(10, "/novel.skrib")],
             &[recent("/novel.skrib"), recent("/other.skrib")],
             10,
+            Some("/novel.skrib"),
         );
         assert_eq!(s.open.len(), 1);
         assert_eq!(s.recent.len(), 1, "only the un-open project stays");
@@ -153,21 +208,26 @@ mod tests {
     /// path, not by "is it mine".
     #[test]
     fn a_peer_windows_project_is_also_dropped_from_recent() {
-        let s = sections(vec![entry(99, "/novel.skrib")], &[recent("/novel.skrib")], 10);
+        let s = sections(
+            vec![entry(99, "/novel.skrib")],
+            &[recent("/novel.skrib")],
+            10,
+            Some("/mine.skrib"),
+        );
         assert!(s.recent.is_empty());
         assert!(!s.open[0].is_self);
     }
 
     #[test]
     fn nothing_open_leaves_every_recent_in_place() {
-        let s = sections(vec![], &[recent("/a.skrib"), recent("/b.skrib")], 10);
+        let s = sections(vec![], &[recent("/a.skrib"), recent("/b.skrib")], 10, None);
         assert!(s.open.is_empty());
         assert_eq!(s.recent.len(), 2);
     }
 
     #[test]
     fn both_empty_is_the_empty_state() {
-        assert!(sections(vec![], &[], 10).is_empty());
-        assert!(!sections(vec![entry(1, "/a.skrib")], &[], 1).is_empty());
+        assert!(sections(vec![], &[], 10, None).is_empty());
+        assert!(!sections(vec![entry(1, "/a.skrib")], &[], 1, None).is_empty());
     }
 }

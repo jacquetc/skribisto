@@ -473,6 +473,13 @@ dialog-new-scene = Nouvelle scène
 close-work-question = Enregistrer les modifications avant de fermer l'œuvre ?
 quit-question = Enregistrer les modifications avant de quitter ?
 unsaved-changes = Cette œuvre a des modifications non enregistrées.
+# Affiché par Quitter quand une autre œuvre ouverte (pas celle de cette fenêtre)
+# a encore des modifications non enregistrées — le dialogue unique listant
+# chaque œuvre modifiée (voir l'action `app.quit` dans
+# app::commands::file). Quitter est refusé tant qu'elles ne sont pas
+# enregistrées ou fermées depuis leur propre fenêtre.
+quit-other-works-dirty-title = D'autres œuvres ouvertes ont des modifications non enregistrées
+quit-other-works-dirty-text = Quitter laisserait des modifications non enregistrées dans : { $list }. Basculez vers chacune pour l'enregistrer ou la fermer, puis quittez à nouveau.
 # Remplacement de l'œuvre ouverte dans cette fenêtre (Nouvelle œuvre, Ouvrir une
 # œuvre, « Ouvrir ici », « Ouvrir maintenant » du bandeau d'import), même garde
 # que la fermeture, puisque l'œuvre ouverte est fermée dans tous les cas.

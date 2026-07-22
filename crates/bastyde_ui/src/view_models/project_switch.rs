@@ -12,15 +12,28 @@
 //!   * the project switcher's **"Open here"** — `load_work`
 //!   * the Plume importer's **"Open now"** toast action — `load_work`
 //!
-//! Both backend use cases call `work_io::close_current_work` as their first act
-//! (`new_work_uc.rs` / `load_work_uc.rs`: "Opening/creating a work replaces the
-//! currently-open one"), and `App`'s `LoadWork`/`NewWork` subscribers then call
-//! `EditorsViewModel::close_all` — whose contract is explicitly *"does not flush
-//! — the outgoing work is saved/discarded by the close flow"*. None of these four
-//! ran a close flow, so every one of them silently destroyed the open project's
-//! unsaved edits: no prompt, no save, no undo. The close paths (window X, Alt+F4,
-//! Ctrl+Q, Ctrl+W, File ▸ Close Work) have always prompted; these simply never
-//! called that guard.
+//! `App`'s `LoadWork`/`NewWork` subscribers then call `EditorsViewModel::close_all`
+//! — whose contract is explicitly *"does not flush — the outgoing work is
+//! saved/discarded by the close flow"*. None of these four ran a close flow, so
+//! every one of them silently destroyed the open project's unsaved edits: no
+//! prompt, no save, no undo. The close paths (window X, Alt+F4, Ctrl+Q, Ctrl+W,
+//! File ▸ Close Work) have always prompted; these simply never called that guard.
+//!
+//! **Phase 3 fix — the outgoing Work's backend subtree.** The backend no longer
+//! closes the previous Work as part of `new_work`/`load_work` (Phase 2 removed
+//! that sweep from `new_work_uc.rs`/`load_work_uc.rs` so two DIFFERENT Works can
+//! coexist in two windows) — so [`Self::perform`]'s `OpenWork` branch now calls
+//! `crate::app::close_outgoing_work` itself, right before `load_work`, to close
+//! the SAME window's own outgoing Work explicitly. (The `NewWork` branch only
+//! *shows the form* here — the actual replace happens later, on "Create Work",
+//! so `NewWorkViewModel::create` closes the outgoing Work itself, right before
+//! calling `new_work`; closing it here, before the form even appears, would
+//! leave the window showing no project at all if the user then cancelled.) The
+//! outgoing Work's id is threaded in as a plain parameter (`request`'s own
+//! `outgoing_work_id`, down through `defer`/`perform`), resolved by each of the
+//! four doors from THEIR OWN window's `AppIds` — never `ctx.app_state::<AppIds>()`,
+//! which would answer with the wrong window's id once a second Work is open in a
+//! second window (see `close_outgoing_work`'s own doc).
 //!
 //! This view-model *is* that guard, factored so all four doors share one branch
 //! order — [`unsaved_decision`], which `work.close` also matches on, so the two
@@ -136,6 +149,15 @@ pub struct ProjectSwitchViewModel {
     /// "a save finished" — an autosave already in flight may have gathered the
     /// store before our flush.
     pending_seq: Rc<Cell<Option<u64>>>,
+    /// The OUTGOING Work [`Self::pending`] will close (see
+    /// `crate::app::close_outgoing_work`) once it fires — the caller's own
+    /// window's `AppIds.work_id` at the moment [`Self::request`] was called,
+    /// captured here (alongside [`Self::pending_seq`]) rather than re-read
+    /// later: by the time a parked switch actually performs, `App::build`'s own
+    /// `LoadWork` subscriber may already have re-seeded `AppIds` for an
+    /// unrelated reason, and re-reading it then would name the wrong Work (or
+    /// none at all).
+    pending_work_id: Rc<Cell<Option<u64>>>,
     /// Flush the editors and ask for a disk write, returning the edit sequence it
     /// will cover (`EditorsViewModel::request_save`). Installed by `App::build`,
     /// which is where the editors are created; a no-op until then, and in headless
@@ -161,6 +183,7 @@ impl ProjectSwitchViewModel {
             autosave,
             pending: Signal::new(PendingSwitch::None),
             pending_seq: Rc::new(Cell::new(None)),
+            pending_work_id: Rc::new(Cell::new(None)),
             save_hook: Rc::new(RefCell::new(Rc::new(|| None) as Rc<dyn Fn() -> Option<u64>>)),
             new_work_form_hook: Rc::new(RefCell::new(
                 Rc::new(|_: &mut EventContext| {}) as Rc<dyn Fn(&mut EventContext)>
@@ -182,14 +205,26 @@ impl ProjectSwitchViewModel {
     /// **The guard.** Every in-place project switch goes through here: decide what
     /// to do with the open project's unsaved edits, then switch (now, or once the
     /// save lands, or not at all).
-    pub fn request(&self, ctx: &mut EventContext, switch: PendingSwitch) {
+    ///
+    /// `outgoing_work_id` is the CALLER's own window's `AppIds.work_id.get()` —
+    /// the Work this switch is about to replace, resolved by the caller from its
+    /// own, correct-for-this-window handle rather than by this view-model reaching
+    /// for the process-wide `app_state` slot (see `crate::app::close_outgoing_work`'s
+    /// doc for why that distinction matters once a second Work can be open in a
+    /// second window). `None` when nothing is open yet.
+    pub fn request(
+        &self,
+        ctx: &mut EventContext,
+        switch: PendingSwitch,
+        outgoing_work_id: Option<u64>,
+    ) {
         match unsaved_decision(
             self.unsaved.get(),
             self.backup_mode.get(),
             self.autosave.get(),
         ) {
-            UnsavedDecision::Proceed => self.perform(ctx, switch),
-            UnsavedDecision::SaveThenProceed => self.defer(ctx, switch),
+            UnsavedDecision::Proceed => self.perform(ctx, switch, outgoing_work_id),
+            UnsavedDecision::SaveThenProceed => self.defer(ctx, switch, outgoing_work_id),
             UnsavedDecision::PromptDiscardOnly => {
                 let me = self.clone();
                 ctx.present_message_box(
@@ -203,7 +238,7 @@ impl ProjectSwitchViewModel {
                         .escape_button(StandardButton::Cancel)
                         .on_result(move |r, ctx| {
                             if r.button == StandardButton::Discard {
-                                me.perform(ctx, switch.clone());
+                                me.perform(ctx, switch.clone(), outgoing_work_id);
                             }
                         }),
                 );
@@ -221,10 +256,12 @@ impl ProjectSwitchViewModel {
                         .default_button(StandardButton::Save)
                         .escape_button(StandardButton::Cancel)
                         .on_result(move |r, ctx| match r.button {
-                            StandardButton::Save => me.defer(ctx, switch.clone()),
+                            StandardButton::Save => me.defer(ctx, switch.clone(), outgoing_work_id),
                             // Discard: the edits stay in the store, unsaved — and
                             // the switch below wipes it. That is what was asked for.
-                            StandardButton::Discard => me.perform(ctx, switch.clone()),
+                            StandardButton::Discard => {
+                                me.perform(ctx, switch.clone(), outgoing_work_id)
+                            }
                             _ => {}
                         }),
                 );
@@ -239,7 +276,7 @@ impl ProjectSwitchViewModel {
     /// The switch is parked only if a save was really asked for. If the command
     /// could not be issued at all, nothing is parked: a switch waiting on a write
     /// that will never happen is a command that silently never happens.
-    fn defer(&self, ctx: &mut EventContext, switch: PendingSwitch) {
+    fn defer(&self, ctx: &mut EventContext, switch: PendingSwitch, outgoing_work_id: Option<u64>) {
         let save = self.save_hook.borrow().clone();
         let Some(covers) = save() else {
             ctx.show_toast(Toast::error(tr!(switch_save_not_started())));
@@ -247,16 +284,21 @@ impl ProjectSwitchViewModel {
         };
         self.pending.set(switch);
         self.pending_seq.set(Some(covers));
+        self.pending_work_id.set(outgoing_work_id);
     }
 
-    /// Do the switch. The point of no return: both use cases close the open Work
-    /// first, so everything not already in the store (or on disk) is gone.
-    fn perform(&self, ctx: &mut EventContext, switch: PendingSwitch) {
+    /// Do the switch. The point of no return: `OpenWork` closes the outgoing Work's
+    /// backend subtree itself (see `crate::app::close_outgoing_work`) immediately
+    /// before `load_work`; `NewWork` only shows the form here — the outgoing Work
+    /// stays open (and closeable-again by Cancel) until `NewWorkViewModel::create`
+    /// itself closes it, right before the actual `new_work` call.
+    fn perform(&self, ctx: &mut EventContext, switch: PendingSwitch, outgoing_work_id: Option<u64>) {
         // Persist the outgoing project's desk (open tabs + docks) while its store is
-        // still alive — the in-place switches fire no `CloseWork`, and `load_work` /
-        // `new_work` close the current Work before anyone could translate a tab into
-        // its persistable ordinal. (For New Work, the form is only *shown* here; the
-        // current desk captured now is the one being left.)
+        // still alive — the in-place switches fire no `CloseWork` of their own before
+        // this point, and `load_work` (via `close_outgoing_work`, right below) closes
+        // the current Work before anyone could translate a tab into its persistable
+        // ordinal. (For New Work, the form is only *shown* here; the current desk
+        // captured now is the one being left.)
         //
         // `ProjectSwitchViewModel` is a single, Tier-1 shared instance (see this
         // view-model's module doc) — a known, disclosed Phase-3 boundary, the same
@@ -265,11 +307,15 @@ impl ProjectSwitchViewModel {
         // `close_work_and_return_to_launcher`/`quit_app` now do, so it still reaches
         // for the process-wide `app_state` registration — correct only while this is
         // the first (and, for in-place New/Open, still the *only* still-live) window.
+        // (Unlike this, `outgoing_work_id` above is NOT resolved this way — the
+        // caller supplies its own window's real id — because closing the wrong
+        // window's Work is a correctness hazard `capture`-ing the wrong layout is
+        // not: see `close_outgoing_work`'s doc.)
         if let Some(workspace_layout) = ctx
             .app_state::<crate::view_models::WorkspaceLayoutViewModel>()
             .cloned()
         {
-            crate::app::capture_workspace_layout(&workspace_layout, ctx);
+            crate::app::capture_workspace_layout(&workspace_layout);
         }
         match switch {
             PendingSwitch::None => {}
@@ -278,6 +324,12 @@ impl ProjectSwitchViewModel {
                 form(ctx);
             }
             PendingSwitch::OpenWork(path) => {
+                // Close the SAME window's own outgoing Work before replacing it —
+                // see the module doc and `close_outgoing_work`'s own doc. This is
+                // the terminal step (no further confirmation follows), so closing
+                // here, immediately before `load_work`, never leaves the window
+                // showing nothing for longer than this one synchronous call.
+                crate::app::close_outgoing_work(&self.app_ctx, outgoing_work_id);
                 if let Err(e) = work_management_commands::load_work(
                     &self.app_ctx,
                     &LoadWorkDto {
@@ -307,9 +359,10 @@ impl ProjectSwitchViewModel {
         if saved_seq < waiting_for {
             return; // an earlier save landed; ours is still coming
         }
+        let outgoing_work_id = self.pending_work_id.get();
         let switch = self.take_pending();
         if switch != PendingSwitch::None {
-            self.perform(ctx, switch);
+            self.perform(ctx, switch, outgoing_work_id);
         }
     }
 
@@ -348,6 +401,7 @@ impl ProjectSwitchViewModel {
             self.pending.set(PendingSwitch::None);
         }
         self.pending_seq.set(None);
+        self.pending_work_id.set(None);
         switch
     }
 }
@@ -415,12 +469,18 @@ mod tests {
     /// `defer` needs an `EventContext` only for its "the save never started" toast,
     /// and this crate has no `EventContext` harness (see `backup_scheduler.rs`).
     /// This is the ctx-free core it is built on: ask for the save, park the switch
-    /// against the edit sequence that save will cover.
-    fn defer_headless(vm: &ProjectSwitchViewModel, switch: PendingSwitch) {
+    /// against the edit sequence that save will cover, and the outgoing Work it
+    /// will close once it fires.
+    fn defer_headless(
+        vm: &ProjectSwitchViewModel,
+        switch: PendingSwitch,
+        outgoing_work_id: Option<u64>,
+    ) {
         let save = vm.save_hook.borrow().clone();
         if let Some(covers) = save() {
             vm.pending.set(switch);
             vm.pending_seq.set(Some(covers));
+            vm.pending_work_id.set(outgoing_work_id);
         }
     }
 
@@ -435,7 +495,11 @@ mod tests {
                 Some(7)
             }));
         }
-        defer_headless(&vm, PendingSwitch::OpenWork("/tmp/other.skrib".into()));
+        defer_headless(
+            &vm,
+            PendingSwitch::OpenWork("/tmp/other.skrib".into()),
+            Some(42),
+        );
         assert_eq!(saves.get(), 1, "the deferral must ask for the disk write");
         assert_eq!(
             vm.pending.get(),
@@ -443,6 +507,11 @@ mod tests {
             "the switch must be parked, not performed — the write is still in flight"
         );
         assert_eq!(vm.pending_seq.get(), Some(7));
+        assert_eq!(
+            vm.pending_work_id.get(),
+            Some(42),
+            "the outgoing Work to close once the switch fires must be parked too"
+        );
     }
 
     #[test]
@@ -454,7 +523,7 @@ mod tests {
         // landing (a lower sequence) must not release it.
         let vm = test_vm(true, false, true);
         vm.set_save_hook(Rc::new(|| Some(9))); // our edits are at seq 9
-        defer_headless(&vm, PendingSwitch::NewWork);
+        defer_headless(&vm, PendingSwitch::NewWork, Some(7));
 
         assert!(
             vm.pending_seq.get().is_some_and(|s| 8 < s),
@@ -473,6 +542,10 @@ mod tests {
         assert_eq!(vm.take_pending(), PendingSwitch::NewWork);
         assert_eq!(vm.pending.get(), PendingSwitch::None);
         assert!(vm.pending_seq.get().is_none());
+        assert!(
+            vm.pending_work_id.get().is_none(),
+            "take_pending must drop the parked outgoing-Work id too"
+        );
     }
 
     #[test]
@@ -481,9 +554,10 @@ mod tests {
         // silently never happens. Better to report it and stay put.
         let vm = test_vm(true, false, true);
         vm.set_save_hook(Rc::new(|| None)); // the command could not be issued
-        defer_headless(&vm, PendingSwitch::NewWork);
+        defer_headless(&vm, PendingSwitch::NewWork, Some(7));
         assert_eq!(vm.pending.get(), PendingSwitch::None);
         assert!(vm.pending_seq.get().is_none());
+        assert!(vm.pending_work_id.get().is_none());
     }
 
     #[test]
@@ -492,10 +566,11 @@ mod tests {
         // parked switch must not fire behind it.
         let vm = test_vm(true, false, true);
         vm.set_save_hook(Rc::new(|| Some(1)));
-        defer_headless(&vm, PendingSwitch::NewWork);
+        defer_headless(&vm, PendingSwitch::NewWork, Some(7));
         vm.cancel();
         assert_eq!(vm.pending.get(), PendingSwitch::None);
         assert!(vm.pending_seq.get().is_none());
+        assert!(vm.pending_work_id.get().is_none());
     }
 
     #[test]
@@ -503,7 +578,7 @@ mod tests {
         // Un-hooked (the headless shape): deferring must not panic, and parks
         // nothing to wait on.
         let vm = test_vm(true, false, true);
-        defer_headless(&vm, PendingSwitch::NewWork);
+        defer_headless(&vm, PendingSwitch::NewWork, Some(7));
         assert!(vm.pending_seq.get().is_none());
 
         // The hook cells are shared, so installing from `App::build` reaches the
@@ -517,7 +592,7 @@ mod tests {
                 None
             }));
         }
-        defer_headless(&earlier_clone, PendingSwitch::NewWork);
+        defer_headless(&earlier_clone, PendingSwitch::NewWork, Some(7));
         assert_eq!(saves.get(), 1, "the earlier clone must see the new hook");
     }
 }

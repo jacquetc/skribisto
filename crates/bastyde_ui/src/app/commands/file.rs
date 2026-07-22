@@ -12,6 +12,9 @@
 
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
+use bastyde::widgets::{
+    EventContextMessageBoxExt, MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton,
+};
 
 use crate::panels::import_plume::ImportPlumePanel;
 use crate::intents::AppIntent;
@@ -30,9 +33,10 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     {
         let switch = deps.project_switch.clone();
-        ctx.register_action_global(
-            Action::new("work.new").on_invoke(move |_i, c| switch.request(c, PendingSwitch::NewWork)),
-        );
+        let ids = deps.ids.clone();
+        ctx.register_action_global(Action::new("work.new").on_invoke(move |_i, c| {
+            switch.request(c, PendingSwitch::NewWork, ids.work_id.get())
+        }));
     }
 
     // Open Work (Ctrl+O): native picker for an existing `.skrib`, then the guard, then load.
@@ -47,18 +51,20 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     {
         let switch = deps.project_switch.clone();
-        ctx.register_action_global(
-            Action::new("work.open").on_invoke(move |_i, c| open_work_flow(switch.clone(), c)),
-        );
+        let ids = deps.ids.clone();
+        ctx.register_action_global(Action::new("work.open").on_invoke(move |_i, c| {
+            open_work_flow(switch.clone(), ids.clone(), c)
+        }));
     }
     // Open an already-chosen path (payload in the intent) — the switcher popover's "Open
     // here" and the import toast's "Open now", both of which live outside `App` and pick the
     // path themselves. Same guard, no picker.
     {
         let switch = deps.project_switch.clone();
+        let ids = deps.ids.clone();
         ctx.register_action_global(Action::new("work.open_path").on_invoke(move |i, c| {
             if let Some(AppIntent::OpenWorkPath { path }) = AppIntent::from_intent(i) {
-                switch.request(c, PendingSwitch::OpenWork(path.clone()));
+                switch.request(c, PendingSwitch::OpenWork(path.clone()), ids.work_id.get());
             }
         }));
     }
@@ -98,19 +104,23 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .primary(KeyStroke::ctrl(Key::Character(',')))
             .build(),
     );
-    ctx.register_action_global(Action::new("app.settings").on_invoke(|_i, c| {
-        c.present_modal(
-            ModalRequest::deferred(|t| t.add(SettingsPanel::new()))
-                .presentation(ModalPresentation::InTree)
-                .title("Settings")
-                .size(920, 620)
-                // Not easily dismissable — like a critical MessageBox. Only the panel's own
-                // close button / Cancel / OK close it (each calls `ctx.dismiss_modal()`);
-                // Escape and outside clicks do not, so a stray click never discards a
-                // settings session.
-                .close_behavior(ModalCloseBehavior::Manual),
-        );
-    }));
+    {
+        let session = deps.session.clone();
+        ctx.register_action_global(Action::new("app.settings").on_invoke(move |_i, c| {
+            let session = session.clone();
+            c.present_modal(
+                ModalRequest::deferred(move |t| t.add(SettingsPanel::new(session)))
+                    .presentation(ModalPresentation::InTree)
+                    .title("Settings")
+                    .size(920, 620)
+                    // Not easily dismissable — like a critical MessageBox. Only the panel's own
+                    // close button / Cancel / OK close it (each calls `ctx.dismiss_modal()`);
+                    // Escape and outside clicks do not, so a stray click never discards a
+                    // settings session.
+                    .close_behavior(ModalCloseBehavior::Manual),
+            );
+        }));
+    }
 
     // Quit (Ctrl+Q): really terminates the process (see `PendingExit::Quit`'s docs), after
     // the same unsaved-changes guard as every other exit path — `guard_unsaved_exit`, shared
@@ -119,6 +129,11 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // land back on the project window's close guard, which always returns to the Launcher —
     // never terminates. The title-bar X / Alt+F4 path is unchanged (still `close_window()`,
     // still returns to the Launcher).
+    //
+    // With M Works open, Quit first accounts for every OTHER open Work's dirty state
+    // (`other_dirty_work_titles`) — see that function's own doc for why it REFUSES
+    // (naming them) rather than attempting a cross-window save-then-close-all. THIS
+    // window's own Work always still goes through the unchanged single-Work guard below.
     ctx.register_shortcut_global(
         Shortcut::new("app.quit")
             .name("Quit")
@@ -133,7 +148,21 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let pending = deps.pending_exit.clone();
         let scheduler = deps.backup_scheduler.clone();
         let backup_mode = deps.backup_mode.clone();
+        let registry = deps.registry.clone();
         ctx.register_action_global(Action::new("app.quit").on_invoke(move |_i, ctx| {
+            let others = super::super::other_dirty_work_titles(&registry, ids.work_id.get());
+            if !others.is_empty() {
+                ctx.present_message_box(
+                    MessageBox::warning(tr!(quit_other_works_dirty_title()))
+                        .text(tr!(quit_other_works_dirty_text(list = others.join(", "))))
+                        .buttons(MessageBoxButtons::Custom(vec![MessageBoxButton::standard(
+                            StandardButton::Ok,
+                        )]))
+                        .default_button(StandardButton::Ok)
+                        .escape_button(StandardButton::Ok),
+                );
+                return;
+            }
             guard_unsaved_exit(
                 ctx,
                 &app_ctx,

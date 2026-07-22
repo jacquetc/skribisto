@@ -215,10 +215,18 @@ impl SaveAsViewModel {
                     self.backup_mode.set(false);
                     self.backup_context.set(None);
                 }
-                // This window now points at the freshly-written output path with
-                // no `LoadWork`/`CloseWork` in between, so drop whatever claim it
-                // held before (T1-5's `replace_claim`, not a bare additive `claim`).
-                crate::shell::open_registry::replace_claim(&output_path, &self.single_work.title().get());
+                // This window now points at the freshly-written output path with no
+                // `LoadWork`/`CloseWork` in between, so release whatever claim it held
+                // before (`cur.file_name`, read above before this update overwrote it) and
+                // claim the new path. NOT `replace_claim`/`release_all()` (T1-5's original
+                // choice): that drops every claim the whole *process* holds, which with a
+                // second Work open in a second window would silently un-claim that
+                // sibling's still-open, untouched project too (Phase 3 fix — see
+                // `open_registry::release`'s own doc anticipating exactly this).
+                if let Some(prev) = cur.file_name.as_deref() {
+                    crate::shell::open_registry::release(prev);
+                }
+                crate::shell::open_registry::claim(&output_path, &self.single_work.title().get());
                 ctx.show_toast(Toast::success(tr!(saved_as(target = output_path))));
             }
             Err(e) => {

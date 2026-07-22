@@ -77,6 +77,15 @@ pub(super) struct CommandDeps {
     /// `close_work_and_return_to_launcher`'s doc for why that lookup is unsound
     /// the moment a second Work's window exists).
     pub ids: crate::app_ids::AppIds,
+    /// The whole Tier-2 bundle for this window's own Work — threaded so
+    /// `app.settings` can build `SettingsPanel` over the RIGHT Work's session
+    /// instead of `ctx.app_state`'s stale, first-window-wins slot (see
+    /// `SettingsPanel`'s own `session` field doc).
+    pub session: crate::sessions::WorkSession,
+    /// The app-global Work registry — threaded so `app.quit` can sweep every
+    /// OTHER open Work's dirty state (see `super::super::other_dirty_work_titles`'s
+    /// doc), not just this window's own.
+    pub registry: crate::sessions::WorkRegistry,
     pub outline: OutlineViewModel,
     pub editors: EditorsViewModel,
     pub trash: TrashViewModel,

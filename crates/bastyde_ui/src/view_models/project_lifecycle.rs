@@ -23,9 +23,11 @@
 //! * `outline.set_binder_filter(None)` + `clear_search()` **before** `reload()` — a stale
 //!   filter or query carried over from the previous project would reload into an empty tree.
 //! * `open_registry` claim **while the singles still point at the project** — Close releases
-//!   before unpointing, because the path is unreachable afterwards. Load/New use
-//!   `replace_claim`, which drops this window's previous claim first: Load supersedes an
-//!   earlier New/Load/Restore with no `CloseWork` in between.
+//!   before unpointing, because the path is unreachable afterwards. Load/New release THIS
+//!   window's own previous claim (captured before `seed()` overwrites it), then claim the new
+//!   path — never `replace_claim`/`release_all()`, which would drop every claim the whole
+//!   *process* holds, including a sibling window's untouched, still-open Work (see `claim`'s
+//!   own doc for the Phase-3 fix this was).
 //! * `refresh_spellcheck` **after** the tabs are closed — documents re-open afterwards and
 //!   attach with the right language, so the `attach_all` inside it is a no-op at this point.
 //! * `mark_clean` then the `dirty_seq` bump, in that order, on New only — "everything the
@@ -190,13 +192,31 @@ impl ProjectLifecycleViewModel {
 
     /// Claim the project in the open registry and re-point the spell-checker — the tail of
     /// becoming live, shared by Load and New.
-    fn claim(&self) {
+    ///
+    /// **Phase 3 fix — releases only THIS window's own previous claim, never
+    /// `replace_claim`/`release_all()`.** With one project per process (Phase 2 and
+    /// earlier), dropping every claim this *process* held before claiming the new path
+    /// was equivalent to "drop this window's own previous claim" — there was only ever
+    /// one. With two Works simultaneously open in one process (Phase 2's own multi-Work
+    /// commit), `release_all()` from window B's own Load/New/Restore silently wiped
+    /// window A's still-open, untouched Work out of the open registry too — it would
+    /// vanish from every peer process's ProjectSwitcher and from IPC-raise reachability,
+    /// with no error and no visible cause. `previous_path` is `self`'s own path from
+    /// *before* [`Self::seed`] overwrote `single_work_info` (captured by the caller,
+    /// `on_load`/`on_new`, which is why this takes it as a parameter rather than reading
+    /// it here) — `None` for this window's very first Load/New, when it held no claim
+    /// yet. `open_registry::release`'s own doc already anticipated this exact fix: "once
+    /// multiple projects can be open in one window/process, those call sites move to
+    /// plain claim/release."
+    fn claim(&self, previous_path: Option<&str>) {
         let i = &self.inner;
+        if let Some(prev) = previous_path {
+            crate::shell::open_registry::release(prev);
+        }
         // Advertise it as open so other instances' switchers list it (and can raise this
-        // window). `replace_claim` drops any claim this window already held: Load supersedes
-        // New/Load/Restore with no `CloseWork` in between.
+        // window).
         if let Some(path) = i.single_work_info.file_name().get() {
-            crate::shell::open_registry::replace_claim(&path, &i.single_work.title().get());
+            crate::shell::open_registry::claim(&path, &i.single_work.title().get());
         }
         self.refresh_spellcheck();
     }
@@ -218,8 +238,10 @@ impl ProjectLifecycleViewModel {
     /// owns both, because the restore needs that answer (a backup gets a clean default desk,
     /// not the source project's).
     pub fn on_load(&self, work_id: u64) {
+        // Captured before `seed()` overwrites `single_work_info` — see `claim`'s doc.
+        let previous_path = self.inner.single_work_info.file_name().get();
         self.seed(work_id);
-        self.claim();
+        self.claim(previous_path.as_deref());
     }
 
     /// `NewWork`: adopt the project, then write it to disk.
@@ -229,12 +251,14 @@ impl ProjectLifecycleViewModel {
     /// lands, so an exit or close during the in-flight write is caught by the guards rather
     /// than dropping the file.
     pub fn on_new(&self, work_id: u64) {
+        // Captured before `seed()` overwrites `single_work_info` — see `claim`'s doc.
+        let previous_path = self.inner.single_work_info.file_name().get();
         let i = &self.inner;
         self.seed(work_id);
         // One step ahead of `mark_clean`: reads as unsaved until the create-and-save lands.
         // Sits between `seed` and `claim` because that is where the inline version had it.
         i.save_state.bump_dirty();
-        self.claim();
+        self.claim(previous_path.as_deref());
         // A brand-new project is never a backup.
         i.backup_mode.set(false);
         i.backup_context.set(None);

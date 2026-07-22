@@ -97,6 +97,12 @@ struct Inner {
     /// One-shot guard for the expand-state restore — a second `wire` (a segment switch)
     /// must not undo collapses the writer has made since the first.
     expansion_restored: Cell<bool>,
+    /// This window's own Work-scoped tree-expansion service — constructor-threaded
+    /// (from `WorkSession::tree_expansion` via `EditorsViewModel`/`ContentTab::new`),
+    /// never `ctx.app_state::<TreeExpansionViewModel>()`. See `restore_expansion`'s
+    /// doc for why the `app_state` lookup was wrong the moment a second Work's
+    /// window exists.
+    tree_expansion: crate::view_models::TreeExpansionViewModel,
 }
 
 #[derive(Clone)]
@@ -114,6 +120,7 @@ impl OverviewViewModel {
         role: &frontend::common::entities::BinderItemRole,
         sub_role: &frontend::common::entities::BinderItemSubRole,
         counting_method: Signal<CountingMethodSetting>,
+        tree_expansion: crate::view_models::TreeExpansionViewModel,
     ) -> Option<Self> {
         if !skribisto_model::overview_capable(role, sub_role) {
             return None;
@@ -144,6 +151,7 @@ impl OverviewViewModel {
                 observers: RefCell::new(Vec::new()),
                 count_wired: Cell::new(false),
                 expansion_restored: Cell::new(false),
+                tree_expansion,
             }),
         })
     }
@@ -190,20 +198,24 @@ impl OverviewViewModel {
     /// was written last session is what is read now, with no translation step and no
     /// ordering constraint against the workspace-layout restore.
     ///
-    /// Reached through `app_state` rather than a held reference: the service is app-wide
-    /// and this view-model is per tab, so threading it through `ContentTab::new` would
-    /// make every tab constructor carry a dependency only this pane uses.
-    fn restore_expansion(&self, ctx: &mut BuildContext) {
+    /// **Scope C fix.** This used to resolve `TreeExpansionViewModel` via
+    /// `ctx.app_state`, justified by a doc comment calling "the service" app-wide —
+    /// but `TreeExpansionViewModel` (unlike the on-disk `TreeExpansionService` it
+    /// wraps, which genuinely is one shared file) is bound to its own `ids: AppIds`
+    /// at construction, i.e. Tier 2 (per open Work), not Tier 1. The `app_state`
+    /// lookup silently resolved to whichever Work's session registered it first —
+    /// a second Work's window would restore (and later capture) the FIRST Work's
+    /// chevron state instead of its own. Now threaded in at construction (via
+    /// `EditorsViewModel`/`ContentTab::new`, from `WorkSession::tree_expansion`),
+    /// exactly like `save_state`/`tags` already are.
+    fn restore_expansion(&self, _ctx: &mut BuildContext) {
         if self.inner.expansion_restored.replace(true) {
             return;
         }
-        let Some(vm) = ctx.app_state::<crate::view_models::TreeExpansionViewModel>().cloned() else {
-            return; // no service registered (a launcher window, or a headless test)
-        };
         let Some(container_uid) = self.inner.container_probe.dto().map(|d| d.uid) else {
             return; // the probe has not resolved the container yet
         };
-        let remembered = vm.expanded_for(container_uid);
+        let remembered = self.inner.tree_expansion.expanded_for(container_uid);
         if !remembered.is_empty() {
             self.inner.rows.set_expanded_uids(&remembered);
         }
@@ -716,13 +728,20 @@ mod tests {
     /// backend there are no fixture rows for it to read.
     #[cfg(feature = "mocks")]
     fn vm_for(container: u64) -> Option<OverviewViewModel> {
+        let app_ctx = Rc::new(AppContext::new());
+        let ids = AppIds::new();
         let vm = OverviewViewModel::new(
-            Rc::new(AppContext::new()),
-            AppIds::new(),
+            app_ctx.clone(),
+            ids.clone(),
             container,
             &BinderItemRole::Folder,
             &BinderItemSubRole::Book,
             Signal::new(CountingMethodSetting::default()),
+            crate::view_models::TreeExpansionViewModel::new(
+                app_ctx,
+                ids,
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
         );
         // Stands in for `wire()`, which performs the first load in the app.
         if let Some(vm) = &vm {
@@ -738,13 +757,20 @@ mod tests {
         use BinderItemRole::{Folder, Item};
         use BinderItemSubRole::{Book, ChapterScene, None as NoSub, Note, Part, Scene};
         let mk = |role: BinderItemRole, sub_role: BinderItemSubRole| {
+            let app_ctx = Rc::new(AppContext::new());
+            let ids = AppIds::new();
             OverviewViewModel::new(
-                Rc::new(AppContext::new()),
-                AppIds::new(),
+                app_ctx.clone(),
+                ids.clone(),
                 101,
                 &role,
                 &sub_role,
                 Signal::new(CountingMethodSetting::default()),
+                crate::view_models::TreeExpansionViewModel::new(
+                    app_ctx,
+                    ids,
+                    crate::models::TreeExpansionService::in_memory_default(),
+                ),
             )
             .is_some()
         };
@@ -947,13 +973,20 @@ mod leaks {
     /// closure captures the uid → id map instead, which references nothing.
     #[test]
     fn the_rows_model_drops_with_its_view_model() {
+        let app_ctx = Rc::new(AppContext::new());
+        let ids = AppIds::new();
         let vm = OverviewViewModel::new(
-            Rc::new(AppContext::new()),
-            AppIds::new(),
+            app_ctx.clone(),
+            ids.clone(),
             101,
             &BinderItemRole::Folder,
             &BinderItemSubRole::Book,
             Signal::new(CountingMethodSetting::default()),
+            crate::view_models::TreeExpansionViewModel::new(
+                app_ctx,
+                ids,
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
         )
         .unwrap();
         vm.install_reorder();

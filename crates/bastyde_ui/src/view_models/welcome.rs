@@ -421,7 +421,6 @@ mod tests {
     use super::*;
     use std::cell::RefCell;
 
-    use crate::app::PendingExit;
     use crate::models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
     use crate::sessions::WorkRegistry;
     use crate::spellcheck::SpellcheckService;
@@ -434,8 +433,6 @@ mod tests {
     /// see `ProjectWindowFactory::window_config`'s doc — so this helper only
     /// needs the *ingredients*, not a pre-built session).
     fn test_factory(app_ctx: Rc<AppContext>) -> ProjectWindowFactory {
-        let backup_mode = Signal::new(false);
-        let backup_context = Signal::new(None);
         let backup_settings =
             BackupSettingsViewModel::new(BackupSettingsService::in_memory_default());
         ProjectWindowFactory::new(
@@ -447,10 +444,6 @@ mod tests {
             TreeExpansionService::in_memory_default(),
             Signal::new(false), // autosave_menu
             Signal::new(true),  // spellcheck_menu (default on)
-            backup_mode,
-            backup_context,
-            Signal::new(false),
-            Signal::new(PendingExit::None),
             Rc::new(RefCell::new(None)),
             crate::view_models::FormatViewModel::detached(),
         )

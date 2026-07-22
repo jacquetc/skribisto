@@ -16,6 +16,7 @@ pub(in crate::settings) fn work_language_pane(
     ctx: &mut BuildContext,
     vm: &WorkSettingsViewModel,
     work_title: String,
+    open_docs: crate::models::OpenDocsStore,
 ) -> impl Widget {
     // Build the whole form per branch so the pill field is added through FormLayout's own
     // `full_width(widget)` **deferred insertion** (which parents it to the FormLayout). The
@@ -28,15 +29,16 @@ pub(in crate::settings) fn work_language_pane(
         .label_gap(16.0)
         .row_spacing(12.0)
         .full_width(group(tr!(settings_field_dict_language())));
-    // NOTE (multi-Work migration, Phase 3 boundary): this pane still resolves both
-    // handles via `ctx.app_state::<T>()` rather than a session threaded through
-    // `SettingsPanel`'s own constructor — the design doc names the 6 Work-scoped
-    // Settings panes as Phase 3 work (`SettingsPanel::build` becomes session-scoped
-    // like everything else), so this call site is left exactly as it already
-    // behaved rather than partially fixed here.
+    // `open_docs` is now the OPENING WINDOW's own `WorkSession::open_docs`,
+    // threaded in by `SettingsPanel::build` (Phase 3 fix) — never
+    // `ctx.app_state::<OpenDocsStore>()`, which would silently resolve to
+    // whichever Work's session registered it first. `SpellcheckService` stays
+    // resolved via `ctx.app_state`: it is genuinely Tier-1 (one process-wide
+    // service, internally partitioned per `work_id` — see its own module doc),
+    // not per-Work state that needs threading.
     let form = match (
         ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned(),
-        ctx.app_state::<crate::models::OpenDocsStore>().cloned(),
+        Some(open_docs),
     ) {
         (Some(spell), Some(open_docs)) => {
             let value = vm.dict_language();

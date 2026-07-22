@@ -52,10 +52,12 @@ pub struct NewWorkPanel {
 
 impl NewWorkPanel {
     /// Presented over an already-open project (File ▸ New Work / Ctrl+N):
-    /// creates the work in place, replacing this window's project.
-    pub fn new(app_ctx: Rc<AppContext>) -> Self {
+    /// creates the work in place, replacing this window's project. `ids` is
+    /// THIS window's own `AppIds` — see [`NewWorkViewModel::new`]'s doc for why
+    /// "Create Work" must close the outgoing Work through it.
+    pub fn new(app_ctx: Rc<AppContext>, ids: crate::app_ids::AppIds) -> Self {
         Self {
-            vm: NewWorkViewModel::new(app_ctx),
+            vm: NewWorkViewModel::new(app_ctx, ids),
             root_child: None,
             name_field: std::cell::Cell::new(None),
         }
@@ -390,7 +392,10 @@ mod tests {
     fn panel_builds_and_lays_out() {
         let ctx = Rc::new(AppContext::new());
         let mut tree = WidgetTree::new();
-        let id = tree.add_boxed(Box::new(NewWorkPanel::new(ctx)));
+        let id = tree.add_boxed(Box::new(NewWorkPanel::new(
+            ctx,
+            crate::app_ids::AppIds::new(),
+        )));
         // Lay out at the modal's card size; every child (FormLayout rows, the
         // SegmentedControls, FilePickerField, ComboBox, ScrollArea, footer) must
         // build and place without panicking.
