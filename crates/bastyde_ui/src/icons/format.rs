@@ -89,6 +89,14 @@ pub fn align_center() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/format/align-center.svg")).icon_size(ICON_SIZE)
 }
 
+/// Right-to-left paragraph direction.
+///
+/// A *paragraph* property, not a character one — which is why it sits
+/// with the alignment buttons rather than with bold and italic.
+pub fn direction_rtl() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/format/direction-rtl.svg")).icon_size(ICON_SIZE)
+}
+
 /// Blockquote.
 pub fn blockquote() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/format/blockquote.svg")).icon_size(ICON_SIZE)

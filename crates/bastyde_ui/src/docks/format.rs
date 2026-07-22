@@ -308,6 +308,13 @@ fn controls(vm: &FormatViewModel) -> Padding {
                 |vm| vm.set_alignment(ALIGN_CENTER),
             ))
             .child(toggle_button(
+                glyph::direction_rtl(),
+                tr!(format_direction_rtl()),
+                vm.dir_rtl(),
+                vm.clone(),
+                |vm| vm.toggle_direction(),
+            ))
+            .child(toggle_button(
                 glyph::blockquote(),
                 tr!(format_blockquote()),
                 vm.blockquote(),

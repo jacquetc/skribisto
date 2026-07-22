@@ -98,7 +98,8 @@ pub use export::{ExportViewModel, format_label, scope_label};
 pub use export_styles::ExportStylesViewModel;
 pub use find::FindViewModel;
 pub use format::{
-    ALIGN_CENTER, ALIGN_LEFT, ALIGN_OTHER, EditorKind, FormatSurface, FormatViewModel,
+    ALIGN_CENTER, ALIGN_LEFT, ALIGN_OTHER, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind,
+    FormatSurface, FormatViewModel,
 };
 pub use import_plume::ImportPlumeViewModel;
 pub use new_work::NewWorkViewModel;

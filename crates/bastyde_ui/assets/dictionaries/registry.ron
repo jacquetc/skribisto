@@ -3,7 +3,7 @@
 // One entry per installable dictionary VARIANT. `id` is the `dict_language` value;
 // `system_basenames` matches a system-installed copy under /usr/share/hunspell.
 //
-// Verified live (2026-07-15): every URL returned HTTP 200, every `SET` encoding was read from
+// Verified live (2026-07-15; ar added 2026-07-22): every URL returned HTTP 200, every `SET` encoding was read from
 // the `.aff`, every licence was read from the source. Sizes are the `.dic` Content-Length.
 //
 // Encoding note: pl-PL is ISO8859-2 and all three German dicts are ISO8859-1 (not UTF-8) — the
@@ -245,5 +245,17 @@
         license_asset: "ca-unspecified",
         license_name: "GPL and/or LGPL (version unstated by source)",
         approx_size_bytes: 3086130,
+    ),
+    DictionaryEntry(
+        id: "ar",
+        display_name: "العربية",
+        system_basenames: ["ar", "ar_SA"],
+        source: DirectFiles(
+            aff_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/ar/ar.aff",
+            dic_url: "https://raw.githubusercontent.com/LibreOffice/dictionaries/master/ar/ar.dic",
+        ),
+        license_asset: "mpl-1.1",
+        license_name: "GPL-2.0, LGPL-2.1, or MPL-1.1 (bundling MPL-1.1 text)",
+        approx_size_bytes: 7217161,
     ),
 ]
