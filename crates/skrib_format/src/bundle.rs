@@ -167,6 +167,55 @@ pub struct WorkFile {
     /// for the same reason as `text_replacement_rule_ids`.
     #[serde(default)]
     pub custom_replacement_rules_enabled: bool,
+    /// The punctuation house style, nested rather than given a file of its own.
+    ///
+    /// `dictionary.ron` and `replacements.ron` are separate files because they
+    /// hold *collections* that grow independently of the Work. This is a single
+    /// row of seven scalars that exists exactly once per Work and is meaningless
+    /// without it — the same shape as `chapter_flat` above, just wider. A
+    /// `punctuation.ron` would buy file-level diff granularity nobody needs, at
+    /// the cost of another read/write path and another id space.
+    ///
+    /// `None` means the bundle predates the feature, and is deliberately not
+    /// collapsed to an all-false default here: only the loader can decide what
+    /// absence should become, and it needs to be able to tell absence from a
+    /// writer who switched everything off.
+    #[serde(default)]
+    pub smart_punctuation: Option<SmartPunctuationFile>,
+}
+
+/// The punctuation house style, nested inside [`WorkFile`].
+///
+/// No `file_id`, unlike every sibling `*File` type: those ids exist so other
+/// records can reference the row and so the materialiser can remap it. Nothing
+/// references this one — it is reached only through its owning `WorkFile` — so
+/// an id would be a value to keep unique for no reader's benefit.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SmartPunctuationFile {
+    pub created_at: String,
+    pub updated_at: String,
+    /// Whether this project overrides the app-level preference at all. False
+    /// means "follow the application default", and the flags below are then
+    /// inert — kept rather than cleared, so turning the override back on
+    /// restores what the writer had configured.
+    #[serde(default)]
+    pub override_app_default: bool,
+    #[serde(default)]
+    pub dashes: bool,
+    #[serde(default)]
+    pub ellipsis: bool,
+    #[serde(default)]
+    pub quotes: bool,
+    /// `LocaleDefault`, `CurlyDouble`, `Guillemets` or `LowHigh` — stored as a
+    /// string so a future variant added by one build does not make the bundle
+    /// unreadable to another; an unrecognised value falls back to the locale
+    /// default on read.
+    #[serde(default)]
+    pub quote_style: String,
+    #[serde(default)]
+    pub pre_punctuation_spacing: bool,
+    #[serde(default)]
+    pub dialogue_marker: bool,
 }
 
 /// `tags.ron`

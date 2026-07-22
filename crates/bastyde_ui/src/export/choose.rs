@@ -327,6 +327,7 @@ mod tests {
             tags: vec![],
             dict_words: vec![],
             text_replacement_rules: vec![],
+            smart_punctuation: None,
             trash_infos: vec![],
             paces: vec![],
             progress_snapshots: vec![],

@@ -643,6 +643,9 @@ impl ExportViewModel {
             tags: Vec::new(),
             dict_words: Vec::new(),
             text_replacement_rules: Vec::new(),
+            // Punctuation settings shape prose as it is typed; by export time the
+            // substitutions are already in the text, so there is nothing to read.
+            smart_punctuation: None,
             trash_infos: Vec::new(),
             // Export only needs the item stream for scope resolution, not the writing plan
             // or the progress history.

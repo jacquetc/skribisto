@@ -174,6 +174,15 @@ mod tests {
             None,
             &CreateWorkDto {
                 unique_id: "project-alpha".to_string(),
+                // Distinct from project-beta's below, and non-zero. `Work
+                // .smart_punctuation` is a one-to-one relationship, so the
+                // generated uniqueness check rejects two Works naming the same
+                // row — and a defaulted 0 counts as naming one, since nothing
+                // in the generated check treats 0 as "unset". Only this test
+                // builds two bare Works in one store, which is why only it has
+                // to say so; every real path goes through `new_work`/`load_work`,
+                // which mint a row per Work.
+                smart_punctuation: 900,
                 ..Default::default()
             },
         )
@@ -202,6 +211,7 @@ mod tests {
             None,
             &CreateWorkDto {
                 unique_id: "project-beta".to_string(),
+                smart_punctuation: 901,
                 ..Default::default()
             },
         )

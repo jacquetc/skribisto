@@ -26,7 +26,7 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
-    TextReplacementRule, TrashInfo, Work, WorkInfo,
+    SmartPunctuation, TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::OperationProgress;
 use common::types::EntityId;
@@ -61,6 +61,14 @@ pub trait TreeReader {
         _ids: &[EntityId],
     ) -> Result<Vec<Option<TextReplacementRule>>> {
         Ok(Vec::new())
+    }
+    /// The punctuation house style. Singular, not a `_multi`, because the
+    /// relationship is one-to-one — there is exactly one row or none.
+    ///
+    /// Defaulted to `None` like the list readers above, so `export_work` (which
+    /// has no reason to read settings) needs no implementation.
+    fn smart_punctuation(&self, _id: &EntityId) -> Result<Option<SmartPunctuation>> {
+        Ok(None)
     }
     fn content_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Content>>>;
 
@@ -101,6 +109,10 @@ pub struct Gathered {
     pub tags: Vec<BinderTag>,
     pub dict_words: Vec<DictWord>,
     pub text_replacement_rules: Vec<TextReplacementRule>,
+    /// `None` when the reader does not read settings (export), or when the row
+    /// genuinely does not resolve — never fabricated here, so the writer can
+    /// record its absence faithfully.
+    pub smart_punctuation: Option<SmartPunctuation>,
     pub trash_infos: Vec<TrashInfo>,
     pub paces: Vec<PaceWithChildren>,
     pub progress_snapshots: Vec<ProgressSnapshot>,
@@ -128,6 +140,14 @@ pub fn gather<R: TreeReader + ?Sized>(
     work.dict_words = reader.work_rel(&work_id, &WorkRelationshipField::DictWords)?;
     work.text_replacement_rules =
         reader.work_rel(&work_id, &WorkRelationshipField::TextReplacementRules)?;
+    // A one-to-one relationship still comes back as a vector — take the first,
+    // and treat an empty one as "no row", which is what a Work loaded from a
+    // pre-feature bundle looks like before the materialiser heals it.
+    work.smart_punctuation = reader
+        .work_rel(&work_id, &WorkRelationshipField::SmartPunctuation)?
+        .first()
+        .copied()
+        .unwrap_or(0);
     work.binders = reader.work_rel(&work_id, &WorkRelationshipField::Binders)?;
 
     let tags = fetch_multi(&work.tags, |ids| reader.tag_multi(ids))?;
@@ -135,6 +155,13 @@ pub fn gather<R: TreeReader + ?Sized>(
     let text_replacement_rules = fetch_multi(&work.text_replacement_rules, |ids| {
         reader.text_replacement_rule_multi(ids)
     })?;
+    // Skip the read entirely for an unwired Work rather than asking for id 0,
+    // which no store row can have.
+    let smart_punctuation = if work.smart_punctuation == 0 {
+        None
+    } else {
+        reader.smart_punctuation(&work.smart_punctuation)?
+    };
     let trash_infos = reader.all_trash_info()?;
     let paces = if reader.reads_paces() {
         hydrate_paces(reader, &work_id)?
@@ -183,6 +210,7 @@ pub fn gather<R: TreeReader + ?Sized>(
         tags,
         dict_words,
         text_replacement_rules,
+        smart_punctuation,
         trash_infos,
         paces,
         progress_snapshots,

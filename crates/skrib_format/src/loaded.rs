@@ -9,7 +9,9 @@
 //! Ids on these entities are the source's **file ids** — the materialiser
 //! remaps them to fresh store ids while preserving order and M2M links.
 
-use common::entities::{Binder, BinderItem, BinderTag, Content, DictWord, TextReplacementRule, Work};
+use common::entities::{
+    Binder, BinderItem, BinderTag, Content, DictWord, SmartPunctuation, TextReplacementRule, Work,
+};
 
 pub struct LoadedWork {
     /// `work.id` = work file id; `binders`/`tags`/`dict_words` vecs are empty
@@ -18,6 +20,15 @@ pub struct LoadedWork {
     pub tags: Vec<BinderTag>,
     pub dict_words: Vec<DictWord>,
     pub text_replacement_rules: Vec<TextReplacementRule>,
+    /// The punctuation house style, or `None` for a bundle written before the
+    /// setting existed.
+    ///
+    /// `Option` rather than a defaulted value on purpose: the materialiser has
+    /// to create the row either way (a one-to-one child cannot be absent), and
+    /// this is the only place that can still tell "the writer chose all-off"
+    /// apart from "this file predates the feature". Collapsing them here would
+    /// throw that distinction away before anyone could act on it.
+    pub smart_punctuation: Option<SmartPunctuation>,
     pub binders: Vec<LoadedBinder>,
     pub trash_infos: Vec<LoadedTrash>,
     pub paces: Vec<LoadedPace>,

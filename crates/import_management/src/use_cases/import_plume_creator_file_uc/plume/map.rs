@@ -132,6 +132,10 @@ pub fn build_bundle(
         // Plume has no custom-replacement concept to import.
         text_replacement_rule_ids: Vec::new(),
         custom_replacement_rules_enabled: false,
+        // Nor a punctuation house style. `None`, not an all-false row: the
+        // imported project has simply never been asked, so it should follow the
+        // app default exactly as a newly created one does.
+        smart_punctuation: None,
     };
 
     // Binders, in on-disk order: Manuscript, then Story Bible (only if non-empty).

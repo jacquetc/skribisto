@@ -115,6 +115,9 @@ fn sample_bundle() -> WorkBundle {
         tags: vec![10, 11],
         dict_words: vec![20],
         text_replacement_rules: vec![],
+        // Non-default too, and for the same reason as chapter_mode above: an
+        // all-default row would round-trip equal even if the field were dropped.
+        smart_punctuation: 30,
         binders: vec![100, 101],
         trash_infos: vec![],
         paces: vec![],
@@ -238,6 +241,18 @@ fn sample_bundle() -> WorkBundle {
         &tags,
         &dict_words,
         &[],
+        Some(&common::entities::SmartPunctuation {
+            id: 30,
+            created_at: ts(),
+            updated_at: ts(),
+            override_app_default: true,
+            dashes: true,
+            ellipsis: true,
+            quotes: true,
+            quote_style: common::entities::QuoteStyle::Guillemets,
+            pre_punctuation_spacing: true,
+            dialogue_marker: true,
+        }),
         &trash,
         &[],
         &[],
@@ -603,6 +618,106 @@ fn text_replacement_rules_survive_a_save_load_round_trip() {
         2,
         "the Work must still own both rules after the id remap"
     );
+}
+
+/// The punctuation house style must survive the full store round-trip.
+///
+/// **Every flag is set to its non-default value on purpose.** `SmartPunctuation`
+/// derives `Default` with all-`false`/`LocaleDefault`, so a fixture left at its
+/// defaults would compare equal to a row that had been dropped entirely at any
+/// point in the chain — written, read, materialised, gathered, written again.
+/// That is precisely how `chapter_mode` was lost on every load for as long as
+/// flat chapters existed, and this test is shaped to make the same mistake
+/// impossible here.
+#[test]
+fn the_punctuation_house_style_survives_a_save_load_round_trip() {
+    const T: &str = "2020-01-01T00:00:00+00:00";
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.smart_punctuation = Some(skrib::SmartPunctuationFile {
+        created_at: T.into(),
+        updated_at: T.into(),
+        override_app_default: true,
+        dashes: true,
+        ellipsis: true,
+        quotes: true,
+        quote_style: "guillemets".into(),
+        pre_punctuation_spacing: true,
+        dialogue_marker: true,
+    });
+
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("WithPunctuation");
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load bundle with a punctuation house style");
+
+    let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    let sp = out
+        .manifest
+        .work
+        .smart_punctuation
+        .expect("the house style must still be there after the round trip");
+    assert!(sp.override_app_default, "the master switch must survive");
+    assert!(sp.dashes);
+    assert!(sp.ellipsis);
+    assert!(sp.quotes);
+    assert_eq!(
+        sp.quote_style, "guillemets",
+        "the house quote style must survive, not fall back to the locale default"
+    );
+    assert!(sp.pre_punctuation_spacing);
+    assert!(sp.dialogue_marker);
+}
+
+/// A project saved before the punctuation setting existed must load, and must come
+/// back as "never configured" rather than as "the writer switched everything off".
+///
+/// The distinction is the whole reason the field is an `Option` end to end: a Work
+/// whose `override_app_default` is false follows the application preference, which
+/// is what someone who has never opened the setting should get.
+#[test]
+fn a_project_without_a_punctuation_style_loads_and_follows_the_app_default() {
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.smart_punctuation = None;
+
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("NoPunctuation");
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("a bundle with no punctuation style must still load");
+
+    let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    // A row IS minted on load — the relationship is one-to-one, so it cannot be
+    // absent in the store — but it must be an inert one.
+    let sp = out
+        .manifest
+        .work
+        .smart_punctuation
+        .expect("the loader mints a row, because a one-to-one child cannot be absent");
+    assert!(
+        !sp.override_app_default,
+        "a pre-feature project must follow the app default, not adopt a house style"
+    );
+    assert!(!sp.dashes && !sp.ellipsis && !sp.quotes);
+    assert_eq!(sp.quote_style, "locale_default");
 }
 
 /// A per-Book Pace (with a Holiday and a Milestone) must survive the full store

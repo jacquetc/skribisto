@@ -27,7 +27,8 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
-    RecentWork, Root, Search, System, TextReplacementRule, TrashInfo, Work, WorkInfo, WorkShape,
+    RecentWork, Root, Search, SmartPunctuation, System, TextReplacementRule, TrashInfo, Work,
+    WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use skrib_format::{self as skrib, LoadedWork, SkribShape};
@@ -48,6 +49,7 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
 #[macros::uow_action(entity = "DictWord", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "CreateOrphan")]
+#[macros::uow_action(entity = "SmartPunctuation", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
 #[macros::uow_action(entity = "WorkInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
@@ -289,6 +291,49 @@ struct Materialized {
 /// are meant to start empty say so with an explicit value and a reason.
 fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result<Materialized> {
     let lw = &loaded.work;
+    // Exactly one punctuation row per Work, created unconditionally — the same
+    // rule `create_trunk` applies to `Search`, and for the same reason: a
+    // project opened without one could never reach the setting at all.
+    //
+    // A bundle written before the feature existed carries `None`, and gets the
+    // entity's own defaults. That is not the same as "the writer turned
+    // everything off": `override_app_default` stays false, which is what tells
+    // the UI to follow the app-level preference rather than this row.
+    // Spelled out field by field rather than with `..sp`, for the reason this
+    // whole file avoids `..Default::default()`: a struct-update tail would let a
+    // future field be added to `SmartPunctuation` and silently dropped on every
+    // load, which is exactly how `chapter_mode` was lost.
+    let smart_punctuation = uow.create_orphan_smart_punctuation(&match &loaded.smart_punctuation {
+        Some(sp) => SmartPunctuation {
+            id: 0,
+            created_at: sp.created_at,
+            updated_at: sp.updated_at,
+            override_app_default: sp.override_app_default,
+            dashes: sp.dashes,
+            ellipsis: sp.ellipsis,
+            quotes: sp.quotes,
+            quote_style: sp.quote_style.clone(),
+            pre_punctuation_spacing: sp.pre_punctuation_spacing,
+            dialogue_marker: sp.dialogue_marker,
+        },
+        None => SmartPunctuation {
+            id: 0,
+            created_at: lw.created_at,
+            updated_at: lw.updated_at,
+            // All false, and `override_app_default` false above all: that is
+            // what tells the UI to follow the app-level preference rather than
+            // this row, so a pre-feature project behaves as if the setting had
+            // never been asked about.
+            override_app_default: false,
+            dashes: false,
+            ellipsis: false,
+            quotes: false,
+            quote_style: common::entities::QuoteStyle::LocaleDefault,
+            pre_punctuation_spacing: false,
+            dialogue_marker: false,
+        },
+    })?;
+
     // The relationship vectors are deliberately empty: `create_orphan_*` makes the
     // rows, and the ids are wired on afterwards by `set_work_relationship`.
     let work = uow.create_orphan_work(&Work {
@@ -311,9 +356,17 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
         tags: Vec::new(),
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
+        // The real id, not a placeholder — which is why the row above is created
+        // BEFORE the Work rather than after it, unlike every collection here.
+        // A one-to-one field seeds its junction at create time, so two Works
+        // both carrying a placeholder 0 would collide on the generated
+        // uniqueness check ("SmartPunctuation 0 is already referenced by Work
+        // 1") the moment a second project was opened in one session.
+        smart_punctuation: smart_punctuation.id,
         trash_infos: Vec::new(),
         paces: Vec::new(),
     })?;
+
 
     // Tags (file id -> new id).
     let mut tag_map: HashMap<u64, EntityId> = HashMap::new();
@@ -598,6 +651,13 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             &text_replacement_rule_ids,
         )?;
     }
+    // Unconditional, unlike every collection above: there is always exactly one
+    // punctuation row, so there is no "empty" case to skip.
+    uow.set_work_relationship(
+        &work.id,
+        &WorkRelationshipField::SmartPunctuation,
+        &[smart_punctuation.id],
+    )?;
     // Trash lives under the Work trunk (post-reparent).
     if !trash_info_ids.is_empty() {
         uow.set_work_relationship(
@@ -805,8 +865,9 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         dict_language: skribisto_model::language::parse_legacy_list(&p.dict_language),
         // Carry the legacy id through; empty → minted at `materialize`.
         unique_id: p.unique_id.clone(),
-        // A legacy project predates both of these: it has no chapter-mode concept
-        // (folder chapters are the only shape it can express) and no lexicon.
+        // A legacy project predates all three: it has no chapter-mode concept
+        // (folder chapters are the only shape it can express), no lexicon, and
+        // no punctuation house style.
         chapter_mode: common::entities::ChapterMode::Folder,
         custom_replacement_rules_enabled: false,
         // `LoadedWork` carries the children in its own ordered vectors.
@@ -814,6 +875,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         tags: Vec::new(),
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
+        // `materialize` mints the default row — see the note at its own literal.
+        smart_punctuation: 0,
         trash_infos: Vec::new(),
         paces: Vec::new(),
     };
@@ -971,6 +1034,10 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         dict_words,
         // Legacy (pre-.skrib-v4) SQLite projects predate this feature entirely.
         text_replacement_rules: Vec::new(),
+        // Likewise — and `None` rather than an all-false row, so `materialize`
+        // treats it as "never configured" and leaves the project following the
+        // app default instead of recording a house style nobody chose.
+        smart_punctuation: None,
         binders,
         trash_infos,
         // Legacy projects never had a writing plan.

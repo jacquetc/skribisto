@@ -57,6 +57,7 @@ fn sample_inputs() -> (
     Work,
     Vec<BinderTag>,
     Vec<DictWord>,
+    common::entities::SmartPunctuation,
     Vec<TrashInfo>,
     Vec<BinderWithItems>,
 ) {
@@ -74,9 +75,26 @@ fn sample_inputs() -> (
         tags: vec![10, 11],
         dict_words: vec![20, 21],
         text_replacement_rules: vec![],
+        smart_punctuation: 30,
         binders: vec![100],
         trash_infos: vec![],
         paces: vec![],
+    };
+    // Every field deliberately OFF-default, for the reason spelled out on the
+    // tags below: the round-trip tests compare whole bundles, and a row left at
+    // its derived defaults would compare equal even if the field were dropped
+    // end to end. That is exactly how `chapter_mode` was silently lost.
+    let smart_punctuation = common::entities::SmartPunctuation {
+        id: 30,
+        created_at: now,
+        updated_at: now,
+        override_app_default: true,
+        dashes: true,
+        ellipsis: true,
+        quotes: true,
+        quote_style: common::entities::QuoteStyle::Guillemets,
+        pre_punctuation_spacing: true,
+        dialogue_marker: true,
     };
     let tags = vec![
         // Non-default `details`/`discoverable` on purpose: the folder and zip
@@ -203,13 +221,22 @@ fn sample_inputs() -> (
         },
     ];
 
-    (work, tags, dict_words, trash, binders)
+    (work, tags, dict_words, smart_punctuation, trash, binders)
 }
 
 fn build_bundle(shape: ShapeTag) -> WorkBundle {
-    let (work, tags, dict_words, trash, binders) = sample_inputs();
+    let (work, tags, dict_words, smart_punctuation, trash, binders) = sample_inputs();
     from_entities(
-        &work, &tags, &dict_words, &[], &trash, &[], &[], &binders, shape,
+        &work,
+        &tags,
+        &dict_words,
+        &[],
+        Some(&smart_punctuation),
+        &trash,
+        &[],
+        &[],
+        &binders,
+        shape,
     )
 }
 
@@ -335,7 +362,18 @@ fn disallowed_content_is_dropped() {
         },
         items: vec![ItemWithContents { item, contents }],
     }];
-    let bundle = from_entities(&work, &[], &[], &[], &[], &[], &[], &binders, ShapeTag::Folder);
+    let bundle = from_entities(
+        &work,
+        &[],
+        &[],
+        &[],
+        None,
+        &[],
+        &[],
+        &[],
+        &binders,
+        ShapeTag::Folder,
+    );
     let f = &bundle.binders[0].items[0].item;
     assert!(
         f.prose_refs
@@ -715,6 +753,72 @@ fn a_work_written_before_author_name_existed_still_parses() {
     assert_eq!(w.title, "Old Novel");
     // Absent means unset, which is a legal state — the field is optional.
     assert_eq!(w.author_name, "");
+}
+
+/// A `work.ron` written before the punctuation house style existed must still parse.
+///
+/// Same hazard as `author_name` above, and the same one-line guard: without
+/// `#[serde(default)]` on `WorkFile.smart_punctuation`, every project saved before
+/// this feature landed would fail to deserialize — before `migration` ever runs, so
+/// no step could heal it.
+#[test]
+fn a_work_written_before_smart_punctuation_existed_still_parses() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "Old Novel",
+        author_name: "Jane",
+        dict_language: ["fr-FR"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "abc",
+    )"#;
+    let w: WorkFile =
+        ron::from_str(old).expect("a work.ron without smart_punctuation must still parse");
+    assert_eq!(w.title, "Old Novel");
+    // `None`, and deliberately not an all-false row: absent means "this project
+    // was never asked", which the loader turns into "follow the app default".
+    // An all-false row would instead mean "the writer switched everything off".
+    assert!(w.smart_punctuation.is_none());
+}
+
+/// An unknown quote style degrades to the locale default rather than failing.
+///
+/// The style is written as a string precisely so a bundle from a build that knows
+/// a style this one does not stays readable. Reading it back as `LocaleDefault` is
+/// the honest fallback: it is what the locale would have picked anyway.
+#[test]
+fn an_unrecognised_quote_style_falls_back_instead_of_failing() {
+    let future = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "From The Future",
+        author_name: "Jane",
+        dict_language: ["en-US"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "abc",
+        smart_punctuation: Some(SmartPunctuationFile(
+            created_at: "2023-11-14T22:13:20Z",
+            updated_at: "2023-11-14T22:13:20Z",
+            override_app_default: true,
+            dashes: true,
+            ellipsis: true,
+            quotes: true,
+            quote_style: "corner_brackets",
+            pre_punctuation_spacing: false,
+            dialogue_marker: false,
+        )),
+    )"#;
+    let w: WorkFile = ron::from_str(future).expect("an unknown quote style must not break parsing");
+    let sp = w.smart_punctuation.expect("the row is present");
+    assert_eq!(sp.quote_style, "corner_brackets", "stored verbatim");
+    // The rest of the row still round-trips — one unknown value must not
+    // discard the settings around it.
+    assert!(sp.override_app_default);
+    assert!(sp.dashes);
 }
 
 /// A bundle written before `details`/`discoverable`/`aliases` existed must still parse.

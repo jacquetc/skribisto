@@ -21,8 +21,8 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, Holiday, Milestone, Pace,
-    ProgressSnapshot, RecentWork, Root, Search, System, TextReplacementRule, TrashInfo, Work,
-    WorkInfo, WorkShape,
+    ProgressSnapshot, RecentWork, Root, Search, SmartPunctuation, System, TextReplacementRule,
+    TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use std::path::Path;
@@ -40,6 +40,7 @@ pub trait NewWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Binder", action = "CreateOrphan")]
 #[macros::uow_action(entity = "BinderItem", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
+#[macros::uow_action(entity = "SmartPunctuation", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
 #[macros::uow_action(entity = "WorkInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "System", action = "CreateOrphan")]
@@ -241,6 +242,31 @@ impl NewWorkUseCase {
         let title = title_from_file_name(&dto.file_name);
         let labels = TemplateLabels::from_list(&dto.labels);
 
+        // Every Work owns exactly one punctuation row, created BEFORE the Work
+        // so the Work can be built with its real id.
+        //
+        // Not a detail of style: a one-to-one field seeds its junction at
+        // create time, so leaving a placeholder 0 here makes the second
+        // project of a session fail outright with "SmartPunctuation 0 is
+        // already referenced by Work 1" — the generated uniqueness check
+        // doing exactly its job. `..Default::default()` below would have
+        // filled that 0 in silently.
+        let smart_punctuation = uow.create_orphan_smart_punctuation(&SmartPunctuation {
+            created_at: now,
+            updated_at: now,
+            // Every rule off, and `override_app_default` off above all: a new
+            // project follows the app-level preference until someone
+            // deliberately gives it a house style of its own.
+            override_app_default: false,
+            dashes: false,
+            ellipsis: false,
+            quotes: false,
+            quote_style: common::entities::QuoteStyle::LocaleDefault,
+            pre_punctuation_spacing: false,
+            dialogue_marker: false,
+            ..Default::default()
+        })?;
+
         // The Work (with a fresh, stable identity).
         let work = uow.create_orphan_work(&Work {
             created_at: now,
@@ -261,8 +287,10 @@ impl NewWorkUseCase {
             // Off by default for every new project — a writer opts a specific
             // project into custom replacements explicitly, never inherits it.
             custom_replacement_rules_enabled: false,
+            smart_punctuation: smart_punctuation.id,
             ..Default::default()
         })?;
+
 
         // Template subtree: binders → items → content (already model-valid).
         let mut binder_ids: Vec<EntityId> = Vec::new();

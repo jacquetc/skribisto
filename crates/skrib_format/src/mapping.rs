@@ -7,8 +7,8 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::entities::{
-    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, ProgressSnapshot,
-    TextReplacementRule, TrashInfo, Work,
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, ProgressSnapshot, QuoteStyle,
+    SmartPunctuation, TextReplacementRule, TrashInfo, Work,
 };
 use skribisto_model::content_allowed;
 use std::collections::BTreeMap;
@@ -27,6 +27,39 @@ fn parse_dt(s: &str) -> Result<DateTime<Utc>> {
         .with_timezone(&Utc))
 }
 
+/// The on-disk name of a [`QuoteStyle`].
+///
+/// Written as a string rather than relying on serde's enum encoding so that a
+/// variant added by a later build cannot make the whole bundle unreadable to an
+/// earlier one — the worst case degrades to [`quote_style_from_name`]'s fallback
+/// instead of a hard deserialization error, which is the same posture every
+/// other additive field in this crate takes.
+fn quote_style_name(style: &QuoteStyle) -> &'static str {
+    match style {
+        QuoteStyle::LocaleDefault => "locale_default",
+        QuoteStyle::CurlyDouble => "curly_double",
+        QuoteStyle::Guillemets => "guillemets",
+        QuoteStyle::LowHigh => "low_high",
+    }
+}
+
+/// Read a [`QuoteStyle`] back, falling back to the locale default.
+///
+/// An unknown name means the bundle was written by a build that knows a style
+/// this one does not. Falling back to `LocaleDefault` is the honest answer: it
+/// is what the locale would have chosen anyway, so the prose stays typographically
+/// sane rather than silently adopting some other house style.
+fn quote_style_from_name(name: &str) -> QuoteStyle {
+    match name {
+        "curly_double" => QuoteStyle::CurlyDouble,
+        "guillemets" => QuoteStyle::Guillemets,
+        "low_high" => QuoteStyle::LowHigh,
+        // Covers "locale_default", the empty string a `#[serde(default)]` yields
+        // for a field written before this existed, and anything unrecognised.
+        _ => QuoteStyle::LocaleDefault,
+    }
+}
+
 // ---------------------------------------------------------------------------
 // store entities -> WorkBundle (save path)
 // ---------------------------------------------------------------------------
@@ -42,6 +75,11 @@ pub fn from_entities(
     tags: &[BinderTag],
     dict_words: &[DictWord],
     text_replacement_rules: &[TextReplacementRule],
+    // Deliberately **not** a slice, though every neighbour here is one: this is
+    // a one-to-one child, and taking `&Option<_>` means a caller cannot pass it
+    // in the wrong positional slot — the two `&[...]` parameters on either side
+    // would have accepted each other silently.
+    smart_punctuation: Option<&SmartPunctuation>,
     trash_infos: &[TrashInfo],
     paces: &[PaceWithChildren],
     progress_snapshots: &[ProgressSnapshot],
@@ -149,6 +187,17 @@ pub fn from_entities(
                 chapter_flat: matches!(work.chapter_mode, ChapterMode::Flat),
                 text_replacement_rule_ids: work.text_replacement_rules.clone(),
                 custom_replacement_rules_enabled: work.custom_replacement_rules_enabled,
+                smart_punctuation: smart_punctuation.map(|sp| SmartPunctuationFile {
+                    created_at: fmt_dt(&sp.created_at),
+                    updated_at: fmt_dt(&sp.updated_at),
+                    override_app_default: sp.override_app_default,
+                    dashes: sp.dashes,
+                    ellipsis: sp.ellipsis,
+                    quotes: sp.quotes,
+                    quote_style: quote_style_name(&sp.quote_style).to_string(),
+                    pre_punctuation_spacing: sp.pre_punctuation_spacing,
+                    dialogue_marker: sp.dialogue_marker,
+                }),
             },
             binder_order: binders.iter().map(|b| b.binder.id).collect(),
             // A regular save. The backup path re-stamps these via `mark_as_backup`.
@@ -297,6 +346,13 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         tags: Vec::new(),
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
+        // Zero for the same reason the vectors are empty — `materialize` mints
+        // the row and writes its store id back. Unlike them, zero is not a
+        // valid resting state: a `Work` whose one-to-one child is still 0 has a
+        // dangling relationship, so `materialize` must create a default row for
+        // a bundle that carries none (every bundle written before this field
+        // existed).
+        smart_punctuation: 0,
         trash_infos: Vec::new(),
         paces: Vec::new(),
     };
@@ -510,11 +566,36 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         })
         .collect::<Result<Vec<_>>>()?;
 
+    // `None` here flows all the way to the materialiser, which is what lets it
+    // tell a pre-feature bundle from one whose writer switched everything off.
+    let smart_punctuation = m
+        .work
+        .smart_punctuation
+        .as_ref()
+        .map(|sp| -> Result<SmartPunctuation> {
+            Ok(SmartPunctuation {
+                // Remapped to a fresh store id at materialise time, like every
+                // other file id in this graph.
+                id: 0,
+                created_at: parse_dt(&sp.created_at)?,
+                updated_at: parse_dt(&sp.updated_at)?,
+                override_app_default: sp.override_app_default,
+                dashes: sp.dashes,
+                ellipsis: sp.ellipsis,
+                quotes: sp.quotes,
+                quote_style: quote_style_from_name(&sp.quote_style),
+                pre_punctuation_spacing: sp.pre_punctuation_spacing,
+                dialogue_marker: sp.dialogue_marker,
+            })
+        })
+        .transpose()?;
+
     Ok(LoadedWork {
         work,
         tags,
         dict_words,
         text_replacement_rules,
+        smart_punctuation,
         binders: loaded_binders,
         trash_infos,
         paces,

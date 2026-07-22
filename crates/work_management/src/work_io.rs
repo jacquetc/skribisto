@@ -132,6 +132,7 @@ pub fn serialize_and_write(
         &g.tags,
         &g.dict_words,
         &g.text_replacement_rules,
+        g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,
         &g.progress_snapshots,

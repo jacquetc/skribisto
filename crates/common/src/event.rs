@@ -53,6 +53,7 @@ pub enum DirectAccessEntity {
     SearchResult(EntityEvent),
     RecentWork(EntityEvent),
     Work(EntityEvent),
+    SmartPunctuation(EntityEvent),
     TrashInfo(EntityEvent),
     Pace(EntityEvent),
     Holiday(EntityEvent),
@@ -179,6 +180,9 @@ impl Event {
                     format!("direct_access_recent_work_{:?}", event)
                 }
                 DirectAccessEntity::Work(event) => format!("direct_access_work_{:?}", event),
+                DirectAccessEntity::SmartPunctuation(event) => {
+                    format!("direct_access_smart_punctuation_{:?}", event)
+                }
                 DirectAccessEntity::TrashInfo(event) => {
                     format!("direct_access_trash_info_{:?}", event)
                 }

@@ -42,6 +42,13 @@ fn strip_volatile(b: &mut WorkBundle) {
     let w = &mut b.manifest.work;
     w.created_at.clear();
     w.updated_at.clear();
+    // Nested under the Work rather than a top-level vector, so this is an
+    // `if let` where its neighbours below are loops. The seven settings
+    // themselves are real content and stay — only the timestamps are volatile.
+    if let Some(sp) = &mut w.smart_punctuation {
+        sp.created_at.clear();
+        sp.updated_at.clear();
+    }
 
     for t in &mut b.tags {
         t.created_at.clear();
@@ -122,6 +129,7 @@ mod tests {
                     chapter_flat: false,
                     text_replacement_rule_ids: vec![],
                     custom_replacement_rules_enabled: false,
+                    smart_punctuation: None,
                 },
                 binder_order: vec![],
                 kind: BundleKind::Regular,
