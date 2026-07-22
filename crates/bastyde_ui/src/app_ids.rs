@@ -28,7 +28,7 @@
 use bastyde::prelude::Signal;
 
 use frontend::AppContext;
-use frontend::commands::{undo_redo_commands, work_commands, work_info_commands};
+use frontend::commands::{undo_redo_commands, work_info_commands};
 
 /// The app's id-only per-Work state. Cloneable (every field is an `Rc`-backed
 /// `Signal`), so all clones share one live state.
@@ -55,17 +55,24 @@ impl AppIds {
         Self::default()
     }
 
-    /// Bootstrap the entity ids from the freshly-loaded project. The single
-    /// `get_all_*` sweep run on each `LoadWork`; thereafter everything downstream
-    /// is id-driven (singles/models read these signals and self-refresh on
-    /// entity events).
-    pub fn seed(&self, ctx: &AppContext) {
-        self.work_id
-            .set(first_id(work_commands::get_all_work(ctx).ok(), |w| w.id));
-        self.work_info_id.set(first_id(
-            work_info_commands::get_all_work_info(ctx).ok(),
-            |wi| wi.id,
-        ));
+    /// Bootstrap the entity ids from the freshly-loaded project, given the
+    /// `work_id` the triggering `LoadWork`/`NewWork` event itself carries.
+    ///
+    /// Deliberately **not** "the first `Work`/`WorkInfo` the store returns":
+    /// with a second Work simultaneously open, `get_all_work(ctx).first()` can
+    /// answer with *either* open Work (whichever the backend's `HashMap`
+    /// happens to iterate first) — silently seeding this window at someone
+    /// else's project. `work_id` is supplied by the caller (the event that
+    /// fired this seed), so `work_info_id` is resolved by walking `WorkInfo.work`
+    /// back to exactly that id, not by taking a guess.
+    pub fn seed(&self, ctx: &AppContext, work_id: u64) {
+        self.work_id.set(Some(work_id));
+        self.work_info_id.set(
+            work_info_commands::get_all_work_info(ctx)
+                .ok()
+                .and_then(|list| list.into_iter().find(|wi| wi.work == Some(work_id)))
+                .map(|wi| wi.id),
+        );
     }
 
     /// Open a fresh per-`Work` undo stack and record its id. Call on `LoadWork`.
@@ -80,9 +87,80 @@ impl AppIds {
         self.work_info_id.set(None);
         self.stack_id.set(None);
     }
+
+    /// "Is this `LoadWork`/`NewWork` event about my Work?" — loose form, for the
+    /// two events that **seed** [`Self::work_id`] in the first place.
+    ///
+    /// Every open window/[`crate::sessions::WorkSession`] shares the one process-
+    /// wide [`frontend::EventHubClient`], so a second simultaneously-open Work's
+    /// `LoadWork` fires this window's subscribers too — each must answer "is this
+    /// about my Work" before acting (the migration's whole Phase-2 point). For a
+    /// window whose Work is already known, that is exactly `event_ids.contains(&mine)`.
+    ///
+    /// But the window whose *own* bootstrap load (or in-place New/Open-Work
+    /// switch) is what fired this very event has `work_id == None` at the instant
+    /// its subscribers run — seeding `work_id` from the event's own ids is that
+    /// subscriber's job, so it cannot already hold the answer. Treating "not yet
+    /// seeded" as "mine" is exact, not a guess: bastyde's event dispatch is
+    /// synchronous and single-threaded, and a project window performs its own
+    /// `load_work`/`new_work` call synchronously, inline in the same build/action
+    /// that subscribed — so at most one not-yet-seeded window can be "in between"
+    /// subscribing and its own seed landing at any instant (no second window's
+    /// `App::build` can be mid-construction at the same time; see `main.rs`'s
+    /// module docs on window construction). Phase 4 (multi-file-select) may need
+    /// to revisit this if it ever queues more than one bootstrap load in flight.
+    ///
+    /// Do NOT use this for `CloseWork` or for anything that must never fire
+    /// against a window with nothing open yet — see [`Self::is_event_for_my_work`].
+    pub fn is_bootstrap_or_own(&self, event_ids: &[u64]) -> bool {
+        match self.work_id.get() {
+            Some(mine) => event_ids.contains(&mine),
+            None => true,
+        }
+    }
+
+    /// "Is this event about my Work?" — strict form. `None` (nothing open yet)
+    /// never matches: a `CloseWork`/entity event cannot legitimately be about a
+    /// window that has not finished loading anything.
+    pub fn is_event_for_my_work(&self, event_ids: &[u64]) -> bool {
+        self.work_id
+            .get()
+            .is_some_and(|mine| event_ids.contains(&mine))
+    }
 }
 
-/// The id of the first element of a `get_all_*` result, if any.
-fn first_id<T>(list: Option<Vec<T>>, id_of: impl Fn(&T) -> u64) -> Option<u64> {
-    list?.first().map(id_of)
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bootstrap_or_own_accepts_any_event_before_seeding() {
+        let ids = AppIds::new();
+        assert!(ids.is_bootstrap_or_own(&[42]));
+        assert!(ids.is_bootstrap_or_own(&[]));
+    }
+
+    #[test]
+    fn bootstrap_or_own_matches_only_my_work_once_seeded() {
+        let ids = AppIds::new();
+        ids.work_id.set(Some(7));
+        assert!(ids.is_bootstrap_or_own(&[7]));
+        assert!(!ids.is_bootstrap_or_own(&[8]));
+        assert!(!ids.is_bootstrap_or_own(&[]));
+    }
+
+    #[test]
+    fn strict_match_never_accepts_before_seeding() {
+        let ids = AppIds::new();
+        assert!(!ids.is_event_for_my_work(&[42]));
+        assert!(!ids.is_event_for_my_work(&[]));
+    }
+
+    #[test]
+    fn strict_match_matches_only_my_work_once_seeded() {
+        let ids = AppIds::new();
+        ids.work_id.set(Some(7));
+        assert!(ids.is_event_for_my_work(&[7]));
+        assert!(!ids.is_event_for_my_work(&[8]));
+    }
 }

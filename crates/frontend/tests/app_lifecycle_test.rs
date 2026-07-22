@@ -120,11 +120,15 @@ fn new_work_reuses_the_shared_frame() {
         init.root_id,
         "Root id stable across opens"
     );
-    // Single-project-at-a-time today: only the latest Work remains in the store.
+    // Phase 2 of the multi-Work migration: opening a second Work no longer
+    // replaces the first (the "close every other open Work" sweep was
+    // deleted from `new_work_uc.rs`/`load_work_uc.rs` — see
+    // `frontend::tests::multi_work_scoping_test`) — both remain open,
+    // exactly as two simultaneously-open project windows require.
     assert_eq!(
         work_commands::get_all_work(&ctx).unwrap().len(),
-        1,
-        "opening a work replaces the previous one"
+        2,
+        "opening a second work must leave the first one open too"
     );
 
     // Recents accumulate on the shared System — the trunk *appends* rather than

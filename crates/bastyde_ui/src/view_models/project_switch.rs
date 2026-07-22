@@ -257,7 +257,20 @@ impl ProjectSwitchViewModel {
         // `new_work` close the current Work before anyone could translate a tab into
         // its persistable ordinal. (For New Work, the form is only *shown* here; the
         // current desk captured now is the one being left.)
-        crate::app::capture_workspace_layout(ctx);
+        //
+        // `ProjectSwitchViewModel` is a single, Tier-1 shared instance (see this
+        // view-model's module doc) — a known, disclosed Phase-3 boundary, the same
+        // shape as `tags::tag_chip`/`view_models::overview`'s app_state fallback. It
+        // cannot yet resolve "this window's own `WorkspaceLayoutViewModel`" the way
+        // `close_work_and_return_to_launcher`/`quit_app` now do, so it still reaches
+        // for the process-wide `app_state` registration — correct only while this is
+        // the first (and, for in-place New/Open, still the *only* still-live) window.
+        if let Some(workspace_layout) = ctx
+            .app_state::<crate::view_models::WorkspaceLayoutViewModel>()
+            .cloned()
+        {
+            crate::app::capture_workspace_layout(&workspace_layout, ctx);
+        }
         match switch {
             PendingSwitch::None => {}
             PendingSwitch::NewWork => {

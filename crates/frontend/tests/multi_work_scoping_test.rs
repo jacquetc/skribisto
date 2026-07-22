@@ -111,10 +111,11 @@ struct SecondWork {
 
 /// Seed a second Work directly onto `ctx`'s already-populated store, via nothing but
 /// public generated entity commands — replicating exactly what `new_work`/`load_work`'s
-/// own trunk-building does, minus the "close every other open Work" sweep neither of
-/// those two use cases can be asked to skip today. Legal per the entity model: `Root.works`
-/// is `one_to_many`, so more than one `Work` coexisting is a supported shape, just not one
-/// the app-level lifecycle commands can reach yet.
+/// own trunk-building does, without the overhead of a real template/legacy-upgrade
+/// pipeline. Legal per the entity model: `Root.works` is `one_to_many`, so more than one
+/// `Work` coexisting is a supported shape — since Phase 2 (see the tests below this
+/// file's tripwire section), `load_work`/`new_work` themselves reach it too, not just
+/// this hand-built bypass.
 fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
     let n = now();
 
@@ -1584,41 +1585,31 @@ fn merge_two_scenes_only_indexes_under_the_requested_work() {
     );
 }
 
-// ───────────────────── Phase-0 tripwire: the "close everything" sweep ─────────────────────
+// ───────────────────── Phase 2: a second Work genuinely stays open ─────────────────────
 //
-// Every test above proves Work-scoping works PROVIDED two Works are already open, which
-// today only happens through `seed_second_work`'s bypass — the real, public entry points
-// (`load_work`/`new_work`) still run through `work_io::close_current_work` for
-// EVERY currently-open Work first, so the app itself can never actually reach the two-Works
-// state the tests above construct by hand. That is deliberate Phase-0 behaviour (see
-// `load_work_uc.rs`/`new_work_uc.rs`), NOT a bug — but nothing currently fails if a future
-// change (e.g. a second window in Phase 2) ships while that sweep is still in place, silently
-// tearing down whichever Work the user had open in another window.
+// Until Phase 2, the real, public entry points (`load_work`/`new_work`) ran a "close every
+// other open Work" sweep first (`work_io::close_current_work`, looped over
+// `uow.get_all_work()`), so the app itself could never actually reach the two-Works-open
+// state the tests above construct by hand via `seed_second_work`. Phase 2 deletes that sweep
+// (see `load_work_uc.rs`/`new_work_uc.rs`) — opening a second Work now genuinely leaves the
+// first one open, exactly like a second window onto a second project.
 //
-// The two tests below are that tripwire. They PIN today's real, sweep-driven behaviour by
-// going through the actual public `load_work`/`new_work` commands (no `seed_second_work`
-// bypass) and asserting the sweep fired: opening a second Work leaves exactly one Work open,
-// and it is the new one, not the one that was already there.
-//
-// *** THESE TESTS ARE EXPECTED TO FAIL AND BE REWRITTEN ONCE PHASE 2 LANDS. *** Phase 2's
-// whole point is to let more than one Work stay open at once (one per window); the day that
-// ships, `load_work`/`new_work` must stop closing every other open Work, and these two tests
-// will start failing — on purpose. That failure IS the signal to go delete the
-// `for existing_id in uow.get_all_work()? { work_io::close_current_work(...) }` loops in
-// `load_work_uc.rs::LoadWorkUseCase::execute` and `new_work_uc.rs::NewWorkUseCase::execute`
-// (and once removed, delete these two tests too — the two-Works-scoping tests above already
-// cover the world that replaces them).
+// The two tests below replace the sweep-pinning tripwire tests that used to live here
+// (`load_work_closes_every_other_open_work_today` / `new_work_closes_every_other_open_work_today`,
+// which asserted the OLD behaviour and were written to fail the moment this landed — see
+// their retired doc comments in git history). They go through the actual public
+// `load_work`/`new_work` commands (no `seed_second_work` bypass) and assert the NEW
+// behaviour: Work A survives a second `load_work`/`new_work` call untouched — still present,
+// still in `Root.works`, still carrying its own `WorkInfo` — alongside the newly
+// opened/created Work B. Each test also asserts Work B's own presence, so a regression that
+// silently drops the NEW Work (rather than the old one) still fails loudly.
 
-/// Tripwire (see the section doc comment above): `load_work` still closes every other open
-/// Work before opening the requested one. Loading a second project through the real,
-/// public `load_work` path must leave Work A gone — not just "invisible next to Work B" the
-/// way `seed_second_work` would have it, but actually removed from the store (its `Work` row,
-/// its `WorkInfo`, and its slot in `Root.works`).
-///
-/// EXPECTED TO FAIL once Phase 2 stops `load_work` from closing other open Works — that
-/// failure is the cue to delete this test alongside the sweep in `load_work_uc.rs`.
+/// `load_work` no longer closes Work A before opening Work B: after loading a second project
+/// through the real, public `load_work` path, BOTH Works are in the store, both are listed in
+/// `Root.works`, and both have their own `WorkInfo` — exactly the shape a second project
+/// window opening onto a second Work needs.
 #[test]
-fn load_work_closes_every_other_open_work_today() {
+fn load_work_leaves_every_other_open_work_intact() {
     let (ctx, work_a) = ctx_with_work_a();
     assert_eq!(
         work_info_commands::get_all_work_info(&ctx).unwrap().len(),
@@ -1640,43 +1631,45 @@ fn load_work_closes_every_other_open_work_today() {
     let works_after = work_commands::get_all_work(&ctx).unwrap();
     assert_eq!(
         works_after.len(),
-        1,
-        "load_work's sweep must leave exactly ONE Work open, not two — got {}",
+        2,
+        "opening Work B must leave Work A open too — exactly two Works, got {}",
         works_after.len()
     );
-    assert_ne!(
-        works_after[0].id, work_a,
-        "Work A must be gone: load_work closes every other open Work before opening a new one \
-         (Phase-0 behaviour, deliberately preserved — see load_work_uc.rs)"
+    assert!(
+        works_after.iter().any(|w| w.id == work_a),
+        "Work A must still be in the store after Work B loads"
     );
+    let work_b = works_after
+        .iter()
+        .map(|w| w.id)
+        .find(|&id| id != work_a)
+        .expect("a second, distinct Work must exist");
 
     let root_id = root_commands::get_all_root(&ctx).unwrap().pop().unwrap().id;
-    let root_works =
+    let mut root_works =
         root_commands::get_root_relationship(&ctx, &root_id, &RootRelationshipField::Works)
             .unwrap();
+    root_works.sort_unstable();
+    let mut expected = vec![work_a, work_b];
+    expected.sort_unstable();
     assert_eq!(
-        root_works,
-        vec![works_after[0].id],
-        "Root.works must list only the freshly loaded Work — Work A's slot must be gone, not \
-         merely superseded"
+        root_works, expected,
+        "Root.works must list BOTH Works — Work A's slot must survive, appended to (not \
+         replaced by) Work B's"
     );
 
     let work_infos_after = work_info_commands::get_all_work_info(&ctx).unwrap();
     assert_eq!(
         work_infos_after.len(),
-        1,
-        "Work A's WorkInfo must be gone too, not just orphaned"
+        2,
+        "both Work A's and Work B's WorkInfo must exist — neither swept away"
     );
 }
 
-/// Tripwire (see the section doc comment above): `new_work` shares `load_work`'s sweep
-/// shape (same `work_io::close_current_work` loop, same rationale) — pin it independently
-/// so a fix applied to one use case but not the other still trips a failing test.
-///
-/// EXPECTED TO FAIL once Phase 2 stops `new_work` from closing other open Works — that
-/// failure is the cue to delete this test alongside the sweep in `new_work_uc.rs`.
+/// `new_work` shares `load_work`'s Phase-2 behaviour (no more sweep) — pinned independently
+/// so a regression applied to one use case but not the other still trips a failing test.
 #[test]
-fn new_work_closes_every_other_open_work_today() {
+fn new_work_leaves_every_other_open_work_intact() {
     let (ctx, work_a) = ctx_with_work_a();
     assert_eq!(
         work_info_commands::get_all_work_info(&ctx).unwrap().len(),
@@ -1685,7 +1678,7 @@ fn new_work_closes_every_other_open_work_today() {
     );
 
     let dir = std::env::temp_dir().join(format!(
-        "skrib-multiwork-tripwire-{}",
+        "skrib-multiwork-coexist-{}",
         std::process::id()
     ));
     let _ = std::fs::remove_dir_all(&dir);
@@ -1707,31 +1700,70 @@ fn new_work_closes_every_other_open_work_today() {
     let works_after = work_commands::get_all_work(&ctx).unwrap();
     assert_eq!(
         works_after.len(),
-        1,
-        "new_work's sweep must leave exactly ONE Work open, not two — got {}",
+        2,
+        "creating Work B must leave Work A open too — exactly two Works, got {}",
         works_after.len()
     );
-    assert_ne!(
-        works_after[0].id, work_a,
-        "Work A must be gone: new_work closes every other open Work before creating a new one \
-         (Phase-0 behaviour, deliberately preserved — see new_work_uc.rs)"
+    assert!(
+        works_after.iter().any(|w| w.id == work_a),
+        "Work A must still be in the store after Work B is created"
     );
+    let work_b = works_after
+        .iter()
+        .map(|w| w.id)
+        .find(|&id| id != work_a)
+        .expect("a second, distinct Work must exist");
 
     let root_id = root_commands::get_all_root(&ctx).unwrap().pop().unwrap().id;
-    let root_works =
+    let mut root_works =
         root_commands::get_root_relationship(&ctx, &root_id, &RootRelationshipField::Works)
             .unwrap();
+    root_works.sort_unstable();
+    let mut expected = vec![work_a, work_b];
+    expected.sort_unstable();
     assert_eq!(
-        root_works,
-        vec![works_after[0].id],
-        "Root.works must list only the freshly created Work — Work A's slot must be gone, not \
-         merely superseded"
+        root_works, expected,
+        "Root.works must list BOTH Works — Work A's slot must survive, appended to (not \
+         replaced by) Work B's"
     );
 
     let work_infos_after = work_info_commands::get_all_work_info(&ctx).unwrap();
     assert_eq!(
         work_infos_after.len(),
-        1,
-        "Work A's WorkInfo must be gone too, not just orphaned"
+        2,
+        "both Work A's and Work B's WorkInfo must exist — neither swept away"
     );
+}
+
+/// Both directions in one store: load Work A, load Work B, load Work C — every one of the
+/// three must still be present and distinct at the end. Proves the fix is genuinely
+/// "stop closing", not merely "keep one extra Work around" (e.g. an off-by-one sweep that
+/// still closes everything except the immediately-previous Work).
+#[test]
+fn three_works_loaded_in_sequence_all_coexist() {
+    let (ctx, work_a) = ctx_with_work_a();
+
+    let fixture = format!(
+        "{}/../../resources/test/skribisto_test_project.skrib",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture.clone() })
+        .expect("load_work B");
+    work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture })
+        .expect("load_work C");
+
+    let works_after = work_commands::get_all_work(&ctx).unwrap();
+    assert_eq!(
+        works_after.len(),
+        3,
+        "three separate loads must leave three separate Works open, got {}",
+        works_after.len()
+    );
+    assert!(
+        works_after.iter().any(|w| w.id == work_a),
+        "Work A, the very first one, must still be present after two more Works load"
+    );
+    let distinct_ids: std::collections::HashSet<EntityId> =
+        works_after.iter().map(|w| w.id).collect();
+    assert_eq!(distinct_ids.len(), 3, "all three Works must have distinct ids");
 }

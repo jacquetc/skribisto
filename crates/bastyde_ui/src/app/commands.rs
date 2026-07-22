@@ -48,8 +48,9 @@ use frontend::AppContext;
 
 use crate::models::OpenDocsStore;
 use crate::view_models::{
-    BackupSchedulerViewModel, DictionariesViewModel, EditorsViewModel, OutlineViewModel,
-    ProjectSwitchViewModel, SearchReplaceViewModel, TrashViewModel,
+    BackupSchedulerViewModel, DictionariesViewModel, EditorsViewModel, ExportViewModel,
+    OutlineViewModel, ProjectSwitchViewModel, SearchReplaceViewModel, TrashViewModel,
+    UserDictionaryViewModel,
 };
 
 use super::PendingExit;
@@ -70,6 +71,12 @@ mod view;
 /// cheap `Rc`/`Signal` clones of state that outlives any single build.
 pub(super) struct CommandDeps {
     pub app_ctx: Rc<AppContext>,
+    /// This window's own id-only Work state — threaded so `app.quit`'s guard
+    /// (and any future close-adjacent command) resolves the *right* Work via
+    /// `guard_unsaved_exit`, never `ctx.app_state::<AppIds>()` (see
+    /// `close_work_and_return_to_launcher`'s doc for why that lookup is unsound
+    /// the moment a second Work's window exists).
+    pub ids: crate::app_ids::AppIds,
     pub outline: OutlineViewModel,
     pub editors: EditorsViewModel,
     pub trash: TrashViewModel,
@@ -78,6 +85,18 @@ pub(super) struct CommandDeps {
     pub backup_scheduler: BackupSchedulerViewModel,
     pub dictionaries: DictionariesViewModel,
     pub spell_docs: OpenDocsStore,
+    /// Tier-2 (per-open-Work), threaded from `sessions::WorkSession` — never via
+    /// `ctx.app_state::<T>()`: that slot is one process-wide value, so with a
+    /// second Work open in a second window the lookup would silently resolve
+    /// to whichever Work's session registered it first, and "Add to
+    /// dictionary" fired from this window would write into *that* Work's
+    /// personal dictionary instead of this window's own.
+    pub user_dictionary: UserDictionaryViewModel,
+    /// Tier-2 (per-open-Work, bound to this window's own `ids`) — threaded
+    /// rather than looked up via `ctx.app_state::<ExportViewModel>()`: see
+    /// `user_dictionary`'s doc above for why an `app_state` lookup would be
+    /// wrong the moment a second Work opens in a second window.
+    pub export: ExportViewModel,
     /// Fixed dock ids (see [`crate::docks`]) — the reveal targets.
     pub search_dock: DockWidgetId,
     pub trash_dock: DockWidgetId,

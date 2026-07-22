@@ -90,9 +90,19 @@ pub fn inspector_dock(
     outline: OutlineViewModel,
     focus: Signal<Option<u64>>,
     dock_id: DockWidgetId,
+    tags: crate::view_models::TagsViewModel,
+    mention_index: crate::view_models::MentionIndex,
+    open_docs: crate::models::OpenDocsStore,
 ) -> DockWidget {
     DockWidget::new(dock_id, tr!(inspector()), move |_id| {
-        Inspector::new(app_ctx.clone(), outline.clone(), focus.clone())
+        Inspector::new(
+            app_ctx.clone(),
+            outline.clone(),
+            focus.clone(),
+            tags.clone(),
+            mention_index.clone(),
+            open_docs.clone(),
+        )
     })
     .icon(crate::icons::activity::inspector_icon)
     .default_location(DockOpenLocation::side(DockSide::Trailing))
@@ -108,10 +118,27 @@ struct Inspector {
     /// touching the item's own row, so nothing else here would re-resolve the milestone.
     moves: Signal<u64>,
     root_child: Option<WidgetId>,
+    /// Tier-2 (per-open-Work) handles, threaded in from the owning window's own
+    /// `sessions::WorkSession` — **not** looked up via `ctx.app_state::<T>()`, the
+    /// multi-Work migration's whole point (see `sessions::WorkSession`'s module
+    /// doc): an `app_state` slot is one process-wide value, so with a second Work
+    /// open in a second window, that lookup would silently answer with whichever
+    /// Work's session was registered first — this dock's tag picker would then
+    /// attach a *different* Work's tag id onto this window's own item.
+    tags: crate::view_models::TagsViewModel,
+    mention_index: crate::view_models::MentionIndex,
+    open_docs: crate::models::OpenDocsStore,
 }
 
 impl Inspector {
-    fn new(app_ctx: Rc<AppContext>, outline: OutlineViewModel, focus: Signal<Option<u64>>) -> Self {
+    fn new(
+        app_ctx: Rc<AppContext>,
+        outline: OutlineViewModel,
+        focus: Signal<Option<u64>>,
+        tags: crate::view_models::TagsViewModel,
+        mention_index: crate::view_models::MentionIndex,
+        open_docs: crate::models::OpenDocsStore,
+    ) -> Self {
         Self {
             probe: SingleBinderItem::new(app_ctx.clone()),
             app_ctx,
@@ -119,6 +146,9 @@ impl Inspector {
             focus,
             moves: Signal::new(0),
             root_child: None,
+            tags,
+            mention_index,
+            open_docs,
         }
     }
 }
@@ -204,8 +234,8 @@ impl Widget for Inspector {
                 // right item after focus moves on. The two writers differ underneath though:
                 // `set_tags` writes a relationship (already undoable on its own), while
                 // `set_aliases` is a scalar patch — see `SingleBinderItem`.
-                if let Some(tags_vm) = ctx.app_state::<crate::view_models::TagsViewModel>().cloned()
                 {
+                    let tags_vm = self.tags.clone();
                     let stack = self.outline.ids().stack_id.get();
 
                     let tag_value = Signal::new(d.tags.clone());
@@ -264,9 +294,8 @@ impl Widget for Inspector {
                     // The mention index, in both directions. Hidden entirely when the
                     // project has no discoverable tags: nothing has been asked to be found,
                     // so an empty "Mentioned here" would be a section about nothing.
-                    if let Some(index) = ctx.app_state::<crate::view_models::MentionIndex>().cloned()
-                        && !discoverable.is_empty()
-                    {
+                    if !discoverable.is_empty() {
+                        let index = self.mention_index.clone();
                         index.changed_signal().bind_to(
                             ctx.self_id(),
                             ctx.binding_registry(),
@@ -285,9 +314,9 @@ impl Widget for Inspector {
                         // roster follows what is being written instead of waiting for a save.
                         // `peek` never opens anything: an item with no tab simply falls back
                         // to the last batch.
-                        let prose = ctx
-                            .app_state::<crate::models::OpenDocsStore>()
-                            .and_then(|docs| docs.peek(d.id))
+                        let prose = self
+                            .open_docs
+                            .peek(d.id)
                             .and_then(|doc| doc.main.as_ref().and_then(|m| m.doc.to_djot().ok()));
                         let roster = index.roster_for(d.id, prose.as_deref());
                         if !roster.is_empty() {
@@ -342,9 +371,7 @@ impl Widget for Inspector {
                 // children" beside it is the *only* way a language spreads down a subtree.
                 if let Some(spell) = ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned()
                 {
-                    let inherited = ctx
-                        .app_state::<crate::models::OpenDocsStore>()
-                        .map(|s| s.effective_language(d.id));
+                    let inherited = Some(self.open_docs.effective_language(d.id));
                     let value = Signal::new(d.dict_language.clone());
                     // A probe fixed to *this* item, so the write targets it even after focus
                     // moves on (unlike the shared `self.probe`).
@@ -365,6 +392,7 @@ impl Widget for Inspector {
                             set,
                             spell,
                             inherited.clone(),
+                            self.open_docs.clone(),
                         ));
                     // Push this language down the subtree, one undo step (shown only when the
                     // item actually has a subtree — the same gate the export toggle uses).

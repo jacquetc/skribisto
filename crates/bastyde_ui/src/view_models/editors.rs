@@ -761,6 +761,34 @@ impl EditorsViewModel {
         self.save_state.mark_clean();
     }
 
+    /// Release every reference this window's own tabs (both panes) hold on the
+    /// shared [`OpenDocsStore`] — the exact per-item inverse of every `open_in`/
+    /// `open_to_side` this window ever ran. `stack` is the undo stack to flush
+    /// through, snapshotted by the caller: this runs from the window's own
+    /// `on_removed`-driven teardown (see `sessions::WorkRegistry::remove_window`),
+    /// which fires *after* the window's tree — and, in today's single-window-
+    /// per-Work flow, after `AppIds::clear()` has already zeroed `self.ids` — is
+    /// gone, so reading `self.ids.stack_id` live here would always see `None`.
+    ///
+    /// Deliberately **not** `close_all`/`docs.clear()`: that method is for an
+    /// in-place project switch happening in a window that is *staying open*
+    /// (so it also clears this window's own tab lists, and clearing the whole
+    /// shared store is correct there — the previous project is leaving this
+    /// window and no other window shares its `WorkSession` yet). This one runs
+    /// once bastyde confirms the window itself is gone — there is no tab list
+    /// left worth clearing, only the shared store's refcounts *this* window
+    /// itself was holding. With a second window sharing this Work (Phase 3's
+    /// `AttachExisting`), `docs.clear()` here would drop items a sibling
+    /// window still has open; releasing exactly this window's own
+    /// `tab_item_ids` never does.
+    pub fn release_own_open_docs(&self, stack: Option<u64>) {
+        for side in [Side::Primary, Side::Secondary] {
+            for item_id in self.tab_item_ids(side) {
+                self.docs.release(item_id, stack);
+            }
+        }
+    }
+
     /// Close every tab in both panes and reset the split (e.g. on project load).
     /// Does not flush — the outgoing work is saved/discarded by the close flow.
     pub fn close_all(&self) {
@@ -1066,6 +1094,72 @@ mod tests {
             tab,
         ));
         id
+    }
+
+    /// [`EditorsViewModel::release_own_open_docs`] is the on_removed-driven
+    /// teardown's release step: it must release exactly the items *this*
+    /// window's own tabs (both panes) held open, and never touch what a
+    /// sibling window sharing the same `OpenDocsStore` (Phase 3's
+    /// `AttachExisting`) has open — the whole reason it exists instead of
+    /// `close_all`'s `docs.clear()`.
+    #[test]
+    fn release_own_open_docs_releases_only_this_windows_items_never_a_siblings() {
+        use crate::models::OpenDoc;
+        use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+
+        let app_ctx = Rc::new(AppContext::new());
+        let save_state = SaveStateViewModel::new(app_ctx.clone(), AppIds::new());
+        // One shared `OpenDocsStore` (Tier 2) — as it would be for two windows
+        // onto the same Work.
+        let docs = OpenDocsStore::new(app_ctx.clone());
+        let window_a = EditorsViewModel::new(
+            app_ctx.clone(),
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            crate::view_models::CorkboardDefaults::detached(),
+            AppIds::new(),
+            docs.clone(),
+            Signal::new(false),
+            save_state.clone(),
+            Signal::new(false),
+        );
+        let window_b = EditorsViewModel::new(
+            app_ctx.clone(),
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            crate::view_models::CorkboardDefaults::detached(),
+            AppIds::new(),
+            docs.clone(),
+            Signal::new(false),
+            save_state,
+            Signal::new(false),
+        );
+
+        // Window A has item 1 in its primary pane and item 2 in its side pane;
+        // window B (a sibling on the same Work) has item 3.
+        push_tab(&window_a, Side::Primary, 1);
+        push_tab(&window_a, Side::Secondary, 2);
+        push_tab(&window_b, Side::Primary, 3);
+        for id in [1u64, 2, 3] {
+            docs.insert_for_test(Rc::new(OpenDoc::build(
+                &app_ctx,
+                id,
+                &BinderItemRole::Item,
+                &BinderItemSubRole::Scene,
+                &[],
+                docs.edited_any(),
+            )));
+        }
+
+        window_a.release_own_open_docs(None);
+
+        assert!(docs.refs_for_test(1).is_none(), "window A's own primary-pane item must be released");
+        assert!(docs.refs_for_test(2).is_none(), "window A's own side-pane item must be released");
+        assert_eq!(docs.refs_for_test(3), Some(1), "window B's item must be untouched");
     }
 
     #[test]

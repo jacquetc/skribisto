@@ -24,5 +24,5 @@
 mod work_registry;
 mod work_session;
 
-pub use work_registry::WorkRegistry;
+pub use work_registry::{StackTeardown, WindowTeardown, WorkRegistry};
 pub use work_session::WorkSession;

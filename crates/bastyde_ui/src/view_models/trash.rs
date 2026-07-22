@@ -402,11 +402,21 @@ impl TrashViewModel {
                     // undoable. (Dismissing a notification must not silently wipe
                     // the undo history; and clear only THIS work's stack, not every
                     // stack.)
-                    if cause == ToastDismissCause::Timeout {
-                        match stack {
-                            Some(sid) => undo_redo_commands::clear_stack(&clear_ctx, sid),
-                            None => undo_redo_commands::clear_all_stacks(&clear_ctx),
-                        }
+                    //
+                    // Deliberately no `clear_all_stacks` fallback for a `None` stack
+                    // (the multi-Work migration removed it): with several Works open
+                    // at once, each with its own stack, "clear every stack because
+                    // this one couldn't be resolved" would wipe every *other* open
+                    // Work's undo history too — a correctness regression far worse
+                    // than leaving this one op's history alone. A live `TrashViewModel`
+                    // always has a seeded `stack_id` once a Work is open (`AppIds::open_stack`
+                    // runs on every `LoadWork`/`NewWork`), so `None` here means no Work
+                    // is open at all — nothing to clear, and the op above could not
+                    // have succeeded either.
+                    if cause == ToastDismissCause::Timeout
+                        && let Some(sid) = stack
+                    {
+                        undo_redo_commands::clear_stack(&clear_ctx, sid);
                     }
                 }),
         );

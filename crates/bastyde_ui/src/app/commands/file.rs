@@ -127,6 +127,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     {
         let app_ctx = deps.app_ctx.clone();
+        let ids = deps.ids.clone();
         let unsaved = deps.unsaved.clone();
         let autosave = deps.autosave.clone();
         let pending = deps.pending_exit.clone();
@@ -136,6 +137,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             guard_unsaved_exit(
                 ctx,
                 &app_ctx,
+                &ids,
                 unsaved.get(),
                 backup_mode.get(),
                 autosave.get(),

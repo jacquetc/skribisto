@@ -236,8 +236,14 @@ impl OpenDoc {
     /// session, which recomputes immediately; `None` (nothing installed/active) clears the
     /// squiggles — the degrade path. Only the two prose fields carry a session; the title/subtitle
     /// are plain `Signal<String>`.
-    pub fn attach_spell(&self, spell: &SpellcheckService, tags: &[String], color: Color) {
-        let checker = spell.build_checker(tags);
+    pub fn attach_spell(
+        &self,
+        spell: &SpellcheckService,
+        tags: &[String],
+        color: Color,
+        work_id: Option<u64>,
+    ) {
+        let checker = spell.build_checker(tags, work_id);
         if let Some(s) = &self.spell_main {
             s.set_checker(checker.clone(), color);
         }
@@ -414,6 +420,14 @@ impl OpenDocsStore {
         self.invalidate_language_cache();
     }
 
+    /// This store's own open Work, if any — the `work_id` `set_project_language` last set.
+    /// Exposed so a caller holding only an `OpenDocsStore` (e.g. [`LanguagePillField`](crate::spellcheck::language_pill_field::LanguagePillField))
+    /// can scope its own `SpellcheckService` calls (`is_muted`/`set_muted`/`build_checker`) to
+    /// *this* window's Work rather than guessing or reaching for a process-wide fallback.
+    pub fn work_id(&self) -> Option<u64> {
+        self.inner.work_id.get()
+    }
+
     /// Re-attach the spell-checker to **every** open document — the single path for install,
     /// remove, mute, language-change, focus-regain, and theme change. Recomputes each item's
     /// effective language through the same resolver search uses.
@@ -447,8 +461,9 @@ impl OpenDocsStore {
                 })
                 .collect()
         });
+        let work_id = self.inner.work_id.get();
         for (doc, tags) in attachments {
-            doc.attach_spell(&spell, &tags, color);
+            doc.attach_spell(&spell, &tags, color, work_id);
         }
     }
 
@@ -464,7 +479,12 @@ impl OpenDocsStore {
             s.set_active(self.inner.synopsis_visible.get());
         }
         let tags = self.language_for(doc.item_id);
-        doc.attach_spell(&spell, &tags, self.inner.squiggle.get());
+        doc.attach_spell(
+            &spell,
+            &tags,
+            self.inner.squiggle.get(),
+            self.inner.work_id.get(),
+        );
     }
 
     /// Every distinct language tag the open project actually uses — the union across every
@@ -762,7 +782,12 @@ impl OpenDocsStore {
 impl OpenDocsStore {
     /// Seed one entry directly (bypassing the backend probe) at one reference, so
     /// the refcount/eviction lifecycle is testable without a loaded project.
-    fn insert_for_test(&self, doc: Rc<OpenDoc>) {
+    ///
+    /// `pub(crate)`, not private: `view_models::editors`'s own tests use this to
+    /// model two windows sharing one `OpenDocsStore` (Tier 2), each opening
+    /// different items, for `EditorsViewModel::release_own_open_docs`'s
+    /// "releases only this window's own items" contract.
+    pub(crate) fn insert_for_test(&self, doc: Rc<OpenDoc>) {
         let id = doc.item_id;
         self.inner
             .open
@@ -771,7 +796,7 @@ impl OpenDocsStore {
     }
 
     /// The current reference count for `item_id`, or `None` if not open.
-    fn refs_for_test(&self, item_id: u64) -> Option<usize> {
+    pub(crate) fn refs_for_test(&self, item_id: u64) -> Option<usize> {
         self.inner.open.borrow().get(&item_id).map(|e| e.refs)
     }
 }

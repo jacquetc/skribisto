@@ -163,12 +163,25 @@ mod imp {
                     Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
                     Origin::TrashManagement(TrashManagementEvent::RestoreItems),
                     Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
-                    Origin::WorkManagement(WorkManagementEvent::LoadWork),
-                    Origin::WorkManagement(WorkManagementEvent::NewWork),
                 ];
                 for origin in origins {
                     let me = self.clone();
                     ctx.subscribe_event(origin, move |_event: &Event| me.refresh());
+                }
+                // Project (re)load — guarded (loose form): `refresh` always
+                // re-derives from this model's own `work_id`, so a sibling Work's
+                // Load/New would only cost a harmless, still-correct re-derive;
+                // guarded anyway so opening a second Work doesn't force a wasted
+                // rebuild of every other open window's stream.
+                for wev in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
+                    let me = self.clone();
+                    let work_id = self.inner.work_id.clone();
+                    ctx.subscribe_event(Origin::WorkManagement(wev), move |event: &Event| {
+                        let mine = work_id.get();
+                        if mine.is_none() || event.ids.first() == mine.as_ref() {
+                            me.refresh();
+                        }
+                    });
                 }
             }
             self.refresh();

@@ -361,7 +361,11 @@ impl NewWorkViewModel {
                 }
             },
             Some(factory) => {
-                ctx.open_window(factory.window_config(PendingAction::New(self.dto())));
+                // The returned `InitialWindowState` is only kept by `main.rs`'s
+                // very first window (see `window_config`'s doc) — every later
+                // window, like this one, discards it.
+                let (config, _state) = factory.window_config(PendingAction::New(self.dto()));
+                ctx.open_window(config);
                 ctx.close_window();
             }
         }

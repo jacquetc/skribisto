@@ -954,12 +954,21 @@ fn new_work_mints_distinct_ids() {
         false,
         NewWorkTemplate::None,
     );
+    let work_a_id = live_work_id(&db);
     let id1 = store_to_bundle(&db, &hub, &dir.path().join("o1"))
         .manifest
         .work
         .unique_id;
 
-    // A second new_work replaces the first and mints a different id.
+    // Phase 2 of the multi-Work migration: `new_work` no longer closes Work A
+    // first — explicitly close it here so `store_to_bundle`'s `live_work_id`
+    // (which assumes exactly one resident Work) keeps resolving unambiguously
+    // to "the" work, matching this test's own single-work-at-a-time intent
+    // (proving distinct ids, not multi-Work coexistence — see
+    // `frontend::tests::multi_work_scoping_test` for that).
+    work_management_controller::close_work(&db, &hub, &CloseWorkDto { work_id: work_a_id })
+        .expect("close_work A");
+
     new_work(
         &db,
         &hub,
@@ -997,8 +1006,18 @@ fn new_work_replaces_open_project() {
         },
     )
     .expect("load_work");
+    let existing_work_id = live_work_id(&db);
 
-    // Creating a new (None) work must clear the old tree entirely.
+    // Phase 2 of the multi-Work migration: `new_work` no longer closes the
+    // open Work first (see `frontend::tests::multi_work_scoping_test` for the
+    // "both stay open" proof) — this test is about a *closed-then-reopened*
+    // project starting from a clean tree, so it closes the existing project
+    // explicitly first, exactly as a real "Close Work" then "New Work" would.
+    work_management_controller::close_work(&db, &hub, &CloseWorkDto { work_id: existing_work_id })
+        .expect("close_work Existing");
+
+    // Creating a new (None) work over a closed project must start from a
+    // clean tree, not inherit the old one's binders.
     new_work(
         &db,
         &hub,
@@ -1847,6 +1866,156 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
     // A must still be fully open/save-able afterward (no dangling relationship
     // left behind by B's close) — a full content check, not just a fingerprint.
     let final_a = store_to_bundle(&db, &hub, &dir.path().join("final_a"));
+    assert_eq!(final_a.manifest.work.title, "First Project");
+    assert_eq!(final_a.manifest.work.unique_id, "first-project-uid");
+    assert_eq!(norm(&final_a), norm(&bundle_a));
+}
+
+/// **Phase 2 acceptance test.** The test above still seeds Work B through
+/// `load_additional_work` (a direct `materialize`/`create_trunk` call), because
+/// at Phase 0 the real, public `load_work` controller still ran the "close
+/// every other open Work" sweep — the only way to get two Works open at once
+/// was to bypass it. Phase 2 deletes that sweep (`load_work_uc.rs`/
+/// `new_work_uc.rs`), so this test proves the identical "open A, open B,
+/// mutate, save, close ONE, assert the OTHER is untouched" scenario through
+/// nothing but the real, public `work_management_controller::load_work`/
+/// `close_work` entry points — no bypass, no direct use-case/UoW construction
+/// for B at all. This is the scenario a second project window actually drives.
+#[test]
+fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    // Work A, via the real public `load_work` path — exactly as a first
+    // project window would open it.
+    let mut bundle_a = sample_bundle();
+    bundle_a.manifest.work.title = "First Project".into();
+    bundle_a.manifest.work.unique_id = "first-project-uid".into();
+    let path_a = dir.path().join("A");
+    skrib::write_bundle(path_a.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle_a).unwrap();
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: path_a.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load_work A");
+    let work_a_id = live_work_id(&db);
+    let row_a_before = db
+        .get_store()
+        .works
+        .read()
+        .unwrap()
+        .get(&work_a_id)
+        .cloned()
+        .expect("A resident");
+    let fp_a_checkpoint0 = fingerprint_of(&db, &hub, work_a_id, &dir.path().join("real-fp0"));
+
+    // Work B, ALSO via the real public `load_work` path, on the SAME store,
+    // while A is still open — exactly a second project window opening a
+    // second Work. Before Phase 2 this call would have swept A away first;
+    // it must not, any more.
+    let mut bundle_b = sample_bundle();
+    bundle_b.manifest.work.title = "Second Project".into();
+    bundle_b.manifest.work.unique_id = "second-project-uid".into();
+    let path_b = dir.path().join("B");
+    skrib::write_bundle(path_b.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle_b).unwrap();
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: path_b.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load_work B — must NOT close Work A first");
+    let work_b_id = *db
+        .get_store()
+        .works
+        .read()
+        .unwrap()
+        .keys()
+        .find(|&&id| id != work_a_id)
+        .expect("a second, distinct Work must now be resident");
+
+    assert_eq!(
+        db.get_store().works.read().unwrap().len(),
+        2,
+        "both A and B must be resident after loading B through the real path"
+    );
+    assert_eq!(
+        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        Some(row_a_before.clone()),
+        "A's row must be byte-for-byte the same object after B loads through the real path"
+    );
+    assert_eq!(
+        fingerprint_of(&db, &hub, work_a_id, &dir.path().join("real-fp1")),
+        fp_a_checkpoint0,
+        "A unaffected by B's real load_work call"
+    );
+
+    // Mutate B directly (simulating a live edit), then save B through the
+    // real, work_id-scoped save path — A must not move at any point.
+    {
+        let store = db.get_store();
+        let mut works = store.works.write().unwrap();
+        let mut b = works.get(&work_b_id).unwrap().clone();
+        b.title = "Mutated B (real path)".into();
+        works.insert(work_b_id, b);
+    }
+    let save_b = SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            work_id: work_b_id,
+            file_name: dir.path().join("real-out-b").to_str().unwrap().to_string(),
+            overwrite: true,
+        },
+    );
+    let save_b_result = save_b
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("save_work B");
+    let saved_b_bundle = skrib::read_bundle(&save_b_result.output_path).unwrap();
+    assert_eq!(saved_b_bundle.manifest.work.title, "Mutated B (real path)");
+    assert_eq!(
+        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        Some(row_a_before.clone()),
+        "A unaffected by B's mutate + save"
+    );
+    assert_eq!(
+        fingerprint_of(&db, &hub, work_a_id, &dir.path().join("real-fp2")),
+        fp_a_checkpoint0,
+        "A's fingerprint unaffected by B's mutate + save"
+    );
+
+    // Close B through the real, public `close_work` path — A must survive,
+    // fully intact, and B's rows must be fully gone.
+    work_management_controller::close_work(&db, &hub, &CloseWorkDto { work_id: work_b_id })
+        .expect("close_work B");
+
+    assert!(
+        db.get_store().works.read().unwrap().get(&work_b_id).is_none(),
+        "B's Work row must be fully removed by the real close_work path"
+    );
+    assert_eq!(
+        db.get_store().works.read().unwrap().len(),
+        1,
+        "only A remains resident after B closes"
+    );
+    assert_eq!(
+        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        Some(row_a_before),
+        "A survives B's whole real-path lifecycle (load, mutate, save, close), byte-identical"
+    );
+    assert_eq!(
+        fingerprint_of(&db, &hub, work_a_id, &dir.path().join("real-fp3")),
+        fp_a_checkpoint0,
+        "A byte-identical throughout — the whole two-Works scenario, driven only through \
+         the real public load_work/close_work commands, exactly as two project windows would"
+    );
+
+    // A must still be fully open/save-able afterward — a full content check.
+    let final_a = store_to_bundle(&db, &hub, &dir.path().join("real-final-a"));
     assert_eq!(final_a.manifest.work.title, "First Project");
     assert_eq!(final_a.manifest.work.unique_id, "first-project-uid");
     assert_eq!(norm(&final_a), norm(&bundle_a));

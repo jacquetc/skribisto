@@ -54,6 +54,12 @@ pub struct LanguagePillField {
     /// When `value` is empty, the list inherited from the Book/Work (shown, and materialised on
     /// the first edit). `None` for the Work-level field, which inherits from nothing.
     inherited: Option<Vec<String>>,
+    /// The open Work's own document store — threaded in from the caller (Tier 2,
+    /// see `sessions::WorkSession`'s module doc) rather than resolved via
+    /// `ctx.app_state::<OpenDocsStore>()` in [`reattach`]: that slot is one
+    /// process-wide value, so with a second Work open in a second window, a mute
+    /// toggle in this window could re-attach a *different* Work's open documents.
+    open_docs: OpenDocsStore,
     root_child: Option<WidgetId>,
 }
 
@@ -63,12 +69,14 @@ impl LanguagePillField {
         set: SetLanguages,
         spell: SpellcheckService,
         inherited: Option<Vec<String>>,
+        open_docs: OpenDocsStore,
     ) -> Self {
         Self {
             value,
             set,
             spell,
             inherited,
+            open_docs,
             root_child: None,
         }
     }
@@ -81,10 +89,8 @@ impl std::fmt::Debug for LanguagePillField {
 }
 
 /// Re-attach the spell-checker to every open document — after a mute toggle or a list edit.
-fn reattach(ctx: &mut EventContext) {
-    if let Some(store) = ctx.app_state::<OpenDocsStore>() {
-        store.attach_all();
-    }
+fn reattach(open_docs: &OpenDocsStore, _ctx: &mut EventContext) {
+    open_docs.attach_all();
 }
 
 /// The base language name — the display name with any region/variant qualifier stripped:
@@ -202,17 +208,23 @@ impl Widget for LanguagePillField {
 
         let mut flow = Wrap::new().spacing(6.0).line_spacing(6.0);
 
+        // This window's own open Work — read from `open_docs` (Tier 2, threaded in) rather
+        // than tracked separately here: `set_muted`/`is_muted` must scope to the *right*
+        // Work, never a different one this same field instance happens to be rebuilt for.
+        let work_id = self.open_docs.work_id();
         for tag in language::all(&effective) {
             let tag = tag.to_string();
-            let active = !self.spell.is_muted(&tag);
+            let active = !self.spell.is_muted(&tag, work_id);
 
             // Toggle this language's session mute, then re-highlight.
             let on_toggle: Rc<dyn Fn(&mut EventContext)> = {
                 let spell = self.spell.clone();
                 let tag = tag.clone();
+                let open_docs = self.open_docs.clone();
                 Rc::new(move |c| {
-                    spell.set_muted(&tag, !spell.is_muted(&tag));
-                    reattach(c);
+                    let work_id = open_docs.work_id();
+                    spell.set_muted(&tag, !spell.is_muted(&tag, work_id), work_id);
+                    reattach(&open_docs, c);
                 })
             };
             // Remove this language from the list (persisted).
@@ -221,11 +233,12 @@ impl Widget for LanguagePillField {
                 let value = self.value.clone();
                 let effective = effective.clone();
                 let tag = tag.clone();
+                let open_docs = self.open_docs.clone();
                 Rc::new(move |c| {
                     let new = without(&effective, &tag);
                     value.set(new.clone());
                     set(new, c);
-                    reattach(c);
+                    reattach(&open_docs, c);
                 })
             };
 
@@ -276,12 +289,13 @@ impl Widget for LanguagePillField {
             let value = self.value.clone();
             let effective = effective.clone();
             let id = entry.id.clone();
+            let open_docs = self.open_docs.clone();
             menu = menu.item(
                 MenuItem::new(lit!(entry.display_name.clone())).on_activate_fn(move |c| {
                     let new = with(&effective, &id);
                     value.set(new.clone());
                     set(new, c);
-                    reattach(c);
+                    reattach(&open_docs, c);
                 }),
             );
         }
@@ -295,12 +309,13 @@ impl Widget for LanguagePillField {
             let value = self.value.clone();
             let effective = effective.clone();
             let code = ud.code.clone();
+            let open_docs = self.open_docs.clone();
             menu = menu.item(
                 MenuItem::new(lit!(ud.name.clone())).on_activate_fn(move |c| {
                     let new = with(&effective, &code);
                     value.set(new.clone());
                     set(new, c);
-                    reattach(c);
+                    reattach(&open_docs, c);
                 }),
             );
         }

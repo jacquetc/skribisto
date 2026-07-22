@@ -858,7 +858,13 @@ mod tests {
         let ids = AppIds::new();
         work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: fixture() })
             .expect("load fixture");
-        ids.seed(&app_ctx);
+        // A fresh, single-project store: the one `Work` the load just created.
+        let work_id = frontend::commands::work_commands::get_all_work(&app_ctx)
+            .expect("work")
+            .first()
+            .expect("one work")
+            .id;
+        ids.seed(&app_ctx, work_id);
         let item_ids: Vec<u64> = binder_item_commands::get_all_binder_item(&app_ctx)
             .expect("items")
             .into_iter()

@@ -87,12 +87,15 @@ mod imp {
     use bastyde::prelude::*;
 
     use frontend::AppContext;
-    use frontend::commands::{binder_tag_commands, tag_management_commands};
+    use frontend::commands::{binder_tag_commands, tag_management_commands, work_commands};
+    use frontend::common::direct_access::work::WorkRelationshipField;
     use frontend::common::event::{
         DirectAccessEntity, EntityEvent, Event, Origin, TagManagementEvent, WorkManagementEvent,
     };
     use frontend::direct_access::{CreateBinderTagDto, UpdateBinderTagDto};
     use frontend::tag_management::ImportTagsDto;
+
+    use crate::app_ids::AppIds;
 
     use super::{TagRow, build_lookup, sort_rows};
 
@@ -102,6 +105,10 @@ mod imp {
         lookup: Signal<Rc<HashMap<u64, TagRow>>>,
         subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
+        /// The open Work's own ids — scopes every read to *this* Work's `tags`
+        /// relationship (see [`load_rows`]); a second simultaneously-open Work's
+        /// tag palette must never merge into this one's list.
+        ids: AppIds,
     }
 
     #[derive(Clone)]
@@ -110,8 +117,8 @@ mod imp {
     }
 
     impl WorkTagsListModel {
-        pub fn new(ctx: Rc<AppContext>) -> Self {
-            let rows = load_rows(&ctx);
+        pub fn new(ctx: Rc<AppContext>, ids: AppIds) -> Self {
+            let rows = load_rows(&ctx, &ids);
             let lookup = Signal::new(Rc::new(build_lookup(&rows)));
             Self {
                 inner: Rc::new(Inner {
@@ -120,6 +127,7 @@ mod imp {
                     lookup,
                     subscribed: Cell::new(false),
                     ctx,
+                    ids,
                 }),
             }
         }
@@ -127,6 +135,11 @@ mod imp {
         /// Subscribe (once) so the palette stays live: any `BinderTag` mutation — from the
         /// settings pane, the inspector's "New tag…", a preset, or an undo/redo — re-reads
         /// it, and a project switch replaces it wholesale.
+        ///
+        /// `BinderTag`/`ImportTags` carry no `work_id`, but `refresh` always re-derives
+        /// from this model's own `ids.work_id` (see [`load_rows`]), so a sibling Work's
+        /// tag mutation only ever costs a harmless, still-correct re-read. `LoadWork`/
+        /// `NewWork`/`CloseWork` DO carry `work_id` and are guarded accordingly.
         pub fn wire(&self, ctx: &mut BuildContext) {
             if self.inner.subscribed.replace(true) {
                 return;
@@ -149,15 +162,24 @@ mod imp {
                 Origin::TagManagement(TagManagementEvent::ImportTags),
                 move |_event: &Event| me.refresh(),
             );
-            for wev in [
-                WorkManagementEvent::LoadWork,
-                WorkManagementEvent::NewWork,
-                WorkManagementEvent::CloseWork,
-            ] {
+            for wev in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
                 let me = self.clone();
-                ctx.subscribe_event(Origin::WorkManagement(wev), move |_event: &Event| {
-                    me.refresh()
+                ctx.subscribe_event(Origin::WorkManagement(wev), move |event: &Event| {
+                    if me.inner.ids.is_bootstrap_or_own(&event.ids) {
+                        me.refresh()
+                    }
                 });
+            }
+            {
+                let me = self.clone();
+                ctx.subscribe_event(
+                    Origin::WorkManagement(WorkManagementEvent::CloseWork),
+                    move |event: &Event| {
+                        if me.inner.ids.is_event_for_my_work(&event.ids) {
+                            me.refresh()
+                        }
+                    },
+                );
             }
         }
 
@@ -311,7 +333,7 @@ mod imp {
         }
 
         fn refresh(&self) {
-            let rows = load_rows(&self.inner.ctx);
+            let rows = load_rows(&self.inner.ctx, &self.inner.ids);
             self.inner.lookup.set(Rc::new(build_lookup(&rows)));
             self.inner.model.reconcile_by_key(rows, |r| r.id);
             let v = &self.inner.version;
@@ -319,11 +341,21 @@ mod imp {
         }
     }
 
-    /// Read every `BinderTag` (one Work per process) into sorted rows.
-    fn load_rows(ctx: &AppContext) -> Vec<TagRow> {
-        let mut rows: Vec<TagRow> = binder_tag_commands::get_all_binder_tag(ctx)
+    /// Read this window's own open Work's `BinderTag`s (via `Work.tags`), into
+    /// sorted rows — **not** `get_all_binder_tag`, which returns every tag in the
+    /// whole shared store: with a second Work simultaneously open, that would leak
+    /// one Work's tag palette into the other's Inspector and Settings ▸ Tags pane.
+    fn load_rows(ctx: &AppContext, ids: &AppIds) -> Vec<TagRow> {
+        let Some(work_id) = ids.work_id.get() else {
+            return Vec::new(); // no project open
+        };
+        let tag_ids =
+            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Tags)
+                .unwrap_or_default();
+        let mut rows: Vec<TagRow> = binder_tag_commands::get_binder_tag_multi(ctx, &tag_ids)
             .unwrap_or_default()
             .into_iter()
+            .flatten()
             .map(|t| TagRow {
                 id: t.id,
                 name: t.name,
@@ -354,6 +386,8 @@ mod imp {
 
     use frontend::AppContext;
 
+    use crate::app_ids::AppIds;
+
     use super::{TagRow, build_lookup, name_key, sort_rows};
 
     struct Inner {
@@ -379,7 +413,7 @@ mod imp {
     }
 
     impl WorkTagsListModel {
-        pub fn new(_ctx: Rc<AppContext>) -> Self {
+        pub fn new(_ctx: Rc<AppContext>, _ids: AppIds) -> Self {
             // A palette shaped like the Basic preset: a status ladder that demonstrates
             // the `status/…` clustering, two flags, and the discoverable taxonomy.
             let mut rows = vec![

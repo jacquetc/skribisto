@@ -154,10 +154,6 @@ impl CommandUnitOfWork for NewWorkUnitOfWork {
 #[macros::uow_action(entity = "System", action = "GetRelationship")]
 #[macros::uow_action(entity = "Root", action = "GetAll")]
 #[macros::uow_action(entity = "Root", action = "GetRelationship")]
-#[macros::uow_action(entity = "Work", action = "GetAll")]
-#[macros::uow_action(entity = "Work", action = "RemoveMulti")]
-#[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipsFromRightIds")]
-#[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 impl NewWorkUnitOfWorkTrait for NewWorkUnitOfWork {
     fn publish_new_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

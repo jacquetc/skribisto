@@ -12,7 +12,6 @@
 // turns into entities (preserving every field + order + M2M links), then
 // `create_trunk` builds the non-undoable System/RecentWork/WorkInfo/Root frame.
 use crate::LoadWorkDto;
-use crate::work_io::{self, WorkCloser};
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::database::CommandUnitOfWork;
@@ -75,32 +74,8 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 // `Root.works` is an append, not a replace (below) — read-modify-write needs the
 // current list first.
 #[macros::uow_action(entity = "Root", action = "GetRelationship")]
-// Clearing actions: opening a work first closes whichever Work(s) are currently
-// open (shared with close_work/new_work via `work_io::close_current_work`), plus
-// the one relationship lookup `WorkCloser` needs to find each one's `WorkInfo`
-// (see work_io.rs — `Work::remove_multi` already cascades everything else).
-#[macros::uow_action(entity = "Work", action = "GetAll")]
-#[macros::uow_action(entity = "Work", action = "RemoveMulti")]
-#[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipsFromRightIds")]
-#[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 pub trait LoadWorkUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_load_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
-}
-
-impl<'a> WorkCloser for dyn LoadWorkUnitOfWorkTrait + 'a {
-    fn work_info_ids_for_work(&self, work_id: EntityId) -> Result<Vec<EntityId>> {
-        Ok(self
-            .get_work_info_relationships_from_right_ids(&WorkInfoRelationshipField::Work, &[work_id])?
-            .into_iter()
-            .map(|(work_info_id, _)| work_info_id)
-            .collect())
-    }
-    fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_work_info_multi(ids)
-    }
-    fn remove_works(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_work_multi(ids)
-    }
 }
 
 pub struct LoadWorkUseCase {
@@ -131,26 +106,20 @@ impl LoadWorkUseCase {
             }
         };
 
-        // Stage 2: materialise entities in a single transaction. First close
-        // whichever Work(s) are currently open (0 or 1 today — opening a work
-        // still replaces it; Phase 0 keeps this UI-visible behaviour unchanged).
-        // Shared helper, NOT a use-case call (use cases never call each other).
-        // Scoped per-id (`work_io::close_current_work`), not a store-wide sweep,
-        // so this loop is forward-safe the day a second Work is genuinely meant
-        // to stay open.
+        // Stage 2: materialise entities in a single transaction. Phase 2 (see
+        // the multi-Work migration design doc §8): loading a Work no longer
+        // closes any other currently-open Work first — the whole point of
+        // this phase is that a second simultaneously-open Work stays open.
+        // `create_trunk` below appends this Work onto `Root.works` (Phase 0
+        // already made that relationship an append, not an overwrite), so
+        // materializing this Work cannot disturb another Work's rows.
         //
-        // TRIPWIRE: this sweep is DELIBERATE Phase-0 behaviour and must stay until Phase 2
-        // (multiple simultaneously-open Works, one per window) actually lands — do not
-        // remove it as a "cleanup" before then. It is pinned by
-        // `frontend::tests::multi_work_scoping_test::load_work_closes_every_other_open_work_today`,
-        // which is written to FAIL the day this loop is removed; that test failing (not this
-        // comment) is the authoritative signal that it is finally safe to delete this loop.
+        // Pinned by `frontend::tests::multi_work_scoping_test::
+        // load_work_leaves_every_other_open_work_intact`, which asserts a
+        // previously-open Work survives a second `load_work` call untouched —
+        // see that test for the both-directions proof.
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-
-        for existing_id in uow.get_all_work()?.into_iter().map(|w| w.id) {
-            work_io::close_current_work(&*uow, existing_id)?;
-        }
 
         let mat = materialize(&*uow, &loaded)?;
         create_trunk(&*uow, &loaded, &mat, &dto.file_name, shape, now)?;
@@ -551,11 +520,17 @@ pub(crate) fn create_trunk(
         ..Default::default()
     })?;
     // Per-open-Work session info: link under System.work_infos and point it at
-    // its Work (the multi-Work discriminator).
+    // its Work (the multi-Work discriminator). Append, not replace — mirrors the
+    // RecentWorks/Root.Works idiom below: with the "close every other open Work"
+    // sweep removed, another Work's WorkInfo can already be linked here, and a
+    // blind `set` would silently unlink it while that Work is still open.
+    let mut work_info_ids =
+        uow.get_system_relationship(&system_id, &SystemRelationshipField::WorkInfos)?;
+    work_info_ids.push(work_info.id);
     uow.set_system_relationship(
         &system_id,
         &SystemRelationshipField::WorkInfos,
-        &[work_info.id],
+        &work_info_ids,
     )?;
     uow.set_work_info_relationship(
         &work_info.id,

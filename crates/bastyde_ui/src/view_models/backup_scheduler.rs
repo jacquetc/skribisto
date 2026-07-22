@@ -46,6 +46,7 @@
 //! shared mode (see `models::backup_settings_file`'s module docs).
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -59,10 +60,11 @@ use frontend::work_management::{
 };
 
 use crate::app::PendingExit;
+use crate::app_ids::AppIds;
 use crate::backup::is_destination_available;
 use crate::models::{BackupPolicy, RetentionMode, uid_is_usable};
 use crate::singles::{SingleWork, SingleWorkInfo};
-use crate::view_models::BackupSettingsViewModel;
+use crate::view_models::{BackupSettingsViewModel, WorkspaceLayoutViewModel};
 
 use super::long_op::{event_id, parse_payload, payload_id};
 
@@ -84,6 +86,18 @@ struct Pending {
 #[derive(Clone)]
 pub struct BackupSchedulerViewModel {
     app_ctx: Rc<AppContext>,
+    /// This session's own id-only state — needed so [`Self::do_close`] can name
+    /// the *right* Work when it calls `close_work_and_return_to_launcher`/
+    /// `quit_app` (multi-Work migration: those two used to resolve "which Work"
+    /// via `ctx.app_state::<AppIds>()`, a single process-wide slot that can only
+    /// ever answer with whichever window's `AppIds` the builder happened to
+    /// register — wrong the instant a second Work's window exists).
+    ids: AppIds,
+    /// This session's own `WorkspaceLayoutViewModel` — needed for the same reason as
+    /// `ids`: [`Self::do_close`] hands it straight to
+    /// `close_work_and_return_to_launcher`/`quit_app` so they capture *this* window's
+    /// desk, not whichever window's instance last won `ctx.app_state`'s single slot.
+    workspace_layout: WorkspaceLayoutViewModel,
     settings: BackupSettingsViewModel,
     single_work: SingleWork,
     single_work_info: SingleWorkInfo,
@@ -96,13 +110,18 @@ pub struct BackupSchedulerViewModel {
     /// "every N hours" means N hours since the *last backup*, whatever triggered
     /// it — not N hours since the timer last armed.
     completed_epoch: Signal<u64>,
-    /// See the module doc's "T1-2 — the flush invariant" section.
-    flush_hook: Rc<RefCell<Rc<dyn Fn()>>>,
+    /// See the module doc's "T1-2 — the flush invariant" section. A Work with
+    /// two windows must flush *both* before a backup, so this is keyed per
+    /// window, not the single last-writer-wins cell it used to be.
+    flush_hooks: Rc<RefCell<HashMap<BastydeWindowId, Rc<dyn Fn()>>>>,
 }
 
 impl BackupSchedulerViewModel {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         app_ctx: Rc<AppContext>,
+        ids: AppIds,
+        workspace_layout: WorkspaceLayoutViewModel,
         settings: BackupSettingsViewModel,
         single_work: SingleWork,
         single_work_info: SingleWorkInfo,
@@ -110,29 +129,67 @@ impl BackupSchedulerViewModel {
     ) -> Self {
         Self {
             app_ctx,
+            ids,
+            workspace_layout,
             settings,
             single_work,
             single_work_info,
             backup_mode,
             pending: Signal::new(None),
             completed_epoch: Signal::new(0),
-            flush_hook: Rc::new(RefCell::new(Rc::new(|| {}) as Rc<dyn Fn()>)),
+            flush_hooks: Rc::new(RefCell::new(HashMap::new())),
         }
     }
 
-    /// Install the real flush hook (wired once in `App::build`, as
-    /// `editors.flush_all()`). Every clone of this scheduler shares the same
-    /// cell, so installing it on any one of them is visible on all the others
-    /// already handed out.
-    pub fn set_flush_hook(&self, hook: Rc<dyn Fn()>) {
-        *self.flush_hook.borrow_mut() = hook;
+    /// This session's own `WorkspaceLayoutViewModel` — see the field's doc.
+    /// Exposed so `guard_unsaved_exit`'s immediate-discard branches (which call
+    /// `close_work_and_return_to_launcher`/`quit_app` directly, bypassing
+    /// [`Self::do_close`]) can pass the *right* one too.
+    pub(crate) fn workspace_layout(&self) -> &WorkspaceLayoutViewModel {
+        &self.workspace_layout
     }
 
-    /// T1-2: flush live editor buffers into the store. Called unconditionally
-    /// as the first statement of every trigger — see the module doc.
+    /// Register (or replace) this `window_id`'s flush hook — wired in
+    /// `App::build`, as `editors.flush_all()`, once per window. Every clone of
+    /// this scheduler shares the same map, so registering on any one of them is
+    /// visible on all the others already handed out — the same sharing
+    /// `set_flush_hook` used to rely on, now keyed so a second window's editors
+    /// don't silently displace the first's.
+    ///
+    /// Unregistered by [`Self::unregister_flush_hook`], called from the
+    /// window's own `on_removed`-driven teardown (see
+    /// `sessions::WorkRegistry::remove_window`) — bastyde's window-teardown
+    /// hook that closed the framework gap this doc used to describe (a
+    /// per-widget destroy pass on window close, so there is now a reliable
+    /// "this window just closed" moment to call it from). Deliberately NOT
+    /// unregistered on an in-place Work switch (`register_window`'s replace
+    /// path): this hook is keyed on the window, not the Work it happens to be
+    /// showing, and the same window keeps needing its buffers flushed for
+    /// whatever Work it shows next.
+    pub fn register_flush_hook(&self, window_id: BastydeWindowId, hook: Rc<dyn Fn()>) {
+        self.flush_hooks.borrow_mut().insert(window_id, hook);
+    }
+
+    /// Drop `window_id`'s flush hook — the inverse of
+    /// [`Self::register_flush_hook`], called once bastyde's `on_removed` hook
+    /// confirms that window is gone. Without this, every closed window's hook
+    /// stayed in the map for the rest of the process, each future backup
+    /// trigger calling `editors.flush_all()` on a torn-down `EditorsViewModel`
+    /// forever — harmless (the call is inert, not unsound) but a real,
+    /// unbounded leak over a long session that opens and closes many windows.
+    /// A safe no-op for a `window_id` with no hook registered.
+    pub fn unregister_flush_hook(&self, window_id: BastydeWindowId) {
+        self.flush_hooks.borrow_mut().remove(&window_id);
+    }
+
+    /// T1-2: flush every registered window's live editor buffers into the
+    /// store. Called unconditionally as the first statement of every trigger —
+    /// see the module doc.
     fn flush(&self) {
-        let hook = self.flush_hook.borrow().clone();
-        hook();
+        let hooks: Vec<Rc<dyn Fn()>> = self.flush_hooks.borrow().values().cloned().collect();
+        for hook in hooks {
+            hook();
+        }
     }
 
     /// Counter of completed backups — the App's interval timer re-arms whenever
@@ -407,10 +464,15 @@ impl BackupSchedulerViewModel {
     /// close can end in.
     fn do_close(&self, ctx: &mut EventContext, then: PendingExit) {
         match then {
-            PendingExit::ReturnToLauncher => {
-                crate::app::close_work_and_return_to_launcher(&self.app_ctx, ctx)
+            PendingExit::ReturnToLauncher => crate::app::close_work_and_return_to_launcher(
+                &self.app_ctx,
+                &self.ids,
+                &self.workspace_layout,
+                ctx,
+            ),
+            PendingExit::Quit => {
+                crate::app::quit_app(&self.app_ctx, &self.ids, &self.workspace_layout, ctx)
             }
-            PendingExit::Quit => crate::app::quit_app(&self.app_ctx, ctx),
             PendingExit::None => {}
         }
     }
@@ -726,13 +788,25 @@ mod tests {
 
     fn test_scheduler() -> BackupSchedulerViewModel {
         let app_ctx = Rc::new(AppContext::new());
+        let ids = AppIds::new();
         let settings =
             BackupSettingsViewModel::new(crate::models::BackupSettingsService::in_memory_default());
         let single_work = SingleWork::new(app_ctx.clone());
         let single_work_info = SingleWorkInfo::new(app_ctx.clone());
         let backup_mode = Signal::new(false);
+        let workspace_layout = WorkspaceLayoutViewModel::new(
+            app_ctx.clone(),
+            crate::models::WorkspaceLayoutService::in_memory_default(),
+            bastyde::widgets::DockingModel::new(),
+            single_work.clone(),
+            single_work_info.clone(),
+            ids.clone(),
+            backup_mode.clone(),
+        );
         BackupSchedulerViewModel::new(
             app_ctx,
+            ids,
+            workspace_layout,
             settings,
             single_work,
             single_work_info,
@@ -756,7 +830,8 @@ mod tests {
         let flushed = Rc::new(Cell::new(0u32));
         {
             let flushed = flushed.clone();
-            scheduler.set_flush_hook(Rc::new(move || flushed.set(flushed.get() + 1)));
+            scheduler
+                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed.set(flushed.get() + 1)));
         }
         // No project open — `on_open` returns right after the flush, via
         // `current()` returning `None`. The flush must still have happened.
@@ -770,7 +845,8 @@ mod tests {
         let flushed = Rc::new(Cell::new(0u32));
         {
             let flushed = flushed.clone();
-            scheduler.set_flush_hook(Rc::new(move || flushed.set(flushed.get() + 1)));
+            scheduler
+                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed.set(flushed.get() + 1)));
         }
         scheduler.interval_tick();
         assert_eq!(flushed.get(), 1);
@@ -786,8 +862,8 @@ mod tests {
     }
 
     #[test]
-    fn set_flush_hook_is_visible_on_every_existing_clone() {
-        // The hook cell is shared (`Rc<RefCell<..>>`), so installing it on ONE
+    fn flush_hook_is_visible_on_every_existing_clone() {
+        // The hook map is shared (`Rc<RefCell<..>>`), so registering on ONE
         // clone (as `App::build` does) must be visible on clones made earlier —
         // e.g. the project window's close guard clone in `windows.rs`.
         let scheduler = test_scheduler();
@@ -795,10 +871,68 @@ mod tests {
         let flushed = Rc::new(Cell::new(0u32));
         {
             let flushed = flushed.clone();
-            scheduler.set_flush_hook(Rc::new(move || flushed.set(flushed.get() + 1)));
+            scheduler
+                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed.set(flushed.get() + 1)));
         }
         earlier_clone.on_open();
         assert_eq!(flushed.get(), 1, "the earlier clone must see the new hook");
+    }
+
+    #[test]
+    fn every_registered_window_is_flushed_not_just_the_last() {
+        // The whole point of the multi-Work migration's fix: a Work with two
+        // windows must flush BOTH before a backup, not silently drop the first
+        // window's unsaved edits the moment a second window registers.
+        let scheduler = test_scheduler();
+        let flushed_a = Rc::new(Cell::new(0u32));
+        let flushed_b = Rc::new(Cell::new(0u32));
+        {
+            let flushed_a = flushed_a.clone();
+            scheduler
+                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed_a.set(flushed_a.get() + 1)));
+        }
+        {
+            let flushed_b = flushed_b.clone();
+            scheduler
+                .register_flush_hook(BastydeWindowId::new(2), Rc::new(move || flushed_b.set(flushed_b.get() + 1)));
+        }
+        scheduler.on_open();
+        assert_eq!(flushed_a.get(), 1, "window 1's editors must still be flushed");
+        assert_eq!(flushed_b.get(), 1, "window 2's editors must also be flushed");
+    }
+
+    /// `unregister_flush_hook` — the on_removed-driven inverse of
+    /// `register_flush_hook` — must drop exactly the closed window's hook and
+    /// leave a sibling window's alone.
+    #[test]
+    fn unregister_flush_hook_drops_only_that_window_and_leaves_a_sibling_alone() {
+        let scheduler = test_scheduler();
+        let flushed_a = Rc::new(Cell::new(0u32));
+        let flushed_b = Rc::new(Cell::new(0u32));
+        {
+            let flushed_a = flushed_a.clone();
+            scheduler
+                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed_a.set(flushed_a.get() + 1)));
+        }
+        {
+            let flushed_b = flushed_b.clone();
+            scheduler
+                .register_flush_hook(BastydeWindowId::new(2), Rc::new(move || flushed_b.set(flushed_b.get() + 1)));
+        }
+
+        scheduler.unregister_flush_hook(BastydeWindowId::new(1));
+        scheduler.on_open();
+
+        assert_eq!(flushed_a.get(), 0, "window 1's hook must no longer run once unregistered");
+        assert_eq!(flushed_b.get(), 1, "window 2's hook must still run");
+    }
+
+    #[test]
+    fn unregister_flush_hook_for_an_unknown_window_is_a_safe_no_op() {
+        let scheduler = test_scheduler();
+        scheduler.unregister_flush_hook(BastydeWindowId::new(404));
+        // Must not panic, and must not disturb an unrelated trigger.
+        scheduler.on_open();
     }
 
     // ── pure helpers ─────────────────────────────────────────────────────────

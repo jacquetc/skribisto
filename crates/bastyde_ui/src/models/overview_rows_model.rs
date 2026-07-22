@@ -162,6 +162,11 @@ pub struct OverviewRowsModel {
     _filters: Rc<Vec<ObserverHandle>>,
     /// One-shot guard so `wire` subscribes to backend events only once.
     subscribed: Rc<Cell<bool>>,
+    /// The open Work's own id — guards the `LoadWork`/`NewWork` re-source
+    /// subscription in [`Self::wire`] against a sibling Work's project boundary
+    /// (see that method's docs). Not otherwise read: `reload`/the slice's own
+    /// source closure already captured their own clone of it in [`Self::new`].
+    work_id: Signal<Option<u64>>,
 }
 
 impl OverviewRowsModel {
@@ -274,6 +279,7 @@ impl OverviewRowsModel {
             remembered,
             _filters: Rc::new(observers),
             subscribed: Rc::new(Cell::new(false)),
+            work_id,
         }
     }
 
@@ -304,12 +310,25 @@ impl OverviewRowsModel {
             Origin::TrashManagement(TrashManagementEvent::TrashBinder),
             Origin::TrashManagement(TrashManagementEvent::RestoreItems),
             Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
-            Origin::WorkManagement(WorkManagementEvent::LoadWork),
-            Origin::WorkManagement(WorkManagementEvent::NewWork),
         ];
         for origin in origins {
             let me = self.clone();
             ctx.subscribe_event(origin, move |_e: &Event| me.reload());
+        }
+        // Project (re)load — guarded (loose form): the slice's own source closure
+        // always re-derives from this model's own `work_id`, so a sibling Work's
+        // Load/New would only cost a harmless, still-correct re-derive; guarded
+        // anyway so opening a second Work doesn't force a wasted rebuild of every
+        // other open window's Overview table.
+        for wev in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
+            let me = self.clone();
+            let work_id = self.work_id.clone();
+            ctx.subscribe_event(Origin::WorkManagement(wev), move |event: &Event| {
+                let mine = work_id.get();
+                if mine.is_none() || event.ids.first() == mine.as_ref() {
+                    me.reload();
+                }
+            });
         }
         // A create must also *reveal*: give a childless container its first child and
         // the row exists but sits under a parent that, having had nothing to show, was

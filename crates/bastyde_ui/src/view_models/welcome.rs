@@ -217,8 +217,11 @@ impl WelcomeViewModel {
                     return;
                 }
                 // Open the project window *before* closing the Launcher — the
-                // ordering rule in `main.rs`'s module docs.
-                ectx.open_window(factory.window_config(PendingAction::Load(path.clone())));
+                // ordering rule in `main.rs`'s module docs. The returned
+                // `InitialWindowState` is only kept by `main.rs`'s very first
+                // window (see `window_config`'s doc); discarded here.
+                let (config, _state) = factory.window_config(PendingAction::Load(path.clone()));
+                ectx.open_window(config);
                 ectx.close_window();
             },
         )
@@ -265,7 +268,9 @@ impl WelcomeViewModel {
                             }));
                             return;
                         }
-                        ectx2.open_window(factory.window_config(PendingAction::Load(file.clone())));
+                        let (config, _state) =
+                            factory.window_config(PendingAction::Load(file.clone()));
+                        ectx2.open_window(config);
                         ectx2.close_window();
                     },
                 )
@@ -417,50 +422,31 @@ mod tests {
     use std::cell::RefCell;
 
     use crate::app::PendingExit;
-    use crate::app_ids::AppIds;
     use crate::models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
-    use crate::sessions::WorkSession;
+    use crate::sessions::WorkRegistry;
     use crate::spellcheck::SpellcheckService;
-    use crate::view_models::{
-        BackupSettingsViewModel, ExportViewModel, OutlineViewModel, SaveAsViewModel,
-    };
+    use crate::view_models::BackupSettingsViewModel;
 
     /// A minimal, fully in-memory `ProjectWindowFactory` — enough plumbing to
     /// construct a `WelcomeViewModel` in a test; these particular tests never
-    /// exercise the factory's `window_config`.
+    /// exercise the factory's `window_config` (which now mints a fresh
+    /// `AppIds`/`OutlineViewModel`/`ExportViewModel`/`WorkSession` per call —
+    /// see `ProjectWindowFactory::window_config`'s doc — so this helper only
+    /// needs the *ingredients*, not a pre-built session).
     fn test_factory(app_ctx: Rc<AppContext>) -> ProjectWindowFactory {
-        let ids = AppIds::new();
-        let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
-        let export = ExportViewModel::new(app_ctx.clone(), ids.clone());
         let backup_mode = Signal::new(false);
         let backup_context = Signal::new(None);
         let backup_settings =
             BackupSettingsViewModel::new(BackupSettingsService::in_memory_default());
-        let session = WorkSession::new(
-            app_ctx.clone(),
-            ids.clone(),
+        ProjectWindowFactory::new(
+            app_ctx,
+            WorkRegistry::new(),
             SpellcheckService::new(),
-            outline.docking(),
-            backup_mode.clone(),
             backup_settings,
             WorkspaceLayoutService::in_memory_default(),
             TreeExpansionService::in_memory_default(),
-        );
-        let save_as_vm = SaveAsViewModel::new(
-            app_ctx.clone(),
-            ids.clone(),
-            session.single_work.clone(),
-            backup_mode.clone(),
-            backup_context.clone(),
-        );
-        ProjectWindowFactory::new(
-            app_ctx,
-            outline,
-            export,
-            session,
             Signal::new(false), // autosave_menu
             Signal::new(true),  // spellcheck_menu (default on)
-            save_as_vm,
             backup_mode,
             backup_context,
             Signal::new(false),

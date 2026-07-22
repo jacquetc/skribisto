@@ -131,10 +131,10 @@ impl WorkSession {
 
         let save_state = SaveStateViewModel::new(app_ctx.clone(), ids.clone());
 
-        let work_tags = WorkTagsListModel::new(app_ctx.clone());
+        let work_tags = WorkTagsListModel::new(app_ctx.clone(), ids.clone());
         let tags = TagsViewModel::new(work_tags, ids.clone());
 
-        let dict_words = DictWordListModel::new(app_ctx.clone());
+        let dict_words = DictWordListModel::new(app_ctx.clone(), ids.clone());
         let single_dict_word = SingleDictWord::new(app_ctx.clone());
         let user_dictionary = UserDictionaryViewModel::new(dict_words, single_dict_word, ids.clone());
 
@@ -155,6 +155,8 @@ impl WorkSession {
 
         let backup_scheduler = BackupSchedulerViewModel::new(
             app_ctx,
+            ids.clone(),
+            workspace_layout.clone(),
             backup_settings,
             single_work.clone(),
             single_work_info.clone(),

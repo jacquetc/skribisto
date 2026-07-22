@@ -433,8 +433,18 @@ fn spell_format(color: Color) -> HighlightFormat {
     }
 }
 
-/// The app-wide spell-check engine: a per-language dictionary cache, the session mute set, and
-/// the current Work's personal words. Cloneable (shares one `Rc` state).
+/// The app-wide spell-check engine: a per-language dictionary cache (genuinely Tier 1 —
+/// loading a dictionary is expensive and language-keyed, not Work-keyed, so every open Work
+/// shares one), the master switch, and the mute-version counter. Cloneable (shares one `Rc`
+/// state) — the **same** instance is handed to every window/`WorkSession` (see
+/// `shell::windows::ProjectWindowFactory`'s `spellcheck` field), unlike the per-session
+/// view-models that get a fresh instance per open Work.
+///
+/// **The session mute set and the personal words are Tier 2 (per open Work)**, keyed by
+/// `work_id` in [`Inner::muted`]/[`Inner::personal`] — *not* one flat set. Before the
+/// multi-Work migration there was always at most one open Work, so a flat set and "per Work"
+/// were the same thing; with two Works genuinely open at once, closing one must drop only
+/// *its own* mutes/personal words, never a still-open sibling's (see [`Self::clear`]).
 #[derive(Clone)]
 pub struct SpellcheckService {
     inner: Rc<Inner>,
@@ -442,20 +452,26 @@ pub struct SpellcheckService {
 
 struct Inner {
     /// id → loaded dictionary, or `None` for "tried and absent/unusable" (so a miss isn't
-    /// re-attempted every keystroke).
+    /// re-attempted every keystroke). Tier 1 — shared by every open Work.
     cache: RefCell<HashMap<String, Option<Arc<spellbook::Dictionary>>>>,
-    /// Session-muted language keys (resolved registry ids). Cleared on `close_work`.
-    muted: RefCell<HashSet<String>>,
+    /// Session-muted language keys (resolved registry ids), keyed by `work_id`. Tier 2 — a
+    /// Work's own entry is dropped on `close_work` (see [`Self::clear`]), never every Work's.
+    muted: RefCell<HashMap<u64, HashSet<String>>>,
     /// Bumped on every mute change **and every master-switch flip** so a language-pill field
     /// rebuilds its check marks — the pills bind this and nothing else, so a switch that did
-    /// not bump it would leave them looking live while nothing was being checked.
+    /// not bump it would leave them looking live while nothing was being checked. One counter
+    /// for the whole process: a pill field rebuilding on an unrelated Work's mute change is
+    /// wasted work, not a correctness bug (it re-reads its own Work's `is_muted` and gets the
+    /// same answer) — see the migration report's toast-policy note for the same class of
+    /// accepted, non-corrupting cross-Work chatter.
     mute_version: Signal<u64>,
     /// The master switch (`SPELLCHECK_ENABLED_KEY`, default on). Mirrored here by `App` from
     /// the settings store so [`build_checker`](SpellcheckService::build_checker) — the single
     /// gate every document passes through — can answer "off" before touching a dictionary.
+    /// Tier 1 — an app-wide preference, not a Work property.
     enabled: Cell<bool>,
-    /// The open Work's personal words (`DictWord`).
-    personal: RefCell<HashSet<String>>,
+    /// Each open Work's personal words (`DictWord`), keyed by `work_id`. Tier 2 — see `muted`.
+    personal: RefCell<HashMap<u64, HashSet<String>>>,
 }
 
 impl SpellcheckService {
@@ -463,10 +479,10 @@ impl SpellcheckService {
         Self {
             inner: Rc::new(Inner {
                 cache: RefCell::new(HashMap::new()),
-                muted: RefCell::new(HashSet::new()),
+                muted: RefCell::new(HashMap::new()),
                 mute_version: Signal::new(0),
                 enabled: Cell::new(true),
-                personal: RefCell::new(HashSet::new()),
+                personal: RefCell::new(HashMap::new()),
             }),
         }
     }
@@ -518,17 +534,26 @@ impl SpellcheckService {
         loaded
     }
 
-    /// Whether spell-checking for `tag`'s language is muted this session.
-    pub fn is_muted(&self, tag: &str) -> bool {
-        self.inner.muted.borrow().contains(&Self::key_of(tag))
+    /// Whether spell-checking for `tag`'s language is muted this session, for `work_id`'s
+    /// Work. `work_id: None` (no project open) is never muted — there is nothing to mute yet.
+    pub fn is_muted(&self, tag: &str, work_id: Option<u64>) -> bool {
+        let Some(work_id) = work_id else { return false };
+        self.inner
+            .muted
+            .borrow()
+            .get(&work_id)
+            .is_some_and(|set| set.contains(&Self::key_of(tag)))
     }
 
-    /// Toggle the session mute for `tag`'s language. Returns whether the set changed (so the
-    /// caller only re-attaches on a real change).
-    pub fn set_muted(&self, tag: &str, muted: bool) -> bool {
+    /// Toggle `work_id`'s Work's session mute for `tag`'s language. Returns whether the set
+    /// changed (so the caller only re-attaches on a real change). A no-op (never "changed")
+    /// with no `work_id` — muting means nothing without an open Work to scope it to.
+    pub fn set_muted(&self, tag: &str, muted: bool, work_id: Option<u64>) -> bool {
+        let Some(work_id) = work_id else { return false };
         let key = Self::key_of(tag);
         let changed = {
-            let mut set = self.inner.muted.borrow_mut();
+            let mut map = self.inner.muted.borrow_mut();
+            let set = map.entry(work_id).or_default();
             if muted {
                 set.insert(key)
             } else {
@@ -542,40 +567,53 @@ impl SpellcheckService {
         changed
     }
 
-    /// Replace the open Work's personal words (from its `DictWord` set).
-    pub fn set_personal(&self, words: HashSet<String>) {
-        *self.inner.personal.borrow_mut() = words;
+    /// Replace `work_id`'s Work's personal words (from its `DictWord` set).
+    pub fn set_personal(&self, work_id: u64, words: HashSet<String>) {
+        self.inner.personal.borrow_mut().insert(work_id, words);
     }
 
-    /// Drop the loaded-dictionary cache only (keeping session mutes + personal words), so the
-    /// next attach re-reads disk. Called when a dictionary is installed or removed: without this,
-    /// `dict()`'s per-id cache would keep serving a stale entry — a cached miss would hide a fresh
-    /// install, and a cached `Arc` would keep a just-removed dictionary alive (so squiggles would
-    /// neither appear nor degrade until the project is reopened).
+    /// Drop the loaded-dictionary cache only (keeping every Work's session mutes + personal
+    /// words), so the next attach re-reads disk. Called when a dictionary is installed or
+    /// removed: without this, `dict()`'s per-id cache would keep serving a stale entry — a
+    /// cached miss would hide a fresh install, and a cached `Arc` would keep a just-removed
+    /// dictionary alive (so squiggles would neither appear nor degrade until the project is
+    /// reopened). Tier 1 — shared by every open Work, so this is never per-`work_id`.
     pub fn invalidate_dictionaries(&self) {
         self.inner.cache.borrow_mut().clear();
     }
 
-    /// Drop everything project-scoped — the dictionary cache, mutes, and personal words. Called
-    /// on `close_work`; a fresh project reloads lazily and starts unmuted.
-    pub fn clear(&self) {
-        self.inner.cache.borrow_mut().clear();
-        let had_mutes = !self.inner.muted.borrow().is_empty();
-        self.inner.muted.borrow_mut().clear();
-        self.inner.personal.borrow_mut().clear();
+    /// Drop `work_id`'s Work's own project-scoped state — its session mutes and personal
+    /// words. Called on `close_work`; a fresh project reloads lazily and starts unmuted.
+    ///
+    /// Removes exactly this Work's own map entry, never every open Work's: the dictionary
+    /// *cache* is deliberately untouched (Tier 1, shared — see [`invalidate_dictionaries`](Self::invalidate_dictionaries)),
+    /// and a still-open sibling Work's mutes/personal words under a different `work_id` are
+    /// a different map entry, never reached by this call.
+    pub fn clear(&self, work_id: u64) {
+        let had_mutes = self
+            .inner
+            .muted
+            .borrow()
+            .get(&work_id)
+            .is_some_and(|set| !set.is_empty());
+        self.inner.muted.borrow_mut().remove(&work_id);
+        self.inner.personal.borrow_mut().remove(&work_id);
         if had_mutes {
             let v = self.inner.mute_version.get();
             self.inner.mute_version.set(v.wrapping_add(1));
         }
     }
 
-    /// The active (non-muted, installed) dictionaries for a tag list, primary first, deduped.
-    fn active_dicts(&self, tags: &[String]) -> Vec<Arc<spellbook::Dictionary>> {
+    /// The active (non-muted, installed) dictionaries for a tag list, primary first, deduped,
+    /// under `work_id`'s Work's own mute set.
+    fn active_dicts(&self, tags: &[String], work_id: Option<u64>) -> Vec<Arc<spellbook::Dictionary>> {
         let mut out = Vec::new();
         let mut seen = HashSet::new();
+        let muted = self.inner.muted.borrow();
+        let my_mutes = work_id.and_then(|id| muted.get(&id));
         for tag in language::all(tags) {
             let key = Self::key_of(tag);
-            if self.inner.muted.borrow().contains(&key) {
+            if my_mutes.is_some_and(|set| set.contains(&key)) {
                 continue;
             }
             if !seen.insert(key.clone()) {
@@ -588,9 +626,12 @@ impl SpellcheckService {
         out
     }
 
-    /// Build a [`SpellChecker`] for a document's tag list, or `None` when nothing is
-    /// active/installed (the caller then clears its session — the degrade path).
-    pub fn build_checker(&self, tags: &[String]) -> Option<SpellChecker> {
+    /// Build a [`SpellChecker`] for a document's tag list under `work_id`'s Work, or `None`
+    /// when nothing is active/installed (the caller then clears its session — the degrade
+    /// path). `work_id` scopes both the mute set (via [`active_dicts`](Self::active_dicts))
+    /// and the personal words baked into the returned checker — never a different open
+    /// Work's, and never every open Work's merged together.
+    pub fn build_checker(&self, tags: &[String], work_id: Option<u64>) -> Option<SpellChecker> {
         // The master switch, checked first: every document's checker is built here, so one
         // early return turns spell-check off everywhere — squiggles, `is_misspelled`, and the
         // context menu's corrections alike — without loading a dictionary or walking a tag.
@@ -599,14 +640,14 @@ impl SpellcheckService {
         if !self.inner.enabled.get() {
             return None;
         }
-        let dicts = self.active_dicts(tags);
+        let dicts = self.active_dicts(tags, work_id);
         if dicts.is_empty() {
             return None;
         }
-        Some(SpellChecker {
-            dicts,
-            personal: self.inner.personal.borrow().clone(),
-        })
+        let personal = work_id
+            .and_then(|id| self.inner.personal.borrow().get(&id).cloned())
+            .unwrap_or_default();
+        Some(SpellChecker { dicts, personal })
     }
 }
 
@@ -975,13 +1016,16 @@ mod tests {
     #[test]
     fn build_checker_short_circuits_when_disabled_and_resumes_when_re_enabled() {
         let svc = service_with_tiny_dict();
-        assert!(svc.build_checker(&tags("en-US")).is_some(), "on by default");
+        assert!(svc.build_checker(&tags("en-US"), Some(1)).is_some(), "on by default");
 
         svc.set_enabled(false);
-        assert!(svc.build_checker(&tags("en-US")).is_none(), "off — no checker at all");
+        assert!(
+            svc.build_checker(&tags("en-US"), Some(1)).is_none(),
+            "off — no checker at all"
+        );
 
         svc.set_enabled(true);
-        let checker = svc.build_checker(&tags("en-US")).expect("back on");
+        let checker = svc.build_checker(&tags("en-US"), Some(1)).expect("back on");
         assert!(checker.misspelled("helo"), "and it checks again");
     }
 
@@ -990,23 +1034,95 @@ mod tests {
     #[test]
     fn the_master_switch_overrides_an_otherwise_checkable_document() {
         let svc = service_with_tiny_dict();
-        assert!(!svc.is_muted("en-US"), "precondition: nothing muted");
+        assert!(!svc.is_muted("en-US", Some(1)), "precondition: nothing muted");
         svc.set_enabled(false);
         assert!(
-            svc.build_checker(&tags("en-US")).is_none(),
+            svc.build_checker(&tags("en-US"), Some(1)).is_none(),
             "an installed, unmuted language is still not checked when the switch is off"
         );
     }
 
-    /// `clear()` is `close_work`: it drops **project** state (dictionary cache, session mutes,
-    /// personal words). The master switch is an app-wide preference and must survive — a
-    /// writer who turned spell-check off does not expect the next project to turn it back on.
+    /// `clear(work_id)` is `close_work`: it drops that Work's **own** project-scoped state
+    /// (session mutes + personal words) — never the shared dictionary cache, and never a
+    /// different, still-open Work's state. The master switch is an app-wide preference and
+    /// must survive — a writer who turned spell-check off does not expect the next project to
+    /// turn it back on.
     #[test]
     fn close_work_does_not_reset_the_master_switch() {
         let svc = SpellcheckService::new();
         svc.set_enabled(false);
-        svc.clear();
+        svc.clear(1);
         assert!(!svc.is_enabled(), "the switch is app-wide, not project state");
+    }
+
+    // ── Multi-Work isolation (Phase 2) ──────────────────────────────────────
+
+    /// The bug this migration fixed: closing one Work must never wipe a different, still-open
+    /// Work's session mutes or personal words. Before partitioning by `work_id`, `clear()` was
+    /// one flat set shared by every open Work.
+    #[test]
+    fn closing_one_work_leaves_a_different_open_works_mutes_and_personal_words_intact() {
+        let svc = service_with_tiny_dict();
+        let (work_a, work_b) = (1u64, 2u64);
+
+        svc.set_muted("en-US", true, Some(work_a));
+        let mut personal_a = HashSet::new();
+        personal_a.insert("Skribisto".to_string());
+        svc.set_personal(work_a, personal_a);
+
+        let mut personal_b = HashSet::new();
+        personal_b.insert("Bastyde".to_string());
+        svc.set_personal(work_b, personal_b);
+
+        // Work B closes.
+        svc.clear(work_b);
+
+        assert!(
+            svc.is_muted("en-US", Some(work_a)),
+            "Work A's own mute must survive Work B's close"
+        );
+        assert!(
+            !svc.is_muted("en-US", Some(work_b)),
+            "Work B's mute is gone, as expected"
+        );
+        let checker_a = svc
+            .build_checker(&tags("fr-FR"), Some(work_a))
+            .expect("Work A still has an active (unmuted) dictionary/personal word");
+        assert!(
+            !checker_a.misspelled("Skribisto"),
+            "Work A's personal word survives Work B's close"
+        );
+    }
+
+    /// Two simultaneously-open Works never see each other's personal words or mutes — the
+    /// live, non-close-related half of the same isolation guarantee.
+    #[test]
+    fn two_open_works_never_share_personal_words_or_mutes() {
+        let svc = service_with_tiny_dict();
+        let (work_a, work_b) = (1u64, 2u64);
+
+        let mut personal_a = HashSet::new();
+        personal_a.insert("Skribisto".to_string());
+        svc.set_personal(work_a, personal_a);
+        svc.set_muted("en-US", true, Some(work_a));
+
+        // Work B has its own, disjoint personal set and no mutes.
+        let mut personal_b = HashSet::new();
+        personal_b.insert("Bastyde".to_string());
+        svc.set_personal(work_b, personal_b);
+
+        assert!(!svc.is_muted("en-US", Some(work_b)), "Work B never inherits Work A's mute");
+        let checker_b = svc
+            .build_checker(&tags("en-US"), Some(work_b))
+            .expect("Work B's own dictionary is still active — it never muted en-US");
+        assert!(
+            checker_b.misspelled("Skribisto"),
+            "Work B's checker must not know Work A's personal word"
+        );
+        assert!(
+            !checker_b.misspelled("Bastyde"),
+            "Work B's checker knows its own personal word"
+        );
     }
 
     /// Char offsets are correct through accented text (a byte offset would be wrong here).

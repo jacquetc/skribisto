@@ -43,15 +43,18 @@ use frontend::AppContext;
 use frontend::common::entities::WorkShape;
 
 use crate::app::{App, PendingAction, PendingExit, guard_unsaved_exit};
+use crate::app_ids::AppIds;
 use crate::export::split_button::ExportSplitButton;
 use crate::intents::AppIntent;
+use crate::models::{TreeExpansionService, WorkspaceLayoutService};
 use crate::panels::welcome::WelcomePanel;
-use crate::sessions::WorkSession;
+use crate::sessions::{WorkRegistry, WorkSession};
 use crate::shell::project_switcher_button::ProjectSwitcherButton;
+use crate::spellcheck::SpellcheckService;
 use crate::spellcheck::toggle_button::SpellcheckToggleButton;
 use crate::view_models::{
-    ALIGN_CENTER, ALIGN_LEFT, ExportViewModel, FormatViewModel, OutlineViewModel, SaveAsViewModel,
-    scope_label,
+    ALIGN_CENTER, ALIGN_LEFT, BackupSettingsViewModel, ExportViewModel, FormatViewModel,
+    OutlineViewModel, SaveAsViewModel, scope_label,
 };
 use export_management::ExportScopeKind;
 
@@ -264,25 +267,50 @@ fn command(
         })
 }
 
+/// The fresh, per-window Tier-2 handles [`ProjectWindowFactory::window_config`]
+/// just minted for its `WindowConfig`'s own `App` — handed back so `main.rs`
+/// can (for the *initial* window only) seed the remaining `app_state`
+/// registrations a few widgets still read Tier-2 state through. See
+/// `window_config`'s doc for why this is a known, flagged Phase-2 gap rather
+/// than a full fix.
+#[derive(Clone)]
+pub struct InitialWindowState {
+    pub session: WorkSession,
+    pub outline: OutlineViewModel,
+}
+
 #[derive(Clone)]
 pub struct ProjectWindowFactory {
     /// The formatting view-model, created detached here because the menu bar is
     /// built alongside `App` rather than inside it — the Format menu binds these
     /// signals at that moment. `App::build` attaches the editors on every build.
+    ///
+    /// **Known Phase-2 limitation, deliberately not fixed**: shared across
+    /// every window this factory builds (as it always was pre-migration).
+    /// `App::build` re-`attach`es it on every build, so with two
+    /// simultaneously-open project windows, whichever one built most recently
+    /// wins the Format dock's live target — the same last-writer-wins shape as
+    /// `SaveAsViewModel`/`BackupRestoreViewModel`/`ProjectSwitchViewModel`
+    /// below. Fixing it needs `FormatViewModel` threaded through
+    /// `EditorsViewModel` and every tab/dock factory that reaches it via
+    /// `ctx.app_state`, which is materially larger than Phase 2's scope
+    /// (Work-scoped *data* isolation); flagged for a follow-up.
     format: FormatViewModel,
     app_ctx: Rc<AppContext>,
-    outline: OutlineViewModel,
-    export: ExportViewModel,
-    /// The Tier-2 per-open-Work bundle (see `sessions::WorkSession`'s module
-    /// doc) — `single_work`/`single_work_info`/`backup_scheduler` used to be
-    /// three separate constructor parameters; Phase 1 folds them (and every
-    /// other Tier-2 field this factory doesn't happen to need yet) into one.
-    session: WorkSession,
+    registry: WorkRegistry,
+    /// Tier-1 ingredients `WorkSession::new` needs — held here (not a
+    /// pre-built session) so every call to [`Self::window_config`] can mint a
+    /// **fresh** `WorkSession` for the Work that window is about to load/create
+    /// (Phase 2: a second simultaneously-open Work must never share the first
+    /// window's `AppIds`/singles/tag palette/dictionary/undo stack).
+    spellcheck: SpellcheckService,
+    backup_settings: BackupSettingsViewModel,
+    workspace_layout_service: WorkspaceLayoutService,
+    tree_expansion_service: TreeExpansionService,
     autosave_menu: Signal<bool>,
     /// Plain mirror of the master spell-check switch — the title-bar toggle's icon and
     /// the View ▸ Check spelling checkmark read it. `App::build` keeps it in sync.
     spellcheck_menu: Signal<bool>,
-    save_as_vm: SaveAsViewModel,
     backup_mode: Signal<bool>,
     backup_context: Signal<Option<crate::backup::BackupContext>>,
     unsaved: Signal<bool>,
@@ -291,7 +319,9 @@ pub struct ProjectWindowFactory {
     /// "raise" events (see `ipc.rs`) can focus it directly without a
     /// `WindowManager` id lookup (which misses while that window is
     /// dispatching its own events). Retargeted to the freshest project
-    /// window each time one opens.
+    /// window each time one opens. **Known Phase-2 limitation**: single-
+    /// process IPC "raise" is Phase 4 scope (single-instance primary/remote);
+    /// left exactly as it behaved pre-migration.
     main_window_state: Rc<RefCell<Option<WindowState>>>,
 }
 
@@ -299,12 +329,13 @@ impl ProjectWindowFactory {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         app_ctx: Rc<AppContext>,
-        outline: OutlineViewModel,
-        export: ExportViewModel,
-        session: WorkSession,
+        registry: WorkRegistry,
+        spellcheck: SpellcheckService,
+        backup_settings: BackupSettingsViewModel,
+        workspace_layout_service: WorkspaceLayoutService,
+        tree_expansion_service: TreeExpansionService,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
-        save_as_vm: SaveAsViewModel,
         backup_mode: Signal<bool>,
         backup_context: Signal<Option<crate::backup::BackupContext>>,
         unsaved: Signal<bool>,
@@ -315,12 +346,13 @@ impl ProjectWindowFactory {
         Self {
             format,
             app_ctx,
-            outline,
-            export,
-            session,
+            registry,
+            spellcheck,
+            backup_settings,
+            workspace_layout_service,
+            tree_expansion_service,
             autosave_menu,
             spellcheck_menu,
-            save_as_vm,
             backup_mode,
             backup_context,
             unsaved,
@@ -336,14 +368,47 @@ impl ProjectWindowFactory {
     /// Launcher's recents / new-work / examples flows. Doing the backend
     /// mutation here instead (before the window exists) would race that
     /// subscription and silently skip seeding `AppIds`/the singles/the tree.
-    pub fn window_config(&self, action: PendingAction) -> WindowConfig {
+    ///
+    /// **Phase 2**: mints a brand-new `AppIds`/`OutlineViewModel`/
+    /// `ExportViewModel`/`WorkSession` for *this* call — never the previous
+    /// call's — so a second simultaneously-open Work gets its own independent
+    /// ids, tree, tag palette, personal dictionary and undo stack, never a
+    /// second handle onto the first window's. The fresh session is registered
+    /// into `WorkRegistry` once its own `LoadWork`/`NewWork` subscriber (in
+    /// `App::build`) resolves a real `work_id` — not here, since the id does
+    /// not exist yet at this point for a `Load`/`New` action (only Phase 3's
+    /// `AttachExisting{work_id}` would let `window_config` resolve one up
+    /// front via `WorkRegistry::session_for`).
+    ///
+    /// Returns the freshly-built [`InitialWindowState`] alongside the
+    /// `WindowConfig`: `main.rs`'s *initial* window uses it to seed the handful
+    /// of remaining `app_state` registrations a few widgets still read Tier-2
+    /// state through (`tags::tag_chip`, `view_models::overview`'s tree-
+    /// expansion restore, the Settings ▸ Work panes — a known, flagged Phase-2
+    /// gap; see the migration report) rather than a constructor-threaded
+    /// handle. Every other caller (the Welcome/New-Work flows opening a
+    /// genuinely new window) discards it: `app_state` cannot be re-registered
+    /// after the builder runs, so only the first window's session can ever
+    /// satisfy those few lookups.
+    pub fn window_config(&self, action: PendingAction) -> (WindowConfig, InitialWindowState) {
         let id = window_id_for(action.target_path());
 
         let app_ctx_root = self.app_ctx.clone();
-        let outline = self.outline.clone();
+        let ids = AppIds::new();
+        let outline = OutlineViewModel::new_default(app_ctx_root.clone(), ids.clone());
         let format = self.format.clone();
-        let export = self.export.clone();
-        let session = self.session.clone();
+        let export = ExportViewModel::new(app_ctx_root.clone(), ids.clone());
+        let session = WorkSession::new(
+            app_ctx_root.clone(),
+            ids.clone(),
+            self.spellcheck.clone(),
+            outline.docking(),
+            self.backup_mode.clone(),
+            self.backup_settings.clone(),
+            self.workspace_layout_service.clone(),
+            self.tree_expansion_service.clone(),
+        );
+        let registry = self.registry.clone();
         let single_work = session.single_work.clone();
         let single_work_info = session.single_work_info.clone();
         let autosave_menu = self.autosave_menu.clone();
@@ -353,15 +418,38 @@ impl ProjectWindowFactory {
         // has focused. A process-wide one would let a second project window
         // grey out this window's Format menu.
         let scene_focused = Signal::new(false);
-        let save_as_vm = self.save_as_vm.clone();
         let backup_mode = self.backup_mode.clone();
         let backup_context = self.backup_context.clone();
+        // Fresh per window (Phase 2), like `session`/`outline`/`export` above:
+        // bound to *this* window's own `ids`/`single_work`, so a Save-As or
+        // backup-restore from this window always targets this window's own
+        // Work, never whichever window happened to build most recently.
+        let save_as_vm = SaveAsViewModel::new(
+            app_ctx_root.clone(),
+            ids.clone(),
+            single_work.clone(),
+            backup_mode.clone(),
+            backup_context.clone(),
+        );
+        let restore_vm = crate::view_models::BackupRestoreViewModel::new(
+            app_ctx_root.clone(),
+            ids.clone(),
+            single_work.clone(),
+            backup_mode.clone(),
+            backup_context.clone(),
+        );
         let unsaved = self.unsaved.clone();
         let pending_exit = self.pending_exit.clone();
         let backup_scheduler = session.backup_scheduler.clone();
         let main_window_state = self.main_window_state.clone();
+        // Clones for the caller (see this method's doc) — the originals are
+        // moved into the `.root(...)` closure below.
+        let initial_state = InitialWindowState {
+            session: session.clone(),
+            outline: outline.clone(),
+        };
 
-        WindowConfig::new()
+        let config = WindowConfig::new()
             .id(id)
             .title("Skribisto")
             .size(1200, 800)
@@ -400,10 +488,12 @@ impl ProjectWindowFactory {
                 let scheduler = backup_scheduler.clone();
                 let backup_mode = backup_mode.clone();
                 let app_ctx_guard = app_ctx_root.clone();
+                let ids = session.ids.clone();
                 move |ctx| {
                     guard_unsaved_exit(
                         ctx,
                         &app_ctx_guard,
+                        &ids,
                         unsaved.get(),
                         backup_mode.get(),
                         autosave.get(),
@@ -413,6 +503,32 @@ impl ProjectWindowFactory {
                     );
                     CloseResponse::Veto
                 }
+            })
+            // The window-teardown hook (see `bastyde::core::window::WindowConfig::
+            // on_removed`'s doc for exactly when this fires and what it may/may not
+            // touch — no `EventContext`, no live tree). Built fresh here, inside
+            // this per-call closure, never hoisted onto a `ProjectWindowFactory`
+            // field: `on_removed` may be attached to several windows (the doc's own
+            // "Rc-cloned config" case), and a closure built once in `new` would
+            // fire against every window with the SAME captured window/session
+            // state — exactly the mistake `on_close_requested` above already
+            // avoids by being rebuilt per call.
+            //
+            // `registry.remove_window` is the one thing this needs: it looks up
+            // (by `event.id`) the two teardowns `App::build`'s `LoadWork`/
+            // `NewWork` subscribers registered for THIS window (see
+            // `build_stack_teardown`/`build_window_teardown` in `app.rs`), runs
+            // the window-scoped one unconditionally (its `OpenDoc` refs/backup
+            // flush hook — the window really is gone now), then decides — from
+            // Skribisto's own window→Work bookkeeping, never
+            // `event.remaining_windows` (which counts every window in the
+            // process, Launcher included) — whether this was the last window on
+            // its Work, and runs the stack-scoped one with that answer. A safe
+            // no-op for the rare window that force-closed before its own
+            // Load/New ever registered one.
+            .on_removed({
+                let registry = registry.clone();
+                move |event| registry.remove_window(event.id)
             })
             .root(move |tree, state| {
                 // Publish this window's handle so IPC "raise" events (handled
@@ -985,6 +1101,7 @@ impl ProjectWindowFactory {
                     app_ctx_root.clone(),
                     session.clone(),
                     outline.clone(),
+                    export.clone(),
                     autosave_menu.clone(),
                     spellcheck_menu.clone(),
                     scene_focused.clone(),
@@ -993,6 +1110,9 @@ impl ProjectWindowFactory {
                     backup_mode.clone(),
                     backup_context.clone(),
                     action,
+                    registry.clone(),
+                    save_as_vm.clone(),
+                    restore_vm.clone(),
                 )));
                 let inner =
                     tree.add(VStack::new().spacing(0.0).add_child(title_bar).add_child(body));
@@ -1007,7 +1127,8 @@ impl ProjectWindowFactory {
                     }
                     _ => inner,
                 }
-            })
+            });
+        (config, initial_state)
     }
 }
 

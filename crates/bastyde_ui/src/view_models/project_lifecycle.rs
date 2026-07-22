@@ -55,7 +55,8 @@ use std::rc::Rc;
 use bastyde::prelude::Signal;
 
 use frontend::AppContext;
-use frontend::commands::dict_word_commands;
+use frontend::commands::{dict_word_commands, work_commands};
+use frontend::common::direct_access::work::WorkRelationshipField;
 
 use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
@@ -68,19 +69,30 @@ use super::{
     WorkspaceLayoutViewModel,
 };
 
-/// Reload the open Work's personal words (`DictWord`) into the checker's personal set.
+/// Reload `work_id`'s Work's personal words (`DictWord`, via `Work.dict_words`) into the
+/// checker's personal set for that Work. **Not** `dict_word_commands::get_all_dict_word`,
+/// which returns every `DictWord` in the whole shared store: with a second Work
+/// simultaneously open, that would merge both Works' personal dictionaries into one set,
+/// and a personal word from Work B would silently stop flagging a genuine typo in Work A (and
+/// vice-versa) — see `models::dict_word_list_model`'s identical fix/rationale for the
+/// Settings-pane list this mirrors. A `None` `work_id` (no project open) reloads nothing.
 ///
 /// The narrow half of the project-switch refresh: no language re-point (that only changes on
 /// a project switch), no re-attach — the caller re-attaches, so a project switch attaches
 /// once rather than twice. Also called directly from `App`'s `DictWord` event wiring, where
 /// a word was added or removed but the project did not change.
-pub(crate) fn reload_personal_words(app_ctx: &AppContext, spell: &SpellcheckService) {
-    let personal: HashSet<String> = dict_word_commands::get_all_dict_word(app_ctx)
+pub(crate) fn reload_personal_words(app_ctx: &AppContext, spell: &SpellcheckService, work_id: Option<u64>) {
+    let Some(work_id) = work_id else { return };
+    let word_ids =
+        work_commands::get_work_relationship(app_ctx, &work_id, &WorkRelationshipField::DictWords)
+            .unwrap_or_default();
+    let personal: HashSet<String> = dict_word_commands::get_dict_word_multi(app_ctx, &word_ids)
         .unwrap_or_default()
         .into_iter()
+        .flatten()
         .map(|w| w.word)
         .collect();
-    spell.set_personal(personal);
+    spell.set_personal(work_id, personal);
 }
 
 struct Inner {
@@ -151,9 +163,14 @@ impl ProjectLifecycleViewModel {
     /// Stops short of the registry claim and the spell-check re-point ([`Self::claim`]) so
     /// that New can slot its `dirty_seq` bump between the two, exactly where the inline
     /// version had it.
-    fn seed(&self) {
+    ///
+    /// `work_id` comes from the triggering `LoadWork`/`NewWork` event itself (see
+    /// `AppIds::seed`'s docs) — never re-derived by asking the store "which Work is
+    /// open", which stopped being answerable the moment a second Work could be open
+    /// at the same time.
+    fn seed(&self, work_id: u64) {
         let i = &self.inner;
-        i.ids.seed(&i.app_ctx);
+        i.ids.seed(&i.app_ctx, work_id);
         i.ids.open_stack(&i.app_ctx);
         // Start the freshly-live Work unfiltered: a stale binder filter or query from the
         // previous Work would reload into an empty tree.
@@ -188,7 +205,7 @@ impl ProjectLifecycleViewModel {
     /// open-docs store at its default language, and re-attach every open document.
     fn refresh_spellcheck(&self) {
         let i = &self.inner;
-        reload_personal_words(&i.app_ctx, &i.spellcheck);
+        reload_personal_words(&i.app_ctx, &i.spellcheck, i.ids.work_id.get());
         i.docs
             .set_project_language(i.ids.work_id.get(), i.single_work.dict_language().get());
         i.docs.attach_all();
@@ -200,8 +217,8 @@ impl ProjectLifecycleViewModel {
     /// `LoadWork` subscriber in `App::build` sniffs whether the opened file is a backup and
     /// owns both, because the restore needs that answer (a backup gets a clean default desk,
     /// not the source project's).
-    pub fn on_load(&self) {
-        self.seed();
+    pub fn on_load(&self, work_id: u64) {
+        self.seed(work_id);
         self.claim();
     }
 
@@ -211,9 +228,9 @@ impl ProjectLifecycleViewModel {
     /// The write is a long op; the SaveWork-completion handler clears `unsaved` only once it
     /// lands, so an exit or close during the in-flight write is caught by the guards rather
     /// than dropping the file.
-    pub fn on_new(&self) {
+    pub fn on_new(&self, work_id: u64) {
         let i = &self.inner;
-        self.seed();
+        self.seed(work_id);
         // One step ahead of `mark_clean`: reads as unsaved until the create-and-save lands.
         // Sits between `seed` and `claim` because that is where the inline version had it.
         i.save_state.bump_dirty();
@@ -240,9 +257,30 @@ impl ProjectLifecycleViewModel {
         if let Some(path) = i.single_work_info.file_name().get() {
             crate::shell::open_registry::release(&path);
         }
-        // Drop this project's dictionaries, mutes and personal words: the next project
-        // reloads lazily and starts unmuted.
-        i.spellcheck.clear();
+        // Drop *this* project's own dictionaries, mutes and personal words: the next
+        // project loaded in this window reloads lazily and starts unmuted.
+        //
+        // `SpellcheckService` is a single Tier-1 engine shared by every open Work (one
+        // `spellbook::Dictionary` pool, correctly process-wide) — but its session-mute
+        // set and personal words are partitioned by `work_id` (see the service's own
+        // module doc), so `clear(work_id)` drops exactly this Work's own map entry and
+        // never a different, still-open Work's. Read `work_id` before `ids.clear()`
+        // zeroes it.
+        if let Some(work_id) = i.ids.work_id.get() {
+            i.spellcheck.clear(work_id);
+        }
+        // Deleting this Work's own undo/redo stack (`create_new_stack` minted it on
+        // `on_load`/`on_new` above) does **not** happen here. `CloseWork` fires once
+        // per window that had this Work open (Phase 3's `AttachExisting`: several
+        // windows can share one Work), so deleting the stack unconditionally in every
+        // one of those windows' own `on_close` would delete it out from under a
+        // sibling window that still needs it. The real "is anyone still using this
+        // stack" answer is Skribisto's own window→Work bookkeeping, not this
+        // per-window lifecycle step — see `sessions::WorkRegistry::remove_window`
+        // (driven by bastyde's `on_removed` window-teardown hook, for a real
+        // close) and `register_window`'s own replace path (for an in-place Work
+        // switch, which fires no `CloseWork` at all), either of which deletes
+        // the stack exactly once, only on the last window standing.
         i.ids.clear();
         i.outline.set_binder_filter(None);
         i.outline.clear_search();

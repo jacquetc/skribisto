@@ -20,6 +20,7 @@ use std::rc::Rc;
 use frontend::AppContext;
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 
+use crate::app_ids::AppIds;
 use crate::models::OpenDocsStore;
 use crate::spellcheck::SpellcheckService;
 use crate::view_models::DictionariesViewModel;
@@ -29,6 +30,7 @@ use super::super::spell_underline_color;
 pub(in crate::app) fn install(
     ctx: &mut BuildContext,
     app_ctx: &Rc<AppContext>,
+    ids: &AppIds,
     docs: &OpenDocsStore,
     spell: &SpellcheckService,
     dictionaries: &DictionariesViewModel,
@@ -55,18 +57,40 @@ pub(in crate::app) fn install(
     // reload the personal words and re-attach every open document so squiggles update
     // immediately. This is the single place a `DictWord` mutation touches the checker; the
     // pane and the context menu both just create/remove the entity.
+    //
+    // Guarded — `DictWord` events carry no `work_id`, only the changed entity's own id, so a
+    // sibling window's DictWord edit (a *different* open Work) would otherwise reload *this*
+    // window's personal words from the wrong Work's `DictWord` set (or, before this guard,
+    // `reload_personal_words` used to read `get_all_dict_word` and merge every open Work's
+    // words together regardless). `mutation_ids_belong_to_work` is the same relationship-walk
+    // guard `App`'s autosave `mutation_origins()` loop uses for the identical problem.
     for dict_word_event in [
         EntityEvent::Created,
         EntityEvent::Updated,
         EntityEvent::Removed,
     ] {
         let app_ctx = app_ctx.clone();
+        let ids = ids.clone();
         let docs = docs.clone();
         let spell = spell.clone();
         ctx.subscribe_event(
             Origin::DirectAccess(DirectAccessEntity::DictWord(dict_word_event)),
-            move |_event: &Event| {
-                crate::view_models::reload_personal_words(&app_ctx, &spell);
+            move |event: &Event| {
+                let Origin::DirectAccess(entity) = event.origin.clone() else {
+                    return;
+                };
+                let Some(my_work_id) = ids.work_id.get() else {
+                    return; // nothing open here — cannot be my mutation
+                };
+                if !super::super::mutation_ids_belong_to_work(
+                    &app_ctx,
+                    my_work_id,
+                    entity,
+                    &event.ids,
+                ) {
+                    return;
+                }
+                crate::view_models::reload_personal_words(&app_ctx, &spell, Some(my_work_id));
                 docs.attach_all();
             },
         );

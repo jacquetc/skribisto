@@ -28,11 +28,17 @@ pub(in crate::settings) fn work_language_pane(
         .label_gap(16.0)
         .row_spacing(12.0)
         .full_width(group(tr!(settings_field_dict_language())));
-    let form = match ctx
-        .app_state::<crate::spellcheck::SpellcheckService>()
-        .cloned()
-    {
-        Some(spell) => {
+    // NOTE (multi-Work migration, Phase 3 boundary): this pane still resolves both
+    // handles via `ctx.app_state::<T>()` rather than a session threaded through
+    // `SettingsPanel`'s own constructor — the design doc names the 6 Work-scoped
+    // Settings panes as Phase 3 work (`SettingsPanel::build` becomes session-scoped
+    // like everything else), so this call site is left exactly as it already
+    // behaved rather than partially fixed here.
+    let form = match (
+        ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned(),
+        ctx.app_state::<crate::models::OpenDocsStore>().cloned(),
+    ) {
+        (Some(spell), Some(open_docs)) => {
             let value = vm.dict_language();
             let set: crate::spellcheck::language_pill_field::SetLanguages = {
                 let vm = vm.clone();
@@ -40,10 +46,10 @@ pub(in crate::settings) fn work_language_pane(
             };
             // The Work is the root of the inheritance chain — nothing to inherit from.
             base.full_width(crate::spellcheck::language_pill_field::LanguagePillField::new(
-                value, set, spell, None,
+                value, set, spell, None, open_docs,
             ))
         }
-        None => base.full_width(TextWidget::new(tr!(settings_field_dict_language()))),
+        _ => base.full_width(TextWidget::new(tr!(settings_field_dict_language()))),
     }
     .full_width(hint(tr!(dict_tradeoff_hint())));
 

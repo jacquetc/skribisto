@@ -23,7 +23,7 @@ use frontend::common::event::{Event, LongOperationEvent, Origin, WorkManagementE
 
 use crate::view_models::{
     BackupRestoreViewModel, BackupSchedulerViewModel, ExportViewModel, ImportPlumeViewModel,
-    SaveAsViewModel,
+    MentionIndex, ProgressRecorder, SaveAsViewModel,
 };
 
 /// Subscribe `vm` to each `(event, handler)` pair.
@@ -51,6 +51,9 @@ pub(in crate::app) fn install(
     save_as_vm: &SaveAsViewModel,
     backup_scheduler: &BackupSchedulerViewModel,
     restore_vm: &BackupRestoreViewModel,
+    export_vm: &ExportViewModel,
+    mention_index: &MentionIndex,
+    progress_recorder: &ProgressRecorder,
 ) {
     // Import from Plume Creator — progress / cancel / success / error toast.
     if let Some(vm) = ctx.app_state::<ImportPlumeViewModel>().cloned() {
@@ -75,27 +78,28 @@ pub(in crate::app) fn install(
         );
     }
 
-    // Export — same shape as import.
-    if let Some(vm) = ctx.app_state::<ExportViewModel>().cloned() {
-        route(
-            ctx,
-            &vm,
-            &[
-                (LongOperationEvent::Progress, |v: &ExportViewModel, c, e| {
-                    v.on_long_op_progress(c, e)
-                }),
-                (LongOperationEvent::Completed, |v, c, e| {
-                    v.on_long_op_completed(c, e)
-                }),
-                (LongOperationEvent::Cancelled, |v, c, e| {
-                    v.on_long_op_cancelled(c, e)
-                }),
-                (LongOperationEvent::Failed, |v, c, e| {
-                    v.on_long_op_failed(c, e)
-                }),
-            ],
-        );
-    }
+    // Export — same shape as import. Threaded in (Tier 2, per-open-Work), not
+    // resolved via `ctx.app_state::<ExportViewModel>()`: see `CommandDeps::export`'s
+    // doc for why that lookup would be wrong the moment a second Work opens in a
+    // second window.
+    route(
+        ctx,
+        export_vm,
+        &[
+            (LongOperationEvent::Progress, |v: &ExportViewModel, c, e| {
+                v.on_long_op_progress(c, e)
+            }),
+            (LongOperationEvent::Completed, |v, c, e| {
+                v.on_long_op_completed(c, e)
+            }),
+            (LongOperationEvent::Cancelled, |v, c, e| {
+                v.on_long_op_cancelled(c, e)
+            }),
+            (LongOperationEvent::Failed, |v, c, e| {
+                v.on_long_op_failed(c, e)
+            }),
+        ],
+    );
 
     // Save As — no progress toast; on success it records the new file_name/shape into
     // WorkInfo synchronously on the UI thread (save_as itself is read-only).
@@ -154,10 +158,14 @@ pub(in crate::app) fn install(
     // Hand-written rather than routed: it also listens on a `WorkManagement` origin, uses
     // plain `subscribe_event` (it shows no UI, so it needs no `EventContext`), and maps two
     // different events onto one method.
-    if let Some(recorder) = ctx
-        .app_state::<crate::view_models::ProgressRecorder>()
-        .cloned()
+    //
+    // Threaded in (Tier 2, per-open-Work — it captures its own `AppIds`, see
+    // `view_models::progress_recorder`'s module doc), not resolved via
+    // `ctx.app_state::<ProgressRecorder>()`: that lookup can only ever answer with
+    // whichever window built `main`'s bootstrap session, exactly the bug `export_vm`
+    // and `mention_index` were fixed for above/below.
     {
+        let recorder = progress_recorder.clone();
         {
             let r = recorder.clone();
             ctx.subscribe_event(
@@ -184,7 +192,11 @@ pub(in crate::app) fn install(
     // historical word-count point should not be recorded for a project merely opened — but
     // an index is live state, and a roster that stays empty until the first save would make
     // the feature look broken on every project you open.
-    if let Some(index) = ctx.app_state::<crate::view_models::MentionIndex>().cloned() {
+    //
+    // Threaded in (Tier 2, per-open-Work), not resolved via
+    // `ctx.app_state::<MentionIndex>()` — see the `progress_recorder` note just above.
+    {
+        let index = mention_index.clone();
         for event in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
             let i = index.clone();
             ctx.subscribe_event(Origin::WorkManagement(event), move |_e: &Event| i.rescan());
