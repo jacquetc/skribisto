@@ -31,6 +31,12 @@ serde_json = "1.0"
 chrono = { workspace = true }
 uuid = { workspace = true }
 
+[dev-dependencies]
+# Test setup only: build two independent Works (root/work/binder/binder_item)
+# straight through direct_access, bypassing work_management's single-open-Work
+# sweep so a cross-Work id-mismatch scenario can exist at all.
+direct_access = { workspace = true }
+
 [lints]
 workspace = true
 

@@ -80,6 +80,25 @@ impl TrashBinderUseCase {
         // land under an unrelated Work while the caller's own Work lost the
         // binder with no trash-bin trace of it).
         self.work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
+
+        // Ownership check: binder_id must be one of THIS Work's own binders.
+        // Binder ownership is exclusive (Work.binders is a strong
+        // one_to_many), so this forward lookup is exact: a binder id
+        // belonging to a different Work can never appear in `work_id`'s own
+        // list. Without this, a caller passing Work B's binder_id under Work
+        // A's (real, open) work_id would trash Work B's binder + items while
+        // the new TrashInfo landed under Work A's index, with no undo record
+        // on Work B's side.
+        if !uow
+            .get_work_relationship(&self.work_id, &WorkRelationshipField::Binders)?
+            .contains(&binder_id)
+        {
+            return Err(anyhow!(
+                "trash_binder: binder {binder_id} does not belong to work {}",
+                self.work_id
+            ));
+        }
+
         self.item_ids = item_ids;
         self.trashed_at = Utc::now();
         self.apply(uow.as_ref())?;

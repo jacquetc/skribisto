@@ -60,9 +60,11 @@ use std::time::Instant;
 use bastyde::prelude::Signal;
 
 use frontend::AppContext;
-use frontend::commands::{work_commands, work_management_commands};
+use frontend::commands::work_management_commands;
 use frontend::common::event::Event;
 use frontend::work_management::SaveWorkDto;
+
+use crate::app_ids::AppIds;
 
 use super::long_op::{event_id, parse_payload};
 use super::save_queue::{SaveQueue, SaveRequest};
@@ -83,6 +85,12 @@ pub struct SaveLanded {
 
 struct Inner {
     app_ctx: Rc<AppContext>,
+    /// The Work this save state is scoped to (`AppIds::work_id`, shared with
+    /// every other Tier-2 view-model on the same `WorkSession`) — what
+    /// `start_save` stamps onto `SaveWorkDto.work_id`. Not a snapshot: reading
+    /// it live means a `WorkSession` can never save the wrong Work, even if
+    /// `ids.work_id` were ever reseeded out from under an existing session.
+    ids: AppIds,
     /// Monotonic edit sequence: bumped on every mutation (typing, tree edits,
     /// metadata — see `App::mutation_origins`). A save started after a flush at
     /// seq *n* is said to *cover* n.
@@ -119,10 +127,11 @@ pub struct SaveStateViewModel {
 }
 
 impl SaveStateViewModel {
-    pub fn new(app_ctx: Rc<AppContext>) -> Self {
+    pub fn new(app_ctx: Rc<AppContext>, ids: AppIds) -> Self {
         Self {
             inner: Rc::new(Inner {
                 app_ctx,
+                ids,
                 dirty_seq: Signal::new(0),
                 saved_seq: Signal::new(0),
                 saving: Signal::new(false),
@@ -189,21 +198,16 @@ impl SaveStateViewModel {
     /// Issue `save_work` and record it as the running op. `false` if the
     /// command could not be issued at all.
     ///
-    /// Phase 0 (backend): `SaveWorkDto` gained a `work_id` field. This type has
-    /// no `AppIds`/work-id source of its own today (unlike `SaveAsViewModel`,
-    /// which already stores one) — resolved here the same way `AppIds::seed`
-    /// itself does (`get_all_work().first()`), which is behaviourally identical
-    /// to today under the single-Work-at-a-time invariant Phase 0 preserves.
-    /// Flagged in the Phase 0 report as a WIP-file touch rather than done
-    /// silently — a real `work_id` source on this view-model (an `AppIds` field,
-    /// mirroring `SaveAsViewModel`) is a more permanent fix for whoever owns the
-    /// `WorkSession` reshape this type is the seed of.
+    /// `work_id` is read from this view-model's own `AppIds` (mirroring
+    /// `SaveAsViewModel`) — the same `AppIds` shared by every other Tier-2
+    /// view-model on this Work's `WorkSession` — rather than resolved via
+    /// `get_all_work(ctx).next()`. The latter is only correct under the
+    /// single-Work-at-a-time invariant Phase 0/1 still preserve; the moment a
+    /// second `Work` is open in-process, "the first Work `get_all_work`
+    /// happens to return" is not necessarily the Work this session (and the
+    /// window calling `request_save`) is showing.
     fn start_save(&self, covers: u64) -> bool {
-        let work_id = work_commands::get_all_work(&self.inner.app_ctx)
-            .ok()
-            .and_then(|works| works.into_iter().next())
-            .map(|w| w.id)
-            .unwrap_or_default();
+        let work_id = self.inner.ids.work_id.get().unwrap_or_default();
         match work_management_commands::save_work(
             &self.inner.app_ctx,
             &SaveWorkDto {
@@ -331,7 +335,7 @@ mod tests {
     use super::*;
 
     fn vm() -> SaveStateViewModel {
-        SaveStateViewModel::new(Rc::new(AppContext::new()))
+        SaveStateViewModel::new(Rc::new(AppContext::new()), AppIds::new())
     }
 
     fn completed_event(op_id: &str) -> Event {

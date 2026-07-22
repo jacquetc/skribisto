@@ -187,6 +187,27 @@ impl MergeTwoScenesUseCase {
         // Work-scoped snapshot, after the read-only validation above and before
         // the first mutation below.
         let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
+
+        // Ownership check: `binder` (the row target and source were just
+        // confirmed to share) must belong to the NAMED Work. Binder ownership
+        // is exclusive (Work.binders is a strong one_to_many), so this
+        // forward lookup is exact: a binder id belonging to a different Work
+        // can never appear in `work_id`'s own list. Every check above only
+        // cross-references target/source against each other and against
+        // `binder`, never against the Work -- so two scenes that legitimately
+        // share a binder belonging to Work B would otherwise sail through
+        // here under Work A's (real, open) work_id: the content merge and the
+        // trash-index update below would land on Work B while the undo/redo
+        // snapshot stayed scoped to Work A.
+        if !uow
+            .get_work_relationship(&work_id, &WorkRelationshipField::Binders)?
+            .contains(&binder)
+        {
+            return Err(anyhow!(
+                "merge_two_scenes: binder {binder} does not belong to work {work_id}"
+            ));
+        }
+
         let snap_before = uow.snapshot_work(&[work_id])?;
 
         let now = chrono::Utc::now();

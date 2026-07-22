@@ -30,6 +30,7 @@ pub trait DeleteTrashEntriesUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "GetAll")]
 #[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Work", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "Work", action = "Snapshot")]
 #[macros::uow_action(entity = "Work", action = "Restore")]
@@ -79,6 +80,38 @@ impl DeleteTrashEntriesUseCase {
             .get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?
             .into_iter()
             .collect();
+        let missing: Vec<EntityId> = dto
+            .trash_info_ids
+            .iter()
+            .copied()
+            .filter(|id| !indexed.contains(id))
+            .collect();
+        if !missing.is_empty() {
+            // A missing id is one of two very different things: a genuinely
+            // stale row (already purged elsewhere -- tolerate, per this file's
+            // documented "stale id -> no-op" contract) or a row that is very
+            // much alive under a DIFFERENT open Work (the caller passed the
+            // wrong work_id alongside a real id it doesn't own). The plain
+            // `indexed` filter above cannot tell these apart -- both look like
+            // "not in `work_id`'s own list". Only a reverse lookup on the
+            // missing ids does: this is the "sneakiest variant" this file's
+            // header warns about, where the tolerant filter would otherwise
+            // swallow a real cross-Work mismatch as a silent, successful no-op.
+            let owners = uow.get_work_relationships_from_right_ids(
+                &WorkRelationshipField::TrashInfos,
+                &missing,
+            )?;
+            let foreign: Vec<EntityId> = owners
+                .into_iter()
+                .filter(|(w, _)| *w != work_id)
+                .flat_map(|(_, ids)| ids)
+                .collect();
+            if !foreign.is_empty() {
+                return Err(anyhow!(
+                    "delete_trash_entries: trash entries {foreign:?} do not belong to work {work_id}"
+                ));
+            }
+        }
         let ids: Vec<EntityId> = dto
             .trash_info_ids
             .iter()

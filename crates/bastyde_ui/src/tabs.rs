@@ -28,7 +28,7 @@
 //! only ever owns the content roles `skribisto_model` allows for its
 //! `(role, sub_role)`, so non-prose rows can never be corrupted.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use bastyde::core::widget::WidgetPlacement;
@@ -91,6 +91,9 @@ pub struct TitleField {
 pub struct ProseField {
     pub doc: TextDocument,
     content: SingleContent,
+    /// `doc.content_revision()` as of the last successful [`flush`](Self::flush)
+    /// (or the load that built this field) — see [`Self::is_stale`].
+    flushed_revision: Cell<u64>,
 }
 
 /// The dynamic-tab payload: a thin per-tab **view** over a shared [`OpenDoc`]
@@ -199,7 +202,12 @@ pub(crate) fn prose_field(
     // switching a Book to Full Book / Full Synopsis freeze for seconds.
     let _ = doc.set_djot_sync(&content.data().get());
     doc.set_modified(false);
-    ProseField { doc, content }
+    let flushed_revision = Cell::new(doc.content_revision());
+    ProseField {
+        doc,
+        content,
+        flushed_revision,
+    }
 }
 
 /// A name field over `item_id`, seeded from the **entity** (`BinderItem.title` /
@@ -651,6 +659,7 @@ impl ProseField {
         self.content.set_data(self.doc.to_djot()?);
         self.content.save(stack)?;
         self.doc.set_modified(false);
+        self.flushed_revision.set(self.doc.content_revision());
         Ok(())
     }
 
@@ -662,6 +671,32 @@ impl ProseField {
         // A load, like `prose_field` — same reason for the synchronous form.
         let _ = self.doc.set_djot_sync(&data);
         self.doc.set_modified(false);
+        self.flushed_revision.set(self.doc.content_revision());
+    }
+
+    /// Exact "has this field changed since it was last flushed (or reloaded)"
+    /// check — a sharper question than `doc.is_modified()`, the plain boolean
+    /// [`flush`](Self::flush) itself gates on and unconditionally clears.
+    ///
+    /// `is_modified()`/`OpenDoc::dirty` are flags: set on any edit, cleared on
+    /// flush, with no memory of *which* edit they were cleared against. That
+    /// can't distinguish "flushed, then edited again" from "flushed and quiet"
+    /// — both leave the flag `false` right after a flush. Comparing
+    /// `content_revision()` (a monotonic counter the document itself bumps on
+    /// every real content change) against the revision recorded at the last
+    /// flush is exact: a concurrent/subsequent edit bumps the live revision
+    /// past the recorded one, so this stays `true` even though `is_modified()`
+    /// was just reset.
+    ///
+    /// **Not** a fix for undo-past-save reporting dirty: `content_revision()`
+    /// bumps on undo too (see `text_document::TextDocument::content_revision`'s
+    /// docs), so undoing back to the exact saved text still reports stale here.
+    ///
+    /// Called by `OpenDoc::is_stale` (currently also `#[allow(dead_code)]` —
+    /// see its doc), plus this module's own test proving the property below.
+    #[allow(dead_code)]
+    pub(crate) fn is_stale(&self) -> bool {
+        self.doc.content_revision() != self.flushed_revision.get()
     }
 
     /// This field's current text as Djot (empty on a serialisation error) — the
@@ -1783,5 +1818,79 @@ mod tests {
         // `main_typography` picks the bundle by kind.
         assert_eq!(mk(Scene).main_typography().font_family.get(), "Literata");
         assert_eq!(mk(Note).main_typography().font_family.get(), "Inter");
+    }
+
+    /// `is_stale` distinguishes "flushed and quiet" from "flushed, then edited
+    /// again" — the exact gap `OpenDoc::dirty`/`doc.is_modified()` leaves, since
+    /// both are booleans a flush clears unconditionally with no memory of which
+    /// edit they were cleared against.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn is_stale_distinguishes_a_later_edit_from_flushed_and_quiet() {
+        use frontend::commands::binder_commands;
+        use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+        let ctx = Rc::new(AppContext::new());
+        let work = frontend::commands::work_commands::create_orphan_work(
+            &ctx,
+            None,
+            &CreateWorkDto::default(),
+        )
+        .unwrap();
+        let binder = binder_commands::create_binder(
+            &ctx,
+            None,
+            &CreateBinderDto {
+                name: "B".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .unwrap();
+        let item = frontend::commands::binder_item_commands::create_binder_item(
+            &ctx,
+            None,
+            &CreateBinderItemDto {
+                title: "Scene".into(),
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+                activated: true,
+                ..Default::default()
+            },
+            binder.id,
+            -1,
+        )
+        .unwrap();
+
+        let field = prose_field(&ctx, item.id, ContentRole::SceneText, None);
+        assert!(!field.is_stale(), "a freshly loaded field is never stale");
+
+        // A first edit — `TextCursor::insert_text`, the same primitive live typing
+        // uses, so this queues a real `ContentsChanged` and bumps `content_revision`
+        // (unlike `set_djot_sync`/`set_plain_text`, which only reset the document
+        // and never touch either `content_revision` or `is_modified`).
+        field.doc.cursor_at(0).insert_text("First draft.").unwrap();
+        assert!(field.is_stale(), "an edit must show stale");
+        field.flush(None).expect("flush a real item's field");
+        assert!(!field.is_stale(), "flush must clear staleness");
+        assert!(!field.doc.is_modified(), "flush must also clear the coarse flag");
+
+        // A SECOND edit after that flush: `content_revision` moves again, so
+        // `is_stale` still catches it — exactly the case a boolean
+        // `dirty`/`is_modified` flag cannot distinguish from "flushed and quiet"
+        // the instant after any flush clears it.
+        field
+            .doc
+            .cursor_at(0)
+            .insert_text("Second draft, written after the save. ")
+            .unwrap();
+        assert!(
+            field.is_stale(),
+            "an edit made after the last flush must be detected, even though \
+             right after any flush it looks identical to 'flushed and quiet' from \
+             `is_modified()`'s point of view"
+        );
     }
 }

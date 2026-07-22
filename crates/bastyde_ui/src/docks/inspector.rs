@@ -29,6 +29,7 @@ use frontend::common::event::{BinderItemManagementEvent, Event, Origin};
 
 use skribisto_model::compile::{ItemMeta, StreamLevel, enclosing_head};
 
+use crate::app_ids::AppIds;
 use crate::date_convert::{jiff_to_naive, naive_to_jiff_opt};
 use crate::docks::outline::promote_menu;
 use crate::models::BinderTreeKey;
@@ -40,9 +41,16 @@ use crate::view_models::OutlineViewModel;
 /// needs content for its preview). Used to resolve a focused Part/Chapter's enclosing Book
 /// via [`enclosing_head`]. Cheap and only walked off a focus change, mirroring
 /// `export::compute_applicable`.
-fn live_item_metas(ctx: &AppContext) -> Vec<ItemMeta> {
+///
+/// Resolves the Work through `ids.work_id` (the id `AppIds` already carries — the
+/// Phase-1 seam) rather than `get_all_work(ctx)`'s first entry: a second open Work
+/// would make "whichever the store returns first" wrong, not just imprecise.
+fn live_item_metas(ctx: &AppContext, ids: &AppIds) -> Vec<ItemMeta> {
     let mut out = Vec::new();
-    let Some(work) = work_commands::get_all_work(ctx).ok().and_then(|w| w.into_iter().next()) else {
+    let Some(work_id) = ids.work_id.get() else {
+        return out;
+    };
+    let Ok(Some(work)) = work_commands::get_work(ctx, &work_id) else {
         return out;
     };
     let Ok(binder_ids) =
@@ -431,7 +439,7 @@ impl Widget for Inspector {
                 // only makes sense for a compile-stream Part or Chapter, and only inside a
                 // Book — so gate on the sub_role, then resolve the enclosing Book head.
                 if matches!(d.sub_role, BinderItemSubRole::Part | BinderItemSubRole::ChapterScene) {
-                    let metas = live_item_metas(&self.app_ctx);
+                    let metas = live_item_metas(&self.app_ctx, &self.outline.ids());
                     if let Some(book_id) = metas
                         .iter()
                         .position(|m| m.id == d.id)

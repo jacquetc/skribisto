@@ -38,6 +38,7 @@ mod imp {
     use frontend::AppContext;
     use frontend::commands::{work_commands, work_info_commands};
     use frontend::common::event::{Event, Origin, WorkManagementEvent};
+    use frontend::common::types::EntityId;
     use frontend::direct_access::RecentWorkDto;
 
     /// Max unpinned recents kept on disk.
@@ -154,13 +155,21 @@ mod imp {
             let me = self.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
-                move |_event: &Event| me.on_open(),
+                move |event: &Event| {
+                    if let Some(&work_id) = event.ids.first() {
+                        me.on_open(work_id);
+                    }
+                },
             );
             // A new project is also a "recently opened" work.
             let me = self.clone();
             ctx.subscribe_event(
                 Origin::WorkManagement(WorkManagementEvent::NewWork),
-                move |_event: &Event| me.on_open(),
+                move |event: &Event| {
+                    if let Some(&work_id) = event.ids.first() {
+                        me.on_open(work_id);
+                    }
+                },
             );
         }
 
@@ -237,8 +246,8 @@ mod imp {
         /// never block. `mru.add` + `refresh` need no `EventContext` (no ambient
         /// op), so a fire-and-forget `spawn_local` is enough — no
         /// `spawn_local_with` completion hop required.
-        fn on_open(&self) {
-            let Some(entry) = opened_entry(&self.inner.ctx) else {
+        fn on_open(&self, work_id: EntityId) {
+            let Some(entry) = opened_entry(&self.inner.ctx, work_id) else {
                 self.refresh();
                 return;
             };
@@ -300,16 +309,24 @@ mod imp {
     }
 
     /// The just-opened work as an MRU entry: its on-disk path + title. `None` when
-    /// no work is open or it has no file path yet.
-    fn opened_entry(ctx: &AppContext) -> Option<RecentEntry> {
+    /// `work_id` (the id carried by the `LoadWork`/`NewWork` event that triggered
+    /// this — see `wire`) has no file path yet.
+    ///
+    /// Resolved by `work_id`, not `get_all_work_info(ctx)`'s first entry:
+    /// `WorkInfoDto.work` is this row's own backlink, so filtering on it (rather
+    /// than trusting store-iteration order) stays correct once more than one
+    /// Work/WorkInfo can be open at a time — unlike `AppIds.work_id`, `work_id`
+    /// here comes straight off the event that just fired, so it can never be
+    /// stale relative to some *other* subscriber's re-seeding order.
+    fn opened_entry(ctx: &AppContext, work_id: EntityId) -> Option<RecentEntry> {
         let path = work_info_commands::get_all_work_info(ctx)
             .ok()?
             .into_iter()
-            .next()?
+            .find(|wi| wi.work == Some(work_id))?
             .file_name?;
-        let title = work_commands::get_all_work(ctx)
+        let title = work_commands::get_work(ctx, &work_id)
             .ok()
-            .and_then(|works| works.into_iter().next())
+            .flatten()
             .map(|w| w.title)
             .unwrap_or_default();
         Some(RecentEntry {
@@ -525,7 +542,11 @@ mod imp {
             .unwrap();
 
             // `on_open` reads the opened work into an entry — assert that mapping.
-            let entry = opened_entry(&ctx).expect("an open work yields an MRU entry");
+            // `wire`'s real subscriber gets `work_id` off the `NewWork` event itself;
+            // here (no event plumbing in a headless test) fetch the one Work the
+            // fresh in-memory store holds, exactly as that event's payload would.
+            let work_id = work_commands::get_all_work(&ctx).unwrap().into_iter().next().unwrap().id;
+            let entry = opened_entry(&ctx, work_id).expect("an open work yields an MRU entry");
             assert_eq!(entry.path, proj.to_string_lossy());
 
             // Persist it, then drop the list (simulates process exit).

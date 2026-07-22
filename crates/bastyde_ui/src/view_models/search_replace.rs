@@ -657,10 +657,17 @@ impl SearchReplaceViewModel {
 
     /// This project's `(unique_id, path, title)` for keying `search.toml`. Empty
     /// `unique_id` (a brand-new unsaved project) makes the settings writes no-ops.
+    ///
+    /// Resolved through `self.ids.work_id` (the Phase-1 seam), not
+    /// `get_all_work(ctx)`'s first entry — see `main::current_project_path`'s
+    /// doc for why that stopped being a safe stand-in once the backend scoped
+    /// `Work` to support more than one open project.
     fn project_ident(&self) -> (String, String, String) {
-        let work = work_commands::get_all_work(&self.app_ctx)
-            .ok()
-            .and_then(|w| w.into_iter().next());
+        let work = self
+            .ids
+            .work_id
+            .get()
+            .and_then(|id| work_commands::get_work(&self.app_ctx, &id).ok().flatten());
         match work {
             Some(w) => (w.unique_id, String::new(), w.title),
             None => (String::new(), String::new(), String::new()),

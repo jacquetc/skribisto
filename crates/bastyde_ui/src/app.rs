@@ -43,8 +43,8 @@ use crate::app_ids::AppIds;
 use crate::export::panel::ExportPanel;
 use crate::models::TreeNode;
 use crate::panels::new_work::NewWorkPanel;
+use crate::sessions::WorkSession;
 use crate::settings::SettingsPanel;
-use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, DeferredResume, EditorsViewModel,
@@ -435,6 +435,17 @@ fn offer_missing_dictionaries(
 
 pub struct App {
     app_ctx: Rc<AppContext>,
+    /// The Tier-2 per-open-Work bundle (see `sessions::WorkSession`'s module
+    /// doc) — created once in `main`, shared with every project window's
+    /// `App` the way `outline` already is. `App::build` reads its fields
+    /// straight off `self.session` instead of doing its own
+    /// `ctx.app_state::<T>()` lookup for each one — the concrete piece of the
+    /// migration's "resolution mechanism" this phase implements (see the
+    /// design doc §2). This is a pure wiring change: every field here is
+    /// *also* still registered as its own `app_state` entry in `main.rs`
+    /// (save_state excepted — see its own doc), so nothing downstream needed
+    /// to change.
+    session: WorkSession,
     /// The outline view-model is created in `main` (the title-bar menu needs a
     /// handle to it for the reactive checkmark) and shared with `App`.
     outline: OutlineViewModel,
@@ -527,6 +538,7 @@ impl App {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         app_ctx: Rc<AppContext>,
+        session: WorkSession,
         outline: OutlineViewModel,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
@@ -539,6 +551,7 @@ impl App {
     ) -> Self {
         Self {
             app_ctx,
+            session,
             outline,
             autosave_menu,
             spellcheck_menu,
@@ -649,6 +662,11 @@ impl Widget for App {
         // ── Layer-B view-models: created once, then shared by clone ──────────
         let settings = SettingsViewModel::new(ctx.settings());
 
+        // The Tier-2 per-open-Work bundle — see `sessions::WorkSession`'s module
+        // doc and this struct's own field doc for why `App::build` reads these
+        // straight off `session` instead of doing its own `ctx.app_state::<T>()`
+        // lookup per field, the way the rest of this function used to.
+        let session = self.session.clone();
         let app_ctx = self.app_ctx.clone();
         let column_width = settings.column_width();
         let show_synopsis = settings.synopsis_pane();
@@ -656,18 +674,17 @@ impl Widget for App {
         let view_memory = crate::view_models::EditorViewMemory::new(ctx.settings());
         let corkboard_defaults = settings.corkboard_defaults();
         let ids = self.outline.ids();
-        let docs = ctx
-            .app_state::<crate::models::OpenDocsStore>()
-            .cloned()
-            .expect("OpenDocsStore registered in main");
-        // Work-scoped, not per-window: created once in `main` and shared by every
-        // window onto this project — see `SaveStateViewModel`'s module docs for why
-        // a per-window copy of `dirty_seq`/`saved_seq`/`saving`/the `SaveQueue` is a
-        // bug the moment a second window exists.
-        let save_state = ctx
-            .app_state::<crate::view_models::SaveStateViewModel>()
-            .cloned()
-            .expect("SaveStateViewModel registered in main");
+        let docs = session.open_docs.clone();
+        // Work-scoped, not per-window: created once in `main` (inside the
+        // `WorkSession` bundle) and shared by every window onto this project —
+        // see `SaveStateViewModel`'s module docs for why a per-window copy of
+        // `dirty_seq`/`saved_seq`/`saving`/the `SaveQueue` is a bug the moment a
+        // second window exists. Unlike every other Tier-2 field, this one is
+        // *not* also reachable via `ctx.app_state::<SaveStateViewModel>()` —
+        // `main.rs` deliberately stopped registering it there once `App` itself
+        // started carrying the session (see `main.rs`'s comment at its
+        // construction site).
+        let save_state = session.save_state.clone();
         let backup_mode_for_editors = self.backup_mode.clone();
         let save_state_for_editors = save_state.clone();
         let scene_focused_for_editors = self.scene_focused.clone();
@@ -755,22 +772,19 @@ impl Widget for App {
         }
 
         // Hand the editors to the per-work workspace-layout restore. It was created
-        // in `main` (before any `ctx.settings()`), so it starts editor-less and is
-        // wired here, on every build — idempotent (`set_editors` just re-points).
-        // Kept as a local so the Load/New subscribers can drive its restore.
-        let workspace_layout = ctx
-            .app_state::<crate::view_models::WorkspaceLayoutViewModel>()
-            .cloned();
+        // in `main` (inside the `WorkSession` bundle, before any `ctx.settings()`),
+        // so it starts editor-less and is wired here, on every build — idempotent
+        // (`set_editors` just re-points). Kept as a local `Option` (rather than
+        // `session.workspace_layout` directly) so the Load/New subscribers below,
+        // which pre-date this field always being present, don't need reshaping.
+        let workspace_layout = Some(session.workspace_layout.clone());
         if let Some(layout) = &workspace_layout {
             layout.set_editors(editors.clone());
         }
 
         // ── Spell-checking wiring (Step 6). `docs` above was moved into the editors VM, so
-        // re-fetch the shared handles for the attach loop. ──
-        let spell_docs = ctx
-            .app_state::<crate::models::OpenDocsStore>()
-            .cloned()
-            .expect("OpenDocsStore registered in main");
+        // re-fetch the shared handle for the attach loop. ──
+        let spell_docs = session.open_docs.clone();
         // Keep the store's cached language map honest: an item's `dict_language` or
         // `sub_role` edited in place leaves the binder's shape unchanged, so only the
         // entity event can invalidate it. Every build — the subscription is scoped to
@@ -848,10 +862,7 @@ impl Widget for App {
         let search = {
             let app_ctx = self.app_ctx.clone();
             let ids = self.outline.ids();
-            let docs = ctx
-                .app_state::<crate::models::OpenDocsStore>()
-                .cloned()
-                .expect("OpenDocsStore registered in main");
+            let docs = session.open_docs.clone();
             let docking = outline.docking();
             let search_dock = self.search_dock;
             let preview_dock = self.preview_dock;
@@ -952,22 +963,13 @@ impl Widget for App {
             });
         }
 
-        // ── Layer-A singles: id-only global state + reactive entity handles ──
-        // Created in `main`, shared via `app_state`. `wire` installs each single's
-        // event subscriptions on this (process-lifetime) widget; they are
-        // re-pointed on `LoadWork` below.
-        let ids = ctx
-            .app_state::<AppIds>()
-            .cloned()
-            .expect("AppIds registered in main");
-        let single_work = ctx
-            .app_state::<SingleWork>()
-            .cloned()
-            .expect("SingleWork registered in main");
-        let single_work_info = ctx
-            .app_state::<SingleWorkInfo>()
-            .cloned()
-            .expect("SingleWorkInfo registered in main");
+        // ── Layer-A singles: id-only per-Work state + reactive entity handles ──
+        // Held on `session` (created in `main`, shared with every window onto this
+        // Work). `wire` installs each single's event subscriptions on this
+        // (process-lifetime) widget; they are re-pointed on `LoadWork` below.
+        let ids = session.ids.clone();
+        let single_work = session.single_work.clone();
+        let single_work_info = session.single_work_info.clone();
         single_work.wire(ctx);
         single_work_info.wire(ctx);
 
@@ -990,30 +992,17 @@ impl Widget for App {
             self.backup_context.clone(),
             workspace_layout.clone(),
         );
-        // The personal-dictionary view-model (registered in `main`) — wire its
-        // held list-model + single so the Settings pane stays live and the
-        // editor's "Add to dictionary" reaches a wired handle.
-        if let Some(user_dictionary) = ctx
-            .app_state::<crate::view_models::UserDictionaryViewModel>()
-            .cloned()
-        {
-            user_dictionary.wire(ctx);
-        }
+        // The personal-dictionary view-model — wire its held list-model + single so
+        // the Settings pane stays live and the editor's "Add to dictionary" reaches
+        // a wired handle.
+        session.user_dictionary.wire(ctx);
         // The tag palette, same reasoning: one wired instance behind the Inspector's tag
         // section, the Settings pane and every chip in the app.
-        if let Some(tags) = ctx
-            .app_state::<crate::view_models::TagsViewModel>()
-            .cloned()
-        {
-            tags.wire(ctx);
-        }
-        // Backup scheduler + settings (registered in `main`). The scheduler drives
-        // every trigger and holds the singles; the settings VM tracks the active
-        // project for the per-project settings pane.
-        let backup_scheduler = ctx
-            .app_state::<BackupSchedulerViewModel>()
-            .cloned()
-            .expect("BackupSchedulerViewModel registered in main");
+        session.tags.wire(ctx);
+        // Backup scheduler (on `session`) + settings (registered in `main`). The
+        // scheduler drives every trigger and holds the singles; the settings VM
+        // tracks the active project for the per-project settings pane.
+        let backup_scheduler = session.backup_scheduler.clone();
         let backup_settings = ctx
             .app_state::<BackupSettingsViewModel>()
             .cloned()
@@ -1182,6 +1171,8 @@ impl Widget for App {
         // points), so this only ever fires in a window dedicated to that backup.
         {
             let app_ctx = self.app_ctx.clone();
+            let ids = ids.clone();
+            let tree_expansion = session.tree_expansion.clone();
             let backup_mode = self.backup_mode.clone();
             let backup_context = self.backup_context.clone();
             let restore_vm = restore_vm.clone();
@@ -1200,10 +1191,19 @@ impl Widget for App {
             ctx.subscribe_event_with_ctx(
                 Origin::WorkManagement(WorkManagementEvent::LoadWork),
                 move |_e: &Event, c: &mut EventContext| {
-                    let path = frontend::commands::work_info_commands::get_all_work_info(&app_ctx)
-                        .ok()
-                        .and_then(|v| v.into_iter().next())
-                        .and_then(|wi| wi.file_name);
+                    // Resolved through the Phase-1 seam (`ids.work_info_id`, already
+                    // re-seeded by the first `LoadWork` subscriber above — registered
+                    // earlier in this same `build`, so it always runs first),
+                    // rather than `get_all_work_info(&app_ctx)`'s first entry: see
+                    // `main::current_project_path`'s doc for why that stopped being
+                    // a safe stand-in for "this window's project" once the backend
+                    // scoped `WorkInfo` to support more than one open `Work`.
+                    let path = ids.work_info_id.get().and_then(|id| {
+                        frontend::commands::work_info_commands::get_work_info(&app_ctx, &id)
+                            .ok()
+                            .flatten()
+                            .and_then(|wi| wi.file_name)
+                    });
                     // Sniff the manifest once: drives both the backup-mode branch
                     // below and the workspace-layout restore.
                     let backup = path.as_deref().and_then(crate::backup::backup_context_for);
@@ -1219,12 +1219,8 @@ impl Widget for App {
                     // its saved expansion is the *source's* and it gets the default tree
                     // instead. Keyed by durable uid, so what was written is what is read
                     // — no translation against the freshly re-minted store ids.
-                    if backup.is_none()
-                        && let Some(expansion) = c
-                            .app_state::<crate::view_models::TreeExpansionViewModel>()
-                            .cloned()
-                    {
-                        let remembered = expansion.outline_expanded();
+                    if backup.is_none() {
+                        let remembered = tree_expansion.outline_expanded();
                         if !remembered.is_empty() {
                             outline_model.set_expanded_keys(&remembered);
                         }
@@ -1953,12 +1949,9 @@ impl Widget for App {
             // Snapshot this pristine arrangement as the reset target for a project
             // that has no saved layout (so an in-place switch to an unconfigured
             // project doesn't inherit the previous one's docks).
-            if let Some(layout_vm) = ctx
-                .app_state::<crate::view_models::WorkspaceLayoutViewModel>()
-                .cloned()
-            {
-                layout_vm.set_default_docks(docking.export_state());
-            }
+            session
+                .workspace_layout
+                .set_default_docks(docking.export_state());
         }
 
         // ── Status bar (thin) with the notification bell ─────────────────────
@@ -1990,9 +1983,7 @@ impl Widget for App {
         // document's live text (so it tracks typing), off `StatsModel` over the shared
         // `OpenDocsStore`.
         let stats = crate::models::StatsModel::new(
-            ctx.app_state::<crate::models::OpenDocsStore>()
-                .cloned()
-                .expect("OpenDocsStore registered in main"),
+            session.open_docs.clone(),
             editors.active_item(),
             settings.counting_method(),
         );

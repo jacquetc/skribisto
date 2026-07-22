@@ -167,6 +167,11 @@ impl OpenDoc {
     /// Persist every changed field back to its `Content` row (creating the row on
     /// first save) via each field's `SingleContent`. Idempotent (clean fields are
     /// a no-op). Routes through the undo `stack`.
+    ///
+    /// Each prose field records the `content_revision` it flushed at as it goes
+    /// (see [`ProseField::flush`]) — [`Self::is_stale`] compares against it for
+    /// an exact per-document staleness check, sharper than the `dirty` flag this
+    /// method clears unconditionally below.
     pub fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
         if let Some(f) = &self.title {
             f.flush(stack)?;
@@ -182,6 +187,25 @@ impl OpenDoc {
         }
         self.dirty.set(false);
         Ok(())
+    }
+
+    /// Exact "has any prose field changed since it was last flushed" check,
+    /// across whichever of `main`/`synopsis` this doc has — see
+    /// [`ProseField::is_stale`]'s doc for why this is more precise than the
+    /// aggregate [`dirty`](Self::dirty) flag above (which `title`/`subtitle`
+    /// still rely on; their own edit detection — diffing the live signal
+    /// against the value loaded at open, see `TitleField::edited_probe` — has
+    /// no such imprecision to begin with, since it holds no intermediate flag
+    /// to go stale).
+    ///
+    /// No caller yet — folded in as a primitive per the migration design doc
+    /// (§3), not wired into autosave/save-indicator behaviour this phase (that
+    /// would be a visible behaviour change, out of scope here). See
+    /// `ProseField`'s own test for the property this proves.
+    #[allow(dead_code)]
+    pub fn is_stale(&self) -> bool {
+        self.main.as_ref().is_some_and(ProseField::is_stale)
+            || self.synopsis.as_ref().is_some_and(ProseField::is_stale)
     }
 
     /// Discard the live edits and re-read every present field from its persisted

@@ -139,6 +139,14 @@ fn section(label: bastyde::i18n::LocalizedString) -> impl Widget {
 /// state each time it is shown — without rebuilding the enclosing button.
 struct OpenProjectsMenu {
     model: RecentWorkListModel,
+    /// The current Work's title/path, for the "Currently open" section's
+    /// check-marked row — a constructor parameter (from `ProjectSwitcherButton`,
+    /// which is itself handed these by `ProjectWindowFactory::window_config`),
+    /// not an independent `ctx.app_state` lookup: see `sessions::WorkSession`'s
+    /// module doc on why "the Work" should be resolved through the seam a
+    /// window was actually given, not re-fetched from scratch.
+    single_work: SingleWork,
+    single_work_info: SingleWorkInfo,
     open_epoch: Signal<u64>,
     root: Option<WidgetId>,
 }
@@ -151,14 +159,8 @@ impl std::fmt::Debug for OpenProjectsMenu {
 
 impl Widget for OpenProjectsMenu {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let single_work = ctx
-            .app_state::<SingleWork>()
-            .cloned()
-            .expect("SingleWork registered in main");
-        let single_work_info = ctx
-            .app_state::<SingleWorkInfo>()
-            .cloned()
-            .expect("SingleWorkInfo registered in main");
+        let single_work = self.single_work.clone();
+        let single_work_info = self.single_work_info.clone();
 
         self.model.wire(ctx);
         let sid = ctx.self_id();
@@ -279,6 +281,10 @@ impl Widget for OpenProjectsMenu {
 pub struct ProjectSwitcherButton {
     app_ctx: Rc<AppContext>,
     model: RecentWorkListModel,
+    /// The open Work's title/path — a constructor parameter, not an
+    /// independent `ctx.app_state` lookup; see [`OpenProjectsMenu`]'s doc.
+    single_work: SingleWork,
+    single_work_info: SingleWorkInfo,
     /// Bumped by the popover's `on_open`; consumed by [`OpenProjectsMenu`] to
     /// re-scan the registry each time the popover shows. Owned here so it survives
     /// this widget's rebuilds.
@@ -287,10 +293,16 @@ pub struct ProjectSwitcherButton {
 }
 
 impl ProjectSwitcherButton {
-    pub fn new(app_ctx: Rc<AppContext>) -> Self {
+    pub fn new(
+        app_ctx: Rc<AppContext>,
+        single_work: SingleWork,
+        single_work_info: SingleWorkInfo,
+    ) -> Self {
         Self {
             model: RecentWorkListModel::new(app_ctx.clone()),
             app_ctx,
+            single_work,
+            single_work_info,
             open_epoch: Signal::new(0),
             root_child: None,
         }
@@ -305,14 +317,8 @@ impl std::fmt::Debug for ProjectSwitcherButton {
 
 impl Widget for ProjectSwitcherButton {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let single_work = ctx
-            .app_state::<SingleWork>()
-            .cloned()
-            .expect("SingleWork registered in main");
-        let single_work_info = ctx
-            .app_state::<SingleWorkInfo>()
-            .cloned()
-            .expect("SingleWorkInfo registered in main");
+        let single_work = self.single_work.clone();
+        let single_work_info = self.single_work_info.clone();
 
         // Trigger label rebuilds on load/title/close — NOT on popover open (that
         // would recreate the PopoverButton and close the just-opened popover).
@@ -364,6 +370,8 @@ impl Widget for ProjectSwitcherButton {
 
         let content = OpenProjectsMenu {
             model: RecentWorkListModel::new(self.app_ctx.clone()),
+            single_work: self.single_work.clone(),
+            single_work_info: self.single_work_info.clone(),
             open_epoch: self.open_epoch.clone(),
             root: None,
         };

@@ -5,24 +5,35 @@
 //!
 //! Per the writing-model architecture, the UI reads entity *data* reactively
 //! through [`singles`](crate::singles) and [`models`](crate::models); the app
-//! itself keeps only the handful of ids those handles point at — the current
-//! `Root`, the open `Work`, its `WorkInfo`, and the per-`Work` undo stack.
+//! itself keeps only the handful of ids those handles point at — the open
+//! `Work`, its `WorkInfo`, and the per-`Work` undo stack.
 //!
 //! Seeded once per `LoadWork` (see `App::build`), shared everywhere by clone, and
 //! registered as `app_state` so any widget can reach it via
 //! `ctx.app_state::<AppIds>()`. Singles/models read these signals to know what to
 //! point at and refresh themselves on fine-grained backend events thereafter.
+//!
+//! **`root_id` lives on [`crate::sessions::WorkRegistry`], not here.** Every
+//! field that remains below is per-open-`Work` (Tier 2 in the multi-Work
+//! migration's terms — see `crate::sessions`'s module doc): a second
+//! simultaneously-open Work needs its *own* `work_id`/`work_info_id`/
+//! `stack_id`. `root_id` does not — there is exactly one shared `Root` per
+//! process ([qleany.yaml](../../../qleany.yaml)'s `Root` entity), so it is
+//! genuinely Tier 1 (app-global), and duplicating it into every `WorkSession`
+//! would just be N copies of the same value. It was also, in practice,
+//! write-only here: nothing in this crate ever read `AppIds.root_id` back —
+//! confirmed by grep — so lifting it out cost no consumer a rewrite.
+//! `AppIds` itself is the type `WorkSession` bundles as its `ids` field.
 
 use bastyde::prelude::Signal;
 
 use frontend::AppContext;
-use frontend::commands::{root_commands, undo_redo_commands, work_commands, work_info_commands};
+use frontend::commands::{undo_redo_commands, work_commands, work_info_commands};
 
-/// The app's id-only global state. Cloneable (every field is an `Rc`-backed
+/// The app's id-only per-Work state. Cloneable (every field is an `Rc`-backed
 /// `Signal`), so all clones share one live state.
 #[derive(Clone)]
 pub struct AppIds {
-    pub root_id: Signal<Option<u64>>,
     pub work_id: Signal<Option<u64>>,
     pub work_info_id: Signal<Option<u64>>,
     /// Per-`Work` undo stack id — one Ctrl+Z history for the whole undoable trunk.
@@ -32,7 +43,6 @@ pub struct AppIds {
 impl Default for AppIds {
     fn default() -> Self {
         Self {
-            root_id: Signal::new(None),
             work_id: Signal::new(None),
             work_info_id: Signal::new(None),
             stack_id: Signal::new(None),
@@ -50,8 +60,6 @@ impl AppIds {
     /// is id-driven (singles/models read these signals and self-refresh on
     /// entity events).
     pub fn seed(&self, ctx: &AppContext) {
-        self.root_id
-            .set(first_id(root_commands::get_all_root(ctx).ok(), |r| r.id));
         self.work_id
             .set(first_id(work_commands::get_all_work(ctx).ok(), |w| w.id));
         self.work_info_id.set(first_id(
@@ -68,7 +76,6 @@ impl AppIds {
 
     /// Forget all ids — no work is open. Call on `CloseWork`.
     pub fn clear(&self) {
-        self.root_id.set(None);
         self.work_id.set(None);
         self.work_info_id.set(None);
         self.stack_id.set(None);

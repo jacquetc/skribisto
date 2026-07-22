@@ -1018,7 +1018,7 @@ mod tests {
 
     fn editors() -> EditorsViewModel {
         let app_ctx = Rc::new(AppContext::new());
-        let save_state = SaveStateViewModel::new(app_ctx.clone());
+        let save_state = SaveStateViewModel::new(app_ctx.clone(), AppIds::new());
         editors_with(app_ctx, save_state)
     }
 
@@ -1288,7 +1288,7 @@ mod tests {
     #[test]
     fn mark_clean_settles_the_dirty_flag() {
         let app_ctx = Rc::new(AppContext::new());
-        let save_state = SaveStateViewModel::new(app_ctx.clone());
+        let save_state = SaveStateViewModel::new(app_ctx.clone(), AppIds::new());
         let vm = editors_with(app_ctx, save_state.clone());
 
         assert!(!vm.is_unsaved(), "a freshly built editor starts clean");
@@ -1314,7 +1314,7 @@ mod tests {
     #[test]
     fn two_editors_view_models_sharing_one_save_state_agree_on_dirty_and_clean() {
         let app_ctx = Rc::new(AppContext::new());
-        let save_state = SaveStateViewModel::new(app_ctx.clone());
+        let save_state = SaveStateViewModel::new(app_ctx.clone(), AppIds::new());
         let window_a = editors_with(app_ctx.clone(), save_state.clone());
         let window_b = editors_with(app_ctx, save_state.clone());
 

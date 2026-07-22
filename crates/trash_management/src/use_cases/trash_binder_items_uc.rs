@@ -96,6 +96,27 @@ impl TrashBinderItemsUseCase {
 
         self.origin_binder = origin_binder;
         self.work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
+
+        // Ownership check: origin_binder_id must be one of THIS Work's own
+        // binders. Binder ownership is exclusive (Work.binders is a strong
+        // one_to_many), so this forward lookup is exact: a binder id
+        // belonging to a different Work can never appear in `work_id`'s own
+        // list. The roots/cascade above are resolved purely from
+        // `origin_binder`'s own order, with no cross-check against the Work
+        // at all -- so without this, a caller passing Work B's
+        // origin_binder_id (with Work B's own item ids) under Work A's (real,
+        // open) work_id would trash Work B's cascade while the new TrashInfo
+        // landed under Work A's index, with no undo record on Work B's side.
+        if !uow
+            .get_work_relationship(&self.work_id, &WorkRelationshipField::Binders)?
+            .contains(&origin_binder)
+        {
+            return Err(anyhow!(
+                "trash_binder_items: binder {origin_binder} does not belong to work {}",
+                self.work_id
+            ));
+        }
+
         self.trashed_at = Utc::now();
         self.roots = roots.clone();
         self.cascade = cascade;

@@ -45,6 +45,7 @@ mod date_convert;
 mod docks;
 mod intents;
 mod models;
+mod sessions;
 mod settings;
 mod singles;
 mod spellcheck;
@@ -80,29 +81,36 @@ use frontend::common::event::{Event, Origin};
 
 use app::PendingExit;
 use app_ids::AppIds;
-use models::{BackupSettingsService, OpenDocsStore, TreeExpansionService, WorkspaceLayoutService};
-use singles::{SingleDictWord, SingleWork, SingleWorkInfo};
+use models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
+use sessions::{WorkRegistry, WorkSession};
 use view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel,
-    OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel, BackupRestoreViewModel, SaveAsViewModel,
-    SaveStateViewModel, TreeExpansionViewModel, WorkspaceLayoutViewModel,
+    BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel, OutlineViewModel,
+    ProjectSwitchViewModel, BackupRestoreViewModel, SaveAsViewModel,
 };
 
-/// The currently-open project's path (from `WorkInfo`), if any.
-pub(crate) fn current_project_path(ctx: &AppContext) -> Option<String> {
-    work_info_commands::get_all_work_info(ctx)
-        .ok()?
-        .into_iter()
-        .next()?
+/// The currently-open project's path (from its `WorkInfo`), if any.
+///
+/// Resolved through the Phase-1 seam — `ids.work_info_id`, the id `WorkSession`
+/// carries for exactly this project — rather than `get_all_work_info(ctx)`'s
+/// first entry: the backend's `WorkInfo` list is no longer guaranteed to hold
+/// only this window's project (Phase 0 scoped `Root.works`/`System.work_infos`
+/// to support more than one open `Work`), so "whichever the store returns
+/// first" stopped being a safe stand-in for "the one this window means" the
+/// moment that scoping landed, even though today's single-Work-open sweep
+/// still makes the two answers coincide in practice.
+pub(crate) fn current_project_path(ctx: &AppContext, ids: &AppIds) -> Option<String> {
+    let work_info_id = ids.work_info_id.get()?;
+    work_info_commands::get_work_info(ctx, &work_info_id)
+        .ok()??
         .file_name
 }
 
 /// The open work's base name (no extension), or `"work"` — pre-fills the
 /// "Save as" dialog's file name. A folder work's entry is `…/project.skrib`
 /// (the on-disk manifest name), so its directory name is used.
-pub(crate) fn project_stem(ctx: &AppContext) -> String {
+pub(crate) fn project_stem(ctx: &AppContext, ids: &AppIds) -> String {
     use std::path::Path;
-    current_project_path(ctx)
+    current_project_path(ctx, ids)
         .as_deref()
         .map(|cur| {
             let p = Path::new(cur);
@@ -453,27 +461,31 @@ fn main() {
         .fallback_locale("en-US".parse().unwrap())
         .framework_locales(framework_locales());
 
-    // The app's id-only global state (root/work/work-info/undo-stack ids). Created
-    // here, shared into the outline, the singles, and the title-bar menu, and
-    // registered as `app_state` so any widget can reach it.
-    let ids = AppIds::new();
+    // The app-global (Tier 1) registry: today just `root_id` (see `app_ids.rs`'s
+    // module doc for why that one field lives here and not on the per-Work
+    // `AppIds`) plus a lookup for the one live `WorkSession` below. Registered as
+    // `app_state` so any future consumer can reach it the same way as everything
+    // else here.
+    let registry = WorkRegistry::new();
     // Point the app at the shared Root seeded by `initialize_app` above, so the
     // root id is known before any work is opened (a load/new refreshes it later).
     if let Some(root_id) = init_root_id {
-        ids.root_id.set(Some(root_id));
+        registry.set_root_id(Some(root_id));
     }
-    // The shared open-document store (Layer A): one live `OpenDoc` per open item,
-    // holding the editors' `TextDocument`s + write-back. Registered as `app_state`
-    // so the split editor's two panes (and any future view) share one document per
-    // item — the documents are usable outside the `TabWidget`s.
-    let open_docs = OpenDocsStore::new(app_ctx.clone());
+    // The app's id-only per-Work state (work/work-info/undo-stack ids). Created
+    // here, shared into the outline, the session below, the singles, and the
+    // title-bar menu, and registered as `app_state` so any widget can reach it.
+    // Not itself a `WorkSession` field's *source* — `WorkSession::new` takes this
+    // same clone, rather than minting its own, so `outline` (built next, not
+    // itself Tier 2 — see `sessions::WorkSession`'s module doc) and the session
+    // always agree on which Work is open.
+    let ids = AppIds::new();
     // Spell-checking (Step 6): the engine is shared by every open document (one
-    // `spellbook::Dictionary` per language), and the open-docs store owns the attach
-    // loop — so hand the engine to the store, and register it as `app_state` so the
-    // language-pill field and the personal-word list reach the same instance (mute set,
-    // personal words).
+    // `spellbook::Dictionary` per language) — a genuinely machine-wide resource
+    // (Tier 1), handed to the session below so its `OpenDocsStore` can attach it.
+    // Registered as `app_state` so the language-pill field and the personal-word
+    // list reach the same instance (mute set, personal words).
     let spellcheck = spellcheck::SpellcheckService::new();
-    open_docs.set_spellcheck(spellcheck.clone());
     // Dictionary management: accepted-licence store (cross-process, like `backup.toml`),
     // on-disk discovery, and the download view-model. App-local (a downloaded `.dic` is a
     // machine-wide resource, not `Work` state) — degrades to a throwaway temp settings
@@ -489,14 +501,12 @@ fn main() {
         models::InstalledDictionariesModel::new(dictionary_settings.clone());
     let dictionaries =
         view_models::DictionariesViewModel::new(dictionary_settings, installed_dictionaries);
-    // Reactive single-entity handles (Layer A). Created here so the title-bar menu
-    // can bind the project title (Bug 1) and shape (Bug 2); `App::build` wires
-    // their event subscriptions and re-points them on each `LoadWork`.
-    let single_work = SingleWork::new(app_ctx.clone());
-    let single_work_info = SingleWorkInfo::new(app_ctx.clone());
     // The outline view-model is created here (no settings dependency) so the
     // title-bar menu can bind its reactive checkmark and the whole app can reach
-    // it via `ctx.app_state::<OutlineViewModel>()`.
+    // it via `ctx.app_state::<OutlineViewModel>()`. Not itself Tier 2 (its
+    // `DockingModel` half is genuinely per-window canvas state — see
+    // `sessions::WorkSession`'s module doc) — but the session below mounts its
+    // `workspace_layout` onto this same `DockingModel`, so it must exist first.
     let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
     // Per-work workspace layout (open editor tabs + dock arrangement): opened
     // eagerly here so the restore fires on the first `LoadWork`. App-local config
@@ -522,14 +532,6 @@ fn main() {
                 .ok()
         })
         .unwrap_or_else(TreeExpansionService::in_memory_default);
-    // The progress recorder (writing-cadence): on each save it recounts the
-    // project's words and records a daily `ProgressSnapshot` feeding the Pace
-    // charts. Registered as app-state so `App::build` can route the save +
-    // `count_words` long-operation events to it (and a future manual "recount").
-    let progress_recorder = ProgressRecorder::new(app_ctx.clone(), ids.clone());
-    // One instance app-wide: every roster and backlink list resolves through it, so a
-    // second would mean a second scan and two answers.
-    let mention_index = view_models::MentionIndex::new(app_ctx.clone(), ids.clone());
     // The Import-Plume view-model is a singleton (form + in-flight job + progress
     // toast). Registered as app-state so `App::build` can route the import's
     // long-operation events to it and the menu action can reach it to open the panel.
@@ -551,21 +553,6 @@ fn main() {
         })
         .unwrap_or_else(models::ExportStylesService::in_memory_default);
     let export_styles = view_models::ExportStylesViewModel::new(export_styles_service);
-    // Personal-dictionary feature (per-project `DictWord`): a reactive list model
-    // + a single (for inline rename), composed by the view-model. Registered as
-    // app-state so the Settings pane and the editor's "Add to dictionary" global
-    // action reach the one instance; `App::build` wires its subscriptions.
-    let dict_words = models::DictWordListModel::new(app_ctx.clone());
-    let single_dict_word = SingleDictWord::new(app_ctx.clone());
-    let user_dictionary =
-        view_models::UserDictionaryViewModel::new(dict_words, single_dict_word, ids.clone());
-    // The tag palette + its view-model, on the same footing: registered as app-state so the
-    // Inspector's tag section, the Settings pane and (from Stage 4) the chip popover all
-    // reach the ONE instance. Sharing matters more here than for most view-models — every
-    // chip in the app resolves its colour through this model's lookup signal, so a second
-    // instance would mean a second subscription set and two palettes drifting apart.
-    let work_tags = models::WorkTagsListModel::new(app_ctx.clone());
-    let tags_vm = view_models::TagsViewModel::new(work_tags, ids.clone());
     // Backup-mode state: `backup_mode` is true while a *backup file* is open in
     // this window (Save + auto-backup off; the file is read-only, the content is
     // still editable). `backup_context` carries the open backup's details (drives
@@ -573,32 +560,6 @@ fn main() {
     // `backup_mode` (to hide Save / Back up now); `App::build` sets them on load.
     let backup_mode = Signal::new(false);
     let backup_context: Signal<Option<backup::BackupContext>> = Signal::new(None);
-    // Per-work workspace layout view-model (built here, once `backup_mode` exists —
-    // capture is inert in backup mode). It drives the shared `DockingModel` (via the
-    // outline handle) and is handed the editors once `App::build` creates them.
-    let tree_expansion =
-        TreeExpansionViewModel::new(app_ctx.clone(), ids.clone(), tree_expansion_service);
-    let workspace_layout = WorkspaceLayoutViewModel::new(
-        app_ctx.clone(),
-        workspace_layout_service,
-        outline.docking(),
-        single_work.clone(),
-        single_work_info.clone(),
-        ids.clone(),
-        backup_mode.clone(),
-    );
-    // The Save-As view-model records the new path/shape into WorkInfo on the UI
-    // thread when a background "Save As" completes (save_as itself is read-only).
-    // It also clears backup mode on success — a Save As out of a backup window makes
-    // that window the freshly-written (regular) project.
-    // Registered as app-state so `App::build` routes the long-operation events to it.
-    let save_as_vm = SaveAsViewModel::new(
-        app_ctx.clone(),
-        ids.clone(),
-        single_work.clone(),
-        backup_mode.clone(),
-        backup_context.clone(),
-    );
     // Backup ("Copies de secours") settings — opened eagerly here (before any
     // project loads) so the on-open/on-close/interval hooks and the scheduler see
     // it. Degrades to a throwaway temp file if the config dir is unavailable,
@@ -611,16 +572,36 @@ fn main() {
         })
         .unwrap_or_else(BackupSettingsService::in_memory_default);
     let backup_settings = BackupSettingsViewModel::new(backup_service);
-    // The backup scheduler drives every trigger (manual / on-open / interval /
-    // on-close). It reads the open project's uid/path from the singles and the
-    // policy from `backup_settings`. Registered as app-state so `App::build` routes
-    // the backup long-operation events to it and fires the triggers.
-    let backup_scheduler = BackupSchedulerViewModel::new(
+
+    // ── The Tier-2 seam: one `WorkSession` bundling every per-open-Work
+    // view-model/single/model (see `sessions::WorkSession`'s module doc for the
+    // full list and why each one belongs here). Phase 1 constructs exactly one,
+    // here, and registers it as the registry's current session — the same
+    // "one instance in practice" the rest of the app already assumed, now
+    // behind a seam Phase 2 can multiply without touching every consumer.
+    let session = WorkSession::new(
         app_ctx.clone(),
-        backup_settings.clone(),
-        single_work.clone(),
-        single_work_info.clone(),
+        ids.clone(),
+        spellcheck.clone(),
+        outline.docking(),
         backup_mode.clone(),
+        backup_settings.clone(),
+        workspace_layout_service,
+        tree_expansion_service,
+    );
+    registry.set_current(session.clone());
+
+    // The Save-As view-model records the new path/shape into WorkInfo on the UI
+    // thread when a background "Save As" completes (save_as itself is read-only).
+    // It also clears backup mode on success — a Save As out of a backup window makes
+    // that window the freshly-written (regular) project.
+    // Registered as app-state so `App::build` routes the long-operation events to it.
+    let save_as_vm = SaveAsViewModel::new(
+        app_ctx.clone(),
+        ids.clone(),
+        session.single_work.clone(),
+        backup_mode.clone(),
+        backup_context.clone(),
     );
     // Restore-a-backup view-model — overwrites the original project with the open
     // backup's content (reusing `save_as`), then leaves backup mode. Registered as
@@ -629,7 +610,7 @@ fn main() {
     let restore_vm = BackupRestoreViewModel::new(
         app_ctx.clone(),
         ids.clone(),
-        single_work.clone(),
+        session.single_work.clone(),
         backup_mode.clone(),
         backup_context.clone(),
     );
@@ -646,14 +627,12 @@ fn main() {
     let unsaved = Signal::new(false);
     let pending_exit = Signal::new(PendingExit::None);
     // The save-tracking state (`dirty_seq`/`saved_seq`/`saving` + the `SaveQueue`)
-    // for the open Work — created once, here, and registered as `app_state` so
-    // every project window's `App`/`EditorsViewModel` shares this ONE instance
-    // rather than each minting its own. See `SaveStateViewModel`'s module docs:
-    // that per-window duplication is exactly what broke the moment a second
-    // window existed (a one-shot `SaveQueue::completed` only ever answering the
-    // first window's own queue, leaving every other window's `saved_seq` frozen
-    // while its `dirty_seq` kept climbing).
-    let save_state = SaveStateViewModel::new(app_ctx.clone());
+    // for the open Work now lives on `session.save_state` — the seed this whole
+    // `WorkSession` bundle grew from (see its module doc). `App::build` reads it
+    // straight off `self.session` rather than via `ctx.app_state::<SaveStateViewModel>()`,
+    // so — unlike every other Tier-2 field above — it is deliberately NOT also
+    // registered as its own `app_state` entry below: nothing else in the crate
+    // looked it up that way.
     // The *switch* guard — the same unsaved-changes prompt for the four commands
     // that replace this window's project in place without going through a close
     // (New Work, Open Work, the switcher's "Open here", the import toast's "Open
@@ -706,8 +685,7 @@ fn main() {
         app_ctx.clone(),
         outline.clone(),
         export.clone(),
-        single_work.clone(),
-        single_work_info.clone(),
+        session.clone(),
         autosave_menu.clone(),
         spellcheck_menu.clone(),
         save_as_vm.clone(),
@@ -715,7 +693,6 @@ fn main() {
         backup_context.clone(),
         unsaved.clone(),
         pending_exit.clone(),
-        backup_scheduler.clone(),
         main_window_state.clone(),
         format_vm.clone(),
     );
@@ -777,27 +754,27 @@ fn main() {
         // silently never wake a future awaiting a native timer/socket.
         .install_async_async_std()
         .event_source(EventHubSource { client })
+        .app_state(registry.clone())
         .app_state(ids.clone())
-        .app_state(open_docs.clone())
+        .app_state(session.open_docs.clone())
         .app_state(spellcheck.clone())
         .app_state(dictionaries.clone())
-        .app_state(tags_vm.clone())
+        .app_state(session.tags.clone())
         .app_state(format_vm.clone())
-        .app_state(single_work.clone())
-        .app_state(single_work_info.clone())
+        .app_state(session.single_work.clone())
+        .app_state(session.single_work_info.clone())
         .app_state(outline.clone())
-        .app_state(workspace_layout.clone())
-        .app_state(tree_expansion.clone())
-        .app_state(mention_index.clone())
-        .app_state(progress_recorder.clone())
+        .app_state(session.workspace_layout.clone())
+        .app_state(session.tree_expansion.clone())
+        .app_state(session.mention_index.clone())
+        .app_state(session.progress_recorder.clone())
         .app_state(import_plume.clone())
         .app_state(export.clone())
         .app_state(export_styles.clone())
-        .app_state(user_dictionary.clone())
+        .app_state(session.user_dictionary.clone())
         .app_state(save_as_vm.clone())
-        .app_state(save_state.clone())
         .app_state(backup_settings.clone())
-        .app_state(backup_scheduler.clone())
+        .app_state(session.backup_scheduler.clone())
         .app_state(restore_vm.clone())
         .app_state(project_switch.clone())
         .app_state(project_factory.clone())

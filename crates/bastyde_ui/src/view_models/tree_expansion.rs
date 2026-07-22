@@ -80,7 +80,7 @@ impl TreeExpansionViewModel {
         let Some(work_uid) = self.work_uid() else {
             return;
         };
-        let path = crate::current_project_path(&self.app_ctx).unwrap_or_default();
+        let path = crate::current_project_path(&self.app_ctx, &self.ids).unwrap_or_default();
         if let Err(e) = self.service.set_outline(&work_uid, &path, expanded) {
             eprintln!("skribisto: could not persist outline expansion: {e}");
         }
@@ -101,7 +101,7 @@ impl TreeExpansionViewModel {
         let Some(work_uid) = self.work_uid() else {
             return;
         };
-        let path = crate::current_project_path(&self.app_ctx).unwrap_or_default();
+        let path = crate::current_project_path(&self.app_ctx, &self.ids).unwrap_or_default();
         if let Err(e) = self.service.set_folders(&work_uid, &path, folders) {
             // Losing a remembered chevron is not worth interrupting a close for, but it
             // should not vanish silently either.

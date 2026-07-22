@@ -396,7 +396,7 @@ impl ExportViewModel {
     }
 
     fn default_output_path(&self) -> String {
-        let stem = crate::project_stem(&self.app_ctx);
+        let stem = crate::project_stem(&self.app_ctx, &self.ids);
         let ext = extension_of(&self.selected_format());
         let name = format!("{stem}.{ext}");
         match self.default_dir() {
@@ -408,7 +408,7 @@ impl ExportViewModel {
     /// The folder the project lives in (its *sibling*, so an export doesn't land inside a
     /// folder-shaped project). `None` when no project path is known.
     fn default_dir(&self) -> Option<PathBuf> {
-        let cur = crate::current_project_path(&self.app_ctx)?;
+        let cur = crate::current_project_path(&self.app_ctx, &self.ids)?;
         let p = Path::new(&cur);
         // A folder work's entry is `…/<Project>/project.skrib`; a zip work's is `…/X.skrib`.
         let base = if p.file_name().and_then(|n| n.to_str()) == Some("project.skrib") {
@@ -602,12 +602,15 @@ impl ExportViewModel {
     /// converting each DTO to its entity. The client analogue of the backend's frozen
     /// `gather` — best-effort (an empty store yields "no open work", and the preview then
     /// shows its empty state).
+    ///
+    /// Resolved through `self.ids.work_id` (the Phase-1 seam), not
+    /// `get_all_work(ctx)`'s first entry — see `dto`'s identical resolution just
+    /// below for the same reasoning.
     fn client_gather(&self) -> anyhow::Result<Gathered> {
         let ctx = &self.app_ctx;
-        let work_dto = work_commands::get_all_work(ctx)?
-            .into_iter()
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("no open work"))?;
+        let work_id = self.ids.work_id.get().ok_or_else(|| anyhow::anyhow!("no open work"))?;
+        let work_dto =
+            work_commands::get_work(ctx, &work_id)?.ok_or_else(|| anyhow::anyhow!("no open work"))?;
         let work: Work = work_dto.into();
         let binder_ids =
             work_commands::get_work_relationship(ctx, &work.id, &WorkRelationshipField::Binders)?;

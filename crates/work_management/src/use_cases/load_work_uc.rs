@@ -138,6 +138,13 @@ impl LoadWorkUseCase {
         // Scoped per-id (`work_io::close_current_work`), not a store-wide sweep,
         // so this loop is forward-safe the day a second Work is genuinely meant
         // to stay open.
+        //
+        // TRIPWIRE: this sweep is DELIBERATE Phase-0 behaviour and must stay until Phase 2
+        // (multiple simultaneously-open Works, one per window) actually lands — do not
+        // remove it as a "cleanup" before then. It is pinned by
+        // `frontend::tests::multi_work_scoping_test::load_work_closes_every_other_open_work_today`,
+        // which is written to FAIL the day this loop is removed; that test failing (not this
+        // comment) is the authoritative signal that it is finally safe to delete this loop.
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 

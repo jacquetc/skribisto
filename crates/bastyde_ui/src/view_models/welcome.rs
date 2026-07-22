@@ -418,11 +418,11 @@ mod tests {
 
     use crate::app::PendingExit;
     use crate::app_ids::AppIds;
-    use crate::models::BackupSettingsService;
-    use crate::singles::{SingleWork, SingleWorkInfo};
+    use crate::models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
+    use crate::sessions::WorkSession;
+    use crate::spellcheck::SpellcheckService;
     use crate::view_models::{
-        BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, OutlineViewModel,
-        SaveAsViewModel,
+        BackupSettingsViewModel, ExportViewModel, OutlineViewModel, SaveAsViewModel,
     };
 
     /// A minimal, fully in-memory `ProjectWindowFactory` — enough plumbing to
@@ -432,32 +432,32 @@ mod tests {
         let ids = AppIds::new();
         let outline = OutlineViewModel::new_default(app_ctx.clone(), ids.clone());
         let export = ExportViewModel::new(app_ctx.clone(), ids.clone());
-        let single_work = SingleWork::new(app_ctx.clone());
-        let single_work_info = SingleWorkInfo::new(app_ctx.clone());
         let backup_mode = Signal::new(false);
         let backup_context = Signal::new(None);
+        let backup_settings =
+            BackupSettingsViewModel::new(BackupSettingsService::in_memory_default());
+        let session = WorkSession::new(
+            app_ctx.clone(),
+            ids.clone(),
+            SpellcheckService::new(),
+            outline.docking(),
+            backup_mode.clone(),
+            backup_settings,
+            WorkspaceLayoutService::in_memory_default(),
+            TreeExpansionService::in_memory_default(),
+        );
         let save_as_vm = SaveAsViewModel::new(
             app_ctx.clone(),
             ids.clone(),
-            single_work.clone(),
+            session.single_work.clone(),
             backup_mode.clone(),
             backup_context.clone(),
-        );
-        let backup_settings =
-            BackupSettingsViewModel::new(BackupSettingsService::in_memory_default());
-        let backup_scheduler = BackupSchedulerViewModel::new(
-            app_ctx.clone(),
-            backup_settings,
-            single_work.clone(),
-            single_work_info.clone(),
-            backup_mode.clone(),
         );
         ProjectWindowFactory::new(
             app_ctx,
             outline,
             export,
-            single_work,
-            single_work_info,
+            session,
             Signal::new(false), // autosave_menu
             Signal::new(true),  // spellcheck_menu (default on)
             save_as_vm,
@@ -465,7 +465,6 @@ mod tests {
             backup_context,
             Signal::new(false),
             Signal::new(PendingExit::None),
-            backup_scheduler,
             Rc::new(RefCell::new(None)),
             crate::view_models::FormatViewModel::detached(),
         )

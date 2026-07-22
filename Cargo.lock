@@ -5488,6 +5488,7 @@ dependencies = [
  "serde_json",
  "skribisto-binder-ordering",
  "skribisto-common",
+ "skribisto-direct-access",
  "skribisto-macros",
  "skribisto-model",
  "uuid",
@@ -5730,6 +5731,7 @@ dependencies = [
  "serde_json",
  "skribisto-binder-ordering",
  "skribisto-common",
+ "skribisto-direct-access",
  "skribisto-macros",
  "uuid",
 ]

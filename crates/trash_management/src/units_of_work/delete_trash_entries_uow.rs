@@ -133,6 +133,7 @@ impl CommandUnitOfWork for DeleteTrashEntriesUnitOfWork {
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "GetAll")]
 #[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Work", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "Work", action = "Snapshot")]
 #[macros::uow_action(entity = "Work", action = "Restore")]

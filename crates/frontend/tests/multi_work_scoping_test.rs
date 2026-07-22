@@ -73,7 +73,7 @@ use trash_management::{
     DeleteTrashEntriesDto, DropPosition, EmptyTrashDto, RestoreItemsDto, RestoreItemsToDto,
     TrashBinderDto, TrashBinderItemsDto,
 };
-use work_management::{NewWorkDto, NewWorkTemplate};
+use work_management::{LoadWorkDto, NewWorkDto, NewWorkTemplate};
 
 fn now() -> chrono::DateTime<chrono::Utc> {
     chrono::Utc::now()
@@ -1581,5 +1581,157 @@ fn merge_two_scenes_only_indexes_under_the_requested_work() {
         trash_a_after.len(),
         1,
         "Work A's trash index must remain exactly its own one entry after a merge naming Work B"
+    );
+}
+
+// ───────────────────── Phase-0 tripwire: the "close everything" sweep ─────────────────────
+//
+// Every test above proves Work-scoping works PROVIDED two Works are already open, which
+// today only happens through `seed_second_work`'s bypass — the real, public entry points
+// (`load_work`/`new_work`) still run through `work_io::close_current_work` for
+// EVERY currently-open Work first, so the app itself can never actually reach the two-Works
+// state the tests above construct by hand. That is deliberate Phase-0 behaviour (see
+// `load_work_uc.rs`/`new_work_uc.rs`), NOT a bug — but nothing currently fails if a future
+// change (e.g. a second window in Phase 2) ships while that sweep is still in place, silently
+// tearing down whichever Work the user had open in another window.
+//
+// The two tests below are that tripwire. They PIN today's real, sweep-driven behaviour by
+// going through the actual public `load_work`/`new_work` commands (no `seed_second_work`
+// bypass) and asserting the sweep fired: opening a second Work leaves exactly one Work open,
+// and it is the new one, not the one that was already there.
+//
+// *** THESE TESTS ARE EXPECTED TO FAIL AND BE REWRITTEN ONCE PHASE 2 LANDS. *** Phase 2's
+// whole point is to let more than one Work stay open at once (one per window); the day that
+// ships, `load_work`/`new_work` must stop closing every other open Work, and these two tests
+// will start failing — on purpose. That failure IS the signal to go delete the
+// `for existing_id in uow.get_all_work()? { work_io::close_current_work(...) }` loops in
+// `load_work_uc.rs::LoadWorkUseCase::execute` and `new_work_uc.rs::NewWorkUseCase::execute`
+// (and once removed, delete these two tests too — the two-Works-scoping tests above already
+// cover the world that replaces them).
+
+/// Tripwire (see the section doc comment above): `load_work` still closes every other open
+/// Work before opening the requested one. Loading a second project through the real,
+/// public `load_work` path must leave Work A gone — not just "invisible next to Work B" the
+/// way `seed_second_work` would have it, but actually removed from the store (its `Work` row,
+/// its `WorkInfo`, and its slot in `Root.works`).
+///
+/// EXPECTED TO FAIL once Phase 2 stops `load_work` from closing other open Works — that
+/// failure is the cue to delete this test alongside the sweep in `load_work_uc.rs`.
+#[test]
+fn load_work_closes_every_other_open_work_today() {
+    let (ctx, work_a) = ctx_with_work_a();
+    assert_eq!(
+        work_info_commands::get_all_work_info(&ctx).unwrap().len(),
+        1,
+        "sanity: Work A's own WorkInfo must exist before the second load"
+    );
+
+    let fixture = format!(
+        "{}/../../resources/test/skribisto_test_project.skrib",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    assert!(
+        std::path::Path::new(&fixture).exists(),
+        "fixture missing: {fixture}"
+    );
+    work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture })
+        .expect("load_work must succeed opening the second project");
+
+    let works_after = work_commands::get_all_work(&ctx).unwrap();
+    assert_eq!(
+        works_after.len(),
+        1,
+        "load_work's sweep must leave exactly ONE Work open, not two — got {}",
+        works_after.len()
+    );
+    assert_ne!(
+        works_after[0].id, work_a,
+        "Work A must be gone: load_work closes every other open Work before opening a new one \
+         (Phase-0 behaviour, deliberately preserved — see load_work_uc.rs)"
+    );
+
+    let root_id = root_commands::get_all_root(&ctx).unwrap().pop().unwrap().id;
+    let root_works =
+        root_commands::get_root_relationship(&ctx, &root_id, &RootRelationshipField::Works)
+            .unwrap();
+    assert_eq!(
+        root_works,
+        vec![works_after[0].id],
+        "Root.works must list only the freshly loaded Work — Work A's slot must be gone, not \
+         merely superseded"
+    );
+
+    let work_infos_after = work_info_commands::get_all_work_info(&ctx).unwrap();
+    assert_eq!(
+        work_infos_after.len(),
+        1,
+        "Work A's WorkInfo must be gone too, not just orphaned"
+    );
+}
+
+/// Tripwire (see the section doc comment above): `new_work` shares `load_work`'s sweep
+/// shape (same `work_io::close_current_work` loop, same rationale) — pin it independently
+/// so a fix applied to one use case but not the other still trips a failing test.
+///
+/// EXPECTED TO FAIL once Phase 2 stops `new_work` from closing other open Works — that
+/// failure is the cue to delete this test alongside the sweep in `new_work_uc.rs`.
+#[test]
+fn new_work_closes_every_other_open_work_today() {
+    let (ctx, work_a) = ctx_with_work_a();
+    assert_eq!(
+        work_info_commands::get_all_work_info(&ctx).unwrap().len(),
+        1,
+        "sanity: Work A's own WorkInfo must exist before the second new_work"
+    );
+
+    let dir = std::env::temp_dir().join(format!(
+        "skrib-multiwork-tripwire-{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&dir);
+    work_management_commands::new_work(
+        &ctx,
+        &NewWorkDto {
+            file_name: dir.to_string_lossy().to_string(),
+            is_folder: true,
+            template_kind: NewWorkTemplate::EmptyNovel,
+            labels: vec![],
+            language: vec!["en-US".to_string()],
+            author_name: String::new(),
+            chapter_scene_mode: false,
+        },
+    )
+    .expect("new_work B");
+    let _ = std::fs::remove_dir_all(&dir);
+
+    let works_after = work_commands::get_all_work(&ctx).unwrap();
+    assert_eq!(
+        works_after.len(),
+        1,
+        "new_work's sweep must leave exactly ONE Work open, not two — got {}",
+        works_after.len()
+    );
+    assert_ne!(
+        works_after[0].id, work_a,
+        "Work A must be gone: new_work closes every other open Work before creating a new one \
+         (Phase-0 behaviour, deliberately preserved — see new_work_uc.rs)"
+    );
+
+    let root_id = root_commands::get_all_root(&ctx).unwrap().pop().unwrap().id;
+    let root_works =
+        root_commands::get_root_relationship(&ctx, &root_id, &RootRelationshipField::Works)
+            .unwrap();
+    assert_eq!(
+        root_works,
+        vec![works_after[0].id],
+        "Root.works must list only the freshly created Work — Work A's slot must be gone, not \
+         merely superseded"
+    );
+
+    let work_infos_after = work_info_commands::get_all_work_info(&ctx).unwrap();
+    assert_eq!(
+        work_infos_after.len(),
+        1,
+        "Work A's WorkInfo must be gone too, not just orphaned"
     );
 }

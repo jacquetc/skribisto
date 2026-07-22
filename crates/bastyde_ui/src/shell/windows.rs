@@ -46,12 +46,12 @@ use crate::app::{App, PendingAction, PendingExit, guard_unsaved_exit};
 use crate::export::split_button::ExportSplitButton;
 use crate::intents::AppIntent;
 use crate::panels::welcome::WelcomePanel;
+use crate::sessions::WorkSession;
 use crate::shell::project_switcher_button::ProjectSwitcherButton;
-use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::spellcheck::toggle_button::SpellcheckToggleButton;
 use crate::view_models::{
-    ALIGN_CENTER, ALIGN_LEFT, BackupSchedulerViewModel, ExportViewModel, FormatViewModel,
-    OutlineViewModel, SaveAsViewModel, scope_label,
+    ALIGN_CENTER, ALIGN_LEFT, ExportViewModel, FormatViewModel, OutlineViewModel, SaveAsViewModel,
+    scope_label,
 };
 use export_management::ExportScopeKind;
 
@@ -273,8 +273,11 @@ pub struct ProjectWindowFactory {
     app_ctx: Rc<AppContext>,
     outline: OutlineViewModel,
     export: ExportViewModel,
-    single_work: SingleWork,
-    single_work_info: SingleWorkInfo,
+    /// The Tier-2 per-open-Work bundle (see `sessions::WorkSession`'s module
+    /// doc) — `single_work`/`single_work_info`/`backup_scheduler` used to be
+    /// three separate constructor parameters; Phase 1 folds them (and every
+    /// other Tier-2 field this factory doesn't happen to need yet) into one.
+    session: WorkSession,
     autosave_menu: Signal<bool>,
     /// Plain mirror of the master spell-check switch — the title-bar toggle's icon and
     /// the View ▸ Check spelling checkmark read it. `App::build` keeps it in sync.
@@ -284,7 +287,6 @@ pub struct ProjectWindowFactory {
     backup_context: Signal<Option<crate::backup::BackupContext>>,
     unsaved: Signal<bool>,
     pending_exit: Signal<PendingExit>,
-    backup_scheduler: BackupSchedulerViewModel,
     /// Shared handle to the *current* project window's `WindowState`, so IPC
     /// "raise" events (see `ipc.rs`) can focus it directly without a
     /// `WindowManager` id lookup (which misses while that window is
@@ -299,8 +301,7 @@ impl ProjectWindowFactory {
         app_ctx: Rc<AppContext>,
         outline: OutlineViewModel,
         export: ExportViewModel,
-        single_work: SingleWork,
-        single_work_info: SingleWorkInfo,
+        session: WorkSession,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
         save_as_vm: SaveAsViewModel,
@@ -308,7 +309,6 @@ impl ProjectWindowFactory {
         backup_context: Signal<Option<crate::backup::BackupContext>>,
         unsaved: Signal<bool>,
         pending_exit: Signal<PendingExit>,
-        backup_scheduler: BackupSchedulerViewModel,
         main_window_state: Rc<RefCell<Option<WindowState>>>,
         format: FormatViewModel,
     ) -> Self {
@@ -317,8 +317,7 @@ impl ProjectWindowFactory {
             app_ctx,
             outline,
             export,
-            single_work,
-            single_work_info,
+            session,
             autosave_menu,
             spellcheck_menu,
             save_as_vm,
@@ -326,7 +325,6 @@ impl ProjectWindowFactory {
             backup_context,
             unsaved,
             pending_exit,
-            backup_scheduler,
             main_window_state,
         }
     }
@@ -345,8 +343,9 @@ impl ProjectWindowFactory {
         let outline = self.outline.clone();
         let format = self.format.clone();
         let export = self.export.clone();
-        let single_work = self.single_work.clone();
-        let single_work_info = self.single_work_info.clone();
+        let session = self.session.clone();
+        let single_work = session.single_work.clone();
+        let single_work_info = session.single_work_info.clone();
         let autosave_menu = self.autosave_menu.clone();
         let spellcheck_menu = self.spellcheck_menu.clone();
         // Per WINDOW, not per process: unlike `spellcheck_menu` (a global
@@ -359,7 +358,7 @@ impl ProjectWindowFactory {
         let backup_context = self.backup_context.clone();
         let unsaved = self.unsaved.clone();
         let pending_exit = self.pending_exit.clone();
-        let backup_scheduler = self.backup_scheduler.clone();
+        let backup_scheduler = session.backup_scheduler.clone();
         let main_window_state = self.main_window_state.clone();
 
         WindowConfig::new()
@@ -431,6 +430,7 @@ impl ProjectWindowFactory {
                         let export_for_menu = export.clone();
                         let menu_work = single_work.clone();
                         let menu_work_info = single_work_info.clone();
+                        let menu_ids = session.ids.clone();
                         let menu_autosave = autosave_menu.clone();
         // The menu closure below is `move`, so give it its own clone — the title-bar toggle
         // still needs the original (same reason `menu_autosave` exists).
@@ -443,6 +443,8 @@ impl ProjectWindowFactory {
                         let menu = MenuModel::new().menu(tr!(menu_work()), move |m| {
                             let file_ctx = menu_ctx.clone();
                             let folder_ctx = menu_ctx.clone();
+                            let file_ids = menu_ids.clone();
+                            let folder_ids = menu_ids.clone();
                             let folder_work = menu_work.clone();
                             let save_as_file_vm = menu_save_as.clone();
                             let save_as_folder_vm = menu_save_as.clone();
@@ -552,7 +554,10 @@ impl ProjectWindowFactory {
                                     let vm = save_as_file_vm.clone();
                                     let req = FileDialogRequest::save_file()
                                         .title("Save as single .skrib file")
-                                        .default_file_name(format!("{}.skrib", crate::project_stem(&ctx)))
+                                        .default_file_name(format!(
+                                            "{}.skrib",
+                                            crate::project_stem(&ctx, &file_ids)
+                                        ))
                                         .add_filter("Skribisto work", &["skrib"]);
                                     let _ = ectx.save_file(req, move |res, ectx2| {
                                         if let FileDialogResult::Saved(Some(path)) = res {
@@ -575,7 +580,7 @@ impl ProjectWindowFactory {
                                     // project file stem when the title is empty.
                                     let title = folder_work.title().get();
                                     let raw = if title.trim().is_empty() {
-                                        crate::project_stem(&ctx)
+                                        crate::project_stem(&ctx, &folder_ids)
                                     } else {
                                         title
                                     };
@@ -952,7 +957,11 @@ impl ProjectWindowFactory {
                                                     size: IconButtonSize::Large
                                                     on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
                                                 }
-                                                ProjectSwitcherButton::new(app_ctx_root.clone())
+                                                ProjectSwitcherButton::new(
+                                                    app_ctx_root.clone(),
+                                                    single_work.clone(),
+                                                    single_work_info.clone(),
+                                                )
                                             }
                                         }
                                         Expand::horizontal {
@@ -974,6 +983,7 @@ impl ProjectWindowFactory {
 
                 let body = tree.add(Expand::new().child(App::new(
                     app_ctx_root.clone(),
+                    session.clone(),
                     outline.clone(),
                     autosave_menu.clone(),
                     spellcheck_menu.clone(),

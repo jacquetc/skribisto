@@ -195,6 +195,36 @@ impl RestoreItemsToUseCase {
             ));
         }
 
+        // Ownership check: every binder this op touches -- each item's
+        // *source* binder (resolved above from the item itself, with no
+        // reference to `work_id`) and the *destination* -- must belong to the
+        // NAMED Work. Binder ownership is exclusive (Work.binders is a strong
+        // one_to_many), so this forward lookup is exact: a binder id copied
+        // from a different Work's tree can never appear in `work_id`'s own
+        // list. Every check so far only cross-references binder/item ids
+        // against EACH OTHER, never against the Work, so a caller handing in
+        // Work B's binder_item_ids (and Work B's own destination binder)
+        // under Work A's (real, open) work_id would otherwise sail through:
+        // the mutation below would move Work B's rows while the undo/redo
+        // snapshot stayed scoped to Work A.
+        let owned_binders: HashSet<EntityId> = uow
+            .get_work_relationship(&work_id, &WorkRelationshipField::Binders)?
+            .into_iter()
+            .collect();
+        let mut touched_binders: HashSet<EntityId> =
+            plan.iter().filter_map(|p| p.src_binder).collect();
+        touched_binders.insert(dest_binder_id);
+        let foreign: Vec<EntityId> = touched_binders
+            .iter()
+            .copied()
+            .filter(|id| !owned_binders.contains(id))
+            .collect();
+        if !foreign.is_empty() {
+            return Err(anyhow!(
+                "restore_items_to: binder(s) {foreign:?} do not belong to work {work_id}"
+            ));
+        }
+
         // Snapshot the Work trunk before any mutation. (Taken unconditionally so
         // undo/redo work even when nothing was recoverable.)
         let snap_before = uow.snapshot_work(&[work_id])?;

@@ -81,6 +81,31 @@ impl RestoreItemsUseCase {
         // owning Work with dangling trash rows pointing at now-reactivated
         // items, on top of an undo/redo pair scoped to the wrong tree.
         let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
+
+        // Ownership check: every requested TrashInfo must be indexed under
+        // THIS Work, not merely exist somewhere in the store. `work_id()`
+        // above only validates the *scalar* dto.work_id against the open
+        // Works -- it says nothing about whether `dto.trash_info_ids` are
+        // actually this Work's own rows. Without this, an id copied from a
+        // different (also open) Work's trash bin would sail straight through:
+        // the loop below resolves `trashed_binder`/`trashed_binder_item` from
+        // the TrashInfo itself and reactivates whatever Binder/BinderItem it
+        // points at, regardless of which Work owns them, while the
+        // snapshot/restore pair stays scoped to `work_id` -- the real owning
+        // Work's tree gets mutated with no undo record, and this Work's index
+        // loses a row it never held.
+        let indexed: HashSet<EntityId> = uow
+            .get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?
+            .into_iter()
+            .collect();
+        let foreign: Vec<EntityId> =
+            info_ids.iter().copied().filter(|id| !indexed.contains(id)).collect();
+        if !foreign.is_empty() {
+            return Err(anyhow!(
+                "restore_items: trash entries {foreign:?} do not belong to work {work_id}"
+            ));
+        }
+
         // Work-scoped snapshot, before the first mutation.
         let snap_before = uow.snapshot_work(&[work_id])?;
 
