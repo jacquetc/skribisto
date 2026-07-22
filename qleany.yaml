@@ -255,6 +255,11 @@ entities:
     entity: TextReplacementRule
     relationship: one_to_many
     strong: true
+  - name: smart_punctuation
+    type: entity
+    entity: SmartPunctuation
+    relationship: one_to_one
+    strong: true
   - name: trash_infos
     type: entity
     entity: TrashInfo
@@ -269,6 +274,51 @@ entities:
     strong: true
     list_model: true
     list_model_displayed_field: start_date
+  undoable: true
+# Per-project smart punctuation: the "-- becomes an em dash, « » get their
+# non-breaking spaces" rules, as the DOCUMENT's house style rather than this
+# machine's preference — so it travels in the .skrib exactly as Pace and the
+# replacement lexicon do (a co-author opening the file gets the same typography).
+#
+# Named for what it does. "Typography" is already taken in this codebase by
+# `EditorTypography`, which means fonts, sizes and spacing — a different thing
+# entirely, and one that legitimately IS a machine preference.
+#
+# `undoable: true`, and not by preference: `qleany check` refuses a non-undoable
+# strong child under an undoable parent, so "owned by Work" and "off the undo
+# stack" are mutually exclusive here. Travelling with the document is the more
+# valuable half, and undoable per-project settings are the house norm anyway —
+# Pace's own comment says as much about editing a deadline. (Nor is there a way
+# round it at runtime: `undoable` is fixed at codegen time, and `stack_id: None`
+# reroutes to the never-cleared global stack 0 rather than skipping the push.)
+#
+# The glyphs themselves are NOT here: they come from the locale ruleset keyed by
+# the item's effective `dict_language`. These fields only say which rules are on,
+# plus a house-style quote override for the locales that genuinely have more than
+# one accepted system (Italian above all).
+- name: SmartPunctuation
+  inherits_from: EntityBase
+  fields:
+  - name: override_app_default
+    type: boolean
+  - name: dashes
+    type: boolean
+  - name: ellipsis
+    type: boolean
+  - name: quotes
+    type: boolean
+  - name: quote_style
+    type: enum
+    enum_name: QuoteStyle
+    enum_values:
+      - LocaleDefault
+      - CurlyDouble
+      - Guillemets
+      - LowHigh
+  - name: pre_punctuation_spacing
+    type: boolean
+  - name: dialogue_marker
+    type: boolean
   undoable: true
 - name: TrashInfo
   inherits_from: EntityBase
