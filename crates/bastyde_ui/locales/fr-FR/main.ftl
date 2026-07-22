@@ -972,6 +972,36 @@ settings-user-dict-import-failed = Impossible de lire la liste de mots : { $erro
 settings-user-dict-exported = { $count } mots enregistrés.
 settings-user-dict-export-failed = Impossible d’enregistrer la liste de mots : { $error }
 
+## Réglages: Projet ▸ Remplacements de texte (lexique personnalisé par projet)
+settings-page-text-replacements = Remplacements de texte
+settings-text-repl-desc = Remplace une abréviation par le texte complet à la frappe : « dbl » devient « Dumbledore » dès que vous tapez une espace ou une ponctuation.
+settings-text-repl-enable = Utiliser les remplacements de texte dans ce projet
+settings-text-repl-disabled-hint = Activez cette option pour définir des abréviations qui se développent à l’écriture.
+settings-text-repl-add = Ajouter la règle
+settings-text-repl-trigger-placeholder = Abréviation
+settings-text-repl-replacement-placeholder = Ce qu’elle devient
+settings-text-repl-added = « { $trigger } » ajouté
+settings-text-repl-duplicate = « { $trigger } » a déjà une règle
+settings-text-repl-filter = Filtrer les règles
+# `{ $n }` rather than a literal "1" in the [one] branch: French puts zero in the
+# `one` category, so a hardcoded numeral renders "1 règle" for an empty lexicon.
+settings-text-repl-count = { $n ->
+    [one] { $n } règle
+   *[other] { $n } règles
+}
+settings-text-repl-row-enabled-tip = Utiliser cette règle pendant l’écriture
+settings-text-repl-delete = Supprimer la règle de { $trigger }
+settings-text-repl-deleted = Règle de « { $trigger } » supprimée
+settings-text-repl-empty = Aucune règle pour l’instant.
+settings-text-repl-csv-filter = Fichiers CSV
+settings-text-repl-import = Importer…
+settings-text-repl-export = Exporter…
+settings-text-repl-imported = { $added } importées, { $skipped } ignorées
+settings-text-repl-exported = { $n ->
+    [one] { $n } règle exportée
+   *[other] { $n } règles exportées
+}
+
 ## Éditeur: orthographe (menu contextuel + notification)
 # Affiché à la place des corrections quand un mot signalé n’en a aucune.
 editor-menu-no-suggestions = Aucune suggestion

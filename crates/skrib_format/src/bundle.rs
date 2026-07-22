@@ -156,6 +156,17 @@ pub struct WorkFile {
     /// older bundles readable (missing → folder mode).
     #[serde(default)]
     pub chapter_flat: bool,
+    /// The custom text-replacement lexicon's ids for this Work. Additive, like
+    /// `chapter_flat` — `#[serde(default)]` keeps older bundles readable (missing
+    /// → no rules, exactly what a project written before this feature existed
+    /// should mean).
+    #[serde(default)]
+    pub text_replacement_rule_ids: Vec<u64>,
+    /// Per-project master switch for the custom text-replacement lexicon, off by
+    /// default — a writer opts a specific project in explicitly. `#[serde(default)]`
+    /// for the same reason as `text_replacement_rule_ids`.
+    #[serde(default)]
+    pub custom_replacement_rules_enabled: bool,
 }
 
 /// `tags.ron`
@@ -197,6 +208,17 @@ pub struct DictWordFile {
     pub created_at: String,
     pub updated_at: String,
     pub word: String,
+}
+
+/// `replacements.ron`
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TextReplacementRuleFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub trigger: String,
+    pub replacement: String,
+    pub enabled: bool,
 }
 
 /// `trash.ron`
@@ -361,6 +383,7 @@ pub struct WorkBundle {
     pub manifest: ProjectManifest,
     pub tags: Vec<BinderTagFile>,
     pub dict_words: Vec<DictWordFile>,
+    pub text_replacement_rules: Vec<TextReplacementRuleFile>,
     pub trash_infos: Vec<TrashInfoFile>,
     pub paces: Vec<PaceFile>,
     pub progress_snapshots: Vec<ProgressSnapshotFile>,

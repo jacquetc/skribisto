@@ -52,6 +52,7 @@ pub(super) fn synopsis_editor(
         on_change,
         split,
         spell,
+        open_doc.replacement_synopsis(),
     )
 }
 

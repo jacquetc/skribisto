@@ -9,7 +9,7 @@
 //! Ids on these entities are the source's **file ids** — the materialiser
 //! remaps them to fresh store ids while preserving order and M2M links.
 
-use common::entities::{Binder, BinderItem, BinderTag, Content, DictWord, Work};
+use common::entities::{Binder, BinderItem, BinderTag, Content, DictWord, TextReplacementRule, Work};
 
 pub struct LoadedWork {
     /// `work.id` = work file id; `binders`/`tags`/`dict_words` vecs are empty
@@ -17,6 +17,7 @@ pub struct LoadedWork {
     pub work: Work,
     pub tags: Vec<BinderTag>,
     pub dict_words: Vec<DictWord>,
+    pub text_replacement_rules: Vec<TextReplacementRule>,
     pub binders: Vec<LoadedBinder>,
     pub trash_infos: Vec<LoadedTrash>,
     pub paces: Vec<LoadedPace>,

@@ -70,8 +70,10 @@ fn sample_inputs() -> (
         dict_language: vec!["en-US".to_string()],
         unique_id: "test-unique-id-abc".into(),
         chapter_mode: common::entities::ChapterMode::Flat,
+        custom_replacement_rules_enabled: false,
         tags: vec![10, 11],
         dict_words: vec![20, 21],
+        text_replacement_rules: vec![],
         binders: vec![100],
         trash_infos: vec![],
         paces: vec![],
@@ -206,7 +208,9 @@ fn sample_inputs() -> (
 
 fn build_bundle(shape: ShapeTag) -> WorkBundle {
     let (work, tags, dict_words, trash, binders) = sample_inputs();
-    from_entities(&work, &tags, &dict_words, &trash, &[], &[], &binders, shape)
+    from_entities(
+        &work, &tags, &dict_words, &[], &trash, &[], &[], &binders, shape,
+    )
 }
 
 #[test]
@@ -331,7 +335,7 @@ fn disallowed_content_is_dropped() {
         },
         items: vec![ItemWithContents { item, contents }],
     }];
-    let bundle = from_entities(&work, &[], &[], &[], &[], &[], &binders, ShapeTag::Folder);
+    let bundle = from_entities(&work, &[], &[], &[], &[], &[], &[], &binders, ShapeTag::Folder);
     let f = &bundle.binders[0].items[0].item;
     assert!(
         f.prose_refs

@@ -84,6 +84,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 tab.mark_dirty_fn(),
                 Option::None,
                 tab.open_doc.spell_synopsis(),
+                tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
             ));
     }
@@ -97,6 +98,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             tab.mark_dirty_fn(),
             None, // the container's own page has no find banner (no top strip here)
             tab.open_doc.spell_main(),
+            tab.open_doc.replacement_main(),
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
@@ -150,6 +152,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
                 &tab.typography.synopsis,
                 tab.mark_dirty_fn(),
                 tab.open_doc.spell_synopsis(),
+                tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
             ),
         ));
@@ -166,6 +169,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             tab.mark_dirty_fn(),
             find.clone(),
             tab.open_doc.spell_main(),
+            tab.open_doc.replacement_main(),
         ));
     }
     // The whole dual-pane body scrolls as one flowing page: the main editor is
@@ -232,6 +236,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 tab.mark_dirty_fn(),
                 Option::None,
                 tab.open_doc.spell_synopsis(),
+                tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
             ));
     }
@@ -283,6 +288,7 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
                 tab.mark_dirty_fn(),
                 Option::None,
                 tab.open_doc.spell_synopsis(),
+                tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
             ));
     }

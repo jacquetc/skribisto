@@ -33,6 +33,7 @@ pub trait WorkCloser {
     fn content_ids(&self) -> Result<Vec<EntityId>>;
     fn tag_ids(&self) -> Result<Vec<EntityId>>;
     fn dict_ids(&self) -> Result<Vec<EntityId>>;
+    fn text_replacement_rule_ids(&self) -> Result<Vec<EntityId>>;
     fn trash_ids(&self) -> Result<Vec<EntityId>>;
     fn pace_ids(&self) -> Result<Vec<EntityId>>;
     fn holiday_ids(&self) -> Result<Vec<EntityId>>;
@@ -45,6 +46,7 @@ pub trait WorkCloser {
     fn remove_contents(&self, ids: &[EntityId]) -> Result<()>;
     fn remove_tags(&self, ids: &[EntityId]) -> Result<()>;
     fn remove_dicts(&self, ids: &[EntityId]) -> Result<()>;
+    fn remove_text_replacement_rules(&self, ids: &[EntityId]) -> Result<()>;
     fn remove_trashes(&self, ids: &[EntityId]) -> Result<()>;
     fn remove_paces(&self, ids: &[EntityId]) -> Result<()>;
     fn remove_holidays(&self, ids: &[EntityId]) -> Result<()>;
@@ -64,6 +66,7 @@ pub fn close_current_work<C: WorkCloser + ?Sized>(c: &C) -> Result<()> {
     c.remove_binders(&c.binder_ids()?)?;
     c.remove_tags(&c.tag_ids()?)?;
     c.remove_dicts(&c.dict_ids()?)?;
+    c.remove_text_replacement_rules(&c.text_replacement_rule_ids()?)?;
     c.remove_trashes(&c.trash_ids()?)?;
     // Pace children before Pace before Work (children-before-parent).
     c.remove_milestones(&c.milestone_ids()?)?;
@@ -128,6 +131,7 @@ pub fn serialize_and_write(
         &g.work,
         &g.tags,
         &g.dict_words,
+        &g.text_replacement_rules,
         &g.trash_infos,
         &g.paces,
         &g.progress_snapshots,

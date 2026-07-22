@@ -51,6 +51,10 @@ fn strip_volatile(b: &mut WorkBundle) {
         d.created_at.clear();
         d.updated_at.clear();
     }
+    for r in &mut b.text_replacement_rules {
+        r.created_at.clear();
+        r.updated_at.clear();
+    }
     for ti in &mut b.trash_infos {
         ti.created_at.clear();
         ti.updated_at.clear();
@@ -116,6 +120,8 @@ mod tests {
                     dict_word_ids: vec![],
                     unique_id: "uid-1".into(),
                     chapter_flat: false,
+                    text_replacement_rule_ids: vec![],
+                    custom_replacement_rules_enabled: false,
                 },
                 binder_order: vec![],
                 kind: BundleKind::Regular,
@@ -124,6 +130,7 @@ mod tests {
             },
             tags: vec![],
             dict_words: vec![],
+            text_replacement_rules: vec![],
             trash_infos: vec![],
             paces: vec![],
             progress_snapshots: vec![],

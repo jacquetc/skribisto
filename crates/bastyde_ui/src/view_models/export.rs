@@ -642,6 +642,7 @@ impl ExportViewModel {
             work,
             tags: Vec::new(),
             dict_words: Vec::new(),
+            text_replacement_rules: Vec::new(),
             trash_infos: Vec::new(),
             // Export only needs the item stream for scope resolution, not the writing plan
             // or the progress history.

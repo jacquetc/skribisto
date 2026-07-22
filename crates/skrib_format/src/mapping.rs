@@ -7,8 +7,8 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::entities::{
-    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, ProgressSnapshot, TrashInfo,
-    Work,
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, ProgressSnapshot,
+    TextReplacementRule, TrashInfo, Work,
 };
 use skribisto_model::content_allowed;
 use std::collections::BTreeMap;
@@ -41,6 +41,7 @@ pub fn from_entities(
     work: &Work,
     tags: &[BinderTag],
     dict_words: &[DictWord],
+    text_replacement_rules: &[TextReplacementRule],
     trash_infos: &[TrashInfo],
     paces: &[PaceWithChildren],
     progress_snapshots: &[ProgressSnapshot],
@@ -146,6 +147,8 @@ pub fn from_entities(
                 dict_word_ids: work.dict_words.clone(),
                 unique_id: work.unique_id.clone(),
                 chapter_flat: matches!(work.chapter_mode, ChapterMode::Flat),
+                text_replacement_rule_ids: work.text_replacement_rules.clone(),
+                custom_replacement_rules_enabled: work.custom_replacement_rules_enabled,
             },
             binder_order: binders.iter().map(|b| b.binder.id).collect(),
             // A regular save. The backup path re-stamps these via `mark_as_backup`.
@@ -172,6 +175,17 @@ pub fn from_entities(
                 created_at: fmt_dt(&w.created_at),
                 updated_at: fmt_dt(&w.updated_at),
                 word: w.word.clone(),
+            })
+            .collect(),
+        text_replacement_rules: text_replacement_rules
+            .iter()
+            .map(|r| TextReplacementRuleFile {
+                file_id: r.id,
+                created_at: fmt_dt(&r.created_at),
+                updated_at: fmt_dt(&r.updated_at),
+                trigger: r.trigger.clone(),
+                replacement: r.replacement.clone(),
+                enabled: r.enabled,
             })
             .collect(),
         trash_infos: trash_infos
@@ -276,6 +290,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         } else {
             ChapterMode::Folder
         },
+        custom_replacement_rules_enabled: m.work.custom_replacement_rules_enabled,
         ..Default::default()
     };
 
@@ -304,6 +319,21 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                 created_at: parse_dt(&w.created_at)?,
                 updated_at: parse_dt(&w.updated_at)?,
                 word: w.word.clone(),
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    let text_replacement_rules = bundle
+        .text_replacement_rules
+        .iter()
+        .map(|r| {
+            Ok(TextReplacementRule {
+                id: r.file_id,
+                created_at: parse_dt(&r.created_at)?,
+                updated_at: parse_dt(&r.updated_at)?,
+                trigger: r.trigger.clone(),
+                replacement: r.replacement.clone(),
+                enabled: r.enabled,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -475,6 +505,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         work,
         tags,
         dict_words,
+        text_replacement_rules,
         binders: loaded_binders,
         trash_infos,
         paces,

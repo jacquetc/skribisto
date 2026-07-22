@@ -20,8 +20,9 @@ use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
-    RecentWork, Root, Search, System, TrashInfo, Work, WorkInfo, WorkShape,
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, Holiday, Milestone, Pace,
+    ProgressSnapshot, RecentWork, Root, Search, System, TextReplacementRule, TrashInfo, Work,
+    WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use std::path::Path;
@@ -69,6 +70,8 @@ pub trait NewWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "RemoveMulti")]
 #[macros::uow_action(entity = "DictWord", action = "GetAll")]
 #[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
+#[macros::uow_action(entity = "TextReplacementRule", action = "GetAll")]
+#[macros::uow_action(entity = "TextReplacementRule", action = "RemoveMulti")]
 #[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Pace", action = "GetAll")]
@@ -113,6 +116,13 @@ impl<'a> WorkCloser for dyn NewWorkUnitOfWorkTrait + 'a {
     fn dict_ids(&self) -> Result<Vec<EntityId>> {
         Ok(self
             .get_all_dict_word()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn text_replacement_rule_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_text_replacement_rule()?
             .into_iter()
             .map(|e| e.id)
             .collect())
@@ -168,6 +178,9 @@ impl<'a> WorkCloser for dyn NewWorkUnitOfWorkTrait + 'a {
     }
     fn remove_dicts(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_dict_word_multi(ids)
+    }
+    fn remove_text_replacement_rules(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_text_replacement_rule_multi(ids)
     }
     fn remove_trashes(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_trash_info_multi(ids)
@@ -245,6 +258,9 @@ impl NewWorkUseCase {
             } else {
                 ChapterMode::Folder
             },
+            // Off by default for every new project — a writer opts a specific
+            // project into custom replacements explicitly, never inherits it.
+            custom_replacement_rules_enabled: false,
             ..Default::default()
         })?;
 

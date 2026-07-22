@@ -12,8 +12,8 @@ use anyhow::Result;
 use common::database::CommandUnitOfWork;
 #[allow(unused_imports)]
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot, TrashInfo, Work,
-    WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
+    TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::types::EntityId;
 
@@ -35,6 +35,8 @@ pub trait CloseWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "RemoveMulti")]
 #[macros::uow_action(entity = "DictWord", action = "GetAll")]
 #[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
+#[macros::uow_action(entity = "TextReplacementRule", action = "GetAll")]
+#[macros::uow_action(entity = "TextReplacementRule", action = "RemoveMulti")]
 #[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Pace", action = "GetAll")]
@@ -78,6 +80,13 @@ impl<'a> WorkCloser for dyn CloseWorkUnitOfWorkTrait + 'a {
     fn dict_ids(&self) -> Result<Vec<EntityId>> {
         Ok(self
             .get_all_dict_word()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn text_replacement_rule_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_text_replacement_rule()?
             .into_iter()
             .map(|e| e.id)
             .collect())
@@ -133,6 +142,9 @@ impl<'a> WorkCloser for dyn CloseWorkUnitOfWorkTrait + 'a {
     }
     fn remove_dicts(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_dict_word_multi(ids)
+    }
+    fn remove_text_replacement_rules(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_text_replacement_rule_multi(ids)
     }
     fn remove_trashes(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_trash_info_multi(ids)

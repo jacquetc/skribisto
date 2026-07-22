@@ -970,6 +970,34 @@ settings-user-dict-import-failed = Could not read the word list: { $error }
 settings-user-dict-exported = Saved { $count } words.
 settings-user-dict-export-failed = Could not save the word list: { $error }
 
+## Settings: Work ▸ Text replacements (per-project custom lexicon)
+settings-page-text-replacements = Text replacements
+settings-text-repl-desc = Replace shorthand with the full text as you type: "dbl" becomes "Dumbledore" the moment you type a space or punctuation.
+settings-text-repl-enable = Use text replacements in this project
+settings-text-repl-disabled-hint = Turn this on to define shorthand that expands as you write.
+settings-text-repl-add = Add rule
+settings-text-repl-trigger-placeholder = Shorthand
+settings-text-repl-replacement-placeholder = What it becomes
+settings-text-repl-added = Added "{ $trigger }"
+settings-text-repl-duplicate = "{ $trigger }" already has a rule
+settings-text-repl-filter = Filter rules
+settings-text-repl-count = { $n ->
+    [one] 1 rule
+   *[other] { $n } rules
+}
+settings-text-repl-row-enabled-tip = Use this rule while writing
+settings-text-repl-delete = Delete the rule for { $trigger }
+settings-text-repl-deleted = Deleted the rule for "{ $trigger }"
+settings-text-repl-empty = No rules yet.
+settings-text-repl-csv-filter = CSV files
+settings-text-repl-import = Import…
+settings-text-repl-export = Export…
+settings-text-repl-imported = Imported { $added }, skipped { $skipped }
+settings-text-repl-exported = Exported { $n ->
+    [one] 1 rule
+   *[other] { $n } rules
+}
+
 ## Editor: spelling (context menu + toast)
 # Shown in place of the corrections when a flagged word has none to offer.
 editor-menu-no-suggestions = No suggestions

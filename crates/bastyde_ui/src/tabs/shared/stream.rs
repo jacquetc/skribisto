@@ -96,6 +96,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Option::None,
                     Option::None,
                     tab.open_doc.spell_main(),
+                    tab.open_doc.replacement_main(),
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
@@ -104,6 +105,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     tab.mark_dirty_fn(),
                     Option::None,
                     tab.open_doc.spell_synopsis(),
+                    tab.open_doc.replacement_synopsis(),
                     // No per-tab sink: a stream shows one synopsis per row, so
                     // the last row built would win it. These rows reach the
                     // formatting surfaces through the editor registry instead
@@ -246,6 +248,7 @@ fn stream_row(
                         split,
                         Option::None,
                         doc.spell_main(),
+                        doc.replacement_main(),
                     ));
                 }
             }
@@ -258,6 +261,7 @@ fn stream_row(
                         on_change,
                         split,
                         doc.spell_synopsis(),
+                        doc.replacement_synopsis(),
                         // One synopsis per stream row — see the sibling call.
                         // Formatting reaches it through the editor registry.
                         Option::None,

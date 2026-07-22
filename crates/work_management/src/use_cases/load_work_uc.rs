@@ -27,7 +27,7 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
-    RecentWork, Root, Search, System, TrashInfo, Work, WorkInfo, WorkShape,
+    RecentWork, Root, Search, System, TextReplacementRule, TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use skrib_format::{self as skrib, LoadedWork, SkribShape};
@@ -47,6 +47,7 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderTag", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
 #[macros::uow_action(entity = "DictWord", action = "CreateOrphan")]
+#[macros::uow_action(entity = "TextReplacementRule", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
 #[macros::uow_action(entity = "WorkInfo", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TrashInfo", action = "CreateOrphan")]
@@ -86,6 +87,8 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "RemoveMulti")]
 #[macros::uow_action(entity = "DictWord", action = "GetAll")]
 #[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
+#[macros::uow_action(entity = "TextReplacementRule", action = "GetAll")]
+#[macros::uow_action(entity = "TextReplacementRule", action = "RemoveMulti")]
 #[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
 #[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Pace", action = "GetAll")]
@@ -129,6 +132,13 @@ impl<'a> WorkCloser for dyn LoadWorkUnitOfWorkTrait + 'a {
     fn dict_ids(&self) -> Result<Vec<EntityId>> {
         Ok(self
             .get_all_dict_word()?
+            .into_iter()
+            .map(|e| e.id)
+            .collect())
+    }
+    fn text_replacement_rule_ids(&self) -> Result<Vec<EntityId>> {
+        Ok(self
+            .get_all_text_replacement_rule()?
             .into_iter()
             .map(|e| e.id)
             .collect())
@@ -184,6 +194,9 @@ impl<'a> WorkCloser for dyn LoadWorkUnitOfWorkTrait + 'a {
     }
     fn remove_dicts(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_dict_word_multi(ids)
+    }
+    fn remove_text_replacement_rules(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_text_replacement_rule_multi(ids)
     }
     fn remove_trashes(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_trash_info_multi(ids)
@@ -267,6 +280,7 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
         title: lw.title.clone(),
         author_name: lw.author_name.clone(),
         dict_language: lw.dict_language.clone(),
+        custom_replacement_rules_enabled: lw.custom_replacement_rules_enabled,
         // Single heal point for every load (legacy + new-format): preserve the
         // source's stable id, or mint a fresh one when it has none.
         unique_id: if lw.unique_id.is_empty() {
@@ -304,6 +318,20 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
             ..Default::default()
         })?;
         dict_word_ids.push(created.id);
+    }
+
+    // Custom text-replacement rules.
+    let mut text_replacement_rule_ids: Vec<EntityId> = Vec::new();
+    for r in &loaded.text_replacement_rules {
+        let created = uow.create_orphan_text_replacement_rule(&TextReplacementRule {
+            created_at: r.created_at,
+            updated_at: r.updated_at,
+            trigger: r.trigger.clone(),
+            replacement: r.replacement.clone(),
+            enabled: r.enabled,
+            ..Default::default()
+        })?;
+        text_replacement_rule_ids.push(created.id);
     }
 
     // Binders -> items -> contents.
@@ -522,6 +550,13 @@ fn materialize(uow: &dyn LoadWorkUnitOfWorkTrait, loaded: &LoadedWork) -> Result
     }
     if !dict_word_ids.is_empty() {
         uow.set_work_relationship(&work.id, &WorkRelationshipField::DictWords, &dict_word_ids)?;
+    }
+    if !text_replacement_rule_ids.is_empty() {
+        uow.set_work_relationship(
+            &work.id,
+            &WorkRelationshipField::TextReplacementRules,
+            &text_replacement_rule_ids,
+        )?;
     }
     // Trash lives under the Work trunk (post-reparent).
     if !trash_info_ids.is_empty() {
@@ -845,6 +880,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         work,
         tags,
         dict_words,
+        // Legacy (pre-.skrib-v4) SQLite projects predate this feature entirely.
+        text_replacement_rules: Vec::new(),
         binders,
         trash_infos,
         // Legacy projects never had a writing plan.

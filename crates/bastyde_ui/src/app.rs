@@ -990,6 +990,14 @@ impl Widget for App {
         {
             tags.wire(ctx);
         }
+        // The custom replacement lexicon, same reasoning: one wired instance behind the
+        // Settings pane and the editor's typing session.
+        if let Some(replacements) = ctx
+            .app_state::<crate::view_models::TextReplacementRulesViewModel>()
+            .cloned()
+        {
+            replacements.wire(ctx);
+        }
         // Backup scheduler + settings (registered in `main`). The scheduler drives
         // every trigger and holds the singles; the settings VM tracks the active
         // project for the per-project settings pane.

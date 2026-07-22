@@ -77,6 +77,7 @@ mod search_replace;
 mod settings;
 mod stream;
 mod tags;
+mod text_replacement_rules;
 mod timers;
 mod trash;
 mod tree_expansion;
@@ -124,6 +125,7 @@ pub use settings::{
 };
 pub use stream::{SplitFlavour, StreamViewModel};
 pub use tags::{TagImportSummary, TagsViewModel};
+pub use text_replacement_rules::{TextReplacementImportSummary, TextReplacementRulesViewModel};
 pub(crate) use timers::{AutosaveCountdown, IntervalCountdown, IntervalTick};
 pub use trash::TrashViewModel;
 pub use tree_expansion::TreeExpansionViewModel;

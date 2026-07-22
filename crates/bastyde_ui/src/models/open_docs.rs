@@ -43,6 +43,8 @@ use frontend::direct_access::ContentDto;
 
 use crate::singles::SingleBinderItem;
 use crate::spellcheck::{SpellSession, SpellcheckService};
+use crate::text_replacement::TextReplacementSession;
+use crate::view_models::TextReplacementRulesViewModel;
 use crate::tabs::{
     ProseField, ProseKind, TitleField, TitlePart, prose_field, prose_kind_for, title_field,
 };
@@ -82,6 +84,13 @@ pub struct OpenDoc {
     /// `Rc` so the editor build can hold a clone to drive it.
     spell_main: Option<Rc<SpellSession>>,
     spell_synopsis: Option<Rc<SpellSession>>,
+    /// The replace-while-typing state machine for each prose document, if the
+    /// lexicon view-model was installed on the store. Set by
+    /// [`attach_replacements`](Self::attach_replacements) on open, and living as
+    /// long as the `OpenDoc` — its pending backspace-revert has to outlive a tab
+    /// rebuild, which is exactly why it hangs here and not on the widget.
+    replacement_main: RefCell<Option<Rc<TextReplacementSession>>>,
+    replacement_synopsis: RefCell<Option<Rc<TextReplacementSession>>>,
 }
 
 impl OpenDoc {
@@ -124,6 +133,8 @@ impl OpenDoc {
             edited,
             spell_main: None,
             spell_synopsis: None,
+            replacement_main: RefCell::new(None),
+            replacement_synopsis: RefCell::new(None),
         };
         for cr in skribisto_model::allowed_content(role, sub_role) {
             let existing = contents.iter().find(|c| &c.role == cr);
@@ -232,6 +243,29 @@ impl OpenDoc {
     pub fn spell_synopsis(&self) -> Option<Rc<SpellSession>> {
         self.spell_synopsis.clone()
     }
+
+    /// Give each present prose document its replace-while-typing session.
+    ///
+    /// Idempotent: a doc already carrying sessions keeps them, so re-opening an
+    /// already-open item cannot discard a pending backspace-revert mid-keystroke.
+    pub fn attach_replacements(&self, vm: &TextReplacementRulesViewModel) {
+        if self.main.is_some() && self.replacement_main.borrow().is_none() {
+            *self.replacement_main.borrow_mut() = Some(TextReplacementSession::new(vm.clone()));
+        }
+        if self.synopsis.is_some() && self.replacement_synopsis.borrow().is_none() {
+            *self.replacement_synopsis.borrow_mut() = Some(TextReplacementSession::new(vm.clone()));
+        }
+    }
+
+    /// The replace-while-typing session on the main prose document, if any.
+    pub fn replacement_main(&self) -> Option<Rc<TextReplacementSession>> {
+        self.replacement_main.borrow().clone()
+    }
+
+    /// The replace-while-typing session on the synopsis document, if any.
+    pub fn replacement_synopsis(&self) -> Option<Rc<TextReplacementSession>> {
+        self.replacement_synopsis.borrow().clone()
+    }
 }
 
 struct Entry {
@@ -249,6 +283,10 @@ struct Inner {
     /// The spell-check engine, set once by `App`. `None` until then (headless tests, or before
     /// the first project loads) — every attach is then a no-op, so opening still works.
     spell: RefCell<Option<SpellcheckService>>,
+    /// The custom replacement lexicon, set once by `App` on the same footing as
+    /// `spell`. `None` until then, and then every attach is a no-op — a headless
+    /// test opens documents that simply never expand anything.
+    text_replacements: RefCell<Option<TextReplacementRulesViewModel>>,
     /// The squiggle colour, resolved from a theme role by `App` (updated on theme change).
     squiggle: Cell<Color>,
     /// Whether the synopsis pane is currently shown (the global setting, mirrored here by `App`).
@@ -314,6 +352,7 @@ impl OpenDocsStore {
                 app_ctx,
                 edited: Signal::new(0),
                 spell: RefCell::new(None),
+                text_replacements: RefCell::new(None),
                 // A sensible default until `App` resolves the theme's error role.
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
                 synopsis_visible: Cell::new(true),
@@ -328,6 +367,27 @@ impl OpenDocsStore {
     /// no-ops and the app behaves exactly as before spell-check existed.
     pub fn set_spellcheck(&self, spell: SpellcheckService) {
         *self.inner.spell.borrow_mut() = Some(spell);
+    }
+
+    /// Install the custom replacement lexicon (once, from `App`), and give it to
+    /// every document already open.
+    ///
+    /// The back-fill matters: `App::build` installs this after the store exists,
+    /// and a project restoring its remembered tabs can have opened documents by
+    /// then. Without it those tabs would silently never expand anything until
+    /// they were closed and reopened.
+    pub fn set_text_replacements(&self, vm: TextReplacementRulesViewModel) {
+        *self.inner.text_replacements.borrow_mut() = Some(vm.clone());
+        let docs: Vec<Rc<OpenDoc>> = self
+            .inner
+            .open
+            .borrow()
+            .values()
+            .map(|e| e.doc.clone())
+            .collect();
+        for doc in docs {
+            doc.attach_replacements(&vm);
+        }
     }
 
     /// Subscribe the cached language map to the edits its
@@ -430,6 +490,12 @@ impl OpenDocsStore {
 
     /// Attach the spell-checker to one freshly-built doc (on open / rebuild).
     fn attach_one(&self, doc: &Rc<OpenDoc>) {
+        // The replacement lexicon first, and outside the spell early-return: the
+        // two features are independent, and a project with no dictionary
+        // installed must still expand its own shorthand.
+        if let Some(vm) = self.inner.text_replacements.borrow().clone() {
+            doc.attach_replacements(&vm);
+        }
         let Some(spell) = self.inner.spell.borrow().clone() else {
             return;
         };

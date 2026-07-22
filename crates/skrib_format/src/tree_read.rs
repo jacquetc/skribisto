@@ -10,10 +10,11 @@
 //! read + relationship hydration once. This is the same "shared crate, no feature
 //! coupling" precedent as the rest of `skrib_format`.
 //!
-//! Export lists fewer entities than save (no `WorkInfo` / `TrashInfo` / `DictWord`), so
-//! [`TreeReader::all_work_info`], [`TreeReader::all_trash_info`] and
-//! [`TreeReader::dict_multi`] have **default no-op** bodies — an implementor that has no
-//! such generated getter simply omits them.
+//! Export lists fewer entities than save (no `WorkInfo` / `TrashInfo` / `DictWord` /
+//! `TextReplacementRule`), so [`TreeReader::all_work_info`], [`TreeReader::all_trash_info`],
+//! [`TreeReader::dict_multi`] and [`TreeReader::text_replacement_rule_multi`] have
+//! **default no-op** bodies — an implementor that has no such generated getter simply
+//! omits them.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -25,7 +26,7 @@ use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
     Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
-    TrashInfo, Work, WorkInfo,
+    TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::OperationProgress;
 use common::types::EntityId;
@@ -53,6 +54,12 @@ pub trait TreeReader {
     -> Result<Vec<EntityId>>;
     fn tag_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<BinderTag>>>;
     fn dict_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<DictWord>>> {
+        Ok(Vec::new())
+    }
+    fn text_replacement_rule_multi(
+        &self,
+        _ids: &[EntityId],
+    ) -> Result<Vec<Option<TextReplacementRule>>> {
         Ok(Vec::new())
     }
     fn content_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Content>>>;
@@ -93,6 +100,7 @@ pub struct Gathered {
     pub work: Work,
     pub tags: Vec<BinderTag>,
     pub dict_words: Vec<DictWord>,
+    pub text_replacement_rules: Vec<TextReplacementRule>,
     pub trash_infos: Vec<TrashInfo>,
     pub paces: Vec<PaceWithChildren>,
     pub progress_snapshots: Vec<ProgressSnapshot>,
@@ -118,10 +126,15 @@ pub fn gather<R: TreeReader + ?Sized>(
 
     work.tags = reader.work_rel(&work_id, &WorkRelationshipField::Tags)?;
     work.dict_words = reader.work_rel(&work_id, &WorkRelationshipField::DictWords)?;
+    work.text_replacement_rules =
+        reader.work_rel(&work_id, &WorkRelationshipField::TextReplacementRules)?;
     work.binders = reader.work_rel(&work_id, &WorkRelationshipField::Binders)?;
 
     let tags = fetch_multi(&work.tags, |ids| reader.tag_multi(ids))?;
     let dict_words = fetch_multi(&work.dict_words, |ids| reader.dict_multi(ids))?;
+    let text_replacement_rules = fetch_multi(&work.text_replacement_rules, |ids| {
+        reader.text_replacement_rule_multi(ids)
+    })?;
     let trash_infos = reader.all_trash_info()?;
     let paces = if reader.reads_paces() {
         hydrate_paces(reader, &work_id)?
@@ -169,6 +182,7 @@ pub fn gather<R: TreeReader + ?Sized>(
         work,
         tags,
         dict_words,
+        text_replacement_rules,
         trash_infos,
         paces,
         progress_snapshots,

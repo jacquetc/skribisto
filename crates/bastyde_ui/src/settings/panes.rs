@@ -32,6 +32,7 @@ pub(super) mod editor_behavior;
 pub(super) mod export_styles;
 pub(super) mod goals;
 pub(super) mod spellcheck;
+pub(super) mod text_replacements;
 pub(super) mod typography;
 pub(super) mod user_dictionary;
 pub(super) mod work_author;

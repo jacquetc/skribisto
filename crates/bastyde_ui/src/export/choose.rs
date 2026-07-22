@@ -326,6 +326,7 @@ mod tests {
             work: Work { id: 1, ..Default::default() },
             tags: vec![],
             dict_words: vec![],
+            text_replacement_rules: vec![],
             trash_infos: vec![],
             paces: vec![],
             progress_snapshots: vec![],

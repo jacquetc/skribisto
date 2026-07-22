@@ -129,6 +129,9 @@ pub fn build_bundle(
         unique_id: new_unique_id(),
         // Plume Creator organises chapters as folders of sheets → folder mode.
         chapter_flat: false,
+        // Plume has no custom-replacement concept to import.
+        text_replacement_rule_ids: Vec::new(),
+        custom_replacement_rules_enabled: false,
     };
 
     // Binders, in on-disk order: Manuscript, then Story Bible (only if non-empty).
@@ -162,6 +165,7 @@ pub fn build_bundle(
         },
         tags: b.tags,
         dict_words: dict,
+        text_replacement_rules: Vec::new(),
         trash_infos: Vec::new(),
         // Plume has no writing-plan or progress-history concept to import.
         paces: Vec::new(),

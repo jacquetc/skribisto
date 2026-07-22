@@ -31,7 +31,32 @@ const FIND_FIELD_MAX_WIDTH: f32 = 240.0;
 use crate::intents::AppIntent;
 use crate::spellcheck::SpellSession;
 use crate::tabs::TitleField;
+use crate::text_replacement::TextReplacementSession;
 use crate::view_models::{EditorKind, EditorTypography, FindViewModel, FormatViewModel};
+
+/// Install `on_change` on `editor`, with the document's replace-while-typing
+/// session composed in behind it.
+///
+/// The session runs **after** the tab's own dirty-marking, and needs the
+/// editor's handle — which only exists once the editor does. That is why the
+/// three writing surfaces set their `on_change` through this rather than in
+/// their builder chain: the composition cannot be expressed before the widget
+/// it reads back from.
+fn on_change_with_replacements(
+    editor: RichTextEditor,
+    doc: &TextDocument,
+    on_change: impl Fn() + 'static,
+    replacement: Option<Rc<TextReplacementSession>>,
+) -> RichTextEditor {
+    let handle = editor.handle();
+    let doc = doc.clone();
+    editor.on_change(move || {
+        on_change();
+        if let Some(session) = &replacement {
+            session.on_text_changed(&handle, &doc);
+        }
+    })
+}
 
 /// A caret-aware "split scene" action for a writing editor's context menu:
 /// invoked with the event context and the current caret offset.
@@ -70,10 +95,10 @@ pub fn writing_column(
     split: Option<SplitFn>,
     find: Option<crate::view_models::FindViewModel>,
     spell: Option<Rc<SpellSession>>,
+    replacement: Option<Rc<TextReplacementSession>>,
 ) -> CenterColumnFlowing {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
-        .on_change(on_change)
         .content_padding_symmetric(8.0, 12.0)
         .min_lines(min_lines)
         .v_scroll_policy(ScrollPolicy::AlwaysOff)
@@ -84,6 +109,7 @@ pub fn writing_column(
         .window_to_clip(true)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
+    editor = on_change_with_replacements(editor, doc, on_change, replacement);
     // Hand this editor's handle to the find banner so it can select + scroll the
     // current match into view. Re-attached on every rebuild (a fresh widget each
     // time); the handle just re-points at the same underlying editor state.
@@ -348,17 +374,18 @@ pub fn synopsis_editor(
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
     spell: Option<Rc<SpellSession>>,
+    replacement: Option<Rc<TextReplacementSession>>,
     // Where to re-attach this editor's handle so tab-level commands can find
     // it. `None` for surfaces with no tab (the corkboard card's own editor).
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
-        .on_change(on_change)
         .content_padding_symmetric(6.0, 30.0)
         .text_color(TextRole::Secondary)
         .typography_defaults(typo_defaults(typo))
         .zoom(typo.size.get());
+    editor = on_change_with_replacements(editor, doc, on_change, replacement);
     // Re-attached on every rebuild, exactly as `writing_column` does for the
     // prose handle: a tab rebuild mints a fresh editor, so a stored handle would
     // address the one the writer *used* to be typing in.
@@ -431,14 +458,15 @@ pub fn card_synopsis_editor(
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
     spell: Option<Rc<SpellSession>>,
+    replacement: Option<Rc<TextReplacementSession>>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
-        .on_change(on_change)
         .content_padding_symmetric(4.0, 8.0)
         .v_scroll_policy(ScrollPolicy::Auto)
         .typography_defaults(typo_defaults(&typo))
         .zoom(typo.size.get());
+    editor = on_change_with_replacements(editor, &doc, on_change, replacement);
     {
         let handle = editor.handle();
         let cursor = editor.cursor_position_signal();
@@ -562,6 +590,7 @@ pub fn synopsis_section(
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
     spell: Option<Rc<SpellSession>>,
+    replacement: Option<Rc<TextReplacementSession>>,
     // Where the built editor re-attaches its handle, so tab-level commands
     // (the format dock) can act on the synopsis the caret is actually in.
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
@@ -585,6 +614,7 @@ pub fn synopsis_section(
                             on_change,
                             Option::None,
                             spell,
+                            replacement,
                             handle_sink,
                         )
                     }
@@ -610,6 +640,7 @@ pub fn synopsis_column(
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
     spell: Option<Rc<SpellSession>>,
+    replacement: Option<Rc<TextReplacementSession>>,
     // Where the built editor re-attaches its handle, so tab-level commands
     // (the format dock) can act on the synopsis the caret is actually in.
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
@@ -619,7 +650,16 @@ pub fn synopsis_column(
         MaxSize::width(synopsis_width.get()) {
             max_width: synopsis_width.clone()
             Expand::horizontal {
-                child: synopsis_editor(doc, typo, SynopsisFit::Growing, on_change, split, spell, handle_sink)
+                child: synopsis_editor(
+                    doc,
+                    typo,
+                    SynopsisFit::Growing,
+                    on_change,
+                    split,
+                    spell,
+                    replacement,
+                    handle_sink,
+                )
             }
         }
     ))
@@ -635,6 +675,7 @@ pub fn writing_section(
     on_change: impl Fn() + 'static,
     find: Option<crate::view_models::FindViewModel>,
     spell: Option<Rc<SpellSession>>,
+    replacement: Option<Rc<TextReplacementSession>>,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -652,6 +693,7 @@ pub fn writing_section(
             None,
             find,
             spell,
+            replacement,
         ))
 }
 
@@ -1467,7 +1509,7 @@ mod tests {
         let doc = TextDocument::new();
         let _ =
             doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(60));
-        let editor = card_synopsis_editor(doc, test_typo(), || {}, None, None);
+        let editor = card_synopsis_editor(doc, test_typo(), || {}, None, None, None);
         let mut tree = WidgetTree::new();
         let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
         // Propose an *unbounded* height, the way the corkboard's GridView tile does —

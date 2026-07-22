@@ -49,6 +49,7 @@ mod spellcheck;
 mod statusbar;
 mod tabs;
 mod tags;
+mod text_replacement;
 mod trash;
 mod widgets;
 // The pane tests that need fixture rows are mocks-gated, but the search preview's
@@ -566,6 +567,19 @@ fn main() {
     // instance would mean a second subscription set and two palettes drifting apart.
     let work_tags = models::WorkTagsListModel::new(app_ctx.clone());
     let tags_vm = view_models::TagsViewModel::new(work_tags, ids.clone());
+    // The per-project custom replacement lexicon ("dbl" → "Dumbledore"), on the same
+    // footing: registered as app-state so the Settings pane and the editor's typing
+    // session reach the ONE instance. Its master switch lives on the `Work` entity, so
+    // it composes the shared `SingleWork` rather than owning a signal of its own.
+    let replacement_rules = models::TextReplacementRuleListModel::new(app_ctx.clone());
+    let text_replacements = view_models::TextReplacementRulesViewModel::new(
+        replacement_rules,
+        single_work.clone(),
+        ids.clone(),
+    );
+    // Hand it to the open-docs store, which owns the per-document attach loop —
+    // exactly as the spell engine above is handed over.
+    open_docs.set_text_replacements(text_replacements.clone());
     // Backup-mode state: `backup_mode` is true while a *backup file* is open in
     // this window (Save + auto-backup off; the file is read-only, the content is
     // still editable). `backup_context` carries the open backup's details (drives
@@ -773,6 +787,7 @@ fn main() {
         .app_state(spellcheck.clone())
         .app_state(dictionaries.clone())
         .app_state(tags_vm.clone())
+        .app_state(text_replacements.clone())
         .app_state(format_vm.clone())
         .app_state(single_work.clone())
         .app_state(single_work_info.clone())

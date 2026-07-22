@@ -111,8 +111,10 @@ fn sample_bundle() -> WorkBundle {
         unique_id: "the-lighthouse-uid".into(),
         // Non-default so the round-trip actually exercises chapter_mode persistence.
         chapter_mode: common::entities::ChapterMode::Flat,
+        custom_replacement_rules_enabled: false,
         tags: vec![10, 11],
         dict_words: vec![20],
+        text_replacement_rules: vec![],
         binders: vec![100, 101],
         trash_infos: vec![],
         paces: vec![],
@@ -235,6 +237,7 @@ fn sample_bundle() -> WorkBundle {
         &work,
         &tags,
         &dict_words,
+        &[],
         &trash,
         &[],
         &[],
@@ -515,6 +518,85 @@ fn legacy_load_preserves_word_and_char_count_goals() {
     assert_eq!(
         goal_item.char_count_goal, 9000,
         "the legacy char_count_goal must migrate on the same item"
+    );
+}
+
+/// The per-project replacement lexicon must survive the full store round-trip —
+/// written to a `.skrib`, loaded into the store (ids remapped), and saved back out —
+/// with every rule's trigger, replacement and enabled flag intact, and the Work's
+/// master switch with it.
+///
+/// Both halves are set to **non-default** values on purpose. A field that is never
+/// materialised out of the loaded bundle reads back as its `Default`, so a fixture
+/// left at the default would pass while the field was being silently dropped — which
+/// is exactly how `chapter_mode` went unnoticed (`sample_bundle` sets it to `Flat`,
+/// but `norm` never compares it, so nothing failed).
+#[test]
+fn text_replacement_rules_survive_a_save_load_round_trip() {
+    const T: &str = "2020-01-01T00:00:00+00:00";
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.custom_replacement_rules_enabled = true;
+    bundle.manifest.work.text_replacement_rule_ids = vec![600, 601];
+    bundle.text_replacement_rules = vec![
+        skrib::TextReplacementRuleFile {
+            file_id: 600,
+            created_at: T.into(),
+            updated_at: T.into(),
+            trigger: "dbl".into(),
+            replacement: "Dumbledore".into(),
+            enabled: true,
+        },
+        // Disabled on purpose: `enabled` is the one field whose loss would be
+        // invisible in the list but would silently start expanding a rule the
+        // writer switched off.
+        skrib::TextReplacementRuleFile {
+            file_id: 601,
+            created_at: T.into(),
+            updated_at: T.into(),
+            trigger: "teh".into(),
+            replacement: "the".into(),
+            enabled: false,
+        },
+    ];
+
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("WithReplacements");
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load bundle with replacement rules");
+
+    let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    assert!(
+        out.manifest.work.custom_replacement_rules_enabled,
+        "the per-project master switch must survive the round trip"
+    );
+    let mut rules: Vec<_> = out
+        .text_replacement_rules
+        .iter()
+        .map(|r| (r.trigger.clone(), r.replacement.clone(), r.enabled))
+        .collect();
+    rules.sort();
+    assert_eq!(
+        rules,
+        vec![
+            ("dbl".to_string(), "Dumbledore".to_string(), true),
+            ("teh".to_string(), "the".to_string(), false),
+        ],
+        "every rule must round-trip with its enabled flag"
+    );
+    assert_eq!(
+        out.manifest.work.text_replacement_rule_ids.len(),
+        2,
+        "the Work must still own both rules after the id remap"
     );
 }
 

@@ -36,6 +36,7 @@ mod search_results_model;
 mod search_settings_file;
 mod stats_model;
 mod stream_rows_model;
+mod text_replacement_rule_list_model;
 mod trash_tree_model;
 mod tree_expansion_file;
 mod workspace_layout_file;
@@ -67,6 +68,9 @@ pub use search_results_model::SearchResultsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use stats_model::StatsModel;
 pub use stream_rows_model::{StreamLevel, StreamRow, StreamRowsModel};
+pub use text_replacement_rule_list_model::{
+    TextReplacementRuleListModel, TextReplacementRuleRow, trigger_key,
+};
 pub use trash_tree_model::{TrashNode, TrashRootKind, TrashTreeKey, TrashTreeModel};
 pub use tree_expansion_file::TreeExpansionService;
 pub use workspace_layout_file::{PaneLayout, PerProjectLayout, WorkspaceLayoutService};

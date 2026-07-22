@@ -113,6 +113,9 @@ enum Pane {
     /// it is shown *first* in the tree, but that is `build_tree`'s business, not this
     /// number's: renumbering here would re-point every later `Switcher` slot.
     WorkAuthor,
+    /// Per-project custom replacement lexicon (under the open Work's section). Appended
+    /// last, same rule as every one above it.
+    WorkTextReplacements,
 }
 
 impl Pane {
@@ -142,6 +145,7 @@ impl Pane {
             Pane::WorkDictionary => tr!(settings_page_personal_dictionary()),
             Pane::WorkTags => tr!(settings_page_tags()),
             Pane::WorkAuthor => tr!(settings_page_author()),
+            Pane::WorkTextReplacements => tr!(settings_page_text_replacements()),
             Pane::Spellcheck => tr!(settings_page_spellcheck()),
         }
     }
@@ -597,6 +601,12 @@ impl SettingsPanel {
                 Pane::WorkTags,
                 model.insert_child(wk, 5, Node::Page(Pane::WorkTags)),
             );
+            // Beside the personal dictionary and the tag palette: the third per-project
+            // vocabulary the writer curates.
+            nodes.insert(
+                Pane::WorkTextReplacements,
+                model.insert_child(wk, 6, Node::Page(Pane::WorkTextReplacements)),
+            );
             work_node = Some(wk);
         }
         // The dynamic section label needs the title inside the row closure.
@@ -682,7 +692,8 @@ impl SettingsPanel {
             | Pane::WorkBackup
             | Pane::WorkDictionary
             | Pane::WorkTags
-            | Pane::WorkAuthor => work_node,
+            | Pane::WorkAuthor
+            | Pane::WorkTextReplacements => work_node,
             Pane::Keymap => None,
         };
         if let Some(sec) = section_of(self.selected_pane.get()) {
@@ -716,6 +727,13 @@ impl SettingsPanel {
             (tr!(settings_page_backup()), Pane::Backup),
             (tr!(settings_page_export()), Pane::ExportFormats),
             (tr!(settings_page_keymap()), Pane::Keymap),
+            // Per-project pages resolve to no tree node when nothing is open —
+            // `on_select` skips the selection and still switches the pane, which
+            // lands on that page's "no project" placeholder. Correct either way.
+            (
+                tr!(settings_page_text_replacements()),
+                Pane::WorkTextReplacements,
+            ),
             (tr!(settings_text_width()), Pane::EditorBehavior),
             (tr!(settings_synopsis_pane()), Pane::EditorBehavior),
             (tr!(settings_field_app_theme()), Pane::Appearance),
@@ -965,6 +983,35 @@ impl Widget for SettingsPanel {
             )),
         };
 
+        // Work ▸ Text replacements — the per-project custom lexicon, over the shared
+        // `TextReplacementRulesViewModel`. Present in the Switcher regardless, an empty
+        // placeholder when no project is open (same as the other Work panes).
+        let text_replacements_pane: Box<dyn Widget> = match (
+            ctx.app_state::<crate::view_models::TextReplacementRulesViewModel>()
+                .cloned(),
+            &work,
+        ) {
+            (Some(rvm), Some(w)) if w.id().is_some() => {
+                let title = w.title().get();
+                Box::new(pane_frame(
+                    crumb(
+                        Some(lit!(format!(
+                            "{}: {}",
+                            tr!(settings_sec_work()).resolve_now(),
+                            title
+                        ))),
+                        tr!(settings_page_text_replacements()),
+                    ),
+                    crate::settings::panes::text_replacements::text_replacements_pane(ctx, &rvm),
+                ))
+            }
+            _ => Box::new(empty_pane(
+                None,
+                tr!(settings_page_text_replacements()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+
         // Work ▸ Personal dictionary — the per-project word-list manager, over the
         // shared `UserDictionaryViewModel`. Present in the Switcher regardless, an
         // empty placeholder when no project is open (same as the other Work panes).
@@ -1084,6 +1131,7 @@ impl Widget for SettingsPanel {
             (Pane::Spellcheck, Box::new(panes::spellcheck::spellcheck_pane(&vm))),
             (Pane::WorkTags, tags_pane),
             (Pane::WorkAuthor, author_pane),
+            (Pane::WorkTextReplacements, text_replacements_pane),
         ];
         if let Some((slot, (pane, _))) =
             panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)
@@ -1283,6 +1331,7 @@ mod tests {
             Pane::Spellcheck,
             Pane::WorkTags,
             Pane::WorkAuthor,
+            Pane::WorkTextReplacements,
         ];
         for (i, pane) in all.iter().enumerate() {
             assert_eq!(
