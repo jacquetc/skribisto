@@ -429,7 +429,6 @@ fn main() {
         .supported_locales([
             "en-US".parse().unwrap(),
             "fr-FR".parse().unwrap(),
-            "ar".parse().unwrap(),
         ])
         // Directory layout: one `.ftl` per topic per locale. The `tr!` macro
         // auto-detects `locales/en-US/` and validates keys across every file
@@ -451,12 +450,6 @@ fn main() {
                     include_str!("../locales/fr-FR/tags.ftl"),
                 ],
             ),
-            // Partial: the keys it omits fall back to en-US per key.
-            // Offering it at all is what lets a writer select Arabic, and
-            // selecting Arabic is what turns on the framework's RTL chrome
-            // mirroring. Only `main.ftl` — see its header for why there is
-            // no tooltips/tags file.
-            ("ar", &[include_str!("../locales/ar/main.ftl")]),
         ])
         .user_locale(locale_str.parse().ok())
         .auto_detect_os_locale(false)
