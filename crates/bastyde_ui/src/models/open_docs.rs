@@ -44,6 +44,7 @@ use frontend::direct_access::ContentDto;
 use crate::singles::SingleBinderItem;
 use crate::spellcheck::{SpellSession, SpellcheckService};
 use crate::text_replacement::TextReplacementSession;
+use crate::text_replacement::typography::SmartPunctuationFlags;
 use crate::view_models::TextReplacementRulesViewModel;
 use crate::tabs::{
     ProseField, ProseKind, TitleField, TitlePart, prose_field, prose_kind_for, title_field,
@@ -274,6 +275,23 @@ impl OpenDoc {
         }
     }
 
+    /// Tell both sessions which punctuation rules this project wants.
+    ///
+    /// Pushed for the same reason the locale is: the row can change while the
+    /// document is open (the settings pane is right there), and a stale flag set
+    /// means the writer flips a switch and nothing happens until they reopen the
+    /// scene.
+    ///
+    /// `None` means "not resolved yet" and substitutes nothing — see
+    /// [`TextReplacementSession::set_punctuation`].
+    pub fn set_punctuation(&self, flags: Option<SmartPunctuationFlags>) {
+        for session in [&self.replacement_main, &self.replacement_synopsis] {
+            if let Some(s) = session.borrow().as_ref() {
+                s.set_punctuation(flags.clone());
+            }
+        }
+    }
+
     /// The replace-while-typing session on the main prose document, if any.
     pub fn replacement_main(&self) -> Option<Rc<TextReplacementSession>> {
         self.replacement_main.borrow().clone()
@@ -314,6 +332,9 @@ struct Inner {
     /// the Work's). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
     work_lang: RefCell<Vec<String>>,
+    /// The open project's punctuation rules, pushed down to every session on
+    /// change and to each newly-opened document. `None` until resolved.
+    punctuation: RefCell<Option<SmartPunctuationFlags>>,
     /// The memoised [`language_map`](OpenDocsStore::language_map), with the binder
     /// [fingerprint](LangFingerprint) it was built from.
     ///
@@ -375,6 +396,7 @@ impl OpenDocsStore {
                 synopsis_visible: Cell::new(true),
                 work_id: Cell::new(None),
                 work_lang: RefCell::new(Vec::new()),
+            punctuation: RefCell::new(None),
                 lang_cache: RefCell::new(None),
             }),
         }
@@ -467,6 +489,29 @@ impl OpenDocsStore {
         self.invalidate_language_cache();
     }
 
+    /// Set the open project's punctuation rules and push them to every open
+    /// document at once.
+    ///
+    /// Called from an effect over the project's `SmartPunctuation` row, so a
+    /// switch flipped in Settings reaches the scene the writer is looking at
+    /// without reopening it. Idempotent — each session compares before
+    /// recompiling.
+    pub fn set_punctuation(&self, flags: Option<SmartPunctuationFlags>) {
+        *self.inner.punctuation.borrow_mut() = flags.clone();
+        let docs: Vec<Rc<OpenDoc>> = self
+            .inner
+            .open
+            .borrow()
+            .values()
+            .map(|e| e.doc.clone())
+            .collect();
+        // Collected first, then pushed outside the borrow: a session recompile
+        // must not run while the map is borrowed.
+        for doc in docs {
+            doc.set_punctuation(flags.clone());
+        }
+    }
+
     /// Re-attach the spell-checker to **every** open document — the single path for install,
     /// remove, mute, language-change, focus-regain, and theme change. Recomputes each item's
     /// effective language through the same resolver search uses.
@@ -501,8 +546,13 @@ impl OpenDocsStore {
         // folds case through the document's language, and a writer with no
         // dictionary installed still gets their lexicon. Spell-check is the
         // feature that needs an engine; this one only needs the tag.
+        let punctuation = self.inner.punctuation.borrow().clone();
         for (doc, tags) in &attachments {
             doc.set_replacement_locale(tags);
+            // Pushed here too, not only from `set_punctuation`: a document
+            // opened after the settings resolved would otherwise never hear
+            // about them and would silently substitute nothing.
+            doc.set_punctuation(punctuation.clone());
         }
         let Some(spell) = self.inner.spell.borrow().clone() else {
             return;

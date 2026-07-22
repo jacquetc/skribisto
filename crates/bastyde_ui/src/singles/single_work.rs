@@ -38,6 +38,10 @@ mod imp {
         /// the key the backup settings/retention correlate a project on. Empty
         /// string when no work is loaded (or a pre-v2 project not yet healed).
         unique_id: Signal<String>,
+        /// The id of this Work's `SmartPunctuation` row. Read-only: the row is
+        /// minted with the Work and never re-pointed, so the UI only needs to
+        /// know where it is.
+        smart_punctuation: Signal<u64>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -64,6 +68,7 @@ mod imp {
                     chapter_mode: Signal::new(ChapterMode::default()),
                     custom_replacement_rules_enabled: Signal::new(false),
                     unique_id: Signal::new(String::new()),
+                    smart_punctuation: Signal::new(0),
                     loading_status: Signal::new(LoadingStatus::Unloaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -135,6 +140,9 @@ mod imp {
         }
         /// The open project's stable UUID (empty when no work is loaded). Read-only —
         /// the key backup settings/retention correlate this project on.
+        pub fn smart_punctuation(&self) -> Signal<u64> {
+            self.inner.smart_punctuation.clone()
+        }
         pub fn unique_id(&self) -> Signal<String> {
             self.inner.unique_id.clone()
         }
@@ -224,6 +232,7 @@ mod imp {
                         .custom_replacement_rules_enabled
                         .set(w.custom_replacement_rules_enabled);
                     self.inner.unique_id.set(w.unique_id);
+                    self.inner.smart_punctuation.set(w.smart_punctuation);
                     self.inner.is_refreshing.set(false);
                     self.inner.dirty.set(false);
                     self.inner.error_message.set(String::new());
@@ -242,6 +251,7 @@ mod imp {
             self.inner.chapter_mode.set(ChapterMode::default());
             self.inner.custom_replacement_rules_enabled.set(false);
             self.inner.unique_id.set(String::new());
+            self.inner.smart_punctuation.set(0);
             self.inner.is_refreshing.set(false);
             self.inner.dirty.set(false);
             self.inner.error_message.set(String::new());
@@ -275,6 +285,10 @@ mod imp {
         chapter_mode: Signal<ChapterMode>,
         custom_replacement_rules_enabled: Signal<bool>,
         unique_id: Signal<String>,
+        /// The id of this Work's `SmartPunctuation` row. Read-only: the row is
+        /// minted with the Work and never re-pointed, so the UI only needs to
+        /// know where it is.
+        smart_punctuation: Signal<u64>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -298,6 +312,7 @@ mod imp {
                     chapter_mode: Signal::new(ChapterMode::default()),
                     custom_replacement_rules_enabled: Signal::new(false),
                     unique_id: Signal::new("mock-work-uid-1".to_string()),
+                    smart_punctuation: Signal::new(1),
                     loading_status: Signal::new(LoadingStatus::Loaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -327,6 +342,9 @@ mod imp {
         }
         pub fn custom_replacement_rules_enabled(&self) -> Signal<bool> {
             self.inner.custom_replacement_rules_enabled.clone()
+        }
+        pub fn smart_punctuation(&self) -> Signal<u64> {
+            self.inner.smart_punctuation.clone()
         }
         pub fn unique_id(&self) -> Signal<String> {
             self.inner.unique_id.clone()

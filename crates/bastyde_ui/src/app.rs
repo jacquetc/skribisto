@@ -44,7 +44,29 @@ use crate::export::panel::ExportPanel;
 use crate::models::TreeNode;
 use crate::panels::new_work::NewWorkPanel;
 use crate::settings::SettingsPanel;
-use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::singles::{SingleSmartPunctuation, SingleWork, SingleWorkInfo};
+use crate::text_replacement::typography::SmartPunctuationFlags;
+
+/// The punctuation rules in force for the open project.
+///
+/// `override_app_default` off means "follow the application preference". There
+/// is no application-level punctuation preference yet — that is the second tier
+/// of the design and is not built — so following it currently means substituting
+/// nothing. The distinction is kept rather than collapsed because it is what the
+/// stored row means, and the day the app tier lands this function is the single
+/// place that changes.
+fn punctuation_flags(sp: &SingleSmartPunctuation) -> SmartPunctuationFlags {
+    if !sp.override_app_default().get() {
+        return SmartPunctuationFlags::all_off();
+    }
+    SmartPunctuationFlags {
+        dashes: sp.dashes().get(),
+        ellipsis: sp.ellipsis().get(),
+        quotes: sp.quotes().get(),
+        quote_style: sp.quote_style().get(),
+        pre_punctuation_spacing: sp.pre_punctuation_spacing().get(),
+    }
+}
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, DeferredResume, EditorsViewModel,
@@ -951,8 +973,49 @@ impl Widget for App {
             .app_state::<SingleWorkInfo>()
             .cloned()
             .expect("SingleWorkInfo registered in main");
+        let smart_punctuation = ctx
+            .app_state::<SingleSmartPunctuation>()
+            .cloned()
+            .expect("SingleSmartPunctuation registered in main");
         single_work.wire(ctx);
         single_work_info.wire(ctx);
+        smart_punctuation.wire(ctx);
+
+        // ── The punctuation house style, from the Work's row to every editor ──
+        //
+        // Two hops, because the row is reached through the Work: re-point the
+        // handle whenever the open project changes, then push the flags whenever
+        // any of them does. The second hop is what makes a switch flipped in
+        // Settings reach the scene the writer is looking at without reopening it.
+        {
+            let sp = smart_punctuation.clone();
+            ctx.effect(&single_work.smart_punctuation(), move |id| {
+                // 0 is "no project open", never "this project has no row" — the
+                // row is minted before its Work, so a live project always has one.
+                sp.set_id((*id != 0).then_some(*id));
+            });
+        }
+        {
+            let docs = spell_docs.clone();
+            let sp = smart_punctuation.clone();
+            let push = move || {
+                docs.set_punctuation(Some(punctuation_flags(&sp)));
+            };
+            // One effect per flag: `ctx.effect` takes a single signal, and the
+            // five are independent switches rather than one compound value.
+            for signal in [
+                smart_punctuation.override_app_default(),
+                smart_punctuation.dashes(),
+                smart_punctuation.ellipsis(),
+                smart_punctuation.quotes(),
+                smart_punctuation.pre_punctuation_spacing(),
+            ] {
+                let push = push.clone();
+                ctx.effect(&signal, move |_| push());
+            }
+            let push_style = push.clone();
+            ctx.effect(&smart_punctuation.quote_style(), move |_| push_style());
+        }
 
         // The project-lifecycle view-model: the shared Load/New/Close sequence, which was
         // three hand-kept-in-step closures here. Built fresh each build — it holds only

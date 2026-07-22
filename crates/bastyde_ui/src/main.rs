@@ -82,7 +82,7 @@ use frontend::common::event::{Event, Origin};
 use app::PendingExit;
 use app_ids::AppIds;
 use models::{BackupSettingsService, OpenDocsStore, TreeExpansionService, WorkspaceLayoutService};
-use singles::{SingleDictWord, SingleWork, SingleWorkInfo};
+use singles::{SingleDictWord, SingleSmartPunctuation, SingleWork, SingleWorkInfo};
 use view_models::{
     BackupRestoreViewModel, BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel,
     ImportPlumeViewModel, OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel,
@@ -494,6 +494,9 @@ fn main() {
     // can bind the project title (Bug 1) and shape (Bug 2); `App::build` wires
     // their event subscriptions and re-points them on each `LoadWork`.
     let single_work = SingleWork::new(app_ctx.clone());
+    // The project's punctuation house style. Re-pointed on every LoadWork by
+    // `App::build`, from `Work.smart_punctuation`.
+    let single_smart_punctuation = SingleSmartPunctuation::new(app_ctx.clone());
     let single_work_info = SingleWorkInfo::new(app_ctx.clone());
     // The outline view-model is created here (no settings dependency) so the
     // title-bar menu can bind its reactive checkmark and the whole app can reach
@@ -790,6 +793,7 @@ fn main() {
         .app_state(text_replacements.clone())
         .app_state(format_vm.clone())
         .app_state(single_work.clone())
+        .app_state(single_smart_punctuation.clone())
         .app_state(single_work_info.clone())
         .app_state(outline.clone())
         .app_state(workspace_layout.clone())
