@@ -210,6 +210,53 @@ pub fn is_rtl(tag: &str) -> bool {
     )
 }
 
+/// Whether a BCP-47 tag is written in the **Arabic script** specifically.
+///
+/// [`is_rtl`] deliberately answers a layout question and so lumps together every
+/// right-to-left script — Arabic, Hebrew, Syriac, Thaana, N'Ko. Punctuation is not a
+/// layout question: Arabic-script languages substitute their own comma, semicolon and
+/// question mark (`،` `؛` `؟`), whereas Hebrew keeps the ASCII ones outright. Mirroring
+/// punctuation off `is_rtl` would therefore corrupt Hebrew prose, so this is a separate,
+/// narrower test — the same reason [`counting`] carries its own `is_cjk_language` rather
+/// than reusing a broader script check.
+///
+/// Same resolution order as [`is_rtl`]: an explicit script subtag wins in both directions
+/// (`az-Arab` qualifies, `ar-Latn` does not), otherwise the primary language decides.
+/// Whitespace/casing tolerant, `_` accepted as a separator, unknown tags answer `false`.
+///
+/// ## Two deliberate divergences from [`is_rtl`]'s language list
+///
+/// - **Bare `ku` is excluded.** Unqualified Kurdish means Kurmanji, which is written in a
+///   Latin alphabet and takes ASCII punctuation; Sorani (`ckb`) is the Arabic-script one
+///   and is included. `is_rtl` treats bare `ku` as RTL, which is arguable for layout but
+///   would be plainly wrong here.
+/// - **`rhg` is excluded.** Rohingya's modern orthography is Hanifi, its own script with
+///   its own marks, not Arabic.
+///
+/// [`counting`]: crate::counting
+pub fn uses_arabic_script(tag: &str) -> bool {
+    let lower = tag.trim().replace('_', "-").to_ascii_lowercase();
+    if lower.is_empty() {
+        return false;
+    }
+    let mut subtags = lower.split('-');
+    let language = subtags.next().unwrap_or("");
+    let script = subtags
+        .next()
+        .filter(|s| s.len() == 4 && s.bytes().all(|b| b.is_ascii_alphabetic()));
+    if let Some(script) = script {
+        // `aran` is Nastaliq — a style of the Arabic script, not a different one, and the
+        // usual way Urdu is tagged when the style is worth recording.
+        return matches!(script, "arab" | "aran");
+    }
+    matches!(
+        language,
+        "ar" | "fa" | "prs" | "ur" | "ps" | "sd" | "ug" | "ckb" | "ks" | "pnb" | "bal" | "lrc"
+            | "mzn" | "glk" | "arz" | "ary" | "acm" | "apc" | "ajp" | "aeb" | "afb" | "ars"
+            | "ayl" | "kby"
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -454,5 +501,72 @@ mod tests {
         assert!(is_rtl("AR_eg"));
         assert!(is_rtl("HE"));
         assert!(!is_rtl("EN_us"), "US is a region, not an RTL script");
+    }
+
+    // ── uses_arabic_script ───────────────────────────────────────────────────
+
+    #[test]
+    fn arabic_script_languages_are_detected() {
+        for t in [
+            "ar", "ar-EG", "arz", "ary", "fa", "fa-IR", "prs", "ur", "ur-PK", "ps", "sd", "ug",
+            "ckb", "ks", "pnb",
+        ] {
+            assert!(uses_arabic_script(t), "{t} is written in the Arabic script");
+        }
+        for t in ["", "en", "en-US", "fr-FR", "tr", "ru", "zh-Hans", "ja"] {
+            assert!(!uses_arabic_script(t), "{t} is not Arabic-script");
+        }
+    }
+
+    /// **The reason this function exists at all.** Every one of these is right-to-left, so
+    /// `is_rtl` says yes to all of them — but none takes Arabic punctuation. Mirroring a
+    /// typed `?` to `؟` off `is_rtl` would silently corrupt Hebrew, Yiddish and Divehi prose.
+    #[test]
+    fn other_rtl_scripts_are_not_arabic_script() {
+        for t in ["he", "he-IL", "iw", "yi", "ji", "dv", "syr", "arc", "nqo", "rhg"] {
+            assert!(is_rtl(t), "{t} is RTL — that is precisely the trap");
+            assert!(
+                !uses_arabic_script(t),
+                "{t} is RTL but must NOT take Arabic punctuation"
+            );
+        }
+    }
+
+    /// An explicit script subtag overrides the language default, both ways — so a
+    /// romanised Arabic tag keeps ASCII punctuation, and a Latin-script language written
+    /// in Arabic script takes Arabic punctuation.
+    #[test]
+    fn arabic_script_subtag_wins_over_the_language() {
+        assert!(uses_arabic_script("az-Arab"), "Azerbaijani in Arabic script");
+        assert!(uses_arabic_script("ur-Aran"), "Nastaliq is the Arabic script");
+        assert!(!uses_arabic_script("ar-Latn"), "romanised Arabic is not");
+        assert!(!uses_arabic_script("ku-Latn"), "Kurmanji in Latin script");
+        assert!(
+            !uses_arabic_script("he-Hebr"),
+            "an explicit Hebrew script is still not Arabic"
+        );
+    }
+
+    /// Bare `ku` means Kurmanji, written in a Latin alphabet with ASCII punctuation —
+    /// even though `is_rtl` calls it RTL. Sorani, the Arabic-script one, has its own tag.
+    #[test]
+    fn bare_kurdish_is_kurmanji_and_takes_ascii_punctuation() {
+        assert!(is_rtl("ku"), "is_rtl treats bare ku as RTL");
+        assert!(
+            !uses_arabic_script("ku"),
+            "…but Kurmanji is Latin-script, so no punctuation mirroring"
+        );
+        assert!(uses_arabic_script("ckb"), "Sorani is the Arabic-script one");
+    }
+
+    #[test]
+    fn arabic_script_is_separator_and_case_tolerant() {
+        assert!(uses_arabic_script("AR_eg"));
+        assert!(uses_arabic_script("FA"));
+        assert!(
+            !uses_arabic_script("EN_us"),
+            "US is a region subtag, not a script"
+        );
+        assert!(uses_arabic_script("  ar-SA  "), "whitespace is trimmed");
     }
 }
