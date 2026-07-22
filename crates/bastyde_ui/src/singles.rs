@@ -28,6 +28,7 @@ mod single_content;
 mod single_corkboard_card;
 mod single_dict_word;
 mod single_milestone;
+mod single_smart_punctuation;
 mod single_work;
 mod single_work_info;
 
@@ -37,6 +38,7 @@ pub use single_content::SingleContent;
 pub use single_corkboard_card::SingleCorkboardCard;
 pub use single_dict_word::SingleDictWord;
 pub use single_milestone::SingleMilestone;
+pub use single_smart_punctuation::SingleSmartPunctuation;
 pub use single_work::SingleWork;
 pub use single_work_info::SingleWorkInfo;
 

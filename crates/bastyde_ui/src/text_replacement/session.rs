@@ -55,6 +55,7 @@ use bastyde::text_document::TextDocument;
 use bastyde::widgets::rich_text::EditorHandle;
 
 use super::engine::TextReplacementEngine;
+use super::typography::{SmartPunctuationFlags, TypographyEngine};
 use crate::view_models::TextReplacementRulesViewModel;
 
 /// What a fired rule left behind, so the next keystroke can undo it.
@@ -113,6 +114,18 @@ pub struct TextReplacementSession {
     /// The locale the current engine was compiled for, so a language change
     /// forces a recompile the same way a lexicon edit does.
     compiled_locale: RefCell<String>,
+    /// The locale's punctuation rules — quotes, dashes, the ellipsis, French
+    /// spacing, Arabic's own marks. Rebuilt whenever the locale or the project's
+    /// flags change; see [`set_punctuation`](Self::set_punctuation).
+    typography: RefCell<TypographyEngine>,
+    /// Which punctuation rules this project wants on, pushed in from the
+    /// `SmartPunctuation` row. `None` until the store has resolved it, which is
+    /// **not** the same as "all off" — it means "do not substitute anything
+    /// yet", so a document opened before the row loads is never silently
+    /// rewritten under a guess.
+    punctuation: RefCell<Option<SmartPunctuationFlags>>,
+    /// The `(flags, locale)` the typography engine was compiled from.
+    compiled_punctuation: RefCell<Option<(SmartPunctuationFlags, String)>>,
     pending: RefCell<Option<PendingRevert>>,
     suppressed: RefCell<Option<Suppressed>>,
     /// Caret position at the previous tick; `None` until the first one.
@@ -144,6 +157,18 @@ impl TextReplacementSession {
             // Deliberately not equal to `locale`'s initial value, so the very
             // first refresh compiles rather than believing itself current.
             compiled_locale: RefCell::new("\u{0}unset".to_string()),
+            // Explicitly all-off, NOT `TypographyEngine::default()`. That
+            // default carries `SmartPunctuationFlags::default()`, which is
+            // everything **on** — the right default for the app-level
+            // preference, and exactly wrong here: it would substitute
+            // punctuation in the window between the document opening and its
+            // settings resolving, in a project that may want none.
+            typography: RefCell::new(TypographyEngine::new(
+                "",
+                SmartPunctuationFlags::all_off(),
+            )),
+            punctuation: RefCell::new(None),
+            compiled_punctuation: RefCell::new(None),
             pending: RefCell::new(None),
             suppressed: RefCell::new(None),
             last_caret: Cell::new(None),
@@ -191,7 +216,18 @@ impl TextReplacementSession {
             return;
         }
         self.refresh_engine();
-        self.try_fire(handle, doc, caret);
+        self.refresh_typography();
+        // The lexicon first, and at most one of the two per keystroke.
+        //
+        // Both can match the same character — typing `dbl.` ends a lexicon
+        // trigger *and* could begin an ellipsis. The lexicon wins because it is
+        // the writer's own explicit instruction, where typography is a house
+        // convention; and only one fires because each leaves a pending revert
+        // behind, and two in one tick would make Backspace undo the wrong half.
+        if self.try_fire(handle, doc, caret) {
+            return;
+        }
+        self.try_typography(handle, doc, caret);
     }
 
     /// Set the document's language tag. Cheap and idempotent; a real change
@@ -205,6 +241,44 @@ impl TextReplacementSession {
         if *locale != tag {
             *locale = tag.to_string();
         }
+    }
+
+    /// Set which punctuation rules this project wants, from its
+    /// `SmartPunctuation` row. Cheap and idempotent, like [`set_locale`].
+    ///
+    /// `None` means "not resolved yet" and substitutes nothing. It is
+    /// deliberately distinct from `Some(everything off)`: a document whose row
+    /// has not loaded must not be rewritten under a guess, and once the row
+    /// arrives with `override_app_default` false the caller passes the
+    /// app-level default rather than this row's inert flags.
+    ///
+    /// [`set_locale`]: Self::set_locale
+    pub fn set_punctuation(&self, flags: Option<SmartPunctuationFlags>) {
+        let mut current = self.punctuation.borrow_mut();
+        if *current != flags {
+            *current = flags;
+        }
+    }
+
+    /// Rebuild the typography engine when the flags or the locale have moved.
+    ///
+    /// Separate from [`refresh_engine`](Self::refresh_engine) because the two
+    /// have different inputs — the lexicon's version counter versus a pushed
+    /// flag set — even though both are recompiled on the same tick.
+    fn refresh_typography(&self) {
+        let flags = self.punctuation.borrow().clone();
+        let locale = self.locale.borrow().clone();
+        let wanted = flags.clone().map(|f| (f, locale.clone()));
+        if *self.compiled_punctuation.borrow() == wanted {
+            return;
+        }
+        *self.compiled_punctuation.borrow_mut() = wanted;
+        *self.typography.borrow_mut() = match flags {
+            Some(flags) => TypographyEngine::new(&locale, flags),
+            // Not resolved: an engine with every rule off, so the per-keystroke
+            // path stays one call rather than a branch on an Option.
+            None => TypographyEngine::new(&locale, SmartPunctuationFlags::all_off()),
+        };
     }
 
     /// The lexicon this session reads. Test-only: the live-editor tests need to
@@ -284,15 +358,16 @@ impl TextReplacementSession {
         true
     }
 
-    /// Expand a rule if one just fired.
-    fn try_fire(&self, handle: &EditorHandle, doc: &TextDocument, caret: usize) {
+    /// Expand a lexicon rule if one just fired. Returns whether it did, so the
+    /// caller knows not to also run a typography rule over the same keystroke.
+    fn try_fire(&self, handle: &EditorHandle, doc: &TextDocument, caret: usize) -> bool {
         let fired = {
             let engine = self.engine.borrow();
             if engine.is_empty() {
-                return;
+                return false;
             }
             let Some(window) = text_before(doc, caret, engine.window_chars()) else {
-                return;
+                return false;
             };
             engine.check(&window)
         };
@@ -301,22 +376,25 @@ impl TextReplacementSession {
             // one-shot suppression — it only covers re-typing the delimiter
             // they just deleted, not the rest of the paragraph.
             self.suppressed.borrow_mut().take();
-            return;
+            return false;
         };
 
         // The delimiter that fired sits between the trigger and the caret.
         let Some(span_start) = caret.checked_sub(fired.trigger_chars + 1) else {
-            return;
+            return false;
         };
         if self.consume_suppression(span_start, &fired.typed) {
-            return;
+            // Suppressed still counts as handled: the writer just rejected this
+            // expansion, and letting typography have the same keystroke would
+            // substitute something else in its place.
+            return true;
         }
 
         let delimiter = match text_before(doc, caret, 1) {
             Some(d) if !d.is_empty() => d,
             // The delimiter is what fired the rule, so it must be readable; if
             // it is not, the document moved under us and doing nothing is right.
-            _ => return,
+            _ => return false,
         };
         let replacement_chars = fired.replacement.chars().count();
         let text = format!("{}{delimiter}", fired.replacement);
@@ -329,6 +407,46 @@ impl TextReplacementSession {
             typed: fired.typed,
             revision: doc.content_revision(),
         });
+        self.last_caret.set(Some(handle.cursor_position()));
+        self.last_revision.set(Some(doc.content_revision()));
+        true
+    }
+
+    /// Substitute the locale's own punctuation if the character just typed calls
+    /// for it.
+    ///
+    /// Unlike a lexicon rule this replaces text ending *at* the caret rather
+    /// than one character before it: the trigger here IS the character the
+    /// writer just typed, not a delimiter following a word.
+    ///
+    /// ## And unlike a lexicon rule, it leaves no pending revert
+    ///
+    /// The backspace-revert exists because a lexicon expansion swallows the
+    /// delimiter the writer typed, so Backspace has to mean "put my word back"
+    /// rather than "delete a character". A punctuation substitution swallows
+    /// nothing — one glyph in, one glyph out — so Backspace should delete it
+    /// exactly as it deletes any character, and pressing it twice to remove one
+    /// quotation mark would be a bug, not an escape hatch.
+    ///
+    /// The escape hatch is Ctrl+Z, and it already works: the substitution goes
+    /// through a single [`EditorHandle::replace_range`], which is one undo
+    /// entry, so undoing it restores the literal `"` or `--` the writer typed.
+    /// That is also what Word and LibreOffice do.
+    fn try_typography(&self, handle: &EditorHandle, doc: &TextDocument, caret: usize) {
+        let fired = {
+            let typography = self.typography.borrow();
+            let Some(window) = text_before(doc, caret, typography.window_chars()) else {
+                return;
+            };
+            typography.check(&window)
+        };
+        let Some(fired) = fired else {
+            return;
+        };
+        let Some(span_start) = caret.checked_sub(fired.replace_chars) else {
+            return;
+        };
+        self.apply(|| handle.replace_range(span_start, caret, &fired.replacement));
         self.last_caret.set(Some(handle.cursor_position()));
         self.last_revision.set(Some(doc.content_revision()));
     }
@@ -496,6 +614,13 @@ mod live_editor_tests {
         session: &TextReplacementSession,
         s: &str,
     ) {
+        // Seed the caret baseline before typing, which is what the real app
+        // does for free: the frame-tick effect runs from the moment the editor
+        // is built, so by the time anyone types, `tick` has already observed a
+        // caret. Without this the FIRST character of each test is swallowed by
+        // the caret-advanced gate — invisible to a multi-character lexicon
+        // trigger, but fatal to a single-character punctuation rule.
+        session.tick(handle, doc);
         for c in s.chars() {
             handle.insert_text(&c.to_string());
             session.tick(handle, doc);
@@ -650,6 +775,144 @@ mod live_editor_tests {
             "a deletion must not fire a rule, got {:?}",
             plain(&doc)
         );
+    }
+
+    // ── Typography, through the same live editor ─────────────────────────────
+
+    /// Turn on the punctuation rules for `locale` on an existing session.
+    fn punctuate(session: &TextReplacementSession, locale: &str) {
+        session.set_locale(locale);
+        session.set_punctuation(Some(SmartPunctuationFlags::default()));
+    }
+
+    #[test]
+    fn typing_three_dots_produces_an_ellipsis() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "en-US");
+        type_text(&handle, &doc, &session, "wait...");
+        assert_eq!(plain(&doc), "wait…");
+    }
+
+    /// The chained case, through a real document: two hyphens become an en dash
+    /// and the third has to upgrade it rather than sit beside it.
+    #[test]
+    fn typing_three_hyphens_climbs_to_an_em_dash() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "en-US");
+        type_text(&handle, &doc, &session, "a--");
+        assert_eq!(plain(&doc), "a–", "two hyphens make an en dash");
+        type_text(&handle, &doc, &session, "-");
+        assert_eq!(plain(&doc), "a—", "the third upgrades it");
+    }
+
+    #[test]
+    fn quotes_curl_by_side_against_a_real_document() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "en-US");
+        type_text(&handle, &doc, &session, "he said \"yes\"");
+        assert_eq!(plain(&doc), "he said “yes”");
+    }
+
+    /// French takes guillemets and a narrow no-break space before its question
+    /// mark — both rules on one line of prose.
+    #[test]
+    fn french_gets_its_guillemets_and_its_thin_space() {
+        let (doc, handle, session, _tree) = editor("");
+        session.set_locale("fr-FR");
+        session.set_punctuation(Some(SmartPunctuationFlags {
+            pre_punctuation_spacing: true,
+            ..SmartPunctuationFlags::default()
+        }));
+        type_text(&handle, &doc, &session, "\"Quoi ?");
+        assert_eq!(plain(&doc), "«Quoi\u{202F}?");
+    }
+
+    /// Arabic mirroring, end to end.
+    #[test]
+    fn arabic_punctuation_is_mirrored_in_the_document() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "ar");
+        type_text(&handle, &doc, &session, "كيف?");
+        assert_eq!(plain(&doc), "كيف؟");
+    }
+
+    /// The reason mirroring is gated on script rather than direction — Hebrew is
+    /// right-to-left and keeps its ASCII question mark.
+    #[test]
+    fn hebrew_keeps_its_ascii_question_mark_in_the_document() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "he-IL");
+        type_text(&handle, &doc, &session, "מה?");
+        assert_eq!(plain(&doc), "מה?");
+    }
+
+    /// Both engines can match the same keystroke. The lexicon wins, because it
+    /// is the writer's own instruction where typography is a house convention —
+    /// and only one fires, or Backspace would undo the wrong half.
+    #[test]
+    fn the_lexicon_wins_a_keystroke_both_engines_could_claim() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "en-US");
+        // `btw` + `.` ends a lexicon trigger; the `.` could also begin an
+        // ellipsis. Only the expansion may happen.
+        type_text(&handle, &doc, &session, "I saw btw.");
+        assert_eq!(plain(&doc), "I saw by the way.");
+    }
+
+    /// Typography must not disturb the lexicon's own backspace-revert.
+    #[test]
+    fn backspace_revert_still_works_with_punctuation_on() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "en-US");
+        type_text(&handle, &doc, &session, "I saw btw ");
+        assert_eq!(plain(&doc), "I saw by the way ");
+        let end = handle.cursor_position();
+        handle.replace_range(end - 1, end, "");
+        session.tick(&handle, &doc);
+        assert_eq!(plain(&doc), "I saw btw");
+    }
+
+    /// A punctuation substitution leaves NO pending revert: one glyph replaced
+    /// one glyph, so Backspace must delete it like any character rather than
+    /// restoring the literal and needing a second press.
+    #[test]
+    fn backspace_after_a_substitution_just_deletes_it() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "en-US");
+        // A space before it, so the quote opens rather than closes — the side
+        // is decided by what precedes, and `a"` would legitimately give `a”`.
+        type_text(&handle, &doc, &session, "a \"");
+        assert_eq!(plain(&doc), "a “");
+        let end = handle.cursor_position();
+        handle.replace_range(end - 1, end, "");
+        session.tick(&handle, &doc);
+        assert_eq!(
+            plain(&doc),
+            "a ",
+            "the quote is gone, not turned back into a literal one"
+        );
+    }
+
+    /// Until the project's row resolves, nothing is substituted — a document
+    /// must never be rewritten under a guess about settings still loading.
+    #[test]
+    fn nothing_is_substituted_before_the_settings_resolve() {
+        let (doc, handle, session, _tree) = editor("");
+        session.set_locale("en-US");
+        // `set_punctuation` deliberately not called.
+        type_text(&handle, &doc, &session, "wait... \"no\"");
+        assert_eq!(plain(&doc), "wait... \"no\"");
+    }
+
+    /// And an explicitly all-off row substitutes nothing either, while the
+    /// lexicon carries on working — the two switches are independent.
+    #[test]
+    fn punctuation_off_leaves_the_lexicon_running() {
+        let (doc, handle, session, _tree) = editor("");
+        session.set_locale("en-US");
+        session.set_punctuation(Some(SmartPunctuationFlags::all_off()));
+        type_text(&handle, &doc, &session, "wait... btw ");
+        assert_eq!(plain(&doc), "wait... by the way ");
     }
 
     /// With the project's master switch off, nothing expands at all.

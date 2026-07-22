@@ -343,6 +343,21 @@ pub struct SmartPunctuationFlags {
     pub pre_punctuation_spacing: bool,
 }
 
+impl SmartPunctuationFlags {
+    /// Every rule off — what a session uses before its project's row has
+    /// resolved, and what a project that follows the app default with nothing
+    /// configured amounts to.
+    pub fn all_off() -> Self {
+        Self {
+            dashes: false,
+            ellipsis: false,
+            quotes: false,
+            quote_style: QuoteStyle::LocaleDefault,
+            pre_punctuation_spacing: false,
+        }
+    }
+}
+
 impl Default for SmartPunctuationFlags {
     /// Everything on but the French spacing.
     ///
