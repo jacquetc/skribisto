@@ -620,6 +620,12 @@ impl OpenDocsStore {
     }
 
     /// One item's effective language list, read through the cached map.
+    /// [`language_for`](Self::language_for), for tests.
+    #[cfg(test)]
+    pub(crate) fn language_for_test(&self, item_id: u64) -> Vec<String> {
+        self.language_for(item_id)
+    }
+
     fn language_for(&self, item_id: u64) -> Vec<String> {
         self.with_language_map(|map| map.get(&item_id).cloned())
             .unwrap_or_else(|| self.inner.work_lang.borrow().clone())
@@ -1004,6 +1010,35 @@ mod tests {
         // Releasing an unknown / already-evicted id is a no-op.
         store.release(1, None);
         assert_eq!(store.refs_for_test(1), None);
+    }
+
+    /// Changing the project's default language must reach an item that has no
+    /// language of its own.
+    ///
+    /// The store caches the Work language, and the cache fingerprint is computed
+    /// *from* that cached value — so a stale cache looks fresh to itself and no
+    /// invalidation can rescue it. Before `App` grew an effect over the Work's
+    /// `dict_language`, only project load wrote this, and a language edit in
+    /// Settings re-resolved every document against the previous language.
+    /// Spell-check inherited the same staleness; punctuation only made it
+    /// visible.
+    #[test]
+    fn changing_the_project_language_reaches_an_inheriting_item() {
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx);
+        store.set_project_language(Some(1), vec!["en-US".to_string()]);
+        assert_eq!(
+            store.language_for_test(42),
+            vec!["en-US".to_string()],
+            "an item with no tag of its own inherits the project's"
+        );
+
+        store.set_project_language(Some(1), vec!["es-ES".to_string()]);
+        assert_eq!(
+            store.language_for_test(42),
+            vec!["es-ES".to_string()],
+            "…and follows it when the writer changes it"
+        );
     }
 
     /// The store's document is a live, shareable resource **independent of any

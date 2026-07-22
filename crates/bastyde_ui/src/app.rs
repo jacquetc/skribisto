@@ -995,6 +995,25 @@ impl Widget for App {
                 sp.set_id((*id != 0).then_some(*id));
             });
         }
+        // The project's default language, from the Work to the open documents.
+        //
+        // `OpenDocsStore` caches it (every item that has no tag of its own
+        // inherits it, and re-resolving per keystroke would be wasteful), and
+        // until this effect existed only `ProjectLifecycleViewModel` ever wrote
+        // that cache — on load. So editing Settings ▸ Work ▸ Language updated
+        // the entity, re-attached every document, and re-resolved them all
+        // against the *stale* cached language: the change did not reach the
+        // editor until the project was reopened. That affected spell-check as
+        // much as punctuation.
+        {
+            let docs = spell_docs.clone();
+            let ids = ids.clone();
+            ctx.effect(&single_work.dict_language(), move |langs| {
+                docs.set_project_language(ids.work_id.get(), langs.clone());
+                docs.attach_all();
+            });
+        }
+
         {
             let docs = spell_docs.clone();
             let sp = smart_punctuation.clone();
