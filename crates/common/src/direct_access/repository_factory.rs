@@ -40,6 +40,10 @@ pub mod write {
                 search_result_table::SearchResultHashMapTable,
             },
             system::{system_repository::SystemRepository, system_table::SystemHashMapTable},
+            text_replacement_rule::{
+                text_replacement_rule_repository::TextReplacementRuleRepository,
+                text_replacement_rule_table::TextReplacementRuleHashMapTable,
+            },
             trash_info::{
                 trash_info_repository::TrashInfoRepository, trash_info_table::TrashInfoHashMapTable,
             },
@@ -184,6 +188,17 @@ pub mod write {
             transaction,
         ))
     }
+
+    pub fn create_text_replacement_rule_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<TextReplacementRuleRepository<'_>> {
+        let text_replacement_rule_table =
+            TextReplacementRuleHashMapTable::new(transaction.get_store());
+        Ok(TextReplacementRuleRepository::new(
+            Box::new(text_replacement_rule_table),
+            transaction,
+        ))
+    }
 }
 
 pub mod read {
@@ -228,6 +243,10 @@ pub mod read {
                 search_result_table::SearchResultHashMapTableRO,
             },
             system::{system_repository::SystemRepositoryRO, system_table::SystemHashMapTableRO},
+            text_replacement_rule::{
+                text_replacement_rule_repository::TextReplacementRuleRepositoryRO,
+                text_replacement_rule_table::TextReplacementRuleHashMapTableRO,
+            },
             trash_info::{
                 trash_info_repository::TrashInfoRepositoryRO,
                 trash_info_table::TrashInfoHashMapTableRO,
@@ -353,5 +372,15 @@ pub mod read {
     ) -> Result<DictWordRepositoryRO<'_>> {
         let dict_word_table = DictWordHashMapTableRO::new(transaction.get_store());
         Ok(DictWordRepositoryRO::new(Box::new(dict_word_table)))
+    }
+
+    pub fn create_text_replacement_rule_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<TextReplacementRuleRepositoryRO<'_>> {
+        let text_replacement_rule_table =
+            TextReplacementRuleHashMapTableRO::new(transaction.get_store());
+        Ok(TextReplacementRuleRepositoryRO::new(Box::new(
+            text_replacement_rule_table,
+        )))
     }
 }

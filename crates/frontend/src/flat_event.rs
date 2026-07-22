@@ -14,9 +14,7 @@ use common::event::{
     AllEvent, BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event,
     ExportManagementEvent, HandlingAppLifecycleEvent, ImportManagementEvent, LongOperationEvent,
     MentionManagementEvent, Origin, ProgressManagementEvent, SearchManagementEvent,
-    TagManagementEvent,
-    TrashManagementEvent, UndoRedoEvent,
-    WorkManagementEvent,
+    TagManagementEvent, TrashManagementEvent, UndoRedoEvent, WorkManagementEvent,
 };
 use common::types::EntityId;
 
@@ -79,6 +77,9 @@ pub enum FlatEventKind {
     DictWordCreated,
     DictWordUpdated,
     DictWordRemoved,
+    TextReplacementRuleCreated,
+    TextReplacementRuleUpdated,
+    TextReplacementRuleRemoved,
 
     // Per-feature use case events
     WorkManagementLoadWork,
@@ -90,6 +91,8 @@ pub enum FlatEventKind {
 
     ExportManagementExportWork,
 
+    MentionManagementScanMentions,
+
     ProgressManagementCountWords,
     ProgressManagementRecordProgressSnapshot,
 
@@ -100,7 +103,6 @@ pub enum FlatEventKind {
     TrashManagementRestoreItemsTo,
     TrashManagementDeleteTrashEntries,
 
-    MentionManagementScanMentions,
     TagManagementImportTags,
 
     BinderItemManagementDuplicate,
@@ -254,6 +256,15 @@ impl From<Event> for FlatEvent {
                 DirectAccessEntity::DictWord(EntityEvent::Removed) => {
                     FlatEventKind::DictWordRemoved
                 }
+                DirectAccessEntity::TextReplacementRule(EntityEvent::Created) => {
+                    FlatEventKind::TextReplacementRuleCreated
+                }
+                DirectAccessEntity::TextReplacementRule(EntityEvent::Updated) => {
+                    FlatEventKind::TextReplacementRuleUpdated
+                }
+                DirectAccessEntity::TextReplacementRule(EntityEvent::Removed) => {
+                    FlatEventKind::TextReplacementRuleRemoved
+                }
             },
 
             Origin::WorkManagement(fe) => match fe {
@@ -266,6 +277,11 @@ impl From<Event> for FlatEvent {
             },
             Origin::ExportManagement(fe) => match fe {
                 ExportManagementEvent::ExportWork => FlatEventKind::ExportManagementExportWork,
+            },
+            Origin::MentionManagement(fe) => match fe {
+                MentionManagementEvent::ScanMentions => {
+                    FlatEventKind::MentionManagementScanMentions
+                }
             },
             Origin::ProgressManagement(fe) => match fe {
                 ProgressManagementEvent::CountWords => FlatEventKind::ProgressManagementCountWords,
@@ -286,9 +302,6 @@ impl From<Event> for FlatEvent {
                 TrashManagementEvent::DeleteTrashEntries => {
                     FlatEventKind::TrashManagementDeleteTrashEntries
                 }
-            },
-            Origin::MentionManagement(fe) => match fe {
-                MentionManagementEvent::ScanMentions => FlatEventKind::MentionManagementScanMentions,
             },
             Origin::TagManagement(fe) => match fe {
                 TagManagementEvent::ImportTags => FlatEventKind::TagManagementImportTags,
@@ -406,6 +419,9 @@ pub fn is_mutation(kind: &FlatEventKind) -> bool {
             | DictWordCreated
             | DictWordUpdated
             | DictWordRemoved
+            | TextReplacementRuleCreated
+            | TextReplacementRuleUpdated
+            | TextReplacementRuleRemoved
     )
 }
 
@@ -504,6 +520,10 @@ mod tests {
         assert!(is_mutation(&FlatEventKind::DictWordCreated));
         assert!(is_mutation(&FlatEventKind::DictWordUpdated));
         assert!(is_mutation(&FlatEventKind::DictWordRemoved));
+
+        assert!(is_mutation(&FlatEventKind::TextReplacementRuleCreated));
+        assert!(is_mutation(&FlatEventKind::TextReplacementRuleUpdated));
+        assert!(is_mutation(&FlatEventKind::TextReplacementRuleRemoved));
 
         assert!(!is_mutation(&FlatEventKind::Reset));
         assert!(!is_mutation(&FlatEventKind::UndoPerformed));

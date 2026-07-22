@@ -39,6 +39,11 @@ impl<'a> WorkHashMapTable<'a> {
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
             WorkRelationshipField::Paces => &self.store.jn_pace_from_work_paces,
             WorkRelationshipField::Tags => &self.store.jn_binder_tag_from_work_tags,
+            WorkRelationshipField::TextReplacementRules => {
+                &self
+                    .store
+                    .jn_text_replacement_rule_from_work_text_replacement_rules
+            }
             WorkRelationshipField::TrashInfos => &self.store.jn_trash_info_from_work_trash_infos,
         }
     }
@@ -47,6 +52,12 @@ impl<'a> WorkHashMapTable<'a> {
         entity.binders = junction_get(&self.store.jn_binder_from_work_binders, &entity.id);
         entity.tags = junction_get(&self.store.jn_binder_tag_from_work_tags, &entity.id);
         entity.dict_words = junction_get(&self.store.jn_dict_word_from_work_dict_words, &entity.id);
+        entity.text_replacement_rules = junction_get(
+            &self
+                .store
+                .jn_text_replacement_rule_from_work_text_replacement_rules,
+            &entity.id,
+        );
         entity.trash_infos =
             junction_get(&self.store.jn_trash_info_from_work_trash_infos, &entity.id);
         entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);
@@ -101,6 +112,13 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 &self.store.jn_binder_tag_from_work_tags,
                 new_entity.id,
                 new_entity.tags.clone(),
+            );
+            junction_set(
+                &self
+                    .store
+                    .jn_text_replacement_rule_from_work_text_replacement_rules,
+                new_entity.id,
+                new_entity.text_replacement_rules.clone(),
             );
             junction_set(
                 &self.store.jn_trash_info_from_work_trash_infos,
@@ -192,6 +210,13 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 entity.dict_words.clone(),
             );
             junction_set(
+                &self
+                    .store
+                    .jn_text_replacement_rule_from_work_text_replacement_rules,
+                entity.id,
+                entity.text_replacement_rules.clone(),
+            );
+            junction_set(
                 &self.store.jn_trash_info_from_work_trash_infos,
                 entity.id,
                 entity.trash_infos.clone(),
@@ -222,6 +247,12 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
             junction_remove(&self.store.jn_binder_from_work_binders, id);
             junction_remove(&self.store.jn_binder_tag_from_work_tags, id);
             junction_remove(&self.store.jn_dict_word_from_work_dict_words, id);
+            junction_remove(
+                &self
+                    .store
+                    .jn_text_replacement_rule_from_work_text_replacement_rules,
+                id,
+            );
             junction_remove(&self.store.jn_trash_info_from_work_trash_infos, id);
             junction_remove(&self.store.jn_pace_from_work_paces, id);
 
@@ -254,6 +285,11 @@ impl<'a> WorkHashMapTableRO<'a> {
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
             WorkRelationshipField::Paces => &self.store.jn_pace_from_work_paces,
             WorkRelationshipField::Tags => &self.store.jn_binder_tag_from_work_tags,
+            WorkRelationshipField::TextReplacementRules => {
+                &self
+                    .store
+                    .jn_text_replacement_rule_from_work_text_replacement_rules
+            }
             WorkRelationshipField::TrashInfos => &self.store.jn_trash_info_from_work_trash_infos,
         }
     }
@@ -262,6 +298,12 @@ impl<'a> WorkHashMapTableRO<'a> {
         entity.binders = junction_get(&self.store.jn_binder_from_work_binders, &entity.id);
         entity.tags = junction_get(&self.store.jn_binder_tag_from_work_tags, &entity.id);
         entity.dict_words = junction_get(&self.store.jn_dict_word_from_work_dict_words, &entity.id);
+        entity.text_replacement_rules = junction_get(
+            &self
+                .store
+                .jn_text_replacement_rule_from_work_text_replacement_rules,
+            &entity.id,
+        );
         entity.trash_infos =
             junction_get(&self.store.jn_trash_info_from_work_trash_infos, &entity.id);
         entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);

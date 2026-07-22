@@ -19,6 +19,7 @@ pub mod search;
 pub mod search_result;
 pub(crate) mod setup;
 pub mod system;
+pub mod text_replacement_rule;
 pub mod trash_info;
 pub mod use_cases;
 pub mod work;

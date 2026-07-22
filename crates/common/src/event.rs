@@ -62,6 +62,7 @@ pub enum DirectAccessEntity {
     BinderTag(EntityEvent),
     Content(EntityEvent),
     DictWord(EntityEvent),
+    TextReplacementRule(EntityEvent),
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
@@ -196,6 +197,9 @@ impl Event {
                 DirectAccessEntity::Content(event) => format!("direct_access_content_{:?}", event),
                 DirectAccessEntity::DictWord(event) => {
                     format!("direct_access_dict_word_{:?}", event)
+                }
+                DirectAccessEntity::TextReplacementRule(event) => {
+                    format!("direct_access_text_replacement_rule_{:?}", event)
                 }
             },
             Origin::UndoRedo(event) => format!("undo_redo_{:?}", event),

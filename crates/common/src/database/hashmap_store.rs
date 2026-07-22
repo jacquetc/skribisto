@@ -40,6 +40,7 @@ pub struct HashMapStore {
     pub binder_tags: RwLock<HashMap<EntityId, BinderTag>>,
     pub contents: RwLock<HashMap<EntityId, Content>>,
     pub dict_words: RwLock<HashMap<EntityId, DictWord>>,
+    pub text_replacement_rules: RwLock<HashMap<EntityId, TextReplacementRule>>,
 
     // ── Junction tables (one per forward relationship, shared for backward cleanup) ─
     pub jn_system_from_root_system: RwLock<HashMap<EntityId, Vec<EntityId>>>,
@@ -55,6 +56,8 @@ pub struct HashMapStore {
     pub jn_dict_word_from_work_dict_words: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_pace_from_work_paces: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_tag_from_work_tags: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_text_replacement_rule_from_work_text_replacement_rules:
+        RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_trash_info_from_work_trash_infos: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_from_trash_info_trashed_binder: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_trash_info_trashed_binder_item:
@@ -104,6 +107,7 @@ impl HashMapStore {
             binder_tags: read_or_recover(&self.binder_tags).clone(),
             contents: read_or_recover(&self.contents).clone(),
             dict_words: read_or_recover(&self.dict_words).clone(),
+            text_replacement_rules: read_or_recover(&self.text_replacement_rules).clone(),
             jn_system_from_root_system: read_or_recover(&self.jn_system_from_root_system).clone(),
             jn_work_from_root_works: read_or_recover(&self.jn_work_from_root_works).clone(),
             jn_recent_work_from_system_recent_works: read_or_recover(
@@ -133,6 +137,10 @@ impl HashMapStore {
             jn_pace_from_work_paces: read_or_recover(&self.jn_pace_from_work_paces).clone(),
             jn_binder_tag_from_work_tags: read_or_recover(&self.jn_binder_tag_from_work_tags)
                 .clone(),
+            jn_text_replacement_rule_from_work_text_replacement_rules: read_or_recover(
+                &self.jn_text_replacement_rule_from_work_text_replacement_rules,
+            )
+            .clone(),
             jn_trash_info_from_work_trash_infos: read_or_recover(
                 &self.jn_trash_info_from_work_trash_infos,
             )
@@ -225,6 +233,7 @@ impl HashMapStore {
         let g_binder_tags = read_or_recover(&self.binder_tags);
         let g_contents = read_or_recover(&self.contents);
         let g_dict_words = read_or_recover(&self.dict_words);
+        let g_text_replacement_rules = read_or_recover(&self.text_replacement_rules);
         let g_jn_system_from_root_system = read_or_recover(&self.jn_system_from_root_system);
         let g_jn_work_from_root_works = read_or_recover(&self.jn_work_from_root_works);
         let g_jn_recent_work_from_system_recent_works =
@@ -243,6 +252,8 @@ impl HashMapStore {
             read_or_recover(&self.jn_dict_word_from_work_dict_words);
         let g_jn_pace_from_work_paces = read_or_recover(&self.jn_pace_from_work_paces);
         let g_jn_binder_tag_from_work_tags = read_or_recover(&self.jn_binder_tag_from_work_tags);
+        let g_jn_text_replacement_rule_from_work_text_replacement_rules =
+            read_or_recover(&self.jn_text_replacement_rule_from_work_text_replacement_rules);
         let g_jn_trash_info_from_work_trash_infos =
             read_or_recover(&self.jn_trash_info_from_work_trash_infos);
         let g_jn_binder_from_trash_info_trashed_binder =
@@ -284,6 +295,7 @@ impl HashMapStore {
             binder_tags: RwLock::new(g_binder_tags.clone()),
             contents: RwLock::new(g_contents.clone()),
             dict_words: RwLock::new(g_dict_words.clone()),
+            text_replacement_rules: RwLock::new(g_text_replacement_rules.clone()),
             jn_system_from_root_system: RwLock::new(g_jn_system_from_root_system.clone()),
             jn_work_from_root_works: RwLock::new(g_jn_work_from_root_works.clone()),
             jn_recent_work_from_system_recent_works: RwLock::new(
@@ -306,6 +318,9 @@ impl HashMapStore {
             ),
             jn_pace_from_work_paces: RwLock::new(g_jn_pace_from_work_paces.clone()),
             jn_binder_tag_from_work_tags: RwLock::new(g_jn_binder_tag_from_work_tags.clone()),
+            jn_text_replacement_rule_from_work_text_replacement_rules: RwLock::new(
+                g_jn_text_replacement_rule_from_work_text_replacement_rules.clone(),
+            ),
             jn_trash_info_from_work_trash_infos: RwLock::new(
                 g_jn_trash_info_from_work_trash_infos.clone(),
             ),
@@ -362,6 +377,7 @@ impl HashMapStore {
         *write_or_recover(&self.binder_tags) = snap.binder_tags.clone();
         *write_or_recover(&self.contents) = snap.contents.clone();
         *write_or_recover(&self.dict_words) = snap.dict_words.clone();
+        *write_or_recover(&self.text_replacement_rules) = snap.text_replacement_rules.clone();
         *write_or_recover(&self.jn_system_from_root_system) =
             snap.jn_system_from_root_system.clone();
         *write_or_recover(&self.jn_work_from_root_works) = snap.jn_work_from_root_works.clone();
@@ -385,6 +401,9 @@ impl HashMapStore {
         *write_or_recover(&self.jn_pace_from_work_paces) = snap.jn_pace_from_work_paces.clone();
         *write_or_recover(&self.jn_binder_tag_from_work_tags) =
             snap.jn_binder_tag_from_work_tags.clone();
+        *write_or_recover(&self.jn_text_replacement_rule_from_work_text_replacement_rules) = snap
+            .jn_text_replacement_rule_from_work_text_replacement_rules
+            .clone();
         *write_or_recover(&self.jn_trash_info_from_work_trash_infos) =
             snap.jn_trash_info_from_work_trash_infos.clone();
         *write_or_recover(&self.jn_binder_from_trash_info_trashed_binder) =
@@ -466,6 +485,7 @@ impl HashMapStore {
         *write_or_recover(&self.binder_tags) = snap.binder_tags.clone();
         *write_or_recover(&self.contents) = snap.contents.clone();
         *write_or_recover(&self.dict_words) = snap.dict_words.clone();
+        *write_or_recover(&self.text_replacement_rules) = snap.text_replacement_rules.clone();
         *write_or_recover(&self.jn_system_from_root_system) =
             snap.jn_system_from_root_system.clone();
         *write_or_recover(&self.jn_work_from_root_works) = snap.jn_work_from_root_works.clone();
@@ -489,6 +509,9 @@ impl HashMapStore {
         *write_or_recover(&self.jn_pace_from_work_paces) = snap.jn_pace_from_work_paces.clone();
         *write_or_recover(&self.jn_binder_tag_from_work_tags) =
             snap.jn_binder_tag_from_work_tags.clone();
+        *write_or_recover(&self.jn_text_replacement_rule_from_work_text_replacement_rules) = snap
+            .jn_text_replacement_rule_from_work_text_replacement_rules
+            .clone();
         *write_or_recover(&self.jn_trash_info_from_work_trash_infos) =
             snap.jn_trash_info_from_work_trash_infos.clone();
         *write_or_recover(&self.jn_binder_from_trash_info_trashed_binder) =
@@ -553,6 +576,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) binder_tags: HashMap<EntityId, BinderTag>,
     pub(crate) contents: HashMap<EntityId, Content>,
     pub(crate) dict_words: HashMap<EntityId, DictWord>,
+    pub(crate) text_replacement_rules: HashMap<EntityId, TextReplacementRule>,
     pub(crate) jn_system_from_root_system: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_work_from_root_works: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_recent_work_from_system_recent_works: HashMap<EntityId, Vec<EntityId>>,
@@ -566,6 +590,8 @@ pub struct HashMapStoreSnapshot {
     pub(crate) jn_dict_word_from_work_dict_words: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_pace_from_work_paces: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_tag_from_work_tags: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_text_replacement_rule_from_work_text_replacement_rules:
+        HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_trash_info_from_work_trash_infos: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_from_trash_info_trashed_binder: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_trash_info_trashed_binder_item: HashMap<EntityId, Vec<EntityId>>,

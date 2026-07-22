@@ -16,6 +16,7 @@ pub mod root_commands;
 pub mod search_commands;
 pub mod search_result_commands;
 pub mod system_commands;
+pub mod text_replacement_rule_commands;
 pub mod trash_info_commands;
 pub mod work_commands;
 pub mod work_info_commands;
