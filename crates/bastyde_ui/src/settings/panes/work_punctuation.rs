@@ -7,6 +7,8 @@ use bastyde::prelude::*;
 use bastyde::widgets::{Segment, SegmentedControl};
 use frontend::common::entities::QuoteStyle;
 
+use crate::text_replacement::typography::{QuoteSystem, mirrored_for, ruleset_for};
+
 #[allow(unused_imports)]
 use super::super::*;
 
@@ -31,6 +33,48 @@ fn quote_style_label(style: &QuoteStyle) -> bastyde::i18n::LocalizedString {
         QuoteStyle::Guillemets => tr!(settings_quote_style_guillemets()),
         QuoteStyle::LowHigh => tr!(settings_quote_style_low_high()),
     }
+}
+
+/// A sample of what the project's language actually produces, given the chosen
+/// quote style — the answer to "I set the language to Spanish and nothing in
+/// this pane changed".
+///
+/// Nothing here *is* language-dependent: the switches say which rules run, and
+/// the locale table says what each one produces, so the pane legitimately looks
+/// identical in every language. That is defensible and still unhelpful — a
+/// writer cannot see what "Language default" means for their book without
+/// typing a quotation mark into a scene and looking. This line shows it.
+///
+/// Built as data (`lit!`), not a translated string: it is glyphs, and the same
+/// glyphs whatever the interface language.
+fn language_sample(langs: &[String], style: &QuoteStyle) -> String {
+    let tag = skribisto_model::language::primary(langs);
+    let ruleset = ruleset_for(tag);
+    let quotes = match style {
+        QuoteStyle::LocaleDefault => ruleset.primary_quotes,
+        QuoteStyle::CurlyDouble => QuoteSystem::Paired {
+            open: '\u{201C}',
+            close: '\u{201D}',
+        },
+        QuoteStyle::Guillemets => QuoteSystem::Paired {
+            open: '\u{00AB}',
+            close: '\u{00BB}',
+        },
+        QuoteStyle::LowHigh => QuoteSystem::Paired {
+            open: '\u{201E}',
+            close: '\u{201C}',
+        },
+    };
+    let mut out = format!("{}\u{2026}{}", quotes.open(), quotes.close());
+    // The two rules that are language-gated rather than switch-gated, and so
+    // cannot be inferred from anything else on this pane.
+    if !ruleset.pre_punctuation.is_empty() {
+        out.push_str("   mot\u{202F}?");
+    }
+    for (ascii, localized) in mirrored_for(tag) {
+        out.push_str(&format!("   {ascii}\u{2192}{localized}"));
+    }
+    out
 }
 
 /// Bridge a `bool` on the entity to a `Signal<bool>` the widget owns.
@@ -152,6 +196,18 @@ pub(in crate::settings) fn work_punctuation_pane(
                 })
                 .enabled(style_enabled),
         )
+        .line(
+            field_label(tr!(settings_punctuation_sample())),
+            TextWidget::new(lit!(language_sample(
+                &vm.dict_language().get(),
+                &vm.quote_style().get()
+            )))
+            .text(
+                vm.dict_language()
+                    .zip(&vm.quote_style())
+                    .map(|(l, s)| language_sample(l, s)),
+            ),
+        )
         .full_width(
             Checkbox::new(spacing)
                 .label(tr!(settings_punctuation_spacing()))
@@ -242,6 +298,62 @@ mod tests {
         // and took the whole pane down on first open.
         tree.sync_accessibility();
         tree
+    }
+
+    /// **The row that answers "I changed the language and nothing happened".**
+    ///
+    /// Nothing on this pane is language-dependent — the switches say which rules
+    /// run, the locale table says what each produces — so the pane legitimately
+    /// looks identical in every language. This sample is the one place the
+    /// difference is visible, so it is pinned per language.
+    #[test]
+    fn the_sample_shows_what_each_language_produces() {
+        let l = |s: &str| vec![s.to_string()];
+        let d = QuoteStyle::LocaleDefault;
+
+        assert_eq!(language_sample(&l("en-US"), &d), "\u{201C}\u{2026}\u{201D}");
+        assert_eq!(language_sample(&l("es-ES"), &d), "\u{00AB}\u{2026}\u{00BB}");
+        assert_eq!(language_sample(&l("de-DE"), &d), "\u{201E}\u{2026}\u{201C}");
+        // Swedish opens and closes with the same glyph.
+        assert_eq!(language_sample(&l("sv-SE"), &d), "\u{201D}\u{2026}\u{201D}");
+
+        // French adds its spacing example — the rule is language-gated, so it
+        // cannot be inferred from the switches.
+        let fr = language_sample(&l("fr-FR"), &d);
+        assert!(fr.starts_with("\u{00AB}\u{2026}\u{00BB}"), "got {fr:?}");
+        assert!(
+            fr.contains("mot\u{202F}?"),
+            "French shows its thin space: {fr:?}"
+        );
+
+        // Arabic adds its mirrored marks, which appear nowhere else in the pane.
+        let ar = language_sample(&l("ar"), &d);
+        for want in [
+            "?\u{2192}\u{061F}",
+            ",\u{2192}\u{060C}",
+            ";\u{2192}\u{061B}",
+        ] {
+            assert!(ar.contains(want), "Arabic shows {want}: {ar:?}");
+        }
+
+        // Hebrew is right-to-left and must NOT show mirrored marks.
+        let he = language_sample(&l("he-IL"), &d);
+        assert!(!he.contains("\u{061F}"), "Hebrew keeps ASCII: {he:?}");
+    }
+
+    /// An explicit house style overrides the language in the sample too — what
+    /// the writer sees has to match what they will get.
+    #[test]
+    fn an_explicit_style_overrides_the_language_in_the_sample() {
+        let l = vec!["en-US".to_string()];
+        assert_eq!(
+            language_sample(&l, &QuoteStyle::Guillemets),
+            "\u{00AB}\u{2026}\u{00BB}"
+        );
+        assert_eq!(
+            language_sample(&l, &QuoteStyle::LowHigh),
+            "\u{201E}\u{2026}\u{201C}"
+        );
     }
 
     /// The pane mounts, lays out and builds an accessibility tree. This is the

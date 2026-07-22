@@ -1183,3 +1183,4 @@ settings-quote-style-guillemets = «Guillemets»
 settings-quote-style-low-high = „Low-high“
 settings-punctuation-spacing = Space before ; : ! ? and »
 settings-punctuation-spacing-hint = French typography sets a narrow no-break space before ; ! ? and a full one before :. It applies only to text written in French.
+settings-punctuation-sample = Your language gives
