@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! Settings ▸ Work ▸ **Text replacements** — the per-project custom lexicon
-//! manager ("dbl" → "Dumbledore", "--" → "—"), gated behind a leading
+//! manager ("btw" → "by the way", "--" → "—"), gated behind a leading
 //! per-project master switch (`Work.custom_replacement_rules_enabled`).
 //!
 //! Shaped like the tag palette pane next to it: a description, the master
@@ -420,7 +420,11 @@ impl Widget for RuleRowView {
                 }
             });
         }
-        let toggle = Toggle::new(enabled).tooltip(tr!(settings_text_repl_row_enabled_tip()));
+        // `.label(..)`, not `.tooltip(..)`: a tooltip is not an accessible name, and
+        // `Toggle` asserts on a nameless switch — a screen reader would otherwise
+        // announce bare "switch" for every row. It crashed the pane outright the
+        // first time a rule existed to render.
+        let toggle = Toggle::new(enabled).label(tr!(settings_text_repl_row_enabled()));
 
         let delete = {
             let vm = self.vm.clone();
@@ -478,3 +482,203 @@ fn empty_state() -> impl Widget {
     )
 }
 
+
+/// Headless layout tests for the pane and its rows.
+///
+/// These exist because of a real crash: `RuleRowView`'s enable switch was built
+/// with `.tooltip(..)` and no `.label(..)`, and `Toggle::accessibility` asserts
+/// on a switch with no accessible name. Nothing in the suite ever *built* a row,
+/// so every engine, view-model and live-editor test passed while the pane took
+/// the whole app down the moment a project had one rule to render.
+///
+/// The lesson generalises past that one widget: a11y assertions, missing
+/// `BuildContext` wiring and layout panics only fire when a widget is actually
+/// mounted and laid out. So mount them.
+#[cfg(all(test, feature = "mocks"))]
+mod tests {
+    use std::rc::Rc;
+
+    use bastyde::prelude::SizeProposal;
+    use frontend::AppContext;
+
+    use super::*;
+    use crate::app_ids::AppIds;
+    use crate::models::TextReplacementRuleListModel;
+    use crate::singles::SingleWork;
+
+    fn vm(enabled: bool) -> (Rc<AppContext>, TextReplacementRulesViewModel) {
+        let ctx = Rc::new(AppContext::new());
+        let work = SingleWork::new(ctx.clone());
+        work.set_custom_replacement_rules_enabled(enabled);
+        let vm = TextReplacementRulesViewModel::new(
+            TextReplacementRuleListModel::new(ctx.clone()),
+            work,
+            AppIds::new(),
+        );
+        (ctx, vm)
+    }
+
+    /// A row must mount and lay out. This is the test that fails — by panicking
+    /// inside `Toggle` — if the enable switch ever loses its accessible label
+    /// again.
+    #[test]
+    fn a_rule_row_mounts_and_lays_out() {
+        let (ctx, vm) = vm(true);
+        let row = vm
+            .rows()
+            .into_iter()
+            .next()
+            .expect("the mock lexicon ships rules");
+        let mut tree = crate::test_support::tree_with_settings(&ctx);
+        tree.add(RuleRowView {
+            vm: vm.clone(),
+            row,
+            root_child: None,
+        });
+        tree.layout(SizeProposal::exact(760.0, 46.0));
+        // The assertion lives in `Toggle::accessibility`, which only runs when
+        // the AccessKit tree is built — laying out alone would not reach it.
+        tree.sync_accessibility();
+    }
+
+    /// Every row, not just the first: the mock lexicon carries an enabled rule, a
+    /// caseless one and a disabled one, and a row's own state feeds its widgets.
+    #[test]
+    fn every_rule_row_mounts() {
+        let (ctx, vm) = vm(true);
+        for row in vm.rows() {
+            let mut tree = crate::test_support::tree_with_settings(&ctx);
+            tree.add(RuleRowView {
+                vm: vm.clone(),
+                row: row.clone(),
+                root_child: None,
+            });
+            tree.layout(SizeProposal::exact(760.0, 46.0));
+            tree.sync_accessibility();
+        }
+    }
+
+    /// Hosts the pane so it can be mounted: `text_replacements_pane` needs a
+    /// `&mut BuildContext`, which only exists inside a `Widget::build`.
+    struct PaneHost {
+        vm: Option<TextReplacementRulesViewModel>,
+        root_child: Option<WidgetId>,
+    }
+
+    impl std::fmt::Debug for PaneHost {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("PaneHost").finish()
+        }
+    }
+
+    impl Widget for PaneHost {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let vm = self.vm.take().expect("built once");
+            let body = text_replacements_pane(ctx, &vm);
+            let root = ctx.add(body);
+            self.root_child = Some(root);
+            vec![root]
+        }
+
+        fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+            self.root_child
+                .and_then(|id| ctx.child_size(id, proposal))
+                .map(LayoutResponse::from)
+                .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        }
+
+        fn children(&self) -> Vec<WidgetId> {
+            self.root_child.into_iter().collect()
+        }
+    }
+
+    /// Mount the pane and return how many text inputs the accessibility tree
+    /// exposes — the add row contributes two (trigger + replacement), so this is
+    /// a direct read of whether the master switch actually gated the body.
+    fn mount_pane_inputs(enabled: bool) -> usize {
+        use bastyde::core::accesskit::Role;
+        let (ctx, vm) = vm(enabled);
+        let mut tree = crate::test_support::tree_with_settings(&ctx);
+        tree.add(PaneHost { vm: Some(vm), root_child: None });
+        tree.layout(SizeProposal::exact(760.0, 520.0));
+        let update = tree.sync_accessibility();
+        update
+            .nodes
+            .iter()
+            .filter(|(_, n)| n.role() == Role::TextInput)
+            .count()
+    }
+
+    fn mount_pane(enabled: bool) {
+        let _ = mount_pane_inputs(enabled);
+    }
+
+    /// Flipping the switch on an ALREADY-MOUNTED pane must re-gate the body.
+    ///
+    /// The build-time test above passes even when the `Switcher` is stuck,
+    /// because it mounts a fresh pane per state. This is the path a writer takes:
+    /// open the pane, click the switch, and expect the add row to appear or go
+    /// away under them.
+    #[test]
+    fn flipping_the_master_switch_re_gates_a_mounted_pane() {
+        use bastyde::core::accesskit::Role;
+        let (ctx, vm) = vm(true);
+        let mut tree = crate::test_support::tree_with_settings(&ctx);
+        tree.add(PaneHost { vm: Some(vm.clone()), root_child: None });
+        tree.layout(SizeProposal::exact(760.0, 520.0));
+
+        let inputs = |tree: &mut bastyde::core::widget_tree::WidgetTree| {
+            tree.sync_accessibility()
+                .nodes
+                .iter()
+                .filter(|(_, n)| n.role() == Role::TextInput)
+                .count()
+        };
+        assert!(inputs(&mut tree) >= 2, "starts on, so the add row is present");
+
+        vm.set_enabled(false);
+        tree.layout(SizeProposal::exact(760.0, 520.0));
+        assert_eq!(
+            inputs(&mut tree),
+            0,
+            "switching off must take the add row away, not leave it editable"
+        );
+
+        vm.set_enabled(true);
+        tree.layout(SizeProposal::exact(760.0, 520.0));
+        assert!(
+            inputs(&mut tree) >= 2,
+            "switching back on must bring the add row back"
+        );
+    }
+
+    /// The master switch must actually gate the body, in BOTH directions. The
+    /// `Switcher` is driven by a mapped signal off the toggle, and a stuck one
+    /// would leave the add row and the list on screen for a project that has the
+    /// feature switched off — offering edits to a lexicon that will never fire.
+    #[test]
+    fn the_master_switch_gates_the_add_row() {
+        assert_eq!(
+            mount_pane_inputs(false),
+            0,
+            "switched off, the pane must show only the hint — no add row"
+        );
+        assert!(
+            mount_pane_inputs(true) >= 2,
+            "switched on, the add row's trigger and replacement fields must be present"
+        );
+    }
+
+    /// The whole pane, switched on — the add row, the toolbar and a populated
+    /// list, which is the state a writer actually sees.
+    #[test]
+    fn the_pane_mounts_with_the_switch_on() {
+        mount_pane(true);
+    }
+
+    /// And switched off, where the `Switcher` shows the explanatory hint instead.
+    #[test]
+    fn the_pane_mounts_with_the_switch_off() {
+        mount_pane(false);
+    }
+}

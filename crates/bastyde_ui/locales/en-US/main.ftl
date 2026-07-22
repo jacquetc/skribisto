@@ -972,7 +972,7 @@ settings-user-dict-export-failed = Could not save the word list: { $error }
 
 ## Settings: Work ▸ Text replacements (per-project custom lexicon)
 settings-page-text-replacements = Text replacements
-settings-text-repl-desc = Replace shorthand with the full text as you type: "dbl" becomes "Dumbledore" the moment you type a space or punctuation.
+settings-text-repl-desc = Replace shorthand with the full text as you type: "btw" becomes "by the way" the moment you type a space or punctuation.
 settings-text-repl-enable = Use text replacements in this project
 settings-text-repl-disabled-hint = Turn this on to define shorthand that expands as you write.
 settings-text-repl-add = Add rule
@@ -985,7 +985,7 @@ settings-text-repl-count = { $n ->
     [one] 1 rule
    *[other] { $n } rules
 }
-settings-text-repl-row-enabled-tip = Use this rule while writing
+settings-text-repl-row-enabled = Use this rule
 settings-text-repl-delete = Delete the rule for { $trigger }
 settings-text-repl-deleted = Deleted the rule for "{ $trigger }"
 settings-text-repl-empty = No rules yet.

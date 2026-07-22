@@ -567,7 +567,7 @@ fn main() {
     // instance would mean a second subscription set and two palettes drifting apart.
     let work_tags = models::WorkTagsListModel::new(app_ctx.clone());
     let tags_vm = view_models::TagsViewModel::new(work_tags, ids.clone());
-    // The per-project custom replacement lexicon ("dbl" → "Dumbledore"), on the same
+    // The per-project custom replacement lexicon ("btw" → "by the way"), on the same
     // footing: registered as app-state so the Settings pane and the editor's typing
     // session reach the ONE instance. Its master switch lives on the `Work` entity, so
     // it composes the shared `SingleWork` rather than owning a signal of its own.

@@ -974,7 +974,7 @@ settings-user-dict-export-failed = Impossible d’enregistrer la liste de mots :
 
 ## Réglages: Projet ▸ Remplacements de texte (lexique personnalisé par projet)
 settings-page-text-replacements = Remplacements de texte
-settings-text-repl-desc = Remplace une abréviation par le texte complet à la frappe : « dbl » devient « Dumbledore » dès que vous tapez une espace ou une ponctuation.
+settings-text-repl-desc = Remplace une abréviation par le texte complet à la frappe : « stp » devient « s’il te plaît » dès que vous tapez une espace ou une ponctuation.
 settings-text-repl-enable = Utiliser les remplacements de texte dans ce projet
 settings-text-repl-disabled-hint = Activez cette option pour définir des abréviations qui se développent à l’écriture.
 settings-text-repl-add = Ajouter la règle
@@ -989,7 +989,7 @@ settings-text-repl-count = { $n ->
     [one] { $n } règle
    *[other] { $n } règles
 }
-settings-text-repl-row-enabled-tip = Utiliser cette règle pendant l’écriture
+settings-text-repl-row-enabled = Utiliser cette règle
 settings-text-repl-delete = Supprimer la règle de { $trigger }
 settings-text-repl-deleted = Règle de « { $trigger } » supprimée
 settings-text-repl-empty = Aucune règle pour l’instant.

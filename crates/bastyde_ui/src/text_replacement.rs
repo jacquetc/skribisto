@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! Replace-while-typing: the per-project custom lexicon applied as the writer
-//! types ("dbl" + space → "Dumbledore").
+//! types ("btw" + space → "by the way").
 //!
 //! Two halves, deliberately split so the hard part is testable without a GPU:
 //!

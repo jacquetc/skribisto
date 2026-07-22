@@ -16,13 +16,13 @@
 //! The session therefore gates on the caret having advanced since the previous
 //! call rather than on it having advanced by exactly one: an insertion moves it
 //! forward, a deletion or a replaced selection does not. Without that gate,
-//! deleting the "x" out of "dblx " would leave text that ends in a fired
+//! deleting the "x" out of "btwx " would leave text that ends in a fired
 //! trigger and expand it, which is not something the writer typed.
 //!
 //! ## Applying the rule
 //!
 //! The delimiter is replaced along with the trigger and immediately re-added
-//! (`"dbl "` → `"Dumbledore "`) rather than the trigger alone. Two reasons:
+//! (`"btw "` → `"by the way "`) rather than the trigger alone. Two reasons:
 //! [`EditorHandle::replace_range`] leaves the caret after the inserted text, so
 //! replacing just the trigger would strand the caret *before* the space the
 //! writer typed; and one call is one undo entry, so a single Ctrl+Z takes the
@@ -314,25 +314,25 @@ mod tests {
         PendingRevert {
             span_start: 4,
             replacement_chars: 10,
-            replacement: "Dumbledore".into(),
-            typed: "dbl".into(),
+            replacement: "by the way".into(),
+            typed: "btw".into(),
             revision: 7,
         }
     }
 
-    /// The case the feature exists for: "say dbl " expanded, the writer hit
+    /// The case the feature exists for: "say btw " expanded, the writer hit
     /// Backspace, so the delimiter is gone and the caret sits at the end of the
     /// replacement.
     #[test]
     fn deleting_the_delimiter_right_after_a_fire_reverts() {
-        assert!(revert_applies(&pending(), 14, "Dumbledore"));
+        assert!(revert_applies(&pending(), 14, "by the way"));
     }
 
     /// The writer kept typing instead — the caret is past where a revert could
     /// apply, so the expansion stands.
     #[test]
     fn typing_on_after_a_fire_does_not_revert() {
-        assert!(!revert_applies(&pending(), 15, "Dumbledore "));
+        assert!(!revert_applies(&pending(), 15, "by the way "));
     }
 
     /// A caret in the right place is not enough on its own: an edit elsewhere
@@ -340,21 +340,21 @@ mod tests {
     /// touched.
     #[test]
     fn a_matching_caret_over_different_text_does_not_revert() {
-        assert!(!revert_applies(&pending(), 14, "Dumbledorf"));
+        assert!(!revert_applies(&pending(), 14, "by the wax"));
     }
 
     /// Deleting further back moves the caret out of the span.
     #[test]
     fn deleting_into_the_replacement_does_not_revert() {
-        assert!(!revert_applies(&pending(), 13, "Dumbledor"));
+        assert!(!revert_applies(&pending(), 13, "by the wa"));
     }
 
     /// The suppression is keyed case-insensitively, matching the engine: the
-    /// writer who reverted "DBL" must not have "dbl" re-expand at that spot.
+    /// writer who reverted "BTW" must not have "btw" re-expand at that spot.
     #[test]
     fn the_suppression_key_is_case_insensitive() {
-        let s = Suppressed { span_start: 4, key: "dbl".into() };
-        assert_eq!(s.key, "DBL".to_lowercase());
+        let s = Suppressed { span_start: 4, key: "btw".into() };
+        assert_eq!(s.key, "BTW".to_lowercase());
     }
 
     /// The revert restores the trigger *without* the delimiter the backspace
@@ -365,12 +365,12 @@ mod tests {
         use crate::models::TextReplacementRuleRow;
         let engine = TextReplacementEngine::from_rules(&[TextReplacementRuleRow {
             id: 0,
-            trigger: "dbl".into(),
-            replacement: "Dumbledore".into(),
+            trigger: "btw".into(),
+            replacement: "by the way".into(),
             enabled: true,
         }]);
-        // What the document reads as after a revert of "say dbl ".
-        assert_eq!(engine.check("say dbl"), None);
+        // What the document reads as after a revert of "say btw ".
+        assert_eq!(engine.check("say btw"), None);
     }
 }
 
@@ -399,7 +399,7 @@ mod live_editor_tests {
     use crate::singles::SingleWork;
 
     /// A live editor over `text`, plus a session whose lexicon is the mock one
-    /// (`--` → `—`, `dbl` → `Dumbledore`, and a disabled `teh` → `the`) with the
+    /// (`--` → `—`, `btw` → `by the way`, and a disabled `teh` → `the`) with the
     /// project's master switch turned on.
     ///
     /// The `WidgetTree` is returned and must be kept alive — the handle reads
@@ -448,11 +448,11 @@ mod live_editor_tests {
     #[test]
     fn typing_a_trigger_then_a_space_expands_it() {
         let (doc, handle, session, _tree) = editor("");
-        type_text(&handle, &doc, &session, "I saw dbl ");
-        assert_eq!(plain(&doc), "I saw Dumbledore ");
+        type_text(&handle, &doc, &session, "I saw btw ");
+        assert_eq!(plain(&doc), "I saw by the way ");
         assert_eq!(
             handle.cursor_position(),
-            "I saw Dumbledore ".chars().count(),
+            "I saw by the way ".chars().count(),
             "the caret must end up after the delimiter, not before it"
         );
     }
@@ -462,16 +462,16 @@ mod live_editor_tests {
     #[test]
     fn typing_the_trigger_alone_does_not_expand() {
         let (doc, handle, session, _tree) = editor("");
-        type_text(&handle, &doc, &session, "I saw dbl");
-        assert_eq!(plain(&doc), "I saw dbl");
+        type_text(&handle, &doc, &session, "I saw btw");
+        assert_eq!(plain(&doc), "I saw btw");
     }
 
     /// The word-start guard, against a real document.
     #[test]
     fn a_trigger_inside_a_longer_word_does_not_expand() {
         let (doc, handle, session, _tree) = editor("");
-        type_text(&handle, &doc, &session, "a xdbl ");
-        assert_eq!(plain(&doc), "a xdbl ");
+        type_text(&handle, &doc, &session, "a xbtw ");
+        assert_eq!(plain(&doc), "a xbtw ");
     }
 
     /// Case propagation end to end.
@@ -496,14 +496,14 @@ mod live_editor_tests {
     #[test]
     fn backspace_right_after_an_expansion_reverts_it() {
         let (doc, handle, session, _tree) = editor("");
-        type_text(&handle, &doc, &session, "I saw dbl ");
-        assert_eq!(plain(&doc), "I saw Dumbledore ");
+        type_text(&handle, &doc, &session, "I saw btw ");
+        assert_eq!(plain(&doc), "I saw by the way ");
 
         // The delimiter the expansion re-added is what Backspace removes.
         let end = handle.cursor_position();
         handle.replace_range(end - 1, end, "");
         session.on_text_changed(&handle, &doc);
-        assert_eq!(plain(&doc), "I saw dbl");
+        assert_eq!(plain(&doc), "I saw btw");
     }
 
     /// And having reverted, re-typing the delimiter must NOT expand it again —
@@ -511,16 +511,16 @@ mod live_editor_tests {
     #[test]
     fn re_typing_the_delimiter_after_a_revert_does_not_re_expand() {
         let (doc, handle, session, _tree) = editor("");
-        type_text(&handle, &doc, &session, "I saw dbl ");
+        type_text(&handle, &doc, &session, "I saw btw ");
         let end = handle.cursor_position();
         handle.replace_range(end - 1, end, "");
         session.on_text_changed(&handle, &doc);
-        assert_eq!(plain(&doc), "I saw dbl");
+        assert_eq!(plain(&doc), "I saw btw");
 
         type_text(&handle, &doc, &session, " ");
         assert_eq!(
             plain(&doc),
-            "I saw dbl ",
+            "I saw btw ",
             "the rule the writer just rejected must not fire again at that spot"
         );
     }
@@ -530,13 +530,13 @@ mod live_editor_tests {
     #[test]
     fn a_later_occurrence_still_expands_after_a_revert() {
         let (doc, handle, session, _tree) = editor("");
-        type_text(&handle, &doc, &session, "I saw dbl ");
+        type_text(&handle, &doc, &session, "I saw btw ");
         let end = handle.cursor_position();
         handle.replace_range(end - 1, end, "");
         session.on_text_changed(&handle, &doc);
-        type_text(&handle, &doc, &session, " and dbl ");
+        type_text(&handle, &doc, &session, " and btw ");
         assert!(
-            plain(&doc).ends_with("and Dumbledore "),
+            plain(&doc).ends_with("and by the way "),
             "got {:?}",
             plain(&doc)
         );
@@ -546,14 +546,14 @@ mod live_editor_tests {
     /// not typing, and must not expand — the caret-advanced gate.
     #[test]
     fn a_deletion_that_exposes_a_trigger_does_not_expand() {
-        let (doc, handle, session, _tree) = editor("say dbl x ");
-        // Put the caret after the "x " and delete the "x", leaving "say dbl  ".
+        let (doc, handle, session, _tree) = editor("say btw x ");
+        // Put the caret after the "x " and delete the "x", leaving "say btw  ".
         handle.select_range(9, 9);
         session.on_text_changed(&handle, &doc); // seed the caret baseline
         handle.replace_range(8, 9, "");
         session.on_text_changed(&handle, &doc);
         assert!(
-            !plain(&doc).contains("Dumbledore"),
+            !plain(&doc).contains("by the way"),
             "a deletion must not fire a rule, got {:?}",
             plain(&doc)
         );
@@ -578,8 +578,8 @@ mod live_editor_tests {
             AppIds::new(),
         );
         let session = TextReplacementSession::new(vm);
-        type_text(&handle, &doc, &session, "I saw dbl ");
-        assert_eq!(plain(&doc), "I saw dbl ");
+        type_text(&handle, &doc, &session, "I saw btw ");
+        assert_eq!(plain(&doc), "I saw btw ");
         drop(tree);
     }
 }

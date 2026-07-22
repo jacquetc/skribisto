@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! Reactive list model over the open Work's custom text-replacement lexicon
-//! (`TextReplacementRule`) — the "dbl → Dumbledore" rules the writer can add,
+//! (`TextReplacementRule`) — the "btw → by the way" rules the writer can add,
 //! toggled on a per-project basis via `Work.custom_replacement_rules_enabled`
 //! (see [`SingleWork`](crate::singles::SingleWork)).
 //!
@@ -382,7 +382,7 @@ mod imp {
         pub fn new(_ctx: Rc<AppContext>) -> Self {
             let mut rows = vec![
                 row(1, "--", "—", true),
-                row(2, "dbl", "Dumbledore", true),
+                row(2, "btw", "by the way", true),
                 row(3, "teh", "the", false),
             ];
             sort_rows(&mut rows);
@@ -514,40 +514,40 @@ mod tests {
 
     #[test]
     fn trigger_key_ignores_case_and_surrounding_space() {
-        assert_eq!(trigger_key("  DBL  "), "dbl");
-        assert_eq!(trigger_key("dbl"), trigger_key("Dbl"));
+        assert_eq!(trigger_key("  BTW  "), "btw");
+        assert_eq!(trigger_key("btw"), trigger_key("Btw"));
         assert_eq!(trigger_key("   "), "");
     }
 
     fn rules() -> Vec<TextReplacementRuleRow> {
-        vec![r(1, "dbl"), r(2, "--"), r(3, "very long trigger word")]
+        vec![r(1, "btw"), r(2, "--"), r(3, "very long trigger word")]
     }
 
     #[test]
     fn an_exact_trigger_collides() {
         assert_eq!(
-            colliding_trigger(&rules(), "dbl", None).as_deref(),
-            Some("dbl")
+            colliding_trigger(&rules(), "btw", None).as_deref(),
+            Some("btw")
         );
     }
 
     #[test]
     fn a_differently_cased_trigger_collides_and_reports_the_existing_spelling() {
         assert_eq!(
-            colliding_trigger(&rules(), "DBL", None).as_deref(),
-            Some("dbl"),
+            colliding_trigger(&rules(), "BTW", None).as_deref(),
+            Some("btw"),
             "the warning names the trigger as it is actually spelled, not as it was typed"
         );
     }
 
     #[test]
     fn a_rule_never_collides_with_itself() {
-        assert_eq!(colliding_trigger(&rules(), "dbl", Some(1)), None);
+        assert_eq!(colliding_trigger(&rules(), "btw", Some(1)), None);
         let mut two = rules();
-        two.push(r(4, "DBL"));
+        two.push(r(4, "BTW"));
         assert_eq!(
-            colliding_trigger(&two, "dbl", Some(1)).as_deref(),
-            Some("DBL")
+            colliding_trigger(&two, "btw", Some(1)).as_deref(),
+            Some("BTW")
         );
     }
 

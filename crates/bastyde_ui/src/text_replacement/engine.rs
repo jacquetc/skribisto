@@ -14,8 +14,8 @@
 //! a space, a newline, a comma, a full stop. That delimiter is the last
 //! character of the window handed to [`TextReplacementEngine::check`]; the
 //! trigger is what sits immediately before it, and the character before *that*
-//! must itself be a delimiter (or the document must start there), so `dbl`
-//! expands in "say dbl " but not in "fumbl ".
+//! must itself be a delimiter (or the document must start there), so `btw`
+//! expands in "say btw " but not in "fumbl ".
 //!
 //! ## What counts as a delimiter
 //!
@@ -193,11 +193,11 @@ fn is_delimiter(c: char) -> bool {
 /// Propagate the case the writer typed onto the replacement — Word's rule.
 ///
 /// A replacement that carries **any** uppercase of its own is used verbatim:
-/// the writer wrote "Dumbledore" (or "McGonagall", or "iPhone") deliberately,
+/// the writer wrote "by the way" (or "PhD", or "iPhone") deliberately,
 /// and re-casing it from the trigger would destroy that. Only an all-lowercase
 /// replacement follows the trigger, and then only into the three states a
 /// writer can express by typing: lowercase, Capitalized, ALL CAPS. Anything
-/// else they typed (`dBl`) carries no clear intent, so the replacement is left
+/// else they typed (`bTw`) carries no clear intent, so the replacement is left
 /// alone.
 ///
 /// Casing uses Rust's default Unicode mappings, which are locale-independent.
@@ -290,19 +290,19 @@ mod tests {
 
     #[test]
     fn an_exact_trigger_followed_by_a_space_fires() {
-        let e = engine(&[rule("dbl", "Dumbledore")]);
-        let f = fire(&e, "I saw dbl ").expect("the rule must fire");
-        assert_eq!(f.replacement, "Dumbledore");
+        let e = engine(&[rule("btw", "by the way")]);
+        let f = fire(&e, "I saw btw ").expect("the rule must fire");
+        assert_eq!(f.replacement, "by the way");
         assert_eq!(f.trigger_chars, 3);
-        assert_eq!(f.typed, "dbl");
+        assert_eq!(f.typed, "btw");
     }
 
     /// The delimiter is what fires the rule, so mid-word typing must stay quiet
-    /// — otherwise every keystroke of "dbl" would expand as it was typed.
+    /// — otherwise every keystroke of "btw" would expand as it was typed.
     #[test]
     fn a_trigger_not_yet_followed_by_a_delimiter_does_not_fire() {
-        let e = engine(&[rule("dbl", "Dumbledore")]);
-        assert_eq!(fire(&e, "I saw dbl"), None);
+        let e = engine(&[rule("btw", "by the way")]);
+        assert_eq!(fire(&e, "I saw btw"), None);
     }
 
     /// The whole point of the start-of-word check: a trigger that happens to be
@@ -315,8 +315,8 @@ mod tests {
 
     #[test]
     fn any_punctuation_fires_the_rule_not_just_a_space() {
-        let e = engine(&[rule("dbl", "Dumbledore")]);
-        for text in ["dbl,", "dbl.", "dbl!", "dbl\n", "dbl\t", "dbl)", "dbl—"] {
+        let e = engine(&[rule("btw", "by the way")]);
+        for text in ["btw,", "btw.", "btw!", "btw\n", "btw\t", "btw)", "btw—"] {
             assert!(
                 fire(&e, &format!("I saw {text}")).is_some(),
                 "{text:?} must fire the rule"
@@ -335,28 +335,28 @@ mod tests {
     }
 
     /// A replacement the writer capitalised themselves is theirs — re-casing it
-    /// from the trigger would turn "McGonagall" into "Mcgonagall".
+    /// from the trigger would turn "PhD" into "Phdonagall".
     #[test]
     fn a_replacement_with_its_own_uppercase_is_used_verbatim() {
-        let e = engine(&[rule("mcg", "McGonagall")]);
-        assert_eq!(fire(&e, "mcg ").unwrap().replacement, "McGonagall");
-        assert_eq!(fire(&e, "MCG ").unwrap().replacement, "McGonagall");
-        assert_eq!(fire(&e, "Mcg ").unwrap().replacement, "McGonagall");
+        let e = engine(&[rule("phd", "PhD")]);
+        assert_eq!(fire(&e, "phd ").unwrap().replacement, "PhD");
+        assert_eq!(fire(&e, "PHD ").unwrap().replacement, "PhD");
+        assert_eq!(fire(&e, "Phd ").unwrap().replacement, "PhD");
     }
 
     /// A single uppercase letter reads as Capitalized rather than as shouting —
     /// otherwise a one-letter trigger could never produce a capitalised word.
     #[test]
     fn a_one_letter_uppercase_trigger_capitalizes_rather_than_shouts() {
-        let e = engine(&[rule("d", "dumbledore")]);
-        assert_eq!(fire(&e, "D ").unwrap().replacement, "Dumbledore");
+        let e = engine(&[rule("b", "by the way")]);
+        assert_eq!(fire(&e, "B ").unwrap().replacement, "By the way");
     }
 
     /// Case the writer cannot have meant carries no instruction.
     #[test]
     fn a_mixed_case_trigger_leaves_the_replacement_alone() {
-        let e = engine(&[rule("dbl", "dumbledore")]);
-        assert_eq!(fire(&e, "dBl ").unwrap().replacement, "dumbledore");
+        let e = engine(&[rule("btw", "by the way")]);
+        assert_eq!(fire(&e, "bTw ").unwrap().replacement, "by the way");
     }
 
     /// A trigger with no letters at all has no case to propagate.
@@ -379,18 +379,22 @@ mod tests {
 
     #[test]
     fn the_longest_matching_trigger_wins() {
-        let e = engine(&[rule("dbl", "Dumbledore"), rule("bl", "Bill")]);
-        assert_eq!(fire(&e, "say dbl ").unwrap().replacement, "Dumbledore");
+        // Both are viable here: "e g" starts after the space before "e", and "g"
+        // starts after the space before it, so each on its own would fire. The
+        // longer must win.
+        let e = engine(&[rule("e g", "for example"), rule("g", "gram")]);
+        assert_eq!(fire(&e, "an e g ").unwrap().replacement, "for example");
     }
 
     /// The longest candidate failing the start-of-word check must not stop a
     /// shorter one that passes it — a `continue`, not a bail-out.
     #[test]
     fn a_shorter_rule_still_fires_when_the_longest_fails_the_word_start_check() {
-        // "xbl" cannot fire in "axbl " (preceded by "a"), but "bl" starts right
-        // after the delimiter in "a bl ".
-        let e = engine(&[rule("xbl", "Xylophone"), rule("bl", "Bill")]);
-        assert_eq!(fire(&e, "a bl ").unwrap().replacement, "Bill");
+        // In "xa b " the longer rule "a b" DOES match the text behind the caret,
+        // but starts mid-word (preceded by "x"), so it must be skipped rather
+        // than end the search — "b" starts right after the space and fires.
+        let e = engine(&[rule("a b", "alpha beta"), rule("b", "beta")]);
+        assert_eq!(fire(&e, "xa b ").unwrap().replacement, "beta");
     }
 
     // ── Document-start edges ────────────────────────────────────────────────
@@ -399,29 +403,29 @@ mod tests {
     /// before it — that must read as "starts a word", not as a failed check.
     #[test]
     fn a_trigger_at_the_very_start_of_the_document_fires() {
-        let e = engine(&[rule("dbl", "Dumbledore")]);
-        let f = fire(&e, "dbl ").expect("a trigger at position 0 must fire");
-        assert_eq!(f.replacement, "Dumbledore");
+        let e = engine(&[rule("btw", "by the way")]);
+        let f = fire(&e, "btw ").expect("a trigger at position 0 must fire");
+        assert_eq!(f.replacement, "by the way");
     }
 
     /// The window is shorter than `window_chars()` near the start of a
     /// document; the match must not depend on it being full.
     #[test]
     fn a_window_shorter_than_requested_still_matches() {
-        let e = engine(&[rule("verylongtrigger", "x"), rule("dbl", "Dumbledore")]);
-        assert!(e.window_chars() > "dbl ".chars().count());
-        assert_eq!(fire(&e, "dbl ").unwrap().replacement, "Dumbledore");
+        let e = engine(&[rule("verylongtrigger", "x"), rule("btw", "by the way")]);
+        assert!(e.window_chars() > "btw ".chars().count());
+        assert_eq!(fire(&e, "btw ").unwrap().replacement, "by the way");
     }
 
     // ── Compilation ─────────────────────────────────────────────────────────
 
     #[test]
     fn a_disabled_rule_never_fires() {
-        let mut row = rule("dbl", "Dumbledore");
+        let mut row = rule("btw", "by the way");
         row.enabled = false;
         let e = engine(&[row]);
         assert!(e.is_empty());
-        assert_eq!(fire(&e, "say dbl "), None);
+        assert_eq!(fire(&e, "say btw "), None);
     }
 
     #[test]
@@ -435,8 +439,8 @@ mod tests {
     /// the settings pane would have refused; the first one wins deterministically.
     #[test]
     fn a_case_insensitive_duplicate_trigger_is_dropped() {
-        let e = engine(&[rule("dbl", "Dumbledore"), rule("DBL", "Different")]);
-        assert_eq!(fire(&e, "say dbl ").unwrap().replacement, "Dumbledore");
+        let e = engine(&[rule("btw", "by the way"), rule("BTW", "Different")]);
+        assert_eq!(fire(&e, "say btw ").unwrap().replacement, "by the way");
     }
 
     #[test]
@@ -452,8 +456,8 @@ mod tests {
     /// space still matches what the writer actually types.
     #[test]
     fn a_stored_trigger_is_matched_trimmed() {
-        let e = engine(&[rule("  dbl  ", "Dumbledore")]);
-        assert_eq!(fire(&e, "say dbl ").unwrap().replacement, "Dumbledore");
+        let e = engine(&[rule("  btw  ", "by the way")]);
+        assert_eq!(fire(&e, "say btw ").unwrap().replacement, "by the way");
     }
 
     // ── Non-Latin scripts ───────────────────────────────────────────────────

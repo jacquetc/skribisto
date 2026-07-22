@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! `TextReplacementRulesViewModel` — the per-project custom lexicon feature's
-//! business logic ("dbl → Dumbledore"), shared by the Settings ▸ Text
+//! business logic ("btw → by the way"), shared by the Settings ▸ Text
 //! replacements pane and (from the trigger-replacement engine) the editor
 //! session that watches for a fired trigger.
 //!
@@ -306,7 +306,7 @@ mod tests {
 
     #[test]
     fn csv_round_trips() {
-        let rows = vec![row("--", "—", true), row("dbl", "Dumbledore", false)];
+        let rows = vec![row("--", "—", true), row("btw", "by the way", false)];
         let text = format_csv(&rows).unwrap();
         let (back, malformed) = parse_csv(&text).unwrap();
         assert_eq!(malformed, 0);
@@ -316,16 +316,16 @@ mod tests {
     #[test]
     fn a_blank_trigger_is_malformed_not_imported() {
         let (rows, malformed) =
-            parse_csv("trigger,replacement,enabled\n  ,x,true\ndbl,Dumbledore,true\n").unwrap();
+            parse_csv("trigger,replacement,enabled\n  ,x,true\nbtw,by the way,true\n").unwrap();
         assert_eq!(malformed, 1);
         assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].trigger, "dbl");
+        assert_eq!(rows[0].trigger, "btw");
     }
 
     #[test]
     fn a_repeated_trigger_within_one_file_is_counted_once() {
         let (rows, malformed) =
-            parse_csv("trigger,replacement\ndbl,Dumbledore\nDBL,Dumbledore2\n").unwrap();
+            parse_csv("trigger,replacement\nbtw,by the way\nBTW,by the way2\n").unwrap();
         assert_eq!(rows.len(), 1, "the second is a duplicate, case-insensitively");
         assert_eq!(malformed, 1);
     }
@@ -334,7 +334,7 @@ mod tests {
     /// defaults to `true`: a rule the writer bothered to list is one they mean to use.
     #[test]
     fn missing_enabled_column_defaults_to_true() {
-        let (rows, malformed) = parse_csv("trigger,replacement\ndbl,Dumbledore\n").unwrap();
+        let (rows, malformed) = parse_csv("trigger,replacement\nbtw,by the way\n").unwrap();
         assert_eq!(malformed, 0);
         assert!(rows[0].enabled);
     }
@@ -388,7 +388,7 @@ mod collision_tests {
     use crate::models::TextReplacementRuleListModel;
     use crate::singles::SingleWork;
 
-    /// A view-model over the mock lexicon, which ships `--` , `dbl` and `teh`.
+    /// A view-model over the mock lexicon, which ships `--` , `btw` and `teh`.
     fn vm() -> TextReplacementRulesViewModel {
         let ctx = Rc::new(AppContext::new());
         TextReplacementRulesViewModel::new(
@@ -422,7 +422,7 @@ mod collision_tests {
     fn renaming_a_trigger_onto_an_existing_one_is_refused() {
         let vm = vm();
         let teh = id_of(&vm, "teh");
-        assert!(!vm.set_trigger(teh, "dbl"), "the write must be refused");
+        assert!(!vm.set_trigger(teh, "btw"), "the write must be refused");
         assert_eq!(
             trigger_of(&vm, teh),
             "teh",
@@ -435,7 +435,7 @@ mod collision_tests {
     fn renaming_onto_a_differently_cased_trigger_is_refused_too() {
         let vm = vm();
         let teh = id_of(&vm, "teh");
-        assert!(!vm.set_trigger(teh, "DBL"));
+        assert!(!vm.set_trigger(teh, "BTW"));
         assert_eq!(trigger_of(&vm, teh), "teh");
     }
 
@@ -452,18 +452,18 @@ mod collision_tests {
     #[test]
     fn a_rule_does_not_collide_with_itself() {
         let vm = vm();
-        let dbl = id_of(&vm, "dbl");
-        assert!(vm.set_trigger(dbl, "dbl"));
-        assert_eq!(trigger_of(&vm, dbl), "dbl");
+        let btw = id_of(&vm, "btw");
+        assert!(vm.set_trigger(btw, "btw"));
+        assert_eq!(trigger_of(&vm, btw), "btw");
     }
 
     /// A blank trigger could never fire, so it is refused rather than stored.
     #[test]
     fn blanking_a_trigger_is_refused() {
         let vm = vm();
-        let dbl = id_of(&vm, "dbl");
-        assert!(!vm.set_trigger(dbl, "   "));
-        assert_eq!(trigger_of(&vm, dbl), "dbl");
+        let btw = id_of(&vm, "btw");
+        assert!(!vm.set_trigger(btw, "   "));
+        assert_eq!(trigger_of(&vm, btw), "btw");
     }
 
     /// The creation half of the same invariant.
@@ -471,8 +471,8 @@ mod collision_tests {
     fn creating_a_duplicate_trigger_is_refused() {
         let vm = vm();
         let before = vm.rows().len();
-        assert_eq!(vm.create("DBL", "Something else", true), None);
-        assert!(!vm.can_add("dbl"));
+        assert_eq!(vm.create("BTW", "Something else", true), None);
+        assert!(!vm.can_add("btw"));
         assert_eq!(vm.rows().len(), before, "nothing may have been created");
     }
 
@@ -480,7 +480,7 @@ mod collision_tests {
     fn creating_a_novel_trigger_succeeds() {
         let vm = vm();
         let before = vm.rows().len();
-        assert!(vm.create("mcg", "McGonagall", true).is_some());
+        assert!(vm.create("phd", "PhD", true).is_some());
         assert_eq!(vm.rows().len(), before + 1);
     }
 }

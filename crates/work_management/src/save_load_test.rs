@@ -547,8 +547,8 @@ fn text_replacement_rules_survive_a_save_load_round_trip() {
             file_id: 600,
             created_at: T.into(),
             updated_at: T.into(),
-            trigger: "dbl".into(),
-            replacement: "Dumbledore".into(),
+            trigger: "btw".into(),
+            replacement: "by the way".into(),
             enabled: true,
         },
         // Disabled on purpose: `enabled` is the one field whose loss would be
@@ -593,7 +593,7 @@ fn text_replacement_rules_survive_a_save_load_round_trip() {
     assert_eq!(
         rules,
         vec![
-            ("dbl".to_string(), "Dumbledore".to_string(), true),
+            ("btw".to_string(), "by the way".to_string(), true),
             ("teh".to_string(), "the".to_string(), false),
         ],
         "every rule must round-trip with its enabled flag"
