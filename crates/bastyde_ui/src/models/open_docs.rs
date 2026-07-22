@@ -257,6 +257,23 @@ impl OpenDoc {
         }
     }
 
+    /// Tell both replace-while-typing sessions what language this document is
+    /// written in. Idempotent; a real change makes the next keystroke recompile.
+    ///
+    /// Separate from [`attach_replacements`](Self::attach_replacements), which
+    /// only *creates* the sessions and is deliberately a no-op once they exist:
+    /// the language of an item can change long after it was opened, and that has
+    /// to reach the engine — a Turkish trigger folds differently from an English
+    /// one, so a stale locale means the rule silently stops matching.
+    pub fn set_replacement_locale(&self, languages: &[String]) {
+        let tag = skribisto_model::language::primary(languages);
+        for session in [&self.replacement_main, &self.replacement_synopsis] {
+            if let Some(s) = session.borrow().as_ref() {
+                s.set_locale(tag);
+            }
+        }
+    }
+
     /// The replace-while-typing session on the main prose document, if any.
     pub fn replacement_main(&self) -> Option<Rc<TextReplacementSession>> {
         self.replacement_main.borrow().clone()
@@ -454,9 +471,6 @@ impl OpenDocsStore {
     /// remove, mute, language-change, focus-regain, and theme change. Recomputes each item's
     /// effective language through the same resolver search uses.
     pub fn attach_all(&self) {
-        let Some(spell) = self.inner.spell.borrow().clone() else {
-            return;
-        };
         let color = self.inner.squiggle.get();
         // Belt and braces. [`wire`](Self::wire) already drops the map when an item's
         // language changes, but every language edit also funnels through here, and
@@ -483,6 +497,16 @@ impl OpenDocsStore {
                 })
                 .collect()
         });
+        // Language first, and NOT behind the spell check below: replace-while-typing
+        // folds case through the document's language, and a writer with no
+        // dictionary installed still gets their lexicon. Spell-check is the
+        // feature that needs an engine; this one only needs the tag.
+        for (doc, tags) in &attachments {
+            doc.set_replacement_locale(tags);
+        }
+        let Some(spell) = self.inner.spell.borrow().clone() else {
+            return;
+        };
         for (doc, tags) in attachments {
             doc.attach_spell(&spell, &tags, color);
         }
@@ -495,6 +519,7 @@ impl OpenDocsStore {
         // installed must still expand its own shorthand.
         if let Some(vm) = self.inner.text_replacements.borrow().clone() {
             doc.attach_replacements(&vm);
+            doc.set_replacement_locale(&self.language_for(doc.item_id));
         }
         let Some(spell) = self.inner.spell.borrow().clone() else {
             return;

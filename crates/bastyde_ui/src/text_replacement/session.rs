@@ -105,6 +105,14 @@ pub struct TextReplacementSession {
     engine: RefCell<TextReplacementEngine>,
     /// The `(lexicon version, master switch)` the engine was compiled from.
     compiled_from: Cell<(u64, bool)>,
+    /// The document's BCP-47 language tag, pushed in by the open-docs store and
+    /// re-pushed when the writer changes an item's language. Decides how case is
+    /// folded and propagated — it is what makes a Turkish trigger match at all
+    /// (see `skribisto_model::casing`).
+    locale: RefCell<String>,
+    /// The locale the current engine was compiled for, so a language change
+    /// forces a recompile the same way a lexicon edit does.
+    compiled_locale: RefCell<String>,
     pending: RefCell<Option<PendingRevert>>,
     suppressed: RefCell<Option<Suppressed>>,
     /// Caret position at the previous tick; `None` until the first one.
@@ -132,6 +140,10 @@ impl TextReplacementSession {
             // opened project's lexicon sits at, so an engine that had never been
             // built would look current and the first rule would never fire.
             compiled_from: Cell::new((u64::MAX, false)),
+            locale: RefCell::new(String::new()),
+            // Deliberately not equal to `locale`'s initial value, so the very
+            // first refresh compiles rather than believing itself current.
+            compiled_locale: RefCell::new("\u{0}unset".to_string()),
             pending: RefCell::new(None),
             suppressed: RefCell::new(None),
             last_caret: Cell::new(None),
@@ -182,19 +194,44 @@ impl TextReplacementSession {
         self.try_fire(handle, doc, caret);
     }
 
-    /// Recompile the engine when the lexicon or the project's master switch has
-    /// changed since it was last built. Both are plain signal reads — cheaper
-    /// per keystroke than a subscription would be to keep correct across
-    /// project switches.
+    /// Set the document's language tag. Cheap and idempotent; a real change
+    /// invalidates the compiled engine so the next tick rebuilds it.
+    ///
+    /// Pushed rather than pulled because the effective language of an item is
+    /// resolved against the whole binder (item's own tag, else the Work's), and
+    /// the open-docs store already does that work for spell-check.
+    pub fn set_locale(&self, tag: &str) {
+        let mut locale = self.locale.borrow_mut();
+        if *locale != tag {
+            *locale = tag.to_string();
+        }
+    }
+
+    /// The lexicon this session reads. Test-only: the live-editor tests need to
+    /// add a rule to the very view-model the session compiles from, and going
+    /// through the session keeps them from having to thread a second handle.
+    #[cfg(test)]
+    pub fn vm_for_test(&self) -> &TextReplacementRulesViewModel {
+        &self.vm
+    }
+
+    /// Recompile the engine when the lexicon, the project's master switch, or
+    /// the document's language has changed since it was last built. All plain
+    /// reads — cheaper per keystroke than a subscription would be to keep
+    /// correct across project switches.
     fn refresh_engine(&self) {
         let enabled = self.vm.enabled_signal().get();
         let version = self.vm.changed_signal().get();
-        if self.compiled_from.get() == (version, enabled) {
+        let locale = self.locale.borrow().clone();
+        if self.compiled_from.get() == (version, enabled)
+            && *self.compiled_locale.borrow() == locale
+        {
             return;
         }
         self.compiled_from.set((version, enabled));
+        *self.compiled_locale.borrow_mut() = locale.clone();
         *self.engine.borrow_mut() = if enabled {
-            TextReplacementEngine::from_rules(&self.vm.rows())
+            TextReplacementEngine::from_rules_for_locale(&self.vm.rows(), &locale)
         } else {
             // Switched off: an empty engine, so the per-keystroke path is a
             // single `is_empty` check rather than a branch on the flag.
@@ -515,6 +552,36 @@ mod live_editor_tests {
         let (doc, handle, session, _tree) = editor("");
         type_text(&handle, &doc, &session, "teh ");
         assert_eq!(plain(&doc), "teh ");
+    }
+
+    /// The document's language must actually reach the matcher.
+    ///
+    /// The mock lexicon ships `teh` → `the` (disabled) and `btw` → `by the way`.
+    /// Under `tr`, typing the SHOUTED form of `btw` is `BTW` either way — `b`,
+    /// `t` and `w` have no dotted-I problem — so this uses a rule that does:
+    /// it adds one, then checks that the Turkish fold matches where the default
+    /// fold would not.
+    #[test]
+    fn the_documents_locale_reaches_the_matcher() {
+        let (doc, handle, session, _tree) = editor("");
+        // A trigger whose uppercase differs between Turkish and the default.
+        session.vm_for_test().create("ii", "iyi", true);
+        session.set_locale("tr-TR");
+        // `İİ` is the Turkish uppercase of `ii`; under the default fold it would
+        // carry a combining dot and never match.
+        type_text(&handle, &doc, &session, "İİ ");
+        assert_eq!(plain(&doc), "İYİ ", "got {:?}", plain(&doc));
+    }
+
+    /// And the same input under a non-Turkish locale must NOT expand — `İİ` is
+    /// not the uppercase of `ii` anywhere else.
+    #[test]
+    fn a_non_turkish_locale_does_not_get_the_turkish_fold() {
+        let (doc, handle, session, _tree) = editor("");
+        session.vm_for_test().create("ii", "iyi", true);
+        session.set_locale("en-US");
+        type_text(&handle, &doc, &session, "İİ ");
+        assert_eq!(plain(&doc), "İİ ", "got {:?}", plain(&doc));
     }
 
     /// Backspace immediately after an expansion puts the writer's own spelling
