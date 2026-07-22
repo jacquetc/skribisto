@@ -1616,7 +1616,6 @@ mod tests {
         assert!(!vm.bold().get(), "mirrors clear when the editor goes away");
     }
 
-
     #[test]
     fn a_fresh_paragraph_reads_as_automatic_direction() {
         let (vm, _editor) = vm_over("Hello");

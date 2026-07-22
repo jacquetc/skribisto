@@ -51,8 +51,7 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::spellcheck::toggle_button::SpellcheckToggleButton;
 use crate::view_models::{
     ALIGN_CENTER, ALIGN_LEFT, BackupSchedulerViewModel, DIR_AUTO, DIR_LTR, DIR_RTL,
-    ExportViewModel, FormatViewModel,
-    OutlineViewModel, SaveAsViewModel, scope_label,
+    ExportViewModel, FormatViewModel, OutlineViewModel, SaveAsViewModel, scope_label,
 };
 use export_management::ExportScopeKind;
 

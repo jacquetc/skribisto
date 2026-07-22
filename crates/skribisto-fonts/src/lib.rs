@@ -109,7 +109,10 @@ mod tests {
             );
             let magic = &bytes[..4];
             assert!(
-                matches!(magic, [0x00, 0x01, 0x00, 0x00] | b"true" | b"OTTO" | b"ttcf"),
+                matches!(
+                    magic,
+                    [0x00, 0x01, 0x00, 0x00] | b"true" | b"OTTO" | b"ttcf"
+                ),
                 "{name} does not start with an sfnt magic number; got {magic:?}"
             );
         }

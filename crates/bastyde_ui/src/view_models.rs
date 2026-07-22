@@ -47,9 +47,10 @@
 //!   * Many-to-one / distant links graduate to the intent bus.
 
 mod add_dictionary;
-mod backups_list;
+mod backup_restore;
 mod backup_scheduler;
 mod backup_settings;
+mod backups_list;
 mod binder_ops;
 mod corkboard;
 mod dictionaries;
@@ -60,37 +61,38 @@ mod find;
 mod format;
 mod import_plume;
 mod long_op;
+mod mention_index;
 mod new_work;
 mod outline;
 mod overview;
 mod pace;
-mod mention_index;
 mod progress_recorder;
 mod project_lifecycle;
 mod project_switch;
-mod tree_expansion;
 pub mod project_switcher;
-mod backup_restore;
 mod save_as;
 mod save_queue;
 mod save_status;
 mod search_replace;
 mod settings;
 mod stream;
+mod tags;
 mod timers;
 mod trash;
-mod tags;
+mod tree_expansion;
 mod user_dictionary;
 mod welcome;
-mod work_settings;
 mod word_count_status;
+mod work_settings;
 mod workspace_layout;
 mod writing_session;
 
 pub use add_dictionary::AddDictionaryViewModel;
+pub use backup_restore::BackupRestoreViewModel;
 pub use backup_scheduler::BackupSchedulerViewModel;
-pub use backups_list::{BackupRow, BackupsListViewModel};
 pub use backup_settings::BackupSettingsViewModel;
+pub use backups_list::{BackupRow, BackupsListViewModel};
+pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};
 pub use corkboard::CorkboardViewModel;
 pub use dictionaries::{DictionariesViewModel, InstallDictError, missing_from};
 pub use editors::{EditorsViewModel, Side};
@@ -98,23 +100,21 @@ pub use export::{ExportViewModel, format_label, scope_label};
 pub use export_styles::ExportStylesViewModel;
 pub use find::FindViewModel;
 pub use format::{
-    ALIGN_CENTER, ALIGN_LEFT, ALIGN_OTHER, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind,
-    FormatSurface, FormatViewModel,
+    ALIGN_CENTER, ALIGN_LEFT, ALIGN_OTHER, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,
+    FormatViewModel,
 };
 pub use import_plume::ImportPlumeViewModel;
+pub use mention_index::{MentionIndex, MentionRow};
 pub use new_work::NewWorkViewModel;
 pub use outline::OutlineViewModel;
 pub use overview::OverviewViewModel;
-pub use tree_expansion::TreeExpansionViewModel;
 pub use pace::PaceViewModel;
-pub use mention_index::{MentionIndex, MentionRow};
 pub use progress_recorder::ProgressRecorder;
 pub use project_lifecycle::ProjectLifecycleViewModel;
 pub(crate) use project_lifecycle::reload_personal_words;
 pub use project_switch::{
     PendingSwitch, ProjectSwitchViewModel, UnsavedDecision, unsaved_decision,
 };
-pub use backup_restore::BackupRestoreViewModel;
 pub use save_as::SaveAsViewModel;
 pub(crate) use save_queue::{DeferredResume, resume_deferred};
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
@@ -123,14 +123,14 @@ pub use settings::{
     CorkboardDefaults, EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel,
 };
 pub use stream::{SplitFlavour, StreamViewModel};
-pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};
+pub use tags::{TagImportSummary, TagsViewModel};
 pub(crate) use timers::{AutosaveCountdown, IntervalCountdown, IntervalTick};
 pub use trash::TrashViewModel;
-pub use tags::{TagImportSummary, TagsViewModel};
+pub use tree_expansion::TreeExpansionViewModel;
 pub use user_dictionary::{ImportSummary, UserDictionaryViewModel};
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
-pub use work_settings::WorkSettingsViewModel;
 pub use word_count_status::{CountDisplay, count_display};
+pub use work_settings::WorkSettingsViewModel;
 pub use workspace_layout::WorkspaceLayoutViewModel;
 pub use writing_session::{
     WritingSessionViewModel, format_mmss, gauge_role, remaining, words_progress,

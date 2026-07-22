@@ -30,27 +30,27 @@
 //! so every transition above always opens the new window *before* closing the
 //! old one. Getting this backwards quits the app.
 
-mod icons;
-mod statusbar;
-mod shell;
-mod trash;
-mod export;
-mod binder;
-mod panels;
 mod a11y;
 mod app;
 mod app_ids;
 mod backup;
+mod binder;
 mod date_convert;
 mod docks;
+mod export;
+mod icons;
 mod intents;
 mod models;
+mod panels;
 mod settings;
+mod shell;
 mod singles;
 mod spellcheck;
-mod tags;
-mod widgets;
+mod statusbar;
 mod tabs;
+mod tags;
+mod trash;
+mod widgets;
 // The pane tests that need fixture rows are mocks-gated, but the search preview's
 // layout tests build their own `OpenDoc`, so they run on the real backend too —
 // and both need an event source. Hence the plain `test` gate.
@@ -83,9 +83,9 @@ use app_ids::AppIds;
 use models::{BackupSettingsService, OpenDocsStore, TreeExpansionService, WorkspaceLayoutService};
 use singles::{SingleDictWord, SingleWork, SingleWorkInfo};
 use view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel,
-    OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel, BackupRestoreViewModel, SaveAsViewModel,
-    TreeExpansionViewModel, WorkspaceLayoutViewModel,
+    BackupRestoreViewModel, BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel,
+    ImportPlumeViewModel, OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel,
+    SaveAsViewModel, TreeExpansionViewModel, WorkspaceLayoutViewModel,
 };
 
 /// The currently-open project's path (from `WorkInfo`), if any.
@@ -426,10 +426,7 @@ fn main() {
 
     let i18n = I18nConfig::new()
         .source_locale("en-US".parse().unwrap())
-        .supported_locales([
-            "en-US".parse().unwrap(),
-            "fr-FR".parse().unwrap(),
-        ])
+        .supported_locales(["en-US".parse().unwrap(), "fr-FR".parse().unwrap()])
         // Directory layout: one `.ftl` per topic per locale. The `tr!` macro
         // auto-detects `locales/en-US/` and validates keys across every file
         // in it, so the writing-model tooltips can live in their own file.
