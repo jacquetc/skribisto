@@ -63,7 +63,16 @@ impl DeleteTrashEntriesUseCase {
     pub fn execute(&mut self, dto: &DeleteTrashEntriesDto) -> Result<()> {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        let work_id = work_id(uow.as_ref())?;
+        // Work resolution: dto.work_id, validated against the open Works --
+        // Phase 0.6: this used to pick `get_all_work().next()`, which had no
+        // defined subject once a second Work was open. This is the sneakiest
+        // variant of the bug: filtering dto.trash_info_ids against the WRONG
+        // Work's index leaves `ids` empty (TrashInfo ids never coincide
+        // across Works), and the existing "stale id -> no-op, not error"
+        // tolerance below then swallows it with zero error -- "Delete
+        // forever" reports success and deletes nothing. Validating here
+        // turns a closed/wrong work_id into a real error instead.
+        let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
 
         // Keep only ids still in the index (stale ids → no-op, not error).
         let indexed: HashSet<EntityId> = uow
@@ -95,12 +104,17 @@ impl DeleteTrashEntriesUseCase {
     }
 }
 
-fn work_id(uow: &dyn DeleteTrashEntriesUnitOfWorkTrait) -> Result<EntityId> {
+// `get_work_relationship` does not validate that `id` is a real, open Work --
+// a junction lookup against an unknown id just comes back empty, which would
+// silently no-op instead of reporting the caller's mistake. So the id from
+// `dto.work_id` is checked against the open Works first, exactly like
+// `empty_trash_uc.rs` does.
+fn work_id(uow: &dyn DeleteTrashEntriesUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()
-        .next()
+        .find(|w| w.id == requested)
         .map(|w| w.id)
-        .ok_or_else(|| anyhow!("delete_trash_entries: no Work entity in store"))
+        .ok_or_else(|| anyhow!("work {requested} is not open"))
 }
 
 use common::undo_redo::UndoRedoCommand;

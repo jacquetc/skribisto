@@ -16,7 +16,7 @@ use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{BinderItem, Work};
+use common::entities::BinderItem;
 use common::types::EntityId;
 use std::collections::{HashMap, HashSet};
 
@@ -26,7 +26,6 @@ use crate::use_cases::empty_trash_uc::EmptyTrashUnitOfWorkTrait;
 /// The UoW surface both purge callers expose identically — their generated
 /// `#[macros::uow_action]` sets must cover every method here.
 pub(crate) trait PurgeAccess {
-    fn get_all_work(&self) -> Result<Vec<Work>>;
     fn get_work_relationship(
         &self,
         id: &EntityId,
@@ -76,9 +75,6 @@ pub(crate) trait PurgeAccess {
 macro_rules! forward_purge_access {
     ($t:path) => {
         impl PurgeAccess for dyn $t {
-            fn get_all_work(&self) -> Result<Vec<Work>> {
-                <Self as $t>::get_all_work(self)
-            }
             fn get_work_relationship(
                 &self,
                 id: &EntityId,
@@ -284,16 +280,19 @@ pub(crate) fn apply_purge<U: PurgeAccess + ?Sized>(
         uow.set_binder_relationship(binder_id, &BinderRelationshipField::BinderItems, &new)?;
     }
 
-    // Drop removed binders from their Works.
+    // Drop removed binders from their Work. A trashed Binder always belongs to
+    // the same Work whose trash is being purged (TrashInfo lives in the Work
+    // trunk), so this can go straight to `work_id` -- Phase 0.6: this used to
+    // scan every open Work with `get_all_work()` looking for whichever one
+    // listed the binder, which happened to always land on the right Work
+    // (ids are globally unique) but did so by re-deriving what `work_id`
+    // already told the caller, an unscoped-resolution shape indistinguishable
+    // at a glance from the real bug this phase hunts.
     if !plan.remove_binders.is_empty() {
         let rb: HashSet<EntityId> = plan.remove_binders.iter().copied().collect();
-        for work in uow.get_all_work()? {
-            let binders = uow.get_work_relationship(&work.id, &WorkRelationshipField::Binders)?;
-            if binders.iter().any(|b| rb.contains(b)) {
-                let new: Vec<EntityId> = binders.into_iter().filter(|b| !rb.contains(b)).collect();
-                uow.set_work_relationship(&work.id, &WorkRelationshipField::Binders, &new)?;
-            }
-        }
+        let binders = uow.get_work_relationship(&work_id, &WorkRelationshipField::Binders)?;
+        let new: Vec<EntityId> = binders.into_iter().filter(|b| !rb.contains(b)).collect();
+        uow.set_work_relationship(&work_id, &WorkRelationshipField::Binders, &new)?;
     }
 
     // Hard-remove entities (contents → items → binders).

@@ -330,6 +330,7 @@ impl BackupSchedulerViewModel {
         });
 
         let dto = BackupNowDto {
+            work_id: self.single_work.id().unwrap_or_default(),
             directories: dirs.clone(),
             last_known_hashes: hashes,
             last_known_paths: paths,

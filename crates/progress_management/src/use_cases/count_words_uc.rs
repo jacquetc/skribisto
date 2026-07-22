@@ -8,6 +8,7 @@
 // every `activated && is_exportable` prose-bearing item, bucketed per Book. This counts
 // exactly what the exporter would emit. Read-only long operation — never mutates the store,
 // so `undoable: false`.
+use crate::CountWordsDto;
 use crate::WordCountResultDto;
 use anyhow::Result;
 use common::database::QueryUnitOfWork;
@@ -79,11 +80,12 @@ impl<'a> TreeReader for dyn CountWordsUnitOfWorkTrait + 'a {
 
 pub struct CountWordsUseCase {
     uow_factory: Box<dyn CountWordsUnitOfWorkFactoryTrait>,
+    dto: CountWordsDto,
 }
 
 impl CountWordsUseCase {
-    pub fn new(uow_factory: Box<dyn CountWordsUnitOfWorkFactoryTrait>) -> Self {
-        CountWordsUseCase { uow_factory }
+    pub fn new(uow_factory: Box<dyn CountWordsUnitOfWorkFactoryTrait>, dto: &CountWordsDto) -> Self {
+        CountWordsUseCase { uow_factory, dto: dto.clone() }
     }
 }
 
@@ -100,7 +102,7 @@ impl LongOperation for CountWordsUseCase {
         let uow = self.uow_factory.create();
         uow.begin_transaction()?;
         // Always close the frozen-read transaction, even on error.
-        let outcome = run_count(&*uow, &progress_callback, &cancel_flag);
+        let outcome = run_count(&*uow, &self.dto, &progress_callback, &cancel_flag);
         uow.end_transaction()?;
 
         let (work_id, result) = outcome?;
@@ -112,10 +114,14 @@ impl LongOperation for CountWordsUseCase {
 
 fn run_count(
     uow: &dyn CountWordsUnitOfWorkTrait,
+    dto: &CountWordsDto,
     progress: &(dyn Fn(OperationProgress) + Send),
     cancel: &AtomicBool,
 ) -> Result<(EntityId, WordCountResultDto)> {
-    let g = gather(uow, progress, cancel)?;
+    // Phase 0.5: count exactly the Work the caller named, not whichever one a
+    // HashMap-backed store happens to iterate first — the same "which Work?"
+    // fix `gather` already makes for save/export/backup.
+    let g = gather(uow, dto.work_id as EntityId, progress, cancel)?;
     let work_id = g.work.id;
 
     // The persisted history uses `Auto` resolved from the project's language — CJK-correct

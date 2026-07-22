@@ -36,6 +36,11 @@ use crate::{BackupNowDto, RetentionMode, SaveAsDto};
 use common::database::hashmap_store::HashMapStore;
 use common::long_operation::{LongOperationManager, OperationProgress, OperationStatus};
 
+// ── Extra surface for the Phase 0 two-Works isolation test ───────────────────
+use crate::CloseWorkDto;
+use crate::units_of_work::load_work_uow::LoadWorkUnitOfWorkFactory;
+use crate::use_cases::load_work_uc::{self, LoadWorkUnitOfWorkFactoryTrait};
+
 fn ts() -> DateTime<Utc> {
     DateTime::from_timestamp(1_700_000_000, 0).unwrap()
 }
@@ -423,6 +428,7 @@ fn store_to_bundle(db: &DbContext, hub: &Arc<EventHub>, out: &std::path::Path) -
     let uc = SaveWorkUseCase::new(
         Box::new(SaveWorkUnitOfWorkFactory::new(db, hub)),
         &SaveWorkDto {
+            work_id: live_work_id(db),
             file_name: out.to_str().unwrap().to_string(),
             overwrite: true,
         },
@@ -1060,6 +1066,23 @@ fn live_title(db: &DbContext) -> String {
         .clone()
 }
 
+/// The id of whichever Work is (first) open in the store — the scoped
+/// `SaveWorkDto`/`SaveAsDto`/`BackupNowDto`/`CloseWorkDto.work_id` every real
+/// caller now supplies. Every helper/test in this file that calls `load_sample`
+/// or `load_work` puts exactly one Work in the store, so "first" is unambiguous
+/// here — the two-Works isolation test below resolves ids explicitly instead of
+/// through this helper, precisely because it is the one place that assumption
+/// stops holding.
+fn live_work_id(db: &DbContext) -> u64 {
+    *db.get_store()
+        .works
+        .read()
+        .unwrap()
+        .keys()
+        .next()
+        .expect("a work is open")
+}
+
 /// F1: a frozen read transaction (what save now begins) sees one consistent
 /// point-in-time view — a concurrent write to the live store is invisible to it.
 #[test]
@@ -1104,6 +1127,7 @@ fn failed_save_as_does_not_roll_back_the_store() {
     let uc = SaveAsUseCase::new(
         Box::new(SaveAsUnitOfWorkFactory::new(&db, &hub)),
         &SaveAsDto {
+            work_id: live_work_id(&db),
             file_name: target.to_str().unwrap().to_string(),
             as_folder: false,
         },
@@ -1122,8 +1146,9 @@ fn failed_save_as_does_not_roll_back_the_store() {
 /// A `BackupNowDto` with every retention/skip field at its "do nothing extra"
 /// default (no pruning, no skip-if-unchanged) — the shape every pre-existing
 /// test wants; tests that exercise T1-3/T1-7/T2-2/T2-11 build their own.
-fn plain_backup_dto(directories: Vec<String>, last_known_hashes: Vec<String>) -> BackupNowDto {
+fn plain_backup_dto(work_id: u64, directories: Vec<String>, last_known_hashes: Vec<String>) -> BackupNowDto {
     BackupNowDto {
+        work_id,
         directories,
         last_known_hashes,
         last_known_paths: vec![],
@@ -1152,7 +1177,7 @@ fn backup_serializes_current_store_not_disk() {
     std::fs::create_dir_all(&backup_dir).unwrap();
     let uc = BackupNowUseCase::new(
         Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
-        &plain_backup_dto(vec![backup_dir.to_str().unwrap().to_string()], vec![]),
+        &plain_backup_dto(live_work_id(&db), vec![backup_dir.to_str().unwrap().to_string()], vec![]),
     );
     let res = uc
         .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
@@ -1191,7 +1216,7 @@ fn backup_multi_destination_is_resilient_and_dedups() {
     let bad = blocker.join("nested"); // parent is a file ⇒ unwritable
 
     let run = |hashes: Vec<String>, paths: Vec<String>| {
-        let mut dto = plain_backup_dto(
+        let mut dto = plain_backup_dto(live_work_id(&db), 
             vec![
                 good.to_str().unwrap().to_string(),
                 bad.to_str().unwrap().to_string(),
@@ -1278,7 +1303,7 @@ fn skip_if_unchanged_does_not_skip_when_the_backup_file_is_gone() {
     let dest = dir.path().join("dest");
     std::fs::create_dir_all(&dest).unwrap();
 
-    let dto1 = plain_backup_dto(vec![dest.to_str().unwrap().to_string()], vec![]);
+    let dto1 = plain_backup_dto(live_work_id(&db), vec![dest.to_str().unwrap().to_string()], vec![]);
     let res1 = BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto1)
         .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
         .expect("backup_now");
@@ -1290,7 +1315,7 @@ fn skip_if_unchanged_does_not_skip_when_the_backup_file_is_gone() {
     assert!(!std::path::Path::new(&written).exists());
 
     // A matching hash AND the now-deleted path must NOT be enough to skip.
-    let mut dto2 = plain_backup_dto(
+    let mut dto2 = plain_backup_dto(live_work_id(&db), 
         vec![dest.to_str().unwrap().to_string()],
         vec![res1.content_hash.clone()],
     );
@@ -1343,7 +1368,7 @@ fn retention_runs_inside_the_operation_and_protects_the_just_written_backup() {
         ));
     }
 
-    let mut dto = plain_backup_dto(
+    let mut dto = plain_backup_dto(live_work_id(&db), 
         vec![
             dest_a.to_str().unwrap().to_string(),
             dest_b.to_str().unwrap().to_string(),
@@ -1408,7 +1433,7 @@ fn destination_failing_verification_is_reported_failed_not_succeeded() {
 
     backup_now_uc::force_verify_failure_for(&dest);
 
-    let dto = plain_backup_dto(vec![dest.to_str().unwrap().to_string()], vec![]);
+    let dto = plain_backup_dto(live_work_id(&db), vec![dest.to_str().unwrap().to_string()], vec![]);
     let res = BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto)
         .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
         .expect("backup_now");
@@ -1457,7 +1482,7 @@ fn a_failed_deletion_is_reported_in_delete_errors() {
     perms.set_mode(0o555);
     std::fs::set_permissions(&stale, perms).unwrap();
 
-    let mut dto = plain_backup_dto(vec![dest.to_str().unwrap().to_string()], vec![]);
+    let mut dto = plain_backup_dto(live_work_id(&db), vec![dest.to_str().unwrap().to_string()], vec![]);
     dto.prune = true;
     dto.retention_mode = RetentionMode::KeepLastN;
     dto.keep_last_n = 1;
@@ -1562,4 +1587,306 @@ fn restore_savepoint_recovers_a_poisoned_table_lock() {
     // use write_or_recover) must also succeed on the recovered store.
     let sp2 = store.create_savepoint();
     store.restore_savepoint(sp2);
+}
+
+// ── Phase 0 acceptance test: two Works in one store, mutate/save/close ONE ──
+
+/// Seed a SECOND Work into a store that already has one open, bypassing
+/// `LoadWorkUseCase::execute`'s auto-close. `execute` deliberately still closes
+/// whatever is open before materialising the new Work (see
+/// `new_work_replaces_open_project` above, which pins that behaviour) — Phase 0
+/// keeps the UI-visible "opening a project replaces the open one" contract
+/// unchanged. The only way to get two Works to genuinely coexist in one store
+/// for this test is therefore to drive the same two steps `execute` itself runs
+/// — `materialize` (builds the entities) then `create_trunk` (builds the
+/// non-undoable System/RecentWork/WorkInfo/Root frame, appending to
+/// `Root.works` — the Phase 0 fix under test) — directly, inside their own
+/// write transaction, with no `close_current_work` call in between. Returns the
+/// new Work's id.
+fn load_additional_work(db: &DbContext, hub: &Arc<EventHub>, path: &std::path::Path) -> u64 {
+    let bundle = skrib::read_bundle(path.to_str().unwrap()).expect("read fixture bundle");
+    let loaded =
+        skrib::bundle_to_loaded(bundle, path.to_str().unwrap()).expect("bundle_to_loaded");
+    let factory = LoadWorkUnitOfWorkFactory::new(db, hub);
+    let mut uow = factory.create();
+    uow.begin_transaction().expect("begin_transaction");
+    let mat = load_work_uc::materialize(&*uow, &loaded).expect("materialize");
+    load_work_uc::create_trunk(
+        &*uow,
+        &loaded,
+        &mat,
+        path.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        Utc::now(),
+    )
+    .expect("create_trunk");
+    uow.commit().expect("commit");
+    mat.work_id
+}
+
+/// A content fingerprint of exactly ONE Work's subtree, taken through the real,
+/// now `work_id`-scoped save path (`SaveWorkUseCase` → the fixed `gather`) —
+/// this is what makes "byte-identical throughout" a literal, not approximate,
+/// assertion: `content_fingerprint` hashes the serialized, timestamp-stripped
+/// bundle (the same helper `backup_now`'s own skip-if-unchanged logic uses).
+fn fingerprint_of(
+    db: &DbContext,
+    hub: &Arc<EventHub>,
+    work_id: u64,
+    scratch: &std::path::Path,
+) -> String {
+    let uc = SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(db, hub)),
+        &SaveWorkDto {
+            work_id,
+            file_name: scratch.to_str().unwrap().to_string(),
+            overwrite: true,
+        },
+    );
+    let result = uc
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("scoped save_work must resolve exactly the requested Work");
+    let bundle = skrib::read_bundle(&result.output_path).unwrap();
+    skrib::content_fingerprint(&bundle)
+}
+
+/// The literal Phase 0 acceptance test: "open two Works in one store; mutate,
+/// save and close ONE; assert the OTHER is byte-identical throughout."
+///
+/// Exercises, in one place, every Phase 0 backend fix: `Root.works` appends
+/// rather than replaces (`load_additional_work` would clobber Work A otherwise);
+/// `tree_read::gather` resolves the Work the DTO actually names, not whichever
+/// the store returns first (`fingerprint_of` would silently target the wrong
+/// Work otherwise, especially since B is *added after* A — the opposite of
+/// insertion order a `.next()`-based bug would default to); `WorkCloser`/
+/// `close_current_work` is scoped to one Work's subtree (closing A must not
+/// touch B's rows); `CloseWorkUseCase` takes a real `work_id` and publishes it.
+#[test]
+fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    // Work A, via the real public `load_work` path.
+    let mut bundle_a = sample_bundle();
+    bundle_a.manifest.work.title = "First Project".into();
+    bundle_a.manifest.work.unique_id = "first-project-uid".into();
+    let path_a = dir.path().join("A");
+    skrib::write_bundle(path_a.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle_a).unwrap();
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: path_a.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load_work A");
+    let work_a_id = live_work_id(&db);
+    let row_a_before = db
+        .get_store()
+        .works
+        .read()
+        .unwrap()
+        .get(&work_a_id)
+        .cloned()
+        .expect("A resident");
+    let fp_a_checkpoint0 = fingerprint_of(&db, &hub, work_a_id, &dir.path().join("fp0"));
+
+    // Work B, seeded onto the SAME store, with ids intentionally allocated
+    // AFTER A's — `all_work().next()` (the pre-Phase-0 bug) would still (by
+    // accident of insertion order) return A here; B is the one that actually
+    // proves `gather` resolves by requested id, not by iteration order.
+    let mut bundle_b = sample_bundle();
+    bundle_b.manifest.work.title = "Second Project".into();
+    bundle_b.manifest.work.unique_id = "second-project-uid".into();
+    let path_b = dir.path().join("B");
+    skrib::write_bundle(path_b.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle_b).unwrap();
+    let work_b_id = load_additional_work(&db, &hub, &path_b);
+    assert_ne!(work_a_id, work_b_id);
+
+    // Root.works must now list BOTH — the append fix, not an overwrite.
+    {
+        let store = db.get_store();
+        let root_id = *store.roots.read().unwrap().keys().next().expect("a root");
+        let works_of_root = store
+            .jn_work_from_root_works
+            .read()
+            .unwrap()
+            .get(&root_id)
+            .cloned()
+            .unwrap_or_default();
+        assert_eq!(
+            works_of_root.len(),
+            2,
+            "Root.works must contain both A and B, not just the most recent"
+        );
+        assert!(works_of_root.contains(&work_a_id));
+        assert!(works_of_root.contains(&work_b_id));
+    }
+    assert_eq!(db.get_store().works.read().unwrap().len(), 2);
+
+    // Checkpoint 1: loading B must not perturb A at all.
+    assert_eq!(
+        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        Some(row_a_before.clone()),
+        "A's row must be byte-for-byte the same object after B is loaded"
+    );
+    assert_eq!(
+        fingerprint_of(&db, &hub, work_a_id, &dir.path().join("fp1")),
+        fp_a_checkpoint0,
+        "A unaffected by B's load"
+    );
+    let fp_b_checkpoint0 = fingerprint_of(&db, &hub, work_b_id, &dir.path().join("fpb0"));
+
+    // Mutate B directly in the live store (simulating a concurrent live edit) —
+    // A must not move.
+    {
+        let store = db.get_store();
+        let mut works = store.works.write().unwrap();
+        let mut b = works.get(&work_b_id).unwrap().clone();
+        b.title = "Mutated B".into();
+        works.insert(work_b_id, b);
+    }
+    assert_eq!(
+        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        Some(row_a_before.clone()),
+        "A unaffected by B's in-store mutation"
+    );
+    assert_eq!(
+        fingerprint_of(&db, &hub, work_a_id, &dir.path().join("fp2")),
+        fp_a_checkpoint0,
+        "A's fingerprint unaffected by B's mutation"
+    );
+
+    // Save B (scoped by work_id) — A must not move.
+    let save_b = SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            work_id: work_b_id,
+            file_name: dir.path().join("out_b").to_str().unwrap().to_string(),
+            overwrite: true,
+        },
+    );
+    let save_b_result = save_b
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("save_work B");
+    let saved_b_bundle = skrib::read_bundle(&save_b_result.output_path).unwrap();
+    assert_eq!(
+        saved_b_bundle.manifest.work.title, "Mutated B",
+        "save_work(work_id=B) must save B's content, not A's or an arbitrary Work's"
+    );
+    assert_eq!(
+        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        Some(row_a_before.clone()),
+        "A unaffected by B's save"
+    );
+    assert_eq!(
+        fingerprint_of(&db, &hub, work_a_id, &dir.path().join("fp3")),
+        fp_a_checkpoint0,
+        "A's fingerprint unaffected by B's save"
+    );
+
+    // Close B (scoped by work_id) — A must survive intact, and B's rows must be
+    // fully gone (not just its Work row: WorkInfo/Search/Binders/... too).
+    work_management_controller::close_work(&db, &hub, &CloseWorkDto { work_id: work_b_id })
+        .expect("close_work B");
+
+    assert!(
+        db.get_store().works.read().unwrap().get(&work_b_id).is_none(),
+        "B's Work row must be fully removed"
+    );
+    assert_eq!(
+        db.get_store().works.read().unwrap().len(),
+        1,
+        "only A remains resident"
+    );
+    assert!(
+        db.get_store()
+            .work_infos
+            .read()
+            .unwrap()
+            .values()
+            .all(|wi| wi.work != Some(work_b_id)),
+        "B's WorkInfo must be fully removed too (the weak, one-way referrer WorkCloser \
+         must find and remove explicitly)"
+    );
+    {
+        let store = db.get_store();
+        let root_id = *store.roots.read().unwrap().keys().next().expect("a root");
+        let works_of_root = store
+            .jn_work_from_root_works
+            .read()
+            .unwrap()
+            .get(&root_id)
+            .cloned()
+            .unwrap_or_default();
+        assert_eq!(
+            works_of_root,
+            vec![work_a_id],
+            "Root.works must list only A once B is closed"
+        );
+    }
+    assert_eq!(
+        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        Some(row_a_before),
+        "A survives B's whole lifecycle (load, mutate, save, close), byte-identical"
+    );
+    assert_eq!(
+        fingerprint_of(&db, &hub, work_a_id, &dir.path().join("fp4")),
+        fp_a_checkpoint0,
+        "A byte-identical throughout the whole two-Works scenario"
+    );
+
+    // Sanity on B's own numbers too (not just "A is fine"): B's pre-close
+    // fingerprint should differ from its checkpoint-0 one, since it was
+    // mutated — proving the fingerprint comparisons above are actually
+    // sensitive to content, not vacuously equal.
+    assert_ne!(
+        skrib::content_fingerprint(&saved_b_bundle),
+        fp_b_checkpoint0,
+        "B's own content did change (the mutation) — the harness is sensitive"
+    );
+
+    // A must still be fully open/save-able afterward (no dangling relationship
+    // left behind by B's close) — a full content check, not just a fingerprint.
+    let final_a = store_to_bundle(&db, &hub, &dir.path().join("final_a"));
+    assert_eq!(final_a.manifest.work.title, "First Project");
+    assert_eq!(final_a.manifest.work.unique_id, "first-project-uid");
+    assert_eq!(norm(&final_a), norm(&bundle_a));
+}
+
+/// Regression guard for the write-transaction single-writer invariant
+/// (`common::database::write_guard`): a second write transaction opened on the
+/// SAME store while the first is still open must error/panic (RAII, not
+/// merely a convention) — exercised here through the real `load_work`/
+/// `new_work`/`close_work` guard wiring rather than the unit's own isolated
+/// tests (see `crates/common/src/database/write_guard.rs`), to prove the guard
+/// is actually reached from the use-case layer, not just correct in isolation.
+#[test]
+fn a_second_write_transaction_on_the_same_store_is_rejected_while_the_first_is_open() {
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    let factory = LoadWorkUnitOfWorkFactory::new(&db, &hub);
+    let mut first = factory.create();
+    first.begin_transaction().expect("first write transaction opens");
+
+    let mut second = factory.create();
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        second.begin_transaction()
+    }));
+    assert!(
+        result.is_err(),
+        "a second concurrent write transaction on the same store must panic (debug build)"
+    );
+
+    // Tear down the first cleanly (rollback releases its guard) and confirm the
+    // slot is free again afterward.
+    first.rollback().expect("rollback releases the guard");
+    let mut third = factory.create();
+    assert!(
+        third.begin_transaction().is_ok(),
+        "the slot must be free once the first transaction ended"
+    );
+    third.rollback().ok();
 }

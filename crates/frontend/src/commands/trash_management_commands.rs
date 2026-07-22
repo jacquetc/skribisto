@@ -8,8 +8,9 @@
 use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use trash_management::{
-    DeleteTrashEntriesDto, RestoreItemsDto, RestoreItemsToDto, RestoreItemsToResultDto,
-    RestoreResultDto, TrashBinderDto, TrashBinderItemsDto, trash_management_controller,
+    DeleteTrashEntriesDto, EmptyTrashDto, RestoreItemsDto, RestoreItemsToDto,
+    RestoreItemsToResultDto, RestoreResultDto, TrashBinderDto, TrashBinderItemsDto,
+    trash_management_controller,
 };
 
 pub fn trash_binder_items(
@@ -56,13 +57,14 @@ pub fn restore_items(
     .context("restore_items")
 }
 
-pub fn empty_trash(ctx: &AppContext, stack_id: Option<u64>) -> Result<()> {
+pub fn empty_trash(ctx: &AppContext, stack_id: Option<u64>, dto: &EmptyTrashDto) -> Result<()> {
     let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
     trash_management_controller::empty_trash(
         &ctx.db_context,
         &ctx.event_hub,
         &mut undo_redo_manager,
         stack_id,
+        dto,
     )
     .context("empty_trash")
 }

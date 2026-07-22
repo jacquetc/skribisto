@@ -5,6 +5,7 @@
 
 use crate::BackupNowDto;
 use crate::BackupResultDto;
+use crate::CloseWorkDto;
 use crate::LoadWorkDto;
 use crate::NewWorkDto;
 use crate::SaveAsDto;
@@ -148,10 +149,14 @@ pub fn get_backup_now_result(
     Ok(Some(result_dto))
 }
 
-pub fn close_work(db_context: &DbContext, event_hub: &Arc<EventHub>) -> Result<()> {
+pub fn close_work(
+    db_context: &DbContext,
+    event_hub: &Arc<EventHub>,
+    dto: &CloseWorkDto,
+) -> Result<()> {
     let uow_context = CloseWorkUnitOfWorkFactory::new(db_context, event_hub);
     let mut uc = CloseWorkUseCase::new(Box::new(uow_context));
-    let return_dto = uc.execute()?;
+    let return_dto = uc.execute(dto)?;
     Ok(return_dto)
 }
 

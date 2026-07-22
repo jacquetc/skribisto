@@ -234,6 +234,7 @@ impl BackupRestoreViewModel {
         match work_management_commands::save_as(
             &self.app_ctx,
             &SaveAsDto {
+                work_id: self.ids.work_id.get().unwrap_or_default(),
                 file_name: temp_target.to_string_lossy().into_owned(),
                 as_folder,
             },

@@ -85,7 +85,7 @@ use singles::{SingleDictWord, SingleWork, SingleWorkInfo};
 use view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, ExportViewModel, ImportPlumeViewModel,
     OutlineViewModel, ProgressRecorder, ProjectSwitchViewModel, BackupRestoreViewModel, SaveAsViewModel,
-    TreeExpansionViewModel, WorkspaceLayoutViewModel,
+    SaveStateViewModel, TreeExpansionViewModel, WorkspaceLayoutViewModel,
 };
 
 /// The currently-open project's path (from `WorkInfo`), if any.
@@ -645,6 +645,15 @@ fn main() {
     // `App` (which maintains `unsaved` and performs the deferred close on save).
     let unsaved = Signal::new(false);
     let pending_exit = Signal::new(PendingExit::None);
+    // The save-tracking state (`dirty_seq`/`saved_seq`/`saving` + the `SaveQueue`)
+    // for the open Work — created once, here, and registered as `app_state` so
+    // every project window's `App`/`EditorsViewModel` shares this ONE instance
+    // rather than each minting its own. See `SaveStateViewModel`'s module docs:
+    // that per-window duplication is exactly what broke the moment a second
+    // window existed (a one-shot `SaveQueue::completed` only ever answering the
+    // first window's own queue, leaving every other window's `saved_seq` frozen
+    // while its `dirty_seq` kept climbing).
+    let save_state = SaveStateViewModel::new(app_ctx.clone());
     // The *switch* guard — the same unsaved-changes prompt for the four commands
     // that replace this window's project in place without going through a close
     // (New Work, Open Work, the switcher's "Open here", the import toast's "Open
@@ -786,6 +795,7 @@ fn main() {
         .app_state(export_styles.clone())
         .app_state(user_dictionary.clone())
         .app_state(save_as_vm.clone())
+        .app_state(save_state.clone())
         .app_state(backup_settings.clone())
         .app_state(backup_scheduler.clone())
         .app_state(restore_vm.clone())

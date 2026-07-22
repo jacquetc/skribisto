@@ -14,7 +14,7 @@
 use frontend::AppContext;
 use frontend::commands::{
     content_commands, search_commands, search_management_commands, search_result_commands,
-    undo_redo_commands, work_management_commands,
+    undo_redo_commands, work_commands, work_management_commands,
 };
 use frontend::common::direct_access::search::SearchRelationshipField;
 use search_management::{ReplaceInProjectDto, RunSearchDto};
@@ -39,8 +39,13 @@ fn loaded_ctx() -> AppContext {
     ctx
 }
 
-fn search(query: &str) -> RunSearchDto {
+fn work_id(ctx: &AppContext) -> u64 {
+    work_commands::get_all_work(ctx).expect("get_all_work").pop().unwrap().id
+}
+
+fn search(ctx: &AppContext, query: &str) -> RunSearchDto {
     RunSearchDto {
+        work_id: work_id(ctx),
         query: query.to_string(),
         case_sensitive: false,
         whole_word: false,
@@ -85,7 +90,7 @@ fn a_replace_is_one_undoable_step() {
     let ctx = loaded_ctx();
     let stack = Some(undo_redo_commands::create_new_stack(&ctx));
 
-    search_management_commands::run_search(&ctx, &search("ipsum")).expect("run_search");
+    search_management_commands::run_search(&ctx, &search(&ctx, "ipsum")).expect("run_search");
     let before = all_prose(&ctx);
     assert!(
         before.contains("ipsum"),
@@ -96,6 +101,7 @@ fn a_replace_is_one_undoable_step() {
         &ctx,
         stack,
         &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
             replacement: "IPSUM-REPLACED".to_string(),
             preserve_case: false,
             excluded_result_ids: vec![],
@@ -146,7 +152,7 @@ fn excluded_rows_are_left_untouched() {
     let ctx = loaded_ctx();
     let stack = Some(undo_redo_commands::create_new_stack(&ctx));
 
-    search_management_commands::run_search(&ctx, &search("ipsum")).expect("run_search");
+    search_management_commands::run_search(&ctx, &search(&ctx, "ipsum")).expect("run_search");
     let ids = result_ids(&ctx);
     assert!(ids.len() >= 2, "need at least two rows to exclude one");
 
@@ -160,6 +166,7 @@ fn excluded_rows_are_left_untouched() {
         &ctx,
         stack,
         &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
             replacement: "ZZZ".to_string(),
             preserve_case: false,
             excluded_result_ids: vec![excluded],
@@ -203,7 +210,7 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
     let ctx = loaded_ctx();
     let stack = Some(undo_redo_commands::create_new_stack(&ctx));
 
-    search_management_commands::run_search(&ctx, &search("ipsum")).expect("run_search");
+    search_management_commands::run_search(&ctx, &search(&ctx, "ipsum")).expect("run_search");
     let ids = result_ids(&ctx);
     let row = search_result_commands::get_search_result(&ctx, &ids[0])
         .unwrap()
@@ -245,6 +252,7 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
         &ctx,
         stack,
         &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
             replacement: "QQQ".to_string(),
             preserve_case: false,
             excluded_result_ids: vec![],
@@ -313,7 +321,7 @@ fn preserve_case_keeps_the_case_it_found() {
     )
     .unwrap();
 
-    let mut q = search("aurélien");
+    let mut q = search(&ctx, "aurélien");
     q.search_titles = false;
     q.search_synopsis = false;
     search_management_commands::run_search(&ctx, &q).expect("run_search");
@@ -322,6 +330,7 @@ fn preserve_case_keeps_the_case_it_found() {
         &ctx,
         stack,
         &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
             replacement: "aurélian".to_string(),
             preserve_case: true,
             excluded_result_ids: vec![],
@@ -407,7 +416,7 @@ fn a_rename_spares_the_markup_and_keeps_the_styling() {
     )
     .unwrap();
 
-    let mut q = search("Aurélien");
+    let mut q = search(&ctx, "Aurélien");
     q.search_titles = false;
     q.search_synopsis = false;
     search_management_commands::run_search(&ctx, &q).expect("run_search");
@@ -416,6 +425,7 @@ fn a_rename_spares_the_markup_and_keeps_the_styling() {
         &ctx,
         stack,
         &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
             replacement: "Aurélian".to_string(),
             preserve_case: true,
             excluded_result_ids: vec![],

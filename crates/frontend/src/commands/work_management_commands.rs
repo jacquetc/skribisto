@@ -8,8 +8,8 @@
 use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use work_management::{
-    BackupNowDto, BackupResultDto, LoadWorkDto, NewWorkDto, SaveAsDto, SaveAsResultDto,
-    SaveResultDto, SaveWorkDto, work_management_controller,
+    BackupNowDto, BackupResultDto, CloseWorkDto, LoadWorkDto, NewWorkDto, SaveAsDto,
+    SaveAsResultDto, SaveResultDto, SaveWorkDto, work_management_controller,
 };
 
 use common::long_operation::OperationProgress;
@@ -105,8 +105,9 @@ pub fn get_backup_now_result(
     .context("getting backup_now result")
 }
 
-pub fn close_work(ctx: &AppContext) -> Result<()> {
-    work_management_controller::close_work(&ctx.db_context, &ctx.event_hub).context("close_work")
+pub fn close_work(ctx: &AppContext, dto: &CloseWorkDto) -> Result<()> {
+    work_management_controller::close_work(&ctx.db_context, &ctx.event_hub, dto)
+        .context("close_work")
 }
 
 pub fn new_work(ctx: &AppContext, dto: &NewWorkDto) -> Result<()> {

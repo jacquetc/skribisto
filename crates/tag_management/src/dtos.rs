@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ImportTagsDto {
+    pub work_id: u64,
     pub names: Vec<String>,
     pub colors: Vec<String>,
     pub details: Vec<String>,

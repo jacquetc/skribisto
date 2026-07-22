@@ -310,6 +310,7 @@ fn import(fx: &Fixture, stack: u64, rows: &[(&str, &str, &str, bool)]) -> tag_ma
         &fx.ctx,
         Some(stack),
         &ImportTagsDto {
+            work_id: fx.work,
             names: rows.iter().map(|r| r.0.to_string()).collect(),
             colors: rows.iter().map(|r| r.1.to_string()).collect(),
             details: rows.iter().map(|r| r.2.to_string()).collect(),
@@ -417,6 +418,7 @@ fn importing_rejects_ragged_columns() {
         &fx.ctx,
         Some(stack),
         &ImportTagsDto {
+            work_id: fx.work,
             names: vec!["a".into(), "b".into()],
             colors: vec!["#f00".into()],
             details: vec![String::new(), String::new()],

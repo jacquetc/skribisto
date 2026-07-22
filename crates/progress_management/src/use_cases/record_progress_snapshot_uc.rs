@@ -72,11 +72,16 @@ impl RecordProgressSnapshotUseCase {
         uow: &dyn RecordProgressSnapshotUnitOfWorkTrait,
         dto: &RecordProgressSnapshotDto,
     ) -> Result<EntityId> {
+        // Phase 0.5: record onto the caller-named Work's own WorkInfo, not
+        // whichever WorkInfo a HashMap-backed store happens to iterate first
+        // — `WorkInfo.work` is the back-pointer `gather` filters on for the
+        // exact same reason.
+        let work_id = dto.work_id as EntityId;
         let work_info: WorkInfo = uow
             .get_all_work_info()?
             .into_iter()
-            .next()
-            .ok_or_else(|| anyhow!("no open work to record progress for"))?;
+            .find(|wi| wi.work == Some(work_id))
+            .ok_or_else(|| anyhow!("work {work_id} is not open"))?;
 
         let existing_ids =
             uow.get_work_info_relationship(&work_info.id, &WorkInfoRelationshipField::ProgressSnapshots)?;

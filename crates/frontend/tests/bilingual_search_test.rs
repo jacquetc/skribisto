@@ -46,8 +46,10 @@ fn loaded_ctx() -> AppContext {
     ctx
 }
 
-fn search(query: &str) -> RunSearchDto {
+fn search(ctx: &AppContext, query: &str) -> RunSearchDto {
+    let work_id = work_commands::get_all_work(ctx).expect("get_all_work").pop().unwrap().id;
     RunSearchDto {
+        work_id,
         query: query.to_string(),
         case_sensitive: false,
         whole_word: false,
@@ -171,7 +173,7 @@ fn bilingual_ctx() -> (AppContext, BinderItemDto, BinderItemDto) {
 fn one_search_folds_two_scenes_under_their_own_rules() {
     let (ctx, french, turkish) = bilingual_ctx();
 
-    search_management_commands::run_search(&ctx, &search("ilse")).expect("run_search");
+    search_management_commands::run_search(&ctx, &search(&ctx, "ilse")).expect("run_search");
     let rows = result_rows(&ctx);
 
     let french_row = rows
@@ -200,11 +202,12 @@ fn one_search_folds_two_scenes_under_their_own_rules() {
 fn one_rename_uppercases_each_scene_under_its_own_rules() {
     let (ctx, french, turkish) = bilingual_ctx();
 
-    search_management_commands::run_search(&ctx, &search("ilse")).expect("run_search");
+    search_management_commands::run_search(&ctx, &search(&ctx, "ilse")).expect("run_search");
     let out = search_management_commands::replace_in_project(
         &ctx,
         None,
         &ReplaceInProjectDto {
+            work_id: work_commands::get_all_work(&ctx).expect("get_all_work").pop().unwrap().id,
             replacement: "irene".to_string(),
             preserve_case: true,
             excluded_result_ids: vec![],
@@ -256,7 +259,7 @@ fn an_items_title_is_folded_under_the_items_own_language() {
     let titles_only = RunSearchDto {
         search_body: false,
         search_titles: true,
-        ..search("ilse")
+        ..search(&ctx, "ilse")
     };
     search_management_commands::run_search(&ctx, &titles_only).expect("run_search");
     let rows = result_rows(&ctx);
@@ -282,7 +285,7 @@ fn a_malformed_language_tag_still_searches() {
     set_item_language(&ctx, &item, "-----");
     write_prose(&ctx, &body_of(&ctx, &item), "Le café était froid.");
 
-    search_management_commands::run_search(&ctx, &search("cafe")).expect("run_search");
+    search_management_commands::run_search(&ctx, &search(&ctx, "cafe")).expect("run_search");
     let rows = result_rows(&ctx);
     assert!(
         rows.iter().any(|r| r.binder_item_id == item.id),

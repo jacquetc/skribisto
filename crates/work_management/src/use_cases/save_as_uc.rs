@@ -174,7 +174,7 @@ fn run_save_as(
     } else {
         SkribShape::ZipFile
     };
-    let g = work_io::gather(uow, progress, cancel)?;
+    let g = work_io::gather(uow, dto.work_id as EntityId, progress, cancel)?;
     let (target, shape, tag) =
         work_io::resolve_target(&dto.file_name, g.work_info.as_ref(), Some(forced))?;
     let work_id = g.work.id;

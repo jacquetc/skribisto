@@ -37,7 +37,7 @@ use frontend::commands::work_management_commands;
 use frontend::common::event::{
     DirectAccessEntity, EntityEvent, Event, LongOperationEvent, Origin, WorkManagementEvent,
 };
-use frontend::work_management::{LoadWorkDto, NewWorkDto};
+use frontend::work_management::{CloseWorkDto, LoadWorkDto, NewWorkDto};
 
 use crate::app_ids::AppIds;
 use crate::export::panel::ExportPanel;
@@ -183,7 +183,14 @@ pub fn close_work_and_return_to_launcher(app_ctx: &Rc<AppContext>, ctx: &mut Eve
     // `close_work` tears the Work subtree out *before* publishing `CloseWork`, so a
     // subscriber could no longer translate a tab into its persistable ordinal.
     capture_workspace_layout(ctx);
-    let _ = work_management_commands::close_work(app_ctx);
+    // Phase 0 (backend): `close_work` now takes a `CloseWorkDto{work_id}` — the
+    // caller names which Work to close rather than the backend picking one.
+    // Resolved from `AppIds` (already the app's one id-only source of "which Work
+    // is open"); skipped entirely when none is open, the same no-op today's
+    // unconditional call silently was against an empty store.
+    if let Some(work_id) = ctx.app_state::<AppIds>().and_then(|ids| ids.work_id.get()) {
+        let _ = work_management_commands::close_work(app_ctx, &CloseWorkDto { work_id });
+    }
     ctx.open_window(crate::shell::windows::launcher_window_config(
         app_ctx.clone(),
     ));
@@ -206,7 +213,10 @@ pub fn quit_app(app_ctx: &Rc<AppContext>, ctx: &mut EventContext) {
     // Persist the desk before the store is torn down — see
     // [`close_work_and_return_to_launcher`].
     capture_workspace_layout(ctx);
-    let _ = work_management_commands::close_work(app_ctx);
+    // See `close_work_and_return_to_launcher`'s identical comment above.
+    if let Some(work_id) = ctx.app_state::<AppIds>().and_then(|ids| ids.work_id.get()) {
+        let _ = work_management_commands::close_work(app_ctx, &CloseWorkDto { work_id });
+    }
     ctx.close_window_forced();
 }
 
@@ -444,17 +454,14 @@ pub struct App {
     /// close guard, `work.close` and the switch guard to decide whether to prompt,
     /// and by `can_save` for the Save affordances.
     ///
-    /// **Derived**, not set by hand: `dirty_seq > editors.saved_seq()`. It used to
-    /// be a flag set on mutation and cleared whenever *a* save landed — which lied
-    /// while a save was in flight, because typing during that save was marked clean
-    /// the moment it finished, even though its snapshot never contained those
-    /// edits. Save then greyed out on prose that was on no disk anywhere.
+    /// **Derived**, not set by hand: `dirty_seq > saved_seq`, both read off the
+    /// shared [`crate::view_models::SaveStateViewModel`] (Work-scoped, not owned
+    /// here — see its module docs). It used to be a flag set on mutation and
+    /// cleared whenever *a* save landed — which lied while a save was in flight,
+    /// because typing during that save was marked clean the moment it finished,
+    /// even though its snapshot never contained those edits. Save then greyed out
+    /// on prose that was on no disk anywhere.
     unsaved: Signal<bool>,
-    /// Monotonic edit sequence: bumped on every mutation (typing via the editors'
-    /// `edited` signal, plus the tree/metadata events in [`mutation_origins`]).
-    /// Handed to the editors, which capture it when a save starts, so "are my edits
-    /// on disk?" has an exact answer — see `view_models::save_queue`.
-    dirty_seq: Signal<u64>,
     /// A deferred close: performed once the save it asked for actually covers the
     /// edits (see `exit_seq`). Shared with `main`'s window close guard.
     pending_exit: Signal<PendingExit>,
@@ -537,7 +544,6 @@ impl App {
             spellcheck_menu,
             scene_focused,
             unsaved,
-            dirty_seq: Signal::new(0),
             pending_exit,
             exit_seq: Rc::new(std::cell::Cell::new(None)),
             save_spinner: Rc::new(std::cell::RefCell::new(SpinnerGate::default())),
@@ -654,8 +660,16 @@ impl Widget for App {
             .app_state::<crate::models::OpenDocsStore>()
             .cloned()
             .expect("OpenDocsStore registered in main");
+        // Work-scoped, not per-window: created once in `main` and shared by every
+        // window onto this project — see `SaveStateViewModel`'s module docs for why
+        // a per-window copy of `dirty_seq`/`saved_seq`/`saving`/the `SaveQueue` is a
+        // bug the moment a second window exists.
+        let save_state = ctx
+            .app_state::<crate::view_models::SaveStateViewModel>()
+            .cloned()
+            .expect("SaveStateViewModel registered in main");
         let backup_mode_for_editors = self.backup_mode.clone();
-        let dirty_seq_for_editors = self.dirty_seq.clone();
+        let save_state_for_editors = save_state.clone();
         let scene_focused_for_editors = self.scene_focused.clone();
         let editors = self
             .editors
@@ -670,7 +684,7 @@ impl Widget for App {
                     ids,
                     docs,
                     backup_mode_for_editors,
-                    dirty_seq_for_editors,
+                    save_state_for_editors,
                     scene_focused_for_editors,
                 )
             })
@@ -795,10 +809,13 @@ impl Widget for App {
         // "Unsaved" is *derived*: the work has edits not on disk iff more mutations
         // have happened than the last completed save covered. Recomputed whenever
         // either side moves — a mutation (typing, tree edit) or a save landing.
+        // Both sequences are read off the shared `SaveStateViewModel`, not owned
+        // here — every window derives the identical `unsaved` from the identical
+        // pair.
         {
             let unsaved = self.unsaved.clone();
-            let dirty_seq = self.dirty_seq.clone();
-            let saved_seq = editors.saved_seq();
+            let dirty_seq = save_state.dirty_seq();
+            let saved_seq = save_state.saved_seq();
             let recompute = Rc::new(move || {
                 let is_unsaved = dirty_seq.get() > saved_seq.get();
                 if unsaved.get() != is_unsaved {
@@ -807,9 +824,9 @@ impl Widget for App {
             });
             {
                 let r = recompute.clone();
-                ctx.effect(&self.dirty_seq, move |_| r());
+                ctx.effect(&save_state.dirty_seq(), move |_| r());
             }
-            ctx.effect(&editors.saved_seq(), move |_| recompute());
+            ctx.effect(&save_state.saved_seq(), move |_| recompute());
         }
 
         // Export: keep the focus-adaptive quick-scope list in step with the focused editor
@@ -968,7 +985,7 @@ impl Widget for App {
             single_work_info.clone(),
             spell_docs.clone(),
             spellcheck.clone(),
-            self.dirty_seq.clone(),
+            save_state.clone(),
             self.backup_mode.clone(),
             self.backup_context.clone(),
             workspace_layout.clone(),
@@ -1447,12 +1464,13 @@ impl Widget for App {
                 let countdown = countdown.clone();
                 let wake = wake.clone();
                 let autosave = autosave.clone();
-                let dirty_seq = self.dirty_seq.clone();
+                let save_state = save_state.clone();
                 Rc::new(move || {
-                    // Bump the edit sequence: this mutation is now ahead of whatever
-                    // the last save covered, so the derived `unsaved` goes true —
-                    // and stays true if the save in flight (if any) predates it.
-                    dirty_seq.set(dirty_seq.get() + 1);
+                    // Bump the shared edit sequence: this mutation is now ahead of
+                    // whatever the last save covered, so the derived `unsaved` goes
+                    // true for every window onto this project — and stays true if
+                    // the save in flight (if any) predates it.
+                    save_state.bump_dirty();
                     if let Some(at) = countdown.on_mutation(Instant::now(), autosave.get()) {
                         wake.set(Some(at));
                     }

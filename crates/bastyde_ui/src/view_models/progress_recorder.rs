@@ -26,7 +26,7 @@ use chrono::Utc;
 use frontend::AppContext;
 use frontend::commands::progress_management_commands;
 use frontend::common::event::Event;
-use frontend::progress_management::RecordProgressSnapshotDto;
+use frontend::progress_management::{CountWordsDto, RecordProgressSnapshotDto};
 
 use crate::app_ids::AppIds;
 
@@ -95,7 +95,11 @@ impl ProgressRecorder {
         let Some(work_info_id) = self.inner.ids.work_info_id.get() else {
             return;
         };
-        if let Ok(op_id) = progress_management_commands::count_words(&self.inner.app_ctx) {
+        let Some(work_id) = self.inner.ids.work_id.get() else {
+            return;
+        };
+        let dto = CountWordsDto { work_id };
+        if let Ok(op_id) = progress_management_commands::count_words(&self.inner.app_ctx, &dto) {
             *self.inner.active.borrow_mut() = Some(op_id);
             self.inner.fired_for.set(Some(work_info_id));
             self.inner.last_fire.set(Some(Instant::now()));
@@ -114,6 +118,12 @@ impl ProgressRecorder {
         if fired_for.is_none() || self.inner.ids.work_info_id.get() != fired_for {
             return;
         }
+        // The guard above already proves the same project (by WorkInfo) is
+        // still open, so its Work id is fetched fresh here rather than
+        // threaded through `fired_for` — the two ids are seeded together.
+        let Some(work_id) = self.inner.ids.work_id.get() else {
+            return;
+        };
         let Ok(Some(res)) =
             progress_management_commands::get_count_words_result(&self.inner.app_ctx, &op_id)
         else {
@@ -125,6 +135,7 @@ impl ProgressRecorder {
             .expect("midnight is valid")
             .and_utc();
         let dto = RecordProgressSnapshotDto {
+            work_id,
             day,
             total_word_count: res.total_word_count,
             total_char_count: res.total_char_count,

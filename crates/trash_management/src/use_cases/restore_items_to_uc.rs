@@ -98,7 +98,13 @@ impl RestoreItemsToUseCase {
 
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        let work_id = work_id(uow.as_ref())?;
+        // Work resolution: dto.work_id, validated against the open Works --
+        // Phase 0.6: this used to pick `get_all_work().next()`, which had no
+        // defined subject once a second Work was open. Scopes both the
+        // undo/redo snapshot AND the post-pass sweep of Work.trash_infos;
+        // getting it wrong leaves the real owning Work's trash index with a
+        // permanently dangling row for an item that is now active elsewhere.
+        let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
 
         // --- destination resolution (read-only) ---
         let dest_binder_id = dto.destination_binder_id;
@@ -361,12 +367,17 @@ fn trashed_subtree_of(
     out
 }
 
-fn work_id(uow: &dyn RestoreItemsToUnitOfWorkTrait) -> Result<EntityId> {
+// `get_work_relationship` does not validate that `id` is a real, open Work --
+// a junction lookup against an unknown id just comes back empty, which would
+// silently no-op instead of reporting the caller's mistake. So the id from
+// `dto.work_id` is checked against the open Works first, exactly like
+// `empty_trash_uc.rs` does.
+fn work_id(uow: &dyn RestoreItemsToUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()
-        .next()
+        .find(|w| w.id == requested)
         .map(|w| w.id)
-        .ok_or_else(|| anyhow!("restore_items_to: no Work entity in store"))
+        .ok_or_else(|| anyhow!("work {requested} is not open"))
 }
 
 use common::undo_redo::UndoRedoCommand;

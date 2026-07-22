@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct RunSearchDto {
+    pub work_id: u64,
     pub query: String,
     pub case_sensitive: bool,
     pub whole_word: bool,
@@ -26,6 +27,7 @@ pub struct RunSearchResultDto {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ReplaceInProjectDto {
+    pub work_id: u64,
     pub replacement: String,
     pub preserve_case: bool,
     pub excluded_result_ids: Vec<u64>,

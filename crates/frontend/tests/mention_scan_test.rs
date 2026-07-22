@@ -35,7 +35,7 @@ use frontend::common::types::EntityId;
 use frontend::direct_access::{
     BinderItemRelationshipDto, CreateBinderItemDto, CreateBinderTagDto, CreateContentDto,
 };
-use mention_management::{MentionHit, MentionHits};
+use mention_management::{MentionHit, MentionHits, ScanMentionsDto};
 use work_management::{NewWorkDto, NewWorkTemplate};
 
 /// The character the fixture is about. Capitalised, because the matcher is case-sensitive by
@@ -75,6 +75,7 @@ fn item(sub_role: BinderItemSubRole, title: &str) -> CreateBinderItemDto {
 struct Fixture {
     ctx: AppContext,
     setup: u64,
+    work: EntityId,
     /// The note the scan should find mentions *of*.
     character: EntityId,
     /// The scene the scan should find mentions *in*.
@@ -173,6 +174,7 @@ fn fixture() -> Fixture {
     Fixture {
         ctx,
         setup,
+        work,
         character,
         scene,
     }
@@ -200,7 +202,8 @@ fn work_management_new(ctx: &AppContext, dir: &std::path::Path) {
 /// delivery and events simply accumulate in the channel — which is what makes draining it a
 /// reliable record of what the scan emitted rather than a race.
 fn scan(fx: &Fixture) -> Vec<MentionHit> {
-    let id = mention_management_commands::scan_mentions(&fx.ctx).expect("start scan");
+    let id = mention_management_commands::scan_mentions(&fx.ctx, &ScanMentionsDto { work_id: fx.work })
+        .expect("start scan");
     let finished = fx
         .ctx
         .long_operation_manager

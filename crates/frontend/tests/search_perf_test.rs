@@ -117,8 +117,10 @@ fn big_manuscript() -> AppContext {
     ctx
 }
 
-fn query(q: &str) -> RunSearchDto {
+fn query(ctx: &AppContext, q: &str) -> RunSearchDto {
+    let work_id = work_commands::get_all_work(ctx).expect("get_all_work").pop().unwrap().id;
     RunSearchDto {
+        work_id,
         query: q.to_string(),
         case_sensitive: false,
         whole_word: false,
@@ -152,7 +154,7 @@ fn how_much_does_a_keystroke_cost() {
     // the one the writer waits for, and the only one that pays the full price.
     search_management::corpus_cache::clear();
     let t = Instant::now();
-    search_management_commands::run_search(&ctx, &query("aurelien")).expect("run_search");
+    search_management_commands::run_search(&ctx, &query(&ctx, "aurelien")).expect("run_search");
     eprintln!("  cold  (empty cache)               {:?}", t.elapsed());
 
     // …and then a search box produces one search per prefix of what is typed. This is what
@@ -160,7 +162,7 @@ fn how_much_does_a_keystroke_cost() {
     // of them.
     for q in ["a", "au", "aur", "aure", "aurel", "aureli", "aurelien"] {
         let t = Instant::now();
-        let out = search_management_commands::run_search(&ctx, &query(q)).expect("run_search");
+        let out = search_management_commands::run_search(&ctx, &query(&ctx, q)).expect("run_search");
         eprintln!(
             "  run_search({q:>9?}) -> {:>5} matches in {:>4} items   {:?}",
             out.match_count,
@@ -191,11 +193,11 @@ fn how_much_does_a_keystroke_cost() {
 fn a_warm_search_over_a_whole_novel_costs_a_few_milliseconds() {
     let ctx = big_manuscript();
 
-    search_management_commands::run_search(&ctx, &query("aurelien")).unwrap();
+    search_management_commands::run_search(&ctx, &query(&ctx, "aurelien")).unwrap();
 
     let t = Instant::now();
     for _ in 0..5 {
-        search_management_commands::run_search(&ctx, &query("aurelien")).unwrap();
+        search_management_commands::run_search(&ctx, &query(&ctx, "aurelien")).unwrap();
     }
     let per_search = t.elapsed() / 5;
 
@@ -220,7 +222,7 @@ fn a_cold_search_still_comes_in_under_the_debounce() {
     search_management::corpus_cache::clear();
 
     let t = Instant::now();
-    search_management_commands::run_search(&ctx, &query("aurelien")).unwrap();
+    search_management_commands::run_search(&ctx, &query(&ctx, "aurelien")).unwrap();
     let cold = t.elapsed();
 
     assert!(

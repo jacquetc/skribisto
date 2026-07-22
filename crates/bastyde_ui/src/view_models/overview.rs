@@ -590,6 +590,11 @@ impl OverviewViewModel {
         if by_binder.is_empty() {
             return;
         }
+        // Read once — the open Work does not change mid-selection, and every
+        // DTO built below shares it.
+        let Some(work_id) = self.inner.ids.work_id.get() else {
+            return; // no project open
+        };
         let stack = self.stack();
         let composite = by_binder.len() > 1 || by_binder.values().map(Vec::len).sum::<usize>() > 1;
         if composite {
@@ -600,6 +605,7 @@ impl OverviewViewModel {
                 ctx,
                 stack,
                 &TrashBinderItemsDto {
+                    work_id,
                     binder_item_ids,
                     origin_binder_id: binder as i64,
                 },

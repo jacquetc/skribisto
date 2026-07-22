@@ -73,8 +73,15 @@ impl RestoreItemsUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
+        // Work resolution: dto.work_id, validated against the open Works --
+        // Phase 0.6: this used to pick `get_all_work().next()`, which had no
+        // defined subject once a second Work was open. Scopes both the
+        // undo/redo snapshot AND which Work's trash_infos index gets the
+        // consumed ids unlinked; getting it wrong here leaves the real
+        // owning Work with dangling trash rows pointing at now-reactivated
+        // items, on top of an undo/redo pair scoped to the wrong tree.
+        let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
         // Work-scoped snapshot, before the first mutation.
-        let work_id = work_id(uow.as_ref())?;
         let snap_before = uow.snapshot_work(&[work_id])?;
 
         let mut restored_count: i64 = 0;
@@ -245,12 +252,17 @@ fn subtree_of(
     out
 }
 
-fn work_id(uow: &dyn RestoreItemsUnitOfWorkTrait) -> Result<EntityId> {
+// `get_work_relationship` does not validate that `id` is a real, open Work --
+// a junction lookup against an unknown id just comes back empty, which would
+// silently no-op instead of reporting the caller's mistake. So the id from
+// `dto.work_id` is checked against the open Works first, exactly like
+// `empty_trash_uc.rs` does.
+fn work_id(uow: &dyn RestoreItemsUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()
-        .next()
+        .find(|w| w.id == requested)
         .map(|w| w.id)
-        .ok_or_else(|| anyhow!("restore_items: no Work entity in store"))
+        .ok_or_else(|| anyhow!("work {requested} is not open"))
 }
 
 use common::undo_redo::UndoRedoCommand;

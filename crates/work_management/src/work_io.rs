@@ -20,59 +20,47 @@ use skrib_format::{self as skrib, ShapeTag, SkribShape};
 // Relocated to `skrib_format::tree_read`; re-exported so existing callers are unchanged.
 pub use skrib_format::tree_read::{Gathered, TreeReader, gather};
 
-/// The write surface needed to clear the open work from the store: list every id
-/// of each entity type and remove them. Implemented per use case's
-/// `dyn …UnitOfWorkTrait` (the generated `get_all_*` / `remove_*_multi` names are
-/// identical), so [`close_current_work`] lives **once** and is reused by
-/// `close_work` AND inline at the top of `load_work` — opening a work closes the
-/// current one without one use case calling another.
+/// The write surface needed to clear ONE work from the store. Implemented per use
+/// case's `dyn …UnitOfWorkTrait` (the generated method names are identical), so
+/// [`close_current_work`] lives **once** and is reused by `close_work` AND inline
+/// at the top of `load_work`/`new_work` — opening a work closes the current one
+/// without one use case calling another.
+///
+/// Only 3 methods, not the store-wide `get_all_<Entity>()` sweep this trait used
+/// to be (see git history): the generated per-entity repositories ALREADY
+/// cascade-delete correctly through every STRONG relationship a `Work` owns
+/// (`Work::remove_multi` → Binders → BinderItems → Contents, Tags, DictWords,
+/// TrashInfos, Paces → Holidays/Milestones — confirmed by direct read of
+/// `common/src/direct_access/{work,binder,binder_item,pace}/*_repository.rs`)
+/// AND reconcile the external owner (`Root.works`) on removal — there is nothing
+/// left for this trait to re-derive by hand. The ONE relationship `Work` does NOT
+/// own is `WorkInfo` (`WorkInfo.work` is a WEAK `many_to_one` FROM `WorkInfo`, not
+/// a strong relationship owned BY `Work` — qleany.yaml's `WorkInfo` entity), so a
+/// closing Work's `WorkInfo` (and, through IT, `Search`/`ProgressSnapshot`, and
+/// `System.work_infos`) has to be found and removed explicitly.
 pub trait WorkCloser {
-    fn work_ids(&self) -> Result<Vec<EntityId>>;
-    fn binder_ids(&self) -> Result<Vec<EntityId>>;
-    fn item_ids(&self) -> Result<Vec<EntityId>>;
-    fn content_ids(&self) -> Result<Vec<EntityId>>;
-    fn tag_ids(&self) -> Result<Vec<EntityId>>;
-    fn dict_ids(&self) -> Result<Vec<EntityId>>;
-    fn trash_ids(&self) -> Result<Vec<EntityId>>;
-    fn pace_ids(&self) -> Result<Vec<EntityId>>;
-    fn holiday_ids(&self) -> Result<Vec<EntityId>>;
-    fn milestone_ids(&self) -> Result<Vec<EntityId>>;
-    fn progress_snapshot_ids(&self) -> Result<Vec<EntityId>>;
-    fn work_info_ids(&self) -> Result<Vec<EntityId>>;
-    fn remove_works(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_binders(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_items(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_contents(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_tags(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_dicts(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_trashes(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_paces(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_holidays(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_milestones(&self, ids: &[EntityId]) -> Result<()>;
-    fn remove_progress_snapshots(&self, ids: &[EntityId]) -> Result<()>;
+    /// Every `WorkInfo` whose `.work` back-pointer is `work_id` — a reverse
+    /// relationship lookup (`WorkInfo → Work` is one-way), NOT a store-wide scan:
+    /// implemented via `get_work_info_relationships_from_right_ids(&Work, &[work_id])`,
+    /// which only returns `WorkInfo`s that actually reference this Work.
+    fn work_info_ids_for_work(&self, work_id: EntityId) -> Result<Vec<EntityId>>;
+    /// Cascades to `Search` + `ProgressSnapshot`s and reconciles `System.work_infos`.
     fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()>;
+    /// Cascades to Binders/Tags/DictWords/TrashInfos/Paces (and, transitively,
+    /// their own children) and reconciles `Root.works`.
+    fn remove_works(&self, ids: &[EntityId]) -> Result<()>;
 }
 
-/// Clear the open work from the in-memory store — every entity under `Root→Work`
-/// plus the System-side `WorkInfo`/`TrashInfo` — leaving `Root`, `System` and the
-/// `RecentWork` list intact. `remove_multi` cleans each parent's backward
-/// junction, so no dangling relationship remains. Children are removed before
-/// parents. A no-op when the store is empty (the first load).
-pub fn close_current_work<C: WorkCloser + ?Sized>(c: &C) -> Result<()> {
-    c.remove_contents(&c.content_ids()?)?;
-    c.remove_items(&c.item_ids()?)?;
-    c.remove_binders(&c.binder_ids()?)?;
-    c.remove_tags(&c.tag_ids()?)?;
-    c.remove_dicts(&c.dict_ids()?)?;
-    c.remove_trashes(&c.trash_ids()?)?;
-    // Pace children before Pace before Work (children-before-parent).
-    c.remove_milestones(&c.milestone_ids()?)?;
-    c.remove_holidays(&c.holiday_ids()?)?;
-    c.remove_paces(&c.pace_ids()?)?;
-    // ProgressSnapshots hang off WorkInfo — remove them before it.
-    c.remove_progress_snapshots(&c.progress_snapshot_ids()?)?;
-    c.remove_work_infos(&c.work_info_ids()?)?;
-    c.remove_works(&c.work_ids()?)?;
+/// Remove exactly `work_id`'s subtree from the in-memory store — its `WorkInfo`
+/// (and everything hanging off it) first, then the `Work` itself (which cascades
+/// through every entity it strongly owns) — leaving every OTHER open Work, plus
+/// `Root`, `System` and the `RecentWork` list, untouched. `WorkInfo` must come
+/// first: it is a weak, one-way referrer of `Work`, so removing the `Work` first
+/// would leave an orphaned `WorkInfo` pointing at a now-gone id. A no-op when
+/// `work_id` is not present (e.g. the very first load, or a redundant close).
+pub fn close_current_work<C: WorkCloser + ?Sized>(c: &C, work_id: EntityId) -> Result<()> {
+    c.remove_work_infos(&c.work_info_ids_for_work(work_id)?)?;
+    c.remove_works(&[work_id])?;
     Ok(())
 }
 

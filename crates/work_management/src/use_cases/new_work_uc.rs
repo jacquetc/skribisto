@@ -19,6 +19,7 @@ use common::direct_access::root::RootRelationshipField;
 use common::direct_access::system::SystemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
+#[allow(unused_imports)]
 use common::entities::{
     Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
     RecentWork, Root, Search, System, TrashInfo, Work, WorkInfo, WorkShape,
@@ -55,31 +56,16 @@ pub trait NewWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "System", action = "GetAll")]
 #[macros::uow_action(entity = "System", action = "GetRelationship")]
 #[macros::uow_action(entity = "Root", action = "GetAll")]
-// Clearing actions: creating a work first closes the currently-open one (shared
-// with load_work/close_work via `work_io::close_current_work`).
+// `Root.works` is an append, not a replace (below) — read-modify-write needs the
+// current list first.
+#[macros::uow_action(entity = "Root", action = "GetRelationship")]
+// Clearing actions: creating a work first closes whichever Work(s) are currently
+// open (shared with load_work/close_work via `work_io::close_current_work`), plus
+// the one relationship lookup `WorkCloser` needs to find each one's `WorkInfo`
+// (see work_io.rs — `Work::remove_multi` already cascades everything else).
 #[macros::uow_action(entity = "Work", action = "GetAll")]
 #[macros::uow_action(entity = "Work", action = "RemoveMulti")]
-#[macros::uow_action(entity = "Binder", action = "GetAll")]
-#[macros::uow_action(entity = "Binder", action = "RemoveMulti")]
-#[macros::uow_action(entity = "BinderItem", action = "GetAll")]
-#[macros::uow_action(entity = "BinderItem", action = "RemoveMulti")]
-#[macros::uow_action(entity = "BinderTag", action = "GetAll")]
-#[macros::uow_action(entity = "BinderTag", action = "RemoveMulti")]
-#[macros::uow_action(entity = "Content", action = "GetAll")]
-#[macros::uow_action(entity = "Content", action = "RemoveMulti")]
-#[macros::uow_action(entity = "DictWord", action = "GetAll")]
-#[macros::uow_action(entity = "DictWord", action = "RemoveMulti")]
-#[macros::uow_action(entity = "TrashInfo", action = "GetAll")]
-#[macros::uow_action(entity = "TrashInfo", action = "RemoveMulti")]
-#[macros::uow_action(entity = "Pace", action = "GetAll")]
-#[macros::uow_action(entity = "Pace", action = "RemoveMulti")]
-#[macros::uow_action(entity = "Holiday", action = "GetAll")]
-#[macros::uow_action(entity = "Holiday", action = "RemoveMulti")]
-#[macros::uow_action(entity = "Milestone", action = "GetAll")]
-#[macros::uow_action(entity = "Milestone", action = "RemoveMulti")]
-#[macros::uow_action(entity = "ProgressSnapshot", action = "GetAll")]
-#[macros::uow_action(entity = "ProgressSnapshot", action = "RemoveMulti")]
-#[macros::uow_action(entity = "WorkInfo", action = "GetAll")]
+#[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 pub trait NewWorkUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_new_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
@@ -87,105 +73,18 @@ pub trait NewWorkUnitOfWorkTrait: CommandUnitOfWork {
 
 // Reuse the shared clearing algorithm (identical generated names as LoadWork).
 impl<'a> WorkCloser for dyn NewWorkUnitOfWorkTrait + 'a {
-    fn work_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self.get_all_work()?.into_iter().map(|e| e.id).collect())
-    }
-    fn binder_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self.get_all_binder()?.into_iter().map(|e| e.id).collect())
-    }
-    fn item_ids(&self) -> Result<Vec<EntityId>> {
+    fn work_info_ids_for_work(&self, work_id: EntityId) -> Result<Vec<EntityId>> {
         Ok(self
-            .get_all_binder_item()?
+            .get_work_info_relationships_from_right_ids(&WorkInfoRelationshipField::Work, &[work_id])?
             .into_iter()
-            .map(|e| e.id)
+            .map(|(work_info_id, _)| work_info_id)
             .collect())
-    }
-    fn content_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self.get_all_content()?.into_iter().map(|e| e.id).collect())
-    }
-    fn tag_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self
-            .get_all_binder_tag()?
-            .into_iter()
-            .map(|e| e.id)
-            .collect())
-    }
-    fn dict_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self
-            .get_all_dict_word()?
-            .into_iter()
-            .map(|e| e.id)
-            .collect())
-    }
-    fn trash_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self
-            .get_all_trash_info()?
-            .into_iter()
-            .map(|e| e.id)
-            .collect())
-    }
-    fn pace_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self.get_all_pace()?.into_iter().map(|e| e.id).collect())
-    }
-    fn holiday_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self.get_all_holiday()?.into_iter().map(|e| e.id).collect())
-    }
-    fn milestone_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self
-            .get_all_milestone()?
-            .into_iter()
-            .map(|e| e.id)
-            .collect())
-    }
-    fn progress_snapshot_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self
-            .get_all_progress_snapshot()?
-            .into_iter()
-            .map(|e| e.id)
-            .collect())
-    }
-    fn work_info_ids(&self) -> Result<Vec<EntityId>> {
-        Ok(self
-            .get_all_work_info()?
-            .into_iter()
-            .map(|e| e.id)
-            .collect())
-    }
-    fn remove_works(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_work_multi(ids)
-    }
-    fn remove_binders(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_binder_multi(ids)
-    }
-    fn remove_items(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_binder_item_multi(ids)
-    }
-    fn remove_contents(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_content_multi(ids)
-    }
-    fn remove_tags(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_binder_tag_multi(ids)
-    }
-    fn remove_dicts(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_dict_word_multi(ids)
-    }
-    fn remove_trashes(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_trash_info_multi(ids)
-    }
-    fn remove_paces(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_pace_multi(ids)
-    }
-    fn remove_holidays(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_holiday_multi(ids)
-    }
-    fn remove_milestones(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_milestone_multi(ids)
-    }
-    fn remove_progress_snapshots(&self, ids: &[EntityId]) -> Result<()> {
-        self.remove_progress_snapshot_multi(ids)
     }
     fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()> {
         self.remove_work_info_multi(ids)
+    }
+    fn remove_works(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_work_multi(ids)
     }
 }
 
@@ -221,8 +120,13 @@ impl NewWorkUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // Opening/creating a work replaces the currently-open one (LoadWork parity).
-        work_io::close_current_work(&*uow)?;
+        // Opening/creating a work replaces whichever Work(s) are currently open
+        // (LoadWork parity — 0 or 1 today). Scoped per-id, not a store-wide
+        // sweep, so this loop is forward-safe the day a second Work is genuinely
+        // meant to stay open.
+        for existing_id in uow.get_all_work()?.into_iter().map(|w| w.id) {
+            work_io::close_current_work(&*uow, existing_id)?;
+        }
 
         let now = chrono::Utc::now();
         let title = title_from_file_name(&dto.file_name);
@@ -404,7 +308,12 @@ impl NewWorkUseCase {
             }
         };
         uow.set_root_relationship(&root_id, &RootRelationshipField::System, &[system_id])?;
-        uow.set_root_relationship(&root_id, &RootRelationshipField::Works, &[work.id])?;
+        // Append, not replace — see load_work_uc.rs's `create_trunk` for the
+        // identical fix and rationale (this is the second, independent occurrence
+        // of the same overwrite bug).
+        let mut work_ids = uow.get_root_relationship(&root_id, &RootRelationshipField::Works)?;
+        work_ids.push(work.id);
+        uow.set_root_relationship(&root_id, &RootRelationshipField::Works, &work_ids)?;
 
         uow.commit()?;
 

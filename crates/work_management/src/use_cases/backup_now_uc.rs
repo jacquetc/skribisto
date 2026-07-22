@@ -192,7 +192,7 @@ fn run_backup(
     progress: &(dyn Fn(OperationProgress) + Send),
     cancel: &AtomicBool,
 ) -> Result<(EntityId, BackupResultDto)> {
-    let g = work_io::gather(uow, progress, cancel)?;
+    let g = work_io::gather(uow, dto.work_id as EntityId, progress, cancel)?;
     // The backup file name/dir is derived from the project's own path; the
     // content is serialised fresh from the store — always as a zip.
     let source = g

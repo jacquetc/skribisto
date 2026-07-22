@@ -517,6 +517,9 @@ impl StreamViewModel {
         let (Some(prev), Some(cur)) = (self.row_doc(prev_id), self.row_doc(id)) else {
             return;
         };
+        let Some(work_id) = self.inner.ids.work_id.get() else {
+            return; // no project open
+        };
 
         // Merge reads content from the store — flush both rows' docs first.
         let stack = self.stack();
@@ -526,6 +529,7 @@ impl StreamViewModel {
             &self.inner.app_ctx,
             stack,
             &MergeTwoScenesDto {
+                work_id,
                 target_id: prev_id,
                 source_id: id,
             },
@@ -588,11 +592,15 @@ impl StreamViewModel {
     }
 
     pub fn trash_row(&self, _ctx: &mut EventContext, id: u64) {
+        let Some(work_id) = self.inner.ids.work_id.get() else {
+            return; // no project open
+        };
         if let Some((binder, _order, _pos)) = binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id) {
             let _ = trash_management_commands::trash_binder_items(
                 &self.inner.app_ctx,
                 self.stack(),
                 &TrashBinderItemsDto {
+                    work_id,
                     binder_item_ids: vec![id as i64],
                     origin_binder_id: binder as i64,
                 },

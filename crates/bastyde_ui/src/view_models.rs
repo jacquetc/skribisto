@@ -39,6 +39,11 @@
 //!     (owns the unsaved-changes guard every in-place project switch — New Work,
 //!     Open Work, "Open here", the import toast — must pass, and the switch parked
 //!     behind an in-flight save).
+//!   * [`save_state`] — `SaveStateViewModel`: **Work**-scoped, not per-window,
+//!     live state (owns `dirty_seq`/`saved_seq`/`saving` and the `SaveQueue`).
+//!     Created once in `main`, shared by every window's `App`/`EditorsViewModel`
+//!     — a per-window copy of any of this breaks the moment a second window
+//!     exists (see its module docs).
 //!
 //! Cross-view-model rules (keep the dependency graph a DAG):
 //!   * A view-model may hold framework model handles and call *down* into them.
@@ -73,6 +78,7 @@ pub mod project_switcher;
 mod backup_restore;
 mod save_as;
 mod save_queue;
+mod save_state;
 mod save_status;
 mod search_replace;
 mod settings;
@@ -116,6 +122,7 @@ pub use project_switch::{
 pub use backup_restore::BackupRestoreViewModel;
 pub use save_as::SaveAsViewModel;
 pub(crate) use save_queue::{DeferredResume, resume_deferred};
+pub use save_state::SaveStateViewModel;
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
 pub use search_replace::SearchReplaceViewModel;
 pub use settings::{

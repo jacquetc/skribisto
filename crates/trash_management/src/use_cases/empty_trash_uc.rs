@@ -8,6 +8,7 @@
 // the index cleared. Undoable via a Work-scoped snapshot/restore: post-reparent
 // TrashInfo lives in the Work trunk alongside the items/binders, so the whole
 // Work is the undo scope.
+use crate::EmptyTrashDto;
 use crate::purge;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
@@ -56,15 +57,19 @@ impl EmptyTrashUseCase {
         }
     }
 
-    pub fn execute(&mut self) -> Result<()> {
+    pub fn execute(&mut self, dto: &EmptyTrashDto) -> Result<()> {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // Purge EVERYTHING currently indexed by Work.trash_infos. The planning
-        // pass is read-only; the Work-scoped snapshot is taken right before the
-        // first mutation. (The shared purge core is also used by
+        // Purge EVERYTHING currently indexed by Work.trash_infos, for the
+        // caller-named Work only — Phase 0.5: this used to pick
+        // `get_all_work().next()`, which had no defined subject once a second
+        // Work was open (whichever Work a HashMap happened to iterate first
+        // had ITS trash purged, data-loss-shaped). The planning pass is
+        // read-only; the Work-scoped snapshot is taken right before the first
+        // mutation. (The shared purge core is also used by
         // delete_trash_entries for a caller-chosen subset.)
-        let work_id = work_id(uow.as_ref())?;
+        let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
         let all_ids = uow.get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?;
         let plan = purge::plan_purge(uow.as_ref(), work_id, &all_ids)?;
         let snap_before = uow.snapshot_work(&[work_id])?;
@@ -79,12 +84,17 @@ impl EmptyTrashUseCase {
     }
 }
 
-fn work_id(uow: &dyn EmptyTrashUnitOfWorkTrait) -> Result<EntityId> {
+// `get_work_relationship` does not validate that `id` is a real, open Work — a
+// junction lookup against an unknown id just comes back empty, which for
+// `empty_trash` would silently no-op instead of reporting the caller's
+// mistake. So the id from `dto.work_id` is checked against the open Works
+// first, exactly like `skrib_format::tree_read::gather` does.
+fn work_id(uow: &dyn EmptyTrashUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()
-        .next()
+        .find(|w| w.id == requested)
         .map(|w| w.id)
-        .ok_or_else(|| anyhow!("empty_trash: no Work entity in store"))
+        .ok_or_else(|| anyhow!("work {requested} is not open"))
 }
 
 use common::undo_redo::UndoRedoCommand;

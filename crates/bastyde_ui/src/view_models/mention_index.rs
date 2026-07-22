@@ -38,7 +38,7 @@ use bastyde::prelude::Signal;
 use frontend::AppContext;
 use frontend::commands::mention_management_commands;
 use frontend::common::event::Event;
-use frontend::mention_management::{MentionEntity, MentionHit, MentionHits, MentionTable};
+use frontend::mention_management::{MentionEntity, MentionHit, MentionHits, MentionTable, ScanMentionsDto};
 use skribisto_model::mentions::{self, DiscoverableEntity};
 use bastyde::text_document::matching::FoldLocale;
 
@@ -152,7 +152,8 @@ impl MentionIndex {
         let Some(work_id) = self.inner.ids.work_id.get() else {
             return;
         };
-        if let Ok(op_id) = mention_management_commands::scan_mentions(&self.inner.app_ctx) {
+        let dto = ScanMentionsDto { work_id };
+        if let Ok(op_id) = mention_management_commands::scan_mentions(&self.inner.app_ctx, &dto) {
             *self.inner.active.borrow_mut() = Some(op_id);
             self.inner.fired_for.set(Some(work_id));
             self.inner.last_fire.set(Some(Instant::now()));

@@ -88,12 +88,15 @@ impl ImportTagsUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        let work_id = uow
-            .get_all_work()?
+        // Phase 0.5: import into the caller-named Work only — this used to
+        // pick `get_all_work().next()`, silently landing a batch of tags on
+        // whichever Work a HashMap happened to iterate first once a second
+        // Work was open.
+        let work_id = dto.work_id as EntityId;
+        uow.get_all_work()?
             .into_iter()
-            .next()
-            .map(|w| w.id)
-            .ok_or_else(|| anyhow!("import_tags: no Work entity in store"))?;
+            .find(|w| w.id == work_id)
+            .ok_or_else(|| anyhow!("work {work_id} is not open"))?;
 
         let mut tag_ids = uow.get_work_relationship(&work_id, &WorkRelationshipField::Tags)?;
         let existing: Vec<BinderTag> = uow

@@ -525,6 +525,10 @@ features:
     dto_in:
       name: SaveWorkDto
       fields:
+      # Which open Work to save — Phase 0 of the multi-Work migration: `gather`
+      # no longer picks an arbitrary Work when more than one is open.
+      - name: work_id
+        type: uinteger
       - name: file_name
         type: string
       - name: overwrite
@@ -550,6 +554,9 @@ features:
     dto_in:
       name: SaveAsDto
       fields:
+      # Which open Work to save — see SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
       - name: file_name
         type: string
       - name: as_folder
@@ -575,6 +582,9 @@ features:
     dto_in:
       name: BackupNowDto
       fields:
+      # Which open Work to back up — see SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
       # Destination directories. Empty ⇒ back up next to the project (back-compat).
       - name: directories
         type: string
@@ -659,6 +669,13 @@ features:
     - Search
     - SearchResult
     undoable: false
+    dto_in:
+      name: CloseWorkDto
+      fields:
+      # Which open Work to close — Phase 0 of the multi-Work migration: closing
+      # used to tear down the whole store; now it is scoped to one Work by id.
+      - name: work_id
+        type: uinteger
   - name: new_work
     entities:
     - Root
@@ -756,8 +773,7 @@ features:
   # Read-only pass over the open Work: match every discoverable item's title and
   # aliases against the prose of every activated Scene/Synopsis/Note. Writes
   # nothing -- detection must never touch entities, dirty the project or push an
-  # undo entry. Modelled on count_words (QueryUnitOfWork, long operation), and
-  # scoped to the single open Work, so no dto_in.
+  # undo entry. Modelled on count_words (QueryUnitOfWork, long operation).
   - name: scan_mentions
     entities:
     - Work
@@ -768,6 +784,12 @@ features:
     undoable: false
     read_only: true
     long_operation: true
+    dto_in:
+      name: ScanMentionsDto
+      fields:
+      # Which open Work to scan -- see work_management's SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
     dto_out:
       name: MentionScanResultDto
       fields:
@@ -808,8 +830,7 @@ features:
   use_cases:
   # Read-only pass over the open Work: sum SceneText prose of every
   # activated && is_exportable item, bucketed per Book. Modelled on save_work /
-  # export_work (QueryUnitOfWork, long operation). Scopes to the single open Work,
-  # so no dto_in.
+  # export_work (QueryUnitOfWork, long operation).
   - name: count_words
     entities:
     - Work
@@ -820,6 +841,12 @@ features:
     undoable: false
     read_only: true
     long_operation: true
+    dto_in:
+      name: CountWordsDto
+      fields:
+      # Which open Work to count -- see work_management's SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
     dto_out:
       name: WordCountResultDto
       fields:
@@ -843,6 +870,11 @@ features:
     dto_in:
       name: RecordProgressSnapshotDto
       fields:
+      # Which open Work's WorkInfo to record onto -- ProgressSnapshot hangs off
+      # WorkInfo, and WorkInfo.work is how we find it. See
+      # work_management's SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
       - name: day
         type: datetime
       - name: total_word_count
@@ -867,6 +899,12 @@ features:
     dto_in:
       name: TrashBinderItemsDto
       fields:
+      # Which open Work's trash_infos index receives the new entries -- see
+      # SaveWorkDto.work_id. Without it, the entry can land under an unrelated
+      # open Work while the caller's own Work loses the item with no trash-bin
+      # trace of it.
+      - name: work_id
+        type: uinteger
       - name: binder_item_ids
         type: integer
         is_list: true
@@ -883,6 +921,10 @@ features:
     dto_in:
       name: TrashBinderDto
       fields:
+      # Which open Work's trash_infos index receives the new entry -- see
+      # SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
       - name: binder_id
         type: integer
   - name: restore_items
@@ -896,6 +938,11 @@ features:
     dto_in:
       name: RestoreItemsDto
       fields:
+      # Which open Work's trash_infos index is being restored from -- see
+      # SaveWorkDto.work_id. Also scopes the undo/redo snapshot: the wrong
+      # Work here means undo can silently roll back an unrelated Work's tree.
+      - name: work_id
+        type: uinteger
       - name: trash_info_ids
         type: integer
         is_list: true
@@ -914,6 +961,14 @@ features:
     - BinderItem
     - Content
     undoable: true
+    dto_in:
+      name: EmptyTrashDto
+      fields:
+      # Which open Work's trash to empty -- see work_management's
+      # SaveWorkDto.work_id. Data-loss-shaped: with two Works open, "empty the
+      # trash" has no defined subject without this.
+      - name: work_id
+        type: uinteger
   - name: restore_items_to
     entities:
     - Work
@@ -924,6 +979,10 @@ features:
     dto_in:
       name: RestoreItemsToDto
       fields:
+      # Which open Work's trash_infos index is being restored from -- see
+      # SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
       - name: binder_item_ids
         type: uinteger
         is_list: true
@@ -957,6 +1016,12 @@ features:
     dto_in:
       name: DeleteTrashEntriesDto
       fields:
+      # Which open Work's trash_infos index the ids are looked up against --
+      # see SaveWorkDto.work_id. Without it, a wrong-Work id is just absent
+      # from that Work's index, so this silently no-ops instead of erroring:
+      # "Delete forever" would report success and delete nothing.
+      - name: work_id
+        type: uinteger
       - name: trash_info_ids
         type: uinteger
         is_list: true
@@ -980,6 +1045,10 @@ features:
     dto_in:
       name: ImportTagsDto
       fields:
+      # Which open Work's tags to import into -- see work_management's
+      # SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
       - name: names
         type: string
         is_list: true
@@ -1055,6 +1124,11 @@ features:
     dto_in:
       name: MergeTwoScenesDto
       fields:
+      # Which open Work owns the merge -- see SaveWorkDto.work_id. Scopes the
+      # undo/redo snapshot and the TrashInfo the absorbed source scene gets
+      # filed under.
+      - name: work_id
+        type: uinteger
       - name: target_id
         type: uinteger
       - name: source_id
@@ -1164,6 +1238,10 @@ features:
     dto_in:
       name: RunSearchDto
       fields:
+      # Which open Work to search -- Search hangs off WorkInfo, and WorkInfo.work
+      # is how we find it. See work_management's SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
       - name: query
         type: string
       - name: case_sensitive
@@ -1220,6 +1298,10 @@ features:
     dto_in:
       name: ReplaceInProjectDto
       fields:
+      # Which open Work's Search results to replace across -- see
+      # RunSearchDto.work_id above.
+      - name: work_id
+        type: uinteger
       - name: replacement
         type: string
       - name: preserve_case

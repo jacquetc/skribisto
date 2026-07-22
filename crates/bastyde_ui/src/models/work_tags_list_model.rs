@@ -290,11 +290,12 @@ mod imp {
 
         /// Bulk-create as ONE undoable step (a CSV import, or applying a preset), skipping
         /// names already present. Returns the names that were skipped, for the summary.
-        pub fn import(&self, rows: &[TagRow], stack_id: Option<u64>) -> Vec<String> {
+        pub fn import(&self, rows: &[TagRow], work_id: u64, stack_id: Option<u64>) -> Vec<String> {
             if rows.is_empty() {
                 return Vec::new();
             }
             let dto = ImportTagsDto {
+                work_id,
                 names: rows.iter().map(|r| r.name.clone()).collect(),
                 colors: rows.iter().map(|r| r.color.clone()).collect(),
                 details: rows.iter().map(|r| r.details.clone()).collect(),
@@ -474,7 +475,7 @@ mod imp {
             self.replace(keep);
         }
 
-        pub fn import(&self, rows: &[TagRow], _stack_id: Option<u64>) -> Vec<String> {
+        pub fn import(&self, rows: &[TagRow], _work_id: u64, _stack_id: Option<u64>) -> Vec<String> {
             let mut current = self.rows();
             let mut skipped = Vec::new();
             for r in rows {

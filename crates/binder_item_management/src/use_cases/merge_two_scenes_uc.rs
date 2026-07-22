@@ -16,10 +16,12 @@
 // must also be adjacent in the flat order — merge is only ever an adjacent merge,
 // and adjacency is what guarantees no boundary sits between them.
 //
-// Undoable via a Root-scoped snapshot/restore: the op mutates A's Content (Work
-// trunk) and creates a TrashInfo (System trunk), so the whole tree is the undo
-// scope. (Narrows to the Work once TrashInfo moves under Work in the deferred
-// multi-Work reparent.)
+// Undoable via a Work-scoped snapshot/restore: both A's Content and the new
+// TrashInfo live in the Work trunk (post-reparent), so the affected Work is
+// the undo scope. Work resolution: dto.work_id, validated against the open
+// Works -- Phase 0.6: this used to pick `get_all_work().next()`, which had no
+// defined subject once a second Work was open (undo could silently roll back
+// an unrelated Work's tree while leaving the actual merge un-undone).
 use crate::MergeTwoScenesDto;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
@@ -184,7 +186,7 @@ impl MergeTwoScenesUseCase {
 
         // Work-scoped snapshot, after the read-only validation above and before
         // the first mutation below.
-        let work_id = work_id(uow.as_ref())?;
+        let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
         let snap_before = uow.snapshot_work(&[work_id])?;
 
         let now = chrono::Utc::now();
@@ -254,12 +256,17 @@ impl MergeTwoScenesUseCase {
     }
 }
 
-fn work_id(uow: &dyn MergeTwoScenesUnitOfWorkTrait) -> Result<EntityId> {
+// `get_work_relationship` does not validate that `id` is a real, open Work --
+// a junction lookup against an unknown id just comes back empty, which would
+// silently no-op instead of reporting the caller's mistake. So the id from
+// `dto.work_id` is checked against the open Works first, exactly like
+// `empty_trash_uc.rs` does.
+fn work_id(uow: &dyn MergeTwoScenesUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()
-        .next()
+        .find(|w| w.id == requested)
         .map(|w| w.id)
-        .ok_or_else(|| anyhow!("merge_two_scenes: no Work entity"))
+        .ok_or_else(|| anyhow!("work {requested} is not open"))
 }
 
 /// Append `b` onto `a` with a blank-line separator (paragraph break in Djot).

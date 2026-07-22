@@ -31,8 +31,8 @@ use binder_item_management::{
 };
 use skribisto_model::PromoteTarget;
 use trash_management::{
-    DeleteTrashEntriesDto, DropPosition, RestoreItemsDto, RestoreItemsToDto, TrashBinderDto,
-    TrashBinderItemsDto,
+    DeleteTrashEntriesDto, DropPosition, EmptyTrashDto, RestoreItemsDto, RestoreItemsToDto,
+    TrashBinderDto, TrashBinderItemsDto,
 };
 
 // ───────────────────────────── fixture helpers ─────────────────────────────
@@ -560,6 +560,7 @@ fn trash_items_cascades_and_indexes_trash_info() {
         &fx.ctx,
         Some(stack),
         &TrashBinderItemsDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.a as i64],
             origin_binder_id: fx.binder1 as i64,
         },
@@ -613,6 +614,7 @@ fn restore_items_round_trip() {
         &fx.ctx,
         Some(s1),
         &TrashBinderItemsDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.c as i64],
             origin_binder_id: fx.binder1 as i64,
         },
@@ -625,6 +627,7 @@ fn restore_items_round_trip() {
         &fx.ctx,
         Some(s2),
         &RestoreItemsDto {
+            work_id: fx.work,
             trash_info_ids: vec![info as i64],
         },
     )
@@ -647,6 +650,7 @@ fn restore_reports_orphaned_when_binder_lost_the_item() {
         &fx.ctx,
         Some(s1),
         &TrashBinderItemsDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.c as i64],
             origin_binder_id: fx.binder1 as i64,
         },
@@ -666,6 +670,7 @@ fn restore_reports_orphaned_when_binder_lost_the_item() {
         &fx.ctx,
         Some(s2),
         &RestoreItemsDto {
+            work_id: fx.work,
             trash_info_ids: vec![info as i64],
         },
     )
@@ -682,6 +687,7 @@ fn trash_binder_deactivates_binder_and_items() {
         &fx.ctx,
         Some(stack),
         &TrashBinderDto {
+            work_id: fx.work,
             binder_id: fx.binder1 as i64,
         },
     )
@@ -718,6 +724,7 @@ fn empty_trash_hard_removes_item_subtree_and_contents() {
         &fx.ctx,
         Some(s1),
         &TrashBinderItemsDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.a as i64],
             origin_binder_id: fx.binder1 as i64,
         },
@@ -725,7 +732,7 @@ fn empty_trash_hard_removes_item_subtree_and_contents() {
     .expect("trash");
 
     let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
-    trash_management_commands::empty_trash(&fx.ctx, Some(s2)).expect("empty");
+    trash_management_commands::empty_trash(&fx.ctx, Some(s2), &EmptyTrashDto { work_id: fx.work }).expect("empty");
 
     // A subtree gone from the store and the binder order.
     assert!(
@@ -772,13 +779,14 @@ fn empty_trash_removes_trashed_binder_from_work() {
         &fx.ctx,
         Some(s1),
         &TrashBinderDto {
+            work_id: fx.work,
             binder_id: fx.binder2 as i64,
         },
     )
     .expect("trash binder");
 
     let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
-    trash_management_commands::empty_trash(&fx.ctx, Some(s2)).expect("empty");
+    trash_management_commands::empty_trash(&fx.ctx, Some(s2), &EmptyTrashDto { work_id: fx.work }).expect("empty");
 
     assert!(
         binder_commands::get_binder(&fx.ctx, &fx.binder2)
@@ -854,6 +862,7 @@ fn restore_items_undo_redo() {
         &fx.ctx,
         Some(s1),
         &TrashBinderItemsDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.c as i64],
             origin_binder_id: fx.binder1 as i64,
         },
@@ -866,6 +875,7 @@ fn restore_items_undo_redo() {
         &fx.ctx,
         Some(s2),
         &RestoreItemsDto {
+            work_id: fx.work,
             trash_info_ids: vec![info as i64],
         },
     )
@@ -900,6 +910,7 @@ fn merge_two_scenes_round_trip() {
         &fx.ctx,
         Some(stack),
         &MergeTwoScenesDto {
+            work_id: fx.work,
             target_id: a,
             source_id: b,
         },
@@ -1530,6 +1541,7 @@ fn trash_item(fx: &Fixture, stack: u64, root: EntityId) -> EntityId {
         &fx.ctx,
         Some(stack),
         &TrashBinderItemsDto {
+            work_id: fx.work,
             binder_item_ids: vec![root as i64],
             origin_binder_id: fx.binder1 as i64,
         },
@@ -1554,6 +1566,7 @@ fn restore_descendant_out_of_larger_trashed_subtree_leaves_ancestor_trashed() {
         &fx.ctx,
         Some(s2),
         &RestoreItemsToDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.a2],
             destination_binder_id: fx.binder2,
             anchor_item_id: None,
@@ -1591,6 +1604,7 @@ fn restore_whole_root_via_its_own_item_id_consumes_its_trash_info() {
         &fx.ctx,
         Some(s2),
         &RestoreItemsToDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.a],
             destination_binder_id: fx.binder2,
             anchor_item_id: None,
@@ -1622,6 +1636,7 @@ fn restore_items_to_undo_redo() {
         &fx.ctx,
         Some(s2),
         &RestoreItemsToDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.c],
             destination_binder_id: fx.binder2,
             anchor_item_id: None,
@@ -1655,6 +1670,7 @@ fn restore_items_to_rejects_a_deactivated_destination_binder() {
         &fx.ctx,
         Some(s1),
         &TrashBinderDto {
+            work_id: fx.work,
             binder_id: fx.binder2 as i64,
         },
     )
@@ -1667,6 +1683,7 @@ fn restore_items_to_rejects_a_deactivated_destination_binder() {
         &fx.ctx,
         Some(s3),
         &RestoreItemsToDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.c],
             destination_binder_id: fx.binder2,
             anchor_item_id: None,
@@ -1700,6 +1717,7 @@ fn restore_items_to_recovers_a_dangling_orphan_singleton() {
         &fx.ctx,
         Some(undo_redo_commands::create_new_stack(&fx.ctx)),
         &RestoreItemsDto {
+            work_id: fx.work,
             trash_info_ids: vec![info as i64],
         },
     )
@@ -1712,6 +1730,7 @@ fn restore_items_to_recovers_a_dangling_orphan_singleton() {
         &fx.ctx,
         Some(s2),
         &RestoreItemsToDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.c],
             destination_binder_id: fx.binder2,
             anchor_item_id: None,
@@ -1733,6 +1752,7 @@ fn restore_items_to_peels_from_a_wholly_trashed_binder() {
         &fx.ctx,
         Some(s1),
         &TrashBinderDto {
+            work_id: fx.work,
             binder_id: fx.binder1 as i64,
         },
     )
@@ -1744,6 +1764,7 @@ fn restore_items_to_peels_from_a_wholly_trashed_binder() {
         &fx.ctx,
         Some(s2),
         &RestoreItemsToDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.c],
             destination_binder_id: fx.binder2,
             anchor_item_id: None,
@@ -1780,6 +1801,7 @@ fn restore_items_to_marks_orphaned_for_an_already_active_item() {
         &fx.ctx,
         Some(s),
         &RestoreItemsToDto {
+            work_id: fx.work,
             binder_item_ids: vec![fx.b], // never trashed
             destination_binder_id: fx.binder2,
             anchor_item_id: None,
@@ -1808,6 +1830,7 @@ fn delete_trash_entries_purges_only_the_requested_subtree() {
         &fx.ctx,
         Some(s3),
         &DeleteTrashEntriesDto {
+            work_id: fx.work,
             trash_info_ids: vec![info_a],
         },
     )
@@ -1846,6 +1869,7 @@ fn delete_trash_entries_removes_content_of_purged_subtree_only() {
         &fx.ctx,
         Some(s3),
         &DeleteTrashEntriesDto {
+            work_id: fx.work,
             trash_info_ids: vec![info_a],
         },
     )
@@ -1867,6 +1891,7 @@ fn delete_trash_entries_undo_redo() {
         &fx.ctx,
         Some(s2),
         &DeleteTrashEntriesDto {
+            work_id: fx.work,
             trash_info_ids: vec![info_c],
         },
     )
@@ -1923,6 +1948,7 @@ fn delete_trash_entries_sweeps_collateral_stale_entries() {
         &fx.ctx,
         Some(s3),
         &DeleteTrashEntriesDto {
+            work_id: fx.work,
             trash_info_ids: vec![info_a],
         },
     )
@@ -1949,6 +1975,7 @@ fn delete_trash_entries_on_a_stale_id_is_a_noop() {
         &fx.ctx,
         Some(s),
         &DeleteTrashEntriesDto {
+            work_id: fx.work,
             trash_info_ids: vec![999_999],
         },
     )

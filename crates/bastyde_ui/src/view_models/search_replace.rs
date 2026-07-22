@@ -324,6 +324,12 @@ impl SearchReplaceViewModel {
     /// is the seam the headless tests assert the toggles/scopes/facets reach.
     pub fn build_dto(&self) -> RunSearchDto {
         RunSearchDto {
+            // No open project ⇒ 0, a value no real Work ever has (ids start at 1)
+            // — callers that actually run a search (`run_now`) guard on
+            // `self.ids.work_id` separately and never send this placeholder to
+            // the backend. Kept out of this pure/no-I/O builder so its existing
+            // "no AppIds seeded" unit tests are unaffected.
+            work_id: self.ids.work_id.get().unwrap_or(0),
             query: self.query.get(),
             case_sensitive: self.case_sensitive.get(),
             whole_word: self.whole_word.get(),
@@ -363,6 +369,11 @@ impl SearchReplaceViewModel {
     /// the store's `SearchResultsModel` fresh via the published `RunSearch` event,
     /// so this only fires the scan and records the summary counts.
     pub fn run_now(&self) {
+        // No open project → nothing to search (also keeps the mock build, which
+        // never seeds a real Work, inert).
+        if self.ids.work_id.get().is_none() {
+            return;
+        }
         let dto = self.build_dto();
         let has_query = !dto.query.trim().is_empty();
         // A new result set invalidates the old per-field exclusions (the rows are
@@ -512,7 +523,13 @@ impl SearchReplaceViewModel {
     /// `EventContext`) surfaces the toast + its Undo, reloads open docs, and
     /// re-runs the search.
     pub fn replace_all(&self) -> anyhow::Result<ReplaceInProjectResultDto> {
+        let work_id = self
+            .ids
+            .work_id
+            .get()
+            .ok_or_else(|| anyhow::anyhow!("replace_all: no open project"))?;
         let dto = ReplaceInProjectDto {
+            work_id,
             replacement: self.replacement.get(),
             preserve_case: self.preserve_case.get(),
             excluded_result_ids: self.excluded.get().into_iter().collect(),

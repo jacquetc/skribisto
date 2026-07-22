@@ -11,6 +11,7 @@ pub struct LoadWorkDto {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct SaveWorkDto {
+    pub work_id: u64,
     pub file_name: String,
     pub overwrite: bool,
 }
@@ -20,6 +21,7 @@ pub struct SaveResultDto {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct SaveAsDto {
+    pub work_id: u64,
     pub file_name: String,
     pub as_folder: bool,
 }
@@ -29,6 +31,7 @@ pub struct SaveAsResultDto {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct BackupNowDto {
+    pub work_id: u64,
     pub directories: Vec<String>,
     pub last_known_hashes: Vec<String>,
     pub last_known_paths: Vec<String>,
@@ -57,6 +60,10 @@ pub struct BackupResultDto {
     pub failed_reasons: Vec<String>,
     pub deleted_paths: Vec<String>,
     pub delete_errors: Vec<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct CloseWorkDto {
+    pub work_id: u64,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct NewWorkDto {

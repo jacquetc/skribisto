@@ -175,11 +175,13 @@ impl TagsViewModel {
     }
 
     fn import_rows(&self, rows: Vec<TagRow>) -> TagImportSummary {
-        if rows.is_empty() {
+        // No open project ⇒ nowhere for the palette to live — same silent no-op
+        // as `create` returning `None` above.
+        let (Some(work_id), false) = (self.ids.work_id.get(), rows.is_empty()) else {
             return TagImportSummary::default();
-        }
+        };
         let requested = rows.len();
-        let skipped = self.list.import(&rows, self.stack());
+        let skipped = self.list.import(&rows, work_id, self.stack());
         TagImportSummary {
             added: requested.saturating_sub(skipped.len()),
             duplicates: skipped.len(),

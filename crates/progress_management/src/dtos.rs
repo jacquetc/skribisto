@@ -6,6 +6,10 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct CountWordsDto {
+    pub work_id: u64,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct WordCountResultDto {
     pub total_word_count: i64,
     pub total_char_count: i64,
@@ -14,6 +18,7 @@ pub struct WordCountResultDto {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct RecordProgressSnapshotDto {
+    pub work_id: u64,
     pub day: chrono::DateTime<chrono::Utc>,
     pub total_word_count: i64,
     pub total_char_count: i64,

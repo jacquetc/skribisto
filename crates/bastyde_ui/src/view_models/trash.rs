@@ -37,7 +37,8 @@ use frontend::commands::{
 };
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::trash_management::{
-    DeleteTrashEntriesDto, DropPosition, RestoreItemsDto, RestoreItemsToDto, RestoreItemsToResultDto,
+    DeleteTrashEntriesDto, DropPosition, EmptyTrashDto, RestoreItemsDto, RestoreItemsToDto,
+    RestoreItemsToResultDto,
 };
 
 use crate::app_ids::AppIds;
@@ -173,7 +174,15 @@ impl TrashViewModel {
         if roots.is_empty() {
             return;
         }
+        // No open project → nothing to restore into. Same guard as
+        // `empty_trash` — a data-loss-shaped op bails loudly rather than
+        // guessing which open Work the caller meant.
+        let Some(work_id) = self.ids.work_id.get() else {
+            ctx.show_toast(Toast::error(tr!(trash_restore_no_project())));
+            return;
+        };
         let dto = RestoreItemsDto {
+            work_id,
             trash_info_ids: roots.iter().map(|&x| x as i64).collect(),
         };
         match trash_management_commands::restore_items(&self.app_ctx, self.stack(), &dto) {
@@ -253,7 +262,18 @@ impl TrashViewModel {
         anchor_item_id: Option<u64>,
         drop_position: DropPosition,
     ) -> anyhow::Result<RestoreItemsToResultDto> {
+        // No open project → nothing to restore into. The caller already
+        // renders any `Err` here as an error toast (see
+        // `restore_target_panel.rs`), so a plain error is enough — no
+        // dedicated toast copy needed for this rarer, already-error-handled
+        // path.
+        let work_id = self
+            .ids
+            .work_id
+            .get()
+            .ok_or_else(|| anyhow::anyhow!(tr!(trash_restore_no_project()).resolve_now()))?;
         let dto = RestoreItemsToDto {
+            work_id,
             binder_item_ids: vec![item_id],
             destination_binder_id,
             anchor_item_id,
@@ -285,6 +305,14 @@ impl TrashViewModel {
     }
 
     pub fn delete_forever(&self, ctx: &mut EventContext, roots: &[u64]) {
+        // No open project → nothing to delete. Same guard as `empty_trash` —
+        // without it, a wrong/closed work_id would either error loudly (good)
+        // or, before the backend validated it, silently no-op ("Delete
+        // forever" reporting success while deleting nothing).
+        let Some(work_id) = self.ids.work_id.get() else {
+            ctx.show_toast(Toast::error(tr!(trash_delete_no_project())));
+            return;
+        };
         let ids: Vec<u64> = roots.to_vec();
         let count = roots.len() as i64;
         self.run_with_undo_toast(
@@ -296,6 +324,7 @@ impl TrashViewModel {
                     app_ctx,
                     stack,
                     &DeleteTrashEntriesDto {
+                        work_id,
                         trash_info_ids: ids,
                     },
                 )
@@ -321,11 +350,19 @@ impl TrashViewModel {
     }
 
     pub fn empty_trash(&self, ctx: &mut EventContext) {
+        // No open project → nothing to empty. Data-loss-shaped op, so this bails
+        // loudly rather than guessing a Work — see `EmptyTrashDto`'s manifest doc.
+        let Some(work_id) = self.ids.work_id.get() else {
+            ctx.show_toast(Toast::error(tr!(trash_empty_no_project())));
+            return;
+        };
         self.run_with_undo_toast(
             ctx,
             tr!(trash_emptied_title()),
             tr!(trash_emptied_body()),
-            |app_ctx, stack| trash_management_commands::empty_trash(app_ctx, stack),
+            move |app_ctx, stack| {
+                trash_management_commands::empty_trash(app_ctx, stack, &EmptyTrashDto { work_id })
+            },
         );
     }
 

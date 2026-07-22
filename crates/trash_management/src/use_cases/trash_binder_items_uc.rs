@@ -10,8 +10,11 @@
 // created. Post-reparent TrashInfo lives in the Work trunk alongside the items,
 // so no cross-trunk snapshot is needed.
 //
-// Work resolution is get_all_work (single Work today); when in-process multi-Work
-// lands this resolves origin_binder -> its owning Work.
+// Work resolution: dto.work_id, validated against the open Works -- Phase 0.6:
+// this used to pick `get_all_work().next()`, which had no defined subject once
+// a second Work was open (whichever Work a HashMap happened to iterate first
+// got the new TrashInfo, while the caller's own Work lost the item with no
+// trash-bin trace of it).
 use crate::TrashBinderItemsDto;
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
@@ -92,7 +95,7 @@ impl TrashBinderItemsUseCase {
         }
 
         self.origin_binder = origin_binder;
-        self.work_id = work_id(uow.as_ref())?;
+        self.work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
         self.trashed_at = Utc::now();
         self.roots = roots.clone();
         self.cascade = cascade;
@@ -209,12 +212,20 @@ pub(crate) fn roots_and_cascade(
     (roots, cascade)
 }
 
-pub(crate) fn work_id(uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<EntityId> {
+// `get_work_relationship` does not validate that `id` is a real, open Work --
+// a junction lookup against an unknown id just comes back empty, which would
+// silently no-op instead of reporting the caller's mistake. So the id from
+// `dto.work_id` is checked against the open Works first, exactly like
+// `empty_trash_uc.rs` does.
+pub(crate) fn work_id(
+    uow: &dyn TrashBinderItemsUnitOfWorkTrait,
+    requested: EntityId,
+) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()
-        .next()
+        .find(|w| w.id == requested)
         .map(|w| w.id)
-        .ok_or_else(|| anyhow!("trash: no Work entity in store"))
+        .ok_or_else(|| anyhow!("work {requested} is not open"))
 }
 
 use common::undo_redo::UndoRedoCommand;

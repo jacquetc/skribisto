@@ -100,29 +100,74 @@ pub struct Gathered {
     pub work_info: Option<WorkInfo>,
 }
 
-/// Read the single open Work, its tags/dict-words/trash, and every binder → item →
-/// content in order, hydrating each entity's relationship id vectors (which `get` does not
+/// Read one open Work (its tags/dict-words/trash, and every binder → item →
+/// content in order), hydrating each entity's relationship id vectors (which `get` does not
 /// populate). Honours `cancel`; reports `progress`.
+///
+/// `work_id` reads exactly that Work — the fix for the "which Work?" bug
+/// (Phase 0 of the multi-Work migration): with more than one Work open, picking
+/// `all_work().next()` picked whichever row a `HashMap` happened to iterate
+/// first, not the one the caller actually asked to save/export/back up/scan/
+/// count. Phase 0.5 closed the last two holdouts
+/// (`mention_management::scan_mentions`, `progress_management::count_words`)
+/// by giving both a `work_id` of their own, so every caller now has a real id
+/// to pass and the `Option` this parameter used to carry is gone.
 pub fn gather<R: TreeReader + ?Sized>(
     reader: &R,
+    work_id: EntityId,
     progress: &(dyn Fn(OperationProgress) + Send),
     cancel: &AtomicBool,
 ) -> Result<Gathered> {
     let mut work = reader
         .all_work()?
         .into_iter()
-        .next()
-        .ok_or_else(|| anyhow!("no open work"))?;
-    let work_info = reader.all_work_info()?.into_iter().next();
+        .find(|w| w.id == work_id)
+        .ok_or_else(|| anyhow!("work {work_id} is not open"))?;
     let work_id = work.id;
+    // WorkInfo has no reverse `WorkRelationshipField` (it is a WEAK, one-way
+    // `many_to_one` FROM WorkInfo — see `work_management::work_io`'s doc comment),
+    // but it already carries the hydrated `.work` back-pointer, so a client-side
+    // filter is correct and — bounded by "number of open Works" — cheap.
+    let work_info = reader
+        .all_work_info()?
+        .into_iter()
+        .find(|wi| wi.work == Some(work_id));
 
     work.tags = reader.work_rel(&work_id, &WorkRelationshipField::Tags)?;
     work.dict_words = reader.work_rel(&work_id, &WorkRelationshipField::DictWords)?;
     work.binders = reader.work_rel(&work_id, &WorkRelationshipField::Binders)?;
+    // Unlike Tags/DictWords/Binders above, `all_trash_info()` has no by-id fetch
+    // (it is the whole-store `get_all_trash_info()`, `TreeReader`'s only defaulted
+    // Vec-returning read besides `all_work_info`) — so TrashInfo is scoped by
+    // filtering that store-wide read down to exactly this Work's own ids, the
+    // same relationship `Work.trash_infos` already exists for and every OTHER
+    // TrashInfo consumer in this codebase (trash_management) walks correctly.
+    work.trash_infos = reader.work_rel(&work_id, &WorkRelationshipField::TrashInfos)?;
 
     let tags = fetch_multi(&work.tags, |ids| reader.tag_multi(ids))?;
     let dict_words = fetch_multi(&work.dict_words, |ids| reader.dict_multi(ids))?;
-    let trash_infos = reader.all_trash_info()?;
+    // `all_trash_info()` is store-wide and `HashMap`-backed, so its iteration
+    // order is NOT stable across insertions into that same shared table (e.g.
+    // another Work's TrashInfo rows being inserted when it is loaded into the
+    // same store). Collecting straight off that iterator — even after
+    // filtering down to this Work's own ids — let this Work's own
+    // `content_fingerprint()` change purely because a second, unrelated Work
+    // was opened in the same process, with this Work's actual content
+    // unchanged. Building an id→entity lookup and then walking
+    // `work.trash_infos` (the relationship vector above, whose order is
+    // deterministic — the same idiom `tags`/`dict_words` already use via
+    // `fetch_multi`) makes the result depend only on this Work's own
+    // relationship order, never on the store's internal hash layout.
+    let trash_lookup: std::collections::HashMap<EntityId, TrashInfo> = reader
+        .all_trash_info()?
+        .into_iter()
+        .map(|t| (t.id, t))
+        .collect();
+    let trash_infos = work
+        .trash_infos
+        .iter()
+        .filter_map(|id| trash_lookup.get(id).cloned())
+        .collect();
     let paces = if reader.reads_paces() {
         hydrate_paces(reader, &work_id)?
     } else {

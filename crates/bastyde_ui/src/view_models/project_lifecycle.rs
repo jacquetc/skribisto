@@ -63,7 +63,10 @@ use crate::models::OpenDocsStore;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::spellcheck::SpellcheckService;
 
-use super::{EditorsViewModel, OutlineViewModel, TrashViewModel, WorkspaceLayoutViewModel};
+use super::{
+    EditorsViewModel, OutlineViewModel, SaveStateViewModel, TrashViewModel,
+    WorkspaceLayoutViewModel,
+};
 
 /// Reload the open Work's personal words (`DictWord`) into the checker's personal set.
 ///
@@ -90,7 +93,9 @@ struct Inner {
     single_work_info: SingleWorkInfo,
     docs: OpenDocsStore,
     spellcheck: SpellcheckService,
-    dirty_seq: Signal<u64>,
+    /// Work-scoped, shared with every other window onto this project — not owned
+    /// here. See [`SaveStateViewModel`]'s module docs.
+    save_state: SaveStateViewModel,
     backup_mode: Signal<bool>,
     backup_context: Signal<Option<BackupContext>>,
     /// Absent in a window with no layout service (a headless or launcher build).
@@ -116,7 +121,7 @@ impl ProjectLifecycleViewModel {
         single_work_info: SingleWorkInfo,
         docs: OpenDocsStore,
         spellcheck: SpellcheckService,
-        dirty_seq: Signal<u64>,
+        save_state: SaveStateViewModel,
         backup_mode: Signal<bool>,
         backup_context: Signal<Option<BackupContext>>,
         workspace_layout: Option<WorkspaceLayoutViewModel>,
@@ -132,7 +137,7 @@ impl ProjectLifecycleViewModel {
                 single_work_info,
                 docs,
                 spellcheck,
-                dirty_seq,
+                save_state,
                 backup_mode,
                 backup_context,
                 workspace_layout,
@@ -211,7 +216,7 @@ impl ProjectLifecycleViewModel {
         self.seed();
         // One step ahead of `mark_clean`: reads as unsaved until the create-and-save lands.
         // Sits between `seed` and `claim` because that is where the inline version had it.
-        i.dirty_seq.set(i.dirty_seq.get() + 1);
+        i.save_state.bump_dirty();
         self.claim();
         // A brand-new project is never a backup.
         i.backup_mode.set(false);

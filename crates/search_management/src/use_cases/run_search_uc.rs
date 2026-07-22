@@ -170,14 +170,17 @@ impl RunSearchUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // One process holds exactly one Work, so its WorkInfo is the only one — and
-        // it owns the Search. (`load_work` / `new_work` create both; see the
-        // eager-creation patch in those use cases.)
+        // Phase 0.5: search the caller-named Work's own WorkInfo — it owns the
+        // Search — not whichever WorkInfo a HashMap-backed store happens to
+        // iterate first once a second Work is open. (`load_work` / `new_work`
+        // create both Work and WorkInfo; see the eager-creation patch in
+        // those use cases.)
+        let work_id = dto.work_id as EntityId;
         let work_info: WorkInfo = uow
             .get_all_work_info()?
             .into_iter()
-            .next()
-            .ok_or_else(|| anyhow!("run_search: no WorkInfo in the store"))?;
+            .find(|wi| wi.work == Some(work_id))
+            .ok_or_else(|| anyhow!("work {work_id} is not open"))?;
         let search_id = work_info.search;
         let search: Search = uow
             .get_search(&search_id)?
@@ -260,11 +263,12 @@ impl RunSearchUseCase {
         uow: &mut Box<dyn RunSearchUnitOfWorkTrait>,
         dto: &RunSearchDto,
     ) -> Result<Vec<Field>> {
+        let work_id = dto.work_id as EntityId;
         let work: Work = uow
             .get_all_work()?
             .into_iter()
-            .next()
-            .ok_or_else(|| anyhow!("run_search: no Work in the store"))?;
+            .find(|w| w.id == work_id)
+            .ok_or_else(|| anyhow!("work {work_id} is not open"))?;
 
         // Resolved ONCE for the whole search, not re-parsed per item.
         let wanted = Self::wanted_facets(dto);

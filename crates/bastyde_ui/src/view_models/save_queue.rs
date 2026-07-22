@@ -28,8 +28,10 @@
 //! ## Sequence numbers
 //!
 //! "Did this save include my edits?" is answered with a monotonic **edit
-//! sequence** (`dirty_seq` in `App`, bumped by every mutation — typing, tree
-//! edits, metadata). A save started after a flush at seq *n* is said to *cover*
+//! sequence** (`dirty_seq`, held by the Work-scoped [`crate::view_models::SaveStateViewModel`]
+//! that also owns this queue — shared by every window, not per-window — bumped
+//! by every mutation: typing, tree edits, metadata). A save started after a
+//! flush at seq *n* is said to *cover*
 //! *n*: when it lands, everything up to *n* is on disk. That single number drives:
 //!
 //!   * **the dirty flag** — `unsaved = dirty_seq > saved_seq`, which is finally
@@ -40,7 +42,8 @@
 //!     `saved_seq >= its own covered seq`, not merely for "a save finished".
 //!
 //! Pure and backend-free (the clock is injected), so the whole state machine is
-//! unit-tested below; `EditorsViewModel` owns one and wires it to `save_work`.
+//! unit-tested below; [`crate::view_models::SaveStateViewModel`] owns one (Work-scoped,
+//! shared by every window) and wires it to `save_work`.
 
 use std::time::{Duration, Instant};
 

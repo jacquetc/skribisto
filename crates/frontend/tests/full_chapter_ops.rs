@@ -17,8 +17,8 @@ use frontend::direct_access::{
     CreateBinderDto, CreateBinderItemDto, CreateContentDto, CreateWorkDto,
 };
 
-/// A fresh store with one Work + one Binder; returns (ctx, binder_id).
-fn setup() -> (AppContext, u64) {
+/// A fresh store with one Work + one Binder; returns (ctx, work_id, binder_id).
+fn setup() -> (AppContext, u64, u64) {
     let ctx = AppContext::new();
     let root = handling_app_lifecycle_commands::initialize_app(&ctx)
         .unwrap()
@@ -46,7 +46,7 @@ fn setup() -> (AppContext, u64) {
         -1,
     )
     .unwrap();
-    (ctx, binder.id)
+    (ctx, work.id, binder.id)
 }
 
 /// Append a `Scene` item with `SceneText = text` to the binder; return its id.
@@ -183,7 +183,7 @@ fn binder_order(ctx: &AppContext, binder: u64) -> Vec<u64> {
 
 #[test]
 fn merge_two_scenes_concats_text_and_trashes_source() {
-    let (ctx, binder) = setup();
+    let (ctx, work_id, binder) = setup();
     let a = make_scene(&ctx, binder, "A", "Alpha");
     let b = make_scene(&ctx, binder, "B", "Beta");
 
@@ -191,6 +191,7 @@ fn merge_two_scenes_concats_text_and_trashes_source() {
         &ctx,
         None,
         &MergeTwoScenesDto {
+            work_id,
             target_id: a,
             source_id: b,
         },
@@ -212,7 +213,7 @@ fn merge_two_scenes_concats_text_and_trashes_source() {
 /// several chapters.
 #[test]
 fn merge_two_scenes_rejects_non_adjacent() {
-    let (ctx, binder) = setup();
+    let (ctx, work_id, binder) = setup();
     let a = make_scene(&ctx, binder, "A", "Alpha");
     make_chapter_folder(&ctx, binder, "Chapter Two", "");
     let b = make_scene(&ctx, binder, "B", "Beta");
@@ -221,6 +222,7 @@ fn merge_two_scenes_rejects_non_adjacent() {
         &ctx,
         None,
         &MergeTwoScenesDto {
+            work_id,
             target_id: a,
             source_id: b,
         },
@@ -246,7 +248,7 @@ fn merge_two_scenes_rejects_non_adjacent() {
 /// *inside* the chapter (indent + 1), as its first child — not after it.
 #[test]
 fn split_scene_works_on_a_chapter_folders_own_prose() {
-    let (ctx, binder) = setup();
+    let (ctx, _work_id, binder) = setup();
     let ch = make_chapter_folder(&ctx, binder, "The Long Road", "FirstBeatSecondBeat");
     let ch_indent = binder_item_commands::get_binder_item(&ctx, &ch)
         .unwrap()
@@ -286,7 +288,7 @@ fn split_scene_works_on_a_chapter_folders_own_prose() {
 /// Split → merge must round-trip.
 #[test]
 fn merge_absorbs_a_scene_back_into_its_chapter_folder() {
-    let (ctx, binder) = setup();
+    let (ctx, work_id, binder) = setup();
     let ch = make_chapter_folder(&ctx, binder, "The Long Road", "FirstBeat");
     let sc = make_scene(&ctx, binder, "Scene", "SecondBeat");
 
@@ -294,6 +296,7 @@ fn merge_absorbs_a_scene_back_into_its_chapter_folder() {
         &ctx,
         None,
         &MergeTwoScenesDto {
+            work_id,
             target_id: ch,
             source_id: sc,
         },
@@ -317,7 +320,7 @@ fn merge_absorbs_a_scene_back_into_its_chapter_folder() {
 fn merge_refuses_to_trash_a_structural_opener() {
     // Both encodings of a chapter open a section: the flat marker and the folder.
     for role in [BinderItemRole::Item, BinderItemRole::Folder] {
-        let (ctx, binder) = setup();
+        let (ctx, work_id, binder) = setup();
         let a = make_scene(&ctx, binder, "A", "Alpha");
         let b = make_item(
             &ctx,
@@ -333,6 +336,7 @@ fn merge_refuses_to_trash_a_structural_opener() {
             &ctx,
             None,
             &MergeTwoScenesDto {
+                work_id,
                 target_id: a,
                 source_id: b,
             },
@@ -353,7 +357,7 @@ fn merge_refuses_to_trash_a_structural_opener() {
 
 #[test]
 fn split_scene_splits_at_offset_into_two() {
-    let (ctx, binder) = setup();
+    let (ctx, _work_id, binder) = setup();
     let a = make_scene_with_synopsis(&ctx, binder, "A", "HelloWorld", "the whole synopsis");
 
     // Split from the *prose* editor: prose is cut at the caret; the synopsis is
@@ -387,7 +391,7 @@ fn split_scene_splits_at_offset_into_two() {
 /// the caret and leaves the prose whole on the original scene.
 #[test]
 fn split_scene_splits_synopsis_leaving_prose_intact() {
-    let (ctx, binder) = setup();
+    let (ctx, _work_id, binder) = setup();
     let a = make_scene_with_synopsis(&ctx, binder, "A", "the whole prose", "TheyMeetTheyFight");
 
     binder_item_management_commands::split_scene(
@@ -427,7 +431,7 @@ fn split_scene_splits_synopsis_leaving_prose_intact() {
 /// moved the prose away. Exercises the update-existing-row branch with empty text.
 #[test]
 fn split_scene_empties_a_role_when_its_half_is_empty() {
-    let (ctx, binder) = setup();
+    let (ctx, _work_id, binder) = setup();
     let a = make_scene_with_synopsis(&ctx, binder, "A", "prose", "AB");
 
     // Everything goes to the new scene: the source is left with empty halves.

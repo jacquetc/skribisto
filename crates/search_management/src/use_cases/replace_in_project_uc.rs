@@ -123,11 +123,15 @@ impl ReplaceInProjectUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
+        // Phase 0.5: replace across the caller-named Work only — see
+        // run_search_uc's identical fix (Search hangs off this Work's own
+        // WorkInfo, found via its `work` back-pointer).
+        let work_id = dto.work_id as EntityId;
         let work_info: WorkInfo = uow
             .get_all_work_info()?
             .into_iter()
-            .next()
-            .ok_or_else(|| anyhow!("replace_in_project: no WorkInfo in the store"))?;
+            .find(|wi| wi.work == Some(work_id))
+            .ok_or_else(|| anyhow!("work {work_id} is not open"))?;
         let search: Search = uow
             .get_search(&work_info.search)?
             .ok_or_else(|| anyhow!("replace_in_project: WorkInfo has no Search"))?;
@@ -137,8 +141,8 @@ impl ReplaceInProjectUseCase {
         let work: Work = uow
             .get_all_work()?
             .into_iter()
-            .next()
-            .ok_or_else(|| anyhow!("replace_in_project: no Work in the store"))?;
+            .find(|w| w.id == work_id)
+            .ok_or_else(|| anyhow!("work {work_id} is not open"))?;
 
         // The rows the writer reviewed, minus the ones they unticked.
         let excluded: HashSet<EntityId> = dto.excluded_result_ids.iter().copied().collect();

@@ -607,10 +607,14 @@ impl CorkboardViewModel {
             return;
         }
         let prev_id = cards[pos - 1].item_id;
+        let Some(work_id) = self.inner.ids.work_id.get() else {
+            return; // no project open
+        };
         let _ = binder_item_management_commands::merge_two_scenes(
             &self.inner.app_ctx,
             self.stack(),
             &MergeTwoScenesDto {
+                work_id,
                 target_id: prev_id,
                 source_id: id,
             },
@@ -618,11 +622,15 @@ impl CorkboardViewModel {
     }
 
     pub fn trash(&self, _ctx: &mut EventContext, id: u64) {
+        let Some(work_id) = self.inner.ids.work_id.get() else {
+            return; // no project open
+        };
         if let Some((binder, _order, _pos)) = binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id) {
             let _ = trash_management_commands::trash_binder_items(
                 &self.inner.app_ctx,
                 self.stack(),
                 &TrashBinderItemsDto {
+                    work_id,
                     binder_item_ids: vec![id as i64],
                     origin_binder_id: binder as i64,
                 },

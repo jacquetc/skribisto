@@ -7,15 +7,18 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct TrashBinderItemsDto {
+    pub work_id: u64,
     pub binder_item_ids: Vec<i64>,
     pub origin_binder_id: i64,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct TrashBinderDto {
+    pub work_id: u64,
     pub binder_id: i64,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct RestoreItemsDto {
+    pub work_id: u64,
     pub trash_info_ids: Vec<i64>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -24,7 +27,12 @@ pub struct RestoreResultDto {
     pub orphaned: bool,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct EmptyTrashDto {
+    pub work_id: u64,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct RestoreItemsToDto {
+    pub work_id: u64,
     pub binder_item_ids: Vec<u64>,
     pub destination_binder_id: u64,
     pub anchor_item_id: Option<u64>,
@@ -45,5 +53,6 @@ pub struct RestoreItemsToResultDto {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct DeleteTrashEntriesDto {
+    pub work_id: u64,
     pub trash_info_ids: Vec<u64>,
 }

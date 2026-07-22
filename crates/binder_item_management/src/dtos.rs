@@ -30,6 +30,7 @@ pub enum MovePlace {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct MergeTwoScenesDto {
+    pub work_id: u64,
     pub target_id: u64,
     pub source_id: u64,
 }

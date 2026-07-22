@@ -568,6 +568,11 @@ impl OutlineViewModel {
         if sel.is_empty() {
             return;
         }
+        // Read once, outside the per-key loops below — the open Work does
+        // not change mid-selection, and every DTO built here shares it.
+        let Some(work_id) = self.ids.work_id.get() else {
+            return; // no project open
+        };
         let stack = self.stack();
         let composite = sel.len() > 1;
         if composite {
@@ -582,6 +587,7 @@ impl OutlineViewModel {
                     ctx,
                     stack,
                     &TrashBinderDto {
+                        work_id,
                         binder_id: b as i64,
                     },
                 );
@@ -601,6 +607,7 @@ impl OutlineViewModel {
                 ctx,
                 stack,
                 &TrashBinderItemsDto {
+                    work_id,
                     binder_item_ids: ids,
                     origin_binder_id: binder as i64,
                 },
@@ -1577,6 +1584,7 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
                     &outline.app_ctx,
                     None,
                     &frontend::trash_management::RestoreItemsDto {
+                        work_id,
                         trash_info_ids: infos().iter().map(|&x| x as i64).collect(),
                     },
                 )

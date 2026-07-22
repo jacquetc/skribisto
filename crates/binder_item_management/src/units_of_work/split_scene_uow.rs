@@ -9,6 +9,7 @@ use crate::use_cases::split_scene_uc::{
 };
 use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
+use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{Binder, BinderItem, Content};
@@ -26,6 +27,10 @@ use std::sync::Arc;
 pub struct SplitSceneUnitOfWork {
     context: DbContext,
     transaction: Option<Transaction>,
+    // RAII: acquired in `begin_transaction`, released via `commit`/`rollback`
+    // falling out of scope alongside `transaction` — see
+    // `common::database::write_guard`'s module doc.
+    write_guard: Option<WriteTransactionGuard>,
     event_hub: Arc<EventHub>,
     event_buffer: RefCell<EventBuffer>,
 }
@@ -35,6 +40,7 @@ impl SplitSceneUnitOfWork {
         SplitSceneUnitOfWork {
             context: db_context.clone(),
             transaction: None,
+            write_guard: None,
             event_hub: event_hub.clone(),
             event_buffer: RefCell::new(EventBuffer::new()),
         }
@@ -43,6 +49,10 @@ impl SplitSceneUnitOfWork {
 
 impl CommandUnitOfWork for SplitSceneUnitOfWork {
     fn begin_transaction(&mut self) -> Result<()> {
+        // Acquire BEFORE the write transaction itself — see
+        // `common::database::write_guard`'s module doc for why this call must
+        // stay UI-thread-synchronous unless given a real off-thread gate.
+        self.write_guard = Some(WriteTransactionGuard::acquire(&self.context, "split_scene")?);
         self.transaction = Some(Transaction::begin_write_transaction(&self.context)?);
         self.event_buffer.get_mut().begin_buffering();
         Ok(())
@@ -53,6 +63,7 @@ impl CommandUnitOfWork for SplitSceneUnitOfWork {
             .take()
             .ok_or_else(|| anyhow::anyhow!("No active transaction"))?
             .commit()?;
+        self.write_guard = None;
         for event in self.event_buffer.get_mut().flush() {
             self.event_hub.send_event(event);
         }
@@ -64,6 +75,7 @@ impl CommandUnitOfWork for SplitSceneUnitOfWork {
             .take()
             .ok_or_else(|| anyhow::anyhow!("No active transaction"))?
             .rollback()?;
+        self.write_guard = None;
         self.event_buffer.get_mut().discard();
         Ok(())
     }

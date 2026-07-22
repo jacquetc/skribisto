@@ -8,17 +8,18 @@
 use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use progress_management::{
-    RecordProgressSnapshotDto, WordCountResultDto, progress_management_controller,
+    CountWordsDto, RecordProgressSnapshotDto, WordCountResultDto, progress_management_controller,
 };
 
 use common::long_operation::OperationProgress;
 
 /// count_words (long operation)
-pub fn count_words(ctx: &AppContext) -> Result<String> {
+pub fn count_words(ctx: &AppContext, dto: &CountWordsDto) -> Result<String> {
     progress_management_controller::count_words(
         &ctx.db_context,
         &ctx.event_hub,
         &mut ctx.long_operation_manager.lock().unwrap(),
+        dto,
     )
     .context("count_words")
 }

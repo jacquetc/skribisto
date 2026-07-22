@@ -113,7 +113,10 @@ fn run_export(
     progress: &(dyn Fn(OperationProgress) + Send),
     cancel: &AtomicBool,
 ) -> Result<(EntityId, ExportResultDto)> {
-    let g = gather(uow, progress, cancel)?;
+    // `ExportWorkDto.work_id` already existed but was dead — `gather` had no way
+    // to be told which Work to read, so it silently picked whichever the store
+    // returned first. Now consumed for real.
+    let g = gather(uow, dto.work_id as EntityId, progress, cancel)?;
     let work_id = g.work.id;
 
     let items = skribisto_compiler::item_metas(&g);

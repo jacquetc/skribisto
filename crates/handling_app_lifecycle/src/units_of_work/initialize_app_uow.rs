@@ -5,12 +5,15 @@
 // Custom implementation (hand-maintained — do NOT blanket-regenerate):
 // UoW for InitializeApp. Actions mirror the trait in
 // ../use_cases/initialize_app_uc.rs exactly.
+// Also hand-added the `write_guard` field/acquire in `begin_transaction` below
+// — see `common::database::write_guard`'s module doc.
 
 use crate::use_cases::initialize_app_uc::{
     InitializeAppUnitOfWorkFactoryTrait, InitializeAppUnitOfWorkTrait,
 };
 use anyhow::{Ok, Result};
 use common::database::CommandUnitOfWork;
+use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{Root, System};
@@ -28,6 +31,10 @@ use std::sync::Arc;
 pub struct InitializeAppUnitOfWork {
     context: DbContext,
     transaction: Option<Transaction>,
+    // RAII: acquired in `begin_transaction`, released via `commit`/`rollback`
+    // falling out of scope alongside `transaction` — see
+    // `common::database::write_guard`'s module doc.
+    write_guard: Option<WriteTransactionGuard>,
     event_hub: Arc<EventHub>,
     event_buffer: RefCell<EventBuffer>,
 }
@@ -37,6 +44,7 @@ impl InitializeAppUnitOfWork {
         InitializeAppUnitOfWork {
             context: db_context.clone(),
             transaction: None,
+            write_guard: None,
             event_hub: event_hub.clone(),
             event_buffer: RefCell::new(EventBuffer::new()),
         }
@@ -45,6 +53,10 @@ impl InitializeAppUnitOfWork {
 
 impl CommandUnitOfWork for InitializeAppUnitOfWork {
     fn begin_transaction(&mut self) -> Result<()> {
+        // Acquire BEFORE the write transaction itself — see
+        // `common::database::write_guard`'s module doc for why this call must
+        // stay UI-thread-synchronous unless given a real off-thread gate.
+        self.write_guard = Some(WriteTransactionGuard::acquire(&self.context, "initialize_app")?);
         self.transaction = Some(Transaction::begin_write_transaction(&self.context)?);
         self.event_buffer.get_mut().begin_buffering();
         Ok(())
@@ -55,6 +67,7 @@ impl CommandUnitOfWork for InitializeAppUnitOfWork {
             .take()
             .ok_or_else(|| anyhow::anyhow!("No active transaction"))?
             .commit()?;
+        self.write_guard = None;
         for event in self.event_buffer.get_mut().flush() {
             self.event_hub.send_event(event);
         }
@@ -66,6 +79,7 @@ impl CommandUnitOfWork for InitializeAppUnitOfWork {
             .take()
             .ok_or_else(|| anyhow::anyhow!("No active transaction"))?
             .rollback()?;
+        self.write_guard = None;
         self.event_buffer.get_mut().discard();
         Ok(())
     }

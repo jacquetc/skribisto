@@ -18,11 +18,11 @@
 use frontend::AppContext;
 use frontend::commands::{
     binder_item_commands, search_commands, search_management_commands, search_result_commands,
-    work_info_commands, work_management_commands,
+    work_commands, work_info_commands, work_management_commands,
 };
 use frontend::common::direct_access::search::SearchRelationshipField;
 use search_management::RunSearchDto;
-use work_management::LoadWorkDto;
+use work_management::{CloseWorkDto, LoadWorkDto};
 
 fn fixture_path() -> String {
     format!(
@@ -45,8 +45,10 @@ fn loaded_ctx() -> AppContext {
 }
 
 /// A query with every scope on and nothing else — the defaults the UI will send.
-fn dto(query: &str) -> RunSearchDto {
+fn dto(ctx: &AppContext, query: &str) -> RunSearchDto {
+    let work_id = work_commands::get_all_work(ctx).expect("get_all_work").pop().unwrap().id;
     RunSearchDto {
+        work_id,
         query: query.to_string(),
         case_sensitive: false,
         whole_word: false,
@@ -109,7 +111,7 @@ fn run_search_finds_prose_and_writes_rows() {
 
     // NB: the fixture's prose is Lorem ipsum, so it contains no English function
     // words — "the" finds nothing here. Query something that is actually in it.
-    let out = search_management_commands::run_search(&ctx, &dto("ipsum")).expect("run_search");
+    let out = search_management_commands::run_search(&ctx, &dto(&ctx, "ipsum")).expect("run_search");
     assert!(
         out.match_count > 0,
         "expected the fixture's Lorem-ipsum prose to contain 'ipsum'"
@@ -157,7 +159,7 @@ fn run_search_finds_prose_and_writes_rows() {
 #[test]
 fn a_row_counts_every_occurrence_in_its_field() {
     let ctx = loaded_ctx();
-    search_management_commands::run_search(&ctx, &dto("ipsum")).expect("run_search");
+    search_management_commands::run_search(&ctx, &dto(&ctx, "ipsum")).expect("run_search");
     let rows = results(&ctx);
     assert!(!rows.is_empty());
     assert!(
@@ -183,11 +185,11 @@ fn a_row_counts_every_occurrence_in_its_field() {
 fn a_search_replaces_the_previous_result_set() {
     let ctx = loaded_ctx();
 
-    search_management_commands::run_search(&ctx, &dto("ipsum")).expect("first search");
+    search_management_commands::run_search(&ctx, &dto(&ctx, "ipsum")).expect("first search");
     let first = results(&ctx);
     assert!(!first.is_empty());
 
-    search_management_commands::run_search(&ctx, &dto("ipsum")).expect("same search again");
+    search_management_commands::run_search(&ctx, &dto(&ctx, "ipsum")).expect("same search again");
     let second = results(&ctx);
     assert_eq!(
         first.len(),
@@ -196,7 +198,7 @@ fn a_search_replaces_the_previous_result_set() {
     );
 
     // A query that cannot match must clear the set, not leave the old rows behind.
-    let out = search_management_commands::run_search(&ctx, &dto("zzqqxx-not-in-any-manuscript"))
+    let out = search_management_commands::run_search(&ctx, &dto(&ctx, "zzqqxx-not-in-any-manuscript"))
         .expect("miss");
     assert_eq!(out.match_count, 0);
     assert!(
@@ -205,9 +207,9 @@ fn a_search_replaces_the_previous_result_set() {
     );
 
     // And an empty query clears it too (the UI sends this when the field is emptied).
-    search_management_commands::run_search(&ctx, &dto("ipsum")).expect("repopulate");
+    search_management_commands::run_search(&ctx, &dto(&ctx, "ipsum")).expect("repopulate");
     assert!(!results(&ctx).is_empty());
-    search_management_commands::run_search(&ctx, &dto("")).expect("empty query");
+    search_management_commands::run_search(&ctx, &dto(&ctx, "")).expect("empty query");
     assert!(
         results(&ctx).is_empty(),
         "clearing the query must clear the results"
@@ -219,7 +221,7 @@ fn a_search_replaces_the_previous_result_set() {
 #[test]
 fn the_search_entity_mirrors_the_query_that_produced_it() {
     let ctx = loaded_ctx();
-    let mut d = dto("ipsum");
+    let mut d = dto(&ctx, "ipsum");
     d.case_sensitive = true;
     d.search_titles = false;
     search_management_commands::run_search(&ctx, &d).expect("run_search");
@@ -244,7 +246,7 @@ fn scopes_restrict_what_is_searched() {
     let ctx = loaded_ctx();
     use frontend::common::entities::MatchField;
 
-    let mut body_only = dto("ipsum");
+    let mut body_only = dto(&ctx, "ipsum");
     body_only.search_titles = false;
     body_only.search_synopsis = false;
     search_management_commands::run_search(&ctx, &body_only).expect("body-only");
@@ -264,7 +266,7 @@ fn scopes_restrict_what_is_searched() {
         );
     }
 
-    let mut titles_only = dto("Chapter");
+    let mut titles_only = dto(&ctx, "Chapter");
     titles_only.search_body = false;
     titles_only.search_synopsis = false;
     search_management_commands::run_search(&ctx, &titles_only).expect("title-only");
@@ -294,7 +296,7 @@ fn closing_a_project_tears_down_its_search_surface() {
     use frontend::commands::search_result_commands;
 
     let ctx = loaded_ctx();
-    search_management_commands::run_search(&ctx, &dto("ipsum")).expect("run_search");
+    search_management_commands::run_search(&ctx, &dto(&ctx, "ipsum")).expect("run_search");
     assert!(
         !results(&ctx).is_empty(),
         "the fixture must produce rows for this test to mean anything"
@@ -305,7 +307,13 @@ fn closing_a_project_tears_down_its_search_surface() {
             .is_empty()
     );
 
-    work_management_commands::close_work(&ctx).expect("close_work");
+    let work_id = work_commands::get_all_work(&ctx)
+        .expect("get_all_work")
+        .into_iter()
+        .next()
+        .expect("a loaded project has exactly one Work")
+        .id;
+    work_management_commands::close_work(&ctx, &CloseWorkDto { work_id }).expect("close_work");
 
     assert!(
         work_info_commands::get_all_work_info(&ctx)
@@ -378,7 +386,7 @@ fn a_case_insensitive_search_over_turkish_prose_does_not_panic() {
     .unwrap();
 
     // The search itself is the assertion: it must return, not panic.
-    let mut q = dto("ipsum");
+    let mut q = dto(&ctx, "ipsum");
     q.search_titles = false;
     q.search_synopsis = false;
     let out = search_management_commands::run_search(&ctx, &q).expect("run_search");
@@ -448,7 +456,7 @@ fn whole_word_reaches_the_matcher_and_finds_the_possessive() {
     )
     .unwrap();
 
-    let mut q = dto("Elena");
+    let mut q = dto(&ctx, "Elena");
     q.search_titles = false;
     q.search_synopsis = false;
     q.whole_word = true;
@@ -515,7 +523,7 @@ fn the_search_reads_the_prose_and_not_the_djot_markup() {
     )
     .unwrap();
 
-    let mut body_only = dto("Aurélien");
+    let mut body_only = dto(&ctx, "Aurélien");
     body_only.search_titles = false;
     body_only.search_synopsis = false;
     let out = search_management_commands::run_search(&ctx, &body_only).expect("run_search");
@@ -527,7 +535,7 @@ fn the_search_reads_the_prose_and_not_the_djot_markup() {
 
     // And the markup itself must be unreachable.
     for markup in ["https", "example.test", "##"] {
-        let mut q = dto(markup);
+        let mut q = dto(&ctx, markup);
         q.search_titles = false;
         q.search_synopsis = false;
         let out = search_management_commands::run_search(&ctx, &q).expect("run_search");
