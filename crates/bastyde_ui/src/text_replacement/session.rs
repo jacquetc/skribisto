@@ -467,7 +467,18 @@ impl TextReplacementSession {
         let Some(span_start) = caret.checked_sub(fired.replace_chars) else {
             return false;
         };
-        self.apply(|| handle.replace_range(span_start, caret, &fired.replacement));
+        if fired.prepend {
+            // Insert the mark at `span_start`, delete nothing (so the clause
+            // between keeps its formatting), then put the caret back where the
+            // writer left it — shifted right by the one glyph we inserted.
+            let shift = fired.replacement.chars().count();
+            self.apply(|| {
+                handle.replace_range(span_start, span_start, &fired.replacement);
+                handle.select_range(caret + shift, caret + shift);
+            });
+        } else {
+            self.apply(|| handle.replace_range(span_start, caret, &fired.replacement));
+        }
         self.last_caret.set(Some(handle.cursor_position()));
         self.last_revision.set(Some(doc.content_revision()));
         true
@@ -895,7 +906,8 @@ mod live_editor_tests {
             ..SmartPunctuationFlags::default()
         }));
         type_text(&handle, &doc, &session, "\"Quoi ?");
-        assert_eq!(plain(&doc), "«Quoi\u{202F}?");
+        // « takes its inner thin space too, and ? takes its space-before.
+        assert_eq!(plain(&doc), "«\u{202F}Quoi\u{202F}?");
     }
 
     /// Arabic mirroring, end to end.
@@ -998,10 +1010,10 @@ mod live_editor_tests {
     #[test]
     fn the_documents_language_picks_the_quotation_marks() {
         for (locale, want) in [
-            ("en-US", "\u{201C}"), // “
-            ("fr-FR", "\u{00AB}"), // «
-            ("de-DE", "\u{201E}"), // „
-            ("de-CH", "\u{00AB}"), // « — Switzerland departs from German
+            ("en-US", "\u{201C}"),         // “
+            ("fr-FR", "\u{00AB}\u{202F}"), // « + its inner thin space
+            ("de-DE", "\u{201E}"),         // „
+            ("de-CH", "\u{00AB}"),         // « — Switzerland departs from German
             ("es-ES", "\u{00AB}"),
             ("it-IT", "\u{00AB}"),
             ("pt-PT", "\u{00AB}"),
@@ -1031,7 +1043,7 @@ mod live_editor_tests {
         let (doc, handle, session, _tree) = editor("");
         punctuate(&session, "fr-CA");
         type_text(&handle, &doc, &session, "il dit \"");
-        assert_eq!(plain(&doc), "il dit \u{00AB}");
+        assert_eq!(plain(&doc), "il dit \u{00AB}\u{202F}");
     }
 
     // ── The paragraph/clause subsystem ───────────────────────────────────────
@@ -1091,6 +1103,17 @@ mod live_editor_tests {
         spanish(&session);
         type_text(&handle, &doc, &session, "\u{00BF}Vienes?");
         assert_eq!(plain(&doc), "\u{00BF}Vienes?");
+    }
+
+    /// And a `¿` the writer placed *mid*-clause is still an existing mark: the
+    /// guard checks the whole clause, not just its first character, so no second
+    /// `¿` is prepended to give `¿Es ¿que?`.
+    #[test]
+    fn a_mid_clause_question_mark_is_not_doubled() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "Es \u{00BF}que?");
+        assert_eq!(plain(&doc), "Es \u{00BF}que?");
     }
 
     /// Neighbours that do NOT invert. Catalan and Portuguese sit next to Spanish
@@ -1212,7 +1235,12 @@ mod live_editor_tests {
         let (doc, handle, session, _tree) = editor("");
         quotes_for(&session, "fr-FR");
         type_text(&handle, &doc, &session, "\"a \"b\" c\"");
-        assert_eq!(plain(&doc), "\u{00AB}a \u{201C}b\u{201D} c\u{00BB}");
+        // Outer guillemets carry their French inner space; the inner curly
+        // doubles do not.
+        assert_eq!(
+            plain(&doc),
+            "\u{00AB}\u{202F}a \u{201C}b\u{201D} c\u{202F}\u{00BB}"
+        );
     }
 
     /// Russian nests guillemets into low-high doubles — a different inner mark,
@@ -1232,8 +1260,11 @@ mod live_editor_tests {
         let (doc, handle, session, _tree) = editor("");
         quotes_for(&session, "fr-FR");
         type_text(&handle, &doc, &session, "\"a \"b \"c\"");
-        // « then “ then « again at depth 2.
-        assert_eq!(plain(&doc), "\u{00AB}a \u{201C}b \u{00AB}c\u{00BB}");
+        // « (spaced) then “ then « (spaced) again at depth 2, closing » (spaced).
+        assert_eq!(
+            plain(&doc),
+            "\u{00AB}\u{202F}a \u{201C}b \u{00AB}\u{202F}c\u{202F}\u{00BB}"
+        );
     }
 
     /// **The reason nesting is gated on double-width secondaries.** English's
@@ -1257,8 +1288,9 @@ mod live_editor_tests {
         let (doc, handle, session, _tree) = editor("");
         quotes_for(&session, "fr-FR");
         type_text(&handle, &doc, &session, "\"l'ami\"");
-        // « … » — the apostrophe curled to ’, and the close is still a guillemet.
-        assert_eq!(plain(&doc), "\u{00AB}l\u{2019}ami\u{00BB}");
+        // «…» (spaced) — the apostrophe curled to ’, and the close is still a
+        // guillemet, not thrown off by counting the apostrophe as a quote.
+        assert_eq!(plain(&doc), "\u{00AB}\u{202F}l\u{2019}ami\u{202F}\u{00BB}");
     }
 
     /// With the project's master switch off, nothing expands at all.

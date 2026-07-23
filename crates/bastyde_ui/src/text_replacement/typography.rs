@@ -94,13 +94,9 @@ pub struct TypographyRuleset {
     pub pre_punctuation: &'static [(char, char)],
     /// The dash that opens a line of dialogue, where the locale uses one.
     ///
-    /// Recorded here, applied by the paragraph-aware subsystem rather than by
-    /// [`TypographyEngine`] — a dialogue dash is meaningless without knowing a
-    /// paragraph just began.
-    #[allow(
-        dead_code,
-        reason = "applied by the paragraph-aware subsystem, which is not built yet"
-    )]
+    /// Read by [`TypographyEngine::check_paragraph`] rather than by the
+    /// stateless [`check`](TypographyEngine::check) — a dialogue dash is
+    /// meaningless without knowing a paragraph just began.
     pub dialogue_dash: Option<char>,
 }
 
@@ -398,13 +394,28 @@ impl Default for SmartPunctuationFlags {
 /// A fired substitution: how much of the tail to replace, and with what.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Fired {
-    /// How many **characters** at the end of the inspected text to remove.
+    /// How many **characters** back from the caret the substitution reaches.
+    ///
+    /// With [`prepend`](Self::prepend) false this is the count of tail
+    /// characters *replaced* by `replacement`; with it true this is the offset
+    /// back to the point `replacement` is *inserted* at, and no characters are
+    /// removed.
     pub replace_chars: usize,
-    /// What replaces them.
+    /// What replaces (or is inserted at) the span.
     pub replacement: String,
     /// Exactly the characters removed, so a backspace-revert can put the
-    /// writer's own keystrokes back rather than a reconstruction of them.
+    /// writer's own keystrokes back rather than a reconstruction of them. Empty
+    /// for a [`prepend`](Self::prepend), which removes nothing.
     pub typed: String,
+    /// Insert `replacement` at `caret - replace_chars` **without deleting** the
+    /// span between, leaving the caret where the writer left it.
+    ///
+    /// This is how Spanish's `¿` is applied: the mark belongs at the clause
+    /// start, which can be most of a line back, but the surrounding clause must
+    /// be left byte-for-byte intact — a tail *replace* that rewrote the clause
+    /// as a plain string would flatten any bold/italic run inside it. The caller
+    /// inserts the one mark and restores the caret to the end.
+    pub prepend: bool,
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -493,6 +504,9 @@ pub struct TypographyEngine {
     locale: String,
     flags: SmartPunctuationFlags,
     quotes: QuoteSystem,
+    /// Whether to set a narrow no-break space inside guillemets (French). Cached
+    /// from the locale so the per-keystroke quote path is a field read.
+    guillemet_spacing: bool,
 }
 
 impl Default for TypographyEngine {
@@ -517,6 +531,7 @@ impl TypographyEngine {
             locale: locale.to_string(),
             flags,
             quotes,
+            guillemet_spacing: uses_guillemet_inner_spacing(locale),
         }
     }
 
@@ -602,12 +617,14 @@ impl TypographyEngine {
         // ── Quotes and the apostrophe ────────────────────────────────────────
         if self.flags.quotes {
             if last == '"' {
-                let glyph = if self.opens_here(before) {
+                // The char before the `"` is the one before `last` in `before`.
+                let prev = before.chars().rev().nth(1);
+                let glyph = if opens_after(prev) {
                     self.quotes.open()
                 } else {
                     self.quotes.close()
                 };
-                return Some(fired(1, glyph.to_string(), "\""));
+                return Some(fired(1, self.spaced_quote(glyph), "\""));
             }
             if last == '\'' {
                 // Always the right single quote: in running prose an ASCII
@@ -656,23 +673,23 @@ impl TypographyEngine {
         {
             let start = clause_start(&chars[..chars.len() - 1]);
             let clause: String = chars[start..].iter().collect();
-            // Already opened — the writer typed it, or this fired earlier in the
-            // same clause. Re-opening would stack `¿¿`.
-            if clause.starts_with(opening) {
+            // Already opened — the writer typed the mark somewhere in this
+            // clause, or a prior fire did. `contains`, not `starts_with`: a `¿`
+            // the writer placed mid-clause (`Es ¿que?`) is just as much an
+            // existing mark, and prepending a second would stack `¿Es ¿que?`.
+            if clause.contains(opening) {
                 return None;
             }
             // An empty clause is a bare `?` with nothing to ask; leave it.
             if clause.chars().count() <= 1 {
                 return None;
             }
-            // ONE replacement spanning the whole clause, not an insertion at
-            // `start`: `replace_range` leaves the caret after the text it wrote,
-            // so inserting at a distant point would drag the caret back there
-            // mid-sentence. Rewriting the clause with the mark prepended leaves
-            // the caret after the `?`, where the writer left it — and is one
-            // undo entry rather than two.
-            let replace_chars = chars.len() - start;
-            return Some(fired(replace_chars, format!("{opening}{clause}"), &clause));
+            // INSERT the one mark at the clause start rather than rewriting the
+            // clause: a tail replace would re-emit the clause as a plain string
+            // and flatten any bold/italic run inside it. `prepend` leaves the
+            // surrounding text byte-for-byte intact and the caret at the `?`.
+            let offset_back = chars.len() - start;
+            return Some(fired_prepend(offset_back, opening.to_string()));
         }
 
         // ── A quotation inside a quotation switches to the inner marks ────────
@@ -691,16 +708,9 @@ impl TypographyEngine {
         // their own key, not that a typed `"` silently becomes a `’`. Those
         // locales keep the stateless rule, which curls each `"` by context and
         // never touches depth. See [`nests_with_double_key`].
-        if self.flags.quotes && last == '"' && nests_with_double_key(self.ruleset.secondary_quotes)
-        {
+        if self.flags.quotes && last == '"' && self.can_nest() {
             let before_the_quote = &chars[..chars.len() - 1];
-            let opening = match before_the_quote.last() {
-                None => true,
-                Some(&prev) => {
-                    prev.is_whitespace()
-                        || matches!(prev, '(' | '[' | '{' | EM_DASH | EN_DASH | '-' | LAQUO)
-                }
-            };
+            let opening = opens_after(before_the_quote.last().copied());
             let depth = self.quote_depth(before_the_quote);
             let glyph = if opening {
                 // Alternate outer/inner by depth: primary at an even count of
@@ -710,10 +720,46 @@ impl TypographyEngine {
                 // Close the innermost open level — the one opened at `depth - 1`.
                 self.system_at(depth.saturating_sub(1)).close()
             };
-            return Some(fired(1, glyph.to_string(), "\""));
+            return Some(fired(1, self.spaced_quote(glyph), "\""));
         }
 
         None
+    }
+
+    /// A quote glyph as a string, wrapping a guillemet in its French inner
+    /// no-break space (`«` → `«\u{202F}`, `»` → `\u{202F}»`) where the locale
+    /// calls for it. Every other glyph, and every non-French locale, is
+    /// untouched.
+    fn spaced_quote(&self, glyph: char) -> String {
+        if self.guillemet_spacing && glyph == LAQUO {
+            format!("{LAQUO}{NNBSP}")
+        } else if self.guillemet_spacing && glyph == RAQUO {
+            format!("{NNBSP}{RAQUO}")
+        } else {
+            glyph.to_string()
+        }
+    }
+
+    /// Whether this engine may switch quote marks by nesting depth.
+    ///
+    /// Requires the locale's inner mark to be double-width
+    /// ([`nests_with_double_key`]) **and** the four glyphs in play — the
+    /// effective primary's open/close and the secondary's open/close — to be
+    /// all distinct, so [`quote_depth`](Self::quote_depth) can tell an open from
+    /// a close by glyph alone. A house-style override can break that
+    /// distinctness (Low-high on French makes the primary's close `“` collide
+    /// with the secondary's open `“`); when it does, nesting is declined and the
+    /// stateless rule handles `"` with the effective primary, which is safe.
+    fn can_nest(&self) -> bool {
+        let sec = self.ruleset.secondary_quotes;
+        if !nests_with_double_key(sec) {
+            return false;
+        }
+        let pri = self.quotes;
+        let g = [pri.open(), pri.close(), sec.open(), sec.close()];
+        g.iter()
+            .enumerate()
+            .all(|(i, a)| g[i + 1..].iter().all(|b| a != b))
     }
 
     /// Which quote system applies at nesting `depth` — the effective primary
@@ -732,9 +778,16 @@ impl TypographyEngine {
     ///
     /// Counts this locale's four quote glyphs: an opening mark deepens, a
     /// closing mark surfaces (saturating at 0, so a stray close cannot drive it
-    /// negative). Sound only because it is called exclusively for locales whose
-    /// glyphs are all distinct and none is the apostrophe — the whole point of
-    /// the [`nests_with_double_key`] gate.
+    /// negative). Sound only because [`can_nest`](Self::can_nest) guarantees the
+    /// four are distinct and none is the apostrophe.
+    ///
+    /// `before` is bounded to the current paragraph by the caller, so depth
+    /// counts from the paragraph start, not the document's. That is deliberate:
+    /// a French or Spanish quotation running across paragraphs re-opens each
+    /// paragraph with the outer mark by convention, which is exactly what a
+    /// per-paragraph reset produces. Nested depth is not carried across a
+    /// paragraph break — the cost of the cheap, paragraph-local read, and
+    /// correct for the common single-level case.
     fn quote_depth(&self, before: &[char]) -> usize {
         let pri = self.quotes;
         let sec = self.ruleset.secondary_quotes;
@@ -748,24 +801,29 @@ impl TypographyEngine {
         }
         depth
     }
+}
 
-    /// Whether a `"` at the end of `before` opens rather than closes.
-    ///
-    /// Opens at the very start of the text, and after whitespace or an opening
-    /// bracket or dash; closes otherwise. For a [`QuoteSystem::Symmetric`]
-    /// locale the answer changes nothing — both ends are the same glyph — which
-    /// is exactly why Swedish needs no special case anywhere else.
-    fn opens_here(&self, before: &str) -> bool {
-        let mut chars = before.chars().rev();
-        let _quote = chars.next();
-        match chars.next() {
-            None => true,
-            Some(prev) => {
-                prev.is_whitespace()
-                    || matches!(prev, '(' | '[' | '{' | EM_DASH | EN_DASH | '-' | LAQUO)
-            }
+/// Whether a quotation *opens* after `prev` (the character immediately before
+/// the `"`): at the very start, or after whitespace, an opening bracket, or a
+/// dash. The single source of truth for both the stateless and the nested quote
+/// paths, which must agree on it.
+fn opens_after(prev: Option<char>) -> bool {
+    match prev {
+        None => true,
+        Some(c) => {
+            c.is_whitespace() || matches!(c, '(' | '[' | '{' | EM_DASH | EN_DASH | '-' | LAQUO)
         }
     }
+}
+
+/// Whether the locale sets a thin no-break space inside its guillemets —
+/// `« mot »` rather than `«mot»`. French practice (and Swiss French); no other
+/// guillemet locale does it, so this is keyed on the French language subtag.
+fn uses_guillemet_inner_spacing(tag: &str) -> bool {
+    tag.split(['-', '_'])
+        .next()
+        .unwrap_or("")
+        .eq_ignore_ascii_case("fr")
 }
 
 /// Whether typing `"` inside a quotation should switch to `secondary` — i.e.
@@ -791,6 +849,18 @@ fn fired(replace_chars: usize, replacement: String, typed: &str) -> Fired {
         replace_chars,
         replacement,
         typed: typed.to_string(),
+        prepend: false,
+    }
+}
+
+/// A substitution that *inserts* `mark` at `offset_back` characters before the
+/// caret, removing nothing — see [`Fired::prepend`].
+fn fired_prepend(offset_back: usize, mark: String) -> Fired {
+    Fired {
+        replace_chars: offset_back,
+        replacement: mark,
+        typed: String::new(),
+        prepend: true,
     }
 }
 
@@ -963,7 +1033,40 @@ mod tests {
     #[test]
     fn french_opens_with_a_guillemet() {
         let f = french().check("il dit \"").expect("fires");
-        assert_eq!(f.replacement, "«");
+        // French sets a narrow no-break space inside its guillemets: « mot ».
+        assert_eq!(f.replacement, "\u{00AB}\u{202F}");
+    }
+
+    /// The other guillemet locales do NOT take the French inner space.
+    #[test]
+    fn non_french_guillemets_have_no_inner_space() {
+        for tag in ["es-ES", "it-IT", "pt-PT", "ru-RU", "ca"] {
+            let e = TypographyEngine::new(tag, SmartPunctuationFlags::default());
+            let f = e.check("dice \"").expect("fires");
+            assert_eq!(f.replacement, "\u{00AB}", "{tag} must not add a space");
+        }
+    }
+
+    /// A Low-high house style on French makes the primary's closing glyph `“`
+    /// collide with the secondary's opening glyph `“`, so nesting is declined
+    /// (rather than miscounting depth) and `"` falls back to the override
+    /// primary via the stateless rule.
+    #[test]
+    fn a_low_high_override_on_french_declines_nesting() {
+        let e = TypographyEngine::new(
+            "fr-FR",
+            SmartPunctuationFlags {
+                quote_style: QuoteStyle::LowHigh,
+                ..SmartPunctuationFlags::default()
+            },
+        );
+        // Even inside an open low-high quote, `check_paragraph` returns None —
+        // it will not risk a depth count over colliding glyphs.
+        assert!(e.check_paragraph("\u{201E}mot \"").is_none());
+        // So the stateless rule opens/closes with the low-high pair, never the
+        // curly-double secondary.
+        assert_eq!(e.check("il dit \"").expect("open").replacement, "\u{201E}");
+        assert_eq!(e.check("mot\"").expect("close").replacement, "\u{201C}");
     }
 
     /// The text handed to `check` ends at the character just typed — so the

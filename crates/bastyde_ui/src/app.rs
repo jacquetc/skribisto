@@ -1039,20 +1039,29 @@ impl Widget for App {
             // Both tiers are observed. The app-level ones matter even while a
             // project holds the override: it can be dropped at any moment, and
             // the flags it falls back to have to be current when it is.
+            //
+            // This list MUST name every signal `punctuation_flags` reads, on
+            // both tiers — a flag observed here but not read there is harmless,
+            // but one read there and not observed here silently fails to
+            // propagate (that is exactly how `dialogue_marker` was inert until a
+            // second setting changed). The bool signals of each tier:
             for signal in [
                 smart_punctuation.override_app_default(),
                 smart_punctuation.dashes(),
                 smart_punctuation.ellipsis(),
                 smart_punctuation.quotes(),
                 smart_punctuation.pre_punctuation_spacing(),
+                smart_punctuation.dialogue_marker(),
                 settings.punct_dashes(),
                 settings.punct_ellipsis(),
                 settings.punct_quotes(),
                 settings.punct_spacing(),
+                settings.punct_dialogue(),
             ] {
                 let push = push.clone();
                 ctx.effect(&signal, move |_| push());
             }
+            // …and the quote-style enum on each tier, which is a different type.
             for signal in [
                 smart_punctuation.quote_style(),
                 settings.punct_quote_style(),
