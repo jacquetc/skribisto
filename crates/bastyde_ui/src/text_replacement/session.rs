@@ -125,7 +125,16 @@ pub struct TextReplacementSession {
     /// rewritten under a guess.
     punctuation: RefCell<Option<SmartPunctuationFlags>>,
     /// The `(flags, locale)` the typography engine was compiled from.
-    compiled_punctuation: RefCell<Option<(SmartPunctuationFlags, String)>>,
+    ///
+    /// The **locale is always part of the key**, even when the flags are still
+    /// `None`. It has to be: a paragraph rule that gates on the language rather
+    /// than on a flag — Spanish's `¿`, Arabic's mirrored marks — fires from an
+    /// engine built with only the locale, so a locale change while the flags are
+    /// unresolved must still force a rebuild. A key that dropped the locale
+    /// alongside the flags left the engine pinned to whatever locale it was
+    /// first built with (`""`), and Spanish never fired in a project whose
+    /// punctuation row had not yet loaded when its language was set.
+    compiled_punctuation: RefCell<Option<(Option<SmartPunctuationFlags>, String)>>,
     pending: RefCell<Option<PendingRevert>>,
     suppressed: RefCell<Option<Suppressed>>,
     /// Caret position at the previous tick; `None` until the first one.
@@ -275,15 +284,18 @@ impl TextReplacementSession {
     fn refresh_typography(&self) {
         let flags = self.punctuation.borrow().clone();
         let locale = self.locale.borrow().clone();
-        let wanted = flags.clone().map(|f| (f, locale.clone()));
-        if *self.compiled_punctuation.borrow() == wanted {
+        // The locale is in the key unconditionally — see the field's own note
+        // for why collapsing it into the flags was a bug.
+        let wanted = (flags.clone(), locale.clone());
+        if self.compiled_punctuation.borrow().as_ref() == Some(&wanted) {
             return;
         }
-        *self.compiled_punctuation.borrow_mut() = wanted;
+        *self.compiled_punctuation.borrow_mut() = Some(wanted);
         *self.typography.borrow_mut() = match flags {
             Some(flags) => TypographyEngine::new(&locale, flags),
-            // Not resolved: an engine with every rule off, so the per-keystroke
-            // path stays one call rather than a branch on an Option.
+            // Not resolved: an engine with every rule off — but built with the
+            // real locale, so a language-only rule (Spanish's `¿`, Arabic's
+            // marks) still fires while the flags are pending.
             None => TypographyEngine::new(&locale, SmartPunctuationFlags::all_off()),
         };
     }
@@ -294,6 +306,14 @@ impl TextReplacementSession {
     #[cfg(test)]
     pub fn vm_for_test(&self) -> &TextReplacementRulesViewModel {
         &self.vm
+    }
+
+    /// The locale the session currently holds — the one the next tick compiles
+    /// the engines against. Test-only, for pinning that a language pushed
+    /// through the open-docs store actually reaches here.
+    #[cfg(test)]
+    pub fn locale_for_test(&self) -> String {
+        self.locale.borrow().clone()
     }
 
     /// Recompile the engine when the lexicon, the project's master switch, or
@@ -1085,6 +1105,44 @@ mod live_editor_tests {
             type_text(&handle, &doc, &session, "Que tal?");
             assert_eq!(plain(&doc), "Que tal?", "{locale} must not invert");
         }
+    }
+
+    /// **The bug this pins.** The order the real app pushes state in is: the
+    /// document's language first, its punctuation flags later (they come from a
+    /// row that loads asynchronously). Between the two, the session's flags are
+    /// `None` — and Spanish's `¿` does not need them, only the locale. A cache
+    /// key that dropped the locale while the flags were `None` left the engine
+    /// pinned to locale `""`, so `¿` never fired in exactly this window.
+    #[test]
+    fn spanish_fires_when_the_language_arrives_before_the_flags() {
+        let (doc, handle, session, _tree) = editor("");
+        // Language known; flags NOT yet resolved — `set_punctuation` never
+        // called, so `punctuation` is `None`.
+        session.set_locale("es-ES");
+        type_text(&handle, &doc, &session, "Hola?");
+        assert_eq!(
+            plain(&doc),
+            "\u{00BF}Hola?",
+            "the opening mark must fire on the locale alone, before any flags load"
+        );
+    }
+
+    /// And a language *change* while the flags stay unresolved must re-reach the
+    /// engine — the same key bug, in its other guise.
+    #[test]
+    fn a_language_change_reaches_the_engine_with_no_flags_set() {
+        let (doc, handle, session, _tree) = editor("");
+        session.set_locale("en-US");
+        type_text(&handle, &doc, &session, "Hola?");
+        assert_eq!(plain(&doc), "Hola?", "English does not invert");
+
+        session.set_locale("es-ES");
+        type_text(&handle, &doc, &session, " Que?");
+        assert!(
+            plain(&doc).ends_with("\u{00BF}Que?"),
+            "the switch to Spanish must take effect, got {:?}",
+            plain(&doc)
+        );
     }
 
     /// The dialogue dash opens a paragraph typed as `- `.

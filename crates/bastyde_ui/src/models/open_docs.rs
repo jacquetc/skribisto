@@ -1041,6 +1041,48 @@ mod tests {
         );
     }
 
+    /// A language pushed at a document reaches its replace-while-typing session.
+    ///
+    /// This is the last link in "I set the project to Spanish and `¿` did not
+    /// fire": the session-level tests prove a session *with* an `es` locale
+    /// fires Spanish, and `language_for` resolution is proven above, but nothing
+    /// pinned that `set_replacement_locale` — the call `attach_all` makes after a
+    /// language change — actually reaches the session. It does.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn a_pushed_language_reaches_the_replacement_session() {
+        use crate::app_ids::AppIds;
+        use crate::models::TextReplacementRuleListModel;
+        use crate::singles::SingleWork;
+        use crate::view_models::TextReplacementRulesViewModel;
+
+        let ctx = Rc::new(AppContext::new());
+        let doc = Rc::new(OpenDoc::build(
+            &ctx,
+            1,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            Signal::new(0),
+        ));
+
+        let work = SingleWork::new(ctx.clone());
+        let vm = TextReplacementRulesViewModel::new(
+            TextReplacementRuleListModel::new(ctx),
+            work,
+            AppIds::new(),
+        );
+        doc.attach_replacements(&vm);
+        doc.set_replacement_locale(&["es-ES".to_string()]);
+
+        let session = doc.replacement_main().expect("a scene has a main session");
+        assert_eq!(
+            session.locale_for_test(),
+            "es-ES",
+            "the locale the store pushes must land on the session the editor drives"
+        );
+    }
+
     /// The store's document is a live, shareable resource **independent of any
     /// `TabWidget`**: two handles to one `OpenDoc`'s main text are the *same* live
     /// document (an edit in one is seen by the other). This is the exact mechanism
