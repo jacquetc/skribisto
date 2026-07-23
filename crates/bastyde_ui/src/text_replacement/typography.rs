@@ -80,14 +80,10 @@ pub struct TypographyRuleset {
     pub primary_quotes: QuoteSystem,
     /// Quotation marks *inside* an existing quotation.
     ///
-    /// Not yet consulted by a rule — nesting depth is paragraph state, not tail
-    /// state — but recorded per locale because the data is the hard part to get
-    /// right and Russian inverts what Polish does, so a later reader must not
-    /// guess it from the primary pair.
-    #[allow(
-        dead_code,
-        reason = "recorded per locale ahead of the nesting rule that will read it — see the doc comment"
-    )]
+    /// Consulted by the nesting rule in [`TypographyEngine::check_paragraph`],
+    /// but only where it is double-width (see [`nests_with_double_key`]);
+    /// recorded for every locale regardless, because Russian inverts what Polish
+    /// does and a later reader must not guess it from the primary pair.
     pub secondary_quotes: QuoteSystem,
     /// Punctuation that takes a space *before* it, and which space character.
     ///
@@ -679,7 +675,78 @@ impl TypographyEngine {
             return Some(fired(replace_chars, format!("{opening}{clause}"), &clause));
         }
 
+        // ── A quotation inside a quotation switches to the inner marks ────────
+        //
+        // The paragraph state the stateless quote rule cannot see: how deeply
+        // nested this `"` is. French opens with `«` at the top level and `“`
+        // inside one; Russian opens `«` then `„`. The writer types `"` for both,
+        // and the depth decides which mark it becomes.
+        //
+        // Only for locales whose *secondary* quotes are double-width — the
+        // guillemet family. Where the inner mark is a single curly quote
+        // (English `‘…’`, Dutch, Swedish) two things rule this out: the closing
+        // single quote is the apostrophe glyph, so counting depth from the
+        // paragraph would be corrupted by every elision and possessive; and the
+        // convention there is that the writer chooses double vs single with
+        // their own key, not that a typed `"` silently becomes a `’`. Those
+        // locales keep the stateless rule, which curls each `"` by context and
+        // never touches depth. See [`nests_with_double_key`].
+        if self.flags.quotes && last == '"' && nests_with_double_key(self.ruleset.secondary_quotes)
+        {
+            let before_the_quote = &chars[..chars.len() - 1];
+            let opening = match before_the_quote.last() {
+                None => true,
+                Some(&prev) => {
+                    prev.is_whitespace()
+                        || matches!(prev, '(' | '[' | '{' | EM_DASH | EN_DASH | '-' | LAQUO)
+                }
+            };
+            let depth = self.quote_depth(before_the_quote);
+            let glyph = if opening {
+                // Alternate outer/inner by depth: primary at an even count of
+                // open quotations, secondary at an odd one.
+                self.system_at(depth).open()
+            } else {
+                // Close the innermost open level — the one opened at `depth - 1`.
+                self.system_at(depth.saturating_sub(1)).close()
+            };
+            return Some(fired(1, glyph.to_string(), "\""));
+        }
+
         None
+    }
+
+    /// Which quote system applies at nesting `depth` — the effective primary
+    /// (house-style aware) at an even depth, the locale's secondary at an odd
+    /// one, alternating for deeper nesting the way every word processor does.
+    fn system_at(&self, depth: usize) -> QuoteSystem {
+        if depth.is_multiple_of(2) {
+            self.quotes
+        } else {
+            self.ruleset.secondary_quotes
+        }
+    }
+
+    /// How many quotations are open at the end of `before` — the nesting depth a
+    /// newly-typed `"` sits at.
+    ///
+    /// Counts this locale's four quote glyphs: an opening mark deepens, a
+    /// closing mark surfaces (saturating at 0, so a stray close cannot drive it
+    /// negative). Sound only because it is called exclusively for locales whose
+    /// glyphs are all distinct and none is the apostrophe — the whole point of
+    /// the [`nests_with_double_key`] gate.
+    fn quote_depth(&self, before: &[char]) -> usize {
+        let pri = self.quotes;
+        let sec = self.ruleset.secondary_quotes;
+        let mut depth: usize = 0;
+        for &c in before {
+            if c == pri.open() || c == sec.open() {
+                depth += 1;
+            } else if c == pri.close() || c == sec.close() {
+                depth = depth.saturating_sub(1);
+            }
+        }
+        depth
     }
 
     /// Whether a `"` at the end of `before` opens rather than closes.
@@ -699,6 +766,24 @@ impl TypographyEngine {
             }
         }
     }
+}
+
+/// Whether typing `"` inside a quotation should switch to `secondary` — i.e.
+/// whether the locale's inner marks are double-width and so reached by the same
+/// key as the outer ones.
+///
+/// True for the guillemet family, whose inner mark is a curly double `“…”` or a
+/// low-high double `„…“`; false where the inner mark is a single curly quote
+/// (`‘…’`), which the writer types with `'` and whose closing glyph is the
+/// apostrophe — the two reasons nesting is unsafe there, spelled out at the call
+/// site.
+fn nests_with_double_key(secondary: QuoteSystem) -> bool {
+    matches!(secondary, QuoteSystem::Paired { open, .. } if is_double_width_open(open))
+}
+
+/// Whether `c` is an opening quotation mark a writer reaches by typing `"`.
+fn is_double_width_open(c: char) -> bool {
+    matches!(c, LEFT_DOUBLE | LOW_DOUBLE | LAQUO)
 }
 
 fn fired(replace_chars: usize, replacement: String, typed: &str) -> Fired {
@@ -773,6 +858,26 @@ mod tests {
         let ru = ruleset_for("ru");
         assert_eq!(ru.primary_quotes, PAIR_GUILLEMET);
         assert_eq!(ru.secondary_quotes, PAIR_LOW_HIGH);
+    }
+
+    /// The design boundary of the nesting rule, stated as data: exactly the
+    /// locales whose *inner* quotation mark is double-width nest from a typed
+    /// `"`. The rest keep their single-curly inner mark on the `'` key, where
+    /// swapping it automatically would collide with the apostrophe.
+    #[test]
+    fn only_double_width_secondaries_nest_from_the_double_key() {
+        for tag in ["fr", "ru", "es", "it", "pt", "ca", "ar"] {
+            assert!(
+                nests_with_double_key(ruleset_for(tag).secondary_quotes),
+                "{tag} has a double-width inner mark and should nest"
+            );
+        }
+        for tag in ["en", "de", "de-CH", "pl", "nl", "pt-BR", "sv", "tr"] {
+            assert!(
+                !nests_with_double_key(ruleset_for(tag).secondary_quotes),
+                "{tag}'s inner mark is single/symmetric and must NOT nest from `\\\"`"
+            );
+        }
     }
 
     /// The case that breaks a naive open/close toggle.

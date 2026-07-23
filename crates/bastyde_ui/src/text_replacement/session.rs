@@ -1198,6 +1198,69 @@ mod live_editor_tests {
         assert_eq!(plain(&doc), "- ");
     }
 
+    // ── Nested quotes ────────────────────────────────────────────────────────
+
+    fn quotes_for(session: &TextReplacementSession, locale: &str) {
+        session.set_locale(locale);
+        session.set_punctuation(Some(SmartPunctuationFlags::default()));
+    }
+
+    /// French switches to curly doubles inside its guillemets, and the writer
+    /// types `"` for every level.
+    #[test]
+    fn french_quotes_nest_from_guillemets_to_curly_doubles() {
+        let (doc, handle, session, _tree) = editor("");
+        quotes_for(&session, "fr-FR");
+        type_text(&handle, &doc, &session, "\"a \"b\" c\"");
+        assert_eq!(plain(&doc), "\u{00AB}a \u{201C}b\u{201D} c\u{00BB}");
+    }
+
+    /// Russian nests guillemets into low-high doubles — a different inner mark,
+    /// proving the rule reads the locale's own secondary rather than a constant.
+    #[test]
+    fn russian_quotes_nest_from_guillemets_to_low_high() {
+        let (doc, handle, session, _tree) = editor("");
+        quotes_for(&session, "ru-RU");
+        type_text(&handle, &doc, &session, "\"a \"b\" c\"");
+        assert_eq!(plain(&doc), "\u{00AB}a \u{201E}b\u{201C} c\u{00BB}");
+    }
+
+    /// Three levels deep, the marks alternate back to the outer style — the
+    /// same as every word processor.
+    #[test]
+    fn a_third_level_alternates_back_to_the_primary() {
+        let (doc, handle, session, _tree) = editor("");
+        quotes_for(&session, "fr-FR");
+        type_text(&handle, &doc, &session, "\"a \"b \"c\"");
+        // « then “ then « again at depth 2.
+        assert_eq!(plain(&doc), "\u{00AB}a \u{201C}b \u{00AB}c\u{00BB}");
+    }
+
+    /// **The reason nesting is gated on double-width secondaries.** English's
+    /// inner mark is a single curly quote, which the writer reaches with `'`,
+    /// not `"`. Typing `"` inside a quote must stay a double, curled by context
+    /// — exactly what Word does — not silently turn into a `’`.
+    #[test]
+    fn english_quotes_do_not_switch_to_single_when_nested() {
+        let (doc, handle, session, _tree) = editor("");
+        quotes_for(&session, "en-US");
+        type_text(&handle, &doc, &session, "\"a \"b\" c\"");
+        assert_eq!(plain(&doc), "\u{201C}a \u{201C}b\u{201D} c\u{201D}");
+    }
+
+    /// And the apostrophe hazard the gate exists to avoid: an elision inside a
+    /// French quotation must not be counted as a closing mark and throw the
+    /// depth off. `l'ami` carries an apostrophe; the closing `"` must still land
+    /// on the guillemet.
+    #[test]
+    fn an_apostrophe_inside_a_quote_does_not_corrupt_the_depth() {
+        let (doc, handle, session, _tree) = editor("");
+        quotes_for(&session, "fr-FR");
+        type_text(&handle, &doc, &session, "\"l'ami\"");
+        // « … » — the apostrophe curled to ’, and the close is still a guillemet.
+        assert_eq!(plain(&doc), "\u{00AB}l\u{2019}ami\u{00BB}");
+    }
+
     /// With the project's master switch off, nothing expands at all.
     #[test]
     fn the_master_switch_off_disables_every_rule() {
