@@ -26,17 +26,17 @@ use crate::view_models::{
     MentionIndex, ProgressRecorder, SaveAsViewModel,
 };
 
+/// One row of a long-operation dispatch table: which event, and what to run on
+/// the view-model when it arrives.
+type LongOpHandler<V> = (LongOperationEvent, fn(&V, &mut EventContext, &Event));
+
 /// Subscribe `vm` to each `(event, handler)` pair.
 ///
 /// The handlers are plain `fn` pointers rather than closures: every call site is a
 /// non-capturing `|v, c, e| v.some_method(c, e)`, which coerces, and requiring that keeps
 /// the table honest — a handler cannot quietly capture extra state and become something
 /// other than "forward this event to the view-model".
-fn route<V: Clone + 'static>(
-    ctx: &mut BuildContext,
-    vm: &V,
-    handlers: &[(LongOperationEvent, fn(&V, &mut EventContext, &Event))],
-) {
+fn route<V: Clone + 'static>(ctx: &mut BuildContext, vm: &V, handlers: &[LongOpHandler<V>]) {
     for (event, handler) in handlers {
         let vm = vm.clone();
         let handler = *handler;
@@ -107,9 +107,10 @@ pub(in crate::app) fn install(
         ctx,
         save_as_vm,
         &[
-            (LongOperationEvent::Completed, |v: &SaveAsViewModel, c, e| {
-                v.on_long_op_completed(c, e)
-            }),
+            (
+                LongOperationEvent::Completed,
+                |v: &SaveAsViewModel, c, e| v.on_long_op_completed(c, e),
+            ),
             (LongOperationEvent::Failed, |v, c, e| {
                 v.on_long_op_failed(c, e)
             }),

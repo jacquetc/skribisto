@@ -24,11 +24,11 @@ use crate::ScanMentionsDto;
 use crate::dtos::{MentionEntity, MentionHit, MentionHits, MentionTable};
 use anyhow::{Result, anyhow};
 use common::database::QueryUnitOfWork;
-use common::entities::{Binder, BinderItem, BinderTag, Content, ContentRole, Work};
-use common::long_operation::{LongOperation, OperationProgress};
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
+use common::entities::{Binder, BinderItem, BinderTag, Content, ContentRole, Work};
+use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
 use skrib_format::{TreeReader, gather};
 use skribisto_model::language;
@@ -212,7 +212,11 @@ fn run_scan(
             let locale = FoldLocale::from_tag(language::primary(
                 lang.get(&owner.id).map(Vec::as_slice).unwrap_or_default(),
             ));
-            for c in iwc.contents.iter().filter(|c| c.activated && is_prose(&c.role)) {
+            for c in iwc
+                .contents
+                .iter()
+                .filter(|c| c.activated && is_prose(&c.role))
+            {
                 if c.data.is_empty() {
                     continue;
                 }
@@ -226,7 +230,7 @@ fn run_scan(
                         continue;
                     }
                     let entity = table.iter().find(|e| e.id == h.entity_id);
-                    let entry = rows.entry((owner.id, h.entity_id)).or_insert_with(Row::default);
+                    let entry = rows.entry((owner.id, h.entity_id)).or_default();
                     entry.hit_count += 1;
                     // Keep the first hit's evidence and name: cut once, here, where the
                     // prose is already in hand. Nothing downstream has access to another
@@ -256,7 +260,7 @@ fn run_scan(
                 if !titles.contains_key(target) {
                     continue;
                 }
-                rows.entry((owner.id, *target)).or_insert_with(Row::default).is_confirmed = true;
+                rows.entry((owner.id, *target)).or_default().is_confirmed = true;
             }
         }
     }
@@ -279,7 +283,7 @@ fn run_scan(
         })
         .collect();
     // Deterministic order so the UI does not reshuffle between identical scans.
-    hits.sort_by(|a, b| key_of(a).cmp(&key_of(b)));
+    hits.sort_by_key(key_of);
 
     // The table rides back with the hits so the UI can rescan the focused item's own prose
     // against exactly the same names, live, without a second full pass.

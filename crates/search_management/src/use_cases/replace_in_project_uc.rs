@@ -249,7 +249,7 @@ impl ReplaceInProjectUseCase {
                         continue;
                     }
                     let rewritten =
-                        crate::matching::replace_all(&current, &search.query, opts, &case_of);
+                        crate::matching::replace_all(&current, &search.query, opts, case_of);
                     match row.match_field {
                         MatchField::Title => item.title = rewritten,
                         _ => item.label = rewritten,

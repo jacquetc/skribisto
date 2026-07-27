@@ -35,6 +35,8 @@ use direct_access::binder_item::binder_item_controller;
 use direct_access::binder_item::dtos::CreateBinderItemDto;
 use direct_access::root::dtos::CreateRootDto;
 use direct_access::root::root_controller;
+use direct_access::smart_punctuation::dtos::CreateSmartPunctuationDto;
+use direct_access::smart_punctuation::smart_punctuation_controller;
 use direct_access::work::dtos::CreateWorkDto;
 use direct_access::work::work_controller;
 
@@ -63,12 +65,28 @@ impl Ctx {
     /// `new_work_uc.rs`). This is the only way to get two Works open at once
     /// today, which is exactly the state this bug needs.
     fn new_project(&mut self) -> (EntityId, EntityId) {
+        // `smart_punctuation` is a one_to_one strong FK on `Work`, seeded at
+        // create time (see `new_work_uc.rs`): two Works can never legally
+        // share a punctuation row, so `CreateWorkDto::default()` (which
+        // defaults the field to the placeholder id `0`) would make this
+        // helper's *second* call collide under the generated uniqueness
+        // check the moment two projects are open at once — exactly the
+        // scenario this test file exists to exercise.
+        let smart_punctuation_id = smart_punctuation_controller::create_orphan(
+            &self.db,
+            &self.hub,
+            &mut self.undo,
+            None,
+            &CreateSmartPunctuationDto::default(),
+        )
+        .expect("smart_punctuation")
+        .id;
         let work_id = work_controller::create(
             &self.db,
             &self.hub,
             &mut self.undo,
             None,
-            &CreateWorkDto::default(),
+            &CreateWorkDto { smart_punctuation: smart_punctuation_id, ..Default::default() },
             self.root_id,
             -1,
         )

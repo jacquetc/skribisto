@@ -87,7 +87,7 @@ fn item(
             // if every fixture row carried the same vector. Odd ids stay empty to cover
             // the absent case, and one entry is multi-word because that is the whole
             // point of `Vec<String>` over a space-separated field.
-            aliases: if id % 2 == 0 {
+            aliases: if id.is_multiple_of(2) {
                 vec![format!("Alias{id}"), format!("Miss Bennet {id}")]
             } else {
                 Vec::new()
@@ -116,8 +116,13 @@ fn sample_bundle() -> WorkBundle {
         unique_id: "the-lighthouse-uid".into(),
         // Non-default so the round-trip actually exercises chapter_mode persistence.
         chapter_mode: common::entities::ChapterMode::Flat,
+        custom_replacement_rules_enabled: false,
         tags: vec![10, 11],
         dict_words: vec![20],
+        text_replacement_rules: vec![],
+        // Non-default too, and for the same reason as chapter_mode above: an
+        // all-default row would round-trip equal even if the field were dropped.
+        smart_punctuation: 30,
         binders: vec![100, 101],
         trash_infos: vec![],
         paces: vec![],
@@ -240,6 +245,19 @@ fn sample_bundle() -> WorkBundle {
         &work,
         &tags,
         &dict_words,
+        &[],
+        Some(&common::entities::SmartPunctuation {
+            id: 30,
+            created_at: ts(),
+            updated_at: ts(),
+            override_app_default: true,
+            dashes: true,
+            ellipsis: true,
+            quotes: true,
+            quote_style: common::entities::QuoteStyle::Guillemets,
+            pre_punctuation_spacing: true,
+            dialogue_marker: true,
+        }),
         &trash,
         &[],
         &[],
@@ -284,6 +302,10 @@ struct Norm {
     author: String,
     lang: Vec<String>,
     unique_id: String,
+    /// Compared, not merely set: `sample_bundle` deliberately uses the non-default
+    /// `Flat`, but for as long as this field was missing from the projection the
+    /// round trip silently reverted it to `Folder` and every test still passed.
+    chapter_flat: bool,
     tags: Vec<NormTag>,
     words: Vec<String>,
     binders: Vec<NormBinder>,
@@ -355,6 +377,7 @@ fn norm(b: &WorkBundle) -> Norm {
         author: b.manifest.work.author_name.clone(),
         lang: b.manifest.work.dict_language.clone(),
         unique_id: b.manifest.work.unique_id.clone(),
+        chapter_flat: b.manifest.work.chapter_flat,
         tags,
         words,
         binders,
@@ -524,6 +547,185 @@ fn legacy_load_preserves_word_and_char_count_goals() {
     );
 }
 
+/// The per-project replacement lexicon must survive the full store round-trip —
+/// written to a `.skrib`, loaded into the store (ids remapped), and saved back out —
+/// with every rule's trigger, replacement and enabled flag intact, and the Work's
+/// master switch with it.
+///
+/// Both halves are set to **non-default** values on purpose. A field that is never
+/// materialised out of the loaded bundle reads back as its `Default`, so a fixture
+/// left at the default would pass while the field was being silently dropped — which
+/// is exactly how `chapter_mode` went unnoticed (`sample_bundle` sets it to `Flat`,
+/// but `norm` never compares it, so nothing failed).
+#[test]
+fn text_replacement_rules_survive_a_save_load_round_trip() {
+    const T: &str = "2020-01-01T00:00:00+00:00";
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.custom_replacement_rules_enabled = true;
+    bundle.manifest.work.text_replacement_rule_ids = vec![600, 601];
+    bundle.text_replacement_rules = vec![
+        skrib::TextReplacementRuleFile {
+            file_id: 600,
+            created_at: T.into(),
+            updated_at: T.into(),
+            trigger: "btw".into(),
+            replacement: "by the way".into(),
+            enabled: true,
+        },
+        // Disabled on purpose: `enabled` is the one field whose loss would be
+        // invisible in the list but would silently start expanding a rule the
+        // writer switched off.
+        skrib::TextReplacementRuleFile {
+            file_id: 601,
+            created_at: T.into(),
+            updated_at: T.into(),
+            trigger: "teh".into(),
+            replacement: "the".into(),
+            enabled: false,
+        },
+    ];
+
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("WithReplacements");
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load bundle with replacement rules");
+
+    let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    assert!(
+        out.manifest.work.custom_replacement_rules_enabled,
+        "the per-project master switch must survive the round trip"
+    );
+    let mut rules: Vec<_> = out
+        .text_replacement_rules
+        .iter()
+        .map(|r| (r.trigger.clone(), r.replacement.clone(), r.enabled))
+        .collect();
+    rules.sort();
+    assert_eq!(
+        rules,
+        vec![
+            ("btw".to_string(), "by the way".to_string(), true),
+            ("teh".to_string(), "the".to_string(), false),
+        ],
+        "every rule must round-trip with its enabled flag"
+    );
+    assert_eq!(
+        out.manifest.work.text_replacement_rule_ids.len(),
+        2,
+        "the Work must still own both rules after the id remap"
+    );
+}
+
+/// The punctuation house style must survive the full store round-trip.
+///
+/// **Every flag is set to its non-default value on purpose.** `SmartPunctuation`
+/// derives `Default` with all-`false`/`LocaleDefault`, so a fixture left at its
+/// defaults would compare equal to a row that had been dropped entirely at any
+/// point in the chain — written, read, materialised, gathered, written again.
+/// That is precisely how `chapter_mode` was lost on every load for as long as
+/// flat chapters existed, and this test is shaped to make the same mistake
+/// impossible here.
+#[test]
+fn the_punctuation_house_style_survives_a_save_load_round_trip() {
+    const T: &str = "2020-01-01T00:00:00+00:00";
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.smart_punctuation = Some(skrib::SmartPunctuationFile {
+        created_at: T.into(),
+        updated_at: T.into(),
+        override_app_default: true,
+        dashes: true,
+        ellipsis: true,
+        quotes: true,
+        quote_style: "guillemets".into(),
+        pre_punctuation_spacing: true,
+        dialogue_marker: true,
+    });
+
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("WithPunctuation");
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load bundle with a punctuation house style");
+
+    let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    let sp = out
+        .manifest
+        .work
+        .smart_punctuation
+        .expect("the house style must still be there after the round trip");
+    assert!(sp.override_app_default, "the master switch must survive");
+    assert!(sp.dashes);
+    assert!(sp.ellipsis);
+    assert!(sp.quotes);
+    assert_eq!(
+        sp.quote_style, "guillemets",
+        "the house quote style must survive, not fall back to the locale default"
+    );
+    assert!(sp.pre_punctuation_spacing);
+    assert!(sp.dialogue_marker);
+}
+
+/// A project saved before the punctuation setting existed must load, and must come
+/// back as "never configured" rather than as "the writer switched everything off".
+///
+/// The distinction is the whole reason the field is an `Option` end to end: a Work
+/// whose `override_app_default` is false follows the application preference, which
+/// is what someone who has never opened the setting should get.
+#[test]
+fn a_project_without_a_punctuation_style_loads_and_follows_the_app_default() {
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.smart_punctuation = None;
+
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("NoPunctuation");
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("a bundle with no punctuation style must still load");
+
+    let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    // A row IS minted on load — the relationship is one-to-one, so it cannot be
+    // absent in the store — but it must be an inert one.
+    let sp = out
+        .manifest
+        .work
+        .smart_punctuation
+        .expect("the loader mints a row, because a one-to-one child cannot be absent");
+    assert!(
+        !sp.override_app_default,
+        "a pre-feature project must follow the app default, not adopt a house style"
+    );
+    assert!(!sp.dashes && !sp.ellipsis && !sp.quotes);
+    assert_eq!(sp.quote_style, "locale_default");
+}
+
 /// A per-Book Pace (with a Holiday and a Milestone) must survive the full store
 /// round-trip — written to a `.skrib`, loaded into the store (ids remapped), and saved
 /// back out — with its dates, weekday mask, children and weak back-links intact.
@@ -576,7 +778,11 @@ fn paces_survive_a_save_load_round_trip() {
     .expect("load bundle with a pace");
 
     let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
-    assert_eq!(out.paces.len(), 1, "the pace must round-trip through the store");
+    assert_eq!(
+        out.paces.len(),
+        1,
+        "the pace must round-trip through the store"
+    );
     let p = &out.paces[0];
     assert_eq!(p.weekday_mask, 31);
     assert!(p.active);
@@ -589,7 +795,10 @@ fn paces_survive_a_save_load_round_trip() {
     assert_eq!(p.milestones[0].label, "Act I done");
     assert_eq!(p.milestones[0].target_word_count, Some(20_000));
     // Weak back-links survive (ids are reassigned by the store, so just assert they resolve).
-    assert!(p.book_item.is_some(), "book_item must resolve after id remap");
+    assert!(
+        p.book_item.is_some(),
+        "book_item must resolve after id remap"
+    );
     assert!(
         p.milestones[0].target_item.is_some(),
         "milestone target_item must resolve after id remap"
@@ -637,12 +846,18 @@ fn progress_snapshots_survive_a_double_round_trip() {
     work_management_controller::load_work(
         &db1,
         &hub1,
-        &LoadWorkDto { file_name: a.to_str().unwrap().to_string() },
+        &LoadWorkDto {
+            file_name: a.to_str().unwrap().to_string(),
+        },
     )
     .unwrap();
     let b_path = dir.path().join("B");
     let bundle_b = store_to_bundle(&db1, &hub1, &b_path);
-    assert_eq!(bundle_b.progress_snapshots.len(), 2, "first save must keep both days");
+    assert_eq!(
+        bundle_b.progress_snapshots.len(),
+        2,
+        "first save must keep both days"
+    );
 
     // Cycle 2: load B (a *fresh* store + WorkInfo) → save → assert still intact.
     let db2 = DbContext::new().unwrap();
@@ -669,7 +884,10 @@ fn progress_snapshots_survive_a_double_round_trip() {
     assert_eq!(days[0].total_word_count, 1200);
     assert_eq!(days[0].total_char_count, Some(6800));
     assert_eq!(days[0].book_word_counts, vec![1200]);
-    assert!(days[0].book_item_ids.len() == 1, "the per-Book id must remap and survive");
+    assert!(
+        days[0].book_item_ids.len() == 1,
+        "the per-Book id must remap and survive"
+    );
     assert!(days[1].day.starts_with("2020-05-02"));
     assert_eq!(days[1].total_word_count, 1850);
     assert_eq!(days[1].total_char_count, None);
@@ -759,7 +977,12 @@ fn new_work_persists_the_author_to_the_manifest() {
         &db,
         &hub,
         &NewWorkDto {
-            file_name: dir.path().join("Authored.skrib").to_str().unwrap().to_string(),
+            file_name: dir
+                .path()
+                .join("Authored.skrib")
+                .to_str()
+                .unwrap()
+                .to_string(),
             is_folder: false,
             template_kind: NewWorkTemplate::Novel,
             labels: labels(),
@@ -906,7 +1129,8 @@ fn new_work_gives_every_binder_and_item_its_own_uid() {
     );
     let worst = seen.values().copied().max().unwrap_or(0);
     assert_eq!(
-        worst, 1,
+        worst,
+        1,
         "uids must be unique across a new project — {} distinct uid(s) cover {} rows, and one \
          uid is shared by {worst} of them",
         seen.len(),

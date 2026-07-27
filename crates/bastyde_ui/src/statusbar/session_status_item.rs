@@ -23,7 +23,9 @@ use bastyde::widgets::{
 };
 
 use crate::icons::session;
-use crate::view_models::{WritingSessionViewModel, format_mmss, gauge_role, remaining, words_progress};
+use crate::view_models::{
+    WritingSessionViewModel, format_mmss, gauge_role, remaining, words_progress,
+};
 
 /// Shared one-shot deadline cell (`ctx.wake_at_handle()`).
 type WakeAt = Rc<Cell<Option<Instant>>>;
@@ -39,7 +41,11 @@ pub struct SessionStatusItem {
 
 impl SessionStatusItem {
     pub fn new(vm: WritingSessionViewModel, has_work: Signal<bool>) -> Self {
-        Self { vm, has_work, root_child: None }
+        Self {
+            vm,
+            has_work,
+            root_child: None,
+        }
     }
 
     /// The compact "N words · M:SS[ left]" readout while running.
@@ -49,7 +55,10 @@ impl SessionStatusItem {
         match self.vm.time_target() {
             Some(t) => {
                 let left = remaining(elapsed, Some(t)).unwrap_or_default();
-                tr!(session_readout_timed(words = words, time = format_mmss(left)))
+                tr!(session_readout_timed(
+                    words = words,
+                    time = format_mmss(left)
+                ))
             }
             None => tr!(session_readout(words = words, time = format_mmss(elapsed))),
         }
@@ -98,7 +107,8 @@ impl SessionStatusItem {
         // Running: the gauge (only with a word goal) + the readout.
         if running {
             if let Some(target) = vm.word_target_opt() {
-                let progress = words_progress(vm.session_words_signal().get(), Some(target)).unwrap_or(0.0);
+                let progress =
+                    words_progress(vm.session_words_signal().get(), Some(target)).unwrap_or(0.0);
                 row = row.child(
                     FixedSize::new().width(GAUGE_WIDTH).child(
                         ProgressBar::new(progress)
@@ -171,10 +181,18 @@ impl Widget for SessionStatusItem {
         // Structural: show/hide + the gauge's presence (word target) rebuild the item.
         self.has_work.bind_to(sid, reg, BindingLevel::Rebuild);
         self.vm.running().bind_to(sid, reg, BindingLevel::Rebuild);
-        self.vm.word_target().bind_to(sid, reg, BindingLevel::Rebuild);
-        self.vm.time_target_min().bind_to(sid, reg, BindingLevel::Rebuild);
-        self.vm.session_words_signal().bind_to(sid, reg, BindingLevel::Rebuild);
-        self.vm.elapsed_signal().bind_to(sid, reg, BindingLevel::Rebuild);
+        self.vm
+            .word_target()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.vm
+            .time_target_min()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.vm
+            .session_words_signal()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.vm
+            .elapsed_signal()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
 
         // Feed edits + focus changes into the word tracker (a no-op while paused).
         {

@@ -19,9 +19,9 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::tokens::{BorderRole, SurfaceRole};
 use bastyde::widgets::{
-    BuiltInIcons, Button, ButtonVariant, Center, Divider, Expand, HStack, IconButton,
-    IconLocation, IconWidget, ListView, MaxSize, MinSize, Padding, Panel, SearchField, Spacer,
-    Switcher, TextInput, TextWidget, Toast, VStack,
+    BuiltInIcons, Button, ButtonVariant, Center, Divider, Expand, HStack, IconButton, IconLocation,
+    IconWidget, ListView, MaxSize, MinSize, Padding, Panel, SearchField, Spacer, Switcher,
+    TextInput, TextWidget, Toast, VStack,
 };
 
 use crate::models::DictWordRow;
@@ -77,8 +77,7 @@ pub fn user_dictionary_pane(ctx: &mut BuildContext, vm: &UserDictionaryViewModel
     // an empty bordered box reads as "broken", a hint reads as "nothing here yet".
     let empty_idx = {
         let vm = vm.clone();
-        vm.changed_signal()
-            .map(move |_| usize::from(vm.len() == 0))
+        vm.changed_signal().map(move |_| usize::from(vm.len() == 0))
     };
     let list_card = Panel::new()
         .background(SurfaceRole::Content)
@@ -136,7 +135,8 @@ fn add_row(vm: &UserDictionaryViewModel) -> impl Widget {
     // Enabled only for a valid, non-duplicate word — recomputed as the text or the word set changes.
     let can_add = {
         let vm = vm.clone();
-        text.zip(&vm.changed_signal()).map(move |(t, _)| vm.can_add(t))
+        text.zip(&vm.changed_signal())
+            .map(move |(t, _)| vm.can_add(t))
     };
     let add_btn = {
         Button::new(tr!(settings_user_dict_add()))
@@ -246,7 +246,7 @@ fn empty_state() -> impl Widget {
 fn present_import(ctx: &mut EventContext, vm: UserDictionaryViewModel) {
     let req = FileDialogRequest::pick_file()
         .title(tr!(settings_user_dict_import()))
-        .add_filter(&tr!(settings_user_dict_txt_filter()).resolve_now(), &["txt"]);
+        .add_filter(tr!(settings_user_dict_txt_filter()).resolve_now(), &["txt"]);
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {
             match vm.import_from(&path) {
@@ -278,7 +278,7 @@ fn present_export(ctx: &mut EventContext, vm: UserDictionaryViewModel) {
     let req = FileDialogRequest::save_file()
         .title(tr!(settings_user_dict_export()))
         .default_file_name("dictionary.txt".to_string())
-        .add_filter(&tr!(settings_user_dict_txt_filter()).resolve_now(), &["txt"]);
+        .add_filter(tr!(settings_user_dict_txt_filter()).resolve_now(), &["txt"]);
     let _ = ctx.save_file(req, move |res, ectx| {
         if let FileDialogResult::Saved(Some(path)) = res {
             let mut target = path.clone();

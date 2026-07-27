@@ -976,6 +976,34 @@ settings-user-dict-import-failed = Could not read the word list: { $error }
 settings-user-dict-exported = Saved { $count } words.
 settings-user-dict-export-failed = Could not save the word list: { $error }
 
+## Settings: Work ▸ Text replacements (per-project custom lexicon)
+settings-page-text-replacements = Text replacements
+settings-text-repl-desc = Replace shorthand with the full text as you type: "btw" becomes "by the way" the moment you type a space or punctuation.
+settings-text-repl-enable = Use text replacements in this project
+settings-text-repl-disabled-hint = Turn this on to define shorthand that expands as you write.
+settings-text-repl-add = Add rule
+settings-text-repl-trigger-placeholder = Shorthand
+settings-text-repl-replacement-placeholder = What it becomes
+settings-text-repl-added = Added "{ $trigger }"
+settings-text-repl-duplicate = "{ $trigger }" already has a rule
+settings-text-repl-filter = Filter rules
+settings-text-repl-count = { $n ->
+    [one] 1 rule
+   *[other] { $n } rules
+}
+settings-text-repl-row-enabled = Use this rule
+settings-text-repl-delete = Delete the rule for { $trigger }
+settings-text-repl-deleted = Deleted the rule for "{ $trigger }"
+settings-text-repl-empty = No rules yet.
+settings-text-repl-csv-filter = CSV files
+settings-text-repl-import = Import…
+settings-text-repl-export = Export…
+settings-text-repl-imported = Imported { $added }, skipped { $skipped }
+settings-text-repl-exported = Exported { $n ->
+    [one] 1 rule
+   *[other] { $n } rules
+}
+
 ## Editor: spelling (context menu + toast)
 # Shown in place of the corrections when a flagged word has none to offer.
 editor-menu-no-suggestions = No suggestions
@@ -1080,6 +1108,7 @@ format-heading-5 = Heading 5
 format-heading-6 = Heading 6
 format-align-left = Align left
 format-align-center = Centre
+format-direction-rtl = Right-to-left paragraph
 format-blockquote = Blockquote
 format-list-bullet = Bulleted list
 format-list-numbered = Numbered list
@@ -1113,6 +1142,10 @@ menu-format-heading-6 = Heading &6
 menu-format-alignment = &Alignment
 menu-format-align-left = Align &Left
 menu-format-align-center = &Centre
+menu-format-direction = Dir&ection
+menu-format-direction-auto = &Automatic
+menu-format-direction-ltr = &Left to Right
+menu-format-direction-rtl = &Right to Left
 menu-format-blockquote = Block&quote
 menu-format-lists = &Lists
 menu-format-list-bullet = &Bulleted List
@@ -1143,3 +1176,23 @@ about-tagline = A novel-writing app for long-form fiction, written in Rust with 
 about-license = Released under the GNU General Public License, version 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Close
+
+# ── Work ▸ Punctuation — the project's typographic house style ──────────────
+settings-page-punctuation = Punctuation
+settings-group-punctuation = Smart punctuation
+settings-punctuation-override = Give this project its own punctuation rules
+settings-punctuation-override-hint = Off: the project follows the application preference. These rules travel inside the .skrib, so a co-author opening the file writes with the same typography.
+settings-punctuation-dashes = Turn -- into an en dash, --- into an em dash
+settings-punctuation-ellipsis = Turn ... into an ellipsis
+settings-punctuation-quotes = Curl quotation marks and apostrophes
+settings-quote-style = Quotation marks
+settings-quote-style-locale = Language default
+settings-quote-style-curly = “Curly”
+settings-quote-style-guillemets = «Guillemets»
+settings-quote-style-low-high = „Low-high“
+settings-punctuation-spacing = Space before ; : ! ? and »
+settings-punctuation-spacing-hint = French typography sets a narrow no-break space before ; ! ? and a full one before :. It applies only to text written in French.
+settings-punctuation-sample = Your language gives
+settings-punctuation-app-hint = What every project does unless it takes rules of its own in Work ▸ Punctuation.
+settings-punctuation-dialogue = Open a paragraph typed as "- " with a dialogue dash
+settings-punctuation-dialogue-hint = For languages that mark speech with a dash rather than quotation marks — French, Spanish, Russian and others. It only fires at the very start of a paragraph.

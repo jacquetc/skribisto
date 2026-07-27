@@ -387,7 +387,10 @@ mod tests {
 
     #[test]
     fn a_close_fires_once_its_own_sequence_is_on_disk() {
-        assert_eq!(resume_deferred(false, 7, true, Some(7)), DeferredResume::Close);
+        assert_eq!(
+            resume_deferred(false, 7, true, Some(7)),
+            DeferredResume::Close
+        );
         assert_eq!(
             resume_deferred(false, 9, true, Some(7)),
             DeferredResume::Close,

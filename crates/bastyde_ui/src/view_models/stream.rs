@@ -595,7 +595,9 @@ impl StreamViewModel {
         let Some(work_id) = self.inner.ids.work_id.get() else {
             return; // no project open
         };
-        if let Some((binder, _order, _pos)) = binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id) {
+        if let Some((binder, _order, _pos)) =
+            binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id)
+        {
             let _ = trash_management_commands::trash_binder_items(
                 &self.inner.app_ctx,
                 self.stack(),

@@ -365,11 +365,17 @@ mod tests {
         assert!(!s.has_override("uid-B"));
         assert!(s.effective_for("uid-A").case_sensitive);
         assert_eq!(s.effective_for("uid-A").facets, vec![1, 3]);
-        assert!(!s.effective_for("uid-B").case_sensitive, "B inherits general");
+        assert!(
+            !s.effective_for("uid-B").case_sensitive,
+            "B inherits general"
+        );
 
         s.clear_override("uid-A").unwrap();
         assert!(!s.has_override("uid-A"));
-        assert!(!s.effective_for("uid-A").case_sensitive, "A back to general");
+        assert!(
+            !s.effective_for("uid-A").case_sensitive,
+            "A back to general"
+        );
     }
 
     #[test]
@@ -380,7 +386,8 @@ mod tests {
         let s = svc(d.path());
         let mut custom = s.general();
         custom.case_sensitive = true;
-        s.set_override("", "/x/new.skrib", "Untitled", custom).unwrap();
+        s.set_override("", "/x/new.skrib", "Untitled", custom)
+            .unwrap();
         assert!(!s.has_override(""), "empty uid must not persist");
     }
 
@@ -414,7 +421,8 @@ mod tests {
         let d = tempdir().unwrap();
         let s = svc(d.path());
         for i in 0..(HISTORY_CAP + 10) {
-            s.push_query("uid-A", "/x/a.skrib", &format!("q{i}")).unwrap();
+            s.push_query("uid-A", "/x/a.skrib", &format!("q{i}"))
+                .unwrap();
         }
         assert_eq!(s.query_history("uid-A").len(), HISTORY_CAP);
         // The newest is at the front, the oldest fell off the back.

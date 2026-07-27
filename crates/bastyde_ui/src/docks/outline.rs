@@ -25,10 +25,10 @@ use frontend::AppContext;
 
 use skribisto_model::PromoteTarget;
 
-use crate::binder::switcher_button::{BinderSwitcherButton, binder_search_button};
 use crate::binder::create_labels::{
     recommendation_label, recommendation_placement, recommendation_tooltip_key,
 };
+use crate::binder::switcher_button::{BinderSwitcherButton, binder_search_button};
 use crate::docks::create_split_button::CreateSplitButton;
 use crate::intents::AppIntent;
 use crate::models::{BinderTreeKey, TreeNode};
@@ -350,7 +350,9 @@ pub fn promote_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuList {
         menu = menu.item(
             MenuItem::new(crate::binder::create_labels::promote_target_label(target))
                 .icon(crate::binder::icons::sub_role_icon(&sub_role))
-                .rich_tooltip(crate::binder::create_labels::promote_target_tooltip_key(target))
+                .rich_tooltip(crate::binder::create_labels::promote_target_tooltip_key(
+                    target,
+                ))
                 .on_activate_fn(move |ctx| promote_with_guard(&vm, key, target, ctx)),
         );
     }
@@ -414,8 +416,7 @@ fn add_recommendations_menu(outline: OutlineViewModel, key: BinderTreeKey) -> Me
         let rec_owned = *rec;
         // Trailing "where it lands" hint + the shared registered type explainer
         // (identical to the header SplitButton row).
-        let placement =
-            recommendation_placement(anchor_title.as_deref(), rec.relation);
+        let placement = recommendation_placement(anchor_title.as_deref(), rec.relation);
         menu = menu.item(
             MenuItem::new(recommendation_label(rec.create_type))
                 .icon(crate::binder::icons::create_type_icon(rec.create_type))

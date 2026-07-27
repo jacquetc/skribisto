@@ -8,8 +8,8 @@
 //! a feature live with it instead — the backup chooser under [`crate::backup`], the trash
 //! destination picker under [`crate::trash`], and so on.
 
-pub(crate) mod welcome;
-pub(crate) mod new_work;
+pub(crate) mod about;
 pub(crate) mod import_plume;
 pub(crate) mod license;
-pub(crate) mod about;
+pub(crate) mod new_work;
+pub(crate) mod welcome;

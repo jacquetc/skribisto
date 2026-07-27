@@ -121,9 +121,9 @@ fn trash_tree(trash: TrashViewModel, on_open: OpenItemFn) -> impl Widget {
     })
 }
 
-/// Reconstruct a row's [`TrashTreeKey`] from its node (the delegate gives the node
-/// + flat metadata, not the key): a root is keyed by its `TrashInfo` id, a
-/// descendant by its `BinderItem` id.
+/// Reconstruct a row's [`TrashTreeKey`] from its node (the delegate gives the
+/// node plus flat metadata, not the key): a root is keyed by its `TrashInfo`
+/// id, a descendant by its `BinderItem` id.
 fn key_of(node: &TrashNode) -> TrashTreeKey {
     if node.is_root {
         TrashTreeKey::Root(node.trash_info_id.unwrap_or(0))

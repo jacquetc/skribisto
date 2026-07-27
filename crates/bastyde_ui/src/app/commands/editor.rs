@@ -58,7 +58,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let editors = deps.editors.clone();
         ctx.register_action_global(Action::new("editor.open_item_to_side").on_invoke(
             move |i, _c| {
-                if let Some(AppIntent::OpenItemToSide { item_id, title }) = AppIntent::from_intent(i)
+                if let Some(AppIntent::OpenItemToSide { item_id, title }) =
+                    AppIntent::from_intent(i)
                 {
                     editors.open_to_side(*item_id, title);
                 }

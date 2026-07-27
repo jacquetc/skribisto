@@ -32,7 +32,10 @@ pub struct ExportSplitButton {
 
 impl ExportSplitButton {
     pub fn new(vm: ExportViewModel) -> Self {
-        Self { vm, root_child: None }
+        Self {
+            vm,
+            root_child: None,
+        }
     }
 }
 
@@ -68,7 +71,9 @@ impl Widget for ExportSplitButton {
                 Button::new(tr!(export_title()))
                     .variant(ButtonVariant::Tinted)
                     .on_activate_fn(|ctx| {
-                        ctx.send_intent(AppIntent::ExportScoped { scope: ExportScopeKind::Custom });
+                        ctx.send_intent(AppIntent::ExportScoped {
+                            scope: ExportScopeKind::Custom,
+                        });
                     }),
             )
         } else {

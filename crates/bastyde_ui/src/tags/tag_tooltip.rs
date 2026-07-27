@@ -75,4 +75,3 @@ pub fn tag_tooltip_body(tag: &TagRow) -> impl Widget {
 
     HStack::new().spacing(8.0).child(swatch).child(text)
 }
-

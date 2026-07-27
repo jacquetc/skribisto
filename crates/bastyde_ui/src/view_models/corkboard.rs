@@ -338,7 +338,9 @@ impl CorkboardViewModel {
     /// Esc→restore→blur cancel path are both quiet no-ops (no stray undo entry).
     pub fn rename(&self, _ctx: &mut EventContext, id: u64, title: &str) {
         let title = title.trim();
-        let current = binder_ops::item_dto(&self.inner.app_ctx, id).map(|d| d.title).unwrap_or_default();
+        let current = binder_ops::item_dto(&self.inner.app_ctx, id)
+            .map(|d| d.title)
+            .unwrap_or_default();
         if !title.is_empty() && title != current {
             let probe = SingleBinderItem::new(self.inner.app_ctx.clone());
             probe.set_id(Some(id));
@@ -370,7 +372,10 @@ impl CorkboardViewModel {
             return Some(doc.clone());
         }
         let doc = self.inner.docs.open(id)?;
-        self.inner.open_synopses.borrow_mut().insert(id, doc.clone());
+        self.inner
+            .open_synopses
+            .borrow_mut()
+            .insert(id, doc.clone());
         Some(doc)
     }
 
@@ -513,7 +518,9 @@ impl CorkboardViewModel {
     // -- dialog entry points --
 
     pub fn begin_set_label(&self, ctx: &mut EventContext, id: u64) {
-        let current = binder_ops::item_dto(&self.inner.app_ctx, id).map(|d| d.label).unwrap_or_default();
+        let current = binder_ops::item_dto(&self.inner.app_ctx, id)
+            .map(|d| d.label)
+            .unwrap_or_default();
         let vm = self.clone();
         InputDialog::new(tr!(dialog_set_label()))
             .default_text(current)
@@ -572,12 +579,12 @@ impl CorkboardViewModel {
             && pos > 0
         {
             binder_ops::move_relative(
-            &self.inner.app_ctx,
-            &self.inner.ids,
-            id,
-            cards[pos - 1].item_id,
-            MovePlace::Before,
-        );
+                &self.inner.app_ctx,
+                &self.inner.ids,
+                id,
+                cards[pos - 1].item_id,
+                MovePlace::Before,
+            );
         }
     }
 
@@ -586,12 +593,12 @@ impl CorkboardViewModel {
             && pos + 1 < cards.len()
         {
             binder_ops::move_relative(
-            &self.inner.app_ctx,
-            &self.inner.ids,
-            id,
-            cards[pos + 1].item_id,
-            MovePlace::After,
-        );
+                &self.inner.app_ctx,
+                &self.inner.ids,
+                id,
+                cards[pos + 1].item_id,
+                MovePlace::After,
+            );
         }
     }
 
@@ -625,7 +632,9 @@ impl CorkboardViewModel {
         let Some(work_id) = self.inner.ids.work_id.get() else {
             return; // no project open
         };
-        if let Some((binder, _order, _pos)) = binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id) {
+        if let Some((binder, _order, _pos)) =
+            binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id)
+        {
             let _ = trash_management_commands::trash_binder_items(
                 &self.inner.app_ctx,
                 self.stack(),

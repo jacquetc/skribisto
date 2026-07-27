@@ -37,8 +37,8 @@ use frontend::AppContext;
 
 use crate::models::RecentWorkListModel;
 use crate::shell::open_registry;
-use crate::view_models::project_switcher as vm;
 use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::view_models::project_switcher as vm;
 
 /// Cap on a popover row's text column.
 ///

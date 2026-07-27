@@ -58,7 +58,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use bastyde::prelude::{Signal, WidgetId};
-use bastyde::text_document::Alignment;
+use bastyde::text_document::{Alignment, TextDirection};
 use bastyde::widgets::rich_text::EditorHandle;
 
 /// Index of "align left" in the alignment radio group.
@@ -75,6 +75,20 @@ pub const ALIGN_CENTER: usize = 1;
 /// leaves no button lit, which is honest — the state is real but not one of
 /// ours — and choosing Left or Center replaces it.
 pub const ALIGN_OTHER: usize = 2;
+
+/// Index of "direction follows the text" in the direction radio group.
+///
+/// The default, and a genuinely distinct state from an explicit
+/// left-to-right: with no direction stored, the bidi algorithm reads the
+/// paragraph's first strong character. That is right almost always, and
+/// wrong in the cases worth having a control for — an Arabic paragraph
+/// opening with a Latin acronym or a quoted English title reads as
+/// left-to-right and lays itself out backwards.
+pub const DIR_AUTO: usize = 0;
+/// Index of "left to right", set explicitly.
+pub const DIR_LTR: usize = 1;
+/// Index of "right to left", set explicitly.
+pub const DIR_RTL: usize = 2;
 
 /// A blockquote's nesting depth is not queryable through `EditorHandle`, so
 /// [`FormatViewModel::clear_formatting`] unwraps one level at a time and stops
@@ -314,6 +328,14 @@ pub struct FormatViewModel {
     /// alignment Skribisto does not offer — see [`ALIGN_OTHER`].
     align_left: Signal<bool>,
     align_center: Signal<bool>,
+    /// [`DIR_AUTO`], [`DIR_LTR`] or [`DIR_RTL`] — the direction radio
+    /// group's index.
+    direction: Signal<usize>,
+    /// The same value as one boolean for the dock's toggle button, which
+    /// wants a `Signal<bool>`. Lit only for an explicit right-to-left, so
+    /// an auto-detected RTL paragraph leaves it dark — the button reports
+    /// what is *stored*, which is what pressing it changes.
+    dir_rtl: Signal<bool>,
     can_undo: Signal<bool>,
     can_redo: Signal<bool>,
     /// Whether there is an editor to act on at all — the Format menu's
@@ -376,6 +398,8 @@ impl FormatViewModel {
             alignment: Signal::new(ALIGN_LEFT),
             align_left: Signal::new(true),
             align_center: Signal::new(false),
+            direction: Signal::new(DIR_AUTO),
+            dir_rtl: Signal::new(false),
             can_undo: Signal::new(false),
             can_redo: Signal::new(false),
             has_target: Signal::new(false),
@@ -547,6 +571,12 @@ impl FormatViewModel {
     pub fn align_left(&self) -> Signal<bool> {
         self.align_left.clone()
     }
+    pub fn direction(&self) -> Signal<usize> {
+        self.direction.clone()
+    }
+    pub fn dir_rtl(&self) -> Signal<bool> {
+        self.dir_rtl.clone()
+    }
     pub fn align_center(&self) -> Signal<bool> {
         self.align_center.clone()
     }
@@ -654,6 +684,9 @@ impl FormatViewModel {
         set_if_changed(&self.alignment, alignment);
         set_if_changed(&self.align_left, alignment == ALIGN_LEFT);
         set_if_changed(&self.align_center, alignment == ALIGN_CENTER);
+        let direction = direction_index(handle.get_direction());
+        set_if_changed(&self.direction, direction);
+        set_if_changed(&self.dir_rtl, direction == DIR_RTL);
         set_if_changed(&self.can_undo, handle.can_undo().get());
         set_if_changed(&self.can_redo, handle.can_redo().get());
     }
@@ -672,6 +705,8 @@ impl FormatViewModel {
         set_if_changed(&self.alignment, ALIGN_LEFT);
         set_if_changed(&self.align_left, true);
         set_if_changed(&self.align_center, false);
+        set_if_changed(&self.direction, DIR_AUTO);
+        set_if_changed(&self.dir_rtl, false);
         set_if_changed(&self.can_undo, false);
         set_if_changed(&self.can_redo, false);
     }
@@ -761,6 +796,14 @@ impl FormatViewModel {
             if handle.get_alignment() != Alignment::Left {
                 handle.set_alignment(Alignment::Left);
             }
+            // Unset rather than pin left-to-right. Every other property
+            // here clears by writing its default, which works because
+            // "default" and "unset" render alike — but a paragraph
+            // pinned left-to-right lays Arabic out backwards, so for
+            // direction the two are not interchangeable.
+            if handle.get_direction().is_some() {
+                handle.clear_direction();
+            }
             handle.remove_from_list();
             // Depth is not queryable, so unwrap one level at a time and bound
             // the loop — a command that cannot make progress must still
@@ -804,6 +847,42 @@ impl FormatViewModel {
             _ => return,
         };
         self.with_editor(|h| h.set_alignment(alignment.clone()));
+    }
+
+    /// Set the paragraph's base reading direction.
+    ///
+    /// [`DIR_AUTO`] unsets it, which is genuinely different from pinning
+    /// [`DIR_LTR`]: an explicit direction overrides the bidi algorithm,
+    /// so a paragraph pinned left-to-right keeps laying out that way
+    /// even after the writer replaces its text with Arabic.
+    pub fn set_direction(&self, index: usize) {
+        match index {
+            DIR_LTR => self.with_editor(|h| h.set_direction(TextDirection::LeftToRight)),
+            DIR_RTL => self.with_editor(|h| h.set_direction(TextDirection::RightToLeft)),
+            DIR_AUTO => self.with_editor(|h| h.clear_direction()),
+            _ => (),
+        }
+    }
+
+    /// Flip the paragraph between right-to-left and automatic.
+    ///
+    /// What the dock's single toggle button does. Turning it off returns
+    /// the paragraph to automatic rather than pinning left-to-right: the
+    /// writer is undoing a choice, not making the opposite one, and
+    /// automatic is right for almost every paragraph.
+    ///
+    /// Reads the block's current direction from the editor rather than
+    /// the cached `dir_rtl` mirror — the mirror only refreshes on
+    /// `sync_now`, so deciding from it would flip based on whichever
+    /// block the caret was in last.
+    pub fn toggle_direction(&self) {
+        self.with_editor(|h| {
+            if h.get_direction() == Some(TextDirection::RightToLeft) {
+                h.clear_direction();
+            } else {
+                h.set_direction(TextDirection::RightToLeft);
+            }
+        });
     }
 
     pub fn toggle_blockquote(&self) {
@@ -896,6 +975,20 @@ fn set_if_changed<T: Clone + PartialEq + 'static>(signal: &Signal<T>, value: T) 
 }
 
 /// Map the document's alignment onto the radio index. See [`ALIGN_OTHER`].
+/// Map a block's stored direction onto its radio index.
+///
+/// `None` is [`DIR_AUTO`] — the paragraph carries no direction and the
+/// bidi algorithm decides. That is deliberately not folded into
+/// [`DIR_LTR`]: they lay out identically for ordinary Latin prose but
+/// differ exactly where the control earns its place.
+fn direction_index(direction: Option<TextDirection>) -> usize {
+    match direction {
+        None => DIR_AUTO,
+        Some(TextDirection::LeftToRight) => DIR_LTR,
+        Some(TextDirection::RightToLeft) => DIR_RTL,
+    }
+}
+
 fn alignment_index(alignment: &Alignment) -> usize {
     match alignment {
         Alignment::Left => ALIGN_LEFT,
@@ -1521,5 +1614,86 @@ mod tests {
         flip.set(false);
         vm.refresh();
         assert!(!vm.bold().get(), "mirrors clear when the editor goes away");
+    }
+
+    #[test]
+    fn a_fresh_paragraph_reads_as_automatic_direction() {
+        let (vm, _editor) = vm_over("Hello");
+        vm.refresh();
+        assert_eq!(vm.direction().get(), DIR_AUTO);
+        assert!(!vm.dir_rtl().get());
+    }
+
+    #[test]
+    fn pinning_a_direction_is_reported_back() {
+        let (vm, _editor) = vm_over("Hello");
+        vm.refresh();
+
+        vm.set_direction(DIR_RTL);
+        vm.refresh();
+        assert_eq!(vm.direction().get(), DIR_RTL);
+        assert!(vm.dir_rtl().get(), "the dock toggle should light up");
+
+        vm.set_direction(DIR_LTR);
+        vm.refresh();
+        assert_eq!(vm.direction().get(), DIR_LTR);
+        assert!(
+            !vm.dir_rtl().get(),
+            "an explicit left-to-right is not right-to-left"
+        );
+    }
+
+    #[test]
+    fn automatic_is_a_state_the_writer_can_get_back_to() {
+        // The reason `clear_direction` had to exist: pinning
+        // left-to-right is *not* the same as never having chosen, and
+        // only an unset direction lets Arabic auto-detect as RTL.
+        let (vm, _editor) = vm_over("Hello");
+        vm.refresh();
+
+        vm.set_direction(DIR_RTL);
+        vm.refresh();
+        assert_eq!(vm.direction().get(), DIR_RTL);
+
+        vm.set_direction(DIR_AUTO);
+        vm.refresh();
+        assert_eq!(
+            vm.direction().get(),
+            DIR_AUTO,
+            "choosing Automatic must unset the direction, not pin LTR"
+        );
+        assert!(!vm.dir_rtl().get());
+    }
+
+    #[test]
+    fn the_dock_toggle_flips_between_rtl_and_automatic() {
+        let (vm, _editor) = vm_over("Hello");
+        vm.refresh();
+
+        vm.toggle_direction();
+        vm.refresh();
+        assert_eq!(vm.direction().get(), DIR_RTL);
+
+        // Off returns to automatic rather than pinning left-to-right —
+        // the writer is undoing a choice, not making the opposite one.
+        vm.toggle_direction();
+        vm.refresh();
+        assert_eq!(vm.direction().get(), DIR_AUTO);
+    }
+
+    #[test]
+    fn clearing_formatting_also_unsets_the_direction() {
+        let (vm, _editor) = vm_over("Hello");
+        vm.refresh();
+        vm.set_direction(DIR_RTL);
+        vm.refresh();
+
+        vm.clear_formatting();
+        assert_eq!(
+            vm.direction().get(),
+            DIR_AUTO,
+            "clear formatting must unset the direction, not leave the \
+             paragraph pinned right-to-left"
+        );
     }
 }

@@ -146,7 +146,8 @@ impl BackupRestoreViewModel {
         MessageBox::warning(tr!(backup_restore_close_elsewhere_title()))
             .text(tr!(backup_restore_close_elsewhere_text()))
             .buttons(MessageBoxButtons::Custom(vec![
-                MessageBoxButton::standard(StandardButton::Open).label(tr!(backup_restore_focus_window())),
+                MessageBoxButton::standard(StandardButton::Open)
+                    .label(tr!(backup_restore_focus_window())),
                 MessageBoxButton::standard(StandardButton::Retry),
                 MessageBoxButton::standard(StandardButton::Cancel),
             ]))
@@ -172,7 +173,8 @@ impl BackupRestoreViewModel {
         MessageBox::question(tr!(backup_restore_confirm_title()))
             .text(tr!(backup_restore_confirm_text()))
             .buttons(MessageBoxButtons::Custom(vec![
-                MessageBoxButton::standard(StandardButton::Ok).label(tr!(backup_restore_confirm_ok())),
+                MessageBoxButton::standard(StandardButton::Ok)
+                    .label(tr!(backup_restore_confirm_ok())),
                 MessageBoxButton::standard(StandardButton::Cancel),
             ]))
             .default_button(StandardButton::Ok)
@@ -207,7 +209,9 @@ impl BackupRestoreViewModel {
         let safety_backup_path = match safety_copy(&target) {
             Ok(p) => p,
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(backup_restore_error(error = e.to_string()))));
+                ctx.show_toast(Toast::error(tr!(backup_restore_error(
+                    error = e.to_string()
+                ))));
                 return;
             }
         };
@@ -250,7 +254,9 @@ impl BackupRestoreViewModel {
                 });
             }
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(backup_restore_error(error = e.to_string()))));
+                ctx.show_toast(Toast::error(tr!(backup_restore_error(
+                    error = e.to_string()
+                ))));
             }
         }
     }
@@ -285,7 +291,9 @@ impl BackupRestoreViewModel {
             // swap failed, so nothing has been lost. Leave it in place (don't
             // delete it) so the user can retry or recover it manually, and
             // leave the original untouched — still viewing the backup here.
-            ctx.show_toast(Toast::error(tr!(backup_restore_error(error = e.to_string()))));
+            ctx.show_toast(Toast::error(tr!(backup_restore_error(
+                error = e.to_string()
+            ))));
             return;
         }
 

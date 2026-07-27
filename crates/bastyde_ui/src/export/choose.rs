@@ -19,14 +19,19 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use bastyde::core::ObserverHandle;
-use bastyde::data::{CheckState, NodeId, TreeModel};
 use bastyde::data::TreeCheckedModel;
+use bastyde::data::{CheckState, NodeId, TreeModel};
 use bastyde::prelude::*;
 use bastyde::widgets::{StandardTreeItem, TextWidget, TreeView};
 
 use frontend::common::entities::BinderItemSubRole;
 use skrib_format::Gathered;
 use skribisto_model::SubRoleExt;
+
+/// The tree's `expand_all`, captured on the first row built and invoked later
+/// from a frame-tick effect — never inside the delegate, where the row slice is
+/// already borrowed (that re-entrant borrow panics).
+type DeferredExpand = Rc<RefCell<Option<Rc<dyn Fn()>>>>;
 
 /// One row of the Choose tree.
 #[derive(Clone)]
@@ -137,7 +142,11 @@ impl ChooseModel {
             );
         }
 
-        Self { tree, checked, _observers: Rc::new(observers) }
+        Self {
+            tree,
+            checked,
+            _observers: Rc::new(observers),
+        }
     }
 
     /// Re-apply a checked set of item ids (leaves only; folders re-derive by aggregation) —
@@ -205,7 +214,10 @@ pub struct ChooseTreeWidget {
 
 impl ChooseTreeWidget {
     pub fn new(model: Option<ChooseModel>) -> Self {
-        Self { model, root_child: None }
+        Self {
+            model,
+            root_child: None,
+        }
     }
 }
 
@@ -236,7 +248,7 @@ impl Widget for ChooseTreeWidget {
         // the slice is the per-row `TreeRowContext`. Capture it on the first row built, then
         // `expand_all` from a frame-tick effect — NOT inside the delegate, where the slice is
         // already borrowed (that re-entrant borrow panics).
-        let expand_fn: Rc<RefCell<Option<Rc<dyn Fn()>>>> = Rc::new(RefCell::new(None));
+        let expand_fn: DeferredExpand = Rc::new(RefCell::new(None));
         let capture = expand_fn.clone();
         let view = TreeView::new_with_context(
             tree.clone(),
@@ -305,7 +317,13 @@ mod tests {
     use frontend::common::entities::{Binder, BinderItem, BinderItemRole, Work};
     use skrib_format::{BinderWithItems, ItemWithContents};
 
-    fn item(id: u64, role: BinderItemRole, sub_role: BinderItemSubRole, indent: i64, exportable: bool) -> ItemWithContents {
+    fn item(
+        id: u64,
+        role: BinderItemRole,
+        sub_role: BinderItemSubRole,
+        indent: i64,
+        exportable: bool,
+    ) -> ItemWithContents {
         ItemWithContents {
             item: BinderItem {
                 id,
@@ -323,14 +341,23 @@ mod tests {
 
     fn gathered(items: Vec<ItemWithContents>) -> Gathered {
         Gathered {
-            work: Work { id: 1, ..Default::default() },
+            work: Work {
+                id: 1,
+                ..Default::default()
+            },
             tags: vec![],
             dict_words: vec![],
+            text_replacement_rules: vec![],
+            smart_punctuation: None,
             trash_infos: vec![],
             paces: vec![],
             progress_snapshots: vec![],
             binders: vec![BinderWithItems {
-                binder: Binder { id: 10, name: "Manuscript".into(), ..Default::default() },
+                binder: Binder {
+                    id: 10,
+                    name: "Manuscript".into(),
+                    ..Default::default()
+                },
                 items,
             }],
             work_info: None,
@@ -349,9 +376,15 @@ mod tests {
         ]);
         let m = ChooseModel::build(&g, false, Signal::new(0));
         let ids = m.checked_item_ids();
-        assert!(ids.contains(&2) && ids.contains(&3) && ids.contains(&4), "prose seeded: {ids:?}");
+        assert!(
+            ids.contains(&2) && ids.contains(&3) && ids.contains(&4),
+            "prose seeded: {ids:?}"
+        );
         // The chapter folder aggregates to Checked (all children checked) → its heading id in.
-        assert!(ids.contains(&1), "a fully-checked chapter folder is included: {ids:?}");
+        assert!(
+            ids.contains(&1),
+            "a fully-checked chapter folder is included: {ids:?}"
+        );
     }
 
     #[test]
@@ -367,14 +400,21 @@ mod tests {
         assert_eq!(hidden.checked_item_ids(), vec![1]);
         // Revealed: the non-exportable scene appears but is NOT default-checked.
         let shown = ChooseModel::build(&g, true, Signal::new(0));
-        assert_eq!(shown.checked_item_ids(), vec![1], "revealed non-exportable stays unchecked");
+        assert_eq!(
+            shown.checked_item_ids(),
+            vec![1],
+            "revealed non-exportable stays unchecked"
+        );
     }
 
     #[test]
     fn unchecking_a_scene_drops_it_from_the_ids() {
         use BinderItemRole::Item;
         use BinderItemSubRole as SR;
-        let g = gathered(vec![item(1, Item, SR::Scene, 0, true), item(2, Item, SR::Scene, 0, true)]);
+        let g = gathered(vec![
+            item(1, Item, SR::Scene, 0, true),
+            item(2, Item, SR::Scene, 0, true),
+        ]);
         let m = ChooseModel::build(&g, false, Signal::new(0));
         // Uncheck scene 1 via its node.
         let n1 = m.tree.find_by(|cn| cn.item_id == Some(1)).unwrap();

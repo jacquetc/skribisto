@@ -49,6 +49,41 @@ use crate::models::TreeNode;
 use crate::panels::new_work::NewWorkPanel;
 use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
+use crate::singles::SingleSmartPunctuation;
+use crate::text_replacement::typography::SmartPunctuationFlags;
+
+/// The punctuation rules in force for the open project — the two tiers resolved
+/// into the one flag set the editor sessions run.
+///
+/// `override_app_default` off means "follow the application preference", which
+/// is now a real thing to follow rather than a synonym for off. On means this
+/// project departs from it, and the row's own five values win outright — not
+/// merged with the app tier, because a house style is a whole system (Italian
+/// picks one of three; French adds a space its neighbours do not) and a
+/// half-inherited one belongs to no language at all.
+fn punctuation_flags(
+    sp: &SingleSmartPunctuation,
+    app: &SettingsViewModel,
+) -> SmartPunctuationFlags {
+    if sp.override_app_default().get() {
+        return SmartPunctuationFlags {
+            dashes: sp.dashes().get(),
+            ellipsis: sp.ellipsis().get(),
+            quotes: sp.quotes().get(),
+            quote_style: sp.quote_style().get(),
+            pre_punctuation_spacing: sp.pre_punctuation_spacing().get(),
+            dialogue_marker: sp.dialogue_marker().get(),
+        };
+    }
+    SmartPunctuationFlags {
+        dashes: app.punct_dashes().get(),
+        ellipsis: app.punct_ellipsis().get(),
+        quotes: app.punct_quotes().get(),
+        quote_style: app.punct_quote_style().get(),
+        pre_punctuation_spacing: app.punct_spacing().get(),
+        dialogue_marker: app.punct_dialogue().get(),
+    }
+}
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, DeferredResume, EditorsViewModel,
@@ -1289,8 +1324,92 @@ impl Widget for App {
         let ids = session.ids.clone();
         let single_work = session.single_work.clone();
         let single_work_info = session.single_work_info.clone();
+        // Resolved off THIS window's own `session`, same as every other
+        // Layer-A single above — a second, simultaneously-open Work always
+        // gets its own punctuation handle (see `WorkSession::smart_punctuation`'s
+        // own doc).
+        let smart_punctuation = session.smart_punctuation.clone();
         single_work.wire(ctx);
         single_work_info.wire(ctx);
+        smart_punctuation.wire(ctx);
+
+        // ── The punctuation house style, from the Work's row to every editor ──
+        //
+        // Two hops, because the row is reached through the Work: re-point the
+        // handle whenever the open project changes, then push the flags whenever
+        // any of them does. The second hop is what makes a switch flipped in
+        // Settings reach the scene the writer is looking at without reopening it.
+        {
+            let sp = smart_punctuation.clone();
+            ctx.effect(&single_work.smart_punctuation(), move |id| {
+                // 0 is "no project open", never "this project has no row" — the
+                // row is minted before its Work, so a live project always has one.
+                sp.set_id((*id != 0).then_some(*id));
+            });
+        }
+        // The project's default language, from the Work to the open documents.
+        //
+        // `OpenDocsStore` caches it (every item that has no tag of its own
+        // inherits it, and re-resolving per keystroke would be wasteful), and
+        // until this effect existed only `ProjectLifecycleViewModel` ever wrote
+        // that cache — on load. So editing Settings ▸ Work ▸ Language updated
+        // the entity, re-attached every document, and re-resolved them all
+        // against the *stale* cached language: the change did not reach the
+        // editor until the project was reopened. That affected spell-check as
+        // much as punctuation.
+        {
+            let docs = spell_docs.clone();
+            let ids = ids.clone();
+            ctx.effect(&single_work.dict_language(), move |langs| {
+                docs.set_project_language(ids.work_id.get(), langs.clone());
+                docs.attach_all();
+            });
+        }
+
+        {
+            let docs = spell_docs.clone();
+            let sp = smart_punctuation.clone();
+            let app = settings.clone();
+            let push = move || {
+                docs.set_punctuation(Some(punctuation_flags(&sp, &app)));
+            };
+            // One effect per flag: `ctx.effect` takes a single signal, and these
+            // are independent switches rather than one compound value.
+            //
+            // Both tiers are observed. The app-level ones matter even while a
+            // project holds the override: it can be dropped at any moment, and
+            // the flags it falls back to have to be current when it is.
+            //
+            // This list MUST name every signal `punctuation_flags` reads, on
+            // both tiers — a flag observed here but not read there is harmless,
+            // but one read there and not observed here silently fails to
+            // propagate (that is exactly how `dialogue_marker` was inert until a
+            // second setting changed). The bool signals of each tier:
+            for signal in [
+                smart_punctuation.override_app_default(),
+                smart_punctuation.dashes(),
+                smart_punctuation.ellipsis(),
+                smart_punctuation.quotes(),
+                smart_punctuation.pre_punctuation_spacing(),
+                smart_punctuation.dialogue_marker(),
+                settings.punct_dashes(),
+                settings.punct_ellipsis(),
+                settings.punct_quotes(),
+                settings.punct_spacing(),
+                settings.punct_dialogue(),
+            ] {
+                let push = push.clone();
+                ctx.effect(&signal, move |_| push());
+            }
+            // …and the quote-style enum on each tier, which is a different type.
+            for signal in [
+                smart_punctuation.quote_style(),
+                settings.punct_quote_style(),
+            ] {
+                let push = push.clone();
+                ctx.effect(&signal, move |_| push());
+            }
+        }
 
         // The project-lifecycle view-model: the shared Load/New/Close sequence, which was
         // three hand-kept-in-step closures here. Built fresh each build — it holds only
@@ -1318,6 +1437,10 @@ impl Widget for App {
         // The tag palette, same reasoning: one wired instance behind the Inspector's tag
         // section, the Settings pane and every chip in the app.
         session.tags.wire(ctx);
+        // The custom replacement lexicon, same reasoning: one wired instance behind the
+        // Settings pane and the editor's typing session — resolved off `session`, same
+        // as `smart_punctuation` above.
+        session.text_replacements.wire(ctx);
         // Backup scheduler (on `session`) + settings (registered in `main`). The
         // scheduler drives every trigger and holds the singles; the settings VM
         // tracks the active project for the per-project settings pane.
@@ -2742,6 +2865,79 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventCo
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The two-tier punctuation resolution, which is the whole point of
+    /// `override_app_default` being a stored flag rather than an implied one.
+    ///
+    /// Driven through real handles rather than a reimplementation of the rule:
+    /// a test that restated the `if` would pass no matter which way round it
+    /// was written.
+    #[test]
+    fn a_project_without_an_override_follows_the_application_preference() {
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let sp = SingleSmartPunctuation::new(ctx);
+        let app = settings_vm_for_test();
+
+        // The app tier says dashes on, spacing off.
+        app.punct_dashes().set(true);
+        app.punct_spacing().set(false);
+        app.punct_quote_style()
+            .set(frontend::common::entities::QuoteStyle::Guillemets);
+
+        // The project disagrees on every count — and must be ignored while its
+        // override is off.
+        sp.set_override_app_default(false);
+        sp.set_dashes(false);
+        sp.set_pre_punctuation_spacing(true);
+        sp.set_quote_style(frontend::common::entities::QuoteStyle::LowHigh);
+
+        let f = punctuation_flags(&sp, &app);
+        assert!(f.dashes, "the app tier decides");
+        assert!(!f.pre_punctuation_spacing);
+        assert_eq!(
+            f.quote_style,
+            frontend::common::entities::QuoteStyle::Guillemets
+        );
+    }
+
+    /// And with the override on, the project's own row wins outright — not
+    /// merged with the app tier. A house style is a whole system; a
+    /// half-inherited one belongs to no language at all.
+    #[test]
+    fn an_overriding_project_wins_outright() {
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let sp = SingleSmartPunctuation::new(ctx);
+        let app = settings_vm_for_test();
+
+        app.punct_dashes().set(true);
+        app.punct_ellipsis().set(true);
+
+        sp.set_override_app_default(true);
+        sp.set_dashes(false);
+        sp.set_ellipsis(false);
+
+        let f = punctuation_flags(&sp, &app);
+        assert!(!f.dashes, "the project decides, even to switch a rule OFF");
+        assert!(
+            !f.ellipsis,
+            "an app-level rule is not inherited through an override"
+        );
+    }
+
+    /// A throwaway store, so these read the real signal plumbing rather than a
+    /// stand-in for it.
+    fn settings_vm_for_test() -> SettingsViewModel {
+        use std::sync::atomic::{AtomicU32, Ordering};
+        static N: AtomicU32 = AtomicU32::new(0);
+        let n = N.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "skribisto_punct_tier_{}_{n}.toml",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        let store = bastyde::settings::SettingsStore::open(path).expect("open temp store");
+        SettingsViewModel::new(&store)
+    }
 
     /// The four states the Save affordances gate on. Nothing to save, or a
     /// read-only backup window → disabled.

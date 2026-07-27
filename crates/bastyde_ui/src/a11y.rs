@@ -26,7 +26,10 @@ mod tests {
             }
         }
         let mut out = Vec::new();
-        walk(Path::new(env!("CARGO_MANIFEST_DIR")).join("src").as_path(), &mut out);
+        walk(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src").as_path(),
+            &mut out,
+        );
         out
     }
 
@@ -56,7 +59,11 @@ mod tests {
     }
 
     /// The three ways this crate opens an anchored overlay.
-    const POPOVERS: [&str; 3] = ["Popover::new", "PopoverButton::new", "PopoverIconButton::new"];
+    const POPOVERS: [&str; 3] = [
+        "Popover::new",
+        "PopoverButton::new",
+        "PopoverIconButton::new",
+    ];
 
     const TRAP: &str = "FocusScope::new(TraversalScopePolicy::Cycle)";
 
@@ -90,7 +97,10 @@ mod tests {
 
         for path in sources() {
             let code = code_of(&path);
-            let count = POPOVERS.iter().map(|p| code.matches(p).count()).sum::<usize>();
+            let count = POPOVERS
+                .iter()
+                .map(|p| code.matches(p).count())
+                .sum::<usize>();
             if count == 0 {
                 continue;
             }
@@ -98,7 +108,9 @@ mod tests {
             if !code.contains(TRAP) {
                 untrapped.push(format!(
                     "{} ({count} popover{})",
-                    path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap_or(&path).display(),
+                    path.strip_prefix(env!("CARGO_MANIFEST_DIR"))
+                        .unwrap_or(&path)
+                        .display(),
                     if count == 1 { "" } else { "s" }
                 ));
             }

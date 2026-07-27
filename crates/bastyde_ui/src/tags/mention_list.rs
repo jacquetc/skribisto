@@ -24,7 +24,6 @@
 
 use std::rc::Rc;
 
-use bastyde::core::BindingLevel;
 use bastyde::core::accesskit::Role;
 use bastyde::core::overlay::TooltipPlacement;
 use bastyde::core::widget::WidgetPlacement;
@@ -100,9 +99,9 @@ impl Widget for MentionList {
                 );
             }
 
-            line = line.child(bastyde::widgets::Expand::horizontal().child(
-                bastyde::widgets::Spacer::new(),
-            ));
+            line = line.child(
+                bastyde::widgets::Expand::horizontal().child(bastyde::widgets::Spacer::new()),
+            );
 
             if row.hit_count > 1 {
                 line = line.child(
@@ -250,7 +249,10 @@ mod tests {
     fn one_line_per_row() {
         let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
         let id = tree.add_boxed(Box::new(list(
-            vec![row(2, "Grace", false, "Grace smiled."), row(3, "Will", true, "")],
+            vec![
+                row(2, "Grace", false, "Grace smiled."),
+                row(3, "Will", true, ""),
+            ],
             true,
         )));
         tree.layout(SizeProposal::exact(300.0, 200.0));

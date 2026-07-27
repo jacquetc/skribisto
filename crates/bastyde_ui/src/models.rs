@@ -22,7 +22,6 @@ mod binder_list_model;
 mod binder_stream;
 mod corkboard_cards_model;
 mod dict_word_list_model;
-mod work_tags_list_model;
 mod dictionary_settings_file;
 mod examples_list_model;
 mod export_styles_file;
@@ -36,8 +35,10 @@ mod search_results_model;
 mod search_settings_file;
 mod stats_model;
 mod stream_rows_model;
+mod text_replacement_rule_list_model;
 mod trash_tree_model;
 mod tree_expansion_file;
+mod work_tags_list_model;
 mod workspace_layout_file;
 
 pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
@@ -48,7 +49,6 @@ pub use binder_list_model::{BinderListModel, BinderRow};
 pub use binder_stream::{BinderItemRef, ordered_binder_items};
 pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
 pub use dict_word_list_model::{DictWordListModel, DictWordRow};
-pub use work_tags_list_model::{TagRow, WorkTagsListModel, colliding_name, name_key, sort_rows};
 pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
 pub use examples_list_model::ExamplesListModel;
 pub use export_styles_file::ExportStylesService;
@@ -58,8 +58,7 @@ pub use installed_dictionaries_model::{
 pub use open_docs::{OpenDoc, OpenDocsStore};
 pub use overview_rows_model::{
     COL_LABEL, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters,
-    OverviewRow,
-    OverviewRowsModel,
+    OverviewRow, OverviewRowsModel,
 };
 pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};
 pub use recent_work_list_model::RecentWorkListModel;
@@ -67,6 +66,10 @@ pub use search_results_model::SearchResultsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use stats_model::StatsModel;
 pub use stream_rows_model::{StreamLevel, StreamRow, StreamRowsModel};
+pub use text_replacement_rule_list_model::{
+    TextReplacementRuleListModel, TextReplacementRuleRow, trigger_key,
+};
 pub use trash_tree_model::{TrashNode, TrashRootKind, TrashTreeKey, TrashTreeModel};
 pub use tree_expansion_file::TreeExpansionService;
+pub use work_tags_list_model::{TagRow, WorkTagsListModel, name_key, sort_rows};
 pub use workspace_layout_file::{PaneLayout, PerProjectLayout, WorkspaceLayoutService};

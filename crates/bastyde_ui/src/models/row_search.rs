@@ -77,7 +77,11 @@ mod tests {
     fn a_blank_query_means_no_filtering() {
         assert_eq!(needle(""), None);
         assert_eq!(needle("   "), None, "whitespace is not a search");
-        assert_eq!(needle("  Dawn "), Some("dawn".to_string()), "trimmed + folded");
+        assert_eq!(
+            needle("  Dawn "),
+            Some("dawn".to_string()),
+            "trimmed + folded"
+        );
     }
 
     #[test]

@@ -48,21 +48,22 @@ use frontend::AppContext;
 use frontend::commands::{
     binder_commands, binder_item_commands, binder_item_management_commands,
     mention_management_commands, progress_management_commands, root_commands, search_commands,
-    search_management_commands, system_commands, tag_management_commands, trash_info_commands,
-    trash_management_commands, work_commands, work_info_commands, work_management_commands,
+    search_management_commands, smart_punctuation_commands, system_commands,
+    tag_management_commands, trash_info_commands, trash_management_commands, work_commands,
+    work_info_commands, work_management_commands,
 };
 use frontend::common::direct_access::root::RootRelationshipField;
 use frontend::common::direct_access::system::SystemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::direct_access::work_info::WorkInfoRelationshipField;
 use frontend::common::entities::{
-    BinderItemRole, BinderItemSubRole, ChapterMode, ContentRole, WorkShape,
+    BinderItemRole, BinderItemSubRole, ChapterMode, ContentRole, QuoteStyle, WorkShape,
 };
 use frontend::common::types::EntityId;
 use frontend::direct_access::{
-    CreateBinderDto, CreateContentDto, CreateSearchDto, CreateTrashInfoDto, CreateWorkDto,
-    CreateWorkInfoDto, RootRelationshipDto, SystemRelationshipDto, WorkInfoRelationshipDto,
-    WorkRelationshipDto,
+    CreateBinderDto, CreateContentDto, CreateSearchDto, CreateSmartPunctuationDto,
+    CreateTrashInfoDto, CreateWorkDto, CreateWorkInfoDto, RootRelationshipDto,
+    SystemRelationshipDto, WorkInfoRelationshipDto, WorkRelationshipDto,
 };
 use binder_item_management::MergeTwoScenesDto;
 use mention_management::ScanMentionsDto;
@@ -119,6 +120,30 @@ struct SecondWork {
 fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
     let n = now();
 
+    // Every Work owns exactly one punctuation row (one_to_one, strong), created
+    // BEFORE the Work so the Work can be built with its real id — see
+    // `new_work_uc.rs`'s own comment on this exact ordering. Leaving the
+    // placeholder `0` here (e.g. via `..Default::default()`) would make this
+    // helper's *second* call collide under the generated uniqueness check
+    // ("SmartPunctuation 0 is already referenced by Work ..."), since two
+    // Works cannot legally reference the same SmartPunctuation row.
+    let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
+        ctx,
+        None,
+        &CreateSmartPunctuationDto {
+            created_at: n,
+            updated_at: n,
+            override_app_default: false,
+            dashes: false,
+            ellipsis: false,
+            quotes: false,
+            quote_style: QuoteStyle::LocaleDefault,
+            pre_punctuation_spacing: false,
+            dialogue_marker: false,
+        },
+    )
+    .unwrap_or_else(|e| panic!("create smart_punctuation for {title}: {e}"));
+
     let work = work_commands::create_orphan_work(
         ctx,
         None,
@@ -130,9 +155,12 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
             dict_language: vec!["en-US".to_string()],
             unique_id: format!("{title}-uid"),
             chapter_mode: ChapterMode::default(),
+            custom_replacement_rules_enabled: false,
             binders: vec![],
             tags: vec![],
             dict_words: vec![],
+            text_replacement_rules: vec![],
+            smart_punctuation: smart_punctuation.id,
             trash_infos: vec![],
             paces: vec![],
         },

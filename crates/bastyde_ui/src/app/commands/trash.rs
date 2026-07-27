@@ -45,7 +45,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let trash = deps.trash.clone();
         ctx.register_action_global(Action::new("trash.delete_forever").on_invoke(move |i, c| {
-            if let Some(AppIntent::DeleteTrashForever { trash_info_ids }) = AppIntent::from_intent(i)
+            if let Some(AppIntent::DeleteTrashForever { trash_info_ids }) =
+                AppIntent::from_intent(i)
             {
                 trash.confirm_delete_forever(c, trash_info_ids);
             }

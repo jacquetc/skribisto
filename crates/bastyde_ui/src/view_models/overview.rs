@@ -38,7 +38,10 @@ use uuid::Uuid;
 
 use frontend::AppContext;
 use frontend::binder_item_management::{DuplicateDto, MovePlace};
-use frontend::commands::{binder_item_commands, binder_item_management_commands, trash_management_commands, undo_redo_commands};
+use frontend::commands::{
+    binder_item_commands, binder_item_management_commands, trash_management_commands,
+    undo_redo_commands,
+};
 use frontend::trash_management::TrashBinderItemsDto;
 
 use skribisto_model::counting::CountingMethodSetting;
@@ -168,7 +171,9 @@ impl OverviewViewModel {
         // only notifies on a real change.
         {
             let me = self.clone();
-            ctx.effect(&self.inner.filters.query, move |_| me.recompute_projecting());
+            ctx.effect(&self.inner.filters.query, move |_| {
+                me.recompute_projecting()
+            });
         }
         {
             let me = self.clone();
@@ -249,8 +254,7 @@ impl OverviewViewModel {
                 // whose row vanished between drag-start and drop resolves to `None` and
                 // the move is refused rather than applied to the wrong item.
                 let map = ids_by_uid.borrow();
-                let (Some(&item_id), Some(&target_id)) =
-                    (map.get(&dragged), map.get(&target))
+                let (Some(&item_id), Some(&target_id)) = (map.get(&dragged), map.get(&target))
                 else {
                     return false;
                 };
@@ -539,8 +543,12 @@ impl OverviewViewModel {
         let Some(item_id) = self.item_id_of(&uid) else {
             return;
         };
-        let blocked =
-            binder_ops::demote_blocked_children(&self.inner.app_ctx, &self.inner.ids, item_id, target);
+        let blocked = binder_ops::demote_blocked_children(
+            &self.inner.app_ctx,
+            &self.inner.ids,
+            item_id,
+            target,
+        );
         if blocked > 0 {
             MessageBox::warning(tr!(promote_blocked_title()))
                 .text(tr!(promote_blocked_text(count = blocked.to_string())))
@@ -700,7 +708,13 @@ impl OverviewViewModel {
         } else {
             MovePlace::After
         };
-        binder_ops::move_relative(&self.inner.app_ctx, &self.inner.ids, item_id, target_id, place);
+        binder_ops::move_relative(
+            &self.inner.app_ctx,
+            &self.inner.ids,
+            item_id,
+            target_id,
+            place,
+        );
     }
 
     /// Whether the table is showing a projection (search and/or sort) rather than
@@ -716,7 +730,6 @@ impl OverviewViewModel {
             self.inner.projecting.set(projecting);
         }
     }
-
 }
 
 #[cfg(test)]
@@ -812,7 +825,11 @@ mod tests {
             vec![elsewhere],
             "outside the selection → that row alone, selection untouched"
         );
-        assert_eq!(vm.selection().count(), 2, "and the selection is not disturbed");
+        assert_eq!(
+            vm.selection().count(),
+            2,
+            "and the selection is not disturbed"
+        );
     }
 
     /// The inline-edit cursor is one cell at a time, and cancelling clears it.
@@ -897,10 +914,15 @@ mod tests {
     #[test]
     fn reordering_is_refused_while_sorted_or_searching() {
         let vm = vm_for(101).unwrap();
-        assert!(vm.can_reorder(), "manuscript order: reordering is meaningful");
+        assert!(
+            vm.can_reorder(),
+            "manuscript order: reordering is meaningful"
+        );
 
-        vm.sort_signal()
-            .set(Some((crate::models::COL_TOTAL_WORDS.to_string(), SortDirection::Descending)));
+        vm.sort_signal().set(Some((
+            crate::models::COL_TOTAL_WORDS.to_string(),
+            SortDirection::Descending,
+        )));
         vm.recompute_projecting();
         assert!(!vm.can_reorder(), "a sorted table must not be reordered");
 
@@ -922,7 +944,11 @@ mod tests {
         let vm = vm_for(101).unwrap();
         let uid = common::uid::fixture_uid(201);
         vm.begin_edit(uid, crate::models::COL_TITLE);
-        assert_eq!(vm.edit_buffer().text.get(), "Scene 1", "seeded from the row");
+        assert_eq!(
+            vm.edit_buffer().text.get(),
+            "Scene 1",
+            "seeded from the row"
+        );
 
         vm.edit_buffer().text.set("Half-typed nam".to_string());
         vm.rows().reload(); // what any backend event triggers

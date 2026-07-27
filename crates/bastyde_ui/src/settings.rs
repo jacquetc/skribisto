@@ -92,6 +92,11 @@ enum Pane {
     Keymap,
     /// Per-project "Work: `<name>` ▸ Structure" — chapter mode (folder vs flat).
     WorkStructure,
+    /// Per-project "Work: `<name>` ▸ Punctuation" — the smart-punctuation house style.
+    WorkPunctuation,
+    /// Application-level "Editor ▸ Punctuation" — the tier every project follows
+    /// unless it takes an override of its own.
+    Punctuation,
     /// General backup ("Copies de secours") policy (under Backup & Sync).
     Backup,
     /// Per-project backup override (under the open Work's section).
@@ -112,6 +117,9 @@ enum Pane {
     /// it is shown *first* in the tree, but that is `build_tree`'s business, not this
     /// number's: renumbering here would re-point every later `Switcher` slot.
     WorkAuthor,
+    /// Per-project custom replacement lexicon (under the open Work's section). Appended
+    /// last, same rule as every one above it.
+    WorkTextReplacements,
 }
 
 impl Pane {
@@ -135,12 +143,15 @@ impl Pane {
             Pane::ExportFormats => tr!(settings_page_export()),
             Pane::Keymap => tr!(settings_page_keymap()),
             Pane::WorkStructure => tr!(settings_page_structure()),
+            Pane::WorkPunctuation => tr!(settings_page_punctuation()),
+            Pane::Punctuation => tr!(settings_page_punctuation()),
             Pane::Backup => tr!(settings_page_backup()),
             Pane::WorkBackup => tr!(settings_page_work_backup()),
             Pane::WorkLanguage => tr!(settings_page_language()),
             Pane::WorkDictionary => tr!(settings_page_personal_dictionary()),
             Pane::WorkTags => tr!(settings_page_tags()),
             Pane::WorkAuthor => tr!(settings_page_author()),
+            Pane::WorkTextReplacements => tr!(settings_page_text_replacements()),
             Pane::Spellcheck => tr!(settings_page_spellcheck()),
         }
     }
@@ -542,13 +553,19 @@ impl SettingsPanel {
             Pane::EditorBehavior,
             model.insert_child(ed, 3, Node::Page(Pane::EditorBehavior)),
         );
+        // Beside Editor Behavior: the other set of switches that change what
+        // happens as the writer types, rather than how the page looks.
+        nodes.insert(
+            Pane::Punctuation,
+            model.insert_child(ed, 4, Node::Page(Pane::Punctuation)),
+        );
         nodes.insert(
             Pane::Goals,
-            model.insert_child(ed, 4, Node::Page(Pane::Goals)),
+            model.insert_child(ed, 5, Node::Page(Pane::Goals)),
         );
         nodes.insert(
             Pane::Corkboard,
-            model.insert_child(ed, 5, Node::Page(Pane::Corkboard)),
+            model.insert_child(ed, 6, Node::Page(Pane::Corkboard)),
         );
 
         let sp = model.insert_root(2, Node::Section(Sec::Spelling));
@@ -615,6 +632,18 @@ impl SettingsPanel {
             nodes.insert(
                 Pane::WorkTags,
                 model.insert_child(wk, 5, Node::Page(Pane::WorkTags)),
+            );
+            // Beside the personal dictionary and the tag palette: the third per-project
+            // vocabulary the writer curates.
+            nodes.insert(
+                Pane::WorkTextReplacements,
+                model.insert_child(wk, 6, Node::Page(Pane::WorkTextReplacements)),
+            );
+            // Next to the lexicon: the other thing that rewrites prose as it is
+            // typed, and the other one that travels inside the `.skrib`.
+            nodes.insert(
+                Pane::WorkPunctuation,
+                model.insert_child(wk, 7, Node::Page(Pane::WorkPunctuation)),
             );
             work_node = Some(wk);
         }
@@ -691,17 +720,20 @@ impl SettingsPanel {
             | Pane::SynopsisTypography
             | Pane::NotesTypography
             | Pane::EditorBehavior
+            | Pane::Punctuation
             | Pane::Goals
             | Pane::Corkboard => Some(ed),
             Pane::Spellcheck | Pane::Dictionaries => Some(sp),
             Pane::Autosave | Pane::Backup => Some(bk),
             Pane::ExportFormats => Some(ce),
             Pane::WorkStructure
+            | Pane::WorkPunctuation
             | Pane::WorkLanguage
             | Pane::WorkBackup
             | Pane::WorkDictionary
             | Pane::WorkTags
-            | Pane::WorkAuthor => work_node,
+            | Pane::WorkAuthor
+            | Pane::WorkTextReplacements => work_node,
             Pane::Keymap => None,
         };
         if let Some(sec) = section_of(self.selected_pane.get()) {
@@ -735,6 +767,13 @@ impl SettingsPanel {
             (tr!(settings_page_backup()), Pane::Backup),
             (tr!(settings_page_export()), Pane::ExportFormats),
             (tr!(settings_page_keymap()), Pane::Keymap),
+            // Per-project pages resolve to no tree node when nothing is open —
+            // `on_select` skips the selection and still switches the pane, which
+            // lands on that page's "no project" placeholder. Correct either way.
+            (
+                tr!(settings_page_text_replacements()),
+                Pane::WorkTextReplacements,
+            ),
             (tr!(settings_text_width()), Pane::EditorBehavior),
             (tr!(settings_synopsis_pane()), Pane::EditorBehavior),
             (tr!(settings_field_app_theme()), Pane::Appearance),
@@ -831,9 +870,12 @@ impl Widget for SettingsPanel {
         let work_title = work.as_ref().map(|w| w.title().get()).unwrap_or_default();
         // The two Work pages edit the *entity*, not the settings store, so they go through
         // their own view-model rather than calling `SingleWork::set_*` + `save` from a pane.
+        // THIS WINDOW's own session (never `ctx.app_state`), same reasoning as `work` above.
+        let punctuation = Some(self.session.smart_punctuation.clone());
         let work_vm = work
             .as_ref()
-            .map(|w| WorkSettingsViewModel::new(w.clone(), stack.clone()));
+            .zip(punctuation.as_ref())
+            .map(|(w, p)| WorkSettingsViewModel::new(w.clone(), p.clone(), stack.clone()));
         let structure_pane: Box<dyn Widget> = match &work_vm {
             Some(vm) => Box::new(panes::work_structure::work_structure_pane(
                 ctx,
@@ -843,6 +885,18 @@ impl Widget for SettingsPanel {
             None => Box::new(empty_pane(
                 None,
                 tr!(settings_page_structure()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+        let punctuation_pane: Box<dyn Widget> = match &work_vm {
+            Some(vm) => Box::new(panes::work_punctuation::work_punctuation_pane(
+                ctx,
+                vm,
+                work_title.clone(),
+            )),
+            None => Box::new(empty_pane(
+                None,
+                tr!(settings_page_punctuation()),
                 res!("assets/icons/binder/book.svg"),
             )),
         };
@@ -986,6 +1040,34 @@ impl Widget for SettingsPanel {
             )),
         };
 
+        // Work ▸ Text replacements — the per-project custom lexicon, over THIS
+        // WINDOW's own `WorkSession::text_replacements` (never `ctx.app_state`),
+        // same reasoning as `tags_pane`/`dictionary_pane`/`punctuation` above.
+        let text_replacements_pane: Box<dyn Widget> = match (
+            Some(self.session.text_replacements.clone()),
+            &work,
+        ) {
+            (Some(rvm), Some(w)) if w.id().is_some() => {
+                let title = w.title().get();
+                Box::new(pane_frame(
+                    crumb(
+                        Some(lit!(format!(
+                            "{}: {}",
+                            tr!(settings_sec_work()).resolve_now(),
+                            title
+                        ))),
+                        tr!(settings_page_text_replacements()),
+                    ),
+                    crate::settings::panes::text_replacements::text_replacements_pane(ctx, &rvm),
+                ))
+            }
+            _ => Box::new(empty_pane(
+                None,
+                tr!(settings_page_text_replacements()),
+                res!("assets/icons/binder/book.svg"),
+            )),
+        };
+
         // Work ▸ Personal dictionary — the per-project word-list manager, over
         // THIS WINDOW's own `WorkSession::user_dictionary` (never
         // `ctx.app_state::<UserDictionaryViewModel>()`, same reasoning as
@@ -1088,7 +1170,10 @@ impl Widget for SettingsPanel {
                 Box::new(panes::corkboard::corkboard_pane(ctx, &vm)),
             ),
             (Pane::Dictionaries, dictionaries_pane),
-            (Pane::Autosave, Box::new(panes::autosave::autosave_pane(&vm))),
+            (
+                Pane::Autosave,
+                Box::new(panes::autosave::autosave_pane(&vm)),
+            ),
             (Pane::ExportFormats, export_styles_pane),
             (
                 Pane::Keymap,
@@ -1099,13 +1184,22 @@ impl Widget for SettingsPanel {
                 )),
             ),
             (Pane::WorkStructure, structure_pane),
+            (Pane::WorkPunctuation, punctuation_pane),
+            (
+                Pane::Punctuation,
+                Box::new(panes::punctuation::punctuation_pane(ctx, &vm)),
+            ),
             (Pane::Backup, backup_pane),
             (Pane::WorkBackup, work_backup_pane),
             (Pane::WorkLanguage, language_pane),
             (Pane::WorkDictionary, dictionary_pane),
-            (Pane::Spellcheck, Box::new(panes::spellcheck::spellcheck_pane(&vm))),
+            (
+                Pane::Spellcheck,
+                Box::new(panes::spellcheck::spellcheck_pane(&vm)),
+            ),
             (Pane::WorkTags, tags_pane),
             (Pane::WorkAuthor, author_pane),
+            (Pane::WorkTextReplacements, text_replacements_pane),
         ];
         if let Some((slot, (pane, _))) =
             panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)
@@ -1298,6 +1392,8 @@ mod tests {
             Pane::ExportFormats,
             Pane::Keymap,
             Pane::WorkStructure,
+            Pane::WorkPunctuation,
+            Pane::Punctuation,
             Pane::Backup,
             Pane::WorkBackup,
             Pane::WorkLanguage,
@@ -1305,6 +1401,7 @@ mod tests {
             Pane::Spellcheck,
             Pane::WorkTags,
             Pane::WorkAuthor,
+            Pane::WorkTextReplacements,
         ];
         for (i, pane) in all.iter().enumerate() {
             assert_eq!(

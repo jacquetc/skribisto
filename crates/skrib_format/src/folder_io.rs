@@ -63,6 +63,10 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         to_ron(&bundle.dict_words)?.as_bytes(),
     )?;
     write_if_changed(
+        &root.join("replacements.ron"),
+        to_ron(&bundle.text_replacement_rules)?.as_bytes(),
+    )?;
+    write_if_changed(
         &root.join("trash.ron"),
         to_ron(&bundle.trash_infos)?.as_bytes(),
     )?;
@@ -158,6 +162,9 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
 
     let tags = read_ron_vec(&root.join("tags.ron"), "tags.ron")?;
     let dict_words = read_ron_vec(&root.join("dictionary.ron"), "dictionary.ron")?;
+    // Additive: a pre-feature bundle has no `replacements.ron`; `read_ron_vec` treats a
+    // missing file as an empty vec, so old projects load with zero rules (no version bump).
+    let text_replacement_rules = read_ron_vec(&root.join("replacements.ron"), "replacements.ron")?;
     let trash_infos = read_ron_vec(&root.join("trash.ron"), "trash.ron")?;
     // Additive: a pre-Pace bundle has no `paces.ron`; `read_ron_vec` treats a missing
     // file as an empty vec, so old projects load with zero paces (no version bump).
@@ -205,6 +212,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         manifest,
         tags,
         dict_words,
+        text_replacement_rules,
         trash_infos,
         paces,
         progress_snapshots,

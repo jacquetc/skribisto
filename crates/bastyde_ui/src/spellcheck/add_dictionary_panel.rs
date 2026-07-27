@@ -123,7 +123,8 @@ impl Widget for AddDictionaryPanel {
         // Build the form first so its first focusable descendant can be captured
         // for `initial_focus_hint` (see the note there).
         let form_id = ctx.add(self.form());
-        self.first_field.set(ctx.first_focusable_descendant(form_id));
+        self.first_field
+            .set(ctx.first_focusable_descendant(form_id));
 
         let body = ScrollArea::new().child(Padding::symmetric(20.0, 22.0).child_id(form_id));
 
@@ -210,23 +211,25 @@ impl Widget for AddDictionaryPanel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bastyde::core::widget_tree::WidgetTree;
     use crate::models::{DictionarySettingsService, InstalledDictionariesModel};
+    use bastyde::core::widget_tree::WidgetTree;
 
     /// The panel builds and lays out headlessly at its card size (the FormLayout body — two
     /// `TextInput`s, two `FilePickerField`s — plus header and footer).
     #[test]
     fn panel_builds_and_lays_out() {
         let settings = DictionarySettingsService::in_memory_default();
-        let dicts = DictionariesViewModel::new(
-            settings.clone(),
-            InstalledDictionariesModel::new(settings),
-        );
+        let dicts =
+            DictionariesViewModel::new(settings.clone(), InstalledDictionariesModel::new(settings));
         let vm = AddDictionaryViewModel::new(dicts);
         let mut tree = WidgetTree::new();
         let id = tree.add_boxed(Box::new(AddDictionaryPanel::new(vm)));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         let b = tree.bounds(id);
-        assert_eq!((b.width, b.height), (CARD_W, CARD_H), "panel fills the card");
+        assert_eq!(
+            (b.width, b.height),
+            (CARD_W, CARD_H),
+            "panel fills the card"
+        );
     }
 }

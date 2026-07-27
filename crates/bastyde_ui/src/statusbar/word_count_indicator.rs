@@ -41,10 +41,19 @@ impl WordCountIndicator {
             CountDisplay::Hidden => return None,
             CountDisplay::Words(n) => tr!(statusbar_word_count(count = n as i64)),
             CountDisplay::WordsChars { words, chars } => {
-                tr!(statusbar_word_char_count(words = words as i64, chars = chars as i64))
+                tr!(statusbar_word_char_count(
+                    words = words as i64,
+                    chars = chars as i64
+                ))
             }
         };
-        Some(ctx.add(TextWidget::new(label).color(TextRole::Secondary).single_line()))
+        Some(
+            ctx.add(
+                TextWidget::new(label)
+                    .color(TextRole::Secondary)
+                    .single_line(),
+            ),
+        )
     }
 }
 
@@ -62,12 +71,22 @@ impl Widget for WordCountIndicator {
         // a counting-method or show-characters change also re-derives (the status bar
         // sits behind the Settings modal, so nothing else would rebuild it).
         self.has_work.bind_to(sid, reg, BindingLevel::Rebuild);
-        self.stats.active_item().bind_to(sid, reg, BindingLevel::Rebuild);
-        self.stats.edited_signal().bind_to(sid, reg, BindingLevel::Rebuild);
-        self.stats.method_signal().bind_to(sid, reg, BindingLevel::Rebuild);
-        self.show_characters.bind_to(sid, reg, BindingLevel::Rebuild);
+        self.stats
+            .active_item()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.stats
+            .edited_signal()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.stats
+            .method_signal()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.show_characters
+            .bind_to(sid, reg, BindingLevel::Rebuild);
 
-        let focused = self.stats.focused_counts().map(|c| (c.words, c.chars_with_spaces));
+        let focused = self
+            .stats
+            .focused_counts()
+            .map(|c| (c.words, c.chars_with_spaces));
         let display = count_display(self.has_work.get(), focused, self.show_characters.get());
         self.root_child = self.render(ctx, display);
         self.root_child.into_iter().collect()

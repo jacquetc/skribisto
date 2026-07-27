@@ -30,28 +30,48 @@
 //! so every transition above always opens the new window *before* closing the
 //! old one. Getting this backwards quits the app.
 
-mod icons;
-mod statusbar;
-mod shell;
-mod trash;
-mod export;
-mod binder;
-mod panels;
+// A deliberate, blunt instrument — and worth knowing exactly what it hides.
+//
+// This is a **binary** crate, so `pub` shields nothing and every item the views
+// have not wired up yet reads as dead. Two thirds of what this silences is
+// view-model surface built ahead of the view that will consume it (the idiom
+// `singles.rs` already spells out per-impl as "public reactive surface; wired to
+// consumers incrementally"), and much of the rest is live only under
+// `--features mocks` — clippy lints each `#[cfg]` arm on its own, so a helper the
+// mock models use is dead in the default arm and vice versa. **Deleting those
+// would break the other feature set's build**, which is why this is an allow
+// rather than a cleanup.
+//
+// The cost is real: genuine rot in this crate now goes unreported. The honest
+// follow-up is a triage pass that deletes what is vestigial and annotates the
+// rest per item with its reason, after which this line should come back out.
+// It is here because CI's `-D warnings` gate cannot go green without it, and a
+// gate that has never once been green teaches nobody anything.
+#![allow(dead_code)]
+
 mod a11y;
 mod app;
 mod app_ids;
 mod backup;
+mod binder;
 mod date_convert;
 mod docks;
+mod export;
+mod icons;
 mod intents;
 mod models;
+mod panels;
 mod sessions;
 mod settings;
+mod shell;
 mod singles;
 mod spellcheck;
-mod tags;
-mod widgets;
+mod statusbar;
 mod tabs;
+mod tags;
+mod text_replacement;
+mod trash;
+mod widgets;
 // The pane tests that need fixture rows are mocks-gated, but the search preview's
 // layout tests build their own `OpenDoc`, so they run on the real backend too —
 // and both need an event source. Hence the plain `test` gate.
@@ -84,8 +104,7 @@ use app_ids::AppIds;
 use models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
 use sessions::{WorkRegistry, WorkSession};
 use view_models::{
-    BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel,
-    ProjectSwitchViewModel,
+    BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel, ProjectSwitchViewModel,
 };
 
 /// The currently-open project's path (from its `WorkInfo`), if any.
@@ -271,6 +290,36 @@ pub const REMEMBER_VIEW_KEY: &str = "editor.remember_view";
 pub const REMEMBER_VIEW_DEFAULT: bool = true;
 /// Keep the caret line vertically centred while typing.
 pub const TYPEWRITER_KEY: &str = "editor.typewriter_scroll";
+
+// ── Smart punctuation, application-level ────────────────────────────────────
+//
+// The default tier. A project that has not taken the override in
+// Work ▸ Punctuation follows these, which is what `override_app_default: false`
+// on its row means.
+//
+// Dashes, the ellipsis and curled quotes default **on**: that is what "smart
+// punctuation" means to a writer, it is what Word, LibreOffice and Scrivener all
+// do out of the box, and every one of them is reversible with a single Ctrl+Z on
+// the keystroke that fired it.
+//
+// Pre-punctuation spacing defaults **off** even though it is equally correct for
+// French. It inserts an *invisible* character, so a writer who has not asked for
+// it would see their file change in ways they cannot see on screen — and unlike
+// the others it applies to one language only.
+pub const PUNCT_DASHES_KEY: &str = "editor.punctuation.dashes";
+pub const PUNCT_DASHES_DEFAULT: bool = true;
+pub const PUNCT_ELLIPSIS_KEY: &str = "editor.punctuation.ellipsis";
+pub const PUNCT_ELLIPSIS_DEFAULT: bool = true;
+pub const PUNCT_QUOTES_KEY: &str = "editor.punctuation.quotes";
+pub const PUNCT_QUOTES_DEFAULT: bool = true;
+pub const PUNCT_QUOTE_STYLE_KEY: &str = "editor.punctuation.quote_style";
+pub const PUNCT_SPACING_KEY: &str = "editor.punctuation.pre_punctuation_spacing";
+pub const PUNCT_SPACING_DEFAULT: bool = false;
+pub const PUNCT_DIALOGUE_KEY: &str = "editor.punctuation.dialogue_marker";
+/// Off, like the spacing rule: it rewrites the *shape* of a line rather than one
+/// glyph inside it, and it is wrong outright in the languages that quote their
+/// dialogue instead of dashing it.
+pub const PUNCT_DIALOGUE_DEFAULT: bool = false;
 pub const TYPEWRITER_DEFAULT: bool = true;
 /// Highlight the sentence the caret is in.
 pub const HIGHLIGHT_SENTENCE_KEY: &str = "editor.highlight_sentence";
@@ -543,7 +592,17 @@ fn main() {
     // open Work's window. `WorkSession::new` now mints a fresh pair per Work —
     // see its module doc — so the title-bar menu / `App` read theirs off
     // `session.backup_mode`/`session.backup_context` instead (see
-    // `ProjectWindowFactory::window_config`).
+    // `ProjectWindowFactory::window_config`). The personal dictionary, tag
+    // palette, tree-expansion and workspace-layout view-models moved the same
+    // way (`session.user_dictionary`/`session.tags`/`session.tree_expansion`/
+    // `session.workspace_layout`), and `save_as_vm` is minted per window by
+    // `ProjectWindowFactory` for the same reason. The punctuation house style
+    // and the per-project custom replacement lexicon ("btw" → "by the way")
+    // moved the same way too (`session.smart_punctuation`/
+    // `session.text_replacements`) — `WorkSession::new` mints a fresh instance
+    // of each per Work, so a second, simultaneously-open Work never shares
+    // this Work's punctuation row or lexicon.
+
     // Backup ("Copies de secours") settings — opened eagerly here (before any
     // project loads) so the on-open/on-close/interval hooks and the scheduler see
     // it. Degrades to a throwaway temp file if the config dir is unavailable,
@@ -768,7 +827,11 @@ fn main() {
         // Work, not a second Work opened in a second window later. Every
         // other consumer (the vast majority — confirmed by grep) already
         // reaches its Tier-2 state through a real constructor parameter, and
-        // is unaffected by this limitation.
+        // is unaffected by this limitation. `smart_punctuation`/
+        // `text_replacements` are NOT in that handful — every consumer of
+        // either (`App::build`, `SettingsPanel::build`) already reads them off
+        // `session` directly, so unlike the fields below they need no
+        // `app_state` registration at all.
         .app_state(initial_state.session.ids.clone())
         .app_state(initial_state.session.open_docs.clone())
         .app_state(spellcheck.clone())

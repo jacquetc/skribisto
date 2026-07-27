@@ -190,7 +190,9 @@ impl WritingSessionViewModel {
                 self.begin_baselines();
             }
             self.inner.clock.borrow_mut().start(now);
-            self.inner.elapsed.set(self.inner.clock.borrow().elapsed(now));
+            self.inner
+                .elapsed
+                .set(self.inner.clock.borrow().elapsed(now));
             self.inner.running.set(true);
         }
     }
@@ -208,7 +210,9 @@ impl WritingSessionViewModel {
         self.inner.accumulated.set(0);
         self.inner.scene_baseline.set(f);
         self.inner.last_focused.set(f);
-        self.inner.current_scene.set(self.inner.stats.active_item().get());
+        self.inner
+            .current_scene
+            .set(self.inner.stats.active_item().get());
         self.inner.session_words.set(0);
     }
 
@@ -224,7 +228,9 @@ impl WritingSessionViewModel {
             // Moved to another scene: bank what was written in the one just left, then
             // re-baseline against the new scene.
             let banked = (self.inner.last_focused.get() - self.inner.scene_baseline.get()).max(0);
-            self.inner.accumulated.set(self.inner.accumulated.get() + banked);
+            self.inner
+                .accumulated
+                .set(self.inner.accumulated.get() + banked);
             self.inner.scene_baseline.set(count);
             self.inner.current_scene.set(id);
         }
@@ -277,12 +283,21 @@ mod tests {
         let t = t0();
         let mut c = SessionClock::default();
         c.start(t);
-        assert_eq!(c.elapsed(t + Duration::from_secs(5)), Duration::from_secs(5));
+        assert_eq!(
+            c.elapsed(t + Duration::from_secs(5)),
+            Duration::from_secs(5)
+        );
         c.pause(t + Duration::from_secs(5)); // banked 5s
         // Paused: time no longer advances.
-        assert_eq!(c.elapsed(t + Duration::from_secs(9)), Duration::from_secs(5));
+        assert_eq!(
+            c.elapsed(t + Duration::from_secs(9)),
+            Duration::from_secs(5)
+        );
         c.start(t + Duration::from_secs(9)); // resume
-        assert_eq!(c.elapsed(t + Duration::from_secs(11)), Duration::from_secs(7));
+        assert_eq!(
+            c.elapsed(t + Duration::from_secs(11)),
+            Duration::from_secs(7)
+        );
         c.reset();
         assert_eq!(c.elapsed(t + Duration::from_secs(20)), Duration::ZERO);
         assert!(!c.running());
@@ -294,7 +309,10 @@ mod tests {
         let mut c = SessionClock::default();
         c.start(t);
         c.start(t + Duration::from_secs(3)); // must NOT reset the origin
-        assert_eq!(c.elapsed(t + Duration::from_secs(4)), Duration::from_secs(4));
+        assert_eq!(
+            c.elapsed(t + Duration::from_secs(4)),
+            Duration::from_secs(4)
+        );
     }
 
     #[test]
@@ -317,7 +335,11 @@ mod tests {
         assert_eq!(words_progress(250, Some(0)), None, "0 target = no goal");
         assert_eq!(words_progress(250, Some(500)), Some(0.5));
         assert_eq!(words_progress(600, Some(500)), Some(1.0), "clamped at full");
-        assert_eq!(words_progress(-5, Some(500)), Some(0.0), "negative clamps to 0");
+        assert_eq!(
+            words_progress(-5, Some(500)),
+            Some(0.0),
+            "negative clamps to 0"
+        );
     }
 
     #[test]

@@ -32,10 +32,16 @@ mod imp {
         author_name: Signal<String>,
         dict_language: Signal<Vec<String>>,
         chapter_mode: Signal<ChapterMode>,
+        /// The per-project master switch for the custom text-replacement lexicon.
+        custom_replacement_rules_enabled: Signal<bool>,
         /// The stable per-project UUID (`Work.unique_id`). Read-only here — it is
         /// the key the backup settings/retention correlate a project on. Empty
         /// string when no work is loaded (or a pre-v2 project not yet healed).
         unique_id: Signal<String>,
+        /// The id of this Work's `SmartPunctuation` row. Read-only: the row is
+        /// minted with the Work and never re-pointed, so the UI only needs to
+        /// know where it is.
+        smart_punctuation: Signal<u64>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -60,7 +66,9 @@ mod imp {
                     author_name: Signal::new(String::new()),
                     dict_language: Signal::new(Vec::new()),
                     chapter_mode: Signal::new(ChapterMode::default()),
+                    custom_replacement_rules_enabled: Signal::new(false),
                     unique_id: Signal::new(String::new()),
+                    smart_punctuation: Signal::new(0),
                     loading_status: Signal::new(LoadingStatus::Unloaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -117,6 +125,10 @@ mod imp {
         pub fn chapter_mode(&self) -> Signal<ChapterMode> {
             self.inner.chapter_mode.clone()
         }
+        /// Whether the per-project custom text-replacement lexicon is active.
+        pub fn custom_replacement_rules_enabled(&self) -> Signal<bool> {
+            self.inner.custom_replacement_rules_enabled.clone()
+        }
         pub fn loading_status(&self) -> Signal<LoadingStatus> {
             self.inner.loading_status.clone()
         }
@@ -128,6 +140,9 @@ mod imp {
         }
         /// The open project's stable UUID (empty when no work is loaded). Read-only —
         /// the key backup settings/retention correlate this project on.
+        pub fn smart_punctuation(&self) -> Signal<u64> {
+            self.inner.smart_punctuation.clone()
+        }
         pub fn unique_id(&self) -> Signal<String> {
             self.inner.unique_id.clone()
         }
@@ -148,6 +163,10 @@ mod imp {
         pub fn set_chapter_mode(&self, v: ChapterMode) {
             self.mark_dirty();
             self.inner.chapter_mode.set(v);
+        }
+        pub fn set_custom_replacement_rules_enabled(&self, v: bool) {
+            self.mark_dirty();
+            self.inner.custom_replacement_rules_enabled.set(v);
         }
 
         fn mark_dirty(&self) {
@@ -183,6 +202,7 @@ mod imp {
                 dict_language: self.inner.dict_language.get(),
                 unique_id: existing.unique_id,
                 chapter_mode: self.inner.chapter_mode.get(),
+                custom_replacement_rules_enabled: self.inner.custom_replacement_rules_enabled.get(),
             };
             match work_commands::update_work(ctx, stack_id, &dto) {
                 Ok(_) => {
@@ -205,7 +225,11 @@ mod imp {
                     self.inner.author_name.set(w.author_name);
                     self.inner.dict_language.set(w.dict_language);
                     self.inner.chapter_mode.set(w.chapter_mode);
+                    self.inner
+                        .custom_replacement_rules_enabled
+                        .set(w.custom_replacement_rules_enabled);
                     self.inner.unique_id.set(w.unique_id);
+                    self.inner.smart_punctuation.set(w.smart_punctuation);
                     self.inner.is_refreshing.set(false);
                     self.inner.dirty.set(false);
                     self.inner.error_message.set(String::new());
@@ -222,7 +246,9 @@ mod imp {
             self.inner.author_name.set(String::new());
             self.inner.dict_language.set(Vec::new());
             self.inner.chapter_mode.set(ChapterMode::default());
+            self.inner.custom_replacement_rules_enabled.set(false);
             self.inner.unique_id.set(String::new());
+            self.inner.smart_punctuation.set(0);
             self.inner.is_refreshing.set(false);
             self.inner.dirty.set(false);
             self.inner.error_message.set(String::new());
@@ -254,7 +280,12 @@ mod imp {
         author_name: Signal<String>,
         dict_language: Signal<Vec<String>>,
         chapter_mode: Signal<ChapterMode>,
+        custom_replacement_rules_enabled: Signal<bool>,
         unique_id: Signal<String>,
+        /// The id of this Work's `SmartPunctuation` row. Read-only: the row is
+        /// minted with the Work and never re-pointed, so the UI only needs to
+        /// know where it is.
+        smart_punctuation: Signal<u64>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
         dirty: Signal<bool>,
@@ -276,7 +307,9 @@ mod imp {
                     author_name: Signal::new("Mock Author".to_string()),
                     dict_language: Signal::new(vec!["en".to_string()]),
                     chapter_mode: Signal::new(ChapterMode::default()),
+                    custom_replacement_rules_enabled: Signal::new(false),
                     unique_id: Signal::new("mock-work-uid-1".to_string()),
+                    smart_punctuation: Signal::new(1),
                     loading_status: Signal::new(LoadingStatus::Loaded),
                     error_message: Signal::new(String::new()),
                     dirty: Signal::new(false),
@@ -304,6 +337,12 @@ mod imp {
         pub fn chapter_mode(&self) -> Signal<ChapterMode> {
             self.inner.chapter_mode.clone()
         }
+        pub fn custom_replacement_rules_enabled(&self) -> Signal<bool> {
+            self.inner.custom_replacement_rules_enabled.clone()
+        }
+        pub fn smart_punctuation(&self) -> Signal<u64> {
+            self.inner.smart_punctuation.clone()
+        }
         pub fn unique_id(&self) -> Signal<String> {
             self.inner.unique_id.clone()
         }
@@ -328,6 +367,9 @@ mod imp {
         }
         pub fn set_chapter_mode(&self, v: ChapterMode) {
             self.inner.chapter_mode.set(v);
+        }
+        pub fn set_custom_replacement_rules_enabled(&self, v: bool) {
+            self.inner.custom_replacement_rules_enabled.set(v);
         }
 
         pub fn save(&self, _stack_id: Option<u64>) {

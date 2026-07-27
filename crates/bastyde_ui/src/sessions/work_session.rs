@@ -76,15 +76,15 @@ use frontend::AppContext;
 use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
 use crate::models::{
-    DictWordListModel, OpenDocsStore, TreeExpansionService, WorkTagsListModel,
-    WorkspaceLayoutService,
+    DictWordListModel, OpenDocsStore, TextReplacementRuleListModel, TreeExpansionService,
+    WorkTagsListModel, WorkspaceLayoutService,
 };
-use crate::singles::{SingleDictWord, SingleWork, SingleWorkInfo};
+use crate::singles::{SingleDictWord, SingleSmartPunctuation, SingleWork, SingleWorkInfo};
 use crate::spellcheck::SpellcheckService;
 use crate::view_models::{
     BackupSchedulerViewModel, BackupSettingsViewModel, MentionIndex, ProgressRecorder,
-    SaveStateViewModel, TagsViewModel, TreeExpansionViewModel, UserDictionaryViewModel,
-    WorkspaceLayoutViewModel,
+    SaveStateViewModel, TagsViewModel, TextReplacementRulesViewModel, TreeExpansionViewModel,
+    UserDictionaryViewModel, WorkspaceLayoutViewModel,
 };
 
 /// Every Tier-2 ("per open Work") view-model/single/model, bundled. Cloneable —
@@ -104,6 +104,16 @@ pub struct WorkSession {
     pub save_state: SaveStateViewModel,
     pub tags: TagsViewModel,
     pub user_dictionary: UserDictionaryViewModel,
+    /// The project's punctuation house style (`Work.smart_punctuation`), and
+    /// the per-project custom replacement lexicon ("btw" → "by the way",
+    /// `Work.custom_replacement_rules_enabled` + `Work.text_replacement_rules`).
+    /// Landed on a parallel branch to the multi-Work migration and, through the
+    /// merge that reconciled the two, had no matching `WorkSession` field yet —
+    /// closed here, the same "fresh instance per Work" shape as `tags`/
+    /// `user_dictionary` above: a second, simultaneously-open Work must never
+    /// share this Work's punctuation row or lexicon.
+    pub smart_punctuation: SingleSmartPunctuation,
+    pub text_replacements: TextReplacementRulesViewModel,
     pub mention_index: MentionIndex,
     pub progress_recorder: ProgressRecorder,
     /// Whole instance, not yet split — see the module doc's "what did not
@@ -190,6 +200,15 @@ impl WorkSession {
         let single_dict_word = SingleDictWord::new(app_ctx.clone());
         let user_dictionary = UserDictionaryViewModel::new(dict_words, single_dict_word, ids.clone());
 
+        let smart_punctuation = SingleSmartPunctuation::new(app_ctx.clone());
+
+        let replacement_rules = TextReplacementRuleListModel::new(app_ctx.clone(), ids.clone());
+        let text_replacements =
+            TextReplacementRulesViewModel::new(replacement_rules, single_work.clone(), ids.clone());
+        // Hand it to the open-docs store, which owns the per-document attach
+        // loop — exactly as the spell engine is handed over just above.
+        open_docs.set_text_replacements(text_replacements.clone());
+
         let mention_index = MentionIndex::new(app_ctx.clone(), ids.clone());
         let progress_recorder = ProgressRecorder::new(app_ctx.clone(), ids.clone());
 
@@ -223,6 +242,8 @@ impl WorkSession {
             save_state,
             tags,
             user_dictionary,
+            smart_punctuation,
+            text_replacements,
             mention_index,
             progress_recorder,
             backup_scheduler,
@@ -311,6 +332,60 @@ mod tests {
         assert!(
             !b.unsaved.get(),
             "Work B's unsaved must be untouched by Work A's write — a fresh Signal, not a shared one"
+        );
+    }
+
+    /// The punctuation house style and the custom replacement lexicon landed
+    /// on a parallel branch and, through the merge that reconciled it with the
+    /// multi-Work migration, briefly had no `WorkSession` field at all —
+    /// resolved instead via a process-wide `ctx.app_state`, the exact
+    /// "first-window-wins" shape `backup_mode`/`backup_context`/`unsaved` had
+    /// before their own fixes above. This pins the fix: two simultaneously-open
+    /// Works must never share a `smart_punctuation` identity either.
+    #[test]
+    fn each_session_gets_its_own_smart_punctuation_handle() {
+        let a = WorkSession::for_test();
+        let b = WorkSession::for_test();
+
+        // Read Work B's own starting value first — the mock fixture seeds a
+        // non-default row (see `SingleSmartPunctuation`'s own mock doc), so this
+        // must not assume any particular starting value, only that it is
+        // independent of whatever Work A does next.
+        let b_dashes_before = b.smart_punctuation.dashes().get();
+        let a_dashes_before = a.smart_punctuation.dashes().get();
+
+        a.smart_punctuation.set_dashes(!a_dashes_before);
+
+        assert_eq!(
+            a.smart_punctuation.dashes().get(),
+            !a_dashes_before,
+            "Work A's own flag must reflect its own write"
+        );
+        assert_eq!(
+            b.smart_punctuation.dashes().get(),
+            b_dashes_before,
+            "Work B's punctuation handle must be untouched by Work A's write — a fresh instance, not a shared one"
+        );
+    }
+
+    /// Same class of bug, for the custom replacement lexicon's master switch:
+    /// `TextReplacementRulesViewModel::enabled_signal` proxies the session's
+    /// own `SingleWork` — if two sessions' `text_replacements` ever aliased
+    /// the same handle (or the same underlying `SingleWork`), flipping one
+    /// Work's switch would flip the other's too.
+    #[test]
+    fn each_session_gets_its_own_text_replacements_handle() {
+        let a = WorkSession::for_test();
+        let b = WorkSession::for_test();
+
+        a.text_replacements.set_enabled(true);
+        assert!(
+            a.text_replacements.enabled_signal().get(),
+            "Work A's own switch must reflect its own write"
+        );
+        assert!(
+            !b.text_replacements.enabled_signal().get(),
+            "Work B's switch must be untouched by Work A's write — a fresh handle, not a shared one"
         );
     }
 

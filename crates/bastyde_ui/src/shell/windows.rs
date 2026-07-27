@@ -53,8 +53,8 @@ use crate::shell::project_switcher_button::ProjectSwitcherButton;
 use crate::spellcheck::SpellcheckService;
 use crate::spellcheck::toggle_button::SpellcheckToggleButton;
 use crate::view_models::{
-    ALIGN_CENTER, ALIGN_LEFT, BackupSettingsViewModel, ExportViewModel, FormatViewModel,
-    OutlineViewModel, SaveAsViewModel, scope_label,
+    ALIGN_CENTER, ALIGN_LEFT, BackupSettingsViewModel, DIR_AUTO, DIR_LTR, DIR_RTL,
+    ExportViewModel, FormatViewModel, OutlineViewModel, SaveAsViewModel, scope_label,
 };
 use export_management::ExportScopeKind;
 
@@ -961,6 +961,36 @@ impl ProjectWindowFactory {
                                                     .radio(idx, f.alignment())
                                                     .on_activate(move |c| {
                                                         f.set_alignment(idx);
+                                                        c.request_frame();
+                                                        f.refocus(c);
+                                                    }),
+                                            );
+                                        }
+                                        s
+                                    }
+                                });
+
+                                // Paragraph direction gets the full three-way
+                                // radio the dock's single toggle cannot express:
+                                // "automatic" is a real state, distinct from a
+                                // pinned left-to-right, and worth reaching.
+                                m = m.submenu(tr!(menu_format_direction()), {
+                                    let f = f.clone();
+                                    let on = on.clone();
+                                    move |s| {
+                                        let mut s = s;
+                                        for (idx, label) in [
+                                            (DIR_AUTO, tr!(menu_format_direction_auto())),
+                                            (DIR_LTR, tr!(menu_format_direction_ltr())),
+                                            (DIR_RTL, tr!(menu_format_direction_rtl())),
+                                        ] {
+                                            let f = f.clone();
+                                            s = s.item(
+                                                MenuEntry::new(label)
+                                                    .enabled(on.clone())
+                                                    .radio(idx, f.direction())
+                                                    .on_activate(move |c| {
+                                                        f.set_direction(idx);
                                                         c.request_frame();
                                                         f.refocus(c);
                                                     }),

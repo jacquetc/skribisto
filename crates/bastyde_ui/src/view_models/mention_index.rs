@@ -35,12 +35,12 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use bastyde::prelude::Signal;
+use bastyde::text_document::matching::FoldLocale;
 use frontend::AppContext;
 use frontend::commands::mention_management_commands;
 use frontend::common::event::Event;
 use frontend::mention_management::{MentionEntity, MentionHit, MentionHits, MentionTable, ScanMentionsDto};
 use skribisto_model::mentions::{self, DiscoverableEntity};
-use bastyde::text_document::matching::FoldLocale;
 
 use crate::app_ids::AppIds;
 
@@ -376,8 +376,14 @@ mod tests {
     /// reshuffles on every save reads as if something changed.
     #[test]
     fn equal_rows_keep_a_stable_order() {
-        let a = sorted(vec![row(2, "Bea", false, true, 1), row(3, "Ada", false, true, 1)]);
-        let b = sorted(vec![row(3, "Ada", false, true, 1), row(2, "Bea", false, true, 1)]);
+        let a = sorted(vec![
+            row(2, "Bea", false, true, 1),
+            row(3, "Ada", false, true, 1),
+        ]);
+        let b = sorted(vec![
+            row(3, "Ada", false, true, 1),
+            row(2, "Bea", false, true, 1),
+        ]);
         assert_eq!(a, b);
     }
 }

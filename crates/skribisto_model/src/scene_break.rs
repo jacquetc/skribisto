@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 //! Scene-break markers — the vocabulary an author types into their prose, and
 //! the recogniser every consumer shares.
 //!

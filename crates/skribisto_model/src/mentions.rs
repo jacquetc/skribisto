@@ -235,8 +235,21 @@ static CACHE: RwLock<Option<Store>> = RwLock::new(None);
 /// probed with a plain `&str` — no allocation on a hit. The outer key is what makes this
 /// correct rather than merely fast: a renamed alias produces a different fingerprint, so it
 /// lands in a *different slot* and cannot read the previous answer.
+/// One alias table's cached scans, keyed by the prose that was scanned.
+///
+/// `Arc` because a hit hands the same result to every caller rather than cloning
+/// a mention list per lookup.
+type ScansByProse = HashMap<String, Arc<Vec<Mention>>>;
+
+/// The cache's outer map: a slot per `(alias table, locale)` pair.
+///
+/// Named rather than written inline because the nesting is the whole design —
+/// see [`Store`] — and clippy's `type_complexity` is right that three levels of
+/// generics in a field declaration reads as an accident.
+type ScansByTable = HashMap<(AliasTableFingerprint, FoldLocale), ScansByProse>;
+
 struct Store {
-    by_table: HashMap<(AliasTableFingerprint, FoldLocale), HashMap<String, Arc<Vec<Mention>>>>,
+    by_table: ScansByTable,
     heap: usize,
     max_heap: usize,
 }
@@ -369,7 +382,11 @@ pub fn evidence_sentence(prose: &str, m: &Mention) -> String {
         to += 1;
     }
 
-    chars[from..to].iter().collect::<String>().trim().to_string()
+    chars[from..to]
+        .iter()
+        .collect::<String>()
+        .trim()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -426,7 +443,10 @@ mod tests {
         let table = [entity(1, "Will", &[])];
         let hits = scan("Will's coat lay there.", &table);
         assert_eq!(hits.len(), 1);
-        assert_eq!(hits[0].char_len, 4, "the apostrophe is not part of the name");
+        assert_eq!(
+            hits[0].char_len, 4,
+            "the apostrophe is not part of the name"
+        );
     }
 
     /// French elision, the same rule from the other side.

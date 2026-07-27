@@ -20,9 +20,9 @@ use bastyde::widgets::{
     StandardListItem, Switcher, TabWidget, TextWidget, VStack,
 };
 
-use crate::spellcheck::dictionary_registry;
-use crate::panels::license;
 use crate::models::{DictOrigin, InstalledDictionaryRow};
+use crate::panels::license;
+use crate::spellcheck::dictionary_registry;
 use crate::view_models::DictionariesViewModel;
 
 /// The whole Dictionaries pane body (a two-tab widget). The caller wraps it in `pane_frame`.
@@ -160,7 +160,7 @@ fn catalog_row(vm: &DictionariesViewModel, row: &CatalogRow, selected: bool) -> 
     // Row state → which trailing widget to show: 0 Download, 1 Downloading, 2 Installed.
     let state_idx = {
         let vm_i = vm.clone();
-        let vm_d = vm.clone();
+        let _vm_d = vm.clone();
         let id_i = id.clone();
         let id_d = id.clone();
         let installed = vm.changed_signal().map(move |_| vm_i.is_installed(&id_i));

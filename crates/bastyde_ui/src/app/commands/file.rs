@@ -16,8 +16,8 @@ use bastyde::widgets::{
     EventContextMessageBoxExt, MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton,
 };
 
-use crate::panels::import_plume::ImportPlumePanel;
 use crate::intents::AppIntent;
+use crate::panels::import_plume::ImportPlumePanel;
 use crate::settings::SettingsPanel;
 use crate::view_models::{ImportPlumeViewModel, PendingSwitch};
 

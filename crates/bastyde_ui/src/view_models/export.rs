@@ -247,10 +247,10 @@ impl ExportViewModel {
             if let Some(pos) = metas.iter().position(|m| m.id == active) {
                 let item = &metas[pos];
                 // The focused item's own facet — enabled only when it actually resolves.
-                if let Some(primary) = primary_scope(&item.role, &item.sub_role) {
-                    if resolve_scope(&metas, pos, primary).is_some() {
-                        out.push(from_scope_kind(primary));
-                    }
+                if let Some(primary) = primary_scope(&item.role, &item.sub_role)
+                    && resolve_scope(&metas, pos, primary).is_some()
+                {
+                    out.push(from_scope_kind(primary));
                 }
                 // Then the enclosing structural containers, coarser outward.
                 for (level, sk) in [
@@ -386,13 +386,21 @@ impl ExportViewModel {
 
     /// The checked item ids for the `Custom` scope's include set.
     pub fn checked_item_ids(&self) -> Vec<u64> {
-        self.choose.borrow().as_ref().map(|m| m.checked_item_ids()).unwrap_or_default()
+        self.choose
+            .borrow()
+            .as_ref()
+            .map(|m| m.checked_item_ids())
+            .unwrap_or_default()
     }
 
     /// The number of checked items in the Choose tree — the Choose footer's "{n} selected"
     /// count. Read by a small reactive label that binds `custom_changed` to refresh it.
     pub fn checked_count(&self) -> usize {
-        self.choose.borrow().as_ref().map(|m| m.checked_item_ids().len()).unwrap_or(0)
+        self.choose
+            .borrow()
+            .as_ref()
+            .map(|m| m.checked_item_ids().len())
+            .unwrap_or(0)
     }
 
     fn default_output_path(&self) -> String {
@@ -507,9 +515,12 @@ impl ExportViewModel {
         self.selected_preset().name
     }
     fn selected_preset(&self) -> Preset {
-        self.preset
-            .get()
-            .unwrap_or_else(|| builtin_presets().into_iter().next().expect("a built-in style"))
+        self.preset.get().unwrap_or_else(|| {
+            builtin_presets()
+                .into_iter()
+                .next()
+                .expect("a built-in style")
+        })
     }
 
     /// The extension for the currently-chosen format — the panel keeps the output path's
@@ -523,7 +534,8 @@ impl ExportViewModel {
         }
         let p = Path::new(&current);
         let with_ext = p.with_extension(ext);
-        self.output_path.set(with_ext.to_string_lossy().into_owned());
+        self.output_path
+            .set(with_ext.to_string_lossy().into_owned());
     }
 
     /// Whether "Export" may fire: a non-blank destination and something to export — a
@@ -534,8 +546,8 @@ impl ExportViewModel {
         let choose = self.choose.clone();
         // Recompute when the checks change, the anchor changes, or the scope is switched via
         // the segmented control — so flipping quick ↔ Custom re-evaluates the Export button.
-        let sel_ok =
-            self.custom_changed.zip(&self.anchor).zip(&self.scope).map(move |((_, anchor), scope)| {
+        let sel_ok = self.custom_changed.zip(&self.anchor).zip(&self.scope).map(
+            move |((_, anchor), scope)| {
                 if *scope == ExportScopeKind::Custom {
                     choose
                         .borrow()
@@ -545,7 +557,8 @@ impl ExportViewModel {
                 } else {
                     anchor.is_some()
                 }
-            });
+            },
+        );
         path_ok.and(&sel_ok)
     }
 
@@ -632,11 +645,12 @@ impl ExportViewModel {
                     &item.id,
                     &BinderItemRelationshipField::Contents,
                 )?;
-                let contents: Vec<Content> = content_commands::get_content_multi(ctx, &content_ids)?
-                    .into_iter()
-                    .flatten()
-                    .map(Content::from)
-                    .collect();
+                let contents: Vec<Content> =
+                    content_commands::get_content_multi(ctx, &content_ids)?
+                        .into_iter()
+                        .flatten()
+                        .map(Content::from)
+                        .collect();
                 items.push(ItemWithContents { item, contents });
             }
             binders.push(BinderWithItems { binder, items });
@@ -645,6 +659,10 @@ impl ExportViewModel {
             work,
             tags: Vec::new(),
             dict_words: Vec::new(),
+            text_replacement_rules: Vec::new(),
+            // Punctuation settings shape prose as it is typed; by export time the
+            // substitutions are already in the text, so there is nothing to read.
+            smart_punctuation: None,
             trash_infos: Vec::new(),
             // Export only needs the item stream for scope resolution, not the writing plan
             // or the progress history.
@@ -663,7 +681,10 @@ impl ExportViewModel {
         // A quick scope carries its focused anchor (the backend re-resolves the extent);
         // Choose… carries the full checked set.
         let binder_item_ids: Vec<i64> = if self.scope.get() == ExportScopeKind::Custom {
-            self.checked_item_ids().into_iter().map(|i| i as i64).collect()
+            self.checked_item_ids()
+                .into_iter()
+                .map(|i| i as i64)
+                .collect()
         } else {
             vec![self.anchor.get()? as i64]
         };
@@ -759,8 +780,14 @@ impl ExportViewModel {
         if payload_id(&payload) != Some(op_id.as_str()) {
             return;
         }
-        let percent = payload.get("percentage").and_then(|p| p.as_f64()).unwrap_or(0.0) as f32;
-        let message = payload.get("message").and_then(|m| m.as_str()).unwrap_or("");
+        let percent = payload
+            .get("percentage")
+            .and_then(|p| p.as_f64())
+            .unwrap_or(0.0) as f32;
+        let message = payload
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("");
         ctx.show_toast(self.progress_toast(percent, message));
     }
 
@@ -818,7 +845,11 @@ impl ExportViewModel {
             return;
         }
         self.active.set(None);
-        let error = payload.get("error").and_then(|e| e.as_str()).unwrap_or_default().to_string();
+        let error = payload
+            .get("error")
+            .and_then(|e| e.as_str())
+            .unwrap_or_default()
+            .to_string();
         self.show_error(ctx, &error);
     }
 
@@ -829,12 +860,15 @@ impl ExportViewModel {
                 .id(EXPORT_TOAST_ID)
                 .body(lit!(message.to_string()))
                 .persistent()
-                .action(ToastAction::primary(tr!(export_error_details()), move |c| {
-                    MessageBox::warning(tr!(export_error_title()))
-                        .text(lit!(details.clone()))
-                        .buttons(MessageBoxButtons::Ok)
-                        .present(c);
-                })),
+                .action(ToastAction::primary(
+                    tr!(export_error_details()),
+                    move |c| {
+                        MessageBox::warning(tr!(export_error_title()))
+                            .text(lit!(details.clone()))
+                            .buttons(MessageBoxButtons::Ok)
+                            .present(c);
+                    },
+                )),
         );
     }
 }
@@ -889,7 +923,10 @@ mod tests {
         let any = items
             .iter()
             .any(|&id| !vm.compute_applicable(Some(id)).is_empty());
-        assert!(any, "at least one focused item should offer a quick export scope");
+        assert!(
+            any,
+            "at least one focused item should offer a quick export scope"
+        );
     }
 
     #[test]
@@ -904,7 +941,9 @@ mod tests {
     fn a_focused_item_offers_choose_last() {
         let (vm, items) = loaded_vm();
         // Whatever the focused item, Choose… is always the final entry.
-        let with_scopes = items.iter().find(|&&id| vm.compute_applicable(Some(id)).len() > 1);
+        let with_scopes = items
+            .iter()
+            .find(|&&id| vm.compute_applicable(Some(id)).len() > 1);
         if let Some(&id) = with_scopes {
             let scopes = vm.compute_applicable(Some(id));
             assert_eq!(scopes.last(), Some(&ExportScopeKind::Custom));
@@ -917,8 +956,14 @@ mod tests {
         vm.prepare(ExportScopeKind::Custom, None);
         // The default seed checks the prose rows, so the include set is non-empty and the
         // preview renders — without any anchor.
-        assert!(!vm.checked_item_ids().is_empty(), "prose rows are checked by default");
-        assert!(vm.preview_document().is_some(), "Custom previews the checked selection");
+        assert!(
+            !vm.checked_item_ids().is_empty(),
+            "prose rows are checked by default"
+        );
+        assert!(
+            vm.preview_document().is_some(),
+            "Custom previews the checked selection"
+        );
     }
 
     #[test]

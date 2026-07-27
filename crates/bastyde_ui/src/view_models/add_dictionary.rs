@@ -107,14 +107,16 @@ impl AddDictionaryViewModel {
     /// rebuilds when the set changes so removing a dictionary clears a stale "already installed".
     pub fn code_validation(&self) -> Signal<ValidationState> {
         let dicts = self.dicts.clone();
-        self.code.zip(&self.dicts.changed_signal()).map(move |(c, _)| {
-            let base = code_state(c);
-            if matches!(base, ValidationState::None) && dicts.is_installed_ci(c.trim()) {
-                ValidationState::Error(tr!(dict_add_code_taken()))
-            } else {
-                base
-            }
-        })
+        self.code
+            .zip(&self.dicts.changed_signal())
+            .map(move |(c, _)| {
+                let base = code_state(c);
+                if matches!(base, ValidationState::None) && dicts.is_installed_ci(c.trim()) {
+                    ValidationState::Error(tr!(dict_add_code_taken()))
+                } else {
+                    base
+                }
+            })
     }
     pub fn aff_validation(&self) -> Signal<ValidationState> {
         self.aff.map(|p| file_state(p))
@@ -125,13 +127,22 @@ impl AddDictionaryViewModel {
 
     /// Whether "Add" may fire — all four fields valid and the code not already installed.
     pub fn can_add(&self) -> Signal<bool> {
-        let name_ok = self.name.map(|n| matches!(name_state(n), ValidationState::None));
+        let name_ok = self
+            .name
+            .map(|n| matches!(name_state(n), ValidationState::None));
         let dicts = self.dicts.clone();
-        let code_ok = self.code.zip(&self.dicts.changed_signal()).map(move |(c, _)| {
-            matches!(code_state(c), ValidationState::None) && !dicts.is_installed_ci(c.trim())
-        });
-        let aff_ok = self.aff.map(|p| matches!(file_state(p), ValidationState::None));
-        let dic_ok = self.dic.map(|p| matches!(file_state(p), ValidationState::None));
+        let code_ok = self
+            .code
+            .zip(&self.dicts.changed_signal())
+            .map(move |(c, _)| {
+                matches!(code_state(c), ValidationState::None) && !dicts.is_installed_ci(c.trim())
+            });
+        let aff_ok = self
+            .aff
+            .map(|p| matches!(file_state(p), ValidationState::None));
+        let dic_ok = self
+            .dic
+            .map(|p| matches!(file_state(p), ValidationState::None));
         name_ok.and(&code_ok).and(&aff_ok).and(&dic_ok)
     }
 
@@ -225,22 +236,43 @@ mod tests {
     #[test]
     fn code_rejects_empty_unsafe_and_reserved() {
         assert!(matches!(code_state(""), ValidationState::Error(_)), "empty");
-        assert!(matches!(code_state("a/b"), ValidationState::Error(_)), "separator");
-        assert!(matches!(code_state("--"), ValidationState::Error(_)), "no alphanumeric");
+        assert!(
+            matches!(code_state("a/b"), ValidationState::Error(_)),
+            "separator"
+        );
+        assert!(
+            matches!(code_state("--"), ValidationState::Error(_)),
+            "no alphanumeric"
+        );
         // `fr-FR` is a real catalogue code → reserved; so is a case variant (Win/macOS collide).
-        assert!(matches!(code_state("fr-FR"), ValidationState::Error(_)), "reserved");
-        assert!(matches!(code_state("FR-FR"), ValidationState::Error(_)), "reserved case-variant");
+        assert!(
+            matches!(code_state("fr-FR"), ValidationState::Error(_)),
+            "reserved"
+        );
+        assert!(
+            matches!(code_state("FR-FR"), ValidationState::Error(_)),
+            "reserved case-variant"
+        );
         // A genuinely custom code is accepted.
         assert!(matches!(code_state("fr-FR-x-mine"), ValidationState::None));
     }
 
     #[test]
     fn file_state_wants_an_existing_file() {
-        assert!(matches!(file_state("  "), ValidationState::Error(_)), "blank");
-        assert!(matches!(file_state("/no/such/file.aff"), ValidationState::Error(_)));
+        assert!(
+            matches!(file_state("  "), ValidationState::Error(_)),
+            "blank"
+        );
+        assert!(matches!(
+            file_state("/no/such/file.aff"),
+            ValidationState::Error(_)
+        ));
         let f = std::env::temp_dir().join(format!("skrib-fs-{}.aff", std::process::id()));
         std::fs::write(&f, b"SET UTF-8\n").unwrap();
-        assert!(matches!(file_state(&f.to_string_lossy()), ValidationState::None));
+        assert!(matches!(
+            file_state(&f.to_string_lossy()),
+            ValidationState::None
+        ));
         let _ = std::fs::remove_file(&f);
     }
 }

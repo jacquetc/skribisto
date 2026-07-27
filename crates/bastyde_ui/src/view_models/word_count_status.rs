@@ -47,8 +47,14 @@ mod tests {
 
     #[test]
     fn hidden_without_a_project() {
-        assert_eq!(count_display(false, Some((42, 210)), false), CountDisplay::Hidden);
-        assert_eq!(count_display(false, Some((42, 210)), true), CountDisplay::Hidden);
+        assert_eq!(
+            count_display(false, Some((42, 210)), false),
+            CountDisplay::Hidden
+        );
+        assert_eq!(
+            count_display(false, Some((42, 210)), true),
+            CountDisplay::Hidden
+        );
     }
 
     #[test]
@@ -60,7 +66,10 @@ mod tests {
 
     #[test]
     fn shows_the_word_count_when_focused_on_prose() {
-        assert_eq!(count_display(true, Some((0, 0)), false), CountDisplay::Words(0));
+        assert_eq!(
+            count_display(true, Some((0, 0)), false),
+            CountDisplay::Words(0)
+        );
         assert_eq!(
             count_display(true, Some((1234, 6789)), false),
             CountDisplay::Words(1234)

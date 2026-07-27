@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
 # Tags — the per-project palette, the inspector section, and the preset catalogue.
 # Preset tag NAMES are translated deliberately: presets are generated in code rather than
 # shipped as data precisely so a French project gets French tag names.

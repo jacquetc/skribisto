@@ -28,7 +28,11 @@ use work_management::{NewWorkDto, NewWorkTemplate};
 /// ~75 words of prose per scene, with a little Djot markup so the parse is not trivial, and
 /// one occurrence of the query word in roughly one scene in ten.
 fn scene_prose(i: usize) -> String {
-    let hit = if i % 10 == 0 { "Aurélien" } else { "Elena" };
+    let hit = if i.is_multiple_of(10) {
+        "Aurélien"
+    } else {
+        "Elena"
+    };
     format!(
         "{hit} traversa la forêt où l'ombre s'étirait entre les *hêtres*, et le vent \
          portait l'odeur du sel. Elle songeait à la _promesse_ faite au bord de l'eau, \

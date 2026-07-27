@@ -53,6 +53,7 @@ pub enum DirectAccessEntity {
     SearchResult(EntityEvent),
     RecentWork(EntityEvent),
     Work(EntityEvent),
+    SmartPunctuation(EntityEvent),
     TrashInfo(EntityEvent),
     Pace(EntityEvent),
     Holiday(EntityEvent),
@@ -62,6 +63,7 @@ pub enum DirectAccessEntity {
     BinderTag(EntityEvent),
     Content(EntityEvent),
     DictWord(EntityEvent),
+    TextReplacementRule(EntityEvent),
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
@@ -178,6 +180,9 @@ impl Event {
                     format!("direct_access_recent_work_{:?}", event)
                 }
                 DirectAccessEntity::Work(event) => format!("direct_access_work_{:?}", event),
+                DirectAccessEntity::SmartPunctuation(event) => {
+                    format!("direct_access_smart_punctuation_{:?}", event)
+                }
                 DirectAccessEntity::TrashInfo(event) => {
                     format!("direct_access_trash_info_{:?}", event)
                 }
@@ -196,6 +201,9 @@ impl Event {
                 DirectAccessEntity::Content(event) => format!("direct_access_content_{:?}", event),
                 DirectAccessEntity::DictWord(event) => {
                     format!("direct_access_dict_word_{:?}", event)
+                }
+                DirectAccessEntity::TextReplacementRule(event) => {
+                    format!("direct_access_text_replacement_rule_{:?}", event)
                 }
             },
             Origin::UndoRedo(event) => format!("undo_redo_{:?}", event),

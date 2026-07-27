@@ -31,9 +31,7 @@ use bastyde::prelude::{BuildContext, Signal};
 use bastyde::text_document::Color;
 
 use frontend::AppContext;
-use frontend::commands::{
-    binder_commands, binder_item_commands, content_commands, work_commands,
-};
+use frontend::commands::{binder_commands, binder_item_commands, content_commands, work_commands};
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
@@ -46,6 +44,9 @@ use crate::spellcheck::{SpellSession, SpellcheckService};
 use crate::tabs::{
     ProseField, ProseKind, TitleField, TitlePart, prose_field, prose_kind_for, title_field,
 };
+use crate::text_replacement::TextReplacementSession;
+use crate::text_replacement::typography::SmartPunctuationFlags;
+use crate::view_models::TextReplacementRulesViewModel;
 
 /// One open item's live editing state, shared by every view showing that item.
 pub struct OpenDoc {
@@ -82,6 +83,13 @@ pub struct OpenDoc {
     /// `Rc` so the editor build can hold a clone to drive it.
     spell_main: Option<Rc<SpellSession>>,
     spell_synopsis: Option<Rc<SpellSession>>,
+    /// The replace-while-typing state machine for each prose document, if the
+    /// lexicon view-model was installed on the store. Set by
+    /// [`attach_replacements`](Self::attach_replacements) on open, and living as
+    /// long as the `OpenDoc` — its pending backspace-revert has to outlive a tab
+    /// rebuild, which is exactly why it hangs here and not on the widget.
+    replacement_main: RefCell<Option<Rc<TextReplacementSession>>>,
+    replacement_synopsis: RefCell<Option<Rc<TextReplacementSession>>>,
 }
 
 impl OpenDoc {
@@ -124,6 +132,8 @@ impl OpenDoc {
             edited,
             spell_main: None,
             spell_synopsis: None,
+            replacement_main: RefCell::new(None),
+            replacement_synopsis: RefCell::new(None),
         };
         for cr in skribisto_model::allowed_content(role, sub_role) {
             let existing = contents.iter().find(|c| &c.role == cr);
@@ -262,12 +272,73 @@ impl OpenDoc {
     pub fn spell_synopsis(&self) -> Option<Rc<SpellSession>> {
         self.spell_synopsis.clone()
     }
+
+    /// Give each present prose document its replace-while-typing session.
+    ///
+    /// Idempotent: a doc already carrying sessions keeps them, so re-opening an
+    /// already-open item cannot discard a pending backspace-revert mid-keystroke.
+    pub fn attach_replacements(&self, vm: &TextReplacementRulesViewModel) {
+        if self.main.is_some() && self.replacement_main.borrow().is_none() {
+            *self.replacement_main.borrow_mut() = Some(TextReplacementSession::new(vm.clone()));
+        }
+        if self.synopsis.is_some() && self.replacement_synopsis.borrow().is_none() {
+            *self.replacement_synopsis.borrow_mut() = Some(TextReplacementSession::new(vm.clone()));
+        }
+    }
+
+    /// Tell both replace-while-typing sessions what language this document is
+    /// written in. Idempotent; a real change makes the next keystroke recompile.
+    ///
+    /// Separate from [`attach_replacements`](Self::attach_replacements), which
+    /// only *creates* the sessions and is deliberately a no-op once they exist:
+    /// the language of an item can change long after it was opened, and that has
+    /// to reach the engine — a Turkish trigger folds differently from an English
+    /// one, so a stale locale means the rule silently stops matching.
+    pub fn set_replacement_locale(&self, languages: &[String]) {
+        let tag = skribisto_model::language::primary(languages);
+        for session in [&self.replacement_main, &self.replacement_synopsis] {
+            if let Some(s) = session.borrow().as_ref() {
+                s.set_locale(tag);
+            }
+        }
+    }
+
+    /// Tell both sessions which punctuation rules this project wants.
+    ///
+    /// Pushed for the same reason the locale is: the row can change while the
+    /// document is open (the settings pane is right there), and a stale flag set
+    /// means the writer flips a switch and nothing happens until they reopen the
+    /// scene.
+    ///
+    /// `None` means "not resolved yet" and substitutes nothing — see
+    /// [`TextReplacementSession::set_punctuation`].
+    pub fn set_punctuation(&self, flags: Option<SmartPunctuationFlags>) {
+        for session in [&self.replacement_main, &self.replacement_synopsis] {
+            if let Some(s) = session.borrow().as_ref() {
+                s.set_punctuation(flags.clone());
+            }
+        }
+    }
+
+    /// The replace-while-typing session on the main prose document, if any.
+    pub fn replacement_main(&self) -> Option<Rc<TextReplacementSession>> {
+        self.replacement_main.borrow().clone()
+    }
+
+    /// The replace-while-typing session on the synopsis document, if any.
+    pub fn replacement_synopsis(&self) -> Option<Rc<TextReplacementSession>> {
+        self.replacement_synopsis.borrow().clone()
+    }
 }
 
 struct Entry {
     doc: Rc<OpenDoc>,
     refs: usize,
 }
+
+/// Every open item's resolved language tags, valid for one structural
+/// fingerprint — recomputed whenever that fingerprint moves.
+type LangCache = (LangFingerprint, HashMap<u64, Vec<String>>);
 
 struct Inner {
     open: RefCell<HashMap<u64, Entry>>,
@@ -279,6 +350,10 @@ struct Inner {
     /// The spell-check engine, set once by `App`. `None` until then (headless tests, or before
     /// the first project loads) — every attach is then a no-op, so opening still works.
     spell: RefCell<Option<SpellcheckService>>,
+    /// The custom replacement lexicon, set once by `App` on the same footing as
+    /// `spell`. `None` until then, and then every attach is a no-op — a headless
+    /// test opens documents that simply never expand anything.
+    text_replacements: RefCell<Option<TextReplacementRulesViewModel>>,
     /// The squiggle colour, resolved from a theme role by `App` (updated on theme change).
     squiggle: Cell<Color>,
     /// Whether the synopsis pane is currently shown (the global setting, mirrored here by `App`).
@@ -289,6 +364,9 @@ struct Inner {
     /// the Work's). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
     work_lang: RefCell<Vec<String>>,
+    /// The open project's punctuation rules, pushed down to every session on
+    /// change and to each newly-opened document. `None` until resolved.
+    punctuation: RefCell<Option<SmartPunctuationFlags>>,
     /// The memoised [`language_map`](OpenDocsStore::language_map), with the binder
     /// [fingerprint](LangFingerprint) it was built from.
     ///
@@ -297,7 +375,7 @@ struct Inner {
     /// freshly-built doc, so a container stream opening one document per row paid that
     /// whole-project walk once per row — O(rows × items). Cached, the walk happens once
     /// per structural change instead.
-    lang_cache: RefCell<Option<(LangFingerprint, HashMap<u64, Vec<String>>)>>,
+    lang_cache: RefCell<Option<LangCache>>,
 }
 
 /// What the cached language map is keyed on: the open work, its default language, and
@@ -321,7 +399,11 @@ type LangFingerprint = u64;
 
 /// Fingerprint the inputs the language map is derived from that are cheap to read:
 /// the work, its default language, and the ordered item ids of every binder.
-fn fingerprint_of(work_id: Option<u64>, work_lang: &[String], shape: &[Vec<u64>]) -> LangFingerprint {
+fn fingerprint_of(
+    work_id: Option<u64>,
+    work_lang: &[String],
+    shape: &[Vec<u64>],
+) -> LangFingerprint {
     let mut hasher = DefaultHasher::new();
     work_id.hash(&mut hasher);
     work_lang.hash(&mut hasher);
@@ -344,11 +426,13 @@ impl OpenDocsStore {
                 app_ctx,
                 edited: Signal::new(0),
                 spell: RefCell::new(None),
+                text_replacements: RefCell::new(None),
                 // A sensible default until `App` resolves the theme's error role.
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
                 synopsis_visible: Cell::new(true),
                 work_id: Cell::new(None),
                 work_lang: RefCell::new(Vec::new()),
+                punctuation: RefCell::new(None),
                 lang_cache: RefCell::new(None),
             }),
         }
@@ -358,6 +442,27 @@ impl OpenDocsStore {
     /// no-ops and the app behaves exactly as before spell-check existed.
     pub fn set_spellcheck(&self, spell: SpellcheckService) {
         *self.inner.spell.borrow_mut() = Some(spell);
+    }
+
+    /// Install the custom replacement lexicon (once, from `App`), and give it to
+    /// every document already open.
+    ///
+    /// The back-fill matters: `App::build` installs this after the store exists,
+    /// and a project restoring its remembered tabs can have opened documents by
+    /// then. Without it those tabs would silently never expand anything until
+    /// they were closed and reopened.
+    pub fn set_text_replacements(&self, vm: TextReplacementRulesViewModel) {
+        *self.inner.text_replacements.borrow_mut() = Some(vm.clone());
+        let docs: Vec<Rc<OpenDoc>> = self
+            .inner
+            .open
+            .borrow()
+            .values()
+            .map(|e| e.doc.clone())
+            .collect();
+        for doc in docs {
+            doc.attach_replacements(&vm);
+        }
     }
 
     /// Subscribe the cached language map to the edits its
@@ -428,13 +533,33 @@ impl OpenDocsStore {
         self.inner.work_id.get()
     }
 
+    /// Set the open project's punctuation rules and push them to every open
+    /// document at once.
+    ///
+    /// Called from an effect over the project's `SmartPunctuation` row, so a
+    /// switch flipped in Settings reaches the scene the writer is looking at
+    /// without reopening it. Idempotent — each session compares before
+    /// recompiling.
+    pub fn set_punctuation(&self, flags: Option<SmartPunctuationFlags>) {
+        *self.inner.punctuation.borrow_mut() = flags.clone();
+        let docs: Vec<Rc<OpenDoc>> = self
+            .inner
+            .open
+            .borrow()
+            .values()
+            .map(|e| e.doc.clone())
+            .collect();
+        // Collected first, then pushed outside the borrow: a session recompile
+        // must not run while the map is borrowed.
+        for doc in docs {
+            doc.set_punctuation(flags.clone());
+        }
+    }
+
     /// Re-attach the spell-checker to **every** open document — the single path for install,
     /// remove, mute, language-change, focus-regain, and theme change. Recomputes each item's
     /// effective language through the same resolver search uses.
     pub fn attach_all(&self) {
-        let Some(spell) = self.inner.spell.borrow().clone() else {
-            return;
-        };
         let color = self.inner.squiggle.get();
         // Belt and braces. [`wire`](Self::wire) already drops the map when an item's
         // language changes, but every language edit also funnels through here, and
@@ -462,6 +587,21 @@ impl OpenDocsStore {
                 .collect()
         });
         let work_id = self.inner.work_id.get();
+        // Language first, and NOT behind the spell check below: replace-while-typing
+        // folds case through the document's language, and a writer with no
+        // dictionary installed still gets their lexicon. Spell-check is the
+        // feature that needs an engine; this one only needs the tag.
+        let punctuation = self.inner.punctuation.borrow().clone();
+        for (doc, tags) in &attachments {
+            doc.set_replacement_locale(tags);
+            // Pushed here too, not only from `set_punctuation`: a document
+            // opened after the settings resolved would otherwise never hear
+            // about them and would silently substitute nothing.
+            doc.set_punctuation(punctuation.clone());
+        }
+        let Some(spell) = self.inner.spell.borrow().clone() else {
+            return;
+        };
         for (doc, tags) in attachments {
             doc.attach_spell(&spell, &tags, color, work_id);
         }
@@ -469,6 +609,20 @@ impl OpenDocsStore {
 
     /// Attach the spell-checker to one freshly-built doc (on open / rebuild).
     fn attach_one(&self, doc: &Rc<OpenDoc>) {
+        // The replacement lexicon first, and outside the spell early-return: the
+        // two features are independent, and a project with no dictionary
+        // installed must still expand its own shorthand.
+        if let Some(vm) = self.inner.text_replacements.borrow().clone() {
+            doc.attach_replacements(&vm);
+            doc.set_replacement_locale(&self.language_for(doc.item_id));
+            // The project's punctuation rules too, and for the same reason the
+            // locale is set here: this is the path a doc opened *after* the
+            // project loaded takes, and it does not go through `attach_all`.
+            // Without this a scene opened mid-session substituted nothing at
+            // all, while the scenes already open when the project loaded did —
+            // the kind of split behaviour that reads as the feature being flaky.
+            doc.set_punctuation(self.inner.punctuation.borrow().clone());
+        }
         let Some(spell) = self.inner.spell.borrow().clone() else {
             return;
         };
@@ -510,6 +664,12 @@ impl OpenDocsStore {
     }
 
     /// One item's effective language list, read through the cached map.
+    /// [`language_for`](Self::language_for), for tests.
+    #[cfg(test)]
+    pub(crate) fn language_for_test(&self, item_id: u64) -> Vec<String> {
+        self.language_for(item_id)
+    }
+
     fn language_for(&self, item_id: u64) -> Vec<String> {
         self.with_language_map(|map| map.get(&item_id).cloned())
             .unwrap_or_else(|| self.inner.work_lang.borrow().clone())
@@ -615,7 +775,11 @@ impl OpenDocsStore {
     /// read-only consumer (the status-bar word count) that must not perturb the
     /// open/release lifecycle the editor panes own. `None` if the item isn't open.
     pub fn peek(&self, item_id: u64) -> Option<Rc<OpenDoc>> {
-        self.inner.open.borrow().get(&item_id).map(|e| e.doc.clone())
+        self.inner
+            .open
+            .borrow()
+            .get(&item_id)
+            .map(|e| e.doc.clone())
     }
 
     /// Open item `item_id`, building its [`OpenDoc`] the first time and reusing it
@@ -802,7 +966,8 @@ impl OpenDocsStore {
 }
 
 #[cfg(test)]
-mod tests {    /// Space-separated in the tests, a list in storage — one parser, shared.
+mod tests {
+    /// Space-separated in the tests, a list in storage — one parser, shared.
     use skribisto_model::language::parse_legacy_list as tags;
 
     use super::*;
@@ -894,6 +1059,78 @@ mod tests {    /// Space-separated in the tests, a list in storage — one parse
         // Releasing an unknown / already-evicted id is a no-op.
         store.release(1, None);
         assert_eq!(store.refs_for_test(1), None);
+    }
+
+    /// Changing the project's default language must reach an item that has no
+    /// language of its own.
+    ///
+    /// The store caches the Work language, and the cache fingerprint is computed
+    /// *from* that cached value — so a stale cache looks fresh to itself and no
+    /// invalidation can rescue it. Before `App` grew an effect over the Work's
+    /// `dict_language`, only project load wrote this, and a language edit in
+    /// Settings re-resolved every document against the previous language.
+    /// Spell-check inherited the same staleness; punctuation only made it
+    /// visible.
+    #[test]
+    fn changing_the_project_language_reaches_an_inheriting_item() {
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx);
+        store.set_project_language(Some(1), vec!["en-US".to_string()]);
+        assert_eq!(
+            store.language_for_test(42),
+            vec!["en-US".to_string()],
+            "an item with no tag of its own inherits the project's"
+        );
+
+        store.set_project_language(Some(1), vec!["es-ES".to_string()]);
+        assert_eq!(
+            store.language_for_test(42),
+            vec!["es-ES".to_string()],
+            "…and follows it when the writer changes it"
+        );
+    }
+
+    /// A language pushed at a document reaches its replace-while-typing session.
+    ///
+    /// This is the last link in "I set the project to Spanish and `¿` did not
+    /// fire": the session-level tests prove a session *with* an `es` locale
+    /// fires Spanish, and `language_for` resolution is proven above, but nothing
+    /// pinned that `set_replacement_locale` — the call `attach_all` makes after a
+    /// language change — actually reaches the session. It does.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn a_pushed_language_reaches_the_replacement_session() {
+        use crate::app_ids::AppIds;
+        use crate::models::TextReplacementRuleListModel;
+        use crate::singles::SingleWork;
+        use crate::view_models::TextReplacementRulesViewModel;
+
+        let ctx = Rc::new(AppContext::new());
+        let doc = Rc::new(OpenDoc::build(
+            &ctx,
+            1,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            Signal::new(0),
+        ));
+
+        let work = SingleWork::new(ctx.clone());
+        let ids = AppIds::new();
+        let vm = TextReplacementRulesViewModel::new(
+            TextReplacementRuleListModel::new(ctx, ids.clone()),
+            work,
+            ids,
+        );
+        doc.attach_replacements(&vm);
+        doc.set_replacement_locale(&["es-ES".to_string()]);
+
+        let session = doc.replacement_main().expect("a scene has a main session");
+        assert_eq!(
+            session.locale_for_test(),
+            "es-ES",
+            "the locale the store pushes must land on the session the editor drives"
+        );
     }
 
     /// The store's document is a live, shareable resource **independent of any

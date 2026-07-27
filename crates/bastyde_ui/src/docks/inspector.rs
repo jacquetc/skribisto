@@ -331,17 +331,15 @@ impl Widget for Inspector {
                                     }
                                     let _ = pin_probe.set_references(&next, stack);
                                 });
-                            col = col
-                                .child(
+                            col =
+                                col.child(
                                     TextWidget::new(tr!(mentions_roster()))
                                         .style(TextStyleRole::Tiny)
                                         .color(TextRole::Secondary),
                                 )
-                                .child(crate::tags::MentionList::new(
-                                    roster,
-                                    Some(pin),
-                                    open.clone(),
-                                ));
+                                .child(
+                                    crate::tags::MentionList::new(roster, Some(pin), open.clone()),
+                                );
                         }
 
                         // Backlinks, on a discoverable item: where this character is written
@@ -356,9 +354,7 @@ impl Widget for Inspector {
                                             .style(TextStyleRole::Tiny)
                                             .color(TextRole::Secondary),
                                     )
-                                    .child(crate::tags::MentionList::new(
-                                        backlinks, None, open,
-                                    ));
+                                    .child(crate::tags::MentionList::new(backlinks, None, open));
                             }
                         }
                     }
@@ -369,7 +365,9 @@ impl Widget for Inspector {
                 // declares none of its own. Nothing inherits from a container — an item's tag
                 // reaches only that item (see `skribisto_model::language`) — so "Apply to
                 // children" beside it is the *only* way a language spreads down a subtree.
-                if let Some(spell) = ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned()
+                if let Some(spell) = ctx
+                    .app_state::<crate::spellcheck::SpellcheckService>()
+                    .cloned()
                 {
                     let inherited = Some(self.open_docs.effective_language(d.id));
                     let value = Signal::new(d.dict_language.clone());
@@ -386,7 +384,11 @@ impl Widget for Inspector {
                         })
                     };
                     col = col
-                        .child(TextWidget::new(tr!(inspector_dict_language())).style(TextStyleRole::Tiny).color(TextRole::Secondary))
+                        .child(
+                            TextWidget::new(tr!(inspector_dict_language()))
+                                .style(TextStyleRole::Tiny)
+                                .color(TextRole::Secondary),
+                        )
                         .child(crate::spellcheck::language_pill_field::LanguagePillField::new(
                             value.clone(),
                             set,
@@ -466,7 +468,10 @@ impl Widget for Inspector {
                 // Pace timeline, set right where the writer plans the section. A milestone
                 // only makes sense for a compile-stream Part or Chapter, and only inside a
                 // Book — so gate on the sub_role, then resolve the enclosing Book head.
-                if matches!(d.sub_role, BinderItemSubRole::Part | BinderItemSubRole::ChapterScene) {
+                if matches!(
+                    d.sub_role,
+                    BinderItemSubRole::Part | BinderItemSubRole::ChapterScene
+                ) {
                     let metas = live_item_metas(&self.app_ctx, &self.outline.ids());
                     if let Some(book_id) = metas
                         .iter()

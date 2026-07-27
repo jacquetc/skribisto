@@ -8,8 +8,9 @@
 //! It owns no state of its own beyond the Layer-A handles it composes: the
 //! reactive [`DictWordListModel`](crate::models::DictWordListModel) (the words
 //! list + its collection writes), a [`SingleDictWord`](crate::singles::SingleDictWord)
-//! (the inline rename), and [`AppIds`](crate::app_ids::AppIds) (the owner `Work`
-//! + undo stack every mutation needs). Dedup is exact-case (`"the"` and `"The"`
+//! (the inline rename), and [`AppIds`](crate::app_ids::AppIds) (the owner
+//! `Work` plus the undo stack every mutation needs). Dedup is exact-case
+//! (`"the"` and `"The"`
 //! are distinct — spell-check matching is exact-case); every add is one undoable
 //! step (`create_dict_word_multi`) so a multi-word add / import reverts atomically.
 //!
@@ -142,8 +143,7 @@ impl UserDictionaryViewModel {
     /// word-like tokens, dedups case-exactly against the existing set, and adds
     /// the survivors in one undo step. Reports counts for the toast.
     pub fn import_from(&self, path: &Path) -> Result<ImportSummary> {
-        let bytes = std::fs::read(path)
-            .with_context(|| format!("reading {}", path.display()))?;
+        let bytes = std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
         let text = String::from_utf8_lossy(&bytes);
 
         let mut blank = 0usize;
@@ -274,7 +274,11 @@ mod tests {
 
     #[test]
     fn parse_format_round_trip_survives() {
-        let words = vec!["Gandalf".to_string(), "café".to_string(), "don't".to_string()];
+        let words = vec![
+            "Gandalf".to_string(),
+            "café".to_string(),
+            "don't".to_string(),
+        ];
         let round = parse_txt(&format_txt(&words));
         assert_eq!(round, words);
     }

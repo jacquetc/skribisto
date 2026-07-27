@@ -160,7 +160,11 @@ mod tests {
 
     #[test]
     fn every_genre_preset_extends_basic() {
-        let basic: Vec<String> = Preset::Basic.rows().iter().map(|r| r.name.clone()).collect();
+        let basic: Vec<String> = Preset::Basic
+            .rows()
+            .iter()
+            .map(|r| r.name.clone())
+            .collect();
         for p in Preset::ALL {
             let names: Vec<String> = p.rows().iter().map(|r| r.name.clone()).collect();
             for b in &basic {
@@ -222,12 +226,19 @@ mod tests {
     /// Alphabetical ordering is what makes the prefix worth having.
     #[test]
     fn the_status_prefix_clusters_when_sorted() {
-        let mut names: Vec<String> = Preset::Basic.rows().iter().map(|r| r.name.clone()).collect();
+        let mut names: Vec<String> = Preset::Basic
+            .rows()
+            .iter()
+            .map(|r| r.name.clone())
+            .collect();
         names.sort_by_key(|n| n.to_lowercase());
         let first = names.iter().position(|n| n.starts_with("status/")).unwrap();
         let count = names.iter().filter(|n| n.starts_with("status/")).count();
         for n in names.iter().skip(first).take(count) {
-            assert!(n.starts_with("status/"), "the status run is interrupted by {n:?}");
+            assert!(
+                n.starts_with("status/"),
+                "the status run is interrupted by {n:?}"
+            );
         }
     }
 }

@@ -16,8 +16,8 @@ use common::database::QueryUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot, TrashInfo, Work,
-    WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
+    SmartPunctuation, TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::event::WorkManagementEvent::SaveAs;
 use common::event::{Event, EventHub, Origin};
@@ -78,6 +78,12 @@ impl QueryUnitOfWork for SaveAsUnitOfWork {
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(
+    entity = "TextReplacementRule",
+    action = "GetMultiRO",
+    thread_safe = true
+)]
+#[macros::uow_action(entity = "SmartPunctuation", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "Pace", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Pace", action = "GetRelationshipRO", thread_safe = true)]
 #[macros::uow_action(entity = "Holiday", action = "GetMultiRO", thread_safe = true)]

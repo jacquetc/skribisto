@@ -45,7 +45,10 @@ fn default_version() -> u32 {
 
 impl Default for ExportStylesFile {
     fn default() -> Self {
-        ExportStylesFile { version: ExportStylesFile::CURRENT_VERSION, presets: Vec::new() }
+        ExportStylesFile {
+            version: ExportStylesFile::CURRENT_VERSION,
+            presets: Vec::new(),
+        }
     }
 }
 
@@ -89,8 +92,10 @@ impl ExportStylesService {
     /// Graceful fallback when the config dir is unavailable: a throwaway per-process temp file,
     /// so the app still runs (user styles just won't persist across restarts).
     pub fn in_memory_default() -> Self {
-        let path =
-            std::env::temp_dir().join(format!("skribisto-export-styles-{}.toml", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "skribisto-export-styles-{}.toml",
+            std::process::id()
+        ));
         SettingsFile::load(path, migrator())
             .map(|file| Self { file })
             .unwrap_or_else(|_| {
@@ -143,7 +148,10 @@ impl ExportStylesService {
 
     /// Replace the whole user-preset list (the store is small; every mutation rewrites it).
     fn write_all(&self, presets: &[Preset]) -> Result<(), SettingsFileError> {
-        let json: Vec<String> = presets.iter().filter_map(|p| serde_json::to_string(p).ok()).collect();
+        let json: Vec<String> = presets
+            .iter()
+            .filter_map(|p| serde_json::to_string(p).ok())
+            .collect();
         self.file.mutate(|f| f.presets = json)
     }
 
@@ -159,14 +167,22 @@ impl ExportStylesService {
 
     /// Drop the user preset with `id` (a no-op if absent).
     pub fn remove(&self, id: &str) -> Result<(), SettingsFileError> {
-        let all: Vec<Preset> = self.user_presets().into_iter().filter(|p| p.id != id).collect();
+        let all: Vec<Preset> = self
+            .user_presets()
+            .into_iter()
+            .filter(|p| p.id != id)
+            .collect();
         self.write_all(&all)
     }
 
     /// Store `preset` as a **new** user style, giving it `builtin = false` and a fresh unique id
     /// (derived from `preferred`) when that would collide with a built-in or an existing user id.
     /// Used by both duplicate-to-edit and JSON import. Returns the stored preset (with its final id).
-    pub fn add_fresh(&self, mut preset: Preset, preferred_id: &str) -> Result<Preset, SettingsFileError> {
+    pub fn add_fresh(
+        &self,
+        mut preset: Preset,
+        preferred_id: &str,
+    ) -> Result<Preset, SettingsFileError> {
         preset.builtin = false;
         preset.id = unique_id(preferred_id, &self.taken_ids());
         let mut all = self.user_presets();
@@ -187,7 +203,11 @@ impl ExportStylesService {
 
 /// `preferred` if free, else `preferred-2`, `preferred-3`, … — a stable, collision-free id.
 fn unique_id(preferred: &str, taken: &HashSet<String>) -> String {
-    let base = if preferred.trim().is_empty() { "style" } else { preferred };
+    let base = if preferred.trim().is_empty() {
+        "style"
+    } else {
+        preferred
+    };
     if !taken.contains(base) {
         return base.to_string();
     }
@@ -209,8 +229,10 @@ mod tests {
     fn temp_service() -> ExportStylesService {
         static N: AtomicU64 = AtomicU64::new(0);
         let n = N.fetch_add(1, Ordering::Relaxed);
-        let path = std::env::temp_dir()
-            .join(format!("skribisto-stylestest-{}-{n}.toml", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "skribisto-stylestest-{}-{n}.toml",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&path);
         ExportStylesService::open_at(path).expect("open temp export-styles settings")
     }
@@ -221,18 +243,31 @@ mod tests {
     fn user_preset_round_trips_through_disk() {
         static N: AtomicU64 = AtomicU64::new(0);
         let n = N.fetch_add(1, Ordering::Relaxed);
-        let path = std::env::temp_dir()
-            .join(format!("skribisto-stylesrt-{}-{n}.toml", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "skribisto-stylesrt-{}-{n}.toml",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&path);
 
-        let base = builtin_presets().into_iter().find(|p| p.id == "manuscript-shunn").unwrap();
+        let base = builtin_presets()
+            .into_iter()
+            .find(|p| p.id == "manuscript-shunn")
+            .unwrap();
         {
             let svc = ExportStylesService::open_at(path.clone()).unwrap();
-            let stored = svc.add_fresh(base.clone(), "manuscript-shunn-copy").unwrap();
-            assert_eq!(stored.id, "manuscript-shunn-copy", "fresh id (no collision)");
+            let stored = svc
+                .add_fresh(base.clone(), "manuscript-shunn-copy")
+                .unwrap();
+            assert_eq!(
+                stored.id, "manuscript-shunn-copy",
+                "fresh id (no collision)"
+            );
             assert!(!stored.builtin, "a duplicated style is editable");
             // The data-bearing enum (SceneBreak::Glyph) must survive the JSON-in-TOML envelope.
-            assert!(matches!(stored.scene_break, skribisto_compiler::SceneBreak::Glyph(_)));
+            assert!(matches!(
+                stored.scene_break,
+                skribisto_compiler::SceneBreak::Glyph(_)
+            ));
             // Both tiers, not just the first: `major_scene_break` carries
             // `#[serde(default)]`, so a round trip that silently dropped it would
             // still deserialize — and quietly reset every user's major break.
@@ -292,9 +327,15 @@ mod tests {
         let base = builtin_presets().into_iter().next().unwrap();
         svc.add_fresh(base, "good").unwrap();
         // Inject a garbage JSON string beside the good one.
-        svc.file.mutate(|f| f.presets.push("{ not valid preset json".to_string())).unwrap();
+        svc.file
+            .mutate(|f| f.presets.push("{ not valid preset json".to_string()))
+            .unwrap();
         let users = svc.user_presets();
-        assert_eq!(users.len(), 1, "the good preset survives; the garbage is dropped");
+        assert_eq!(
+            users.len(),
+            1,
+            "the good preset survives; the garbage is dropped"
+        );
         assert_eq!(users[0].id, "good");
     }
 }

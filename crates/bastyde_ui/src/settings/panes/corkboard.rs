@@ -12,7 +12,10 @@ use super::super::*;
 /// size, and what a card shows. All store-backed, so a change fans out live to
 /// every open board. The nested/flat radio bridges a `usize` selection to the
 /// `corkboard_nested` bool via two guarded effects — the shape `goals_pane` uses.
-pub(in crate::settings) fn corkboard_pane(ctx: &mut BuildContext, vm: &SettingsViewModel) -> impl Widget {
+pub(in crate::settings) fn corkboard_pane(
+    ctx: &mut BuildContext,
+    vm: &SettingsViewModel,
+) -> impl Widget {
     let nested = vm.corkboard_nested();
     // 0 = Nested, 1 = Flat.
     let index: Signal<usize> = Signal::new(if nested.get() { 0 } else { 1 });
@@ -76,7 +79,9 @@ pub(in crate::settings) fn corkboard_pane(ctx: &mut BuildContext, vm: &SettingsV
         )
         .line(
             field_label(tr!(settings_field_line_height())),
-            slider_field(typo.line_height.clone(), 1.0, 2.4, 0.02, |v| format!("{v:.2}")),
+            slider_field(typo.line_height.clone(), 1.0, 2.4, 0.02, |v| {
+                format!("{v:.2}")
+            }),
         )
         .line(
             field_label(tr!(settings_field_first_line_indent())),

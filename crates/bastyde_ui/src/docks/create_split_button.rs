@@ -88,8 +88,7 @@ impl Widget for CreateSplitButton {
             // in whatever language was active when this button was last built),
             // and it reaches AT as a *description* instead of being announced as
             // a keyboard chord. The same pairing holds at all five create sites.
-            let placement =
-                recommendation_placement(anchor_title.as_deref(), rec.relation);
+            let placement = recommendation_placement(anchor_title.as_deref(), rec.relation);
             let create_type = rec.create_type;
             let relation = rec.relation;
             btn = btn.item(

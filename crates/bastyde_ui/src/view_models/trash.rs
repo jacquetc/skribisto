@@ -22,8 +22,8 @@ use std::collections::{HashSet, VecDeque};
 use std::rc::Rc;
 use std::time::Duration;
 
-use bastyde::i18n::LocalizedString;
 use bastyde::data::{KeyedSelectionModel, SelectionMode};
+use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     DockWidgetId, DockingModel, MessageBox, MessageBoxButtons, StandardButton, Toast, ToastAction,
@@ -128,8 +128,12 @@ impl TrashViewModel {
         let Some(work) = self.ids.work_id.get() else {
             return Vec::new();
         };
-        work_commands::get_work_relationship(&self.app_ctx, &work, &WorkRelationshipField::TrashInfos)
-            .unwrap_or_default()
+        work_commands::get_work_relationship(
+            &self.app_ctx,
+            &work,
+            &WorkRelationshipField::TrashInfos,
+        )
+        .unwrap_or_default()
     }
 
     /// The trashed `BinderItem` id a `TrashInfo` points at (item entries only).
@@ -209,7 +213,9 @@ impl TrashViewModel {
                 }
             }
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(trash_restore_error(error = e.to_string()))));
+                ctx.show_toast(Toast::error(tr!(trash_restore_error(
+                    error = e.to_string()
+                ))));
             }
         }
     }
@@ -379,7 +385,9 @@ impl TrashViewModel {
     ) {
         let stack = self.stack();
         if let Err(e) = op(&self.app_ctx, stack) {
-            ctx.show_toast(Toast::error(tr!(trash_restore_error(error = e.to_string()))));
+            ctx.show_toast(Toast::error(tr!(trash_restore_error(
+                error = e.to_string()
+            ))));
             return;
         }
         self.reload();

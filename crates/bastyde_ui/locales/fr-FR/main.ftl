@@ -979,6 +979,36 @@ settings-user-dict-import-failed = Impossible de lire la liste de mots : { $erro
 settings-user-dict-exported = { $count } mots enregistrés.
 settings-user-dict-export-failed = Impossible d’enregistrer la liste de mots : { $error }
 
+## Réglages: Projet ▸ Remplacements de texte (lexique personnalisé par projet)
+settings-page-text-replacements = Remplacements de texte
+settings-text-repl-desc = Remplace une abréviation par le texte complet à la frappe : « stp » devient « s’il te plaît » dès que vous tapez une espace ou une ponctuation.
+settings-text-repl-enable = Utiliser les remplacements de texte dans ce projet
+settings-text-repl-disabled-hint = Activez cette option pour définir des abréviations qui se développent à l’écriture.
+settings-text-repl-add = Ajouter la règle
+settings-text-repl-trigger-placeholder = Abréviation
+settings-text-repl-replacement-placeholder = Ce qu’elle devient
+settings-text-repl-added = « { $trigger } » ajouté
+settings-text-repl-duplicate = « { $trigger } » a déjà une règle
+settings-text-repl-filter = Filtrer les règles
+# `{ $n }` rather than a literal "1" in the [one] branch: French puts zero in the
+# `one` category, so a hardcoded numeral renders "1 règle" for an empty lexicon.
+settings-text-repl-count = { $n ->
+    [one] { $n } règle
+   *[other] { $n } règles
+}
+settings-text-repl-row-enabled = Utiliser cette règle
+settings-text-repl-delete = Supprimer la règle de { $trigger }
+settings-text-repl-deleted = Règle de « { $trigger } » supprimée
+settings-text-repl-empty = Aucune règle pour l’instant.
+settings-text-repl-csv-filter = Fichiers CSV
+settings-text-repl-import = Importer…
+settings-text-repl-export = Exporter…
+settings-text-repl-imported = { $added } importées, { $skipped } ignorées
+settings-text-repl-exported = { $n ->
+    [one] { $n } règle exportée
+   *[other] { $n } règles exportées
+}
+
 ## Éditeur: orthographe (menu contextuel + notification)
 # Affiché à la place des corrections quand un mot signalé n’en a aucune.
 editor-menu-no-suggestions = Aucune suggestion
@@ -1083,6 +1113,7 @@ format-heading-5 = Titre 5
 format-heading-6 = Titre 6
 format-align-left = Aligner à gauche
 format-align-center = Centrer
+format-direction-rtl = Paragraphe de droite à gauche
 format-blockquote = Citation
 format-list-bullet = Liste à puces
 format-list-numbered = Liste numérotée
@@ -1116,6 +1147,10 @@ menu-format-heading-6 = Titre &6
 menu-format-alignment = &Alignement
 menu-format-align-left = Aligner à &gauche
 menu-format-align-center = &Centrer
+menu-format-direction = &Sens du texte
+menu-format-direction-auto = &Automatique
+menu-format-direction-ltr = De &gauche à droite
+menu-format-direction-rtl = De &droite à gauche
 menu-format-blockquote = &Citation
 menu-format-lists = &Listes
 menu-format-list-bullet = Liste à &puces
@@ -1146,3 +1181,23 @@ about-tagline = Une application d'écriture de romans pour la fiction longue, é
 about-license = Distribué sous la Licence publique générale GNU, version 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Fermer
+
+# ── Work ▸ Punctuation — le style typographique du projet ───────────────────
+settings-page-punctuation = Ponctuation
+settings-group-punctuation = Ponctuation intelligente
+settings-punctuation-override = Donner à ce projet ses propres règles de ponctuation
+settings-punctuation-override-hint = Désactivé : le projet suit la préférence de l'application. Ces règles voyagent dans le .skrib : un co-auteur qui ouvre le fichier écrit avec la même typographie.
+settings-punctuation-dashes = Transformer -- en tiret demi-cadratin, --- en cadratin
+settings-punctuation-ellipsis = Transformer ... en points de suspension
+settings-punctuation-quotes = Courber les guillemets et les apostrophes
+settings-quote-style = Guillemets
+settings-quote-style-locale = Défaut de la langue
+settings-quote-style-curly = « Courbes » (“…”)
+settings-quote-style-guillemets = «Chevrons»
+settings-quote-style-low-high = „Bas-haut“
+settings-punctuation-spacing = Espace avant ; : ! ? et »
+settings-punctuation-spacing-hint = La typographie française place une espace fine insécable avant ; ! ? et une espace insécable avant :. Ne s'applique qu'au texte écrit en français.
+settings-punctuation-sample = Votre langue donne
+settings-punctuation-app-hint = Ce que fait chaque projet, sauf s'il adopte ses propres règles dans Projet ▸ Ponctuation.
+settings-punctuation-dialogue = Ouvrir un paragraphe saisi « - » par un tiret de dialogue
+settings-punctuation-dialogue-hint = Pour les langues qui marquent le dialogue par un tiret plutôt que par des guillemets — français, espagnol, russe et d'autres. Ne se déclenche qu'en tout début de paragraphe.

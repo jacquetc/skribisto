@@ -121,9 +121,7 @@ mod imp {
         }
 
         fn refresh(&self) {
-            let date = self
-                .current_milestone()
-                .map(|m| m.target_date.date_naive());
+            let date = self.current_milestone().map(|m| m.target_date.date_naive());
             if self.inner.date.get() != date {
                 self.inner.date.set(date);
             }

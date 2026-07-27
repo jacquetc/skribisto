@@ -170,7 +170,9 @@ impl WorkspaceLayoutViewModel {
         let uid_of: HashMap<u64, Uuid> = order.iter().map(|r| (r.id, r.uid)).collect();
         let pane = |side| PaneLayout {
             tabs: to_uids(&uid_of, &editors.tab_item_ids(side)),
-            selected: editors.selected_item(side).and_then(|id| uid_of.get(&id).copied()),
+            selected: editors
+                .selected_item(side)
+                .and_then(|id| uid_of.get(&id).copied()),
         };
         let split_active = editors.split_active().get();
 
@@ -399,10 +401,26 @@ mod tests {
 
     fn stream() -> Vec<BinderItemRef> {
         vec![
-            BinderItemRef { id: 10, uid: u(10), title: "A".into() },
-            BinderItemRef { id: 20, uid: u(20), title: "B".into() },
-            BinderItemRef { id: 30, uid: u(30), title: "C".into() },
-            BinderItemRef { id: 40, uid: u(40), title: "D".into() },
+            BinderItemRef {
+                id: 10,
+                uid: u(10),
+                title: "A".into(),
+            },
+            BinderItemRef {
+                id: 20,
+                uid: u(20),
+                title: "B".into(),
+            },
+            BinderItemRef {
+                id: 30,
+                uid: u(30),
+                title: "C".into(),
+            },
+            BinderItemRef {
+                id: 40,
+                uid: u(40),
+                title: "D".into(),
+            },
         ]
     }
 
@@ -445,8 +463,10 @@ mod tests {
         let uids = to_uids(&uid_map(&order), &[30, 10, 40]);
         assert_eq!(uids, vec![u(30), u(10), u(40)]);
         // restore: uids → the same ids, same order.
-        let resolved: Vec<u64> =
-            resolve_uids(&order, &uids).into_iter().map(|(id, _)| id).collect();
+        let resolved: Vec<u64> = resolve_uids(&order, &uids)
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
         assert_eq!(resolved, vec![30, 10, 40]);
     }
 
@@ -472,8 +492,16 @@ mod tests {
     #[test]
     fn a_nil_uid_is_not_captured() {
         let order = vec![
-            BinderItemRef { id: 10, uid: Uuid::nil(), title: "unhealed".into() },
-            BinderItemRef { id: 20, uid: u(20), title: "B".into() },
+            BinderItemRef {
+                id: 10,
+                uid: Uuid::nil(),
+                title: "unhealed".into(),
+            },
+            BinderItemRef {
+                id: 20,
+                uid: u(20),
+                title: "B".into(),
+            },
         ];
         assert_eq!(to_uids(&uid_map(&order), &[10, 20]), vec![u(20)]);
     }
@@ -486,7 +514,11 @@ mod tests {
         let captured = to_uids(&uid_map(&stream()), &[30, 40]);
 
         // Next session: a new item was inserted at the front of the stream.
-        let mut shifted = vec![BinderItemRef { id: 5, uid: u(5), title: "new".into() }];
+        let mut shifted = vec![BinderItemRef {
+            id: 5,
+            uid: u(5),
+            title: "new".into(),
+        }];
         shifted.extend(stream());
 
         let reopened: Vec<u64> = resolve_uids(&shifted, &captured)

@@ -47,18 +47,26 @@ impl ExportPanel {
     /// `App::build` wired the long-operation events to). The presenting action calls
     /// [`ExportViewModel::prepare`] first so the scope/anchor/default path are set.
     pub fn new(vm: ExportViewModel) -> Self {
-        Self { vm, root_child: None }
+        Self {
+            vm,
+            root_child: None,
+        }
     }
 }
 
 /// A small, dimmed section header (normal case — no full caps).
 fn field_label(text: LocalizedString) -> TextWidget {
-    TextWidget::new(text).style(TextStyleRole::Small).color(TextRole::Secondary)
+    TextWidget::new(text)
+        .style(TextStyleRole::Small)
+        .color(TextRole::Secondary)
 }
 
 /// A labeled section: its header above the body widget.
 fn section(header: LocalizedString, body: impl Widget + 'static) -> VStack {
-    VStack::new().spacing(9.0).child(field_label(header)).child(body)
+    VStack::new()
+        .spacing(9.0)
+        .child(field_label(header))
+        .child(body)
 }
 
 /// The `.ext` suffix shown on a format tile.
@@ -79,11 +87,17 @@ fn format_ext(f: &ExportFormat) -> &'static str {
 /// effect keeps the destination extension in step with the choice.
 fn format_grid(vm: &ExportViewModel) -> RadioTileGroup {
     let mut grid = RadioTileGroup::new(vm.format_index())
-        .layout(TileLayout::Grid { min_tile_width: 122.0 })
+        .layout(TileLayout::Grid {
+            min_tile_width: 122.0,
+        })
         .spacing(7.0)
         .line_spacing(7.0);
     for f in ExportViewModel::panel_formats() {
-        grid = grid.tile(RadioTile::new().title(format_label(f)).description(lit!(format_ext(f))));
+        grid = grid.tile(
+            RadioTile::new()
+                .title(format_label(f))
+                .description(lit!(format_ext(f))),
+        );
     }
     grid
 }
@@ -235,14 +249,22 @@ impl std::fmt::Debug for PreviewHeader {
 
 impl Widget for PreviewHeader {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.vm.format_index().bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.vm.format_index().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
         self.vm.preset_signal().bind_to(
             ctx.self_id(),
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
 
-        let dot = || TextWidget::new(lit!("·")).style(TextStyleRole::Small).color(TextRole::Disabled);
+        let dot = || {
+            TextWidget::new(lit!("·"))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Disabled)
+        };
         let subtitle = HStack::new()
             .spacing(5.0)
             .child(
@@ -333,7 +355,11 @@ impl Widget for ExportPreviewBody {
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
-        self.vm.scope_signal().bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.vm.scope_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
         self.vm.custom_changed().bind_to(
             ctx.self_id(),
             ctx.binding_registry(),
@@ -413,13 +439,18 @@ struct LeadingColumn {
 
 impl LeadingColumn {
     fn new(vm: ExportViewModel) -> Self {
-        Self { vm, root_child: None }
+        Self {
+            vm,
+            root_child: None,
+        }
     }
 
     /// The "What to export" section: the scope segmented control (present only when a quick
     /// scope is available beside Custom) and, under Custom, the Choose… tree box.
     fn what_section(&self) -> VStack {
-        let mut col = VStack::new().spacing(9.0).child(field_label(tr!(export_section_what())));
+        let mut col = VStack::new()
+            .spacing(9.0)
+            .child(field_label(tr!(export_section_what())));
         if let Some(quick) = self.vm.quick_scope() {
             col = col.child(
                 SegmentedControl::new(self.vm.segment_index())
@@ -439,7 +470,11 @@ impl std::fmt::Debug for LeadingColumn {
 
 impl Widget for LeadingColumn {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.vm.scope_signal().bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.vm.scope_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
         let is_custom = self.vm.scope() == ExportScopeKind::Custom;
 
         // The stacked sections. Under Custom the checkbox tree box fills the leftover height
@@ -459,7 +494,10 @@ impl Widget for LeadingColumn {
         col = col
             .child(section(tr!(export_format_label()), format_grid(&self.vm)))
             .child(self.style_section(catalogue))
-            .child(section(tr!(export_section_destination()), destination_field(&self.vm)));
+            .child(section(
+                tr!(export_section_destination()),
+                destination_field(&self.vm),
+            ));
         if !is_custom {
             col = col.child(Spacer::new());
         }
@@ -547,7 +585,10 @@ struct ChoosePane {
 
 impl ChoosePane {
     fn new(vm: ExportViewModel) -> Self {
-        Self { vm, root_child: None }
+        Self {
+            vm,
+            root_child: None,
+        }
     }
 }
 
@@ -759,7 +800,11 @@ mod tests {
         let id = tree.add_boxed(Box::new(ExportPanel::new(vm)));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         let b = tree.bounds(id);
-        assert_eq!((b.width, b.height), (CARD_W, CARD_H), "panel fills the card");
+        assert_eq!(
+            (b.width, b.height),
+            (CARD_W, CARD_H),
+            "panel fills the card"
+        );
     }
 
     /// The Custom-scope path (segmented control + bordered tree box + footer) must also build
@@ -772,6 +817,10 @@ mod tests {
         let id = tree.add_boxed(Box::new(ExportPanel::new(vm)));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         let b = tree.bounds(id);
-        assert_eq!((b.width, b.height), (CARD_W, CARD_H), "custom-mode panel fills the card");
+        assert_eq!(
+            (b.width, b.height),
+            (CARD_W, CARD_H),
+            "custom-mode panel fills the card"
+        );
     }
 }

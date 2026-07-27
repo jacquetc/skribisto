@@ -90,15 +90,15 @@ macro_rules! license_assets {
     };
 }
 const LICENSES: &[(&str, &str)] = license_assets![
-    "gpl-2.0",         // English ×4, pt-PT
-    "gpl-3.0",         // German ×3, it-IT
-    "mpl-2.0",         // French ×3 (grammalecte)
-    "mpl-1.1",         // es-ES (triple-licensed; MPL-1.1 chosen)
-    "lgpl-3.0",        // pt-BR, sv-SE
-    "bsd-revised",     // nl-NL (BSD-3-Clause or CC-BY-3.0)
-    "cc-by-4.0",       // pl-PL (multi-licensed; CC-BY-4.0 chosen)
-    "ru-lebedev",      // ru-RU (a non-standard 4-clause BSD — bundled verbatim)
-    "ca-unspecified",  // ca (source states "GPL, LGPL" with no version)
+    "gpl-2.0",        // English ×4, pt-PT
+    "gpl-3.0",        // German ×3, it-IT
+    "mpl-2.0",        // French ×3 (grammalecte)
+    "mpl-1.1",        // es-ES (triple-licensed; MPL-1.1 chosen)
+    "lgpl-3.0",       // pt-BR, sv-SE
+    "bsd-revised",    // nl-NL (BSD-3-Clause or CC-BY-3.0)
+    "cc-by-4.0",      // pl-PL (multi-licensed; CC-BY-4.0 chosen)
+    "ru-lebedev",     // ru-RU (a non-standard 4-clause BSD — bundled verbatim)
+    "ca-unspecified", // ca (source states "GPL, LGPL" with no version)
 ];
 
 /// The parsed registry, built once on first access.

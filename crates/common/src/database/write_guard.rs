@@ -340,19 +340,26 @@ mod tests {
 
         match outcome {
             Err(payload) => {
-                assert!(
-                    cfg!(debug_assertions),
-                    "`{site}`: a release build must report contention by returning an \
-                     error, not by panicking"
-                );
+                // `if !cfg!(..) { panic!(..) }` rather than `assert!(cfg!(..), ..)`:
+                // the condition is a compile-time constant, which clippy's
+                // `assertions_on_constants` rejects under `-D warnings`. The
+                // check is worth keeping — it is what proves the profile and the
+                // observed behaviour agree — so it is restated, not removed.
+                if !cfg!(debug_assertions) {
+                    panic!(
+                        "`{site}`: a release build must report contention by returning an \
+                         error, not by panicking"
+                    );
+                }
                 panic_message(payload.as_ref())
             }
             Ok(Err(error)) => {
-                assert!(
-                    !cfg!(debug_assertions),
-                    "`{site}`: a debug build must report contention by panicking loudly \
-                     at the offending call site, not by returning an error"
-                );
+                if cfg!(debug_assertions) {
+                    panic!(
+                        "`{site}`: a debug build must report contention by panicking loudly \
+                         at the offending call site, not by returning an error"
+                    );
+                }
                 format!("{error}")
             }
             Ok(Ok(_)) => panic!(

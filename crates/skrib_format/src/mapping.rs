@@ -7,8 +7,8 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::entities::{
-    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, ProgressSnapshot, TrashInfo,
-    Work,
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, ProgressSnapshot, QuoteStyle,
+    SmartPunctuation, TextReplacementRule, TrashInfo, Work,
 };
 use skribisto_model::content_allowed;
 use std::collections::BTreeMap;
@@ -27,6 +27,39 @@ fn parse_dt(s: &str) -> Result<DateTime<Utc>> {
         .with_timezone(&Utc))
 }
 
+/// The on-disk name of a [`QuoteStyle`].
+///
+/// Written as a string rather than relying on serde's enum encoding so that a
+/// variant added by a later build cannot make the whole bundle unreadable to an
+/// earlier one — the worst case degrades to [`quote_style_from_name`]'s fallback
+/// instead of a hard deserialization error, which is the same posture every
+/// other additive field in this crate takes.
+fn quote_style_name(style: &QuoteStyle) -> &'static str {
+    match style {
+        QuoteStyle::LocaleDefault => "locale_default",
+        QuoteStyle::CurlyDouble => "curly_double",
+        QuoteStyle::Guillemets => "guillemets",
+        QuoteStyle::LowHigh => "low_high",
+    }
+}
+
+/// Read a [`QuoteStyle`] back, falling back to the locale default.
+///
+/// An unknown name means the bundle was written by a build that knows a style
+/// this one does not. Falling back to `LocaleDefault` is the honest answer: it
+/// is what the locale would have chosen anyway, so the prose stays typographically
+/// sane rather than silently adopting some other house style.
+fn quote_style_from_name(name: &str) -> QuoteStyle {
+    match name {
+        "curly_double" => QuoteStyle::CurlyDouble,
+        "guillemets" => QuoteStyle::Guillemets,
+        "low_high" => QuoteStyle::LowHigh,
+        // Covers "locale_default", the empty string a `#[serde(default)]` yields
+        // for a field written before this existed, and anything unrecognised.
+        _ => QuoteStyle::LocaleDefault,
+    }
+}
+
 // ---------------------------------------------------------------------------
 // store entities -> WorkBundle (save path)
 // ---------------------------------------------------------------------------
@@ -41,6 +74,12 @@ pub fn from_entities(
     work: &Work,
     tags: &[BinderTag],
     dict_words: &[DictWord],
+    text_replacement_rules: &[TextReplacementRule],
+    // Deliberately **not** a slice, though every neighbour here is one: this is
+    // a one-to-one child, and taking `&Option<_>` means a caller cannot pass it
+    // in the wrong positional slot — the two `&[...]` parameters on either side
+    // would have accepted each other silently.
+    smart_punctuation: Option<&SmartPunctuation>,
     trash_infos: &[TrashInfo],
     paces: &[PaceWithChildren],
     progress_snapshots: &[ProgressSnapshot],
@@ -146,6 +185,19 @@ pub fn from_entities(
                 dict_word_ids: work.dict_words.clone(),
                 unique_id: work.unique_id.clone(),
                 chapter_flat: matches!(work.chapter_mode, ChapterMode::Flat),
+                text_replacement_rule_ids: work.text_replacement_rules.clone(),
+                custom_replacement_rules_enabled: work.custom_replacement_rules_enabled,
+                smart_punctuation: smart_punctuation.map(|sp| SmartPunctuationFile {
+                    created_at: fmt_dt(&sp.created_at),
+                    updated_at: fmt_dt(&sp.updated_at),
+                    override_app_default: sp.override_app_default,
+                    dashes: sp.dashes,
+                    ellipsis: sp.ellipsis,
+                    quotes: sp.quotes,
+                    quote_style: quote_style_name(&sp.quote_style).to_string(),
+                    pre_punctuation_spacing: sp.pre_punctuation_spacing,
+                    dialogue_marker: sp.dialogue_marker,
+                }),
             },
             binder_order: binders.iter().map(|b| b.binder.id).collect(),
             // A regular save. The backup path re-stamps these via `mark_as_backup`.
@@ -172,6 +224,17 @@ pub fn from_entities(
                 created_at: fmt_dt(&w.created_at),
                 updated_at: fmt_dt(&w.updated_at),
                 word: w.word.clone(),
+            })
+            .collect(),
+        text_replacement_rules: text_replacement_rules
+            .iter()
+            .map(|r| TextReplacementRuleFile {
+                file_id: r.id,
+                created_at: fmt_dt(&r.created_at),
+                updated_at: fmt_dt(&r.updated_at),
+                trigger: r.trigger.clone(),
+                replacement: r.replacement.clone(),
+                enabled: r.enabled,
             })
             .collect(),
         trash_infos: trash_infos
@@ -276,7 +339,22 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         } else {
             ChapterMode::Folder
         },
-        ..Default::default()
+        custom_replacement_rules_enabled: m.work.custom_replacement_rules_enabled,
+        // Empty by design: `LoadedWork` carries the children in its own ordered
+        // vectors, and `materialize` wires the real store ids on afterwards.
+        binders: Vec::new(),
+        tags: Vec::new(),
+        dict_words: Vec::new(),
+        text_replacement_rules: Vec::new(),
+        // Zero for the same reason the vectors are empty — `materialize` mints
+        // the row and writes its store id back. Unlike them, zero is not a
+        // valid resting state: a `Work` whose one-to-one child is still 0 has a
+        // dangling relationship, so `materialize` must create a default row for
+        // a bundle that carries none (every bundle written before this field
+        // existed).
+        smart_punctuation: 0,
+        trash_infos: Vec::new(),
+        paces: Vec::new(),
     };
 
     let tags = bundle
@@ -308,20 +386,35 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         })
         .collect::<Result<Vec<_>>>()?;
 
+    let text_replacement_rules = bundle
+        .text_replacement_rules
+        .iter()
+        .map(|r| {
+            Ok(TextReplacementRule {
+                id: r.file_id,
+                created_at: parse_dt(&r.created_at)?,
+                updated_at: parse_dt(&r.updated_at)?,
+                trigger: r.trigger.clone(),
+                replacement: r.replacement.clone(),
+                enabled: r.enabled,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
     let mut references: Vec<(u64, u64)> = Vec::new();
     let mut loaded_binders = Vec::with_capacity(bundle.binders.len());
 
     for bb in &bundle.binders {
         let binder = Binder {
             id: bb.binder.file_id,
-            // Explicit, NOT left to `..Default::default()`: an empty uid here
-            // would collapse every row onto one key downstream.
+            // An empty uid here would collapse every row onto one key downstream.
             uid: bb.binder.uid,
             created_at: parse_dt(&bb.binder.created_at)?,
             updated_at: parse_dt(&bb.binder.updated_at)?,
             name: bb.binder.name.clone(),
             activated: bb.binder.activated,
-            ..Default::default()
+            // Empty by design: `LoadedBinder.items` carries the order.
+            binder_items: Vec::new(),
         };
 
         let mut items = Vec::with_capacity(bb.items.len());
@@ -363,7 +456,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
             items.push(LoadedItem {
                 item: BinderItem {
                     id: f.file_id,
-                    // Explicit, NOT left to `..Default::default()` — see above.
+                    // See the binder above.
                     uid: f.uid,
                     created_at: parse_dt(&f.created_at)?,
                     updated_at: parse_dt(&f.updated_at)?,
@@ -379,10 +472,12 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                     word_count_goal: f.word_count_goal,
                     char_count_goal: f.char_count_goal,
                     dict_language: f.dict_language.clone(),
-                    // Must be set explicitly: the `..Default::default()` below would
-                    // otherwise swallow it silently and aliases would never load.
                     aliases: f.aliases.clone(),
-                    ..Default::default()
+                    // Empty by design: `LoadedItem` carries the contents and the tag
+                    // ids, and cross-item `references` are collected separately above.
+                    contents: Vec::new(),
+                    references: Vec::new(),
+                    tags: Vec::new(),
                 },
                 contents,
                 tag_ids: f.tag_ids.clone(),
@@ -471,10 +566,36 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         })
         .collect::<Result<Vec<_>>>()?;
 
+    // `None` here flows all the way to the materialiser, which is what lets it
+    // tell a pre-feature bundle from one whose writer switched everything off.
+    let smart_punctuation = m
+        .work
+        .smart_punctuation
+        .as_ref()
+        .map(|sp| -> Result<SmartPunctuation> {
+            Ok(SmartPunctuation {
+                // Remapped to a fresh store id at materialise time, like every
+                // other file id in this graph.
+                id: 0,
+                created_at: parse_dt(&sp.created_at)?,
+                updated_at: parse_dt(&sp.updated_at)?,
+                override_app_default: sp.override_app_default,
+                dashes: sp.dashes,
+                ellipsis: sp.ellipsis,
+                quotes: sp.quotes,
+                quote_style: quote_style_from_name(&sp.quote_style),
+                pre_punctuation_spacing: sp.pre_punctuation_spacing,
+                dialogue_marker: sp.dialogue_marker,
+            })
+        })
+        .transpose()?;
+
     Ok(LoadedWork {
         work,
         tags,
         dict_words,
+        text_replacement_rules,
+        smart_punctuation,
         binders: loaded_binders,
         trash_infos,
         paces,

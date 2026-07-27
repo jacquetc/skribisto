@@ -124,8 +124,7 @@ fn add_recommendations_menu(vm: OverviewViewModel, uid: Uuid) -> MenuList {
     for rec in &recs {
         let vm = vm.clone();
         let rec_owned = *rec;
-        let placement =
-            recommendation_placement(Some(anchor_title.as_str()), rec.relation);
+        let placement = recommendation_placement(Some(anchor_title.as_str()), rec.relation);
         menu = menu.item(
             MenuItem::new(recommendation_label(rec.create_type))
                 .icon(crate::binder::icons::create_type_icon(rec.create_type))

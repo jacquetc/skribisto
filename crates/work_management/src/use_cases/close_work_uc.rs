@@ -15,8 +15,8 @@ use common::database::CommandUnitOfWork;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 #[allow(unused_imports)]
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot, TrashInfo, Work,
-    WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
+    TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::types::EntityId;
 

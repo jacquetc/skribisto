@@ -46,8 +46,9 @@ pub trait WorkCloser {
     fn work_info_ids_for_work(&self, work_id: EntityId) -> Result<Vec<EntityId>>;
     /// Cascades to `Search` + `ProgressSnapshot`s and reconciles `System.work_infos`.
     fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()>;
-    /// Cascades to Binders/Tags/DictWords/TrashInfos/Paces (and, transitively,
-    /// their own children) and reconciles `Root.works`.
+    /// Cascades to Binders/Tags/DictWords/TextReplacementRules/SmartPunctuation/
+    /// TrashInfos/Paces (and, transitively, their own children) and reconciles
+    /// `Root.works`.
     fn remove_works(&self, ids: &[EntityId]) -> Result<()>;
 }
 
@@ -116,6 +117,8 @@ pub fn serialize_and_write(
         &g.work,
         &g.tags,
         &g.dict_words,
+        &g.text_replacement_rules,
+        g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,
         &g.progress_snapshots,

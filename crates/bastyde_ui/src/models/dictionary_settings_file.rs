@@ -102,7 +102,7 @@ impl Versioned for DictionarySettingsFile {
 /// field), so the step is the identity — the Migrator stamps the new version and serde fills the
 /// empty list. Shared by every load site so a v1 file on disk upgrades consistently.
 fn migrator() -> Migrator<DictionarySettingsFile> {
-    Migrator::new().step(1, |raw| Ok(raw))
+    Migrator::new().step(1, Ok)
 }
 
 /// The lowercase-hex BLAKE3 of a licence text — the canonical hashing used both when
@@ -135,8 +135,10 @@ impl DictionarySettingsService {
     /// Graceful fallback when the config dir is unavailable: a throwaway per-process temp
     /// file, so the app still runs (acceptances just won't persist across restarts).
     pub fn in_memory_default() -> Self {
-        let path =
-            std::env::temp_dir().join(format!("skribisto-dictionaries-{}.toml", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "skribisto-dictionaries-{}.toml",
+            std::process::id()
+        ));
         SettingsFile::load(path, migrator())
             .map(|file| Self { file })
             .unwrap_or_else(|_| {
@@ -238,8 +240,12 @@ mod tests {
         let svc = temp_service();
         let hash = license_hash("Mozilla Public License Version 2.0 …");
 
-        assert!(!svc.has_accepted("fr-FR-x-1990", &hash), "nothing accepted yet");
-        svc.accept("fr-FR-x-1990", &hash, "2026-07-15T00:00:00Z").unwrap();
+        assert!(
+            !svc.has_accepted("fr-FR-x-1990", &hash),
+            "nothing accepted yet"
+        );
+        svc.accept("fr-FR-x-1990", &hash, "2026-07-15T00:00:00Z")
+            .unwrap();
         assert!(svc.has_accepted("fr-FR-x-1990", &hash));
 
         // A different (corrected) text hash reads as not-accepted → re-prompt.
@@ -267,12 +273,14 @@ mod tests {
         let svc = temp_service();
         assert!(svc.user_dictionaries().is_empty());
 
-        svc.add_user_dictionary("fr-FR-x-mine", "My French").unwrap();
+        svc.add_user_dictionary("fr-FR-x-mine", "My French")
+            .unwrap();
         svc.add_user_dictionary("cy-GB", "Cymraeg").unwrap();
         assert_eq!(svc.user_dictionaries().len(), 2);
 
         // Re-adding the same code replaces (a renamed re-import), never duplicates.
-        svc.add_user_dictionary("fr-FR-x-mine", "My French (v2)").unwrap();
+        svc.add_user_dictionary("fr-FR-x-mine", "My French (v2)")
+            .unwrap();
         let list = svc.user_dictionaries();
         assert_eq!(list.len(), 2, "one record per code");
         assert_eq!(
@@ -294,8 +302,8 @@ mod tests {
         use std::sync::atomic::{AtomicU64, Ordering};
         static N: AtomicU64 = AtomicU64::new(0);
         let n = N.fetch_add(1, Ordering::Relaxed);
-        let path = std::env::temp_dir()
-            .join(format!("skribisto-dictmig-{}-{n}.toml", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("skribisto-dictmig-{}-{n}.toml", std::process::id()));
         std::fs::write(
             &path,
             "version = 1\n[[accepted]]\ndictionary_id = \"en-US\"\naccepted_at = \"t\"\nlicense_text_hash = \"h\"\n",
@@ -305,7 +313,10 @@ mod tests {
         let svc = DictionarySettingsService::open_at(path.clone()).expect("v1 upgrades to v2");
         assert_eq!(svc.file.borrow().version, 2, "version stamped forward");
         assert_eq!(svc.file.borrow().accepted.len(), 1, "acceptances preserved");
-        assert!(svc.user_dictionaries().is_empty(), "user list defaults empty");
+        assert!(
+            svc.user_dictionaries().is_empty(),
+            "user list defaults empty"
+        );
         let _ = std::fs::remove_file(&path);
     }
 }

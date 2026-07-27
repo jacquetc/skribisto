@@ -19,13 +19,13 @@ use std::rc::Rc;
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::core::styles::PanelVariant;
 use bastyde::data::{KeyedSelectionModel, SelectionMode, TreeDataSource};
+use bastyde::prelude::TextStyleRole;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     Button, ButtonVariant, Divider, Expand, FixedSize, HStack, IconButton, MessageBox,
     MessageBoxButtons, Padding, Panel, ScrollBarMode, Spacer, StandardButton, StandardTreeItem,
     Switcher, TextWidget, Toast, TreeRow, TreeView, VStack,
 };
-use bastyde::prelude::TextStyleRole;
 
 use frontend::trash_management::DropPosition;
 
@@ -97,7 +97,6 @@ impl TrashRestoreTargetPanel {
             root_child: None,
         }
     }
-
 }
 
 impl std::fmt::Debug for TrashRestoreTargetPanel {

@@ -832,7 +832,10 @@ mod tests {
     fn an_expanded_row_filtered_out_by_a_search_comes_back_expanded() {
         let (m, f) = model_with_filters();
         f.binder.set(Some(1));
-        assert!(m.is_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101))), "Book One starts open");
+        assert!(
+            m.is_expanded(&BinderTreeKey::Item(common::uid::fixture_uid(101))),
+            "Book One starts open"
+        );
 
         // "Random idea" lives in the Notes binder, so nothing under Book One matches and
         // the whole subtree is filtered away.
@@ -872,8 +875,14 @@ mod tests {
     #[test]
     fn binders_cannot_drag_items_can() {
         let m = model();
-        assert_eq!(m.drag(&BinderTreeKey::Binder(common::uid::fixture_uid(9_001))), DragEligibility::NoDrag);
-        assert_eq!(m.drag(&BinderTreeKey::Item(common::uid::fixture_uid(102))), DragEligibility::CanDrag);
+        assert_eq!(
+            m.drag(&BinderTreeKey::Binder(common::uid::fixture_uid(9_001))),
+            DragEligibility::NoDrag
+        );
+        assert_eq!(
+            m.drag(&BinderTreeKey::Item(common::uid::fixture_uid(102))),
+            DragEligibility::CanDrag
+        );
     }
 
     #[test]
@@ -932,8 +941,14 @@ mod tests {
             Some((None, "Manuscript".to_string()))
         );
         // binder_of resolves an item to its owning binder, and a binder to itself.
-        assert_eq!(m.binder_of(&BinderTreeKey::Item(common::uid::fixture_uid(105))), Some(1));
-        assert_eq!(m.binder_of(&BinderTreeKey::Binder(common::uid::fixture_uid(9_002))), Some(2));
+        assert_eq!(
+            m.binder_of(&BinderTreeKey::Item(common::uid::fixture_uid(105))),
+            Some(1)
+        );
+        assert_eq!(
+            m.binder_of(&BinderTreeKey::Binder(common::uid::fixture_uid(9_002))),
+            Some(2)
+        );
     }
 
     /// **The tree model must actually drop.** Same hazard as the Overview's: the slice

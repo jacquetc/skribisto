@@ -23,8 +23,8 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot, TrashInfo, Work,
-    WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
+    SmartPunctuation, TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
@@ -49,6 +49,8 @@ pub trait SaveAsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO")]
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO")]
+#[macros::uow_action(entity = "TextReplacementRule", action = "GetMultiRO")]
+#[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
 #[macros::uow_action(entity = "Pace", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Pace", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "Holiday", action = "GetMultiRO")]
@@ -93,6 +95,15 @@ impl<'a> TreeReader for dyn SaveAsUnitOfWorkTrait + 'a {
     }
     fn dict_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<DictWord>>> {
         self.get_dict_word_multi(ids)
+    }
+    fn text_replacement_rule_multi(
+        &self,
+        ids: &[EntityId],
+    ) -> Result<Vec<Option<TextReplacementRule>>> {
+        self.get_text_replacement_rule_multi(ids)
+    }
+    fn smart_punctuation(&self, id: &EntityId) -> Result<Option<SmartPunctuation>> {
+        self.get_smart_punctuation(id)
     }
     fn content_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Content>>> {
         self.get_content_multi(ids)

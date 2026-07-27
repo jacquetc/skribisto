@@ -230,12 +230,12 @@ mod imp {
         /// screen. Called from `main`, the writer is alive and acks immediately.
         pub fn shutdown() {
             let mru = SHARED_MRU.with(|cell| cell.borrow_mut().take());
-            if let Some(mru) = mru {
-                if let Err(e) = mru.flush_now() {
-                    eprintln!("recents MRU: flush failed: {e}");
-                }
-                // Dropped here, on a live app — not during process teardown.
+            if let Some(mru) = mru
+                && let Err(e) = mru.flush_now()
+            {
+                eprintln!("recents MRU: flush failed: {e}");
             }
+            // Dropped here, on a live app — not during process teardown.
         }
 
         /// On a successful open, record the just-opened work in the durable MRU
@@ -536,7 +536,7 @@ mod imp {
                     labels: vec![],
                     language: vec!["en".to_string()],
                     author_name: String::new(),
-            chapter_scene_mode: false,
+                    chapter_scene_mode: false,
                 },
             )
             .unwrap();

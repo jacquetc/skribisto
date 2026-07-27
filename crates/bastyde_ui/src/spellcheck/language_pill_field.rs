@@ -33,9 +33,9 @@ use crate::widgets::{Pill, PillTooltip};
 
 use std::collections::HashMap;
 
-use crate::spellcheck::dictionary_registry;
 use crate::models::OpenDocsStore;
 use crate::spellcheck::SpellcheckService;
+use crate::spellcheck::dictionary_registry;
 use crate::view_models::DictionariesViewModel;
 use skribisto_model::language;
 
@@ -193,7 +193,7 @@ impl Widget for LanguagePillField {
             }
             None => Vec::new(),
         };
-        user_dicts.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        user_dicts.sort_by_key(|a| a.name.to_lowercase());
         let user_names: HashMap<String, String> = user_dicts
             .iter()
             .map(|u| (u.code.clone(), u.name.clone()))
@@ -327,7 +327,10 @@ impl Widget for LanguagePillField {
             .content(FocusScope::new(TraversalScopePolicy::Cycle).child(menu));
         flow = flow.child(add_button);
 
-        let id = ctx.add(flow.access_role(Role::List).access_label(tr!(lang_pill_list())));
+        let id = ctx.add(
+            flow.access_role(Role::List)
+                .access_label(tr!(lang_pill_list())),
+        );
         self.root_child = Some(id);
         vec![id]
     }

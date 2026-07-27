@@ -123,8 +123,7 @@ impl Widget for OverviewCreateButton {
             .variant(ButtonVariant::Tinted)
             .icon(IconWidget::from_svg_icon(res!("assets/icons/add.svg")).icon_size(14.0));
         for rec in &recs {
-            let placement =
-                recommendation_placement(Some(anchor_title.as_str()), rec.relation);
+            let placement = recommendation_placement(Some(anchor_title.as_str()), rec.relation);
             let rec_owned = *rec;
             let vm = self.vm.clone();
             btn = btn.item(

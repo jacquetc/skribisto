@@ -24,17 +24,20 @@
 //! the feature directories their view-models live in.
 
 pub(super) mod appearance;
-pub(super) mod backup;
 pub(super) mod autosave;
+pub(super) mod backup;
 pub(super) mod corkboard;
 pub(super) mod dictionaries;
 pub(super) mod editor_behavior;
 pub(super) mod export_styles;
 pub(super) mod goals;
+pub(super) mod punctuation;
 pub(super) mod spellcheck;
+pub(super) mod text_replacements;
 pub(super) mod typography;
 pub(super) mod user_dictionary;
 pub(super) mod work_author;
 pub(super) mod work_language;
+pub(super) mod work_punctuation;
 pub(super) mod work_structure;
 pub(super) mod work_tags;

@@ -21,27 +21,33 @@ use bastyde::settings::SettingsStore;
 use frontend::common::entities::BinderItemSubRole;
 use skribisto_model::counting::CountingMethodSetting;
 
+use frontend::common::entities::QuoteStyle;
+
 use crate::{
     AUTOSAVE_KEY, CORKBOARD_CARD_SIZE_DEFAULT, CORKBOARD_CARD_SIZE_KEY,
     CORKBOARD_FIRST_LINE_INDENT_DEFAULT, CORKBOARD_FIRST_LINE_INDENT_KEY,
     CORKBOARD_FONT_FAMILY_DEFAULT, CORKBOARD_FONT_FAMILY_KEY, CORKBOARD_LINE_HEIGHT_DEFAULT,
     CORKBOARD_LINE_HEIGHT_KEY, CORKBOARD_NESTED_DEFAULT, CORKBOARD_NESTED_KEY,
     CORKBOARD_PARA_SPACING_AFTER_DEFAULT, CORKBOARD_PARA_SPACING_AFTER_KEY,
-    CORKBOARD_PARA_SPACING_BEFORE_DEFAULT, CORKBOARD_PARA_SPACING_BEFORE_KEY, CORKBOARD_SIZE_DEFAULT,
-    CORKBOARD_SIZE_KEY, CORKBOARD_SHOW_WORD_COUNT_DEFAULT, CORKBOARD_SHOW_WORD_COUNT_KEY,
-    DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
-    GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
-    HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
-    NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY,
-    NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT,
-    NOTES_PARA_SPACING_AFTER_KEY, NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_PARA_SPACING_BEFORE_KEY,
-    NOTES_SIZE_DEFAULT, NOTES_SIZE_KEY, PREVIEW_WIDTH_DEFAULT, PREVIEW_WIDTH_KEY,
-    REMEMBER_VIEW_DEFAULT, REMEMBER_VIEW_KEY, SCENE_FIRST_LINE_INDENT_DEFAULT,
-    SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT, SCENE_FONT_FAMILY_KEY,
-    SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT,
-    SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY,
-    SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT,
-    SPELLCHECK_ENABLED_KEY, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY,
+    CORKBOARD_PARA_SPACING_BEFORE_DEFAULT, CORKBOARD_PARA_SPACING_BEFORE_KEY,
+    CORKBOARD_SHOW_WORD_COUNT_DEFAULT, CORKBOARD_SHOW_WORD_COUNT_KEY, CORKBOARD_SIZE_DEFAULT,
+    CORKBOARD_SIZE_KEY, DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY,
+    GOALS_COUNTING_METHOD_KEY, GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY,
+    HIGHLIGHT_SENTENCE_DEFAULT, HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY,
+    NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT,
+    NOTES_FONT_FAMILY_KEY, NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY,
+    NOTES_PARA_SPACING_AFTER_DEFAULT, NOTES_PARA_SPACING_AFTER_KEY,
+    NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_PARA_SPACING_BEFORE_KEY, NOTES_SIZE_DEFAULT,
+    NOTES_SIZE_KEY, PREVIEW_WIDTH_DEFAULT, PREVIEW_WIDTH_KEY, PUNCT_DASHES_DEFAULT,
+    PUNCT_DASHES_KEY, PUNCT_DIALOGUE_DEFAULT, PUNCT_DIALOGUE_KEY, PUNCT_ELLIPSIS_DEFAULT,
+    PUNCT_ELLIPSIS_KEY, PUNCT_QUOTE_STYLE_KEY, PUNCT_QUOTES_DEFAULT, PUNCT_QUOTES_KEY,
+    PUNCT_SPACING_DEFAULT, PUNCT_SPACING_KEY, REMEMBER_VIEW_DEFAULT, REMEMBER_VIEW_KEY,
+    SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT,
+    SCENE_FONT_FAMILY_KEY, SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY,
+    SCENE_PARA_SPACING_AFTER_DEFAULT, SCENE_PARA_SPACING_AFTER_KEY,
+    SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY, SCENE_SIZE_DEFAULT,
+    SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY,
+    SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY,
     SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY, SYNOPSIS_LINE_HEIGHT_DEFAULT,
     SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PANE_KEY,
     SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
@@ -201,6 +207,14 @@ pub struct SettingsViewModel {
     corkboard_typo: EditorTypography,
     // ── Editor behaviour ──
     synopsis_pane: Signal<bool>,
+    /// Application-level smart punctuation — the tier a project follows when
+    /// its own `SmartPunctuation` row leaves `override_app_default` off.
+    punct_dashes: Signal<bool>,
+    punct_ellipsis: Signal<bool>,
+    punct_quotes: Signal<bool>,
+    punct_quote_style: Signal<QuoteStyle>,
+    punct_spacing: Signal<bool>,
+    punct_dialogue: Signal<bool>,
     typewriter: Signal<bool>,
     highlight_sentence: Signal<bool>,
     remember_view: Signal<bool>,
@@ -283,8 +297,7 @@ impl SettingsViewModel {
                     CORKBOARD_FONT_FAMILY_DEFAULT.to_string(),
                 ),
                 size: store.signal(CORKBOARD_SIZE_KEY, CORKBOARD_SIZE_DEFAULT),
-                line_height: store
-                    .signal(CORKBOARD_LINE_HEIGHT_KEY, CORKBOARD_LINE_HEIGHT_DEFAULT),
+                line_height: store.signal(CORKBOARD_LINE_HEIGHT_KEY, CORKBOARD_LINE_HEIGHT_DEFAULT),
                 first_line_indent: store.signal(
                     CORKBOARD_FIRST_LINE_INDENT_KEY,
                     CORKBOARD_FIRST_LINE_INDENT_DEFAULT,
@@ -299,6 +312,12 @@ impl SettingsViewModel {
                 ),
             },
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
+            punct_dashes: store.signal(PUNCT_DASHES_KEY, PUNCT_DASHES_DEFAULT),
+            punct_ellipsis: store.signal(PUNCT_ELLIPSIS_KEY, PUNCT_ELLIPSIS_DEFAULT),
+            punct_quotes: store.signal(PUNCT_QUOTES_KEY, PUNCT_QUOTES_DEFAULT),
+            punct_quote_style: store.signal(PUNCT_QUOTE_STYLE_KEY, QuoteStyle::default()),
+            punct_spacing: store.signal(PUNCT_SPACING_KEY, PUNCT_SPACING_DEFAULT),
+            punct_dialogue: store.signal(PUNCT_DIALOGUE_KEY, PUNCT_DIALOGUE_DEFAULT),
             typewriter: store.signal(TYPEWRITER_KEY, TYPEWRITER_DEFAULT),
             highlight_sentence: store.signal(HIGHLIGHT_SENTENCE_KEY, HIGHLIGHT_SENTENCE_DEFAULT),
             remember_view: store.signal(REMEMBER_VIEW_KEY, REMEMBER_VIEW_DEFAULT),
@@ -374,6 +393,26 @@ impl SettingsViewModel {
     pub fn synopsis_pane(&self) -> Signal<bool> {
         self.synopsis_pane.clone()
     }
+    // ── Smart punctuation, application-level ─────────────────────────────
+    pub fn punct_dashes(&self) -> Signal<bool> {
+        self.punct_dashes.clone()
+    }
+    pub fn punct_ellipsis(&self) -> Signal<bool> {
+        self.punct_ellipsis.clone()
+    }
+    pub fn punct_quotes(&self) -> Signal<bool> {
+        self.punct_quotes.clone()
+    }
+    pub fn punct_quote_style(&self) -> Signal<QuoteStyle> {
+        self.punct_quote_style.clone()
+    }
+    pub fn punct_spacing(&self) -> Signal<bool> {
+        self.punct_spacing.clone()
+    }
+    pub fn punct_dialogue(&self) -> Signal<bool> {
+        self.punct_dialogue.clone()
+    }
+
     /// Typewriter scrolling (keep the caret line centred).
     pub fn typewriter(&self) -> Signal<bool> {
         self.typewriter.clone()
@@ -526,6 +565,12 @@ impl SettingsViewModel {
             .para_spacing_after
             .set(CORKBOARD_PARA_SPACING_AFTER_DEFAULT);
         self.synopsis_pane.set(SYNOPSIS_PANE_DEFAULT);
+        self.punct_dashes.set(PUNCT_DASHES_DEFAULT);
+        self.punct_ellipsis.set(PUNCT_ELLIPSIS_DEFAULT);
+        self.punct_quotes.set(PUNCT_QUOTES_DEFAULT);
+        self.punct_quote_style.set(QuoteStyle::default());
+        self.punct_spacing.set(PUNCT_SPACING_DEFAULT);
+        self.punct_dialogue.set(PUNCT_DIALOGUE_DEFAULT);
         self.typewriter.set(TYPEWRITER_DEFAULT);
         self.highlight_sentence.set(HIGHLIGHT_SENTENCE_DEFAULT);
         self.counting_method.set(CountingMethodSetting::default());
