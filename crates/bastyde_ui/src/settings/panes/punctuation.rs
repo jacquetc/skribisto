@@ -56,11 +56,14 @@ pub(in crate::settings) fn punctuation_pane(
         });
     }
 
-    let sample = {
-        let langs = ui_lang.clone();
-        vm.punct_quote_style()
-            .map(move |s| language_sample(&langs, s))
-    };
+    // React to BOTH the quote style and the interface language: switching the UI
+    // language changes which quotes "your language" produces, and the sample has
+    // to follow — a snapshot taken once at build would freeze it on the language
+    // that happened to be active when the pane was first shown.
+    let sample = vm
+        .locale()
+        .zip(&vm.punct_quote_style())
+        .map(|(lang, style)| language_sample(std::slice::from_ref(lang), style));
 
     let form = FormLayout::new()
         .label(tr!(settings_page_punctuation()))

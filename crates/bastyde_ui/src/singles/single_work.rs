@@ -223,13 +223,21 @@ mod imp {
                     self.inner.is_refreshing.set(true);
                     self.inner.title.set(w.title);
                     self.inner.author_name.set(w.author_name);
-                    self.inner.dict_language.set(w.dict_language);
+                    // `refresh` runs on every `Work::Updated`, so it fires on each
+                    // save — but a save rarely changes the language or the
+                    // punctuation row. `set_if_changed` keeps those two quiet
+                    // unless the value really moved: their observers re-attach
+                    // every open document and re-push the whole house style, work
+                    // that must not run once per keystroke-triggered autosave.
+                    self.inner.dict_language.set_if_changed(w.dict_language);
                     self.inner.chapter_mode.set(w.chapter_mode);
                     self.inner
                         .custom_replacement_rules_enabled
                         .set(w.custom_replacement_rules_enabled);
                     self.inner.unique_id.set(w.unique_id);
-                    self.inner.smart_punctuation.set(w.smart_punctuation);
+                    self.inner
+                        .smart_punctuation
+                        .set_if_changed(w.smart_punctuation);
                     self.inner.is_refreshing.set(false);
                     self.inner.dirty.set(false);
                     self.inner.error_message.set(String::new());

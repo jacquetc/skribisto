@@ -76,6 +76,15 @@ mod imp {
         }
 
         pub fn set_id(&self, id: Option<u64>) {
+            // Re-pointing to the row already loaded is a no-op: a fresh `refresh`
+            // would re-read it and re-fire every flag signal, re-pushing the
+            // whole house style to every open editor for no change. The driving
+            // effect fires on each Work save, so without this the punctuation is
+            // recomputed on every keystroke-triggered autosave. Genuine content
+            // edits arrive through `wire`'s `Updated` subscription, not here.
+            if self.inner.id.get() == id {
+                return;
+            }
             self.inner.id.set(id);
             match id {
                 Some(_) => self.refresh(),

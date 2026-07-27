@@ -78,6 +78,15 @@ struct PendingRevert {
     typed: String,
     /// `TextDocument::content_revision` immediately after the fire.
     revision: u64,
+    /// A different revert shape, for a substitution that inserted **more**
+    /// characters than the writer typed — the French guillemet plus its inner
+    /// no-break space (`"` → `«\u{202F}` / `\u{202F}»`). A lexicon revert fires
+    /// when the writer deletes the *delimiter* the fire re-added; there is no
+    /// delimiter here, so instead: the moment the writer backspaces into the
+    /// substitution (deleting its last character), collapse the whole thing back
+    /// to the one `typed` glyph. Without this, one Backspace removes only the
+    /// visible mark and strands the invisible no-break space.
+    collapse: bool,
 }
 
 /// A trigger that must not fire again at this exact spot.
@@ -363,6 +372,23 @@ impl TextReplacementSession {
         pending: &PendingRevert,
         caret: usize,
     ) -> bool {
+        // Collapse revert: the writer backspaced into a substitution that
+        // inserted more characters than they typed (a spaced guillemet). One
+        // Backspace has just removed its last character; finish the job by
+        // restoring the single `typed` glyph, so the companion no-break space is
+        // not left stranded and one press fully undoes the auto-substitution.
+        if pending.collapse && caret + 1 == pending.span_start + pending.replacement_chars {
+            let kept = pending.replacement_chars - 1;
+            let before = text_before(doc, caret, kept);
+            let expected: String = pending.replacement.chars().take(kept).collect();
+            if before.as_deref() == Some(expected.as_str()) {
+                self.apply(|| handle.replace_range(pending.span_start, caret, &pending.typed));
+                self.last_caret.set(Some(handle.cursor_position()));
+                self.last_revision.set(Some(doc.content_revision()));
+                return true;
+            }
+            return false;
+        }
         if caret != pending.span_start + pending.replacement_chars {
             return false;
         }
@@ -391,6 +417,10 @@ impl TextReplacementSession {
         let fired = {
             let engine = self.engine.borrow();
             if engine.is_empty() {
+                // No lexicon to fire — but a suppression left by an earlier
+                // revert must not outlive the keystroke it was meant for, or it
+                // would silently swallow a real fire once the lexicon comes back.
+                self.suppressed.borrow_mut().take();
                 return false;
             }
             let Some(window) = text_before(doc, caret, engine.window_chars()) else {
@@ -433,6 +463,7 @@ impl TextReplacementSession {
             replacement: fired.replacement,
             typed: fired.typed,
             revision: doc.content_revision(),
+            collapse: false,
         });
         self.last_caret.set(Some(handle.cursor_position()));
         self.last_revision.set(Some(doc.content_revision()));
@@ -478,6 +509,7 @@ impl TextReplacementSession {
             });
         } else {
             self.apply(|| handle.replace_range(span_start, caret, &fired.replacement));
+            self.note_expanded_substitution(span_start, &fired, doc);
         }
         self.last_caret.set(Some(handle.cursor_position()));
         self.last_revision.set(Some(doc.content_revision()));
@@ -491,19 +523,19 @@ impl TextReplacementSession {
     /// than one character before it: the trigger here IS the character the
     /// writer just typed, not a delimiter following a word.
     ///
-    /// ## And unlike a lexicon rule, it leaves no pending revert
+    /// ## Revert, only where the substitution grew
     ///
-    /// The backspace-revert exists because a lexicon expansion swallows the
-    /// delimiter the writer typed, so Backspace has to mean "put my word back"
-    /// rather than "delete a character". A punctuation substitution swallows
-    /// nothing — one glyph in, one glyph out — so Backspace should delete it
-    /// exactly as it deletes any character, and pressing it twice to remove one
-    /// quotation mark would be a bug, not an escape hatch.
+    /// A punctuation substitution that is one-glyph-in-one-glyph-out (a curled
+    /// quote, an em dash) leaves no pending revert: Backspace deletes it like any
+    /// character, and Ctrl+Z restores the literal since it is one
+    /// [`EditorHandle::replace_range`] / one undo entry — the same as Word.
     ///
-    /// The escape hatch is Ctrl+Z, and it already works: the substitution goes
-    /// through a single [`EditorHandle::replace_range`], which is one undo
-    /// entry, so undoing it restores the literal `"` or `--` the writer typed.
-    /// That is also what Word and LibreOffice do.
+    /// The exception is a substitution that inserted MORE characters than the
+    /// writer typed — the French guillemet plus its inner no-break space. There,
+    /// a plain per-character Backspace would remove the visible mark and strand
+    /// the invisible space, so [`note_expanded_substitution`](Self::note_expanded_substitution)
+    /// records a collapse revert that restores the single typed glyph on the
+    /// first Backspace instead.
     fn try_typography(&self, handle: &EditorHandle, doc: &TextDocument, caret: usize) {
         let fired = {
             let typography = self.typography.borrow();
@@ -519,8 +551,33 @@ impl TextReplacementSession {
             return;
         };
         self.apply(|| handle.replace_range(span_start, caret, &fired.replacement));
+        self.note_expanded_substitution(span_start, &fired, doc);
         self.last_caret.set(Some(handle.cursor_position()));
         self.last_revision.set(Some(doc.content_revision()));
+    }
+
+    /// Record a collapse revert for a punctuation substitution that inserted
+    /// **more** characters than the writer typed — the only such case is the
+    /// French guillemet plus its inner no-break space. Everything else (one glyph
+    /// in for one-or-more typed) leaves no revert and is deleted char-by-char.
+    /// See [`PendingRevert::collapse`].
+    fn note_expanded_substitution(
+        &self,
+        span_start: usize,
+        fired: &super::typography::Fired,
+        doc: &TextDocument,
+    ) {
+        if fired.replacement.chars().count() <= fired.typed.chars().count() {
+            return;
+        }
+        *self.pending.borrow_mut() = Some(PendingRevert {
+            span_start,
+            replacement_chars: fired.replacement.chars().count(),
+            replacement: fired.replacement.clone(),
+            typed: fired.typed.clone(),
+            revision: doc.content_revision(),
+            collapse: true,
+        });
     }
 
     /// Whether a fire at `span_start` for `typed` is the one a revert just
@@ -570,6 +627,7 @@ mod tests {
             replacement: "by the way".into(),
             typed: "btw".into(),
             revision: 7,
+            collapse: false,
         }
     }
 
@@ -1047,6 +1105,49 @@ mod live_editor_tests {
         assert_eq!(plain(&doc), "il dit \u{00AB}\u{202F}");
     }
 
+    /// **One Backspace undoes a spaced guillemet whole.** French opens with `«`
+    /// plus an inner narrow no-break space, so the substitution puts TWO
+    /// characters in for the one `"` the writer typed. A plain per-character
+    /// Backspace would delete only the trailing space (its own grapheme cluster)
+    /// and leave a bare `«` — or delete the `«` and strand an invisible space.
+    /// The collapse revert restores the single `"` the writer actually typed.
+    #[test]
+    fn one_backspace_collapses_a_spaced_guillemet_to_the_typed_quote() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "fr-FR");
+        type_text(&handle, &doc, &session, "il dit \"");
+        assert_eq!(plain(&doc), "il dit \u{00AB}\u{202F}");
+
+        // Backspace removes the trailing no-break space; the tick that follows
+        // collapses the whole substitution back to the `"`.
+        let end = handle.cursor_position();
+        handle.replace_range(end - 1, end, "");
+        session.tick(&handle, &doc);
+        assert_eq!(
+            plain(&doc),
+            "il dit \"",
+            "one Backspace must undo the auto-guillemet, not strand its inner space"
+        );
+    }
+
+    /// The collapse revert is armed for exactly one keystroke. If the writer
+    /// keeps typing inside the fresh guillemet instead of backspacing, a later
+    /// Backspace is an ordinary character delete, not a collapse.
+    #[test]
+    fn typing_on_after_a_guillemet_disarms_the_collapse() {
+        let (doc, handle, session, _tree) = editor("");
+        punctuate(&session, "fr-FR");
+        type_text(&handle, &doc, &session, "il dit \"a");
+        assert_eq!(plain(&doc), "il dit \u{00AB}\u{202F}a");
+
+        // Backspace now deletes the "a" as any character, leaving the guillemet
+        // and its space intact — the collapse window closed when "a" was typed.
+        let end = handle.cursor_position();
+        handle.replace_range(end - 1, end, "");
+        session.tick(&handle, &doc);
+        assert_eq!(plain(&doc), "il dit \u{00AB}\u{202F}");
+    }
+
     // ── The paragraph/clause subsystem ───────────────────────────────────────
 
     fn spanish(session: &TextReplacementSession) {
@@ -1115,6 +1216,48 @@ mod live_editor_tests {
         spanish(&session);
         type_text(&handle, &doc, &session, "Es \u{00BF}que?");
         assert_eq!(plain(&doc), "Es \u{00BF}que?");
+    }
+
+    /// A decimal point does not end the clause: the `.` in `3.14` is part of a
+    /// number, so the mark opens the whole question, not the fraction — `¿Cuesta
+    /// 3.14?`, never `Cuesta 3.¿14?`.
+    #[test]
+    fn a_decimal_point_does_not_split_the_clause() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "Cuesta 3.14?");
+        assert_eq!(plain(&doc), "\u{00BF}Cuesta 3.14?");
+    }
+
+    /// Nor does the colon of a clock time: `10:30` is one token, so the question
+    /// opens before it — `¿Son las 10:30?`, not `Son las 10:¿30?`.
+    #[test]
+    fn a_clock_time_does_not_split_the_clause() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "Son las 10:30?");
+        assert_eq!(plain(&doc), "\u{00BF}Son las 10:30?");
+    }
+
+    /// A colon that is genuinely punctuation — not between digits — still ends
+    /// the clause, so the question that follows opens after it.
+    #[test]
+    fn a_real_colon_still_opens_the_next_clause() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "Dice: vienes?");
+        assert_eq!(plain(&doc), "Dice: \u{00BF}vienes?");
+    }
+
+    /// A dialogue dash left as a plain hyphen — the conversion off, or the raw
+    /// character — still sits *outside* the clause, so the opening mark lands
+    /// after it: `-¿Vienes?`, never `¿-Vienes?`.
+    #[test]
+    fn a_plain_hyphen_dash_keeps_the_mark_after_it() {
+        let (doc, handle, session, _tree) = editor("");
+        spanish(&session);
+        type_text(&handle, &doc, &session, "-Vienes?");
+        assert_eq!(plain(&doc), "-\u{00BF}Vienes?");
     }
 
     /// Neighbours that do NOT invert. Catalan and Portuguese sit next to Spanish

@@ -470,9 +470,22 @@ fn uses_inverted_marks(tag: &str) -> bool {
 /// with it included finds it, reports the clause as starting after it, and every
 /// question resolves to an empty clause that never fires.
 fn clause_start(chars: &[char]) -> usize {
-    let boundary = chars
-        .iter()
-        .rposition(|c| matches!(c, '.' | '?' | '!' | ',' | ';' | ':' | '\u{2026}'))
+    // A `.` or `:` sitting between two digits is a decimal point or a clock time
+    // (`3.14`, `10:30`), not the end of a clause. Left to count as a boundary it
+    // would open the mark mid-number — `Cuesta 3.¿14?`, `Son las 10:¿30?` — so
+    // those two marks are boundaries only when they are not digit-flanked.
+    let is_boundary = |i: usize| match chars[i] {
+        '?' | '!' | ',' | ';' | '\u{2026}' => true,
+        '.' | ':' => {
+            let prev_digit = i.checked_sub(1).is_some_and(|p| chars[p].is_ascii_digit());
+            let next_digit = chars.get(i + 1).is_some_and(char::is_ascii_digit);
+            !(prev_digit && next_digit)
+        }
+        _ => false,
+    };
+    let boundary = (0..chars.len())
+        .rev()
+        .find(|&i| is_boundary(i))
         .map(|i| i + 1)
         .unwrap_or(0);
     let mut start = boundary;
@@ -481,10 +494,14 @@ fn clause_start(chars: &[char]) -> usize {
         // An existing `¿`/`¡` is deliberately NOT skipped. Skipping it puts the
         // clause start after it, so the already-opened guard below never sees
         // one and a writer who typed their own mark gets a second: `¿¿Vienes?`.
+        //
+        // A plain ASCII `-` is skipped alongside the real dashes: a writer whose
+        // dialogue dash is still a hyphen (dash conversion off, or mid-type
+        // before it fires) must still get `-¿Qué?`, not `¿-Qué?`.
         let skippable = c.is_whitespace()
             || matches!(
                 c,
-                LAQUO | LEFT_DOUBLE | LOW_DOUBLE | LEFT_SINGLE | LSAQUO | EM_DASH | EN_DASH
+                LAQUO | LEFT_DOUBLE | LOW_DOUBLE | LEFT_SINGLE | LSAQUO | EM_DASH | EN_DASH | '-'
             );
         if !skippable {
             break;
@@ -819,7 +836,10 @@ fn opens_after(prev: Option<char>) -> bool {
 /// Whether the locale sets a thin no-break space inside its guillemets —
 /// `« mot »` rather than `«mot»`. French practice (and Swiss French); no other
 /// guillemet locale does it, so this is keyed on the French language subtag.
-fn uses_guillemet_inner_spacing(tag: &str) -> bool {
+///
+/// Reachable from the settings panes so their live sample can show the same
+/// spacing the engine produces, rather than a bare `«…»` that lies about French.
+pub(crate) fn uses_guillemet_inner_spacing(tag: &str) -> bool {
     tag.split(['-', '_'])
         .next()
         .unwrap_or("")

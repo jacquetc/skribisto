@@ -997,6 +997,44 @@ fn new_work_persists_the_author_to_the_manifest() {
     assert_eq!(b.manifest.work.author_name, "A. Writer");
 }
 
+/// **`new_work` must mint the punctuation house-style row, not only `load_work`.**
+///
+/// The existing round-trip tests prove a *loaded* project keeps its row — but the
+/// loader mints one to satisfy the one-to-one relationship, so they would pass
+/// even if `new_work` created a Work with a dangling `smart_punctuation: 0`. This
+/// pins the creation path directly: a freshly made project already has an inert
+/// row on disk, following the application default until someone gives it a house
+/// style of its own.
+#[test]
+fn new_work_mints_a_punctuation_house_style() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+
+    new_work(
+        &db,
+        &hub,
+        dir.path().join("Fresh.skrib").to_str().unwrap(),
+        false,
+        NewWorkTemplate::Novel,
+    );
+
+    let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    let sp = b
+        .manifest
+        .work
+        .smart_punctuation
+        .expect("new_work must mint a SmartPunctuation row that reaches the manifest");
+    assert!(
+        !sp.override_app_default,
+        "a new project follows the app default rather than adopting a house style"
+    );
+    assert!(
+        !sp.dashes && !sp.ellipsis && !sp.quotes && !sp.pre_punctuation_spacing && !sp.dialogue_marker,
+        "every rule starts off on a new project"
+    );
+}
+
 /// An empty author is a legal, common state — it must round-trip as empty
 /// rather than failing or acquiring a placeholder.
 #[test]

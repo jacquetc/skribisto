@@ -7,7 +7,9 @@ use bastyde::prelude::*;
 use bastyde::widgets::{Segment, SegmentedControl};
 use frontend::common::entities::QuoteStyle;
 
-use crate::text_replacement::typography::{QuoteSystem, mirrored_for, ruleset_for};
+use crate::text_replacement::typography::{
+    QuoteSystem, mirrored_for, ruleset_for, uses_guillemet_inner_spacing,
+};
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -65,7 +67,16 @@ pub(in crate::settings) fn language_sample(langs: &[String], style: &QuoteStyle)
             close: '\u{201C}',
         },
     };
-    let mut out = format!("{}\u{2026}{}", quotes.open(), quotes.close());
+    // Guillemets carry a thin no-break space inside them in French (and only
+    // French), added by the engine along with the marks themselves — so the
+    // sample has to show `« … »`, not a bare `«…»` that misrepresents the output.
+    let (open, close) = (quotes.open(), quotes.close());
+    let inner = if uses_guillemet_inner_spacing(tag) && open == '\u{00AB}' && close == '\u{00BB}' {
+        format!("{open}\u{202F}\u{2026}\u{202F}{close}")
+    } else {
+        format!("{open}\u{2026}{close}")
+    };
+    let mut out = inner;
     // The two rules that are language-gated rather than switch-gated, and so
     // cannot be inferred from anything else on this pane.
     if !ruleset.pre_punctuation.is_empty() {
@@ -321,13 +332,19 @@ mod tests {
         // Swedish opens and closes with the same glyph.
         assert_eq!(language_sample(&l("sv-SE"), &d), "\u{201D}\u{2026}\u{201D}");
 
-        // French adds its spacing example — the rule is language-gated, so it
-        // cannot be inferred from the switches.
+        // French guillemets carry their thin no-break space inside the marks —
+        // `« … »`, not `«…»` — because the engine adds it along with the marks,
+        // and the sample has to show what the writer will actually get.
         let fr = language_sample(&l("fr-FR"), &d);
-        assert!(fr.starts_with("\u{00AB}\u{2026}\u{00BB}"), "got {fr:?}");
+        assert!(
+            fr.starts_with("\u{00AB}\u{202F}\u{2026}\u{202F}\u{00BB}"),
+            "French shows the inner thin space: {fr:?}"
+        );
+        // And its pre-punctuation spacing example — that rule is language-gated
+        // too, so it cannot be inferred from the switches.
         assert!(
             fr.contains("mot\u{202F}?"),
-            "French shows its thin space: {fr:?}"
+            "French shows its thin space before ?: {fr:?}"
         );
 
         // Arabic adds its mirrored marks, which appear nowhere else in the pane.
