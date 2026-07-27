@@ -110,7 +110,7 @@ pub fn writing_column(
         .content_padding_symmetric(8.0, 12.0)
         .min_lines(min_lines)
         .v_scroll_policy(ScrollPolicy::AlwaysOff)
-        // Bastard mode: the editor is laid out at full document height and the
+        // dubious mode: the editor is laid out at full document height and the
         // tab's outer ScrollArea scrolls the page. Window the render to the
         // visible clip so a 13k-word scene only rasterizes the rows on screen
         // instead of the whole document on every paint.
