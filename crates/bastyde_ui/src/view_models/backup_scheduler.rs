@@ -65,6 +65,21 @@
 //!    `ToastRegistry`, one `ToastHost` per window, all rendering the same
 //!    unfiltered queue) — fixed upstream in `bastyde`, not worked around
 //!    here.
+//!
+//! **Phase 3 correction — capture, don't re-read live.** This view-model is
+//! per-Work, but its `ids`/`single_work` are the *window's* own long-lived
+//! handles (this scheduler outlives any one backup) — an in-place project
+//! switch (`ProjectSwitchViewModel`, gated only on unsaved edits, never on a
+//! backup in flight) reseeds those SAME signals mid-flight. A progress/
+//! completion/failure handler that re-read `self.ids.work_id.get()` at event
+//! time would therefore silently answer with whatever Work this window shows
+//! *now*, not the Work the backup actually started for — misrouting (and,
+//! via `toast_id()`'s old form, mis-deduping) the toast to an unrelated Work
+//! while the right one never hears its own backup finished. [`Pending::work_id`]
+//! is captured once, in [`Self::start`], and every `on_long_op_*` handler
+//! below routes and scopes its toast on that captured value, never
+//! `self.ids.work_id.get()` — the same fix `ExportViewModel` needed for the
+//! identical pattern (see its own module doc).
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -102,6 +117,19 @@ struct Pending {
     dirs: Vec<String>,
     /// Set when this backup must be followed by a window/work close.
     close: Option<PendingExit>,
+    /// This Work's own id, captured when the backup **started** — read from
+    /// `self.ids.work_id` at that moment, never re-read live. This scheduler
+    /// is per-Work, but its `ids` is the window's own long-lived `AppIds` (see
+    /// the `ids` field's doc): an in-place project switch reseeds the SAME
+    /// `Signal` mid-flight (`ProjectSwitchViewModel::request` gates only on
+    /// unsaved edits, never on a backup in flight), so `self.ids.work_id.get()`
+    /// inside a progress/completion/failure handler would silently answer with
+    /// whatever Work this window shows *now* — misrouting (and mis-deduping,
+    /// via `toast_id()`) an in-flight backup's toasts to a Work it has nothing
+    /// to do with, while the Work that actually ran the backup never hears
+    /// about it. Every toast this struct's own operation raises after it
+    /// started must route on THIS field, not `self.ids.work_id.get()`.
+    work_id: Option<u64>,
 }
 
 #[derive(Clone)]
@@ -251,9 +279,11 @@ impl BackupSchedulerViewModel {
     /// same slot for a repeated id). This does **not** stop the toast from
     /// rendering in every open window (a `bastyde`-framework limitation, also
     /// documented there) — only from two different Works' toasts colliding
-    /// with one another.
+    /// with one another. Delegates to `crate::toast_scope::work_scoped_toast_id`
+    /// — the shared helper every other Work-scoped `.id(...)` site now uses
+    /// too, so this is no longer a hand-rolled one-off.
     fn toast_id(&self) -> String {
-        format!("backup.now.{}", self.single_work.id().unwrap_or_default())
+        crate::toast_scope::work_scoped_toast_id("backup.now", self.single_work.id())
     }
 
     // ── triggers ────────────────────────────────────────────────────────────
@@ -456,6 +486,8 @@ impl BackupSchedulerViewModel {
                     path: path.to_string(),
                     dirs,
                     close,
+                    // Captured NOW — see `Pending::work_id`'s doc.
+                    work_id: self.ids.work_id.get(),
                 }));
             }
             Err(e) => {
@@ -549,7 +581,12 @@ impl BackupSchedulerViewModel {
             .and_then(|m| m.as_str())
             .unwrap_or("");
         ctx.show_toast(
-            progress_toast(&self.toast_id(), percent, message).target_work(self.ids.work_id.get()),
+            progress_toast(
+                &crate::toast_scope::work_scoped_toast_id("backup.now", pending.work_id),
+                percent,
+                message,
+            )
+            .target_work(pending.work_id),
         );
     }
 
@@ -619,9 +656,12 @@ impl BackupSchedulerViewModel {
                     show_result_toast(
                         ctx,
                         Toast::error(tr!(backup_partial(ok = ok, failed = failed)))
-                            .id(self.toast_id())
+                            .id(crate::toast_scope::work_scoped_toast_id(
+                                "backup.now",
+                                pending.work_id,
+                            ))
                             .auto_dismiss_after(Duration::from_secs(6))
-                            .target_work(self.ids.work_id.get()),
+                            .target_work(pending.work_id),
                         detail,
                     );
                 }
@@ -629,9 +669,12 @@ impl BackupSchedulerViewModel {
                 show_result_toast(
                     ctx,
                     Toast::warning(tr!(backup_partial(ok = ok, failed = failed)))
-                        .id(self.toast_id())
+                        .id(crate::toast_scope::work_scoped_toast_id(
+                            "backup.now",
+                            pending.work_id,
+                        ))
                         .auto_dismiss_after(Duration::from_secs(6))
-                        .target_work(self.ids.work_id.get()),
+                        .target_work(pending.work_id),
                     detail,
                 );
             } else if has_delete_errors {
@@ -644,17 +687,23 @@ impl BackupSchedulerViewModel {
                         ok = ok,
                         skipped = skipped
                     )))
-                    .id(self.toast_id())
+                    .id(crate::toast_scope::work_scoped_toast_id(
+                        "backup.now",
+                        pending.work_id,
+                    ))
                     .auto_dismiss_after(Duration::from_secs(6))
-                    .target_work(self.ids.work_id.get()),
+                    .target_work(pending.work_id),
                     detail,
                 );
             } else if pending.close.is_none() && (ok > 0 || skipped > 0) {
                 ctx.show_toast(
                     Toast::success(tr!(backup_complete(ok = ok, skipped = skipped)))
-                        .id(self.toast_id())
+                        .id(crate::toast_scope::work_scoped_toast_id(
+                            "backup.now",
+                            pending.work_id,
+                        ))
                         .auto_dismiss_after(Duration::from_secs(4))
-                        .target_work(self.ids.work_id.get()),
+                        .target_work(pending.work_id),
                 );
             }
         }
@@ -697,8 +746,11 @@ impl BackupSchedulerViewModel {
         show_result_toast(
             ctx,
             Toast::error(tr!(backup_failed_title()))
-                .id(self.toast_id())
-                .target_work(self.ids.work_id.get()),
+                .id(crate::toast_scope::work_scoped_toast_id(
+                    "backup.now",
+                    pending.work_id,
+                ))
+                .target_work(pending.work_id),
             Some(error),
         );
     }
@@ -910,15 +962,152 @@ mod tests {
         assert_eq!(a.toast_id(), a.toast_id());
     }
 
+    // ── F4: the Work a backup started for must survive a later in-place switch ─
+    //
+    // `BackupSchedulerViewModel` is per-Work, but its `ids`/`single_work` are the
+    // window's own long-lived handles (see `Pending::work_id`'s doc) — this
+    // scheduler outlives any one backup. Before this fix, every `on_long_op_*`
+    // handler re-read `self.ids.work_id.get()`/`self.toast_id()` live, so a
+    // window that started a backup, then switched to a different Work before it
+    // finished, would route the completion toast to the NEW Work — the Work
+    // that actually ran the backup never hearing about it. This pins the fix:
+    // `Pending::work_id`, captured once in `Self::start`, must stay pinned even
+    // after the window's live `ids.work_id` moves on.
+
+    #[test]
+    fn a_backups_captured_work_id_survives_a_later_in_place_switch() {
+        let scheduler = test_scheduler();
+        scheduler.ids.work_id.set(Some(1));
+
+        // Simulate what `Self::start` does the instant the long operation
+        // begins: snapshot the window's current Work into `Pending`.
+        scheduler.pending.set(Some(Pending {
+            op_id: "fake-backup-op".to_string(),
+            uid: "uid".to_string(),
+            path: "/tmp/novel.skrib".to_string(),
+            dirs: vec![String::new()],
+            close: None,
+            work_id: scheduler.ids.work_id.get(),
+        }));
+        let captured = scheduler.pending.get().unwrap().work_id;
+        assert_eq!(captured, Some(1));
+
+        // An in-place project switch reseeds `ids.work_id` on the SAME `AppIds`
+        // this long-lived scheduler holds (`ProjectSwitchViewModel::request`
+        // gates only on unsaved edits, never on a backup in flight).
+        scheduler.ids.work_id.set(Some(2));
+
+        assert_eq!(
+            scheduler.pending.get().unwrap().work_id,
+            captured,
+            "the in-flight backup's own Work must stay pinned to what `start` \
+             captured, even after this window switches to a different Work"
+        );
+        assert_ne!(
+            scheduler.pending.get().unwrap().work_id,
+            scheduler.ids.work_id.get(),
+            "the captured Work must now differ from the window's live \
+             `ids.work_id` — proving a handler reading `pending.work_id` cannot \
+             silently be reading the same live value `ids.work_id` would give it"
+        );
+    }
+
+    #[test]
+    fn backup_toast_ids_for_two_captured_works_never_collide() {
+        // The other half of the fix (F1/F2's root cause): even with the right
+        // Work captured, a bare "backup.now" id shared by every window would let
+        // a second Work's backup find this one's still-live toast entry
+        // (`ToastRegistry::enqueue` dedups on id alone) and silently
+        // retarget/steal it.
+        let id_a = crate::toast_scope::work_scoped_toast_id("backup.now", Some(1));
+        let id_b = crate::toast_scope::work_scoped_toast_id("backup.now", Some(2));
+        assert_ne!(id_a, id_b, "two different Works' backup toasts must never collide");
+    }
+
+    /// The test above only proves `work_scoped_toast_id` itself is collision-free
+    /// — it never touches `backup_now`'s actual `.id(self.toast_id())` call site,
+    /// so reverting that call site back to a bare `"backup.now"` would still
+    /// leave it green. This one drives the real, PUBLIC `backup_now(ctx)` entry
+    /// point through a real `ToastRegistry`: two schedulers captured for two
+    /// different Works each raise a toast through a wired `Button` + a
+    /// dispatched click (a real `EventContext`), then asserts both stay live —
+    /// `ToastRegistry::enqueue`'s update-in-place merge would collapse them to
+    /// ONE entry if the id were ever bare again.
+    ///
+    /// Each scheduler is pre-marked "busy" (`pending` already `Some`) so
+    /// `backup_now` takes its ctx-only "already running" branch — the one
+    /// outcome reachable with no real backend Work loaded EITHER under the
+    /// default `SingleWork`/`SingleWorkInfo` (unset, so `current()` is `None`
+    /// and `backup_now` would otherwise return via "nothing open" before ever
+    /// reaching the busy check) OR under `--features mocks` (pre-seeded with a
+    /// fabricated project, so `current()` is always `Some` and `backup_now`
+    /// would otherwise fall through into `start(...)`'s real long-operation
+    /// path). Both toast branches build `.id(self.toast_id())` identically, so
+    /// either exercises the exact fix this test is pinning.
+    #[test]
+    fn backup_now_toasts_for_two_works_both_stay_live_in_a_real_registry() {
+        use bastyde::i18n::lit;
+        use bastyde::widgets::{Button, ToastInstallOptions, ToastRegistry};
+
+        let a = test_scheduler();
+        a.single_work.set_id(Some(1));
+        a.ids.work_id.set(Some(1));
+        a.pending.set(Some(Pending {
+            op_id: "fake-backup-op-a".to_string(),
+            uid: "uid-a".to_string(),
+            path: "/tmp/a.skrib".to_string(),
+            dirs: vec![String::new()],
+            close: None,
+            work_id: Some(1),
+        }));
+        let b = test_scheduler();
+        b.single_work.set_id(Some(2));
+        b.ids.work_id.set(Some(2));
+        b.pending.set(Some(Pending {
+            op_id: "fake-backup-op-b".to_string(),
+            uid: "uid-b".to_string(),
+            path: "/tmp/b.skrib".to_string(),
+            dirs: vec![String::new()],
+            close: None,
+            work_id: Some(2),
+        }));
+
+        let registry = ToastRegistry::new(ToastInstallOptions {
+            archive: None,
+            ..ToastInstallOptions::default()
+        });
+        let mut tree = crate::test_support::tree_with_toast_registry(&a.app_ctx, &registry);
+
+        let sa = a.clone();
+        let sb = b.clone();
+        let btn_a =
+            tree.add(Button::new(lit!("a")).on_activate_fn(move |ctx| sa.backup_now(ctx)));
+        let btn_b =
+            tree.add(Button::new(lit!("b")).on_activate_fn(move |ctx| sb.backup_now(ctx)));
+        tree.layout(SizeProposal::exact(200.0, 80.0));
+
+        crate::test_support::click(&mut tree, btn_a);
+        crate::test_support::click(&mut tree, btn_b);
+
+        assert_eq!(
+            registry.live_count(),
+            2,
+            "two different Works' backup_now toasts must both stay live — a \
+             bare \"backup.now\" id would let Work B's enqueue find Work A's still-live \
+             entry (ToastRegistry::enqueue dedups on id alone) and merge into it, \
+             leaving only 1"
+        );
+    }
+
     // ── T1-2: the flush invariant ────────────────────────────────────────────
     //
     // `backup_now` and `on_close_flow` also call `self.flush()` as their
-    // unconditional first statement (see the module doc), but both require a
-    // real `&mut EventContext` to even be called — and this codebase has no
-    // `EventContext` test harness (see `restore.rs`'s `safety_copy` tests for
-    // the same constraint). The two ctx-free triggers below exercise the exact
-    // same private `flush()` helper those two call first, so this is the
-    // guarantee the codebase can actually assert.
+    // unconditional first statement (see the module doc). A real `EventContext`
+    // test harness now exists (`crate::test_support`, used by the real-registry
+    // toast test just above) — but re-deriving `backup_now`'s whole "nothing
+    // open" branch here would only re-prove the ordering these two ctx-free
+    // triggers already pin more directly: the exact same private `flush()`
+    // helper those two call first.
 
     #[test]
     fn on_open_flushes_before_anything_else() {

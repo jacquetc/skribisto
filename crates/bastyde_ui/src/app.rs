@@ -52,7 +52,7 @@ use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
 use crate::singles::SingleSmartPunctuation;
 use crate::text_replacement::typography::SmartPunctuationFlags;
-use crate::toast_scope::ToastWorkExt;
+use crate::toast_scope::{ToastWorkExt, work_scoped_toast_id};
 
 /// The punctuation rules in force for the open project — the two tiers resolved
 /// into the one flag set the editor sessions run.
@@ -544,7 +544,10 @@ fn offer_missing_dictionaries(
     let session = session.clone();
     ctx.show_toast(
         bastyde::widgets::Toast::info(tr!(dict_missing_toast(count = n)))
-            .id("dict.missing")
+            // Work-scoped (F1): a bare "dict.missing" shared by every window
+            // would let a second Work's own nudge find THIS Work's still-live
+            // toast and silently steal/retarget it.
+            .id(work_scoped_toast_id("dict.missing", work_id))
             .target_work(work_id)
             .action(bastyde::widgets::ToastAction::primary(
                 tr!(dict_missing_action()),
@@ -931,15 +934,33 @@ fn build_stack_teardown(app_ctx: Rc<AppContext>, stack_id: Option<u64>) -> Stack
 /// (the very same window keeps showing tabs, and keeps needing its buffers
 /// flushed, for whatever Work it shows next) — see
 /// `WorkRegistry::register_window`'s doc.
+///
+/// **F3.** Also tells the toast registry to forget this window
+/// (`ToastRegistry::forget_window`) — the counterpart `set_window_audience`
+/// above this window's `LoadWork`/`NewWork` subscriber calls has no forget
+/// half of its own: `set_window_audience(id, None)` only clears the audience
+/// *signal's value*, leaving the map entry (and its `Signal` allocation)
+/// alive in `window_audiences` forever, and `window_versions` (bumped on
+/// every toast) accumulates the same way. Without this, every window ever
+/// opened over a session leaks one entry in each map — unbounded over a long
+/// session that opens and closes many windows, the exact class of leak
+/// `unregister_flush_hook` just above closes for the backup scheduler's own
+/// map. `None` only in a headless/off-screen build context (no
+/// `install_toast_default()` ever ran) — a safe no-op there, same guard as
+/// `toast_registry`'s own doc.
 fn build_window_teardown(
     editors: EditorsViewModel,
     backup_scheduler: BackupSchedulerViewModel,
+    toast_registry: Option<ToastRegistry>,
     window_id: BastydeWindowId,
     stack_id: Option<u64>,
 ) -> WindowTeardown {
     Rc::new(move || {
         editors.release_own_open_docs(stack_id);
         backup_scheduler.unregister_flush_hook(window_id);
+        if let Some(reg) = &toast_registry {
+            reg.forget_window(window_id);
+        }
     })
 }
 
@@ -1685,6 +1706,7 @@ impl Widget for App {
                             let window_teardown = build_window_teardown(
                                 editors_for_teardown.clone(),
                                 backup_scheduler_for_teardown.clone(),
+                                toast_registry_for_load.clone(),
                                 window_id,
                                 my_ids.stack_id.get(),
                             );
@@ -1929,6 +1951,7 @@ impl Widget for App {
                             let window_teardown = build_window_teardown(
                                 editors_for_teardown.clone(),
                                 backup_scheduler_for_teardown.clone(),
+                                toast_registry_for_new.clone(),
                                 window_id,
                                 my_ids.stack_id.get(),
                             );
@@ -3179,5 +3202,95 @@ mod tests {
         reg.register(9, sibling);
 
         assert_eq!(other_dirty_work_titles(&reg, None).len(), 1);
+    }
+
+    /// F3: `build_window_teardown` — the closure `WorkRegistry::remove_window`
+    /// runs once bastyde's `on_removed` hook confirms a window is really
+    /// gone — must tell the toast registry to forget that window too, or
+    /// `window_audiences`/`window_versions` leak one entry per window ever
+    /// opened over the process's lifetime (see the function's own doc).
+    /// `set_window_audience(id, None)` alone is NOT the fix (it only clears
+    /// the signal's *value*, leaving the map entry) — this proves the actual
+    /// teardown path removes the entry, by observing the framework's own
+    /// documented post-`forget_window` behaviour: re-deriving the audience
+    /// signal for a forgotten window starts fresh (`None`), not merely
+    /// "whatever it was last set to".
+    #[test]
+    fn window_teardown_forgets_the_toast_registry_entry_too() {
+        use bastyde::widgets::{ToastAudience, ToastInstallOptions};
+
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let session = crate::sessions::WorkSession::for_test();
+        let editors = test_editors_view_model(&app_ctx);
+        let window_id = BastydeWindowId::new(1);
+
+        let registry = ToastRegistry::new(ToastInstallOptions {
+            archive: None,
+            ..ToastInstallOptions::default()
+        });
+        registry.set_window_audience(window_id, Some(ToastAudience::new(42)));
+        assert_eq!(
+            registry.window_audience_signal(window_id).get(),
+            Some(ToastAudience::new(42)),
+            "sanity: the audience is really set before teardown runs"
+        );
+
+        let teardown = build_window_teardown(
+            editors,
+            session.backup_scheduler.clone(),
+            Some(registry.clone()),
+            window_id,
+            None,
+        );
+        teardown();
+
+        assert_eq!(
+            registry.window_audience_signal(window_id).get(),
+            None,
+            "a forgotten window's audience must start fresh, not resurrect whatever \
+             `set_window_audience` last wrote — proving the map entry (not just the \
+             signal's value) was actually removed"
+        );
+    }
+
+    /// A minimal `EditorsViewModel` for wiring-only tests that just need a real
+    /// instance to pass through `build_window_teardown` — mirrors
+    /// `editors.rs`'s own private test helper (not reachable from here), kept
+    /// deliberately small since nothing here exercises editor behaviour.
+    fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewModel {
+        let bundle = || crate::view_models::EditorTypography {
+            font_family: Signal::new("Literata".to_string()),
+            size: Signal::new(1.0),
+            line_height: Signal::new(1.5),
+            first_line_indent: Signal::new(0.0),
+            para_spacing_before: Signal::new(0.0),
+            para_spacing_after: Signal::new(0.0),
+        };
+        let typography = crate::view_models::EditorTypographySet {
+            scene: bundle(),
+            synopsis: bundle(),
+            notes: bundle(),
+            corkboard: bundle(),
+        };
+        let ids = crate::app_ids::AppIds::new();
+        let save_state = crate::view_models::SaveStateViewModel::new(app_ctx.clone(), ids.clone());
+        EditorsViewModel::new(
+            app_ctx.clone(),
+            Signal::new(700.0),
+            Signal::new(true),
+            typography,
+            crate::view_models::EditorViewMemory::detached(false),
+            crate::view_models::CorkboardDefaults::detached(),
+            ids.clone(),
+            crate::models::OpenDocsStore::new(app_ctx.clone()),
+            Signal::new(false),
+            save_state,
+            Signal::new(false),
+            crate::view_models::TreeExpansionViewModel::new(
+                app_ctx.clone(),
+                ids.clone(),
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+        )
     }
 }

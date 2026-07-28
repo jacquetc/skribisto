@@ -21,7 +21,7 @@ use bastyde::widgets::{
     MessageBox, MessageBoxButtons, MessageBoxResult, StandardButton, Toast, ToastAction,
 };
 
-use crate::toast_scope::ToastWorkExt;
+use crate::toast_scope::{ToastWorkExt, work_scoped_toast_id};
 use crate::view_models::SearchReplaceViewModel;
 
 /// Confirm, then Replace All. Names both strings and both counts, and promises
@@ -80,7 +80,11 @@ fn execute(vm: &SearchReplaceViewModel, ctx: &mut EventContext) {
                 ));
             // Keep it up a little longer than a default toast — the Undo is the
             // only path back, so the writer must have time to reach for it.
-            toast = toast.id("search-replace-result");
+            // Work-scoped (F1): a bare "search-replace-result" shared by every
+            // window would let a second Work's own replace-all find THIS
+            // Work's still-live toast and silently steal/retarget it — its
+            // Undo action along with it.
+            toast = toast.id(work_scoped_toast_id("search-replace-result", vm.work_id()));
             // Work-scoped: a replace-all edits this Work's own prose, so its
             // result (and Undo) belongs to this Work's window/bell, not every
             // open project's.
@@ -89,7 +93,7 @@ fn execute(vm: &SearchReplaceViewModel, ctx: &mut EventContext) {
         Err(e) => {
             ctx.show_toast(
                 Toast::error(tr!(search_replace_failed_title()))
-                    .id("search-replace-result")
+                    .id(work_scoped_toast_id("search-replace-result", vm.work_id()))
                     .body(lit!(e.to_string()))
                     .target_work(vm.work_id()),
             );

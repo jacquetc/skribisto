@@ -43,7 +43,7 @@ use frontend::trash_management::{
 
 use crate::app_ids::AppIds;
 use crate::models::{TrashRootKind, TrashTreeKey, TrashTreeModel};
-use crate::toast_scope::ToastWorkExt;
+use crate::toast_scope::{ToastWorkExt, work_scoped_toast_id};
 
 /// How long the Undo affordance stays live before a destructive op becomes
 /// permanent (matches the toast's own visible countdown — the default
@@ -406,7 +406,16 @@ impl TrashViewModel {
             Toast::warning(title)
                 .body(body)
                 .priority(ToastPriority::High) // never evicted before the window ends
-                .id("trash.commit") // a second op replaces the toast (one grace timer)
+                // Work-scoped (F2): a bare "trash.commit" shared by every window
+                // would let a second Work's destructive op find THIS Work's
+                // still-live Undo toast (`ToastRegistry::enqueue` dedups on id
+                // alone) and silently steal/retarget it — the Undo action would
+                // then reverse the wrong Work's op, and this Work's own
+                // still-pending deletion would commit unseen once its grace
+                // timer (now overwritten) never fires. A second op on THIS SAME
+                // Work still replaces the toast (one grace timer per Work), matching
+                // the comment this replaced.
+                .id(work_scoped_toast_id("trash.commit", work_id))
                 .auto_dismiss_after(TRASH_UNDO_GRACE)
                 .target_work(work_id)
                 .action(ToastAction::primary(tr!(trash_undo()), move |_c| {
@@ -472,5 +481,83 @@ mod tests {
         // Mock fixture: 9001 = whole binder, 9002 = item.
         assert!(!vm.is_item_root(9001));
         assert!(vm.is_item_root(9002));
+    }
+
+    /// `f2_toast_id_tests::two_works_destructive_undo_toasts_never_collide` only
+    /// proves `work_scoped_toast_id` itself is collision-free — it never touches
+    /// `run_with_undo_toast`'s actual `.id(work_scoped_toast_id(...))` call site,
+    /// so reverting that call site back to a bare `"trash.commit"` would still
+    /// leave it green. This one drives the real (private, but same-file-testable)
+    /// `run_with_undo_toast` through a real `ToastRegistry`: two `TrashViewModel`s
+    /// captured for two different Works each raise their destructive-op Undo
+    /// toast through a wired `Button` + a dispatched click (a real
+    /// `EventContext`), then asserts both stay live — `ToastRegistry::enqueue`'s
+    /// update-in-place merge would collapse them to ONE entry (stealing Work A's
+    /// still-pending Undo grace window) if the id were ever bare again.
+    #[test]
+    fn destructive_undo_toasts_for_two_works_both_stay_live_in_a_real_registry() {
+        use bastyde::i18n::lit;
+        use bastyde::widgets::{Button, ToastInstallOptions, ToastRegistry};
+
+        let vm_a = vm();
+        vm_a.ids.work_id.set(Some(1));
+        let vm_b = vm();
+        vm_b.ids.work_id.set(Some(2));
+
+        let registry = ToastRegistry::new(ToastInstallOptions {
+            archive: None,
+            ..ToastInstallOptions::default()
+        });
+        let mut tree =
+            crate::test_support::tree_with_toast_registry(&vm_a.app_ctx, &registry);
+
+        let a = vm_a.clone();
+        let b = vm_b.clone();
+        let btn_a = tree.add(Button::new(lit!("a")).on_activate_fn(move |ctx| {
+            a.run_with_undo_toast(ctx, lit!("Emptied"), lit!("Undo?"), |_ctx, _stack| Ok(()));
+        }));
+        let btn_b = tree.add(Button::new(lit!("b")).on_activate_fn(move |ctx| {
+            b.run_with_undo_toast(ctx, lit!("Emptied"), lit!("Undo?"), |_ctx, _stack| Ok(()));
+        }));
+        tree.layout(SizeProposal::exact(200.0, 80.0));
+
+        crate::test_support::click(&mut tree, btn_a);
+        crate::test_support::click(&mut tree, btn_b);
+
+        assert_eq!(
+            registry.live_count(),
+            2,
+            "two different Works' destructive-op Undo toasts must both stay live — a \
+             bare \"trash.commit\" id would let Work B's enqueue find Work A's still-live \
+             entry (ToastRegistry::enqueue dedups on id alone) and merge into it, \
+             leaving only 1"
+        );
+    }
+}
+
+// Not gated on the `mocks` feature (unlike the module above) — a pure string
+// check, so it runs under both default and `--features mocks` builds.
+#[cfg(test)]
+mod f2_toast_id_tests {
+    use super::*;
+
+    /// F2: `run_with_undo_toast`'s Undo toast (Empty Trash / Delete Forever) used
+    /// a bare `"trash.commit"` id shared by every window. `ToastRegistry::enqueue`
+    /// dedups on id alone (no route check) and overwrites the matched entry's
+    /// route in place — so a second Work committing its own destructive op would
+    /// find THIS Work's still-live Undo toast, silently steal it, and retarget it
+    /// to the second Work's audience. This Work's own deletion would then commit
+    /// unseen (its grace timer overwritten by the steal), and clicking "Undo" on
+    /// the visible toast would reverse the WRONG Work's op. Both Works' Undo
+    /// toasts must survive independently.
+    #[test]
+    fn two_works_destructive_undo_toasts_never_collide() {
+        let a = work_scoped_toast_id("trash.commit", Some(1));
+        let b = work_scoped_toast_id("trash.commit", Some(2));
+        assert_ne!(
+            a, b,
+            "two different Works' Empty-Trash/Delete-Forever Undo toasts must \
+             never collide in the shared ToastRegistry"
+        );
     }
 }
