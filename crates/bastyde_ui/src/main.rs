@@ -70,6 +70,7 @@ mod statusbar;
 mod tabs;
 mod tags;
 mod text_replacement;
+mod toast_scope;
 mod trash;
 mod widgets;
 // The pane tests that need fixture rows are mocks-gated, but the search preview's

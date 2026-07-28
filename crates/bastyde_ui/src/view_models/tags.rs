@@ -66,6 +66,13 @@ impl TagsViewModel {
         self.list.wire(ctx);
     }
 
+    /// The open Work this palette belongs to — the pane's toast call sites
+    /// use this to route feedback ("tag added", "preset applied", …) to the
+    /// Work it is actually about (see `crate::toast_scope::ToastWorkExt`).
+    pub fn work_id(&self) -> Option<u64> {
+        self.ids.work_id.get()
+    }
+
     /// The reactive palette to bind (the pane wraps it in a `SortFilterListModel`).
     pub fn list_model(&self) -> ListModel<TagRow> {
         self.list.list_model()

@@ -183,9 +183,13 @@ impl DictionariesViewModel {
         if !self.has_accepted(id) {
             // A caller that reached here without the licence modal (a bug, or a future scripted
             // path) is refused, not silently served.
-            ctx.show_toast(Toast::warning(tr!(dict_accept_first(
-                name = display_of(id)
-            ))));
+            //
+            // Broadcast: a dictionary is a machine-wide resource that outlives any
+            // one Work (see the module doc), so every open window hears about it,
+            // not just whichever window's Settings panel is open.
+            ctx.show_toast(
+                Toast::warning(tr!(dict_accept_first(name = display_of(id)))).broadcast(),
+            );
             return;
         }
         self.inner.queue.borrow_mut().push_back(id.to_string());
@@ -214,7 +218,8 @@ impl DictionariesViewModel {
         };
         ctx.show_toast(
             Toast::loading(tr!(dict_download_title(name = entry.display_name.clone())))
-                .id(DICT_TOAST_ID),
+                .id(DICT_TOAST_ID)
+                .broadcast(),
         );
 
         let me = self.clone();
@@ -240,13 +245,15 @@ impl DictionariesViewModel {
                 ctx.show_toast(
                     Toast::success(tr!(dict_download_done(name = display_of(id))))
                         .id(DICT_TOAST_ID)
-                        .auto_dismiss_after(Duration::from_secs(4)),
+                        .auto_dismiss_after(Duration::from_secs(4))
+                        .broadcast(),
                 );
             }
             Err(e) => {
                 ctx.show_toast(
                     Toast::error(tr!(dict_download_failed(name = display_of(id), error = e)))
-                        .id(DICT_TOAST_ID),
+                        .id(DICT_TOAST_ID)
+                        .broadcast(),
                 );
             }
         }
@@ -268,7 +275,9 @@ impl DictionariesViewModel {
         self.inner.installed.refresh();
         self.bump_changed();
         ctx.show_toast(
-            Toast::info(tr!(dict_removed(name = name))).auto_dismiss_after(Duration::from_secs(3)),
+            Toast::info(tr!(dict_removed(name = name)))
+                .auto_dismiss_after(Duration::from_secs(3))
+                .broadcast(),
         );
     }
 

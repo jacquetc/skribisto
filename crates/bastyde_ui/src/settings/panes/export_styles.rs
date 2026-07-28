@@ -216,17 +216,23 @@ fn present_import(
             match vm.import_from(&path) {
                 Ok(p) => {
                     selected.set(Some(p.id.clone()));
+                    // Broadcast: export-style presets are a shared user library
+                    // (`ExportStylesViewModel` is a Tier-1 singleton, not
+                    // per-Work — see its view-model), usable from any open
+                    // project's Export panel.
                     ectx.show_toast(
                         Toast::info(tr!(settings_styles_imported()))
                             .body(lit!(p.name.clone()))
-                            .auto_dismiss_after(std::time::Duration::from_secs(4)),
+                            .auto_dismiss_after(std::time::Duration::from_secs(4))
+                            .broadcast(),
                     );
                 }
                 Err(e) => {
                     ectx.show_toast(
                         Toast::error(tr!(settings_styles_import_failed()))
                             .body(lit!(format!("{e:#}")))
-                            .auto_dismiss_after(std::time::Duration::from_secs(6)),
+                            .auto_dismiss_after(std::time::Duration::from_secs(6))
+                            .broadcast(),
                     );
                 }
             }
@@ -247,6 +253,10 @@ fn present_export(ctx: &mut EventContext, vm: ExportStylesViewModel, id: &str, n
             if target.extension().and_then(|e| e.to_str()) != Some("json") {
                 target.set_extension("json");
             }
+            // Origin-window default (not broadcast), unlike import just above:
+            // exporting reads the shared style library out to an arbitrary
+            // file — it changes no state another window's Export panel could
+            // care about, so this is purely local "did my file save" feedback.
             match vm.export_to(&target, &id) {
                 Ok(()) => {
                     ectx.show_toast(

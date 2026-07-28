@@ -28,6 +28,7 @@ use bastyde::widgets::{Toast, ToastAction};
 use crate::app_ids::AppIds;
 use crate::models::{DictWordListModel, DictWordRow};
 use crate::singles::SingleDictWord;
+use crate::toast_scope::ToastWorkExt;
 
 /// Refuse an import larger than this — a `.txt` this big is far more likely a
 /// wrong file (a whole hunspell dictionary, a log) than a hand-curated word list,
@@ -60,6 +61,14 @@ impl UserDictionaryViewModel {
     pub fn wire(&self, ctx: &mut BuildContext) {
         self.list.wire(ctx);
         self.single.wire(ctx);
+    }
+
+    /// The open Work this word list belongs to — every toast this
+    /// view-model (and its settings pane) raises routes here (see
+    /// `crate::toast_scope::ToastWorkExt`) rather than broadcasting a
+    /// per-project dictionary edit into every open window.
+    pub fn work_id(&self) -> Option<u64> {
+        self.ids.work_id.get()
     }
 
     /// The reactive list to bind (the pane wraps it in a `SortFilterListModel`).
@@ -198,9 +207,17 @@ impl UserDictionaryViewModel {
             _ => tr!(editor_dict_added_multi(count = ids.len() as i64)),
         };
         let me = self.clone();
+        let work_id = self.ids.work_id.get();
         ctx.show_toast(
             Toast::info(message)
-                .id("dict.added")
+                // Work-scoped (F1): a bare "dict.added" shared by every window
+                // would let a second Work's own add-burst find THIS Work's
+                // still-live toast and silently steal/retarget it (and its
+                // Undo action along with it).
+                .scoped_id("dict.added", work_id)
+                // Work-scoped: this project's own personal dictionary, not
+                // every open window's.
+                .target_work(work_id)
                 .action(ToastAction::primary(tr!(toast_undo()), move |_c| {
                     me.remove_all(&ids)
                 })),

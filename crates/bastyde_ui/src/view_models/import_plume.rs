@@ -288,6 +288,15 @@ impl ImportPlumeViewModel {
     /// The loading toast the import lives in: spinner + a `NN% · message` body +
     /// a **Cancel** button. Re-shown (same id) on every progress tick so the one
     /// surface updates in place.
+    ///
+    /// Broadcast, like every toast this Tier-1, single-instance view-model
+    /// raises (see the module doc): the import isn't scoped to any open
+    /// Work — it produces a brand-new `.skrib` nobody has opened yet — and
+    /// `ImportPlumeViewModel` is one shared instance every window's
+    /// `App::build` wires the same long-operation events to, so a
+    /// window-scoped default would create one redundant toast entry per
+    /// open window instead of the one shared surface every window should
+    /// show.
     fn progress_toast(&self, percent: f32, message: &str) -> Toast {
         let vm = self.clone();
         let body = if message.is_empty() {
@@ -298,6 +307,7 @@ impl ImportPlumeViewModel {
         Toast::loading(tr!(import_plume_progress_title()))
             .id(IMPORT_TOAST_ID)
             .body(lit!(body))
+            .broadcast()
             .action(
                 ToastAction::destructive(tr!(import_plume_cancel_import()), move |c| vm.cancel(c))
                     .closes_toast(false),
@@ -373,6 +383,7 @@ impl ImportPlumeViewModel {
                     ctx.show_toast(
                         Toast::warning(tr!(import_plume_warnings(count = count)))
                             .id(IMPORT_WARNINGS_TOAST_ID)
+                            .broadcast()
                             .action(ToastAction::primary(
                                 tr!(import_plume_details()),
                                 move |c| {
@@ -384,19 +395,25 @@ impl ImportPlumeViewModel {
                             )),
                     );
                 }
-                ctx.show_toast(Toast::success(done).id(IMPORT_TOAST_ID).action(
-                    ToastAction::primary(tr!(import_plume_open_now()), move |c| {
-                        // Opening the imported project *replaces* the one in this
-                        // window, so this goes through the `work.open_path` intent →
-                        // the unsaved-changes guard, which loads it once the open
-                        // project is saved or explicitly discarded. It used to call
-                        // `load_work` outright: importing from a window with unsaved
-                        // edits and clicking "Open now" binned them without a word.
-                        c.send_intent(AppIntent::OpenWorkPath {
-                            path: output.clone(),
-                        });
-                    }),
-                ));
+                ctx.show_toast(
+                    Toast::success(done)
+                        .id(IMPORT_TOAST_ID)
+                        .broadcast()
+                        .action(ToastAction::primary(
+                            tr!(import_plume_open_now()),
+                            move |c| {
+                                // Opening the imported project *replaces* the one in this
+                                // window, so this goes through the `work.open_path` intent →
+                                // the unsaved-changes guard, which loads it once the open
+                                // project is saved or explicitly discarded. It used to call
+                                // `load_work` outright: importing from a window with unsaved
+                                // edits and clicking "Open now" binned them without a word.
+                                c.send_intent(AppIntent::OpenWorkPath {
+                                    path: output.clone(),
+                                });
+                            },
+                        )),
+                );
             }
             // Completed without a recoverable result (shouldn't happen) — clear
             // the loading toast with a neutral, self-dismissing notice.
@@ -404,7 +421,8 @@ impl ImportPlumeViewModel {
                 ctx.show_toast(
                     Toast::info(tr!(import_plume_progress_title()))
                         .id(IMPORT_TOAST_ID)
-                        .auto_dismiss_after(Duration::from_secs(4)),
+                        .auto_dismiss_after(Duration::from_secs(4))
+                        .broadcast(),
                 );
             }
         }
@@ -423,7 +441,8 @@ impl ImportPlumeViewModel {
         ctx.show_toast(
             Toast::info(tr!(import_plume_cancelled()))
                 .id(IMPORT_TOAST_ID)
-                .auto_dismiss_after(Duration::from_secs(4)),
+                .auto_dismiss_after(Duration::from_secs(4))
+                .broadcast(),
         );
     }
 
@@ -458,6 +477,7 @@ impl ImportPlumeViewModel {
                 .id(IMPORT_TOAST_ID)
                 .body(lit!(message.to_string()))
                 .persistent()
+                .broadcast()
                 .action(ToastAction::primary(
                     tr!(import_plume_error_details()),
                     move |c| {

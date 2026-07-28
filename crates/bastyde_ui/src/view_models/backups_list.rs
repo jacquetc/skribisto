@@ -35,8 +35,12 @@ use bastyde::widgets::Toast;
 use skrib_format::retention;
 
 use crate::shell::process;
+use crate::toast_scope::ToastWorkExt;
 
-/// Toast id, so a burst of delete failures replaces rather than stacks.
+/// Toast id base, so a burst of delete failures replaces rather than stacks —
+/// folded through [`work_scoped_toast_id`] with `self.work_id`/`me.work_id` at
+/// every use, never bare: two windows browsing two different Works' backups
+/// must not collide in the shared `ToastRegistry`.
 const DELETE_TOAST_ID: &str = "backups.delete";
 
 /// One backup file, as the list renders it.
@@ -54,6 +58,11 @@ pub struct BackupsListViewModel {
     uid: String,
     project_path: String,
     dirs: Vec<String>,
+    /// The open Work this browser is listing backups for — a snapshot taken
+    /// when the panel opened (matches `uid`/`project_path`), used to route
+    /// this view-model's delete-failure toast to the right window/bell
+    /// (`crate::toast_scope::ToastWorkExt`) rather than every open project's.
+    work_id: Option<u64>,
     model: ListModel<BackupRow>,
     /// Bumped whenever the list's *content* changes (a scan lands), driving the
     /// empty-state/list `Switcher`.
@@ -65,11 +74,12 @@ pub struct BackupsListViewModel {
 }
 
 impl BackupsListViewModel {
-    pub fn new(uid: String, project_path: String, dirs: Vec<String>) -> Self {
+    pub fn new(uid: String, project_path: String, dirs: Vec<String>, work_id: Option<u64>) -> Self {
         Self {
             uid,
             project_path,
             dirs,
+            work_id,
             model: ListModel::from_vec(Vec::new()),
             epoch: Signal::new(0),
             loading: Signal::new(true),
@@ -159,7 +169,8 @@ impl BackupsListViewModel {
                         if let Some(e) = err {
                             ctx2.show_toast(
                                 Toast::error(tr!(backups_delete_error(error = e)))
-                                    .id(DELETE_TOAST_ID),
+                                    .scoped_id(DELETE_TOAST_ID, me.work_id)
+                                    .target_work(me.work_id),
                             );
                         }
                         me.reload();
@@ -171,7 +182,8 @@ impl BackupsListViewModel {
                 if let Err(e) = remove(&target) {
                     ctx.show_toast(
                         Toast::error(tr!(backups_delete_error(error = e.to_string())))
-                            .id(DELETE_TOAST_ID),
+                            .scoped_id(DELETE_TOAST_ID, self.work_id)
+                            .target_work(self.work_id),
                     );
                 }
                 me.reload();
@@ -300,6 +312,70 @@ mod tests {
         std::fs::write(root.join("binders/manuscript/a.djot"), vec![0u8; 2048]).unwrap();
         assert_eq!(byte_size(&root), 3072, "summed recursively");
         assert_eq!(human_size(&root), "3 KB");
+    }
+
+    /// F1: `DELETE_TOAST_ID` used bare would let a second Work's delete-failure
+    /// toast collide with (and silently steal) this Work's still-live one.
+    #[test]
+    fn two_works_delete_failure_toasts_never_collide() {
+        let a = crate::toast_scope::work_scoped_toast_id(DELETE_TOAST_ID, Some(1));
+        let b = crate::toast_scope::work_scoped_toast_id(DELETE_TOAST_ID, Some(2));
+        assert_ne!(
+            a, b,
+            "two different Works' backup-delete-failure toasts must never collide"
+        );
+    }
+
+    /// The test above only proves `work_scoped_toast_id` itself is
+    /// collision-free — it never touches `delete`'s actual
+    /// `.scoped_id(...)` call site, so reverting that call
+    /// site back to a bare `DELETE_TOAST_ID` would still leave it green.
+    /// This one drives the real, PUBLIC `delete(ctx, path)` entry point
+    /// through a real `ToastRegistry`: two `BackupsListViewModel`s for two
+    /// different Works each try to delete a path that doesn't exist (so
+    /// `delete` hits its error-toast branch without touching a real backup
+    /// file), each through a wired `Button` + a dispatched click (a real
+    /// `EventContext`), then asserts both toasts stay live —
+    /// `ToastRegistry::enqueue`'s update-in-place merge would collapse them
+    /// to ONE entry if the id were ever bare again.
+    #[test]
+    fn delete_failure_toasts_for_two_works_both_stay_live_in_a_real_registry() {
+        use bastyde::i18n::lit;
+        use bastyde::widgets::{Button, ToastInstallOptions, ToastRegistry};
+        use frontend::AppContext;
+        use std::rc::Rc;
+
+        let vm_a = BackupsListViewModel::new(String::new(), String::new(), Vec::new(), Some(1));
+        let vm_b = BackupsListViewModel::new(String::new(), String::new(), Vec::new(), Some(2));
+
+        let registry = ToastRegistry::new(ToastInstallOptions {
+            archive: None,
+            ..ToastInstallOptions::default()
+        });
+        let app_ctx = Rc::new(AppContext::new());
+        let mut tree = crate::test_support::tree_with_toast_registry(&app_ctx, &registry);
+
+        let a = vm_a.clone();
+        let b = vm_b.clone();
+        let btn_a = tree.add(Button::new(lit!("a")).on_activate_fn(move |ctx| {
+            a.delete(ctx, "/no/such/path/for/this/test-a");
+        }));
+        let btn_b = tree.add(Button::new(lit!("b")).on_activate_fn(move |ctx| {
+            b.delete(ctx, "/no/such/path/for/this/test-b");
+        }));
+        tree.layout(SizeProposal::exact(200.0, 80.0));
+
+        crate::test_support::click(&mut tree, btn_a);
+        crate::test_support::click(&mut tree, btn_b);
+
+        assert_eq!(
+            registry.live_count(),
+            2,
+            "two different Works' backup-delete-failure toasts must both stay live — a \
+             bare DELETE_TOAST_ID would let Work B's enqueue find Work A's still-live \
+             entry (ToastRegistry::enqueue dedups on id alone) and merge into it, \
+             leaving only 1"
+        );
     }
 
     #[test]

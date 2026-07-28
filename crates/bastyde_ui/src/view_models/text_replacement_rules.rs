@@ -64,6 +64,13 @@ impl TextReplacementRulesViewModel {
         self.list.wire(ctx);
     }
 
+    /// The open Work this lexicon belongs to — the pane's toast call sites
+    /// use this to route feedback ("rule added", "imported", …) to the Work
+    /// it is actually about (see `crate::toast_scope::ToastWorkExt`).
+    pub fn work_id(&self) -> Option<u64> {
+        self.ids.work_id.get()
+    }
+
     /// The reactive lexicon to bind (the pane wraps it in a `SortFilterListModel`).
     pub fn list_model(&self) -> ListModel<TextReplacementRuleRow> {
         self.list.list_model()

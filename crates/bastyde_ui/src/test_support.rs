@@ -21,11 +21,15 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use bastyde::core::accessibility::widget_id_to_node_id;
 use bastyde::core::event_source::{
     AppEventPoster, EventSourceAdapter, SubscriptionId, TreeAppContext,
 };
+use bastyde::core::widget_id::WidgetId;
 use bastyde::core::widget_tree::WidgetTree;
+use bastyde::core::WidgetEvent;
 use bastyde::settings::SettingsStore;
+use bastyde::widgets::ToastRegistry;
 
 use frontend::{AppContext, EventHubClient};
 
@@ -69,6 +73,41 @@ pub(crate) fn tree_with_settings(app_ctx: &Rc<AppContext>) -> WidgetTree {
     let mut state: HashMap<TypeId, Box<dyn Any>> = HashMap::new();
     state.insert(TypeId::of::<SettingsStore>(), Box::new(store));
     tree_with_events_and_state(app_ctx, state)
+}
+
+/// A `WidgetTree` with a real [`ToastRegistry`] installed as `app_state`, so
+/// `ctx.show_toast(...)` inside a wired handler reaches the SAME registry the
+/// caller can then inspect via [`ToastRegistry::live_count`].
+///
+/// **Why this exists.** The Phase 3 toast-routing fix (F1/F2: a static
+/// `Toast::id` must be folded through `work_scoped_toast_id` per Work, or two
+/// windows showing different Works collide in the process-wide
+/// `ToastRegistry`) is easy to "prove" with a test that only calls
+/// `work_scoped_toast_id(...)` twice and asserts the two strings differ — but
+/// that kind of test never touches the real call site at all: reverting the
+/// call site back to a bare static id still passes it. Driving the ACTUAL
+/// view-model method through a real `EventContext` (wire a `Button` to it,
+/// then [`click`] it) and asserting on `registry.live_count()` closes that
+/// hole — a bare id collapses two Works' toasts into ONE live entry
+/// (`ToastRegistry::enqueue`'s update-in-place merge finds the matching id
+/// and overwrites it in place), which a real registry actually catches.
+pub(crate) fn tree_with_toast_registry(app_ctx: &Rc<AppContext>, registry: &ToastRegistry) -> WidgetTree {
+    let mut state: HashMap<TypeId, Box<dyn Any>> = HashMap::new();
+    state.insert(TypeId::of::<ToastRegistry>(), Box::new(registry.clone()));
+    tree_with_events_and_state(app_ctx, state)
+}
+
+/// Click `id` in `tree` via an AccessKit `Click` action — the same
+/// synthetic-activation path `outline.rs`'s rename tests use, so a wired
+/// `Button::on_activate_fn` (or any `on_activate_fn`) handler runs with a
+/// real `EventContext`, not merely a direct fn call bypassing dispatch.
+pub(crate) fn click(tree: &mut WidgetTree, id: WidgetId) {
+    tree.dispatch_event(WidgetEvent::AccessAction {
+        action: bastyde::core::accesskit::Action::Click,
+        target: Some(id),
+        target_node: widget_id_to_node_id(id),
+        data: None,
+    });
 }
 
 fn tree_with_events_and_state(
