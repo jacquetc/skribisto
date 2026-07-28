@@ -28,8 +28,9 @@ use crate::models::OpenDocsStore;
 use crate::singles::SingleBinderItem;
 use crate::tabs::ContentTab;
 
+use super::binder_ops;
 use super::save_state::{SaveLanded, SaveStateViewModel};
-use crate::view_models::EditorTypographySet;
+use crate::view_models::{EditorTypographySet, GoAvailability};
 
 /// Which editor pane. `Primary` is always present; `Secondary` is the side pane,
 /// revealed by the split view.
@@ -77,9 +78,25 @@ pub struct EditorsViewModel {
     /// as a signal (not a derived map) because it is computed by walking the
     /// tab list, which is not itself in the signal graph.
     scene_focused: Signal<bool>,
+    /// Live "is there a target" mirrors for the six Go-menu rows — recomputed
+    /// alongside `scene_focused` in [`Self::sync_active_item`]. See
+    /// [`GoAvailability`]'s own doc for why this is threaded in rather than owned:
+    /// `shell/windows.rs` builds the Go menu before this view-model exists.
+    go: GoAvailability,
     column_width: Signal<f32>,
     show_synopsis: Signal<bool>,
     typography: EditorTypographySet,
+    /// Whether *this window* is in distraction-free mode — the same `Signal`
+    /// `FocusViewModel::active_signal()` exposes for this window (never a
+    /// private copy), threaded into every `ContentTab` so its
+    /// `main_typography()`/`main_column_width()` can pick the distraction-free
+    /// bundle/width live.
+    distraction_free: Signal<bool>,
+    /// The distraction-free writing column's own width (Settings ▸ Editor ▸
+    /// Editor Behavior), threaded into every `ContentTab` for
+    /// `ContentTab::main_column_width()` — independent from [`Self::column_width`],
+    /// same shape as `distraction_free` just above.
+    distraction_free_width: Signal<f32>,
     /// Per-container-type "last view" memory, threaded into every `ContentTab`.
     view_memory: crate::view_models::EditorViewMemory,
     /// Corkboard default presentation, threaded into every container `ContentTab`.
@@ -120,6 +137,10 @@ impl EditorsViewModel {
         // Shared with the title-bar's Format menu — see `scene_focused_signal`.
         scene_focused: Signal<bool>,
         tree_expansion: crate::view_models::TreeExpansionViewModel,
+        distraction_free: Signal<bool>,
+        distraction_free_width: Signal<f32>,
+        // Shared with the title-bar's Go menu — see `GoAvailability`'s own doc.
+        go: GoAvailability,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -145,9 +166,12 @@ impl EditorsViewModel {
             focused_side: Signal::new(Side::Primary),
             active_item: Signal::new(None),
             scene_focused,
+            go,
             column_width,
             show_synopsis,
             typography,
+            distraction_free,
+            distraction_free_width,
             view_memory,
             corkboard_defaults,
             ids,
@@ -215,6 +239,56 @@ impl EditorsViewModel {
         if self.scene_focused.get() != carries {
             self.scene_focused.set(carries);
         }
+        self.sync_go_targets();
+    }
+
+    /// Recompute the six Go-menu row mirrors from `active_item`'s position in its own
+    /// binder — one backend read (`binder_ops::go_targets`) answers all six. `None`
+    /// (nothing focused) mirrors every row as unavailable, exactly like a located item
+    /// with nothing in a given direction.
+    fn sync_go_targets(&self) {
+        use skribisto_model::{GoDirection::*, GoKind::*};
+        let targets = self
+            .active_item
+            .get()
+            .map(|id| binder_ops::go_targets(&self.app_ctx, &self.ids, id))
+            .unwrap_or_default();
+        self.go.set(Scene, Next, targets.next_scene.is_some());
+        self.go.set(Scene, Previous, targets.prev_scene.is_some());
+        self.go.set(Chapter, Next, targets.next_chapter.is_some());
+        self.go.set(Chapter, Previous, targets.prev_chapter.is_some());
+        self.go.set(Note, Next, targets.next_note.is_some());
+        self.go.set(Note, Previous, targets.prev_note.is_some());
+    }
+
+    /// Jump to the Next/Previous item of `kind` from the focused pane's active tab,
+    /// through [`Self::open_or_focus`] — the exact same path the
+    /// `AppIntent::OpenItem` handler calls, **never** a bypassing direct
+    /// `OpenDocsStore::open` — so autosave, dirty tracking and `StatsModel::active_item`
+    /// all see the jump like any ordinary binder navigation. A safe no-op when nothing
+    /// is focused, or nothing of `kind` lies in that direction (no wraparound).
+    pub fn go(&self, kind: skribisto_model::GoKind, direction: skribisto_model::GoDirection) {
+        let Some(focused) = self.active_item.get() else {
+            return;
+        };
+        let targets = binder_ops::go_targets(&self.app_ctx, &self.ids, focused);
+        let Some(target) = targets.get(kind, direction) else {
+            return;
+        };
+        let title = binder_ops::item_dto(&self.app_ctx, target)
+            .map(|it| it.title)
+            .unwrap_or_default();
+        self.open_or_focus(target, &title);
+    }
+
+    /// The `GoKind` of the focused pane's active tab, if it is a writing tab at all —
+    /// what the generic `go.next`/`go.prev` pair (the distraction-free strip's own
+    /// Next/Previous buttons) resolves at dispatch time to pick which kind-specific
+    /// answer to delegate to. `None` for a non-writing tab (a folder container, a
+    /// heading, a placeholder) — the pair is then a no-op, same as any Go row with
+    /// nothing to jump to.
+    pub fn focused_go_kind(&self) -> Option<skribisto_model::GoKind> {
+        self.with_focused_tab(|t| skribisto_model::go_kind_of(t.role(), t.sub_role()))
     }
 
     /// Open the find banner (Ctrl+F) in the **focused** pane's active tab, if that
@@ -426,6 +500,8 @@ impl EditorsViewModel {
             self.view_memory.clone(),
             self.corkboard_defaults.clone(),
             self.tree_expansion.clone(),
+            self.distraction_free.clone(),
+            self.distraction_free_width.clone(),
         );
         let tab_title = if title.is_empty() {
             tr!(untitled())
@@ -927,6 +1003,8 @@ impl EditorsViewModel {
                     self.view_memory.clone(),
                     self.corkboard_defaults.clone(),
                     self.tree_expansion.clone(),
+                    self.distraction_free.clone(),
+                    self.distraction_free_width.clone(),
                 );
                 let caption = if it.title.is_empty() {
                     tr!(untitled())
@@ -1050,6 +1128,7 @@ mod tests {
             synopsis: bundle("Literata"),
             notes: bundle("Inter"),
             corkboard: bundle("Literata"),
+            distraction_free: bundle("Literata"),
         }
     }
 
@@ -1083,6 +1162,9 @@ mod tests {
             save_state,
             Signal::new(false),
             tree_expansion,
+            Signal::new(false),
+            Signal::new(620.0),
+            crate::view_models::GoAvailability::new(),
         )
     }
 
@@ -1146,6 +1228,9 @@ mod tests {
             save_state.clone(),
             Signal::new(false),
             tree_expansion_a,
+            Signal::new(false),
+            Signal::new(620.0),
+            crate::view_models::GoAvailability::new(),
         );
         let ids_b = AppIds::new();
         let tree_expansion_b = crate::view_models::TreeExpansionViewModel::new(
@@ -1166,6 +1251,9 @@ mod tests {
             save_state,
             Signal::new(false),
             tree_expansion_b,
+            Signal::new(false),
+            Signal::new(620.0),
+            crate::view_models::GoAvailability::new(),
         );
 
         // Window A has item 1 in its primary pane and item 2 in its side pane;

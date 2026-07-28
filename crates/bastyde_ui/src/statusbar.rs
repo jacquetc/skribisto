@@ -6,6 +6,7 @@
 //! `view_models::word_count_status`, the writing-session timer over
 //! `view_models::writing_session`.
 
+pub(crate) mod focus_strip;
 pub(crate) mod notification_bell;
 pub(crate) mod save_indicator;
 pub(crate) mod session_status_item;

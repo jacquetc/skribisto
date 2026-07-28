@@ -194,6 +194,15 @@ pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;
 /// paragraph stays readable — same treatment as the scene column.
 pub const PREVIEW_WIDTH_KEY: &str = "search.preview_width";
 pub const PREVIEW_WIDTH_DEFAULT: f32 = 700.0;
+/// Max width (px) of the writing column while distraction-free mode is active
+/// (Settings ▸ Editor ▸ Editor Behavior). Independent from [`EDITOR_WIDTH_KEY`]
+/// — the two never share a value, so widening the normal Scene column can
+/// never silently widen (or narrow) the distraction-free one. ~68 characters
+/// is the width every typography source surveyed converges on for comfortable
+/// reading (Bringhurst ~66, Butterick 45–90, Dyson & Haselgrove ~55); 620 px is
+/// that measure at the distraction-free bundle's own default face/size.
+pub const DISTRACTION_FREE_WIDTH_KEY: &str = "editor.distraction_free.column_width";
+pub const DISTRACTION_FREE_WIDTH_DEFAULT: f32 = 620.0;
 /// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
 pub const AUTOSAVE_KEY: &str = "editor.autosave";
 /// The master spell-check switch (default **on**) — the title-bar toggle, View ▸ Check
@@ -276,6 +285,32 @@ pub const NOTES_PARA_SPACING_AFTER_KEY: &str = "editor.notes.para_spacing_after"
 // Block-style spacing (notes have no indent) — notes are fragments/lists, so a
 // paragraph gap is what a notes surface is expected to look like.
 pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
+
+/// Distraction-free mode's own typography (Settings ▸ Editor ▸ Typography ▸
+/// Distraction-free) — a fifth bundle alongside Scene / Synopsis / Notes /
+/// Corkboard, selected at render time by `ContentTab::main_typography` whenever
+/// the tab's window is in distraction-free mode (Shift+F11), in place of the
+/// normal Scene/Notes bundle. Independent compile-time constants like every
+/// other bundle here — deliberately **not** seeded from Scene at runtime, so
+/// there is no ordering-fragile "copy on first entry" machinery. A touch larger
+/// and more open than Scene's own defaults (a bigger zoom, taller line height):
+/// distraction-free is the one surface meant to be read at arm's length with
+/// nothing else on screen.
+pub const DISTRACTION_FREE_FONT_FAMILY_KEY: &str = "editor.distraction_free.font_family";
+pub const DISTRACTION_FREE_FONT_FAMILY_DEFAULT: &str = "Literata";
+pub const DISTRACTION_FREE_SIZE_KEY: &str = "editor.distraction_free.size";
+pub const DISTRACTION_FREE_SIZE_DEFAULT: f32 = 1.15;
+pub const DISTRACTION_FREE_LINE_HEIGHT_KEY: &str = "editor.distraction_free.line_height";
+pub const DISTRACTION_FREE_LINE_HEIGHT_DEFAULT: f32 = 1.8;
+pub const DISTRACTION_FREE_FIRST_LINE_INDENT_KEY: &str =
+    "editor.distraction_free.first_line_indent";
+pub const DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT: f32 = 24.0;
+pub const DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY: &str =
+    "editor.distraction_free.para_spacing_before";
+pub const DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const DISTRACTION_FREE_PARA_SPACING_AFTER_KEY: &str =
+    "editor.distraction_free.para_spacing_after";
+pub const DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
 
 // ── Editor behaviour (Settings ▸ Editor ▸ Editor Behavior) ───────────────────
 /// Show the synopsis pane above the manuscript in the dual-pane writing editor

@@ -34,9 +34,20 @@ menu-outline = &Outline
 menu-search = &Search in Project
 menu-search-preview = Search &Preview
 menu-fullscreen = &Fullscreen
+menu-focus-mode = &Distraction-free Mode
 menu-format = F&ormat
 menu-scene-break = Insert scene brea&k
 menu-major-scene-break = Insert &major scene break
+
+## Menu bar: Go
+menu-go = &Go
+menu-go-next-scene = Next &Scene
+menu-go-prev-scene = Pre&vious Scene
+menu-go-next-chapter = Next &Chapter
+menu-go-prev-chapter = Previous C&hapter
+menu-go-next-note = Next &Note
+menu-go-prev-note = Previous No&te
+
 menu-tools = &Tools
 menu-help = &Help
 
@@ -137,6 +148,12 @@ session-no-limit = No limit
 session-reset = Reset session
 session-readout = { $words } words · { $time }
 session-readout-timed = { $words } words · { $time } left
+# Distraction-free mode's always-visible control strip (Increment 2).
+statusbar-focus-exit = Exit distraction-free mode
+# The strip's Next/Previous buttons (Increment 4) — fire the same go.next/go.prev
+# actions as the shortcut and the Go menu's generic pair.
+statusbar-focus-go-prev = Previous item (Alt+Up)
+statusbar-focus-go-next = Next item (Alt+Down)
 
 ## Settings
 language = Language
@@ -179,6 +196,7 @@ settings-page-notes = Notes
 settings-page-editor-behavior = Editor Behavior
 settings-page-goals = Goals & Word Count
 settings-page-corkboard = Corkboard
+settings-page-distraction-free = Distraction-free
 settings-page-dictionaries = Dictionaries
 settings-page-autosave = Autosave
 settings-page-export = Export Formats
@@ -197,6 +215,8 @@ settings-field-line-height = Line height
 settings-field-first-line-indent = First-line indent
 settings-field-paragraph-spacing-before = Space before paragraph
 settings-field-paragraph-spacing-after = Space after paragraph
+settings-field-column-width = Column width
+settings-distraction-free-width-hint = Applies only while distraction-free mode is on — your Scene, Synopsis and Notes column widths are untouched.
 settings-field-app-theme = Theme
 settings-field-text-scale = Interface text size
 settings-field-language = Interface language

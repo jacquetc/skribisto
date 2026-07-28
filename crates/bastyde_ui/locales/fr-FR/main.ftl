@@ -34,9 +34,20 @@ menu-outline = &Plan
 menu-search = &Rechercher dans le projet
 menu-search-preview = &Aperçu de recherche
 menu-fullscreen = P&lein écran
+menu-focus-mode = &Mode sans distraction
 menu-format = Fo&rmat
 menu-scene-break = Insérer un &saut de scène
 menu-major-scene-break = Insérer un saut de scène &majeur
+
+## Barre de menus: Aller
+menu-go = A&ller
+menu-go-next-scene = &Scène suivante
+menu-go-prev-scene = Scène p&récédente
+menu-go-next-chapter = &Chapitre suivant
+menu-go-prev-chapter = Chapitre précéde&nt
+menu-go-next-note = Note suiv&ante
+menu-go-prev-note = Note précédent&e
+
 menu-tools = &Outils
 menu-help = A&ide
 
@@ -137,6 +148,12 @@ session-no-limit = Aucune limite
 session-reset = Réinitialiser la session
 session-readout = { $words } mots · { $time }
 session-readout-timed = { $words } mots · { $time } restant
+# La bande de contrôle toujours visible du mode sans distraction (étape 2).
+statusbar-focus-exit = Quitter le mode sans distraction
+# Les boutons Suivant/Précédent de la bande (étape 4) — déclenchent les mêmes
+# actions go.next/go.prev que le raccourci et la paire générique du menu Aller à.
+statusbar-focus-go-prev = Élément précédent (Alt+Haut)
+statusbar-focus-go-next = Élément suivant (Alt+Bas)
 
 ## Paramètres
 language = Langue
@@ -179,6 +196,7 @@ settings-page-notes = Notes
 settings-page-editor-behavior = Comportement de l'éditeur
 settings-page-goals = Objectifs et nombre de mots
 settings-page-corkboard = Tableau de liège
+settings-page-distraction-free = Sans distraction
 settings-page-dictionaries = Dictionnaires
 settings-page-autosave = Enregistrement automatique
 settings-page-export = Formats d'export
@@ -197,6 +215,8 @@ settings-field-line-height = Interligne
 settings-field-first-line-indent = Retrait de première ligne
 settings-field-paragraph-spacing-before = Espace avant le paragraphe
 settings-field-paragraph-spacing-after = Espace après le paragraphe
+settings-field-column-width = Largeur de colonne
+settings-distraction-free-width-hint = S'applique uniquement en mode sans distraction — les largeurs de colonne de la Scène, du Synopsis et des Notes restent inchangées.
 settings-field-app-theme = Thème
 settings-field-text-scale = Taille du texte de l'interface
 settings-field-language = Langue de l'interface

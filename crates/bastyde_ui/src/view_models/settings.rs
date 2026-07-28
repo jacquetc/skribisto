@@ -31,26 +31,32 @@ use crate::{
     CORKBOARD_PARA_SPACING_AFTER_DEFAULT, CORKBOARD_PARA_SPACING_AFTER_KEY,
     CORKBOARD_PARA_SPACING_BEFORE_DEFAULT, CORKBOARD_PARA_SPACING_BEFORE_KEY,
     CORKBOARD_SHOW_WORD_COUNT_DEFAULT, CORKBOARD_SHOW_WORD_COUNT_KEY, CORKBOARD_SIZE_DEFAULT,
-    CORKBOARD_SIZE_KEY, DARK_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY,
-    GOALS_COUNTING_METHOD_KEY, GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY,
-    HIGHLIGHT_SENTENCE_DEFAULT, HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY,
-    NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT,
-    NOTES_FONT_FAMILY_KEY, NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY,
-    NOTES_PARA_SPACING_AFTER_DEFAULT, NOTES_PARA_SPACING_AFTER_KEY,
-    NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_PARA_SPACING_BEFORE_KEY, NOTES_SIZE_DEFAULT,
-    NOTES_SIZE_KEY, PREVIEW_WIDTH_DEFAULT, PREVIEW_WIDTH_KEY, PUNCT_DASHES_DEFAULT,
-    PUNCT_DASHES_KEY, PUNCT_DIALOGUE_DEFAULT, PUNCT_DIALOGUE_KEY, PUNCT_ELLIPSIS_DEFAULT,
-    PUNCT_ELLIPSIS_KEY, PUNCT_QUOTE_STYLE_KEY, PUNCT_QUOTES_DEFAULT, PUNCT_QUOTES_KEY,
-    PUNCT_SPACING_DEFAULT, PUNCT_SPACING_KEY, REMEMBER_VIEW_DEFAULT, REMEMBER_VIEW_KEY,
-    SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT,
-    SCENE_FONT_FAMILY_KEY, SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY,
-    SCENE_PARA_SPACING_AFTER_DEFAULT, SCENE_PARA_SPACING_AFTER_KEY,
-    SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY, SCENE_SIZE_DEFAULT,
-    SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY,
-    SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY,
-    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY, SYNOPSIS_LINE_HEIGHT_DEFAULT,
-    SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PANE_KEY,
-    SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
+    CORKBOARD_SIZE_KEY, DARK_KEY, DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT,
+    DISTRACTION_FREE_FIRST_LINE_INDENT_KEY, DISTRACTION_FREE_FONT_FAMILY_DEFAULT,
+    DISTRACTION_FREE_FONT_FAMILY_KEY, DISTRACTION_FREE_LINE_HEIGHT_DEFAULT,
+    DISTRACTION_FREE_LINE_HEIGHT_KEY, DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
+    DISTRACTION_FREE_PARA_SPACING_AFTER_KEY, DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT,
+    DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY, DISTRACTION_FREE_SIZE_DEFAULT,
+    DISTRACTION_FREE_SIZE_KEY, DISTRACTION_FREE_WIDTH_DEFAULT, DISTRACTION_FREE_WIDTH_KEY,
+    EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
+    GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
+    HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
+    NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY,
+    NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT,
+    NOTES_PARA_SPACING_AFTER_KEY, NOTES_PARA_SPACING_BEFORE_DEFAULT,
+    NOTES_PARA_SPACING_BEFORE_KEY, NOTES_SIZE_DEFAULT, NOTES_SIZE_KEY, PREVIEW_WIDTH_DEFAULT,
+    PREVIEW_WIDTH_KEY, PUNCT_DASHES_DEFAULT, PUNCT_DASHES_KEY, PUNCT_DIALOGUE_DEFAULT,
+    PUNCT_DIALOGUE_KEY, PUNCT_ELLIPSIS_DEFAULT, PUNCT_ELLIPSIS_KEY, PUNCT_QUOTE_STYLE_KEY,
+    PUNCT_QUOTES_DEFAULT, PUNCT_QUOTES_KEY, PUNCT_SPACING_DEFAULT, PUNCT_SPACING_KEY,
+    REMEMBER_VIEW_DEFAULT, REMEMBER_VIEW_KEY, SCENE_FIRST_LINE_INDENT_DEFAULT,
+    SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT, SCENE_FONT_FAMILY_KEY,
+    SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT,
+    SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT,
+    SCENE_PARA_SPACING_BEFORE_KEY, SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_WELCOME_KEY,
+    SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
+    SYNOPSIS_FIRST_LINE_INDENT_KEY, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY,
+    SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT,
+    SYNOPSIS_PANE_KEY, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
     SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_SIZE_DEFAULT,
     SYNOPSIS_SIZE_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
 };
@@ -81,6 +87,11 @@ pub struct EditorTypographySet {
     /// The corkboard card's synopsis editor — its own bundle so cards can read
     /// distinctly from the Full-Synopsis pane.
     pub corkboard: EditorTypography,
+    /// Distraction-free mode's own bundle — selected by
+    /// `ContentTab::main_typography` in place of Scene/Notes whenever the tab's
+    /// window is in distraction-free mode. Independent, compile-time defaults
+    /// like every bundle here (never seeded from Scene).
+    pub distraction_free: EditorTypography,
 }
 
 /// Per-container-type "last view" memory: the `SegmentedControl` index a freshly
@@ -205,6 +216,10 @@ pub struct SettingsViewModel {
     synopsis_typo: EditorTypography,
     notes_typo: EditorTypography,
     corkboard_typo: EditorTypography,
+    distraction_free_typo: EditorTypography,
+    /// Max width (px) of the writing column while distraction-free mode is
+    /// active — independent from [`Self::column_width`].
+    distraction_free_width: Signal<f32>,
     // ── Editor behaviour ──
     synopsis_pane: Signal<bool>,
     /// Application-level smart punctuation — the tier a project follows when
@@ -311,6 +326,31 @@ impl SettingsViewModel {
                     CORKBOARD_PARA_SPACING_AFTER_DEFAULT,
                 ),
             },
+            distraction_free_typo: EditorTypography {
+                font_family: store.signal(
+                    DISTRACTION_FREE_FONT_FAMILY_KEY,
+                    DISTRACTION_FREE_FONT_FAMILY_DEFAULT.to_string(),
+                ),
+                size: store.signal(DISTRACTION_FREE_SIZE_KEY, DISTRACTION_FREE_SIZE_DEFAULT),
+                line_height: store.signal(
+                    DISTRACTION_FREE_LINE_HEIGHT_KEY,
+                    DISTRACTION_FREE_LINE_HEIGHT_DEFAULT,
+                ),
+                first_line_indent: store.signal(
+                    DISTRACTION_FREE_FIRST_LINE_INDENT_KEY,
+                    DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT,
+                ),
+                para_spacing_before: store.signal(
+                    DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY,
+                    DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT,
+                ),
+                para_spacing_after: store.signal(
+                    DISTRACTION_FREE_PARA_SPACING_AFTER_KEY,
+                    DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
+                ),
+            },
+            distraction_free_width: store
+                .signal(DISTRACTION_FREE_WIDTH_KEY, DISTRACTION_FREE_WIDTH_DEFAULT),
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
             punct_dashes: store.signal(PUNCT_DASHES_KEY, PUNCT_DASHES_DEFAULT),
             punct_ellipsis: store.signal(PUNCT_ELLIPSIS_KEY, PUNCT_ELLIPSIS_DEFAULT),
@@ -379,6 +419,7 @@ impl SettingsViewModel {
             synopsis: self.synopsis_typo.clone(),
             notes: self.notes_typo.clone(),
             corkboard: self.corkboard_typo.clone(),
+            distraction_free: self.distraction_free_typo.clone(),
         }
     }
 
@@ -386,6 +427,13 @@ impl SettingsViewModel {
     /// settings pane, read by every open board's cards.
     pub fn corkboard_typo(&self) -> EditorTypography {
         self.corkboard_typo.clone()
+    }
+
+    /// Max width of the writing column while distraction-free mode is active
+    /// (Settings ▸ Editor ▸ Editor Behavior's "Distraction-free" group) —
+    /// independent from [`Self::column_width`].
+    pub fn distraction_free_width(&self) -> Signal<f32> {
+        self.distraction_free_width.clone()
     }
 
     /// Show the synopsis pane above the manuscript. Consumed live by the writing
@@ -564,6 +612,27 @@ impl SettingsViewModel {
         self.corkboard_typo
             .para_spacing_after
             .set(CORKBOARD_PARA_SPACING_AFTER_DEFAULT);
+        // Distraction-free
+        self.distraction_free_typo
+            .font_family
+            .set(DISTRACTION_FREE_FONT_FAMILY_DEFAULT.to_string());
+        self.distraction_free_typo
+            .size
+            .set(DISTRACTION_FREE_SIZE_DEFAULT);
+        self.distraction_free_typo
+            .line_height
+            .set(DISTRACTION_FREE_LINE_HEIGHT_DEFAULT);
+        self.distraction_free_typo
+            .first_line_indent
+            .set(DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT);
+        self.distraction_free_typo
+            .para_spacing_before
+            .set(DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT);
+        self.distraction_free_typo
+            .para_spacing_after
+            .set(DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT);
+        self.distraction_free_width
+            .set(DISTRACTION_FREE_WIDTH_DEFAULT);
         self.synopsis_pane.set(SYNOPSIS_PANE_DEFAULT);
         self.punct_dashes.set(PUNCT_DASHES_DEFAULT);
         self.punct_ellipsis.set(PUNCT_ELLIPSIS_DEFAULT);
@@ -586,9 +655,9 @@ impl SettingsViewModel {
 mod tests {
     use super::*;
     use crate::{
-        CORKBOARD_SIZE_DEFAULT, NOTES_FONT_FAMILY_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT,
-        SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT, SCENE_SIZE_DEFAULT,
-        SYNOPSIS_SIZE_DEFAULT,
+        CORKBOARD_SIZE_DEFAULT, DISTRACTION_FREE_SIZE_DEFAULT, DISTRACTION_FREE_WIDTH_DEFAULT,
+        NOTES_FONT_FAMILY_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FONT_FAMILY_DEFAULT,
+        SCENE_LINE_HEIGHT_DEFAULT, SCENE_SIZE_DEFAULT, SYNOPSIS_SIZE_DEFAULT,
     };
     use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -610,12 +679,19 @@ mod tests {
         let store = temp_store();
         let vm = SettingsViewModel::new(&store);
         let t = vm.editor_typography();
-        for b in [&t.scene, &t.synopsis, &t.notes, &t.corkboard] {
+        for b in [
+            &t.scene,
+            &t.synopsis,
+            &t.notes,
+            &t.corkboard,
+            &t.distraction_free,
+        ] {
             b.font_family.set("EB Garamond".into());
             b.size.set(1.3);
             b.line_height.set(2.1);
             b.first_line_indent.set(40.0);
         }
+        vm.distraction_free_width().set(999.0);
 
         vm.reset_editor_defaults();
 
@@ -630,8 +706,19 @@ mod tests {
         assert_eq!(t.synopsis.size.get(), SYNOPSIS_SIZE_DEFAULT);
         assert_eq!(t.notes.font_family.get(), NOTES_FONT_FAMILY_DEFAULT);
         assert_eq!(t.corkboard.size.get(), CORKBOARD_SIZE_DEFAULT);
-        // None of the four still holds the mutated value.
-        for b in [&t.scene, &t.synopsis, &t.notes, &t.corkboard] {
+        assert_eq!(t.distraction_free.size.get(), DISTRACTION_FREE_SIZE_DEFAULT);
+        assert_eq!(
+            vm.distraction_free_width().get(),
+            DISTRACTION_FREE_WIDTH_DEFAULT
+        );
+        // None of the five still holds the mutated value.
+        for b in [
+            &t.scene,
+            &t.synopsis,
+            &t.notes,
+            &t.corkboard,
+            &t.distraction_free,
+        ] {
             assert_ne!(b.font_family.get(), "EB Garamond");
             assert_ne!(b.first_line_indent.get(), 40.0);
         }

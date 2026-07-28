@@ -38,6 +38,8 @@
 //!   * [`export`] — the two export entry points.
 //!   * [`file`] — project and application lifecycle (new/open/import/close/settings/quit).
 //!   * [`binder`] — the outline tree's verbs.
+//!   * `go` — prev/next Scene/Chapter/Note (Increment 4 of distraction-free), scoped to
+//!     the focused item's own binder.
 
 use std::rc::Rc;
 
@@ -49,8 +51,8 @@ use frontend::AppContext;
 use crate::models::OpenDocsStore;
 use crate::view_models::{
     BackupSchedulerViewModel, DictionariesViewModel, EditorsViewModel, ExportViewModel,
-    FullscreenViewModel, OutlineViewModel, ProjectSwitchViewModel, SearchReplaceViewModel,
-    TrashViewModel, UserDictionaryViewModel,
+    FocusViewModel, FullscreenViewModel, OutlineViewModel, ProjectSwitchViewModel,
+    SearchReplaceViewModel, TrashViewModel, UserDictionaryViewModel,
 };
 
 use super::PendingExit;
@@ -60,6 +62,7 @@ mod editor;
 mod export;
 mod file;
 mod format;
+mod go;
 mod trash;
 mod view;
 
@@ -93,6 +96,10 @@ pub(super) struct CommandDeps {
     /// with the wrong window's memory the moment a second project window
     /// exists).
     pub fullscreen: FullscreenViewModel,
+    /// This window's own distraction-free state (Increment 2) — minted fresh
+    /// per window, never a `ctx.app_state` lookup, for the same reason as
+    /// `fullscreen` above (see `FocusViewModel`'s own doc).
+    pub focus: FocusViewModel,
     pub editors: EditorsViewModel,
     pub trash: TrashViewModel,
     pub search: SearchReplaceViewModel,
@@ -137,4 +144,5 @@ pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
     file::register(ctx, deps);
     format::register(ctx, deps);
     binder::register(ctx, deps);
+    go::register(ctx, deps);
 }

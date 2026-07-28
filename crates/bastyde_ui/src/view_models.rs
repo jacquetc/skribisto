@@ -47,6 +47,16 @@
 //!   * [`fullscreen`] — `FullscreenViewModel`: per-window live state (remembers
 //!     the placement to restore when this window's F11/View ▸ Fullscreen
 //!     toggle leaves fullscreen) — minted fresh per window, never shared.
+//!   * [`focus`] — `FocusViewModel`: per-window live state (Increment 2 of
+//!     distraction-free — whether this window's chrome is collapsed, plus its
+//!     own independent placement memory for the Shift+F11 toggle) — minted
+//!     fresh per window, reset on Close-Work/Load-Work like `AppIds`.
+//!   * [`go`] — `GoAvailability`: per-window live state (Increment 4's Go menu
+//!     — the six Next/Previous × Scene/Chapter/Note rows' live "is there a
+//!     target" mirrors) — minted fresh per window alongside `scene_focused`,
+//!     for the same reason `fullscreen`/`focus` are: a shared instance would
+//!     let a second project window's Go menu reflect the wrong window's
+//!     focused item.
 //!
 //! Cross-view-model rules (keep the dependency graph a DAG):
 //!   * A view-model may hold framework model handles and call *down* into them.
@@ -66,8 +76,10 @@ mod editors;
 mod export;
 mod export_styles;
 mod find;
+mod focus;
 mod format;
 mod fullscreen;
+mod go;
 mod import_plume;
 mod long_op;
 mod mention_index;
@@ -110,11 +122,13 @@ pub use editors::{EditorsViewModel, Side};
 pub use export::{ExportViewModel, format_label, scope_label};
 pub use export_styles::ExportStylesViewModel;
 pub use find::FindViewModel;
+pub use focus::FocusViewModel;
 pub use format::{
     ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,
     FormatViewModel,
 };
 pub use fullscreen::FullscreenViewModel;
+pub use go::GoAvailability;
 pub use import_plume::ImportPlumeViewModel;
 pub use mention_index::{MentionIndex, MentionRow};
 pub use new_work::NewWorkViewModel;

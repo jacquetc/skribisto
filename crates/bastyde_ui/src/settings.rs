@@ -48,14 +48,18 @@ use crate::view_models::{
     BackupSettingsViewModel, EditorTypography, SettingsViewModel, WorkSettingsViewModel,
 };
 use crate::{
-    EDITOR_WIDTH_DEFAULT, GOALS_SHOW_CHARACTERS_DEFAULT, HIGHLIGHT_SENTENCE_DEFAULT,
-    NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FONT_FAMILY_DEFAULT, NOTES_LINE_HEIGHT_DEFAULT,
-    NOTES_PARA_SPACING_AFTER_DEFAULT, NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_SIZE_DEFAULT,
-    SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT,
-    SCENE_PARA_SPACING_AFTER_DEFAULT, SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_SIZE_DEFAULT,
-    SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_LINE_HEIGHT_DEFAULT,
-    SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
-    SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_SIZE_DEFAULT, TYPEWRITER_DEFAULT,
+    DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT, DISTRACTION_FREE_FONT_FAMILY_DEFAULT,
+    DISTRACTION_FREE_LINE_HEIGHT_DEFAULT, DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
+    DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT, DISTRACTION_FREE_SIZE_DEFAULT,
+    DISTRACTION_FREE_WIDTH_DEFAULT, EDITOR_WIDTH_DEFAULT, GOALS_SHOW_CHARACTERS_DEFAULT,
+    HIGHLIGHT_SENTENCE_DEFAULT, NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FONT_FAMILY_DEFAULT,
+    NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT,
+    NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_SIZE_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT,
+    SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT, SCENE_PARA_SPACING_AFTER_DEFAULT,
+    SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_SIZE_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
+    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_PANE_DEFAULT,
+    SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT,
+    SYNOPSIS_SIZE_DEFAULT, TYPEWRITER_DEFAULT,
 };
 use skribisto_model::ChapterMode;
 use skribisto_model::counting::CountingMethodSetting;
@@ -120,6 +124,11 @@ enum Pane {
     /// Per-project custom replacement lexicon (under the open Work's section). Appended
     /// last, same rule as every one above it.
     WorkTextReplacements,
+    /// Distraction-free mode's own typography bundle (nested under Editor ▸
+    /// Typography, alongside Scene/Synopsis/Notes/Corkboard). Appended last, same
+    /// rule as every one above it — its tree position (inside the new
+    /// `GroupKind::Typography` node) is `build_tree`'s business, not this number's.
+    DistractionFree,
 }
 
 impl Pane {
@@ -153,6 +162,7 @@ impl Pane {
             Pane::WorkAuthor => tr!(settings_page_author()),
             Pane::WorkTextReplacements => tr!(settings_page_text_replacements()),
             Pane::Spellcheck => tr!(settings_page_spellcheck()),
+            Pane::DistractionFree => tr!(settings_page_distraction_free()),
         }
     }
 }
@@ -194,10 +204,32 @@ impl Sec {
     }
 }
 
-/// A node in the category tree: a parent section or a leaf page.
+/// A nested grouping node *inside* a section — one level deeper than [`Sec`],
+/// for a cluster of pages that would otherwise crowd their section's flat
+/// list. Currently only Editor ▸ Typography (Scene / Synopsis / Notes /
+/// Corkboard / Distraction-free — five pages that all start with the same
+/// Typeface/Size/Line height/First-line indent shape). No pane of its own
+/// (expands only, like [`Sec`]) and no icon (design shows icons only on
+/// top-level sections plus the Keymap leaf — a nested group is indented like
+/// any other sub-page).
+#[derive(Clone, Copy)]
+enum GroupKind {
+    Typography,
+}
+
+impl GroupKind {
+    fn label(self) -> LocalizedString {
+        match self {
+            GroupKind::Typography => tr!(settings_group_typography()),
+        }
+    }
+}
+
+/// A node in the category tree: a parent section, a nested group, or a leaf page.
 #[derive(Clone, Copy)]
 enum Node {
     Section(Sec),
+    Group(GroupKind),
     Page(Pane),
 }
 
@@ -205,26 +237,28 @@ impl Node {
     fn label(self) -> LocalizedString {
         match self {
             Node::Section(s) => s.label(),
+            Node::Group(g) => g.label(),
             Node::Page(p) => p.label(),
         }
     }
 
     /// Leading icon: every section, plus the top-level Keymap leaf (design shows
-    /// no icons on the indented sub-pages).
+    /// no icons on the indented sub-pages, which includes the nested `Group`s).
     fn icon(self) -> Option<IconWidget> {
         let svg = match self {
             Node::Section(s) => s.icon_svg(),
             Node::Page(Pane::Keymap) => res!("assets/icons/settings/keymap.svg"),
-            Node::Page(_) => return None,
+            Node::Group(_) | Node::Page(_) => return None,
         };
         Some(IconWidget::from_svg_icon(svg).icon_size(16.0))
     }
 
-    /// The pane a leaf selects; `None` for a parent section (expands only).
+    /// The pane a leaf selects; `None` for a parent section or nested group
+    /// (expands only).
     fn pane(self) -> Option<Pane> {
         match self {
             Node::Page(p) => Some(p),
-            Node::Section(_) => None,
+            Node::Section(_) | Node::Group(_) => None,
         }
     }
 }
@@ -313,6 +347,27 @@ fn build_not_defaults(
         typo.notes
             .para_spacing_after
             .map(|v| (*v - NOTES_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
+        // ── Distraction-free typography ──
+        typo.distraction_free
+            .font_family
+            .map(|f| f.as_str() != DISTRACTION_FREE_FONT_FAMILY_DEFAULT),
+        typo.distraction_free
+            .size
+            .map(|s| (*s - DISTRACTION_FREE_SIZE_DEFAULT).abs() > f32::EPSILON),
+        typo.distraction_free
+            .line_height
+            .map(|h| (*h - DISTRACTION_FREE_LINE_HEIGHT_DEFAULT).abs() > f32::EPSILON),
+        typo.distraction_free
+            .first_line_indent
+            .map(|i| (*i - DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT).abs() > 0.01),
+        typo.distraction_free
+            .para_spacing_before
+            .map(|v| (*v - DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT).abs() > 0.01),
+        typo.distraction_free
+            .para_spacing_after
+            .map(|v| (*v - DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
+        vm.distraction_free_width()
+            .map(|w| (*w - DISTRACTION_FREE_WIDTH_DEFAULT).abs() > 0.01),
         // ── Editor behaviour ──
         vm.synopsis_pane().map(|s| *s != SYNOPSIS_PANE_DEFAULT),
         vm.typewriter().map(|s| *s != TYPEWRITER_DEFAULT),
@@ -537,35 +592,44 @@ impl SettingsPanel {
         );
 
         let ed = model.insert_root(1, Node::Section(Sec::Editor));
+        // The five typography-shaped pages (Scene / Synopsis / Notes / Corkboard /
+        // Distraction-free — all four fields + font/size/line-height/indent) live
+        // under their own nested "Typography" group rather than as five more flat
+        // siblings in an already-crowded Editor list.
+        let typo_group = model.insert_child(ed, 0, Node::Group(GroupKind::Typography));
         nodes.insert(
             Pane::SceneTypography,
-            model.insert_child(ed, 0, Node::Page(Pane::SceneTypography)),
+            model.insert_child(typo_group, 0, Node::Page(Pane::SceneTypography)),
         );
         nodes.insert(
             Pane::SynopsisTypography,
-            model.insert_child(ed, 1, Node::Page(Pane::SynopsisTypography)),
+            model.insert_child(typo_group, 1, Node::Page(Pane::SynopsisTypography)),
         );
         nodes.insert(
             Pane::NotesTypography,
-            model.insert_child(ed, 2, Node::Page(Pane::NotesTypography)),
+            model.insert_child(typo_group, 2, Node::Page(Pane::NotesTypography)),
+        );
+        nodes.insert(
+            Pane::Corkboard,
+            model.insert_child(typo_group, 3, Node::Page(Pane::Corkboard)),
+        );
+        nodes.insert(
+            Pane::DistractionFree,
+            model.insert_child(typo_group, 4, Node::Page(Pane::DistractionFree)),
         );
         nodes.insert(
             Pane::EditorBehavior,
-            model.insert_child(ed, 3, Node::Page(Pane::EditorBehavior)),
+            model.insert_child(ed, 1, Node::Page(Pane::EditorBehavior)),
         );
         // Beside Editor Behavior: the other set of switches that change what
         // happens as the writer types, rather than how the page looks.
         nodes.insert(
             Pane::Punctuation,
-            model.insert_child(ed, 4, Node::Page(Pane::Punctuation)),
+            model.insert_child(ed, 2, Node::Page(Pane::Punctuation)),
         );
         nodes.insert(
             Pane::Goals,
-            model.insert_child(ed, 5, Node::Page(Pane::Goals)),
-        );
-        nodes.insert(
-            Pane::Corkboard,
-            model.insert_child(ed, 6, Node::Page(Pane::Corkboard)),
+            model.insert_child(ed, 3, Node::Page(Pane::Goals)),
         );
 
         let sp = model.insert_root(2, Node::Section(Sec::Spelling));
@@ -702,8 +766,12 @@ impl SettingsPanel {
 
         // Design-state expansion: the first two sections open, the rest closed —
         // regardless of the model's default (collapse is a no-op if already so).
+        // The nested Typography group opens too — it holds the default landing
+        // page (Scene), so it must never start collapsed under the always-open
+        // Editor section.
         tree.expand(ab);
         tree.expand(ed);
+        tree.expand(typo_group);
         tree.collapse(sp);
         tree.collapse(bk);
         tree.collapse(ce);
@@ -716,13 +784,15 @@ impl SettingsPanel {
         // Idempotent with the design-state expansion above.
         let section_of = |p: Pane| match p {
             Pane::Appearance | Pane::MenusToolbars | Pane::Notifications => Some(ab),
+            // The nested Typography group — `ed` (its parent, always expanded
+            // above) already guarantees these are reachable; only the group
+            // itself needs revealing.
             Pane::SceneTypography
             | Pane::SynopsisTypography
             | Pane::NotesTypography
-            | Pane::EditorBehavior
-            | Pane::Punctuation
-            | Pane::Goals
-            | Pane::Corkboard => Some(ed),
+            | Pane::Corkboard
+            | Pane::DistractionFree => Some(typo_group),
+            Pane::EditorBehavior | Pane::Punctuation | Pane::Goals => Some(ed),
             Pane::Spellcheck | Pane::Dictionaries => Some(sp),
             Pane::Autosave | Pane::Backup => Some(bk),
             Pane::ExportFormats => Some(ce),
@@ -762,6 +832,7 @@ impl SettingsPanel {
             (tr!(settings_page_editor_behavior()), Pane::EditorBehavior),
             (tr!(settings_page_goals()), Pane::Goals),
             (tr!(settings_page_corkboard()), Pane::Corkboard),
+            (tr!(settings_page_distraction_free()), Pane::DistractionFree),
             (tr!(settings_page_dictionaries()), Pane::Dictionaries),
             (tr!(settings_page_autosave()), Pane::Autosave),
             (tr!(settings_page_backup()), Pane::Backup),
@@ -782,14 +853,15 @@ impl SettingsPanel {
             (tr!(settings_show_welcome()), Pane::Appearance),
             (tr!(settings_autosave()), Pane::Autosave),
         ];
-        // Typeface / Size / Line height / First-line indent repeat on all three
-        // typography pages, so disambiguate each by page ("Scene — Typeface") —
+        // Typeface / Size / Line height / First-line indent repeat on every
+        // typography page, so disambiguate each by page ("Scene — Typeface") —
         // the index dedupes by resolved text, so bare labels would collide and
-        // leave two of three pages unreachable.
+        // leave all but one page unreachable.
         for (page, pane) in [
             (tr!(settings_page_scene()), Pane::SceneTypography),
             (tr!(settings_page_synopsis()), Pane::SynopsisTypography),
             (tr!(settings_page_notes()), Pane::NotesTypography),
+            (tr!(settings_page_distraction_free()), Pane::DistractionFree),
         ] {
             for field in [
                 tr!(settings_field_typeface()),
@@ -1207,6 +1279,14 @@ impl Widget for SettingsPanel {
             (Pane::WorkTags, tags_pane),
             (Pane::WorkAuthor, author_pane),
             (Pane::WorkTextReplacements, text_replacements_pane),
+            (
+                Pane::DistractionFree,
+                Box::new(panes::typography::typography_pane(
+                    ctx,
+                    tr!(settings_page_distraction_free()),
+                    &typo.distraction_free,
+                )),
+            ),
         ];
         if let Some((slot, (pane, _))) =
             panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)
@@ -1409,6 +1489,7 @@ mod tests {
             Pane::WorkTags,
             Pane::WorkAuthor,
             Pane::WorkTextReplacements,
+            Pane::DistractionFree,
         ];
         for (i, pane) in all.iter().enumerate() {
             assert_eq!(

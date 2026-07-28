@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! Dock and find-banner commands: the outline rail, the bottom preview band, the search &
-//! replace dock, the per-editor find banner, and this window's plain-fullscreen toggle.
+//! replace dock, the per-editor find banner, this window's plain-fullscreen toggle, and its
+//! distraction-free mode toggle.
 
 use bastyde::prelude::*;
 use bastyde::widgets::DockSide;
@@ -59,6 +60,35 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             // `ctx.window()` is `None`.
             if let Some(window) = c.window() {
                 fullscreen.toggle(window);
+            }
+        }));
+    }
+
+    // Shift+F11 — Increment 2 of distraction-free: chrome collapse + docks
+    // disabled + fullscreen, together, as one per-window mode independent of
+    // the plain F11 toggle above (see `FocusViewModel`'s module doc for why
+    // the two never share placement memory). Global for the same reason as
+    // F11/F9/F10.
+    ctx.register_shortcut_global(
+        Shortcut::new("view.focus_mode")
+            .name("Toggle Distraction-free Mode")
+            .primary(KeyStroke::new(Key::F11, Modifiers::SHIFT))
+            .build(),
+    );
+    {
+        let focus = deps.focus.clone();
+        ctx.register_action_global(Action::new("view.focus_mode").on_invoke(move |_i, c| {
+            // Same resolve-the-firing-window rationale as `view.fullscreen`
+            // above; also the target of the strip's Exit button, which fires
+            // this same named intent (`toggle` is always a clean exit there —
+            // the button only renders while the mode is active). The
+            // contextless-Escape handler in `App::build` calls
+            // `FocusViewModel::exit` directly instead, for the stronger
+            // idempotency guarantee that method carries (see its doc) — a
+            // raw key handler, not a discoverable command, same precedent as
+            // the find banner's own local Escape handling.
+            if let Some(window) = c.window() {
+                focus.toggle(window);
             }
         }));
     }

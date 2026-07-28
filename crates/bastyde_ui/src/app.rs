@@ -51,6 +51,7 @@ use crate::panels::new_work::NewWorkPanel;
 use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
 use crate::singles::SingleSmartPunctuation;
+use crate::tabs::shared::editor::VisibleWhen;
 use crate::text_replacement::typography::SmartPunctuationFlags;
 use crate::toast_scope::ToastWorkExt;
 
@@ -594,6 +595,15 @@ pub struct App {
     /// not the Work's data, so two simultaneously-open windows — even on the
     /// same Work — must never share it. See `FullscreenViewModel`'s doc.
     fullscreen: crate::view_models::FullscreenViewModel,
+    /// This window's own distraction-free state (Increment 2 — chrome
+    /// collapse). Minted fresh per window in
+    /// `ProjectWindowFactory::window_config`, the same shape as
+    /// [`Self::fullscreen`] just above, but with its own independent
+    /// placement memory — see `FocusViewModel`'s module doc for why the two
+    /// toggles never share one. Reset on Close-Work/Load-Work (see the
+    /// subscribers in `build`) so a stale "mode was on" never leaks into the
+    /// next project this window shows.
+    focus: crate::view_models::FocusViewModel,
     /// Built **fresh for this window** alongside `session`/`outline`: bound to
     /// this window's own `ids`, so an export from this window scopes to *this*
     /// Work, not whichever Work's `App` constructed the shared registration
@@ -642,6 +652,14 @@ pub struct App {
     /// title-bar's Format menu so its entries grey out off a scene. Written by
     /// `EditorsViewModel`, which is the only thing that can compute it.
     scene_focused: Signal<bool>,
+    /// Live "is there a target" mirrors for the title-bar's Go menu (Increment 4 —
+    /// six Next/Previous × Scene/Chapter/Note rows), the same shape as
+    /// `scene_focused` just above: minted in `shell/windows.rs` (which builds the
+    /// menu before this `App`/its `EditorsViewModel` exist), forwarded to
+    /// `EditorsViewModel::new` here so it can write the live answer, and read
+    /// straight from the window-chrome closure's own clone for the menu's
+    /// `.enabled(..)` bindings. See [`crate::view_models::GoAvailability`]'s doc.
+    go: crate::view_models::GoAvailability,
     /// `true` while the open work has edits not yet written to disk. Read by the
     /// close guard, `work.close` and the switch guard to decide whether to prompt,
     /// and by `can_save` for the Save affordances.
@@ -722,10 +740,12 @@ impl App {
         session: WorkSession,
         outline: OutlineViewModel,
         fullscreen: crate::view_models::FullscreenViewModel,
+        focus: crate::view_models::FocusViewModel,
         export: crate::view_models::ExportViewModel,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
         scene_focused: Signal<bool>,
+        go: crate::view_models::GoAvailability,
         unsaved: Signal<bool>,
         pending_exit: Signal<PendingExit>,
         backup_mode: Signal<bool>,
@@ -742,6 +762,7 @@ impl App {
             session,
             outline,
             fullscreen,
+            focus,
             export,
             registry,
             save_as_vm,
@@ -751,6 +772,7 @@ impl App {
             autosave_menu,
             spellcheck_menu,
             scene_focused,
+            go,
             unsaved,
             pending_exit,
             exit_seq: Rc::new(std::cell::Cell::new(None)),
@@ -1064,6 +1086,13 @@ impl Widget for App {
         let backup_mode_for_editors = self.backup_mode.clone();
         let save_state_for_editors = save_state.clone();
         let scene_focused_for_editors = self.scene_focused.clone();
+        // This window's own distraction-free flag (never a private copy — a copy
+        // would go stale the instant Shift+F11 toggled it), so every `ContentTab`
+        // this window opens can pick the distraction-free typography bundle and
+        // column width live.
+        let distraction_free_for_editors = self.focus.active_signal();
+        let distraction_free_width = settings.distraction_free_width();
+        let go_for_editors = self.go.clone();
         let editors = self
             .editors
             .get_or_insert_with(|| {
@@ -1080,6 +1109,9 @@ impl Widget for App {
                     save_state_for_editors,
                     scene_focused_for_editors,
                     session.tree_expansion.clone(),
+                    distraction_free_for_editors,
+                    distraction_free_width,
+                    go_for_editors,
                 )
             })
             .clone();
@@ -1339,6 +1371,49 @@ impl Widget for App {
                 move |e: &Event| {
                     if my_ids.is_event_for_my_work(&e.ids) {
                         s.clear_preview();
+                    }
+                },
+            );
+        }
+
+        // Forget this window's distraction-free state on Close-Work/Load-Work
+        // — exactly like `AppIds` (see `FocusViewModel`'s module doc): the
+        // process outlives a single project, so an un-reset `FocusViewModel`
+        // would carry a stale "mode was on" into the next project this same
+        // window shows. Same guarded (loose for Load/New, strict for Close)
+        // shape as the search subscribers just above.
+        {
+            let focus = self.focus.clone();
+            let my_ids = session.ids.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::LoadWork),
+                move |e: &Event| {
+                    if my_ids.is_bootstrap_or_own(&e.ids) {
+                        focus.reset();
+                    }
+                },
+            );
+        }
+        {
+            let focus = self.focus.clone();
+            let my_ids = session.ids.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::NewWork),
+                move |e: &Event| {
+                    if my_ids.is_bootstrap_or_own(&e.ids) {
+                        focus.reset();
+                    }
+                },
+            );
+        }
+        {
+            let focus = self.focus.clone();
+            let my_ids = session.ids.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::CloseWork),
+                move |e: &Event| {
+                    if my_ids.is_event_for_my_work(&e.ids) {
+                        focus.reset();
                     }
                 },
             );
@@ -1624,6 +1699,7 @@ impl Widget for App {
             registry: self.registry.clone(),
             outline: outline.clone(),
             fullscreen: self.fullscreen.clone(),
+            focus: self.focus.clone(),
             editors: editors.clone(),
             trash: trash.clone(),
             search: search.clone(),
@@ -2665,6 +2741,32 @@ impl Widget for App {
                 self.trash_dock,
                 on_open,
             ));
+        // Increment 2 of distraction-free: "the editor takes the whole
+        // surface" is this — disabling the three sides that carry chrome
+        // (never the centre, which is the editor itself) rather than hiding
+        // the whole `DockingLayout`. `set_side_enabled` is documented as
+        // reactive (`docs/docking.md`'s "Locking the layout" section) and,
+        // unlike `set_side_visible`, also drops the leading/trailing rail —
+        // the reopen affordance a hidden-but-enabled side otherwise keeps —
+        // so nothing but the editor remains. Non-destructive: docks already
+        // open on a disabled side stay in the model and reappear exactly as
+        // they were the moment the side is re-enabled. `Top` is never docked
+        // anywhere in this app, so it is left alone.
+        //
+        // A plain `ctx.effect` on the MUTABLE `active_signal()` (never a
+        // derived/zip/map read via `ctx.effect` — that panics, see the house
+        // rule); it only fires on a *change*, which is exactly right since a
+        // freshly built window's sides already start enabled, matching
+        // "not in the mode" by construction.
+        {
+            let docking = outline.docking();
+            ctx.effect(&self.focus.active_signal(), move |active| {
+                let enabled = !*active;
+                docking.set_side_enabled(DockSide::Leading, enabled);
+                docking.set_side_enabled(DockSide::Trailing, enabled);
+                docking.set_side_enabled(DockSide::Bottom, enabled);
+            });
+        }
         // First-build-only default arrangement (see the config block above on why
         // it must not re-run on rebuilds).
         if !self.initial_loaded {
@@ -2816,13 +2918,65 @@ impl Widget for App {
             single_work.clone(),
         );
 
+        // Increment 2 of distraction-free: the banner, the divider under the
+        // (now possibly-collapsed) title bar, and the normal status bar all
+        // collapse together — `VisibleWhen`, the same dormant-not-torn-down
+        // gate the synopsis toggle already uses, keyed off the SAME derived
+        // "chrome visible" reading of `FocusViewModel::active_signal()` the
+        // title bar's own menu/trailing/center content uses in
+        // `shell::windows`. The always-visible strip (word count + writing
+        // session + Go Previous/Next + Exit — never hover-reveal, see
+        // `FocusStrip`'s doc) takes the status bar's place while the mode is
+        // active.
+        let chrome_visible = self.focus.active_signal().map(|active| !*active);
+        let focus_active = self.focus.active_signal();
+        let focus_strip = crate::statusbar::focus_strip::FocusStrip::new(
+            stats.clone(),
+            session_vm.clone(),
+            single_work_info.shape().map(|s| s.is_some()),
+            settings.show_characters(),
+        );
+
         let root = ctx.add(
             VStack::new()
                 .spacing(0.0)
-                .child(backup_banner)
-                .child(Divider::new())
+                .child(VisibleWhen::new(chrome_visible.clone(), backup_banner))
+                .child(VisibleWhen::new(chrome_visible.clone(), Divider::new()))
                 .child(Expand::new().child(layout))
-                .child(status),
+                .child(VisibleWhen::new(chrome_visible, status))
+                .child(VisibleWhen::new(focus_active.clone(), focus_strip))
+                .on_key({
+                    let focus = self.focus.clone();
+                    move |ev, ctx| match ev {
+                        // A contextless Escape leaves the mode. This is a
+                        // widget-level key handler, not a global shortcut —
+                        // `RichTextEditor` already consumes Escape for IME
+                        // composition cancel, clearing a selection, and
+                        // dismissing its spell-suggestion popup, and a
+                        // *global* `register_shortcut_global(Escape)` would
+                        // be resolved BEFORE the focused editor ever saw the
+                        // key (see `app/commands.rs`'s module doc on why
+                        // globals go first), firing underneath whatever the
+                        // editor just did with the same keypress — exactly
+                        // backwards. Raw key events bubble from the focused
+                        // widget up through its ancestors instead, so this
+                        // handler on the root only ever sees an Escape
+                        // nothing more local already claimed. Guarded on
+                        // `focus_active` so it is a no-op — and lets the key
+                        // keep bubbling — outside the mode, same precedent as
+                        // the find banner's own local Escape handling
+                        // (`tabs/shared/editor.rs`'s `FindBanner`).
+                        WidgetEvent::KeyDown {
+                            key: Key::Escape, ..
+                        } if focus_active.get() => {
+                            if let Some(window) = ctx.window() {
+                                focus.exit(window);
+                            }
+                            EventResponse::Handled
+                        }
+                        _ => EventResponse::Ignored,
+                    }
+                }),
         );
         self.root_child = Some(root);
 
@@ -3298,6 +3452,7 @@ mod tests {
             synopsis: bundle(),
             notes: bundle(),
             corkboard: bundle(),
+            distraction_free: bundle(),
         };
         let ids = crate::app_ids::AppIds::new();
         let save_state = crate::view_models::SaveStateViewModel::new(app_ctx.clone(), ids.clone());
@@ -3318,6 +3473,9 @@ mod tests {
                 ids.clone(),
                 crate::models::TreeExpansionService::in_memory_default(),
             ),
+            Signal::new(false),
+            Signal::new(620.0),
+            crate::view_models::GoAvailability::new(),
         )
     }
 }
