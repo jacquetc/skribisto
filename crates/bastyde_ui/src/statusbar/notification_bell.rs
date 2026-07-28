@@ -27,9 +27,29 @@ use std::rc::Rc;
 
 use bastyde::core::binding::BindingLevel;
 use bastyde::prelude::*;
+use bastyde::widgets::styles::IconButtonRecipe;
 use bastyde::widgets::{
     IconButtonSize, NotificationArchiveModel, NotificationCenterButton, ToastAudience,
 };
+
+/// The square footprint `IconButtonSize` resolves to under the default
+/// recipe (`IconButtonRecipe::default()` — the same constants
+/// `NotificationCenterButton`'s inner `IconButton` falls back on before its
+/// own theme-supplied style slot is consulted). Used only as the
+/// pre-`build()` layout fallback below: once built, the real footprint comes
+/// from `ctx.child_size` on the actual `NotificationCenterButton`, which is
+/// theme-accurate; this is just the best guess available before that first
+/// `build()` has run.
+fn fallback_dimension(size: IconButtonSize) -> f32 {
+    let recipe = IconButtonRecipe::default();
+    match size {
+        IconButtonSize::Compact => recipe.size_compact,
+        IconButtonSize::Default => recipe.size_default,
+        IconButtonSize::Toolbar => recipe.size_toolbar,
+        IconButtonSize::Large => recipe.size_large,
+        IconButtonSize::Hero => recipe.size_hero,
+    }
+}
 
 pub struct NotificationBell {
     archive: Rc<NotificationArchiveModel>,
@@ -79,7 +99,10 @@ impl Widget for NotificationBell {
         self.root_child
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)
-            .unwrap_or_else(|| proposal.resolve(30.0, 30.0).into())
+            .unwrap_or_else(|| {
+                let dim = fallback_dimension(self.size);
+                proposal.resolve(dim, dim).into()
+            })
     }
 }
 
@@ -167,6 +190,43 @@ mod tests {
             tree.find_by_label("4").is_some(),
             "no Work open ⇒ unscoped bell ⇒ every entry counts, matching \
              NotificationCenterButton's own documented 'no scope set' behaviour"
+        );
+    }
+
+    /// F6 regression: the pre-`build()` layout fallback must derive its
+    /// footprint from `self.size`, not a hardcoded 30x30 (`IconButtonSize::
+    /// Toolbar`'s own dimension, which happens to equal 30 but is wrong for
+    /// every other size — the status bar configures `Compact`, whose
+    /// dimension is smaller). Calling `layout_response` directly, before
+    /// `build()` has ever run, exercises the fallback branch in isolation
+    /// (`root_child` is still `None`, so `ctx.child_size` has nothing to
+    /// find).
+    #[test]
+    fn a_compact_bell_reports_its_own_footprint_before_its_first_build() {
+        let archive = seeded_archive();
+        let bell =
+            NotificationBell::new(archive, Signal::new(Some(1))).size(IconButtonSize::Compact);
+        assert_eq!(bell.root_child, None, "must not have built yet");
+
+        let theme = intui::light();
+        let ctx = LayoutContext::for_testing(&theme);
+        // `unspecified()` (both dimensions `None`) is what actually exercises
+        // `SizeProposal::resolve`'s default-filling branch — an `exact(...)`
+        // proposal would just echo its own numbers back regardless of what
+        // the fallback derives, proving nothing.
+        let response = bell.layout_response(SizeProposal::unspecified(), &ctx);
+
+        let expected = fallback_dimension(IconButtonSize::Compact);
+        assert_eq!(
+            response.size.width, expected,
+            "a Compact bell's pre-build fallback must report Compact's own footprint \
+             ({expected}), not the hardcoded 30x30 that only happens to be correct for \
+             IconButtonSize::Toolbar"
+        );
+        assert_ne!(
+            expected, 30.0,
+            "sanity check: Compact's dimension must actually differ from the old \
+             hardcoded 30.0, otherwise this test could pass for the wrong reason"
         );
     }
 

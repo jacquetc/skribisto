@@ -52,7 +52,7 @@ use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
 use crate::singles::SingleSmartPunctuation;
 use crate::text_replacement::typography::SmartPunctuationFlags;
-use crate::toast_scope::{ToastWorkExt, work_scoped_toast_id};
+use crate::toast_scope::ToastWorkExt;
 
 /// The punctuation rules in force for the open project — the two tiers resolved
 /// into the one flag set the editor sessions run.
@@ -547,7 +547,7 @@ fn offer_missing_dictionaries(
             // Work-scoped (F1): a bare "dict.missing" shared by every window
             // would let a second Work's own nudge find THIS Work's still-live
             // toast and silently steal/retarget it.
-            .id(work_scoped_toast_id("dict.missing", work_id))
+            .scoped_id("dict.missing", work_id)
             .target_work(work_id)
             .action(bastyde::widgets::ToastAction::primary(
                 tr!(dict_missing_action()),

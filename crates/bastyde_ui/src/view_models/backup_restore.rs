@@ -58,7 +58,7 @@ use crate::backup::BackupContext;
 use crate::singles::SingleWork;
 use crate::toast_scope::ToastWorkExt;
 
-use super::long_op::{event_id, parse_payload};
+use super::long_op::{CapturedWork, event_id, parse_payload};
 
 struct BackupRestorePending {
     op_id: String,
@@ -70,14 +70,14 @@ struct BackupRestorePending {
     as_folder: bool,
     work_info_id: Option<u64>,
     safety_backup_path: Option<String>,
-    /// This window's own `ids.work_id`, captured when [`BackupRestoreViewModel::do_restore`]
-    /// started the write — F4 (see `ExportViewModel::active_work_id`'s doc for
-    /// the identical pattern): this view-model is long-lived per window, and an
-    /// in-place project switch reseeds the SAME `ids.work_id` mid-flight, so
-    /// `on_long_op_completed`/`on_long_op_failed` must route their toast on
-    /// THIS snapshot, never a live re-read that could now name a different Work
-    /// than the one whose backup is actually being restored.
-    work_id: Option<u64>,
+    /// This window's own Work, captured when
+    /// [`BackupRestoreViewModel::do_restore`] started the write — see
+    /// `long_op::CapturedWork`'s doc: this view-model is long-lived per
+    /// window, and an in-place project switch reseeds the SAME `ids.work_id`
+    /// mid-flight, so `on_long_op_completed`/`on_long_op_failed` must route
+    /// their toast on THIS snapshot, never a live re-read that could now name
+    /// a different Work than the one whose backup is actually being restored.
+    work_id: CapturedWork,
 }
 
 #[derive(Clone)]
@@ -264,8 +264,8 @@ impl BackupRestoreViewModel {
                     as_folder,
                     work_info_id: self.ids.work_info_id.get(),
                     safety_backup_path,
-                    // Captured NOW — see `BackupRestorePending::work_id`'s doc.
-                    work_id: self.ids.work_id.get(),
+                    // Captured NOW — see `long_op::CapturedWork`'s doc.
+                    work_id: CapturedWork::now(&self.ids),
                 });
             }
             Err(e) => {
@@ -387,7 +387,7 @@ impl BackupRestoreViewModel {
             .unwrap_or_default();
         // `pending` (captured above, before this block) carries the Work this
         // restore started for — see `BackupRestorePending::work_id`'s doc.
-        let work_id = pending.as_ref().and_then(|p| p.work_id);
+        let work_id: Option<u64> = pending.as_ref().and_then(|p| Option::from(p.work_id));
         ctx.show_toast(Toast::error(tr!(backup_restore_error(error = error))).target_work(work_id));
         // State unchanged — still viewing the backup in backup mode.
     }
@@ -580,7 +580,7 @@ mod tests {
             as_folder: false,
             work_info_id: restore.ids.work_info_id.get(),
             safety_backup_path: None,
-            work_id: restore.ids.work_id.get(),
+            work_id: CapturedWork::now(&restore.ids),
         });
         let captured = restore.pending.borrow().as_ref().unwrap().work_id;
         assert_eq!(captured, Some(1));

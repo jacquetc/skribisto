@@ -89,6 +89,8 @@ use frontend::work_management::LoadWorkDto;
 
 use crate::toast_scope::ToastWorkExt;
 
+use super::long_op::CapturedWork;
+
 /// A project switch, either performed at once or parked until the save lands.
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub enum PendingSwitch {
@@ -163,8 +165,11 @@ pub struct ProjectSwitchViewModel {
     /// later: by the time a parked switch actually performs, `App::build`'s own
     /// `LoadWork` subscriber may already have re-seeded `AppIds` for an
     /// unrelated reason, and re-reading it then would name the wrong Work (or
-    /// none at all).
-    pending_work_id: Rc<Cell<Option<u64>>>,
+    /// none at all). A [`super::long_op::CapturedWork`] — see that type's doc
+    /// (and [`CapturedWork::given`] in particular: this view-model holds no
+    /// `AppIds` of its own, so the capture happens one layer up, in each
+    /// switch door's own window).
+    pending_work_id: Rc<Cell<CapturedWork>>,
     /// Flush the editors and ask for a disk write, returning the edit sequence it
     /// will cover (`EditorsViewModel::request_save`). Installed by `App::build`,
     /// which is where the editors are created; a no-op until then, and in headless
@@ -190,7 +195,7 @@ impl ProjectSwitchViewModel {
             autosave,
             pending: Signal::new(PendingSwitch::None),
             pending_seq: Rc::new(Cell::new(None)),
-            pending_work_id: Rc::new(Cell::new(None)),
+            pending_work_id: Rc::new(Cell::new(CapturedWork::none())),
             save_hook: Rc::new(RefCell::new(Rc::new(|| None) as Rc<dyn Fn() -> Option<u64>>)),
             new_work_form_hook: Rc::new(RefCell::new(
                 Rc::new(|_: &mut EventContext| {}) as Rc<dyn Fn(&mut EventContext)>
@@ -293,7 +298,7 @@ impl ProjectSwitchViewModel {
         };
         self.pending.set(switch);
         self.pending_seq.set(Some(covers));
-        self.pending_work_id.set(outgoing_work_id);
+        self.pending_work_id.set(CapturedWork::given(outgoing_work_id));
     }
 
     /// Do the switch. The point of no return: `OpenWork` closes the outgoing Work's
@@ -372,7 +377,7 @@ impl ProjectSwitchViewModel {
         if saved_seq < waiting_for {
             return; // an earlier save landed; ours is still coming
         }
-        let outgoing_work_id = self.pending_work_id.get();
+        let outgoing_work_id: Option<u64> = self.pending_work_id.get().into();
         let switch = self.take_pending();
         if switch != PendingSwitch::None {
             self.perform(ctx, switch, outgoing_work_id);
@@ -422,7 +427,7 @@ impl ProjectSwitchViewModel {
             self.pending.set(PendingSwitch::None);
         }
         self.pending_seq.set(None);
-        self.pending_work_id.set(None);
+        self.pending_work_id.set(CapturedWork::none());
         switch
     }
 }
@@ -501,7 +506,7 @@ mod tests {
         if let Some(covers) = save() {
             vm.pending.set(switch);
             vm.pending_seq.set(Some(covers));
-            vm.pending_work_id.set(outgoing_work_id);
+            vm.pending_work_id.set(CapturedWork::given(outgoing_work_id));
         }
     }
 
@@ -563,8 +568,9 @@ mod tests {
         assert_eq!(vm.take_pending(), PendingSwitch::NewWork);
         assert_eq!(vm.pending.get(), PendingSwitch::None);
         assert!(vm.pending_seq.get().is_none());
-        assert!(
-            vm.pending_work_id.get().is_none(),
+        assert_eq!(
+            vm.pending_work_id.get(),
+            None,
             "take_pending must drop the parked outgoing-Work id too"
         );
     }
@@ -578,7 +584,7 @@ mod tests {
         defer_headless(&vm, PendingSwitch::NewWork, Some(7));
         assert_eq!(vm.pending.get(), PendingSwitch::None);
         assert!(vm.pending_seq.get().is_none());
-        assert!(vm.pending_work_id.get().is_none());
+        assert_eq!(vm.pending_work_id.get(), None);
     }
 
     #[test]
@@ -591,7 +597,7 @@ mod tests {
         vm.cancel();
         assert_eq!(vm.pending.get(), PendingSwitch::None);
         assert!(vm.pending_seq.get().is_none());
-        assert!(vm.pending_work_id.get().is_none());
+        assert_eq!(vm.pending_work_id.get(), None);
     }
 
     #[test]

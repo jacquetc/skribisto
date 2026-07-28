@@ -51,16 +51,17 @@ use skribisto_model::compile::{
     ItemMeta, ScopeKind, StreamLevel, enclosing_head, primary_scope, resolve_scope,
 };
 
-use super::long_op::{event_id, parse_payload, payload_id};
+use super::long_op::{CapturedWork, event_id, parse_payload, payload_id};
 use crate::app_ids::AppIds;
 use crate::export::choose::ChooseModel;
-use crate::toast_scope::{ToastWorkExt, work_scoped_toast_id};
+use crate::toast_scope::ToastWorkExt;
 
 /// Update-in-place key for the single toast an export drives (loading → progress →
 /// success / cancelled / error) — folded through [`work_scoped_toast_id`] with
 /// [`ExportViewModel::active_work_id`] at every use, never bare: see that
-/// field's doc for why a bare static id would let a second Work's export
-/// silently collide with this one's still-in-flight toast.
+/// field's doc (and `long_op::CapturedWork`'s) for why a bare static id would
+/// let a second Work's export silently collide with this one's still-in-flight
+/// toast.
 const EXPORT_TOAST_ID: &str = "export.work";
 
 /// The output formats the panel offers — every one has a complete renderer in
@@ -185,24 +186,12 @@ pub struct ExportViewModel {
     output_path: Signal<String>,
     /// The in-flight export op id (set on start, cleared on completion / cancel / failure).
     active: Signal<Option<String>>,
-    /// This window's own `ids.work_id`, captured the instant [`Self::run_export`]
-    /// starts the long operation — set alongside `active`, cleared alongside it.
-    ///
-    /// **Why not just re-read `self.ids.work_id.get()` in the event handlers?**
-    /// `ExportViewModel` is minted once per window (`shell::windows::ProjectWindowFactory::
-    /// window_config`) and outlives any one export — including across an
-    /// in-place project switch in that SAME window (`ProjectSwitchViewModel::request`
-    /// gates a switch only on unsaved edits/autosave, never on "is an export
-    /// running"). A switch reseeds `ids.work_id` on the SAME `Signal` this
-    /// view-model holds. An event handler reading `self.ids.work_id.get()` live
-    /// would therefore silently answer with whichever Work this window shows
-    /// *at event time*, not the Work the export actually started for —
-    /// misrouting (and, via the bare `EXPORT_TOAST_ID`, mis-deduping) the
-    /// progress/completion/error toast onto a Work that has nothing to do with
-    /// it, while the Work that actually ran the export never hears it finished.
-    /// Every toast this field's export raises must route and scope on THIS
-    /// field, never `self.ids.work_id.get()`.
-    active_work_id: Signal<Option<u64>>,
+    /// This window's own Work, captured the instant [`Self::run_export`]
+    /// starts the long operation — set alongside `active`, cleared alongside
+    /// it. See `long_op::CapturedWork`'s doc for why every handler below must
+    /// route and scope its toast on THIS field, never a live
+    /// `self.ids.work_id.get()`.
+    active_work_id: Signal<CapturedWork>,
 
     // ── Choose… (Custom scope) state ─────────────────────────────────────────
     /// Whether the Choose tree reveals items marked non-exportable (default off).
@@ -234,7 +223,7 @@ impl ExportViewModel {
             preset: Signal::new(builtin_presets().into_iter().next()),
             output_path: Signal::new(String::new()),
             active: Signal::new(None),
-            active_work_id: Signal::new(None),
+            active_work_id: Signal::new(CapturedWork::none()),
             show_non_exportable: Signal::new(false),
             choose: Rc::new(RefCell::new(None)),
             choose_show: Rc::new(Cell::new(false)),
@@ -757,10 +746,10 @@ impl ExportViewModel {
         match export_management_commands::export_work(&self.app_ctx, &dto) {
             Ok(op_id) => {
                 self.active.set(Some(op_id));
-                // Captured NOW — see `Self::active_work_id`'s doc. Every later
-                // handler for THIS op routes on this snapshot, never a live
-                // re-read of `self.ids.work_id`.
-                self.active_work_id.set(self.ids.work_id.get());
+                // Captured NOW — see `long_op::CapturedWork`'s doc. Every
+                // later handler for THIS op routes on this snapshot, never a
+                // live re-read of `self.ids.work_id`.
+                self.active_work_id.set(CapturedWork::now(&self.ids));
                 // Close the export panel. `dismiss_top_overlay` (not `dismiss_modal`) so the
                 // overwrite-confirmation path — whose `on_result` context is anchored at the
                 // tree root — still closes the panel; it is the topmost overlay in both paths.
@@ -782,7 +771,7 @@ impl ExportViewModel {
             format!("{percent:.0}% · {message}")
         };
         Toast::loading(tr!(export_progress_title()))
-            .id(work_scoped_toast_id(EXPORT_TOAST_ID, self.active_work_id.get()))
+            .scoped_id(EXPORT_TOAST_ID, self.active_work_id.get())
             .body(lit!(body))
             .action(
                 ToastAction::destructive(tr!(export_cancel()), move |c| vm.cancel(c))
@@ -836,13 +825,13 @@ impl ExportViewModel {
         // this window shows now.
         let work_id = self.active_work_id.get();
         self.active.set(None);
-        self.active_work_id.set(None);
+        self.active_work_id.set(CapturedWork::none());
         match export_management_commands::get_export_work_result(&self.app_ctx, &op_id) {
             Ok(Some(res)) => {
                 let done = tr!(export_done(count = res.exported_count));
                 ctx.show_toast(
                     Toast::success(done)
-                        .id(work_scoped_toast_id(EXPORT_TOAST_ID, work_id))
+                        .scoped_id(EXPORT_TOAST_ID, work_id)
                         .body(lit!(res.output_path.clone()))
                         .auto_dismiss_after(Duration::from_secs(6))
                         .target_work(work_id),
@@ -851,7 +840,7 @@ impl ExportViewModel {
             Ok(None) | Err(_) => {
                 ctx.show_toast(
                     Toast::info(tr!(export_progress_title()))
-                        .id(work_scoped_toast_id(EXPORT_TOAST_ID, work_id))
+                        .scoped_id(EXPORT_TOAST_ID, work_id)
                         .auto_dismiss_after(Duration::from_secs(4))
                         .target_work(work_id),
                 );
@@ -869,10 +858,10 @@ impl ExportViewModel {
         // Captured BEFORE clearing — see `Self::active_work_id`'s doc.
         let work_id = self.active_work_id.get();
         self.active.set(None);
-        self.active_work_id.set(None);
+        self.active_work_id.set(CapturedWork::none());
         ctx.show_toast(
             Toast::info(tr!(export_cancelled()))
-                .id(work_scoped_toast_id(EXPORT_TOAST_ID, work_id))
+                .scoped_id(EXPORT_TOAST_ID, work_id)
                 .auto_dismiss_after(Duration::from_secs(4))
                 .target_work(work_id),
         );
@@ -891,7 +880,7 @@ impl ExportViewModel {
         // Captured BEFORE clearing — see `Self::active_work_id`'s doc.
         let work_id = self.active_work_id.get();
         self.active.set(None);
-        self.active_work_id.set(None);
+        self.active_work_id.set(CapturedWork::none());
         let error = payload
             .get("error")
             .and_then(|e| e.as_str())
@@ -904,12 +893,15 @@ impl ExportViewModel {
     /// [`Self::active_work_id`] when it fails mid-flight, or (when `run_export`
     /// never even started — e.g. "no project is open to export") the window's
     /// current `self.ids.work_id`, since no operation ever claimed a Work to
-    /// route on instead.
-    fn show_error(&self, ctx: &mut EventContext, message: &str, work_id: Option<u64>) {
+    /// route on instead. Accepts either a plain `Option<u64>` or a
+    /// `long_op::CapturedWork` — both callers below hand in whichever one they
+    /// actually have.
+    fn show_error(&self, ctx: &mut EventContext, message: &str, work_id: impl Into<Option<u64>>) {
+        let work_id = work_id.into();
         let details = message.to_string();
         ctx.show_toast(
             Toast::error(tr!(export_error_title()))
-                .id(work_scoped_toast_id(EXPORT_TOAST_ID, work_id))
+                .scoped_id(EXPORT_TOAST_ID, work_id)
                 .body(lit!(message.to_string()))
                 .persistent()
                 .target_work(work_id)
@@ -1056,7 +1048,7 @@ mod tests {
         // Simulate what `run_export` does the instant the long operation starts:
         // snapshot the window's current Work.
         vm.active.set(Some("fake-export-op".to_string()));
-        vm.active_work_id.set(original_work_id);
+        vm.active_work_id.set(CapturedWork::now(&vm.ids));
 
         // An in-place project switch reseeds `ids.work_id` on the SAME `AppIds`
         // this long-lived view-model holds (`ProjectSwitchViewModel::request`
@@ -1102,14 +1094,13 @@ mod tests {
     /// entry if the id were ever bare again.
     #[test]
     fn export_progress_toasts_for_two_works_both_stay_live_in_a_real_registry() {
-        use bastyde::core::widget_tree::WidgetTree;
         use bastyde::i18n::lit;
         use bastyde::widgets::{Button, ToastInstallOptions, ToastRegistry};
 
         let (vm_a, _) = loaded_vm();
-        vm_a.active_work_id.set(Some(1));
+        vm_a.active_work_id.set(CapturedWork::for_test(Some(1)));
         let (vm_b, _) = loaded_vm();
-        vm_b.active_work_id.set(Some(2));
+        vm_b.active_work_id.set(CapturedWork::for_test(Some(2)));
 
         let registry = ToastRegistry::new(ToastInstallOptions {
             archive: None,

@@ -28,7 +28,7 @@ use bastyde::widgets::{Toast, ToastAction};
 use crate::app_ids::AppIds;
 use crate::models::{DictWordListModel, DictWordRow};
 use crate::singles::SingleDictWord;
-use crate::toast_scope::{ToastWorkExt, work_scoped_toast_id};
+use crate::toast_scope::ToastWorkExt;
 
 /// Refuse an import larger than this — a `.txt` this big is far more likely a
 /// wrong file (a whole hunspell dictionary, a log) than a hand-curated word list,
@@ -214,7 +214,7 @@ impl UserDictionaryViewModel {
                 // would let a second Work's own add-burst find THIS Work's
                 // still-live toast and silently steal/retarget it (and its
                 // Undo action along with it).
-                .id(work_scoped_toast_id("dict.added", work_id))
+                .scoped_id("dict.added", work_id)
                 // Work-scoped: this project's own personal dictionary, not
                 // every open window's.
                 .target_work(work_id)

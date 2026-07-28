@@ -43,7 +43,7 @@ use frontend::trash_management::{
 
 use crate::app_ids::AppIds;
 use crate::models::{TrashRootKind, TrashTreeKey, TrashTreeModel};
-use crate::toast_scope::{ToastWorkExt, work_scoped_toast_id};
+use crate::toast_scope::ToastWorkExt;
 
 /// How long the Undo affordance stays live before a destructive op becomes
 /// permanent (matches the toast's own visible countdown — the default
@@ -415,7 +415,7 @@ impl TrashViewModel {
                 // timer (now overwritten) never fires. A second op on THIS SAME
                 // Work still replaces the toast (one grace timer per Work), matching
                 // the comment this replaced.
-                .id(work_scoped_toast_id("trash.commit", work_id))
+                .scoped_id("trash.commit", work_id)
                 .auto_dismiss_after(TRASH_UNDO_GRACE)
                 .target_work(work_id)
                 .action(ToastAction::primary(tr!(trash_undo()), move |_c| {
@@ -485,7 +485,7 @@ mod tests {
 
     /// `f2_toast_id_tests::two_works_destructive_undo_toasts_never_collide` only
     /// proves `work_scoped_toast_id` itself is collision-free — it never touches
-    /// `run_with_undo_toast`'s actual `.id(work_scoped_toast_id(...))` call site,
+    /// `run_with_undo_toast`'s actual `.scoped_id(...)` call site,
     /// so reverting that call site back to a bare `"trash.commit"` would still
     /// leave it green. This one drives the real (private, but same-file-testable)
     /// `run_with_undo_toast` through a real `ToastRegistry`: two `TrashViewModel`s
@@ -539,8 +539,6 @@ mod tests {
 // check, so it runs under both default and `--features mocks` builds.
 #[cfg(test)]
 mod f2_toast_id_tests {
-    use super::*;
-
     /// F2: `run_with_undo_toast`'s Undo toast (Empty Trash / Delete Forever) used
     /// a bare `"trash.commit"` id shared by every window. `ToastRegistry::enqueue`
     /// dedups on id alone (no route check) and overwrites the matched entry's
@@ -552,8 +550,8 @@ mod f2_toast_id_tests {
     /// toasts must survive independently.
     #[test]
     fn two_works_destructive_undo_toasts_never_collide() {
-        let a = work_scoped_toast_id("trash.commit", Some(1));
-        let b = work_scoped_toast_id("trash.commit", Some(2));
+        let a = crate::toast_scope::work_scoped_toast_id("trash.commit", Some(1));
+        let b = crate::toast_scope::work_scoped_toast_id("trash.commit", Some(2));
         assert_ne!(
             a, b,
             "two different Works' Empty-Trash/Delete-Forever Undo toasts must \

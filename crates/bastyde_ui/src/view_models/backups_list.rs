@@ -35,7 +35,7 @@ use bastyde::widgets::Toast;
 use skrib_format::retention;
 
 use crate::shell::process;
-use crate::toast_scope::{ToastWorkExt, work_scoped_toast_id};
+use crate::toast_scope::ToastWorkExt;
 
 /// Toast id base, so a burst of delete failures replaces rather than stacks —
 /// folded through [`work_scoped_toast_id`] with `self.work_id`/`me.work_id` at
@@ -169,7 +169,7 @@ impl BackupsListViewModel {
                         if let Some(e) = err {
                             ctx2.show_toast(
                                 Toast::error(tr!(backups_delete_error(error = e)))
-                                    .id(work_scoped_toast_id(DELETE_TOAST_ID, me.work_id))
+                                    .scoped_id(DELETE_TOAST_ID, me.work_id)
                                     .target_work(me.work_id),
                             );
                         }
@@ -182,7 +182,7 @@ impl BackupsListViewModel {
                 if let Err(e) = remove(&target) {
                     ctx.show_toast(
                         Toast::error(tr!(backups_delete_error(error = e.to_string())))
-                            .id(work_scoped_toast_id(DELETE_TOAST_ID, self.work_id))
+                            .scoped_id(DELETE_TOAST_ID, self.work_id)
                             .target_work(self.work_id),
                     );
                 }
@@ -318,8 +318,8 @@ mod tests {
     /// toast collide with (and silently steal) this Work's still-live one.
     #[test]
     fn two_works_delete_failure_toasts_never_collide() {
-        let a = work_scoped_toast_id(DELETE_TOAST_ID, Some(1));
-        let b = work_scoped_toast_id(DELETE_TOAST_ID, Some(2));
+        let a = crate::toast_scope::work_scoped_toast_id(DELETE_TOAST_ID, Some(1));
+        let b = crate::toast_scope::work_scoped_toast_id(DELETE_TOAST_ID, Some(2));
         assert_ne!(
             a, b,
             "two different Works' backup-delete-failure toasts must never collide"
@@ -328,7 +328,7 @@ mod tests {
 
     /// The test above only proves `work_scoped_toast_id` itself is
     /// collision-free — it never touches `delete`'s actual
-    /// `.id(work_scoped_toast_id(...))` call site, so reverting that call
+    /// `.scoped_id(...)` call site, so reverting that call
     /// site back to a bare `DELETE_TOAST_ID` would still leave it green.
     /// This one drives the real, PUBLIC `delete(ctx, path)` entry point
     /// through a real `ToastRegistry`: two `BackupsListViewModel`s for two
