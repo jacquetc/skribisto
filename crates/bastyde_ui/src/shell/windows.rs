@@ -468,6 +468,11 @@ impl ProjectWindowFactory {
         // simultaneously-open project window's Go menu never reflects the wrong
         // window's answer. See `GoAvailability`'s module doc.
         let go = crate::view_models::GoAvailability::new();
+        // The "jump to any item" popup's state. Per WINDOW, same rationale as
+        // `go` just above and for a sharper reason: it owns its own binder tree
+        // model and selection, so a process-wide instance would let one window's
+        // popup drive another window's editor. See `GoToViewModel`'s module doc.
+        let go_to = crate::view_models::GoToViewModel::new(app_ctx_root.clone(), ids.clone());
         // Increment 1 of distraction-free (plain fullscreen). Per WINDOW,
         // same rationale as `scene_focused` just above: this remembers
         // *this* window's own pre-fullscreen placement, so a second
@@ -1202,6 +1207,20 @@ impl ProjectWindowFactory {
                                         .enabled(go.signal(Note, Previous))
                                         .intent("go.prev_note"),
                                 )
+                                .separator()
+                                // "Go to…" — the six rows above step relative to
+                                // where you are; this one jumps anywhere. Always
+                                // enabled: unlike the stepping rows there is no
+                                // "is there a target" question to answer, and an
+                                // empty binder simply opens an empty list.
+                                // The action behind it belongs to the `GoToButton`
+                                // widget (`PopoverWidget::open_action`), because
+                                // presenting a popover needs an `EventContext`.
+                                .item(
+                                    MenuEntry::new(tr!(menu_go_to()))
+                                        .intent("go.to")
+                                        .shortcut("go.to"),
+                                )
                             }
                         })
                         // Tools — where every office suite keeps spell-check. Its own
@@ -1370,6 +1389,7 @@ impl ProjectWindowFactory {
                     spellcheck_menu.clone(),
                     scene_focused.clone(),
                     go.clone(),
+                    go_to.clone(),
                     unsaved.clone(),
                     pending_exit.clone(),
                     backup_mode.clone(),

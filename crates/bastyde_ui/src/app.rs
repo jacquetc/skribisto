@@ -676,6 +676,8 @@ pub struct App {
     /// straight from the window-chrome closure's own clone for the menu's
     /// `.enabled(..)` bindings. See [`crate::view_models::GoAvailability`]'s doc.
     go: crate::view_models::GoAvailability,
+    /// This window's "jump to any item" popup state — see `GoToViewModel`.
+    go_to: crate::view_models::GoToViewModel,
     /// `true` while the open work has edits not yet written to disk. Read by the
     /// close guard, `work.close` and the switch guard to decide whether to prompt,
     /// and by `can_save` for the Save affordances.
@@ -762,6 +764,7 @@ impl App {
         spellcheck_menu: Signal<bool>,
         scene_focused: Signal<bool>,
         go: crate::view_models::GoAvailability,
+        go_to: crate::view_models::GoToViewModel,
         unsaved: Signal<bool>,
         pending_exit: Signal<PendingExit>,
         backup_mode: Signal<bool>,
@@ -789,6 +792,7 @@ impl App {
             spellcheck_menu,
             scene_focused,
             go,
+            go_to,
             unsaved,
             pending_exit,
             exit_seq: Rc::new(std::cell::Cell::new(None)),
@@ -2920,6 +2924,20 @@ impl Widget for App {
                 Action::new("session.toggle").on_invoke(move |_i, _c| vm.toggle()),
             );
         }
+        // A work is open iff its `WorkInfo` shape is known — the same test the
+        // word count, the session readout and the File menu already use.
+        let has_work = single_work_info.shape().map(|s| s.is_some());
+        // The Go-to popup's own tree model needs the backend subscription, like
+        // the outline's; and `App` is the only place that can hand it the
+        // "open this item" edge, since a view-model may not import a peer.
+        self.go_to.wire(ctx);
+        {
+            let e = editors.clone();
+            self.go_to
+                .set_open_fn(std::rc::Rc::new(move |item_id, title| {
+                    e.open_or_focus(item_id, title)
+                }));
+        }
         let status = StatusBar::new().background(SurfaceRole::Main).child(
             HStack::new()
                 .spacing(8.0)
@@ -2934,6 +2952,14 @@ impl Widget for App {
                 .child(save_indicator)
                 .child(word_count_indicator)
                 .child(Spacer::new())
+                // "Go to…" sits before the session readout, on the trailing
+                // side: it is an action, and the two items to its right are
+                // readouts. Hidden with no project — there is nothing to jump
+                // to, the same `has_work` test the readouts already use.
+                .child(VisibleWhen::new(
+                    has_work.clone(),
+                    crate::statusbar::go_to_button::GoToButton::new(self.go_to.clone()),
+                ))
                 .child(session_item)
                 .child(
                     IconButton::new(crate::icons::activity::inspector_icon())
@@ -2974,6 +3000,7 @@ impl Widget for App {
         let chrome_visible = self.focus.active_signal().map(|active| !*active);
         let focus_active = self.focus.active_signal();
         let focus_strip = crate::statusbar::focus_strip::FocusStrip::new(
+            self.go_to.clone(),
             stats.clone(),
             session_vm.clone(),
             single_work_info.shape().map(|s| s.is_some()),

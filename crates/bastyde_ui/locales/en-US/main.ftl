@@ -221,6 +221,7 @@ settings-distraction-free-width-hint = Applies only while distraction-free mode 
 settings-distraction-free-tab-bar = Keep the editor tabs
 settings-distraction-free-word-count = Keep the word count
 settings-distraction-free-session = Keep the writing session
+settings-distraction-free-go-to = Keep the Go to… button
 settings-distraction-free-go = Keep the Previous and Next buttons
 settings-distraction-free-chrome-hint = The Exit button always stays, whatever you choose here — it is your way out if Escape is busy.
 settings-field-app-theme = Theme
@@ -1223,3 +1224,9 @@ settings-punctuation-sample = Your language gives
 settings-punctuation-app-hint = What every project does unless it takes rules of its own in Work ▸ Punctuation.
 settings-punctuation-dialogue = Open a paragraph typed as "- " with a dialogue dash
 settings-punctuation-dialogue-hint = For languages that mark speech with a dash rather than quotation marks — French, Spanish, Russian and others. It only fires at the very start of a paragraph.
+
+## Go to (jump to any item)
+statusbar-go-to = Go to…
+go-to-placeholder = Search the binder
+go-to-no-matches = No item matches that search.
+menu-go-to = &Go to…

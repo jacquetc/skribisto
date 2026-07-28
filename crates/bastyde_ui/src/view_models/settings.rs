@@ -36,7 +36,8 @@ use crate::{
     DISTRACTION_FREE_FONT_FAMILY_KEY, DISTRACTION_FREE_LINE_HEIGHT_DEFAULT,
     DISTRACTION_FREE_LINE_HEIGHT_KEY, DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
     DISTRACTION_FREE_PARA_SPACING_AFTER_KEY, DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT,
-    DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_KEY,
+    DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_KEY, DISTRACTION_FREE_GO_TO_DEFAULT,
+    DISTRACTION_FREE_GO_TO_KEY,
     DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY, DISTRACTION_FREE_SESSION_DEFAULT,
     DISTRACTION_FREE_SESSION_KEY, DISTRACTION_FREE_SIZE_DEFAULT, DISTRACTION_FREE_SIZE_KEY,
     DISTRACTION_FREE_TAB_BAR_DEFAULT, DISTRACTION_FREE_TAB_BAR_KEY, DISTRACTION_FREE_WIDTH_DEFAULT,
@@ -230,6 +231,7 @@ pub struct SettingsViewModel {
     distraction_free_word_count: Signal<bool>,
     distraction_free_session: Signal<bool>,
     distraction_free_go: Signal<bool>,
+    distraction_free_go_to: Signal<bool>,
     // ── Editor behaviour ──
     synopsis_pane: Signal<bool>,
     /// Application-level smart punctuation — the tier a project follows when
@@ -373,6 +375,8 @@ impl SettingsViewModel {
                 .signal(DISTRACTION_FREE_SESSION_KEY, DISTRACTION_FREE_SESSION_DEFAULT),
             distraction_free_go: store
                 .signal(DISTRACTION_FREE_GO_KEY, DISTRACTION_FREE_GO_DEFAULT),
+            distraction_free_go_to: store
+                .signal(DISTRACTION_FREE_GO_TO_KEY, DISTRACTION_FREE_GO_TO_DEFAULT),
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
             punct_dashes: store.signal(PUNCT_DASHES_KEY, PUNCT_DASHES_DEFAULT),
             punct_ellipsis: store.signal(PUNCT_ELLIPSIS_KEY, PUNCT_ELLIPSIS_DEFAULT),
@@ -481,6 +485,10 @@ impl SettingsViewModel {
     /// Keep the Previous/Next pair in the distraction-free strip (default on).
     pub fn distraction_free_go(&self) -> Signal<bool> {
         self.distraction_free_go.clone()
+    }
+    /// Keep the "Go to…" jump button in the distraction-free strip (default on).
+    pub fn distraction_free_go_to(&self) -> Signal<bool> {
+        self.distraction_free_go_to.clone()
     }
 
     /// Show the synopsis pane above the manuscript. Consumed live by the writing
@@ -687,6 +695,8 @@ impl SettingsViewModel {
         self.distraction_free_session
             .set(DISTRACTION_FREE_SESSION_DEFAULT);
         self.distraction_free_go.set(DISTRACTION_FREE_GO_DEFAULT);
+        self.distraction_free_go_to
+            .set(DISTRACTION_FREE_GO_TO_DEFAULT);
         self.synopsis_pane.set(SYNOPSIS_PANE_DEFAULT);
         self.punct_dashes.set(PUNCT_DASHES_DEFAULT);
         self.punct_ellipsis.set(PUNCT_ELLIPSIS_DEFAULT);
@@ -784,7 +794,8 @@ mod tests {
     #[test]
     fn distraction_free_chrome_toggles_persist_and_reset() {
         use crate::{
-            DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_SESSION_DEFAULT,
+            DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_TO_DEFAULT,
+            DISTRACTION_FREE_SESSION_DEFAULT,
             DISTRACTION_FREE_TAB_BAR_DEFAULT, DISTRACTION_FREE_WORD_COUNT_DEFAULT,
         };
         let store = temp_store();
@@ -796,12 +807,14 @@ mod tests {
         assert!(vm.distraction_free_word_count().get());
         assert!(vm.distraction_free_session().get());
         assert!(vm.distraction_free_go().get());
+        assert!(vm.distraction_free_go_to().get());
 
         // Flip every one away from its default...
         vm.distraction_free_tab_bar().set(true);
         vm.distraction_free_word_count().set(false);
         vm.distraction_free_session().set(false);
         vm.distraction_free_go().set(false);
+        vm.distraction_free_go_to().set(false);
 
         // ...they survive a fresh view-model over the same store (persisted,
         // not merely cached in this instance)...
@@ -810,6 +823,7 @@ mod tests {
         assert!(!reopened.distraction_free_word_count().get());
         assert!(!reopened.distraction_free_session().get());
         assert!(!reopened.distraction_free_go().get());
+        assert!(!reopened.distraction_free_go_to().get());
 
         // ...and Reset puts all four back.
         vm.reset_editor_defaults();
@@ -826,6 +840,10 @@ mod tests {
             DISTRACTION_FREE_SESSION_DEFAULT
         );
         assert_eq!(vm.distraction_free_go().get(), DISTRACTION_FREE_GO_DEFAULT);
+        assert_eq!(
+            vm.distraction_free_go_to().get(),
+            DISTRACTION_FREE_GO_TO_DEFAULT
+        );
     }
 
     #[test]

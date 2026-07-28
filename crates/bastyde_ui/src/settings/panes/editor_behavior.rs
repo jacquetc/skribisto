@@ -71,6 +71,10 @@ pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl 
                 .label(tr!(settings_distraction_free_session())),
         )
         .full_width(Checkbox::new(vm.distraction_free_go()).label(tr!(settings_distraction_free_go())))
+        .full_width(
+            Checkbox::new(vm.distraction_free_go_to())
+                .label(tr!(settings_distraction_free_go_to())),
+        )
         .full_width(hint(tr!(settings_distraction_free_chrome_hint())))
         .full_width(group(tr!(settings_group_container_views())))
         .full_width(

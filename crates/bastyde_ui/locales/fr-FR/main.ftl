@@ -221,6 +221,7 @@ settings-distraction-free-width-hint = S'applique uniquement en mode sans distra
 settings-distraction-free-tab-bar = Conserver les onglets de l'éditeur
 settings-distraction-free-word-count = Conserver le compteur de mots
 settings-distraction-free-session = Conserver la séance d'écriture
+settings-distraction-free-go-to = Conserver le bouton Aller à…
 settings-distraction-free-go = Conserver les boutons Précédent et Suivant
 settings-distraction-free-chrome-hint = Le bouton Quitter reste toujours affiché, quels que soient ces choix — c'est votre porte de sortie si Échap est déjà pris.
 settings-field-app-theme = Thème
@@ -1228,3 +1229,9 @@ settings-punctuation-sample = Votre langue donne
 settings-punctuation-app-hint = Ce que fait chaque projet, sauf s'il adopte ses propres règles dans Projet ▸ Ponctuation.
 settings-punctuation-dialogue = Ouvrir un paragraphe saisi « - » par un tiret de dialogue
 settings-punctuation-dialogue-hint = Pour les langues qui marquent le dialogue par un tiret plutôt que par des guillemets — français, espagnol, russe et d'autres. Ne se déclenche qu'en tout début de paragraphe.
+
+## Aller à (rejoindre n'importe quel élément)
+statusbar-go-to = Aller à…
+go-to-placeholder = Rechercher dans le classeur
+go-to-no-matches = Aucun élément ne correspond à cette recherche.
+menu-go-to = &Aller à…

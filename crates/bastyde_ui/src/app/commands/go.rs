@@ -92,6 +92,19 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             }
         }));
     }
+
+    // `go.to` — the shortcut only. Its **action** is registered by the
+    // `GoToButton` widget itself, through `PopoverWidget::open_action`, because
+    // opening a popover needs the `EventContext` that only the widget's own
+    // toggle closure has (see that widget's module doc). Registering a second
+    // action here under the same name would shadow it with something that could
+    // not actually present the overlay.
+    ctx.register_shortcut_global(
+        Shortcut::new("go.to")
+            .name("Go to")
+            .primary(KeyStroke::ctrl(Key::G))
+            .build(),
+    );
 }
 
 /// Register one kind-specific Go action: fixed `kind`/`direction`, no payload, no

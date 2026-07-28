@@ -231,6 +231,13 @@ pub const DISTRACTION_FREE_SESSION_DEFAULT: bool = true;
 /// showing or hiding the pair.
 pub const DISTRACTION_FREE_GO_KEY: &str = "editor.distraction_free.go_buttons";
 pub const DISTRACTION_FREE_GO_DEFAULT: bool = true;
+/// Keep the "Go to…" jump button in the distraction-free strip (default **on**).
+/// Distinct from [`DISTRACTION_FREE_GO_KEY`]: the arrows step relative to where
+/// you are, this one jumps anywhere, and a writer may well want one without the
+/// other. Ctrl+G still works either way — hiding a button never removes its
+/// command.
+pub const DISTRACTION_FREE_GO_TO_KEY: &str = "editor.distraction_free.go_to";
+pub const DISTRACTION_FREE_GO_TO_DEFAULT: bool = true;
 /// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
 pub const AUTOSAVE_KEY: &str = "editor.autosave";
 /// The master spell-check switch (default **on**) — the title-bar toggle, View ▸ Check

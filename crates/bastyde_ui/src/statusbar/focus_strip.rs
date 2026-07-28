@@ -54,6 +54,10 @@ pub struct FocusStripChrome {
     pub word_count: Signal<bool>,
     pub session: Signal<bool>,
     pub go: Signal<bool>,
+    /// The "Go to…" jump button. Its own key, not folded into `go`: the arrows
+    /// step relative to where you are and this jumps anywhere, so a writer may
+    /// well want one without the other.
+    pub go_to: Signal<bool>,
 }
 
 impl FocusStripChrome {
@@ -63,6 +67,7 @@ impl FocusStripChrome {
             word_count: settings.distraction_free_word_count(),
             session: settings.distraction_free_session(),
             go: settings.distraction_free_go(),
+            go_to: settings.distraction_free_go_to(),
         }
     }
 
@@ -74,11 +79,13 @@ impl FocusStripChrome {
             word_count: Signal::new(true),
             session: Signal::new(true),
             go: Signal::new(true),
+            go_to: Signal::new(true),
         }
     }
 }
 
 pub struct FocusStrip {
+    go_to_vm: crate::view_models::GoToViewModel,
     stats: StatsModel,
     session_vm: WritingSessionViewModel,
     has_work: Signal<bool>,
@@ -89,6 +96,7 @@ pub struct FocusStrip {
 
 impl FocusStrip {
     pub fn new(
+        go_to_vm: crate::view_models::GoToViewModel,
         stats: StatsModel,
         session_vm: WritingSessionViewModel,
         has_work: Signal<bool>,
@@ -96,6 +104,7 @@ impl FocusStrip {
         chrome: FocusStripChrome,
     ) -> Self {
         Self {
+            go_to_vm,
             stats,
             session_vm,
             has_work,
@@ -147,6 +156,13 @@ impl Widget for FocusStrip {
                                 .tooltip(tr!(statusbar_focus_go_next()))
                                 .on_activate_fn(|ctx| ctx.send_intent(Intent::new("go.next"))),
                         ),
+                ))
+                // "Go to…" — the jump the arrows cannot do. Sits after them
+                // because it is the less-used of the two and the eye reads the
+                // pair first.
+                .child(VisibleWhen::new(
+                    self.chrome.go_to.clone(),
+                    crate::statusbar::go_to_button::GoToButton::new(self.go_to_vm.clone()),
                 ))
                 // Never gated: this strip's documented way out of the mode.
                 // Fires the same named intent the Shift+F11 shortcut and the
@@ -212,6 +228,7 @@ mod tests {
         let session_vm = WritingSessionViewModel::new(stats.clone(), &store);
         let mut tree = crate::test_support::tree_with_events(&ctx);
         tree.add(FocusStrip::new(
+            crate::view_models::GoToViewModel::new(ctx.clone(), crate::app_ids::AppIds::new()),
             stats,
             session_vm,
             Signal::new(true),
@@ -248,6 +265,7 @@ mod tests {
                         word_count: Signal::new(wc),
                         session: Signal::new(session),
                         go: Signal::new(go),
+                        go_to: Signal::new(go),
                     });
                     assert!(
                         button_names(&mut tree).contains(&exit),

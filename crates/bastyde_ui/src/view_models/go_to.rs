@@ -39,7 +39,6 @@ use frontend::AppContext;
 
 use crate::app_ids::AppIds;
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, TreeFilters, TreeNode};
-use crate::view_models::EditorsViewModel;
 
 /// What the popup does when a row is chosen. Set once by `App::build`, which is
 /// the only place that has an `EditorsViewModel` — the view-model itself must
