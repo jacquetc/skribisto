@@ -409,7 +409,7 @@ impl Widget for Inspector {
                         let outline = self.outline.clone();
                         let id = d.id;
                         let value = value.clone();
-                        let placeholder = inherited.unwrap_or_default();
+                        let placeholder = self.open_docs.effective_language(d.id);
                         col = col.child(
                             Button::new(tr!(inspector_apply_language_to_children()))
                                 .variant(ButtonVariant::Plain)

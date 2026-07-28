@@ -97,6 +97,9 @@ use crate::view_models::{BackupSettingsViewModel, WorkspaceLayoutViewModel};
 
 use super::long_op::{event_id, parse_payload, payload_id};
 
+/// Per-window flush hooks, keyed by window: a Work with two windows must flush
+/// both editors before a backup. Aliased so the field type stays legible.
+type FlushHooks = Rc<RefCell<HashMap<BastydeWindowId, Rc<dyn Fn()>>>>;
 
 /// Context of the in-flight backup, so its completion can record hashes and
 /// (on close) perform the deferred close.
@@ -141,7 +144,7 @@ pub struct BackupSchedulerViewModel {
     /// See the module doc's "T1-2 — the flush invariant" section. A Work with
     /// two windows must flush *both* before a backup, so this is keyed per
     /// window, not the single last-writer-wins cell it used to be.
-    flush_hooks: Rc<RefCell<HashMap<BastydeWindowId, Rc<dyn Fn()>>>>,
+    flush_hooks: FlushHooks,
 }
 
 impl BackupSchedulerViewModel {

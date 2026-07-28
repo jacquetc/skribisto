@@ -146,9 +146,9 @@ fn merge_two_scenes_rejects_scenes_owned_by_a_different_work() {
         &mut ctx.undo,
         None,
         &MergeTwoScenesDto {
-            work_id: work_a as u64,
-            target_id: target_b as u64,
-            source_id: source_b as u64,
+            work_id: work_a,
+            target_id: target_b,
+            source_id: source_b,
         },
     );
 

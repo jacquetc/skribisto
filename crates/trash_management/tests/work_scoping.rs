@@ -164,7 +164,7 @@ fn restore_items_rejects_a_trash_info_owned_by_a_different_work() {
         &ctx.hub,
         &mut ctx.undo,
         None,
-        &RestoreItemsDto { work_id: work_a as u64, trash_info_ids: vec![trash_info_b as i64] },
+        &RestoreItemsDto { work_id: work_a, trash_info_ids: vec![trash_info_b as i64] },
     );
 
     assert!(
@@ -198,9 +198,9 @@ fn restore_items_to_rejects_a_source_item_owned_by_a_different_work() {
         &mut ctx.undo,
         None,
         &RestoreItemsToDto {
-            work_id: work_a as u64,
-            binder_item_ids: vec![item_b as u64],
-            destination_binder_id: binder_a as u64,
+            work_id: work_a,
+            binder_item_ids: vec![item_b],
+            destination_binder_id: binder_a,
             anchor_item_id: None,
             drop_position: DropPosition::Before,
         },
@@ -241,7 +241,7 @@ fn delete_trash_entries_rejects_a_trash_info_owned_by_a_different_work() {
         &ctx.hub,
         &mut ctx.undo,
         None,
-        &DeleteTrashEntriesDto { work_id: work_a as u64, trash_info_ids: vec![trash_info_b as u64] },
+        &DeleteTrashEntriesDto { work_id: work_a, trash_info_ids: vec![trash_info_b] },
     );
 
     assert!(
@@ -271,7 +271,7 @@ fn delete_trash_entries_still_tolerates_a_truly_stale_id() {
         &ctx.hub,
         &mut ctx.undo,
         None,
-        &DeleteTrashEntriesDto { work_id: work_a as u64, trash_info_ids: vec![999_999] },
+        &DeleteTrashEntriesDto { work_id: work_a, trash_info_ids: vec![999_999] },
     );
 
     assert!(result.is_ok(), "an id that never existed anywhere must be tolerated, not an error");
@@ -296,7 +296,7 @@ fn trash_binder_items_rejects_an_origin_binder_owned_by_a_different_work() {
         &mut ctx.undo,
         None,
         &TrashBinderItemsDto {
-            work_id: work_a as u64,
+            work_id: work_a,
             binder_item_ids: vec![item_b as i64],
             origin_binder_id: binder_b as i64,
         },
@@ -328,7 +328,7 @@ fn trash_binder_rejects_a_binder_owned_by_a_different_work() {
         &ctx.hub,
         &mut ctx.undo,
         None,
-        &TrashBinderDto { work_id: work_a as u64, binder_id: binder_b as i64 },
+        &TrashBinderDto { work_id: work_a, binder_id: binder_b as i64 },
     );
 
     assert!(

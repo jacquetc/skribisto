@@ -99,7 +99,6 @@ use frontend::EventHubClient;
 use frontend::commands::{handling_app_lifecycle_commands, work_info_commands};
 use frontend::common::event::{Event, Origin};
 
-use app::PendingExit;
 use app_ids::AppIds;
 use models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
 use sessions::{WorkRegistry, WorkSession};
