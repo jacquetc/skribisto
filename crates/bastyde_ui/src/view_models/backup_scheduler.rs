@@ -53,26 +53,18 @@
 //!
 //! 1. [`Self::toast_id`] scopes every toast this view-model shows to this
 //!    Work's own `work_id`, not a fixed string — see its own doc for why.
-//! 2. **What this cannot fix.** `bastyde`'s toast system is process-wide by
-//!    design: `install_toast` (`bastyde/src/toast_install.rs`) registers
-//!    exactly one `ToastRegistry` in `app_state` (the framework's own doc:
-//!    "each type T may be registered at most once"), and wraps *every*
-//!    window's root in its own `ToastHost`, each pointed at the *same*
-//!    cloned registry (`registry_for_hook.clone()`); `ToastHost::build`
-//!    (`bastyde-widgets/src/toast/host.rs`) then renders
-//!    `self.registry.live_entry_ids()` with no per-window filter at all — a
-//!    toast this view-model shows for Work B renders in every open window,
-//!    Work A's included, not just Work B's own. There is no Skribisto-side
-//!    workaround for that: `EventContext::show_toast` has no "target window"
-//!    parameter to give it. Fixing it needs a bastyde-framework change (a
-//!    window-scoped registry, or a target-window tag on `Toast` that
-//!    `ToastHost::build` filters on) — out of scope here per the "Skribisto is
-//!    a Bastyde test bed" convention (warn + get agreement before editing the
-//!    bastyde repo). [`Self::toast_id`] is the best available scoping from
-//!    this side: it stops two Works' concurrent toasts from silently
-//!    overwriting *one another's* slot (`Toast::id` reuses the same slot for
-//!    a repeated id — see its own doc), even though both still render on
-//!    every open window.
+//! 2. **Routing.** Every toast below is built with
+//!    `.target_work(self.ids.work_id.get())` (`crate::toast_scope::ToastWorkExt`),
+//!    which resolves to bastyde's window-scoped toast routing
+//!    (`Toast::target`/`ToastAudience`): `App::build` mints each project
+//!    window's `ToastAudience` from that same `work_id`
+//!    (`ToastRegistry::set_window_audience`), so a Work B backup toast now
+//!    renders — and archives into the bell — only in windows currently
+//!    showing Work B, never in a sibling window on Work A. This used to be a
+//!    real, documented gap (`bastyde`'s toast system was process-wide: one
+//!    `ToastRegistry`, one `ToastHost` per window, all rendering the same
+//!    unfiltered queue) — fixed upstream in `bastyde`, not worked around
+//!    here.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -93,6 +85,7 @@ use crate::app_ids::AppIds;
 use crate::backup::is_destination_available;
 use crate::models::{BackupPolicy, RetentionMode, uid_is_usable};
 use crate::singles::{SingleWork, SingleWorkInfo};
+use crate::toast_scope::ToastWorkExt;
 use crate::view_models::{BackupSettingsViewModel, WorkspaceLayoutViewModel};
 
 use super::long_op::{event_id, parse_payload, payload_id};
@@ -272,11 +265,19 @@ impl BackupSchedulerViewModel {
             return;
         }
         let Some((uid, path)) = self.current() else {
-            ctx.show_toast(Toast::warning(tr!(backup_nothing_open())).id(self.toast_id()));
+            ctx.show_toast(
+                Toast::warning(tr!(backup_nothing_open()))
+                    .id(self.toast_id())
+                    .target_work(self.ids.work_id.get()),
+            );
             return;
         };
         if self.busy() {
-            ctx.show_toast(Toast::info(tr!(backup_already_running())).id(self.toast_id()));
+            ctx.show_toast(
+                Toast::info(tr!(backup_already_running()))
+                    .id(self.toast_id())
+                    .target_work(self.ids.work_id.get()),
+            );
             return;
         }
         let policy = self.settings.effective_for(&uid);
@@ -460,7 +461,9 @@ impl BackupSchedulerViewModel {
             Err(e) => {
                 if let Some(ctx) = ctx {
                     ctx.show_toast(
-                        Toast::error(tr!(backup_error(error = e.to_string()))).id(self.toast_id()),
+                        Toast::error(tr!(backup_error(error = e.to_string())))
+                            .id(self.toast_id())
+                            .target_work(self.ids.work_id.get()),
                     );
                     // A failed *start* must never trap a pending close.
                     if let Some(then) = close {
@@ -545,7 +548,9 @@ impl BackupSchedulerViewModel {
             .get("message")
             .and_then(|m| m.as_str())
             .unwrap_or("");
-        ctx.show_toast(progress_toast(&self.toast_id(), percent, message));
+        ctx.show_toast(
+            progress_toast(&self.toast_id(), percent, message).target_work(self.ids.work_id.get()),
+        );
     }
 
     pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
@@ -615,7 +620,8 @@ impl BackupSchedulerViewModel {
                         ctx,
                         Toast::error(tr!(backup_partial(ok = ok, failed = failed)))
                             .id(self.toast_id())
-                            .auto_dismiss_after(Duration::from_secs(6)),
+                            .auto_dismiss_after(Duration::from_secs(6))
+                            .target_work(self.ids.work_id.get()),
                         detail,
                     );
                 }
@@ -624,7 +630,8 @@ impl BackupSchedulerViewModel {
                     ctx,
                     Toast::warning(tr!(backup_partial(ok = ok, failed = failed)))
                         .id(self.toast_id())
-                        .auto_dismiss_after(Duration::from_secs(6)),
+                        .auto_dismiss_after(Duration::from_secs(6))
+                        .target_work(self.ids.work_id.get()),
                     detail,
                 );
             } else if has_delete_errors {
@@ -638,14 +645,16 @@ impl BackupSchedulerViewModel {
                         skipped = skipped
                     )))
                     .id(self.toast_id())
-                    .auto_dismiss_after(Duration::from_secs(6)),
+                    .auto_dismiss_after(Duration::from_secs(6))
+                    .target_work(self.ids.work_id.get()),
                     detail,
                 );
             } else if pending.close.is_none() && (ok > 0 || skipped > 0) {
                 ctx.show_toast(
                     Toast::success(tr!(backup_complete(ok = ok, skipped = skipped)))
                         .id(self.toast_id())
-                        .auto_dismiss_after(Duration::from_secs(4)),
+                        .auto_dismiss_after(Duration::from_secs(4))
+                        .target_work(self.ids.work_id.get()),
                 );
             }
         }
@@ -687,7 +696,9 @@ impl BackupSchedulerViewModel {
         // detail behind a "Details" action, not the headline itself.
         show_result_toast(
             ctx,
-            Toast::error(tr!(backup_failed_title())).id(self.toast_id()),
+            Toast::error(tr!(backup_failed_title()))
+                .id(self.toast_id())
+                .target_work(self.ids.work_id.get()),
             Some(error),
         );
     }

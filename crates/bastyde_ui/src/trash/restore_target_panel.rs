@@ -30,6 +30,7 @@ use bastyde::widgets::{
 use frontend::trash_management::DropPosition;
 
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, TreeFilters, TreeNode};
+use crate::toast_scope::ToastWorkExt;
 use crate::view_models::TrashViewModel;
 
 const CARD_W: f32 = 560.0;
@@ -199,13 +200,17 @@ impl Widget for TrashRestoreTargetPanel {
                                 // first would make it that overlay and leave the
                                 // modal open (matches the export/import ordering).
                                 ctx2.dismiss_top_overlay();
-                                ctx2.show_toast(Toast::success(tr!(trash_restored_ok(count = 1))));
+                                ctx2.show_toast(
+                                    Toast::success(tr!(trash_restored_ok(count = 1)))
+                                        .target_work(trash.work_id().get()),
+                                );
                                 (on_done)(ctx2);
                             }
                             Err(e) => {
-                                ctx2.show_toast(Toast::error(tr!(trash_restore_error(
-                                    error = e.to_string()
-                                ))));
+                                ctx2.show_toast(
+                                    Toast::error(tr!(trash_restore_error(error = e.to_string())))
+                                        .target_work(trash.work_id().get()),
+                                );
                             }
                         }
                     })

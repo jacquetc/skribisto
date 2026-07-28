@@ -21,6 +21,7 @@ use bastyde::widgets::{
     MessageBox, MessageBoxButtons, MessageBoxResult, StandardButton, Toast, ToastAction,
 };
 
+use crate::toast_scope::ToastWorkExt;
 use crate::view_models::SearchReplaceViewModel;
 
 /// Confirm, then Replace All. Names both strings and both counts, and promises
@@ -80,13 +81,17 @@ fn execute(vm: &SearchReplaceViewModel, ctx: &mut EventContext) {
             // Keep it up a little longer than a default toast — the Undo is the
             // only path back, so the writer must have time to reach for it.
             toast = toast.id("search-replace-result");
-            ctx.show_toast(toast);
+            // Work-scoped: a replace-all edits this Work's own prose, so its
+            // result (and Undo) belongs to this Work's window/bell, not every
+            // open project's.
+            ctx.show_toast(toast.target_work(vm.work_id()));
         }
         Err(e) => {
             ctx.show_toast(
                 Toast::error(tr!(search_replace_failed_title()))
                     .id("search-replace-result")
-                    .body(lit!(e.to_string())),
+                    .body(lit!(e.to_string()))
+                    .target_work(vm.work_id()),
             );
         }
     }
@@ -100,7 +105,9 @@ fn undo(vm: &SearchReplaceViewModel, touched: &[u64], ctx: &mut EventContext) {
         Ok(()) => reload_and_rescan(vm, touched, ctx),
         Err(e) => {
             ctx.show_toast(
-                Toast::error(tr!(search_replace_undo_failed_title())).body(lit!(e.to_string())),
+                Toast::error(tr!(search_replace_undo_failed_title()))
+                    .body(lit!(e.to_string()))
+                    .target_work(vm.work_id()),
             );
         }
     }

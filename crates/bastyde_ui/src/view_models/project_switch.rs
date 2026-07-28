@@ -87,6 +87,8 @@ use frontend::AppContext;
 use frontend::commands::work_management_commands;
 use frontend::work_management::LoadWorkDto;
 
+use crate::toast_scope::ToastWorkExt;
+
 /// A project switch, either performed at once or parked until the save lands.
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub enum PendingSwitch {
@@ -284,7 +286,9 @@ impl ProjectSwitchViewModel {
     fn defer(&self, ctx: &mut EventContext, switch: PendingSwitch, outgoing_work_id: Option<u64>) {
         let save = self.save_hook.borrow().clone();
         let Some(covers) = save() else {
-            ctx.show_toast(Toast::error(tr!(switch_save_not_started())));
+            // Work-scoped: about the outgoing Work's own save, not every open
+            // window's.
+            ctx.show_toast(Toast::error(tr!(switch_save_not_started())).target_work(outgoing_work_id));
             return;
         };
         self.pending.set(switch);
@@ -341,6 +345,10 @@ impl ProjectSwitchViewModel {
                         file_name: path.clone(),
                     },
                 ) {
+                    // The outgoing Work is already closed at this point (see
+                    // above), so there is no live Work to target any more —
+                    // this window's own audience is about to become the new
+                    // (never-opened) one. Origin-window default is correct.
                     ctx.show_toast(Toast::error(tr!(could_not_open_work(
                         error = e.to_string()
                     ))));
@@ -386,11 +394,19 @@ impl ProjectSwitchViewModel {
         if self.pending_seq.get().is_none() {
             return false;
         }
+        // Read BEFORE `take_pending()` — it clears `pending_work_id` as part of
+        // dropping the parked switch, so the outgoing Work's id must be
+        // captured first or every one of these toasts would silently fall
+        // back to the origin-window default.
+        let outgoing_work_id = self.pending_work_id.get();
         self.take_pending();
-        ctx.show_toast(Toast::error(match error {
-            Some(e) => tr!(switch_save_failed(error = e.to_string())),
-            None => tr!(switch_save_not_started()),
-        }));
+        ctx.show_toast(
+            Toast::error(match error {
+                Some(e) => tr!(switch_save_failed(error = e.to_string())),
+                None => tr!(switch_save_not_started()),
+            })
+            .target_work(outgoing_work_id),
+        );
         true
     }
 

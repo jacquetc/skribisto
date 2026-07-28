@@ -45,11 +45,17 @@ impl BackupsListPanel {
     /// `dirs` are the configured destinations; the project's own folder is always
     /// scanned too (the default "next to the project" destination). The scan
     /// itself is deferred to the first `build()` (T2-3) — construction does no
-    /// filesystem I/O.
-    pub fn new(uid: String, project_path: String, mut dirs: Vec<String>) -> Self {
+    /// filesystem I/O. `work_id` is the caller's own window's open Work (for
+    /// toast routing — see `BackupsListViewModel::new`'s doc).
+    pub fn new(
+        uid: String,
+        project_path: String,
+        mut dirs: Vec<String>,
+        work_id: Option<u64>,
+    ) -> Self {
         dirs.push(String::new()); // the project's own folder
         Self {
-            vm: BackupsListViewModel::new(uid, project_path, dirs),
+            vm: BackupsListViewModel::new(uid, project_path, dirs, work_id),
             root_child: None,
             scan_kicked: false,
         }
@@ -273,6 +279,7 @@ mod tests {
                 .to_string_lossy()
                 .into_owned(),
             vec![dir.path().to_string_lossy().into_owned()],
+            Some(1),
         ));
         // Lay the panel out at the size it reports (CARD_W x CARD_H) — that is
         // what the modal overlay gives it.

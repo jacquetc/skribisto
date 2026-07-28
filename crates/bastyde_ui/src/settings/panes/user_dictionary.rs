@@ -25,6 +25,7 @@ use bastyde::widgets::{
 };
 
 use crate::models::DictWordRow;
+use crate::toast_scope::ToastWorkExt;
 use crate::view_models::UserDictionaryViewModel;
 
 const WORD_COL: &str = "word";
@@ -256,7 +257,9 @@ fn present_import(ctx: &mut EventContext, vm: UserDictionaryViewModel) {
                             count = summary.added as i64,
                             duplicates = summary.duplicates as i64
                         )))
-                        .auto_dismiss_after(std::time::Duration::from_secs(5)),
+                        .auto_dismiss_after(std::time::Duration::from_secs(5))
+                        // Work-scoped: this project's own personal dictionary.
+                        .target_work(vm.work_id()),
                     );
                 }
                 Err(e) => {
@@ -264,7 +267,8 @@ fn present_import(ctx: &mut EventContext, vm: UserDictionaryViewModel) {
                         Toast::error(tr!(settings_user_dict_import_failed(
                             error = format!("{e:#}")
                         )))
-                        .auto_dismiss_after(std::time::Duration::from_secs(6)),
+                        .auto_dismiss_after(std::time::Duration::from_secs(6))
+                        .target_work(vm.work_id()),
                     );
                 }
             }
@@ -290,7 +294,8 @@ fn present_export(ctx: &mut EventContext, vm: UserDictionaryViewModel) {
                     ectx.show_toast(
                         Toast::info(tr!(settings_user_dict_exported(count = count as i64)))
                             .body(lit!(target.to_string_lossy().into_owned()))
-                            .auto_dismiss_after(std::time::Duration::from_secs(4)),
+                            .auto_dismiss_after(std::time::Duration::from_secs(4))
+                            .target_work(vm.work_id()),
                     );
                 }
                 Err(e) => {
@@ -298,7 +303,8 @@ fn present_export(ctx: &mut EventContext, vm: UserDictionaryViewModel) {
                         Toast::error(tr!(settings_user_dict_export_failed(
                             error = format!("{e:#}")
                         )))
-                        .auto_dismiss_after(std::time::Duration::from_secs(6)),
+                        .auto_dismiss_after(std::time::Duration::from_secs(6))
+                        .target_work(vm.work_id()),
                     );
                 }
             }

@@ -34,6 +34,7 @@ use bastyde::widgets::{
 
 use crate::models::TagRow;
 use crate::tags::{Preset, contrast};
+use crate::toast_scope::ToastWorkExt;
 use crate::view_models::TagsViewModel;
 
 const NAME_COL: &str = "name";
@@ -147,7 +148,9 @@ fn add_row(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
             }
             if vm.create(&name, DEFAULT_NEW_COLOR, "", false).is_some() {
                 ctx.show_toast(
-                    Toast::info(tr!(settings_tags_added(name = name.clone()))).id("tags.added"),
+                    Toast::info(tr!(settings_tags_added(name = name.clone())))
+                        .id("tags.added")
+                        .target_work(vm.work_id()),
                 );
             }
             text.set(String::new());
@@ -200,7 +203,8 @@ fn preset_button(vm: &TagsViewModel) -> impl Widget {
                     added = summary.added as i64,
                     skipped = summary.duplicates as i64
                 )))
-                .id("tags.preset"),
+                .id("tags.preset")
+                .target_work(vm.work_id()),
             );
         }));
     }
@@ -255,11 +259,16 @@ fn import_button(vm: &TagsViewModel) -> impl Widget {
                                     added = s.added as i64,
                                     skipped = (s.duplicates + s.malformed) as i64
                                 )))
-                                .id("tags.imported"),
+                                .id("tags.imported")
+                                .target_work(vm.work_id()),
                             );
                         }
                         Err(e) => {
-                            c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("tags.error"));
+                            c.show_toast(
+                                Toast::info(lit!(format!("{e:#}")))
+                                    .id("tags.error")
+                                    .target_work(vm.work_id()),
+                            );
                         }
                     }
                 }
@@ -287,11 +296,16 @@ fn export_button(vm: &TagsViewModel) -> impl Widget {
                         Ok(n) => {
                             c.show_toast(
                                 Toast::info(tr!(settings_tags_exported(n = n as i64)))
-                                    .id("tags.exported"),
+                                    .id("tags.exported")
+                                    .target_work(vm.work_id()),
                             );
                         }
                         Err(e) => {
-                            c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("tags.error"));
+                            c.show_toast(
+                                Toast::info(lit!(format!("{e:#}")))
+                                    .id("tags.error")
+                                    .target_work(vm.work_id()),
+                            );
                         }
                     }
                 }
@@ -440,7 +454,8 @@ impl Widget for TagRowView {
                     vm.delete(&[id]);
                     c.show_toast(
                         Toast::info(tr!(settings_tags_deleted(name = name.clone())))
-                            .id("tags.deleted"),
+                            .id("tags.deleted")
+                            .target_work(vm.work_id()),
                     );
                 })
         };
@@ -513,7 +528,8 @@ fn empty_state(vm: &TagsViewModel) -> impl Widget {
                     added = summary.added as i64,
                     skipped = summary.duplicates as i64
                 )))
-                .id("tags.preset"),
+                .id("tags.preset")
+                .target_work(vm.work_id()),
             );
         }));
     }

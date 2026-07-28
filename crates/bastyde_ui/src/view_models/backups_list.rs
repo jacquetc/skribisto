@@ -35,6 +35,7 @@ use bastyde::widgets::Toast;
 use skrib_format::retention;
 
 use crate::shell::process;
+use crate::toast_scope::ToastWorkExt;
 
 /// Toast id, so a burst of delete failures replaces rather than stacks.
 const DELETE_TOAST_ID: &str = "backups.delete";
@@ -54,6 +55,11 @@ pub struct BackupsListViewModel {
     uid: String,
     project_path: String,
     dirs: Vec<String>,
+    /// The open Work this browser is listing backups for — a snapshot taken
+    /// when the panel opened (matches `uid`/`project_path`), used to route
+    /// this view-model's delete-failure toast to the right window/bell
+    /// (`crate::toast_scope::ToastWorkExt`) rather than every open project's.
+    work_id: Option<u64>,
     model: ListModel<BackupRow>,
     /// Bumped whenever the list's *content* changes (a scan lands), driving the
     /// empty-state/list `Switcher`.
@@ -65,11 +71,12 @@ pub struct BackupsListViewModel {
 }
 
 impl BackupsListViewModel {
-    pub fn new(uid: String, project_path: String, dirs: Vec<String>) -> Self {
+    pub fn new(uid: String, project_path: String, dirs: Vec<String>, work_id: Option<u64>) -> Self {
         Self {
             uid,
             project_path,
             dirs,
+            work_id,
             model: ListModel::from_vec(Vec::new()),
             epoch: Signal::new(0),
             loading: Signal::new(true),
@@ -159,7 +166,8 @@ impl BackupsListViewModel {
                         if let Some(e) = err {
                             ctx2.show_toast(
                                 Toast::error(tr!(backups_delete_error(error = e)))
-                                    .id(DELETE_TOAST_ID),
+                                    .id(DELETE_TOAST_ID)
+                                    .target_work(me.work_id),
                             );
                         }
                         me.reload();
@@ -171,7 +179,8 @@ impl BackupsListViewModel {
                 if let Err(e) = remove(&target) {
                     ctx.show_toast(
                         Toast::error(tr!(backups_delete_error(error = e.to_string())))
-                            .id(DELETE_TOAST_ID),
+                            .id(DELETE_TOAST_ID)
+                            .target_work(self.work_id),
                     );
                 }
                 me.reload();

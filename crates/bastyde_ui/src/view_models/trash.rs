@@ -43,6 +43,7 @@ use frontend::trash_management::{
 
 use crate::app_ids::AppIds;
 use crate::models::{TrashRootKind, TrashTreeKey, TrashTreeModel};
+use crate::toast_scope::ToastWorkExt;
 
 /// How long the Undo affordance stays live before a destructive op becomes
 /// permanent (matches the toast's own visible countdown — the default
@@ -201,21 +202,27 @@ impl TrashViewModel {
                         .filter_map(|&tid| self.item_of_trash_info(tid))
                         .collect();
                     if failed_items.is_empty() {
-                        ctx.show_toast(Toast::warning(tr!(trash_restore_orphaned())));
+                        ctx.show_toast(
+                            Toast::warning(tr!(trash_restore_orphaned())).target_work(Some(work_id)),
+                        );
                     } else {
-                        ctx.show_toast(Toast::info(tr!(trash_restore_orphaned())));
+                        ctx.show_toast(
+                            Toast::info(tr!(trash_restore_orphaned())).target_work(Some(work_id)),
+                        );
                         self.open_orphan_picker_chain(ctx, failed_items);
                     }
                 } else {
-                    ctx.show_toast(Toast::success(tr!(trash_restored_ok(
-                        count = res.restored_count
-                    ))));
+                    ctx.show_toast(
+                        Toast::success(tr!(trash_restored_ok(count = res.restored_count)))
+                            .target_work(Some(work_id)),
+                    );
                 }
             }
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(trash_restore_error(
-                    error = e.to_string()
-                ))));
+                ctx.show_toast(
+                    Toast::error(tr!(trash_restore_error(error = e.to_string())))
+                        .target_work(Some(work_id)),
+                );
             }
         }
     }
@@ -383,11 +390,13 @@ impl TrashViewModel {
         body: LocalizedString,
         op: impl FnOnce(&AppContext, Option<u64>) -> anyhow::Result<()>,
     ) {
+        let work_id = self.ids.work_id.get();
         let stack = self.stack();
         if let Err(e) = op(&self.app_ctx, stack) {
-            ctx.show_toast(Toast::error(tr!(trash_restore_error(
-                error = e.to_string()
-            ))));
+            ctx.show_toast(
+                Toast::error(tr!(trash_restore_error(error = e.to_string())))
+                    .target_work(work_id),
+            );
             return;
         }
         self.reload();
@@ -399,6 +408,7 @@ impl TrashViewModel {
                 .priority(ToastPriority::High) // never evicted before the window ends
                 .id("trash.commit") // a second op replaces the toast (one grace timer)
                 .auto_dismiss_after(TRASH_UNDO_GRACE)
+                .target_work(work_id)
                 .action(ToastAction::primary(tr!(trash_undo()), move |_c| {
                     let _ = undo_redo_commands::undo(&undo_ctx, stack);
                 }))

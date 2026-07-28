@@ -27,6 +27,7 @@ use bastyde::widgets::{
 };
 
 use crate::models::TextReplacementRuleRow;
+use crate::toast_scope::ToastWorkExt;
 use crate::view_models::TextReplacementRulesViewModel;
 
 const TRIGGER_COL: &str = "trigger";
@@ -198,7 +199,8 @@ fn add_row(ctx: &mut BuildContext, vm: &TextReplacementRulesViewModel) -> impl W
             }
             ctx.show_toast(
                 Toast::info(tr!(settings_text_repl_added(trigger = t.clone())))
-                    .id("text_repl.added"),
+                    .id("text_repl.added")
+                    .target_work(vm.work_id()),
             );
             trigger.set(String::new());
             replacement.set(String::new());
@@ -287,11 +289,16 @@ fn import_button(vm: &TextReplacementRulesViewModel) -> impl Widget {
                                     added = s.added as i64,
                                     skipped = (s.duplicates + s.malformed) as i64
                                 )))
-                                .id("text_repl.imported"),
+                                .id("text_repl.imported")
+                                .target_work(vm.work_id()),
                             );
                         }
                         Err(e) => {
-                            c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("text_repl.error"));
+                            c.show_toast(
+                                Toast::info(lit!(format!("{e:#}")))
+                                    .id("text_repl.error")
+                                    .target_work(vm.work_id()),
+                            );
                         }
                     }
                 }
@@ -319,11 +326,16 @@ fn export_button(vm: &TextReplacementRulesViewModel) -> impl Widget {
                         Ok(n) => {
                             c.show_toast(
                                 Toast::info(tr!(settings_text_repl_exported(n = n as i64)))
-                                    .id("text_repl.exported"),
+                                    .id("text_repl.exported")
+                                    .target_work(vm.work_id()),
                             );
                         }
                         Err(e) => {
-                            c.show_toast(Toast::info(lit!(format!("{e:#}"))).id("text_repl.error"));
+                            c.show_toast(
+                                Toast::info(lit!(format!("{e:#}")))
+                                    .id("text_repl.error")
+                                    .target_work(vm.work_id()),
+                            );
                         }
                     }
                 }
@@ -467,7 +479,8 @@ impl Widget for RuleRowView {
                         Toast::info(tr!(settings_text_repl_deleted(
                             trigger = trigger_label.clone()
                         )))
-                        .id("text_repl.deleted"),
+                        .id("text_repl.deleted")
+                        .target_work(vm.work_id()),
                     );
                 })
         };

@@ -10,14 +10,21 @@
 //! events in `App::build` — reads the result and applies the new `file_name` +
 //! `WorkShape` to `WorkInfo` **synchronously on the UI thread** via
 //! `update_work_info`, which fires `WorkInfo Updated` and refreshes
-//! `SingleWorkInfo` (flipping the "Save as…" menu). Single-instance live state
-//! created in `main.rs`, registered as app-state.
+//! `SingleWorkInfo` (flipping the "Save as…" menu). Built fresh per window
+//! (`shell::windows::ProjectWindowFactory::window_config`), bound to that
+//! window's own `ids` — never a shared instance (Phase 2: a second
+//! simultaneously-open Work must never see, or drive, this window's Save As).
 //!
 //! In-flight ops are keyed by their long-operation id, and each records the
 //! `WorkInfo` id captured **when the op started** — so completion always targets
 //! the project that was actually saved, even if the user switched projects while
 //! the background save was running, and concurrent Save-As ops don't drop each
-//! other's completion.
+//! other's completion. Every toast below routes on `self.ids.work_id` (the
+//! window's *current* Work) via `crate::toast_scope::ToastWorkExt` — the
+//! completion of a Save As started before an in-place project switch has no
+//! live audience to reach any more (that Work's session/window binding is
+//! already gone), so falling in with whatever this window shows now is the
+//! only sensible target.
 //!
 //! [`SaveAsViewModel::begin`] is the **only** door to the backend `save_as`: it
 //! flushes the live editor buffers into the store before the background op reads
@@ -46,6 +53,7 @@ use frontend::work_management::SaveAsDto;
 use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
 use crate::singles::SingleWork;
+use crate::toast_scope::ToastWorkExt;
 
 use super::long_op::{event_id, parse_payload};
 
@@ -124,10 +132,13 @@ impl SaveAsViewModel {
                 } else {
                     tr!(saving_as_file(target = target))
                 };
-                ctx.show_toast(Toast::info(toast));
+                ctx.show_toast(Toast::info(toast).target_work(self.ids.work_id.get()));
             }
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(save_error(error = e.to_string()))));
+                ctx.show_toast(
+                    Toast::error(tr!(save_error(error = e.to_string())))
+                        .target_work(self.ids.work_id.get()),
+                );
             }
         }
     }
@@ -227,10 +238,16 @@ impl SaveAsViewModel {
                     crate::shell::open_registry::release(prev);
                 }
                 crate::shell::open_registry::claim(&output_path, &self.single_work.title().get());
-                ctx.show_toast(Toast::success(tr!(saved_as(target = output_path))));
+                ctx.show_toast(
+                    Toast::success(tr!(saved_as(target = output_path)))
+                        .target_work(self.ids.work_id.get()),
+                );
             }
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(save_error(error = e.to_string()))));
+                ctx.show_toast(
+                    Toast::error(tr!(save_error(error = e.to_string())))
+                        .target_work(self.ids.work_id.get()),
+                );
             }
         };
     }
@@ -247,7 +264,9 @@ impl SaveAsViewModel {
         let error = parse_payload(event)
             .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
             .unwrap_or_default();
-        ctx.show_toast(Toast::error(tr!(save_error(error = error))));
+        ctx.show_toast(
+            Toast::error(tr!(save_error(error = error))).target_work(self.ids.work_id.get()),
+        );
     }
 }
 

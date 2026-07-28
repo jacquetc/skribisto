@@ -28,8 +28,9 @@ use bastyde::widgets::{
     Divider, DockCorner, DockOpenLocation, DockRail, DockRailItemSize, DockSide, DockWidgetId,
     DockingLayout, DropRegion, DropTarget, DropTargetVariant, EventContextMessageBoxExt, Expand,
     HStack, IconButton, IconButtonSize, MessageBox, MessageBoxButton, MessageBoxButtons,
-    NotificationArchiveModel, NotificationCenterButton, RowDragData, Spacer, Splitter,
-    StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast, ToastAction, VStack,
+    NotificationArchiveModel, RowDragData, Spacer, Splitter,
+    StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast, ToastAction,
+    ToastAudience, ToastRegistry, VStack,
 };
 
 use frontend::AppContext;
@@ -51,6 +52,7 @@ use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
 use crate::singles::SingleSmartPunctuation;
 use crate::text_replacement::typography::SmartPunctuationFlags;
+use crate::toast_scope::ToastWorkExt;
 
 /// The punctuation rules in force for the open project — the two tiers resolved
 /// into the one flag set the editor sessions run.
@@ -536,10 +538,14 @@ fn offer_missing_dictionaries(
     }
     dictionaries.set_highlight(missing.clone());
     let n = missing.len() as i64;
+    // Work-scoped: this Work's own declared languages, so only this
+    // window/bell needs to hear about it — not every open project.
+    let work_id = session.ids.work_id.get();
     let session = session.clone();
     ctx.show_toast(
         bastyde::widgets::Toast::info(tr!(dict_missing_toast(count = n)))
             .id("dict.missing")
+            .target_work(work_id)
             .action(bastyde::widgets::ToastAction::primary(
                 tr!(dict_missing_action()),
                 move |c| {
@@ -1317,6 +1323,14 @@ impl Widget for App {
             });
         }
 
+        // The framework's toast registry — used below (LoadWork/NewWork) to bind
+        // this window's toast/bell audience to whatever Work it is showing (see
+        // `crate::toast_scope`'s module doc). `None` only in a headless/off-screen
+        // build context where `install_toast_default()` was never called; every
+        // real window has it (`main.rs`'s builder chain installs it once, up
+        // front, before any window exists).
+        let toast_registry = ctx.app_state::<ToastRegistry>().cloned();
+
         // ── Layer-A singles: id-only per-Work state + reactive entity handles ──
         // Held on `session` (created in `main`, shared with every window onto this
         // Work). `wire` installs each single's event subscriptions on this
@@ -1625,6 +1639,7 @@ impl Widget for App {
             let my_ids = session.ids.clone();
             let my_session = session.clone();
             let registry_for_load = self.registry.clone();
+            let toast_registry_for_load = toast_registry.clone();
             // Ingredients for this window's own `on_removed`-driven teardown —
             // see `build_window_teardown`'s doc. `editors`/`app_ctx`/
             // `backup_scheduler` are cheap `Rc`-backed clones; `window_id` is
@@ -1680,6 +1695,21 @@ impl Widget for App {
                                 window_teardown,
                             );
                             window_ordinal_for_load.set(ordinal);
+                            // Bind this window's toast/bell audience to the Work
+                            // it just loaded — the same `work_id` every Work-scoped
+                            // toast in this crate routes on
+                            // (`crate::toast_scope::ToastWorkExt`), so a toast
+                            // raised for this Work always lands in exactly the
+                            // window(s) showing it. Superseding a previous
+                            // audience (an in-place Load/New/switch) is exactly
+                            // right: this window no longer shows the old Work, so
+                            // its toasts/bell must stop matching here too.
+                            if let Some(reg) = &toast_registry_for_load {
+                                reg.set_window_audience(
+                                    window_id,
+                                    Some(ToastAudience::new(work_id)),
+                                );
+                            }
                         }
                     }
                 },
@@ -1812,20 +1842,29 @@ impl Widget for App {
                                     backup_settings.mark_nudged(&uid, p);
                                 }
                                 let session_for_action = session_for_nudge.clone();
-                                c.show_toast(Toast::warning(tr!(backup_nudge_text())).action(
-                                    ToastAction::primary(tr!(backup_nudge_action()), move |c| {
-                                        let session_for_action = session_for_action.clone();
-                                        c.present_modal(
-                                            ModalRequest::deferred(move |t| {
-                                                t.add(SettingsPanel::open_to_backup(session_for_action))
-                                            })
-                                            .presentation(ModalPresentation::InTree)
-                                            .title("Settings")
-                                            .size(920, 620)
-                                            .close_behavior(ModalCloseBehavior::Manual),
-                                        );
-                                    }),
-                                ));
+                                // Work-scoped: this project's own backup policy.
+                                c.show_toast(
+                                    Toast::warning(tr!(backup_nudge_text()))
+                                        .target_work(ids.work_id.get())
+                                        .action(ToastAction::primary(
+                                            tr!(backup_nudge_action()),
+                                            move |c| {
+                                                let session_for_action =
+                                                    session_for_action.clone();
+                                                c.present_modal(
+                                                    ModalRequest::deferred(move |t| {
+                                                        t.add(SettingsPanel::open_to_backup(
+                                                            session_for_action,
+                                                        ))
+                                                    })
+                                                    .presentation(ModalPresentation::InTree)
+                                                    .title("Settings")
+                                                    .size(920, 620)
+                                                    .close_behavior(ModalCloseBehavior::Manual),
+                                                );
+                                            },
+                                        )),
+                                );
                             }
                         }
                     }
@@ -1864,6 +1903,7 @@ impl Widget for App {
             let my_ids = session.ids.clone();
             let my_session = session.clone();
             let registry_for_new = self.registry.clone();
+            let toast_registry_for_new = toast_registry.clone();
             // Same teardown ingredients as the LoadWork subscriber above — see
             // `build_window_teardown`'s doc.
             let editors_for_teardown = editors.clone();
@@ -1899,6 +1939,13 @@ impl Widget for App {
                                 window_teardown,
                             );
                             window_ordinal_for_new.set(ordinal);
+                            // See the identical LoadWork subscriber above for why.
+                            if let Some(reg) = &toast_registry_for_new {
+                                reg.set_window_audience(
+                                    window_id,
+                                    Some(ToastAudience::new(work_id)),
+                                );
+                            }
                         }
                     }
                 },
@@ -2220,6 +2267,7 @@ impl Widget for App {
             let scheduler = backup_scheduler.clone();
             let switch = project_switch.clone();
             let workspace_layout = workspace_layout.clone();
+            let ids = ids.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Completed),
                 move |e: &Event, c| {
@@ -2249,9 +2297,14 @@ impl Widget for App {
                         pe != PendingExit::None,
                         exit_seq.get(),
                     ) {
-                        DeferredResume::Abandon => {
-                            abandon_deferred(c, &pending, &exit_seq, &switch, None)
-                        }
+                        DeferredResume::Abandon => abandon_deferred(
+                            c,
+                            &pending,
+                            &exit_seq,
+                            &switch,
+                            None,
+                            ids.work_id.get(),
+                        ),
                         DeferredResume::Close => {
                             pending.set(PendingExit::None);
                             exit_seq.set(None);
@@ -2285,13 +2338,21 @@ impl Widget for App {
             let pending = self.pending_exit.clone();
             let exit_seq = self.exit_seq.clone();
             let switch = project_switch.clone();
+            let ids = ids.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Failed),
                 move |e: &Event, c| {
                     let Some(error) = editors.on_save_failed(e) else {
                         return;
                     };
-                    abandon_deferred(c, &pending, &exit_seq, &switch, Some(&error));
+                    abandon_deferred(
+                        c,
+                        &pending,
+                        &exit_seq,
+                        &switch,
+                        Some(&error),
+                        ids.work_id.get(),
+                    );
                 },
             );
         }
@@ -2349,12 +2410,14 @@ impl Widget for App {
                     return;
                 };
                 let dirs = backup_settings.effective_for(&uid).destinations;
+                let work_id = single_work.id();
                 c.present_modal(
                     ModalRequest::deferred(move |t| {
                         t.add(crate::backup::list_panel::BackupsListPanel::new(
                             uid.clone(),
                             path.clone(),
                             dirs.clone(),
+                            work_id,
                         ))
                     })
                     .presentation(ModalPresentation::InTree)
@@ -2685,7 +2748,13 @@ impl Widget for App {
                             dock_trail.toggle_side_visible(DockSide::Trailing)
                         }),
                 )
-                .child(NotificationCenterButton::new(archive).size(IconButtonSize::Compact)),
+                .child(
+                    crate::statusbar::notification_bell::NotificationBell::new(
+                        archive,
+                        ids.work_id.clone(),
+                    )
+                    .size(IconButtonSize::Compact),
+                ),
         );
 
         // The permanent backup banner sits above everything while a backup file is
@@ -2778,21 +2847,30 @@ impl Widget for App {
 ///
 /// The project is untouched — still open, still dirty — so nothing is lost by
 /// staying put; the edits are exactly where the user left them.
+///
+/// `work_id` is this window's own `AppIds.work_id` at the moment the deferred
+/// save's outcome landed — the toast is squarely about *this* window's own
+/// save, so it routes here (`crate::toast_scope::ToastWorkExt`) rather than
+/// to every open project.
 fn abandon_deferred(
     c: &mut EventContext,
     pending: &Signal<PendingExit>,
     exit_seq: &Rc<std::cell::Cell<Option<u64>>>,
     switch: &ProjectSwitchViewModel,
     error: Option<&str>,
+    work_id: Option<u64>,
 ) {
     if pending.get() != PendingExit::None {
         pending.set(PendingExit::None);
         exit_seq.set(None);
         switch.cancel();
-        c.show_toast(Toast::error(match error {
-            Some(e) => tr!(close_save_failed(error = e.to_string())),
-            None => tr!(close_save_not_started()),
-        }));
+        c.show_toast(
+            Toast::error(match error {
+                Some(e) => tr!(close_save_failed(error = e.to_string())),
+                None => tr!(close_save_not_started()),
+            })
+            .target_work(work_id),
+        );
         return;
     }
     if switch.on_save_failed(c, error) {
@@ -2800,9 +2878,9 @@ fn abandon_deferred(
     }
     // Nothing was waiting: report just the failed write.
     if let Some(e) = error {
-        c.show_toast(Toast::error(tr!(save_error(error = e.to_string()))));
+        c.show_toast(Toast::error(tr!(save_error(error = e.to_string()))).target_work(work_id));
     } else {
-        c.show_toast(Toast::error(tr!(save_not_started())));
+        c.show_toast(Toast::error(tr!(save_not_started())).target_work(work_id));
     }
 }
 

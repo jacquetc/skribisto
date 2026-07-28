@@ -161,13 +161,22 @@ impl AddDictionaryViewModel {
         ) {
             Ok(()) => {
                 ctx.dismiss_modal();
+                // Broadcast: like `DictionariesViewModel`, this installs a
+                // machine-wide dictionary, not one Work's data — every open
+                // window should hear about it.
                 ctx.show_toast(
                     Toast::success(tr!(dict_add_done(name = name.trim().to_string())))
-                        .auto_dismiss_after(Duration::from_secs(4)),
+                        .auto_dismiss_after(Duration::from_secs(4))
+                        .broadcast(),
                 );
             }
             // Map the typed error to a localized message — an English string in the toast would
             // be half-translated. The form stays open so the user can correct the input.
+            //
+            // Origin-window default (not broadcast): almost every one of these
+            // is form validation ("that code is taken", "pick a name") local to
+            // whichever window has this modal open, not news about the shared
+            // dictionary resource — unlike the success toast above.
             Err(e) => {
                 let msg = match e {
                     InstallDictError::NameRequired => tr!(dict_add_name_required()),

@@ -56,6 +56,7 @@ use skrib_format::mark_existing_as_backup;
 use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
 use crate::singles::SingleWork;
+use crate::toast_scope::ToastWorkExt;
 
 use super::long_op::{event_id, parse_payload};
 
@@ -124,7 +125,10 @@ impl BackupRestoreViewModel {
         // Resolve the original. If it can't be located, the user's escape hatch is
         // Save As (still available in backup mode) — say so rather than guessing.
         let Some(target) = bc.backup_of.clone().filter(|p| Path::new(p).exists()) else {
-            ctx.show_toast(Toast::error(tr!(backup_restore_original_missing())));
+            ctx.show_toast(
+                Toast::error(tr!(backup_restore_original_missing()))
+                    .target_work(self.ids.work_id.get()),
+            );
             return;
         };
         self.check_open_elsewhere(ctx, target);
@@ -209,9 +213,10 @@ impl BackupRestoreViewModel {
         let safety_backup_path = match safety_copy(&target) {
             Ok(p) => p,
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(backup_restore_error(
-                    error = e.to_string()
-                ))));
+                ctx.show_toast(
+                    Toast::error(tr!(backup_restore_error(error = e.to_string())))
+                        .target_work(self.ids.work_id.get()),
+                );
                 return;
             }
         };
@@ -254,9 +259,10 @@ impl BackupRestoreViewModel {
                 });
             }
             Err(e) => {
-                ctx.show_toast(Toast::error(tr!(backup_restore_error(
-                    error = e.to_string()
-                ))));
+                ctx.show_toast(
+                    Toast::error(tr!(backup_restore_error(error = e.to_string())))
+                        .target_work(self.ids.work_id.get()),
+                );
             }
         }
     }
@@ -291,9 +297,10 @@ impl BackupRestoreViewModel {
             // swap failed, so nothing has been lost. Leave it in place (don't
             // delete it) so the user can retry or recover it manually, and
             // leave the original untouched — still viewing the backup here.
-            ctx.show_toast(Toast::error(tr!(backup_restore_error(
-                error = e.to_string()
-            ))));
+            ctx.show_toast(
+                Toast::error(tr!(backup_restore_error(error = e.to_string())))
+                    .target_work(self.ids.work_id.get()),
+            );
             return;
         }
 
@@ -341,7 +348,7 @@ impl BackupRestoreViewModel {
             Some(p) => tr!(backup_restored_with_safety(path = p.clone())),
             None => tr!(backup_restored_ok()),
         };
-        ctx.show_toast(Toast::success(msg));
+        ctx.show_toast(Toast::success(msg).target_work(self.ids.work_id.get()));
     }
 
     pub fn on_long_op_failed(&self, ctx: &mut EventContext, event: &Event) {
@@ -368,7 +375,9 @@ impl BackupRestoreViewModel {
         let error = parse_payload(event)
             .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
             .unwrap_or_default();
-        ctx.show_toast(Toast::error(tr!(backup_restore_error(error = error))));
+        ctx.show_toast(
+            Toast::error(tr!(backup_restore_error(error = error))).target_work(self.ids.work_id.get()),
+        );
         // State unchanged — still viewing the backup in backup mode.
     }
 }

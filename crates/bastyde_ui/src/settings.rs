@@ -1003,7 +1003,14 @@ impl Widget for SettingsPanel {
                         ))),
                         tr!(settings_page_work_backup()),
                     ),
-                    crate::settings::panes::backup::work_backup_pane(ctx, vm, uid, path, title),
+                    crate::settings::panes::backup::work_backup_pane(
+                        ctx,
+                        vm,
+                        uid,
+                        path,
+                        title,
+                        w.id(),
+                    ),
                 ))
             }
             _ => Box::new(empty_pane(

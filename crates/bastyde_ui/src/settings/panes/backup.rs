@@ -75,6 +75,7 @@ pub fn work_backup_pane(
     uid: String,
     path: String,
     title: String,
+    work_id: Option<u64>,
 ) -> impl Widget {
     let usable = uid_is_usable(&uid);
     let has_override = vm.has_override(&uid);
@@ -151,6 +152,7 @@ pub fn work_backup_pane(
                         uid.clone(),
                         path.clone(),
                         dirs.clone(),
+                        work_id,
                     ))
                 })
                 .presentation(bastyde::core::modal::ModalPresentation::InTree)

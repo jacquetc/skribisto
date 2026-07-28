@@ -177,6 +177,14 @@ impl SearchReplaceViewModel {
         }
     }
 
+    /// The open Work this search runs over — `search_replace_flow.rs`'s
+    /// completion/error toasts route here (see
+    /// `crate::toast_scope::ToastWorkExt`): a replace-all is squarely this
+    /// Work's own edit, never every open window's business.
+    pub fn work_id(&self) -> Option<u64> {
+        self.ids.work_id.get()
+    }
+
     // ── view handles (signals the widgets bind to) ──────────────────────────
     pub fn query_signal(&self) -> Signal<String> {
         self.query.clone()

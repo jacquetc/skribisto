@@ -54,6 +54,7 @@ use skribisto_model::compile::{
 use super::long_op::{event_id, parse_payload, payload_id};
 use crate::app_ids::AppIds;
 use crate::export::choose::ChooseModel;
+use crate::toast_scope::ToastWorkExt;
 
 /// Update-in-place key for the single toast an export drives (loading → progress →
 /// success / cancelled / error).
@@ -738,7 +739,7 @@ impl ExportViewModel {
                 // overwrite-confirmation path — whose `on_result` context is anchored at the
                 // tree root — still closes the panel; it is the topmost overlay in both paths.
                 ctx.dismiss_top_overlay();
-                ctx.show_toast(self.progress_toast(0.0, ""));
+                ctx.show_toast(self.progress_toast(0.0, "").target_work(self.ids.work_id.get()));
             }
             Err(e) => self.show_error(ctx, &format!("{e:#}")),
         }
@@ -788,7 +789,7 @@ impl ExportViewModel {
             .get("message")
             .and_then(|m| m.as_str())
             .unwrap_or("");
-        ctx.show_toast(self.progress_toast(percent, message));
+        ctx.show_toast(self.progress_toast(percent, message).target_work(self.ids.work_id.get()));
     }
 
     pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
@@ -806,14 +807,16 @@ impl ExportViewModel {
                     Toast::success(done)
                         .id(EXPORT_TOAST_ID)
                         .body(lit!(res.output_path.clone()))
-                        .auto_dismiss_after(Duration::from_secs(6)),
+                        .auto_dismiss_after(Duration::from_secs(6))
+                        .target_work(self.ids.work_id.get()),
                 );
             }
             Ok(None) | Err(_) => {
                 ctx.show_toast(
                     Toast::info(tr!(export_progress_title()))
                         .id(EXPORT_TOAST_ID)
-                        .auto_dismiss_after(Duration::from_secs(4)),
+                        .auto_dismiss_after(Duration::from_secs(4))
+                        .target_work(self.ids.work_id.get()),
                 );
             }
         }
@@ -830,7 +833,8 @@ impl ExportViewModel {
         ctx.show_toast(
             Toast::info(tr!(export_cancelled()))
                 .id(EXPORT_TOAST_ID)
-                .auto_dismiss_after(Duration::from_secs(4)),
+                .auto_dismiss_after(Duration::from_secs(4))
+                .target_work(self.ids.work_id.get()),
         );
     }
 
@@ -860,6 +864,7 @@ impl ExportViewModel {
                 .id(EXPORT_TOAST_ID)
                 .body(lit!(message.to_string()))
                 .persistent()
+                .target_work(self.ids.work_id.get())
                 .action(ToastAction::primary(
                     tr!(export_error_details()),
                     move |c| {
