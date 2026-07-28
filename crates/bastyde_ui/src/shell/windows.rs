@@ -1231,17 +1231,40 @@ impl ProjectWindowFactory {
                             .hamburger_size(IconButtonSize::Large);
 
                         // Increment 2 of distraction-free: the menu bar, the title/
-                        // switcher row, and the trailing controls all collapse — but
-                        // the enclosing `TitleBar` itself stays mounted (never wrapped),
-                        // so its drag region and native window controls (minimize/
-                        // maximize/close, where the host renders them) stay reachable
-                        // even with the mode's chrome hidden. That's the accessibility
-                        // requirement from this increment's own research pass (§6): the
-                        // strip's Exit button is the primary way out, but a wedged
-                        // Escape must never also take away the OS's own way to close
-                        // the window. `VisibleWhen` (not `Switcher`) — dormant, not torn
-                        // down, the same pattern the synopsis toggle already uses.
+                        // switcher row and the trailing controls all collapse — and so
+                        // does the enclosing `TitleBar`, below. `VisibleWhen` (not
+                        // `Switcher`) throughout — dormant, not torn down, the same
+                        // pattern the synopsis toggle already uses.
+                        //
+                        // The bar used to stay mounted so the window controls remained
+                        // reachable, on the reasoning that a wedged Escape must never
+                        // also take away the OS's own way to close the window. That
+                        // reasoning predates the strip's Exit button being *mandatory*
+                        // (no settings combination can remove it — `focus_strip`'s
+                        // `exit_survives_every_combination_of_the_chrome_settings`
+                        // pins it), and it left a min/max/close cluster floating over a
+                        // fullscreen window, which no desktop convention does: macOS
+                        // hides the traffic lights, Windows fullscreen has no caption
+                        // buttons, browsers and editors hide their chrome outright.
+                        // `WindowPlacement::Fullscreen`'s own doc says "title bar and
+                        // all chrome hidden". Minimize and maximize are meaningless for
+                        // a window with no frame.
+                        //
+                        // The replacement guarantee, which is strictly stronger:
+                        //   * distraction-free → the strip's Exit button (always
+                        //     present), Shift+F11, and Escape;
+                        //   * plain fullscreen → the menu bar is still on screen, so
+                        //     View ▸ Fullscreen and F11;
+                        //   * either → Ctrl+W, Ctrl+Q, and the compositor's own
+                        //     unfullscreen/close.
                         let chrome_visible = focus.active_signal().map(|active| !*active);
+                        // Read from the WINDOW's own placement, not from
+                        // `FullscreenViewModel`/`FocusViewModel`: those are two
+                        // independent memories (F11 and Shift+F11 each keep their own),
+                        // and an OS-initiated fullscreen goes through neither. The
+                        // placement is the single fact all three agree on.
+                        let controls_visible =
+                            state.placement().map(|p| !p.is_fullscreen());
                         let menubar = VisibleWhen::new(chrome_visible.clone(), menubar);
                         let trailing_controls = VisibleWhen::new(
                             chrome_visible.clone(),
@@ -1304,7 +1327,14 @@ impl ProjectWindowFactory {
                             ),
                         );
 
-                        tree.add_boxed(Box::new(bati!(
+                        // The whole bar collapses in distraction-free: every slot inside
+                        // it is already gated, so what would be left is an empty band
+                        // ~40 px tall above the writing column. Wrapping it here
+                        // reclaims that height for the manuscript, which is the point
+                        // of the mode.
+                        tree.add_boxed(Box::new(VisibleWhen::new(
+                            chrome_visible,
+                            bati!(
 
                             TitleBar::new(host) {
                                 background: SurfaceRole::Main
@@ -1316,8 +1346,14 @@ impl ProjectWindowFactory {
                                 center: Expand::horizontal {
                                     child: center_content
                                 }
+                                // Hidden whenever this window is fullscreen — plain F11
+                                // as well as distraction-free. See `chrome_visible`'s
+                                // comment above for the exit guarantee that replaces
+                                // "the window controls are always there".
+                                controls_visible: controls_visible
                                 close_action: |ctx| ctx.close_window()
                             }
+                            ),
                         )))
                     }
                     None => tree.add(TextWidget::new(lit!("Skribisto")).text(title_text.clone())),

@@ -144,6 +144,23 @@ def click(s, n):
                                   "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
 
 
+# The window-control cluster's own a11y names, from bastyde-widgets'
+# `a11y-window-*-name` keys. Matched exactly, not by substring: the strip's
+# "Exit distraction-free mode" and the split-pane "Close split" would both trip
+# a naive `"close" in label` test.
+WINDOW_CONTROL_NAMES = {"minimize", "maximize", "restore", "close"}
+
+
+def window_control_buttons(s):
+    """Every window-control button the accessibility tree exposes."""
+    return [
+        n
+        for n in s.nodes()
+        if n.get("role") == "Button"
+        and (n.get("label") or "").strip().lower() in WINDOW_CONTROL_NAMES
+    ]
+
+
 def tab_lists(s):
     """Every Role::TabList in the window. The editor panes are the only tab
     strips in a project window, so a non-empty result means the editor tab
@@ -197,6 +214,22 @@ if not wait_for(lambda: len(tab_lists(s)) > 0):
          "script would pass vacuously", s.app, s.mcp, s.log)
 before = len(tab_lists(s))
 print(f"  {before} tab strip(s) present outside the mode")
+controls_before = len(window_control_buttons(s))
+if controls_before == 0:
+    fail("no window-control buttons outside the mode — the fullscreen check "
+         "below would pass vacuously", s.app, s.mcp, s.log)
+print(f"  {controls_before} window-control button(s) present outside the mode")
+
+# The title bar's own slots, not just its control cluster. Gating the controls
+# once cost the bar its menu, title and tools while leaving the cluster in
+# place — and every assertion here still passed, because none of them looked at
+# the slots. `TitleBar::build` consumes them, so anything that rebuilds the bar
+# empties it; this is the check that notices.
+if not has_label(s, "export"):
+    s.shot("/tmp/df-chrome-empty-title-bar.png")
+    fail("the title bar has no Export control outside the mode — its leading/"
+         "center/trailing slots are missing", s.app, s.mcp, s.log)
+print("  title-bar slots populated (Export control present)")
 s.shot("/tmp/df-chrome-before.png")
 
 # ── 2. Enter distraction-free → the tab strip goes, Exit stays ───────────────
@@ -213,6 +246,16 @@ if not wait_for(lambda: has_label(s, "exit"), timeout=10):
     fail("no Exit button in the distraction-free strip — the one control that "
          "must never be absent", s.app, s.mcp, s.log)
 print("  Exit button present")
+
+# The title bar goes with the rest of the chrome: minimize/maximize/close are
+# meaningless over a window with no frame, and every desktop convention hides
+# them in fullscreen. The strip's Exit button, Shift+F11 and Escape are the
+# replacement way out — the first of which the check above just confirmed.
+if not wait_for(lambda: len(window_control_buttons(s)) == 0, timeout=10):
+    s.shot("/tmp/df-chrome-controls-left.png")
+    left = [n.get("label") for n in window_control_buttons(s)]
+    fail(f"window controls survived entering the mode: {left}", s.app, s.mcp, s.log)
+print("  window controls hidden")
 s.shot("/tmp/df-chrome-during.png")
 
 # ── 3. Leave the mode → the tab strip comes back ────────────────────────────
@@ -223,6 +266,17 @@ if not wait_for(lambda: len(tab_lists(s)) == before, timeout=10):
     fail(f"the tab strip did not come back on leaving the mode "
          f"(want {before}, got {len(tab_lists(s))})", s.app, s.mcp, s.log)
 print("  tab strip restored")
+if not wait_for(lambda: len(window_control_buttons(s)) == controls_before, timeout=10):
+    s.shot("/tmp/df-chrome-controls-not-restored.png")
+    fail(f"the window controls did not come back on leaving the mode "
+         f"(want {controls_before}, got {len(window_control_buttons(s))})",
+         s.app, s.mcp, s.log)
+print("  window controls restored")
+if not wait_for(lambda: has_label(s, "export"), timeout=10):
+    s.shot("/tmp/df-chrome-slots-not-restored.png")
+    fail("the title bar came back empty — its slots did not survive the mode",
+         s.app, s.mcp, s.log)
+print("  title-bar slots restored")
 s.shot("/tmp/df-chrome-after.png")
 
 # ── 4. The settings surface exists and is on the right page ─────────────────
