@@ -44,6 +44,9 @@
 //!     Created once in `main`, shared by every window's `App`/`EditorsViewModel`
 //!     — a per-window copy of any of this breaks the moment a second window
 //!     exists (see its module docs).
+//!   * [`fullscreen`] — `FullscreenViewModel`: per-window live state (remembers
+//!     the placement to restore when this window's F11/View ▸ Fullscreen
+//!     toggle leaves fullscreen) — minted fresh per window, never shared.
 //!
 //! Cross-view-model rules (keep the dependency graph a DAG):
 //!   * A view-model may hold framework model handles and call *down* into them.
@@ -64,6 +67,7 @@ mod export;
 mod export_styles;
 mod find;
 mod format;
+mod fullscreen;
 mod import_plume;
 mod long_op;
 mod mention_index;
@@ -110,6 +114,7 @@ pub use format::{
     ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,
     FormatViewModel,
 };
+pub use fullscreen::FullscreenViewModel;
 pub use import_plume::ImportPlumeViewModel;
 pub use mention_index::{MentionIndex, MentionRow};
 pub use new_work::NewWorkViewModel;

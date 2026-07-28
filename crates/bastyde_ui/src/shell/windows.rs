@@ -462,6 +462,13 @@ impl ProjectWindowFactory {
         // has focused. A process-wide one would let a second project window
         // grey out this window's Format menu.
         let scene_focused = Signal::new(false);
+        // Increment 1 of distraction-free (plain fullscreen). Per WINDOW,
+        // same rationale as `scene_focused` just above: this remembers
+        // *this* window's own pre-fullscreen placement, so a second
+        // simultaneously-open project window's F11 never restores (or
+        // clobbers) the wrong window's memory. See `FullscreenViewModel`'s
+        // module doc.
+        let fullscreen = crate::view_models::FullscreenViewModel::new();
         // Sourced from `session`, never a `self` field (Phase 3): a second
         // simultaneously-open Work must never share this Work's backup-mode
         // flag/details — see `WorkSession`'s module doc.
@@ -822,6 +829,17 @@ impl ProjectWindowFactory {
                             // without writing it; the toggles are driven by the
                             // `outline.toggle` (F9) / `preview.toggle` (F10) intents.
                             let outline = outline.clone();
+                            // Increment 1 of distraction-free (plain fullscreen): a
+                            // reflect-only checkmark straight off THIS window's own
+                            // `WindowState::placement()` — the same round-tripping
+                            // signal `view.fullscreen`'s action writes and the OS
+                            // reads back (see `FullscreenViewModel`'s doc), so the
+                            // mark stays correct even if fullscreen is left behind
+                            // the app's back (KDE's own shortcut, the titlebar).
+                            let is_fullscreen = state
+                                .placement()
+                                .clone()
+                                .map(|p| *p == WindowPlacement::Fullscreen);
                             move |m| {
                                 // The bottom band has no persistent reveal affordance
                                 // of its own — a hidden top/bottom side collapses its
@@ -857,6 +875,16 @@ impl ProjectWindowFactory {
                                         .checked(preview_visible)
                                         .intent("preview.toggle")
                                         .shortcut("preview.toggle"),
+                                )
+                                .separator()
+                                // Increment 1 of distraction-free: plain fullscreen,
+                                // not the collapsed-chrome mode itself (that is a
+                                // later increment). F11, the platform convention.
+                                .item(
+                                    MenuEntry::new(tr!(menu_fullscreen()))
+                                        .checked(is_fullscreen)
+                                        .intent("view.fullscreen")
+                                        .shortcut("view.fullscreen"),
                                 )
                             }
                         })
@@ -1195,6 +1223,7 @@ impl ProjectWindowFactory {
                     app_ctx_root.clone(),
                     session.clone(),
                     outline.clone(),
+                    fullscreen.clone(),
                     export.clone(),
                     autosave_menu.clone(),
                     spellcheck_menu.clone(),

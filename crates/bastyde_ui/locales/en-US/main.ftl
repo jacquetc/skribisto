@@ -33,6 +33,7 @@ menu-view = &View
 menu-outline = &Outline
 menu-search = &Search in Project
 menu-search-preview = Search &Preview
+menu-fullscreen = &Fullscreen
 menu-format = F&ormat
 menu-scene-break = Insert scene brea&k
 menu-major-scene-break = Insert &major scene break

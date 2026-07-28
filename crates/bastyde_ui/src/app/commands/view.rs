@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! Dock and find-banner commands: the outline rail, the bottom preview band, the search &
-//! replace dock, and the per-editor find banner.
+//! replace dock, the per-editor find banner, and this window's plain-fullscreen toggle.
 
 use bastyde::prelude::*;
 use bastyde::widgets::DockSide;
@@ -39,6 +39,28 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         ctx.register_action_global(
             Action::new("outline.toggle").on_invoke(move |_i, _c| outline.toggle()),
         );
+    }
+
+    // F11, the platform convention — free (no other command claims it; see
+    // this increment's ground-truth sweep). A Global shortcut so it fires
+    // regardless of which widget has focus, same rationale as F9/F10 above.
+    ctx.register_shortcut_global(
+        Shortcut::new("view.fullscreen")
+            .name("Toggle Fullscreen")
+            .primary(KeyStroke::new(Key::F11, Modifiers::NONE))
+            .build(),
+    );
+    {
+        let fullscreen = deps.fullscreen.clone();
+        ctx.register_action_global(Action::new("view.fullscreen").on_invoke(move |_i, c| {
+            // Resolve THIS event's own window rather than a captured handle —
+            // correct with several project windows open. No-op in the (never
+            // reachable from a real project window) headless case where
+            // `ctx.window()` is `None`.
+            if let Some(window) = c.window() {
+                fullscreen.toggle(window);
+            }
+        }));
     }
 
     // Ctrl+F opens the per-editor find banner in the focused pane's active tab (its

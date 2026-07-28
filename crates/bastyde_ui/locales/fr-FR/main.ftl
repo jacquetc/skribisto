@@ -33,6 +33,7 @@ menu-view = &Affichage
 menu-outline = &Plan
 menu-search = &Rechercher dans le projet
 menu-search-preview = &Aperçu de recherche
+menu-fullscreen = P&lein écran
 menu-format = Fo&rmat
 menu-scene-break = Insérer un &saut de scène
 menu-major-scene-break = Insérer un saut de scène &majeur

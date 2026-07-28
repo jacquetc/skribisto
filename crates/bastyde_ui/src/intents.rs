@@ -25,6 +25,16 @@ pub enum AppIntent {
     #[name = "outline.toggle"]
     ToggleOutline,
 
+    /// Toggle THIS window between fullscreen and whatever placement it had
+    /// before (Maximized/Floating) — Increment 1 of distraction-free (plain
+    /// fullscreen; not distraction-free mode itself). Fired by F11 and the
+    /// View ▸ Fullscreen menu entry. Consumed by the global `view.fullscreen`
+    /// action in `App::build`, which resolves the firing window from the
+    /// `EventContext` rather than any captured handle — correct with several
+    /// project windows open.
+    #[name = "view.fullscreen"]
+    ToggleFullscreen,
+
     /// Start or pause the status-bar writing session. Fired by name (palette /
     /// automation); the play/pause button is the primary control. Consumed by a
     /// global `session.toggle` action in `App::build`.
@@ -288,6 +298,15 @@ mod tests {
         assert!(matches!(
             AppIntent::from_intent(&intent),
             Some(AppIntent::ShowWelcome)
+        ));
+    }
+
+    #[test]
+    fn toggle_fullscreen_unit_intent_bridges() {
+        let intent: Intent = AppIntent::ToggleFullscreen.into();
+        assert!(matches!(
+            AppIntent::from_intent(&intent),
+            Some(AppIntent::ToggleFullscreen)
         ));
     }
 }

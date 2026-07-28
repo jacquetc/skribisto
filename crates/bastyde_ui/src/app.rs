@@ -587,6 +587,13 @@ pub struct App {
     /// each simultaneously-open Work gets its own outline/tree, never a second
     /// window's.
     outline: OutlineViewModel,
+    /// This window's own "was I maximized/floating before I went fullscreen"
+    /// memory (Increment 1 of distraction-free — plain fullscreen). Minted
+    /// fresh per window in `ProjectWindowFactory::window_config`, the same
+    /// shape as [`Self::scene_focused`]: it names a *window's* own UI state,
+    /// not the Work's data, so two simultaneously-open windows — even on the
+    /// same Work — must never share it. See `FullscreenViewModel`'s doc.
+    fullscreen: crate::view_models::FullscreenViewModel,
     /// Built **fresh for this window** alongside `session`/`outline`: bound to
     /// this window's own `ids`, so an export from this window scopes to *this*
     /// Work, not whichever Work's `App` constructed the shared registration
@@ -714,6 +721,7 @@ impl App {
         app_ctx: Rc<AppContext>,
         session: WorkSession,
         outline: OutlineViewModel,
+        fullscreen: crate::view_models::FullscreenViewModel,
         export: crate::view_models::ExportViewModel,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
@@ -733,6 +741,7 @@ impl App {
             app_ctx,
             session,
             outline,
+            fullscreen,
             export,
             registry,
             save_as_vm,
@@ -1005,18 +1014,35 @@ impl Widget for App {
         // call, the half a KWin rule (matching a window by its title text)
         // actually needs. A no-op in a headless/off-screen build context
         // (`ctx.window()` is `None` there — same guard as `window_id` above).
-        if let Some(window) = ctx.window() {
-            let os_title = window.title().clone();
-            ctx.effect(&self.title_text, move |t: &String| {
-                os_title.set(t.clone());
-            });
-        }
 
         // The Tier-2 per-open-Work bundle — see `sessions::WorkSession`'s module
         // doc and this struct's own field doc for why `App::build` reads these
         // straight off `session` instead of doing its own `ctx.app_state::<T>()`
         // lookup per field, the way the rest of this function used to.
         let session = self.session.clone();
+
+        if let Some(window) = ctx.window() {
+            let os_title = window.title().clone();
+            // Observe the two MUTABLE sources, never `self.title_text` itself:
+            // that is `single_work.title().zip(ordinal).map(..)`
+            // (`shell::windows::window_title_text`), and a zip/map signal is
+            // lazy and read-only — `ctx.effect` observes, and `observe()`
+            // panics on a derived signal. Reading its value inside the closure
+            // is fine; only observing it is not. Both arms recompute the whole
+            // title, so either source changing pushes the same correct text.
+            let title_text = self.title_text.clone();
+            let title = session.single_work.title();
+            {
+                let os_title = os_title.clone();
+                let title_text = title_text.clone();
+                ctx.effect(&title, move |_: &String| {
+                    os_title.set(title_text.get());
+                });
+            }
+            ctx.effect(&self.window_ordinal, move |_: &usize| {
+                os_title.set(title_text.get());
+            });
+        }
         let app_ctx = self.app_ctx.clone();
         let column_width = settings.column_width();
         let show_synopsis = settings.synopsis_pane();
@@ -1597,6 +1623,7 @@ impl Widget for App {
             session: session.clone(),
             registry: self.registry.clone(),
             outline: outline.clone(),
+            fullscreen: self.fullscreen.clone(),
             editors: editors.clone(),
             trash: trash.clone(),
             search: search.clone(),

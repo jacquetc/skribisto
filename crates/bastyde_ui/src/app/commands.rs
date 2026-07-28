@@ -49,8 +49,8 @@ use frontend::AppContext;
 use crate::models::OpenDocsStore;
 use crate::view_models::{
     BackupSchedulerViewModel, DictionariesViewModel, EditorsViewModel, ExportViewModel,
-    OutlineViewModel, ProjectSwitchViewModel, SearchReplaceViewModel, TrashViewModel,
-    UserDictionaryViewModel,
+    FullscreenViewModel, OutlineViewModel, ProjectSwitchViewModel, SearchReplaceViewModel,
+    TrashViewModel, UserDictionaryViewModel,
 };
 
 use super::PendingExit;
@@ -87,6 +87,12 @@ pub(super) struct CommandDeps {
     /// doc), not just this window's own.
     pub registry: crate::sessions::WorkRegistry,
     pub outline: OutlineViewModel,
+    /// This window's own "was I maximized/floating before I went fullscreen"
+    /// memory — minted fresh per window (never a `ctx.app_state` lookup, see
+    /// `FullscreenViewModel`'s own doc for why a shared instance would answer
+    /// with the wrong window's memory the moment a second project window
+    /// exists).
+    pub fullscreen: FullscreenViewModel,
     pub editors: EditorsViewModel,
     pub trash: TrashViewModel,
     pub search: SearchReplaceViewModel,
