@@ -129,6 +129,32 @@ impl AppIds {
     }
 }
 
+/// A view-model that holds its own [`AppIds`] and wants the open Work's id
+/// directly, rather than spelling out `self.ids.work_id.get()` at every call
+/// site.
+///
+/// Before this trait, `SearchReplaceViewModel`, `TagsViewModel`,
+/// `TextReplacementRulesViewModel` and `UserDictionaryViewModel` each
+/// hand-wrote an identical `pub fn work_id(&self) -> Option<u64> { self.ids
+/// .work_id.get() }` — the same scattered-copy pattern
+/// [`crate::toast_scope::ToastWorkExt`] was written to eliminate for toast
+/// ids. `app_ids` is infrastructure every view-model already imports (it is
+/// never a peer view-model importing another peer), so a default method here
+/// gives the accessor one shared home without breaking the cross-VM-talk DAG
+/// rule.
+pub trait HasWorkId {
+    /// This view-model's own [`AppIds`].
+    fn app_ids(&self) -> &AppIds;
+
+    /// The open Work this view-model's own reads/toasts should route to.
+    /// `self.ids.work_id` is the authoritative "current Work" source — see
+    /// this module's doc — so implementors need only hand back their `ids`
+    /// field from [`Self::app_ids`]; this default does the rest.
+    fn work_id(&self) -> Option<u64> {
+        self.app_ids().work_id.get()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -162,5 +188,26 @@ mod tests {
         ids.work_id.set(Some(7));
         assert!(ids.is_event_for_my_work(&[7]));
         assert!(!ids.is_event_for_my_work(&[8]));
+    }
+
+    struct Holder(AppIds);
+    impl HasWorkId for Holder {
+        fn app_ids(&self) -> &AppIds {
+            &self.0
+        }
+    }
+
+    #[test]
+    fn has_work_id_default_reads_through_to_the_live_app_ids() {
+        let ids = AppIds::new();
+        let holder = Holder(ids.clone());
+        assert_eq!(holder.work_id(), None);
+        ids.work_id.set(Some(9));
+        assert_eq!(
+            holder.work_id(),
+            Some(9),
+            "the default method must read the live signal each call, not a snapshot \
+             taken when `app_ids()` first ran"
+        );
     }
 }

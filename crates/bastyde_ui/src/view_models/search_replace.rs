@@ -40,7 +40,7 @@ use frontend::search_management::{ReplaceInProjectDto, ReplaceInProjectResultDto
 
 use skribisto_model::SearchFacet;
 
-use crate::app_ids::AppIds;
+use crate::app_ids::{AppIds, HasWorkId};
 use crate::models::{
     OpenDoc, OpenDocsStore, SearchPrefs, SearchResultsModel, SearchSettingsService,
 };
@@ -175,14 +175,6 @@ impl SearchReplaceViewModel {
             deadline: Rc::new(Cell::new(None)),
             last_persisted: Rc::new(RefCell::new(None)),
         }
-    }
-
-    /// The open Work this search runs over — `search_replace_flow.rs`'s
-    /// completion/error toasts route here (see
-    /// `crate::toast_scope::ToastWorkExt`): a replace-all is squarely this
-    /// Work's own edit, never every open window's business.
-    pub fn work_id(&self) -> Option<u64> {
-        self.ids.work_id.get()
     }
 
     // ── view handles (signals the widgets bind to) ──────────────────────────
@@ -727,6 +719,16 @@ impl SearchReplaceViewModel {
 
     fn row_by_id(&self, result_id: u64) -> Option<SearchResultDto> {
         self.results.items().into_iter().find(|r| r.id == result_id)
+    }
+}
+
+/// The open Work this search runs over — `search_replace_flow.rs`'s
+/// completion/error toasts route here via [`HasWorkId::work_id`] (see
+/// `crate::toast_scope::ToastWorkExt`): a replace-all is squarely this
+/// Work's own edit, never every open window's business.
+impl HasWorkId for SearchReplaceViewModel {
+    fn app_ids(&self) -> &AppIds {
+        &self.ids
     }
 }
 

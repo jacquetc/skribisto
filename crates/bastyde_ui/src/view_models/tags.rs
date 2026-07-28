@@ -20,7 +20,7 @@ use anyhow::{Context, Result};
 use bastyde::data::ListModel;
 use bastyde::prelude::*;
 
-use crate::app_ids::AppIds;
+use crate::app_ids::{AppIds, HasWorkId};
 use crate::models::{TagRow, WorkTagsListModel, name_key};
 use crate::tags::Preset;
 
@@ -64,13 +64,6 @@ impl TagsViewModel {
     /// Wire the held Layer-A handle's event subscriptions (once, from `App::build`).
     pub fn wire(&self, ctx: &mut BuildContext) {
         self.list.wire(ctx);
-    }
-
-    /// The open Work this palette belongs to — the pane's toast call sites
-    /// use this to route feedback ("tag added", "preset applied", …) to the
-    /// Work it is actually about (see `crate::toast_scope::ToastWorkExt`).
-    pub fn work_id(&self) -> Option<u64> {
-        self.ids.work_id.get()
     }
 
     /// The reactive palette to bind (the pane wraps it in a `SortFilterListModel`).
@@ -214,6 +207,16 @@ impl TagsViewModel {
         let text = format_csv(&rows)?;
         std::fs::write(path, text).with_context(|| format!("writing {}", path.display()))?;
         Ok(rows.len())
+    }
+}
+
+/// The open Work this palette belongs to — the pane's toast call sites use
+/// this (via [`HasWorkId::work_id`]) to route feedback ("tag added", "preset
+/// applied", …) to the Work it is actually about (see
+/// `crate::toast_scope::ToastWorkExt`).
+impl HasWorkId for TagsViewModel {
+    fn app_ids(&self) -> &AppIds {
+        &self.ids
     }
 }
 

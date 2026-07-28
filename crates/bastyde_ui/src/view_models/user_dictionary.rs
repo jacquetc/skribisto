@@ -25,7 +25,7 @@ use bastyde::data::ListModel;
 use bastyde::prelude::*;
 use bastyde::widgets::{Toast, ToastAction};
 
-use crate::app_ids::AppIds;
+use crate::app_ids::{AppIds, HasWorkId};
 use crate::models::{DictWordListModel, DictWordRow};
 use crate::singles::SingleDictWord;
 use crate::toast_scope::ToastWorkExt;
@@ -61,14 +61,6 @@ impl UserDictionaryViewModel {
     pub fn wire(&self, ctx: &mut BuildContext) {
         self.list.wire(ctx);
         self.single.wire(ctx);
-    }
-
-    /// The open Work this word list belongs to — every toast this
-    /// view-model (and its settings pane) raises routes here (see
-    /// `crate::toast_scope::ToastWorkExt`) rather than broadcasting a
-    /// per-project dictionary edit into every open window.
-    pub fn work_id(&self) -> Option<u64> {
-        self.ids.work_id.get()
     }
 
     /// The reactive list to bind (the pane wraps it in a `SortFilterListModel`).
@@ -243,6 +235,16 @@ impl UserDictionaryViewModel {
             out.push(t.to_string());
         }
         out
+    }
+}
+
+/// The open Work this word list belongs to — every toast this view-model
+/// (and its settings pane) raises routes here (via [`HasWorkId::work_id`],
+/// see `crate::toast_scope::ToastWorkExt`) rather than broadcasting a
+/// per-project dictionary edit into every open window.
+impl HasWorkId for UserDictionaryViewModel {
+    fn app_ids(&self) -> &AppIds {
+        &self.ids
     }
 }
 

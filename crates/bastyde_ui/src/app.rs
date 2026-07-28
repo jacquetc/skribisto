@@ -2530,13 +2530,20 @@ impl Widget for App {
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
             let backup_settings = backup_settings.clone();
+            let ids = ids.clone();
             ctx.register_action_global(Action::new("backups.show").on_invoke(move |_i, c| {
                 let uid = single_work.unique_id().get();
                 let Some(path) = single_work_info.file_name().get() else {
                     return;
                 };
                 let dirs = backup_settings.effective_for(&uid).destinations;
-                let work_id = single_work.id();
+                // F2 — `ids.work_id` is the authoritative "current Work" id
+                // (never `single_work.id()`): this is threaded into
+                // `BackupsListPanel`/`BackupsListViewModel` for the
+                // delete-failure toast's `scoped_id`/`target_work`, which
+                // must route on the same source every other toast in this
+                // window does.
+                let work_id = ids.work_id.get();
                 c.present_modal(
                     ModalRequest::deferred(move |t| {
                         t.add(crate::backup::list_panel::BackupsListPanel::new(

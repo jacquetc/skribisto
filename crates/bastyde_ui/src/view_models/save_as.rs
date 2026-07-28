@@ -21,13 +21,15 @@
 //! user switched projects while the background save was running, and
 //! concurrent Save-As ops don't drop each other's completion.
 //!
-//! **F1.** Every completion/failure toast below routes on [`Pending::work_id`]
-//! — a [`super::long_op::CapturedWork`], captured once in [`SaveAsViewModel::start`]
-//! — never a live `self.ids.work_id.get()`. This view-model is minted once per
-//! window (see above) and outlives any one Save As, including across an
-//! in-place project switch in the SAME window while the background op is
-//! still running (`ProjectSwitchViewModel::request` gates a switch only on
-//! unsaved edits/autosave, never on "is a Save As running"). A switch reseeds
+//! **F1.** Every completion/failure toast below routes on
+//! [`Pending::tracked`]'s `work_id()` — a [`super::long_op::CapturedWork`]
+//! bundled with the op id in a [`super::long_op::TrackedOp`], captured once
+//! in [`SaveAsViewModel::start`] — never a live `self.ids.work_id.get()`.
+//! This view-model is minted once per window (see above) and outlives any
+//! one Save As, including across an in-place project switch in the SAME
+//! window while the background op is still running
+//! (`ProjectSwitchViewModel::request` gates a switch only on unsaved
+//! edits/autosave, never on "is a Save As running"). A switch reseeds
 //! `ids.work_id` on the SAME `Signal` this view-model holds, so a handler
 //! reading it live would silently answer with whichever Work this window
 //! shows *at completion time*, not the Work that was actually saved —
@@ -35,7 +37,7 @@
 //! never hears it finished. `ExportViewModel`, `BackupSchedulerViewModel` and
 //! `BackupRestoreViewModel` were fixed for the identical pattern first; this
 //! view-model was missed, and is now on the same shared mechanism (see
-//! `long_op::CapturedWork`'s own doc).
+//! `long_op::CapturedWork`'s and `long_op::TrackedOp`'s own docs).
 //!
 //! [`SaveAsViewModel::begin`] is the **only** door to the backend `save_as`: it
 //! flushes the live editor buffers into the store before the background op reads
@@ -66,11 +68,11 @@ use crate::backup::BackupContext;
 use crate::singles::SingleWork;
 use crate::toast_scope::ToastWorkExt;
 
-use super::long_op::{CapturedWork, event_id, parse_payload};
+use super::long_op::{CapturedWork, TrackedOp, event_id, parse_payload};
 
 /// Update-in-place key for the single toast a Save As drives (starting →
 /// success / error) — folded through [`work_scoped_toast_id`] with the
-/// captured [`Pending::work_id`] at every use, never bare, for the same
+/// captured [`Pending::tracked`]'s `work_id()` at every use, never bare, for the same
 /// reason [`super::export::ExportViewModel`]'s own toast id is: two Works
 /// running their own Save As at once must never collide in the shared
 /// `ToastRegistry` (`ToastRegistry::enqueue` dedups on id alone). Reusing one
@@ -81,14 +83,16 @@ const SAVE_AS_TOAST_ID: &str = "save_as.work";
 
 /// What a running Save-As needs to record on completion — pinned at start time.
 struct Pending {
+    /// The long-operation id (also this entry's `HashMap` key, kept here too
+    /// so a handler need not thread the key through separately) bundled with
+    /// the Work it was captured for (F4) — see `long_op::TrackedOp`'s doc and
+    /// the module doc's "F1" section. Every completion/failure toast routes
+    /// on `tracked.work_id()`, never a live `self.ids.work_id.get()`.
+    tracked: TrackedOp,
     as_folder: bool,
     /// The `WorkInfo` id of the project being saved, captured at `start()`. `None`
     /// if no project was open (shouldn't happen — Save As requires one).
     work_info_id: Option<u64>,
-    /// This window's own Work, captured at `start()` — see the module doc's
-    /// "F1" section and `long_op::CapturedWork`'s own doc. Every completion/
-    /// failure toast routes on THIS, never a live `self.ids.work_id.get()`.
-    work_id: CapturedWork,
 }
 
 #[derive(Clone)]
@@ -213,12 +217,14 @@ impl SaveAsViewModel {
     /// "starting" toast.
     fn start(&self, op_id: String, as_folder: bool) -> CapturedWork {
         let work_info_id = self.ids.work_info_id.get();
-        let work_id = CapturedWork::now(&self.ids);
+        // Captured NOW, bundled with the op id — see `long_op::TrackedOp`'s doc.
+        let tracked = TrackedOp::start(&self.ids, op_id.clone());
+        let work_id = tracked.work_id();
         self.pending.borrow_mut().insert(
             op_id,
             Pending {
+                tracked,
                 as_folder,
-                work_id,
                 work_info_id,
             },
         );
@@ -284,19 +290,19 @@ impl SaveAsViewModel {
                 }
                 crate::shell::open_registry::claim(&output_path, &self.single_work.title().get());
                 // F1: routes AND scopes on the Work THIS Save As started for
-                // — see `Pending::work_id`'s doc — never a live
+                // — see `Pending::tracked`'s doc — never a live
                 // `self.ids.work_id.get()`.
                 ctx.show_toast(
                     Toast::success(tr!(saved_as(target = output_path)))
-                        .scoped_id(SAVE_AS_TOAST_ID, pending.work_id)
-                        .target_work(pending.work_id),
+                        .scoped_id(SAVE_AS_TOAST_ID, pending.tracked.work_id())
+                        .target_work(pending.tracked.work_id()),
                 );
             }
             Err(e) => {
                 ctx.show_toast(
                     Toast::error(tr!(save_error(error = e.to_string())))
-                        .scoped_id(SAVE_AS_TOAST_ID, pending.work_id)
-                        .target_work(pending.work_id),
+                        .scoped_id(SAVE_AS_TOAST_ID, pending.tracked.work_id())
+                        .target_work(pending.tracked.work_id()),
                 );
             }
         };
@@ -315,11 +321,11 @@ impl SaveAsViewModel {
             .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
             .unwrap_or_default();
         // F1: routes AND scopes on the Work THIS Save As started for — see
-        // `Pending::work_id`'s doc — never a live `self.ids.work_id.get()`.
+        // `Pending::tracked`'s doc — never a live `self.ids.work_id.get()`.
         ctx.show_toast(
             Toast::error(tr!(save_error(error = error)))
-                .scoped_id(SAVE_AS_TOAST_ID, pending.work_id)
-                .target_work(pending.work_id),
+                .scoped_id(SAVE_AS_TOAST_ID, pending.tracked.work_id())
+                .target_work(pending.tracked.work_id()),
         );
     }
 }
@@ -417,12 +423,18 @@ mod tests {
         vm.pending.borrow_mut().insert(
             "fake-save-as-op".to_string(),
             Pending {
+                tracked: TrackedOp::start(&vm.ids, "fake-save-as-op".to_string()),
                 as_folder: false,
                 work_info_id: None,
-                work_id: CapturedWork::now(&vm.ids),
             },
         );
-        let captured = vm.pending.borrow().get("fake-save-as-op").unwrap().work_id;
+        let captured = vm
+            .pending
+            .borrow()
+            .get("fake-save-as-op")
+            .unwrap()
+            .tracked
+            .work_id();
         assert_eq!(captured, Some(1));
 
         // An in-place project switch reseeds `ids.work_id` on the SAME `AppIds`
@@ -431,16 +443,26 @@ mod tests {
         vm.ids.work_id.set(Some(2));
 
         assert_eq!(
-            vm.pending.borrow().get("fake-save-as-op").unwrap().work_id,
+            vm.pending
+                .borrow()
+                .get("fake-save-as-op")
+                .unwrap()
+                .tracked
+                .work_id(),
             captured,
             "the in-flight Save As's own Work must stay pinned to what `start` \
              captured, even after this window switches to a different Work"
         );
         assert_ne!(
-            vm.pending.borrow().get("fake-save-as-op").unwrap().work_id,
+            vm.pending
+                .borrow()
+                .get("fake-save-as-op")
+                .unwrap()
+                .tracked
+                .work_id(),
             vm.ids.work_id.get(),
             "the captured Work must now differ from the window's live \
-             `ids.work_id` — proving a handler reading `pending.work_id` cannot \
+             `ids.work_id` — proving a handler reading `pending.tracked.work_id()` cannot \
              silently be reading the same live value `ids.work_id` would give it"
         );
     }
@@ -493,9 +515,9 @@ mod tests {
         vm_a.pending.borrow_mut().insert(
             "fake-op-a".to_string(),
             Pending {
+                tracked: TrackedOp::start(&vm_a.ids, "fake-op-a".to_string()), // captures Work 1
                 as_folder: false,
                 work_info_id: None,
-                work_id: CapturedWork::now(&vm_a.ids), // captures Work 1
             },
         );
         // …then window A switches in place to Work 2 — the SAME Work window B
@@ -508,9 +530,9 @@ mod tests {
         vm_b.pending.borrow_mut().insert(
             "fake-op-b".to_string(),
             Pending {
+                tracked: TrackedOp::start(&vm_b.ids, "fake-op-b".to_string()), // captures Work 2
                 as_folder: false,
                 work_info_id: None,
-                work_id: CapturedWork::now(&vm_b.ids), // captures Work 2
             },
         );
 

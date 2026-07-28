@@ -1081,7 +1081,13 @@ impl Widget for SettingsPanel {
                         uid,
                         path,
                         title,
-                        w.id(),
+                        // F3 — `ids.work_id` is the authoritative "current
+                        // Work" id, never `single_work.id()` (`w` here):
+                        // this feeds `BackupsListPanel`/`BackupsListViewModel`
+                        // for the identical delete-failure toast routing as
+                        // `app.rs`'s `backups.show` handler (F2), so it must
+                        // read the same source.
+                        self.session.ids.work_id.get(),
                     ),
                 ))
             }

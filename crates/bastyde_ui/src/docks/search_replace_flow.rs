@@ -21,6 +21,7 @@ use bastyde::widgets::{
     MessageBox, MessageBoxButtons, MessageBoxResult, StandardButton, Toast, ToastAction,
 };
 
+use crate::app_ids::HasWorkId;
 use crate::toast_scope::ToastWorkExt;
 use crate::view_models::SearchReplaceViewModel;
 
