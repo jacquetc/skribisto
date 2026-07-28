@@ -51,7 +51,9 @@ use crate::{
     DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT, DISTRACTION_FREE_FONT_FAMILY_DEFAULT,
     DISTRACTION_FREE_LINE_HEIGHT_DEFAULT, DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
     DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT, DISTRACTION_FREE_SIZE_DEFAULT,
-    DISTRACTION_FREE_WIDTH_DEFAULT, EDITOR_WIDTH_DEFAULT, GOALS_SHOW_CHARACTERS_DEFAULT,
+    DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_SESSION_DEFAULT,
+    DISTRACTION_FREE_TAB_BAR_DEFAULT, DISTRACTION_FREE_WIDTH_DEFAULT,
+    DISTRACTION_FREE_WORD_COUNT_DEFAULT, EDITOR_WIDTH_DEFAULT, GOALS_SHOW_CHARACTERS_DEFAULT,
     HIGHLIGHT_SENTENCE_DEFAULT, NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FONT_FAMILY_DEFAULT,
     NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT,
     NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_SIZE_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT,
@@ -368,6 +370,14 @@ fn build_not_defaults(
             .map(|v| (*v - DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
         vm.distraction_free_width()
             .map(|w| (*w - DISTRACTION_FREE_WIDTH_DEFAULT).abs() > 0.01),
+        vm.distraction_free_tab_bar()
+            .map(|s| *s != DISTRACTION_FREE_TAB_BAR_DEFAULT),
+        vm.distraction_free_word_count()
+            .map(|s| *s != DISTRACTION_FREE_WORD_COUNT_DEFAULT),
+        vm.distraction_free_session()
+            .map(|s| *s != DISTRACTION_FREE_SESSION_DEFAULT),
+        vm.distraction_free_go()
+            .map(|s| *s != DISTRACTION_FREE_GO_DEFAULT),
         // ── Editor behaviour ──
         vm.synopsis_pane().map(|s| *s != SYNOPSIS_PANE_DEFAULT),
         vm.typewriter().map(|s| *s != TYPEWRITER_DEFAULT),
@@ -847,6 +857,22 @@ impl SettingsPanel {
             ),
             (tr!(settings_text_width()), Pane::EditorBehavior),
             (tr!(settings_synopsis_pane()), Pane::EditorBehavior),
+            // The distraction-free chrome toggles live on the Editor Behavior
+            // page, not the Distraction-free typography page — searching for
+            // "tabs" has to land where the checkbox actually is.
+            (
+                tr!(settings_distraction_free_tab_bar()),
+                Pane::EditorBehavior,
+            ),
+            (
+                tr!(settings_distraction_free_word_count()),
+                Pane::EditorBehavior,
+            ),
+            (
+                tr!(settings_distraction_free_session()),
+                Pane::EditorBehavior,
+            ),
+            (tr!(settings_distraction_free_go()), Pane::EditorBehavior),
             (tr!(settings_field_app_theme()), Pane::Appearance),
             (tr!(settings_field_text_scale()), Pane::Appearance),
             (tr!(settings_field_language()), Pane::Appearance),

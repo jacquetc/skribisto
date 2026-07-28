@@ -95,6 +95,21 @@ use crate::view_models::{
     unsaved_decision,
 };
 
+/// Whether an editor pane shows its tab strip, from this window's
+/// distraction-free state and the writer's "keep the editor tabs" setting.
+///
+/// Pure, so the rule is checkable without a window: the mode takes the strip
+/// away, and that one setting is the only thing that overrides it. Outside the
+/// mode the setting has no say at all — it is scoped to distraction-free, not
+/// a general "hide my tabs" preference.
+fn tab_bar_policy(focus_active: bool, keep_in_focus_mode: bool) -> TabBarVisibility {
+    if focus_active && !keep_in_focus_mode {
+        TabBarVisibility::Never
+    } else {
+        TabBarVisibility::Always
+    }
+}
+
 /// Build one editor pane's `TabWidget`: dynamic tabs, cross-pane migration
 /// (`accept_external_tabs` + `on_tab_received` dedup + `on_transfer_out`
 /// collapse), close, and `trailing` in the tab-strip trailing slot. Shared by
@@ -103,6 +118,7 @@ fn build_pane_tabs(
     editors: &EditorsViewModel,
     side: Side,
     trailing: impl Widget + 'static,
+    bar_visibility: Signal<TabBarVisibility>,
 ) -> TabWidget {
     let close = editors.clone();
     let recv = editors.clone();
@@ -115,7 +131,7 @@ fn build_pane_tabs(
         .on_transfer_out(move |tab_id, _ctx| out.transfer_out(side, tab_id))
         .reorderable(true)
         .accept_external_tabs(true)
-        .bar_visibility(TabBarVisibility::Always)
+        .bar_visibility(bar_visibility)
         .compact_bar()
         .selected_tab_background(SurfaceRole::Content)
         .hover_tab_background(Hover)
@@ -2615,6 +2631,20 @@ impl Widget for App {
             });
         }
 
+        // The editor tab strip is chrome like the menu bar and the docks, so
+        // distraction-free mode takes it away too — unless the writer ticked
+        // Settings ▸ Editor ▸ Editor Behavior ▸ Distraction-free ▸ "Editor tabs".
+        // Bound (not swapped): `TabWidget::bar_visibility` takes a `Prop`, so
+        // the strip appears and disappears in place and the panes below it are
+        // never rebuilt — entering the mode must not cost the writer their
+        // caret or scroll position. Both panes share the one signal so their
+        // chrome can't drift, the same reason `build_pane_tabs` exists at all.
+        let tab_bar_visibility = self
+            .focus
+            .active_signal()
+            .zip(&settings.distraction_free_tab_bar())
+            .map(|(focus_active, keep)| tab_bar_policy(*focus_active, *keep));
+
         let primary_pane = {
             let e = editors.clone();
             DropTarget::new()
@@ -2637,7 +2667,12 @@ impl Widget for App {
                         _ => e.open_in(Side::Primary, item_id, title),
                     })
                 })
-                .child(build_pane_tabs(&editors, Side::Primary, split_button))
+                .child(build_pane_tabs(
+                    &editors,
+                    Side::Primary,
+                    split_button,
+                    tab_bar_visibility.clone(),
+                ))
                 .focus_within(primary_focus.clone())
         };
 
@@ -2661,6 +2696,7 @@ impl Widget for App {
                     &editors,
                     Side::Secondary,
                     close_split_button,
+                    tab_bar_visibility,
                 ))
                 .focus_within(secondary_focus.clone())
         };
@@ -2942,6 +2978,7 @@ impl Widget for App {
             session_vm.clone(),
             single_work_info.shape().map(|s| s.is_some()),
             settings.show_characters(),
+            crate::statusbar::focus_strip::FocusStripChrome::from_settings(&settings),
         );
 
         let root = ctx.add(
@@ -3154,6 +3191,25 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventCo
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Distraction-free mode takes the editor tab strip away, and only the
+    /// "keep the editor tabs" setting brings it back — and only *inside* the
+    /// mode. The fourth row is the one worth pinning: with the mode off, a
+    /// writer who unticked the box still gets their tabs, because the setting
+    /// is scoped to distraction-free rather than being a general "hide my
+    /// tabs" preference.
+    #[test]
+    fn the_tab_strip_is_hidden_only_by_distraction_free_mode() {
+        use TabBarVisibility::{Always, Never};
+        assert_eq!(tab_bar_policy(true, false), Never, "in the mode, not kept");
+        assert_eq!(tab_bar_policy(true, true), Always, "in the mode, kept");
+        assert_eq!(tab_bar_policy(false, true), Always, "outside the mode");
+        assert_eq!(
+            tab_bar_policy(false, false),
+            Always,
+            "outside the mode the setting has no say"
+        );
+    }
 
     /// The two-tier punctuation resolution, which is the whole point of
     /// `override_app_default` being a stored flag rather than an implied one.

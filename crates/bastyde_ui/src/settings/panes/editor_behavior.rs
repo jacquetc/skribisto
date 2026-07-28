@@ -9,8 +9,9 @@ use bastyde::prelude::*;
 use super::super::*;
 
 /// Editor ▸ Editor Behavior — the non-typographic writing settings: the
-/// centered-column width + the synopsis-pane / typewriter / highlight toggles,
-/// plus distraction-free mode's own column width.
+/// centered-column width, the writing-view toggles, and everything
+/// distraction-free mode does differently (its own column width, and which
+/// pieces of chrome it keeps).
 pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl Widget {
     let form = FormLayout::new()
         .label(tr!(settings_page_editor_behavior()))
@@ -29,6 +30,17 @@ pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl 
                 format!("{} px", v.round() as i32)
             }),
         )
+        // These three are general writing-surface options and apply in every
+        // mode. They carry their own group heading so they cannot be read as
+        // belonging to the "Distraction-free" one below — which is exactly how
+        // they rendered before, the group heading having been inserted above
+        // them when the distraction-free column width was added.
+        .full_width(group(tr!(settings_group_writing_view())))
+        .full_width(Checkbox::new(vm.synopsis_pane()).label(tr!(settings_synopsis_pane())))
+        .full_width(Checkbox::new(vm.typewriter()).label(tr!(settings_typewriter())))
+        .full_width(
+            Checkbox::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())),
+        )
         // Distraction-free mode's own column width — a flat pixel measure like the
         // two above (not a character-count cap: `bastyde-text`'s reachable surface
         // has no horizontal glyph-advance metrics to fake one), kept as its own
@@ -42,11 +54,24 @@ pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl 
             }),
         )
         .full_width(hint(tr!(settings_distraction_free_width_hint())))
-        .full_width(Checkbox::new(vm.synopsis_pane()).label(tr!(settings_synopsis_pane())))
-        .full_width(Checkbox::new(vm.typewriter()).label(tr!(settings_typewriter())))
+        // Which chrome the mode keeps. Ticked = kept, so every box reads the
+        // same way round; the tab strip starts unticked and the three readouts
+        // ticked. There is deliberately no Exit checkbox — the hint below says
+        // so, because its absence is a promise, not an oversight.
         .full_width(
-            Checkbox::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())),
+            Checkbox::new(vm.distraction_free_tab_bar())
+                .label(tr!(settings_distraction_free_tab_bar())),
         )
+        .full_width(
+            Checkbox::new(vm.distraction_free_word_count())
+                .label(tr!(settings_distraction_free_word_count())),
+        )
+        .full_width(
+            Checkbox::new(vm.distraction_free_session())
+                .label(tr!(settings_distraction_free_session())),
+        )
+        .full_width(Checkbox::new(vm.distraction_free_go()).label(tr!(settings_distraction_free_go())))
+        .full_width(hint(tr!(settings_distraction_free_chrome_hint())))
         .full_width(group(tr!(settings_group_container_views())))
         .full_width(
             Checkbox::new(vm.remember_view())

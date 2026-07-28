@@ -203,6 +203,34 @@ pub const PREVIEW_WIDTH_DEFAULT: f32 = 700.0;
 /// that measure at the distraction-free bundle's own default face/size.
 pub const DISTRACTION_FREE_WIDTH_KEY: &str = "editor.distraction_free.column_width";
 pub const DISTRACTION_FREE_WIDTH_DEFAULT: f32 = 620.0;
+// ── Which pieces of chrome distraction-free mode keeps ──
+//
+// The mode's job is to take chrome away, so each of these defaults to the
+// *quieter* answer and the writer opts back in — except the Exit button,
+// which is deliberately **not** a setting at all. It is the strip's
+// documented way out (see `statusbar/focus_strip.rs`), so it must survive
+// every combination of these four: a wedged Escape must never be able to
+// combine with a settings choice to leave someone stuck in the mode.
+/// Keep the editor tab strip while distraction-free mode is active.
+/// Default **off** — one manuscript, no tab row, which is what Scrivener's
+/// Composition Mode, FocusWriter and Manuskript's fullscreen all present.
+/// Ctrl+Tab and the strip's own Go arrows still move between documents, so
+/// hiding the strip removes the chrome without removing the navigation.
+pub const DISTRACTION_FREE_TAB_BAR_KEY: &str = "editor.distraction_free.tab_bar";
+pub const DISTRACTION_FREE_TAB_BAR_DEFAULT: bool = false;
+/// Keep the word-count readout in the distraction-free strip (default **on**).
+pub const DISTRACTION_FREE_WORD_COUNT_KEY: &str = "editor.distraction_free.word_count";
+pub const DISTRACTION_FREE_WORD_COUNT_DEFAULT: bool = true;
+/// Keep the writing-session readout in the distraction-free strip
+/// (default **on**).
+pub const DISTRACTION_FREE_SESSION_KEY: &str = "editor.distraction_free.session";
+pub const DISTRACTION_FREE_SESSION_DEFAULT: bool = true;
+/// Keep the Previous/Next pair in the distraction-free strip (default **on**).
+/// One key for both buttons: they are a single navigational affordance, and a
+/// strip offering only one direction would be a worse answer than either
+/// showing or hiding the pair.
+pub const DISTRACTION_FREE_GO_KEY: &str = "editor.distraction_free.go_buttons";
+pub const DISTRACTION_FREE_GO_DEFAULT: bool = true;
 /// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
 pub const AUTOSAVE_KEY: &str = "editor.autosave";
 /// The master spell-check switch (default **on**) — the title-bar toggle, View ▸ Check

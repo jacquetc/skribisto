@@ -36,8 +36,12 @@ use crate::{
     DISTRACTION_FREE_FONT_FAMILY_KEY, DISTRACTION_FREE_LINE_HEIGHT_DEFAULT,
     DISTRACTION_FREE_LINE_HEIGHT_KEY, DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
     DISTRACTION_FREE_PARA_SPACING_AFTER_KEY, DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT,
-    DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY, DISTRACTION_FREE_SIZE_DEFAULT,
-    DISTRACTION_FREE_SIZE_KEY, DISTRACTION_FREE_WIDTH_DEFAULT, DISTRACTION_FREE_WIDTH_KEY,
+    DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_KEY,
+    DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY, DISTRACTION_FREE_SESSION_DEFAULT,
+    DISTRACTION_FREE_SESSION_KEY, DISTRACTION_FREE_SIZE_DEFAULT, DISTRACTION_FREE_SIZE_KEY,
+    DISTRACTION_FREE_TAB_BAR_DEFAULT, DISTRACTION_FREE_TAB_BAR_KEY, DISTRACTION_FREE_WIDTH_DEFAULT,
+    DISTRACTION_FREE_WIDTH_KEY, DISTRACTION_FREE_WORD_COUNT_DEFAULT,
+    DISTRACTION_FREE_WORD_COUNT_KEY,
     EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
     GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
     HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
@@ -220,6 +224,12 @@ pub struct SettingsViewModel {
     /// Max width (px) of the writing column while distraction-free mode is
     /// active — independent from [`Self::column_width`].
     distraction_free_width: Signal<f32>,
+    /// Which pieces of chrome distraction-free mode keeps. The Exit button is
+    /// absent by design — see `DISTRACTION_FREE_TAB_BAR_KEY`'s doc in `main.rs`.
+    distraction_free_tab_bar: Signal<bool>,
+    distraction_free_word_count: Signal<bool>,
+    distraction_free_session: Signal<bool>,
+    distraction_free_go: Signal<bool>,
     // ── Editor behaviour ──
     synopsis_pane: Signal<bool>,
     /// Application-level smart punctuation — the tier a project follows when
@@ -351,6 +361,18 @@ impl SettingsViewModel {
             },
             distraction_free_width: store
                 .signal(DISTRACTION_FREE_WIDTH_KEY, DISTRACTION_FREE_WIDTH_DEFAULT),
+            distraction_free_tab_bar: store.signal(
+                DISTRACTION_FREE_TAB_BAR_KEY,
+                DISTRACTION_FREE_TAB_BAR_DEFAULT,
+            ),
+            distraction_free_word_count: store.signal(
+                DISTRACTION_FREE_WORD_COUNT_KEY,
+                DISTRACTION_FREE_WORD_COUNT_DEFAULT,
+            ),
+            distraction_free_session: store
+                .signal(DISTRACTION_FREE_SESSION_KEY, DISTRACTION_FREE_SESSION_DEFAULT),
+            distraction_free_go: store
+                .signal(DISTRACTION_FREE_GO_KEY, DISTRACTION_FREE_GO_DEFAULT),
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
             punct_dashes: store.signal(PUNCT_DASHES_KEY, PUNCT_DASHES_DEFAULT),
             punct_ellipsis: store.signal(PUNCT_ELLIPSIS_KEY, PUNCT_ELLIPSIS_DEFAULT),
@@ -434,6 +456,31 @@ impl SettingsViewModel {
     /// independent from [`Self::column_width`].
     pub fn distraction_free_width(&self) -> Signal<f32> {
         self.distraction_free_width.clone()
+    }
+
+    // ── Which chrome distraction-free mode keeps ─────────────────────────
+    //
+    // Read by `App::build` (the tab strip) and `FocusStrip` (the other three).
+    // Each gates a `VisibleWhen` *inside* the mode; none of them has any
+    // effect while the mode is off.
+
+    /// Keep the editor tab strip while distraction-free mode is active
+    /// (default off).
+    pub fn distraction_free_tab_bar(&self) -> Signal<bool> {
+        self.distraction_free_tab_bar.clone()
+    }
+    /// Keep the word count in the distraction-free strip (default on).
+    pub fn distraction_free_word_count(&self) -> Signal<bool> {
+        self.distraction_free_word_count.clone()
+    }
+    /// Keep the writing-session readout in the distraction-free strip
+    /// (default on).
+    pub fn distraction_free_session(&self) -> Signal<bool> {
+        self.distraction_free_session.clone()
+    }
+    /// Keep the Previous/Next pair in the distraction-free strip (default on).
+    pub fn distraction_free_go(&self) -> Signal<bool> {
+        self.distraction_free_go.clone()
     }
 
     /// Show the synopsis pane above the manuscript. Consumed live by the writing
@@ -633,6 +680,13 @@ impl SettingsViewModel {
             .set(DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT);
         self.distraction_free_width
             .set(DISTRACTION_FREE_WIDTH_DEFAULT);
+        self.distraction_free_tab_bar
+            .set(DISTRACTION_FREE_TAB_BAR_DEFAULT);
+        self.distraction_free_word_count
+            .set(DISTRACTION_FREE_WORD_COUNT_DEFAULT);
+        self.distraction_free_session
+            .set(DISTRACTION_FREE_SESSION_DEFAULT);
+        self.distraction_free_go.set(DISTRACTION_FREE_GO_DEFAULT);
         self.synopsis_pane.set(SYNOPSIS_PANE_DEFAULT);
         self.punct_dashes.set(PUNCT_DASHES_DEFAULT);
         self.punct_ellipsis.set(PUNCT_ELLIPSIS_DEFAULT);
@@ -722,6 +776,56 @@ mod tests {
             assert_ne!(b.font_family.get(), "EB Garamond");
             assert_ne!(b.first_line_indent.get(), 40.0);
         }
+    }
+
+    /// The four distraction-free chrome toggles round-trip through the store
+    /// and are restored by Reset. Easy to add a setting and forget the reset
+    /// arm — the typography test above only covers the bundles.
+    #[test]
+    fn distraction_free_chrome_toggles_persist_and_reset() {
+        use crate::{
+            DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_SESSION_DEFAULT,
+            DISTRACTION_FREE_TAB_BAR_DEFAULT, DISTRACTION_FREE_WORD_COUNT_DEFAULT,
+        };
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+
+        // The mode exists to remove chrome, so the tab strip starts hidden and
+        // the three informational items start shown.
+        assert!(!vm.distraction_free_tab_bar().get());
+        assert!(vm.distraction_free_word_count().get());
+        assert!(vm.distraction_free_session().get());
+        assert!(vm.distraction_free_go().get());
+
+        // Flip every one away from its default...
+        vm.distraction_free_tab_bar().set(true);
+        vm.distraction_free_word_count().set(false);
+        vm.distraction_free_session().set(false);
+        vm.distraction_free_go().set(false);
+
+        // ...they survive a fresh view-model over the same store (persisted,
+        // not merely cached in this instance)...
+        let reopened = SettingsViewModel::new(&store);
+        assert!(reopened.distraction_free_tab_bar().get());
+        assert!(!reopened.distraction_free_word_count().get());
+        assert!(!reopened.distraction_free_session().get());
+        assert!(!reopened.distraction_free_go().get());
+
+        // ...and Reset puts all four back.
+        vm.reset_editor_defaults();
+        assert_eq!(
+            vm.distraction_free_tab_bar().get(),
+            DISTRACTION_FREE_TAB_BAR_DEFAULT
+        );
+        assert_eq!(
+            vm.distraction_free_word_count().get(),
+            DISTRACTION_FREE_WORD_COUNT_DEFAULT
+        );
+        assert_eq!(
+            vm.distraction_free_session().get(),
+            DISTRACTION_FREE_SESSION_DEFAULT
+        );
+        assert_eq!(vm.distraction_free_go().get(), DISTRACTION_FREE_GO_DEFAULT);
     }
 
     #[test]
