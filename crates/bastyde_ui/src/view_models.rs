@@ -80,6 +80,7 @@ mod focus;
 mod format;
 mod fullscreen;
 mod go;
+mod go_to;
 mod import_plume;
 mod long_op;
 mod mention_index;
@@ -129,6 +130,7 @@ pub use format::{
 };
 pub use fullscreen::FullscreenViewModel;
 pub use go::GoAvailability;
+pub use go_to::GoToViewModel;
 pub use import_plume::ImportPlumeViewModel;
 pub use mention_index::{MentionIndex, MentionRow};
 pub use new_work::NewWorkViewModel;
