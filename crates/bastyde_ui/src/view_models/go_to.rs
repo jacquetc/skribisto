@@ -33,7 +33,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use bastyde::data::{KeyedSelectionModel, SelectionMode};
+use bastyde::data::{KeyedSelectionModel, SelectionMode, TreeDataSource};
 use bastyde::prelude::*;
 use frontend::AppContext;
 
@@ -136,6 +136,108 @@ impl GoToViewModel {
         } else {
             self.show();
         }
+    }
+
+    /// Move the highlight one row down (`+1`) or up (`-1`) through the rows the
+    /// current query leaves visible, and return where it landed.
+    ///
+    /// This is what "quicker selection" means here, and why the popup does
+    /// **not** also grow a suggestion dropdown: a dropdown over a filtered tree
+    /// puts the same items on screen twice and makes Enter ambiguous between
+    /// them. Every palette a writer already knows — VS Code, Sublime, IntelliJ,
+    /// Scrivener's own Go To — has exactly one result list and moves through it
+    /// from the field. So does this.
+    ///
+    /// Rows that are not destinations are skipped, not merely rejected on
+    /// Enter — see [`Self::is_destination`]. A highlight that can rest on
+    /// something Enter refuses to open (or opens *wrongly*) is a dead end the
+    /// writer has to notice and step past.
+    pub fn step_selection(&self, delta: isize) -> Option<BinderTreeKey> {
+        let count = self.model.visible_count();
+        if count == 0 {
+            return None;
+        }
+        let current = self
+            .selection
+            .selected_keys()
+            .first()
+            .and_then(|k| (0..count).find(|&i| self.model.key_at(i).as_ref() == Some(k)));
+
+        // From nothing, Down starts at the top and Up at the bottom — the
+        // wrap-around a writer expects when the list has no cursor yet.
+        let mut idx = match (current, delta >= 0) {
+            (Some(i), _) => i as isize + delta,
+            (None, true) => 0,
+            (None, false) => count as isize - 1,
+        };
+
+        // Walk past binder rows in the direction of travel; stop at the ends
+        // rather than wrapping, so holding an arrow key settles instead of
+        // cycling forever.
+        while (0..count as isize).contains(&idx) {
+            if let Some(key) = self.model.key_at(idx as usize)
+                && self.is_destination(&key)
+            {
+                self.selection.select(key.clone());
+                return Some(key);
+            }
+            idx += if delta >= 0 { 1 } else { -1 };
+        }
+        None
+    }
+
+    /// Is this row a legitimate destination for the arrows and Enter?
+    ///
+    /// Openable **and**, once a query is typed, actually a match for it. The
+    /// filter is ancestor-preserving, so a search for "epi" also shows the Book
+    /// and Part that contain the Epilogue — context the writer wants to *see*
+    /// but did not ask to *go to*. Landing the highlight on the containing Book
+    /// and opening it on Enter is a jump nobody requested.
+    ///
+    /// With an empty query every openable row is fair game: the writer is
+    /// browsing the tree, not searching it.
+    fn is_destination(&self, key: &BinderTreeKey) -> bool {
+        if self.model.item_id_of(key).is_none() {
+            return false;
+        }
+        let query = self.filters.query.get();
+        let query = query.trim();
+        if query.is_empty() {
+            return true;
+        }
+        self.model
+            .node_of(key)
+            .map(|(_, title)| title.to_lowercase().contains(&query.to_lowercase()))
+            .unwrap_or(false)
+    }
+
+    /// The first row the current query leaves visible that is a real
+    /// destination — what Enter takes when the writer has typed and not touched
+    /// the arrows, which is the common path.
+    pub fn first_openable(&self) -> Option<BinderTreeKey> {
+        (0..self.model.visible_count())
+            .filter_map(|i| self.model.key_at(i))
+            .find(|k| self.is_destination(k))
+    }
+
+    /// Open whatever Enter should open: the highlighted row, or — when the
+    /// writer has only typed — the first match. Returns whether it jumped.
+    pub fn activate_current(&self) -> bool {
+        let key = self
+            .selection
+            .selected_keys()
+            .into_iter()
+            .find(|k| self.is_destination(k))
+            .or_else(|| self.first_openable());
+        let Some(key) = key else { return false };
+        let Some((item_id, title)) = self.model.node_of(&key) else {
+            return false;
+        };
+        self.activate(&TreeNode {
+            title,
+            item_id,
+            ..Default::default()
+        })
     }
 
     /// Jump to `node`, if it names something openable, and close the popup.
@@ -243,6 +345,42 @@ mod tests {
         vm.show();
         assert!(!vm.activate(&item("Chapter 1", 1)));
         assert!(vm.is_open());
+    }
+
+    /// Stepping either finds a real destination or answers `None`. It must
+    /// never park the highlight on a row Enter would refuse — that is a dead
+    /// end the writer has to notice and step past.
+    ///
+    /// Written against the invariant rather than against a row count, because
+    /// the two feature sets disagree about what is loaded: the real build
+    /// starts with no project, the mock one fabricates a binder. A test that
+    /// assumed either would pass in one build and fail in the other — as the
+    /// first version of this one did.
+    #[test]
+    fn stepping_never_lands_on_a_non_destination() {
+        let vm = vm();
+        for delta in [1isize, -1] {
+            if let Some(key) = vm.step_selection(delta) {
+                assert!(
+                    vm.model().item_id_of(&key).is_some(),
+                    "stepped onto a row with no document behind it"
+                );
+            }
+        }
+        if let Some(key) = vm.first_openable() {
+            assert!(vm.model().item_id_of(&key).is_some());
+        }
+    }
+
+    /// An activation that cannot succeed must not close the popup — closing on
+    /// having gone nowhere is the worst of both outcomes. Feature-agnostic:
+    /// with no open-fn injected the jump fails whatever rows exist.
+    #[test]
+    fn a_failed_activation_leaves_the_popup_open() {
+        let vm = vm();
+        vm.show();
+        assert!(!vm.activate_current());
+        assert!(vm.is_open(), "nothing happened, so nothing closes");
     }
 
     /// The popup searches the whole project. A match hiding because it lives in

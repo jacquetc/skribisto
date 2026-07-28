@@ -2958,7 +2958,10 @@ impl Widget for App {
                 // to, the same `has_work` test the readouts already use.
                 .child(VisibleWhen::new(
                     has_work.clone(),
-                    crate::statusbar::go_to_button::GoToButton::new(self.go_to.clone()),
+                    crate::statusbar::go_to_button::GoToButton::new(
+                        self.go_to.clone(),
+                        crate::statusbar::go_to_button::GO_TO_MAIN,
+                    ),
                 ))
                 .child(session_item)
                 .child(

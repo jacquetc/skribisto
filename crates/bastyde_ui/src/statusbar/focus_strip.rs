@@ -162,7 +162,10 @@ impl Widget for FocusStrip {
                 // pair first.
                 .child(VisibleWhen::new(
                     self.chrome.go_to.clone(),
-                    crate::statusbar::go_to_button::GoToButton::new(self.go_to_vm.clone()),
+                    crate::statusbar::go_to_button::GoToButton::new(
+                        self.go_to_vm.clone(),
+                        crate::statusbar::go_to_button::GO_TO_FOCUS,
+                    ),
                 ))
                 // Never gated: this strip's documented way out of the mode.
                 // Fires the same named intent the Shift+F11 shortcut and the

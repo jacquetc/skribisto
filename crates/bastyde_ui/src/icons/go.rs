@@ -19,3 +19,11 @@ pub fn next_icon() -> IconWidget {
 pub fn prev_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/go/prev.svg"))
 }
+
+/// "Go to…" — a target/crosshair. Deliberately not a magnifier: this jumps to
+/// a known item, it does not search prose, and the Find dock already owns the
+/// magnifier. Two glyphs that read alike for two different jobs is worse than
+/// one that is slightly less obvious.
+pub fn go_to_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/go/go-to.svg"))
+}

@@ -188,7 +188,7 @@ fn binder_tree(
     // Single-click to open (Scrivener convention) — arrow-key navigation only
     // moves the highlight, so stepping through the binder never spawns tabs.
     .activate_on(ActivateOn::SingleClick)
-    .on_activate(move |idx| {
+    .on_activate(move |idx, _ctx| {
         if let Some(key) = activate_model.key_at(idx) {
             // Binder rows have `item_id == None` and don't open an editor.
             if let Some((Some(item_id), title)) = activate_model.node_of(&key) {

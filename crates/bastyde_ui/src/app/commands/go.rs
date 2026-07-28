@@ -105,6 +105,23 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .primary(KeyStroke::ctrl(Key::G))
             .build(),
     );
+    // `go.to` is the name the menu and the shortcut use; it forwards to
+    // whichever `GoToButton` is actually on screen. There are two per window —
+    // the status bar's and the distraction-free strip's — and only one is ever
+    // visible. Letting both claim the same action meant Ctrl+G could be
+    // answered by the *hidden* one, whose trigger has no live bounds, so the
+    // popover opened anchored to nothing in the top-left corner.
+    {
+        let focus = deps.focus.clone();
+        ctx.register_action_global(Action::new("go.to").on_invoke(move |_i, c| {
+            let target = if focus.active_signal().get() {
+                crate::statusbar::go_to_button::GO_TO_FOCUS
+            } else {
+                crate::statusbar::go_to_button::GO_TO_MAIN
+            };
+            c.send_intent(Intent::new(target));
+        }));
+    }
 }
 
 /// Register one kind-specific Go action: fixed `kind`/`direction`, no payload, no

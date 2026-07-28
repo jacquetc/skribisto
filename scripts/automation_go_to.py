@@ -238,6 +238,27 @@ if not has(s, "epilogue"):
     fail("the surviving rows do not include the match", s.app, s.mcp, s.log)
 print(f"  {before} rows -> {after} rows, Epilogue among them")
 
+# ── 2b. Down highlights a result and Enter opens it, without ever leaving the
+#       search field. This is the "one list, driven from the field" shape — the
+#       reason the popup has no second suggestion dropdown over the tree.
+print("== Down + Enter jumps ==")
+s.call("inject_key", {"key": "ArrowDown"})
+time.sleep(0.5)
+s.call("inject_key", {"key": "Enter"})
+if not wait_for(lambda: not popup_open(s), timeout=10):
+    s.shot("/tmp/goto-enter-did-nothing.png")
+    fail("Enter did not act on the highlighted row", s.app, s.mcp, s.log)
+if not wait_for(lambda: has(s, "epilogue"), timeout=10):
+    s.shot("/tmp/goto-enter-wrong-target.png")
+    fail("Enter closed the popup without opening the match", s.app, s.mcp, s.log)
+print("  jumped to Epilogue and closed")
+s.shot("/tmp/goto-jumped.png")
+
+# Reopen for the Escape checks below.
+s.call("inject_key", {"key": "g", "ctrl": True})
+if not wait_for(lambda: popup_open(s), timeout=10):
+    fail("could not reopen the popup", s.app, s.mcp, s.log)
+
 # ── 3. Escape closes the popup and nothing else.
 print("== Escape closes the popup ==")
 s.call("inject_key", {"key": "Escape"})
