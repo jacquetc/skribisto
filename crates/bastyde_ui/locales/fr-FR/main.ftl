@@ -33,9 +33,21 @@ menu-view = &Affichage
 menu-outline = &Plan
 menu-search = &Rechercher dans le projet
 menu-search-preview = &Aperçu de recherche
+menu-fullscreen = P&lein écran
+menu-focus-mode = &Mode sans distraction
 menu-format = Fo&rmat
 menu-scene-break = Insérer un &saut de scène
 menu-major-scene-break = Insérer un saut de scène &majeur
+
+## Barre de menus: Aller
+menu-go = A&ller
+menu-go-next-scene = &Scène suivante
+menu-go-prev-scene = Scène p&récédente
+menu-go-next-chapter = &Chapitre suivant
+menu-go-prev-chapter = Chapitre précéde&nt
+menu-go-next-note = Note suiv&ante
+menu-go-prev-note = Note précédent&e
+
 menu-tools = &Outils
 menu-help = A&ide
 
@@ -136,6 +148,12 @@ session-no-limit = Aucune limite
 session-reset = Réinitialiser la session
 session-readout = { $words } mots · { $time }
 session-readout-timed = { $words } mots · { $time } restant
+# La bande de contrôle toujours visible du mode sans distraction (étape 2).
+statusbar-focus-exit = Quitter le mode sans distraction
+# Les boutons Suivant/Précédent de la bande (étape 4) — déclenchent les mêmes
+# actions go.next/go.prev que le raccourci et la paire générique du menu Aller à.
+statusbar-focus-go-prev = Élément précédent (Alt+Haut)
+statusbar-focus-go-next = Élément suivant (Alt+Bas)
 
 ## Paramètres
 language = Langue
@@ -178,6 +196,7 @@ settings-page-notes = Notes
 settings-page-editor-behavior = Comportement de l'éditeur
 settings-page-goals = Objectifs et nombre de mots
 settings-page-corkboard = Tableau de liège
+settings-page-distraction-free = Sans distraction
 settings-page-dictionaries = Dictionnaires
 settings-page-autosave = Enregistrement automatique
 settings-page-export = Formats d'export
@@ -186,6 +205,7 @@ settings-page-keymap = Raccourcis clavier
 ## Fenêtre des paramètres: champs
 settings-group-typography = Typographie
 settings-group-writing-column = Colonne d'écriture
+settings-group-writing-view = Affichage de l'écriture
 settings-group-theme = Thème
 settings-group-language = Langue
 settings-group-startup = Démarrage
@@ -196,6 +216,14 @@ settings-field-line-height = Interligne
 settings-field-first-line-indent = Retrait de première ligne
 settings-field-paragraph-spacing-before = Espace avant le paragraphe
 settings-field-paragraph-spacing-after = Espace après le paragraphe
+settings-field-column-width = Largeur de colonne
+settings-distraction-free-width-hint = S'applique uniquement en mode sans distraction — les largeurs de colonne de la Scène, du Synopsis et des Notes restent inchangées.
+settings-distraction-free-tab-bar = Conserver les onglets de l'éditeur
+settings-distraction-free-word-count = Conserver le compteur de mots
+settings-distraction-free-session = Conserver la séance d'écriture
+settings-distraction-free-go-to = Conserver le bouton Aller à…
+settings-distraction-free-go = Conserver les boutons Précédent et Suivant
+settings-distraction-free-chrome-hint = Le bouton Quitter reste toujours affiché, quels que soient ces choix — c'est votre porte de sortie si Échap est déjà pris.
 settings-field-app-theme = Thème
 settings-field-text-scale = Taille du texte de l'interface
 settings-field-language = Langue de l'interface
@@ -472,14 +500,13 @@ dialog-set-label = Définir l'étiquette
 dialog-new-scene = Nouvelle scène
 close-work-question = Enregistrer les modifications avant de fermer l'œuvre ?
 quit-question = Enregistrer les modifications avant de quitter ?
+quit-save-work-question = Enregistrer les modifications de { $title } avant de quitter ?
 unsaved-changes = Cette œuvre a des modifications non enregistrées.
 # Affiché par Quitter quand une autre œuvre ouverte (pas celle de cette fenêtre)
 # a encore des modifications non enregistrées — le dialogue unique listant
 # chaque œuvre modifiée (voir l'action `app.quit` dans
 # app::commands::file). Quitter est refusé tant qu'elles ne sont pas
 # enregistrées ou fermées depuis leur propre fenêtre.
-quit-other-works-dirty-title = D'autres œuvres ouvertes ont des modifications non enregistrées
-quit-other-works-dirty-text = Quitter laisserait des modifications non enregistrées dans : { $list }. Basculez vers chacune pour l'enregistrer ou la fermer, puis quittez à nouveau.
 # Remplacement de l'œuvre ouverte dans cette fenêtre (Nouvelle œuvre, Ouvrir une
 # œuvre, « Ouvrir ici », « Ouvrir maintenant » du bandeau d'import), même garde
 # que la fermeture, puisque l'œuvre ouverte est fermée dans tous les cas.
@@ -543,6 +570,7 @@ backup-restored-with-safety = Projet restauré. Votre version précédente a ét
 close-backup-discard-title = Abandonner les modifications de cette copie de secours ?
 close-backup-discard-text = Les modifications d'une copie de secours ne peuvent pas y être enregistrées. Utilisez « Enregistrer sous » pour les conserver, ou abandonnez et fermez.
 quit-backup-discard-title = Abandonner les modifications et quitter ?
+quit-backup-discard-work-question = Abandonner les modifications de { $title } et quitter ?
 quit-backup-discard-text = Les modifications d'une copie de secours ne peuvent pas y être enregistrées. Utilisez « Enregistrer sous » pour les conserver, ou abandonnez et quittez.
 backup-nudge-text = Aucune copie de secours n'est configurée pour ce projet.
 backup-nudge-action = Configurer les copies de secours…
@@ -1201,3 +1229,9 @@ settings-punctuation-sample = Votre langue donne
 settings-punctuation-app-hint = Ce que fait chaque projet, sauf s'il adopte ses propres règles dans Projet ▸ Ponctuation.
 settings-punctuation-dialogue = Ouvrir un paragraphe saisi « - » par un tiret de dialogue
 settings-punctuation-dialogue-hint = Pour les langues qui marquent le dialogue par un tiret plutôt que par des guillemets — français, espagnol, russe et d'autres. Ne se déclenche qu'en tout début de paragraphe.
+
+## Aller à (rejoindre n'importe quel élément)
+statusbar-go-to = Aller à…
+go-to-placeholder = Rechercher dans le classeur
+go-to-no-matches = Aucun élément ne correspond à cette recherche.
+menu-go-to = &Aller à…

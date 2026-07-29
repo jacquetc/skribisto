@@ -23,7 +23,7 @@ use anyhow::{Context, Result};
 use bastyde::data::ListModel;
 use bastyde::prelude::*;
 
-use crate::app_ids::AppIds;
+use crate::app_ids::{AppIds, HasWorkId};
 use crate::models::{TextReplacementRuleListModel, TextReplacementRuleRow, trigger_key};
 use crate::singles::SingleWork;
 
@@ -62,13 +62,6 @@ impl TextReplacementRulesViewModel {
     /// Wire the held Layer-A handle's event subscriptions (once, from `App::build`).
     pub fn wire(&self, ctx: &mut BuildContext) {
         self.list.wire(ctx);
-    }
-
-    /// The open Work this lexicon belongs to — the pane's toast call sites
-    /// use this to route feedback ("rule added", "imported", …) to the Work
-    /// it is actually about (see `crate::toast_scope::ToastWorkExt`).
-    pub fn work_id(&self) -> Option<u64> {
-        self.ids.work_id.get()
     }
 
     /// The reactive lexicon to bind (the pane wraps it in a `SortFilterListModel`).
@@ -226,6 +219,16 @@ impl TextReplacementRulesViewModel {
         let text = format_csv(&rows)?;
         std::fs::write(path, text).with_context(|| format!("writing {}", path.display()))?;
         Ok(rows.len())
+    }
+}
+
+/// The open Work this lexicon belongs to — the pane's toast call sites use
+/// this (via [`HasWorkId::work_id`]) to route feedback ("rule added",
+/// "imported", …) to the Work it is actually about (see
+/// `crate::toast_scope::ToastWorkExt`).
+impl HasWorkId for TextReplacementRulesViewModel {
+    fn app_ids(&self) -> &AppIds {
+        &self.ids
     }
 }
 

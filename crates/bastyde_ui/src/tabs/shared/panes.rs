@@ -93,7 +93,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
     if let Some(m) = tab.main() {
         col = col.child(vspace(10.0)).child(writing_section(
             &m.doc,
-            &tab.column_width,
+            tab.main_column_width(),
             tab.main_typography(),
             tab.mark_dirty_fn(),
             None, // the container's own page has no find banner (no top strip here)
@@ -164,7 +164,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     if let Some(m) = tab.main() {
         col = col.child(vspace(10.0)).child(writing_section(
             &m.doc,
-            &tab.column_width,
+            tab.main_column_width(),
             tab.main_typography(),
             tab.mark_dirty_fn(),
             find.clone(),

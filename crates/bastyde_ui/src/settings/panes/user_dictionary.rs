@@ -24,6 +24,7 @@ use bastyde::widgets::{
     TextInput, TextWidget, Toast, VStack,
 };
 
+use crate::app_ids::HasWorkId;
 use crate::models::DictWordRow;
 use crate::toast_scope::ToastWorkExt;
 use crate::view_models::UserDictionaryViewModel;

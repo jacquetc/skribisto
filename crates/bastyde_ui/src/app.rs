@@ -51,6 +51,7 @@ use crate::panels::new_work::NewWorkPanel;
 use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
 use crate::singles::SingleSmartPunctuation;
+use crate::tabs::shared::editor::VisibleWhen;
 use crate::text_replacement::typography::SmartPunctuationFlags;
 use crate::toast_scope::ToastWorkExt;
 
@@ -94,6 +95,21 @@ use crate::view_models::{
     unsaved_decision,
 };
 
+/// Whether an editor pane shows its tab strip, from this window's
+/// distraction-free state and the writer's "keep the editor tabs" setting.
+///
+/// Pure, so the rule is checkable without a window: the mode takes the strip
+/// away, and that one setting is the only thing that overrides it. Outside the
+/// mode the setting has no say at all — it is scoped to distraction-free, not
+/// a general "hide my tabs" preference.
+fn tab_bar_policy(focus_active: bool, keep_in_focus_mode: bool) -> TabBarVisibility {
+    if focus_active && !keep_in_focus_mode {
+        TabBarVisibility::Never
+    } else {
+        TabBarVisibility::Always
+    }
+}
+
 /// Build one editor pane's `TabWidget`: dynamic tabs, cross-pane migration
 /// (`accept_external_tabs` + `on_tab_received` dedup + `on_transfer_out`
 /// collapse), close, and `trailing` in the tab-strip trailing slot. Shared by
@@ -102,6 +118,7 @@ fn build_pane_tabs(
     editors: &EditorsViewModel,
     side: Side,
     trailing: impl Widget + 'static,
+    bar_visibility: Signal<TabBarVisibility>,
 ) -> TabWidget {
     let close = editors.clone();
     let recv = editors.clone();
@@ -114,7 +131,7 @@ fn build_pane_tabs(
         .on_transfer_out(move |tab_id, _ctx| out.transfer_out(side, tab_id))
         .reorderable(true)
         .accept_external_tabs(true)
-        .bar_visibility(TabBarVisibility::Always)
+        .bar_visibility(bar_visibility)
         .compact_bar()
         .selected_tab_background(SurfaceRole::Content)
         .hover_tab_background(Hover)
@@ -273,23 +290,6 @@ pub fn close_work_and_return_to_launcher(
 /// `CloseResponse::Veto` afterward, exactly like its Launcher-returning
 /// sibling: this function performs the actual close itself, via
 /// `close_window_forced`, rather than deferring to the guard's own return
-/// value.
-pub fn quit_app(
-    app_ctx: &Rc<AppContext>,
-    ids: &AppIds,
-    workspace_layout: &crate::view_models::WorkspaceLayoutViewModel,
-    ctx: &mut EventContext,
-) {
-    // Persist the desk before the store is torn down — see
-    // [`close_work_and_return_to_launcher`].
-    capture_workspace_layout(workspace_layout);
-    // See `close_work_and_return_to_launcher`'s identical comment above.
-    if let Some(work_id) = ids.work_id.get() {
-        let _ = work_management_commands::close_work(app_ctx, &CloseWorkDto { work_id });
-    }
-    ctx.close_window_forced();
-}
-
 /// Persist the open project's workspace layout (open tabs + dock arrangement)
 /// through `workspace_layout` — the **calling window's own** [`WorkspaceLayoutViewModel`]
 /// handle, passed in explicitly rather than resolved via
@@ -370,7 +370,13 @@ fn perform_exit(
         PendingExit::ReturnToLauncher => {
             close_work_and_return_to_launcher(app_ctx, ids, workspace_layout, ctx)
         }
-        PendingExit::Quit => quit_app(app_ctx, ids, workspace_layout, ctx),
+        // Never reached: `guard_unsaved_exit` only ever carries
+        // `ReturnToLauncher` now. `Quit` belongs to `QuitSequencer`, whose
+        // continuation runs in `BackupSchedulerViewModel::do_close` instead of
+        // here — quitting spans every window, so it cannot be expressed as one
+        // window's exit. A silent no-op rather than a panic: an unreachable
+        // state is not worth taking the app down for.
+        PendingExit::Quit => {}
         PendingExit::None => unreachable!("guard_unsaved_exit is never invoked with outcome=None"),
     }
 }
@@ -474,45 +480,6 @@ pub(crate) fn guard_unsaved_exit(
     }
 }
 
-/// Every OTHER currently-open Work's title that still has unsaved edits — the
-/// input to `app.quit`'s "you have other unsaved projects open" refusal.
-///
-/// **Scope E — accounting for every dirty Work on Quit, per the design doc's
-/// §9 q1 recommendation of ONE dialog naming every dirty Work, not just the
-/// quitting window's own.** With M Works open, `app.quit` used to guard only
-/// the ONE window it was invoked from (`guard_unsaved_exit`, unchanged, still
-/// below) — a sibling window's own unsaved edits were never asked about, and
-/// closing only the invoking window doesn't even terminate the process while
-/// another remains open. Actually orchestrating a save-then-close across
-/// EVERY open window is a much bigger feature this phase does not build (it
-/// would need forcing an arbitrary *other* window closed, which
-/// `EventContext::close_window_by_id`'s own doc says is guarded — "equivalent
-/// to `close_window` when `id` is the current window's id" — for any other
-/// id, so it would just re-open THAT window's own close guard/dialog, not
-/// collapse into the one aggregated dialog the design doc asks for; a real
-/// fix needs a `close_window_forced`-by-id bastyde does not expose today).
-/// So instead: Quit safely REFUSES and names every other dirty Work when one
-/// exists, rather than silently discarding it or silently doing nothing —
-/// accounting for it by making it impossible to lose unnoticed. The user
-/// switches to that Work's own window and saves/closes it there (where the
-/// existing, correct single-Work guard already applies), then quits again.
-/// THIS window's own Work is unaffected and still goes through
-/// `guard_unsaved_exit` exactly as before.
-///
-/// A backup-mode Work is excluded: Save is off there, so its "unsaved" can
-/// never reach disk regardless — the same reasoning `unsaved_decision`'s own
-/// `PromptDiscardOnly` branch already applies to THIS window's Work.
-fn other_dirty_work_titles(registry: &WorkRegistry, my_work_id: Option<u64>) -> Vec<String> {
-    registry
-        .open_work_ids()
-        .into_iter()
-        .filter(|&id| Some(id) != my_work_id)
-        .filter_map(|id| registry.session_for(id))
-        .filter(|s| s.unsaved.get() && !s.backup_mode.get())
-        .map(|s| s.single_work.title().get())
-        .collect()
-}
-
 /// Convert a theme colour role to the `text_document` colour a highlight span carries. Used to
 /// paint spell-check squiggles in the theme's `text_error` role — a semantic role, not a hex
 /// literal, so light/dark both work.
@@ -587,6 +554,22 @@ pub struct App {
     /// each simultaneously-open Work gets its own outline/tree, never a second
     /// window's.
     outline: OutlineViewModel,
+    /// This window's own "was I maximized/floating before I went fullscreen"
+    /// memory (Increment 1 of distraction-free — plain fullscreen). Minted
+    /// fresh per window in `ProjectWindowFactory::window_config`, the same
+    /// shape as [`Self::scene_focused`]: it names a *window's* own UI state,
+    /// not the Work's data, so two simultaneously-open windows — even on the
+    /// same Work — must never share it. See `FullscreenViewModel`'s doc.
+    fullscreen: crate::view_models::FullscreenViewModel,
+    /// This window's own distraction-free state (Increment 2 — chrome
+    /// collapse). Minted fresh per window in
+    /// `ProjectWindowFactory::window_config`, the same shape as
+    /// [`Self::fullscreen`] just above, but with its own independent
+    /// placement memory — see `FocusViewModel`'s module doc for why the two
+    /// toggles never share one. Reset on Close-Work/Load-Work (see the
+    /// subscribers in `build`) so a stale "mode was on" never leaks into the
+    /// next project this window shows.
+    focus: crate::view_models::FocusViewModel,
     /// Built **fresh for this window** alongside `session`/`outline`: bound to
     /// this window's own `ids`, so an export from this window scopes to *this*
     /// Work, not whichever Work's `App` constructed the shared registration
@@ -602,6 +585,9 @@ pub struct App {
     /// `register_window` call supersedes its own previous binding on an
     /// in-place Work switch (see that method's doc).
     registry: WorkRegistry,
+    /// The app-global quit sequencer (`app.quit`). Shared across every window,
+    /// unlike almost everything else on this struct: a quit spans them all.
+    quit: crate::view_models::QuitSequencer,
     /// Built fresh alongside `session`, bound to *this* window's own `ids`/
     /// `single_work` — see `shell::windows::ProjectWindowFactory::window_config`'s
     /// doc for why these can no longer be the single `ctx.app_state`-registered
@@ -635,6 +621,16 @@ pub struct App {
     /// title-bar's Format menu so its entries grey out off a scene. Written by
     /// `EditorsViewModel`, which is the only thing that can compute it.
     scene_focused: Signal<bool>,
+    /// Live "is there a target" mirrors for the title-bar's Go menu (Increment 4 —
+    /// six Next/Previous × Scene/Chapter/Note rows), the same shape as
+    /// `scene_focused` just above: minted in `shell/windows.rs` (which builds the
+    /// menu before this `App`/its `EditorsViewModel` exist), forwarded to
+    /// `EditorsViewModel::new` here so it can write the live answer, and read
+    /// straight from the window-chrome closure's own clone for the menu's
+    /// `.enabled(..)` bindings. See [`crate::view_models::GoAvailability`]'s doc.
+    go: crate::view_models::GoAvailability,
+    /// This window's "jump to any item" popup state — see `GoToViewModel`.
+    go_to: crate::view_models::GoToViewModel,
     /// `true` while the open work has edits not yet written to disk. Read by the
     /// close guard, `work.close` and the switch guard to decide whether to prompt,
     /// and by `can_save` for the Save affordances.
@@ -714,16 +710,21 @@ impl App {
         app_ctx: Rc<AppContext>,
         session: WorkSession,
         outline: OutlineViewModel,
+        fullscreen: crate::view_models::FullscreenViewModel,
+        focus: crate::view_models::FocusViewModel,
         export: crate::view_models::ExportViewModel,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
         scene_focused: Signal<bool>,
+        go: crate::view_models::GoAvailability,
+        go_to: crate::view_models::GoToViewModel,
         unsaved: Signal<bool>,
         pending_exit: Signal<PendingExit>,
         backup_mode: Signal<bool>,
         backup_context: Signal<Option<crate::backup::BackupContext>>,
         initial_action: PendingAction,
         registry: WorkRegistry,
+        quit: crate::view_models::QuitSequencer,
         save_as_vm: SaveAsViewModel,
         restore_vm: crate::view_models::BackupRestoreViewModel,
         title_text: Signal<String>,
@@ -733,8 +734,11 @@ impl App {
             app_ctx,
             session,
             outline,
+            fullscreen,
+            focus,
             export,
             registry,
+            quit,
             save_as_vm,
             restore_vm,
             title_text,
@@ -742,6 +746,8 @@ impl App {
             autosave_menu,
             spellcheck_menu,
             scene_focused,
+            go,
+            go_to,
             unsaved,
             pending_exit,
             exit_seq: Rc::new(std::cell::Cell::new(None)),
@@ -1005,18 +1011,35 @@ impl Widget for App {
         // call, the half a KWin rule (matching a window by its title text)
         // actually needs. A no-op in a headless/off-screen build context
         // (`ctx.window()` is `None` there — same guard as `window_id` above).
-        if let Some(window) = ctx.window() {
-            let os_title = window.title().clone();
-            ctx.effect(&self.title_text, move |t: &String| {
-                os_title.set(t.clone());
-            });
-        }
 
         // The Tier-2 per-open-Work bundle — see `sessions::WorkSession`'s module
         // doc and this struct's own field doc for why `App::build` reads these
         // straight off `session` instead of doing its own `ctx.app_state::<T>()`
         // lookup per field, the way the rest of this function used to.
         let session = self.session.clone();
+
+        if let Some(window) = ctx.window() {
+            let os_title = window.title().clone();
+            // Observe the two MUTABLE sources, never `self.title_text` itself:
+            // that is `single_work.title().zip(ordinal).map(..)`
+            // (`shell::windows::window_title_text`), and a zip/map signal is
+            // lazy and read-only — `ctx.effect` observes, and `observe()`
+            // panics on a derived signal. Reading its value inside the closure
+            // is fine; only observing it is not. Both arms recompute the whole
+            // title, so either source changing pushes the same correct text.
+            let title_text = self.title_text.clone();
+            let title = session.single_work.title();
+            {
+                let os_title = os_title.clone();
+                let title_text = title_text.clone();
+                ctx.effect(&title, move |_: &String| {
+                    os_title.set(title_text.get());
+                });
+            }
+            ctx.effect(&self.window_ordinal, move |_: &usize| {
+                os_title.set(title_text.get());
+            });
+        }
         let app_ctx = self.app_ctx.clone();
         let column_width = settings.column_width();
         let show_synopsis = settings.synopsis_pane();
@@ -1038,6 +1061,13 @@ impl Widget for App {
         let backup_mode_for_editors = self.backup_mode.clone();
         let save_state_for_editors = save_state.clone();
         let scene_focused_for_editors = self.scene_focused.clone();
+        // This window's own distraction-free flag (never a private copy — a copy
+        // would go stale the instant Shift+F11 toggled it), so every `ContentTab`
+        // this window opens can pick the distraction-free typography bundle and
+        // column width live.
+        let distraction_free_for_editors = self.focus.active_signal();
+        let distraction_free_width = settings.distraction_free_width();
+        let go_for_editors = self.go.clone();
         let editors = self
             .editors
             .get_or_insert_with(|| {
@@ -1054,6 +1084,9 @@ impl Widget for App {
                     save_state_for_editors,
                     scene_focused_for_editors,
                     session.tree_expansion.clone(),
+                    distraction_free_for_editors,
+                    distraction_free_width,
+                    go_for_editors,
                 )
             })
             .clone();
@@ -1313,6 +1346,49 @@ impl Widget for App {
                 move |e: &Event| {
                     if my_ids.is_event_for_my_work(&e.ids) {
                         s.clear_preview();
+                    }
+                },
+            );
+        }
+
+        // Forget this window's distraction-free state on Close-Work/Load-Work
+        // — exactly like `AppIds` (see `FocusViewModel`'s module doc): the
+        // process outlives a single project, so an un-reset `FocusViewModel`
+        // would carry a stale "mode was on" into the next project this same
+        // window shows. Same guarded (loose for Load/New, strict for Close)
+        // shape as the search subscribers just above.
+        {
+            let focus = self.focus.clone();
+            let my_ids = session.ids.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::LoadWork),
+                move |e: &Event| {
+                    if my_ids.is_bootstrap_or_own(&e.ids) {
+                        focus.reset();
+                    }
+                },
+            );
+        }
+        {
+            let focus = self.focus.clone();
+            let my_ids = session.ids.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::NewWork),
+                move |e: &Event| {
+                    if my_ids.is_bootstrap_or_own(&e.ids) {
+                        focus.reset();
+                    }
+                },
+            );
+        }
+        {
+            let focus = self.focus.clone();
+            let my_ids = session.ids.clone();
+            ctx.subscribe_event(
+                Origin::WorkManagement(WorkManagementEvent::CloseWork),
+                move |e: &Event| {
+                    if my_ids.is_event_for_my_work(&e.ids) {
+                        focus.reset();
                     }
                 },
             );
@@ -1596,7 +1672,10 @@ impl Widget for App {
             ids: session.ids.clone(),
             session: session.clone(),
             registry: self.registry.clone(),
+            quit: self.quit.clone(),
             outline: outline.clone(),
+            fullscreen: self.fullscreen.clone(),
+            focus: self.focus.clone(),
             editors: editors.clone(),
             trash: trash.clone(),
             search: search.clone(),
@@ -2291,9 +2370,17 @@ impl Widget for App {
             let switch = project_switch.clone();
             let workspace_layout = workspace_layout.clone();
             let ids = ids.clone();
+            let quit_for_completed = self.quit.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Completed),
                 move |e: &Event, c| {
+                    // A quit parked on *another* Work's save resumes here — this is
+                    // the crate's only place holding both this event and an
+                    // `EventContext`. It runs before the `editors` filter below
+                    // precisely because the save it waits on usually belongs to a
+                    // Work this window is not showing, which `on_save_completed`
+                    // would (correctly) return `None` for.
+                    quit_for_completed.on_long_op_completed(e, c);
                     // Ours? (A backup's, an import's or a Save As's completion is
                     // their own view-model's business.) This also issues the
                     // follow-up save when edits arrived while that one was running.
@@ -2362,9 +2449,14 @@ impl Widget for App {
             let exit_seq = self.exit_seq.clone();
             let switch = project_switch.clone();
             let ids = ids.clone();
+            let quit_for_failed = self.quit.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Failed),
                 move |e: &Event, c| {
+                    // A quit waiting on this save must abandon it: closing a window
+                    // over edits that were never written, having promised to write
+                    // them, is the one outcome no exit path may produce.
+                    quit_for_failed.on_long_op_failed(e, c);
                     let Some(error) = editors.on_save_failed(e) else {
                         return;
                     };
@@ -2427,13 +2519,20 @@ impl Widget for App {
             let single_work = single_work.clone();
             let single_work_info = single_work_info.clone();
             let backup_settings = backup_settings.clone();
+            let ids = ids.clone();
             ctx.register_action_global(Action::new("backups.show").on_invoke(move |_i, c| {
                 let uid = single_work.unique_id().get();
                 let Some(path) = single_work_info.file_name().get() else {
                     return;
                 };
                 let dirs = backup_settings.effective_for(&uid).destinations;
-                let work_id = single_work.id();
+                // F2 — `ids.work_id` is the authoritative "current Work" id
+                // (never `single_work.id()`): this is threaded into
+                // `BackupsListPanel`/`BackupsListViewModel` for the
+                // delete-failure toast's `scoped_id`/`target_work`, which
+                // must route on the same source every other toast in this
+                // window does.
+                let work_id = ids.work_id.get();
                 c.present_modal(
                     ModalRequest::deferred(move |t| {
                         t.add(crate::backup::list_panel::BackupsListPanel::new(
@@ -2505,6 +2604,20 @@ impl Widget for App {
             });
         }
 
+        // The editor tab strip is chrome like the menu bar and the docks, so
+        // distraction-free mode takes it away too — unless the writer ticked
+        // Settings ▸ Editor ▸ Editor Behavior ▸ Distraction-free ▸ "Editor tabs".
+        // Bound (not swapped): `TabWidget::bar_visibility` takes a `Prop`, so
+        // the strip appears and disappears in place and the panes below it are
+        // never rebuilt — entering the mode must not cost the writer their
+        // caret or scroll position. Both panes share the one signal so their
+        // chrome can't drift, the same reason `build_pane_tabs` exists at all.
+        let tab_bar_visibility = self
+            .focus
+            .active_signal()
+            .zip(&settings.distraction_free_tab_bar())
+            .map(|(focus_active, keep)| tab_bar_policy(*focus_active, *keep));
+
         let primary_pane = {
             let e = editors.clone();
             DropTarget::new()
@@ -2527,7 +2640,12 @@ impl Widget for App {
                         _ => e.open_in(Side::Primary, item_id, title),
                     })
                 })
-                .child(build_pane_tabs(&editors, Side::Primary, split_button))
+                .child(build_pane_tabs(
+                    &editors,
+                    Side::Primary,
+                    split_button,
+                    tab_bar_visibility.clone(),
+                ))
                 .focus_within(primary_focus.clone())
         };
 
@@ -2551,6 +2669,7 @@ impl Widget for App {
                     &editors,
                     Side::Secondary,
                     close_split_button,
+                    tab_bar_visibility,
                 ))
                 .focus_within(secondary_focus.clone())
         };
@@ -2638,6 +2757,32 @@ impl Widget for App {
                 self.trash_dock,
                 on_open,
             ));
+        // Increment 2 of distraction-free: "the editor takes the whole
+        // surface" is this — disabling the three sides that carry chrome
+        // (never the centre, which is the editor itself) rather than hiding
+        // the whole `DockingLayout`. `set_side_enabled` is documented as
+        // reactive (`docs/docking.md`'s "Locking the layout" section) and,
+        // unlike `set_side_visible`, also drops the leading/trailing rail —
+        // the reopen affordance a hidden-but-enabled side otherwise keeps —
+        // so nothing but the editor remains. Non-destructive: docks already
+        // open on a disabled side stay in the model and reappear exactly as
+        // they were the moment the side is re-enabled. `Top` is never docked
+        // anywhere in this app, so it is left alone.
+        //
+        // A plain `ctx.effect` on the MUTABLE `active_signal()` (never a
+        // derived/zip/map read via `ctx.effect` — that panics, see the house
+        // rule); it only fires on a *change*, which is exactly right since a
+        // freshly built window's sides already start enabled, matching
+        // "not in the mode" by construction.
+        {
+            let docking = outline.docking();
+            ctx.effect(&self.focus.active_signal(), move |active| {
+                let enabled = !*active;
+                docking.set_side_enabled(DockSide::Leading, enabled);
+                docking.set_side_enabled(DockSide::Trailing, enabled);
+                docking.set_side_enabled(DockSide::Bottom, enabled);
+            });
+        }
         // First-build-only default arrangement (see the config block above on why
         // it must not re-run on rebuilds).
         if !self.initial_loaded {
@@ -2748,6 +2893,20 @@ impl Widget for App {
                 Action::new("session.toggle").on_invoke(move |_i, _c| vm.toggle()),
             );
         }
+        // A work is open iff its `WorkInfo` shape is known — the same test the
+        // word count, the session readout and the File menu already use.
+        let has_work = single_work_info.shape().map(|s| s.is_some());
+        // The Go-to popup's own tree model needs the backend subscription, like
+        // the outline's; and `App` is the only place that can hand it the
+        // "open this item" edge, since a view-model may not import a peer.
+        self.go_to.wire(ctx);
+        {
+            let e = editors.clone();
+            self.go_to
+                .set_open_fn(std::rc::Rc::new(move |item_id, title| {
+                    e.open_or_focus(item_id, title)
+                }));
+        }
         let status = StatusBar::new().background(SurfaceRole::Main).child(
             HStack::new()
                 .spacing(8.0)
@@ -2762,6 +2921,17 @@ impl Widget for App {
                 .child(save_indicator)
                 .child(word_count_indicator)
                 .child(Spacer::new())
+                // "Go to…" sits before the session readout, on the trailing
+                // side: it is an action, and the two items to its right are
+                // readouts. Hidden with no project — there is nothing to jump
+                // to, the same `has_work` test the readouts already use.
+                .child(VisibleWhen::new(
+                    has_work.clone(),
+                    crate::statusbar::go_to_button::GoToButton::new(
+                        self.go_to.clone(),
+                        crate::statusbar::go_to_button::GO_TO_MAIN,
+                    ),
+                ))
                 .child(session_item)
                 .child(
                     IconButton::new(crate::icons::activity::inspector_icon())
@@ -2789,13 +2959,67 @@ impl Widget for App {
             single_work.clone(),
         );
 
+        // Increment 2 of distraction-free: the banner, the divider under the
+        // (now possibly-collapsed) title bar, and the normal status bar all
+        // collapse together — `VisibleWhen`, the same dormant-not-torn-down
+        // gate the synopsis toggle already uses, keyed off the SAME derived
+        // "chrome visible" reading of `FocusViewModel::active_signal()` the
+        // title bar's own menu/trailing/center content uses in
+        // `shell::windows`. The always-visible strip (word count + writing
+        // session + Go Previous/Next + Exit — never hover-reveal, see
+        // `FocusStrip`'s doc) takes the status bar's place while the mode is
+        // active.
+        let chrome_visible = self.focus.active_signal().map(|active| !*active);
+        let focus_active = self.focus.active_signal();
+        let focus_strip = crate::statusbar::focus_strip::FocusStrip::new(
+            self.go_to.clone(),
+            stats.clone(),
+            session_vm.clone(),
+            single_work_info.shape().map(|s| s.is_some()),
+            settings.show_characters(),
+            crate::statusbar::focus_strip::FocusStripChrome::from_settings(&settings),
+        );
+
         let root = ctx.add(
             VStack::new()
                 .spacing(0.0)
-                .child(backup_banner)
-                .child(Divider::new())
+                .child(VisibleWhen::new(chrome_visible.clone(), backup_banner))
+                .child(VisibleWhen::new(chrome_visible.clone(), Divider::new()))
                 .child(Expand::new().child(layout))
-                .child(status),
+                .child(VisibleWhen::new(chrome_visible, status))
+                .child(VisibleWhen::new(focus_active.clone(), focus_strip))
+                .on_key({
+                    let focus = self.focus.clone();
+                    move |ev, ctx| match ev {
+                        // A contextless Escape leaves the mode. This is a
+                        // widget-level key handler, not a global shortcut —
+                        // `RichTextEditor` already consumes Escape for IME
+                        // composition cancel, clearing a selection, and
+                        // dismissing its spell-suggestion popup, and a
+                        // *global* `register_shortcut_global(Escape)` would
+                        // be resolved BEFORE the focused editor ever saw the
+                        // key (see `app/commands.rs`'s module doc on why
+                        // globals go first), firing underneath whatever the
+                        // editor just did with the same keypress — exactly
+                        // backwards. Raw key events bubble from the focused
+                        // widget up through its ancestors instead, so this
+                        // handler on the root only ever sees an Escape
+                        // nothing more local already claimed. Guarded on
+                        // `focus_active` so it is a no-op — and lets the key
+                        // keep bubbling — outside the mode, same precedent as
+                        // the find banner's own local Escape handling
+                        // (`tabs/shared/editor.rs`'s `FindBanner`).
+                        WidgetEvent::KeyDown {
+                            key: Key::Escape, ..
+                        } if focus_active.get() => {
+                            if let Some(window) = ctx.window() {
+                                focus.exit(window);
+                            }
+                            EventResponse::Handled
+                        }
+                        _ => EventResponse::Ignored,
+                    }
+                }),
         );
         self.root_child = Some(root);
 
@@ -2942,13 +3166,16 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventCo
                         .unwrap_or(false)
                 },
                 move |is_backup, ectx2| {
-                    // A backup always opens in its own instance (never replacing
-                    // the project in this window) — see the backup-mode invariant.
-                    // Nothing here is destroyed, so there is nothing to guard.
+                    // A backup always opens in its own WINDOW, never replacing the
+                    // project in this one — see the backup-mode invariant. (Its own
+                    // *process* until Phase 4; per-Work `backup_mode` since Phase 3
+                    // makes a window the real unit of isolation.) Nothing here is
+                    // destroyed, so there is nothing to guard — which is why the
+                    // sniff still earns its keep on this path even though the
+                    // Launcher's equivalent lost it: here the two branches really do
+                    // differ, in-place-switch versus new window.
                     if is_backup {
-                        ectx2.request_activation_token_self(Box::new(move |tok| {
-                            crate::shell::process::spawn_new_process(&file, tok);
-                        }));
+                        crate::shell::windows::open_or_focus_project(ectx2, &file);
                         return;
                     }
                     switch.request(
@@ -2966,6 +3193,25 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventCo
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Distraction-free mode takes the editor tab strip away, and only the
+    /// "keep the editor tabs" setting brings it back — and only *inside* the
+    /// mode. The fourth row is the one worth pinning: with the mode off, a
+    /// writer who unticked the box still gets their tabs, because the setting
+    /// is scoped to distraction-free rather than being a general "hide my
+    /// tabs" preference.
+    #[test]
+    fn the_tab_strip_is_hidden_only_by_distraction_free_mode() {
+        use TabBarVisibility::{Always, Never};
+        assert_eq!(tab_bar_policy(true, false), Never, "in the mode, not kept");
+        assert_eq!(tab_bar_policy(true, true), Always, "in the mode, kept");
+        assert_eq!(tab_bar_policy(false, true), Always, "outside the mode");
+        assert_eq!(
+            tab_bar_policy(false, false),
+            Always,
+            "outside the mode the setting has no say"
+        );
+    }
 
     /// The two-tier punctuation resolution, which is the whole point of
     /// `override_app_default` being a stored flag rather than an implied one.
@@ -3143,67 +3389,6 @@ mod tests {
         assert!(!action.is_enabled(), "editor.save inert in backup mode");
     }
 
-    // ── `other_dirty_work_titles` (Scope E — app.quit's multi-Work accounting) ──
-
-    #[test]
-    fn other_dirty_work_titles_is_empty_with_only_this_window_open() {
-        let reg = WorkRegistry::new();
-        let mine = crate::sessions::WorkSession::for_test();
-        mine.ids.work_id.set(Some(1));
-        mine.unsaved.set(true);
-        reg.register(1, mine);
-
-        assert!(
-            other_dirty_work_titles(&reg, Some(1)).is_empty(),
-            "this window's own dirty Work must never appear in the OTHER-Works list"
-        );
-    }
-
-    #[test]
-    fn other_dirty_work_titles_excludes_mine_clean_and_backup_mode_works() {
-        let reg = WorkRegistry::new();
-
-        let mine = crate::sessions::WorkSession::for_test();
-        mine.ids.work_id.set(Some(1));
-        mine.unsaved.set(true); // dirty, but it's MY OWN Work — must never appear
-        reg.register(1, mine);
-
-        let clean = crate::sessions::WorkSession::for_test();
-        clean.ids.work_id.set(Some(2)); // unsaved stays false
-        reg.register(2, clean);
-
-        let backup = crate::sessions::WorkSession::for_test();
-        backup.ids.work_id.set(Some(3));
-        backup.unsaved.set(true);
-        backup.backup_mode.set(true); // dirty, but Save is off here — excluded
-        reg.register(3, backup);
-
-        let dirty_other = crate::sessions::WorkSession::for_test();
-        dirty_other.ids.work_id.set(Some(4));
-        dirty_other.unsaved.set(true);
-        reg.register(4, dirty_other);
-
-        let others = other_dirty_work_titles(&reg, Some(1));
-        assert_eq!(
-            others.len(),
-            1,
-            "only Work 4 qualifies: not mine, dirty, and not in backup mode"
-        );
-    }
-
-    #[test]
-    fn other_dirty_work_titles_with_no_work_of_my_own_still_finds_others() {
-        // This window hasn't finished its own Load/New yet (`my_work_id = None`) —
-        // a sibling Work's own dirty edits must still be reported.
-        let reg = WorkRegistry::new();
-        let sibling = crate::sessions::WorkSession::for_test();
-        sibling.ids.work_id.set(Some(9));
-        sibling.unsaved.set(true);
-        reg.register(9, sibling);
-
-        assert_eq!(other_dirty_work_titles(&reg, None).len(), 1);
-    }
-
     /// F3: `build_window_teardown` — the closure `WorkRegistry::remove_window`
     /// runs once bastyde's `on_removed` hook confirms a window is really
     /// gone — must tell the toast registry to forget that window too, or
@@ -3271,6 +3456,7 @@ mod tests {
             synopsis: bundle(),
             notes: bundle(),
             corkboard: bundle(),
+            distraction_free: bundle(),
         };
         let ids = crate::app_ids::AppIds::new();
         let save_state = crate::view_models::SaveStateViewModel::new(app_ctx.clone(), ids.clone());
@@ -3291,6 +3477,9 @@ mod tests {
                 ids.clone(),
                 crate::models::TreeExpansionService::in_memory_default(),
             ),
+            Signal::new(false),
+            Signal::new(620.0),
+            crate::view_models::GoAvailability::new(),
         )
     }
 }

@@ -3,13 +3,21 @@
 
 //! The window/process shell: what a window *is*, and how instances find each other.
 //!
-//! Skribisto runs **one process per project**, so "open that project" is often "spawn or
-//! raise another instance" rather than anything in-window. [`open_registry`] is the lock-file
-//! directory listing what is open across instances, [`ipc`] the per-instance socket that
-//! receives a raise request, [`process`] the spawn itself, and [`project_switcher_button`]
-//! the title-bar control that ties them together. [`windows`] builds the two window kinds
+//! Skribisto is **single-instance**: the first live copy wins an election and becomes the
+//! primary, and every later launch forwards its command line to it and exits, so "open that
+//! project" is a new *window* in one process rather than a new process. [`instance`] runs
+//! that election and the handoff, [`ipc`] carries the protocol and serves both sockets
+//! (the primary one and this instance's own per-pid one), [`open_registry`] is the lock-file
+//! directory listing what is open across whatever instances do exist, [`process`] holds the
+//! path helpers left over from the multi-process era, and [`project_switcher_button`] is the
+//! title-bar control that ties them together. [`windows`] builds the two window kinds
 //! (Launcher and project).
+//!
+//! Several processes are still reachable and still supported — `--new-instance` asks for one
+//! outright, and a wedged primary degrades to one — which is why the open registry and the
+//! per-pid socket remain rather than being folded away.
 
+pub(crate) mod instance;
 pub(crate) mod ipc;
 pub(crate) mod open_registry;
 pub(crate) mod process;

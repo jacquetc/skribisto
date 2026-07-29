@@ -32,6 +32,7 @@ use bastyde::widgets::{
     Toggle, TraversalScopePolicy, VStack, ValidationState,
 };
 
+use crate::app_ids::HasWorkId;
 use crate::models::TagRow;
 use crate::tags::{Preset, contrast};
 use crate::toast_scope::ToastWorkExt;

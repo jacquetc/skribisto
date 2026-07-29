@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! Dock and find-banner commands: the outline rail, the bottom preview band, the search &
-//! replace dock, and the per-editor find banner.
+//! replace dock, the per-editor find banner, this window's plain-fullscreen toggle, and its
+//! distraction-free mode toggle.
 
 use bastyde::prelude::*;
 use bastyde::widgets::DockSide;
@@ -39,6 +40,57 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         ctx.register_action_global(
             Action::new("outline.toggle").on_invoke(move |_i, _c| outline.toggle()),
         );
+    }
+
+    // F11, the platform convention — free (no other command claims it; see
+    // this increment's ground-truth sweep). A Global shortcut so it fires
+    // regardless of which widget has focus, same rationale as F9/F10 above.
+    ctx.register_shortcut_global(
+        Shortcut::new("view.fullscreen")
+            .name("Toggle Fullscreen")
+            .primary(KeyStroke::new(Key::F11, Modifiers::NONE))
+            .build(),
+    );
+    {
+        let fullscreen = deps.fullscreen.clone();
+        ctx.register_action_global(Action::new("view.fullscreen").on_invoke(move |_i, c| {
+            // Resolve THIS event's own window rather than a captured handle —
+            // correct with several project windows open. No-op in the (never
+            // reachable from a real project window) headless case where
+            // `ctx.window()` is `None`.
+            if let Some(window) = c.window() {
+                fullscreen.toggle(window);
+            }
+        }));
+    }
+
+    // Shift+F11 — Increment 2 of distraction-free: chrome collapse + docks
+    // disabled + fullscreen, together, as one per-window mode independent of
+    // the plain F11 toggle above (see `FocusViewModel`'s module doc for why
+    // the two never share placement memory). Global for the same reason as
+    // F11/F9/F10.
+    ctx.register_shortcut_global(
+        Shortcut::new("view.focus_mode")
+            .name("Toggle Distraction-free Mode")
+            .primary(KeyStroke::new(Key::F11, Modifiers::SHIFT))
+            .build(),
+    );
+    {
+        let focus = deps.focus.clone();
+        ctx.register_action_global(Action::new("view.focus_mode").on_invoke(move |_i, c| {
+            // Same resolve-the-firing-window rationale as `view.fullscreen`
+            // above; also the target of the strip's Exit button, which fires
+            // this same named intent (`toggle` is always a clean exit there —
+            // the button only renders while the mode is active). The
+            // contextless-Escape handler in `App::build` calls
+            // `FocusViewModel::exit` directly instead, for the stronger
+            // idempotency guarantee that method carries (see its doc) — a
+            // raw key handler, not a discoverable command, same precedent as
+            // the find banner's own local Escape handling.
+            if let Some(window) = c.window() {
+                focus.toggle(window);
+            }
+        }));
     }
 
     // Ctrl+F opens the per-editor find banner in the focused pane's active tab (its

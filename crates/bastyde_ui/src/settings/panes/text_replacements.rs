@@ -26,6 +26,7 @@ use bastyde::widgets::{
     Switcher, TextInput, TextWidget, Toast, Toggle, VStack, ValidationState,
 };
 
+use crate::app_ids::HasWorkId;
 use crate::models::TextReplacementRuleRow;
 use crate::toast_scope::ToastWorkExt;
 use crate::view_models::TextReplacementRulesViewModel;

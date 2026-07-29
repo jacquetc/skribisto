@@ -44,6 +44,19 @@
 //!     Created once in `main`, shared by every window's `App`/`EditorsViewModel`
 //!     — a per-window copy of any of this breaks the moment a second window
 //!     exists (see its module docs).
+//!   * [`fullscreen`] — `FullscreenViewModel`: per-window live state (remembers
+//!     the placement to restore when this window's F11/View ▸ Fullscreen
+//!     toggle leaves fullscreen) — minted fresh per window, never shared.
+//!   * [`focus`] — `FocusViewModel`: per-window live state (Increment 2 of
+//!     distraction-free — whether this window's chrome is collapsed, plus its
+//!     own independent placement memory for the Shift+F11 toggle) — minted
+//!     fresh per window, reset on Close-Work/Load-Work like `AppIds`.
+//!   * [`go`] — `GoAvailability`: per-window live state (Increment 4's Go menu
+//!     — the six Next/Previous × Scene/Chapter/Note rows' live "is there a
+//!     target" mirrors) — minted fresh per window alongside `scene_focused`,
+//!     for the same reason `fullscreen`/`focus` are: a shared instance would
+//!     let a second project window's Go menu reflect the wrong window's
+//!     focused item.
 //!
 //! Cross-view-model rules (keep the dependency graph a DAG):
 //!   * A view-model may hold framework model handles and call *down* into them.
@@ -63,7 +76,11 @@ mod editors;
 mod export;
 mod export_styles;
 mod find;
+mod focus;
 mod format;
+mod fullscreen;
+mod go;
+mod go_to;
 mod import_plume;
 mod long_op;
 mod mention_index;
@@ -75,6 +92,7 @@ mod progress_recorder;
 mod project_lifecycle;
 mod project_switch;
 pub mod project_switcher;
+mod quit_sequencer;
 mod save_as;
 mod save_queue;
 mod save_state;
@@ -106,10 +124,14 @@ pub use editors::{EditorsViewModel, Side};
 pub use export::{ExportViewModel, format_label, scope_label};
 pub use export_styles::ExportStylesViewModel;
 pub use find::FindViewModel;
+pub use focus::FocusViewModel;
 pub use format::{
     ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,
     FormatViewModel,
 };
+pub use fullscreen::FullscreenViewModel;
+pub use go::GoAvailability;
+pub use go_to::GoToViewModel;
 pub use import_plume::ImportPlumeViewModel;
 pub use mention_index::{MentionIndex, MentionRow};
 pub use new_work::NewWorkViewModel;
@@ -123,6 +145,7 @@ pub use project_switch::{
     PendingSwitch, ProjectSwitchViewModel, UnsavedDecision, unsaved_decision,
 };
 pub use save_as::SaveAsViewModel;
+pub use quit_sequencer::QuitSequencer;
 pub(crate) use save_queue::{DeferredResume, resume_deferred};
 pub use save_state::SaveStateViewModel;
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};

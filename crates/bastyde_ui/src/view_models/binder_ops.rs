@@ -91,15 +91,34 @@ pub(crate) fn locate(
     None
 }
 
-/// `{id -> (indent, sub_role)}` for a binder's items — the data [`crate::binder::placement`]
-/// walks to turn "put it after this one" into a concrete `(index, indent)`.
+/// `{id -> (role, indent, sub_role)}` for a binder's items — the data
+/// [`crate::binder::placement`] walks to turn "put it after this one" into a concrete
+/// `(index, indent)`, and [`go_targets`] walks to resolve each row's
+/// `skribisto_model::GoKind`.
 pub(crate) fn item_meta(app_ctx: &AppContext, order: &[u64]) -> ItemMeta {
     binder_item_commands::get_binder_item_multi(app_ctx, order)
         .unwrap_or_default()
         .into_iter()
         .flatten()
-        .map(|it| (it.id, (it.indent, it.sub_role)))
+        .map(|it| (it.id, (it.role, it.indent, it.sub_role)))
         .collect()
+}
+
+/// Resolve every [`placement::GoTargets`] field for `focused_id`, walking its binder's
+/// flat order. One `locate` + `item_meta` backend read feeds the pure walk in
+/// [`placement::go_targets_in`], which is where the actual traversal (and its unit
+/// tests) live — this wrapper exists only to fetch the data that pure function needs,
+/// mirroring every other function in this "Backend reads" section.
+pub(crate) fn go_targets(
+    app_ctx: &AppContext,
+    ids: &AppIds,
+    focused_id: u64,
+) -> placement::GoTargets {
+    let Some((_binder, order, pos)) = locate(app_ctx, ids, focused_id) else {
+        return placement::GoTargets::default();
+    };
+    let meta = item_meta(app_ctx, &order);
+    placement::go_targets_in(&order, &meta, pos)
 }
 
 // ── Backend writes ───────────────────────────────────────────────────────────
@@ -134,7 +153,7 @@ pub(crate) fn create_by_recommendation(
         return;
     };
     let meta = item_meta(app_ctx, &order);
-    let anchor_indent = meta.get(&anchor_id).map(|(i, _)| *i).unwrap_or(0);
+    let anchor_indent = meta.get(&anchor_id).map(|(_role, i, _sr)| *i).unwrap_or(0);
     let (index, indent) =
         placement::insertion_point_for_item(&order, &meta, pos, anchor_indent, rec.relation);
 

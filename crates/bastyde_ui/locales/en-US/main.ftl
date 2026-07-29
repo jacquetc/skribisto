@@ -33,9 +33,21 @@ menu-view = &View
 menu-outline = &Outline
 menu-search = &Search in Project
 menu-search-preview = Search &Preview
+menu-fullscreen = &Fullscreen
+menu-focus-mode = &Distraction-free Mode
 menu-format = F&ormat
 menu-scene-break = Insert scene brea&k
 menu-major-scene-break = Insert &major scene break
+
+## Menu bar: Go
+menu-go = &Go
+menu-go-next-scene = Next &Scene
+menu-go-prev-scene = Pre&vious Scene
+menu-go-next-chapter = Next &Chapter
+menu-go-prev-chapter = Previous C&hapter
+menu-go-next-note = Next &Note
+menu-go-prev-note = Previous No&te
+
 menu-tools = &Tools
 menu-help = &Help
 
@@ -136,6 +148,12 @@ session-no-limit = No limit
 session-reset = Reset session
 session-readout = { $words } words · { $time }
 session-readout-timed = { $words } words · { $time } left
+# Distraction-free mode's always-visible control strip (Increment 2).
+statusbar-focus-exit = Exit distraction-free mode
+# The strip's Next/Previous buttons (Increment 4) — fire the same go.next/go.prev
+# actions as the shortcut and the Go menu's generic pair.
+statusbar-focus-go-prev = Previous item (Alt+Up)
+statusbar-focus-go-next = Next item (Alt+Down)
 
 ## Settings
 language = Language
@@ -178,6 +196,7 @@ settings-page-notes = Notes
 settings-page-editor-behavior = Editor Behavior
 settings-page-goals = Goals & Word Count
 settings-page-corkboard = Corkboard
+settings-page-distraction-free = Distraction-free
 settings-page-dictionaries = Dictionaries
 settings-page-autosave = Autosave
 settings-page-export = Export Formats
@@ -186,6 +205,7 @@ settings-page-keymap = Keymap
 ## Settings window: fields
 settings-group-typography = Typography
 settings-group-writing-column = Writing column
+settings-group-writing-view = Writing view
 settings-group-theme = Theme
 settings-group-language = Language
 settings-group-startup = Startup
@@ -196,6 +216,14 @@ settings-field-line-height = Line height
 settings-field-first-line-indent = First-line indent
 settings-field-paragraph-spacing-before = Space before paragraph
 settings-field-paragraph-spacing-after = Space after paragraph
+settings-field-column-width = Column width
+settings-distraction-free-width-hint = Applies only while distraction-free mode is on — your Scene, Synopsis and Notes column widths are untouched.
+settings-distraction-free-tab-bar = Keep the editor tabs
+settings-distraction-free-word-count = Keep the word count
+settings-distraction-free-session = Keep the writing session
+settings-distraction-free-go-to = Keep the Go to… button
+settings-distraction-free-go = Keep the Previous and Next buttons
+settings-distraction-free-chrome-hint = The Exit button always stays, whatever you choose here — it is your way out if Escape is busy.
 settings-field-app-theme = Theme
 settings-field-text-scale = Interface text size
 settings-field-language = Interface language
@@ -471,13 +499,12 @@ dialog-set-label = Set label
 dialog-new-scene = New scene
 close-work-question = Save changes before closing the work?
 quit-question = Save changes before quitting?
+quit-save-work-question = Save changes to { $title } before quitting?
 unsaved-changes = This work has unsaved changes.
 # Shown by Quit when another open Work (not this window's own) still has
 # unsaved edits — the design's "one dialog listing every dirty Work" (see
 # app::commands::file's `app.quit` action). Quit is refused until those are
 # saved or closed from their own window.
-quit-other-works-dirty-title = Other open works have unsaved changes
-quit-other-works-dirty-text = Quitting would leave unsaved changes in: { $list }. Switch to each and save or close it, then quit again.
 # Replacing the open work in this window (New Work, Open Work, "Open here", the
 # import toast's "Open now"), the same guard as closing, since the open work is
 # closed either way.
@@ -540,6 +567,7 @@ backup-restored-with-safety = Project restored. Your previous version was saved 
 close-backup-discard-title = Discard changes to this backup?
 close-backup-discard-text = Changes to a backup can't be saved to it. Use Save As to keep them, or discard and close.
 quit-backup-discard-title = Discard changes and quit?
+quit-backup-discard-work-question = Discard changes to { $title } and quit?
 quit-backup-discard-text = Changes to a backup can't be saved to it. Use Save As to keep them, or discard and quit.
 backup-nudge-text = No backups are set up for this project.
 backup-nudge-action = Set up backups…
@@ -1196,3 +1224,9 @@ settings-punctuation-sample = Your language gives
 settings-punctuation-app-hint = What every project does unless it takes rules of its own in Work ▸ Punctuation.
 settings-punctuation-dialogue = Open a paragraph typed as "- " with a dialogue dash
 settings-punctuation-dialogue-hint = For languages that mark speech with a dash rather than quotation marks — French, Spanish, Russian and others. It only fires at the very start of a paragraph.
+
+## Go to (jump to any item)
+statusbar-go-to = Go to…
+go-to-placeholder = Search the binder
+go-to-no-matches = No item matches that search.
+menu-go-to = &Go to…

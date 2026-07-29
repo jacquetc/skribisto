@@ -12,16 +12,13 @@
 
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
-use bastyde::widgets::{
-    EventContextMessageBoxExt, MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton,
-};
 
 use crate::intents::AppIntent;
 use crate::panels::import_plume::ImportPlumePanel;
 use crate::settings::SettingsPanel;
 use crate::view_models::{ImportPlumeViewModel, PendingSwitch};
 
-use super::super::{PendingExit, guard_unsaved_exit, open_work_flow};
+use super::super::open_work_flow;
 use super::CommandDeps;
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
@@ -41,7 +38,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 
     // Open Work (Ctrl+O): native picker for an existing `.skrib`, then the guard, then load.
     // The guard runs *after* the pick, so cancelling the picker — or choosing a backup file,
-    // which opens in its own process and leaves this project untouched — never prompts about
+    // which opens in its own window and leaves this project untouched — never prompts about
     // unsaved changes.
     ctx.register_shortcut_global(
         Shortcut::new("work.open")
@@ -122,18 +119,20 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         }));
     }
 
-    // Quit (Ctrl+Q): really terminates the process (see `PendingExit::Quit`'s docs), after
-    // the same unsaved-changes guard as every other exit path — `guard_unsaved_exit`, shared
-    // with `work.close`'s action and the project window's own `on_close_requested` guard
-    // (`windows.rs`). Deliberately does NOT go through `close_window()`: that would only ever
-    // land back on the project window's close guard, which always returns to the Launcher —
-    // never terminates. The title-bar X / Alt+F4 path is unchanged (still `close_window()`,
-    // still returns to the Launcher).
+    // Quit (Ctrl+Q): really terminates the process, accounting for **every** open Work
+    // first — see `QuitSequencer`'s module doc.
     //
-    // With M Works open, Quit first accounts for every OTHER open Work's dirty state
-    // (`other_dirty_work_titles`) — see that function's own doc for why it REFUSES
-    // (naming them) rather than attempting a cross-window save-then-close-all. THIS
-    // window's own Work always still goes through the unchanged single-Work guard below.
+    // It used to guard only the ONE window it was invoked from and then force-close that
+    // window, which with a second window open neither asked about that project's edits nor
+    // actually quit; a later revision made it *refuse* whenever another Work was dirty. Both
+    // were defensible while two simultaneous projects were exotic. Phase 4 made
+    // single-instance the deployment model, so several windows in one process is now the
+    // ordinary shape and Quit has to mean quit.
+    //
+    // Deliberately still NOT `close_window()`: that lands on the project window's close
+    // guard, which always returns to the Launcher rather than terminating. The title-bar
+    // X / Alt+F4 path is unchanged (still `close_window()`, still returns to the Launcher) —
+    // closing *a window* and quitting *the app* are different requests.
     ctx.register_shortcut_global(
         Shortcut::new("app.quit")
             .name("Quit")
@@ -141,39 +140,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .build(),
     );
     {
-        let app_ctx = deps.app_ctx.clone();
-        let ids = deps.ids.clone();
-        let unsaved = deps.unsaved.clone();
-        let autosave = deps.autosave.clone();
-        let pending = deps.pending_exit.clone();
-        let scheduler = deps.backup_scheduler.clone();
-        let backup_mode = deps.backup_mode.clone();
-        let registry = deps.registry.clone();
+        let quit = deps.quit.clone();
         ctx.register_action_global(Action::new("app.quit").on_invoke(move |_i, ctx| {
-            let others = super::super::other_dirty_work_titles(&registry, ids.work_id.get());
-            if !others.is_empty() {
-                ctx.present_message_box(
-                    MessageBox::warning(tr!(quit_other_works_dirty_title()))
-                        .text(tr!(quit_other_works_dirty_text(list = others.join(", "))))
-                        .buttons(MessageBoxButtons::Custom(vec![MessageBoxButton::standard(
-                            StandardButton::Ok,
-                        )]))
-                        .default_button(StandardButton::Ok)
-                        .escape_button(StandardButton::Ok),
-                );
-                return;
-            }
-            guard_unsaved_exit(
-                ctx,
-                &app_ctx,
-                &ids,
-                unsaved.get(),
-                backup_mode.get(),
-                autosave.get(),
-                &pending,
-                &scheduler,
-                PendingExit::Quit,
-            );
+            quit.begin(ctx);
         }));
     }
 

@@ -37,6 +37,8 @@ use skrib_format::retention;
 use crate::shell::process;
 use crate::toast_scope::ToastWorkExt;
 
+use super::long_op::CapturedWork;
+
 /// Toast id base, so a burst of delete failures replaces rather than stacks —
 /// folded through [`work_scoped_toast_id`] with `self.work_id`/`me.work_id` at
 /// every use, never bare: two windows browsing two different Works' backups
@@ -58,11 +60,41 @@ pub struct BackupsListViewModel {
     uid: String,
     project_path: String,
     dirs: Vec<String>,
-    /// The open Work this browser is listing backups for — a snapshot taken
-    /// when the panel opened (matches `uid`/`project_path`), used to route
-    /// this view-model's delete-failure toast to the right window/bell
+    /// The open Work this browser is listing backups for, used to route this
+    /// view-model's delete-failure toast to the right window/bell
     /// (`crate::toast_scope::ToastWorkExt`) rather than every open project's.
-    work_id: Option<u64>,
+    ///
+    /// # F7 — why `CapturedWork` here, with no `AppIds` to protect against
+    ///
+    /// `delete()` backgrounds its filesystem removal (`spawn_blocking`) and
+    /// only routes a toast on completion, the same hazard class every
+    /// long-operation view-model in this crate guards against with
+    /// `long_op::CapturedWork` — so this is that same type, not a bare
+    /// `Option<u64>`, even though the reasoning differs slightly from those:
+    ///
+    /// Every OTHER `CapturedWork` holder (`ExportViewModel`,
+    /// `BackupSchedulerViewModel`, `BackupRestoreViewModel`, `SaveAsViewModel`)
+    /// is minted ONCE per window and outlives many operations, holding its
+    /// own long-lived `ids: AppIds` *alongside* the capture — so the risk is a
+    /// handler accidentally reading the live `ids.work_id` instead of the
+    /// snapshot. `BackupsListViewModel` holds no `AppIds` at all: a fresh
+    /// instance is built by `BackupsListPanel::new` every time the panel
+    /// opens (see `backup/list_panel.rs`), with `work_id` given by the
+    /// caller (`app.rs`'s `backups.show` action, `settings.rs`'s work-backup
+    /// pane) reading `ids.work_id.get()` at THAT moment — there is no live
+    /// signal on this type a future handler could substitute for it even by
+    /// accident. So a delete finishing after an in-place project switch (the
+    /// panel itself isn't destroyed by a switch — nothing in
+    /// `ProjectSwitchViewModel` closes overlays) still correctly names the
+    /// Work the panel was opened for, structurally, not by discipline.
+    ///
+    /// Using [`CapturedWork::given`] anyway (rather than a bare `Option<u64>`)
+    /// keeps this call site self-documenting and consistent with every other
+    /// `.scoped_id`/`.target_work` call in the crate — `ProjectSwitchViewModel::
+    /// pending_work_id` is the other holder that takes this same door, for the
+    /// same reason (see [`CapturedWork::given`]'s own doc): the capture
+    /// happened one layer up, in the caller's own window `AppIds`.
+    work_id: CapturedWork,
     model: ListModel<BackupRow>,
     /// Bumped whenever the list's *content* changes (a scan lands), driving the
     /// empty-state/list `Switcher`.
@@ -79,7 +111,11 @@ impl BackupsListViewModel {
             uid,
             project_path,
             dirs,
-            work_id,
+            // The caller (`BackupsListPanel::new`) already read this from its
+            // own window's `ids.work_id.get()` at panel-open time — this just
+            // wraps that already-captured value in the shared type. See
+            // `Self::work_id`'s doc (F7).
+            work_id: CapturedWork::given(work_id),
             model: ListModel::from_vec(Vec::new()),
             epoch: Signal::new(0),
             loading: Signal::new(true),
@@ -191,13 +227,16 @@ impl BackupsListViewModel {
         }
     }
 
-    /// Open a backup in its own instance — a backup always opens in a fresh process, which is
-    /// what shows the read-only / restore choice.
+    /// Open a backup in its **own window**, which is what shows the read-only /
+    /// restore choice.
+    ///
+    /// It used to be its own *process*. Phase 3 moved `backup_mode`/`backup_context`
+    /// onto `WorkSession`, so the isolation a backup needs — it must never replace
+    /// the project the user is working in, and its dirty state must never be
+    /// confused with theirs — is per-Work and therefore per-window already; and
+    /// Phase 4 made a second process a round trip back to this one anyway.
     pub fn open(&self, ctx: &mut EventContext, path: &str) {
-        let path = path.to_string();
-        ctx.request_activation_token_self(Box::new(move |tok| {
-            process::spawn_new_process(&path, tok);
-        }));
+        crate::shell::windows::open_or_focus_project(ctx, path);
     }
 
     /// Show the backup in the platform's file manager.
@@ -279,6 +318,19 @@ fn byte_size(path: &Path) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// F7: `new`'s `work_id` parameter must land in `Self::work_id` wrapped as
+    /// a `CapturedWork` (via `CapturedWork::given`), not stored bare — see
+    /// that field's doc for why this type is the right one here even though
+    /// this view-model holds no `AppIds` of its own to protect against.
+    #[test]
+    fn new_wraps_the_given_work_id_as_a_captured_work() {
+        let vm = BackupsListViewModel::new(String::new(), String::new(), Vec::new(), Some(1));
+        assert_eq!(vm.work_id, Some(1));
+
+        let none_vm = BackupsListViewModel::new(String::new(), String::new(), Vec::new(), None);
+        assert_eq!(none_vm.work_id, None);
+    }
 
     #[test]
     fn scan_lists_this_projects_backups_newest_first() {

@@ -38,6 +38,8 @@
 //!   * [`export`] — the two export entry points.
 //!   * [`file`] — project and application lifecycle (new/open/import/close/settings/quit).
 //!   * [`binder`] — the outline tree's verbs.
+//!   * `go` — prev/next Scene/Chapter/Note (Increment 4 of distraction-free), scoped to
+//!     the focused item's own binder.
 
 use std::rc::Rc;
 
@@ -49,8 +51,8 @@ use frontend::AppContext;
 use crate::models::OpenDocsStore;
 use crate::view_models::{
     BackupSchedulerViewModel, DictionariesViewModel, EditorsViewModel, ExportViewModel,
-    OutlineViewModel, ProjectSwitchViewModel, SearchReplaceViewModel, TrashViewModel,
-    UserDictionaryViewModel,
+    FocusViewModel, FullscreenViewModel, OutlineViewModel, ProjectSwitchViewModel,
+    SearchReplaceViewModel, TrashViewModel, UserDictionaryViewModel,
 };
 
 use super::PendingExit;
@@ -60,6 +62,7 @@ mod editor;
 mod export;
 mod file;
 mod format;
+mod go;
 mod trash;
 mod view;
 
@@ -82,11 +85,23 @@ pub(super) struct CommandDeps {
     /// instead of `ctx.app_state`'s stale, first-window-wins slot (see
     /// `SettingsPanel`'s own `session` field doc).
     pub session: crate::sessions::WorkSession,
-    /// The app-global Work registry — threaded so `app.quit` can sweep every
-    /// OTHER open Work's dirty state (see `super::super::other_dirty_work_titles`'s
-    /// doc), not just this window's own.
+    /// The app-global Work registry.
     pub registry: crate::sessions::WorkRegistry,
+    /// The app-global quit sequencer — `app.quit`'s whole implementation. Shared
+    /// (not per-window) precisely because a quit spans every window: two windows
+    /// running their own sequence over the same Works would prompt twice for each.
+    pub quit: crate::view_models::QuitSequencer,
     pub outline: OutlineViewModel,
+    /// This window's own "was I maximized/floating before I went fullscreen"
+    /// memory — minted fresh per window (never a `ctx.app_state` lookup, see
+    /// `FullscreenViewModel`'s own doc for why a shared instance would answer
+    /// with the wrong window's memory the moment a second project window
+    /// exists).
+    pub fullscreen: FullscreenViewModel,
+    /// This window's own distraction-free state (Increment 2) — minted fresh
+    /// per window, never a `ctx.app_state` lookup, for the same reason as
+    /// `fullscreen` above (see `FocusViewModel`'s own doc).
+    pub focus: FocusViewModel,
     pub editors: EditorsViewModel,
     pub trash: TrashViewModel,
     pub search: SearchReplaceViewModel,
@@ -131,4 +146,5 @@ pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
     file::register(ctx, deps);
     format::register(ctx, deps);
     binder::register(ctx, deps);
+    go::register(ctx, deps);
 }

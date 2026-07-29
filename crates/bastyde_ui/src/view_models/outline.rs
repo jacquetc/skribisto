@@ -634,7 +634,7 @@ impl OutlineViewModel {
         let Some(pos) = order.iter().position(|&x| x == item_id) else {
             return Vec::new();
         };
-        let base = meta.get(&item_id).map(|(i, _)| *i).unwrap_or(0);
+        let base = meta.get(&item_id).map(|(_role, i, _sr)| *i).unwrap_or(0);
         let end = placement::subtree_end(&order, &meta, pos, base);
         order[pos + 1..end].to_vec()
     }
@@ -849,7 +849,7 @@ impl OutlineViewModel {
                 let binder = self.model.binder_of(&key)?;
                 let (order, meta) = self.ordered_meta(binder);
                 let pos = order.iter().position(|&x| x == i)?;
-                let (anchor_indent, _) = *meta.get(&i)?;
+                let (_, anchor_indent, _) = *meta.get(&i)?;
                 // Shared with `StreamViewModel` — see `crate::binder::placement`.
                 let (index, indent) = placement::insertion_point_for_item(
                     &order,
@@ -867,9 +867,9 @@ impl OutlineViewModel {
         }
     }
 
-    /// The binder's ordered item ids plus `{id -> (indent, sub_role)}`, in one
+    /// The binder's ordered item ids plus `{id -> (role, indent, sub_role)}`, in one
     /// batch fetch — the data `insertion_point_for` / `gate_book_end` walk.
-    fn ordered_meta(&self, binder: u64) -> (Vec<u64>, HashMap<u64, (i64, BinderItemSubRole)>) {
+    fn ordered_meta(&self, binder: u64) -> (Vec<u64>, placement::ItemMeta) {
         let ctx = &*self.app_ctx;
         let order = binder_commands::get_binder_relationship(
             ctx,
@@ -881,7 +881,7 @@ impl OutlineViewModel {
             .unwrap_or_default()
             .into_iter()
             .flatten()
-            .map(|it| (it.id, (it.indent, it.sub_role)))
+            .map(|it| (it.id, (it.role, it.indent, it.sub_role)))
             .collect();
         (order, meta)
     }
@@ -891,10 +891,10 @@ impl OutlineViewModel {
     /// intermediate chapters). `None` if the anchor is not inside a book.
     fn enclosing_book(
         order: &[u64],
-        meta: &HashMap<u64, (i64, BinderItemSubRole)>,
+        meta: &placement::ItemMeta,
         pos: usize,
     ) -> Option<(usize, i64)> {
-        let (ind0, sr0) = meta.get(&order[pos])?;
+        let (_role0, ind0, sr0) = meta.get(&order[pos])?;
         let mut cur_indent = *ind0;
         if sr0.opens_book() {
             return Some((pos, cur_indent));
@@ -902,7 +902,7 @@ impl OutlineViewModel {
         let mut cur = pos;
         while cur > 0 {
             cur -= 1;
-            let (ind, sr) = meta.get(&order[cur])?;
+            let (_role, ind, sr) = meta.get(&order[cur])?;
             if *ind < cur_indent {
                 cur_indent = *ind;
                 if sr.opens_book() {
@@ -933,7 +933,7 @@ impl OutlineViewModel {
         let end = placement::subtree_end(&order, &meta, book_pos, book_indent);
         let has_end = order[book_pos..end]
             .iter()
-            .any(|id| meta.get(id).is_some_and(|(_, sr)| sr.closes_book()));
+            .any(|id| meta.get(id).is_some_and(|(_role, _ind, sr)| sr.closes_book()));
         if has_end {
             recs.retain(|r| !r.create_type.closes_book());
         }

@@ -58,10 +58,17 @@ use crate::backup::BackupContext;
 use crate::singles::SingleWork;
 use crate::toast_scope::ToastWorkExt;
 
-use super::long_op::{CapturedWork, event_id, parse_payload};
+use super::long_op::{TrackedOp, event_id, parse_payload};
 
 struct BackupRestorePending {
-    op_id: String,
+    /// The long-operation id bundled with the Work it was captured for (F4)
+    /// — see `long_op::TrackedOp`'s doc: this view-model is long-lived per
+    /// window, and an in-place project switch reseeds the SAME `ids.work_id`
+    /// mid-flight, so `on_long_op_completed`/`on_long_op_failed` must route
+    /// their toast on `tracked.work_id()`, never a live re-read that could
+    /// now name a different Work than the one whose backup is actually being
+    /// restored.
+    tracked: TrackedOp,
     /// The real project path being restored over.
     target: String,
     /// Where `save_as` actually wrote (T2-6): a temp sibling of `target`, never
@@ -70,14 +77,6 @@ struct BackupRestorePending {
     as_folder: bool,
     work_info_id: Option<u64>,
     safety_backup_path: Option<String>,
-    /// This window's own Work, captured when
-    /// [`BackupRestoreViewModel::do_restore`] started the write — see
-    /// `long_op::CapturedWork`'s doc: this view-model is long-lived per
-    /// window, and an in-place project switch reseeds the SAME `ids.work_id`
-    /// mid-flight, so `on_long_op_completed`/`on_long_op_failed` must route
-    /// their toast on THIS snapshot, never a live re-read that could now name
-    /// a different Work than the one whose backup is actually being restored.
-    work_id: CapturedWork,
 }
 
 #[derive(Clone)]
@@ -142,18 +141,29 @@ impl BackupRestoreViewModel {
         self.check_open_elsewhere(ctx, target);
     }
 
-    /// Refuse to overwrite an original that a *different* process has open; ask the
+    /// Refuse to overwrite an original that some *other window* has open; ask the
     /// user to close it there (offering to focus that window), then retry.
+    ///
+    /// **Matched on path alone, not on `pid != my_pid()`.** That pid test was
+    /// correct only while Skribisto was one process per project. Since Phase 4 the
+    /// usual way to have two projects open is two windows of *one* process, so a
+    /// pid filter would wave through the exact case it exists to catch — a sibling
+    /// window holding the original while this one overwrites it. It is the same
+    /// class of bug Phase 3 fixed in `project_switcher::sections`.
+    ///
+    /// There is no risk of matching *ourselves*: this window is in backup mode, so
+    /// its own open-registry claim is on the backup, and `target` is the original
+    /// the backup was made from.
     fn check_open_elsewhere(&self, ctx: &mut EventContext, target: String) {
         let canon = crate::shell::open_registry::canonical(&target);
-        let peer = crate::shell::open_registry::scan().into_iter().find(|e| {
-            e.pid != crate::shell::open_registry::my_pid()
-                && crate::shell::open_registry::canonical(&e.path) == canon
-        });
+        let peer = crate::shell::open_registry::scan()
+            .into_iter()
+            .find(|e| crate::shell::open_registry::canonical(&e.path) == canon);
         let Some(entry) = peer else {
             return self.confirm(ctx, target);
         };
         let pid = entry.pid;
+        let raise_path = entry.path.clone();
         let me = self.clone();
         MessageBox::warning(tr!(backup_restore_close_elsewhere_title()))
             .text(tr!(backup_restore_close_elsewhere_text()))
@@ -169,9 +179,7 @@ impl BackupRestoreViewModel {
                 // Focus the other window (best-effort raise), then let the user
                 // retry once they've closed it there.
                 StandardButton::Open => {
-                    c.request_activation_token_self(Box::new(move |tok| {
-                        let _ = crate::shell::ipc::send_raise(pid, tok);
-                    }));
+                    crate::view_models::project_switcher::raise_instance(c, pid, &raise_path);
                 }
                 StandardButton::Retry => me.check_open_elsewhere(c, target.clone()),
                 _ => {}
@@ -258,14 +266,14 @@ impl BackupRestoreViewModel {
         ) {
             Ok(op_id) => {
                 *self.pending.borrow_mut() = Some(BackupRestorePending {
-                    op_id,
+                    // Captured NOW, bundled with the op id — see
+                    // `long_op::TrackedOp`'s doc.
+                    tracked: TrackedOp::start(&self.ids, op_id),
                     target,
                     temp_target: temp_target.to_string_lossy().into_owned(),
                     as_folder,
                     work_info_id: self.ids.work_info_id.get(),
                     safety_backup_path,
-                    // Captured NOW — see `long_op::CapturedWork`'s doc.
-                    work_id: CapturedWork::now(&self.ids),
                 });
             }
             Err(e) => {
@@ -288,7 +296,7 @@ impl BackupRestoreViewModel {
         let pending = {
             let mut slot = self.pending.borrow_mut();
             match slot.as_ref() {
-                Some(p) if p.op_id == op_id => slot.take().unwrap(),
+                Some(p) if p.tracked.matches(&op_id) => slot.take().unwrap(),
                 _ => return, // not our restore op
             }
         };
@@ -309,7 +317,7 @@ impl BackupRestoreViewModel {
             // leave the original untouched — still viewing the backup here.
             ctx.show_toast(
                 Toast::error(tr!(backup_restore_error(error = e.to_string())))
-                    .target_work(pending.work_id),
+                    .target_work(pending.tracked.work_id()),
             );
             return;
         }
@@ -358,7 +366,7 @@ impl BackupRestoreViewModel {
             Some(p) => tr!(backup_restored_with_safety(path = p.clone())),
             None => tr!(backup_restored_ok()),
         };
-        ctx.show_toast(Toast::success(msg).target_work(pending.work_id));
+        ctx.show_toast(Toast::success(msg).target_work(pending.tracked.work_id()));
     }
 
     pub fn on_long_op_failed(&self, ctx: &mut EventContext, event: &Event) {
@@ -368,7 +376,7 @@ impl BackupRestoreViewModel {
         let pending = {
             let mut slot = self.pending.borrow_mut();
             match slot.as_ref() {
-                Some(p) if p.op_id == op_id => slot.take(),
+                Some(p) if p.tracked.matches(&op_id) => slot.take(),
                 _ => return,
             }
         };
@@ -386,8 +394,8 @@ impl BackupRestoreViewModel {
             .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
             .unwrap_or_default();
         // `pending` (captured above, before this block) carries the Work this
-        // restore started for — see `BackupRestorePending::work_id`'s doc.
-        let work_id: Option<u64> = pending.as_ref().and_then(|p| Option::from(p.work_id));
+        // restore started for — see `BackupRestorePending::tracked`'s doc.
+        let work_id: Option<u64> = pending.as_ref().and_then(|p| p.tracked.work_id().into());
         ctx.show_toast(Toast::error(tr!(backup_restore_error(error = error))).target_work(work_id));
         // State unchanged — still viewing the backup in backup mode.
     }
@@ -563,8 +571,9 @@ mod tests {
     // re-read `self.ids.work_id.get()` live, so a window that started a
     // restore, then switched to a different Work before the write finished,
     // would route the completion/error toast to the NEW Work. This pins the
-    // fix: `BackupRestorePending::work_id`, captured once in `do_restore`, must
-    // stay pinned even after the window's live `ids.work_id` moves on.
+    // fix: `BackupRestorePending::tracked`'s `work_id()`, captured once in
+    // `do_restore`, must stay pinned even after the window's live
+    // `ids.work_id` moves on.
 
     #[test]
     fn a_restores_captured_work_id_survives_a_later_in_place_switch() {
@@ -574,15 +583,14 @@ mod tests {
         // Simulate what `do_restore` does the instant `save_as` starts: snapshot
         // the window's current Work into the pending restore.
         *restore.pending.borrow_mut() = Some(BackupRestorePending {
-            op_id: "fake-restore-op".to_string(),
+            tracked: TrackedOp::start(&restore.ids, "fake-restore-op".to_string()),
             target: "/tmp/original.skrib".to_string(),
             temp_target: "/tmp/original.skrib.restore-tmp-x".to_string(),
             as_folder: false,
             work_info_id: restore.ids.work_info_id.get(),
             safety_backup_path: None,
-            work_id: CapturedWork::now(&restore.ids),
         });
-        let captured = restore.pending.borrow().as_ref().unwrap().work_id;
+        let captured = restore.pending.borrow().as_ref().unwrap().tracked.work_id();
         assert_eq!(captured, Some(1));
 
         // An in-place project switch reseeds `ids.work_id` on the SAME `AppIds`
@@ -590,16 +598,16 @@ mod tests {
         restore.ids.work_id.set(Some(2));
 
         assert_eq!(
-            restore.pending.borrow().as_ref().unwrap().work_id,
+            restore.pending.borrow().as_ref().unwrap().tracked.work_id(),
             captured,
             "the in-flight restore's own Work must stay pinned to what `do_restore` \
              captured, even after this window switches to a different Work"
         );
         assert_ne!(
-            restore.pending.borrow().as_ref().unwrap().work_id,
+            restore.pending.borrow().as_ref().unwrap().tracked.work_id(),
             restore.ids.work_id.get(),
             "the captured Work must now differ from the window's live `ids.work_id` — \
-             proving a handler reading `pending.work_id` cannot silently be reading the \
+             proving a handler reading `pending.tracked.work_id()` cannot silently be reading the \
              same live value `ids.work_id` would give it"
         );
     }

@@ -25,6 +25,30 @@ pub enum AppIntent {
     #[name = "outline.toggle"]
     ToggleOutline,
 
+    /// Toggle THIS window between fullscreen and whatever placement it had
+    /// before (Maximized/Floating) — Increment 1 of distraction-free (plain
+    /// fullscreen; not distraction-free mode itself). Fired by F11 and the
+    /// View ▸ Fullscreen menu entry. Consumed by the global `view.fullscreen`
+    /// action in `App::build`, which resolves the firing window from the
+    /// `EventContext` rather than any captured handle — correct with several
+    /// project windows open.
+    #[name = "view.fullscreen"]
+    ToggleFullscreen,
+
+    /// Toggle distraction-free mode on THIS window — Increment 2 of
+    /// distraction-free: chrome collapses (menu bar, backup banner, status
+    /// bar, the binder/inspector/preview docks), the editor fills the window,
+    /// and the window goes fullscreen, all together. Independent of
+    /// [`Self::ToggleFullscreen`] — see `FocusViewModel`'s module doc for why
+    /// the two keep separate placement memory. Fired by Shift+F11, the
+    /// View ▸ Distraction-free Mode menu entry, and the mode's own strip
+    /// Exit button. Consumed by the global `view.focus_mode` action in
+    /// `App::build`, which resolves the firing window from the
+    /// `EventContext` rather than any captured handle — correct with several
+    /// project windows open.
+    #[name = "view.focus_mode"]
+    ToggleFocusMode,
+
     /// Start or pause the status-bar writing session. Fired by name (palette /
     /// automation); the play/pause button is the primary control. Consumed by a
     /// global `session.toggle` action in `App::build`.
@@ -288,6 +312,24 @@ mod tests {
         assert!(matches!(
             AppIntent::from_intent(&intent),
             Some(AppIntent::ShowWelcome)
+        ));
+    }
+
+    #[test]
+    fn toggle_fullscreen_unit_intent_bridges() {
+        let intent: Intent = AppIntent::ToggleFullscreen.into();
+        assert!(matches!(
+            AppIntent::from_intent(&intent),
+            Some(AppIntent::ToggleFullscreen)
+        ));
+    }
+
+    #[test]
+    fn toggle_focus_mode_unit_intent_bridges() {
+        let intent: Intent = AppIntent::ToggleFocusMode.into();
+        assert!(matches!(
+            AppIntent::from_intent(&intent),
+            Some(AppIntent::ToggleFocusMode)
         ));
     }
 }

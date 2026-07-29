@@ -3,21 +3,38 @@
 
 //! Skribisto desktop UI (Bastyde). Wires the Qleany backend to a Bastyde shell.
 //!
+//! ## Single instance
+//!
+//! The **first** live copy of Skribisto wins an election ([`shell::instance`]) and
+//! becomes the *primary*. Every later launch is a *remote*: it forwards what it
+//! was asked to do over a socket and exits, in milliseconds, without ever
+//! building an event hub, a store, a settings writer or a window. The primary
+//! answers by opening — or focusing — a window of its own.
+//!
+//! That is why the election runs at the very **top** of [`main`], before
+//! `AppContext::new()`. A remote that had already run `initialize_app`, pruned
+//! `window_state.toml` and opened settings handles would be doing all of it
+//! against files the primary is concurrently using, for a process about to exit.
+//!
+//! Several processes are still reachable: `--new-instance` asks for one outright
+//! (the two-process automation test needs it), and an unreachable or wedged
+//! primary degrades to `Standalone`, which is exactly the pre-Phase-4 behaviour.
+//!
 //! ## The launcher-window model
 //!
-//! Skribisto is one process per project, so a project window must only ever
-//! be created once its project is already known — otherwise the window's
-//! persistence id (see [`windows::window_id_for`]) has to be fixed before any
-//! project exists, and per-project geometry becomes impossible to key
-//! correctly (the bug this model replaces).
+//! A project window must only ever be created once its project is already known —
+//! otherwise the window's persistence id (see [`windows::window_id_for`]) has to
+//! be fixed before any project exists, and per-project geometry becomes
+//! impossible to key correctly (the bug this model replaces).
 //!
 //! - **Bare launch** (no `.skrib` on argv), with the "show at startup" setting
 //!   on, or with it off but no reachable recent project: opens a **Launcher**
 //!   window (the Welcome UI as a real window — see [`windows::launcher_window_config`]).
 //! - **Bare launch with the setting off and a reachable recent project**:
 //!   skips the Launcher and opens that project directly.
-//! - **Launch with a path on argv** (file manager, CLI, `spawn_new_process`):
-//!   always skips the Launcher and opens that project directly.
+//! - **Launch with a path on argv** (file manager, CLI): always skips the
+//!   Launcher and opens that project directly — in the primary's process when
+//!   there is one.
 //! - Picking / creating / importing a project from the Launcher opens a
 //!   **project window**, then closes the Launcher.
 //! - Closing a project (its window's own close, Ctrl+Q, Ctrl+W / File ▸ Close
@@ -82,13 +99,11 @@ mod tooltip_registry;
 mod version;
 mod view_models;
 
-use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use bastyde::core::event_source::{EventSource, SubscriptionHandle};
 
-use bastyde::core::app_event::AppEvent;
 use bastyde::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
 use bastyde::settings::{AppPaths, SettingsStore};
 use bastyde::widgets::framework_locales;
@@ -194,6 +209,50 @@ pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;
 /// paragraph stays readable — same treatment as the scene column.
 pub const PREVIEW_WIDTH_KEY: &str = "search.preview_width";
 pub const PREVIEW_WIDTH_DEFAULT: f32 = 700.0;
+/// Max width (px) of the writing column while distraction-free mode is active
+/// (Settings ▸ Editor ▸ Editor Behavior). Independent from [`EDITOR_WIDTH_KEY`]
+/// — the two never share a value, so widening the normal Scene column can
+/// never silently widen (or narrow) the distraction-free one. ~68 characters
+/// is the width every typography source surveyed converges on for comfortable
+/// reading (Bringhurst ~66, Butterick 45–90, Dyson & Haselgrove ~55); 620 px is
+/// that measure at the distraction-free bundle's own default face/size.
+pub const DISTRACTION_FREE_WIDTH_KEY: &str = "editor.distraction_free.column_width";
+pub const DISTRACTION_FREE_WIDTH_DEFAULT: f32 = 620.0;
+// ── Which pieces of chrome distraction-free mode keeps ──
+//
+// The mode's job is to take chrome away, so each of these defaults to the
+// *quieter* answer and the writer opts back in — except the Exit button,
+// which is deliberately **not** a setting at all. It is the strip's
+// documented way out (see `statusbar/focus_strip.rs`), so it must survive
+// every combination of these four: a wedged Escape must never be able to
+// combine with a settings choice to leave someone stuck in the mode.
+/// Keep the editor tab strip while distraction-free mode is active.
+/// Default **off** — one manuscript, no tab row, which is what Scrivener's
+/// Composition Mode, FocusWriter and Manuskript's fullscreen all present.
+/// Ctrl+Tab and the strip's own Go arrows still move between documents, so
+/// hiding the strip removes the chrome without removing the navigation.
+pub const DISTRACTION_FREE_TAB_BAR_KEY: &str = "editor.distraction_free.tab_bar";
+pub const DISTRACTION_FREE_TAB_BAR_DEFAULT: bool = false;
+/// Keep the word-count readout in the distraction-free strip (default **on**).
+pub const DISTRACTION_FREE_WORD_COUNT_KEY: &str = "editor.distraction_free.word_count";
+pub const DISTRACTION_FREE_WORD_COUNT_DEFAULT: bool = true;
+/// Keep the writing-session readout in the distraction-free strip
+/// (default **on**).
+pub const DISTRACTION_FREE_SESSION_KEY: &str = "editor.distraction_free.session";
+pub const DISTRACTION_FREE_SESSION_DEFAULT: bool = true;
+/// Keep the Previous/Next pair in the distraction-free strip (default **on**).
+/// One key for both buttons: they are a single navigational affordance, and a
+/// strip offering only one direction would be a worse answer than either
+/// showing or hiding the pair.
+pub const DISTRACTION_FREE_GO_KEY: &str = "editor.distraction_free.go_buttons";
+pub const DISTRACTION_FREE_GO_DEFAULT: bool = true;
+/// Keep the "Go to…" jump button in the distraction-free strip (default **on**).
+/// Distinct from [`DISTRACTION_FREE_GO_KEY`]: the arrows step relative to where
+/// you are, this one jumps anywhere, and a writer may well want one without the
+/// other. Ctrl+G still works either way — hiding a button never removes its
+/// command.
+pub const DISTRACTION_FREE_GO_TO_KEY: &str = "editor.distraction_free.go_to";
+pub const DISTRACTION_FREE_GO_TO_DEFAULT: bool = true;
 /// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
 pub const AUTOSAVE_KEY: &str = "editor.autosave";
 /// The master spell-check switch (default **on**) — the title-bar toggle, View ▸ Check
@@ -276,6 +335,32 @@ pub const NOTES_PARA_SPACING_AFTER_KEY: &str = "editor.notes.para_spacing_after"
 // Block-style spacing (notes have no indent) — notes are fragments/lists, so a
 // paragraph gap is what a notes surface is expected to look like.
 pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
+
+/// Distraction-free mode's own typography (Settings ▸ Editor ▸ Typography ▸
+/// Distraction-free) — a fifth bundle alongside Scene / Synopsis / Notes /
+/// Corkboard, selected at render time by `ContentTab::main_typography` whenever
+/// the tab's window is in distraction-free mode (Shift+F11), in place of the
+/// normal Scene/Notes bundle. Independent compile-time constants like every
+/// other bundle here — deliberately **not** seeded from Scene at runtime, so
+/// there is no ordering-fragile "copy on first entry" machinery. A touch larger
+/// and more open than Scene's own defaults (a bigger zoom, taller line height):
+/// distraction-free is the one surface meant to be read at arm's length with
+/// nothing else on screen.
+pub const DISTRACTION_FREE_FONT_FAMILY_KEY: &str = "editor.distraction_free.font_family";
+pub const DISTRACTION_FREE_FONT_FAMILY_DEFAULT: &str = "Literata";
+pub const DISTRACTION_FREE_SIZE_KEY: &str = "editor.distraction_free.size";
+pub const DISTRACTION_FREE_SIZE_DEFAULT: f32 = 1.15;
+pub const DISTRACTION_FREE_LINE_HEIGHT_KEY: &str = "editor.distraction_free.line_height";
+pub const DISTRACTION_FREE_LINE_HEIGHT_DEFAULT: f32 = 1.8;
+pub const DISTRACTION_FREE_FIRST_LINE_INDENT_KEY: &str =
+    "editor.distraction_free.first_line_indent";
+pub const DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT: f32 = 24.0;
+pub const DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY: &str =
+    "editor.distraction_free.para_spacing_before";
+pub const DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const DISTRACTION_FREE_PARA_SPACING_AFTER_KEY: &str =
+    "editor.distraction_free.para_spacing_after";
+pub const DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
 
 // ── Editor behaviour (Settings ▸ Editor ▸ Editor Behavior) ───────────────────
 /// Show the synopsis pane above the manuscript in the dual-pane writing editor
@@ -416,23 +501,67 @@ impl EventSource for EventHubSource {
 }
 
 fn main() {
+    // ── Single-instance election — FIRST, before anything is built ────────────
+    //
+    // A remote must not construct an `AppContext`, start the event-dispatch
+    // thread, run `initialize_app`, prune `window_state.toml`, or open a settings
+    // handle: all of those touch state the primary is concurrently using, on
+    // behalf of a process that is about to exit. Everything below this block is
+    // therefore reachable only by a primary or a standalone instance.
+    //
+    // `--new-instance` and a bare `.skrib` path are the whole argument surface;
+    // `parse_args` is a pure function so that surface is unit-tested.
+    let (want_new_instance, initial_project) =
+        shell::instance::parse_args(std::env::args().skip(1));
+    // The desktop's own startup token (a file-manager double-click sets it), so
+    // whichever window the primary ends up showing can actually come forward on
+    // Wayland — a process cannot raise itself unprompted.
+    let launch_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
+
+    let role = if want_new_instance {
+        shell::instance::InstanceRole::Standalone
+    } else {
+        shell::instance::elect()
+    };
+    let is_primary = matches!(role, shell::instance::InstanceRole::Primary);
+    if let shell::instance::InstanceRole::Remote(stream) = role {
+        let request = match &initial_project {
+            Some(path) => ipc::InstanceRequest::Open {
+                path: path.clone(),
+                activation_token: launch_token,
+            },
+            // A bare second launch asks for the Launcher rather than a raise:
+            // the Launcher is *how* a further project gets opened, so raising an
+            // existing project window would leave a desktop-icon user with no
+            // route to one. See `InstanceRequest::ShowLauncher`.
+            None => ipc::InstanceRequest::ShowLauncher {
+                activation_token: launch_token,
+            },
+        };
+        if shell::instance::handoff(stream, &request) {
+            return;
+        }
+        // Not acknowledged — a primary that accepted the connection and then
+        // wedged, or died mid-handshake. Fall through and launch normally: a
+        // duplicate window is a far better outcome than a launch that silently
+        // did nothing. This instance does NOT claim the primary socket (the
+        // election already resolved), so it behaves as a standalone peer.
+    }
+
     let app_ctx = Rc::new(AppContext::new());
 
     // Background event-dispatch thread.
     let client = EventHubClient::new(&app_ctx.event_hub);
     client.start(app_ctx.shutdown_rx.clone());
 
-    // Optional `.skrib` path to open on launch (`skribisto <path>`); `App` opens it
-    // once on first build.
-    //
-    // Read **before** the window-state prune below, not at the point of use: the
-    // prune forgets every `work-*` row whose project it cannot account for, and a
-    // path handed to us on argv (a file-manager double-click, `spawn_new_process`)
-    // is a project we are about to open *right now* — but it need not be in the
-    // recents MRU (it can have aged out of the 12-entry cap) nor in the open
-    // registry (nothing has claimed it yet). Pruning first would therefore delete
-    // the saved geometry of the very window we are seconds away from restoring.
-    let initial_project = std::env::args().nth(1).filter(|s| !s.trim().is_empty());
+    // The optional `.skrib` path from argv (`skribisto <path>`) was read above,
+    // which also puts it **before** the window-state prune below — that ordering
+    // is load-bearing, not incidental. The prune forgets every `work-*` row whose
+    // project it cannot account for, and a path handed to us on argv is a project
+    // we are about to open *right now* — but it need not be in the recents MRU
+    // (it can have aged out of the 12-entry cap) nor in the open registry
+    // (nothing has claimed it yet). Pruning first would therefore delete the
+    // saved geometry of the very window we are seconds away from restoring.
 
     // ── One-time startup maintenance: prune orphaned window-state rows (F4b) ──
     // `window_state.toml` gets a `work-{hash}` row every time a project window
@@ -660,29 +789,14 @@ fn main() {
     // constructed after `initial_state` is available, alongside the other
     // Tier-2-via-`app_state` registrations that already read off the first
     // window's session.
-    // If the requested project is already open in another live instance, raise
-    // that instance (forwarding our launch activation token for a real Wayland
-    // raise) and exit instead of opening a duplicate window.
-    if let Some(path) = initial_project.as_ref() {
-        let canon = std::fs::canonicalize(path)
-            .map(|p| p.to_string_lossy().into_owned())
-            .unwrap_or_else(|_| path.clone());
-        if let Some(existing) = open_registry::scan().into_iter().find(|e| e.path == canon) {
-            let token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
-            let _ = ipc::send_raise(existing.pid, token);
-            return;
-        }
-    }
-
-    // Shared handle to the *current* project window's `WindowState`, captured
-    // in its root builder — lets IPC "raise" events (handled in
-    // `on_app_event`) focus it directly without a WindowManager id lookup,
-    // which misses while that window is dispatching its own events. Never
-    // pointed at the Launcher (see `windows::launcher_window_config`'s docs):
-    // IPC raise is only ever targeted at a process holding an open-registry
-    // claim on a specific project path, which a Launcher-only process never
-    // has.
-    let main_window_state: Rc<RefCell<Option<WindowState>>> = Rc::new(RefCell::new(None));
+    // (The "is this project already open somewhere? then raise and exit" check
+    // that used to live here is gone: the election above subsumes it. A remote
+    // hands *every* launch to the primary, which resolves "already open" by
+    // string id — `find_window(window_id_for(path))` — and focuses that exact
+    // window. The old check could only ever answer for a *different* process,
+    // and reached it through a `main_window_state` slot pointing at whichever
+    // project window opened most recently, which with two open was the wrong
+    // one.)
 
     // Everything a project window needs to build itself — bundled once here
     // and registered as `app_state` so both this initial-window decision and
@@ -703,7 +817,6 @@ fn main() {
         tree_expansion_service,
         autosave_menu.clone(),
         spellcheck_menu.clone(),
-        main_window_state.clone(),
         format_vm.clone(),
     );
 
@@ -852,21 +965,26 @@ fn main() {
         .app_state(initial_state.session.backup_scheduler.clone())
         .app_state(project_switch.clone())
         .app_state(project_factory.clone())
-        // Bind this instance's IPC listener (multi-process window switching); an
-        // incoming raise request focuses the captured main window.
-        .on_ready(ipc::spawn_listener)
-        .on_app_event({
-            let main_window_state = main_window_state.clone();
-            move |event| {
-                if let AppEvent::External(payload) = event
-                    && let Some(req) = payload.downcast_ref::<ipc::RaiseMainWindow>()
-                    && let Some(state) = main_window_state.borrow().as_ref()
-                {
-                    if let Some(token) = req.activation_token.clone() {
-                        state.set_activation_token(token);
-                    }
-                    state.focus();
-                }
+        // Bind this instance's sockets: its own per-pid one always, and the
+        // well-known primary one if it won the election. Both feed the router
+        // below.
+        .on_ready(move |proxy| ipc::spawn_listener(proxy, is_primary))
+        // Serve remote launches. `on_external_with_ctx`, not `on_app_event`:
+        // answering an `Open` means *opening a window*, and `on_app_event`
+        // receives `&AppEvent` with no tree and no `WindowOps` — `open_window`
+        // on a standalone context panics. This hook (added to bastyde for
+        // exactly this) runs the closure against a live window's `EventContext`.
+        .on_external_with_ctx({
+            let app_ctx = app_ctx.clone();
+            move |payload, ctx| {
+                let Some(incoming) = payload.downcast_ref::<ipc::IncomingRequest>() else {
+                    return false;
+                };
+                serve_instance_request(&app_ctx, &incoming.request, ctx);
+                // Acknowledge only after the window work is done, so a remote
+                // that is told "accepted" really has had its request honoured.
+                incoming.accept();
+                true
             }
         })
         .initial_window(initial_window_config)
@@ -889,11 +1007,81 @@ fn main() {
     // unlink this instance's IPC socket so a later `scan()` never has to reap
     // it as stale.
     crate::shell::open_registry::release_all();
-    crate::shell::ipc::cleanup_own_socket();
+    // Unlink both sockets this instance bound — its own per-pid one, and (only
+    // if it was the primary) the well-known election socket. Leaving the latter
+    // behind would make the *next* launch pay one failed connect before it could
+    // unlink and claim it.
+    crate::shell::ipc::cleanup_own_sockets(is_primary);
     if let Err(e) = handling_app_lifecycle_commands::clean_up_before_exit(&app_ctx) {
         eprintln!("clean_up_before_exit failed: {e:#}");
     }
     app_ctx.shutdown();
+}
+
+/// Serve one [`ipc::InstanceRequest`] — the primary's whole answer to a remote
+/// launch, and to a peer's raise.
+///
+/// Every arm is the multi-window "document window" pattern: a window's **string
+/// id** is its identity, so `find_window(window_id_for(path))` answers "is this
+/// project already open here?" exactly, and `open_window` is reached only when it
+/// is not. Nothing keeps a side table of paths to windows — the id *is* the table,
+/// and it is the same id the window's persisted geometry is keyed by.
+///
+/// The activation token is applied to the resolved window before focusing it. On
+/// Wayland a process cannot raise itself unprompted; the token the *requester*
+/// minted (or the desktop handed its launch) is the compositor's evidence that
+/// this raise was asked for. Skipping it leaves the window behind the current one
+/// on KWin — the raise silently doing nothing.
+fn serve_instance_request(
+    app_ctx: &Rc<AppContext>,
+    request: &ipc::InstanceRequest,
+    ctx: &mut bastyde::prelude::EventContext,
+) {
+    match request {
+        ipc::InstanceRequest::Open {
+            path,
+            activation_token,
+        } => {
+            if let Some(id) = windows::open_or_focus_project(ctx, path) {
+                focus_with_token(ctx, id, activation_token.clone());
+            }
+        }
+        ipc::InstanceRequest::Raise {
+            path,
+            activation_token,
+        } => {
+            // A raise never opens anything: it is "come forward", not "open".
+            // With no path (a bare "raise this app"), the focused/primary window
+            // the context was minted from is already the right answer, so there
+            // is nothing to resolve.
+            if let Some(path) = path
+                && let Some(id) = ctx.find_window(&windows::window_id_for(path))
+            {
+                focus_with_token(ctx, id, activation_token.clone());
+            }
+        }
+        ipc::InstanceRequest::ShowLauncher { activation_token } => {
+            let id = match ctx.find_window(windows::LAUNCHER_WINDOW_ID) {
+                Some(id) => id,
+                None => ctx.open_window(windows::launcher_window_config(app_ctx.clone())),
+            };
+            focus_with_token(ctx, id, activation_token.clone());
+        }
+    }
+}
+
+/// Raise `id`, handing the compositor the activation token that authorises it.
+fn focus_with_token(
+    ctx: &mut bastyde::prelude::EventContext,
+    id: bastyde::prelude::BastydeWindowId,
+    token: Option<String>,
+) {
+    if let Some(token) = token
+        && let Some(state) = ctx.window_state(id)
+    {
+        state.set_activation_token(token);
+    }
+    ctx.focus_window(id);
 }
 
 /// Best-effort read of persisted theme/locale/autosave/show-welcome; defaults

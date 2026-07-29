@@ -274,6 +274,50 @@ impl SubRoleExt for SubRole {
     }
 }
 
+/// Which "kind" of writing item the Go menu's Next/Previous commands act on.
+///
+/// Deliberately its own axis, not a reuse of an existing one: [`SearchFacet`] buckets by
+/// the same structural chip a writer *filters* by, which lumps `Folder/Note` (a notes
+/// container) in with `Item/Note` (an actual note) — wrong here, since a Go command must
+/// land *in* a note, never on its container. `tabs::prose_kind_for` collapses Scene and
+/// Chapter onto one `ProseKind::Scene` (right for typography, since both use the Scene
+/// bundle) but wrong for Go, which must let a writer jump to a chapter head specifically.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum GoKind {
+    Scene,
+    Chapter,
+    Note,
+}
+
+/// Which way a Go command steps through the binder's flat order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum GoDirection {
+    Next,
+    Previous,
+}
+
+/// Which [`GoKind`] `(role, sub_role)` counts as for the Go menu, or `None` if it is not a
+/// Go target at all (a folder container that is not itself a chapter head, a structural
+/// marker, the legacy `Item/Text` separator…).
+///
+/// Chapter identity spans **two** role encodings (`Item/ChapterScene` and
+/// `Folder/ChapterScene`) — checked role-agnostically via `opens_chapter()` first, so
+/// both land on `GoKind::Chapter` without a role match. Everything else keys on the exact
+/// `(role, sub_role)` pair: only the *leaf* forms of Scene and Note are targets — a Note's
+/// *container* (`Folder/Note`) is deliberately excluded, matching [`search_facet_of`]'s own
+/// exclusion of the analogous case in the other direction, though for a different reason
+/// here (there is nowhere useful to "land" on a folder from a Go command).
+pub fn go_kind_of(role: &Role, sub_role: &SubRole) -> Option<GoKind> {
+    if sub_role.opens_chapter() {
+        return Some(GoKind::Chapter);
+    }
+    match (role, sub_role) {
+        (Role::Item, SubRole::Scene) => Some(GoKind::Scene),
+        (Role::Item, SubRole::Note) => Some(GoKind::Note),
+        _ => None,
+    }
+}
+
 /// UI-axis predicates over a `role`.
 pub trait RoleExt {
     /// Whether this node can contain children in the UI. The compiler ignores
@@ -1273,6 +1317,58 @@ mod tests {
             promote_content_loss(&Role::Item, &SubRole::Scene, &[SceneText, SynopsisText])
                 .is_empty()
         );
+    }
+
+    /// Both chapter encodings land on `GoKind::Chapter` — checked role-agnostically, so
+    /// this must hold whichever `role` the project's `ChapterMode` picked.
+    #[test]
+    fn both_chapter_encodings_are_go_chapter() {
+        assert_eq!(go_kind_of(&Role::Item, &SubRole::ChapterScene), Some(GoKind::Chapter));
+        assert_eq!(
+            go_kind_of(&Role::Folder, &SubRole::ChapterScene),
+            Some(GoKind::Chapter)
+        );
+    }
+
+    #[test]
+    fn a_leaf_scene_is_go_scene() {
+        assert_eq!(go_kind_of(&Role::Item, &SubRole::Scene), Some(GoKind::Scene));
+    }
+
+    #[test]
+    fn a_leaf_note_is_go_note() {
+        assert_eq!(go_kind_of(&Role::Item, &SubRole::Note), Some(GoKind::Note));
+    }
+
+    /// A notes *folder* is deliberately not a Go target — there is nowhere useful for
+    /// "Next Note" to land on a container, only on the actual note items inside it. This
+    /// is the one place `go_kind_of` and `search_facet_of` disagree on purpose.
+    #[test]
+    fn a_notes_folder_is_not_a_go_target() {
+        assert_eq!(go_kind_of(&Role::Folder, &SubRole::Note), None);
+    }
+
+    /// Every other structural row (a plain folder, a part, a book in either encoding, the
+    /// legacy text separator) has no Go kind — the matrix's remaining eight combinations,
+    /// once the four Chapter/Scene/Note rows above are excluded.
+    #[test]
+    fn structural_rows_have_no_go_kind() {
+        for c in COMBINATIONS {
+            let is_scene_or_note_leaf = matches!(
+                (&c.role, &c.sub_role),
+                (Role::Item, SubRole::Scene) | (Role::Item, SubRole::Note)
+            );
+            if c.sub_role.opens_chapter() || is_scene_or_note_leaf {
+                continue;
+            }
+            assert_eq!(
+                go_kind_of(&c.role, &c.sub_role),
+                None,
+                "{:?}/{:?} should have no Go kind",
+                c.role,
+                c.sub_role
+            );
+        }
     }
 
     #[test]

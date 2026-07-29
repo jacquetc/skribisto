@@ -51,7 +51,7 @@ use skribisto_model::compile::{
     ItemMeta, ScopeKind, StreamLevel, enclosing_head, primary_scope, resolve_scope,
 };
 
-use super::long_op::{CapturedWork, event_id, parse_payload, payload_id};
+use super::long_op::{CapturedWork, TrackedOp, event_id, parse_payload, payload_id};
 use crate::app_ids::AppIds;
 use crate::export::choose::ChooseModel;
 use crate::toast_scope::ToastWorkExt;
@@ -59,7 +59,7 @@ use crate::toast_scope::ToastWorkExt;
 /// Update-in-place key for the single toast an export drives (loading → progress →
 /// success / cancelled / error) — folded through [`work_scoped_toast_id`] with
 /// [`ExportViewModel::active_work_id`] at every use, never bare: see that
-/// field's doc (and `long_op::CapturedWork`'s) for why a bare static id would
+/// method's doc (and `long_op::TrackedOp`'s) for why a bare static id would
 /// let a second Work's export silently collide with this one's still-in-flight
 /// toast.
 const EXPORT_TOAST_ID: &str = "export.work";
@@ -184,14 +184,20 @@ pub struct ExportViewModel {
     preset: Signal<Option<Preset>>,
     /// The destination file path.
     output_path: Signal<String>,
-    /// The in-flight export op id (set on start, cleared on completion / cancel / failure).
-    active: Signal<Option<String>>,
-    /// This window's own Work, captured the instant [`Self::run_export`]
-    /// starts the long operation — set alongside `active`, cleared alongside
-    /// it. See `long_op::CapturedWork`'s doc for why every handler below must
-    /// route and scope its toast on THIS field, never a live
-    /// `self.ids.work_id.get()`.
-    active_work_id: Signal<CapturedWork>,
+    /// The in-flight export: its long-operation id bundled with the Work it
+    /// was captured for (F4 — see `long_op::TrackedOp`'s doc), set on start
+    /// and cleared on completion / cancel / failure. Every handler below
+    /// routes and scopes its toast on THIS captured value (via
+    /// [`Self::active_work_id`]), never a live `self.ids.work_id.get()`.
+    ///
+    /// Before `TrackedOp` existed this was two independent fields (`active:
+    /// Signal<Option<String>>` for the op id, `active_work_id:
+    /// Rc<Cell<CapturedWork>>` for the captured Work) that nothing forced to
+    /// stay in lockstep — only hand discipline (setting/clearing both, always
+    /// adjacent) kept them paired. Bundling them into one `TrackedOp` makes
+    /// that pairing structural: there is no longer a "set one, forget the
+    /// other" spelling available at all.
+    active: Signal<Option<TrackedOp>>,
 
     // ── Choose… (Custom scope) state ─────────────────────────────────────────
     /// Whether the Choose tree reveals items marked non-exportable (default off).
@@ -223,7 +229,6 @@ impl ExportViewModel {
             preset: Signal::new(builtin_presets().into_iter().next()),
             output_path: Signal::new(String::new()),
             active: Signal::new(None),
-            active_work_id: Signal::new(CapturedWork::none()),
             show_non_exportable: Signal::new(false),
             choose: Rc::new(RefCell::new(None)),
             choose_show: Rc::new(Cell::new(false)),
@@ -745,22 +750,33 @@ impl ExportViewModel {
         };
         match export_management_commands::export_work(&self.app_ctx, &dto) {
             Ok(op_id) => {
-                self.active.set(Some(op_id));
-                // Captured NOW — see `long_op::CapturedWork`'s doc. Every
-                // later handler for THIS op routes on this snapshot, never a
-                // live re-read of `self.ids.work_id`.
-                self.active_work_id.set(CapturedWork::now(&self.ids));
+                // Captured NOW, bundled with the op id in one `TrackedOp` —
+                // see `long_op::TrackedOp`'s doc (F4). Every later handler for
+                // THIS op routes on this snapshot, never a live re-read of
+                // `self.ids.work_id`.
+                self.active.set(Some(TrackedOp::start(&self.ids, op_id)));
                 // Close the export panel. `dismiss_top_overlay` (not `dismiss_modal`) so the
                 // overwrite-confirmation path — whose `on_result` context is anchored at the
                 // tree root — still closes the panel; it is the topmost overlay in both paths.
                 ctx.dismiss_top_overlay();
                 ctx.show_toast(
                     self.progress_toast(0.0, "")
-                        .target_work(self.active_work_id.get()),
+                        .target_work(self.active_work_id()),
                 );
             }
             Err(e) => self.show_error(ctx, &format!("{e:#}"), self.ids.work_id.get()),
         }
+    }
+
+    /// The Work the in-flight export was captured for (F4) — `CapturedWork::none()`
+    /// when nothing is running. Reads [`Self::active`]'s bundled `TrackedOp`;
+    /// see that type's doc for why the op id and the captured Work live in
+    /// one field instead of two.
+    fn active_work_id(&self) -> CapturedWork {
+        self.active
+            .get()
+            .map(|op| op.work_id())
+            .unwrap_or_else(CapturedWork::none)
     }
 
     fn progress_toast(&self, percent: f32, message: &str) -> Toast {
@@ -771,7 +787,7 @@ impl ExportViewModel {
             format!("{percent:.0}% · {message}")
         };
         Toast::loading(tr!(export_progress_title()))
-            .scoped_id(EXPORT_TOAST_ID, self.active_work_id.get())
+            .scoped_id(EXPORT_TOAST_ID, self.active_work_id())
             .body(lit!(body))
             .action(
                 ToastAction::destructive(tr!(export_cancel()), move |c| vm.cancel(c))
@@ -780,8 +796,8 @@ impl ExportViewModel {
     }
 
     pub fn cancel(&self, _ctx: &mut EventContext) {
-        if let Some(op_id) = self.active.get() {
-            long_operation_commands::cancel_operation(&self.app_ctx, &op_id);
+        if let Some(tracked) = self.active.get() {
+            long_operation_commands::cancel_operation(&self.app_ctx, tracked.op_id());
         }
     }
 
@@ -790,13 +806,16 @@ impl ExportViewModel {
     // against the in-flight export — events for save / import / backup are ignored.
 
     pub fn on_long_op_progress(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
+        let Some(tracked) = self.active.get() else {
             return;
         };
         let Some(payload) = parse_payload(event) else {
             return;
         };
-        if payload_id(&payload) != Some(op_id.as_str()) {
+        let Some(id) = payload_id(&payload) else {
+            return;
+        };
+        if !tracked.matches(id) {
             return;
         }
         let percent = payload
@@ -809,23 +828,26 @@ impl ExportViewModel {
             .unwrap_or("");
         ctx.show_toast(
             self.progress_toast(percent, message)
-                .target_work(self.active_work_id.get()),
+                .target_work(tracked.work_id()),
         );
     }
 
     pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
+        let Some(tracked) = self.active.get() else {
             return;
         };
-        if event_id(event) != Some(op_id.clone()) {
+        let Some(id) = event_id(event) else {
+            return;
+        };
+        if !tracked.matches(&id) {
             return;
         }
         // Captured BEFORE clearing — see `Self::active_work_id`'s doc: this
         // completion belongs to the Work the export started for, not whatever
         // this window shows now.
-        let work_id = self.active_work_id.get();
+        let work_id = tracked.work_id();
+        let op_id = tracked.op_id().to_string();
         self.active.set(None);
-        self.active_work_id.set(CapturedWork::none());
         match export_management_commands::get_export_work_result(&self.app_ctx, &op_id) {
             Ok(Some(res)) => {
                 let done = tr!(export_done(count = res.exported_count));
@@ -849,16 +871,18 @@ impl ExportViewModel {
     }
 
     pub fn on_long_op_cancelled(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
+        let Some(tracked) = self.active.get() else {
             return;
         };
-        if event_id(event) != Some(op_id.clone()) {
+        let Some(id) = event_id(event) else {
+            return;
+        };
+        if !tracked.matches(&id) {
             return;
         }
         // Captured BEFORE clearing — see `Self::active_work_id`'s doc.
-        let work_id = self.active_work_id.get();
+        let work_id = tracked.work_id();
         self.active.set(None);
-        self.active_work_id.set(CapturedWork::none());
         ctx.show_toast(
             Toast::info(tr!(export_cancelled()))
                 .scoped_id(EXPORT_TOAST_ID, work_id)
@@ -868,19 +892,21 @@ impl ExportViewModel {
     }
 
     pub fn on_long_op_failed(&self, ctx: &mut EventContext, event: &Event) {
-        let Some(op_id) = self.active.get() else {
+        let Some(tracked) = self.active.get() else {
             return;
         };
         let Some(payload) = parse_payload(event) else {
             return;
         };
-        if payload_id(&payload) != Some(op_id.as_str()) {
+        let Some(id) = payload_id(&payload) else {
+            return;
+        };
+        if !tracked.matches(id) {
             return;
         }
         // Captured BEFORE clearing — see `Self::active_work_id`'s doc.
-        let work_id = self.active_work_id.get();
+        let work_id = tracked.work_id();
         self.active.set(None);
-        self.active_work_id.set(CapturedWork::none());
         let error = payload
             .get("error")
             .and_then(|e| e.as_str())
@@ -1046,9 +1072,11 @@ mod tests {
         assert!(original_work_id.is_some(), "the fixture loads a real Work");
 
         // Simulate what `run_export` does the instant the long operation starts:
-        // snapshot the window's current Work.
-        vm.active.set(Some("fake-export-op".to_string()));
-        vm.active_work_id.set(CapturedWork::now(&vm.ids));
+        // snapshot the window's current Work, bundled with the op id.
+        vm.active.set(Some(TrackedOp::start(
+            &vm.ids,
+            "fake-export-op".to_string(),
+        )));
 
         // An in-place project switch reseeds `ids.work_id` on the SAME `AppIds`
         // this long-lived view-model holds (`ProjectSwitchViewModel::request`
@@ -1057,13 +1085,13 @@ mod tests {
         vm.ids.seed(&vm.app_ctx, other_work_id);
 
         assert_eq!(
-            vm.active_work_id.get(),
+            vm.active_work_id(),
             original_work_id,
             "the in-flight export's own Work must stay pinned to what `run_export` \
              captured, even after this window switches to a different Work"
         );
         assert_ne!(
-            vm.active_work_id.get(),
+            vm.active_work_id(),
             vm.ids.work_id.get(),
             "the captured Work must now differ from the window's live `ids.work_id` — \
              proving a handler reading `active_work_id` cannot silently be reading the \
@@ -1098,9 +1126,15 @@ mod tests {
         use bastyde::widgets::{Button, ToastInstallOptions, ToastRegistry};
 
         let (vm_a, _) = loaded_vm();
-        vm_a.active_work_id.set(CapturedWork::for_test(Some(1)));
+        vm_a.active.set(Some(TrackedOp::given(
+            "fake-export-op-a".to_string(),
+            CapturedWork::for_test(Some(1)),
+        )));
         let (vm_b, _) = loaded_vm();
-        vm_b.active_work_id.set(CapturedWork::for_test(Some(2)));
+        vm_b.active.set(Some(TrackedOp::given(
+            "fake-export-op-b".to_string(),
+            CapturedWork::for_test(Some(2)),
+        )));
 
         let registry = ToastRegistry::new(ToastInstallOptions {
             archive: None,
@@ -1112,10 +1146,10 @@ mod tests {
         let a = vm_a.clone();
         let b = vm_b.clone();
         let btn_a = tree.add(Button::new(lit!("a")).on_activate_fn(move |ctx| {
-            ctx.show_toast(a.progress_toast(10.0, "").target_work(a.active_work_id.get()));
+            ctx.show_toast(a.progress_toast(10.0, "").target_work(a.active_work_id()));
         }));
         let btn_b = tree.add(Button::new(lit!("b")).on_activate_fn(move |ctx| {
-            ctx.show_toast(b.progress_toast(20.0, "").target_work(b.active_work_id.get()));
+            ctx.show_toast(b.progress_toast(20.0, "").target_work(b.active_work_id()));
         }));
         tree.layout(SizeProposal::exact(200.0, 80.0));
 

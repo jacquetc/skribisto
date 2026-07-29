@@ -21,12 +21,17 @@
 
 use std::collections::HashMap;
 
-use frontend::common::entities::BinderItemSubRole;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use skribisto_model::{Relation, SubRoleExt};
 
-/// `{item_id -> (indent, sub_role)}` for one binder's items — what the walks below
+/// `{item_id -> (role, indent, sub_role)}` for one binder's items — what the walks below
 /// need, fetched once by the caller.
-pub type ItemMeta = HashMap<u64, (i64, BinderItemSubRole)>;
+///
+/// Carries `role` (not just `indent`/`sub_role`) so a Go-command traversal
+/// ([`crate::view_models::binder_ops::go_targets`]) can resolve each row's
+/// `skribisto_model::GoKind` — Chapter identity spans two role encodings
+/// (`Item/ChapterScene` and `Folder/ChapterScene`), so `sub_role` alone cannot answer it.
+pub type ItemMeta = HashMap<u64, (BinderItemRole, i64, BinderItemSubRole)>;
 
 /// First index after `order[pos]`'s whole subtree: the next row whose indent is
 /// `<= base_indent`. A leaf (nothing deeper follows) returns `pos + 1`.
@@ -38,7 +43,7 @@ pub fn subtree_end(order: &[u64], meta: &ItemMeta, pos: usize, base_indent: i64)
     while j < order.len()
         && meta
             .get(&order[j])
-            .map(|(ind, _)| *ind)
+            .map(|(_role, ind, _sr)| *ind)
             .unwrap_or(base_indent)
             > base_indent
     {
@@ -52,10 +57,10 @@ pub fn subtree_end(order: &[u64], meta: &ItemMeta, pos: usize, base_indent: i64)
 /// anchor has no such enclosing opener.
 pub fn enclosing_opener(order: &[u64], meta: &ItemMeta, pos: usize) -> Option<(usize, i64)> {
     let mut cur = pos;
-    let mut cur_indent = meta.get(order.get(pos)?)?.0;
+    let mut cur_indent = meta.get(order.get(pos)?)?.1;
     while cur > 0 {
         cur -= 1;
-        let (ind, sr) = meta.get(&order[cur])?;
+        let (_role, ind, sr) = meta.get(&order[cur])?;
         if *ind < cur_indent {
             if sr.opens_chapter() || sr.opens_book() {
                 return Some((cur, *ind));
@@ -92,7 +97,7 @@ pub fn insertion_point_for_item(
             let child_indent = anchor_indent + 1;
             let before_close = ((pos + 1)..end).find(|&k| {
                 meta.get(&order[k])
-                    .is_some_and(|(ind, sr)| *ind == child_indent && sr.closes_book())
+                    .is_some_and(|(_role, ind, sr)| *ind == child_indent && sr.closes_book())
             });
             (before_close.unwrap_or(end), child_indent)
         }
@@ -104,12 +109,99 @@ pub fn insertion_point_for_item(
     }
 }
 
+/// The Next/Previous target (if any) for each [`skribisto_model::GoKind`], resolved
+/// once from `pos`'s position in `order` — the Go menu's traversal math.
+///
+/// Deliberately answers all **six** independently of the row at `pos`'s own kind —
+/// "Next Chapter" from inside a Scene still has its own answer, per the Go menu's
+/// settled "six static rows" design (each row asks its own question, not "the next
+/// thing of whatever kind I'm currently in"). Every field is `None` when nothing of
+/// that kind lies in that direction — **no wraparound**, matching Scrivener's own
+/// Previous/Next behaviour, and this never looks outside `order` (the caller's own
+/// binder), so it never jumps to another binder either.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct GoTargets {
+    pub next_scene: Option<u64>,
+    pub prev_scene: Option<u64>,
+    pub next_chapter: Option<u64>,
+    pub prev_chapter: Option<u64>,
+    pub next_note: Option<u64>,
+    pub prev_note: Option<u64>,
+}
+
+impl GoTargets {
+    /// The resolved target for one (kind, direction) pair — the single lookup both the
+    /// Go-menu enablement mirrors and the actual jump share, so they can never disagree
+    /// about whether a row that fires would have found anywhere to go.
+    pub fn get(
+        &self,
+        kind: skribisto_model::GoKind,
+        direction: skribisto_model::GoDirection,
+    ) -> Option<u64> {
+        use skribisto_model::{GoDirection::*, GoKind::*};
+        match (kind, direction) {
+            (Scene, Next) => self.next_scene,
+            (Scene, Previous) => self.prev_scene,
+            (Chapter, Next) => self.next_chapter,
+            (Chapter, Previous) => self.prev_chapter,
+            (Note, Next) => self.next_note,
+            (Note, Previous) => self.prev_note,
+        }
+    }
+}
+
+/// Walk `order` from `pos`, forward for the `next_*` fields and backward for the
+/// `prev_*` fields, filling in [`GoTargets`] as each kind's first match is found.
+pub fn go_targets_in(order: &[u64], meta: &ItemMeta, pos: usize) -> GoTargets {
+    use skribisto_model::GoKind;
+
+    let kind_at = |i: usize| {
+        meta.get(&order[i])
+            .and_then(|(role, _indent, sub_role)| skribisto_model::go_kind_of(role, sub_role))
+    };
+
+    let mut out = GoTargets::default();
+    for i in (pos + 1)..order.len() {
+        match kind_at(i) {
+            Some(GoKind::Scene) if out.next_scene.is_none() => out.next_scene = Some(order[i]),
+            Some(GoKind::Chapter) if out.next_chapter.is_none() => {
+                out.next_chapter = Some(order[i])
+            }
+            Some(GoKind::Note) if out.next_note.is_none() => out.next_note = Some(order[i]),
+            _ => {}
+        }
+        if out.next_scene.is_some() && out.next_chapter.is_some() && out.next_note.is_some() {
+            break;
+        }
+    }
+    for i in (0..pos).rev() {
+        match kind_at(i) {
+            Some(GoKind::Scene) if out.prev_scene.is_none() => out.prev_scene = Some(order[i]),
+            Some(GoKind::Chapter) if out.prev_chapter.is_none() => {
+                out.prev_chapter = Some(order[i])
+            }
+            Some(GoKind::Note) if out.prev_note.is_none() => out.prev_note = Some(order[i]),
+            _ => {}
+        }
+        if out.prev_scene.is_some() && out.prev_chapter.is_some() && out.prev_note.is_some() {
+            break;
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use frontend::common::entities::BinderItemRole::Item;
     use frontend::common::entities::BinderItemSubRole::*;
 
     /// `Book(0) [ ChapterScene(1) [ Scene(2), Scene(2) ], BookEnd(1) ]`
+    ///
+    /// Every row is `role = Item` — this fixture exercises the pure indent/sub_role
+    /// walk, which does not care which role a row carries. `go_targets_in`'s own tests
+    /// below use a separate, mixed-role fixture, since Chapter identity is exactly the
+    /// one place role matters.
     fn fixture() -> (Vec<u64>, ItemMeta) {
         let rows: Vec<(u64, i64, BinderItemSubRole)> = vec![
             (1, 0, Book),
@@ -121,7 +213,7 @@ mod tests {
         let order = rows.iter().map(|r| r.0).collect();
         let meta = rows
             .into_iter()
-            .map(|(id, ind, sr)| (id, (ind, sr)))
+            .map(|(id, ind, sr)| (id, (Item, ind, sr)))
             .collect();
         (order, meta)
     }
@@ -171,5 +263,108 @@ mod tests {
             insertion_point_for_item(&order, &meta, 2, 2, Relation::Sibling),
             (3, 2)
         );
+    }
+
+    // ── `go_targets_in` (the Go menu's traversal) ───────────────────────────
+
+    use frontend::common::entities::BinderItemRole::Folder;
+
+    /// A mixed-role stream, deliberately crossing chapter/part/book boundaries and
+    /// covering both chapter encodings:
+    ///
+    /// `id1 Folder/Book(0), id2 Item/ChapterScene(1) [flat chapter],
+    /// id3 Item/Scene(2), id4 Item/Scene(2),
+    /// id5 Folder/ChapterScene(1) [chapter folder], id6 Item/Scene(2) [its child],
+    /// id7 Item/Note(1), id8 Item/BookEnd(0)`
+    fn go_fixture() -> (Vec<u64>, ItemMeta) {
+        let rows: Vec<(u64, BinderItemRole, i64, BinderItemSubRole)> = vec![
+            (1, Folder, 0, Book),
+            (2, Item, 1, ChapterScene),
+            (3, Item, 2, Scene),
+            (4, Item, 2, Scene),
+            (5, Folder, 1, ChapterScene),
+            (6, Item, 2, Scene),
+            (7, Item, 1, Note),
+            (8, Item, 0, BookEnd),
+        ];
+        let order = rows.iter().map(|r| r.0).collect();
+        let meta = rows
+            .into_iter()
+            .map(|(id, role, ind, sr)| (id, (role, ind, sr)))
+            .collect();
+        (order, meta)
+    }
+
+    /// From the very first row (the Book), every Next answer is the first row of its
+    /// kind found forward — crossing the chapter boundary at id2 to find id3's scene,
+    /// and reaching all the way to id7 for the note. No Previous answer exists yet.
+    #[test]
+    fn from_the_first_row_every_next_target_is_the_first_of_its_kind() {
+        let (order, meta) = go_fixture();
+        let targets = go_targets_in(&order, &meta, 0);
+        assert_eq!(targets.next_scene, Some(3));
+        assert_eq!(targets.next_chapter, Some(2));
+        assert_eq!(targets.next_note, Some(7));
+        // `Option::None`, not bare `None`: this module's `use ...BinderItemSubRole::*`
+        // glob-imports the `SubRole::None` variant, which shadows `Option::None`.
+        assert_eq!(targets.prev_scene, Option::None);
+        assert_eq!(targets.prev_chapter, Option::None);
+        assert_eq!(targets.prev_note, Option::None);
+    }
+
+    /// From the middle (id4, the flat chapter's second scene): Previous answers look
+    /// backward (id3 the sibling scene, id2 the flat chapter, no note yet), and Next
+    /// answers cross into the *folder*-encoded chapter (id5) and its child (id6),
+    /// proving both chapter encodings are found as `GoKind::Chapter` alike.
+    #[test]
+    fn from_the_middle_both_directions_resolve_independently() {
+        let (order, meta) = go_fixture();
+        let pos = order.iter().position(|&id| id == 4).unwrap();
+        let targets = go_targets_in(&order, &meta, pos);
+        assert_eq!(targets.prev_scene, Some(3));
+        assert_eq!(targets.prev_chapter, Some(2));
+        assert_eq!(
+            targets.prev_note,
+            Option::None,
+            "no note lies before this position"
+        );
+        assert_eq!(
+            targets.next_chapter,
+            Some(5),
+            "the folder-encoded chapter must be found exactly like the flat one"
+        );
+        assert_eq!(targets.next_scene, Some(6));
+        assert_eq!(targets.next_note, Some(7));
+    }
+
+    /// From the last row (BookEnd): every Previous answer resolves, and — with
+    /// **no wraparound** — every Next answer is `None`, matching Scrivener's own
+    /// Previous/Next behaviour rather than cycling back to the top.
+    #[test]
+    fn from_the_last_row_next_never_wraps_around() {
+        let (order, meta) = go_fixture();
+        let pos = order.len() - 1;
+        let targets = go_targets_in(&order, &meta, pos);
+        assert_eq!(targets.next_scene, Option::None);
+        assert_eq!(targets.next_chapter, Option::None);
+        assert_eq!(targets.next_note, Option::None);
+        assert_eq!(targets.prev_scene, Some(6));
+        assert_eq!(targets.prev_chapter, Some(5));
+        assert_eq!(targets.prev_note, Some(7));
+    }
+
+    /// `GoTargets::get` is the one lookup both the menu mirrors and the actual jump
+    /// share — pinned so the (kind, direction) → field mapping cannot silently drift.
+    #[test]
+    fn go_targets_get_maps_every_kind_and_direction() {
+        let (order, meta) = go_fixture();
+        let targets = go_targets_in(&order, &meta, 0);
+        use skribisto_model::{GoDirection::*, GoKind::*};
+        assert_eq!(targets.get(Scene, Next), targets.next_scene);
+        assert_eq!(targets.get(Scene, Previous), targets.prev_scene);
+        assert_eq!(targets.get(Chapter, Next), targets.next_chapter);
+        assert_eq!(targets.get(Chapter, Previous), targets.prev_chapter);
+        assert_eq!(targets.get(Note, Next), targets.next_note);
+        assert_eq!(targets.get(Note, Previous), targets.prev_note);
     }
 }

@@ -152,6 +152,20 @@ pub struct ContentTab {
     /// shared live from Settings. Every editor this tab builds reads its bundle
     /// from here, so a preference change fans out to all open tabs at once.
     pub typography: EditorTypographySet,
+    /// Whether *this tab's window* is currently in distraction-free mode — the
+    /// same `Signal` `FocusViewModel::active_signal()` exposes, threaded down
+    /// through `EditorsViewModel` (never a private copy: a copy would go stale
+    /// the instant the mode toggled). Read by [`Self::main_typography`] to pick
+    /// the distraction-free typography bundle and by [`Self::main_column_width`]
+    /// to pick the distraction-free column width, both instead of the normal
+    /// Scene/Notes split — nothing else on the tab branches on it.
+    pub distraction_free: Signal<bool>,
+    /// Max width (px) of the writing column while [`Self::distraction_free`] is
+    /// active (Settings ▸ Editor ▸ Editor Behavior's own "Column width" slider),
+    /// shared live from Settings — same shape as [`Self::column_width`], kept as
+    /// its own field so widening the normal column can never silently widen (or
+    /// narrow) the distraction-free one. Read by [`Self::main_column_width`].
+    pub distraction_free_width: Signal<f32>,
     /// Per-container-type "last view" memory: seeds this tab's initial [`Self::segment`]
     /// and (for a folder container) is written back when the user switches view, so a
     /// new tab of the same type inherits it. Shared live from Settings.
@@ -272,6 +286,13 @@ pub fn tab_for(
             ids.clone(),
             crate::models::TreeExpansionService::in_memory_default(),
         ),
+        // A standalone tab is never a real project window, so it is never in
+        // distraction-free mode; tests that need to exercise that branch build
+        // a `ContentTab` via `ContentTab::new` directly and set this signal.
+        Signal::new(false),
+        // Unreachable while the flag above stays `false` — same compile-time
+        // default `SettingsViewModel::distraction_free_width` seeds from.
+        Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
     )
 }
 
@@ -406,6 +427,8 @@ impl ContentTab {
         view_memory: crate::view_models::EditorViewMemory,
         corkboard_defaults: crate::view_models::CorkboardDefaults,
         tree_expansion: crate::view_models::TreeExpansionViewModel,
+        distraction_free: Signal<bool>,
+        distraction_free_width: Signal<f32>,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
         // the stream (Book only). Built first, so it can borrow `app_ctx` before
@@ -479,6 +502,8 @@ impl ContentTab {
             column_width,
             show_synopsis,
             typography,
+            distraction_free,
+            distraction_free_width,
             view_memory,
         }
     }
@@ -559,13 +584,34 @@ impl ContentTab {
         self.open_doc.flush(stack)
     }
 
-    /// The typography bundle for this tab's **main** prose editor: the Notes
-    /// bundle for a Note, the Scene bundle otherwise (Scene / ChapterScene, and a
-    /// safe fallback for any layout without a `kind`).
+    /// The typography bundle for this tab's **main** prose editor: the
+    /// distraction-free bundle whenever this tab's window is in distraction-free
+    /// mode (checked *before* the `ProseKind` match — a window-mode axis, not a
+    /// content-type one, so it must win regardless of Scene vs Note); otherwise
+    /// the Notes bundle for a Note, the Scene bundle for everything else (Scene /
+    /// ChapterScene, and a safe fallback for any layout without a `kind`).
     pub fn main_typography(&self) -> &EditorTypography {
+        if self.distraction_free.get() {
+            return &self.typography.distraction_free;
+        }
         match self.open_doc.kind {
             Some(ProseKind::Note) => &self.typography.notes,
             _ => &self.typography.scene,
+        }
+    }
+
+    /// The column width for this tab's **main** prose editor: the
+    /// distraction-free width whenever this tab's window is in distraction-free
+    /// mode, otherwise the normal writing-column width — the same window-mode
+    /// axis [`Self::main_typography`] checks, and for the same reason (it must
+    /// win regardless of prose kind). Nothing but the main editor's column reads
+    /// this: the title, synopsis and every other pane still centre on
+    /// [`Self::column_width`], per the Settings ▸ Editor Behavior hint.
+    pub fn main_column_width(&self) -> &Signal<f32> {
+        if self.distraction_free.get() {
+            &self.distraction_free_width
+        } else {
+            &self.column_width
         }
     }
 
@@ -736,6 +782,7 @@ mod tests {
             synopsis: bundle("Literata"),
             notes: bundle("Inter"),
             corkboard: bundle("Literata"),
+            distraction_free: bundle("Literata"),
         }
     }
 
@@ -1828,6 +1875,92 @@ mod tests {
         // `main_typography` picks the bundle by kind.
         assert_eq!(mk(Scene).main_typography().font_family.get(), "Literata");
         assert_eq!(mk(Note).main_typography().font_family.get(), "Inter");
+    }
+
+    /// Distraction-free mode is a *window-mode* axis, not a content-type one:
+    /// `main_typography` must return the distraction-free bundle for BOTH a
+    /// Scene and a Note tab the instant this tab's window enters the mode, and
+    /// must fall back to the normal Scene/Notes split the instant it leaves —
+    /// the branch `ContentTab::new`'s `distraction_free` flag exists for.
+    /// `main_column_width` rides the very same flag, so it is pinned here too:
+    /// this is the regression test for the column-width slider that used to be
+    /// a complete no-op (nothing downstream of `ContentTab::column_width` ever
+    /// read `distraction_free_width`).
+    #[test]
+    fn distraction_free_overrides_prose_kind_typography_while_active() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let mut typo = test_typography();
+        typo.distraction_free.font_family = Signal::new("Distraction Serif".to_string());
+        let distraction_free = Signal::new(false);
+        let mk = |sr: BinderItemSubRole,
+                  typo: &EditorTypographySet,
+                  df: &Signal<bool>,
+                  df_width: &Signal<f32>| {
+            let open_doc = Rc::new(OpenDoc::build(
+                &ctx,
+                1,
+                &Item,
+                &sr,
+                &[],
+                Signal::new(0),
+            ));
+            ContentTab::new(
+                ctx.clone(),
+                AppIds::new(),
+                OpenDocsStore::new(ctx.clone()),
+                open_doc,
+                Signal::new(700.0),
+                Signal::new(true),
+                typo.clone(),
+                crate::view_models::EditorViewMemory::detached(false),
+                crate::view_models::CorkboardDefaults::detached(),
+                crate::view_models::TreeExpansionViewModel::new(
+                    ctx.clone(),
+                    AppIds::new(),
+                    crate::models::TreeExpansionService::in_memory_default(),
+                ),
+                df.clone(),
+                df_width.clone(),
+            )
+        };
+        let distraction_free_width = Signal::new(620.0);
+
+        // Inactive: the normal Scene/Note split still applies, and the column
+        // stays at the normal width.
+        let scene = mk(Scene, &typo, &distraction_free, &distraction_free_width);
+        let note = mk(Note, &typo, &distraction_free, &distraction_free_width);
+        assert_eq!(scene.main_typography().font_family.get(), "Literata");
+        assert_eq!(note.main_typography().font_family.get(), "Inter");
+        assert_eq!(scene.main_column_width().get(), 700.0);
+        assert_eq!(note.main_column_width().get(), 700.0);
+
+        // Active: both read the distraction-free bundle — and the
+        // distraction-free width — instead.
+        distraction_free.set(true);
+        assert_eq!(
+            scene.main_typography().font_family.get(),
+            "Distraction Serif"
+        );
+        assert_eq!(
+            note.main_typography().font_family.get(),
+            "Distraction Serif"
+        );
+        assert_eq!(scene.main_column_width().get(), 620.0);
+        assert_eq!(note.main_column_width().get(), 620.0);
+
+        // The distraction-free width is itself live, exactly like every other
+        // Settings-backed signal — dragging the slider must reach an already
+        // built tab, not just a freshly opened one.
+        distraction_free_width.set(500.0);
+        assert_eq!(scene.main_column_width().get(), 500.0);
+
+        // Deactivated again: back to the normal split/width — the flag is
+        // live, not baked in at construction time.
+        distraction_free.set(false);
+        assert_eq!(scene.main_typography().font_family.get(), "Literata");
+        assert_eq!(scene.main_column_width().get(), 700.0);
     }
 
     /// `is_stale` distinguishes "flushed and quiet" from "flushed, then edited

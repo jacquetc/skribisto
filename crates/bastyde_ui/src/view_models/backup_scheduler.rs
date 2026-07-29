@@ -75,10 +75,11 @@
 //! per-Work, but its `ids`/`single_work` are the *window's* own long-lived
 //! handles (this scheduler outlives any one backup) — an in-place project
 //! switch (`ProjectSwitchViewModel`, gated only on unsaved edits, never on a
-//! backup in flight) reseeds those SAME signals mid-flight. [`Pending::work_id`]
-//! is a [`super::long_op::CapturedWork`], captured once in [`Self::start`] —
-//! see that type's doc for the full hazard and why every `on_long_op_*`
-//! handler below routes and scopes its toast on that captured value, never
+//! backup in flight) reseeds those SAME signals mid-flight. [`Pending::tracked`]
+//! is a [`super::long_op::TrackedOp`], bundling the op id with a
+//! [`super::long_op::CapturedWork`] captured once in [`Self::start`] — see
+//! those types' docs for the full hazard and why every `on_long_op_*`
+//! handler below routes and scopes its toast on `tracked.work_id()`, never
 //! `self.ids.work_id.get()`.
 
 use std::cell::RefCell;
@@ -103,7 +104,7 @@ use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::toast_scope::ToastWorkExt;
 use crate::view_models::{BackupSettingsViewModel, WorkspaceLayoutViewModel};
 
-use super::long_op::{CapturedWork, event_id, parse_payload, payload_id};
+use super::long_op::{TrackedOp, event_id, parse_payload, payload_id};
 
 /// Per-window flush hooks, keyed by window: a Work with two windows must flush
 /// both editors before a backup. Aliased so the field type stays legible.
@@ -112,7 +113,7 @@ type FlushHooks = Rc<RefCell<HashMap<BastydeWindowId, Rc<dyn Fn()>>>>;
 /// Toast id base for every backup toast this view-model shows (progress,
 /// success, partial, failure) — folded through
 /// [`crate::toast_scope::ToastWorkExt::scoped_id`] with `self.ids.work_id`/
-/// `pending.work_id` at every use, never bare: two windows backing up two
+/// `pending.tracked.work_id()` at every use, never bare: two windows backing up two
 /// different Works at once must not collide in the shared `ToastRegistry`
 /// (see the module doc's "toast routing" section).
 const BACKUP_TOAST_ID: &str = "backup.now";
@@ -121,18 +122,17 @@ const BACKUP_TOAST_ID: &str = "backup.now";
 /// (on close) perform the deferred close.
 #[derive(Clone)]
 struct Pending {
-    op_id: String,
+    /// The long-operation id bundled with the Work it was captured for (F4)
+    /// — see `long_op::TrackedOp`'s doc for why every toast this struct's own
+    /// operation raises after it started must route on `tracked.work_id()`,
+    /// never a live `self.ids.work_id.get()`.
+    tracked: TrackedOp,
     uid: String,
     path: String,
     /// The directories passed to the engine (a single `""` means "next to project").
     dirs: Vec<String>,
     /// Set when this backup must be followed by a window/work close.
     close: Option<PendingExit>,
-    /// This Work's own id, captured when the backup **started** — see
-    /// `long_op::CapturedWork`'s doc for why every toast this struct's own
-    /// operation raises after it started must route on THIS field, never a
-    /// live `self.ids.work_id.get()`.
-    work_id: CapturedWork,
 }
 
 #[derive(Clone)]
@@ -166,6 +166,10 @@ pub struct BackupSchedulerViewModel {
     /// two windows must flush *both* before a backup, so this is keyed per
     /// window, not the single last-writer-wins cell it used to be.
     flush_hooks: FlushHooks,
+    /// The app-global quit sequencer, if one has been injected
+    /// ([`Self::set_quit_sequencer`]). `None` in tests and in the throwaway
+    /// bootstrap session `main` builds before any project window exists.
+    quit: Rc<RefCell<Option<crate::view_models::QuitSequencer>>>,
 }
 
 impl BackupSchedulerViewModel {
@@ -190,6 +194,7 @@ impl BackupSchedulerViewModel {
             pending: Signal::new(None),
             completed_epoch: Signal::new(0),
             flush_hooks: Rc::new(RefCell::new(HashMap::new())),
+            quit: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -244,6 +249,19 @@ impl BackupSchedulerViewModel {
         }
     }
 
+    /// [`Self::flush`], for a caller outside this type.
+    ///
+    /// The hook registry is per-Work and keyed by window, which makes it the only
+    /// thing in the crate that can answer "put *this Work's* live editor buffers
+    /// into the store" without holding one particular window's
+    /// `EditorsViewModel`. [`crate::view_models::QuitSequencer`] needs exactly
+    /// that: it saves Works it is not the window for, and `request_save` records
+    /// an edit sequence that only means anything once the store holds everything
+    /// up to it.
+    pub fn flush_all_windows(&self) {
+        self.flush();
+    }
+
     /// Counter of completed backups — the App's interval timer re-arms whenever
     /// this changes (see [`Self::completed_epoch`]).
     pub fn completed_epoch(&self) -> u64 {
@@ -291,7 +309,7 @@ impl BackupSchedulerViewModel {
     /// fail loudly if a future change set one without the other.
     /// `self.ids.work_id` is the authoritative answer to "which Work"
     /// throughout this file already — it's what every captured
-    /// `Pending::work_id` derives from (`CapturedWork::now(&self.ids)`) and
+    /// `Pending::tracked`'s `work_id()` derives from (`CapturedWork::now(&self.ids)`) and
     /// what every post-capture toast below routes on — so every toast here
     /// reads that one signal, never `self.single_work.id()`.
     ///
@@ -449,6 +467,25 @@ impl BackupSchedulerViewModel {
 
     // ── engine kickoff ────────────────────────────────────────────────────────
 
+    /// The Work id the BACKEND `BackupNowDto` itself is tagged with.
+    ///
+    /// **F1 — one source, not two.** This used to read
+    /// `self.single_work.id()` while, two lines below in [`Self::start`],
+    /// `Pending::tracked`'s `work_id()` captures `self.ids` via `CapturedWork::now` for the
+    /// exact same operation. They agreed today only because
+    /// `ProjectLifecycleViewModel::seed` sets `ids.work_id` then
+    /// `single_work.set_id` one line later, with nothing enforcing that
+    /// ordering — in that window, a backup could be dispatched to the
+    /// backend tagged with one Work while its own completion toast (routed
+    /// through the `Pending::tracked`'s `work_id()` captured right next to it) reports a
+    /// different one. `self.ids.work_id` is the authoritative "current Work"
+    /// signal throughout this file already, so this reads that one signal,
+    /// never `self.single_work.id()`. Split out so a test can pin it without
+    /// driving the real long-operation command.
+    fn backup_now_dto_work_id(&self) -> u64 {
+        self.ids.work_id.get().unwrap_or_default()
+    }
+
     /// Build the DTO and start the long op. `ctx` is present only when a UI
     /// surface (toast / close) should react; on-open / interval pass `None`.
     fn start(
@@ -474,7 +511,7 @@ impl BackupSchedulerViewModel {
         });
 
         let dto = BackupNowDto {
-            work_id: self.single_work.id().unwrap_or_default(),
+            work_id: self.backup_now_dto_work_id(),
             directories: dirs.clone(),
             last_known_hashes: hashes,
             last_known_paths: paths,
@@ -493,13 +530,13 @@ impl BackupSchedulerViewModel {
         match frontend::commands::work_management_commands::backup_now(&self.app_ctx, &dto) {
             Ok(op_id) => {
                 self.pending.set(Some(Pending {
-                    op_id,
+                    // Captured NOW, bundled with the op id — see
+                    // `long_op::TrackedOp`'s doc.
+                    tracked: TrackedOp::start(&self.ids, op_id),
                     uid: uid.to_string(),
                     path: path.to_string(),
                     dirs,
                     close,
-                    // Captured NOW — see `long_op::CapturedWork`'s doc.
-                    work_id: CapturedWork::now(&self.ids),
                 }));
             }
             Err(e) => {
@@ -561,11 +598,29 @@ impl BackupSchedulerViewModel {
                 &self.workspace_layout,
                 ctx,
             ),
+            // A quit spans every open Work, so "close" here cannot mean "close my
+            // own window" — that would end the process with other projects still
+            // unaccounted for. It means "this Work's on-close backup is done;
+            // carry on with the quit", and the sequencer owns what that is.
             PendingExit::Quit => {
-                crate::app::quit_app(&self.app_ctx, &self.ids, &self.workspace_layout, ctx)
+                if let Some(quit) = self.quit.borrow().as_ref() {
+                    quit.on_backup_done(ctx);
+                }
             }
             PendingExit::None => {}
         }
+    }
+
+    /// Hand this Work's scheduler the app-global quit sequencer, so its on-close
+    /// backup can hand control back when it finishes.
+    ///
+    /// Injected after construction rather than taken by `WorkSession::new`
+    /// because the dependency runs the other way round for everything else here:
+    /// the sequencer reaches *into* per-Work schedulers to flush and save, and
+    /// making the constructor require it would put the app-global handle in the
+    /// signature of every per-Work test fixture in the crate.
+    pub fn set_quit_sequencer(&self, quit: crate::view_models::QuitSequencer) {
+        *self.quit.borrow_mut() = Some(quit);
     }
 
     // ── long-operation event handlers (wired in App::build) ───────────────────
@@ -581,7 +636,7 @@ impl BackupSchedulerViewModel {
         let Some(payload) = parse_payload(event) else {
             return;
         };
-        if payload_id(&payload) != Some(pending.op_id.as_str()) {
+        if payload_id(&payload) != Some(pending.tracked.op_id()) {
             return;
         }
         let percent = payload
@@ -593,7 +648,8 @@ impl BackupSchedulerViewModel {
             .and_then(|m| m.as_str())
             .unwrap_or("");
         ctx.show_toast(
-            progress_toast(pending.work_id, percent, message).target_work(pending.work_id),
+            progress_toast(pending.tracked.work_id(), percent, message)
+                .target_work(pending.tracked.work_id()),
         );
     }
 
@@ -601,14 +657,14 @@ impl BackupSchedulerViewModel {
         let Some(pending) = self.pending.get() else {
             return;
         };
-        if event_id(event).as_deref() != Some(pending.op_id.as_str()) {
+        if event_id(event).as_deref() != Some(pending.tracked.op_id()) {
             return;
         }
         self.pending.set(None);
 
         let result = frontend::commands::work_management_commands::get_backup_now_result(
             &self.app_ctx,
-            &pending.op_id,
+            pending.tracked.op_id(),
         )
         .ok()
         .flatten();
@@ -663,9 +719,9 @@ impl BackupSchedulerViewModel {
                     show_result_toast(
                         ctx,
                         Toast::error(tr!(backup_partial(ok = ok, failed = failed)))
-                            .scoped_id(BACKUP_TOAST_ID, pending.work_id)
+                            .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
                             .auto_dismiss_after(Duration::from_secs(6))
-                            .target_work(pending.work_id),
+                            .target_work(pending.tracked.work_id()),
                         detail,
                     );
                 }
@@ -673,9 +729,9 @@ impl BackupSchedulerViewModel {
                 show_result_toast(
                     ctx,
                     Toast::warning(tr!(backup_partial(ok = ok, failed = failed)))
-                        .scoped_id(BACKUP_TOAST_ID, pending.work_id)
+                        .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
                         .auto_dismiss_after(Duration::from_secs(6))
-                        .target_work(pending.work_id),
+                        .target_work(pending.tracked.work_id()),
                     detail,
                 );
             } else if has_delete_errors {
@@ -688,17 +744,17 @@ impl BackupSchedulerViewModel {
                         ok = ok,
                         skipped = skipped
                     )))
-                    .scoped_id(BACKUP_TOAST_ID, pending.work_id)
+                    .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
                     .auto_dismiss_after(Duration::from_secs(6))
-                    .target_work(pending.work_id),
+                    .target_work(pending.tracked.work_id()),
                     detail,
                 );
             } else if pending.close.is_none() && (ok > 0 || skipped > 0) {
                 ctx.show_toast(
                     Toast::success(tr!(backup_complete(ok = ok, skipped = skipped)))
-                        .scoped_id(BACKUP_TOAST_ID, pending.work_id)
+                        .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
                         .auto_dismiss_after(Duration::from_secs(4))
-                        .target_work(pending.work_id),
+                        .target_work(pending.tracked.work_id()),
                 );
             }
         }
@@ -722,7 +778,7 @@ impl BackupSchedulerViewModel {
         let Some(payload) = parse_payload(event) else {
             return;
         };
-        if payload_id(&payload) != Some(pending.op_id.as_str()) {
+        if payload_id(&payload) != Some(pending.tracked.op_id()) {
             return;
         }
         self.pending.set(None);
@@ -741,8 +797,8 @@ impl BackupSchedulerViewModel {
         show_result_toast(
             ctx,
             Toast::error(tr!(backup_failed_title()))
-                .scoped_id(BACKUP_TOAST_ID, pending.work_id)
-                .target_work(pending.work_id),
+                .scoped_id(BACKUP_TOAST_ID, pending.tracked.work_id())
+                .target_work(pending.tracked.work_id()),
             Some(error),
         );
     }
@@ -807,7 +863,7 @@ fn progress_label(message: &str) -> String {
 
 /// The loading toast shown while a backup runs: title + `NN% · phase` body,
 /// re-shown (same id) on every progress tick so the one surface updates in
-/// place. `work_id` is the backup's own captured `Pending::work_id` — never a
+/// place. `work_id` is the backup's own captured `Pending::tracked`'s `work_id()` — never a
 /// fixed string — folded into [`BACKUP_TOAST_ID`] via
 /// [`crate::toast_scope::ToastWorkExt::scoped_id`], so a second Work's own
 /// progress toast can never land in this one's slot.
@@ -989,16 +1045,53 @@ mod tests {
         );
     }
 
+    /// F1 regression: before the fix, `BackupNowDto.work_id` (the BACKEND
+    /// operation's own Work identity) was built from `self.single_work.id()`
+    /// while `Pending::tracked`'s `work_id()`, captured two lines later in [`Self::start`],
+    /// read `self.ids` via `CapturedWork::now` — two different "current
+    /// Work" sources for one operation. This pins them to agree even when
+    /// `single_work` is stale/unset and only `ids.work_id` is current,
+    /// proving the DTO's `work_id` is derived from `ids.work_id` alone —
+    /// the same source `Pending::tracked`'s `work_id()` captures right next to it, so the
+    /// two can never again diverge (a backup dispatched tagged with one Work
+    /// while its completion toast reports another).
+    #[test]
+    fn backup_now_dto_work_id_tracks_ids_work_id_even_when_single_work_disagrees() {
+        let a = test_scheduler();
+        a.ids.work_id.set(Some(1));
+        // Deliberately point `single_work` at a DIFFERENT Work (99) — not
+        // `None`, which under `--features mocks` isn't even reachable
+        // (`SingleWork`'s mock fabricates `Some(1)` by construction). If the
+        // DTO's `work_id` was ever again built from `single_work.id()`, it
+        // would read "99" here while the captured `Pending::tracked`'s `work_id()` right
+        // next to it still pinned Work 1.
+        a.single_work.set_id(Some(99));
+        assert_eq!(
+            a.backup_now_dto_work_id(),
+            1,
+            "BackupNowDto.work_id must be derived from ids.work_id, the same \
+             source Pending::tracked's work_id() captures via CapturedWork::now right next \
+             to it in Self::start — never single_work.id(), which this test \
+             deliberately set to a different Work"
+        );
+        assert_ne!(
+            a.backup_now_dto_work_id(),
+            a.single_work.id().unwrap_or_default(),
+            "the DTO's work_id must now differ from single_work.id() — proving \
+             a future regression back to single_work.id() would be caught here"
+        );
+    }
+
     // ── F4: the Work a backup started for must survive a later in-place switch ─
     //
     // `BackupSchedulerViewModel` is per-Work, but its `ids`/`single_work` are the
-    // window's own long-lived handles (see `Pending::work_id`'s doc) — this
+    // window's own long-lived handles (see `Pending::tracked`'s `work_id()`'s doc) — this
     // scheduler outlives any one backup. Before this fix, every `on_long_op_*`
     // handler re-read `self.ids.work_id.get()` live, so a
     // window that started a backup, then switched to a different Work before it
     // finished, would route the completion toast to the NEW Work — the Work
     // that actually ran the backup never hearing about it. This pins the fix:
-    // `Pending::work_id`, captured once in `Self::start`, must stay pinned even
+    // `Pending::tracked`'s `work_id()`, captured once in `Self::start`, must stay pinned even
     // after the window's live `ids.work_id` moves on.
 
     #[test]
@@ -1009,14 +1102,13 @@ mod tests {
         // Simulate what `Self::start` does the instant the long operation
         // begins: snapshot the window's current Work into `Pending`.
         scheduler.pending.set(Some(Pending {
-            op_id: "fake-backup-op".to_string(),
+            tracked: TrackedOp::start(&scheduler.ids, "fake-backup-op".to_string()),
             uid: "uid".to_string(),
             path: "/tmp/novel.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
-            work_id: CapturedWork::now(&scheduler.ids),
         }));
-        let captured = scheduler.pending.get().unwrap().work_id;
+        let captured = scheduler.pending.get().unwrap().tracked.work_id();
         assert_eq!(captured, Some(1));
 
         // An in-place project switch reseeds `ids.work_id` on the SAME `AppIds`
@@ -1025,16 +1117,16 @@ mod tests {
         scheduler.ids.work_id.set(Some(2));
 
         assert_eq!(
-            scheduler.pending.get().unwrap().work_id,
+            scheduler.pending.get().unwrap().tracked.work_id(),
             captured,
             "the in-flight backup's own Work must stay pinned to what `start` \
              captured, even after this window switches to a different Work"
         );
         assert_ne!(
-            scheduler.pending.get().unwrap().work_id,
+            scheduler.pending.get().unwrap().tracked.work_id(),
             scheduler.ids.work_id.get(),
             "the captured Work must now differ from the window's live \
-             `ids.work_id` — proving a handler reading `pending.work_id` cannot \
+             `ids.work_id` — proving a handler reading `pending.tracked.work_id()` cannot \
              silently be reading the same live value `ids.work_id` would give it"
         );
     }
@@ -1080,23 +1172,21 @@ mod tests {
         a.single_work.set_id(Some(1));
         a.ids.work_id.set(Some(1));
         a.pending.set(Some(Pending {
-            op_id: "fake-backup-op-a".to_string(),
+            tracked: TrackedOp::start(&a.ids, "fake-backup-op-a".to_string()),
             uid: "uid-a".to_string(),
             path: "/tmp/a.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
-            work_id: CapturedWork::now(&a.ids),
         }));
         let b = test_scheduler();
         b.single_work.set_id(Some(2));
         b.ids.work_id.set(Some(2));
         b.pending.set(Some(Pending {
-            op_id: "fake-backup-op-b".to_string(),
+            tracked: TrackedOp::start(&b.ids, "fake-backup-op-b".to_string()),
             uid: "uid-b".to_string(),
             path: "/tmp/b.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
-            work_id: CapturedWork::now(&b.ids),
         }));
 
         let registry = ToastRegistry::new(ToastInstallOptions {
@@ -1151,22 +1241,20 @@ mod tests {
         // gave it — never pointed to agree with `ids.work_id` — on both `a`
         // and `b`. See the doc above.
         a.pending.set(Some(Pending {
-            op_id: "fake-backup-op-a".to_string(),
+            tracked: TrackedOp::start(&a.ids, "fake-backup-op-a".to_string()),
             uid: "uid-a".to_string(),
             path: "/tmp/a.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
-            work_id: CapturedWork::now(&a.ids),
         }));
         let b = test_scheduler();
         b.ids.work_id.set(Some(2));
         b.pending.set(Some(Pending {
-            op_id: "fake-backup-op-b".to_string(),
+            tracked: TrackedOp::start(&b.ids, "fake-backup-op-b".to_string()),
             uid: "uid-b".to_string(),
             path: "/tmp/b.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
-            work_id: CapturedWork::now(&b.ids),
         }));
 
         let registry = ToastRegistry::new(ToastInstallOptions {

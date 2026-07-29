@@ -38,3 +38,5 @@ scene-break-major-more =
     Se saisit sous la forme `# # #`, et le style d'export l'imprime différemment du niveau ordinaire — la norme Shunn oppose précisément `#` à `# # #`. Là où une tradition ne connaît pas de marque plus forte, les deux niveaux s'impriment de la même façon.
 wm-story-bible = Skribisto recherche cet élément dans votre texte.
 wm-story-bible-more = Activez cette option pour les étiquettes qui nomment ce dont vous parlez : personnages, lieux, objets. Tout élément portant une telle étiquette est recherché dans votre texte par son titre et par les autres noms que vous lui donnez, si bien que chaque [scène](:wm-scene) énumère qui et quoi y apparaît sans que vous ayez à créer le moindre lien. Laissez-la désactivée pour les étiquettes qui décrivent un élément au lieu de le nommer, comme un état d’avancement ou un rappel de vérifier la continuité.
+
+tooltip-go-to = Rejoindre n'importe quel élément du classeur (Ctrl+G)

@@ -45,7 +45,6 @@ use frontend::AppContext;
 use frontend::direct_access::RecentWorkDto;
 
 use crate::SHOW_WELCOME_KEY;
-use crate::app::PendingAction;
 use crate::models::RecentWorkListModel;
 use crate::panels::new_work::NewWorkPanel;
 use crate::shell::windows::ProjectWindowFactory;
@@ -191,41 +190,25 @@ impl WelcomeViewModel {
         }
     }
 
-    /// Open a recent/known work by path: opens a project window carrying
-    /// `PendingAction::Load(path)`, then closes the Launcher.
+    /// Open a recent/known work by path: opens a project window on it, then
+    /// closes the Launcher.
     ///
-    /// The backup sniff (a blocking `File::open` + zip parse with no timeout —
-    /// see `crate::backup::is_backup_path`) runs off the UI thread (T2-3):
-    /// clicking any recent entry must never hang the app on a disconnected
-    /// network/FUSE mount.
+    /// **No backup sniff any more.** This used to probe the file off the UI
+    /// thread (`crate::backup::is_backup_path` — a blocking `File::open` + zip
+    /// parse with no timeout) purely to decide *where* the project went: a
+    /// backup had to open in its own process, anything else opened as this
+    /// process's project. Phase 3 moved `backup_mode`/`backup_context` onto
+    /// `WorkSession`, so a window is now isolation enough, and Phase 4 opens
+    /// both in a window of this process — which makes the two branches the same
+    /// action and the probe pure cost on every click. A backup still enters
+    /// backup mode: the `LoadWork` subscriber in `app.rs` sniffs the loaded path
+    /// itself, in the window that loaded it.
     pub fn open_work(&self, path: String, ctx: &mut EventContext) {
-        let factory = self.factory.clone();
-        let path_for_check = path.clone();
-        ctx.spawn_local_with(
-            async move {
-                spawn_blocking(move || crate::backup::is_backup_path(&path_for_check))
-                    .await
-                    .unwrap_or(false)
-            },
-            move |is_backup, ectx| {
-                // A backup always opens in its own instance (never as this
-                // process's project) — see the backup-mode invariant.
-                if is_backup {
-                    ectx.request_activation_token_self(Box::new(move |tok| {
-                        crate::shell::process::spawn_new_process(&path, tok);
-                    }));
-                    return;
-                }
-                // Open the project window *before* closing the Launcher — the
-                // ordering rule in `main.rs`'s module docs. The returned
-                // `InitialWindowState` is only kept by `main.rs`'s very first
-                // window (see `window_config`'s doc); discarded here.
-                let (config, _state) = factory.window_config(PendingAction::Load(path.clone()));
-                ectx.open_window(config);
-                ectx.close_window();
-            },
-        )
-        .detach();
+        // Open the project window *before* closing the Launcher — the ordering
+        // rule in `main.rs`'s module docs. Backwards, the process is briefly
+        // windowless and quits.
+        crate::shell::windows::open_or_focus_project(ctx, &path);
+        ctx.close_window();
     }
 
     /// Open a bundled example. Its bytes are embedded in the binary; write them
@@ -243,38 +226,17 @@ impl WelcomeViewModel {
     }
 
     /// "Open" button — native picker for an existing `.skrib`, then open a
-    /// project window carrying `PendingAction::Load`. The backup sniff runs
-    /// off the UI thread (T2-3), same rationale as [`Self::open_work`].
+    /// project window on it. No backup sniff, same reasoning as
+    /// [`Self::open_work`].
     pub fn pick_open(&self, ctx: &mut EventContext) {
-        let factory = self.factory.clone();
         let req = FileDialogRequest::pick_file()
             .title("Open Skribisto work")
             .add_filter("Skribisto work", &["skrib"]);
         let _ = ctx.pick_file(req, move |res, ectx| {
             if let FileDialogResult::File(Some(path)) = res {
                 let file = path.to_string_lossy().into_owned();
-                let factory = factory.clone();
-                let file_for_check = file.clone();
-                ectx.spawn_local_with(
-                    async move {
-                        spawn_blocking(move || crate::backup::is_backup_path(&file_for_check))
-                            .await
-                            .unwrap_or(false)
-                    },
-                    move |is_backup, ectx2| {
-                        if is_backup {
-                            ectx2.request_activation_token_self(Box::new(move |tok| {
-                                crate::shell::process::spawn_new_process(&file, tok);
-                            }));
-                            return;
-                        }
-                        let (config, _state) =
-                            factory.window_config(PendingAction::Load(file.clone()));
-                        ectx2.open_window(config);
-                        ectx2.close_window();
-                    },
-                )
-                .detach();
+                crate::shell::windows::open_or_focus_project(ectx, &file);
+                ectx.close_window();
             }
         });
     }
@@ -419,7 +381,6 @@ fn write_temp_example(file_name: &str, bytes: &[u8]) -> std::io::Result<String> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
 
     use crate::models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
     use crate::sessions::WorkRegistry;
@@ -444,7 +405,6 @@ mod tests {
             TreeExpansionService::in_memory_default(),
             Signal::new(false), // autosave_menu
             Signal::new(true),  // spellcheck_menu (default on)
-            Rc::new(RefCell::new(None)),
             crate::view_models::FormatViewModel::detached(),
         )
     }

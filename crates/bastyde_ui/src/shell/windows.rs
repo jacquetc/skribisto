@@ -28,7 +28,6 @@
 //! nothing reopened, so the last-window-closes rule *is* the exit — see
 //! [`crate::app::quit_app`]/`PendingExit::Quit`.
 
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use bastyde::prelude::*;
@@ -52,6 +51,7 @@ use crate::sessions::{WorkRegistry, WorkSession};
 use crate::shell::project_switcher_button::ProjectSwitcherButton;
 use crate::spellcheck::SpellcheckService;
 use crate::spellcheck::toggle_button::SpellcheckToggleButton;
+use crate::tabs::shared::editor::VisibleWhen;
 use crate::view_models::{
     ALIGN_CENTER, ALIGN_LEFT, BackupSettingsViewModel, DIR_AUTO, DIR_LTR, DIR_RTL,
     ExportViewModel, FormatViewModel, OutlineViewModel, SaveAsViewModel, scope_label,
@@ -95,6 +95,35 @@ pub fn window_id_for(project: &str) -> String {
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|_| project.to_string());
     format!("work-{}", &blake3::hash(canon.as_bytes()).to_hex()[..16])
+}
+
+/// Open `path` in a project window of **this** process, or focus the window
+/// already showing it. Returns the window's id, or `None` if no
+/// [`ProjectWindowFactory`] is registered (only in a headless test context).
+///
+/// **The one door.** Five surfaces need "get me a window on this project" — the
+/// ProjectSwitcher's "Open in new window", the Launcher's recents and Open
+/// button, the backups list, File ▸ Open Work…'s backup redirect, and the
+/// primary's handler for a remote launch — and before Phase 4 four of them
+/// spawned a whole second `skribisto` to do it. Under single-instance that is a
+/// round trip to nowhere: the child would elect, find this very process as the
+/// primary, hand the path straight back over a socket and exit.
+///
+/// The "already open?" test is `find_window(window_id_for(path))`, not a side
+/// table: a window's **string id** is its identity, and it is the same id its
+/// persisted geometry is keyed by, so the two can never disagree about which
+/// window belongs to which project.
+pub fn open_or_focus_project(
+    ctx: &mut bastyde::prelude::EventContext,
+    path: &str,
+) -> Option<bastyde::prelude::BastydeWindowId> {
+    if let Some(id) = ctx.find_window(&window_id_for(path)) {
+        ctx.focus_window(id);
+        return Some(id);
+    }
+    let factory = ctx.app_state::<ProjectWindowFactory>()?;
+    let (config, _state) = factory.window_config(PendingAction::Load(path.to_string()));
+    Some(ctx.open_window(config))
 }
 
 /// Scope D — window titles. A reactive `"{Work title} — Skribisto"` (falling
@@ -361,14 +390,17 @@ pub struct ProjectWindowFactory {
     /// Plain mirror of the master spell-check switch — the title-bar toggle's icon and
     /// the View ▸ Check spelling checkmark read it. `App::build` keeps it in sync.
     spellcheck_menu: Signal<bool>,
-    /// Shared handle to the *current* project window's `WindowState`, so IPC
-    /// "raise" events (see `ipc.rs`) can focus it directly without a
-    /// `WindowManager` id lookup (which misses while that window is
-    /// dispatching its own events). Retargeted to the freshest project
-    /// window each time one opens. **Known Phase-2 limitation**: single-
-    /// process IPC "raise" is Phase 4 scope (single-instance primary/remote);
-    /// left exactly as it behaved pre-migration.
-    main_window_state: Rc<RefCell<Option<WindowState>>>,
+    /// The app-global quit sequencer, built **here** rather than per window and
+    /// rather than in `main`: a quit spans every window, so two windows each
+    /// running their own sequence over the same Works would prompt twice for
+    /// each; and this factory already holds the only two things it needs (the
+    /// registry and the autosave switch).
+    quit: crate::view_models::QuitSequencer,
+    // (Phase 4 removed `main_window_state`: one `Rc<RefCell<Option<WindowState>>>`
+    // retargeted to the *freshest* project window, which IPC "raise" focused. It was
+    // already the wrong answer with two project windows open, and single-instance
+    // makes two windows the normal case. `main.rs`'s router resolves the target by
+    // string id instead — which names the exact window and needs no side table.)
 }
 
 impl ProjectWindowFactory {
@@ -382,11 +414,15 @@ impl ProjectWindowFactory {
         tree_expansion_service: TreeExpansionService,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
-        main_window_state: Rc<RefCell<Option<WindowState>>>,
         format: FormatViewModel,
     ) -> Self {
         Self {
             format,
+            quit: crate::view_models::QuitSequencer::new(
+                app_ctx.clone(),
+                registry.clone(),
+                autosave_menu.clone(),
+            ),
             app_ctx,
             registry,
             spellcheck,
@@ -395,7 +431,6 @@ impl ProjectWindowFactory {
             tree_expansion_service,
             autosave_menu,
             spellcheck_menu,
-            main_window_state,
         }
     }
 
@@ -446,6 +481,11 @@ impl ProjectWindowFactory {
             self.tree_expansion_service.clone(),
         );
         let registry = self.registry.clone();
+        let quit = self.quit.clone();
+        // Let this Work's on-close backup hand control back to the quit sequencer
+        // when it lands (see `BackupSchedulerViewModel::do_close`'s
+        // `PendingExit::Quit` arm).
+        session.backup_scheduler.set_quit_sequencer(quit.clone());
         let single_work = session.single_work.clone();
         let single_work_info = session.single_work_info.clone();
         // Scope D — window titles. `1` until `App::build`'s own `LoadWork`/
@@ -462,6 +502,28 @@ impl ProjectWindowFactory {
         // has focused. A process-wide one would let a second project window
         // grey out this window's Format menu.
         let scene_focused = Signal::new(false);
+        // Increment 4 (the Go menu). Per WINDOW, same rationale as `scene_focused`
+        // just above: it mirrors *this* window's own focused item, so a second
+        // simultaneously-open project window's Go menu never reflects the wrong
+        // window's answer. See `GoAvailability`'s module doc.
+        let go = crate::view_models::GoAvailability::new();
+        // The "jump to any item" popup's state. Per WINDOW, same rationale as
+        // `go` just above and for a sharper reason: it owns its own binder tree
+        // model and selection, so a process-wide instance would let one window's
+        // popup drive another window's editor. See `GoToViewModel`'s module doc.
+        let go_to = crate::view_models::GoToViewModel::new(app_ctx_root.clone(), ids.clone());
+        // Increment 1 of distraction-free (plain fullscreen). Per WINDOW,
+        // same rationale as `scene_focused` just above: this remembers
+        // *this* window's own pre-fullscreen placement, so a second
+        // simultaneously-open project window's F11 never restores (or
+        // clobbers) the wrong window's memory. See `FullscreenViewModel`'s
+        // module doc.
+        let fullscreen = crate::view_models::FullscreenViewModel::new();
+        // Increment 2 of distraction-free (chrome collapse). Per WINDOW, same
+        // rationale as `fullscreen` just above — see `FocusViewModel`'s
+        // module doc for why it keeps its own independent placement memory
+        // rather than sharing `fullscreen`'s.
+        let focus = crate::view_models::FocusViewModel::new();
         // Sourced from `session`, never a `self` field (Phase 3): a second
         // simultaneously-open Work must never share this Work's backup-mode
         // flag/details — see `WorkSession`'s module doc.
@@ -496,7 +558,6 @@ impl ProjectWindowFactory {
         // independently. See `ProjectWindowFactory`'s field doc.
         let pending_exit: Signal<PendingExit> = Signal::new(PendingExit::None);
         let backup_scheduler = session.backup_scheduler.clone();
-        let main_window_state = self.main_window_state.clone();
         // Clones for the caller (see this method's doc) — the originals are
         // moved into the `.root(...)` closure below.
         let initial_state = InitialWindowState {
@@ -592,9 +653,6 @@ impl ProjectWindowFactory {
                 move |event| registry.remove_window(event.id)
             })
             .root(move |tree, state| {
-                // Publish this window's handle so IPC "raise" events (handled
-                // in `on_app_event`) can focus it directly.
-                *main_window_state.borrow_mut() = Some(state.clone());
                 let theme = tree.theme().clone();
 
                 // Custom Bastyde title bar with a model-driven hamburger menu
@@ -613,6 +671,7 @@ impl ProjectWindowFactory {
         // still needs the original (same reason `menu_autosave` exists).
         let menu_spellcheck = spellcheck_menu.clone();
                         let menu_scene_focused = scene_focused.clone();
+                        let menu_go = go.clone();
                         let menu_format_vm = format.clone();
                         let menu_save_as = save_as_vm.clone();
                         let menu_backup_mode = backup_mode.clone();
@@ -822,6 +881,23 @@ impl ProjectWindowFactory {
                             // without writing it; the toggles are driven by the
                             // `outline.toggle` (F9) / `preview.toggle` (F10) intents.
                             let outline = outline.clone();
+                            // Increment 1 of distraction-free (plain fullscreen): a
+                            // reflect-only checkmark straight off THIS window's own
+                            // `WindowState::placement()` — the same round-tripping
+                            // signal `view.fullscreen`'s action writes and the OS
+                            // reads back (see `FullscreenViewModel`'s doc), so the
+                            // mark stays correct even if fullscreen is left behind
+                            // the app's back (KDE's own shortcut, the titlebar).
+                            let is_fullscreen = state
+                                .placement()
+                                .clone()
+                                .map(|p| *p == WindowPlacement::Fullscreen);
+                            // Increment 2 of distraction-free: this checkmark reflects
+                            // `FocusViewModel::active_signal()` directly — unlike
+                            // `is_fullscreen` above, this is this window's own live
+                            // state, not something round-tripped off the OS, so there
+                            // is no fresher source to read it from.
+                            let is_focus_mode = focus.active_signal();
                             move |m| {
                                 // The bottom band has no persistent reveal affordance
                                 // of its own — a hidden top/bottom side collapses its
@@ -857,6 +933,25 @@ impl ProjectWindowFactory {
                                         .checked(preview_visible)
                                         .intent("preview.toggle")
                                         .shortcut("preview.toggle"),
+                                )
+                                .separator()
+                                // Increment 1 of distraction-free: plain fullscreen,
+                                // not the collapsed-chrome mode itself (that is a
+                                // later increment). F11, the platform convention.
+                                .item(
+                                    MenuEntry::new(tr!(menu_fullscreen()))
+                                        .checked(is_fullscreen)
+                                        .intent("view.fullscreen")
+                                        .shortcut("view.fullscreen"),
+                                )
+                                // Increment 2 of distraction-free: chrome
+                                // collapse + docks disabled + fullscreen,
+                                // together, as one per-window mode. Shift+F11.
+                                .item(
+                                    MenuEntry::new(tr!(menu_focus_mode()))
+                                        .checked(is_focus_mode)
+                                        .intent("view.focus_mode")
+                                        .shortcut("view.focus_mode"),
                                 )
                             }
                         })
@@ -1098,6 +1193,71 @@ impl ProjectWindowFactory {
                                 )
                             }
                         })
+                        // Go — Increment 4 of distraction-free: prev/next Scene/
+                        // Chapter/Note, scoped to one binder, deliberately crossing
+                        // Chapter/Part/Book boundaries within it (uninterrupted
+                        // drafting), never wrapping around. Six STATIC rows, gated
+                        // by `.enabled()` — never `.visible()` — for the same
+                        // reason the Format menu's scene-break rows stay visible
+                        // when disabled (see that menu's own comment above): a
+                        // greyed row still teaches the feature exists and what its
+                        // shortcut namespace is, and it still reaches the a11y
+                        // tree. No individual shortcuts here — the generic
+                        // `go.next`/`go.prev` pair (Alt+Down/Alt+Up), registered in
+                        // `app::commands::go`, delegates to whichever of these six
+                        // answers the focused tab's own kind resolves to; the
+                        // distraction-free strip's own Next/Previous buttons fire
+                        // that same generic pair, never a reimplementation.
+                        .menu(tr!(menu_go()), {
+                            let go = menu_go.clone();
+                            move |m| {
+                                use skribisto_model::{GoDirection::{Next, Previous}, GoKind::{Chapter, Note, Scene}};
+                                m.item(
+                                    MenuEntry::new(tr!(menu_go_next_scene()))
+                                        .enabled(go.signal(Scene, Next))
+                                        .intent("go.next_scene"),
+                                )
+                                .item(
+                                    MenuEntry::new(tr!(menu_go_prev_scene()))
+                                        .enabled(go.signal(Scene, Previous))
+                                        .intent("go.prev_scene"),
+                                )
+                                .item(
+                                    MenuEntry::new(tr!(menu_go_next_chapter()))
+                                        .enabled(go.signal(Chapter, Next))
+                                        .intent("go.next_chapter"),
+                                )
+                                .item(
+                                    MenuEntry::new(tr!(menu_go_prev_chapter()))
+                                        .enabled(go.signal(Chapter, Previous))
+                                        .intent("go.prev_chapter"),
+                                )
+                                .item(
+                                    MenuEntry::new(tr!(menu_go_next_note()))
+                                        .enabled(go.signal(Note, Next))
+                                        .intent("go.next_note"),
+                                )
+                                .item(
+                                    MenuEntry::new(tr!(menu_go_prev_note()))
+                                        .enabled(go.signal(Note, Previous))
+                                        .intent("go.prev_note"),
+                                )
+                                .separator()
+                                // "Go to…" — the six rows above step relative to
+                                // where you are; this one jumps anywhere. Always
+                                // enabled: unlike the stepping rows there is no
+                                // "is there a target" question to answer, and an
+                                // empty binder simply opens an empty list.
+                                // The action behind it belongs to the `GoToButton`
+                                // widget (`PopoverWidget::open_action`), because
+                                // presenting a popover needs an `EventContext`.
+                                .item(
+                                    MenuEntry::new(tr!(menu_go_to()))
+                                        .intent("go.to")
+                                        .shortcut("go.to"),
+                                )
+                            }
+                        })
                         // Tools — where every office suite keeps spell-check. Its own
                         // top-level section rather than a View entry: View toggles what a
                         // *dock* shows, whereas this changes how the manuscript is *processed*.
@@ -1124,7 +1284,111 @@ impl ProjectWindowFactory {
                             .collapse_policy(CollapsePolicy::Always)
                             .hamburger_size(IconButtonSize::Large);
 
-                        tree.add_boxed(Box::new(bati!(
+                        // Increment 2 of distraction-free: the menu bar, the title/
+                        // switcher row and the trailing controls all collapse — and so
+                        // does the enclosing `TitleBar`, below. `VisibleWhen` (not
+                        // `Switcher`) throughout — dormant, not torn down, the same
+                        // pattern the synopsis toggle already uses.
+                        //
+                        // The bar used to stay mounted so the window controls remained
+                        // reachable, on the reasoning that a wedged Escape must never
+                        // also take away the OS's own way to close the window. That
+                        // reasoning predates the strip's Exit button being *mandatory*
+                        // (no settings combination can remove it — `focus_strip`'s
+                        // `exit_survives_every_combination_of_the_chrome_settings`
+                        // pins it), and it left a min/max/close cluster floating over a
+                        // fullscreen window, which no desktop convention does: macOS
+                        // hides the traffic lights, Windows fullscreen has no caption
+                        // buttons, browsers and editors hide their chrome outright.
+                        // `WindowPlacement::Fullscreen`'s own doc says "title bar and
+                        // all chrome hidden". Minimize and maximize are meaningless for
+                        // a window with no frame.
+                        //
+                        // The replacement guarantee, which is strictly stronger:
+                        //   * distraction-free → the strip's Exit button (always
+                        //     present), Shift+F11, and Escape;
+                        //   * plain fullscreen → the menu bar is still on screen, so
+                        //     View ▸ Fullscreen and F11;
+                        //   * either → Ctrl+W, Ctrl+Q, and the compositor's own
+                        //     unfullscreen/close.
+                        let chrome_visible = focus.active_signal().map(|active| !*active);
+                        // Read from the WINDOW's own placement, not from
+                        // `FullscreenViewModel`/`FocusViewModel`: those are two
+                        // independent memories (F11 and Shift+F11 each keep their own),
+                        // and an OS-initiated fullscreen goes through neither. The
+                        // placement is the single fact all three agree on.
+                        let controls_visible =
+                            state.placement().map(|p| !p.is_fullscreen());
+                        let menubar = VisibleWhen::new(chrome_visible.clone(), menubar);
+                        let trailing_controls = VisibleWhen::new(
+                            chrome_visible.clone(),
+                            bati!(
+                                HStack {
+                                    spacing: 5.0
+                                    alignment: bastyde::tokens::VAlignment::Center
+                                    SpellcheckToggleButton::new(spellcheck_menu.clone())
+                                    ExportSplitButton::new(export.clone())
+                                }
+                            ),
+                        );
+                        let center_content = VisibleWhen::new(
+                            chrome_visible.clone(),
+                            bati!(
+                                HStack {
+                                    spacing: 5.0
+                                    alignment: bastyde::tokens::VAlignment::Center
+                                    // The `center` slot lives inside the TitleBar's
+                                    // DragRegion, which is published to the OS as the
+                                    // window caption (on Windows: WM_NCHITTEST ->
+                                    // HTCAPTION). The OS owns caption pixels outright,
+                                    // so a bare button here would never see a click —
+                                    // it would only drag the window. `DeadZone` carves
+                                    // these two controls back out of the caption, and
+                                    // (on every platform) stops a few px of pointer
+                                    // jitter during a click from arming the window drag.
+                                    DeadZone {
+                                        HStack {
+                                            spacing: 5.0
+                                            alignment: bastyde::tokens::VAlignment::Center
+                                            IconButton::new(IconWidget::from_raster(
+                                                res!("../../resources/icons/skribisto.png"),
+                                                25.0,
+                                            )
+                                            .mode(IconMode::FullColor)) {
+                                                tooltip: tr!(tooltip_welcome())
+                                                size: IconButtonSize::Large
+                                                on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
+                                            }
+                                            ProjectSwitcherButton::new(
+                                                app_ctx_root.clone(),
+                                                single_work.clone(),
+                                                single_work_info.clone(),
+                                            )
+                                        }
+                                    }
+                                    Expand::horizontal {
+                                        Center {
+                                            TextWidget::new(lit!("Skribisto")) {
+                                                // Scope D — live, per-Work, sibling-disambiguating
+                                                // title (see `window_title_text`'s doc).
+                                                text: title_text.clone()
+                                                style: theme.typography.body_bold.clone()
+                                                color: TextRole::Primary
+                                            }
+                                        }
+                                    }
+                                }
+                            ),
+                        );
+
+                        // The whole bar collapses in distraction-free: every slot inside
+                        // it is already gated, so what would be left is an empty band
+                        // ~40 px tall above the writing column. Wrapping it here
+                        // reclaims that height for the manuscript, which is the point
+                        // of the mode.
+                        tree.add_boxed(Box::new(VisibleWhen::new(
+                            chrome_visible,
+                            bati!(
 
                             TitleBar::new(host) {
                                 background: SurfaceRole::Main
@@ -1132,60 +1396,18 @@ impl ProjectWindowFactory {
                                 // Left of the window buttons: the master spell-check switch,
                                 // then the focus-adaptive Export control. The `trailing` slot
                                 // takes one widget, so they share an HStack.
-                                trailing: HStack {
-                                    spacing: 5.0
-                                    alignment: bastyde::tokens::VAlignment::Center
-                                    SpellcheckToggleButton::new(spellcheck_menu.clone())
-                                    ExportSplitButton::new(export.clone())
-                                }
+                                trailing: trailing_controls
                                 center: Expand::horizontal {
-                                    HStack {
-                                        spacing: 5.0
-                                        alignment: bastyde::tokens::VAlignment::Center
-                                        // The `center` slot lives inside the TitleBar's
-                                        // DragRegion, which is published to the OS as the
-                                        // window caption (on Windows: WM_NCHITTEST ->
-                                        // HTCAPTION). The OS owns caption pixels outright,
-                                        // so a bare button here would never see a click —
-                                        // it would only drag the window. `DeadZone` carves
-                                        // these two controls back out of the caption, and
-                                        // (on every platform) stops a few px of pointer
-                                        // jitter during a click from arming the window drag.
-                                        DeadZone {
-                                            HStack {
-                                                spacing: 5.0
-                                                alignment: bastyde::tokens::VAlignment::Center
-                                                IconButton::new(IconWidget::from_raster(
-                                                    res!("../../resources/icons/skribisto.png"),
-                                                    25.0,
-                                                )
-                                                .mode(IconMode::FullColor)) {
-                                                    tooltip: tr!(tooltip_welcome())
-                                                    size: IconButtonSize::Large
-                                                    on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
-                                                }
-                                                ProjectSwitcherButton::new(
-                                                    app_ctx_root.clone(),
-                                                    single_work.clone(),
-                                                    single_work_info.clone(),
-                                                )
-                                            }
-                                        }
-                                        Expand::horizontal {
-                                            Center {
-                                                TextWidget::new(lit!("Skribisto")) {
-                                                    // Scope D — live, per-Work, sibling-disambiguating
-                                                    // title (see `window_title_text`'s doc).
-                                                    text: title_text.clone()
-                                                    style: theme.typography.body_bold.clone()
-                                                    color: TextRole::Primary
-                                                }
-                                            }
-                                        }
-                                    }
+                                    child: center_content
                                 }
+                                // Hidden whenever this window is fullscreen — plain F11
+                                // as well as distraction-free. See `chrome_visible`'s
+                                // comment above for the exit guarantee that replaces
+                                // "the window controls are always there".
+                                controls_visible: controls_visible
                                 close_action: |ctx| ctx.close_window()
                             }
+                            ),
                         )))
                     }
                     None => tree.add(TextWidget::new(lit!("Skribisto")).text(title_text.clone())),
@@ -1195,16 +1417,21 @@ impl ProjectWindowFactory {
                     app_ctx_root.clone(),
                     session.clone(),
                     outline.clone(),
+                    fullscreen.clone(),
+                    focus.clone(),
                     export.clone(),
                     autosave_menu.clone(),
                     spellcheck_menu.clone(),
                     scene_focused.clone(),
+                    go.clone(),
+                    go_to.clone(),
                     unsaved.clone(),
                     pending_exit.clone(),
                     backup_mode.clone(),
                     backup_context.clone(),
                     action,
                     registry.clone(),
+                    quit.clone(),
                     save_as_vm.clone(),
                     restore_vm.clone(),
                     title_text.clone(),
@@ -1318,6 +1545,7 @@ mod tests {
                 "menu-work",
                 "menu-view",
                 "menu-format",
+                "menu-go",
                 "menu-tools",
                 "menu-help",
             ],
@@ -1364,6 +1592,8 @@ mod tests {
                 "menu-search",
                 "menu-trash",
                 "menu-search-preview",
+                "menu-fullscreen",
+                "menu-focus-mode",
             ],
         ),
         (
@@ -1431,6 +1661,17 @@ mod tests {
                 "menu-format-table-2x2",
                 "menu-format-table-3x3",
                 "menu-format-table-4x4",
+            ],
+        ),
+        (
+            "Go",
+            &[
+                "menu-go-next-scene",
+                "menu-go-prev-scene",
+                "menu-go-next-chapter",
+                "menu-go-prev-chapter",
+                "menu-go-next-note",
+                "menu-go-prev-note",
             ],
         ),
         ("Tools", &["menu-spellcheck"]),

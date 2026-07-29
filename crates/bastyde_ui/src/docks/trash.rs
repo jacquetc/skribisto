@@ -111,7 +111,7 @@ fn trash_tree(trash: TrashViewModel, on_open: OpenItemFn) -> impl Widget {
     .scroll_bar_style(ScrollBarMode::Overlay)
     .row_click_expands(false)
     .activate_on(ActivateOn::SingleClick)
-    .on_activate(move |idx| {
+    .on_activate(move |idx, _ctx| {
         if let Some(key) = activate_model.key_at(idx)
             && let Some(item_id) = activate_model.item_id_of(key)
         {
