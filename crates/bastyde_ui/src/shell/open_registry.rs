@@ -19,16 +19,24 @@
 //! distinct files — one can never clobber or delete the other's claim. Other
 //! instances [`scan`] these lock files to show which projects are open elsewhere
 //! (the ProjectSwitcher "Currently open" section) and to reach the owning
-//! process — its IPC socket path is derived from the pid
-//! ([`ipc_socket_for_pid`]) — to ask it to raise its window.
+//! process — its IPC socket is derived from the pid ([`socket_name`]) — to ask it
+//! to raise its window.
+//!
+//! The shared directory is **namespaced by installation identity** — see
+//! [`namespace_for`]. `XDG_RUNTIME_DIR` is per-login-session, not
+//! per-installation, so without that suffix a sandboxed run (the automation
+//! scripts override `XDG_CONFIG_HOME`/`XDG_DATA_HOME`/`HOME` but not the runtime
+//! dir) would share locks, sockets and the primary election with the developer's
+//! own running copy.
 //!
 //! Crash-safe by construction: a lock whose pid is no longer alive is reaped on
 //! [`scan`]; the mere presence of a file never means "open". [`scan`] also reaps
 //! this instance's IPC socket files (`ipc-{pid}.sock`) once their owning pid is
-//! dead — sockets are not otherwise cleaned up by anything else, so on platforms
-//! without an ephemeral runtime dir (the macOS/Windows fallback below) they would
-//! otherwise accumulate without bound. These are OS-level functions, independent
-//! of the (mock or real) backend, so they are not `#[cfg]`-gated.
+//! dead — sockets are not otherwise cleaned up by anything else, so on macOS
+//! (whose fallback directory is persistent) they would otherwise accumulate
+//! without bound. On Windows there is nothing to reap: a named pipe is not a
+//! filesystem object and cannot outlive its server. These are OS-level functions,
+//! independent of the (mock or real) backend, so they are not `#[cfg]`-gated.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -71,18 +79,71 @@ pub fn my_pid() -> u32 {
     std::process::id()
 }
 
+/// The per-installation namespace suffix for [`dir`] — 16 hex chars of blake3
+/// over `config_dir`.
+///
+/// **Why this exists.** `XDG_RUNTIME_DIR` is a *per-login-session* directory, not
+/// a per-installation one, and nothing that sandboxes Skribisto sandboxes it: the
+/// automation scripts override `XDG_CONFIG_HOME`/`XDG_DATA_HOME`/`HOME` and leave
+/// the runtime dir pointing at the real `/run/user/{uid}`. Without a suffix, a
+/// sandboxed run and the developer's own running copy share one lock directory,
+/// one set of IPC sockets, and — once `shell::instance` lands — one *primary
+/// election*: the first automation run to start would become the primary for the
+/// real app, and every later launch would hand its project off into a tempdir.
+/// Keying on the config dir makes each sandbox its own instance universe, while a
+/// normal user (one config dir) sees exactly one namespace and no change at all.
+///
+/// **Hashed, not canonicalized.** `std::fs::canonicalize` answers differently
+/// before and after the directory first exists, so a canonicalizing namespace
+/// would silently change on the run that creates the config dir — orphaning every
+/// lock and socket minted before that moment. The literal path `AppPaths` returns
+/// is already deterministic for a given environment, which is the whole
+/// requirement here.
+///
+/// **blake3, not `DefaultHasher`** — same rationale `shell::windows::window_id_for`
+/// documents: `DefaultHasher`'s algorithm is explicitly not stable across Rust
+/// releases, so a toolchain bump would move every live instance to a fresh
+/// namespace and strand the locks in the old one. blake3 is already in this
+/// workspace's dependency graph.
+fn namespace_for(config_dir: &Path) -> String {
+    let bytes = config_dir.as_os_str().as_encoded_bytes();
+    blake3::hash(bytes).to_hex()[..16].to_string()
+}
+
+/// This installation's namespace, or `None` when no home directory is
+/// detectable. Also used to name Windows pipes (see [`socket_name`]).
+pub fn namespace() -> Option<String> {
+    bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .map(|p| namespace_for(p.config_dir()))
+}
+
 /// The shared directory holding every instance's lock + socket files. Prefers an
 /// ephemeral runtime dir (`XDG_RUNTIME_DIR`); falls back to the app data dir on
 /// platforms without one (macOS/Windows). That fallback is persistent, so unlike
 /// the tmpfs case a reboot does not clear it — stale lock files are still reaped
 /// by pid on every [`scan`], but see the module doc for why sockets needed an
 /// explicit reap too.
+///
+/// **Only the `XDG_RUNTIME_DIR` branch carries the namespace suffix**, because it
+/// is the only one that needs it: that directory is per-login-session and shared
+/// by every installation and sandbox on the machine. The fallback is already
+/// rooted inside *this* installation's own data dir, so it is per-installation for
+/// free.
+///
+/// This asymmetry is deliberate and was learned the hard way. An earlier revision
+/// suffixed both, for the tidiness of one naming rule — and broke macOS outright.
+/// There is no `XDG_RUNTIME_DIR` there, so the path is
+/// `~/Library/Application Support/eu.skribisto.Skribisto/run/…`, and a Unix domain
+/// socket's `sun_path` holds only **104 bytes** on Darwin. The 17 bytes of
+/// `-{16 hex}` pushed every username over the cap (104 for a two-letter name, 107
+/// for `cyril`), `bind()` failed with `ENAMETOOLONG`, and single-instance silently
+/// never engaged. `the_macos_socket_path_fits_in_sun_path` pins the budget.
 pub fn dir() -> Option<PathBuf> {
     if let Some(over) = DIR_OVERRIDE.with(|d| d.borrow().clone()) {
         std::fs::create_dir_all(&over).ok()?;
         return Some(over);
     }
-    let base: Option<PathBuf> = {
+    let session_dir: Option<PathBuf> = {
         #[cfg(unix)]
         {
             std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from)
@@ -92,11 +153,21 @@ pub fn dir() -> Option<PathBuf> {
             None
         }
     };
-    let base = base.or_else(|| {
-        bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
-            .map(|p| p.data_dir().join("run"))
-    })?;
-    let d = base.join("skribisto");
+    let d = match session_dir {
+        // Shared across installations and sandboxes — must be namespaced. No
+        // `AppPaths` means no detectable home directory, hence no installation
+        // identity to key on; fall back to the unsuffixed name this function used
+        // before namespacing so that degraded case behaves as it always did.
+        Some(base) => base.join(match namespace() {
+            Some(ns) => format!("skribisto-{ns}"),
+            None => "skribisto".to_string(),
+        }),
+        // Already inside this installation's own data dir. Every byte spent here
+        // comes out of the macOS `sun_path` budget, so spend none.
+        None => bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")?
+            .data_dir()
+            .join("run"),
+    };
     std::fs::create_dir_all(&d).ok()?;
     Some(d)
 }
@@ -108,14 +179,94 @@ fn set_dir_override(path: Option<PathBuf>) {
     DIR_OVERRIDE.with(|d| *d.borrow_mut() = path);
 }
 
-/// The IPC socket path for the instance owning `pid`.
-pub fn ipc_socket_for_pid(pid: u32) -> Option<PathBuf> {
-    Some(dir()?.join(format!("ipc-{pid}.sock")))
+/// Which of this installation's two socket kinds a caller means.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SocketId {
+    /// The well-known socket the single-instance election runs on. Exactly one
+    /// live instance owns it.
+    Primary,
+    /// A specific instance's own socket, reachable by pid — how a peer process
+    /// (a `--new-instance` sibling) is asked to raise a window.
+    Pid(u32),
 }
 
-/// This instance's own IPC socket path (where its listener binds).
+impl SocketId {
+    /// The leaf file name on Unix, and the distinguishing part of the pipe name
+    /// on Windows.
+    fn leaf(self) -> String {
+        match self {
+            SocketId::Primary => "primary".to_string(),
+            SocketId::Pid(pid) => format!("ipc-{pid}"),
+        }
+    }
+}
+
+/// The **path** backing `id`, on platforms where a socket is a file.
+///
+/// `None` on Windows, where a named pipe is not a filesystem object at all: it
+/// has no path to unlink, no path to stat, and it ceases to exist when its server
+/// does. Callers use this only for the file-ish chores (unlinking a stale socket,
+/// reaping one whose owner died); the actual bind/connect goes through
+/// [`socket_name`], which is the platform-correct address either way.
+#[cfg(unix)]
+pub fn socket_path(id: SocketId) -> Option<PathBuf> {
+    Some(dir()?.join(format!("{}.sock", id.leaf())))
+}
+
+#[cfg(not(unix))]
+pub fn socket_path(_id: SocketId) -> Option<PathBuf> {
+    None
+}
+
+/// The socket **path** for the instance owning `pid`.
+///
+/// Retained as the path-shaped view of [`SocketId::Pid`] for callers that only
+/// ever needed a file (reaping a dead owner's socket). Anything that binds or
+/// connects must use [`socket_name`] instead — a path is not an address on
+/// Windows.
+pub fn ipc_socket_for_pid(pid: u32) -> Option<PathBuf> {
+    socket_path(SocketId::Pid(pid))
+}
+
+/// This instance's own IPC socket path.
 pub fn my_ipc_socket() -> Option<PathBuf> {
     ipc_socket_for_pid(my_pid())
+}
+
+/// The address to bind or connect `id` on, in whatever form this platform's local
+/// sockets actually take.
+///
+/// **Unix** — a filesystem path under [`dir`], mapped with `GenericFilePath`.
+///
+/// **Windows** — a *named pipe*, mapped with `GenericNamespaced`, which prepends
+/// `\\.\pipe\`. This is not a stylistic choice: `GenericFilePath` on Windows
+/// accepts only paths that already begin `\\.\pipe\` and "attempting to map any
+/// other type of path … returns an error". Our path lives under `%APPDATA%`, so
+/// every `to_fs_name` call failed, both `try_connect` and `try_bind` failed, and
+/// the election fell through to `Standalone` — single-instance never engaged on
+/// Windows at all. (The per-pid socket had the same latent bug since long before
+/// single-instance existed, which is why cross-process raise never worked there
+/// either.)
+///
+/// The namespace hash moves into the pipe *name* on Windows, since there is no
+/// directory to put it in — the pipe namespace is machine-global, so two sandboxes
+/// would otherwise collide exactly as they did on Linux.
+pub fn socket_name(id: SocketId) -> Option<interprocess::local_socket::Name<'static>> {
+    #[cfg(unix)]
+    {
+        use interprocess::local_socket::{GenericFilePath, ToFsName};
+        socket_path(id)?.to_fs_name::<GenericFilePath>().ok()
+    }
+    #[cfg(not(unix))]
+    {
+        use interprocess::local_socket::{GenericNamespaced, ToNsName};
+        let ns = namespace().unwrap_or_else(|| "default".to_string());
+        // No `.sock` suffix: this is a pipe, not a file, and naming it after a
+        // filesystem object it is not would mislead anyone reading `\\.\pipe\`.
+        format!("skribisto-{ns}-{}", id.leaf())
+            .to_ns_name::<GenericNamespaced>()
+            .ok()
+    }
 }
 
 pub(crate) fn canonical(path: &str) -> String {
@@ -326,6 +477,130 @@ mod tests {
         };
         std::fs::write(&lock, serde_json::to_string(&entry).unwrap()).unwrap();
         lock
+    }
+
+    /// **The macOS budget.** There is no `XDG_RUNTIME_DIR` on macOS, so the
+    /// socket lives under `~/Library/Application Support/…`, and a Unix domain
+    /// socket's `sun_path` holds only **104 bytes** on Darwin. An earlier
+    /// revision namespaced that branch too, for the tidiness of one naming rule,
+    /// and every username went over — `bind()` failed with `ENAMETOOLONG` and
+    /// single-instance silently never engaged on macOS at all.
+    ///
+    /// Computed rather than measured: this suite does not run on Darwin, and the
+    /// failure it guards is a silent degradation to `Standalone`, not a crash
+    /// anyone would notice. `etcetera`'s Apple strategy puts the data dir at
+    /// `~/Library/Application Support/{tld}.{author}.{app}`.
+    #[test]
+    fn the_macos_socket_path_fits_in_sun_path() {
+        const DARWIN_SUN_PATH: usize = 104;
+        // Generous: longer than almost any real macOS short name.
+        let long_user = "jean-baptiste-de-la";
+        for user in ["bo", "cyril", long_user] {
+            let dir = format!(
+                "/Users/{user}/Library/Application Support/eu.skribisto.Skribisto/run"
+            );
+            for leaf in [
+                SocketId::Primary.leaf(),
+                SocketId::Pid(4_294_967_295).leaf(),
+            ] {
+                let path = format!("{dir}/{leaf}.sock");
+                assert!(
+                    path.len() < DARWIN_SUN_PATH,
+                    "{path} is {} bytes; Darwin's sun_path holds {DARWIN_SUN_PATH} \
+                     including the NUL, so bind() would fail with ENAMETOOLONG",
+                    path.len()
+                );
+            }
+        }
+    }
+
+    /// The suffix belongs to the `XDG_RUNTIME_DIR` branch alone — that directory
+    /// is per-login-session and shared by every installation on the machine. The
+    /// data-dir fallback is already inside this installation's own tree, and
+    /// every byte spent there comes out of the macOS budget above.
+    #[test]
+    fn only_the_shared_session_dir_pays_for_a_namespace() {
+        let ns = namespace_for(Path::new("/home/writer/.config/Skribisto"));
+        let session = PathBuf::from("/run/user/1000").join(format!("skribisto-{ns}"));
+        let fallback = PathBuf::from("/home/writer/.local/share/Skribisto").join("run");
+
+        assert!(
+            session.to_string_lossy().contains(&ns),
+            "the shared session dir must be namespaced"
+        );
+        assert!(
+            !fallback.to_string_lossy().contains(&ns),
+            "the per-installation fallback must not spend bytes on a suffix it does not need"
+        );
+    }
+
+    /// Socket leaves must stay short and free of path separators: on Unix they
+    /// are a file name inside `dir()`, on Windows they are spliced into a
+    /// `\\.\pipe\` name, and neither tolerates a `/`.
+    #[test]
+    fn socket_leaves_are_short_and_flat() {
+        for leaf in [
+            SocketId::Primary.leaf(),
+            SocketId::Pid(4_294_967_295).leaf(),
+        ] {
+            assert!(!leaf.contains('/') && !leaf.contains('\\'), "{leaf} has a separator");
+            assert!(leaf.len() <= 16, "{leaf} is {} bytes", leaf.len());
+        }
+    }
+
+    #[test]
+    fn two_config_dirs_get_two_namespaces() {
+        let a = namespace_for(Path::new("/home/writer/.config/Skribisto"));
+        let b = namespace_for(Path::new("/tmp/skribisto_sandbox_1/config/Skribisto"));
+        assert_ne!(
+            a, b,
+            "a sandboxed run must not share the real installation's instance universe"
+        );
+    }
+
+    #[test]
+    fn the_same_config_dir_always_gets_the_same_namespace() {
+        // The suffix keys lock files, IPC sockets and (once `shell::instance`
+        // lands) the primary election. An unstable answer would strand every
+        // one of them in a directory nothing looks at any more.
+        let p = Path::new("/home/writer/.config/Skribisto");
+        assert_eq!(namespace_for(p), namespace_for(p));
+        assert_eq!(namespace_for(p), namespace_for(&PathBuf::from(p)));
+    }
+
+    #[test]
+    fn the_namespace_is_a_fixed_width_hex_suffix() {
+        let ns = namespace_for(Path::new("/home/writer/.config/Skribisto"));
+        assert_eq!(ns.len(), 16, "matches the `work-{{:016x}}` id width");
+        assert!(ns.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    /// The namespace's whole point: a claim minted under one installation
+    /// identity must be invisible to another. Exercised through `scan` with two
+    /// distinct directory overrides, which is what the suffix resolves to.
+    #[test]
+    fn a_claim_in_one_namespace_is_invisible_in_another() {
+        let ns_a = setup("namespace-a");
+        let path = "/tmp/skribisto-registry-test-project-ns.skrib";
+        claim(path, "Mine");
+        assert_eq!(scan().len(), 1, "visible in its own namespace");
+
+        // A different namespace = a different directory, exactly as the
+        // blake3 suffix produces for a different config dir.
+        let ns_b = std::env::temp_dir().join(format!(
+            "skribisto-open-registry-test-namespace-b-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&ns_b).unwrap();
+        set_dir_override(Some(ns_b.clone()));
+        assert!(
+            scan().is_empty(),
+            "a peer namespace must not see this installation's claims"
+        );
+
+        set_dir_override(Some(ns_a));
+        release_all();
+        let _ = std::fs::remove_dir_all(&ns_b);
     }
 
     #[test]
