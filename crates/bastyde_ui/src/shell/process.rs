@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Launching another instance of this app.
+//! Path helpers shared by the surfaces that reach outside this window.
 //!
-//! Skribisto is **one process per project** (see [`crate::shell::open_registry`] and [`crate::shell::ipc`]),
-//! so "open that project" from anywhere other than this window means spawning a fresh
-//! process. Four unrelated surfaces need that — the project switcher popover, the Launcher's
-//! recents, the open-a-backup redirect, and the backups list — which is why it lives here
-//! rather than in whichever one happened to implement it first.
+//! This module used to own `spawn_new_process`, and existed because **four** unrelated
+//! surfaces needed it — the project switcher popover, the Launcher's recents, the
+//! open-a-backup redirect and the backups list — back when Skribisto was one process per
+//! project and "open that project" meant launching a second copy of itself.
 //!
-//! It sat in `project_switcher_button.rs` (a title-bar widget) and was imported from there by
-//! `app.rs`, `view_models::welcome` and `backups_list_panel.rs`: three features reaching into
-//! a button's module for process-launch infrastructure.
+//! Phase 4 removed all four. Skribisto is single-instance now: a spawned child would elect,
+//! find this very process as the primary, hand the path straight back over a socket and exit,
+//! so every one of those callers goes through
+//! [`crate::shell::windows::open_or_focus_project`] instead. What is left here is the two
+//! helpers that were never about spawning at all.
 
 use std::path::Path;
 
@@ -25,31 +26,6 @@ pub(crate) fn canon(path: &str) -> String {
     std::fs::canonicalize(path)
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|_| path.to_string())
-}
-
-/// Launch a fresh Skribisto process to open `path`, forwarding an activation `token` so the
-/// new window comes up focused.
-///
-/// The token is the Wayland `xdg_activation_v1` handshake: without it the compositor treats
-/// the new window as an unsolicited pop-up and (on KWin) leaves it behind the current one.
-/// The callers obtain it with `request_activation_token_self` and hand it straight here; the
-/// new process reads it back via `activate_from_env`. Both env vars are set because
-/// compositors disagree on which they honour.
-///
-/// Best-effort throughout: a failure to resolve our own executable, or to spawn, is silently
-/// dropped. There is no useful recovery — and the user's own next action (retrying, or
-/// opening the file from their file manager) is a better remedy than a toast about `argv[0]`.
-pub(crate) fn spawn_new_process(path: &str, token: Option<String>) {
-    let Ok(exe) = std::env::current_exe() else {
-        return;
-    };
-    let mut cmd = std::process::Command::new(exe);
-    cmd.arg(path);
-    if let Some(tok) = token {
-        cmd.env("XDG_ACTIVATION_TOKEN", &tok);
-        cmd.env("DESKTOP_STARTUP_ID", &tok);
-    }
-    let _ = cmd.spawn();
 }
 
 /// Open the file manager at `path`'s containing folder (best-effort, per platform).

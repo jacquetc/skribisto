@@ -85,10 +85,12 @@ pub(super) struct CommandDeps {
     /// instead of `ctx.app_state`'s stale, first-window-wins slot (see
     /// `SettingsPanel`'s own `session` field doc).
     pub session: crate::sessions::WorkSession,
-    /// The app-global Work registry — threaded so `app.quit` can sweep every
-    /// OTHER open Work's dirty state (see `super::super::other_dirty_work_titles`'s
-    /// doc), not just this window's own.
+    /// The app-global Work registry.
     pub registry: crate::sessions::WorkRegistry,
+    /// The app-global quit sequencer — `app.quit`'s whole implementation. Shared
+    /// (not per-window) precisely because a quit spans every window: two windows
+    /// running their own sequence over the same Works would prompt twice for each.
+    pub quit: crate::view_models::QuitSequencer,
     pub outline: OutlineViewModel,
     /// This window's own "was I maximized/floating before I went fullscreen"
     /// memory — minted fresh per window (never a `ctx.app_state` lookup, see

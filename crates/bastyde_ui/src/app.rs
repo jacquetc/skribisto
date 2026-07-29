@@ -290,23 +290,6 @@ pub fn close_work_and_return_to_launcher(
 /// `CloseResponse::Veto` afterward, exactly like its Launcher-returning
 /// sibling: this function performs the actual close itself, via
 /// `close_window_forced`, rather than deferring to the guard's own return
-/// value.
-pub fn quit_app(
-    app_ctx: &Rc<AppContext>,
-    ids: &AppIds,
-    workspace_layout: &crate::view_models::WorkspaceLayoutViewModel,
-    ctx: &mut EventContext,
-) {
-    // Persist the desk before the store is torn down — see
-    // [`close_work_and_return_to_launcher`].
-    capture_workspace_layout(workspace_layout);
-    // See `close_work_and_return_to_launcher`'s identical comment above.
-    if let Some(work_id) = ids.work_id.get() {
-        let _ = work_management_commands::close_work(app_ctx, &CloseWorkDto { work_id });
-    }
-    ctx.close_window_forced();
-}
-
 /// Persist the open project's workspace layout (open tabs + dock arrangement)
 /// through `workspace_layout` — the **calling window's own** [`WorkspaceLayoutViewModel`]
 /// handle, passed in explicitly rather than resolved via
@@ -387,7 +370,13 @@ fn perform_exit(
         PendingExit::ReturnToLauncher => {
             close_work_and_return_to_launcher(app_ctx, ids, workspace_layout, ctx)
         }
-        PendingExit::Quit => quit_app(app_ctx, ids, workspace_layout, ctx),
+        // Never reached: `guard_unsaved_exit` only ever carries
+        // `ReturnToLauncher` now. `Quit` belongs to `QuitSequencer`, whose
+        // continuation runs in `BackupSchedulerViewModel::do_close` instead of
+        // here — quitting spans every window, so it cannot be expressed as one
+        // window's exit. A silent no-op rather than a panic: an unreachable
+        // state is not worth taking the app down for.
+        PendingExit::Quit => {}
         PendingExit::None => unreachable!("guard_unsaved_exit is never invoked with outcome=None"),
     }
 }
@@ -489,45 +478,6 @@ pub(crate) fn guard_unsaved_exit(
             );
         }
     }
-}
-
-/// Every OTHER currently-open Work's title that still has unsaved edits — the
-/// input to `app.quit`'s "you have other unsaved projects open" refusal.
-///
-/// **Scope E — accounting for every dirty Work on Quit, per the design doc's
-/// §9 q1 recommendation of ONE dialog naming every dirty Work, not just the
-/// quitting window's own.** With M Works open, `app.quit` used to guard only
-/// the ONE window it was invoked from (`guard_unsaved_exit`, unchanged, still
-/// below) — a sibling window's own unsaved edits were never asked about, and
-/// closing only the invoking window doesn't even terminate the process while
-/// another remains open. Actually orchestrating a save-then-close across
-/// EVERY open window is a much bigger feature this phase does not build (it
-/// would need forcing an arbitrary *other* window closed, which
-/// `EventContext::close_window_by_id`'s own doc says is guarded — "equivalent
-/// to `close_window` when `id` is the current window's id" — for any other
-/// id, so it would just re-open THAT window's own close guard/dialog, not
-/// collapse into the one aggregated dialog the design doc asks for; a real
-/// fix needs a `close_window_forced`-by-id bastyde does not expose today).
-/// So instead: Quit safely REFUSES and names every other dirty Work when one
-/// exists, rather than silently discarding it or silently doing nothing —
-/// accounting for it by making it impossible to lose unnoticed. The user
-/// switches to that Work's own window and saves/closes it there (where the
-/// existing, correct single-Work guard already applies), then quits again.
-/// THIS window's own Work is unaffected and still goes through
-/// `guard_unsaved_exit` exactly as before.
-///
-/// A backup-mode Work is excluded: Save is off there, so its "unsaved" can
-/// never reach disk regardless — the same reasoning `unsaved_decision`'s own
-/// `PromptDiscardOnly` branch already applies to THIS window's Work.
-fn other_dirty_work_titles(registry: &WorkRegistry, my_work_id: Option<u64>) -> Vec<String> {
-    registry
-        .open_work_ids()
-        .into_iter()
-        .filter(|&id| Some(id) != my_work_id)
-        .filter_map(|id| registry.session_for(id))
-        .filter(|s| s.unsaved.get() && !s.backup_mode.get())
-        .map(|s| s.single_work.title().get())
-        .collect()
 }
 
 /// Convert a theme colour role to the `text_document` colour a highlight span carries. Used to
@@ -635,6 +585,9 @@ pub struct App {
     /// `register_window` call supersedes its own previous binding on an
     /// in-place Work switch (see that method's doc).
     registry: WorkRegistry,
+    /// The app-global quit sequencer (`app.quit`). Shared across every window,
+    /// unlike almost everything else on this struct: a quit spans them all.
+    quit: crate::view_models::QuitSequencer,
     /// Built fresh alongside `session`, bound to *this* window's own `ids`/
     /// `single_work` — see `shell::windows::ProjectWindowFactory::window_config`'s
     /// doc for why these can no longer be the single `ctx.app_state`-registered
@@ -771,6 +724,7 @@ impl App {
         backup_context: Signal<Option<crate::backup::BackupContext>>,
         initial_action: PendingAction,
         registry: WorkRegistry,
+        quit: crate::view_models::QuitSequencer,
         save_as_vm: SaveAsViewModel,
         restore_vm: crate::view_models::BackupRestoreViewModel,
         title_text: Signal<String>,
@@ -784,6 +738,7 @@ impl App {
             focus,
             export,
             registry,
+            quit,
             save_as_vm,
             restore_vm,
             title_text,
@@ -1717,6 +1672,7 @@ impl Widget for App {
             ids: session.ids.clone(),
             session: session.clone(),
             registry: self.registry.clone(),
+            quit: self.quit.clone(),
             outline: outline.clone(),
             fullscreen: self.fullscreen.clone(),
             focus: self.focus.clone(),
@@ -2414,9 +2370,17 @@ impl Widget for App {
             let switch = project_switch.clone();
             let workspace_layout = workspace_layout.clone();
             let ids = ids.clone();
+            let quit_for_completed = self.quit.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Completed),
                 move |e: &Event, c| {
+                    // A quit parked on *another* Work's save resumes here — this is
+                    // the crate's only place holding both this event and an
+                    // `EventContext`. It runs before the `editors` filter below
+                    // precisely because the save it waits on usually belongs to a
+                    // Work this window is not showing, which `on_save_completed`
+                    // would (correctly) return `None` for.
+                    quit_for_completed.on_long_op_completed(e, c);
                     // Ours? (A backup's, an import's or a Save As's completion is
                     // their own view-model's business.) This also issues the
                     // follow-up save when edits arrived while that one was running.
@@ -2485,9 +2449,14 @@ impl Widget for App {
             let exit_seq = self.exit_seq.clone();
             let switch = project_switch.clone();
             let ids = ids.clone();
+            let quit_for_failed = self.quit.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Failed),
                 move |e: &Event, c| {
+                    // A quit waiting on this save must abandon it: closing a window
+                    // over edits that were never written, having promised to write
+                    // them, is the one outcome no exit path may produce.
+                    quit_for_failed.on_long_op_failed(e, c);
                     let Some(error) = editors.on_save_failed(e) else {
                         return;
                     };
@@ -3197,13 +3166,16 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventCo
                         .unwrap_or(false)
                 },
                 move |is_backup, ectx2| {
-                    // A backup always opens in its own instance (never replacing
-                    // the project in this window) — see the backup-mode invariant.
-                    // Nothing here is destroyed, so there is nothing to guard.
+                    // A backup always opens in its own WINDOW, never replacing the
+                    // project in this one — see the backup-mode invariant. (Its own
+                    // *process* until Phase 4; per-Work `backup_mode` since Phase 3
+                    // makes a window the real unit of isolation.) Nothing here is
+                    // destroyed, so there is nothing to guard — which is why the
+                    // sniff still earns its keep on this path even though the
+                    // Launcher's equivalent lost it: here the two branches really do
+                    // differ, in-place-switch versus new window.
                     if is_backup {
-                        ectx2.request_activation_token_self(Box::new(move |tok| {
-                            crate::shell::process::spawn_new_process(&file, tok);
-                        }));
+                        crate::shell::windows::open_or_focus_project(ectx2, &file);
                         return;
                     }
                     switch.request(
@@ -3415,67 +3387,6 @@ mod tests {
         backup_mode.set(true);
         assert!(!shortcut.is_enabled(), "Ctrl+S inert in backup mode");
         assert!(!action.is_enabled(), "editor.save inert in backup mode");
-    }
-
-    // ── `other_dirty_work_titles` (Scope E — app.quit's multi-Work accounting) ──
-
-    #[test]
-    fn other_dirty_work_titles_is_empty_with_only_this_window_open() {
-        let reg = WorkRegistry::new();
-        let mine = crate::sessions::WorkSession::for_test();
-        mine.ids.work_id.set(Some(1));
-        mine.unsaved.set(true);
-        reg.register(1, mine);
-
-        assert!(
-            other_dirty_work_titles(&reg, Some(1)).is_empty(),
-            "this window's own dirty Work must never appear in the OTHER-Works list"
-        );
-    }
-
-    #[test]
-    fn other_dirty_work_titles_excludes_mine_clean_and_backup_mode_works() {
-        let reg = WorkRegistry::new();
-
-        let mine = crate::sessions::WorkSession::for_test();
-        mine.ids.work_id.set(Some(1));
-        mine.unsaved.set(true); // dirty, but it's MY OWN Work — must never appear
-        reg.register(1, mine);
-
-        let clean = crate::sessions::WorkSession::for_test();
-        clean.ids.work_id.set(Some(2)); // unsaved stays false
-        reg.register(2, clean);
-
-        let backup = crate::sessions::WorkSession::for_test();
-        backup.ids.work_id.set(Some(3));
-        backup.unsaved.set(true);
-        backup.backup_mode.set(true); // dirty, but Save is off here — excluded
-        reg.register(3, backup);
-
-        let dirty_other = crate::sessions::WorkSession::for_test();
-        dirty_other.ids.work_id.set(Some(4));
-        dirty_other.unsaved.set(true);
-        reg.register(4, dirty_other);
-
-        let others = other_dirty_work_titles(&reg, Some(1));
-        assert_eq!(
-            others.len(),
-            1,
-            "only Work 4 qualifies: not mine, dirty, and not in backup mode"
-        );
-    }
-
-    #[test]
-    fn other_dirty_work_titles_with_no_work_of_my_own_still_finds_others() {
-        // This window hasn't finished its own Load/New yet (`my_work_id = None`) —
-        // a sibling Work's own dirty edits must still be reported.
-        let reg = WorkRegistry::new();
-        let sibling = crate::sessions::WorkSession::for_test();
-        sibling.ids.work_id.set(Some(9));
-        sibling.unsaved.set(true);
-        reg.register(9, sibling);
-
-        assert_eq!(other_dirty_work_titles(&reg, None).len(), 1);
     }
 
     /// F3: `build_window_teardown` — the closure `WorkRegistry::remove_window`

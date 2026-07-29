@@ -166,6 +166,10 @@ pub struct BackupSchedulerViewModel {
     /// two windows must flush *both* before a backup, so this is keyed per
     /// window, not the single last-writer-wins cell it used to be.
     flush_hooks: FlushHooks,
+    /// The app-global quit sequencer, if one has been injected
+    /// ([`Self::set_quit_sequencer`]). `None` in tests and in the throwaway
+    /// bootstrap session `main` builds before any project window exists.
+    quit: Rc<RefCell<Option<crate::view_models::QuitSequencer>>>,
 }
 
 impl BackupSchedulerViewModel {
@@ -190,6 +194,7 @@ impl BackupSchedulerViewModel {
             pending: Signal::new(None),
             completed_epoch: Signal::new(0),
             flush_hooks: Rc::new(RefCell::new(HashMap::new())),
+            quit: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -242,6 +247,19 @@ impl BackupSchedulerViewModel {
         for hook in hooks {
             hook();
         }
+    }
+
+    /// [`Self::flush`], for a caller outside this type.
+    ///
+    /// The hook registry is per-Work and keyed by window, which makes it the only
+    /// thing in the crate that can answer "put *this Work's* live editor buffers
+    /// into the store" without holding one particular window's
+    /// `EditorsViewModel`. [`crate::view_models::QuitSequencer`] needs exactly
+    /// that: it saves Works it is not the window for, and `request_save` records
+    /// an edit sequence that only means anything once the store holds everything
+    /// up to it.
+    pub fn flush_all_windows(&self) {
+        self.flush();
     }
 
     /// Counter of completed backups — the App's interval timer re-arms whenever
@@ -580,11 +598,29 @@ impl BackupSchedulerViewModel {
                 &self.workspace_layout,
                 ctx,
             ),
+            // A quit spans every open Work, so "close" here cannot mean "close my
+            // own window" — that would end the process with other projects still
+            // unaccounted for. It means "this Work's on-close backup is done;
+            // carry on with the quit", and the sequencer owns what that is.
             PendingExit::Quit => {
-                crate::app::quit_app(&self.app_ctx, &self.ids, &self.workspace_layout, ctx)
+                if let Some(quit) = self.quit.borrow().as_ref() {
+                    quit.on_backup_done(ctx);
+                }
             }
             PendingExit::None => {}
         }
+    }
+
+    /// Hand this Work's scheduler the app-global quit sequencer, so its on-close
+    /// backup can hand control back when it finishes.
+    ///
+    /// Injected after construction rather than taken by `WorkSession::new`
+    /// because the dependency runs the other way round for everything else here:
+    /// the sequencer reaches *into* per-Work schedulers to flush and save, and
+    /// making the constructor require it would put the app-global handle in the
+    /// signature of every per-Work test fixture in the crate.
+    pub fn set_quit_sequencer(&self, quit: crate::view_models::QuitSequencer) {
+        *self.quit.borrow_mut() = Some(quit);
     }
 
     // ── long-operation event handlers (wired in App::build) ───────────────────

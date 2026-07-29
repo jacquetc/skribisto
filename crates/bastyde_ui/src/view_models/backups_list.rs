@@ -227,13 +227,16 @@ impl BackupsListViewModel {
         }
     }
 
-    /// Open a backup in its own instance — a backup always opens in a fresh process, which is
-    /// what shows the read-only / restore choice.
+    /// Open a backup in its **own window**, which is what shows the read-only /
+    /// restore choice.
+    ///
+    /// It used to be its own *process*. Phase 3 moved `backup_mode`/`backup_context`
+    /// onto `WorkSession`, so the isolation a backup needs — it must never replace
+    /// the project the user is working in, and its dirty state must never be
+    /// confused with theirs — is per-Work and therefore per-window already; and
+    /// Phase 4 made a second process a round trip back to this one anyway.
     pub fn open(&self, ctx: &mut EventContext, path: &str) {
-        let path = path.to_string();
-        ctx.request_activation_token_self(Box::new(move |tok| {
-            process::spawn_new_process(&path, tok);
-        }));
+        crate::shell::windows::open_or_focus_project(ctx, path);
     }
 
     /// Show the backup in the platform's file manager.

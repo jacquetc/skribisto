@@ -210,12 +210,13 @@ impl Widget for OpenProjectsMenu {
                     let title = entry.title.clone();
                     let path = entry.path.clone();
                     let pid = entry.pid;
+                    let raise_path = entry.path.clone();
                     menu = menu.item(row(is_self, is_self, title, path, None, move |ctx| {
                         ctx.dismiss_self_overlay_chain();
                         if is_self {
                             return; // already this window
                         }
-                        vm::raise_instance(ctx, pid);
+                        vm::raise_instance(ctx, pid, &raise_path);
                     }));
                 }
             }

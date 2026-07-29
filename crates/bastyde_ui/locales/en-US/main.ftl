@@ -499,13 +499,12 @@ dialog-set-label = Set label
 dialog-new-scene = New scene
 close-work-question = Save changes before closing the work?
 quit-question = Save changes before quitting?
+quit-save-work-question = Save changes to { $title } before quitting?
 unsaved-changes = This work has unsaved changes.
 # Shown by Quit when another open Work (not this window's own) still has
 # unsaved edits — the design's "one dialog listing every dirty Work" (see
 # app::commands::file's `app.quit` action). Quit is refused until those are
 # saved or closed from their own window.
-quit-other-works-dirty-title = Other open works have unsaved changes
-quit-other-works-dirty-text = Quitting would leave unsaved changes in: { $list }. Switch to each and save or close it, then quit again.
 # Replacing the open work in this window (New Work, Open Work, "Open here", the
 # import toast's "Open now"), the same guard as closing, since the open work is
 # closed either way.
@@ -568,6 +567,7 @@ backup-restored-with-safety = Project restored. Your previous version was saved 
 close-backup-discard-title = Discard changes to this backup?
 close-backup-discard-text = Changes to a backup can't be saved to it. Use Save As to keep them, or discard and close.
 quit-backup-discard-title = Discard changes and quit?
+quit-backup-discard-work-question = Discard changes to { $title } and quit?
 quit-backup-discard-text = Changes to a backup can't be saved to it. Use Save As to keep them, or discard and quit.
 backup-nudge-text = No backups are set up for this project.
 backup-nudge-action = Set up backups…

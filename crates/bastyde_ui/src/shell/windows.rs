@@ -28,7 +28,6 @@
 //! nothing reopened, so the last-window-closes rule *is* the exit — see
 //! [`crate::app::quit_app`]/`PendingExit::Quit`.
 
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use bastyde::prelude::*;
@@ -96,6 +95,35 @@ pub fn window_id_for(project: &str) -> String {
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|_| project.to_string());
     format!("work-{}", &blake3::hash(canon.as_bytes()).to_hex()[..16])
+}
+
+/// Open `path` in a project window of **this** process, or focus the window
+/// already showing it. Returns the window's id, or `None` if no
+/// [`ProjectWindowFactory`] is registered (only in a headless test context).
+///
+/// **The one door.** Five surfaces need "get me a window on this project" — the
+/// ProjectSwitcher's "Open in new window", the Launcher's recents and Open
+/// button, the backups list, File ▸ Open Work…'s backup redirect, and the
+/// primary's handler for a remote launch — and before Phase 4 four of them
+/// spawned a whole second `skribisto` to do it. Under single-instance that is a
+/// round trip to nowhere: the child would elect, find this very process as the
+/// primary, hand the path straight back over a socket and exit.
+///
+/// The "already open?" test is `find_window(window_id_for(path))`, not a side
+/// table: a window's **string id** is its identity, and it is the same id its
+/// persisted geometry is keyed by, so the two can never disagree about which
+/// window belongs to which project.
+pub fn open_or_focus_project(
+    ctx: &mut bastyde::prelude::EventContext,
+    path: &str,
+) -> Option<bastyde::prelude::BastydeWindowId> {
+    if let Some(id) = ctx.find_window(&window_id_for(path)) {
+        ctx.focus_window(id);
+        return Some(id);
+    }
+    let factory = ctx.app_state::<ProjectWindowFactory>()?;
+    let (config, _state) = factory.window_config(PendingAction::Load(path.to_string()));
+    Some(ctx.open_window(config))
 }
 
 /// Scope D — window titles. A reactive `"{Work title} — Skribisto"` (falling
@@ -362,14 +390,17 @@ pub struct ProjectWindowFactory {
     /// Plain mirror of the master spell-check switch — the title-bar toggle's icon and
     /// the View ▸ Check spelling checkmark read it. `App::build` keeps it in sync.
     spellcheck_menu: Signal<bool>,
-    /// Shared handle to the *current* project window's `WindowState`, so IPC
-    /// "raise" events (see `ipc.rs`) can focus it directly without a
-    /// `WindowManager` id lookup (which misses while that window is
-    /// dispatching its own events). Retargeted to the freshest project
-    /// window each time one opens. **Known Phase-2 limitation**: single-
-    /// process IPC "raise" is Phase 4 scope (single-instance primary/remote);
-    /// left exactly as it behaved pre-migration.
-    main_window_state: Rc<RefCell<Option<WindowState>>>,
+    /// The app-global quit sequencer, built **here** rather than per window and
+    /// rather than in `main`: a quit spans every window, so two windows each
+    /// running their own sequence over the same Works would prompt twice for
+    /// each; and this factory already holds the only two things it needs (the
+    /// registry and the autosave switch).
+    quit: crate::view_models::QuitSequencer,
+    // (Phase 4 removed `main_window_state`: one `Rc<RefCell<Option<WindowState>>>`
+    // retargeted to the *freshest* project window, which IPC "raise" focused. It was
+    // already the wrong answer with two project windows open, and single-instance
+    // makes two windows the normal case. `main.rs`'s router resolves the target by
+    // string id instead — which names the exact window and needs no side table.)
 }
 
 impl ProjectWindowFactory {
@@ -383,11 +414,15 @@ impl ProjectWindowFactory {
         tree_expansion_service: TreeExpansionService,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
-        main_window_state: Rc<RefCell<Option<WindowState>>>,
         format: FormatViewModel,
     ) -> Self {
         Self {
             format,
+            quit: crate::view_models::QuitSequencer::new(
+                app_ctx.clone(),
+                registry.clone(),
+                autosave_menu.clone(),
+            ),
             app_ctx,
             registry,
             spellcheck,
@@ -396,7 +431,6 @@ impl ProjectWindowFactory {
             tree_expansion_service,
             autosave_menu,
             spellcheck_menu,
-            main_window_state,
         }
     }
 
@@ -447,6 +481,11 @@ impl ProjectWindowFactory {
             self.tree_expansion_service.clone(),
         );
         let registry = self.registry.clone();
+        let quit = self.quit.clone();
+        // Let this Work's on-close backup hand control back to the quit sequencer
+        // when it lands (see `BackupSchedulerViewModel::do_close`'s
+        // `PendingExit::Quit` arm).
+        session.backup_scheduler.set_quit_sequencer(quit.clone());
         let single_work = session.single_work.clone();
         let single_work_info = session.single_work_info.clone();
         // Scope D — window titles. `1` until `App::build`'s own `LoadWork`/
@@ -519,7 +558,6 @@ impl ProjectWindowFactory {
         // independently. See `ProjectWindowFactory`'s field doc.
         let pending_exit: Signal<PendingExit> = Signal::new(PendingExit::None);
         let backup_scheduler = session.backup_scheduler.clone();
-        let main_window_state = self.main_window_state.clone();
         // Clones for the caller (see this method's doc) — the originals are
         // moved into the `.root(...)` closure below.
         let initial_state = InitialWindowState {
@@ -615,9 +653,6 @@ impl ProjectWindowFactory {
                 move |event| registry.remove_window(event.id)
             })
             .root(move |tree, state| {
-                // Publish this window's handle so IPC "raise" events (handled
-                // in `on_app_event`) can focus it directly.
-                *main_window_state.borrow_mut() = Some(state.clone());
                 let theme = tree.theme().clone();
 
                 // Custom Bastyde title bar with a model-driven hamburger menu
@@ -1396,6 +1431,7 @@ impl ProjectWindowFactory {
                     backup_context.clone(),
                     action,
                     registry.clone(),
+                    quit.clone(),
                     save_as_vm.clone(),
                     restore_vm.clone(),
                     title_text.clone(),

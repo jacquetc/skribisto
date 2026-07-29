@@ -92,6 +92,7 @@ mod progress_recorder;
 mod project_lifecycle;
 mod project_switch;
 pub mod project_switcher;
+mod quit_sequencer;
 mod save_as;
 mod save_queue;
 mod save_state;
@@ -144,6 +145,7 @@ pub use project_switch::{
     PendingSwitch, ProjectSwitchViewModel, UnsavedDecision, unsaved_decision,
 };
 pub use save_as::SaveAsViewModel;
+pub use quit_sequencer::QuitSequencer;
 pub(crate) use save_queue::{DeferredResume, resume_deferred};
 pub use save_state::SaveStateViewModel;
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};

@@ -141,18 +141,29 @@ impl BackupRestoreViewModel {
         self.check_open_elsewhere(ctx, target);
     }
 
-    /// Refuse to overwrite an original that a *different* process has open; ask the
+    /// Refuse to overwrite an original that some *other window* has open; ask the
     /// user to close it there (offering to focus that window), then retry.
+    ///
+    /// **Matched on path alone, not on `pid != my_pid()`.** That pid test was
+    /// correct only while Skribisto was one process per project. Since Phase 4 the
+    /// usual way to have two projects open is two windows of *one* process, so a
+    /// pid filter would wave through the exact case it exists to catch — a sibling
+    /// window holding the original while this one overwrites it. It is the same
+    /// class of bug Phase 3 fixed in `project_switcher::sections`.
+    ///
+    /// There is no risk of matching *ourselves*: this window is in backup mode, so
+    /// its own open-registry claim is on the backup, and `target` is the original
+    /// the backup was made from.
     fn check_open_elsewhere(&self, ctx: &mut EventContext, target: String) {
         let canon = crate::shell::open_registry::canonical(&target);
-        let peer = crate::shell::open_registry::scan().into_iter().find(|e| {
-            e.pid != crate::shell::open_registry::my_pid()
-                && crate::shell::open_registry::canonical(&e.path) == canon
-        });
+        let peer = crate::shell::open_registry::scan()
+            .into_iter()
+            .find(|e| crate::shell::open_registry::canonical(&e.path) == canon);
         let Some(entry) = peer else {
             return self.confirm(ctx, target);
         };
         let pid = entry.pid;
+        let raise_path = entry.path.clone();
         let me = self.clone();
         MessageBox::warning(tr!(backup_restore_close_elsewhere_title()))
             .text(tr!(backup_restore_close_elsewhere_text()))
@@ -168,9 +179,7 @@ impl BackupRestoreViewModel {
                 // Focus the other window (best-effort raise), then let the user
                 // retry once they've closed it there.
                 StandardButton::Open => {
-                    c.request_activation_token_self(Box::new(move |tok| {
-                        let _ = crate::shell::ipc::send_raise(pid, tok);
-                    }));
+                    crate::view_models::project_switcher::raise_instance(c, pid, &raise_path);
                 }
                 StandardButton::Retry => me.check_open_elsewhere(c, target.clone()),
                 _ => {}
