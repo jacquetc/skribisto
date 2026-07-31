@@ -745,7 +745,7 @@ impl ExportViewModel {
     /// `on_long_op_*`.
     fn run_export(&self, ctx: &mut EventContext) {
         let Some(dto) = self.dto() else {
-            self.show_error(ctx, "no project is open to export", self.ids.work_id.get());
+            self.show_error(ctx, "no project is open to export", self.ids.work_id.get(), None);
             return;
         };
         match export_management_commands::export_work(&self.app_ctx, &dto) {
@@ -764,7 +764,7 @@ impl ExportViewModel {
                         .target_work(self.active_work_id()),
                 );
             }
-            Err(e) => self.show_error(ctx, &format!("{e:#}"), self.ids.work_id.get()),
+            Err(e) => self.show_error(ctx, &format!("{e:#}"), self.ids.work_id.get(), None),
         }
     }
 
@@ -786,8 +786,17 @@ impl ExportViewModel {
         } else {
             format!("{percent:.0}% · {message}")
         };
+        // Keyed on the running operation (see `scoped_op_id`): with two windows
+        // on one Work, two exports can be in flight at once, and a Work-only key
+        // would let the second silently take over the first's toast — Cancel
+        // button included.
+        let op_id = self
+            .active
+            .get()
+            .map(|op| op.op_id().to_string())
+            .unwrap_or_default();
         Toast::loading(tr!(export_progress_title()))
-            .scoped_id(EXPORT_TOAST_ID, self.active_work_id())
+            .scoped_op_id(EXPORT_TOAST_ID, self.active_work_id(), &op_id)
             .body(lit!(body))
             .action(
                 ToastAction::destructive(tr!(export_cancel()), move |c| vm.cancel(c))
@@ -853,7 +862,7 @@ impl ExportViewModel {
                 let done = tr!(export_done(count = res.exported_count));
                 ctx.show_toast(
                     Toast::success(done)
-                        .scoped_id(EXPORT_TOAST_ID, work_id)
+                        .scoped_op_id(EXPORT_TOAST_ID, work_id, &op_id)
                         .body(lit!(res.output_path.clone()))
                         .auto_dismiss_after(Duration::from_secs(6))
                         .target_work(work_id),
@@ -862,7 +871,7 @@ impl ExportViewModel {
             Ok(None) | Err(_) => {
                 ctx.show_toast(
                     Toast::info(tr!(export_progress_title()))
-                        .scoped_id(EXPORT_TOAST_ID, work_id)
+                        .scoped_op_id(EXPORT_TOAST_ID, work_id, &op_id)
                         .auto_dismiss_after(Duration::from_secs(4))
                         .target_work(work_id),
                 );
@@ -885,7 +894,7 @@ impl ExportViewModel {
         self.active.set(None);
         ctx.show_toast(
             Toast::info(tr!(export_cancelled()))
-                .scoped_id(EXPORT_TOAST_ID, work_id)
+                .scoped_op_id(EXPORT_TOAST_ID, work_id, &id)
                 .auto_dismiss_after(Duration::from_secs(4))
                 .target_work(work_id),
         );
@@ -912,7 +921,7 @@ impl ExportViewModel {
             .and_then(|e| e.as_str())
             .unwrap_or_default()
             .to_string();
-        self.show_error(ctx, &error, work_id);
+        self.show_error(ctx, &error, work_id, Some(id));
     }
 
     /// `work_id` is the Work this error concerns: the export's own captured
@@ -922,12 +931,27 @@ impl ExportViewModel {
     /// route on instead. Accepts either a plain `Option<u64>` or a
     /// `long_op::CapturedWork` — both callers below hand in whichever one they
     /// actually have.
-    fn show_error(&self, ctx: &mut EventContext, message: &str, work_id: impl Into<Option<u64>>) {
+    ///
+    /// `op_id` is the failing operation's id when there *was* one, so the error
+    /// replaces that export's own progress toast in place rather than whichever
+    /// export on this Work happens to be showing one (see `scoped_op_id`).
+    /// `None` for the failures that happen before any operation starts: nothing
+    /// is in flight for them to be confused with.
+    fn show_error(
+        &self,
+        ctx: &mut EventContext,
+        message: &str,
+        work_id: impl Into<Option<u64>>,
+        op_id: Option<&str>,
+    ) {
         let work_id = work_id.into();
         let details = message.to_string();
+        let toast = Toast::error(tr!(export_error_title()));
         ctx.show_toast(
-            Toast::error(tr!(export_error_title()))
-                .scoped_id(EXPORT_TOAST_ID, work_id)
+            match op_id {
+                Some(op) => toast.scoped_op_id(EXPORT_TOAST_ID, work_id, op),
+                None => toast.scoped_id(EXPORT_TOAST_ID, work_id),
+            }
                 .body(lit!(message.to_string()))
                 .persistent()
                 .target_work(work_id)

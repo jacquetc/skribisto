@@ -9,7 +9,8 @@
 //! actions (derive the target path, assemble the `NewWorkDto`, create the work)
 //! live here, not in the view's `build()`.
 //!
-//! Two presentation contexts, one behaviour split on [`Self::create`]:
+//! Three presentation contexts, one behaviour split on [`Self::create`] — see
+//! [`CreateTarget`]:
 //!   * **From an already-open project** (`NewWorkPanel::new` — File ▸ New
 //!     Work / Ctrl+N): creates the work in place, replacing this window's
 //!     project — the same "load in place" pattern as `work.open`/Ctrl+O.
@@ -20,6 +21,14 @@
 //!     Creating the work here instead — before that window's `NewWork`
 //!     subscription is live — would race the event and silently skip the
 //!     seed flow (`AppIds::seed`, `SingleWork::set_id`, the tree reload, …).
+//!   * **From a project window that cannot replace its project in place**
+//!     (`NewWorkPanel::new_beside_current` — File ▸ New Work in a window whose
+//!     Work is also shown by a Work ▸ New Window sibling): same deferred
+//!     creation as the Launcher, but the presenting window *stays open*. It
+//!     shares one `AppIds`/`WorkSession` with its sibling, so replacing its
+//!     project in place would re-point the sibling's project out from under it;
+//!     the new project therefore gets a window of its own and both existing
+//!     windows are left exactly as they were.
 
 use std::path::Path;
 use std::rc::Rc;
@@ -209,20 +218,39 @@ pub struct NewWorkViewModel {
     /// non-manuscript templates. Defaults to `false` (the classic layout).
     chapter_scene: Signal<bool>,
     app_ctx: Rc<AppContext>,
-    /// THIS window's own id-only Work state — `Some` only alongside
-    /// `launcher_factory: None` (an already-open project really does have one).
-    /// Read (`.work_id.get()`) at [`Self::create`] time to close the outgoing
-    /// Work before replacing it — never `ctx.app_state::<AppIds>()`, which is
-    /// one process-wide slot fixed at builder time from the *first* window's
-    /// session (see `crate::app::close_outgoing_work`'s doc): with a second
-    /// Work open in a second window, that slot would name the WRONG window's
-    /// Work, and closing it would tear a sibling window's live, untouched Work
-    /// out from under it.
-    ids: Option<crate::app_ids::AppIds>,
-    /// `Some` when presented from the Launcher: "Create Work" defers to a
-    /// freshly-opened project window instead of creating in place. `None`
-    /// when presented from an already-open project (File ▸ New Work).
-    launcher_factory: Option<ProjectWindowFactory>,
+    /// Where "Create Work" puts the new project — see [`CreateTarget`].
+    target: CreateTarget,
+}
+
+/// Where [`NewWorkViewModel::create`] puts the project it is about to create.
+///
+/// One enum rather than an `Option<AppIds>` + `Option<ProjectWindowFactory>`
+/// pair: the pair could represent "both" and "neither", neither of which means
+/// anything, and the third context (create beside a window that must keep its
+/// own project) is a genuine third case rather than a flag on one of the first
+/// two.
+#[derive(Clone)]
+enum CreateTarget {
+    /// Replace the presenting window's own project, in place. The `AppIds` is
+    /// **that window's own** — read (`.work_id.get()`) at [`NewWorkViewModel::create`]
+    /// time to close the outgoing Work before replacing it, never
+    /// `ctx.app_state::<AppIds>()`, which is one process-wide slot fixed at
+    /// builder time from the *first* window's session (see
+    /// `crate::app::close_outgoing_work`'s doc): with a second Work open in a
+    /// second window, that slot would name the WRONG window's Work, and closing
+    /// it would tear a sibling window's live, untouched Work out from under it.
+    InPlace(crate::app_ids::AppIds),
+    /// Create it in a **new** project window, which performs the creation on its
+    /// own first build ([`crate::app::PendingAction::New`]).
+    ///
+    /// `close_presenting_window` distinguishes the two callers: the Launcher
+    /// exists only until a project window replaces it, so it closes; a project
+    /// window whose Work is shared with a Work ▸ New Window sibling keeps its
+    /// own project and simply gains a neighbour, so it stays.
+    NewWindow {
+        factory: ProjectWindowFactory,
+        close_presenting_window: bool,
+    },
 }
 
 #[allow(dead_code)]
@@ -241,15 +269,33 @@ impl NewWorkViewModel {
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
             app_ctx,
-            ids: Some(ids),
-            launcher_factory: None,
+            target: CreateTarget::InPlace(ids),
         }
     }
 
     /// For `NewWorkPanel::new_for_launcher` — presented from the Launcher, no
     /// project open yet (so there is nothing to close). `factory` builds the
-    /// project window that "Create Work" opens once the form is submitted.
+    /// project window that "Create Work" opens once the form is submitted; the
+    /// Launcher closes behind it.
     pub fn new_for_launcher(app_ctx: Rc<AppContext>, factory: ProjectWindowFactory) -> Self {
+        Self::in_a_new_window(app_ctx, factory, true)
+    }
+
+    /// For `NewWorkPanel::new_beside_current` — presented from a project window
+    /// that must **not** replace its own project: its Work is also shown by a
+    /// Work ▸ New Window sibling, and the two share one `AppIds`/`WorkSession`,
+    /// so an in-place replace would re-point the sibling's project too. The new
+    /// project opens in its own window and the presenting window stays exactly
+    /// as it was.
+    pub fn new_beside_current(app_ctx: Rc<AppContext>, factory: ProjectWindowFactory) -> Self {
+        Self::in_a_new_window(app_ctx, factory, false)
+    }
+
+    fn in_a_new_window(
+        app_ctx: Rc<AppContext>,
+        factory: ProjectWindowFactory,
+        close_presenting_window: bool,
+    ) -> Self {
         Self {
             name: Signal::new(String::new()),
             author: Signal::new(String::new()),
@@ -259,8 +305,10 @@ impl NewWorkViewModel {
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
             app_ctx,
-            ids: None,
-            launcher_factory: Some(factory),
+            target: CreateTarget::NewWindow {
+                factory,
+                close_presenting_window,
+            },
         }
     }
 
@@ -377,10 +425,9 @@ impl NewWorkViewModel {
     /// path's existing error handling. Nothing is open in the Launcher window,
     /// so there is nothing to close.
     pub fn create(&self, ctx: &mut EventContext) {
-        match &self.launcher_factory {
-            None => {
-                let outgoing_work_id = self.ids.as_ref().and_then(|ids| ids.work_id.get());
-                crate::app::close_outgoing_work(&self.app_ctx, outgoing_work_id);
+        match &self.target {
+            CreateTarget::InPlace(ids) => {
+                crate::app::close_outgoing_work(&self.app_ctx, ids.work_id.get());
                 match work_management_commands::new_work(&self.app_ctx, &self.dto()) {
                     Ok(()) => ctx.dismiss_modal(),
                     Err(e) => {
@@ -390,13 +437,24 @@ impl NewWorkViewModel {
                     }
                 }
             }
-            Some(factory) => {
+            CreateTarget::NewWindow {
+                factory,
+                close_presenting_window,
+            } => {
                 // The returned `InitialWindowState` is only kept by `main.rs`'s
                 // very first window (see `window_config`'s doc) — every later
                 // window, like this one, discards it.
                 let (config, _state) = factory.window_config(PendingAction::New(self.dto()));
                 ctx.open_window(config);
-                ctx.close_window();
+                if *close_presenting_window {
+                    ctx.close_window();
+                } else {
+                    // A project window: it keeps its own project, so only the
+                    // form goes away. Dismissing is not optional — the modal
+                    // would otherwise stay up over a window that has just
+                    // handed the user's request to a different one.
+                    ctx.dismiss_modal();
+                }
             }
         }
     }

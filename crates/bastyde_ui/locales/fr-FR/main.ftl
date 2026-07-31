@@ -8,6 +8,7 @@
 menu-work = Œ&uvre
 menu-new-work = &Nouvelle œuvre
 menu-open-work = &Ouvrir une œuvre…
+menu-new-window = Nouvelle fenê&tre
 menu-import-from = &Importer depuis
 menu-import-plume = &Plume Creator (.plume)…
 menu-export = E&xporter

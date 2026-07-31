@@ -63,6 +63,21 @@ impl NewWorkPanel {
         }
     }
 
+    /// Presented from a project window whose Work is shared with a Work ▸ New
+    /// Window sibling: the new project opens in its own window and this one
+    /// keeps the project it is showing — see
+    /// [`crate::view_models::NewWorkViewModel::new_beside_current`].
+    pub fn new_beside_current(
+        app_ctx: Rc<AppContext>,
+        factory: crate::shell::windows::ProjectWindowFactory,
+    ) -> Self {
+        Self {
+            vm: NewWorkViewModel::new_beside_current(app_ctx, factory),
+            root_child: None,
+            name_field: std::cell::Cell::new(None),
+        }
+    }
+
     /// Presented from the Launcher (`WelcomeViewModel::new_work`): creation is
     /// deferred to a freshly-opened project window, which then closes the
     /// Launcher — see [`crate::view_models::NewWorkViewModel::new_for_launcher`].

@@ -15,6 +15,7 @@ use bastyde::prelude::*;
 
 use crate::intents::AppIntent;
 use crate::panels::import_plume::ImportPlumePanel;
+use crate::panels::new_work::NewWorkPanel;
 use crate::settings::SettingsPanel;
 use crate::view_models::{ImportPlumeViewModel, PendingSwitch};
 
@@ -31,7 +32,38 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let switch = deps.project_switch.clone();
         let ids = deps.ids.clone();
+        let registry = deps.registry.clone();
+        let app_ctx = deps.app_ctx.clone();
+        let attached = deps.attached;
         ctx.register_action_global(Action::new("work.new").on_invoke(move |_i, c| {
+            // A window that shares its Work with a Work ▸ New Window sibling
+            // cannot replace its project in place — they share one `AppIds`, so
+            // the switch would re-point the sibling too (see
+            // `may_switch_project_in_place`). The form is presented directly
+            // here, in "create beside this window" mode, rather than through
+            // `ProjectSwitchViewModel`: there is nothing to guard (this
+            // window's project is staying exactly where it is), and the
+            // switch's `new_work_form_hook` is a single process-wide slot
+            // installed by the *owning* window, bound to that window's `AppIds`.
+            if !crate::app::may_switch_project_in_place(&registry, &ids, attached) {
+                let Some(factory) = c
+                    .app_state::<crate::shell::windows::ProjectWindowFactory>()
+                    .cloned()
+                else {
+                    return;
+                };
+                let app_ctx = app_ctx.clone();
+                c.present_modal(
+                    ModalRequest::deferred(move |t| {
+                        t.add(NewWorkPanel::new_beside_current(app_ctx, factory))
+                    })
+                    .presentation(ModalPresentation::InTree)
+                    .title("New Work")
+                    .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                    .size(600, 680),
+                );
+                return;
+            }
             switch.request(c, PendingSwitch::NewWork, ids.work_id.get())
         }));
     }
@@ -49,8 +81,10 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let switch = deps.project_switch.clone();
         let ids = deps.ids.clone();
+        let registry = deps.registry.clone();
+        let attached = deps.attached;
         ctx.register_action_global(Action::new("work.open").on_invoke(move |_i, c| {
-            open_work_flow(switch.clone(), ids.clone(), c)
+            open_work_flow(switch.clone(), ids.clone(), registry.clone(), attached, c)
         }));
     }
     // Open an already-chosen path (payload in the intent) — the switcher popover's "Open
@@ -59,9 +93,72 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let switch = deps.project_switch.clone();
         let ids = deps.ids.clone();
+        let registry = deps.registry.clone();
+        let attached = deps.attached;
         ctx.register_action_global(Action::new("work.open_path").on_invoke(move |i, c| {
             if let Some(AppIntent::OpenWorkPath { path }) = AppIntent::from_intent(i) {
+                // "Open here" cannot mean *here* when a Work ▸ New Window sibling
+                // shares this window's `AppIds` — see `may_switch_project_in_place`.
+                // It becomes "open it", in a window of its own, which is what the
+                // switcher's other row already does and what the import toast
+                // wanted all along; this window keeps its project either way.
+                if !crate::app::may_switch_project_in_place(&registry, &ids, attached) {
+                    crate::shell::windows::open_or_focus_project(c, &path);
+                    return;
+                }
                 switch.request(c, PendingSwitch::OpenWork(path.clone()), ids.work_id.get());
+            }
+        }));
+    }
+
+    // Work ▸ New Window (Ctrl+Shift+N): a SECOND window onto the Work this
+    // window is already showing.
+    //
+    // The one project command that mutates nothing. Both windows share the live
+    // `WorkSession` — one store view, one undo stack, one set of open documents,
+    // one dirty state — so a scene typed in either is the same edit, and only
+    // the last of them to close ends the project. What each window keeps to
+    // itself is its desk: its own tabs, split editor, docks and outline. That is
+    // the point of the command (two chapters side by side, or the binder pinned
+    // to a second monitor), and it is why this is not "open the file again":
+    // loading the same `.skrib` twice would give two independent, silently
+    // diverging copies racing each other onto one path.
+    //
+    // Resolution and refcounting happen in
+    // `ProjectWindowFactory::attached_window_config`, which needs both this
+    // window's `work_id` and its project path — the latter for the new window's
+    // persistence id. A `None` from it means the Work stopped being open between
+    // the menu opening and the click (the menu item is hidden without a project,
+    // so this is a race, not a normal path); doing nothing is the right answer,
+    // since the thing the user asked for a second view of no longer exists.
+    ctx.register_shortcut_global(
+        Shortcut::new("window.new")
+            .name("New Window")
+            .primary(KeyStroke::new(Key::N, Modifiers::CTRL | Modifiers::SHIFT))
+            .build(),
+    );
+    {
+        let app_ctx = deps.app_ctx.clone();
+        let ids = deps.ids.clone();
+        ctx.register_action_global(Action::new("window.new").on_invoke(move |_i, c| {
+            let Some(work_id) = ids.work_id.get() else {
+                return;
+            };
+            // The Work's own path, resolved through this window's `work_info_id`
+            // — never `get_all_work_info`'s first entry, which with several Works
+            // open answers about somebody else's project (see
+            // `current_project_path`'s doc).
+            let Some(path) = crate::current_project_path(&app_ctx, &ids) else {
+                return;
+            };
+            let Some(factory) = c
+                .app_state::<crate::shell::windows::ProjectWindowFactory>()
+                .cloned()
+            else {
+                return;
+            };
+            if let Some((config, _state)) = factory.attached_window_config(work_id, &path) {
+                c.open_window(config);
             }
         }));
     }

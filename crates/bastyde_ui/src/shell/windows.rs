@@ -97,6 +97,41 @@ pub fn window_id_for(project: &str) -> String {
     format!("work-{}", &blake3::hash(canon.as_bytes()).to_hex()[..16])
 }
 
+/// The window-persistence id of the **`ordinal`-th** window on `project` —
+/// [`window_id_for`] for the first, `{base}-w{ordinal}` for every further one
+/// opened by Work ▸ New Window.
+///
+/// Two things forced this to exist, and both are load-bearing:
+///
+///   * **A string id is a window's identity.** bastyde's `WindowManager` keeps
+///     one `string_to_id` entry per id and simply overwrites it, so two windows
+///     built with the same `.id(..)` do not collide loudly — the second silently
+///     steals the first's identity, and `find_window` (hence
+///     [`open_or_focus_project`], the IPC raise path and the switcher) would
+///     answer with whichever registered last.
+///   * **Geometry is keyed by that same id.** Giving each window its own means a
+///     second window's size and placement are remembered as *its own*, across
+///     launches — rather than the two fighting over one `window_state.toml` row.
+///
+/// Ordinal 1 deliberately yields the bare [`window_id_for`] value: the first
+/// window on a project must keep the id its geometry has always been saved
+/// under, and it is the one [`open_or_focus_project`] resolves to when some
+/// other surface asks for "the" window on this project.
+///
+/// Ordinals are stable per window for as long as it lives and are never reused
+/// (see [`crate::sessions::WorkRegistry::reserve_window_ordinal`]), so the id is
+/// stable too — a second window that closes and is reopened comes back as
+/// `-w3`, with its own remembered geometry, rather than inheriting the placement
+/// of the window that just went away.
+pub fn attached_window_id_for(project: &str, ordinal: usize) -> String {
+    let base = window_id_for(project);
+    if ordinal <= 1 {
+        base
+    } else {
+        format!("{base}-w{ordinal}")
+    }
+}
+
 /// Open `path` in a project window of **this** process, or focus the window
 /// already showing it. Returns the window's id, or `None` if no
 /// [`ProjectWindowFactory`] is registered (only in a headless test context).
@@ -121,9 +156,46 @@ pub fn open_or_focus_project(
         ctx.focus_window(id);
         return Some(id);
     }
+    // The string-id test above only ever finds the project's FIRST window: every
+    // further one (Work ▸ New Window) is identified by `attached_window_id_for`,
+    // ordinal suffix and all. So a project whose first window has since closed
+    // while a second stayed open is invisible to it — and answering "not open"
+    // there would load the very same `.skrib` a second time, into a second,
+    // independent `Work`: two live copies of one project, each unaware of the
+    // other's edits, both saving to one path.
+    //
+    // The registry knows better, because it tracks Works rather than window ids.
+    // Matching goes through `window_id_for` on both sides rather than comparing
+    // the strings directly, so it inherits exactly the same canonicalization
+    // (symlinks, `..`, relative spellings) the id itself is built on — the two
+    // cannot disagree about what "the same project" means.
+    if let Some(id) = find_open_project_window(ctx, path) {
+        ctx.focus_window(id);
+        return Some(id);
+    }
     let factory = ctx.app_state::<ProjectWindowFactory>()?;
     let (config, _state) = factory.window_config(PendingAction::Load(path.to_string()));
     Some(ctx.open_window(config))
+}
+
+/// Any live window showing the project at `path`, resolved through the
+/// [`WorkRegistry`] rather than through window string ids — the fallback
+/// [`open_or_focus_project`] needs once one project can own several windows.
+/// The longest-standing window on the Work is the one returned (`windows_for`
+/// is ordinal-ordered).
+fn find_open_project_window(
+    ctx: &bastyde::prelude::EventContext,
+    path: &str,
+) -> Option<bastyde::prelude::BastydeWindowId> {
+    let registry = ctx.app_state::<WorkRegistry>()?;
+    let wanted = window_id_for(path);
+    registry.open_work_ids().into_iter().find_map(|work_id| {
+        let session = registry.session_for(work_id)?;
+        let open_path = session.single_work_info.file_name().get()?;
+        (window_id_for(&open_path) == wanted)
+            .then(|| registry.windows_for(work_id).first().copied())
+            .flatten()
+    })
 }
 
 /// Scope D — window titles. A reactive `"{Work title} — Skribisto"` (falling
@@ -141,9 +213,14 @@ pub fn open_or_focus_project(
 /// number assigned once per window and never renumbered/reused for as long as
 /// that window is open, so "Window 2" always means the same physical window
 /// even after "Window 1" closes. `ordinal == 1` never shows a suffix at all —
-/// today's only reachable case (Phase 3 does not yet ship `AttachExisting`,
-/// the second-window-on-one-Work action), so no window anyone can currently
-/// open ever shows a suffix; the mechanism is ready the moment it does.
+/// the first window on a project is just the project.
+///
+/// Work ▸ New Window is what reaches the suffix ([`attached_window_config`]).
+/// Such a window knows its ordinal before it is built (its persistence id is
+/// derived from it), so `window_ordinal` starts at the real value and the title
+/// reads "(Window 2)" from the first frame rather than flickering through the
+/// un-suffixed form; every other window starts at `1` and is corrected, if it
+/// ever needs to be, by its own `LoadWork`/`NewWork` subscriber.
 fn window_title_text(
     single_work: &crate::singles::SingleWork,
     ordinal: &Signal<usize>,
@@ -449,9 +526,9 @@ impl ProjectWindowFactory {
     /// second handle onto the first window's. The fresh session is registered
     /// into `WorkRegistry` once its own `LoadWork`/`NewWork` subscriber (in
     /// `App::build`) resolves a real `work_id` — not here, since the id does
-    /// not exist yet at this point for a `Load`/`New` action (only Phase 3's
-    /// `AttachExisting{work_id}` would let `window_config` resolve one up
-    /// front via `WorkRegistry::session_for`).
+    /// not exist yet at this point for a `Load`/`New` action. A **second window
+    /// on an already-open Work** is the one case where it does: see
+    /// [`Self::attached_window_config`].
     ///
     /// Returns the freshly-built [`InitialWindowState`] alongside the
     /// `WindowConfig`: `main.rs`'s *initial* window uses it to seed the handful
@@ -464,22 +541,99 @@ impl ProjectWindowFactory {
     /// after the builder runs, so only the first window's session can ever
     /// satisfy those few lookups.
     pub fn window_config(&self, action: PendingAction) -> (WindowConfig, InitialWindowState) {
-        let id = window_id_for(action.target_path());
+        self.build_window(action, None)
+    }
 
+    /// Build a **second window onto a Work that is already open** in this
+    /// process — Work ▸ New Window. `None` when `work_id` names no
+    /// currently-open Work, which is the one thing the caller cannot rule out
+    /// on its own (a `work_id` read from a window whose project was closed
+    /// between the menu opening and the click).
+    ///
+    /// This is the create-**or-share** half of the registry's resolution
+    /// mechanism finally being used: the live [`WorkSession`] is resolved
+    /// through [`WorkRegistry::attach`], not minted, so both windows share one
+    /// `AppIds`, one set of singles, one undo stack, one `OpenDocsStore` and one
+    /// save/dirty state. Typing in either window is the same edit to the same
+    /// document, and only the *last* window to close tears any of it down.
+    ///
+    /// Two things are decided here rather than in `App`, because both must be
+    /// known before the window exists:
+    ///
+    ///   * the **ordinal** ([`WorkRegistry::reserve_window_ordinal`]) — the
+    ///     window's fixed "which window on this Work am I" number, which its
+    ///     title suffix and its persistence id are both derived from;
+    ///   * the **string id** ([`attached_window_id_for`]) — its identity in
+    ///     bastyde's window map and the key its geometry is saved under.
+    ///
+    /// The refcount `attach` bumps is released symmetrically by
+    /// `WorkRegistry::remove_window`, driven by this window's own `on_removed`
+    /// hook — the same path every other window's release already takes.
+    pub fn attached_window_config(
+        &self,
+        work_id: u64,
+        path: &str,
+    ) -> Option<(WindowConfig, InitialWindowState)> {
+        let session = self.registry.attach(work_id)?;
+        let ordinal = self.registry.reserve_window_ordinal(work_id);
+        Some(self.build_window(
+            PendingAction::AttachExisting {
+                work_id,
+                path: path.to_string(),
+                ordinal,
+            },
+            Some(session),
+        ))
+    }
+
+    /// The shared body of [`Self::window_config`] and
+    /// [`Self::attached_window_config`]. `attached` is the already-open Work's
+    /// live session (Work ▸ New Window) or `None` to mint a fresh one.
+    fn build_window(
+        &self,
+        action: PendingAction,
+        attached: Option<WorkSession>,
+    ) -> (WindowConfig, InitialWindowState) {
         let app_ctx_root = self.app_ctx.clone();
-        let ids = AppIds::new();
-        let outline = OutlineViewModel::new_default(app_ctx_root.clone(), ids.clone());
         let format = self.format.clone();
+        // A second window on an already-open Work is numbered — and so
+        // *identified* — the moment it is built; every other window is the
+        // first on its Work until its own Load/New says otherwise.
+        let ordinal = match &action {
+            PendingAction::AttachExisting { ordinal, .. } => *ordinal,
+            _ => 1,
+        };
+        // Fixed for this window's whole life — see `App::attached` for what it
+        // decides (desk ownership) and why it must not be re-derived later.
+        let is_attached = matches!(&action, PendingAction::AttachExisting { .. });
+        let id = attached_window_id_for(action.target_path(), ordinal);
+        // Tier 2 (the Work's own state) is either shared with the sibling
+        // window that already shows this Work, or minted fresh for the Work
+        // this window is about to load/create. Tier 3 — the outline and its
+        // `DockingModel` — is always this window's own, even when the Work is
+        // shared: two windows on one project each arrange their own desk.
+        let (session, ids, outline) = match attached {
+            Some(session) => {
+                let ids = session.ids.clone();
+                let outline = OutlineViewModel::new_default(app_ctx_root.clone(), ids.clone());
+                (session, ids, outline)
+            }
+            None => {
+                let ids = AppIds::new();
+                let outline = OutlineViewModel::new_default(app_ctx_root.clone(), ids.clone());
+                let session = WorkSession::new(
+                    app_ctx_root.clone(),
+                    ids.clone(),
+                    self.spellcheck.clone(),
+                    outline.docking(),
+                    self.backup_settings.clone(),
+                    self.workspace_layout_service.clone(),
+                    self.tree_expansion_service.clone(),
+                );
+                (session, ids, outline)
+            }
+        };
         let export = ExportViewModel::new(app_ctx_root.clone(), ids.clone());
-        let session = WorkSession::new(
-            app_ctx_root.clone(),
-            ids.clone(),
-            self.spellcheck.clone(),
-            outline.docking(),
-            self.backup_settings.clone(),
-            self.workspace_layout_service.clone(),
-            self.tree_expansion_service.clone(),
-        );
         let registry = self.registry.clone();
         let quit = self.quit.clone();
         // Let this Work's on-close backup hand control back to the quit sequencer
@@ -488,12 +642,17 @@ impl ProjectWindowFactory {
         session.backup_scheduler.set_quit_sequencer(quit.clone());
         let single_work = session.single_work.clone();
         let single_work_info = session.single_work_info.clone();
-        // Scope D — window titles. `1` until `App::build`'s own `LoadWork`/
-        // `NewWork` subscriber calls `WorkRegistry::register_window` and
-        // writes back whatever ordinal it was actually assigned (see
-        // `window_title_text`'s doc for why `1` never shows a suffix, and
-        // `App::new`'s `window_ordinal` parameter for the write-back).
-        let window_ordinal: Signal<usize> = Signal::new(1);
+        // Scope D — window titles. For a Load/New window this is `1` until
+        // `App::build`'s own `LoadWork`/`NewWork` subscriber calls
+        // `WorkRegistry::register_window` and writes back whatever ordinal it
+        // was actually assigned (see `window_title_text`'s doc for why `1`
+        // never shows a suffix, and `App::new`'s `window_ordinal` parameter for
+        // the write-back). A Work ▸ New Window window already knows its number
+        // — it was reserved before the window was built, precisely so its
+        // string id could be derived from it — so it starts with the real value
+        // and its title reads "(Window 2)" from the very first frame rather
+        // than flickering through the un-suffixed form.
+        let window_ordinal: Signal<usize> = Signal::new(ordinal);
         let title_text = window_title_text(&single_work, &window_ordinal);
         let autosave_menu = self.autosave_menu.clone();
         let spellcheck_menu = self.spellcheck_menu.clone();
@@ -603,6 +762,19 @@ impl ProjectWindowFactory {
             // always vetoes the framework's own close, regardless of branch —
             // the guard performs the actual transition itself, either at once
             // or once a deferred save lands.
+            //
+            // **Except when a sibling window still shows this Work** (Work ▸ New
+            // Window). Then closing this window is closing a *view*, not the
+            // project: the Work stays open, its edits stay exactly where they
+            // are, and the sibling goes on showing them. So there is nothing to
+            // guard — prompting "you have unsaved changes" for a project that is
+            // not going anywhere would be a lie, an on-close backup would fire
+            // for a project still being edited, and returning to the Launcher
+            // would be answering a question nobody asked. The framework's own
+            // close is allowed through instead, and `on_removed` below does the
+            // rest: this window's `OpenDoc` refs and flush hook released, the
+            // Work's refcount dropped by one, its undo stack left alone because
+            // `WorkRegistry` reports this was not the last window on it.
             .on_close_requested({
                 let unsaved = unsaved.clone();
                 let autosave = autosave_menu.clone();
@@ -611,7 +783,28 @@ impl ProjectWindowFactory {
                 let backup_mode = backup_mode.clone();
                 let app_ctx_guard = app_ctx_root.clone();
                 let ids = session.ids.clone();
+                let registry_guard = registry.clone();
+                let layout_guard = session.workspace_layout.clone();
                 move |ctx| {
+                    let shared_with_a_sibling = ids
+                        .work_id
+                        .get()
+                        .is_some_and(|work_id| registry_guard.window_count_for(work_id) > 1);
+                    if shared_with_a_sibling {
+                        // The desk belongs to the window that loaded the project
+                        // (see `App::attached`), and this is its last chance to
+                        // write it: the Work lives on in the sibling, so no
+                        // `CloseWork` — and none of the capture that hangs off
+                        // it — will ever run for this window. Captured here,
+                        // while its `DockingModel` and editors are still live,
+                        // rather than left to the sibling's eventual close,
+                        // which would read the same handles long after this
+                        // window's tree was dropped.
+                        if !is_attached {
+                            crate::app::capture_workspace_layout(&layout_guard);
+                        }
+                        return CloseResponse::Close;
+                    }
                     guard_unsaved_exit(
                         ctx,
                         &app_ctx_guard,
@@ -723,6 +916,19 @@ impl ProjectWindowFactory {
                                 MenuEntry::new(tr!(menu_open_work()))
                                     .intent("work.open")
                                     .shortcut("work.open"),
+                            )
+                            // A second window onto the Work this one already
+                            // shows — same project, same edits, its own desk.
+                            // Hidden with no project open: there is nothing to
+                            // open a second view of. Same `show_open` signal the
+                            // Close/Backups entries below use, so the whole
+                            // "needs a project" group appears and disappears
+                            // together.
+                            .item(
+                                MenuEntry::new(tr!(menu_new_window()))
+                                    .visible(show_open.clone())
+                                    .intent("window.new")
+                                    .shortcut("window.new"),
                             )
                             // Import from another writing app. A submenu so
                             // more importers can slot in later; each opens its
@@ -1517,6 +1723,191 @@ mod tests {
         );
     }
 
+    // ── Second windows on one project (Work ▸ New Window) ────────────────
+
+    /// The first window on a project must keep the id its geometry has always
+    /// been saved under — anything else silently orphans every existing
+    /// `window_state.toml` row the day this ships.
+    #[test]
+    fn the_first_window_on_a_project_keeps_the_plain_id() {
+        let path = "/tmp/skribisto-attached-id-test-does-not-exist.skrib";
+        assert_eq!(attached_window_id_for(path, 1), window_id_for(path));
+        // Defensive: an ordinal of 0 is not reachable (they start at 1), but it
+        // must degrade to the base id rather than producing `-w0`.
+        assert_eq!(attached_window_id_for(path, 0), window_id_for(path));
+    }
+
+    /// Every further window is a distinct identity — distinct from the first
+    /// and from each other. bastyde's `WindowManager` overwrites its
+    /// `string_to_id` entry rather than rejecting a duplicate, so a collision
+    /// here would not fail loudly: the newer window would silently steal the
+    /// older one's identity, and `find_window` (hence `open_or_focus_project`,
+    /// the IPC raise path and the switcher) would resolve to the wrong one.
+    #[test]
+    fn every_further_window_on_one_project_gets_its_own_id() {
+        let path = "/tmp/skribisto-attached-id-test-does-not-exist.skrib";
+        let base = window_id_for(path);
+        let second = attached_window_id_for(path, 2);
+        let third = attached_window_id_for(path, 3);
+
+        assert_eq!(second, format!("{base}-w2"));
+        assert_ne!(
+            second, base,
+            "the second window must not claim the first's id"
+        );
+        assert_ne!(third, second, "two further windows must not share one id");
+        assert!(
+            second.starts_with(&base),
+            "a second window's id must stay recognisably derived from its project's"
+        );
+    }
+
+    /// Two different projects' second windows must not collide either — the
+    /// suffix disambiguates *within* a project, never across them.
+    #[test]
+    fn second_windows_of_different_projects_do_not_collide() {
+        let a = attached_window_id_for("/tmp/skribisto-attached-a-does-not-exist.skrib", 2);
+        let b = attached_window_id_for("/tmp/skribisto-attached-b-does-not-exist.skrib", 2);
+        assert_ne!(a, b);
+    }
+
+    /// The id is a pure function of (project, ordinal): reopening a second
+    /// window on the same project at the same ordinal must land on the same
+    /// remembered geometry.
+    #[test]
+    fn an_attached_window_id_is_deterministic() {
+        let path = "/tmp/skribisto-attached-id-test-does-not-exist.skrib";
+        assert_eq!(
+            attached_window_id_for(path, 2),
+            attached_window_id_for(path, 2)
+        );
+    }
+
+    // ── `attached_window_config` (the Work ▸ New Window factory path) ──────
+
+    /// A factory over a caller-supplied registry, so a test can register a Work
+    /// and then ask for a second window on it. (`view_models::welcome`'s own
+    /// helper builds its registry internally, which is fine there and useless
+    /// here.)
+    fn test_factory(app_ctx: Rc<AppContext>, registry: WorkRegistry) -> ProjectWindowFactory {
+        use crate::models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
+        use crate::spellcheck::SpellcheckService;
+        ProjectWindowFactory::new(
+            app_ctx,
+            registry,
+            SpellcheckService::new(),
+            BackupSettingsViewModel::new(BackupSettingsService::in_memory_default()),
+            WorkspaceLayoutService::in_memory_default(),
+            TreeExpansionService::in_memory_default(),
+            Signal::new(false),
+            Signal::new(true),
+            FormatViewModel::detached(),
+        )
+    }
+
+    /// The race the menu item cannot rule out on its own: the Work was closed
+    /// between the menu opening and the click. No window, rather than a window
+    /// onto nothing — and, critically, rather than falling back to *loading the
+    /// file again*, which would give two independent `Work`s for one project.
+    #[test]
+    fn attaching_to_a_work_that_is_not_open_yields_no_window() {
+        let app_ctx = Rc::new(AppContext::new());
+        let registry = WorkRegistry::new();
+        let factory = test_factory(app_ctx, registry);
+
+        assert!(
+            factory
+                .attached_window_config(404, "/tmp/skribisto-attach-test.skrib")
+                .is_none()
+        );
+    }
+
+    /// The heart of the feature: a second window on an open Work shares that
+    /// Work's live session — one `AppIds`, one set of singles, one undo stack —
+    /// rather than minting a second one, and takes its own identity (ordinal,
+    /// string id) so the two windows never collide in bastyde's window map.
+    #[test]
+    fn a_second_window_shares_the_works_session_and_takes_its_own_identity() {
+        let app_ctx = Rc::new(AppContext::new());
+        let registry = WorkRegistry::new();
+        let session = crate::sessions::WorkSession::for_test();
+        session.ids.work_id.set(Some(1));
+        registry.register(1, session.clone());
+        // The Work's first window, exactly as its own `LoadWork` subscriber
+        // binds it — the state Work ▸ New Window is always invoked from.
+        registry.register_window(
+            bastyde::prelude::BastydeWindowId::new(1),
+            1,
+            None,
+            Rc::new(|_| {}),
+            Rc::new(|| {}),
+        );
+        let factory = test_factory(app_ctx, registry.clone());
+
+        let path = "/tmp/skribisto-attach-test.skrib";
+        let (config, state) = factory
+            .attached_window_config(1, path)
+            .expect("the Work is open, so a second window on it must be buildable");
+
+        assert_eq!(
+            config.string_id.as_deref(),
+            Some(attached_window_id_for(path, 2).as_str()),
+            "the second window must carry its own persistence id, never the first's"
+        );
+        // Shared, not copied: a write through the registered session is visible
+        // through the new window's — they are one object.
+        session.ids.work_info_id.set(Some(99));
+        assert_eq!(
+            state.session.ids.work_info_id.get(),
+            Some(99),
+            "the attached window must share the Work's live session, not a fresh one"
+        );
+        assert_eq!(
+            registry.window_count_for(1),
+            2,
+            "attaching must take a reference the new window's close will drop"
+        );
+    }
+
+    /// Each further window gets its own ordinal and its own id — the mechanism
+    /// is not limited to a second window, and none of them may collide.
+    #[test]
+    fn a_third_window_does_not_reuse_the_seconds_identity() {
+        let app_ctx = Rc::new(AppContext::new());
+        let registry = WorkRegistry::new();
+        registry.register(1, crate::sessions::WorkSession::for_test());
+        registry.register_window(
+            bastyde::prelude::BastydeWindowId::new(1),
+            1,
+            None,
+            Rc::new(|_| {}),
+            Rc::new(|| {}),
+        );
+        let factory = test_factory(app_ctx, registry.clone());
+
+        let path = "/tmp/skribisto-attach-test.skrib";
+        let (second, _) = factory.attached_window_config(1, path).expect("second window");
+        let (third, _) = factory.attached_window_config(1, path).expect("third window");
+
+        assert_eq!(second.string_id.as_deref(), Some(attached_window_id_for(path, 2).as_str()));
+        assert_eq!(third.string_id.as_deref(), Some(attached_window_id_for(path, 3).as_str()));
+        assert_ne!(second.string_id, third.string_id);
+        assert_eq!(registry.window_count_for(1), 3);
+    }
+
+    /// A window that *loads* a project keeps the plain id its geometry has
+    /// always been saved under — the suffix is only ever an addition.
+    #[test]
+    fn a_loading_window_keeps_the_plain_project_id() {
+        let app_ctx = Rc::new(AppContext::new());
+        let factory = test_factory(app_ctx, WorkRegistry::new());
+
+        let path = "/tmp/skribisto-attach-test.skrib";
+        let (config, _) = factory.window_config(PendingAction::Load(path.to_string()));
+
+        assert_eq!(config.string_id.as_deref(), Some(window_id_for(path).as_str()));
+    }
+
     // ── Menu mnemonics ────────────────────────────────────────────────────
     //
     // A mnemonic must be unique *within* one keyboard namespace, and each open
@@ -1555,6 +1946,7 @@ mod tests {
             &[
                 "menu-new-work",
                 "menu-open-work",
+                "menu-new-window",
                 "menu-import-from",
                 "menu-export",
                 "menu-save",

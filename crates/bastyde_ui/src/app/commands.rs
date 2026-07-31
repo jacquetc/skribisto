@@ -87,6 +87,11 @@ pub(super) struct CommandDeps {
     pub session: crate::sessions::WorkSession,
     /// The app-global Work registry.
     pub registry: crate::sessions::WorkRegistry,
+    /// This window was opened by Work ▸ New Window onto a Work a sibling already
+    /// shows (see `crate::app::App::attached`). Paired with `registry`/`ids` by
+    /// `crate::app::may_switch_project_in_place`, which the New Work / Open Work
+    /// doors in [`file`] consult before replacing this window's project.
+    pub attached: bool,
     /// The app-global quit sequencer — `app.quit`'s whole implementation. Shared
     /// (not per-window) precisely because a quit spans every window: two windows
     /// running their own sequence over the same Works would prompt twice for each.

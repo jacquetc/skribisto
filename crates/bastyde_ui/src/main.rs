@@ -1158,12 +1158,40 @@ fn prune_orphaned_window_state(window_state: &WindowStateService, known_paths: &
         .map(|p| windows::window_id_for(p))
         .collect();
     for label in window_state.labels() {
-        if !label.starts_with("work-") || known_labels.contains(&label) {
+        if !label.starts_with("work-") || is_known_window_label(&label, &known_labels) {
             continue;
         }
         if let Err(e) = window_state.forget(&label) {
             eprintln!("skribisto: could not forget stale window state '{label}': {e}");
         }
+    }
+}
+
+/// Does `label` name a window of a project we still know about?
+///
+/// Not a plain set lookup, because one project can own **several** geometry
+/// rows since Work ▸ New Window: its first window saves under the bare
+/// `windows::window_id_for(path)`, and each further one under
+/// `{that}-w{ordinal}` (see `windows::attached_window_id_for`). Testing only for
+/// exact membership would leave every `-w2`/`-w3` row unmatched and therefore
+/// pruned — on *every* launch, so a second window's size and placement could
+/// never survive one, and the loss would look like the geometry feature simply
+/// not working for second windows rather than like a sweep deleting it.
+///
+/// The suffix must parse as a number rather than merely being present: `-w` is
+/// otherwise the start of any string at all, and this decides what gets
+/// deleted.
+fn is_known_window_label(label: &str, known_labels: &std::collections::HashSet<String>) -> bool {
+    if known_labels.contains(label) {
+        return true;
+    }
+    match label.rsplit_once("-w") {
+        Some((base, ordinal)) => {
+            !ordinal.is_empty()
+                && ordinal.bytes().all(|b| b.is_ascii_digit())
+                && known_labels.contains(base)
+        }
+        None => false,
     }
 }
 
@@ -1276,6 +1304,72 @@ mod tests {
         );
 
         let _ = std::fs::remove_file(&path);
+    }
+
+    /// Work ▸ New Window: a project owns one geometry row per window it has ever
+    /// had — the bare id for the first, `-w{ordinal}` for the rest. The sweep
+    /// must keep them all, and it runs on **every** launch, so getting this
+    /// wrong would not lose a second window's geometry occasionally, it would
+    /// lose it always — looking like the feature had simply never worked.
+    #[test]
+    fn prune_orphaned_window_state_keeps_a_known_projects_further_windows() {
+        let path = std::env::temp_dir().join(format!(
+            "skribisto_test_{}_window_state_prune_attached.toml",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&path);
+        let window_state = WindowStateService::open_at(path.clone(), std::time::Duration::ZERO)
+            .expect("open a fresh window-state file");
+
+        let known_path = "/tmp/skribisto-prune-test-attached-project.skrib".to_string();
+        let known_label = windows::window_id_for(&known_path);
+        let second = windows::attached_window_id_for(&known_path, 2);
+        let third = windows::attached_window_id_for(&known_path, 7);
+        // Same shape, unknown project — must still be pruned: the suffix is not
+        // a licence to keep anything, only to trace a row back to its project.
+        let orphan_second = format!("work-0000000000000000-w2");
+
+        let sample = |label: &str| PerWindowState {
+            label: label.to_string(),
+            x: 0,
+            y: 0,
+            width: 800,
+            height: 600,
+            placement: WindowPlacement::Floating,
+        };
+        window_state.record(sample(&known_label)).unwrap();
+        window_state.record(sample(&second)).unwrap();
+        window_state.record(sample(&third)).unwrap();
+        window_state.record(sample(&orphan_second)).unwrap();
+
+        prune_orphaned_window_state(&window_state, &[known_path]);
+
+        let labels: std::collections::HashSet<String> = window_state.labels().into_iter().collect();
+        assert!(labels.contains(&known_label), "the first window's row must survive");
+        assert!(labels.contains(&second), "a second window's row must survive");
+        assert!(labels.contains(&third), "any ordinal's row must survive, not just -w2");
+        assert!(
+            !labels.contains(&orphan_second),
+            "a -w suffix on an unknown project must not rescue the row"
+        );
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// The suffix test decides what gets deleted, so it must not be fooled by a
+    /// label that merely contains `-w`.
+    #[test]
+    fn a_window_label_suffix_must_be_a_number_to_count() {
+        let mut known = std::collections::HashSet::new();
+        known.insert("work-abc".to_string());
+
+        assert!(is_known_window_label("work-abc", &known), "the base id itself");
+        assert!(is_known_window_label("work-abc-w2", &known));
+        assert!(is_known_window_label("work-abc-w13", &known));
+        assert!(!is_known_window_label("work-abc-w", &known), "no ordinal at all");
+        assert!(!is_known_window_label("work-abc-wx", &known), "not a number");
+        assert!(!is_known_window_label("work-abcd", &known), "a different project");
+        assert!(!is_known_window_label("work-def-w2", &known), "an unknown project");
     }
 
     /// The argv project must count as "known" even when it is in neither the

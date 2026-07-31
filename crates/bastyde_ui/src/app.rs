@@ -211,6 +211,29 @@ pub enum PendingAction {
     Load(String),
     /// Create a brand-new work from this DTO (the Launcher's "New Work").
     New(NewWorkDto),
+    /// Show a Work that is **already open** in another window of this process —
+    /// Work ▸ New Window. The one action that performs no backend mutation at
+    /// all: the `Work` is loaded, its `AppIds` are seeded, its singles point at
+    /// it, and its undo stack is open, because a sibling window did all of that
+    /// already. What is left is purely this window's own share of the seeding —
+    /// see `App::build`'s `attach_to_open_work`, which stands in for the
+    /// `LoadWork` event that will never fire here.
+    ///
+    /// `work_id` is resolved (and its session refcount bumped, via
+    /// [`crate::sessions::WorkRegistry::attach`]) by
+    /// `ProjectWindowFactory::attached_window_config` *before* the window is
+    /// opened, so by the time this reaches `App` the Work cannot have gone away
+    /// underneath it. `path`/`ordinal` are carried for the window's persistence
+    /// id and its title suffix.
+    AttachExisting {
+        work_id: u64,
+        /// The Work's own file path — the base its window-persistence id is
+        /// derived from, exactly as [`Self::Load`]'s is.
+        path: String,
+        /// The ordinal reserved for this window on `work_id` (see
+        /// [`crate::sessions::WorkRegistry::reserve_window_ordinal`]).
+        ordinal: usize,
+    },
 }
 
 impl PendingAction {
@@ -221,6 +244,17 @@ impl PendingAction {
         match self {
             PendingAction::Load(path) => path,
             PendingAction::New(dto) => &dto.file_name,
+            PendingAction::AttachExisting { path, .. } => path,
+        }
+    }
+
+    /// The `work_id` this action attaches to, when it attaches to one at all.
+    /// `None` for [`Self::Load`]/[`Self::New`] — neither knows its Work's id
+    /// until the backend mints it.
+    pub fn attached_work_id(&self) -> Option<u64> {
+        match self {
+            PendingAction::AttachExisting { work_id, .. } => Some(*work_id),
+            _ => None,
         }
     }
 }
@@ -236,6 +270,17 @@ impl PendingAction {
 /// `on_close_requested` guard must return `CloseResponse::Veto` afterward:
 /// this function performs the actual close itself, via `close_window_forced`,
 /// rather than deferring to the guard's own return value.
+///
+/// **This closes the WORK, so it closes every window showing it.** Since
+/// Work ▸ New Window, a project can have several windows
+/// (`WorkRegistry::windows_for`), and `close_work` tears out the one backend
+/// subtree they all read: a sibling left open would be a window onto nothing —
+/// tabs closed by the shared `CloseWork` subscriber, an empty tree, and a title
+/// still naming a project that no longer exists. Closing *a window* rather than
+/// the project is the other, narrower gesture (the title-bar X / Alt+F4 with a
+/// sibling still open), and it never reaches here — see the close guard in
+/// `shell::windows`, which resolves that case before consulting the unsaved
+/// guard at all.
 pub fn close_work_and_return_to_launcher(
     app_ctx: &Rc<AppContext>,
     ids: &AppIds,
@@ -259,8 +304,36 @@ pub fn close_work_and_return_to_launcher(
     // Work's window is open; reading it here would close the WRONG Work).
     // Skipped entirely when none is open, the same no-op today's unconditional
     // call silently was against an empty store.
+    //
+    // The sibling windows on this same Work are collected *before* the close, so
+    // the list is read while the registry bindings are still intact, and closed
+    // *after* it, so each one's `CloseWork` subscriber has already run in its own
+    // window (clearing its tabs and unpointing its tree) before its window goes
+    // away. `close_window_by_id` is deliberately the unconditional close: their
+    // own close guards must not run — the project is already gone, so there is
+    // nothing left for them to guard, and letting each one open its own Launcher
+    // would spawn one per window.
+    let siblings = ids
+        .work_id
+        .get()
+        .map(|work_id| {
+            let me = ctx.window().map(|w| w.id());
+            ctx.app_state::<crate::sessions::WorkRegistry>()
+                // Tier 1 — genuinely one registry per process, so unlike
+                // `AppIds`/`WorkspaceLayoutViewModel` this `app_state` lookup is
+                // the right way to reach it, not a first-window-wins trap.
+                .map(|reg| reg.windows_for(work_id))
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|id| Some(*id) != me)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     if let Some(work_id) = ids.work_id.get() {
         let _ = work_management_commands::close_work(app_ctx, &CloseWorkDto { work_id });
+    }
+    for window in siblings {
+        ctx.close_window_by_id(window);
     }
     // Scope E fix: with M Works open, a DIFFERENT window's own close-to-launcher
     // may already have opened the Launcher (bastyde's `WindowManager::create_window`
@@ -277,6 +350,46 @@ pub fn close_work_and_return_to_launcher(
         }
     }
     ctx.close_window_forced();
+}
+
+/// **May this window replace its own project in place?** `false` means it must
+/// open the incoming project in a *new* window instead — the answer every one of
+/// the four switch doors (File ▸ New Work, File ▸ Open Work…, the switcher's
+/// "Open here", the import toast's "Open now") consults before doing anything.
+///
+/// An in-place switch re-points the window's `AppIds` (`AppIds::seed`) and
+/// closes its outgoing Work (`close_outgoing_work`). Both are correct exactly
+/// when this window is the only one showing that Work. Since Work ▸ New Window,
+/// it may not be — and `AppIds` is *shared* between windows on one Work, not
+/// copied, so an in-place switch from either of them would:
+///
+///   * delete the backend subtree the sibling is still displaying (its tree, its
+///     open tabs, its unsaved edits — all reading rows that no longer exist);
+///   * re-seed the shared ids to the incoming Work, so the sibling's own event
+///     guards (`AppIds::is_event_for_my_work`) would start answering about a
+///     project it never opened;
+///   * and race the sibling's `CloseWork` subscriber, since both windows resolve
+///     "is this event mine?" through the very same signal.
+///
+/// Two conditions, not one. `window_count_for(work_id) > 1` is the live fact.
+/// `attached` is the durable one: a Work ▸ New Window window never owns the
+/// project's saved desk (see [`App::attached`]), and `WorkSession::workspace_layout`
+/// still holds the *original* window's `DockingModel` and editors, so even once
+/// its sibling has closed and it is alone on the Work, an in-place switch there
+/// would persist a dead window's desk under the incoming project's key. A window
+/// that arrived by attaching therefore always opens elsewhere, for as long as it
+/// lives.
+pub(crate) fn may_switch_project_in_place(
+    registry: &WorkRegistry,
+    ids: &AppIds,
+    attached: bool,
+) -> bool {
+    if attached {
+        return false;
+    }
+    !ids.work_id
+        .get()
+        .is_some_and(|work_id| registry.window_count_for(work_id) > 1)
 }
 
 /// Release the open project and terminate the process — the `Quit` sibling
@@ -667,6 +780,31 @@ pub struct App {
     initial_action: Option<PendingAction>,
     /// One-shot guard so `initial_action` runs only on the first build.
     initial_loaded: bool,
+    /// This window was opened by **Work ▸ New Window** onto a Work a sibling
+    /// window already shows ([`PendingAction::AttachExisting`]). Derived once in
+    /// [`App::new`] rather than read off `initial_action`, which `build`
+    /// consumes on its first pass.
+    ///
+    /// It decides one thing: **this window does not own the project's saved
+    /// desk.** `WorkSession::workspace_layout` is Tier 2 (one per Work) but
+    /// holds Tier-3 state — the `DockingModel` it was constructed with, plus the
+    /// `EditorsViewModel`/`OutlineViewModel` injected into it — all of which
+    /// belong to whichever window built them. With two windows on one Work,
+    /// letting both inject would leave one shared handle holding window B's
+    /// editors and window A's docks, and `capture()` would then persist a desk
+    /// that neither window ever had. So the window that reached its Work by
+    /// loading or creating it keeps the desk, and an attached window never
+    /// injects, never restores and never captures: it opens on the default
+    /// arrangement and leaves the saved one alone.
+    ///
+    /// The flag is fixed for the window's whole life, not re-derived per build.
+    /// That matters after the first window closes and this one is left alone on
+    /// the Work: `workspace_layout` still points at the window that is now gone,
+    /// so this one must keep its hands off the desk even though it is, by then,
+    /// the only window there is. (See `shell::windows`'s close guard for the
+    /// other half — the owning window captures its desk on the way out even when
+    /// a sibling keeps the Work open.)
+    attached: bool,
     /// Created once on first build (its column-width signal needs `ctx.settings()`).
     editors: Option<EditorsViewModel>,
     /// Stable id for the trailing Inspector dock (created once so a rebuild keeps
@@ -755,6 +893,7 @@ impl App {
             save_spinner_visible: Signal::new(false),
             backup_mode,
             backup_context,
+            attached: matches!(initial_action, PendingAction::AttachExisting { .. }),
             initial_action: Some(initial_action),
             initial_loaded: false,
             editors: None,
@@ -1161,7 +1300,19 @@ impl Widget for App {
         // (`set_editors` just re-points). Kept as a local `Option` (rather than
         // `session.workspace_layout` directly) so the Load/New subscribers below,
         // which pre-date this field always being present, don't need reshaping.
-        let workspace_layout = Some(session.workspace_layout.clone());
+        //
+        // **`None` for an attached window** (Work ▸ New Window — see
+        // [`Self::attached`]). `workspace_layout` is one shared handle per Work
+        // holding one window's `DockingModel` and one window's injected
+        // editors/outline; a second window injecting into it would leave it
+        // describing a desk that exists in neither window (window B's tabs over
+        // window A's docks) and `capture()` would persist exactly that. An
+        // attached window therefore drops out of desk persistence entirely — the
+        // `Option` this was already carrying for headless builds is the seam
+        // that says so, and every downstream `if let Some(layout)` (the restore
+        // in the backup-sniff subscriber, `ProjectLifecycleViewModel`'s own
+        // capture) inherits the exclusion without a second flag.
+        let workspace_layout = (!self.attached).then(|| session.workspace_layout.clone());
         if let Some(layout) = &workspace_layout {
             layout.set_editors(editors.clone());
             // Same idempotent re-point, for `capture_tree_expansion`'s own use of
@@ -1629,32 +1780,45 @@ impl Widget for App {
         // here, once — the guard itself is created in `main` (it holds the same
         // `unsaved`/`backup_mode`/autosave signals as the close guard) and reached
         // from outside `App` via app-state.
+        //
+        // **An attached window installs neither.** `ProjectSwitchViewModel` is
+        // one process-wide instance with one slot per hook, and both hooks are
+        // bound to the installing window (its editors; its `AppIds`). A
+        // Work ▸ New Window window can never perform an in-place switch anyway
+        // (`may_switch_project_in_place` — it shares its `AppIds` with the
+        // sibling, and goes on sharing its desk-owning `workspace_layout` even
+        // after that sibling closes), so installing here would only overwrite
+        // the owning window's hooks with a second set that nothing will ever
+        // legitimately fire — leaving the owner's own Ctrl+N/Ctrl+O flushing the
+        // wrong window's editors into the wrong window's project.
         let project_switch = ctx
             .app_state::<ProjectSwitchViewModel>()
             .cloned()
             .expect("ProjectSwitchViewModel registered in main");
-        project_switch.set_save_hook(Rc::new({
-            let editors = editors.clone();
-            move || editors.request_save()
-        }));
-        project_switch.set_new_work_form_hook(Rc::new({
-            let app_ctx = self.app_ctx.clone();
-            // THIS window's own `AppIds` — so "Create Work" (`NewWorkViewModel::create`)
-            // closes THIS window's own outgoing Work, never `ctx.app_state::<AppIds>()`'s
-            // stale, first-window-wins slot. See `close_outgoing_work`'s doc.
-            let ids = ids.clone();
-            move |c: &mut EventContext| {
-                let app_ctx = app_ctx.clone();
+        if !self.attached {
+            project_switch.set_save_hook(Rc::new({
+                let editors = editors.clone();
+                move || editors.request_save()
+            }));
+            project_switch.set_new_work_form_hook(Rc::new({
+                let app_ctx = self.app_ctx.clone();
+                // THIS window's own `AppIds` — so "Create Work" (`NewWorkViewModel::create`)
+                // closes THIS window's own outgoing Work, never `ctx.app_state::<AppIds>()`'s
+                // stale, first-window-wins slot. See `close_outgoing_work`'s doc.
                 let ids = ids.clone();
-                c.present_modal(
-                    ModalRequest::deferred(move |t| t.add(NewWorkPanel::new(app_ctx, ids)))
-                        .presentation(ModalPresentation::InTree)
-                        .title("New Work")
-                        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                        .size(600, 680),
-                );
-            }
-        }));
+                move |c: &mut EventContext| {
+                    let app_ctx = app_ctx.clone();
+                    let ids = ids.clone();
+                    c.present_modal(
+                        ModalRequest::deferred(move |t| t.add(NewWorkPanel::new(app_ctx, ids)))
+                            .presentation(ModalPresentation::InTree)
+                            .title("New Work")
+                            .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                            .size(600, 680),
+                    );
+                }
+            }));
+        }
         // Keep the outline tree reactive to *all* structural mutations (incl. the
         // manuscript streams' rename/merge/split/add), not just the outline's own.
         self.outline.wire(ctx);
@@ -1670,6 +1834,7 @@ impl Widget for App {
         let command_deps = commands::CommandDeps {
             app_ctx: self.app_ctx.clone(),
             ids: session.ids.clone(),
+            attached: self.attached,
             session: session.clone(),
             registry: self.registry.clone(),
             quit: self.quit.clone(),
@@ -1792,6 +1957,11 @@ impl Widget for App {
                             let ordinal = registry_for_load.register_window(
                                 window_id,
                                 work_id,
+                                // No reservation: a window that reaches a Work
+                                // through its own `load_work` is numbered on the
+                                // spot. Only Work ▸ New Window reserves ahead —
+                                // see `WorkRegistry::reserve_window_ordinal`.
+                                None,
                                 stack_teardown,
                                 window_teardown,
                             );
@@ -1816,6 +1986,113 @@ impl Widget for App {
                 },
             );
         }
+
+        // ── Work ▸ New Window: this window's stand-in for `LoadWork` ─────────
+        //
+        // A window opened by Work ▸ New Window shows a Work that is **already
+        // open** (`PendingAction::AttachExisting`). It performs no backend
+        // mutation, so no `LoadWork`/`NewWork` event will ever fire for it, and
+        // the subscriber just above — which is where a project window normally
+        // becomes live — never runs on its behalf.
+        //
+        // Everything that subscriber does splits cleanly in two, and only one
+        // half belongs here:
+        //
+        //   * **Per Work** — `ids.seed`, `open_stack`, `single_work.set_id`,
+        //     `single_work_info.set_id`, `mark_clean`, the open-registry claim,
+        //     the spell-checker re-point, the backup-mode sniff, the
+        //     workspace-layout restore. The sibling window did all of it, and
+        //     the `WorkSession` carrying the result is the very same instance
+        //     this window was handed (`WorkRegistry::attach`). Redoing any of it
+        //     would be wrong, not merely redundant: `mark_clean` would drop the
+        //     sibling's unsaved-edit tracking on the floor, and a second
+        //     open-registry claim would let the first window's release retire a
+        //     path this window still shows.
+        //   * **Per window** — the outline tree, the trash panel, the registry's
+        //     window→Work binding (with the teardowns bastyde's `on_removed`
+        //     hook will run for *this* window) and the toast audience. Those are
+        //     this window's own, and nobody else can have done them. That is
+        //     exactly the list below.
+        //
+        // `register` is deliberately absent: `attached_window_config` already
+        // bumped the session refcount via `attach`, which is the same +1
+        // `register` would contribute. Calling both would leave the Work
+        // permanently one window short of teardown.
+        let attach_seed: Rc<dyn Fn(u64, usize)> = {
+            let outline = self.outline.clone();
+            let trash = trash.clone();
+            let registry = self.registry.clone();
+            let ids = session.ids.clone();
+            let app_ctx = self.app_ctx.clone();
+            let editors = editors.clone();
+            let backup_scheduler = backup_scheduler.clone();
+            let toast_registry = toast_registry.clone();
+            let window_ordinal = self.window_ordinal.clone();
+            let search = search.clone();
+            let tree_expansion = session.tree_expansion.clone();
+            Rc::new(move |work_id: u64, ordinal: usize| {
+                // This window's own tree and trash panel: fresh models over a
+                // store that is already populated, so they need one read to
+                // catch up with the Work the sibling loaded.
+                outline.set_binder_filter(None);
+                outline.clear_search();
+                outline.reload();
+                trash.reload();
+                // The project's remembered chevrons, exactly as the `LoadWork`
+                // path applies them — this window's tree model is its own, so it
+                // starts fully collapsed otherwise, which for a large binder is
+                // a wall of book-level folders rather than the shape the writer
+                // was working in. Read-only here: an attached window never
+                // *captures* the expansion (see `App::attached`), so opening a
+                // second window can never rewrite what the first one remembers.
+                // No backup check, unlike the `LoadWork` path: this Work's
+                // backup-ness was already settled by the window that loaded it,
+                // and a backup's `backup_mode` is shared straight off the
+                // session — there is no second sniff to get wrong.
+                let remembered = tree_expansion.outline_expanded();
+                if !remembered.is_empty() {
+                    outline.model().set_expanded_keys(&remembered);
+                }
+                // The search dock's inputs are per window (each window has its
+                // own `SearchReplaceViewModel`), but the preferences they are
+                // seeded from are the project's. Without this the new window's
+                // search box silently ignores the project's saved
+                // case-sensitivity/whole-word overrides and searches with the
+                // app-wide defaults instead — the same re-seed the `LoadWork`
+                // subscriber above performs for a window that loads a project.
+                search.restore_for_project();
+                if let Some(window_id) = window_id {
+                    let stack_teardown = build_stack_teardown(app_ctx.clone(), ids.stack_id.get());
+                    let window_teardown = build_window_teardown(
+                        editors.clone(),
+                        backup_scheduler.clone(),
+                        toast_registry.clone(),
+                        window_id,
+                        ids.stack_id.get(),
+                    );
+                    // `Some(ordinal)`: the number was reserved before this
+                    // window existed, because its persistence string id is
+                    // derived from it (`shell::windows::attached_window_id_for`).
+                    // Registering with `None` here would consume a *second*
+                    // ordinal and leave the window titled "(Window 3)" while its
+                    // geometry was saved under `-w2`.
+                    let assigned = registry.register_window(
+                        window_id,
+                        work_id,
+                        Some(ordinal),
+                        stack_teardown,
+                        window_teardown,
+                    );
+                    window_ordinal.set(assigned);
+                    // Same audience as the sibling window's: a toast raised for
+                    // this Work is about a project both windows show, so both
+                    // hear it — see `crate::toast_scope`.
+                    if let Some(reg) = &toast_registry {
+                        reg.set_window_audience(window_id, Some(ToastAudience::new(work_id)));
+                    }
+                }
+            })
+        };
 
         // Detect "a backup file was opened" and enter backup mode. A separate
         // `subscribe_event_with_ctx` (needs an `EventContext` to present the choice
@@ -2037,6 +2314,8 @@ impl Widget for App {
                             let ordinal = registry_for_new.register_window(
                                 window_id,
                                 work_id,
+                                // See the identical LoadWork subscriber above.
+                                None,
                                 stack_teardown,
                                 window_teardown,
                             );
@@ -2371,6 +2650,9 @@ impl Widget for App {
             let workspace_layout = workspace_layout.clone();
             let ids = ids.clone();
             let quit_for_completed = self.quit.clone();
+            // Work-scoped, so the "who reports this failure" claim is shared by
+            // every window on this Work — see `abandon_deferred`.
+            let save_state_for_completed = save_state.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Completed),
                 move |e: &Event, c| {
@@ -2414,6 +2696,8 @@ impl Widget for App {
                             &switch,
                             None,
                             ids.work_id.get(),
+                            &save_state_for_completed,
+                            e,
                         ),
                         DeferredResume::Close => {
                             pending.set(PendingExit::None);
@@ -2450,6 +2734,8 @@ impl Widget for App {
             let switch = project_switch.clone();
             let ids = ids.clone();
             let quit_for_failed = self.quit.clone();
+            // See the Completed subscriber above.
+            let save_state_for_failed = save_state.clone();
             ctx.subscribe_event_with_ctx(
                 Origin::LongOperation(LongOperationEvent::Failed),
                 move |e: &Event, c| {
@@ -2467,6 +2753,8 @@ impl Widget for App {
                         &switch,
                         Some(&error),
                         ids.work_id.get(),
+                        &save_state_for_failed,
+                        e,
                     );
                 },
             );
@@ -2834,9 +3122,18 @@ impl Widget for App {
             // Snapshot this pristine arrangement as the reset target for a project
             // that has no saved layout (so an in-place switch to an unconfigured
             // project doesn't inherit the previous one's docks).
-            session
-                .workspace_layout
-                .set_default_docks(docking.export_state());
+            //
+            // Skipped for an attached window (Work ▸ New Window — see
+            // [`Self::attached`]): the shared `workspace_layout` describes the
+            // *owning* window's desk, and this snapshot is the reset target
+            // `restore()` falls back to. Overwriting it from a second window
+            // would hand the owner a default arrangement exported from somebody
+            // else's `DockingModel`.
+            if !self.attached {
+                session
+                    .workspace_layout
+                    .set_default_docks(docking.export_state());
+            }
         }
 
         // ── Status bar (thin) with the notification bell ─────────────────────
@@ -3050,6 +3347,15 @@ impl Widget for App {
                         eprintln!("skribisto: could not create '{target}': {e}");
                     }
                 }
+                // Work ▸ New Window — the one action with no backend call at
+                // all. The Work is already loaded and this window's `AppIds`
+                // already point at it (they are the sibling window's, shared);
+                // what is missing is this window's own share of becoming live.
+                // See `attach_seed`'s own comment for the per-Work/per-window
+                // split it implements.
+                Some(PendingAction::AttachExisting {
+                    work_id, ordinal, ..
+                }) => attach_seed(work_id, ordinal),
                 None => {}
             }
         }
@@ -3106,30 +3412,63 @@ fn abandon_deferred(
     switch: &ProjectSwitchViewModel,
     error: Option<&str>,
     work_id: Option<u64>,
+    save_state: &crate::view_models::SaveStateViewModel,
+    event: &Event,
 ) {
     if pending.get() != PendingExit::None {
         pending.set(PendingExit::None);
         exit_seq.set(None);
         switch.cancel();
+        // The *specific* report — only this window knows its close/switch was
+        // dropped, so it always speaks, and says so loudly enough that no
+        // sibling need add a bare "couldn't save" underneath it.
+        save_state.note_specific_failure_report(event);
         c.show_toast(
             Toast::error(match error {
                 Some(e) => tr!(close_save_failed(error = e.to_string())),
                 None => tr!(close_save_not_started()),
             })
+            .scoped_id(SAVE_FAILED_TOAST_ID, work_id)
             .target_work(work_id),
         );
         return;
     }
     if switch.on_save_failed(c, error) {
-        return; // it toasted "…so it wasn't replaced"
+        // It toasted "…so it wasn't replaced" — equally specific, and equally
+        // the one report this Work needs.
+        save_state.note_specific_failure_report(event);
+        return;
     }
-    // Nothing was waiting: report just the failed write.
+    // Nothing was waiting: report just the failed write — once for the Work, not
+    // once per window showing it. Every window's subscriber reaches this line for
+    // the same broadcast failure (`on_save_failed` answers all of them by design,
+    // see its doc), so without the claim a second window would stack a second,
+    // identical error toast.
+    if !save_state.claim_generic_failure_report(event) {
+        return;
+    }
     if let Some(e) = error {
-        c.show_toast(Toast::error(tr!(save_error(error = e.to_string()))).target_work(work_id));
+        c.show_toast(
+            Toast::error(tr!(save_error(error = e.to_string())))
+                .scoped_id(SAVE_FAILED_TOAST_ID, work_id)
+                .target_work(work_id),
+        );
     } else {
-        c.show_toast(Toast::error(tr!(save_not_started())).target_work(work_id));
+        c.show_toast(
+            Toast::error(tr!(save_not_started()))
+                .scoped_id(SAVE_FAILED_TOAST_ID, work_id)
+                .target_work(work_id),
+        );
     }
 }
+
+/// Dedup id (Work-scoped — see [`crate::toast_scope`]) shared by every "the save
+/// failed" toast [`abandon_deferred`] raises. One id on purpose: a specific
+/// report and a generic one are two texts for the *same* failure, so the
+/// registry's update-in-place keeps exactly one toast per Work no matter which
+/// window's subscriber runs first, and the specific text wins either way — it
+/// replaces an already-shown generic one, and suppresses a later one.
+const SAVE_FAILED_TOAST_ID: &str = "save.failed";
 
 /// Present the native picker for an existing `.skrib` and load it. Backs the
 /// global `work.open` command (File ▸ Open Work… and Ctrl+O) — the most-used
@@ -3149,7 +3488,22 @@ fn abandon_deferred(
 /// final `switch.request` call below, not snapshotted here, so the outgoing Work
 /// it names is whatever is actually open in this window at that (later, async)
 /// moment, not whatever was open when the picker was first invoked.
-fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventContext) {
+///
+/// …unless this window may not replace its project in place at all
+/// ([`may_switch_project_in_place`] — a Work ▸ New Window sibling shares its
+/// `AppIds`). Then the picked project takes the same route a backup already
+/// does: its own window, this one untouched. Deciding that *here*, after the
+/// pick, rather than at the menu is deliberate — the answer can change while the
+/// native picker is up (a sibling window can be opened or closed under it), and
+/// the state that matters is the one at the moment the load would actually
+/// happen.
+fn open_work_flow(
+    switch: ProjectSwitchViewModel,
+    ids: AppIds,
+    registry: WorkRegistry,
+    attached: bool,
+    ctx: &mut EventContext,
+) {
     let req = FileDialogRequest::pick_file()
         .title("Open Skribisto work")
         .add_filter("Skribisto work", &["skrib"]);
@@ -3158,6 +3512,7 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventCo
             let file = path.to_string_lossy().into_owned();
             let switch = switch.clone();
             let ids = ids.clone();
+            let registry = registry.clone();
             let file_for_check = file.clone();
             ectx.spawn_local_with(
                 async move {
@@ -3174,7 +3529,11 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventCo
                     // sniff still earns its keep on this path even though the
                     // Launcher's equivalent lost it: here the two branches really do
                     // differ, in-place-switch versus new window.
-                    if is_backup {
+                    // A window sharing its Work with a Work ▸ New Window sibling
+                    // takes the same route for the same reason: nothing here is
+                    // destroyed, so there is nothing to guard — the picked
+                    // project gets a window of its own.
+                    if is_backup || !may_switch_project_in_place(&registry, &ids, attached) {
                         crate::shell::windows::open_or_focus_project(ectx2, &file);
                         return;
                     }
@@ -3193,6 +3552,98 @@ fn open_work_flow(switch: ProjectSwitchViewModel, ids: AppIds, ctx: &mut EventCo
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── Work ▸ New Window: may this window replace its project in place? ────
+    //
+    // The predicate every switch door consults. It is the whole protection for
+    // the shared `AppIds`: get it wrong in the permissive direction and File ▸
+    // Open Work from either of two windows on one Work deletes the backend
+    // subtree the other one is displaying.
+
+    /// A window alone on its project switches in place, exactly as before this
+    /// feature existed — the common case must not regress.
+    #[test]
+    fn a_window_alone_on_its_project_may_switch_in_place() {
+        let registry = WorkRegistry::new();
+        let ids = AppIds::new();
+        registry.register(1, crate::sessions::WorkSession::for_test());
+        ids.work_id.set(Some(1));
+
+        assert!(may_switch_project_in_place(&registry, &ids, false));
+    }
+
+    /// With no project open there is nothing to replace and nothing to protect.
+    #[test]
+    fn a_window_with_no_project_may_switch_in_place() {
+        let registry = WorkRegistry::new();
+        let ids = AppIds::new();
+        assert!(may_switch_project_in_place(&registry, &ids, false));
+    }
+
+    /// The live condition: a sibling window is showing this very Work, and the
+    /// two share one `AppIds`.
+    #[test]
+    fn a_window_sharing_its_work_with_a_sibling_may_not_switch_in_place() {
+        let registry = WorkRegistry::new();
+        let ids = AppIds::new();
+        registry.register(1, crate::sessions::WorkSession::for_test());
+        registry.attach(1).expect("a second window on Work 1");
+        ids.work_id.set(Some(1));
+
+        assert!(!may_switch_project_in_place(&registry, &ids, false));
+    }
+
+    /// …and it becomes permitted again once that sibling closes: the reason was
+    /// the sharing, not a one-way door.
+    #[test]
+    fn the_last_window_left_on_a_work_may_switch_in_place_again() {
+        let registry = WorkRegistry::new();
+        let ids = AppIds::new();
+        registry.register(1, crate::sessions::WorkSession::for_test());
+        registry.attach(1).expect("a second window on Work 1");
+        ids.work_id.set(Some(1));
+        assert!(!may_switch_project_in_place(&registry, &ids, false));
+
+        registry.unregister(1); // the sibling closed
+        assert!(may_switch_project_in_place(&registry, &ids, false));
+    }
+
+    /// The durable condition, and the one that is easy to miss: a window opened
+    /// BY Work ▸ New Window may never switch in place, even once it is the only
+    /// window left on the Work. It does not own the project's saved desk — the
+    /// shared `workspace_layout` still holds the *original* window's
+    /// `DockingModel` and editors — so an in-place switch there would persist a
+    /// dead window's desk under the incoming project's key.
+    #[test]
+    fn an_attached_window_may_never_switch_in_place_even_when_left_alone() {
+        let registry = WorkRegistry::new();
+        let ids = AppIds::new();
+        registry.register(1, crate::sessions::WorkSession::for_test());
+        ids.work_id.set(Some(1));
+        // No sibling at all: only `attached` stands in the way.
+        assert_eq!(registry.window_count_for(1), 1);
+
+        assert!(!may_switch_project_in_place(&registry, &ids, true));
+    }
+
+    /// Work ▸ New Window carries the ordinal that decides both the window's
+    /// title suffix and its persistence id, so `PendingAction` has to surface
+    /// the Work it attaches to — and must not claim one for the actions that
+    /// have no `work_id` until the backend mints it.
+    #[test]
+    fn only_an_attaching_action_names_a_work_up_front() {
+        let attach = PendingAction::AttachExisting {
+            work_id: 7,
+            path: "/tmp/x.skrib".into(),
+            ordinal: 2,
+        };
+        assert_eq!(attach.attached_work_id(), Some(7));
+        assert_eq!(attach.target_path(), "/tmp/x.skrib");
+
+        let load = PendingAction::Load("/tmp/y.skrib".into());
+        assert_eq!(load.attached_work_id(), None);
+        assert_eq!(load.target_path(), "/tmp/y.skrib");
+    }
 
     /// Distraction-free mode takes the editor tab strip away, and only the
     /// "keep the editor tabs" setting brings it back — and only *inside* the

@@ -112,6 +112,15 @@ struct Inner {
     last_completed: RefCell<Option<(String, SaveLanded)>>,
     /// The same idea for `LongOperation::Failed` — see [`Self::on_save_failed`].
     last_failed: RefCell<Option<(String, String)>>,
+    /// Which op id has already had its failure *reported to the user*, and
+    /// whether that report was the specific kind — see
+    /// [`SaveStateViewModel::claim_generic_failure_report`].
+    ///
+    /// Deliberately separate from [`Self::last_failed`], which every window must
+    /// keep seeing (each one has to decide what its own deferred close/switch
+    /// does about the failure). This is the narrower question of who *says so*,
+    /// and it has exactly one right answer per Work.
+    failure_reported: RefCell<Option<(String, bool)>>,
 }
 
 /// Work-scoped save-tracking state: `dirty_seq`, `saved_seq`, `saving` and the
@@ -138,6 +147,7 @@ impl SaveStateViewModel {
                 queue: RefCell::new(SaveQueue::default()),
                 last_completed: RefCell::new(None),
                 last_failed: RefCell::new(None),
+                failure_reported: RefCell::new(None),
             }),
         }
     }
@@ -309,6 +319,59 @@ impl SaveStateViewModel {
         Some(error)
     }
 
+    // ── Who reports a failed save ────────────────────────────────────────────
+    //
+    // [`Self::on_save_failed`] answers every window, on purpose: each has to
+    // decide what its own deferred close/switch does about the failure. But the
+    // *toast* is about the Work, not the window — and since Work ▸ New Window a
+    // Work can have several — so N windows each reporting the same failed write
+    // would stack N identical error toasts.
+    //
+    // Two kinds of report, and they are not equal:
+    //
+    //   * **specific** — this window had a close or a project switch parked
+    //     behind that save, and it was dropped. Only that window knows, and the
+    //     dropped command is the more confusing half of the failure, so it
+    //     always speaks.
+    //   * **generic** — "couldn't save". Any window can say it, so exactly one
+    //     should, and only if nobody said the specific thing.
+    //
+    // Both toasts carry the same Work-scoped dedup id, so the registry keeps one
+    // entry either way (it matches on id and updates in place). That plus the
+    // rules below makes the outcome independent of the order the windows'
+    // subscribers happen to run in: a specific report always ends up the visible
+    // one, whether it arrives before the generic one (which is then suppressed)
+    // or after it (replacing it in place).
+
+    /// Record that this window is reporting the failure *specifically* — its own
+    /// deferred command was dropped. Always report after calling this; the call
+    /// only stops a sibling from adding a redundant generic toast afterwards.
+    pub fn note_specific_failure_report(&self, event: &Event) {
+        let Some(op_id) = event_id(event) else { return };
+        *self.inner.failure_reported.borrow_mut() = Some((op_id, true));
+    }
+
+    /// May this window raise the plain "couldn't save" toast? `true` for the
+    /// first window to ask about a given failure, and never once a sibling has
+    /// made a specific report for it.
+    ///
+    /// `true` for an event carrying no op id at all: with nothing to key on there
+    /// is no way to tell a repeat from a first report, and a failed write the
+    /// user is never told about is the worse failure.
+    pub fn claim_generic_failure_report(&self, event: &Event) -> bool {
+        let Some(op_id) = event_id(event) else {
+            return true;
+        };
+        let mut reported = self.inner.failure_reported.borrow_mut();
+        if let Some((last_op, _)) = reported.as_ref()
+            && *last_op == op_id
+        {
+            return false;
+        }
+        *reported = Some((op_id, false));
+        true
+    }
+
     /// Mark everything currently in the store as "on disk" — a project just
     /// loaded, was created, or was closed: nothing is pending against *this*
     /// work.
@@ -327,6 +390,7 @@ impl SaveStateViewModel {
         self.inner.saved_seq.set(self.inner.dirty_seq.get());
         *self.inner.last_completed.borrow_mut() = None;
         *self.inner.last_failed.borrow_mut() = None;
+        *self.inner.failure_reported.borrow_mut() = None;
     }
 }
 
@@ -523,5 +587,102 @@ mod tests {
         assert!(!vm.is_unsaved(), "the save covered the only edit so far");
         vm.bump_dirty();
         assert!(vm.is_unsaved(), "a later edit is unsaved again");
+    }
+
+    // ── Who reports a failed save (Work ▸ New Window) ───────────────────────
+    //
+    // `on_save_failed` answers EVERY window, by design. Since a Work can have
+    // several windows, the *toast* needs its own arbitration — see the section
+    // comment above `note_specific_failure_report`.
+
+    /// Two windows, one failed write: exactly one plain "couldn't save" toast.
+    #[test]
+    fn only_the_first_window_may_raise_the_generic_failure_toast() {
+        let window_a = vm();
+        let window_b = window_a.clone();
+        let failure = failed_event("op-1", "disk full");
+
+        assert!(window_a.claim_generic_failure_report(&failure), "the first window reports");
+        assert!(
+            !window_b.claim_generic_failure_report(&failure),
+            "a sibling window must not stack a second identical toast"
+        );
+    }
+
+    /// A specific report (this window's close was dropped) suppresses the
+    /// generic one that would otherwise follow it.
+    #[test]
+    fn a_specific_report_suppresses_a_siblings_generic_one() {
+        let window_a = vm();
+        let window_b = window_a.clone();
+        let failure = failed_event("op-1", "disk full");
+
+        window_a.note_specific_failure_report(&failure);
+        assert!(
+            !window_b.claim_generic_failure_report(&failure),
+            "the specific message already told the user everything the generic one would"
+        );
+    }
+
+    /// …and the reverse order must reach the same place. The generic toast goes
+    /// up first, then the window whose close was dropped speaks anyway — both
+    /// carry one Work-scoped dedup id, so its text replaces the generic one in
+    /// place rather than adding a second toast. What must NOT happen is the
+    /// specific report being suppressed: it carries the only information about
+    /// the dropped command.
+    #[test]
+    fn a_generic_report_never_silences_the_specific_one() {
+        let window_a = vm();
+        let window_b = window_a.clone();
+        let failure = failed_event("op-1", "disk full");
+
+        assert!(window_a.claim_generic_failure_report(&failure));
+        window_b.note_specific_failure_report(&failure);
+        assert!(
+            !window_a.claim_generic_failure_report(&failure),
+            "and the generic one still cannot come back afterwards"
+        );
+    }
+
+    /// A *different* failure is a different report — the claim is per op, not a
+    /// latch that silences every later failure for the rest of the session.
+    #[test]
+    fn a_later_failure_is_reported_again() {
+        let vm = vm();
+        assert!(vm.claim_generic_failure_report(&failed_event("op-1", "disk full")));
+        assert!(
+            vm.claim_generic_failure_report(&failed_event("op-2", "disk full")),
+            "the next failed write must be reported on its own account"
+        );
+    }
+
+    /// A project switch clears the arbitration with the rest of the idempotency
+    /// caches: an op id from the outgoing project must not silence the incoming
+    /// one's first failure.
+    #[test]
+    fn mark_clean_reopens_the_failure_report() {
+        let vm = vm();
+        let failure = failed_event("op-1", "disk full");
+        assert!(vm.claim_generic_failure_report(&failure));
+        vm.mark_clean();
+        assert!(
+            vm.claim_generic_failure_report(&failure),
+            "a freshly loaded project starts with nothing reported"
+        );
+    }
+
+    /// With no op id there is nothing to key on, and a failed write nobody is
+    /// told about is worse than one told about twice.
+    #[test]
+    fn a_failure_with_no_op_id_is_always_reportable() {
+        use frontend::common::event::{LongOperationEvent, Origin};
+        let vm = vm();
+        let anonymous = Event {
+            origin: Origin::LongOperation(LongOperationEvent::Failed),
+            ids: Vec::new(),
+            data: None,
+        };
+        assert!(vm.claim_generic_failure_report(&anonymous));
+        assert!(vm.claim_generic_failure_report(&anonymous));
     }
 }

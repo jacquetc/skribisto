@@ -63,6 +63,31 @@ pub trait ToastWorkExt {
     /// collidable `"{base}.0"` — and this is the one place that unwraps it,
     /// correctly, every time.
     fn scoped_id(self, base: &str, work_id: impl Into<Option<u64>>) -> Self;
+
+    /// [`Self::scoped_id`] for a toast that follows **one long operation** from
+    /// start to finish (loading → progress → success/cancelled/error): the op's
+    /// own id joins `work_id` in the dedup key.
+    ///
+    /// Work-scoping alone was enough while one Work meant one window, because
+    /// the view-models that drive these toasts (`ExportViewModel`,
+    /// `SaveAsViewModel`) are per **window** and each allows one operation at a
+    /// time — so "this Work's export" and "this window's export" were the same
+    /// thing. Work ▸ New Window separates them: two windows on one Work can each
+    /// start an export, and with only the Work in the key the second one's
+    /// enqueue finds the first's still-live entry, overwrites it in place and
+    /// retargets it — the first export's progress bar and its Cancel button
+    /// vanish mid-flight while the operation itself carries on running,
+    /// uncancellable.
+    ///
+    /// The op id is unique per operation, so it distinguishes the two without
+    /// the view-model needing to know anything about windows — and, being the
+    /// *same* string for every update of one operation, it keeps the
+    /// update-in-place behaviour those toasts depend on.
+    ///
+    /// A caller with no operation (nothing was ever started — "no project is
+    /// open to export") has no op id and keeps [`Self::scoped_id`]: there is no
+    /// operation for a second toast to be confused with.
+    fn scoped_op_id(self, base: &str, work_id: impl Into<Option<u64>>, op_id: &str) -> Self;
 }
 
 impl ToastWorkExt for Toast {
@@ -77,6 +102,17 @@ impl ToastWorkExt for Toast {
         match work_scoped_toast_id(base, work_id) {
             Some(id) => self.id(id),
             None => self,
+        }
+    }
+
+    fn scoped_op_id(self, base: &str, work_id: impl Into<Option<u64>>, op_id: &str) -> Self {
+        // Unlike `scoped_id`, a `None` Work is not a reason to drop the id: the
+        // op id alone already identifies exactly one operation, which is the
+        // whole thing this toast tracks. F2's hazard (every window with no Work
+        // open sharing one id) cannot arise from a key no two operations share.
+        match work_scoped_toast_id(base, work_id) {
+            Some(id) => self.id(format!("{id}.{op_id}")),
+            None => self.id(format!("{base}.{op_id}")),
         }
     }
 }

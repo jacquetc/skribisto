@@ -161,15 +161,18 @@ impl SaveAsViewModel {
     /// in lockstep with every later handler below, which cannot re-read live.
     pub fn begin(&self, ctx: &mut EventContext, target: String, as_folder: bool) {
         match self.start_flushed(target.clone(), as_folder) {
-            Ok(work_id) => {
+            Ok((work_id, op_id)) => {
                 let toast = if as_folder {
                     tr!(saving_as_folder(target = target))
                 } else {
                     tr!(saving_as_file(target = target))
                 };
                 ctx.show_toast(
+                    // Keyed on the operation, not just its Work: two windows on
+                    // one Work can each run a Save As, and a Work-only key would
+                    // let the second overwrite the first's toast in place.
                     Toast::info(toast)
-                        .scoped_id(SAVE_AS_TOAST_ID, work_id)
+                        .scoped_op_id(SAVE_AS_TOAST_ID, work_id, &op_id)
                         .target_work(work_id),
                 );
             }
@@ -196,7 +199,15 @@ impl SaveAsViewModel {
     /// Split out ctx-free so the flush-before-serialize invariant is testable
     /// headlessly (this crate has no `EventContext` harness — see the tests below
     /// and `backup_scheduler.rs`'s).
-    fn start_flushed(&self, target: String, as_folder: bool) -> anyhow::Result<CapturedWork> {
+    ///
+    /// Returns the captured Work **and the operation's own id** — [`Self::begin`]
+    /// needs the latter for its "starting" toast's dedup key, which is per
+    /// operation rather than merely per Work (see `ToastWorkExt::scoped_op_id`).
+    fn start_flushed(
+        &self,
+        target: String,
+        as_folder: bool,
+    ) -> anyhow::Result<(CapturedWork, String)> {
         self.flush();
         let op_id = work_management_commands::save_as(
             &self.app_ctx,
@@ -206,7 +217,7 @@ impl SaveAsViewModel {
                 as_folder,
             },
         )?;
-        Ok(self.start(op_id, as_folder))
+        Ok((self.start(op_id.clone(), as_folder), op_id))
     }
 
     /// Register the in-flight Save As, capturing the CURRENT `WorkInfo` id (the
@@ -294,14 +305,14 @@ impl SaveAsViewModel {
                 // `self.ids.work_id.get()`.
                 ctx.show_toast(
                     Toast::success(tr!(saved_as(target = output_path)))
-                        .scoped_id(SAVE_AS_TOAST_ID, pending.tracked.work_id())
+                        .scoped_op_id(SAVE_AS_TOAST_ID, pending.tracked.work_id(), &op_id)
                         .target_work(pending.tracked.work_id()),
                 );
             }
             Err(e) => {
                 ctx.show_toast(
                     Toast::error(tr!(save_error(error = e.to_string())))
-                        .scoped_id(SAVE_AS_TOAST_ID, pending.tracked.work_id())
+                        .scoped_op_id(SAVE_AS_TOAST_ID, pending.tracked.work_id(), &op_id)
                         .target_work(pending.tracked.work_id()),
                 );
             }
@@ -324,7 +335,7 @@ impl SaveAsViewModel {
         // `Pending::tracked`'s doc — never a live `self.ids.work_id.get()`.
         ctx.show_toast(
             Toast::error(tr!(save_error(error = error)))
-                .scoped_id(SAVE_AS_TOAST_ID, pending.tracked.work_id())
+                .scoped_op_id(SAVE_AS_TOAST_ID, pending.tracked.work_id(), &op_id)
                 .target_work(pending.tracked.work_id()),
         );
     }
