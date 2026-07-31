@@ -2445,6 +2445,13 @@ impl Widget for App {
         // focused pane. A selection change in a pane also marks it focused and
         // flushes pending edits to the store — autosave on a natural boundary
         // (changed fields only; clean tabs are a no-op). One effect per pane.
+        //
+        // Flush the *whole* store, not only the leaving tab: a shared
+        // `OpenDoc` can be open in both panes (or in a stream row plus a
+        // tab), and a title/prose edit on the tab we leave must land
+        // before the next tab paints. Clean docs are a field-level no-op
+        // (`is_modified` / title probe), so the cost stays proportional
+        // to *dirty* open docs, not to how fast the user clicks tabs.
         for side in [Side::Primary, Side::Secondary] {
             let editors = editors.clone();
             ctx.effect(&editors.selected(side), move |_| {

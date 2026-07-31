@@ -54,8 +54,18 @@ fn wire_replacements(
     let session = session.clone();
     let handle = handle.clone();
     let doc = doc.clone();
+    // Gate on activation: TabWidget pre-mounts every open tab, and
+    // `frame_tick` observers fire even for dormant Switcher pages. A
+    // multi-tab project would otherwise pay a replacement tick for
+    // every open scene on every wake (caret blink, paint).
+    let active = ctx.activation_signal(ctx.self_id());
     let tick = ctx.frame_tick();
-    ctx.effect(&tick, move |_| session.tick(&handle, &doc));
+    ctx.effect(&tick, move |_| {
+        if !active.get() {
+            return;
+        }
+        session.tick(&handle, &doc);
+    });
 }
 
 /// A caret-aware "split scene" action for a writing editor's context menu:
@@ -937,9 +947,18 @@ impl Widget for FindBanner {
         });
         let f = self.find.clone();
         ctx.effect(&self.find.whole_word_signal(), move |_| f.refresh_query());
+        // Find lives under `VisibleWhen`: when the banner is closed the
+        // whole subtree is dormant, but `frame_tick` still fires. Skip
+        // the re-derive while hidden so a closed banner does not keep
+        // a multi-tab project busy.
         let f = self.find.clone();
+        let active = ctx.activation_signal(ctx.self_id());
         let tick = ctx.frame_tick();
-        ctx.effect(&tick, move |_| f.tick());
+        ctx.effect(&tick, move |_| {
+            if active.get() {
+                f.tick();
+            }
+        });
 
         // "N of M" / "No results" — empty while the query is empty.
         let label = self
@@ -1236,15 +1255,27 @@ pub(crate) fn wire_spell(
     spell: &Rc<SpellSession>,
 ) -> WidgetId {
     let token = ctx.self_id();
+    // Same dormancy gate as `wire_replacements` / the rich-text frame
+    // loop: pre-mounted tab content must not keep ticking spell work
+    // (or pinning a caret exemption) while its Switcher page is
+    // parked. Rapid tab switches without this gate left every visited
+    // tab's session paying O(document) catch-up on every frame wake.
+    let active = ctx.activation_signal(token);
     {
         let s = spell.clone();
-        ctx.effect(&handle.cursor_position_signal(), move |_| s.on_caret(token));
+        let active = active.clone();
+        ctx.effect(&handle.cursor_position_signal(), move |_| {
+            if active.get() {
+                s.on_caret(token);
+            }
+        });
     }
     {
         let s = spell.clone();
         let h = handle.clone();
+        let active = active.clone();
         ctx.effect(&handle.focused_signal(), move |&focused| {
-            if focused {
+            if focused && active.get() {
                 let hh = h.clone();
                 s.on_focus(token, Rc::new(move || hh.cursor_position()));
             } else {
@@ -1254,8 +1285,26 @@ pub(crate) fn wire_spell(
     }
     {
         let s = spell.clone();
+        let active = active.clone();
+        ctx.effect(&active, move |&is_active| {
+            if !is_active {
+                // Tab parked: drop this view as the caret source so a
+                // sibling (split pane / later re-open) is not stuck
+                // with a stale exemption from a dormant editor.
+                s.on_blur(token);
+            }
+        });
+    }
+    {
+        let s = spell.clone();
+        let active = active.clone();
         let tick = ctx.frame_tick();
-        ctx.effect(&tick, move |_| s.tick());
+        ctx.effect(&tick, move |_| {
+            if !active.get() {
+                return;
+            }
+            s.tick();
+        });
     }
     token
 }
