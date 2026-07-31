@@ -22,4 +22,8 @@ pub(crate) mod ipc;
 pub(crate) mod open_registry;
 pub(crate) mod process;
 pub(crate) mod project_switcher_button;
+pub(crate) mod window_ids;
 pub(crate) mod windows;
+
+// Path→window identity lives in `window_ids` and is re-exported from `windows`
+// so existing `shell::windows::window_id_for` call sites keep compiling.

@@ -170,6 +170,9 @@ pub struct ContentTab {
     /// and (for a folder container) is written back when the user switches view, so a
     /// new tab of the same type inherits it. Shared live from Settings.
     pub view_memory: crate::view_models::EditorViewMemory,
+    /// This window's Format surfaces — every writing editor this tab builds
+    /// registers with it (never process-wide `app_state`).
+    pub format: crate::view_models::FormatViewModel,
 }
 
 /// Which prose kind a dual-pane main-text editor is, so it can pick the Scene vs
@@ -293,6 +296,7 @@ pub fn tab_for(
         // Unreachable while the flag above stays `false` — same compile-time
         // default `SettingsViewModel::distraction_free_width` seeds from.
         Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
+        crate::view_models::FormatViewModel::detached(),
     )
 }
 
@@ -429,6 +433,7 @@ impl ContentTab {
         tree_expansion: crate::view_models::TreeExpansionViewModel,
         distraction_free: Signal<bool>,
         distraction_free_width: Signal<f32>,
+        format: crate::view_models::FormatViewModel,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
         // the stream (Book only). Built first, so it can borrow `app_ctx` before
@@ -505,6 +510,7 @@ impl ContentTab {
             distraction_free,
             distraction_free_width,
             view_memory,
+            format,
         }
     }
 
@@ -1923,6 +1929,7 @@ mod tests {
                 ),
                 df.clone(),
                 df_width.clone(),
+                crate::view_models::FormatViewModel::detached(),
             )
         };
         let distraction_free_width = Signal::new(620.0);

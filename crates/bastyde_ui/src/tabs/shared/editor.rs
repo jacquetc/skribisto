@@ -113,6 +113,7 @@ pub fn writing_column(
     find: Option<crate::view_models::FindViewModel>,
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
+    format: Option<FormatViewModel>,
 ) -> CenterColumnFlowing {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -164,6 +165,7 @@ pub fn writing_column(
                     spell,
                     replacement.map(|s| (doc.clone(), s)),
                     EditorKind::Prose,
+                    format,
                 )
             }
         }
@@ -408,6 +410,7 @@ pub fn synopsis_editor(
     // Where to re-attach this editor's handle so tab-level commands can find
     // it. `None` for surfaces with no tab (the corkboard card's own editor).
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
+    format: Option<FormatViewModel>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -464,6 +467,7 @@ pub fn synopsis_editor(
                 spell,
                 replacement.map(|s| (doc.clone(), s)),
                 EditorKind::Synopsis,
+                    format,
             )
         }
     )
@@ -502,6 +506,7 @@ pub fn card_synopsis_editor(
     split: Option<SplitFn>,
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
+    format: Option<FormatViewModel>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -532,6 +537,7 @@ pub fn card_synopsis_editor(
         spell,
         replacement.map(|s| (doc.clone(), s)),
         EditorKind::Synopsis,
+        format,
     )
 }
 
@@ -643,6 +649,7 @@ pub fn synopsis_section(
     // Where the built editor re-attaches its handle, so tab-level commands
     // (the format dock) can act on the synopsis the caret is actually in.
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
+    format: Option<FormatViewModel>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
@@ -665,6 +672,7 @@ pub fn synopsis_section(
                             spell,
                             replacement,
                             handle_sink,
+                            format,
                         )
                     }
                 }
@@ -695,6 +703,7 @@ pub fn synopsis_column(
     // Where the built editor re-attaches its handle, so tab-level commands
     // (the format dock) can act on the synopsis the caret is actually in.
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
+    format: Option<FormatViewModel>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(
@@ -710,6 +719,7 @@ pub fn synopsis_column(
                     spell,
                     replacement,
                     handle_sink,
+                    format,
                 )
             }
         }
@@ -727,6 +737,7 @@ pub fn writing_section(
     find: Option<crate::view_models::FindViewModel>,
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
+    format: Option<FormatViewModel>,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -745,6 +756,7 @@ pub fn writing_section(
             find,
             spell,
             replacement,
+            format,
         ))
 }
 
@@ -1328,9 +1340,11 @@ struct TypographyBoundEditor {
     /// formatting registry cannot work out for itself. See [`EditorKind`].
     kind: EditorKind,
     /// The formatting registry this editor announced itself to, and under which id,
-    /// so `Drop` can withdraw it. `None` when no `FormatViewModel` is in app state
+    /// so `Drop` can withdraw it. `None` when no `FormatViewModel` was supplied
     /// (the widget tests, which build editors with no app around them).
     format: Option<(FormatViewModel, WidgetId)>,
+    /// This window's Format VM — used at build to register; not the live registry entry.
+    format_vm: Option<FormatViewModel>,
 }
 
 impl TypographyBoundEditor {
@@ -1340,6 +1354,7 @@ impl TypographyBoundEditor {
         spell: Option<Rc<crate::spellcheck::SpellSession>>,
         replacement: Option<(TextDocument, Rc<TextReplacementSession>)>,
         kind: EditorKind,
+        format_vm: Option<FormatViewModel>,
     ) -> Self {
         Self {
             editor: Some(editor),
@@ -1350,6 +1365,7 @@ impl TypographyBoundEditor {
             child_id: None,
             kind,
             format: None,
+            format_vm,
         }
     }
 }
@@ -1438,7 +1454,7 @@ impl Widget for TypographyBoundEditor {
         // focus instead. Re-registering on rebuild re-points the entry at the
         // fresh handle, which is exactly the staleness rule this app follows for
         // handles everywhere else.
-        if let Some(format) = ctx.app_state::<FormatViewModel>().cloned() {
+        if let Some(format) = self.format_vm.clone() {
             let self_id = ctx.self_id();
             format.register(self_id, handle.clone(), self.kind);
             self.format = Some((format, self_id));
@@ -1655,6 +1671,7 @@ mod frame_loop_tests {
             Some(find.clone()),
             None,
             Some(session.clone()),
+            None,
         );
         let mut tree = WidgetTree::new();
         tree.add(col);
@@ -1760,7 +1777,7 @@ mod tests {
         let doc = TextDocument::new();
         let _ =
             doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(60));
-        let editor = card_synopsis_editor(doc, test_typo(), || {}, None, None, None);
+        let editor = card_synopsis_editor(doc, test_typo(), || {}, None, None, None, None);
         let mut tree = WidgetTree::new();
         let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
         // Propose an *unbounded* height, the way the corkboard's GridView tile does —

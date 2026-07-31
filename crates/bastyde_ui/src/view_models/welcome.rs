@@ -405,7 +405,6 @@ mod tests {
             TreeExpansionService::in_memory_default(),
             Signal::new(false), // autosave_menu
             Signal::new(true),  // spellcheck_menu (default on)
-            crate::view_models::FormatViewModel::detached(),
         )
     }
 

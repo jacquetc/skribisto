@@ -50,9 +50,14 @@ impl RichTextEditorStyle for SeamlessEditorStyle {
 /// The bottom-side preview dock. `FocusScope` with `Continue` (groups its Tab
 /// order without trapping the keyboard), no header (the band's height is spent on
 /// prose, not chrome), fronted by a rail glyph so a hidden band can be reopened.
-pub fn search_preview_dock(vm: SearchReplaceViewModel, dock_id: DockWidgetId) -> DockWidget {
+pub fn search_preview_dock(
+    vm: SearchReplaceViewModel,
+    format: FormatViewModel,
+    dock_id: DockWidgetId,
+) -> DockWidget {
     DockWidget::new(dock_id, tr!(search_preview()), move |_id| {
-        FocusScope::new(TraversalScopePolicy::Continue).child(PreviewBody::new(vm.clone()))
+        FocusScope::new(TraversalScopePolicy::Continue)
+            .child(PreviewBody::new(vm.clone(), format.clone()))
     })
     .icon(crate::icons::activity::search_preview_icon)
     .show_header(false)
@@ -63,6 +68,7 @@ pub fn search_preview_dock(vm: SearchReplaceViewModel, dock_id: DockWidgetId) ->
 /// editable document or an empty state.
 struct PreviewBody {
     vm: SearchReplaceViewModel,
+    format: FormatViewModel,
     child_id: Option<WidgetId>,
     /// The find-highlight layer over the previewed document — so the shown
     /// paragraph highlights the same query the result list matched. Recreated per
@@ -82,9 +88,10 @@ struct PreviewBody {
 }
 
 impl PreviewBody {
-    fn new(vm: SearchReplaceViewModel) -> Self {
+    fn new(vm: SearchReplaceViewModel, format: FormatViewModel) -> Self {
         Self {
             vm,
+            format,
             child_id: None,
             find: std::rc::Rc::new(std::cell::RefCell::new(None)),
             spell_view: None,
@@ -235,7 +242,8 @@ impl Widget for PreviewBody {
                 // this editor deliberately does not use: it carries the seamless
                 // style and the preview's own width, not a tab's typography), on the
                 // same release-on-rebuild-and-drop discipline as `spell_view` above.
-                if let Some(format) = ctx.app_state::<FormatViewModel>().cloned() {
+                {
+                    let format = self.format.clone();
                     let self_id = ctx.self_id();
                     format.register(self_id, editor.handle(), kind);
                     self.format_view = Some((format, self_id));
@@ -424,7 +432,10 @@ mod tests {
     fn editor_body_height(paragraphs: usize, dock_height: f32) -> f32 {
         let (ctx, vm) = vm_previewing(paragraphs);
         let mut tree = crate::test_support::tree_with_settings(&ctx);
-        let root = tree.add(PreviewBody::new(vm));
+        let root = tree.add(PreviewBody::new(
+            vm,
+            FormatViewModel::detached(),
+        ));
         tree.layout(SizeProposal::exact(900.0, dock_height));
         let body = find(&tree, root, "RichTextEditorBody")
             .expect("the preview mounts a rich text editor over the previewed document");
@@ -499,7 +510,7 @@ mod tests {
     fn the_band_fills_the_dock_so_a_tall_scene_can_scroll() {
         let (ctx, vm) = vm_previewing(40);
         let mut tree = crate::test_support::tree_with_settings(&ctx);
-        let root = tree.add(PreviewBody::new(vm));
+        let root = tree.add(PreviewBody::new(vm, FormatViewModel::detached()));
         tree.layout(SizeProposal::exact(900.0, 400.0));
         let scroll = find(&tree, root, "ScrollArea").expect("the preview band scrolls");
         let bounds = tree.bounds(scroll);

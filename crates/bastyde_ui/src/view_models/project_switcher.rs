@@ -101,10 +101,10 @@ pub fn sections(
 ///
 /// **Two routes, and the split matters.** Since Phase 4 the common case is that the project
 /// is open in a window of *this very process* — single-instance means a second launch hands
-/// off rather than forking — so `pid == my_pid()` is resolved directly:
-/// `find_window(window_id_for(path))` names the exact window (that string id is what the
-/// window was opened with) and `focus_window` raises it. Going out over a socket to ourselves
-/// would arrive at the same handler by a longer road.
+/// off rather than forking — so `pid == my_pid()` is resolved directly through
+/// [`crate::shell::windows::resolve_project_window`] (first window string id, then registry
+/// fallback for a secondary-only open) and `focus_window` raises it. Going out over a socket
+/// to ourselves would arrive at the same handler by a longer road.
 ///
 /// A foreign pid is a genuine peer — a `--new-instance` sibling, or an instance that ran
 /// while this one was wedged — and still goes over its per-pid IPC socket, carrying `path` so
@@ -115,7 +115,7 @@ pub fn sections(
 /// user just clicked in.
 pub fn raise_instance(ctx: &mut EventContext, pid: u32, path: &str) {
     if pid == crate::shell::open_registry::my_pid() {
-        if let Some(id) = ctx.find_window(&crate::shell::windows::window_id_for(path)) {
+        if let Some(id) = crate::shell::windows::resolve_project_window(ctx, path) {
             ctx.focus_window(id);
         }
         return;

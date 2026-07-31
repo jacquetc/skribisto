@@ -34,18 +34,11 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let ids = deps.ids.clone();
         let registry = deps.registry.clone();
         let app_ctx = deps.app_ctx.clone();
-        let attached = deps.attached;
+        let role = deps.role;
         ctx.register_action_global(Action::new("work.new").on_invoke(move |_i, c| {
-            // A window that shares its Work with a Work ▸ New Window sibling
-            // cannot replace its project in place — they share one `AppIds`, so
-            // the switch would re-point the sibling too (see
-            // `may_switch_project_in_place`). The form is presented directly
-            // here, in "create beside this window" mode, rather than through
-            // `ProjectSwitchViewModel`: there is nothing to guard (this
-            // window's project is staying exactly where it is), and the
-            // switch's `new_work_form_hook` is a single process-wide slot
-            // installed by the *owning* window, bound to that window's `AppIds`.
-            if !crate::app::may_switch_project_in_place(&registry, &ids, attached) {
+            // A window that may not switch in place (attached, or a live
+            // sibling) presents the form in "create beside this window" mode.
+            if !crate::app::may_switch_project_in_place(&registry, &ids, role) {
                 let Some(factory) = c
                     .app_state::<crate::shell::windows::ProjectWindowFactory>()
                     .cloned()
@@ -82,9 +75,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let switch = deps.project_switch.clone();
         let ids = deps.ids.clone();
         let registry = deps.registry.clone();
-        let attached = deps.attached;
+        let role = deps.role;
         ctx.register_action_global(Action::new("work.open").on_invoke(move |_i, c| {
-            open_work_flow(switch.clone(), ids.clone(), registry.clone(), attached, c)
+            open_work_flow(switch.clone(), ids.clone(), registry.clone(), role, c)
         }));
     }
     // Open an already-chosen path (payload in the intent) — the switcher popover's "Open
@@ -94,15 +87,10 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let switch = deps.project_switch.clone();
         let ids = deps.ids.clone();
         let registry = deps.registry.clone();
-        let attached = deps.attached;
+        let role = deps.role;
         ctx.register_action_global(Action::new("work.open_path").on_invoke(move |i, c| {
             if let Some(AppIntent::OpenWorkPath { path }) = AppIntent::from_intent(i) {
-                // "Open here" cannot mean *here* when a Work ▸ New Window sibling
-                // shares this window's `AppIds` — see `may_switch_project_in_place`.
-                // It becomes "open it", in a window of its own, which is what the
-                // switcher's other row already does and what the import toast
-                // wanted all along; this window keeps its project either way.
-                if !crate::app::may_switch_project_in_place(&registry, &ids, attached) {
+                if !crate::app::may_switch_project_in_place(&registry, &ids, role) {
                     crate::shell::windows::open_or_focus_project(c, &path);
                     return;
                 }

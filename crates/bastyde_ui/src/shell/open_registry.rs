@@ -3,14 +3,16 @@
 
 //! Cross-instance "open project" registry.
 //!
-//! Skribisto is multi-process today (each running instance is its own window),
-//! and moving toward one instance holding several projects at once (the
-//! `System.work_info` -> `work_infos` fan-out already landed). This module does
-//! **not** assume "at most one project per process": a process may hold any
-//! number of claims at once, and two different processes may legitimately claim
-//! the *same* path for a moment (e.g. one closing while another opens it) — both
-//! must be visible to [`scan`] so callers like `BackupRestoreViewModel::check_open_elsewhere`
-//! can tell a peer still has the project open before overwriting it.
+//! Skribisto is **single-instance by default**: one process hosts every project
+//! window, and a second launch hands off over IPC. Multiple processes still
+//! appear under `--new-instance` or when a wedged primary degrades — this
+//! registry is what those peers use to list what is open and to raise each
+//! other. This module does **not** assume "at most one project per process": a
+//! process may hold any number of claims at once, and two different processes
+//! may legitimately claim the *same* path for a moment (e.g. one closing while
+//! another opens it) — both must be visible to [`scan`] so callers like
+//! `BackupRestoreViewModel::check_open_elsewhere` can tell a peer still has the
+//! project open before overwriting it.
 //!
 //! While a project is open, the claiming process writes a small lock file naming
 //! that project + its own pid into a shared runtime directory. The file name

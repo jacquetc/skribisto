@@ -86,6 +86,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 tab.open_doc.spell_synopsis(),
                 tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
+                Some(tab.format.clone()),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -99,6 +100,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             None, // the container's own page has no find banner (no top strip here)
             tab.open_doc.spell_main(),
             tab.open_doc.replacement_main(),
+            Some(tab.format.clone()),
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
@@ -154,6 +156,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
                 tab.open_doc.spell_synopsis(),
                 tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
+                Some(tab.format.clone()),
             ),
         ));
     }
@@ -170,6 +173,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             find.clone(),
             tab.open_doc.spell_main(),
             tab.open_doc.replacement_main(),
+            Some(tab.format.clone()),
         ));
     }
     // The whole dual-pane body scrolls as one flowing page: the main editor is
@@ -238,6 +242,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 tab.open_doc.spell_synopsis(),
                 tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
+                Some(tab.format.clone()),
             ));
     }
     tab_backdrop(ScrollArea::new().child(col.child(vspace(28.0))))
@@ -290,6 +295,7 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
                 tab.open_doc.spell_synopsis(),
                 tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
+                Some(tab.format.clone()),
             ));
     }
     ScrollArea::new().child(col.child(vspace(28.0)))

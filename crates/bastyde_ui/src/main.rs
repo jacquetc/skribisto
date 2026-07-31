@@ -119,7 +119,7 @@ use app_ids::AppIds;
 use models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
 use sessions::{WorkRegistry, WorkSession};
 use view_models::{
-    BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel, ProjectSwitchViewModel,
+    BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel,
 };
 
 /// The currently-open project's path (from its `WorkInfo`), if any.
@@ -807,7 +807,6 @@ fn main() {
     // rather than inside it, so the Format menu needs these signals before
     // `EditorsViewModel` exists. `App::build` attaches the editors on every
     // build — the same shape as the workspace-layout view-model.
-    let format_vm = crate::view_models::FormatViewModel::detached();
     let project_factory = windows::ProjectWindowFactory::new(
         app_ctx.clone(),
         registry.clone(),
@@ -817,7 +816,6 @@ fn main() {
         tree_expansion_service,
         autosave_menu.clone(),
         spellcheck_menu.clone(),
-        format_vm.clone(),
     );
 
     // ── Decide the initial window: launcher-window model ────────────────
@@ -882,21 +880,14 @@ fn main() {
         }
     });
 
-    // The switch guard (see the doc where `autosave_menu` is constructed
-    // above) — built here, now that `initial_state` exists, so its
-    // `unsaved`/`backup_mode` handles are a real Work's (Scope E/Phase 3:
-    // `WorkSession::new` mints a fresh pair per Work; there is no
-    // process-wide one any more). `ProjectSwitchViewModel` itself is still a
-    // single, Tier-1 shared instance — this only fixes *which* Work's
-    // `unsaved`/`backup_mode` it reads, the same way every other
-    // Tier-2-via-`app_state` registration below reads off the first window's
-    // session.
-    let project_switch = ProjectSwitchViewModel::new(
-        app_ctx.clone(),
-        initial_state.session.unsaved.clone(),
-        initial_state.session.backup_mode.clone(),
-        autosave_menu.clone(),
-    );
+    // Format + ProjectSwitch are per-window now (minted inside
+    // `ProjectWindowFactory::build_window`). Residual `app_state` registrations
+    // below still seed a throwaway Format for widgets that still look it up
+    // that way (search preview / writing editors) — each real window's own
+    // `App::build` re-registers its Format into the process map on build so
+    // those surfaces pick up the *current* window's instance. That is still a
+    // last-write-wins compromise for app_state readers; the attach/menu/dock
+    // paths use constructor-threaded handles and are correct.
 
     BastydeAppBuilder::new()
         .theme(theme)
@@ -950,7 +941,9 @@ fn main() {
         .app_state(spellcheck.clone())
         .app_state(dictionaries.clone())
         .app_state(initial_state.session.tags.clone())
-        .app_state(format_vm.clone())
+        // Seed so first-build app_state readers find *some* Format; each
+        // window re-points this on `App::build` to its own instance.
+        .app_state(crate::view_models::FormatViewModel::detached())
         .app_state(initial_state.session.single_work.clone())
         .app_state(initial_state.session.single_work_info.clone())
         .app_state(initial_state.outline.clone())
@@ -963,7 +956,6 @@ fn main() {
         .app_state(initial_state.session.user_dictionary.clone())
         .app_state(backup_settings.clone())
         .app_state(initial_state.session.backup_scheduler.clone())
-        .app_state(project_switch.clone())
         .app_state(project_factory.clone())
         // Bind this instance's sockets: its own per-pid one always, and the
         // well-known primary one if it won the election. Both feed the router
@@ -1055,7 +1047,7 @@ fn serve_instance_request(
             // the context was minted from is already the right answer, so there
             // is nothing to resolve.
             if let Some(path) = path
-                && let Some(id) = ctx.find_window(&windows::window_id_for(path))
+                && let Some(id) = windows::resolve_project_window(ctx, path)
             {
                 focus_with_token(ctx, id, activation_token.clone());
             }

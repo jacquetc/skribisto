@@ -3,8 +3,12 @@
 
 //! Window-construction factories for the launcher-window model.
 //!
-//! Skribisto is one process per project (see `main.rs`'s module docs), and a
-//! **project window is only ever created once its project is already
+//! Skribisto is **single-instance**: one process hosts the Launcher and every
+//! open project window (see `main.rs` / `shell::instance`). A second launch
+//! hands off to this process rather than forking. Multiple project windows —
+//! different Works, or Work ▸ New Window onto the same Work — are normal.
+//!
+//! A **project window is only ever created once its project is already
 //! known** — that's the fix for the window-geometry bug this module exists
 //! to close: a project's persisted geometry keys on
 //! [`window_id_for`]`(path)`, which can only be computed once a path exists.
@@ -20,13 +24,16 @@
 //!     `ctx.open_window(...)` (from the Launcher once a project is
 //!     picked/created) build an identical window.
 //!
+//! Path→window identity (`window_id_for`, [`resolve_project_window`],
+//! [`open_or_focus_project`]) lives in [`super::window_ids`] and is re-exported
+//! below so call sites keep a stable path.
+//!
 //! **Ordering invariant.** The process quits when its last window closes, so
 //! every transition here opens the new window *before* closing the old one —
 //! see `main.rs`'s module docs and [`crate::app::close_work_and_return_to_launcher`].
 //! The one deliberate exception is `app.quit` (Ctrl+Q / File ▸ Quit —
-//! registered in `app.rs`, not here): it force-closes this window with
-//! nothing reopened, so the last-window-closes rule *is* the exit — see
-//! [`crate::app::quit_app`]/`PendingExit::Quit`.
+//! registered in `app.rs`, not here): it force-closes this window with nothing
+//! reopened, so the last-window-closes rule *is* the exit.
 
 use std::rc::Rc;
 
@@ -58,145 +65,12 @@ use crate::view_models::{
 };
 use export_management::ExportScopeKind;
 
-/// Stable window-persistence string_id for the Launcher window. One process
-/// only ever shows one Launcher at a time (it closes the moment a project
-/// opens), so a fixed id — not per-project hashing — is correct here; see
-/// [`window_id_for`] for project windows.
-pub const LAUNCHER_WINDOW_ID: &str = "launcher";
-
-/// Per-project window-persistence id: `work-{hash(canonical_path)}`.
-///
-/// Canonicalizing first collapses different spellings of the same path
-/// (symlinks, `..`, relative vs. absolute, a trailing slash) onto one id, so
-/// a project's remembered geometry keys on the file it actually is, not the
-/// string a particular launch path happened to spell it as — the bug this
-/// replaces: per-project ids only worked when the path came from argv,
-/// because a bare launch used to fix the window's id *before* any project
-/// was chosen.
-///
-/// Falls back to the raw string when the path doesn't exist yet (a New Work
-/// target that hasn't been written to disk) — still stable and still
-/// collision-free in practice, since every caller hashes the exact target
-/// path it already computed.
-///
-/// Hashed with **blake3**, not `std::hash::DefaultHasher`: the result is
-/// *persisted* (as the key of a `window_state.toml` row), and `DefaultHasher`'s
-/// algorithm is explicitly not guaranteed stable across Rust releases — a
-/// toolchain bump would silently orphan every saved geometry. blake3 is
-/// already resolved in this workspace (a transitive dependency via
-/// `skrib_format`, which documents the identical rationale in
-/// `crates/skrib_format/src/fingerprint.rs`), so this adds no new crate to
-/// the dependency graph. Truncated to 16 hex chars to match the previous
-/// `work-{:016x}` id width (`window_state.toml`'s existing well-formed rows
-/// stay visually consistent); the full 32-char digest would be equally safe,
-/// this is just cosmetic.
-pub fn window_id_for(project: &str) -> String {
-    let canon = std::fs::canonicalize(project)
-        .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| project.to_string());
-    format!("work-{}", &blake3::hash(canon.as_bytes()).to_hex()[..16])
-}
-
-/// The window-persistence id of the **`ordinal`-th** window on `project` —
-/// [`window_id_for`] for the first, `{base}-w{ordinal}` for every further one
-/// opened by Work ▸ New Window.
-///
-/// Two things forced this to exist, and both are load-bearing:
-///
-///   * **A string id is a window's identity.** bastyde's `WindowManager` keeps
-///     one `string_to_id` entry per id and simply overwrites it, so two windows
-///     built with the same `.id(..)` do not collide loudly — the second silently
-///     steals the first's identity, and `find_window` (hence
-///     [`open_or_focus_project`], the IPC raise path and the switcher) would
-///     answer with whichever registered last.
-///   * **Geometry is keyed by that same id.** Giving each window its own means a
-///     second window's size and placement are remembered as *its own*, across
-///     launches — rather than the two fighting over one `window_state.toml` row.
-///
-/// Ordinal 1 deliberately yields the bare [`window_id_for`] value: the first
-/// window on a project must keep the id its geometry has always been saved
-/// under, and it is the one [`open_or_focus_project`] resolves to when some
-/// other surface asks for "the" window on this project.
-///
-/// Ordinals are stable per window for as long as it lives and are never reused
-/// (see [`crate::sessions::WorkRegistry::reserve_window_ordinal`]), so the id is
-/// stable too — a second window that closes and is reopened comes back as
-/// `-w3`, with its own remembered geometry, rather than inheriting the placement
-/// of the window that just went away.
-pub fn attached_window_id_for(project: &str, ordinal: usize) -> String {
-    let base = window_id_for(project);
-    if ordinal <= 1 {
-        base
-    } else {
-        format!("{base}-w{ordinal}")
-    }
-}
-
-/// Open `path` in a project window of **this** process, or focus the window
-/// already showing it. Returns the window's id, or `None` if no
-/// [`ProjectWindowFactory`] is registered (only in a headless test context).
-///
-/// **The one door.** Five surfaces need "get me a window on this project" — the
-/// ProjectSwitcher's "Open in new window", the Launcher's recents and Open
-/// button, the backups list, File ▸ Open Work…'s backup redirect, and the
-/// primary's handler for a remote launch — and before Phase 4 four of them
-/// spawned a whole second `skribisto` to do it. Under single-instance that is a
-/// round trip to nowhere: the child would elect, find this very process as the
-/// primary, hand the path straight back over a socket and exit.
-///
-/// The "already open?" test is `find_window(window_id_for(path))`, not a side
-/// table: a window's **string id** is its identity, and it is the same id its
-/// persisted geometry is keyed by, so the two can never disagree about which
-/// window belongs to which project.
-pub fn open_or_focus_project(
-    ctx: &mut bastyde::prelude::EventContext,
-    path: &str,
-) -> Option<bastyde::prelude::BastydeWindowId> {
-    if let Some(id) = ctx.find_window(&window_id_for(path)) {
-        ctx.focus_window(id);
-        return Some(id);
-    }
-    // The string-id test above only ever finds the project's FIRST window: every
-    // further one (Work ▸ New Window) is identified by `attached_window_id_for`,
-    // ordinal suffix and all. So a project whose first window has since closed
-    // while a second stayed open is invisible to it — and answering "not open"
-    // there would load the very same `.skrib` a second time, into a second,
-    // independent `Work`: two live copies of one project, each unaware of the
-    // other's edits, both saving to one path.
-    //
-    // The registry knows better, because it tracks Works rather than window ids.
-    // Matching goes through `window_id_for` on both sides rather than comparing
-    // the strings directly, so it inherits exactly the same canonicalization
-    // (symlinks, `..`, relative spellings) the id itself is built on — the two
-    // cannot disagree about what "the same project" means.
-    if let Some(id) = find_open_project_window(ctx, path) {
-        ctx.focus_window(id);
-        return Some(id);
-    }
-    let factory = ctx.app_state::<ProjectWindowFactory>()?;
-    let (config, _state) = factory.window_config(PendingAction::Load(path.to_string()));
-    Some(ctx.open_window(config))
-}
-
-/// Any live window showing the project at `path`, resolved through the
-/// [`WorkRegistry`] rather than through window string ids — the fallback
-/// [`open_or_focus_project`] needs once one project can own several windows.
-/// The longest-standing window on the Work is the one returned (`windows_for`
-/// is ordinal-ordered).
-fn find_open_project_window(
-    ctx: &bastyde::prelude::EventContext,
-    path: &str,
-) -> Option<bastyde::prelude::BastydeWindowId> {
-    let registry = ctx.app_state::<WorkRegistry>()?;
-    let wanted = window_id_for(path);
-    registry.open_work_ids().into_iter().find_map(|work_id| {
-        let session = registry.session_for(work_id)?;
-        let open_path = session.single_work_info.file_name().get()?;
-        (window_id_for(&open_path) == wanted)
-            .then(|| registry.windows_for(work_id).first().copied())
-            .flatten()
-    })
-}
+// Re-export path→window identity so `shell::windows::*` stays the
+// stable public surface for call sites.
+pub use super::window_ids::{
+    LAUNCHER_WINDOW_ID, attached_window_id_for, open_or_focus_project,
+    resolve_project_window, window_id_for,
+};
 
 /// Scope D — window titles. A reactive `"{Work title} — Skribisto"` (falling
 /// back to plain `"Skribisto"` before a Work has finished loading/creating),
@@ -423,25 +297,6 @@ pub struct InitialWindowState {
 
 #[derive(Clone)]
 pub struct ProjectWindowFactory {
-    /// The formatting view-model, created detached here because the menu bar is
-    /// built alongside `App` rather than inside it — the Format menu binds these
-    /// signals at that moment. `App::build` attaches the editors on every build.
-    ///
-    /// **Known Phase-2 limitation, deliberately not fixed**: shared across
-    /// every window this factory builds (as it always was pre-migration).
-    /// `App::build` re-`attach`es it on every build, so with two
-    /// simultaneously-open project windows, whichever one built most recently
-    /// wins the Format dock's live target — the same last-writer-wins shape
-    /// `SaveAsViewModel`/`BackupRestoreViewModel`/`ProjectSwitchViewModel` used
-    /// to share (Phase 3 fixed the first two — each now reads its Work's own
-    /// `backup_mode`/`backup_context` off `WorkSession`, and is itself minted
-    /// fresh per window — see `WorkSession`'s module doc; `ProjectSwitchViewModel`
-    /// remains a known, disclosed Tier-1 gap, unrelated to backup state).
-    /// Fixing `FormatViewModel` needs it threaded through `EditorsViewModel`
-    /// and every tab/dock factory that reaches it via `ctx.app_state`, which is
-    /// materially larger than Phase 2's scope (Work-scoped *data* isolation);
-    /// flagged for a follow-up.
-    format: FormatViewModel,
     app_ctx: Rc<AppContext>,
     registry: WorkRegistry,
     /// Tier-1 ingredients `WorkSession::new` needs — held here (not a
@@ -491,10 +346,8 @@ impl ProjectWindowFactory {
         tree_expansion_service: TreeExpansionService,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
-        format: FormatViewModel,
     ) -> Self {
         Self {
-            format,
             quit: crate::view_models::QuitSequencer::new(
                 app_ctx.clone(),
                 registry.clone(),
@@ -595,7 +448,10 @@ impl ProjectWindowFactory {
         attached: Option<WorkSession>,
     ) -> (WindowConfig, InitialWindowState) {
         let app_ctx_root = self.app_ctx.clone();
-        let format = self.format.clone();
+        // Per WINDOW: the menu bar binds these signals before `EditorsViewModel`
+        // exists; `App::build` attaches the editors. Never shared — a shared
+        // instance made the last-built window win the Format dock's target.
+        let format = FormatViewModel::detached();
         // A second window on an already-open Work is numbered — and so
         // *identified* — the moment it is built; every other window is the
         // first on its Work until its own Load/New says otherwise.
@@ -603,9 +459,8 @@ impl ProjectWindowFactory {
             PendingAction::AttachExisting { ordinal, .. } => *ordinal,
             _ => 1,
         };
-        // Fixed for this window's whole life — see `App::attached` for what it
-        // decides (desk ownership) and why it must not be re-derived later.
-        let is_attached = matches!(&action, PendingAction::AttachExisting { .. });
+        // Fixed for this window's whole life — see [`crate::app::WindowRole`].
+        let role = crate::app::WindowRole::from_action(&action);
         let id = attached_window_id_for(action.target_path(), ordinal);
         // Tier 2 (the Work's own state) is either shared with the sibling
         // window that already shows this Work, or minted fresh for the Work
@@ -711,6 +566,14 @@ impl ProjectWindowFactory {
         // Work must never share this Work's dirty-state flag — see
         // `WorkSession::unsaved`'s doc.
         let unsaved = session.unsaved.clone();
+        // Per WINDOW, bound to *this* Work's unsaved/backup signals — never a
+        // process-wide switch guard whose hooks the last owner overwrote.
+        let project_switch = crate::view_models::ProjectSwitchViewModel::new(
+            app_ctx_root.clone(),
+            unsaved.clone(),
+            backup_mode.clone(),
+            self.autosave_menu.clone(),
+        );
         // Fresh per WINDOW, never a `self`/`session` field: this names a
         // *window's* own deferred close/quit, not the Work's data — even two
         // windows on the SAME Work must each resolve their own close
@@ -792,15 +655,11 @@ impl ProjectWindowFactory {
                         .is_some_and(|work_id| registry_guard.window_count_for(work_id) > 1);
                     if shared_with_a_sibling {
                         // The desk belongs to the window that loaded the project
-                        // (see `App::attached`), and this is its last chance to
-                        // write it: the Work lives on in the sibling, so no
-                        // `CloseWork` — and none of the capture that hangs off
-                        // it — will ever run for this window. Captured here,
-                        // while its `DockingModel` and editors are still live,
-                        // rather than left to the sibling's eventual close,
-                        // which would read the same handles long after this
-                        // window's tree was dropped.
-                        if !is_attached {
+                        // (see `WindowRole::owns_desk`), and this is its last
+                        // chance to write it: the Work lives on in the sibling,
+                        // so no `CloseWork` — and none of the capture that hangs
+                        // off it — will ever run for this window.
+                        if role.owns_desk() {
                             crate::app::capture_workspace_layout(&layout_guard);
                         }
                         return CloseResponse::Close;
@@ -1640,6 +1499,8 @@ impl ProjectWindowFactory {
                     quit.clone(),
                     save_as_vm.clone(),
                     restore_vm.clone(),
+                    format.clone(),
+                    project_switch.clone(),
                     title_text.clone(),
                     window_ordinal.clone(),
                 )));
@@ -1801,7 +1662,6 @@ mod tests {
             TreeExpansionService::in_memory_default(),
             Signal::new(false),
             Signal::new(true),
-            FormatViewModel::detached(),
         )
     }
 

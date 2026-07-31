@@ -61,13 +61,15 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             SplitFlavour::Prose => tab.typography.scene.clone(),
             SplitFlavour::Synopsis => tab.typography.synopsis.clone(),
         };
+        let format = tab.format.clone();
         let factory = {
             let vm = vm.clone();
             let cw = cw.clone();
             let md = mark_dirty.clone();
             let typo = typo.clone();
+            let format = format.clone();
             move |row: &StreamRow| -> Box<dyn Widget> {
-                Box::new(stream_row(&vm, row, &cw, &typo, flavour, &md))
+                Box::new(stream_row(&vm, row, &cw, &typo, flavour, &md, &format))
             }
         };
 
@@ -97,6 +99,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Option::None,
                     tab.open_doc.spell_main(),
                     tab.open_doc.replacement_main(),
+                    Some(tab.format.clone()),
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
@@ -112,6 +115,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // (see `FormatViewModel`), which resolves by focus and so
                     // can name the row the caret is actually in.
                     Option::None,
+                    Some(tab.format.clone()),
                 )),
             };
             col = col.child(vspace(6.0));
@@ -199,6 +203,7 @@ fn stream_row(
     typo: &EditorTypography,
     flavour: SplitFlavour,
     mark_dirty: &Rc<dyn Fn()>,
+    format: &crate::view_models::FormatViewModel,
 ) -> impl Widget {
     let id = row.item_id;
     let is_heading = row.sub_role.opens_chapter() || row.sub_role.opens_part();
@@ -249,6 +254,7 @@ fn stream_row(
                         Option::None,
                         doc.spell_main(),
                         doc.replacement_main(),
+                        Some(format.clone()),
                     ));
                 }
             }
@@ -265,6 +271,7 @@ fn stream_row(
                         // One synopsis per stream row — see the sibling call.
                         // Formatting reaches it through the editor registry.
                         Option::None,
+                        Some(format.clone()),
                     ));
                 }
             }

@@ -12,7 +12,7 @@
 //!   check-marked; clicking another instance's project raises that window (via an
 //!   IPC "raise" message carrying a freshly-minted xdg-activation token).
 //! - **Recent** — recent projects not currently open. Clicking one asks
-//!   (MessageBox) whether to open it in a new window (a new process) or here.
+//!   (MessageBox) whether to open it in a new window of this process or here.
 //!
 //! **On-open refresh:** the registry scan is stale the moment another instance
 //! opens/closes a project, so the popover content is re-scanned **each time the

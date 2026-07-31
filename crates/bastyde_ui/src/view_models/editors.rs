@@ -119,6 +119,9 @@ pub struct EditorsViewModel {
     /// doc for why this moved from an `OverviewViewModel`-local `ctx.app_state`
     /// lookup to a constructor-threaded handle (Scope C fix).
     tree_expansion: crate::view_models::TreeExpansionViewModel,
+    /// This window's Format surfaces — threaded into every `ContentTab` so
+    /// editors register with the right registry (never process-wide app_state).
+    format: crate::view_models::FormatViewModel,
 }
 
 impl EditorsViewModel {
@@ -141,6 +144,7 @@ impl EditorsViewModel {
         distraction_free_width: Signal<f32>,
         // Shared with the title-bar's Go menu — see `GoAvailability`'s own doc.
         go: GoAvailability,
+        format: crate::view_models::FormatViewModel,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -167,6 +171,7 @@ impl EditorsViewModel {
             active_item: Signal::new(None),
             scene_focused,
             go,
+            format,
             column_width,
             show_synopsis,
             typography,
@@ -502,6 +507,7 @@ impl EditorsViewModel {
             self.tree_expansion.clone(),
             self.distraction_free.clone(),
             self.distraction_free_width.clone(),
+            self.format.clone(),
         );
         let tab_title = if title.is_empty() {
             tr!(untitled())
@@ -1005,6 +1011,7 @@ impl EditorsViewModel {
                     self.tree_expansion.clone(),
                     self.distraction_free.clone(),
                     self.distraction_free_width.clone(),
+                    self.format.clone(),
                 );
                 let caption = if it.title.is_empty() {
                     tr!(untitled())
@@ -1165,6 +1172,7 @@ mod tests {
             Signal::new(false),
             Signal::new(620.0),
             crate::view_models::GoAvailability::new(),
+            crate::view_models::FormatViewModel::detached(),
         )
     }
 
@@ -1231,6 +1239,7 @@ mod tests {
             Signal::new(false),
             Signal::new(620.0),
             crate::view_models::GoAvailability::new(),
+            crate::view_models::FormatViewModel::detached(),
         );
         let ids_b = AppIds::new();
         let tree_expansion_b = crate::view_models::TreeExpansionViewModel::new(
@@ -1254,6 +1263,7 @@ mod tests {
             Signal::new(false),
             Signal::new(620.0),
             crate::view_models::GoAvailability::new(),
+            crate::view_models::FormatViewModel::detached(),
         );
 
         // Window A has item 1 in its primary pane and item 2 in its side pane;
