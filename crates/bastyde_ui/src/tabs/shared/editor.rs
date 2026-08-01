@@ -136,7 +136,8 @@ pub fn writing_column(
         // instead of the whole document on every paint.
         .window_to_clip(true)
         .typography_defaults(typo_defaults(typo))
-        .zoom(typo.size.get());
+        // Sharp logical size (composes with a11y text scale) — not page zoom.
+        .font_size_scale(typo.size.get());
     // Hand this editor's handle to the find banner so it can select + scroll the
     // current match into view. Re-attached on every rebuild (a fresh widget each
     // time); the handle just re-points at the same underlying editor state.
@@ -443,7 +444,7 @@ pub fn synopsis_editor(
         .content_padding_symmetric(6.0, 30.0)
         .text_color(TextRole::Secondary)
         .typography_defaults(typo_defaults(typo))
-        .zoom(typo.size.get());
+        .font_size_scale(typo.size.get());
     // Re-attached on every rebuild, exactly as `writing_column` does for the
     // prose handle: a tab rebuild mints a fresh editor, so a stored handle would
     // address the one the writer *used* to be typing in.
@@ -546,7 +547,7 @@ pub fn card_synopsis_editor(
         .content_padding_symmetric(4.0, 8.0)
         .v_scroll_policy(ScrollPolicy::Auto)
         .typography_defaults(typo_defaults(&typo))
-        .zoom(typo.size.get());
+        .font_size_scale(typo.size.get());
     {
         let handle = editor.handle();
         let cursor = editor.cursor_position_signal();
@@ -1280,7 +1281,7 @@ pub fn centered(child: impl Widget + 'static, column_width: &Signal<f32>) -> imp
 
 /// The framework's non-destructive default typography from a settings bundle's
 /// *current* values (font family / line height / first-line indent). Size is
-/// applied separately as editor zoom.
+/// applied separately as logical `font_size_scale` (sharp; composes with a11y).
 fn typo_defaults(typo: &EditorTypography) -> EditorTypographyDefaults {
     EditorTypographyDefaults {
         font_family: Some(typo.font_family.get()),
@@ -1292,21 +1293,21 @@ fn typo_defaults(typo: &EditorTypography) -> EditorTypographyDefaults {
 }
 
 /// Push `typo`'s current values onto a live editor: font / line-height / indent
-/// as non-destructive defaults, size as zoom. Idempotent — called on mount and
-/// on every settings change.
+/// as non-destructive defaults, size as logical font-size scale. Idempotent —
+/// called on mount and on every settings change.
 fn push_typography(handle: &EditorHandle, typo: &EditorTypography) {
     handle.set_typography_defaults(typo_defaults(typo));
-    handle.set_zoom_level(typo.size.get());
+    handle.set_font_size_scale(typo.size.get());
 }
 
 /// Wraps a `RichTextEditor`, keeping its per-editor-type typography live for the
 /// life of the tab. Initial values are already baked onto `editor` by the caller
-/// (`typography_defaults` + `zoom`); this registers one `ctx.effect` per settings
-/// field so a preference edit re-pushes the whole bundle through the editor
-/// handle to every open tab. Four *separate* effects rather than one combined
-/// `zip` signal — `zip`/`zip3` build a *derived* signal, which panics on
-/// `.observe()`; the `SettingsStore` signals are mutable, so per-field effects
-/// are safe.
+/// (`typography_defaults` + `font_size_scale`); this registers one `ctx.effect`
+/// per settings field so a preference edit re-pushes the whole bundle through
+/// the editor handle to every open tab. Four *separate* effects rather than one
+/// combined `zip` signal — `zip`/`zip3` build a *derived* signal, which panics
+/// on `.observe()`; the `SettingsStore` signals are mutable, so per-field
+/// effects are safe.
 /// Wire a prose editor's `handle` to its document's caret-aware [`SpellSession`]: feed this view's
 /// focus + caret (read **live** via `EditorHandle::cursor_position()` — the caret signal lags a
 /// frame behind a just-typed character, so the effects only *ping* "something changed") and drive

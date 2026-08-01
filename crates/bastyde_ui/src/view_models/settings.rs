@@ -70,8 +70,9 @@ use crate::{
 
 /// One editor type's four typography knobs. Cheap to clone — every field is a
 /// `SettingsStore`-cached `Signal`, so all clones observe / drive the same
-/// live value. `size` is a relative zoom multiplier (`1.0` = 100 %);
-/// `line_height` is a multiple of the font size; `first_line_indent` is in px.
+/// live value. `size` is a relative font-size scale (`1.0` = 100 %), composed
+/// with interface a11y text scale; `line_height` is a multiple of the font
+/// size; `first_line_indent` is in px.
 #[derive(Clone)]
 pub struct EditorTypography {
     pub font_family: Signal<String>,

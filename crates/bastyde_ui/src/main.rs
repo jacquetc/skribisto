@@ -294,11 +294,12 @@ pub const SHOW_WELCOME_KEY: &str = "ui.show_welcome";
 // Non-destructive per-editor-type defaults. Font family / line height /
 // first-line indent are applied via `RichTextEditor::typography_defaults`
 // (a display-time snapshot fill that never mutates the document); size is a
-// per-editor `zoom` multiplier (`1.0` = 100 %). These are NOT the char-format
-// `set_font_family`/`set_font_size` (which mutate the selection + document).
-// `font_family` must resolve via the shared typesetter — an installed system
-// font or one registered by `register_editor_fonts` below; the `FontPicker`
-// control only ever offers names that will render.
+// per-editor `font_size_scale` multiplier (`1.0` = 100 %), composed with the
+// interface a11y text scale — real shaping (sharp), not page zoom. These are
+// NOT the char-format `set_font_family`/`set_font_size` (which mutate the
+// selection + document). `font_family` must resolve via the shared typesetter
+// — an installed system font or one registered by `register_editor_fonts`
+// below; the `FontPicker` control only ever offers names that will render.
 
 /// Scene / manuscript body editor typography.
 pub const SCENE_FONT_FAMILY_KEY: &str = "editor.scene.font_family";
@@ -487,9 +488,9 @@ fn register_editor_fonts() -> bastyde::text::VecFontRegistrar {
         data: Arc::new(bytes.to_vec()),
         is_default: false,
         // The writing-serif design size: this is what a Scene / Synopsis editor's
-        // `size` = 100 % resolves to (the `size` setting is a zoom multiplier, so the
-        // absolute px is anchored here). 18 px is the comfortable long-form drafting
-        // size; a Synopsis pane scales down from it via its 0.85 default.
+        // `size` = 100 % resolves to (the `size` setting is a font-size scale, so
+        // the absolute px is anchored here). 18 px is the comfortable long-form
+        // drafting size; a Synopsis pane scales down from it via its 0.85 default.
         default_size_px: 18.0,
     };
     // Bytes come from the shared `skribisto_fonts` crate — the same blobs the PDF exporter
