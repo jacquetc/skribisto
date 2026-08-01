@@ -203,6 +203,8 @@ settings-page-dictionaries = Dictionnaires
 settings-page-autosave = Enregistrement automatique
 settings-page-export = Formats d'export
 settings-page-keymap = Raccourcis clavier
+# Champ de filtre de la page Raccourcis (filtre la liste ShortcutSettings par nom / id / catégorie).
+settings-keymap-filter = Filtrer les raccourcis
 
 ## Fenêtre des paramètres: champs
 settings-group-typography = Typographie

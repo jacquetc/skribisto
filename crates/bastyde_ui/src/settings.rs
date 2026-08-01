@@ -15,7 +15,9 @@
 //! (theme / interface language / text scale — each applies live and persists).
 //! The panes bind those signals directly; this view is thin.
 //!
-//! Categories that don't yet carry settings render an **empty placeholder**.
+//! Categories that don't yet carry settings (today only Menus & Toolbars) render
+//! an **empty placeholder**. Keymap embeds Bastyde's `ShortcutSettings`;
+//! Notifications embeds the toast archive `NotificationLog`.
 //! **Instant-apply** (the macOS / GNOME convention): every change takes effect and
 //! persists immediately, so there is no Apply/Cancel/OK staged model. The footer
 //! carries only *Reset to defaults* (left — enabled only while something differs
@@ -1318,11 +1320,7 @@ impl Widget for SettingsPanel {
             ),
             (
                 Pane::Notifications,
-                Box::new(empty_pane(
-                    Some(tr!(settings_sec_appearance_behaviour())),
-                    tr!(settings_page_notifications()),
-                    Sec::AppearanceBehaviour.icon_svg(),
-                )),
+                panes::notifications::notifications_pane(ctx),
             ),
             (
                 Pane::SceneTypography,
@@ -1363,14 +1361,7 @@ impl Widget for SettingsPanel {
                 Box::new(panes::autosave::autosave_pane(&vm)),
             ),
             (Pane::ExportFormats, export_styles_pane),
-            (
-                Pane::Keymap,
-                Box::new(empty_pane(
-                    None,
-                    tr!(settings_page_keymap()),
-                    res!("assets/icons/settings/keymap.svg"),
-                )),
-            ),
+            (Pane::Keymap, Box::new(panes::keymap::keymap_pane(ctx))),
             (Pane::WorkStructure, structure_pane),
             (Pane::WorkPunctuation, punctuation_pane),
             (

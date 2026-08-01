@@ -203,6 +203,8 @@ settings-page-dictionaries = Dictionaries
 settings-page-autosave = Autosave
 settings-page-export = Export Formats
 settings-page-keymap = Keymap
+# Filter box on the Keymap page (filters the ShortcutSettings list by name / id / category).
+settings-keymap-filter = Filter shortcuts
 
 ## Settings window: fields
 settings-group-typography = Typography

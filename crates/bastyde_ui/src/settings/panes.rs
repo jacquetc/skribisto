@@ -14,8 +14,9 @@
 //! `crumb`) through `use super::super::*` — child modules can see a parent's private items,
 //! so none of those had to be widened to make this move.
 //!
-//! Three pages are still `empty_pane` placeholders (Menus & Toolbars, Notifications, Keymap)
-//! and have no module until they have a body.
+//! One page is still an `empty_pane` placeholder (Menus & Toolbars) and has no module
+//! until it has a body. Keymap hosts Bastyde's [`ShortcutSettings`]; Notifications hosts
+//! the toast archive [`NotificationLog`].
 //!
 //! The four that were already split live here too, having been top-level `settings_*.rs`
 //! files: [`backup`], [`dictionaries`], [`export_styles`] and [`user_dictionary`]. A
@@ -33,6 +34,8 @@ pub(super) mod distraction_free_themes;
 pub(super) mod editor_behavior;
 pub(super) mod export_styles;
 pub(super) mod goals;
+pub(super) mod keymap;
+pub(super) mod notifications;
 pub(super) mod punctuation;
 pub(super) mod spellcheck;
 pub(super) mod text_replacements;
