@@ -98,11 +98,22 @@ tags-chip-more = { $n ->
    *[other] { $n } more tags
 }
 
-## The story-bible roster and backlinks
-mentions-roster = Mentioned here
-mentions-backlinks = Mentioned in
-mentions-pin = Keep { $name } on this item
+## Cast of the scene (references-first story-bible pins + suggestions)
+cast-section = Cast
+cast-add = Add to cast…
+cast-add-filter-placeholder = Filter story bible…
+cast-add-empty = No story-bible entries to add
+cast-pin = Add { $name } to cast
+cast-unpin = Remove { $name } from cast
+cast-empty = No one pinned yet — add or keep a suggestion
+
+## Backlinks on a story-bible item
+mentions-backlinks = Appears in
 mentions-hit-count = { $n ->
     [one] once
    *[other] { $n } times
 }
+
+## Legacy keys kept so older scripts/tests that still reference them compile
+mentions-roster = Cast
+mentions-pin = Add { $name } to cast

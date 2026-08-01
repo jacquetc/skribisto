@@ -1471,6 +1471,75 @@ fn duplicate_copies_aliases() {
     );
 }
 
+fn item_references(fx: &Fixture, item_id: EntityId) -> Vec<EntityId> {
+    binder_item_commands::get_binder_item_relationship(
+        &fx.ctx,
+        &item_id,
+        &BinderItemRelationshipField::References,
+    )
+    .expect("references")
+}
+
+/// `duplicate` copies confirmed references (cast pins), the same M2M shape as tags.
+///
+/// A clone of a scene keeps the writer's cast; dropping them would make "Duplicate"
+/// lose planning work that is as intentional as the tag list.
+#[test]
+fn duplicate_copies_references() {
+    let fx = make_fixture();
+    let source = mk_scene(&fx, "Scene with cast");
+    let character = mk_scene(&fx, "Elena");
+    wire_binder(&fx.ctx, fx.setup, fx.binder2, &[source, character]);
+    binder_item_commands::set_binder_item_relationship(
+        &fx.ctx,
+        Some(fx.setup),
+        &BinderItemRelationshipDto {
+            id: source,
+            field: BinderItemRelationshipField::References,
+            right_ids: vec![character],
+        },
+    )
+    .expect("pin cast");
+
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+    let res = binder_item_management_commands::duplicate(
+        &fx.ctx,
+        Some(stack),
+        &DuplicateDto {
+            item_ids: vec![source],
+        },
+    )
+    .expect("duplicate");
+    let clone = res.new_item_ids[0];
+
+    assert_eq!(
+        item_references(&fx, clone),
+        vec![character],
+        "the clone must keep the same cast pins as its source"
+    );
+    assert_eq!(
+        item_references(&fx, source),
+        vec![character],
+        "source cast is untouched"
+    );
+
+    undo_redo_commands::undo(&fx.ctx, Some(stack)).expect("undo");
+    assert!(
+        binder_item_commands::get_binder_item(&fx.ctx, &clone)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        item_references(&fx, clone).is_empty(),
+        "no dangling cast junction on the removed clone"
+    );
+    assert_eq!(
+        item_references(&fx, source),
+        vec![character],
+        "undo must leave the source's cast untouched"
+    );
+}
+
 /// `split_scene` carries the source's per-item language onto the new half.
 ///
 /// Regression: the new scene is built with `..Default::default()`, so an explicit

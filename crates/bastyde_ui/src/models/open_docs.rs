@@ -77,6 +77,10 @@ pub struct OpenDoc {
     /// The store's aggregate "an edit happened" counter — bumped by every edit,
     /// observed by the debounced autosave timer.
     edited: Signal<u64>,
+    /// Per-doc edit generation — bumped only when **this** item is edited.
+    /// Cast live-overlay (and anything else that must not wake on a side tab)
+    /// binds here instead of [`OpenDocsStore::edited_any`].
+    pub edit_gen: Signal<u64>,
     /// The caret-aware spell-check range session on the main / synopsis document, if that field
     /// exists. Created once in [`build`](Self::build); `attach_spell` sets its checker (dictionary
     /// install/remove, mute, language change) and the editor feeds it the focused view's caret.
@@ -130,6 +134,7 @@ impl OpenDoc {
                 p
             },
             edited,
+            edit_gen: Signal::new(0),
             spell_main: None,
             spell_synopsis: None,
             replacement_main: RefCell::new(None),
@@ -164,13 +169,16 @@ impl OpenDoc {
     }
 
     /// The `on_change` hook for this doc's editors: mark it dirty and bump the
-    /// store's aggregate edit counter (drives autosave).
+    /// store's aggregate edit counter (drives autosave) plus this doc's
+    /// [`edit_gen`](Self::edit_gen) (per-item observers such as cast live-overlay).
     pub fn mark_dirty_fn(&self) -> impl Fn() + 'static {
         let dirty = self.dirty.clone();
         let edited = self.edited.clone();
+        let edit_gen = self.edit_gen.clone();
         move || {
             dirty.set(true);
             edited.set(edited.get().wrapping_add(1));
+            edit_gen.set(edit_gen.get().wrapping_add(1));
         }
     }
 
@@ -1163,7 +1171,7 @@ mod tests {
     }
 
     /// `mark_dirty_fn` flips the doc's dirty flag and bumps the store's aggregate
-    /// edit counter (what the autosave timer observes).
+    /// edit counter (what the autosave timer observes) and this doc's edit_gen.
     #[test]
     fn mark_dirty_sets_dirty_and_bumps_edited() {
         let ctx = Rc::new(AppContext::new());
@@ -1178,8 +1186,10 @@ mod tests {
         );
         assert!(!doc.dirty.get());
         let before = edited.get();
+        let gen_before = doc.edit_gen.get();
         doc.mark_dirty_fn()();
         assert!(doc.dirty.get());
         assert_eq!(edited.get(), before + 1);
+        assert_eq!(doc.edit_gen.get(), gen_before + 1);
     }
 }

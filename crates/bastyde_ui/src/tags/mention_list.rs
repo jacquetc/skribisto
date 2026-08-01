@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The story-bible roster and its mirror, backlinks — the Inspector's two views of the
+//! The cast list and its mirror, backlinks — the Inspector's two views of the
 //! mention index.
 //!
-//! **Roster**, on a scene: who and what appears here. **Backlinks**, on a discoverable item:
-//! where this character is mentioned. Both are the same rows read from opposite ends, so both
-//! render through [`MentionList`].
+//! **Cast**, on a scene/note/chapter: who and what the writer has pinned here,
+//! plus scan suggestions. **Backlinks** / Appears in, on a discoverable item:
+//! where this character is mentioned. Both are the same rows read from opposite
+//! ends, so both render through [`MentionList`].
 //!
 //! ## Confirmed and suggested are different claims, and look it
 //!
 //! A *confirmed* row is a persisted `references` entry — a decision the writer made. A
 //! *suggested* row is the scan's guess from having found the name in the prose. Suggestions
-//! are ghosted and carry a pin; confirmed rows are plain and do not.
+//! are ghosted and carry a pin; confirmed rows are plain and offer unpin.
 //!
 //! **Every suggestion shows its evidence.** Hovering gives the sentence the name was found
 //! in, with the matched name and how often it occurred. This is the feature's answer to being
 //! wrong: the matcher cannot tell a character called Don from the contraction "don't", so
-//! rather than assert a roster it shows its working and lets the writer decline. A confident
-//! bare list would be worse than useless the first time it was wrong.
+//! rather than assert a roster it shows its working and lets the writer decline.
 //!
-//! Nothing here writes except the pin, which goes through `references` and is undoable.
+//! Nothing here writes except pin/unpin, which go through `references` and are undoable.
 
 use std::rc::Rc;
 
@@ -33,8 +33,11 @@ use bastyde::widgets::{HStack, IconButton, TextWidget, VStack};
 use crate::view_models::MentionRow;
 use crate::widgets::attach_labelled_composite_tooltip;
 
-/// Persist a new confirmed-reference list for the item the list belongs to.
+/// Persist a new confirmed-reference list for the item the list belongs to (append one id).
 pub type PinReference = Rc<dyn Fn(u64, &mut EventContext)>;
+
+/// Remove a confirmed reference from the item the list belongs to.
+pub type UnpinReference = Rc<dyn Fn(u64, &mut EventContext)>;
 
 /// Open a row's target in the side pane.
 pub type OpenTarget = Rc<dyn Fn(u64, String, &mut EventContext)>;
@@ -45,15 +48,23 @@ pub struct MentionList {
     /// character", which is a statement about the *scene*, and a backlinks list is looking
     /// at the character. Offering a pin there would write the wrong item's references.
     pin: Option<PinReference>,
+    /// Same gate as pin: only the cast direction (owner item) can unpin.
+    unpin: Option<UnpinReference>,
     open: OpenTarget,
     root_child: Option<WidgetId>,
 }
 
 impl MentionList {
-    pub fn new(rows: Vec<MentionRow>, pin: Option<PinReference>, open: OpenTarget) -> Self {
+    pub fn new(
+        rows: Vec<MentionRow>,
+        pin: Option<PinReference>,
+        unpin: Option<UnpinReference>,
+        open: OpenTarget,
+    ) -> Self {
         Self {
             rows,
             pin,
+            unpin,
             open,
             root_child: None,
         }
@@ -111,16 +122,22 @@ impl Widget for MentionList {
                 );
             }
 
-            // Pin, on suggestions only: a confirmed row is already pinned, and offering the
-            // control again would suggest it does something.
-            if !row.is_confirmed
-                && let Some(pin) = self.pin.clone()
-            {
+            if row.is_confirmed {
+                if let Some(unpin) = self.unpin.clone() {
+                    let target = row.target_id;
+                    line = line.child(
+                        IconButton::clear()
+                            .embedded()
+                            .tooltip(tr!(cast_unpin(name = row.title.clone())))
+                            .on_activate_fn(move |c| unpin(target, c)),
+                    );
+                }
+            } else if let Some(pin) = self.pin.clone() {
                 let target = row.target_id;
                 line = line.child(
                     IconButton::add()
                         .embedded()
-                        .tooltip(tr!(mentions_pin(name = row.title.clone())))
+                        .tooltip(tr!(cast_pin(name = row.title.clone())))
                         .on_activate_fn(move |c| pin(target, c)),
                 );
             }
@@ -237,10 +254,11 @@ mod tests {
         }
     }
 
-    fn list(rows: Vec<MentionRow>, with_pin: bool) -> MentionList {
+    fn list(rows: Vec<MentionRow>, with_pin: bool, with_unpin: bool) -> MentionList {
         MentionList::new(
             rows,
             with_pin.then(|| Rc::new(|_id: u64, _c: &mut EventContext| {}) as PinReference),
+            with_unpin.then(|| Rc::new(|_id: u64, _c: &mut EventContext| {}) as UnpinReference),
             Rc::new(|_id: u64, _t: String, _c: &mut EventContext| {}),
         )
     }
@@ -254,17 +272,18 @@ mod tests {
                 row(3, "Will", true, ""),
             ],
             true,
+            true,
         )));
         tree.layout(SizeProposal::exact(300.0, 200.0));
         let col = tree.children(id)[0];
         assert_eq!(tree.children(col).len(), 2);
     }
 
-    /// How many buttons the list emits. The pin is the only one, so this counts pins
-    /// without depending on how deeply the row happens to nest.
-    fn pin_count(rows: Vec<MentionRow>, with_pin: bool) -> usize {
+    /// How many buttons the list emits. Pin and unpin are the only ones, so this
+    /// counts controls without depending on how deeply the row happens to nest.
+    fn button_count(rows: Vec<MentionRow>, with_pin: bool, with_unpin: bool) -> usize {
         let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
-        tree.add_boxed(Box::new(list(rows, with_pin)));
+        tree.add_boxed(Box::new(list(rows, with_pin, with_unpin)));
         tree.layout(SizeProposal::exact(300.0, 200.0));
         let _ = tree.render();
         tree.sync_accessibility()
@@ -274,21 +293,31 @@ mod tests {
             .count()
     }
 
-    /// A confirmed row is already pinned; offering the control again would imply it does
-    /// something.
+    /// A confirmed row offers unpin; a suggestion offers pin — never both on one row.
     #[test]
-    fn only_suggestions_offer_a_pin() {
+    fn suggestions_pin_and_confirmed_unpin() {
         let rows = vec![row(2, "Suggested", false, "x"), row(3, "Pinned", true, "x")];
-        assert_eq!(pin_count(rows, true), 1, "one pin, on the suggestion only");
+        assert_eq!(
+            button_count(rows, true, true),
+            2,
+            "one pin + one unpin"
+        );
     }
 
-    /// A backlinks list has no pin at all: pinning states that *this scene* references a
-    /// character, and a backlinks list is looking at the character, so the control would
-    /// write the wrong item's references.
+    /// A backlinks list has no pin/unpin at all: those write the *owner* item's
+    /// references, and a backlinks list is looking at the character.
     #[test]
-    fn a_list_without_a_pin_callback_renders_no_pin() {
-        let rows = vec![row(2, "Grace", false, "x"), row(3, "Will", false, "x")];
-        assert_eq!(pin_count(rows.clone(), true), 2, "both are suggestions");
-        assert_eq!(pin_count(rows, false), 0, "no pin without a callback");
+    fn a_list_without_callbacks_renders_no_controls() {
+        let rows = vec![row(2, "Grace", false, "x"), row(3, "Will", true, "x")];
+        assert_eq!(button_count(rows.clone(), true, true), 2);
+        assert_eq!(button_count(rows, false, false), 0);
+    }
+
+    #[test]
+    fn empty_list_builds() {
+        let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
+        let id = tree.add_boxed(Box::new(list(vec![], true, true)));
+        tree.layout(SizeProposal::exact(300.0, 200.0));
+        assert!(tree.children(id).len() <= 1);
     }
 }

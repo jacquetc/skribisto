@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 // Custom implementation: deep-copy each selected BinderItem subtree (items +
-// their Content rows + tag links, NOT references) and insert each new subtree
-// immediately after its source subtree in the binder. Undoable via a scoped
-// snapshot/restore of the source binder subtree.
+// their Content rows + tag links + confirmed references / cast pins) and insert
+// each new subtree immediately after its source subtree in the binder. Undoable
+// via a scoped snapshot/restore of the source binder subtree.
 use crate::DuplicateDto;
 use crate::DuplicateReturnDto;
 use anyhow::{Result, anyhow};
@@ -184,7 +184,7 @@ impl DuplicateUseCase {
                     )?;
                 }
 
-                // Copy tag links (shared M2M); references are intentionally NOT copied.
+                // Copy tag links (shared M2M).
                 let tag_ids =
                     uow.get_binder_item_relationship(&src.id, &BinderItemRelationshipField::Tags)?;
                 if !tag_ids.is_empty() {
@@ -192,6 +192,20 @@ impl DuplicateUseCase {
                         &created_item.id,
                         &BinderItemRelationshipField::Tags,
                         &tag_ids,
+                    )?;
+                }
+
+                // Copy confirmed references (cast pins). Same shared-target M2M shape as
+                // tags: the clone keeps the same story-bible cast the writer already chose.
+                let ref_ids = uow.get_binder_item_relationship(
+                    &src.id,
+                    &BinderItemRelationshipField::References,
+                )?;
+                if !ref_ids.is_empty() {
+                    uow.set_binder_item_relationship(
+                        &created_item.id,
+                        &BinderItemRelationshipField::References,
+                        &ref_ids,
                     )?;
                 }
 

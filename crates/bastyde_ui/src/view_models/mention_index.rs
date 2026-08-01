@@ -231,6 +231,191 @@ impl MentionIndex {
         let _ = self.take_if_ours(event);
     }
 
+    /// Discoverable entities the last batch built — the story-bible catalogue for Add-to-cast
+    /// and write-path validation. Empty until the first scan lands.
+    pub fn discoverable_table(&self) -> Vec<DiscoverableEntity> {
+        self.inner.table.borrow().clone()
+    }
+
+    /// Whether `target_id` is currently a valid cast target (present in the alias table).
+    pub fn is_valid_cast_target(&self, target_id: u64) -> bool {
+        self.inner.table.borrow().iter().any(|e| e.id == target_id)
+    }
+
+    /// Keep only discoverable, non-self targets, preserving order and dropping duplicates.
+    ///
+    /// When the alias table is still empty (scan not landed yet), only self and
+    /// duplicates are dropped — stripping against an empty table would wipe a
+    /// writer's cast the first time they pin before the first scan returns.
+    pub fn filter_cast_targets(&self, owner_id: u64, ids: &[u64]) -> Vec<u64> {
+        let table = self.inner.table.borrow();
+        let mut out = Vec::with_capacity(ids.len());
+        for &id in ids {
+            if id == owner_id {
+                continue;
+            }
+            if !table.is_empty() && !table.iter().any(|e| e.id == id) {
+                continue;
+            }
+            if !out.contains(&id) {
+                out.push(id);
+            }
+        }
+        out
+    }
+
+    /// References-first cast for the focused item: confirmed pins first, then scan
+    /// suggestions (batch + optional chapter-union owners + optional live prose).
+    ///
+    /// `live_prose` must be supplied only from a **debounced** path — never from the
+    /// editor key handler. When `None`, suggestions come from the batch index alone.
+    /// `is_confirmed` is always taken from `confirmed` (the focused item's `references`),
+    /// never from a child owner's pins when `extra_owners` is used for a chapter union.
+    pub fn cast_for(
+        &self,
+        owner_id: u64,
+        live_prose: Option<&str>,
+        confirmed: &[u64],
+        extra_owners: &[u64],
+    ) -> Vec<MentionRow> {
+        let table = self.inner.table.borrow();
+        // When the table is empty, still surface raw confirmed ids (titles may be
+        // blank until the first scan); never drop the writer's pins.
+        let confirmed_set: HashMap<u64, ()> = confirmed
+            .iter()
+            .copied()
+            .filter(|&id| {
+                id != owner_id && (table.is_empty() || table.iter().any(|e| e.id == id))
+            })
+            .map(|id| (id, ()))
+            .collect();
+
+        // Suggestions: batch for owner (unless non-empty live prose replaces it) + extra
+        // owners (chapter union). Live prose is never computed here — the caller debounces
+        // it. Empty `Some("")` must not drop the owner batch: that is the same as no live
+        // overlay yet (new scene, cleared body).
+        let mut by_target: HashMap<u64, MentionRow> = HashMap::new();
+        let live = live_prose.filter(|p| !p.is_empty());
+
+        let merge_suggestion = |map: &mut HashMap<u64, MentionRow>, row: MentionRow| {
+            if row.target_id == owner_id {
+                return;
+            }
+            if !table.iter().any(|e| e.id == row.target_id) {
+                return;
+            }
+            match map.get_mut(&row.target_id) {
+                Some(existing) => {
+                    existing.hit_count = existing.hit_count.max(row.hit_count);
+                    if existing.evidence.is_empty() && !row.evidence.is_empty() {
+                        existing.evidence = row.evidence;
+                        existing.matched_name = row.matched_name;
+                        existing.is_title_match = row.is_title_match;
+                    } else if row.is_title_match && !existing.is_title_match {
+                        existing.is_title_match = true;
+                        existing.matched_name = row.matched_name;
+                    }
+                }
+                None => {
+                    map.insert(
+                        row.target_id,
+                        MentionRow {
+                            // Cast rows are owned by the focused item for pin/unpin.
+                            owner_id,
+                            is_confirmed: false,
+                            ..row
+                        },
+                    );
+                }
+            }
+        };
+
+        {
+            let by_owner = self.inner.by_owner.borrow();
+            // Non-empty live prose replaces the owner's batch half (same as
+            // `roster_for`); still merge extra_owners from the batch only.
+            let batch_owners: Box<dyn Iterator<Item = u64>> = if live.is_some() {
+                Box::new(extra_owners.iter().copied())
+            } else {
+                Box::new(std::iter::once(owner_id).chain(extra_owners.iter().copied()))
+            };
+            for id in batch_owners {
+                if let Some(rows) = by_owner.get(&id) {
+                    for row in rows {
+                        // Child batch `is_confirmed` is ignored — only `confirmed` below matters.
+                        merge_suggestion(&mut by_target, row.clone());
+                    }
+                }
+            }
+        }
+
+        if let Some(prose) = live {
+            if !table.is_empty() {
+                let fingerprint = mentions::fingerprint_alias_table(&table);
+                let hits =
+                    mentions::cached_mentions(prose, &table, fingerprint, FoldLocale::default());
+                let mut live_counts: HashMap<u64, MentionRow> = HashMap::new();
+                for h in hits.iter() {
+                    if h.entity_id == owner_id {
+                        continue;
+                    }
+                    let Some(entity) = table.iter().find(|e| e.id == h.entity_id) else {
+                        continue;
+                    };
+                    let row = live_counts.entry(h.entity_id).or_insert_with(|| MentionRow {
+                        owner_id,
+                        target_id: h.entity_id,
+                        title: entity.title.clone(),
+                        matched_name: h.matched_name(entity).to_string(),
+                        is_title_match: h.is_title_match,
+                        hit_count: 0,
+                        is_confirmed: false,
+                        evidence: mentions::evidence_sentence(prose, h),
+                    });
+                    row.hit_count += 1;
+                }
+                for row in live_counts.into_values() {
+                    merge_suggestion(&mut by_target, row);
+                }
+            }
+        }
+
+        // Apply confirmed flags; inject pure-planning pins with no prose hits.
+        for &target_id in confirmed_set.keys() {
+            match by_target.get_mut(&target_id) {
+                Some(row) => row.is_confirmed = true,
+                None => {
+                    let title = table
+                        .iter()
+                        .find(|e| e.id == target_id)
+                        .map(|e| e.title.clone())
+                        .unwrap_or_default();
+                    by_target.insert(
+                        target_id,
+                        MentionRow {
+                            owner_id,
+                            target_id,
+                            title: title.clone(),
+                            matched_name: title,
+                            is_title_match: true,
+                            hit_count: 0,
+                            is_confirmed: true,
+                            evidence: String::new(),
+                        },
+                    );
+                }
+            }
+        }
+
+        // Drop suggestions that somehow kept a child-confirmed flag without being in
+        // `confirmed` — merge_suggestion already forces false, but be explicit.
+        for row in by_target.values_mut() {
+            row.is_confirmed = confirmed_set.contains_key(&row.target_id);
+        }
+
+        sorted(by_target.into_values().collect())
+    }
+
     /// Who this item mentions — the batch's answer, or a live rescan of `prose` when the
     /// caller has the item's text in hand (it is the focused one, so its prose is already
     /// loaded and may be newer than the last batch).
@@ -385,5 +570,111 @@ mod tests {
             row(2, "Bea", false, true, 1),
         ]);
         assert_eq!(a, b);
+    }
+
+    /// Seed a MentionIndex as if a batch scan just landed — table + by_owner only.
+    fn seeded_index(
+        table: Vec<DiscoverableEntity>,
+        by_owner: HashMap<u64, Vec<MentionRow>>,
+    ) -> MentionIndex {
+        // AppContext is only needed for fire/rescan; cast_for is pure over Inner maps.
+        let app_ctx = frontend::AppContext::new();
+        let ids = crate::app_ids::AppIds::new();
+        let index = MentionIndex::new(std::rc::Rc::new(app_ctx), ids);
+        *index.inner.table.borrow_mut() = table;
+        *index.inner.by_owner.borrow_mut() = by_owner;
+        index
+    }
+
+    fn entity(id: u64, title: &str) -> DiscoverableEntity {
+        DiscoverableEntity {
+            id,
+            title: title.to_string(),
+            aliases: vec![],
+        }
+    }
+
+    fn suggestion(owner: u64, target: u64, title: &str, hits: i64, confirmed: bool) -> MentionRow {
+        MentionRow {
+            owner_id: owner,
+            target_id: target,
+            title: title.to_string(),
+            matched_name: title.to_string(),
+            is_title_match: true,
+            hit_count: hits,
+            is_confirmed: confirmed,
+            evidence: if hits > 0 {
+                format!("{title} walked in.")
+            } else {
+                String::new()
+            },
+        }
+    }
+
+    #[test]
+    fn cast_for_shows_confirmed_pins_without_prose_hits() {
+        let index = seeded_index(
+            vec![entity(10, "Elena"), entity(11, "Dock")],
+            HashMap::new(),
+        );
+        let cast = index.cast_for(1, None, &[10], &[]);
+        assert_eq!(cast.len(), 1);
+        assert!(cast[0].is_confirmed);
+        assert_eq!(cast[0].target_id, 10);
+        assert_eq!(cast[0].hit_count, 0);
+    }
+
+    /// Empty live prose must not wipe the owner's batch suggestions (review issue 2).
+    #[test]
+    fn cast_for_empty_live_prose_keeps_owner_batch() {
+        let mut by_owner = HashMap::new();
+        by_owner.insert(1, vec![suggestion(1, 10, "Grace", 2, false)]);
+        let index = seeded_index(vec![entity(10, "Grace")], by_owner);
+        let cast = index.cast_for(1, Some(""), &[], &[]);
+        assert_eq!(cast.len(), 1, "batch suggestion must survive empty live prose");
+        assert_eq!(cast[0].hit_count, 2);
+        assert!(!cast[0].is_confirmed);
+    }
+
+    #[test]
+    fn cast_for_chapter_union_ignores_child_pins() {
+        // Child scene has Grace confirmed on the *scene*; chapter did not pin her.
+        let mut by_owner = HashMap::new();
+        by_owner.insert(
+            2,
+            vec![suggestion(2, 10, "Grace", 3, true)], // child-confirmed
+        );
+        let index = seeded_index(vec![entity(10, "Grace")], by_owner);
+        let cast = index.cast_for(1, None, &[], &[2]);
+        assert_eq!(cast.len(), 1);
+        assert!(
+            !cast[0].is_confirmed,
+            "chapter cast must not inherit a child's pin"
+        );
+        assert_eq!(cast[0].hit_count, 3);
+    }
+
+    #[test]
+    fn cast_for_chapter_pin_is_independent_of_children() {
+        let mut by_owner = HashMap::new();
+        by_owner.insert(2, vec![suggestion(2, 10, "Grace", 1, false)]);
+        let index = seeded_index(
+            vec![entity(10, "Grace"), entity(11, "Will")],
+            by_owner,
+        );
+        // Chapter pins Will only; Grace is a child suggestion.
+        let cast = index.cast_for(1, None, &[11], &[2]);
+        assert_eq!(cast.len(), 2);
+        assert!(cast[0].is_confirmed && cast[0].target_id == 11);
+        assert!(!cast[1].is_confirmed && cast[1].target_id == 10);
+    }
+
+    #[test]
+    fn filter_cast_targets_drops_self_and_unknown() {
+        let index = seeded_index(vec![entity(10, "Elena"), entity(11, "Dock")], HashMap::new());
+        assert_eq!(
+            index.filter_cast_targets(1, &[10, 1, 10, 99, 11]),
+            vec![10, 11]
+        );
     }
 }

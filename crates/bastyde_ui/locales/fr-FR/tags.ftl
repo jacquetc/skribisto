@@ -99,11 +99,22 @@ tags-chip-more = { $n ->
    *[other] { $n } étiquettes de plus
 }
 
-## La distribution de la bible et les rétroliens
-mentions-roster = Mentionnés ici
-mentions-backlinks = Mentionné dans
-mentions-pin = Conserver { $name } sur cet élément
+## Présence de la scène (épingles bible narrative + suggestions)
+cast-section = Présence
+cast-add = Ajouter à la présence…
+cast-add-filter-placeholder = Filtrer la bible narrative…
+cast-add-empty = Aucune entrée de bible narrative à ajouter
+cast-pin = Ajouter { $name } à la présence
+cast-unpin = Retirer { $name } de la présence
+cast-empty = Personne n’est encore épinglé — ajoutez ou conservez une suggestion
+
+## Rétroliens sur une entrée de bible narrative
+mentions-backlinks = Apparaît dans
 mentions-hit-count = { $n ->
     [one] une fois
    *[other] { $n } fois
 }
+
+## Anciennes clés conservées pour les scripts/tests qui y font encore référence
+mentions-roster = Présence
+mentions-pin = Ajouter { $name } à la présence

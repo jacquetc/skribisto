@@ -128,6 +128,11 @@ struct Inspector {
     tags: crate::view_models::TagsViewModel,
     mention_index: crate::view_models::MentionIndex,
     open_docs: crate::models::OpenDocsStore,
+    /// Debounced live prose for cast suggestions — never bound at Rebuild to
+    /// open-doc edit counters (typing must not rebuild this dock). Frame-tick
+    /// and edit effects are re-registered every cast-scope build: bastyde drops
+    /// `ctx.effect` on rebuild (same rule as the move subscription above).
+    live_cast: crate::tags::LiveCastOverlay,
 }
 
 impl Inspector {
@@ -149,6 +154,7 @@ impl Inspector {
             tags,
             mention_index,
             open_docs,
+            live_cast: crate::tags::LiveCastOverlay::new(),
         }
     }
 }
@@ -291,9 +297,10 @@ impl Widget for Inspector {
                             .child(crate::tags::AliasPillField::new(alias_value, set_aliases));
                     }
 
-                    // The mention index, in both directions. Hidden entirely when the
-                    // project has no discoverable tags: nothing has been asked to be found,
-                    // so an empty "Mentioned here" would be a section about nothing.
+                    // Cast / Présence: references-first story-bible pins + scan suggestions.
+                    // Hidden only when the project has no discoverable tags — nothing can be
+                    // cast material. Always shown for Scene / Note / ChapterScene so the
+                    // writer can Add even before any prose names anyone.
                     if !discoverable.is_empty() {
                         let index = self.mention_index.clone();
                         index.changed_signal().bind_to(
@@ -301,51 +308,175 @@ impl Widget for Inspector {
                             ctx.binding_registry(),
                             BindingLevel::Rebuild,
                         );
+                        // Live overlay version only — not open_docs.edited (that would rebuild
+                        // the whole Inspector on every keystroke).
+                        self.live_cast.version().bind_to(
+                            ctx.self_id(),
+                            ctx.binding_registry(),
+                            BindingLevel::Rebuild,
+                        );
 
-                        let open: crate::tags::mention_list::OpenTarget =
-                            Rc::new(move |item_id, title, c: &mut EventContext| {
-                                c.send_intent(crate::intents::AppIntent::OpenItemToSide {
-                                    item_id,
-                                    title,
-                                });
+                        let cast_scope = matches!(
+                            d.sub_role,
+                            BinderItemSubRole::Scene
+                                | BinderItemSubRole::Note
+                                | BinderItemSubRole::ChapterScene
+                        );
+
+                        if cast_scope {
+                            // Debounced live prose: re-register effects every build
+                            // (bastyde drops them on rebuild — a one-shot "wired" flag
+                            // freezes live suggestions after the first version bump).
+                            // Frame tick runs to_djot after idle; edit uses this item's
+                            // edit_gen only (not store-wide edited_any).
+                            let wake = ctx.wake_at_handle();
+                            let live = self.live_cast.clone();
+                            let docs = self.open_docs.clone();
+                            let tick = ctx.frame_tick();
+                            ctx.effect(&tick, {
+                                let live = live.clone();
+                                let docs = docs.clone();
+                                move |_| {
+                                    live.tick(std::time::Instant::now(), |id| {
+                                        docs.peek(id).and_then(|doc| {
+                                            doc.main.as_ref().and_then(|m| m.doc.to_djot().ok())
+                                        })
+                                    });
+                                }
                             });
+                            // Per-item edit gen when the focused cast item is open —
+                            // typing in a side tab must not re-export this scene.
+                            if let Some(doc) = self.open_docs.peek(d.id) {
+                                let edit_gen = doc.edit_gen.clone();
+                                let live = self.live_cast.clone();
+                                let wake = wake.clone();
+                                ctx.effect(&edit_gen, move |g| {
+                                    live.on_edit_gen(*g, &wake);
+                                });
+                            }
+                            self.live_cast.on_focus(d.id, &wake);
 
-                        // The focused item's own prose, when it is open in a tab — so the
-                        // roster follows what is being written instead of waiting for a save.
-                        // `peek` never opens anything: an item with no tab simply falls back
-                        // to the last batch.
-                        let prose = self
-                            .open_docs
-                            .peek(d.id)
-                            .and_then(|doc| doc.main.as_ref().and_then(|m| m.doc.to_djot().ok()));
-                        let roster = index.roster_for(d.id, prose.as_deref());
-                        if !roster.is_empty() {
+                            let open: crate::tags::mention_list::OpenTarget =
+                                Rc::new(move |item_id, title, c: &mut EventContext| {
+                                    c.send_intent(crate::intents::AppIntent::OpenItemToSide {
+                                        item_id,
+                                        title,
+                                    });
+                                });
+
+                            let extra: Vec<u64> =
+                                if matches!(d.sub_role, BinderItemSubRole::ChapterScene) {
+                                    self.outline.subtree_descendants(d.id)
+                                } else {
+                                    Vec::new()
+                                };
+                            // prose_for already drops empty strings; cast_for treats
+                            // empty as batch-only as well.
+                            let live_prose = self.live_cast.prose_for(d.id);
+                            let cast = index.cast_for(
+                                d.id,
+                                live_prose.as_deref(),
+                                &d.references,
+                                &extra,
+                            );
+                            let cast_empty = cast.is_empty();
+
+                            // Read current refs from the probe on each click — a frozen
+                            // snapshot would drop prior pins when Add is used twice before
+                            // the next rebuild lands.
                             let pin_probe = SingleBinderItem::new(self.app_ctx.clone());
                             pin_probe.set_id(Some(d.id));
-                            let existing = d.references.clone();
-                            let pin: crate::tags::mention_list::PinReference =
+                            let index_for_filter = index.clone();
+                            let owner_id = d.id;
+                            let pin: crate::tags::mention_list::PinReference = {
+                                let pin_probe = pin_probe.clone();
+                                let index_for_filter = index_for_filter.clone();
                                 Rc::new(move |target, _c| {
-                                    let mut next = existing.clone();
+                                    let mut next = pin_probe
+                                        .dto()
+                                        .map(|x| x.references)
+                                        .unwrap_or_default();
                                     if !next.contains(&target) {
                                         next.push(target);
                                     }
+                                    let next =
+                                        index_for_filter.filter_cast_targets(owner_id, &next);
                                     let _ = pin_probe.set_references(&next, stack);
-                                });
-                            col =
-                                col.child(
-                                    TextWidget::new(tr!(mentions_roster()))
+                                })
+                            };
+                            let unpin: crate::tags::mention_list::UnpinReference = {
+                                let pin_probe = pin_probe.clone();
+                                let index_for_filter = index_for_filter.clone();
+                                Rc::new(move |target, _c| {
+                                    let next: Vec<u64> = pin_probe
+                                        .dto()
+                                        .map(|x| x.references)
+                                        .unwrap_or_default()
+                                        .into_iter()
+                                        .filter(|&id| id != target)
+                                        .collect();
+                                    let next =
+                                        index_for_filter.filter_cast_targets(owner_id, &next);
+                                    let _ = pin_probe.set_references(&next, stack);
+                                })
+                            };
+
+                            col = col
+                                .child(
+                                    TextWidget::new(tr!(cast_section()))
                                         .style(TextStyleRole::Tiny)
                                         .color(TextRole::Secondary),
                                 )
-                                .child(
-                                    crate::tags::MentionList::new(roster, Some(pin), open.clone()),
-                                );
-                        }
+                                .child(crate::tags::MentionList::new(
+                                    cast,
+                                    Some(pin.clone()),
+                                    Some(unpin),
+                                    open.clone(),
+                                ));
 
-                        // Backlinks, on a discoverable item: where this character is written
-                        // about. No pin here — pinning is a statement about the *mentioning*
-                        // item, and this list is looking the other way.
-                        if tag_value.get().iter().any(|id| discoverable.contains(id)) {
+                            if cast_empty {
+                                col = col.child(
+                                    TextWidget::new(tr!(cast_empty()))
+                                        .style(TextStyleRole::Tiny)
+                                        .color(TextRole::Secondary),
+                                );
+                            }
+
+                            let candidates = crate::tags::candidates_from_table(
+                                &index.discoverable_table(),
+                            );
+                            col = col.child(crate::tags::cast_add_button(
+                                candidates,
+                                d.references.clone(),
+                                d.id,
+                                pin,
+                            ));
+
+                            // Backlinks, on a discoverable item: where this character appears.
+                            // No pin — that would write the wrong item's references.
+                            if tag_value.get().iter().any(|id| discoverable.contains(id)) {
+                                let backlinks = index.backlinks_for(d.id);
+                                if !backlinks.is_empty() {
+                                    col = col
+                                        .child(
+                                            TextWidget::new(tr!(mentions_backlinks()))
+                                                .style(TextStyleRole::Tiny)
+                                                .color(TextRole::Secondary),
+                                        )
+                                        .child(crate::tags::MentionList::new(
+                                            backlinks, None, None, open,
+                                        ));
+                                }
+                            }
+                        } else if tag_value.get().iter().any(|id| discoverable.contains(id)) {
+                            // Out of cast scope but still story-bible: show Appears in only.
+                            let open: crate::tags::mention_list::OpenTarget =
+                                Rc::new(move |item_id, title, c: &mut EventContext| {
+                                    c.send_intent(crate::intents::AppIntent::OpenItemToSide {
+                                        item_id,
+                                        title,
+                                    });
+                                });
                             let backlinks = index.backlinks_for(d.id);
                             if !backlinks.is_empty() {
                                 col = col
@@ -354,7 +485,9 @@ impl Widget for Inspector {
                                             .style(TextStyleRole::Tiny)
                                             .color(TextRole::Secondary),
                                     )
-                                    .child(crate::tags::MentionList::new(backlinks, None, open));
+                                    .child(crate::tags::MentionList::new(
+                                        backlinks, None, None, open,
+                                    ));
                             }
                         }
                     }
