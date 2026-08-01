@@ -199,7 +199,14 @@ impl SaveStateViewModel {
     /// object) this queues a follow-up instead of starting a second op.
     pub fn request_save(&self) -> Option<u64> {
         let covers = self.inner.dirty_seq.get();
-        match self.inner.queue.borrow_mut().request(Instant::now()) {
+        // Bind the decision first so the `RefMut` from `borrow_mut` ends *before*
+        // `start_save` runs. Matching on `queue.borrow_mut().request(...)` keeps
+        // that temporary alive for the whole match (including the `StartNow` arm),
+        // and `start_save` re-borrows the queue to record `started`/`start_failed`
+        // — which panics with "RefCell already borrowed". That path is what a
+        // brand-new Work hits on its first save after create.
+        let request = self.inner.queue.borrow_mut().request(Instant::now());
+        match request {
             SaveRequest::Queued => Some(covers),
             SaveRequest::StartNow => self.start_save(covers).then_some(covers),
         }
@@ -547,6 +554,23 @@ mod tests {
         vm.on_save_completed(&completed_event("op-0"), || {})
             .expect("still a real (if stale) completion of a tracked op");
         assert_eq!(vm.saved_seq().get(), 5, "never regresses");
+    }
+
+    // ── Nested-borrow regression ────────────────────────────────────────────
+
+    /// **New Work panic.** `request_save` used to match on
+    /// `self.inner.queue.borrow_mut().request(...)` directly, so the temporary
+    /// `RefMut` lived for the whole match. The `StartNow` arm then called
+    /// `start_save`, which re-borrows the same `RefCell` to record the op —
+    /// "RefCell already borrowed" on every first save of a brand-new Work.
+    ///
+    /// Even when `save_work` fails (no real backend in unit tests), the `Err`
+    /// path still does `queue.borrow_mut().start_failed()`, so this test
+    /// exercises the re-borrow either way: it must not panic.
+    #[test]
+    fn request_save_does_not_hold_queue_borrow_across_start_save() {
+        let vm = vm();
+        let _ = vm.request_save();
     }
 
     // ── Single-window behaviour is unchanged ────────────────────────────────
