@@ -461,6 +461,7 @@ impl ContentTab {
                         cd.show_word_count.clone(),
                         cd.counting_method.clone(),
                         typography.corkboard.clone(),
+                        format.clone(),
                     )
                 },
             );

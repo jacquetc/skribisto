@@ -53,11 +53,7 @@ pub(super) fn synopsis_editor(
         split,
         spell,
         open_doc.replacement_synopsis(),
-        // Corkboard cards resolve formatting by focus via the window's registry;
-        // Format is threaded when the tab builds the corkboard (ContentTab holds it).
-        // Detached here until corkboard takes an explicit Format handle — the
-        // registry path still works for the focused card via App's attach resolve.
-        None,
+        Some(vm.format()),
     )
 }
 

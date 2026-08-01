@@ -32,8 +32,7 @@ use bastyde::widgets::{
     DockingLayout, DropRegion, DropTarget, DropTargetVariant, EventContextMessageBoxExt, Expand,
     HStack, IconButton, IconButtonSize, MessageBox, MessageBoxButton, MessageBoxButtons,
     NotificationArchiveModel, RowDragData, Spacer, Splitter,
-    StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, Toast, ToastAction,
-    ToastRegistry, VStack,
+    StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, ToastRegistry, VStack,
 };
 
 use frontend::AppContext;
@@ -43,7 +42,7 @@ use frontend::commands::{
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::event::{
-    DirectAccessEntity, EntityEvent, Event, LongOperationEvent, Origin, WorkManagementEvent,
+    DirectAccessEntity, EntityEvent, Event, Origin, WorkManagementEvent,
 };
 use frontend::work_management::{CloseWorkDto, LoadWorkDto, NewWorkDto};
 
@@ -92,7 +91,7 @@ fn punctuation_flags(
 }
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, DeferredResume, EditorsViewModel,
+    BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel,
     ExportViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
     SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision,
     unsaved_decision,
@@ -1963,161 +1962,26 @@ impl Widget for App {
             })
         };
 
-        // Detect "a backup file was opened" and enter backup mode. A separate
-        // `subscribe_event_with_ctx` (needs an `EventContext` to present the choice
-        // modal) reads the just-loaded path and sniffs its manifest. Opening a
-        // backup always happens in its own process (the redirect in the open entry
-        // points), so this only ever fires in a window dedicated to that backup.
-        {
-            let app_ctx = self.app_ctx.clone();
-            let ids = ids.clone();
-            let tree_expansion = session.tree_expansion.clone();
-            let backup_mode = self.backup_mode.clone();
-            let backup_context = self.backup_context.clone();
-            let restore_vm = restore_vm.clone();
-            let single_work = single_work.clone();
-            let backup_settings = backup_settings.clone();
-            let backup_scheduler = backup_scheduler.clone();
-            let workspace_layout = workspace_layout.clone();
-            // A saved per-work layout serialized before the trash dock existed
-            // won't contain it; re-mounting it after restore keeps the trash panel
-            // reachable in every project (and it re-saves with trash thereafter).
-            let trash_docking = outline.docking();
-            // The outline's tree model, for re-applying its remembered chevrons below.
-            let outline_model = outline.model();
-            let trash_dock = self.trash_dock;
-            let outline_dock = outline.dock_id();
-            let session_for_nudge = session.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::WorkManagement(WorkManagementEvent::LoadWork),
-                move |e: &Event, c: &mut EventContext| {
-                    // Guarded (strict form): by the time this fires, the first
-                    // `LoadWork` subscriber above (registered earlier in this same
-                    // `build`, so it always runs first) has already re-seeded
-                    // `ids.work_id` for THIS window's own load — so a sibling
-                    // window's Load, which never touches this window's `ids`,
-                    // reliably fails this check instead of popping this window's
-                    // backup-choice modal / nudge toast for someone else's project.
-                    if !ids.is_event_for_my_work(&e.ids) {
-                        return;
-                    }
-                    // Resolved through the Phase-1 seam (`ids.work_info_id`, already
-                    // re-seeded by the first `LoadWork` subscriber above — registered
-                    // earlier in this same `build`, so it always runs first),
-                    // rather than `get_all_work_info(&app_ctx)`'s first entry: see
-                    // `main::current_project_path`'s doc for why that stopped being
-                    // a safe stand-in for "this window's project" once the backend
-                    // scoped `WorkInfo` to support more than one open `Work`.
-                    let path = ids.work_info_id.get().and_then(|id| {
-                        frontend::commands::work_info_commands::get_work_info(&app_ctx, &id)
-                            .ok()
-                            .flatten()
-                            .and_then(|wi| wi.file_name)
-                    });
-                    // Sniff the manifest once: drives both the backup-mode branch
-                    // below and the workspace-layout restore.
-                    let backup = path.as_deref().and_then(crate::backup::backup_context_for);
-                    // Restore the desk now that backup-ness is known: a backup gets a
-                    // clean default desk (its saved layout is the *source's*), a normal
-                    // project its saved tabs + docks. The first `LoadWork` subscriber
-                    // has already re-seeded the ids/singles and cleared the old tabs.
-                    if let Some(layout) = &workspace_layout {
-                        layout.restore(backup.is_some());
-                    }
-                    // …and the outline's remembered chevrons, from the same moment and
-                    // for the same reason: a backup shares its source project's uid, so
-                    // its saved expansion is the *source's* and it gets the default tree
-                    // instead. Keyed by durable uid, so what was written is what is read
-                    // — no translation against the freshly re-minted store ids.
-                    if backup.is_none() {
-                        let remembered = tree_expansion.outline_expanded();
-                        if !remembered.is_empty() {
-                            outline_model.set_expanded_keys(&remembered);
-                        }
-                    }
-                    // Ensure the trash dock survives restoring a pre-trash layout.
-                    // `open_dock` selects the new tab, so re-reveal the outline to
-                    // keep it the foreground leading panel on launch (the app default).
-                    if !trash_docking.dock_open_signal(trash_dock).get() {
-                        trash_docking.open_dock(
-                            trash_dock,
-                            DockOpenLocation::side(DockSide::Leading).new_tab(),
-                        );
-                        trash_docking.reveal_dock(outline_dock);
-                    }
-                    match backup {
-                        Some(bc) => {
-                            backup_mode.set(true);
-                            backup_context.set(Some(bc.clone()));
-                            let restore = restore_vm.clone();
-                            let backup_mode_for_panel = backup_mode.clone();
-                            let backup_context_for_panel = backup_context.clone();
-                            c.present_modal(
-                                ModalRequest::deferred(move |t| {
-                                    t.add(crate::backup::choice_panel::BackupChoicePanel::new(
-                                        restore.clone(),
-                                        bc.clone(),
-                                        backup_mode_for_panel.clone(),
-                                        backup_context_for_panel.clone(),
-                                    ))
-                                })
-                                .presentation(ModalPresentation::InTree)
-                                .title(tr!(backup_choice_title()))
-                                .close_behavior(ModalCloseBehavior::Manual)
-                                .size(560, 320),
-                            );
-                        }
-                        None => {
-                            // A normal project — never in backup mode.
-                            backup_mode.set(false);
-                            backup_context.set(None);
-                            // Take an on-open backup now (T2-4) — `backup_mode` is
-                            // known false at this point, so a freshly-opened
-                            // *backup* file (the `Some(bc)` arm above) can never be
-                            // pumped into the real project's retention pool before
-                            // anyone knew it was a backup.
-                            backup_scheduler.on_open();
-                            // One-time "no backups configured" nudge (only when the
-                            // effective policy has every trigger off — a project on
-                            // defaults still backs up on close, so it never nags).
-                            let uid = single_work.unique_id().get();
-                            if crate::models::uid_is_usable(&uid)
-                                && backup_settings.effective_for(&uid).is_effectively_off()
-                                && !backup_settings.was_nudged(&uid)
-                            {
-                                if let Some(p) = path.as_deref() {
-                                    backup_settings.mark_nudged(&uid, p);
-                                }
-                                let session_for_action = session_for_nudge.clone();
-                                // Work-scoped: this project's own backup policy.
-                                c.show_toast(
-                                    Toast::warning(tr!(backup_nudge_text()))
-                                        .target_work(ids.work_id.get())
-                                        .action(ToastAction::primary(
-                                            tr!(backup_nudge_action()),
-                                            move |c| {
-                                                let session_for_action =
-                                                    session_for_action.clone();
-                                                c.present_modal(
-                                                    ModalRequest::deferred(move |t| {
-                                                        t.add(SettingsPanel::open_to_backup(
-                                                            session_for_action,
-                                                        ))
-                                                    })
-                                                    .presentation(ModalPresentation::InTree)
-                                                    .title("Settings")
-                                                    .size(920, 620)
-                                                    .close_behavior(ModalCloseBehavior::Manual),
-                                                );
-                                            },
-                                        )),
-                                );
-                            }
-                        }
-                    }
-                },
-            );
-        }
+        // Detect "a backup file was opened" and enter backup mode (second LoadWork
+        // subscriber — must stay registered after the first seed subscriber above).
+        wiring::project_events::install_backup_sniff(
+            ctx,
+            wiring::project_events::BackupSniffDeps {
+                app_ctx: self.app_ctx.clone(),
+                ids: ids.clone(),
+                tree_expansion: session.tree_expansion.clone(),
+                backup_mode: self.backup_mode.clone(),
+                backup_context: self.backup_context.clone(),
+                restore_vm: restore_vm.clone(),
+                single_work: single_work.clone(),
+                backup_settings: backup_settings.clone(),
+                backup_scheduler: backup_scheduler.clone(),
+                workspace_layout: workspace_layout.clone(),
+                outline: outline.clone(),
+                trash_dock: self.trash_dock,
+                session: session.clone(),
+            },
+        );
 
         // Long-operation routing: every background job (import, export, save-as, backup,
         // restore, the progress recorder) reports through the same four events and filters
@@ -2470,165 +2334,21 @@ impl Widget for App {
         }
 
         // ── Exit guards (Close Work / Quit / window close) ───────────────────
-        // The window close guard (in `main`) and the `work.close` action set
-        // `pending_exit`; that asks for a disk save and remembers the edit sequence
-        // it will cover. The close is performed only once *that* sequence is on disk
-        // (below) — so the async write is awaited, never raced.
-        {
-            let editors = editors.clone();
-            let exit_seq = self.exit_seq.clone();
-            let pending = self.pending_exit.clone();
-            ctx.effect(&self.pending_exit, move |pe| {
-                if *pe == PendingExit::None {
-                    return;
-                }
-                match editors.request_save() {
-                    Some(covers) => exit_seq.set(Some(covers)),
-                    // The command could not be issued, so no operation exists — no
-                    // completion and no failure event will ever arrive. Leaving the
-                    // close armed on a write that will never happen would make
-                    // Ctrl+W / Ctrl+Q / the window's X do nothing at all, forever.
-                    // Disarm instead: the window stays open and usable, and the next
-                    // close attempt retries. (No toast: an `effect` has no
-                    // `EventContext`. `save_work` can only fail to *start* on a
-                    // poisoned store lock, at which point this log line is the least
-                    // of it — every other path that can reach a context does toast.)
-                    None => {
-                        exit_seq.set(None);
-                        pending.set(PendingExit::None);
-                        eprintln!("skribisto: could not start the save for a deferred close");
-                    }
-                }
-            });
-        }
-        // Both deferred flows — the close above and a parked project switch (New
-        // Work / Open Work / "Open here" / the import toast, where the user chose
-        // "Save") — resume here, off the **long-operation** events.
-        //
-        // They wait on the edit *sequence* their save covers, not on "a save
-        // finished": `SaveQueue` runs one `save_work` at a time and coalesces, so
-        // the op that finally carries these edits may be a follow-up issued when an
-        // already-in-flight save landed. That in-flight save's snapshot can predate
-        // our flush, and resuming on it would wipe the store while the last sentence
-        // typed was still unwritten.
-        {
-            let editors = editors.clone();
-            let pending = self.pending_exit.clone();
-            let exit_seq = self.exit_seq.clone();
-            let scheduler = backup_scheduler.clone();
-            let switch = project_switch.clone();
-            let workspace_layout = workspace_layout.clone();
-            let ids = ids.clone();
-            let quit_for_completed = self.quit.clone();
-            // Work-scoped, so the "who reports this failure" claim is shared by
-            // every window on this Work — see `abandon_deferred`.
-            let save_state_for_completed = save_state.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Completed),
-                move |e: &Event, c| {
-                    // A quit parked on *another* Work's save resumes here — this is
-                    // the crate's only place holding both this event and an
-                    // `EventContext`. It runs before the `editors` filter below
-                    // precisely because the save it waits on usually belongs to a
-                    // Work this window is not showing, which `on_save_completed`
-                    // would (correctly) return `None` for.
-                    quit_for_completed.on_long_op_completed(e, c);
-                    // Ours? (A backup's, an import's or a Save As's completion is
-                    // their own view-model's business.) This also issues the
-                    // follow-up save when edits arrived while that one was running.
-                    let Some(landed) = editors.on_save_completed(e) else {
-                        return;
-                    };
-                    // The store now matches disk — keep the persisted desk fresh and
-                    // ordinal-aligned with the file, so a later hard exit (crash /
-                    // kill, with no graceful close to capture at) still restores. A
-                    // no-op if a follow-up save is due (still dirty): `capture` self-
-                    // gates on `is_unsaved`, so only the final clean save persists.
-                    if let Some(layout) = &workspace_layout {
-                        layout.capture();
-                    }
-                    // The precedence rule (a close outranks a switch, even an
-                    // uncovered one) lives in `view_models::save_queue` as a pure
-                    // decision, so it is unit-tested rather than only reachable
-                    // through a real async save.
-                    let saved = landed.saved_seq;
-                    let pe = pending.get();
-                    match crate::view_models::resume_deferred(
-                        landed.follow_up_failed,
-                        saved,
-                        pe != PendingExit::None,
-                        exit_seq.get(),
-                    ) {
-                        DeferredResume::Abandon => abandon_deferred(
-                            c,
-                            &pending,
-                            &exit_seq,
-                            &switch,
-                            None,
-                            ids.work_id.get(),
-                            &save_state_for_completed,
-                            e,
-                        ),
-                        DeferredResume::Close => {
-                            pending.set(PendingExit::None);
-                            exit_seq.set(None);
-                            switch.cancel();
-                            // Saved and consistent — now take the on-close backup (if
-                            // configured) and then perform the deferred close. When
-                            // no on-close backup applies, `on_close_flow` closes at
-                            // once.
-                            scheduler.on_close_flow(c, pe);
-                        }
-                        DeferredResume::Wait => {}
-                        DeferredResume::Switch => switch.on_saved(c, saved),
-                    }
-                },
-            );
-        }
-        // **A failed save is always a toast.** The write is asynchronous, so the only
-        // other way the user could learn of it is the Save affordance staying live —
-        // which is invisible under autosave, where Save is hidden entirely. It used
-        // to be reported nowhere at all.
-        //
-        // Exactly one toast, and it says what was lost *besides* the write: if a
-        // close or a project switch was parked behind that save, it is dropped and
-        // the message says so (the deferred command silently never happening is the
-        // more confusing half). The project itself is untouched — still open, still
-        // dirty — so nothing is lost by staying put. Only *our* save's failure
-        // counts here; a failing backup / import / Save As is reported by its own
-        // view-model.
-        {
-            let editors = editors.clone();
-            let pending = self.pending_exit.clone();
-            let exit_seq = self.exit_seq.clone();
-            let switch = project_switch.clone();
-            let ids = ids.clone();
-            let quit_for_failed = self.quit.clone();
-            // See the Completed subscriber above.
-            let save_state_for_failed = save_state.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::LongOperation(LongOperationEvent::Failed),
-                move |e: &Event, c| {
-                    // A quit waiting on this save must abandon it: closing a window
-                    // over edits that were never written, having promised to write
-                    // them, is the one outcome no exit path may produce.
-                    quit_for_failed.on_long_op_failed(e, c);
-                    let Some(error) = editors.on_save_failed(e) else {
-                        return;
-                    };
-                    abandon_deferred(
-                        c,
-                        &pending,
-                        &exit_seq,
-                        &switch,
-                        Some(&error),
-                        ids.work_id.get(),
-                        &save_state_for_failed,
-                        e,
-                    );
-                },
-            );
-        }
+        wiring::save_and_exit::install(
+            ctx,
+            &wiring::save_and_exit::SaveAndExitDeps {
+                editors: editors.clone(),
+                pending_exit: self.pending_exit.clone(),
+                exit_seq: self.exit_seq.clone(),
+                backup_scheduler: backup_scheduler.clone(),
+                project_switch: project_switch.clone(),
+                workspace_layout: workspace_layout.clone(),
+                ids: ids.clone(),
+                quit: self.quit.clone(),
+                save_state: save_state.clone(),
+            },
+        );
+
         // `work.close` — the Close Work menu command (Ctrl+W), and the target of the
         // `welcome.show` alias. Every terminal path ends at
         // [`close_work_and_return_to_launcher`] — there is no more "close in place,
@@ -3253,88 +2973,6 @@ impl Widget for App {
         self.root_child.into_iter().collect()
     }
 }
-
-/// The disk write a deferred flow was waiting on will never land — it failed, or a
-/// follow-up save could not even be started. Drop whatever was parked on it and say
-/// so, rather than leave the user with a command that silently never happens.
-///
-/// **Exactly one toast**, naming what was lost *besides* the write, because the
-/// deferred command not happening is the more confusing half. A close outranks a
-/// switch (it is where the project was headed); with neither parked, this is a plain
-/// autosave / Ctrl+S and only the write itself is reported. `error` is `None` when
-/// the operation never started, so there is no message from the backend to quote.
-///
-/// The project is untouched — still open, still dirty — so nothing is lost by
-/// staying put; the edits are exactly where the user left them.
-///
-/// `work_id` is this window's own `AppIds.work_id` at the moment the deferred
-/// save's outcome landed — the toast is squarely about *this* window's own
-/// save, so it routes here (`crate::toast_scope::ToastWorkExt`) rather than
-/// to every open project.
-fn abandon_deferred(
-    c: &mut EventContext,
-    pending: &Signal<PendingExit>,
-    exit_seq: &Rc<std::cell::Cell<Option<u64>>>,
-    switch: &ProjectSwitchViewModel,
-    error: Option<&str>,
-    work_id: Option<u64>,
-    save_state: &crate::view_models::SaveStateViewModel,
-    event: &Event,
-) {
-    if pending.get() != PendingExit::None {
-        pending.set(PendingExit::None);
-        exit_seq.set(None);
-        switch.cancel();
-        // The *specific* report — only this window knows its close/switch was
-        // dropped, so it always speaks, and says so loudly enough that no
-        // sibling need add a bare "couldn't save" underneath it.
-        save_state.note_specific_failure_report(event);
-        c.show_toast(
-            Toast::error(match error {
-                Some(e) => tr!(close_save_failed(error = e.to_string())),
-                None => tr!(close_save_not_started()),
-            })
-            .scoped_id(SAVE_FAILED_TOAST_ID, work_id)
-            .target_work(work_id),
-        );
-        return;
-    }
-    if switch.on_save_failed(c, error) {
-        // It toasted "…so it wasn't replaced" — equally specific, and equally
-        // the one report this Work needs.
-        save_state.note_specific_failure_report(event);
-        return;
-    }
-    // Nothing was waiting: report just the failed write — once for the Work, not
-    // once per window showing it. Every window's subscriber reaches this line for
-    // the same broadcast failure (`on_save_failed` answers all of them by design,
-    // see its doc), so without the claim a second window would stack a second,
-    // identical error toast.
-    if !save_state.claim_generic_failure_report(event) {
-        return;
-    }
-    if let Some(e) = error {
-        c.show_toast(
-            Toast::error(tr!(save_error(error = e.to_string())))
-                .scoped_id(SAVE_FAILED_TOAST_ID, work_id)
-                .target_work(work_id),
-        );
-    } else {
-        c.show_toast(
-            Toast::error(tr!(save_not_started()))
-                .scoped_id(SAVE_FAILED_TOAST_ID, work_id)
-                .target_work(work_id),
-        );
-    }
-}
-
-/// Dedup id (Work-scoped — see [`crate::toast_scope`]) shared by every "the save
-/// failed" toast [`abandon_deferred`] raises. One id on purpose: a specific
-/// report and a generic one are two texts for the *same* failure, so the
-/// registry's update-in-place keeps exactly one toast per Work no matter which
-/// window's subscriber runs first, and the specific text wins either way — it
-/// replaces an already-shown generic one, and suppresses a later one.
-const SAVE_FAILED_TOAST_ID: &str = "save.failed";
 
 /// Present the native picker for an existing `.skrib` and load it. Backs the
 /// global `work.open` command (File ▸ Open Work… and Ctrl+O) — the most-used

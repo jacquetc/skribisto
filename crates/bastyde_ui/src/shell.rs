@@ -22,6 +22,8 @@ pub(crate) mod ipc;
 pub(crate) mod open_registry;
 pub(crate) mod process;
 pub(crate) mod project_switcher_button;
+pub(crate) mod launcher_window;
+pub(crate) mod project_menus;
 pub(crate) mod window_ids;
 pub(crate) mod windows;
 
