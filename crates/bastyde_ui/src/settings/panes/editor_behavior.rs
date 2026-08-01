@@ -4,6 +4,7 @@
 //! Editor ▸ Editor Behavior — the non-typographic writing settings.
 
 use bastyde::prelude::*;
+use bastyde::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -36,10 +37,17 @@ pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl 
         // they rendered before, the group heading having been inserted above
         // them when the distraction-free column width was added.
         .full_width(group(tr!(settings_group_writing_view())))
-        .full_width(Checkbox::new(vm.synopsis_pane()).label(tr!(settings_synopsis_pane())))
-        .full_width(Checkbox::new(vm.typewriter()).label(tr!(settings_typewriter())))
+        .full_width(Toggle::new(vm.synopsis_pane()).label(tr!(settings_synopsis_pane())))
         .full_width(
-            Checkbox::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())),
+            Toggle::new(vm.typewriter())
+                .label(tr!(settings_typewriter()))
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.typewriter",
+                    tr!(settings_typewriter_tip()),
+                )),
+        )
+        .full_width(
+            Toggle::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())),
         )
         // Distraction-free mode's own column width — a flat pixel measure like the
         // two above (not a character-count cap: `bastyde-text`'s reachable surface
@@ -49,36 +57,44 @@ pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl 
         .full_width(group(tr!(settings_page_distraction_free())))
         .line(
             field_label(tr!(settings_field_column_width())),
-            slider_field(vm.distraction_free_width(), 400.0, 1200.0, 20.0, |v| {
-                format!("{} px", v.round() as i32)
-            }),
+            slider_field_tipped(
+                vm.distraction_free_width(),
+                400.0,
+                1200.0,
+                20.0,
+                |v| format!("{} px", v.round() as i32),
+                tr!(settings_distraction_free_width_hint()),
+            ),
         )
-        .full_width(hint(tr!(settings_distraction_free_width_hint())))
-        // Which chrome the mode keeps. Ticked = kept, so every box reads the
-        // same way round; the tab strip starts unticked and the three readouts
-        // ticked. There is deliberately no Exit checkbox — the hint below says
-        // so, because its absence is a promise, not an oversight.
+        // Which chrome the mode keeps. On = kept. There is deliberately no
+        // Exit toggle — Exit always stays; that promise is on the first chrome
+        // tip so its absence is not read as an oversight.
         .full_width(
-            Checkbox::new(vm.distraction_free_tab_bar())
-                .label(tr!(settings_distraction_free_tab_bar())),
+            Toggle::new(vm.distraction_free_tab_bar())
+                .label(tr!(settings_distraction_free_tab_bar()))
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.df_chrome",
+                    tr!(settings_distraction_free_chrome_hint()),
+                )),
         )
         .full_width(
-            Checkbox::new(vm.distraction_free_word_count())
+            Toggle::new(vm.distraction_free_word_count())
                 .label(tr!(settings_distraction_free_word_count())),
         )
         .full_width(
-            Checkbox::new(vm.distraction_free_session())
+            Toggle::new(vm.distraction_free_session())
                 .label(tr!(settings_distraction_free_session())),
         )
-        .full_width(Checkbox::new(vm.distraction_free_go()).label(tr!(settings_distraction_free_go())))
         .full_width(
-            Checkbox::new(vm.distraction_free_go_to())
+            Toggle::new(vm.distraction_free_go()).label(tr!(settings_distraction_free_go())),
+        )
+        .full_width(
+            Toggle::new(vm.distraction_free_go_to())
                 .label(tr!(settings_distraction_free_go_to())),
         )
-        .full_width(hint(tr!(settings_distraction_free_chrome_hint())))
         .full_width(group(tr!(settings_group_container_views())))
         .full_width(
-            Checkbox::new(vm.remember_view())
+            Toggle::new(vm.remember_view())
                 .label(tr!(settings_remember_view()))
                 .rich_tooltip_content(
                     TooltipContent::new(

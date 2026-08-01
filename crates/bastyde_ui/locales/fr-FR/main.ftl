@@ -166,7 +166,8 @@ dark = Sombre
 settings-text-width = Largeur du texte
 settings-preview-width = Largeur de l'aperçu de recherche
 settings-autosave = Enregistrement automatique sur le disque
-settings-show-welcome = Afficher le lanceur au démarrage (sinon, rouvrir le dernier projet)
+settings-show-welcome = Afficher le lanceur au démarrage
+settings-show-welcome-tip = Sinon, le dernier projet se rouvre.
 
 ## Fenêtre des paramètres: cadre
 settings-title = Paramètres
@@ -229,7 +230,8 @@ settings-field-app-theme = Thème
 settings-field-text-scale = Taille du texte de l'interface
 settings-field-language = Langue de l'interface
 settings-synopsis-pane = Afficher le synopsis au-dessus du manuscrit
-settings-typewriter = Défilement machine à écrire (garder la ligne du curseur centrée)
+settings-typewriter = Défilement machine à écrire
+settings-typewriter-tip = Garde la ligne du curseur centrée pendant la frappe.
 settings-highlight-sentence = Surligner la phrase courante
 settings-group-container-views = Vues des conteneurs
 settings-remember-view = Mémoriser la dernière vue pour chaque type d'élément

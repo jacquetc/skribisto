@@ -10,8 +10,7 @@ use super::super::*;
 
 /// Work: `<name>` ▸ Language — the project's default spell-check language(s), edited with
 /// the shared [`LanguagePillField`](crate::spellcheck::language_pill_field::LanguagePillField) over the
-/// live `SingleWork::dict_language` signal. Adding a language persists it and saves; a hint
-/// states the multi-language trade-off.
+/// live `SingleWork::dict_language` signal. Adding a language persists it and saves.
 pub(in crate::settings) fn work_language_pane(
     ctx: &mut BuildContext,
     vm: &WorkSettingsViewModel,
@@ -27,7 +26,7 @@ pub(in crate::settings) fn work_language_pane(
     let base = FormLayout::new()
         .label(tr!(settings_page_language()))
         .label_gap(16.0)
-        .row_spacing(12.0)
+        .row_spacing(14.0)
         .full_width(group(tr!(settings_field_dict_language())));
     // `open_docs` is now the OPENING WINDOW's own `WorkSession::open_docs`,
     // threaded in by `SettingsPanel::build` (Phase 3 fix) — never
@@ -52,8 +51,7 @@ pub(in crate::settings) fn work_language_pane(
             ))
         }
         _ => base.full_width(TextWidget::new(tr!(settings_field_dict_language()))),
-    }
-    .full_width(hint(tr!(dict_tradeoff_hint())));
+    };
 
     pane_frame(
         crumb(

@@ -4,6 +4,7 @@
 //! Appearance & Behaviour ▸ Appearance — interface language, theme, text size, welcome-at-startup.
 
 use bastyde::prelude::*;
+use bastyde::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -39,7 +40,14 @@ pub(in crate::settings) fn appearance_pane(
                 .child(TextScaleControl::new(scale)),
         )
         .full_width(group(tr!(settings_group_startup())))
-        .full_width(Checkbox::new(vm.show_welcome()).label(tr!(settings_show_welcome())));
+        .full_width(
+            Toggle::new(vm.show_welcome())
+                .label(tr!(settings_show_welcome()))
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.show_welcome",
+                    tr!(settings_show_welcome_tip()),
+                )),
+        );
 
     pane_frame(
         crumb(

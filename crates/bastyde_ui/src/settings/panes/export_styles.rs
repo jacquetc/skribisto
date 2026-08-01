@@ -22,9 +22,9 @@ use bastyde::core::widget::WidgetPlacement;
 use bastyde::data::ListModel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Badge, Button, ButtonVariant, ComboBox, FixedSize, FontPicker, FormLayout, GroupHeader, HStack,
-    ListView, MaxSize, Padding, Segment, SegmentedControl, Spacer, StandardListItem, TextInput,
-    TextWidget, Toast, Toggle, VStack,
+    Badge, Button, ButtonVariant, ComboBox, FixedSize, FontPicker, FormLayout, HStack, ListView,
+    MaxSize, Padding, Segment, SegmentedControl, Spacer, StandardListItem, TextInput, TextWidget,
+    Toast, Toggle, VStack,
 };
 
 use skribisto_compiler::{
@@ -33,6 +33,7 @@ use skribisto_compiler::{
 };
 use skribisto_model::scene_break::SceneBreakTier;
 
+use crate::settings::{field_label, group};
 use crate::view_models::ExportStylesViewModel;
 
 /// One list row (built-in or user), derived from a [`Preset`].
@@ -109,7 +110,9 @@ pub fn export_styles_pane(ctx: &mut BuildContext, vm: &ExportStylesViewModel) ->
 
     VStack::new()
         .spacing(6.0)
-        .child(GroupHeader::new(tr!(settings_styles_builtin())))
+        // Shared `group()` so section headers match every other settings pane
+        // (SmallBold + Secondary), not a bare unstyled `GroupHeader::new`.
+        .child(group(tr!(settings_styles_builtin())))
         // `MaxSize::height`, not `MinSize`: as a *minimum* the list grew to fit
         // its content, and at ten built-in styles it swallowed the whole pane,
         // pushing "My styles" and the editor below it out of the modal. A
@@ -117,14 +120,11 @@ pub fn export_styles_pane(ctx: &mut BuildContext, vm: &ExportStylesViewModel) ->
         // `width: None`, which collapses the rows to the left. `MaxSize` caps
         // the height and leaves the width to fill; each list scrolls internally.
         .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(200.0).child(builtin_list)))
-        .child(
-            Padding::new(14.0, 0.0, 0.0, 0.0).child(GroupHeader::new(tr!(settings_styles_user()))),
-        )
+        .child(Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_user()))))
         .child(Padding::symmetric(6.0, 4.0).child(toolbar))
         .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(150.0).child(user_list)))
         .child(
-            Padding::new(14.0, 0.0, 0.0, 0.0)
-                .child(GroupHeader::new(tr!(settings_styles_editor_group()))),
+            Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_editor_group()))),
         )
         .child(StyleEditor::new(vm.clone(), selected))
 }
@@ -734,7 +734,7 @@ impl Widget for StyleEditor {
         let form = FormLayout::new()
             .label(tr!(settings_styles_editor_title()))
             .label_gap(16.0)
-            .row_spacing(12.0)
+            .row_spacing(14.0)
             .line(
                 field_label(tr!(settings_styles_field_name())),
                 TextInput::new(name).placeholder(tr!(settings_styles_field_name())),
@@ -806,11 +806,4 @@ impl Widget for StyleEditor {
     fn children(&self) -> Vec<WidgetId> {
         self.child_id.into_iter().collect()
     }
-}
-
-/// A dimmed form-row label — mirrors `settings_panel`'s `field_label`.
-fn field_label(text: LocalizedString) -> TextWidget {
-    TextWidget::new(text)
-        .style(TextStyleRole::Small)
-        .color(TextRole::Secondary)
 }

@@ -4,6 +4,7 @@
 //! Editor ▸ Punctuation — the application-level smart-punctuation preference.
 
 use bastyde::prelude::*;
+use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{Segment, SegmentedControl};
 
 #[allow(unused_imports)]
@@ -68,12 +69,20 @@ pub(in crate::settings) fn punctuation_pane(
     let form = FormLayout::new()
         .label(tr!(settings_page_punctuation()))
         .label_gap(16.0)
-        .row_spacing(12.0)
+        .row_spacing(14.0)
         .full_width(group(tr!(settings_group_punctuation())))
-        .full_width(hint(tr!(settings_punctuation_app_hint())))
-        .full_width(Checkbox::new(vm.punct_dashes()).label(tr!(settings_punctuation_dashes())))
-        .full_width(Checkbox::new(vm.punct_ellipsis()).label(tr!(settings_punctuation_ellipsis())))
-        .full_width(Checkbox::new(vm.punct_quotes()).label(tr!(settings_punctuation_quotes())))
+        .full_width(
+            Toggle::new(vm.punct_dashes())
+                .label(tr!(settings_punctuation_dashes()))
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.punct_app",
+                    tr!(settings_punctuation_app_hint()),
+                )),
+        )
+        .full_width(
+            Toggle::new(vm.punct_ellipsis()).label(tr!(settings_punctuation_ellipsis())),
+        )
+        .full_width(Toggle::new(vm.punct_quotes()).label(tr!(settings_punctuation_quotes())))
         .line(
             field_label(tr!(settings_quote_style())),
             QUOTE_STYLES
@@ -91,10 +100,22 @@ pub(in crate::settings) fn punctuation_pane(
             )))
             .text(sample),
         )
-        .full_width(Checkbox::new(vm.punct_spacing()).label(tr!(settings_punctuation_spacing())))
-        .full_width(hint(tr!(settings_punctuation_spacing_hint())))
-        .full_width(Checkbox::new(vm.punct_dialogue()).label(tr!(settings_punctuation_dialogue())))
-        .full_width(hint(tr!(settings_punctuation_dialogue_hint())));
+        .full_width(
+            Toggle::new(vm.punct_spacing())
+                .label(tr!(settings_punctuation_spacing()))
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.punct_spacing",
+                    tr!(settings_punctuation_spacing_hint()),
+                )),
+        )
+        .full_width(
+            Toggle::new(vm.punct_dialogue())
+                .label(tr!(settings_punctuation_dialogue()))
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.punct_dialogue",
+                    tr!(settings_punctuation_dialogue_hint()),
+                )),
+        );
 
     pane_frame(
         crumb(

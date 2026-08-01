@@ -4,6 +4,7 @@
 //! Editor ▸ Corkboard — card size, what a card shows, and how the grid behaves.
 
 use bastyde::prelude::*;
+use bastyde::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -46,11 +47,27 @@ pub(in crate::settings) fn corkboard_pane(
         .full_width(group(tr!(settings_group_corkboard_layout())))
         .full_width(
             RadioGroup::new()
-                .radio(RadioButton::new(0, index.clone()).label(tr!(corkboard_view_nested())))
-                .radio(RadioButton::new(1, index.clone()).label(tr!(corkboard_view_flat()))),
+                .radio(
+                    RadioButton::new(0, index.clone())
+                        .label(tr!(corkboard_view_nested()))
+                        .rich_tooltip_content(TooltipContent::new(
+                            "settings.corkboard_layout",
+                            tr!(corkboard_layout_hint()),
+                        )),
+                )
+                .radio(
+                    RadioButton::new(1, index.clone())
+                        .label(tr!(corkboard_view_flat()))
+                        .rich_tooltip_content(TooltipContent::new(
+                            "settings.corkboard_layout_flat",
+                            tr!(corkboard_layout_hint()),
+                        )),
+                ),
         )
-        .full_width(hint(tr!(corkboard_layout_hint())))
         .full_width(group(tr!(settings_group_corkboard_cards())))
+        // Label lives on the FormLayout row (via `field_label` +
+        // `access_labelled_by`); do not also put `.label()` on the Slider —
+        // that would name the control twice for AT.
         .line(
             field_label(tr!(corkboard_card_size())),
             Slider::new(
@@ -58,8 +75,7 @@ pub(in crate::settings) fn corkboard_pane(
                 crate::CORKBOARD_CARD_SIZE_MIN,
                 crate::CORKBOARD_CARD_SIZE_MAX,
             )
-            .step(crate::CORKBOARD_CARD_SIZE_STEP)
-            .label(tr!(corkboard_card_size())),
+            .step(crate::CORKBOARD_CARD_SIZE_STEP),
         )
         .full_width(
             Toggle::new(vm.corkboard_show_word_count()).label(tr!(corkboard_show_word_count())),

@@ -34,13 +34,12 @@ use bastyde::prelude::*;
 mod panes;
 use bastyde::res;
 use bastyde::settings::{SettingsExt, TEXT_SCALE_KEY};
-use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{
-    Breadcrumb, BreadcrumbItem, Button, ButtonVariant, Center, Checkbox, Divider, Expand,
-    FixedSize, FontPicker, FormLayout, GroupHeader, HStack, IconButton, IconWidget,
-    LanguageSwitcher, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, Panel, RadioButton,
-    RadioGroup, ScrollArea, SearchField, Slider, Spacer, StandardButton, StandardTreeItem,
-    Switcher, TextScaleControl, TextWidget, ThemeSwitcher, Toggle, TreeView, VStack,
+    Breadcrumb, BreadcrumbItem, Button, ButtonVariant, Center, Divider, Expand, FixedSize,
+    FontPicker, FormLayout, GroupHeader, HStack, IconButton, IconWidget, LanguageSwitcher,
+    MessageBox, MessageBoxButton, MessageBoxButtons, Padding, Panel, RadioButton, RadioGroup,
+    ScrollArea, SearchField, Slider, Spacer, StandardButton, StandardTreeItem, Switcher,
+    TextScaleControl, TextWidget, ThemeSwitcher, Toggle, TreeView, VStack,
 };
 
 use crate::sessions::WorkSession;
@@ -435,16 +434,44 @@ fn slider_field(
     step: f32,
     fmt: impl Fn(f32) -> String + 'static,
 ) -> impl Widget + 'static {
+    slider_field_inner(value, min, max, step, fmt, None)
+}
+
+/// Like [`slider_field`], with a plain tooltip on the slider (for short
+/// explanations that used to be body-copy hints under the control).
+fn slider_field_tipped(
+    value: Signal<f32>,
+    min: f32,
+    max: f32,
+    step: f32,
+    fmt: impl Fn(f32) -> String + 'static,
+    tip: LocalizedString,
+) -> impl Widget + 'static {
+    slider_field_inner(value, min, max, step, fmt, Some(tip))
+}
+
+fn slider_field_inner(
+    value: Signal<f32>,
+    min: f32,
+    max: f32,
+    step: f32,
+    fmt: impl Fn(f32) -> String + 'static,
+    tip: Option<LocalizedString>,
+) -> impl Widget + 'static {
     let seed = fmt(value.get());
     let text = value.map(move |v| fmt(*v));
     let readout = TextWidget::new(LocalizedString::literal(seed))
         .text(text)
         .style(TextStyleRole::Small)
         .color(TextRole::Secondary);
+    let mut slider = Slider::new(value, min, max).step(step);
+    if let Some(tip) = tip {
+        slider = slider.tooltip(tip);
+    }
     FixedSize::new().width(300.0).child(
         HStack::new()
             .spacing(12.0)
-            .child(Expand::horizontal().child(Slider::new(value, min, max).step(step)))
+            .child(Expand::horizontal().child(slider))
             .child(FixedSize::new().width(52.0).child(readout)),
     )
 }

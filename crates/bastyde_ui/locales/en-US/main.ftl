@@ -166,7 +166,8 @@ dark = Dark
 settings-text-width = Text width
 settings-preview-width = Search preview width
 settings-autosave = Autosave to disk
-settings-show-welcome = Show the launcher at startup (otherwise, reopen the last project)
+settings-show-welcome = Show the launcher at startup
+settings-show-welcome-tip = When off, the last project reopens instead.
 
 ## Settings window: chrome
 settings-title = Settings
@@ -229,7 +230,8 @@ settings-field-app-theme = Theme
 settings-field-text-scale = Interface text size
 settings-field-language = Interface language
 settings-synopsis-pane = Show synopsis pane above the manuscript
-settings-typewriter = Typewriter scrolling (keep caret line centred)
+settings-typewriter = Typewriter scrolling
+settings-typewriter-tip = Keeps the caret line centred as you type.
 settings-highlight-sentence = Highlight the current sentence
 settings-group-container-views = Container views
 settings-remember-view = Remember the last view for each item type

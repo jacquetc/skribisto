@@ -36,7 +36,7 @@ use bastyde::widgets::{
 
 use crate::backup::is_destination_available;
 use crate::models::{BackupPolicy, RetentionMode, uid_is_usable};
-use crate::settings::group;
+use crate::settings::{field_label, group};
 use crate::view_models::BackupSettingsViewModel;
 
 type Get = Rc<dyn Fn() -> BackupPolicy>;
@@ -265,39 +265,34 @@ fn add_policy_rows(
         p.min_keep = v.max(1) as u32
     });
 
-    // Keep-N vs GFS params, switched on the selected mode. Fixed-width labels (a
-    // `.line()`/Expand label collapses to a sliver inside the hug-width Switcher).
-    let gfs = VStack::new()
-        .spacing(8.0)
-        .child(spin_line(
-            tr!(settings_backup_gfs_hourly()),
-            gfs_h,
-            0,
-            168,
-            &enabled,
-        ))
-        .child(spin_line(
-            tr!(settings_backup_gfs_daily()),
-            gfs_d,
-            0,
-            60,
-            &enabled,
-        ))
-        .child(spin_line(
-            tr!(settings_backup_gfs_weekly()),
-            gfs_w,
-            0,
-            52,
-            &enabled,
-        ))
-        .child(spin_line(
-            tr!(settings_backup_gfs_monthly()),
-            gfs_m,
-            0,
-            120,
-            &enabled,
-        ));
-    let keepn = spin_line(tr!(settings_backup_keep_n()), keep_n, 1, 999, &enabled);
+    // Keep-N vs GFS params, switched on the selected mode. Nested `FormLayout`
+    // (not hand-rolled HStacks): label column auto-sizes from the text, and the
+    // spin cells stay left-aligned — a plain `.line()` on the *outer* form would
+    // collapse under the Switcher's hug-width proposal, but a nested form
+    // measures its own labels and is fine.
+    let gfs = FormLayout::new()
+        .label_gap(12.0)
+        .row_spacing(8.0)
+        .line(
+            field_label(tr!(settings_backup_gfs_hourly())),
+            spin_cell(gfs_h, 0, 168, &enabled),
+        )
+        .line(
+            field_label(tr!(settings_backup_gfs_daily())),
+            spin_cell(gfs_d, 0, 60, &enabled),
+        )
+        .line(
+            field_label(tr!(settings_backup_gfs_weekly())),
+            spin_cell(gfs_w, 0, 52, &enabled),
+        )
+        .line(
+            field_label(tr!(settings_backup_gfs_monthly())),
+            spin_cell(gfs_m, 0, 120, &enabled),
+        );
+    let keepn = FormLayout::new().label_gap(12.0).row_spacing(8.0).line(
+        field_label(tr!(settings_backup_keep_n())),
+        spin_cell(keep_n, 1, 999, &enabled),
+    );
     let retention_params = Switcher::new(retention_mode.map(|m| *m))
         .child(gfs)
         .child(keepn);
@@ -342,13 +337,10 @@ fn add_policy_rows(
         .full_width(group(tr!(settings_backup_retention())))
         .full_width(mode_control)
         .full_width(retention_params)
-        .full_width(spin_line(
-            tr!(settings_backup_min_keep()),
-            min_keep,
-            1,
-            99,
-            &enabled,
-        ))
+        .line(
+            field_label(tr!(settings_backup_min_keep())),
+            spin_cell(min_keep, 1, 99, &enabled),
+        )
         .full_width(
             Toggle::new(dedup)
                 .label(tr!(settings_backup_dedup()))
@@ -356,30 +348,11 @@ fn add_policy_rows(
         )
 }
 
-/// A retention param row: a fixed-width single-line label + a spin cell. Fixed
-/// (not Expand) so the label survives the hug-width proposal a `Switcher` makes.
-fn spin_line(
-    label: impl Into<LocalizedString>,
-    value: Signal<i64>,
-    min: i64,
-    max: i64,
-    enabled: &Signal<bool>,
-) -> impl Widget {
-    HStack::new()
-        .spacing(12.0)
-        .child(
-            FixedSize::new().width(210.0).child(
-                TextWidget::new(label.into())
-                    .style(TextStyleRole::Small)
-                    .color(TextRole::Secondary)
-                    .single_line(),
-            ),
-        )
-        .child(
-            FixedSize::new()
-                .width(120.0)
-                .child(SpinBox::new(value, min, max).enabled(enabled.clone())),
-        )
+/// Fixed-width spin cell used as the field half of a `FormLayout::line`.
+fn spin_cell(value: Signal<i64>, min: i64, max: i64, enabled: &Signal<bool>) -> impl Widget {
+    FixedSize::new()
+        .width(120.0)
+        .child(SpinBox::new(value, min, max).enabled(enabled.clone()))
 }
 
 /// A bool field mirrored into a signal that writes back through `set`.

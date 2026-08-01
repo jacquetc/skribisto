@@ -104,9 +104,9 @@ pub fn work_tags_pane(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget
             ),
         );
 
+    // Description lives on the add field's tooltip — no body-copy paragraph above the list.
     VStack::new()
         .spacing(16.0)
-        .child(TextWidget::new(tr!(settings_tags_desc())).color(TextRole::Secondary))
         .child(add_row(ctx, vm))
         .child(toolbar_row(vm, query))
         .child(Expand::horizontal().child(list_card))
@@ -165,6 +165,10 @@ fn add_row(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
             .leading_slot(add_glyph().color(TextRole::Secondary))
             .placeholder(tr!(settings_tags_add_placeholder()))
             .validation(validation.clone())
+            .rich_tooltip_content(bastyde::widgets::tooltip::TooltipContent::new(
+                "settings.tags",
+                tr!(settings_tags_desc()),
+            ))
             .on_submit_fn(move |ctx| commit(ctx))
     };
 

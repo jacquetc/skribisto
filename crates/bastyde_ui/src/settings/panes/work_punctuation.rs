@@ -4,6 +4,7 @@
 //! Work: `<name>` ▸ Punctuation — the project's typographic house style.
 
 use bastyde::prelude::*;
+use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{Segment, SegmentedControl};
 use frontend::common::entities::QuoteStyle;
 
@@ -183,22 +184,28 @@ pub(in crate::settings) fn work_punctuation_pane(
     let form = FormLayout::new()
         .label(tr!(settings_page_punctuation()))
         .label_gap(16.0)
-        .row_spacing(12.0)
+        .row_spacing(14.0)
         .full_width(group(tr!(settings_group_punctuation())))
-        .full_width(Toggle::new(over.clone()).label(tr!(settings_punctuation_override())))
-        .full_width(hint(tr!(settings_punctuation_override_hint())))
         .full_width(
-            Checkbox::new(dashes)
+            Toggle::new(over.clone())
+                .label(tr!(settings_punctuation_override()))
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.punct_override",
+                    tr!(settings_punctuation_override_hint()),
+                )),
+        )
+        .full_width(
+            Toggle::new(dashes)
                 .label(tr!(settings_punctuation_dashes()))
                 .enabled(over.clone()),
         )
         .full_width(
-            Checkbox::new(ellipsis)
+            Toggle::new(ellipsis)
                 .label(tr!(settings_punctuation_ellipsis()))
                 .enabled(over.clone()),
         )
         .full_width(
-            Checkbox::new(quotes)
+            Toggle::new(quotes)
                 .label(tr!(settings_punctuation_quotes()))
                 .enabled(over.clone()),
         )
@@ -224,17 +231,23 @@ pub(in crate::settings) fn work_punctuation_pane(
             ),
         )
         .full_width(
-            Checkbox::new(spacing)
+            Toggle::new(spacing)
                 .label(tr!(settings_punctuation_spacing()))
-                .enabled(over.clone()),
+                .enabled(over.clone())
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.punct_spacing_work",
+                    tr!(settings_punctuation_spacing_hint()),
+                )),
         )
-        .full_width(hint(tr!(settings_punctuation_spacing_hint())))
         .full_width(
-            Checkbox::new(dialogue)
+            Toggle::new(dialogue)
                 .label(tr!(settings_punctuation_dialogue()))
-                .enabled(over.clone()),
-        )
-        .full_width(hint(tr!(settings_punctuation_dialogue_hint())));
+                .enabled(over.clone())
+                .rich_tooltip_content(TooltipContent::new(
+                    "settings.punct_dialogue_work",
+                    tr!(settings_punctuation_dialogue_hint()),
+                )),
+        );
 
     pane_frame(
         crumb(

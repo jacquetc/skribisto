@@ -99,9 +99,9 @@ pub fn user_dictionary_pane(ctx: &mut BuildContext, vm: &UserDictionaryViewModel
             ),
         );
 
+    // Description lives on the add field's tooltip — no body-copy paragraph above the list.
     VStack::new()
         .spacing(16.0)
-        .child(TextWidget::new(tr!(settings_user_dict_desc())).color(TextRole::Secondary))
         .child(add_row(vm))
         .child(toolbar_row(vm, query))
         // Fill the content width — a `Panel` sizes to its child, so without this the card would
@@ -131,6 +131,10 @@ fn add_row(vm: &UserDictionaryViewModel) -> impl Widget {
         TextInput::new(text.clone())
             .leading_slot(add_glyph().color(TextRole::Secondary))
             .placeholder(tr!(settings_user_dict_add_placeholder()))
+            .rich_tooltip_content(bastyde::widgets::tooltip::TooltipContent::new(
+                "settings.user_dict",
+                tr!(settings_user_dict_desc()),
+            ))
             .on_submit_fn(move |ctx| commit(ctx))
     };
 

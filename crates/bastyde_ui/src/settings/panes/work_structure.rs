@@ -4,6 +4,7 @@
 //! Work: `<name>` ▸ Structure — the open project's chapter encoding.
 
 use bastyde::prelude::*;
+use bastyde::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -42,10 +43,19 @@ pub(in crate::settings) fn work_structure_pane(
     let form = FormLayout::new()
         .label(tr!(settings_page_structure()))
         .label_gap(16.0)
-        .row_spacing(12.0)
+        .row_spacing(14.0)
         .full_width(group(tr!(settings_group_chapters())))
-        .full_width(Toggle::new(flat).label(tr!(settings_chapter_flat())))
-        .full_width(hint(tr!(settings_chapter_flat_hint())));
+        .full_width(
+            Toggle::new(flat)
+                .label(tr!(settings_chapter_flat()))
+                .rich_tooltip_content(
+                    TooltipContent::new(
+                        "settings.chapter_flat",
+                        tr!(new_work_chapter_scene_tip()),
+                    )
+                    .with_more(tr!(new_work_chapter_scene_tip_more())),
+                ),
+        );
 
     pane_frame(
         crumb(

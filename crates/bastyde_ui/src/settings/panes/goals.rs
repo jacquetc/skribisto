@@ -4,6 +4,7 @@
 //! Editor ▸ Goals — word/character targets and how they are counted.
 
 use bastyde::prelude::*;
+use bastyde::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -45,7 +46,14 @@ pub(in crate::settings) fn goals_pane(
         .full_width(group(tr!(settings_group_counting())))
         .full_width(
             RadioGroup::new()
-                .radio(RadioButton::new(0, index.clone()).label(tr!(settings_counting_auto())))
+                .radio(
+                    RadioButton::new(0, index.clone())
+                        .label(tr!(settings_counting_auto()))
+                        .rich_tooltip_content(TooltipContent::new(
+                            "settings.counting_auto",
+                            tr!(settings_counting_hint()),
+                        )),
+                )
                 .radio(
                     RadioButton::new(1, index.clone()).label(tr!(settings_counting_whitespace())),
                 )
@@ -57,7 +65,6 @@ pub(in crate::settings) fn goals_pane(
                     RadioButton::new(3, index.clone()).label(tr!(settings_counting_cjk_hybrid())),
                 ),
         )
-        .full_width(hint(tr!(settings_counting_hint())))
         .full_width(group(tr!(settings_group_goals_display())))
         .full_width(Toggle::new(vm.show_characters()).label(tr!(settings_show_characters())));
 

@@ -5,6 +5,7 @@
 
 use bastyde::prelude::*;
 use bastyde::widgets::TextInput;
+use bastyde::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -49,6 +50,10 @@ pub(in crate::settings) fn work_author_pane(
         let on_blur = commit.clone();
         TextInput::new(typed.clone())
             .placeholder(tr!(settings_field_author_placeholder()))
+            .rich_tooltip_content(TooltipContent::new(
+                "settings.author_name",
+                tr!(settings_field_author_hint()),
+            ))
             .on_submit_fn(move |_c| commit())
             .on_blur_fn(move |_c| on_blur())
     };
@@ -56,9 +61,8 @@ pub(in crate::settings) fn work_author_pane(
     let form = FormLayout::new()
         .label(tr!(settings_page_author()))
         .label_gap(16.0)
-        .row_spacing(12.0)
-        .line(TextWidget::new(tr!(settings_field_author_name())), field)
-        .full_width(hint(tr!(settings_field_author_hint())));
+        .row_spacing(14.0)
+        .line(field_label(tr!(settings_field_author_name())), field);
 
     pane_frame(
         crumb(

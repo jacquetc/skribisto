@@ -21,7 +21,7 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::tokens::{BorderRole, SurfaceRole};
 use bastyde::widgets::{
-    BuiltInIcons, Button, ButtonVariant, Center, Expand, FixedSize, HStack, IconButton,
+    BuiltInIcons, Button, ButtonVariant, Center, Expand, FixedSize, FormLayout, HStack, IconButton,
     IconLocation, IconWidget, ListView, MaxSize, MinSize, Padding, Panel, SearchField, Spacer,
     Switcher, TextInput, TextWidget, Toast, Toggle, VStack, ValidationState,
 };
@@ -70,32 +70,33 @@ pub fn text_replacements_pane(
         ctx.effect(&on, move |v| vm.set_enabled(*v));
     }
 
-    let toggle = Toggle::new(on.clone()).label(tr!(settings_text_repl_enable()));
+    let toggle = Toggle::new(on.clone())
+        .label(tr!(settings_text_repl_enable()))
+        .rich_tooltip_content(
+            bastyde::widgets::tooltip::TooltipContent::new(
+                "settings.text_repl",
+                tr!(settings_text_repl_desc()),
+            )
+            .with_more(tr!(settings_text_repl_disabled_hint())),
+        );
 
     // Only the active body needs the `BuildContext` for its own effects, but `Switcher`
     // builds both children regardless of which is shown (the same shape every empty-state
-    // Switcher here uses) — cheap for a settings-sized list.
+    // Switcher here uses) — cheap for a settings-sized list. Off state is empty: the
+    // toggle's tooltip already says what turning it on does.
     let content = Switcher::new(on.map(|v| usize::from(*v)))
-        .child(disabled_hint())
+        .child(Spacer::new())
         .child(active_body(ctx, vm));
 
-    VStack::new()
-        .spacing(16.0)
-        .child(TextWidget::new(tr!(settings_text_repl_desc())).color(TextRole::Secondary))
-        .child(toggle)
-        .child(content)
-}
-
-/// Shown while the master switch is off: no add row, no list — just what
-/// turning it on will do.
-fn disabled_hint() -> impl Widget {
-    Center::new().child(
-        Padding::symmetric(0.0, 24.0).child(
-            TextWidget::new(tr!(settings_text_repl_disabled_hint()))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        ),
-    )
+    // Same FormLayout shell as the other Work override panes: master switch,
+    // then the list body. The list itself stays a free-form VStack — FormLayout
+    // is for labelled field pairs, not toolbars and bordered lists.
+    FormLayout::new()
+        .label(tr!(settings_page_text_replacements()))
+        .label_gap(16.0)
+        .row_spacing(14.0)
+        .full_width(toggle)
+        .full_width(content)
 }
 
 /// The add row, toolbar and bordered list — everything that only makes sense
