@@ -23,11 +23,16 @@
 //!    ([`crate::view_models::unsaved_decision`]) — the same one `work.close`, the
 //!    window close guard and the four in-place switch doors use. Nothing here
 //!    invents a second opinion about what unsaved edits deserve.
-//! 3. **Cancel anywhere aborts the whole quit** and leaves every window open,
+//! 3. **Discard skips the on-close backup** (and never flushes dirty editors
+//!    first). Same rule as Close Work's Discard: the last-saved state is what
+//!    is kept. Routing Discard through `on_close_flow` would flush those
+//!    discarded buffers into the store and then write them into a backup — the
+//!    opposite of discarding.
+//! 4. **Cancel anywhere aborts the whole quit** and leaves every window open,
 //!    including ones already dealt with. A quit is one decision, not a run of
 //!    independent ones; discarding project A's edits and then stopping at project
 //!    B would leave A destroyed for a quit that never happened.
-//! 4. When the queue drains, close every window. bastyde exits once its window map
+//! 5. When the queue drains, close every window. bastyde exits once its window map
 //!    is empty (`maybe_exit`), so there is no separate "terminate" step.
 //!
 //! ## Why the prompt names the project
@@ -220,7 +225,7 @@ impl QuitSequencer {
                 }
                 me.abort();
             }
-            StandardButton::Discard => me.back_up_then_continue(c, &session),
+            StandardButton::Discard => me.discard_and_continue(c),
             // Cancel — and the escape key, and closing the dialog — abort the
             // whole quit, not just this Work. See the module doc.
             _ => me.abort(),
@@ -245,16 +250,31 @@ impl QuitSequencer {
         .default_button(StandardButton::Cancel)
         .escape_button(StandardButton::Cancel)
         .on_result(move |r, c| match r.button {
-            StandardButton::Discard => me.back_up_then_continue(c, &session),
+            StandardButton::Discard => me.discard_and_continue(c),
             _ => me.abort(),
         })
         .present(ctx);
     }
 
-    /// This Work is accounted for. Take its **on-close backup** if the project's
-    /// policy asks for one, then carry on with the next Work.
+    /// Discard unsaved edits for this Work and move on — **no** flush, **no**
+    /// on-close backup.
     ///
-    /// Quitting is a close, and "Back up when closing" has always applied to it.
+    /// Parity with Close Work's Discard (which skips `on_close_flow`): the
+    /// last-saved state is what is kept. Calling [`Self::back_up_then_continue`]
+    /// here would flush dirty editor buffers into the store and then write them
+    /// into a backup, which is the opposite of discarding.
+    fn discard_and_continue(&self, ctx: &mut EventContext) {
+        self.advance(ctx);
+    }
+
+    /// This Work is accounted for **without discarding edits** (clean, or just
+    /// saved). Take its **on-close backup** if the project's policy asks for one,
+    /// then carry on with the next Work.
+    ///
+    /// Quitting is a close, and "Back up when closing" has always applied to it —
+    /// but only when the Work's current state is the one the user is keeping.
+    /// Discard uses [`Self::discard_and_continue`] instead.
+    ///
     /// Reusing `on_close_flow` rather than re-deriving the rules keeps every one
     /// of them — backup mode suppresses it, an already-running backup is attached
     /// to instead of a second being started, and an unreachable destination
@@ -361,6 +381,15 @@ impl QuitSequencer {
     /// The desk is captured *before* `close_work` — that call tears the Work
     /// subtree out before publishing `CloseWork`, after which a tab can no longer
     /// be translated into anything persistable.
+    ///
+    /// **Closing windows.** Do not rely on `ctx.windows()` alone. During event
+    /// dispatch bastyde pulls the *current* window out of the window map, so
+    /// `windows()` omits the tree this handler is running on. A single-window
+    /// quit that only iterated `windows()` would close every Work and leave an
+    /// empty zombie project window — process never exits, looks like a broken
+    /// Close Work. Same shape as [`crate::app::close_work_and_return_to_launcher`]:
+    /// force-close siblings by id, force-close the current tree via the
+    /// post-dispatch flag.
     fn finish(&self, ctx: &mut EventContext) {
         for work_id in self.inner.registry.open_work_ids() {
             if let Some(session) = self.inner.registry.session_for(work_id) {
@@ -372,12 +401,22 @@ impl QuitSequencer {
                 );
             }
         }
-        // Snapshot the ids first: closing a window mutates the manager's map,
-        // and `windows()` is a live read of it.
-        let ids: Vec<_> = ctx.windows().iter().map(|w| w.id()).collect();
-        for id in ids {
+        let current = ctx.window().map(|w| w.id());
+        // Snapshot first: each close mutates the manager's map, and `windows()`
+        // is a live read of it.
+        let siblings: Vec<_> = ctx
+            .windows()
+            .into_iter()
+            .map(|w| w.id())
+            .filter(|id| Some(*id) != current)
+            .collect();
+        for id in siblings {
+            // Forced (queue_close), not guarded — the project is already gone.
             ctx.close_window_by_id(id);
         }
+        // The invoking window is absent from `windows()` during its own
+        // dispatch; this is the only reliable way to close it.
+        ctx.close_window_forced();
         self.inner.active.set(false);
     }
 }
@@ -480,6 +519,23 @@ mod tests {
         assert!(q.inner.queue.borrow().is_empty());
         assert!(q.inner.waiting.borrow().is_none());
         assert!(!q.is_active());
+    }
+
+    /// Discard must not go through `back_up_then_continue` / `on_close_flow`.
+    /// With an empty registry the only thing we can pin without a live Work is
+    /// that Discard still drains the queue and finishes the quit (same as Skip
+    /// with nothing left to back up) — i.e. it does not hang waiting on a backup.
+    #[test]
+    fn discard_and_continue_drains_an_empty_queue_without_hanging() {
+        let q = sequencer();
+        q.inner.active.set(true);
+        // Queue empty: discard's `advance` must call `finish` and go idle.
+        let mut tree = bastyde::core::widget_tree::WidgetTree::new();
+        tree.run_with_event_context(&mut bastyde::core::NoopWindowOps, |ctx| {
+            q.discard_and_continue(ctx);
+        });
+        assert!(!q.is_active(), "discard finishes the quit when nothing remains");
+        assert!(q.inner.queue.borrow().is_empty());
     }
 
     /// With nothing waiting, a stray completion (a backup's, an import's) must
