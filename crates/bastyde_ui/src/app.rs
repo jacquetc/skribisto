@@ -168,7 +168,7 @@ fn drain_dropped(mut payload: DragPayload, mut open: impl FnMut(u64, &str)) -> b
 ///
 /// Two outcomes today. Every guarded close of a project window that still
 /// goes through `close_window()` (title-bar X, Alt+F4, Ctrl+W, File ▸ Close
-/// Work, the brand icon / File ▸ Welcome…) returns to the Launcher — see
+/// Work, File ▸ Welcome…) returns to the Launcher — see
 /// [`close_work_and_return_to_launcher`]. Ctrl+Q / File ▸ Quit is the one
 /// exception: it never calls `close_window()` at all — `app.quit`'s action
 /// runs the same unsaved-changes guard ([`guard_unsaved_exit`]) but ends in

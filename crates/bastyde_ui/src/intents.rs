@@ -56,8 +56,8 @@ pub enum AppIntent {
     ToggleWritingSession,
 
     /// Show the Welcome modal (start screen). Fired at startup (unless a work
-    /// path was passed), from the File ▸ Welcome… menu, and from the brand
-    /// icon button. Consumed by a global `welcome.show` action in `App::build`.
+    /// path was passed) and from the File ▸ Welcome… menu. Consumed by a
+    /// global `welcome.show` action in `App::build`.
     #[name = "welcome.show"]
     ShowWelcome,
 

@@ -38,7 +38,7 @@
 //! - Picking / creating / importing a project from the Launcher opens a
 //!   **project window**, then closes the Launcher.
 //! - Closing a project (its window's own close, Ctrl+Q, Ctrl+W / File ▸ Close
-//!   Work, or the brand icon / File ▸ Welcome…) opens a fresh Launcher window,
+//!   Work, or File ▸ Welcome…) opens a fresh Launcher window,
 //!   then closes the project window — see
 //!   [`app::close_work_and_return_to_launcher`]. The process stays alive; it
 //!   only quits once the Launcher itself is closed.

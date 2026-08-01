@@ -522,7 +522,6 @@ switch-save-not-started = L'œuvre n'a pas pu être enregistrée, elle n'a donc 
 close-save-failed = L'œuvre n'a pas pu être enregistrée, elle n'a donc pas été fermée : { $error }
 close-save-not-started = L'œuvre n'a pas pu être enregistrée, elle n'a donc pas été fermée.
 save-not-started = L'œuvre n'a pas pu être enregistrée.
-tooltip-welcome = Accueil
 
 ## Notifications
 could-not-open-work = Impossible d'ouvrir l'œuvre : { $error }

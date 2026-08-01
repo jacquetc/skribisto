@@ -68,9 +68,9 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
                 Some(host) => {
                     // Leading inset: the icon is the first thing in the title
                     // bar's centre slot, which starts at the window's left edge
-                    // — bare, it sits flush against it. The project window has
-                    // no such gap to close: its `MenuBar` hamburger leads, and
-                    // an `IconButton` carries its own inset.
+                    // — bare, it sits flush against it. The project window uses
+                    // the same padding on its brand icon (which leads its
+                    // hamburger).
                     let brand_icon = tree.add(
                         Padding::new(0.0, 0.0, 0.0, 8.0).child(
                             IconWidget::from_raster(

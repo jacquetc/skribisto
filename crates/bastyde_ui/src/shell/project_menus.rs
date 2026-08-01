@@ -112,6 +112,21 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
     let focus = parts.focus;
     let placement = parts.placement;
 
+    // Work menu = the File menu under a project-centric name. Grouping and
+    // separators follow the usual desktop document-app File menu:
+    //
+    //   1. Open / create          New, Open, New Window, Import
+    //   2. Persist / ship out     Save, Save As, Export
+    //   3. Archive                Back up now, Backups…
+    //   4. Leave this work        Close Work, Welcome…
+    //   5. App preferences        Settings
+    //   6. Exit process           Quit
+    //
+    // Separators sit between those groups only — never inside a group, and
+    // never stacked. Import lives with Open (foreign formats that start a
+    // work); Export lives with Save (write the current work out). Welcome
+    // sits next to Close because both return to the Launcher (`welcome.show`
+    // aliases `work.close`).
     MenuModel::new().menu(tr!(menu_work()), move |m| {
                             let file_ctx = menu_ctx.clone();
                             let folder_ctx = menu_ctx.clone();
@@ -146,6 +161,8 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                             let show_backup_now = show_open
                                 .zip(&menu_backup_mode)
                                 .map(|(o, bm)| *o && !*bm);
+
+                            // ── 1. Open / create ─────────────────────────────
                             // New / Open route through the global `work.new` /
                             // `work.open` actions (registered in `App::build`), so
                             // the same code path serves the menu and the Ctrl+N /
@@ -164,16 +181,16 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                             // shows — same project, same edits, its own desk.
                             // Hidden with no project open: there is nothing to
                             // open a second view of. Same `show_open` signal the
-                            // Close/Backups entries below use, so the whole
-                            // "needs a project" group appears and disappears
-                            // together.
+                            // Close/Backups entries use, so the whole "needs a
+                            // project" group appears and disappears together.
                             .item(
                                 MenuEntry::new(tr!(menu_new_window()))
                                     .visible(show_open.clone())
                                     .intent("window.new")
                                     .shortcut("window.new"),
                             )
-                            // Import from another writing app. A submenu so
+                            // Import from another writing app. Open-adjacent: it
+                            // starts a work from a foreign format. Submenu so
                             // more importers can slot in later; each opens its
                             // own panel via a global action.
                             .submenu(tr!(menu_import_from()), |s| {
@@ -182,47 +199,8 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                                         .intent("work.import_plume"),
                                 )
                             })
-                            // The same focus-adaptive quick-export list the title-bar
-                            // Export split-button shows — one source (the view-model's
-                            // `applicable` scopes), two surfaces. Each visible entry fires
-                            // the data-bearing `export.scope` intent; the disabled hint keeps
-                            // the submenu from ever being empty.
-                            .submenu(tr!(menu_export()), {
-                                let ex = export_for_menu.clone();
-                                move |s| {
-                                    let entry = |scope: ExportScopeKind| {
-                                        let seen = scope.clone();
-                                        let fire = scope.clone();
-                                        MenuEntry::new(scope_label(&scope))
-                                            .visible(
-                                                ex.applicable_signal()
-                                                    .map(move |v| v.contains(&seen)),
-                                            )
-                                            .on_activate(move |c| {
-                                                c.send_intent(AppIntent::ExportScoped {
-                                                    scope: fire.clone(),
-                                                })
-                                            })
-                                    };
-                                    s.item(entry(ExportScopeKind::CurrentBook))
-                                        .item(entry(ExportScopeKind::CurrentPart))
-                                        .item(entry(ExportScopeKind::CurrentChapter))
-                                        .item(entry(ExportScopeKind::CurrentScene))
-                                        .item(entry(ExportScopeKind::CurrentNote))
-                                        .item(entry(ExportScopeKind::CurrentFolder))
-                                        // Choose… — the checkbox-tree picker (always
-                                        // available with a project open).
-                                        .item(entry(ExportScopeKind::Custom))
-                                        .item(
-                                            MenuEntry::new(tr!(menu_export_none()))
-                                                .visible(
-                                                    ex.applicable_signal().map(|v| v.is_empty()),
-                                                )
-                                                .enabled(false),
-                                        )
-                                }
-                            })
                             .separator()
+                            // ── 2. Persist / ship out ────────────────────────
                             // Flush editors to the store + write to disk (also Ctrl+S).
                             .item(
                                 MenuEntry::new(tr!(menu_save()))
@@ -285,6 +263,50 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                                     });
                                 },
                             ))
+                            // The same focus-adaptive quick-export list the title-bar
+                            // Export split-button shows — one source (the view-model's
+                            // `applicable` scopes), two surfaces. Each visible entry fires
+                            // the data-bearing `export.scope` intent; the disabled hint keeps
+                            // the submenu from ever being empty. Grouped with Save: both
+                            // write the current work out (Save keeps Skribisto shape;
+                            // Export ships another format).
+                            .submenu(tr!(menu_export()), {
+                                let ex = export_for_menu.clone();
+                                move |s| {
+                                    let entry = |scope: ExportScopeKind| {
+                                        let seen = scope.clone();
+                                        let fire = scope.clone();
+                                        MenuEntry::new(scope_label(&scope))
+                                            .visible(
+                                                ex.applicable_signal()
+                                                    .map(move |v| v.contains(&seen)),
+                                            )
+                                            .on_activate(move |c| {
+                                                c.send_intent(AppIntent::ExportScoped {
+                                                    scope: fire.clone(),
+                                                })
+                                            })
+                                    };
+                                    s.item(entry(ExportScopeKind::CurrentBook))
+                                        .item(entry(ExportScopeKind::CurrentPart))
+                                        .item(entry(ExportScopeKind::CurrentChapter))
+                                        .item(entry(ExportScopeKind::CurrentScene))
+                                        .item(entry(ExportScopeKind::CurrentNote))
+                                        .item(entry(ExportScopeKind::CurrentFolder))
+                                        // Choose… — the checkbox-tree picker (always
+                                        // available with a project open).
+                                        .item(entry(ExportScopeKind::Custom))
+                                        .item(
+                                            MenuEntry::new(tr!(menu_export_none()))
+                                                .visible(
+                                                    ex.applicable_signal().map(|v| v.is_empty()),
+                                                )
+                                                .enabled(false),
+                                        )
+                                }
+                            })
+                            .separator()
+                            // ── 3. Archive ───────────────────────────────────
                             // Manual backup — routed through the guarded
                             // `backup.now` action in `App` (which flushes the
                             // editors into the store first, resolves the
@@ -301,9 +323,11 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                                     .visible(show_open.clone())
                                     .intent("backups.show"),
                             )
+                            .separator()
+                            // ── 4. Leave this work ───────────────────────────
                             // Close the open work — routed through the guarded
                             // `work.close` action (unsaved-changes prompt /
-                            // autosave-ensure live in `App`). Now returns to the
+                            // autosave-ensure live in `App`). Returns to the
                             // Launcher instead of leaving an empty window.
                             .item(
                                 MenuEntry::new(tr!(menu_close_work()))
@@ -311,14 +335,19 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                                     .intent("work.close")
                                     .shortcut("work.close"),
                             )
-                            .separator()
+                            // Same terminal path as Close Work (`welcome.show` →
+                            // `work.close`); kept as its own label so the return
+                            // to the start screen is discoverable by name.
                             .item(MenuEntry::new(tr!(menu_welcome())).intent("welcome.show"))
+                            .separator()
+                            // ── 5. App preferences ───────────────────────────
                             .item(
                                 MenuEntry::new(tr!(menu_settings()))
                                     .intent("app.settings")
                                     .shortcut("app.settings"),
                             )
                             .separator()
+                            // ── 6. Exit process (always last) ────────────────
                             .item(
                                 MenuEntry::new(tr!(menu_quit()))
                                     .intent("app.quit")

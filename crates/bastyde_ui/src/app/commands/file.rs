@@ -232,11 +232,11 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     }
 
     // "Welcome" now means "close this work and go back to the Launcher" (the launcher-window
-    // model — Welcome is a real window, not a modal any more). Fired from File ▸ Welcome… and
-    // the brand icon button. A pure alias for `work.close`, dispatched by name, so it shares
+    // model — Welcome is a real window, not a modal any more). Fired from File ▸ Welcome….
+    // A pure alias for `work.close`, dispatched by name, so it shares
     // that action's exact guard (unsaved-changes prompt, the on-close backup, backup-mode
     // handling) rather than bypassing it — do NOT inline a second copy of that logic here.
-    // Global so the title-bar overlay menu/button reach it (house rule).
+    // Global so the title-bar overlay menu reaches it (house rule).
     ctx.register_action_global(
         Action::new("welcome.show").on_invoke(|_i, c| c.send_intent(Intent::new("work.close"))),
     );

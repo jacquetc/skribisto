@@ -41,8 +41,8 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
-    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButton, IconButtonSize,
-    IconWidget, MenuBar, TextWidget, TitleBar, VStack, WindowFrame,
+    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, IconWidget, MenuBar,
+    Padding, TextWidget, TitleBar, VStack, WindowFrame,
 };
 
 use frontend::AppContext;
@@ -600,7 +600,29 @@ impl ProjectWindowFactory {
                         // placement is the single fact all three agree on.
                         let controls_visible =
                             state.placement().map(|p| !p.is_fullscreen());
-                        let menubar = VisibleWhen::new(chrome_visible.clone(), menubar);
+                        // Brand mark first (simple icon, same treatment as the
+                        // Launcher title bar), then the hamburger. Leading inset
+                        // on the icon: it sits at the window's left edge, so
+                        // without padding it would flush against the frame —
+                        // matching `launcher_window`'s brand icon.
+                        let brand_icon = Padding::new(0.0, 0.0, 0.0, 8.0).child(
+                            IconWidget::from_raster(
+                                res!("../../resources/icons/skribisto.png"),
+                                25.0,
+                            )
+                            .mode(IconMode::FullColor),
+                        );
+                        let leading = VisibleWhen::new(
+                            chrome_visible.clone(),
+                            bati!(
+                                HStack {
+                                    spacing: 5.0
+                                    alignment: bastyde::tokens::VAlignment::Center
+                                    child: brand_icon
+                                    child: menubar
+                                }
+                            ),
+                        );
                         let trailing_controls = VisibleWhen::new(
                             chrome_visible.clone(),
                             bati!(
@@ -624,28 +646,15 @@ impl ProjectWindowFactory {
                                     // HTCAPTION). The OS owns caption pixels outright,
                                     // so a bare button here would never see a click —
                                     // it would only drag the window. `DeadZone` carves
-                                    // these two controls back out of the caption, and
+                                    // the project switcher back out of the caption, and
                                     // (on every platform) stops a few px of pointer
                                     // jitter during a click from arming the window drag.
                                     DeadZone {
-                                        HStack {
-                                            spacing: 5.0
-                                            alignment: bastyde::tokens::VAlignment::Center
-                                            IconButton::new(IconWidget::from_raster(
-                                                res!("../../resources/icons/skribisto.png"),
-                                                25.0,
-                                            )
-                                            .mode(IconMode::FullColor)) {
-                                                tooltip: tr!(tooltip_welcome())
-                                                size: IconButtonSize::Large
-                                                on_activate_fn: |ctx| ctx.send_intent(Intent::new("welcome.show"))
-                                            }
-                                            ProjectSwitcherButton::new(
-                                                app_ctx_root.clone(),
-                                                single_work.clone(),
-                                                single_work_info.clone(),
-                                            )
-                                        }
+                                        ProjectSwitcherButton::new(
+                                            app_ctx_root.clone(),
+                                            single_work.clone(),
+                                            single_work_info.clone(),
+                                        )
                                     }
                                     Expand::horizontal {
                                         Center {
@@ -673,7 +682,7 @@ impl ProjectWindowFactory {
 
                             TitleBar::new(host) {
                                 background: SurfaceRole::Main
-                                leading: menubar
+                                leading: leading
                                 // Left of the window buttons: the master spell-check switch,
                                 // then the focus-adaptive Export control. The `trailing` slot
                                 // takes one widget, so they share an HStack.

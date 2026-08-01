@@ -520,7 +520,6 @@ switch-save-not-started = The work couldn't be saved, so it wasn't replaced.
 close-save-failed = The work couldn't be saved, so it wasn't closed: { $error }
 close-save-not-started = The work couldn't be saved, so it wasn't closed.
 save-not-started = The work couldn't be saved.
-tooltip-welcome = Welcome
 
 ## Toasts
 could-not-open-work = Could not open work: { $error }
