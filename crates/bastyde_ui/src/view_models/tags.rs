@@ -61,9 +61,16 @@ impl TagsViewModel {
         Self { list, ids }
     }
 
-    /// Wire the held Layer-A handle's event subscriptions (once, from `App::build`).
+    /// Wire the held Layer-A handle's event subscriptions (from `App::build`, after
+    /// the LoadWork seed is registered — see `WorkTagsListModel::wire`).
     pub fn wire(&self, ctx: &mut BuildContext) {
         self.list.wire(ctx);
+    }
+
+    /// Re-read the open Work's palette. Used when a project becomes live outside a
+    /// `BinderTag` mutation (e.g. attach of an already-open Work).
+    pub fn refresh(&self) {
+        self.list.refresh();
     }
 
     /// The reactive palette to bind (the pane wraps it in a `SortFilterListModel`).

@@ -1630,16 +1630,13 @@ impl Widget for App {
             self.backup_context.clone(),
             workspace_layout.clone(),
         );
-        // The personal-dictionary view-model — wire its held list-model + single so
-        // the Settings pane stays live and the editor's "Add to dictionary" reaches
-        // a wired handle.
-        session.user_dictionary.wire(ctx);
-        // The tag palette, same reasoning: one wired instance behind the Inspector's tag
-        // section, the Settings pane and every chip in the app.
-        session.tags.wire(ctx);
-        // The custom replacement lexicon, same reasoning: one wired instance behind the
-        // Settings pane and the editor's typing session — resolved off `session`, same
-        // as `smart_punctuation` above.
+        // The custom replacement lexicon — one wired instance behind the Settings pane
+        // and the editor's typing session — resolved off `session`, same as
+        // `smart_punctuation` above.
+        //
+        // Tags and the personal dictionary are wired *after* the LoadWork seed below:
+        // their Load/New handlers re-read Work-scoped relationships, and must not race
+        // the lifecycle seed that writes `ids.work_id` (see WorkTagsListModel::wire).
         session.text_replacements.wire(ctx);
         // Backup scheduler (on `session`) + settings (registered in `main`). The
         // scheduler drives every trigger and holds the singles; the settings VM
@@ -1829,6 +1826,13 @@ impl Widget for App {
                 trash_dock: self.trash_dock,
             },
         );
+
+        // Tag palette + personal dictionary: wire **after** the LoadWork seed so their
+        // project-boundary handlers see a seeded `work_id` when possible. They also fall
+        // back to the event's work id (see each model's wire docs) if registration order
+        // ever races seed again.
+        session.user_dictionary.wire(ctx);
+        session.tags.wire(ctx);
 
         // Long-operation routing: every background job (import, export, save-as, backup,
         // restore, the progress recorder) reports through the same four events and filters

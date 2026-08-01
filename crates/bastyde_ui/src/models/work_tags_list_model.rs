@@ -79,7 +79,6 @@ fn build_lookup(rows: &[TagRow]) -> HashMap<u64, TagRow> {
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
-    use std::cell::Cell;
     use std::collections::HashMap;
     use std::rc::Rc;
 
@@ -103,7 +102,6 @@ mod imp {
         model: ListModel<TagRow>,
         version: Signal<u64>,
         lookup: Signal<Rc<HashMap<u64, TagRow>>>,
-        subscribed: Cell<bool>,
         ctx: Rc<AppContext>,
         /// The open Work's own ids — scopes every read to *this* Work's `tags`
         /// relationship (see [`load_rows`]); a second simultaneously-open Work's
@@ -118,32 +116,37 @@ mod imp {
 
     impl WorkTagsListModel {
         pub fn new(ctx: Rc<AppContext>, ids: AppIds) -> Self {
-            let rows = load_rows(&ctx, &ids);
+            let rows = load_rows(&ctx, ids.work_id.get());
             let lookup = Signal::new(Rc::new(build_lookup(&rows)));
             Self {
                 inner: Rc::new(Inner {
                     model: ListModel::from_vec(rows),
                     version: Signal::new(0),
                     lookup,
-                    subscribed: Cell::new(false),
                     ctx,
                     ids,
                 }),
             }
         }
 
-        /// Subscribe (once) so the palette stays live: any `BinderTag` mutation — from the
+        /// Subscribe so the palette stays live: any `BinderTag` mutation — from the
         /// settings pane, the inspector's "New tag…", a preset, or an undo/redo — re-reads
         /// it, and a project switch replaces it wholesale.
+        ///
+        /// **Re-subscribe on every call.** `BuildContext::subscribe_event` is scoped to the
+        /// current build and dropped on the next one (`App::build` re-wires every rebuild).
+        /// A one-shot "subscribed" guard left the palette deaf after the first App rebuild:
+        /// `LoadWork` never refreshed, so Settings ▸ Tags stayed empty until a local create
+        /// happened to fire `BinderTag::Created` through a *new* subscription path.
+        ///
+        /// Always `refresh()` at the end so a Work opened before this model was wired (or
+        /// after `work_id` was re-seeded) lands its tags without waiting for an event.
         ///
         /// `BinderTag`/`ImportTags` carry no `work_id`, but `refresh` always re-derives
         /// from this model's own `ids.work_id` (see [`load_rows`]), so a sibling Work's
         /// tag mutation only ever costs a harmless, still-correct re-read. `LoadWork`/
         /// `NewWork`/`CloseWork` DO carry `work_id` and are guarded accordingly.
         pub fn wire(&self, ctx: &mut BuildContext) {
-            if self.inner.subscribed.replace(true) {
-                return;
-            }
             for ev in [
                 EntityEvent::Created,
                 EntityEvent::Updated,
@@ -165,9 +168,20 @@ mod imp {
             for wev in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
                 let me = self.clone();
                 ctx.subscribe_event(Origin::WorkManagement(wev), move |event: &Event| {
-                    if me.inner.ids.is_bootstrap_or_own(&event.ids) {
-                        me.refresh()
+                    if !me.inner.ids.is_bootstrap_or_own(&event.ids) {
+                        return;
                     }
+                    // Prefer the already-seeded work_id. Fall back to the event's id:
+                    // `tags.wire` historically registered *before* ProjectLifecycle's
+                    // LoadWork seed, so a bare `ids.work_id` refresh ran with `None`
+                    // and left the palette empty until the next BinderTag create.
+                    let work_id = me
+                        .inner
+                        .ids
+                        .work_id
+                        .get()
+                        .or_else(|| event.ids.first().copied());
+                    me.refresh_for(work_id);
                 });
             }
             {
@@ -176,11 +190,13 @@ mod imp {
                     Origin::WorkManagement(WorkManagementEvent::CloseWork),
                     move |event: &Event| {
                         if me.inner.ids.is_event_for_my_work(&event.ids) {
-                            me.refresh()
+                            me.refresh_for(None)
                         }
                     },
                 );
             }
+            // Catch up when this window is already seeded (rebuild / late wire).
+            self.refresh_for(self.inner.ids.work_id.get());
         }
 
         /// The reactive model to bind a `ListView` to (through the pane's
@@ -331,8 +347,15 @@ mod imp {
             }
         }
 
-        fn refresh(&self) {
-            let rows = load_rows(&self.inner.ctx, &self.inner.ids);
+        /// Re-read the palette for the currently seeded Work (`None` → empty).
+        pub fn refresh(&self) {
+            self.refresh_for(self.inner.ids.work_id.get());
+        }
+
+        /// Re-read the palette for an explicit Work id (e.g. a LoadWork event that
+        /// has not yet been written into `AppIds` by the lifecycle seed).
+        fn refresh_for(&self, work_id: Option<u64>) {
+            let rows = load_rows(&self.inner.ctx, work_id);
             self.inner.lookup.set(Rc::new(build_lookup(&rows)));
             self.inner.model.reconcile_by_key(rows, |r| r.id);
             let v = &self.inner.version;
@@ -340,12 +363,12 @@ mod imp {
         }
     }
 
-    /// Read this window's own open Work's `BinderTag`s (via `Work.tags`), into
-    /// sorted rows — **not** `get_all_binder_tag`, which returns every tag in the
-    /// whole shared store: with a second Work simultaneously open, that would leak
-    /// one Work's tag palette into the other's Inspector and Settings ▸ Tags pane.
-    fn load_rows(ctx: &AppContext, ids: &AppIds) -> Vec<TagRow> {
-        let Some(work_id) = ids.work_id.get() else {
+    /// Read one Work's `BinderTag`s (via `Work.tags`), into sorted rows — **not**
+    /// `get_all_binder_tag`, which returns every tag in the whole shared store:
+    /// with a second Work simultaneously open, that would leak one Work's tag
+    /// palette into the other's Inspector and Settings ▸ Tags pane.
+    fn load_rows(ctx: &AppContext, work_id: Option<u64>) -> Vec<TagRow> {
+        let Some(work_id) = work_id else {
             return Vec::new(); // no project open
         };
         let tag_ids =
@@ -448,6 +471,10 @@ mod imp {
         }
 
         pub fn wire(&self, _ctx: &mut BuildContext) {}
+
+        pub fn refresh(&self) {
+            // Mock palette is in-memory and always "loaded".
+        }
 
         pub fn list_model(&self) -> ListModel<TagRow> {
             self.inner.model.clone()

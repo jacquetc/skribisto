@@ -147,6 +147,17 @@ fn add_row(ctx: &mut BuildContext, vm: &TagsViewModel) -> impl Widget {
             if name.is_empty() {
                 return;
             }
+            // Backend permits same-name tags, but creating another is almost always a
+            // mistake — refuse here and toast so the writer sees why Add did nothing
+            // (the inline validation warning is easy to miss when clicking the button).
+            if let Some(existing) = vm.duplicate_name(&name, None) {
+                ctx.show_toast(
+                    Toast::warning(tr!(settings_tags_duplicate(name = existing)))
+                        .scoped_id("tags.duplicate", vm.work_id())
+                        .target_work(vm.work_id()),
+                );
+                return;
+            }
             if vm.create(&name, DEFAULT_NEW_COLOR, "", false).is_some() {
                 ctx.show_toast(
                     Toast::info(tr!(settings_tags_added(name = name.clone())))

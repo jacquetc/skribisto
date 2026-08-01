@@ -11,9 +11,9 @@
 //! The "+" popover both **assigns** an existing palette tag and **creates** one, because the
 //! moment a writer wants a tag is the moment they notice it is missing — sending them to
 //! Settings to make it and back here to apply it is the click-fest this feature exists to
-//! avoid. Creation offers the discoverable toggle inline: it is the switch the whole
-//! story-bible half turns on, and burying it in a settings pane a writer has no reason to
-//! visit would defeat it.
+//! avoid. Creation offers colour + the discoverable toggle inline: it is the switch the
+//! whole story-bible half turns on, and burying it in a settings pane a writer has no
+//! reason to visit would defeat it.
 //!
 //! It never knows *whose* tags it edits — the caller supplies the current ids and a writer.
 
@@ -23,11 +23,15 @@ use bastyde::core::BindingLevel;
 use bastyde::core::accesskit::Role;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
+use bastyde::tokens::Color;
 use bastyde::widgets::{
-    Divider, FocusScope, HStack, IconButton, IconWidget, MaxSize, Padding, Panel,
-    PopoverIconButton, ScrollArea, TextInput, TextWidget, Toggle, TraversalScopePolicy, VStack,
-    Wrap,
+    Button, ButtonVariant, ColorEdit, Divider, FocusScope, HStack, IconButton, IconWidget, MaxSize,
+    Padding, Panel, PopoverIconButton, ScrollArea, TextInput, TextWidget, Toast, Toggle,
+    TraversalScopePolicy, VStack, Wrap,
 };
+
+use crate::app_ids::HasWorkId;
+use crate::toast_scope::ToastWorkExt;
 
 use crate::models::{TagRow, name_key};
 use crate::tags::contrast;
@@ -38,20 +42,20 @@ use crate::widgets::{Pill, PillTooltip};
 /// Persist a new tag-id list for the item. Takes an `EventContext` so it can run a command.
 pub type SetTags = Rc<dyn Fn(Vec<u64>, &mut EventContext)>;
 
-/// Colour given to a tag created from the "+" popover, where there is no colour picker.
+/// Colour given to a tag created from the "+" popover when the writer leaves the default.
 /// Deliberately the same mid-slate the CSV importer falls back to: legible in both themes,
-/// and visibly "unset" so the writer knows Settings is where to choose one.
+/// and visibly "unset" so Settings is still the place for a careful palette.
 const QUICK_CREATE_COLOR: &str = "#607d8b";
+
+fn default_create_color() -> Color {
+    contrast::parse(QUICK_CREATE_COLOR)
+}
 
 pub struct TagPillField {
     /// The item's current tag ids (a local mirror the caller keeps in sync).
     value: Signal<Vec<u64>>,
     set: SetTags,
     vm: TagsViewModel,
-    /// Filter/new-name text in the "+" popover.
-    query: Signal<String>,
-    /// Whether a tag created from the popover is story-bible material.
-    new_discoverable: Signal<bool>,
     root_child: Option<WidgetId>,
 }
 
@@ -61,8 +65,6 @@ impl TagPillField {
             value,
             set,
             vm,
-            query: Signal::new(String::new()),
-            new_discoverable: Signal::new(false),
             root_child: None,
         }
     }
@@ -78,6 +80,8 @@ impl Widget for TagPillField {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         // Rebuild when the item's tags change (an assign/remove) or the palette does (a
         // rename, a recolour, a preset applied from Settings while this is on screen).
+        // **Do not** rebuild on the picker's filter text — that lives inside TagPicker and
+        // would recreate the TextInput, parking the caret at 0 / select-all every keystroke.
         self.value
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
         self.vm.changed_signal().bind_to(
@@ -85,8 +89,6 @@ impl Widget for TagPillField {
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
-        self.query
-            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
 
         let palette = self.vm.rows();
         let assigned_ids = self.value.get();
@@ -190,10 +192,15 @@ impl Widget for TagPillField {
 /// take a tag off, so it has to be able to. One list that toggles serves both, and needs no
 /// mode flag.
 ///
+/// **Filter typing must not rebuild this shell.** The query signal is held here and bound
+/// only by the list/create children — if this widget rebuilt on every keystroke, the
+/// `TextInput` would be recreated with caret at 0 / select-all, and typing would reverse.
+///
 /// [`TagDotsRow`]: crate::tags::TagDotsRow
 pub(crate) struct TagPicker {
     query: Signal<String>,
     new_discoverable: Signal<bool>,
+    new_color: Signal<Color>,
     value: Signal<Vec<u64>>,
     set: SetTags,
     vm: TagsViewModel,
@@ -205,6 +212,7 @@ impl TagPicker {
         Self {
             query: Signal::new(String::new()),
             new_discoverable: Signal::new(false),
+            new_color: Signal::new(default_create_color()),
             value,
             set,
             vm,
@@ -221,22 +229,11 @@ impl std::fmt::Debug for TagPicker {
 
 impl Widget for TagPicker {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.query
-            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
-        self.vm.changed_signal().bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Rebuild,
-        );
-        // Also the item's own tags: a tick has to flip the moment it is clicked, and the
-        // popover stays open across several toggles.
-        self.value
-            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
-
-        let q = self.query.get();
-        let key = name_key(&q);
-        let palette = self.vm.rows();
-        let assigned = self.value.get();
+        // No `query` Rebuild bind on this widget — see type docs.
+        // Value/palette changes are handled by the list and create children so the
+        // filter field survives assignment toggles that only need the list refreshed…
+        // except TagPillField still rebuilds the whole popover when value changes, which
+        // is fine (caret only matters while typing, not mid-toggle).
 
         let mut col = VStack::new().spacing(6.0);
         col = col.child(
@@ -245,13 +242,83 @@ impl Widget for TagPicker {
                 .min_width(220.0),
         );
 
-        // Every palette tag, ticked or not — not just the unassigned ones, so the same list
-        // both adds and removes.
+        col = col.child(TagPickerList {
+            query: self.query.clone(),
+            value: self.value.clone(),
+            set: self.set.clone(),
+            vm: self.vm.clone(),
+            root_child: None,
+        });
+
+        col = col.child(TagPickerCreate {
+            query: self.query.clone(),
+            new_discoverable: self.new_discoverable.clone(),
+            new_color: self.new_color.clone(),
+            value: self.value.clone(),
+            set: self.set.clone(),
+            vm: self.vm.clone(),
+            root_child: None,
+        });
+
+        // Bare: no panel, no `Role::Dialog`. Whoever mounts this supplies the surface — see
+        // the type docs.
+        let id = ctx.add(col);
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        // Popover content: size to the content, never to the (unbounded) overlay proposal.
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
+/// Filterable tick list — rebuilds on query / value / palette without touching the
+/// filter field above it.
+struct TagPickerList {
+    query: Signal<String>,
+    value: Signal<Vec<u64>>,
+    set: SetTags,
+    vm: TagsViewModel,
+    root_child: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for TagPickerList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TagPickerList").finish()
+    }
+}
+
+impl Widget for TagPickerList {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.query
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.vm.changed_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        self.value
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+
+        let q = self.query.get();
+        let key = name_key(&q);
+        let palette = self.vm.rows();
+        let assigned = self.value.get();
+
         let matching: Vec<&TagRow> = palette
             .iter()
             .filter(|t| key.is_empty() || name_key(&t.name).contains(&key))
             .collect();
 
+        let mut col = VStack::new().spacing(2.0);
         if matching.is_empty() && !key.is_empty() {
             col = col.child(
                 Padding::symmetric(4.0, 6.0)
@@ -290,84 +357,143 @@ impl Widget for TagPicker {
         // its own and would otherwise take whatever the overlay proposes.
         col = col.child(MaxSize::height(220.0).child(ScrollArea::new().child(list)));
 
-        // Create, only when the typed name is new. Comparing case-insensitively against the
-        // WHOLE palette, not just the unassigned ones: offering "Create «character»" when a
-        // `character` tag already exists on this item would silently make a second one.
-        let exact_exists = !key.is_empty() && palette.iter().any(|t| name_key(&t.name) == key);
-        if !key.is_empty() && !exact_exists {
-            let vm = self.vm.clone();
-            let set = self.set.clone();
-            let value = self.value.clone();
-            let query = self.query.clone();
-            let discoverable = self.new_discoverable.clone();
-            let name = q.trim().to_string();
-            col = col.child(Divider::new());
-            // Same registry key as the settings pane's switch, so the explanation cannot
-            // drift between the two places this flag is offered.
-            col = col.child(
-                Toggle::new(self.new_discoverable.clone())
-                    .label(tr!(tags_pill_new_discoverable()))
-                    .rich_tooltip(crate::tooltip_registry::WM_STORY_BIBLE),
-            );
-            // The inline hint stays despite the tooltip: this is a creation form in a
-            // transient popover, where a hover-only explanation is easy to never find. The
-            // hint says what the switch does; the tooltip's disclosure teaches why.
-            col = col.child(
-                TextWidget::new(tr!(tags_pill_new_discoverable_hint()))
-                    .color(TextRole::Secondary)
-                    .style(TextStyleRole::Tiny),
-            );
-            // Shared by the pointer and the keyboard path below, so the two cannot drift
-            // into doing different things.
-            let new_name = name.clone();
-            let create: Rc<dyn Fn(&mut EventContext)> = Rc::new(move |c: &mut EventContext| {
-                if let Some(id) = vm.create(&new_name, QUICK_CREATE_COLOR, "", discoverable.get()) {
-                    let mut next = value.get();
-                    next.push(id);
-                    value.set(next.clone());
-                    set(next, c);
-                }
-                query.set(String::new());
-                discoverable.set(false);
-            });
-            col = col.child(
-                HStack::new()
-                    .spacing(6.0)
-                    .child(swatch(contrast::parse(QUICK_CREATE_COLOR)))
-                    .child(TextWidget::new(tr!(tags_pill_create(name = name.clone()))))
-                    .access_role(Role::Button)
-                    .access_label(tr!(tags_pill_create(name = name.clone())))
-                    .focusable(true)
-                    .on_tap({
-                        let create = create.clone();
-                        move |_e, c| create(c)
-                    })
-                    // `on_tap` is pointer-only. Without this the row announces itself as a
-                    // Button, takes focus, and then does nothing on Enter — the same defect
-                    // the picker's tag rows had, one widget over. It is also the only way to
-                    // create a tag from this popover, so a keyboard-only writer who types a
-                    // new name here has no way to commit it (WCAG 2.1.1).
-                    .on_key(move |ev, c| {
-                        if let WidgetEvent::KeyDown { key, .. } = ev
-                            && matches!(key, Key::Enter | Key::Space)
-                        {
-                            create(c);
-                            return EventResponse::Handled;
-                        }
-                        EventResponse::Ignored
-                    }),
-            );
-        }
-
-        // Bare: no panel, no `Role::Dialog`. Whoever mounts this supplies the surface — see
-        // the type docs.
         let id = ctx.add(col);
         self.root_child = Some(id);
         vec![id]
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        // Popover content: size to the content, never to the (unbounded) overlay proposal.
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
+}
+
+/// Create-new-tag affordance: colour picker, story-bible toggle, Plain create button.
+/// Rebuilds when the filter text / palette changes so the create row appears only for a
+/// new name. Colour and discoverable signals are owned by the parent and survive rebuilds.
+struct TagPickerCreate {
+    query: Signal<String>,
+    new_discoverable: Signal<bool>,
+    new_color: Signal<Color>,
+    value: Signal<Vec<u64>>,
+    set: SetTags,
+    vm: TagsViewModel,
+    root_child: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for TagPickerCreate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TagPickerCreate").finish()
+    }
+}
+
+impl Widget for TagPickerCreate {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.query
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.vm.changed_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+
+        let q = self.query.get();
+        let key = name_key(&q);
+        let palette = self.vm.rows();
+        // Create only when the typed name is new. Comparing case-insensitively against the
+        // WHOLE palette, not just the unassigned ones: offering "Create «character»" when a
+        // `character` tag already exists on this item would silently make a second one.
+        let exact_exists = !key.is_empty() && palette.iter().any(|t| name_key(&t.name) == key);
+        if key.is_empty() || exact_exists {
+            // Empty placeholder so the parent still has a stable child slot.
+            let id = ctx.add(VStack::new());
+            self.root_child = Some(id);
+            return vec![id];
+        }
+
+        let name = q.trim().to_string();
+        let vm = self.vm.clone();
+        let set = self.set.clone();
+        let value = self.value.clone();
+        let query = self.query.clone();
+        let discoverable = self.new_discoverable.clone();
+        let color = self.new_color.clone();
+        let new_name = name.clone();
+        let create: Rc<dyn Fn(&mut EventContext)> = Rc::new(move |c: &mut EventContext| {
+            // Defensive: the create row is only shown when the name is new, but a
+            // palette refresh mid-popover could land a collision. Refuse + toast
+            // rather than minting a second tag with the same name.
+            if let Some(existing) = vm.duplicate_name(&new_name, None) {
+                c.show_toast(
+                    Toast::warning(tr!(settings_tags_duplicate(name = existing)))
+                        .scoped_id("tags.duplicate", vm.work_id())
+                        .target_work(vm.work_id()),
+                );
+                return;
+            }
+            let hex = color.get().to_hex_lower(false);
+            if let Some(id) = vm.create(&new_name, &hex, "", discoverable.get()) {
+                let mut next = value.get();
+                next.push(id);
+                value.set(next.clone());
+                set(next, c);
+            }
+            query.set(String::new());
+            discoverable.set(false);
+            color.set(default_create_color());
+        });
+
+        let mut col = VStack::new().spacing(6.0);
+        col = col.child(Divider::new());
+        // Colour + create label on one row so the picker is obvious, not a hidden default.
+        col = col.child(
+            HStack::new()
+                .spacing(8.0)
+                .child(
+                    ColorEdit::new(self.new_color.clone())
+                        .swatches(bastyde::widgets::color_picker::DEFAULT_SWATCHES.to_vec()),
+                )
+                .child(
+                    TextWidget::new(tr!(tags_pill_create(name = name.clone())))
+                        .style(TextStyleRole::Small)
+                        .color(TextRole::Secondary),
+                ),
+        );
+        // Same registry key as the settings pane's switch, so the explanation cannot
+        // drift between the two places this flag is offered.
+        col = col.child(
+            Toggle::new(self.new_discoverable.clone())
+                .label(tr!(tags_pill_new_discoverable()))
+                .rich_tooltip(crate::tooltip_registry::WM_STORY_BIBLE),
+        );
+        // The inline hint stays despite the tooltip: this is a creation form in a
+        // transient popover, where a hover-only explanation is easy to never find.
+        col = col.child(
+            TextWidget::new(tr!(tags_pill_new_discoverable_hint()))
+                .color(TextRole::Secondary)
+                .style(TextStyleRole::Tiny),
+        );
+        col = col.child(
+            Button::new(tr!(tags_pill_create(name = name.clone())))
+                .variant(ButtonVariant::Plain)
+                .on_activate_fn({
+                    let create = create.clone();
+                    move |c| create(c)
+                }),
+        );
+
+        let id = ctx.add(col);
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
         self.root_child
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)
