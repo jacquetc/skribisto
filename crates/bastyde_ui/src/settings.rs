@@ -44,7 +44,8 @@ use bastyde::widgets::{
 
 use crate::sessions::WorkSession;
 use crate::view_models::{
-    BackupSettingsViewModel, EditorTypography, SettingsViewModel, WorkSettingsViewModel,
+    BackupSettingsViewModel, EditorTypography, SettingsViewModel, TypewriterAnchor,
+    WorkSettingsViewModel,
 };
 use crate::{
     DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT, DISTRACTION_FREE_FONT_FAMILY_DEFAULT,
@@ -382,6 +383,8 @@ fn build_not_defaults(
         // ── Editor behaviour ──
         vm.synopsis_pane().map(|s| *s != SYNOPSIS_PANE_DEFAULT),
         vm.typewriter().map(|s| *s != TYPEWRITER_DEFAULT),
+        vm.typewriter_anchor()
+            .map(|a| *a != Some(TypewriterAnchor::default())),
         vm.highlight_sentence()
             .map(|s| *s != HIGHLIGHT_SENTENCE_DEFAULT),
         // ── Goals & word count ──
@@ -886,6 +889,8 @@ impl SettingsPanel {
             ),
             (tr!(settings_text_width()), Pane::EditorBehavior),
             (tr!(settings_synopsis_pane()), Pane::EditorBehavior),
+            (tr!(settings_typewriter()), Pane::EditorBehavior),
+            (tr!(settings_highlight_sentence()), Pane::EditorBehavior),
             // The distraction-free chrome toggles live on the Editor Behavior
             // page, not the Distraction-free typography page — searching for
             // "tabs" has to land where the checkbox actually is.

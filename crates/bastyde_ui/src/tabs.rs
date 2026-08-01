@@ -152,6 +152,11 @@ pub struct ContentTab {
     /// shared live from Settings. Every editor this tab builds reads its bundle
     /// from here, so a preference change fans out to all open tabs at once.
     pub typography: EditorTypographySet,
+    /// Typewriter scrolling, shared live from Settings — the enabled flag plus
+    /// the pinned-line preset. Every full-page writing surface this tab builds
+    /// reads it, and the tab's `ScrollArea` buys its scroll-past-end range from
+    /// it, so the two can never disagree about whether pinning is on.
+    pub typewriter: crate::view_models::TypewriterSettings,
     /// Whether *this tab's window* is currently in distraction-free mode — the
     /// same `Signal` `FocusViewModel::active_signal()` exposes, threaded down
     /// through `EditorsViewModel` (never a private copy: a copy would go stale
@@ -282,6 +287,9 @@ pub fn tab_for(
         column_width,
         show_synopsis,
         typography,
+        // A standalone tab is never a real project window; the tab tests that
+        // exercise pinning build a `ContentTab` directly and pass a live one.
+        crate::view_models::TypewriterSettings::off(),
         view_memory,
         crate::view_models::CorkboardDefaults::detached(),
         crate::view_models::TreeExpansionViewModel::new(
@@ -428,6 +436,7 @@ impl ContentTab {
         column_width: Signal<f32>,
         show_synopsis: Signal<bool>,
         typography: EditorTypographySet,
+        typewriter: crate::view_models::TypewriterSettings,
         view_memory: crate::view_models::EditorViewMemory,
         corkboard_defaults: crate::view_models::CorkboardDefaults,
         tree_expansion: crate::view_models::TreeExpansionViewModel,
@@ -508,6 +517,7 @@ impl ContentTab {
             column_width,
             show_synopsis,
             typography,
+            typewriter,
             distraction_free,
             distraction_free_width,
             view_memory,
@@ -1445,6 +1455,112 @@ mod tests {
 
     /// First node at/under `root` whose fully-qualified type name ends with `suffix`
     /// (DFS pre-order); type names come from `std::any::type_name`, so match the leaf.
+    /// A Scene tab built with the given typewriter setting, laid out, plus the
+    /// page `ScrollArea`'s maximum scroll offset.
+    ///
+    /// The pin lives on the editors, but the *range* that lets the last line
+    /// reach it lives on the page — this is the link between them.
+    fn scene_page_max_scroll(typewriter: crate::view_models::TypewriterSettings) -> (f32, f32) {
+        use bastyde::widgets::ScrollArea;
+        let ctx = Rc::new(AppContext::new());
+        let open_doc = Rc::new(OpenDoc::build(
+            &ctx,
+            1,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            Signal::new(0),
+        ));
+        let tab = ContentTab::new(
+            ctx.clone(),
+            AppIds::new(),
+            OpenDocsStore::new(ctx.clone()),
+            open_doc,
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            typewriter,
+            crate::view_models::EditorViewMemory::detached(false),
+            crate::view_models::CorkboardDefaults::detached(),
+            crate::view_models::TreeExpansionViewModel::new(
+                ctx.clone(),
+                AppIds::new(),
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+            Signal::new(false),
+            Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
+            crate::view_models::FormatViewModel::detached(),
+        );
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let root = tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 400.0));
+        let sa_id = first_of_type(&tree, root, "ScrollArea").expect("the page scrolls");
+        let max_scroll = tree
+            .widget_as_any(sa_id)
+            .and_then(|a| a.downcast_ref::<ScrollArea>())
+            .expect("ScrollArea opts into as_any")
+            .max_scroll_y_signal()
+            .get();
+        (max_scroll, tree.bounds(sa_id).height)
+    }
+
+    /// With typewriter scrolling on, the writing page must be able to scroll
+    /// *past* its last line — otherwise the pin silently stops working over the
+    /// final page, which is exactly where a writer spends their time. With it
+    /// off, the page must stop at its content like any other.
+    ///
+    /// This is the one link the unit tests either side of it cannot cover: that
+    /// every writing surface really does go through `writing_page_scroll`.
+    #[test]
+    fn the_writing_page_buys_scroll_range_only_while_pinning() {
+        use crate::view_models::{TypewriterAnchor, TypewriterSettings};
+
+        let on = |a: TypewriterAnchor| {
+            scene_page_max_scroll(TypewriterSettings::new(Signal::new(true), Signal::new(Some(a))))
+        };
+
+        let (off, _) = scene_page_max_scroll(TypewriterSettings::off());
+        let (middle, viewport) = on(TypewriterAnchor::Middle);
+        let (top_third, _) = on(TypewriterAnchor::TopThird);
+        let (bottom_quarter, _) = on(TypewriterAnchor::BottomQuarter);
+
+        assert!(
+            middle > off,
+            "pinning must buy scroll range past the last line (off={off}, on={middle})"
+        );
+
+        // A higher pin needs more room beneath it, so the range grows as the
+        // anchor rises. Ordering alone would pass on a constant offset — the
+        // exact differences below are what tie the range to the anchor.
+        assert!(top_third > middle && middle > bottom_quarter);
+
+        // Each enabled page differs from the next by exactly the difference in
+        // their scroll-past-end fractions, scaled by the viewport. Asserted as a
+        // *difference* so it holds whatever the tab chrome leaves for content —
+        // an absolute expectation would encode this tab's incidental layout.
+        let expected = |a: TypewriterAnchor, b: TypewriterAnchor| {
+            (a.scroll_past_end() - b.scroll_past_end()) * viewport
+        };
+        assert!(
+            (top_third - middle - expected(TypewriterAnchor::TopThird, TypewriterAnchor::Middle))
+                .abs()
+                < 0.5,
+            "top-third vs middle: got {}, expected {}",
+            top_third - middle,
+            expected(TypewriterAnchor::TopThird, TypewriterAnchor::Middle)
+        );
+        assert!(
+            (middle
+                - bottom_quarter
+                - expected(TypewriterAnchor::Middle, TypewriterAnchor::BottomQuarter))
+            .abs()
+                < 0.5,
+            "middle vs bottom-quarter: got {}, expected {}",
+            middle - bottom_quarter,
+            expected(TypewriterAnchor::Middle, TypewriterAnchor::BottomQuarter)
+        );
+    }
+
     fn first_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str) -> Option<WidgetId> {
         if tree
             .widget_type_name(root)
@@ -1921,6 +2037,7 @@ mod tests {
                 Signal::new(700.0),
                 Signal::new(true),
                 typo.clone(),
+                crate::view_models::TypewriterSettings::off(),
                 crate::view_models::EditorViewMemory::detached(false),
                 crate::view_models::CorkboardDefaults::detached(),
                 crate::view_models::TreeExpansionViewModel::new(

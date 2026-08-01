@@ -114,6 +114,9 @@ pub fn writing_column(
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
     format: Option<FormatViewModel>,
+    // Typewriter scrolling for this surface. `None` on the surfaces that never
+    // pin (and in the widget tests, which build columns with no app around them).
+    typewriter: Option<crate::view_models::TypewriterSettings>,
 ) -> CenterColumnFlowing {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -155,18 +158,22 @@ pub fn writing_column(
             )))
         });
     }
+    let mut bound = TypographyBoundEditor::new(
+        editor,
+        typo.clone(),
+        spell,
+        replacement.map(|s| (doc.clone(), s)),
+        EditorKind::Prose,
+        format,
+    );
+    if let Some(tw) = typewriter {
+        bound = bound.with_typewriter(tw);
+    }
     CenterColumnFlowing::new(bati!(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
             Expand::horizontal {
-                child: TypographyBoundEditor::new(
-                    editor,
-                    typo.clone(),
-                    spell,
-                    replacement.map(|s| (doc.clone(), s)),
-                    EditorKind::Prose,
-                    format,
-                )
+                child: bound
             }
         }
     ))
@@ -411,6 +418,7 @@ pub fn synopsis_editor(
     // it. `None` for surfaces with no tab (the corkboard card's own editor).
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
+    typewriter: Option<crate::view_models::TypewriterSettings>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -455,20 +463,27 @@ pub fn synopsis_editor(
             )))
         });
     }
+    let mut bound = TypographyBoundEditor::new(
+        editor,
+        typo.clone(),
+        spell,
+        replacement.map(|s| (doc.clone(), s)),
+        EditorKind::Synopsis,
+        format,
+    );
+    // Only the page-sized synopsis pins. `Compact` is a six-line box with its
+    // own scrollbar — holding a line at a fixed height inside it would mean
+    // nothing, and would fight the box's own caret-follow.
+    if let (SynopsisFit::Growing, Some(tw)) = (fit, typewriter) {
+        bound = bound.with_typewriter(tw);
+    }
     bati!(
         Panel {
             background: SurfaceRole::Content
             border_color: BorderRole::Default
             border_width: 1.0
             corner_radius: 6.0
-            child: TypographyBoundEditor::new(
-                editor,
-                typo.clone(),
-                spell,
-                replacement.map(|s| (doc.clone(), s)),
-                EditorKind::Synopsis,
-                    format,
-            )
+            child: bound
         }
     )
 }
@@ -673,6 +688,8 @@ pub fn synopsis_section(
                             replacement,
                             handle_sink,
                             format,
+                            // Compact: a bounded six-line box, never pinned.
+                            Option::None,
                         )
                     }
                 }
@@ -704,6 +721,7 @@ pub fn synopsis_column(
     // (the format dock) can act on the synopsis the caret is actually in.
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
+    typewriter: Option<crate::view_models::TypewriterSettings>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(
@@ -720,6 +738,7 @@ pub fn synopsis_column(
                     replacement,
                     handle_sink,
                     format,
+                    typewriter,
                 )
             }
         }
@@ -738,6 +757,7 @@ pub fn writing_section(
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
     format: Option<FormatViewModel>,
+    typewriter: Option<crate::view_models::TypewriterSettings>,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -757,6 +777,7 @@ pub fn writing_section(
             spell,
             replacement,
             format,
+            typewriter,
         ))
 }
 
@@ -1345,6 +1366,11 @@ struct TypographyBoundEditor {
     format: Option<(FormatViewModel, WidgetId)>,
     /// This window's Format VM — used at build to register; not the live registry entry.
     format_vm: Option<FormatViewModel>,
+    /// Typewriter scrolling for this editor, when it is a full-page writing
+    /// surface. `None` for the surfaces that deliberately never pin — the
+    /// compact synopsis box and the corkboard cards, both small bounded boxes
+    /// where holding a line at a fixed height means nothing.
+    typewriter: Option<crate::view_models::TypewriterSettings>,
 }
 
 impl TypographyBoundEditor {
@@ -1366,7 +1392,15 @@ impl TypographyBoundEditor {
             kind,
             format: None,
             format_vm,
+            typewriter: None,
         }
+    }
+
+    /// Pin this editor's caret line per the shared typewriter setting. Opt-in,
+    /// because only the full-page writing surfaces want it.
+    fn with_typewriter(mut self, typewriter: crate::view_models::TypewriterSettings) -> Self {
+        self.typewriter = Some(typewriter);
+        self
     }
 }
 
@@ -1436,6 +1470,22 @@ impl Widget for TypographyBoundEditor {
             ctx.effect(&self.typo.para_spacing_after, move |_| {
                 push_typography(&h, &t)
             });
+        }
+        // Typewriter scrolling, on the same footing as typography and for the
+        // same reason: two separate effects, because a combined `zip` signal is
+        // derived and would panic on observe. Pushed once up front so an editor
+        // built while the setting is already on pins from its first keystroke,
+        // not only after the next settings change.
+        if let Some(tw) = self.typewriter.clone() {
+            handle.set_typewriter(tw.editor_anchor());
+            {
+                let (h, t) = (handle.clone(), tw.clone());
+                ctx.effect(&tw.enabled, move |_| h.set_typewriter(t.editor_anchor()));
+            }
+            {
+                let (h, t) = (handle.clone(), tw.clone());
+                ctx.effect(&tw.preset, move |_| h.set_typewriter(t.editor_anchor()));
+            }
         }
         // Caret-aware spell-check: feed this view's focus + caret and drive the per-frame recompute.
         if let Some(spell) = self.spell.clone() {
@@ -1672,6 +1722,7 @@ mod frame_loop_tests {
             None,
             Some(session.clone()),
             None,
+            None,
         );
         let mut tree = WidgetTree::new();
         tree.add(col);
@@ -1866,5 +1917,115 @@ mod tests {
             "formatting must not move the selection out from under the next click"
         );
         assert!(handle.is_bold());
+    }
+}
+
+/// Typewriter scrolling reaches the editor the app actually builds.
+///
+/// The unit tests for the preset→fraction vocabulary live with
+/// [`crate::view_models::TypewriterAnchor`]; these pin the *wiring* — that the
+/// shared setting arrives at a real `RichTextEditor` built through
+/// `writing_column`, and keeps arriving when the setting changes under it.
+#[cfg(all(test, feature = "mocks"))]
+mod typewriter_tests {
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    use crate::view_models::{TypewriterAnchor, TypewriterSettings};
+
+    fn typo() -> EditorTypography {
+        EditorTypography {
+            font_family: Signal::new("Literata".to_string()),
+            size: Signal::new(1.0),
+            line_height: Signal::new(1.5),
+            first_line_indent: Signal::new(0.0),
+            para_spacing_before: Signal::new(0.0),
+            para_spacing_after: Signal::new(0.0),
+        }
+    }
+
+    /// A real writing column, reaching the editor's handle the way the rest of
+    /// the app does — through the find view-model `writing_column` attaches it
+    /// to. A detached editor over the same document would share the text but
+    /// not the state under test.
+    fn column_with(typewriter: Option<TypewriterSettings>) -> (EditorHandle, WidgetTree) {
+        let doc = TextDocument::new();
+        doc.set_plain_text("Some prose to write in.").unwrap();
+        let find = crate::view_models::FindViewModel::new(doc.clone());
+        let col = writing_column(
+            &doc,
+            &Signal::new(700.0),
+            &typo(),
+            MAIN_MIN_LINES,
+            || {},
+            None,
+            Some(find.clone()),
+            None,
+            None,
+            None,
+            typewriter,
+        );
+        let mut tree = WidgetTree::new();
+        tree.add(col);
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+        let handle = find
+            .editor_handle()
+            .expect("writing_column attached its handle");
+        (handle, tree)
+    }
+
+    #[test]
+    fn the_setting_reaches_the_editor_at_build_time() {
+        // Pushed up front, not only on the next settings change — an editor
+        // opened while the feature is already on must pin from its first
+        // keystroke.
+        let tw = TypewriterSettings::new(
+            Signal::new(true),
+            Signal::new(Some(TypewriterAnchor::BottomQuarter)),
+        );
+        let (handle, _tree) = column_with(Some(tw));
+        assert_eq!(handle.get_typewriter(), Some(0.75));
+    }
+
+    #[test]
+    fn an_editor_built_with_the_feature_off_does_not_pin() {
+        let tw = TypewriterSettings::new(Signal::new(false), Signal::new(None));
+        let (handle, _tree) = column_with(Some(tw));
+        assert_eq!(handle.get_typewriter(), None);
+    }
+
+    #[test]
+    fn a_surface_that_never_pins_passes_no_setting_at_all() {
+        let (handle, _tree) = column_with(None);
+        assert_eq!(handle.get_typewriter(), None);
+    }
+
+    #[test]
+    fn toggling_the_setting_reaches_an_already_open_editor() {
+        // The live path: Settings ▸ Editor Behavior flips the signal while tabs
+        // are open. Both source signals must drive it — a combined derived
+        // signal would panic on observe, which is why the wiring registers one
+        // effect per field.
+        let enabled = Signal::new(false);
+        let preset = Signal::new(Some(TypewriterAnchor::Middle));
+        let tw = TypewriterSettings::new(enabled.clone(), preset.clone());
+        let (handle, _tree) = column_with(Some(tw));
+        assert_eq!(handle.get_typewriter(), None);
+
+        enabled.set(true);
+        assert_eq!(
+            handle.get_typewriter(),
+            Some(0.5),
+            "turning the feature on must reach an editor that is already open"
+        );
+
+        preset.set(Some(TypewriterAnchor::TopThird));
+        assert!(
+            (handle.get_typewriter().unwrap() - 1.0 / 3.0).abs() < 1e-6,
+            "changing the preset must move the pin on an already-open editor"
+        );
+
+        enabled.set(false);
+        assert_eq!(handle.get_typewriter(), None, "and turning it off must stop it");
     }
 }

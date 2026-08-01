@@ -376,8 +376,13 @@ pub const SYNOPSIS_PANE_DEFAULT: bool = true;
 /// `editor.last_view.*` (see [`view_models::EditorViewMemory`]).
 pub const REMEMBER_VIEW_KEY: &str = "editor.remember_view";
 pub const REMEMBER_VIEW_DEFAULT: bool = true;
-/// Keep the caret line vertically centred while typing.
+/// Keep the caret line pinned at a fixed height while typing.
 pub const TYPEWRITER_KEY: &str = "editor.typewriter_scroll";
+pub const TYPEWRITER_DEFAULT: bool = true;
+/// Which height the pinned line sits at — a [`view_models::TypewriterAnchor`]
+/// preset. `Option` because that is the shape a `ComboBox` selection takes; a
+/// missing value resolves to the default rather than disabling the pin.
+pub const TYPEWRITER_ANCHOR_KEY: &str = "editor.typewriter_anchor";
 
 // ── Smart punctuation, application-level ────────────────────────────────────
 //
@@ -408,7 +413,6 @@ pub const PUNCT_DIALOGUE_KEY: &str = "editor.punctuation.dialogue_marker";
 /// glyph inside it, and it is wrong outright in the languages that quote their
 /// dialogue instead of dashing it.
 pub const PUNCT_DIALOGUE_DEFAULT: bool = false;
-pub const TYPEWRITER_DEFAULT: bool = true;
 /// Highlight the sentence the caret is in.
 pub const HIGHLIGHT_SENTENCE_KEY: &str = "editor.highlight_sentence";
 pub const HIGHLIGHT_SENTENCE_DEFAULT: bool = false;

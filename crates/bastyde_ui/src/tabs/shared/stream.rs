@@ -25,7 +25,7 @@ use std::rc::Rc;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     Button, Divider, Expand, FocusScope, HStack, IconButton, IconWidget, MenuItem, MenuList,
-    PopoverIconButton, Repeater, ScrollArea, Spacer, TextWidget, TraversalScopePolicy, VStack,
+    PopoverIconButton, Repeater, Spacer, TextWidget, TraversalScopePolicy, VStack,
 };
 
 use skribisto_model::{CreateType, SubRoleExt};
@@ -68,8 +68,9 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let md = mark_dirty.clone();
             let typo = typo.clone();
             let format = format.clone();
+            let tw = tab.typewriter.clone();
             move |row: &StreamRow| -> Box<dyn Widget> {
-                Box::new(stream_row(&vm, row, &cw, &typo, flavour, &md, &format))
+                Box::new(stream_row(&vm, row, &cw, &typo, flavour, &md, &format, &tw))
             }
         };
 
@@ -100,6 +101,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     tab.open_doc.spell_main(),
                     tab.open_doc.replacement_main(),
                     Some(tab.format.clone()),
+                    Some(tab.typewriter.clone()),
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
@@ -116,6 +118,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // can name the row the caret is actually in.
                     Option::None,
                     Some(tab.format.clone()),
+                    Some(tab.typewriter.clone()),
                 )),
             };
             col = col.child(vspace(6.0));
@@ -127,7 +130,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             .child(centered(add_button(&vm), &cw))
             .child(vspace(28.0));
     }
-    ScrollArea::new().child(col)
+    crate::tabs::shared::panes::writing_page_scroll(tab).child(col)
 }
 
 /// Zero-size child that wires the stream view-model on build (subscribing the row list
@@ -204,6 +207,7 @@ fn stream_row(
     flavour: SplitFlavour,
     mark_dirty: &Rc<dyn Fn()>,
     format: &crate::view_models::FormatViewModel,
+    typewriter: &crate::view_models::TypewriterSettings,
 ) -> impl Widget {
     let id = row.item_id;
     let is_heading = row.sub_role.opens_chapter() || row.sub_role.opens_part();
@@ -255,6 +259,7 @@ fn stream_row(
                         doc.spell_main(),
                         doc.replacement_main(),
                         Some(format.clone()),
+                        Some(typewriter.clone()),
                     ));
                 }
             }
@@ -272,6 +277,7 @@ fn stream_row(
                         // Formatting reaches it through the editor registry.
                         Option::None,
                         Some(format.clone()),
+                        Some(typewriter.clone()),
                     ));
                 }
             }

@@ -4,10 +4,20 @@
 //! Editor ▸ Editor Behavior — the non-typographic writing settings.
 
 use bastyde::prelude::*;
+use bastyde::widgets::ComboBox;
 use bastyde::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
 use super::super::*;
+
+/// Display name for each pinned-line position.
+fn typewriter_anchor_label(anchor: &TypewriterAnchor) -> LocalizedString {
+    match anchor {
+        TypewriterAnchor::TopThird => tr!(settings_typewriter_position_top_third()),
+        TypewriterAnchor::Middle => tr!(settings_typewriter_position_middle()),
+        TypewriterAnchor::BottomQuarter => tr!(settings_typewriter_position_bottom_quarter()),
+    }
+}
 
 /// Editor ▸ Editor Behavior — the non-typographic writing settings: the
 /// centered-column width, the writing-view toggles, and everything
@@ -45,6 +55,21 @@ pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl 
                     "settings.typewriter",
                     tr!(settings_typewriter_tip()),
                 )),
+        )
+        // Where the pinned line sits. Presets rather than a percentage slider,
+        // following Scrivener and Ulysses. Disabled — not hidden — while the
+        // toggle above is off, so the choice stays visible as part of what the
+        // feature offers instead of appearing out of nowhere when it is enabled.
+        .line(
+            field_label(tr!(settings_typewriter_position())),
+            FixedSize::new().width(240.0).child(
+                ComboBox::from_items(
+                    TypewriterAnchor::all(),
+                    vm.typewriter_anchor(),
+                    typewriter_anchor_label,
+                )
+                .enabled(vm.typewriter()),
+            ),
         )
         .full_width(
             Toggle::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())),

@@ -1179,6 +1179,13 @@ impl Widget for App {
         let column_width = settings.column_width();
         let show_synopsis = settings.synopsis_pane();
         let typography = settings.editor_typography();
+        // Typewriter scrolling: the two source signals, straight from the store,
+        // so a settings change reaches every open tab's editors and its page's
+        // scroll range together.
+        let typewriter = crate::view_models::TypewriterSettings::new(
+            settings.typewriter(),
+            settings.typewriter_anchor(),
+        );
         let view_memory = crate::view_models::EditorViewMemory::new(ctx.settings());
         let corkboard_defaults = settings.corkboard_defaults();
         let ids = self.outline.ids();
@@ -1212,6 +1219,7 @@ impl Widget for App {
                     column_width,
                     show_synopsis,
                     typography,
+                    typewriter,
                     view_memory,
                     corkboard_defaults,
                     ids,
@@ -2639,6 +2647,7 @@ mod tests {
             Signal::new(700.0),
             Signal::new(true),
             typography,
+            crate::view_models::TypewriterSettings::off(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
             ids.clone(),

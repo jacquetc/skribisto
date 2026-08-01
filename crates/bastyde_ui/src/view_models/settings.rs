@@ -23,6 +23,8 @@ use skribisto_model::counting::CountingMethodSetting;
 
 use frontend::common::entities::QuoteStyle;
 
+use super::TypewriterAnchor;
+
 use crate::{
     AUTOSAVE_KEY, CORKBOARD_CARD_SIZE_DEFAULT, CORKBOARD_CARD_SIZE_KEY,
     CORKBOARD_FIRST_LINE_INDENT_DEFAULT, CORKBOARD_FIRST_LINE_INDENT_KEY,
@@ -63,7 +65,7 @@ use crate::{
     SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT,
     SYNOPSIS_PANE_KEY, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
     SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_SIZE_DEFAULT,
-    SYNOPSIS_SIZE_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
+    SYNOPSIS_SIZE_KEY, TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
 };
 
 /// One editor type's four typography knobs. Cheap to clone — every field is a
@@ -243,6 +245,7 @@ pub struct SettingsViewModel {
     punct_spacing: Signal<bool>,
     punct_dialogue: Signal<bool>,
     typewriter: Signal<bool>,
+    typewriter_anchor: Signal<Option<TypewriterAnchor>>,
     highlight_sentence: Signal<bool>,
     remember_view: Signal<bool>,
     // ── Goals & word count ──
@@ -385,6 +388,8 @@ impl SettingsViewModel {
             punct_spacing: store.signal(PUNCT_SPACING_KEY, PUNCT_SPACING_DEFAULT),
             punct_dialogue: store.signal(PUNCT_DIALOGUE_KEY, PUNCT_DIALOGUE_DEFAULT),
             typewriter: store.signal(TYPEWRITER_KEY, TYPEWRITER_DEFAULT),
+            typewriter_anchor: store
+                .signal(TYPEWRITER_ANCHOR_KEY, Some(TypewriterAnchor::default())),
             highlight_sentence: store.signal(HIGHLIGHT_SENTENCE_KEY, HIGHLIGHT_SENTENCE_DEFAULT),
             remember_view: store.signal(REMEMBER_VIEW_KEY, REMEMBER_VIEW_DEFAULT),
             counting_method: store
@@ -519,6 +524,12 @@ impl SettingsViewModel {
     /// Typewriter scrolling (keep the caret line centred).
     pub fn typewriter(&self) -> Signal<bool> {
         self.typewriter.clone()
+    }
+    /// Which height the pinned line sits at. `Option` because it binds straight
+    /// to a `ComboBox` selection; read it through
+    /// [`TypewriterAnchor::resolve`] rather than unwrapping.
+    pub fn typewriter_anchor(&self) -> Signal<Option<TypewriterAnchor>> {
+        self.typewriter_anchor.clone()
     }
     /// Highlight the current sentence.
     pub fn highlight_sentence(&self) -> Signal<bool> {
@@ -705,6 +716,7 @@ impl SettingsViewModel {
         self.punct_spacing.set(PUNCT_SPACING_DEFAULT);
         self.punct_dialogue.set(PUNCT_DIALOGUE_DEFAULT);
         self.typewriter.set(TYPEWRITER_DEFAULT);
+        self.typewriter_anchor.set(Some(TypewriterAnchor::default()));
         self.highlight_sentence.set(HIGHLIGHT_SENTENCE_DEFAULT);
         self.counting_method.set(CountingMethodSetting::default());
         self.show_characters.set(GOALS_SHOW_CHARACTERS_DEFAULT);

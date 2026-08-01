@@ -31,6 +31,20 @@ use super::{
     title_input, vspace, writing_section,
 };
 
+/// The `ScrollArea` every writing surface in the app scrolls inside — the one
+/// door, so the scroll range and the editors' pin can never be configured apart.
+///
+/// The editors on these pages are intrinsic-height with their own scroll bars
+/// suppressed ("flowing page" mode), so this is what actually scrolls, and it is
+/// therefore what has to buy the range past the last line that lets the final
+/// paragraph reach the typewriter pin. Without it the pin would quietly stop
+/// working over the last page — exactly where a writer spends their time. The
+/// range collapses to zero when typewriter scrolling is off, so a page without
+/// the feature cannot be scrolled past its own end.
+pub(crate) fn writing_page_scroll(tab: &ContentTab) -> ScrollArea {
+    ScrollArea::new().scroll_past_end(tab.typewriter.scroll_past_end_signal())
+}
+
 /// The container's **own page** — the first segment of every folder container tab.
 ///
 /// It is the container as a *writing surface*, not a summary of one: its title (and
@@ -87,6 +101,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
                 Some(tab.format.clone()),
+                Some(tab.typewriter.clone()),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -101,11 +116,12 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             tab.open_doc.spell_main(),
             tab.open_doc.replacement_main(),
             Some(tab.format.clone()),
+            Some(tab.typewriter.clone()),
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
     // whole thing rather than each editor scrolling inside its own box.
-    ScrollArea::new().child(col.child(vspace(28.0)))
+    writing_page_scroll(tab).child(col.child(vspace(28.0)))
 }
 
 /// The dual-pane writing editor (Skribisto's signature): an optional title, a
@@ -174,6 +190,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             tab.open_doc.spell_main(),
             tab.open_doc.replacement_main(),
             Some(tab.format.clone()),
+            Some(tab.typewriter.clone()),
         ));
     }
     // The whole dual-pane body scrolls as one flowing page: the main editor is
@@ -187,9 +204,9 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     // whose rows have no single "focused editor" to target.
     match find {
         Some(find) => {
-            crate::tabs::shared::editor::tab_backdrop_with_find(find, ScrollArea::new().child(col))
+            crate::tabs::shared::editor::tab_backdrop_with_find(find, writing_page_scroll(tab).child(col))
         }
-        None => crate::tabs::shared::editor::tab_backdrop(ScrollArea::new().child(col)),
+        None => crate::tabs::shared::editor::tab_backdrop(writing_page_scroll(tab).child(col)),
     }
 }
 
@@ -243,9 +260,10 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
                 Some(tab.format.clone()),
+                Some(tab.typewriter.clone()),
             ));
     }
-    tab_backdrop(ScrollArea::new().child(col.child(vspace(28.0))))
+    tab_backdrop(writing_page_scroll(tab).child(col.child(vspace(28.0))))
 }
 
 /// A quiet placeholder for contentless rows (Item/BookEnd, Item/Text): they carry
@@ -296,9 +314,10 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
                 tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
                 Some(tab.format.clone()),
+                Some(tab.typewriter.clone()),
             ));
     }
-    ScrollArea::new().child(col.child(vspace(28.0)))
+    writing_page_scroll(tab).child(col.child(vspace(28.0)))
 }
 
 /// A **notes folder**'s body: its own synopsis page, plus an Overview of what it holds.
