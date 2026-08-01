@@ -41,8 +41,8 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
-    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, IconWidget, MenuBar,
-    Padding, TextWidget, TitleBar, VStack, WindowFrame,
+    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, IconWidget, MenuBar, Padding,
+    Slide, SlideEdge, TextWidget, TitleBar, VStack, WindowFrame, ZStack,
 };
 
 use frontend::AppContext;
@@ -63,8 +63,8 @@ use crate::view_models::{
 // Re-export path→window identity so `shell::windows::*` stays the
 // stable public surface for call sites.
 pub use super::window_ids::{
-    LAUNCHER_WINDOW_ID, attached_window_id_for, open_or_focus_project,
-    resolve_project_window, window_id_for,
+    LAUNCHER_WINDOW_ID, attached_window_id_for, open_or_focus_project, resolve_project_window,
+    window_id_for,
 };
 
 /// Scope D — window titles. A reactive `"{Work title} — Skribisto"` (falling
@@ -109,7 +109,6 @@ fn window_title_text(
 }
 
 pub use super::launcher_window::launcher_window_config;
-
 
 /// The fresh, per-window Tier-2 handles [`ProjectWindowFactory::window_config`]
 /// just minted for its `WindowConfig`'s own `App` — handed back so `main.rs`
@@ -366,6 +365,16 @@ impl ProjectWindowFactory {
         // module doc for why it keeps its own independent placement memory
         // rather than sharing `fullscreen`'s.
         let focus = crate::view_models::FocusViewModel::new();
+        // The surface the mode actually shows. Per window for the same reason
+        // `focus` is; minted empty because everything it needs beyond `focus`,
+        // `go_to` and `ids` is built inside `App::build`, which hands it over
+        // there (see `DistractionFreeSurfaceViewModel`'s module doc).
+        let df_surface = crate::view_models::DistractionFreeSurfaceViewModel::new(
+            app_ctx_root.clone(),
+            focus.clone(),
+            go_to.clone(),
+            ids.clone(),
+        );
         // Sourced from `session`, never a `self` field (Phase 3): a second
         // simultaneously-open Work must never share this Work's backup-mode
         // flag/details — see `WorkSession`'s module doc.
@@ -565,41 +574,26 @@ impl ProjectWindowFactory {
                             .collapse_policy(CollapsePolicy::Always)
                             .hamburger_size(IconButtonSize::Large);
 
-                        // Increment 2 of distraction-free: the menu bar, the title/
-                        // switcher row and the trailing controls all collapse — and so
-                        // does the enclosing `TitleBar`, below. `VisibleWhen` (not
-                        // `Switcher`) throughout — dormant, not torn down, the same
-                        // pattern the synopsis toggle already uses.
+                        // Distraction-free gates nothing in here any more: the
+                        // whole title bar is parked dormant along with the rest of
+                        // the shell, by the one `VisibleWhen` at the window root.
+                        // What is left below is about *fullscreen*, which is a
+                        // different thing and still needs its own answer.
                         //
-                        // The bar used to stay mounted so the window controls remained
-                        // reachable, on the reasoning that a wedged Escape must never
-                        // also take away the OS's own way to close the window. That
-                        // reasoning predates the strip's Exit button being *mandatory*
-                        // (no settings combination can remove it — `focus_strip`'s
-                        // `exit_survives_every_combination_of_the_chrome_settings`
-                        // pins it), and it left a min/max/close cluster floating over a
-                        // fullscreen window, which no desktop convention does: macOS
-                        // hides the traffic lights, Windows fullscreen has no caption
-                        // buttons, browsers and editors hide their chrome outright.
-                        // `WindowPlacement::Fullscreen`'s own doc says "title bar and
-                        // all chrome hidden". Minimize and maximize are meaningless for
-                        // a window with no frame.
-                        //
-                        // The replacement guarantee, which is strictly stronger:
+                        // The exit guarantee the collapsed bar used to owe:
                         //   * distraction-free → the strip's Exit button (always
                         //     present), Shift+F11, and Escape;
                         //   * plain fullscreen → the menu bar is still on screen, so
                         //     View ▸ Fullscreen and F11;
                         //   * either → Ctrl+W, Ctrl+Q, and the compositor's own
                         //     unfullscreen/close.
-                        let chrome_visible = focus.active_signal().map(|active| !*active);
+                        //
                         // Read from the WINDOW's own placement, not from
                         // `FullscreenViewModel`/`FocusViewModel`: those are two
                         // independent memories (F11 and Shift+F11 each keep their own),
                         // and an OS-initiated fullscreen goes through neither. The
                         // placement is the single fact all three agree on.
-                        let controls_visible =
-                            state.placement().map(|p| !p.is_fullscreen());
+                        let controls_visible = state.placement().map(|p| !p.is_fullscreen());
                         // Brand mark first (simple icon, same treatment as the
                         // Launcher title bar), then the hamburger. Leading inset
                         // on the icon: it sits at the window's left edge, so
@@ -612,32 +606,24 @@ impl ProjectWindowFactory {
                             )
                             .mode(IconMode::FullColor),
                         );
-                        let leading = VisibleWhen::new(
-                            chrome_visible.clone(),
-                            bati!(
-                                HStack {
-                                    spacing: 5.0
-                                    alignment: bastyde::tokens::VAlignment::Center
-                                    child: brand_icon
-                                    child: menubar
-                                }
-                            ),
+                        let leading = bati!(
+                            HStack {
+                                spacing: 5.0
+                                alignment: bastyde::tokens::VAlignment::Center
+                                child: brand_icon
+                                child: menubar
+                            }
                         );
-                        let trailing_controls = VisibleWhen::new(
-                            chrome_visible.clone(),
-                            bati!(
-                                HStack {
-                                    spacing: 5.0
-                                    alignment: bastyde::tokens::VAlignment::Center
-                                    SpellcheckToggleButton::new(spellcheck_menu.clone())
-                                    ExportSplitButton::new(export.clone())
-                                }
-                            ),
+                        let trailing_controls = bati!(
+                            HStack {
+                                spacing: 5.0
+                                alignment: bastyde::tokens::VAlignment::Center
+                                SpellcheckToggleButton::new(spellcheck_menu.clone())
+                                ExportSplitButton::new(export.clone())
+                            }
                         );
-                        let center_content = VisibleWhen::new(
-                            chrome_visible.clone(),
-                            bati!(
-                                HStack {
+                        let center_content = bati!(
+                            HStack {
                                     spacing: 5.0
                                     alignment: bastyde::tokens::VAlignment::Center
                                     // The `center` slot lives inside the TitleBar's
@@ -668,18 +654,9 @@ impl ProjectWindowFactory {
                                         }
                                     }
                                 }
-                            ),
                         );
 
-                        // The whole bar collapses in distraction-free: every slot inside
-                        // it is already gated, so what would be left is an empty band
-                        // ~40 px tall above the writing column. Wrapping it here
-                        // reclaims that height for the manuscript, which is the point
-                        // of the mode.
-                        tree.add_boxed(Box::new(VisibleWhen::new(
-                            chrome_visible,
-                            bati!(
-
+                        tree.add_boxed(Box::new(bati!(
                             TitleBar::new(host) {
                                 background: SurfaceRole::Main
                                 leading: leading
@@ -691,13 +668,11 @@ impl ProjectWindowFactory {
                                     child: center_content
                                 }
                                 // Hidden whenever this window is fullscreen — plain F11
-                                // as well as distraction-free. See `chrome_visible`'s
-                                // comment above for the exit guarantee that replaces
-                                // "the window controls are always there".
+                                // as well as distraction-free. See the exit guarantee
+                                // noted above.
                                 controls_visible: controls_visible
                                 close_action: |ctx| ctx.close_window()
                             }
-                            ),
                         )))
                     }
                     None => tree.add(TextWidget::new(lit!("Skribisto")).text(title_text.clone())),
@@ -728,9 +703,102 @@ impl ProjectWindowFactory {
                     project_switch.clone(),
                     title_text.clone(),
                     window_ordinal.clone(),
+                    df_surface.clone(),
                 )));
-                let inner =
-                    tree.add(VStack::new().spacing(0.0).add_child(title_bar).add_child(body));
+                // The project shell, and the distraction-free surface that
+                // replaces it, as siblings in a `ZStack` — the surface is added
+                // second so it paints on top, and it sits *outside* the stack's
+                // first child so it covers the title bar too.
+                //
+                // The main tree's gate is `VisibleWhen`, not merely `Slide`:
+                // `Slide` translates its child but leaves it painted, in the
+                // accessibility tree and in the Tab order, whereas
+                // `ctx.visible_when` parks a subtree dormant — no layout, no
+                // paint, no AT node, no tab order — without destroying it, so
+                // the writer's tabs, carets and scroll positions all survive
+                // untouched behind the surface. Being able to Tab into an
+                // invisible menu bar is exactly what this app's accessibility
+                // posture rules out.
+                //
+                // The surface itself is wrapped in *both*: `VisibleWhen` for
+                // presence and dormancy, `Slide` for the motion. `Slide`'s own
+                // progress animation keeps observing the same signal while its
+                // parent gate is parked, so it is already settled the moment the
+                // gate lets it through.
+                let chrome_visible = focus.active_signal().map(|active| !*active);
+                let shell = tree.add(VisibleWhen::new(
+                    chrome_visible,
+                    VStack::new()
+                        .spacing(0.0)
+                        .add_child(title_bar)
+                        .add_child(body),
+                ));
+                // `VisibleWhen` **inside** `Slide`, not around it. Both read the
+                // same signal, so they turn on and off together — but the nesting
+                // decides which one can animate. `Slide` drives its progress with
+                // an animation, and an animation whose owner is parked dormant is
+                // paused: with the gate on the outside the surface stayed at
+                // progress 0, i.e. fully translated off the trailing edge —
+                // present in the tree (its Exit button was reachable) and
+                // invisible on screen. Slide stays live; the gate parks only the
+                // content, which is all that was ever wanted from it (no layout,
+                // no paint, no accessibility node, no tab stop while the mode is
+                // off).
+                // `Slide` translates its child by the child's own **natural
+                // size**, so the surface reports the full window while the mode
+                // is on (a window's width to travel) and nothing at all while it
+                // is off — see `DistractionFreeSurface::build`, which is also
+                // where the "nothing at all" keeps this sibling from covering the
+                // shell with an invisible click target.
+                //
+                // No `VisibleWhen` around the `Slide`: `Slide` drives its
+                // progress with an animation, and an animation whose owner is
+                // parked dormant is paused — gated from outside, the surface
+                // stayed at progress 0, translated fully off the trailing edge,
+                // present in the tree and invisible on screen.
+                let surface = tree.add(
+                    Slide::new(focus.active_signal())
+                        .from(SlideEdge::Trailing)
+                        .child(crate::distraction_free::DistractionFreeSurface::new(
+                            df_surface.clone(),
+                        )),
+                );
+                // The distraction-free theme, applied as a **token override on
+                // this subtree** rather than as colours on any widget.
+                //
+                // That is what keeps a paper-and-ink theme inside the house rule:
+                // every widget under here still asks only for
+                // `SurfaceRole::Content` / `TextRole::Primary`, and this decides
+                // what those *mean* on the surface — light and dark keep working,
+                // and no raw hex ever reaches a call site. The four axes land on
+                // four roles the widgets already tell apart:
+                //
+                //   surface_content → the page (and the strip, which is themed as
+                //                     the page's own footer)
+                //   text_primary    → the prose
+                //   text_secondary  → the strip's readouts and the item name
+                //   surface_main    → whatever is not the page: a container tab's
+                //                     segmented bar and the gaps around it
+                //
+                // The closure is consulted on every resolve, so it reads the
+                // current theme live; the surface marks its own subtree dirty
+                // when the choice or the library changes (see its `build`).
+                {
+                    let vm = df_surface.clone();
+                    tree.set_theme_override(surface, move |theme| {
+                        if let Some(t) = vm.theme() {
+                            crate::distraction_free::theme::apply_to(theme, &t);
+                        }
+                    });
+                }
+                // `Expand` around the stack, not inside it: `ZStack` sizes itself
+                // to the *intrinsic* max of its children and explicitly claims no
+                // growth slack, so left bare at the window root it would report a
+                // content-sized box instead of filling the window. Its
+                // `place_children` does hand each child the full bounds, so one
+                // `Expand` on the outside is all it takes.
+                let stack = tree.add(ZStack::new().add_child(shell).add_child(surface));
+                let inner = tree.add(Expand::new().child_id(stack));
 
                 // Add edge resize handles only where the host needs the app
                 // to drive them (skipped on macOS — NSWindow handles edges).
@@ -971,11 +1039,21 @@ mod tests {
         let factory = test_factory(app_ctx, registry.clone());
 
         let path = "/tmp/skribisto-attach-test.skrib";
-        let (second, _) = factory.attached_window_config(1, path).expect("second window");
-        let (third, _) = factory.attached_window_config(1, path).expect("third window");
+        let (second, _) = factory
+            .attached_window_config(1, path)
+            .expect("second window");
+        let (third, _) = factory
+            .attached_window_config(1, path)
+            .expect("third window");
 
-        assert_eq!(second.string_id.as_deref(), Some(attached_window_id_for(path, 2).as_str()));
-        assert_eq!(third.string_id.as_deref(), Some(attached_window_id_for(path, 3).as_str()));
+        assert_eq!(
+            second.string_id.as_deref(),
+            Some(attached_window_id_for(path, 2).as_str())
+        );
+        assert_eq!(
+            third.string_id.as_deref(),
+            Some(attached_window_id_for(path, 3).as_str())
+        );
         assert_ne!(second.string_id, third.string_id);
         assert_eq!(registry.window_count_for(1), 3);
     }
@@ -990,7 +1068,10 @@ mod tests {
         let path = "/tmp/skribisto-attach-test.skrib";
         let (config, _) = factory.window_config(PendingAction::Load(path.to_string()));
 
-        assert_eq!(config.string_id.as_deref(), Some(window_id_for(path).as_str()));
+        assert_eq!(
+            config.string_id.as_deref(),
+            Some(window_id_for(path).as_str())
+        );
     }
 
     // ── Menu mnemonics ────────────────────────────────────────────────────

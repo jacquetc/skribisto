@@ -68,6 +68,34 @@ pub struct PaneLayout {
     /// empty.
     #[serde(default)]
     pub selected: Option<Uuid>,
+    /// Where the writer was in each tab: caret offset and page scroll.
+    ///
+    /// A **sidecar** rather than a richer [`Self::tabs`] element, and keyed by
+    /// uid rather than positional, for two independent reasons. Widening `tabs`
+    /// from `Vec<Uuid>` would change its element *type*, which no old file can
+    /// deserialize — this way `#[serde(default)]` carries every v3 file forward
+    /// with nobody losing their tabs. And a tab list reorders (drag, or a
+    /// migration between panes) without the positions meaning anything, exactly
+    /// the mistake v1's ordinals made.
+    ///
+    /// Entries whose uid no longer resolves are simply never applied, the same
+    /// way `resolve_uids` drops a tab whose item has been deleted.
+    #[serde(default)]
+    pub view_states: Vec<TabViewState>,
+}
+
+/// One tab's remembered caret + page scroll.
+///
+/// `caret` is a character offset, so it survives a typography change; `scroll`
+/// is in logical pixels and is clamped to the page's real range on restore (see
+/// `view_models::ViewStatePorts::apply_scroll`).
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+pub struct TabViewState {
+    pub uid: Uuid,
+    #[serde(default)]
+    pub caret: usize,
+    #[serde(default)]
+    pub scroll: f32,
 }
 
 impl PaneLayout {
@@ -171,7 +199,10 @@ impl Versioned for WorkspaceLayoutFile {
     ///
     /// **v3** drops the persisted dock arrangement so the Format dock reaches
     /// projects saved before it existed (see [`migrator`]).
-    const CURRENT_VERSION: u32 = 3;
+    ///
+    /// **v4** adds per-tab caret + scroll ([`PaneLayout::view_states`]). Purely
+    /// additive — no data is reshaped and nothing is dropped.
+    const CURRENT_VERSION: u32 = 4;
     fn version(&self) -> u32 {
         self.version
     }
@@ -231,6 +262,14 @@ fn migrator() -> Migrator<WorkspaceLayoutFile> {
             }
             Ok(raw)
         })
+        // **v3 → v4 is the identity.** `view_states` is a brand-new field with a
+        // serde default, so a v3 document already deserializes correctly under
+        // v4 and there is nothing to transform. The step exists only to stamp
+        // the version, which is what makes a *downgrade* safe: an older build
+        // meeting a v4 file is refused by the `Migrator` rather than silently
+        // rewriting it and dropping everyone's caret positions. Same shape as
+        // `dictionary_settings_file`'s own additive bump.
+        .step(3, Ok)
 }
 
 /// Persistent workspace-layout service. `SettingsFile` is `Clone` (shares the
@@ -363,10 +402,12 @@ mod tests {
             primary: PaneLayout {
                 tabs: vec![u(3), u(7), u(1)],
                 selected: Some(u(7)),
+                view_states: Vec::new(),
             },
             secondary: PaneLayout {
                 tabs: vec![u(9)],
                 selected: Some(u(9)),
+                view_states: Vec::new(),
             },
             focus_secondary: false,
             editor_splitter: None,
@@ -408,6 +449,70 @@ selected = 9
         assert!(got.secondary.tabs.is_empty());
         assert_eq!(got.last_path, "/x/a.skrib", "the rest of the row is kept");
         assert!(got.focus_secondary, "including the focused pane");
+    }
+
+    /// **v3 → v4 loses nothing.** Unlike v1→v2 and v2→v3, which both had to drop
+    /// data they could not translate, `view_states` is a brand-new field: an
+    /// existing file loads with every tab, selection, splitter and dock intact
+    /// and simply no remembered caret positions yet. The version bump exists so
+    /// an *older* build meeting a v4 file is refused rather than silently
+    /// rewriting it.
+    #[test]
+    fn the_v4_migration_is_additive_and_keeps_every_tab() {
+        let d = tempdir().unwrap();
+        let path = d.path().join("workspace.toml");
+        std::fs::write(
+            &path,
+            r#"version = 3
+[[projects]]
+work_uid = "uid-A"
+last_path = "/x/a.skrib"
+focus_secondary = true
+[projects.primary]
+tabs = ["00000000-0000-0000-0000-000000000003"]
+selected = "00000000-0000-0000-0000-000000000003"
+[projects.secondary]
+tabs = []
+"#,
+        )
+        .unwrap();
+
+        let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+        let got = s.get("uid-A").expect("the row survived the migration");
+        assert_eq!(got.primary.tabs.len(), 1, "a v3 file keeps its tabs");
+        assert!(got.primary.selected.is_some());
+        assert_eq!(got.last_path, "/x/a.skrib");
+        assert!(got.focus_secondary);
+        assert!(
+            got.primary.view_states.is_empty(),
+            "nothing remembered yet, but the field must exist rather than fail the load"
+        );
+    }
+
+    /// A caret + scroll pair survives a real write and re-read.
+    #[test]
+    fn view_states_round_trip_through_disk() {
+        let d = tempdir().unwrap();
+        let mut rec = sample("uid-A");
+        rec.primary.view_states = vec![TabViewState {
+            uid: u(3),
+            caret: 412,
+            scroll: 96.5,
+        }];
+        {
+            let s = svc(d.path());
+            s.set(rec).unwrap();
+        }
+        let s = svc(d.path());
+        let got = s.get("uid-A").expect("row");
+        assert_eq!(
+            got.primary.view_states,
+            vec![TabViewState {
+                uid: u(3),
+                caret: 412,
+                scroll: 96.5,
+            }]
+        );
     }
 
     #[test]

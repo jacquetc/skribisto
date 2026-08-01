@@ -103,7 +103,10 @@ pub fn pace_pane(tab: &ContentTab) -> Box<dyn Widget> {
     // planner's `ColumnFlow` reflow into as many columns as it affords, rather than hugging
     // to a centred reading column (which is what collapsed it to one column before). Just
     // horizontal breathing room on the sides.
-    tab_backdrop(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(body)))
+    tab_backdrop(
+        tab.backdrop_role(),
+        ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(body)),
+    )
 }
 
 /// The Pace pane's body below the wiring: the empty "start planning" state, or the

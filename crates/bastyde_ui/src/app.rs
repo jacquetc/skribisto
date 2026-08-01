@@ -13,8 +13,8 @@
 //! generic over closures, which the DSL doesn't express cleanly. See
 //! `settings_panel.rs` for the `bati!` style.
 
-mod project_shell;
 mod commands;
+mod project_shell;
 mod window_role;
 mod wiring;
 
@@ -29,8 +29,8 @@ use bastyde::prelude::*;
 use bastyde::settings::{Reloadable, SettingsExt, SettingsRegistry};
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    DockWidgetId, EventContextMessageBoxExt, MessageBox, MessageBoxButton, MessageBoxButtons, RowDragData,
-    StandardButton, TabBarVisibility, TabWidget, ToastRegistry,
+    DockWidgetId, EventContextMessageBoxExt, MessageBox, MessageBoxButton, MessageBoxButtons,
+    RowDragData, StandardButton, TabBarVisibility, TabWidget, ToastRegistry,
 };
 
 use frontend::AppContext;
@@ -39,9 +39,7 @@ use frontend::commands::{
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
-use frontend::common::event::{
-    DirectAccessEntity, EntityEvent, Event, Origin,
-};
+use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 use frontend::work_management::{CloseWorkDto, LoadWorkDto, NewWorkDto};
 
 use crate::app_ids::AppIds;
@@ -88,26 +86,11 @@ fn punctuation_flags(
 }
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel,
-    ExportViewModel, OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
+    BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ExportViewModel,
+    OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
     SearchReplaceViewModel, SettingsViewModel, Side, SpinnerGate, UnsavedDecision,
     unsaved_decision,
 };
-
-/// Whether an editor pane shows its tab strip, from this window's
-/// distraction-free state and the writer's "keep the editor tabs" setting.
-///
-/// Pure, so the rule is checkable without a window: the mode takes the strip
-/// away, and that one setting is the only thing that overrides it. Outside the
-/// mode the setting has no say at all — it is scoped to distraction-free, not
-/// a general "hide my tabs" preference.
-fn tab_bar_policy(focus_active: bool, keep_in_focus_mode: bool) -> TabBarVisibility {
-    if focus_active && !keep_in_focus_mode {
-        TabBarVisibility::Never
-    } else {
-        TabBarVisibility::Always
-    }
-}
 
 /// Build one editor pane's `TabWidget`: dynamic tabs, cross-pane migration
 /// (`accept_external_tabs` + `on_tab_received` dedup + `on_transfer_out`
@@ -322,9 +305,7 @@ pub fn close_work_and_return_to_launcher(
     // Tier 1 — genuinely one registry per process, so unlike
     // `AppIds`/`WorkspaceLayoutViewModel` this `app_state` lookup is the right
     // way to reach it, not a first-window-wins trap.
-    let registry = ctx
-        .app_state::<crate::sessions::WorkRegistry>()
-        .cloned();
+    let registry = ctx.app_state::<crate::sessions::WorkRegistry>().cloned();
     let my_work_id = ids.work_id.get();
     let me = ctx.window().map(|w| w.id());
     let siblings = my_work_id
@@ -734,6 +715,11 @@ pub struct App {
     /// `build`, the moment `work_id` — and so this window's place among any
     /// siblings on it — becomes known.
     window_ordinal: Signal<usize>,
+    /// This window's distraction-free surface. Mounted at the *window* root (so
+    /// it can cover the title bar), but its dependencies are built here — see
+    /// `DistractionFreeSurfaceViewModel`'s module doc — so `build` hands them
+    /// over with `attach`.
+    df_surface: crate::view_models::DistractionFreeSurfaceViewModel,
     /// Plain mirror of the persisted autosave setting, read by the title-bar menu
     /// (outside `App`) to hide the manual "Save" item. `App::build` mirrors the
     /// store-backed setting into it.
@@ -861,8 +847,10 @@ impl App {
         project_switch: ProjectSwitchViewModel,
         title_text: Signal<String>,
         window_ordinal: Signal<usize>,
+        df_surface: crate::view_models::DistractionFreeSurfaceViewModel,
     ) -> Self {
         Self {
+            df_surface,
             app_ctx,
             session,
             outline,
@@ -987,15 +975,21 @@ fn mutation_ids_belong_to_work(
     match entity {
         DirectAccessEntity::Work(_) => event_ids.contains(&my_work_id),
         DirectAccessEntity::Binder(_) => {
-            let mine =
-                work_commands::get_work_relationship(ctx, &my_work_id, &WorkRelationshipField::Binders)
-                    .unwrap_or_default();
+            let mine = work_commands::get_work_relationship(
+                ctx,
+                &my_work_id,
+                &WorkRelationshipField::Binders,
+            )
+            .unwrap_or_default();
             event_ids.iter().any(|id| mine.contains(id))
         }
         DirectAccessEntity::BinderTag(_) => {
-            let mine =
-                work_commands::get_work_relationship(ctx, &my_work_id, &WorkRelationshipField::Tags)
-                    .unwrap_or_default();
+            let mine = work_commands::get_work_relationship(
+                ctx,
+                &my_work_id,
+                &WorkRelationshipField::Tags,
+            )
+            .unwrap_or_default();
             event_ids.iter().any(|id| mine.contains(id))
         }
         DirectAccessEntity::DictWord(_) => {
@@ -1008,9 +1002,12 @@ fn mutation_ids_belong_to_work(
             event_ids.iter().any(|id| mine.contains(id))
         }
         DirectAccessEntity::BinderItem(_) => {
-            let my_binders =
-                work_commands::get_work_relationship(ctx, &my_work_id, &WorkRelationshipField::Binders)
-                    .unwrap_or_default();
+            let my_binders = work_commands::get_work_relationship(
+                ctx,
+                &my_work_id,
+                &WorkRelationshipField::Binders,
+            )
+            .unwrap_or_default();
             my_binders.iter().any(|binder_id| {
                 let items = binder_commands::get_binder_relationship(
                     ctx,
@@ -1056,7 +1053,10 @@ pub fn can_save(unsaved: &Signal<bool>, backup_mode: &Signal<bool>) -> Signal<bo
 /// `is_last` — whether this was the last window on this Work, decided by
 /// [`WorkRegistry`] itself, never `WindowRemovedEvent::remaining_windows`
 /// (which counts every window in the process, Launcher included).
-pub(crate) fn build_stack_teardown(app_ctx: Rc<AppContext>, stack_id: Option<u64>) -> StackTeardown {
+pub(crate) fn build_stack_teardown(
+    app_ctx: Rc<AppContext>,
+    stack_id: Option<u64>,
+) -> StackTeardown {
     Rc::new(move |is_last: bool| {
         if is_last && let Some(stack_id) = stack_id {
             let _ = undo_redo_commands::delete_stack(&app_ctx, stack_id);
@@ -1203,11 +1203,19 @@ impl Widget for App {
         let backup_mode_for_editors = self.backup_mode.clone();
         let save_state_for_editors = save_state.clone();
         let scene_focused_for_editors = self.scene_focused.clone();
-        // This window's own distraction-free flag (never a private copy — a copy
-        // would go stale the instant Shift+F11 toggled it), so every `ContentTab`
-        // this window opens can pick the distraction-free typography bundle and
-        // column width live.
-        let distraction_free_for_editors = self.focus.active_signal();
+        // A **pane** tab is never distraction-free. This used to be
+        // `self.focus.active_signal()`, on the theory that a mounted pane would
+        // re-typeset itself when Shift+F11 flipped it — but `main_typography()`
+        // and `main_column_width()` resolve as the pane *builds*, `TabWidget`
+        // memoizes its panes and `DockingLayout` preserves its centre across
+        // rebuilds, so nothing ever re-read the flag: a scene opened before
+        // entering the mode kept its normal typeface and its normal column for
+        // the whole session. Making it reactive is closed off — the six
+        // typography pushes go through `ctx.effect`, which panics on a derived
+        // signal — so the mode now mounts its own surface with its own tab
+        // instead, and that tab's flag is a constant `true`
+        // (`EditorsViewModel::open_surface_tab`).
+        let distraction_free_for_editors = Signal::new(false);
         let distraction_free_width = settings.distraction_free_width();
         let go_for_editors = self.go.clone();
         let format_for_editors = self.format.clone();
@@ -2145,7 +2153,6 @@ impl Widget for App {
         );
         self.root_child = Some(root);
 
-
         // Perform this project window's one backend mutation (load the argv
         // path / a Launcher-picked recent, or create a brand-new work)
         // exactly once — now that the `LoadWork`/`NewWork` subscriptions above
@@ -2304,7 +2311,11 @@ mod tests {
         registry.register(1, crate::sessions::WorkSession::for_test());
         ids.work_id.set(Some(1));
 
-        assert!(may_switch_project_in_place(&registry, &ids, WindowRole::Owner));
+        assert!(may_switch_project_in_place(
+            &registry,
+            &ids,
+            WindowRole::Owner
+        ));
     }
 
     /// With no project open there is nothing to replace and nothing to protect.
@@ -2312,7 +2323,11 @@ mod tests {
     fn a_window_with_no_project_may_switch_in_place() {
         let registry = WorkRegistry::new();
         let ids = AppIds::new();
-        assert!(may_switch_project_in_place(&registry, &ids, WindowRole::Owner));
+        assert!(may_switch_project_in_place(
+            &registry,
+            &ids,
+            WindowRole::Owner
+        ));
     }
 
     /// The live condition: a sibling window is showing this very Work, and the
@@ -2325,7 +2340,11 @@ mod tests {
         registry.attach(1).expect("a second window on Work 1");
         ids.work_id.set(Some(1));
 
-        assert!(!may_switch_project_in_place(&registry, &ids, WindowRole::Owner));
+        assert!(!may_switch_project_in_place(
+            &registry,
+            &ids,
+            WindowRole::Owner
+        ));
     }
 
     /// …and it becomes permitted again once that sibling closes: the reason was
@@ -2337,10 +2356,18 @@ mod tests {
         registry.register(1, crate::sessions::WorkSession::for_test());
         registry.attach(1).expect("a second window on Work 1");
         ids.work_id.set(Some(1));
-        assert!(!may_switch_project_in_place(&registry, &ids, WindowRole::Owner));
+        assert!(!may_switch_project_in_place(
+            &registry,
+            &ids,
+            WindowRole::Owner
+        ));
 
         registry.unregister(1); // the sibling closed
-        assert!(may_switch_project_in_place(&registry, &ids, WindowRole::Owner));
+        assert!(may_switch_project_in_place(
+            &registry,
+            &ids,
+            WindowRole::Owner
+        ));
     }
 
     /// The durable condition, and the one that is easy to miss: a window opened
@@ -2358,7 +2385,11 @@ mod tests {
         // No sibling at all: only `attached` stands in the way.
         assert_eq!(registry.window_count_for(1), 1);
 
-        assert!(!may_switch_project_in_place(&registry, &ids, WindowRole::Attached));
+        assert!(!may_switch_project_in_place(
+            &registry,
+            &ids,
+            WindowRole::Attached
+        ));
     }
 
     /// Work ▸ New Window carries the ordinal that decides both the window's
@@ -2378,25 +2409,6 @@ mod tests {
         let load = PendingAction::Load("/tmp/y.skrib".into());
         assert_eq!(load.attached_work_id(), None);
         assert_eq!(load.target_path(), "/tmp/y.skrib");
-    }
-
-    /// Distraction-free mode takes the editor tab strip away, and only the
-    /// "keep the editor tabs" setting brings it back — and only *inside* the
-    /// mode. The fourth row is the one worth pinning: with the mode off, a
-    /// writer who unticked the box still gets their tabs, because the setting
-    /// is scoped to distraction-free rather than being a general "hide my
-    /// tabs" preference.
-    #[test]
-    fn the_tab_strip_is_hidden_only_by_distraction_free_mode() {
-        use TabBarVisibility::{Always, Never};
-        assert_eq!(tab_bar_policy(true, false), Never, "in the mode, not kept");
-        assert_eq!(tab_bar_policy(true, true), Always, "in the mode, kept");
-        assert_eq!(tab_bar_policy(false, true), Always, "outside the mode");
-        assert_eq!(
-            tab_bar_policy(false, false),
-            Always,
-            "outside the mode the setting has no say"
-        );
     }
 
     /// The two-tier punctuation resolution, which is the whole point of

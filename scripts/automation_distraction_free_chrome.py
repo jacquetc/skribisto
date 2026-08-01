@@ -169,7 +169,18 @@ def tab_lists(s):
 
 
 def has_label(s, substr):
-    return any(substr.lower() in (n.get("label") or "").lower() for n in s.nodes())
+    """Match a node's accessible name, whichever field carries it.
+
+    A `Button` publishes its name as `label`; a `Label` (what a plain
+    `TextWidget` becomes — the strip's item name, the word count) publishes it
+    as `value`. Reading only `label` silently misses every readout, which is how
+    the item-name check below first "failed" against a strip that was showing
+    the name perfectly well."""
+    needle = substr.lower()
+    return any(
+        needle in (n.get("label") or "").lower() or needle in (n.get("value") or "").lower()
+        for n in s.nodes()
+    )
 
 
 def wait_for(pred, timeout=10):
@@ -258,6 +269,37 @@ if not wait_for(lambda: len(window_control_buttons(s)) == 0, timeout=10):
 print("  window controls hidden")
 s.shot("/tmp/df-chrome-during.png")
 
+# The item's name is in the strip. With the tab strip and the title bar both
+# gone, and a plain Scene carrying no title field in its own pane, this is the
+# only thing on screen that says which document the writer is in — and Alt+Up /
+# Alt+Down move them between documents without it.
+if not wait_for(lambda: has_label(s, "prologue"), timeout=10):
+    s.shot("/tmp/df-chrome-no-title.png")
+    fail("the strip does not name the open item — nothing on screen says what "
+         "is being written", s.app, s.mcp, s.log)
+print("  the strip names the open item")
+
+# The mode's own settings are reachable without leaving it: the menu bar is
+# parked dormant behind the surface, so the gear in the strip is the only route
+# that does not put the whole Settings modal over the manuscript.
+if not has_label(s, "distraction-free settings"):
+    s.shot("/tmp/df-chrome-no-gear.png")
+    fail("no quick-settings control in the strip — the mode's own settings are "
+         "unreachable from inside it", s.app, s.mcp, s.log)
+print("  quick-settings control present")
+
+# The dock commands are no-ops while the surface is up. Disabling a dock side
+# never disabled its *commands*: `reveal_dock` sets visible and picks a tab
+# regardless, so before the guard Ctrl+Shift+F did nothing you could see here
+# and then the leading rail came back showing Search instead of the binder.
+for key, mods in (("F9", {}), ("F10", {}), ("F", {"ctrl": True, "shift": True})):
+    s.call("inject_key", {"key": key, **mods})
+time.sleep(0.5)
+if len(tab_lists(s)) != 0:
+    s.shot("/tmp/df-chrome-dock-command-leaked.png")
+    fail("a dock command changed the desk from inside the mode", s.app, s.mcp, s.log)
+print("  dock commands are no-ops inside the mode")
+
 # ── 3. Leave the mode → the tab strip comes back ────────────────────────────
 print("== Shift+F11 leaves distraction-free ==")
 s.call("inject_key", {"key": "F11", "shift": True})
@@ -280,10 +322,12 @@ print("  title-bar slots restored")
 s.shot("/tmp/df-chrome-after.png")
 
 # ── 4. The settings surface exists and is on the right page ─────────────────
-# The four checkboxes are the only way a writer changes any of this, so a pane
-# that silently failed to grow them would leave the feature unreachable even
-# though every gate below it works.
-print("== Settings ▸ Editor ▸ Editor Behavior carries the four checkboxes ==")
+# These checkboxes are the only way a writer changes any of this, so a pane that
+# silently failed to grow them would leave the feature unreachable even though
+# every gate below it works. They moved off Editor Behavior when the mode's
+# settings were consolidated onto one page — typography, column width and the
+# strip's items together — so this looks for that page now.
+print("== Settings ▸ Editor ▸ Distraction-free carries the strip checkboxes ==")
 
 
 def settings_open():
@@ -304,9 +348,9 @@ if not opened:
     fail("could not open the Settings window", s.app, s.mcp, s.log)
 
 page = next((n for n in s.nodes()
-             if (n.get("label") or "").strip().lower() == "editor behavior"), None)
+             if (n.get("label") or "").strip().lower() == "distraction-free"), None)
 if not page:
-    fail("no 'Editor Behavior' page row in the settings category rail", s.app, s.mcp, s.log)
+    fail("no 'Distraction-free' page row in the settings category rail", s.app, s.mcp, s.log)
 if "click" in (page.get("actions") or []):
     s.call("invoke_action", {"node": page["id"], "action": "click"})
 else:
@@ -315,13 +359,21 @@ else:
                               "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
 time.sleep(0.8)
 
-WANT = ["keep the editor tabs", "keep the word count",
+WANT = ["keep the item's name", "keep the word count",
         "keep the writing session", "keep the previous and next buttons"]
 missing = [w for w in WANT if not has_label(s, w)]
 s.shot("/tmp/df-chrome-settings.png")
 if missing:
-    fail(f"the Editor Behavior pane is missing {missing}", s.app, s.mcp, s.log)
+    fail(f"the Distraction-free pane is missing {missing}", s.app, s.mcp, s.log)
 print("  all four checkboxes present")
+
+# The "keep the editor tabs" setting was deleted with the chrome collapse it
+# governed: the mode does not undress the shell any more, it covers it, and its
+# surface shows exactly one document with no tab row for a setting to act on.
+if has_label(s, "keep the editor tabs"):
+    fail("the editor-tabs checkbox is still here — it governs nothing now",
+         s.app, s.mcp, s.log)
+print("  and no editor-tabs checkbox, which now governs nothing")
 
 # Exit is promised to have no checkbox — a settings row that could take it away
 # would defeat the strip's whole reason for being always-visible.
@@ -331,5 +383,5 @@ if has_label(s, "keep the exit"):
 print("  and no Exit checkbox, as promised")
 
 print("\nPASS: distraction-free hides the editor tab strip, keeps Exit, restores "
-      "the strip on the way out, and its four toggles are reachable in Settings.")
+      "the strip on the way out, and its toggles are reachable in Settings.")
 s.close()

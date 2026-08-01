@@ -208,6 +208,9 @@ settings-page-keymap = Raccourcis clavier
 settings-group-typography = Typographie
 settings-group-writing-column = Colonne d'écriture
 settings-group-writing-view = Affichage de l'écriture
+# Les éléments optionnels de la bande de contrôle du mode sans distraction
+# (Quitter n'est jamais optionnel).
+settings-group-distraction-free-strip = Bande de contrôle
 settings-group-theme = Thème
 settings-group-language = Langue
 settings-group-startup = Démarrage
@@ -220,7 +223,7 @@ settings-field-paragraph-spacing-before = Espace avant le paragraphe
 settings-field-paragraph-spacing-after = Espace après le paragraphe
 settings-field-column-width = Largeur de colonne
 settings-distraction-free-width-hint = S'applique uniquement en mode sans distraction — les largeurs de colonne de la Scène, du Synopsis et des Notes restent inchangées.
-settings-distraction-free-tab-bar = Conserver les onglets de l'éditeur
+settings-distraction-free-title = Conserver le nom de l'élément
 settings-distraction-free-word-count = Conserver le compteur de mots
 settings-distraction-free-session = Conserver la séance d'écriture
 settings-distraction-free-go-to = Conserver le bouton Aller à…
@@ -1241,3 +1244,35 @@ statusbar-go-to = Aller à…
 go-to-placeholder = Rechercher dans le classeur
 go-to-no-matches = Aucun élément ne correspond à cette recherche.
 menu-go-to = &Aller à…
+
+# ── Thèmes sans distraction (Réglages ▸ Éditeur ▸ Thèmes sans distraction) ──
+settings-page-distraction-free-themes = Thèmes sans distraction
+settings-themes-builtin = Thèmes fournis
+settings-themes-builtin-badge = Fourni
+settings-themes-user = Mes thèmes
+settings-themes-editor-group = Modifier le thème
+settings-themes-editor-empty = Choisissez un thème sous « Mes thèmes » pour le modifier.
+settings-themes-use = Utiliser
+settings-themes-duplicate = Dupliquer
+settings-themes-edit = Modifier
+settings-themes-delete = Supprimer
+settings-themes-export = Exporter…
+settings-themes-import = Importer…
+settings-themes-copy-suffix = copie
+settings-themes-json-filter = Thème (JSON)
+settings-themes-imported = Thème importé
+settings-themes-import-failed = Impossible d'importer ce thème
+settings-themes-exported = Thème exporté
+settings-themes-export-failed = Impossible d'exporter ce thème
+# Affiché pour un thème dont le texte et la page sont sous le seuil WCAG AA.
+settings-themes-low-contrast = contraste faible
+settings-themes-field-name = Nom
+settings-themes-field-paper = Page
+settings-themes-field-ink = Texte
+settings-themes-field-general = Arrière-plan
+settings-themes-field-widget-text = Texte de la bande de contrôle
+
+# L'engrenage de réglages rapides de la bande sans distraction, et l'accès à la
+# bibliothèque complète de thèmes depuis le mode.
+statusbar-focus-settings = Réglages du mode sans distraction
+statusbar-focus-manage-themes = Gérer les thèmes…

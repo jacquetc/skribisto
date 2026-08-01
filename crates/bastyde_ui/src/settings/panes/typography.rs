@@ -37,18 +37,20 @@ pub(in crate::settings) fn font_picker(
     )
 }
 
-/// One per-editor-type typography page (Scene / Synopsis / Notes): Typeface /
-/// Size / Line height / First-line indent, bound to `typo`'s live signals.
-pub(in crate::settings) fn typography_pane(
+/// Append the Typography group's rows to `form`, bound to `typo`'s live signals.
+///
+/// Extracted from [`typography_pane`] because the distraction-free page needs
+/// the *same rows* under a page that also carries a column width and the
+/// control-strip toggles, and the strip's quick-access popover needs them again
+/// in a third place. `FormLayout` is a row-accumulating builder — which is why
+/// the settings pane bodies are chained builders rather than `bati!` — so
+/// "append to a form" is the shape that composes, not "return a widget".
+pub(crate) fn typography_rows(
     ctx: &mut BuildContext,
-    page: LocalizedString,
+    form: FormLayout,
     typo: &EditorTypography,
-) -> impl Widget {
-    let form = FormLayout::new()
-        .label(page.clone())
-        .label_gap(16.0)
-        .row_spacing(14.0)
-        .full_width(group(tr!(settings_group_typography())))
+) -> FormLayout {
+    form.full_width(group(tr!(settings_group_typography())))
         .line(
             field_label(tr!(settings_field_typeface())),
             font_picker(ctx, typo.font_family.clone()),
@@ -82,6 +84,20 @@ pub(in crate::settings) fn typography_pane(
             slider_field(typo.para_spacing_after.clone(), 0.0, 40.0, 2.0, |v| {
                 format!("{} px", v.round() as i32)
             }),
-        );
+        )
+}
+
+/// One per-editor-type typography page (Scene / Synopsis / Notes / Corkboard):
+/// nothing but [`typography_rows`] under its own page heading.
+pub(in crate::settings) fn typography_pane(
+    ctx: &mut BuildContext,
+    page: LocalizedString,
+    typo: &EditorTypography,
+) -> impl Widget {
+    let form = FormLayout::new()
+        .label(page.clone())
+        .label_gap(16.0)
+        .row_spacing(14.0);
+    let form = typography_rows(ctx, form, typo);
     pane_frame(crumb(Some(tr!(settings_sec_editor())), page), form)
 }

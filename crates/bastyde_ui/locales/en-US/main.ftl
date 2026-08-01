@@ -208,6 +208,8 @@ settings-page-keymap = Keymap
 settings-group-typography = Typography
 settings-group-writing-column = Writing column
 settings-group-writing-view = Writing view
+# The distraction-free control strip's optional items (Exit is never optional).
+settings-group-distraction-free-strip = Control strip
 settings-group-theme = Theme
 settings-group-language = Language
 settings-group-startup = Startup
@@ -220,7 +222,7 @@ settings-field-paragraph-spacing-before = Space before paragraph
 settings-field-paragraph-spacing-after = Space after paragraph
 settings-field-column-width = Column width
 settings-distraction-free-width-hint = Applies only while distraction-free mode is on — your Scene, Synopsis and Notes column widths are untouched.
-settings-distraction-free-tab-bar = Keep the editor tabs
+settings-distraction-free-title = Keep the item's name
 settings-distraction-free-word-count = Keep the word count
 settings-distraction-free-session = Keep the writing session
 settings-distraction-free-go-to = Keep the Go to… button
@@ -1236,3 +1238,35 @@ statusbar-go-to = Go to…
 go-to-placeholder = Search the binder
 go-to-no-matches = No item matches that search.
 menu-go-to = &Go to…
+
+# ── Distraction-free themes (Settings ▸ Editor ▸ Distraction-free themes) ──
+settings-page-distraction-free-themes = Distraction-free themes
+settings-themes-builtin = Built-in themes
+settings-themes-builtin-badge = Built-in
+settings-themes-user = My themes
+settings-themes-editor-group = Edit theme
+settings-themes-editor-empty = Pick a theme under "My themes" to edit it.
+settings-themes-use = Use
+settings-themes-duplicate = Duplicate
+settings-themes-edit = Edit
+settings-themes-delete = Delete
+settings-themes-export = Export…
+settings-themes-import = Import…
+settings-themes-copy-suffix = copy
+settings-themes-json-filter = Theme (JSON)
+settings-themes-imported = Theme imported
+settings-themes-import-failed = Could not import that theme
+settings-themes-exported = Theme exported
+settings-themes-export-failed = Could not export that theme
+# Shown on a theme whose text and page are below the WCAG AA contrast floor.
+settings-themes-low-contrast = low contrast
+settings-themes-field-name = Name
+settings-themes-field-paper = Page
+settings-themes-field-ink = Text
+settings-themes-field-general = Background
+settings-themes-field-widget-text = Control strip text
+
+# The distraction-free strip's quick-settings gear, and the way through to the
+# full theme library from inside it.
+statusbar-focus-settings = Distraction-free settings
+statusbar-focus-manage-themes = Manage themes…

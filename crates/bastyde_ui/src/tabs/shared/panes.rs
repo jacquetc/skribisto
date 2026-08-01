@@ -41,8 +41,19 @@ use super::{
 /// working over the last page — exactly where a writer spends their time. The
 /// range collapses to zero when typewriter scrolling is off, so a page without
 /// the feature cannot be scrolled past its own end.
+///
+/// It is also where this tab's **page scroll** is published to its view-state
+/// ports. The scroll a writer wants restored is this area's, not any editor's:
+/// the editors here run with `ScrollPolicy::AlwaysOff` and grow to their
+/// content, so `RichTextEditor::scroll_y()` on a prose column is permanently 0
+/// and persisting it would persist nothing.
 pub(crate) fn writing_page_scroll(tab: &ContentTab) -> ScrollArea {
-    ScrollArea::new().scroll_past_end(tab.typewriter.scroll_past_end_signal())
+    let area = ScrollArea::new().scroll_past_end(tab.typewriter.scroll_past_end_signal());
+    tab.view_state_ports().attach_page_scroll(
+        area.scroll_y_signal().clone(),
+        area.max_scroll_y_signal().clone(),
+    );
+    area
 }
 
 /// The container's **own page** — the first segment of every folder container tab.
@@ -117,6 +128,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             tab.open_doc.replacement_main(),
             Some(tab.format.clone()),
             Some(tab.typewriter.clone()),
+            Some(tab.view_state_binding()),
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
@@ -191,6 +203,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             tab.open_doc.replacement_main(),
             Some(tab.format.clone()),
             Some(tab.typewriter.clone()),
+            Some(tab.view_state_binding()),
         ));
     }
     // The whole dual-pane body scrolls as one flowing page: the main editor is
@@ -203,10 +216,15 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     // writing surface to search, and `folder_segmented` wraps a stream `Switcher`
     // whose rows have no single "focused editor" to target.
     match find {
-        Some(find) => {
-            crate::tabs::shared::editor::tab_backdrop_with_find(find, writing_page_scroll(tab).child(col))
-        }
-        None => crate::tabs::shared::editor::tab_backdrop(writing_page_scroll(tab).child(col)),
+        Some(find) => crate::tabs::shared::editor::tab_backdrop_with_find(
+            tab.backdrop_role(),
+            find,
+            writing_page_scroll(tab).child(col),
+        ),
+        None => crate::tabs::shared::editor::tab_backdrop(
+            tab.backdrop_role(),
+            writing_page_scroll(tab).child(col),
+        ),
     }
 }
 
@@ -263,14 +281,17 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 Some(tab.typewriter.clone()),
             ));
     }
-    tab_backdrop(writing_page_scroll(tab).child(col.child(vspace(28.0))))
+    tab_backdrop(
+        tab.backdrop_role(),
+        writing_page_scroll(tab).child(col.child(vspace(28.0))),
+    )
 }
 
 /// A quiet placeholder for contentless rows (Item/BookEnd, Item/Text): they carry
 /// no editable content, so opening one shows an explanatory label, not an empty
 /// editor.
-pub fn placeholder(_tab: &ContentTab) -> Box<dyn Widget> {
-    tab_backdrop(bati!(
+pub fn placeholder(tab: &ContentTab) -> Box<dyn Widget> {
+    tab_backdrop(tab.backdrop_role(), bati!(
         Center {
             child: TextWidget::new(tr!(no_content())) {
                 color: TextRole::Secondary
@@ -289,7 +310,7 @@ pub fn placeholder(_tab: &ContentTab) -> Box<dyn Widget> {
 /// A **notes** folder used to share this body; it now gets
 /// [`folder_synopsis_with_overview`] instead, because it does have a subtree to tabulate.
 pub fn folder_synopsis_only(tab: &ContentTab) -> Box<dyn Widget> {
-    tab_backdrop(folder_synopsis_body(tab))
+    tab_backdrop(tab.backdrop_role(), folder_synopsis_body(tab))
 }
 
 /// The synopsis page itself, without the tab backdrop — so it can be either a whole tab
@@ -349,7 +370,7 @@ pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
         segment: tab.segment.clone(),
         memory: tab.view_memory.clone(),
         sub_role: tab.sub_role().clone(),
-        child: Some(tab_backdrop(col)),
+        child: Some(tab_backdrop(tab.backdrop_role(), col)),
         child_id: None,
     })
 }
@@ -416,7 +437,7 @@ pub fn folder_segmented(
         segment: tab.segment.clone(),
         memory: tab.view_memory.clone(),
         sub_role: tab.sub_role().clone(),
-        child: Some(tab_backdrop(col)),
+        child: Some(tab_backdrop(tab.backdrop_role(), col)),
         child_id: None,
     })
 }

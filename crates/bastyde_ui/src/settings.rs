@@ -31,7 +31,7 @@ use bastyde::data::{KeyedSelectionModel, NodeId, SelectionMode, TreeModel};
 use bastyde::i18n::{LocalizedString, current_locale, localized};
 use bastyde::prelude::*;
 
-mod panes;
+pub(crate) mod panes;
 use bastyde::res;
 use bastyde::settings::{SettingsExt, TEXT_SCALE_KEY};
 use bastyde::widgets::{
@@ -49,19 +49,18 @@ use crate::view_models::{
 };
 use crate::{
     DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT, DISTRACTION_FREE_FONT_FAMILY_DEFAULT,
+    DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_TO_DEFAULT,
     DISTRACTION_FREE_LINE_HEIGHT_DEFAULT, DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
-    DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT, DISTRACTION_FREE_SIZE_DEFAULT,
-    DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_TO_DEFAULT, DISTRACTION_FREE_SESSION_DEFAULT,
-    DISTRACTION_FREE_TAB_BAR_DEFAULT, DISTRACTION_FREE_WIDTH_DEFAULT,
+    DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT, DISTRACTION_FREE_SESSION_DEFAULT,
+    DISTRACTION_FREE_SIZE_DEFAULT, DISTRACTION_FREE_TITLE_DEFAULT, DISTRACTION_FREE_WIDTH_DEFAULT,
     DISTRACTION_FREE_WORD_COUNT_DEFAULT, EDITOR_WIDTH_DEFAULT, GOALS_SHOW_CHARACTERS_DEFAULT,
     HIGHLIGHT_SENTENCE_DEFAULT, NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FONT_FAMILY_DEFAULT,
-    NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT,
-    NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_SIZE_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT,
-    SCENE_FONT_FAMILY_DEFAULT, SCENE_LINE_HEIGHT_DEFAULT, SCENE_PARA_SPACING_AFTER_DEFAULT,
-    SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_SIZE_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
-    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_PANE_DEFAULT,
-    SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT,
-    SYNOPSIS_SIZE_DEFAULT, TYPEWRITER_DEFAULT,
+    NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT, NOTES_PARA_SPACING_BEFORE_DEFAULT,
+    NOTES_SIZE_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FONT_FAMILY_DEFAULT,
+    SCENE_LINE_HEIGHT_DEFAULT, SCENE_PARA_SPACING_AFTER_DEFAULT, SCENE_PARA_SPACING_BEFORE_DEFAULT,
+    SCENE_SIZE_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FONT_FAMILY_DEFAULT,
+    SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
+    SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_SIZE_DEFAULT, TYPEWRITER_DEFAULT,
 };
 use skribisto_model::ChapterMode;
 use skribisto_model::counting::CountingMethodSetting;
@@ -131,6 +130,10 @@ enum Pane {
     /// rule as every one above it — its tree position (inside the new
     /// `GroupKind::Typography` node) is `build_tree`'s business, not this number's.
     DistractionFree,
+    /// The distraction-free **theme library** (built-ins + the writer's own).
+    /// Appended last, same rule as every one above it: the discriminant fixes the
+    /// `Switcher` slot, the tree position is `build_tree`'s business.
+    DistractionFreeThemes,
 }
 
 impl Pane {
@@ -165,6 +168,7 @@ impl Pane {
             Pane::WorkTextReplacements => tr!(settings_page_text_replacements()),
             Pane::Spellcheck => tr!(settings_page_spellcheck()),
             Pane::DistractionFree => tr!(settings_page_distraction_free()),
+            Pane::DistractionFreeThemes => tr!(settings_page_distraction_free_themes()),
         }
     }
 }
@@ -370,8 +374,8 @@ fn build_not_defaults(
             .map(|v| (*v - DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT).abs() > 0.01),
         vm.distraction_free_width()
             .map(|w| (*w - DISTRACTION_FREE_WIDTH_DEFAULT).abs() > 0.01),
-        vm.distraction_free_tab_bar()
-            .map(|s| *s != DISTRACTION_FREE_TAB_BAR_DEFAULT),
+        vm.distraction_free_title()
+            .map(|s| *s != DISTRACTION_FREE_TITLE_DEFAULT),
         vm.distraction_free_word_count()
             .map(|s| *s != DISTRACTION_FREE_WORD_COUNT_DEFAULT),
         vm.distraction_free_session()
@@ -430,7 +434,7 @@ pub(crate) fn group(text: LocalizedString) -> GroupHeader {
 }
 
 /// A slider with a live value readout on its right, in a fixed 300 px cell.
-fn slider_field(
+pub(crate) fn slider_field(
     value: Signal<f32>,
     min: f32,
     max: f32,
@@ -660,6 +664,10 @@ impl SettingsPanel {
             model.insert_child(typo_group, 4, Node::Page(Pane::DistractionFree)),
         );
         nodes.insert(
+            Pane::DistractionFreeThemes,
+            model.insert_child(typo_group, 5, Node::Page(Pane::DistractionFreeThemes)),
+        );
+        nodes.insert(
             Pane::EditorBehavior,
             model.insert_child(ed, 1, Node::Page(Pane::EditorBehavior)),
         );
@@ -833,7 +841,8 @@ impl SettingsPanel {
             | Pane::SynopsisTypography
             | Pane::NotesTypography
             | Pane::Corkboard
-            | Pane::DistractionFree => Some(typo_group),
+            | Pane::DistractionFree
+            | Pane::DistractionFreeThemes => Some(typo_group),
             Pane::EditorBehavior | Pane::Punctuation | Pane::Goals => Some(ed),
             Pane::Spellcheck | Pane::Dictionaries => Some(sp),
             Pane::Autosave | Pane::Backup => Some(bk),
@@ -875,6 +884,10 @@ impl SettingsPanel {
             (tr!(settings_page_goals()), Pane::Goals),
             (tr!(settings_page_corkboard()), Pane::Corkboard),
             (tr!(settings_page_distraction_free()), Pane::DistractionFree),
+            (
+                tr!(settings_page_distraction_free_themes()),
+                Pane::DistractionFreeThemes,
+            ),
             (tr!(settings_page_dictionaries()), Pane::Dictionaries),
             (tr!(settings_page_autosave()), Pane::Autosave),
             (tr!(settings_page_backup()), Pane::Backup),
@@ -891,26 +904,27 @@ impl SettingsPanel {
             (tr!(settings_synopsis_pane()), Pane::EditorBehavior),
             (tr!(settings_typewriter()), Pane::EditorBehavior),
             (tr!(settings_highlight_sentence()), Pane::EditorBehavior),
-            // The distraction-free chrome toggles live on the Editor Behavior
-            // page, not the Distraction-free typography page — searching for
-            // "tabs" has to land where the checkbox actually is.
+            // The distraction-free settings are all on their own page now —
+            // typography, the column width and the strip's toggles together —
+            // so every one of them searches there.
             (
-                tr!(settings_distraction_free_tab_bar()),
-                Pane::EditorBehavior,
+                tr!(settings_distraction_free_title()),
+                Pane::DistractionFree,
             ),
             (
                 tr!(settings_distraction_free_word_count()),
-                Pane::EditorBehavior,
+                Pane::DistractionFree,
             ),
             (
                 tr!(settings_distraction_free_session()),
-                Pane::EditorBehavior,
+                Pane::DistractionFree,
             ),
-            (tr!(settings_distraction_free_go()), Pane::EditorBehavior),
+            (tr!(settings_distraction_free_go()), Pane::DistractionFree),
             (
                 tr!(settings_distraction_free_go_to()),
-                Pane::EditorBehavior,
+                Pane::DistractionFree,
             ),
+            (tr!(settings_field_column_width()), Pane::DistractionFree),
             (tr!(settings_field_app_theme()), Pane::Appearance),
             (tr!(settings_field_text_scale()), Pane::Appearance),
             (tr!(settings_field_language()), Pane::Appearance),
@@ -926,6 +940,10 @@ impl SettingsPanel {
             (tr!(settings_page_synopsis()), Pane::SynopsisTypography),
             (tr!(settings_page_notes()), Pane::NotesTypography),
             (tr!(settings_page_distraction_free()), Pane::DistractionFree),
+            (
+                tr!(settings_page_distraction_free_themes()),
+                Pane::DistractionFreeThemes,
+            ),
         ] {
             for field in [
                 tr!(settings_field_typeface()),
@@ -1101,6 +1119,30 @@ impl Widget for SettingsPanel {
             )),
         };
 
+        // Editor ▸ Distraction-free themes — the theme library, same shape and
+        // same app_state resolution as Export Formats just above.
+        let df_themes_pane: Box<dyn Widget> = match ctx
+            .app_state::<crate::view_models::DistractionFreeThemesViewModel>()
+            .cloned()
+        {
+            Some(themes_vm) => Box::new(pane_frame(
+                crumb(
+                    Some(tr!(settings_sec_editor())),
+                    tr!(settings_page_distraction_free_themes()),
+                ),
+                crate::settings::panes::distraction_free_themes::distraction_free_themes_pane(
+                    ctx,
+                    &themes_vm,
+                    vm.distraction_free_theme(),
+                ),
+            )),
+            None => Box::new(empty_pane(
+                Some(tr!(settings_sec_editor())),
+                tr!(settings_page_distraction_free_themes()),
+                Sec::Editor.icon_svg(),
+            )),
+        };
+
         // ── Backup ("Copies de secours") panes ──
         // Wrapped in the shared `pane_frame` (breadcrumb · rule · scrollable,
         // padded body) exactly like every built-in pane, so they match the rest
@@ -1192,60 +1234,58 @@ impl Widget for SettingsPanel {
         // Work ▸ Text replacements — the per-project custom lexicon, over THIS
         // WINDOW's own `WorkSession::text_replacements` (never `ctx.app_state`),
         // same reasoning as `tags_pane`/`dictionary_pane`/`punctuation` above.
-        let text_replacements_pane: Box<dyn Widget> = match (
-            Some(self.session.text_replacements.clone()),
-            &work,
-        ) {
-            (Some(rvm), Some(w)) if w.id().is_some() => {
-                let title = w.title().get();
-                Box::new(pane_frame(
-                    crumb(
-                        Some(lit!(format!(
-                            "{}: {}",
-                            tr!(settings_sec_work()).resolve_now(),
-                            title
-                        ))),
-                        tr!(settings_page_text_replacements()),
-                    ),
-                    crate::settings::panes::text_replacements::text_replacements_pane(ctx, &rvm),
-                ))
-            }
-            _ => Box::new(empty_pane(
-                None,
-                tr!(settings_page_text_replacements()),
-                res!("assets/icons/binder/book.svg"),
-            )),
-        };
+        let text_replacements_pane: Box<dyn Widget> =
+            match (Some(self.session.text_replacements.clone()), &work) {
+                (Some(rvm), Some(w)) if w.id().is_some() => {
+                    let title = w.title().get();
+                    Box::new(pane_frame(
+                        crumb(
+                            Some(lit!(format!(
+                                "{}: {}",
+                                tr!(settings_sec_work()).resolve_now(),
+                                title
+                            ))),
+                            tr!(settings_page_text_replacements()),
+                        ),
+                        crate::settings::panes::text_replacements::text_replacements_pane(
+                            ctx, &rvm,
+                        ),
+                    ))
+                }
+                _ => Box::new(empty_pane(
+                    None,
+                    tr!(settings_page_text_replacements()),
+                    res!("assets/icons/binder/book.svg"),
+                )),
+            };
 
         // Work ▸ Personal dictionary — the per-project word-list manager, over
         // THIS WINDOW's own `WorkSession::user_dictionary` (never
         // `ctx.app_state::<UserDictionaryViewModel>()`, same reasoning as
         // `tags_pane` above). Present in the Switcher regardless, an empty
         // placeholder when no project is open (same as the other Work panes).
-        let dictionary_pane: Box<dyn Widget> = match (
-            Some(self.session.user_dictionary.clone()),
-            &work,
-        ) {
-            (Some(vm), Some(w)) if w.id().is_some() => {
-                let title = w.title().get();
-                Box::new(pane_frame(
-                    crumb(
-                        Some(lit!(format!(
-                            "{}: {}",
-                            tr!(settings_sec_work()).resolve_now(),
-                            title
-                        ))),
-                        tr!(settings_page_personal_dictionary()),
-                    ),
-                    crate::settings::panes::user_dictionary::user_dictionary_pane(ctx, &vm),
-                ))
-            }
-            _ => Box::new(empty_pane(
-                None,
-                tr!(settings_page_personal_dictionary()),
-                res!("assets/icons/binder/book.svg"),
-            )),
-        };
+        let dictionary_pane: Box<dyn Widget> =
+            match (Some(self.session.user_dictionary.clone()), &work) {
+                (Some(vm), Some(w)) if w.id().is_some() => {
+                    let title = w.title().get();
+                    Box::new(pane_frame(
+                        crumb(
+                            Some(lit!(format!(
+                                "{}: {}",
+                                tr!(settings_sec_work()).resolve_now(),
+                                title
+                            ))),
+                            tr!(settings_page_personal_dictionary()),
+                        ),
+                        crate::settings::panes::user_dictionary::user_dictionary_pane(ctx, &vm),
+                    ))
+                }
+                _ => Box::new(empty_pane(
+                    None,
+                    tr!(settings_page_personal_dictionary()),
+                    res!("assets/icons/binder/book.svg"),
+                )),
+            };
 
         // ── Left rail: search + category tree ───────────────────────────────
         let (tree, selection, nodes) = self.build_tree(ctx);
@@ -1262,7 +1302,6 @@ impl Widget for SettingsPanel {
         // real bug: the app-wide Spellcheck pane, its discriminant appended last but
         // its child slotted in the middle, made every Work pane show its neighbour) —
         // each child is tagged with the `Pane` it serves and the order is asserted.
-        let ab = tr!(settings_sec_appearance_behaviour());
         let typo = vm.editor_typography();
         let panes: Vec<(Pane, Box<dyn Widget>)> = vec![
             (
@@ -1272,7 +1311,7 @@ impl Widget for SettingsPanel {
             (
                 Pane::MenusToolbars,
                 Box::new(empty_pane(
-                    Some(ab.clone()),
+                    Some(tr!(settings_sec_appearance_behaviour())),
                     tr!(settings_page_menus()),
                     Sec::AppearanceBehaviour.icon_svg(),
                 )),
@@ -1280,7 +1319,7 @@ impl Widget for SettingsPanel {
             (
                 Pane::Notifications,
                 Box::new(empty_pane(
-                    Some(ab),
+                    Some(tr!(settings_sec_appearance_behaviour())),
                     tr!(settings_page_notifications()),
                     Sec::AppearanceBehaviour.icon_svg(),
                 )),
@@ -1351,12 +1390,13 @@ impl Widget for SettingsPanel {
             (Pane::WorkTextReplacements, text_replacements_pane),
             (
                 Pane::DistractionFree,
-                Box::new(panes::typography::typography_pane(
+                Box::new(panes::distraction_free::distraction_free_pane(
                     ctx,
-                    tr!(settings_page_distraction_free()),
+                    &vm,
                     &typo.distraction_free,
                 )),
             ),
+            (Pane::DistractionFreeThemes, df_themes_pane),
         ];
         if let Some((slot, (pane, _))) =
             panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)

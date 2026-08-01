@@ -10,6 +10,22 @@ use bastyde::widgets::DockSide;
 
 use super::CommandDeps;
 
+/// Run a dock command, unless this window's distraction-free surface is up.
+///
+/// The one place the policy lives, so a fifth dock command is written next to a
+/// name that says what it has to do. Disabling a dock side does **not** disable
+/// its commands — `DockingModel::reveal_dock` sets `visible = true` and picks a
+/// tab regardless — and with the shell merely dormant behind the surface,
+/// nothing disables anything at all. Left unguarded these look like no-ops while
+/// quietly rearranging the desk behind the surface: Ctrl+Shift+F in the mode did
+/// nothing you could see, and then the leading rail came back showing Search
+/// instead of the binder you left there.
+fn unless_distraction_free(focus: &crate::view_models::FocusViewModel, f: impl FnOnce()) {
+    if !focus.active_signal().get() {
+        f();
+    }
+}
+
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // F9, not Ctrl+B: Ctrl+B is the editor's built-in bold command, and a Global shortcut is
     // resolved *before* the focused widget sees the raw key — so a Ctrl+B binding here would
@@ -29,17 +45,30 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .primary(KeyStroke::new(Key::F10, Modifiers::NONE))
             .build(),
     );
+    // Every dock command below runs through `unless_distraction_free`.
+    //
+    // Disabling a dock side does not disable its commands: `DockingModel::
+    // reveal_dock` sets `visible = true` and picks a tab regardless of whether
+    // the side is enabled, and `toggle_side_visible` flips the flag the same
+    // way. So these used to *look* like no-ops in the mode while quietly
+    // rearranging the desk behind it — Ctrl+Shift+F in the mode did nothing you
+    // could see, and then the leading rail came back showing Search instead of
+    // the binder you left there. Now the shell is merely dormant behind the
+    // surface, nothing disables anything, and a guard is the only thing that
+    // keeps a hidden desk from being edited.
     {
         let docking = deps.outline.docking();
+        let focus = deps.focus.clone();
         ctx.register_action_global(Action::new("preview.toggle").on_invoke(move |_i, _c| {
-            docking.toggle_side_visible(DockSide::Bottom);
+            unless_distraction_free(&focus, || docking.toggle_side_visible(DockSide::Bottom));
         }));
     }
     {
         let outline = deps.outline.clone();
-        ctx.register_action_global(
-            Action::new("outline.toggle").on_invoke(move |_i, _c| outline.toggle()),
-        );
+        let focus = deps.focus.clone();
+        ctx.register_action_global(Action::new("outline.toggle").on_invoke(move |_i, _c| {
+            unless_distraction_free(&focus, || outline.toggle());
+        }));
     }
 
     // F11, the platform convention — free (no other command claims it; see
@@ -168,17 +197,57 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let docking = deps.outline.docking();
         let search_dock = deps.search_dock;
+        let focus = deps.focus.clone();
         ctx.register_action_global(Action::new("search.show").on_invoke(move |_i, _c| {
-            docking.reveal_dock(search_dock);
+            unless_distraction_free(&focus, || docking.reveal_dock(search_dock));
         }));
     }
     {
         let docking = deps.outline.docking();
         let search_dock = deps.search_dock;
         let search = deps.search.clone();
+        let focus = deps.focus.clone();
         ctx.register_action_global(Action::new("search.replace").on_invoke(move |_i, _c| {
-            docking.reveal_dock(search_dock);
-            search.set_show_replace(true);
+            unless_distraction_free(&focus, || {
+                docking.reveal_dock(search_dock);
+                search.set_show_replace(true);
+            });
         }));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_ids::AppIds;
+    use crate::view_models::{FocusViewModel, OutlineViewModel};
+    use frontend::AppContext;
+    use std::rc::Rc;
+
+    /// A dock command fired while the surface is up must leave the desk exactly
+    /// as the writer left it.
+    ///
+    /// Driven through a real `OutlineViewModel`/`DockingModel` rather than a
+    /// restatement of the `if`: the bug this guards against was never in the
+    /// condition, it was in the assumption that a *disabled* side could not be
+    /// rearranged behind your back.
+    #[test]
+    fn a_dock_command_does_nothing_while_the_surface_is_up() {
+        let outline = OutlineViewModel::new_default(Rc::new(AppContext::new()), AppIds::new());
+        let focus = FocusViewModel::new();
+        let visible_before = outline.is_visible().get();
+
+        focus.active_signal().set(true);
+        unless_distraction_free(&focus, || outline.toggle());
+        assert_eq!(
+            outline.is_visible().get(),
+            visible_before,
+            "the outline moved while the distraction-free surface was up"
+        );
+
+        // …and works normally the moment the writer is back on the desk.
+        focus.active_signal().set(false);
+        unless_distraction_free(&focus, || outline.toggle());
+        assert_ne!(outline.is_visible().get(), visible_before);
     }
 }

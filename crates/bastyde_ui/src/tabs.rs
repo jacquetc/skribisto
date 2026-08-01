@@ -141,6 +141,16 @@ pub struct ContentTab {
     /// giving `find` a back-reference to this tab — the `stream` field above
     /// records what closing that particular `Rc` cycle costs.
     synopsis_handle: Rc<RefCell<Option<bastyde::widgets::rich_text::EditorHandle>>>,
+    /// This tab's remembered caret + page scroll, and the live ports the mounted
+    /// pane publishes so both can be read back.
+    ///
+    /// Per-*pane*, not per-document, which is why it is here and not on the
+    /// shared `OpenDoc` beside the spell and replacement sessions: two split
+    /// panes on one item have one `TextDocument` but two carets. The signal is
+    /// the seed a freshly-built pane starts from; the ports are the live wiring.
+    /// See [`crate::view_models::ViewState`].
+    view_state: Signal<crate::view_models::ViewState>,
+    view_state_ports: Rc<crate::view_models::ViewStatePorts>,
     /// Selected segment for the folder container's `SegmentedControl` — per-tab
     /// (each pane keeps its own segment).
     pub segment: Signal<usize>,
@@ -312,6 +322,16 @@ pub fn tab_for(
 /// `(role, sub_role)` to its own visual-tab module. Mirrors
 /// `skribisto_model::COMBINATIONS`.
 pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
+    // Carry the outgoing pane's caret and scroll into the seed before anything
+    // rebuilds. This is the one door every tab body is built through, so doing it
+    // here means the editors and the page scroll below can each simply read the
+    // seed without caring which of them is rebuilt first — and a rebuild that is
+    // nothing to do with the writer (a Promote, a settings-driven relayout) does
+    // not throw them back to wherever the tab was first opened.
+    //
+    // A no-op on a tab that has never been built: `capture_view_state` falls back
+    // to the seed when the ports are empty.
+    tab.seed_view_state(tab.capture_view_state());
     let content: Box<dyn Widget> = {
         use BinderItemRole::*;
         use BinderItemSubRole::*;
@@ -369,13 +389,13 @@ fn trash_banner(item_id: u64) -> impl Widget {
 /// Wraps an already-boxed widget as an `impl Widget` that fills its bounds — so a
 /// `Box<dyn Widget>` (like `tab_pane`'s per-type body) can be a `VStack`/`Expand`
 /// child.
-struct Boxed {
+pub struct Boxed {
     pending: Option<Box<dyn Widget>>,
     child_id: Option<WidgetId>,
 }
 
 impl Boxed {
-    fn new(child: Box<dyn Widget>) -> Self {
+    pub fn new(child: Box<dyn Widget>) -> Self {
         Self {
             pending: Some(child),
             child_id: None,
@@ -513,6 +533,8 @@ impl ContentTab {
             ids,
             find,
             synopsis_handle: Rc::new(RefCell::new(None)),
+            view_state: Signal::new(crate::view_models::ViewState::default()),
+            view_state_ports: Rc::new(crate::view_models::ViewStatePorts::default()),
             segment,
             column_width,
             show_synopsis,
@@ -551,6 +573,61 @@ impl ContentTab {
     /// This tab's synopsis editor handle, if one is currently built.
     pub fn synopsis_handle(&self) -> Option<bastyde::widgets::rich_text::EditorHandle> {
         self.synopsis_handle.borrow().clone()
+    }
+
+    /// The live ports the mounted pane publishes its editor handle and page
+    /// scroll into. Handed to `writing_column` and `writing_page_scroll`.
+    pub fn view_state_ports(&self) -> Rc<crate::view_models::ViewStatePorts> {
+        self.view_state_ports.clone()
+    }
+
+    /// The position a freshly-built pane starts from — the seed, not the live
+    /// caret. Read by the deferred scroll restore, which has to know what it is
+    /// aiming for before the page has a scroll range to aim within.
+    pub fn view_state(&self) -> Signal<crate::view_models::ViewState> {
+        self.view_state.clone()
+    }
+
+    /// What a freshly-built pane is handed: the position to start at, and the
+    /// ports to publish itself into.
+    pub fn view_state_binding(&self) -> crate::view_models::ViewStateBinding {
+        crate::view_models::ViewStateBinding {
+            initial: self.view_state.get(),
+            ports: self.view_state_ports.clone(),
+        }
+    }
+
+    /// Snapshot the **live** caret and page scroll off the mounted pane, falling
+    /// back to whatever was last seeded for a tab that has never been built (a
+    /// restored tab the writer has not clicked into yet).
+    ///
+    /// Reads the mounted widgets rather than the `view_state` mirror on purpose:
+    /// the mirror is only ever a seed, so trusting it would persist the position
+    /// the tab *opened* at rather than the one the writer left it at.
+    pub fn capture_view_state(&self) -> crate::view_models::ViewState {
+        self.view_state_ports.capture(self.view_state.get())
+    }
+
+    /// Push a position onto the **already-mounted** pane, with no rebuild — the
+    /// distraction-free surface's exit path, where the tab underneath still has
+    /// its editor and scroll area alive and only needs re-pointing.
+    ///
+    /// Also updates the seed, so a later rebuild of this tab starts from the
+    /// same place rather than from where it was first opened.
+    pub fn apply_view_state(&self, state: crate::view_models::ViewState) {
+        self.view_state.set(state);
+        let max_caret = self
+            .main()
+            .map(|m| m.doc.character_count())
+            .unwrap_or(usize::MAX);
+        self.view_state_ports.apply(state, max_caret);
+    }
+
+    /// Set the position a **not-yet-built** pane will start from — the workspace
+    /// restore and distraction-free entry paths, both of which run before the
+    /// pane exists. Read once by `writing_column`/`writing_page_scroll`.
+    pub fn seed_view_state(&self, state: crate::view_models::ViewState) {
+        self.view_state.set(state);
     }
 
     /// The `BinderItem` this tab edits.
@@ -614,6 +691,44 @@ impl ContentTab {
         match self.open_doc.kind {
             Some(ProseKind::Note) => &self.typography.notes,
             _ => &self.typography.scene,
+        }
+    }
+
+    /// Whether this tab's page is a **floating card** on the distraction-free
+    /// surface's margin, rather than a full-bleed background.
+    ///
+    /// Only a prose tab gets the card: it is the paper you write on, and it is
+    /// exactly as wide as the writing column. A corkboard, an overview table or
+    /// a segmented container bar has no column to float — a narrow card behind a
+    /// full-width board would read as a rendering fault — so those keep a
+    /// full-bleed page.
+    ///
+    /// One predicate, read by both the backdrop below *and* the surface that
+    /// draws the card, so the two can never disagree about which is which.
+    ///
+    /// **`kind.is_some()` is not the test**, tempting as it is: a chapter *folder*
+    /// carries scene prose too (`prose_kind_for` maps `(Folder, ChapterScene)` to
+    /// `Some(Scene)` — that is what gives it the right typography), but it renders
+    /// through `folder_segmented`, a full-width segment bar over a `Switcher`. It
+    /// would have got a card the width of a writing column sitting behind a
+    /// corkboard. The three tabs that render `panes::prose` are exactly the
+    /// `Item`-role ones with prose, so the role is the part that matters.
+    pub fn floats_on_a_page(&self) -> bool {
+        self.distraction_free.get()
+            && self.open_doc.kind.is_some()
+            && matches!(self.open_doc.role, BinderItemRole::Item)
+    }
+
+    /// What `tab_backdrop` should paint behind this tab's body.
+    ///
+    /// `Transparent` exactly when the surface is drawing the page itself — see
+    /// [`Self::floats_on_a_page`]. Everywhere else the tab paints its own
+    /// `Content` page as it always has.
+    pub fn backdrop_role(&self) -> SurfaceRole {
+        if self.floats_on_a_page() {
+            SurfaceRole::Transparent
+        } else {
+            SurfaceRole::Content
         }
     }
 
@@ -1516,7 +1631,10 @@ mod tests {
         use crate::view_models::{TypewriterAnchor, TypewriterSettings};
 
         let on = |a: TypewriterAnchor| {
-            scene_page_max_scroll(TypewriterSettings::new(Signal::new(true), Signal::new(Some(a))))
+            scene_page_max_scroll(TypewriterSettings::new(
+                Signal::new(true),
+                Signal::new(Some(a)),
+            ))
         };
 
         let (off, _) = scene_page_max_scroll(TypewriterSettings::off());
@@ -2021,14 +2139,7 @@ mod tests {
                   typo: &EditorTypographySet,
                   df: &Signal<bool>,
                   df_width: &Signal<f32>| {
-            let open_doc = Rc::new(OpenDoc::build(
-                &ctx,
-                1,
-                &Item,
-                &sr,
-                &[],
-                Signal::new(0),
-            ));
+            let open_doc = Rc::new(OpenDoc::build(&ctx, 1, &Item, &sr, &[], Signal::new(0)));
             ContentTab::new(
                 ctx.clone(),
                 AppIds::new(),
@@ -2088,6 +2199,271 @@ mod tests {
         assert_eq!(scene.main_column_width().get(), 700.0);
     }
 
+    /// The manuscript stream honours the tab's **main** typography and column,
+    /// not the Scene bundle and the normal column it used to hardcode.
+    ///
+    /// This is what stops the distraction-free surface's whole point from ending
+    /// at a container's first segment: switch a Full Chapter into the surface and
+    /// the prose must be typeset like the mode's single-scene view. The row
+    /// *headers* deliberately stay on the tab's normal column — page furniture,
+    /// not manuscript.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn the_manuscript_stream_follows_the_tabs_main_typography_and_column() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let mut typo = test_typography();
+        typo.distraction_free.font_family = Signal::new("Distraction Serif".to_string());
+
+        // A container tab built the way the distraction-free surface builds one:
+        // the flag pinned true for the life of the tab.
+        let open_doc = Rc::new(OpenDoc::build(
+            &ctx,
+            101,
+            &Folder,
+            &ChapterScene,
+            &[],
+            Signal::new(0),
+        ));
+        let tab = ContentTab::new(
+            ctx.clone(),
+            AppIds::new(),
+            OpenDocsStore::new(ctx.clone()),
+            open_doc,
+            Signal::new(700.0),
+            Signal::new(true),
+            typo,
+            crate::view_models::TypewriterSettings::off(),
+            crate::view_models::EditorViewMemory::detached(false),
+            crate::view_models::CorkboardDefaults::detached(),
+            crate::view_models::TreeExpansionViewModel::new(
+                ctx.clone(),
+                AppIds::new(),
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+            Signal::new(true),
+            Signal::new(420.0),
+            crate::view_models::FormatViewModel::detached(),
+        );
+
+        // Segment 1 is the manuscript stream (own page / manuscript / Full
+        // Synopsis / Corkboard / Overview).
+        tab.segment.set(1);
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let id = tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(1400.0, 900.0));
+
+        // The stream's prose columns are capped at the distraction-free width.
+        // The header columns keep the normal 700 — both must be present, which is
+        // what proves the two widths did not collapse back into one.
+        let caps = all_max_size_widths(&tree, id);
+        assert!(
+            caps.iter().any(|w| (*w - 420.0).abs() < 0.5),
+            "no stream column at the distraction-free width — the stream is still \
+             hardcoded to the tab's normal column. Widths seen: {caps:?}"
+        );
+        assert!(
+            caps.iter().any(|w| (*w - 700.0).abs() < 0.5),
+            "no stream column at the normal width — the row headers should stay on \
+             the tab's own column. Widths seen: {caps:?}"
+        );
+    }
+
+    /// Every laid-out `MaxSize` cap in the subtree — the writing columns.
+    fn all_max_size_widths(tree: &WidgetTree, root: WidgetId) -> Vec<f32> {
+        let mut out = Vec::new();
+        fn walk(tree: &WidgetTree, id: WidgetId, out: &mut Vec<f32>) {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|n| n.ends_with("MaxSize"))
+            {
+                let b = tree.bounds(id);
+                if b.width > 0.0 {
+                    out.push(b.width);
+                }
+            }
+            for c in tree.children(id) {
+                walk(tree, c, out);
+            }
+        }
+        walk(tree, root, &mut out);
+        out
+    }
+
+    // ── per-document view state (caret + page scroll) ─────────────────────
+
+    /// Build a Scene tab whose prose is `paragraphs` lines long, mount its pane,
+    /// and return both. A long document is what gives the page `ScrollArea` a
+    /// non-zero maximum, without which a restored scroll offset is clamped
+    /// straight back to 0 and the test would prove nothing.
+    fn mounted_scene(paragraphs: usize) -> (ContentTab, WidgetTree) {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(false),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        let text = "The rain kept on.\n".repeat(paragraphs);
+        tab.main()
+            .expect("a Scene has a main prose field")
+            .doc
+            .cursor_at(0)
+            .insert_text(&text)
+            .unwrap();
+        // A real text backend, for the same reason
+        // `a_window_narrower_than_the_column_does_not_overflow` needs one: the
+        // no-backend fallback does not give the prose a faithful height, so the
+        // page would have nothing to scroll and every offset would clamp to 0.
+        let mut tree = WidgetTree::new().with_text_backend(std::rc::Rc::new(
+            std::cell::RefCell::new(bastyde::canvas::MockTextBackend::new()),
+        ));
+        tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(900.0, 300.0));
+        (tab, tree)
+    }
+
+    /// A mounted prose pane must publish **both** ports. They come from two
+    /// different widgets — the caret from the editor handle, the scroll from the
+    /// page `ScrollArea` — because the editors run with their own scroll bars
+    /// suppressed, so `RichTextEditor::scroll_y()` on a prose column is
+    /// permanently 0. If either port went unattached, `capture_view_state` would
+    /// quietly return the seed forever and nothing would ever be persisted.
+    #[test]
+    fn a_mounted_prose_pane_publishes_both_view_state_ports() {
+        let (tab, _tree) = mounted_scene(4);
+        let ports = tab.view_state_ports();
+        assert!(ports.editor().is_some(), "the editor handle port is empty");
+        assert!(
+            ports.max_scroll().is_some(),
+            "the page scroll port is empty — writing_page_scroll did not publish it"
+        );
+    }
+
+    /// The round trip the whole feature rests on: a seeded caret reaches the
+    /// editor as it builds, and the caret the writer actually leaves behind is
+    /// what comes back out — not the seed.
+    #[test]
+    fn a_seeded_caret_reaches_the_editor_and_the_live_one_comes_back() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(false),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.main()
+            .unwrap()
+            .doc
+            .cursor_at(0)
+            .insert_text("The rain kept on for three days.")
+            .unwrap();
+        // Seeded BEFORE the pane exists — the workspace-restore and
+        // distraction-free-entry path.
+        tab.seed_view_state(crate::view_models::ViewState {
+            caret: 9,
+            scroll: 0.0,
+        });
+
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(900.0, 600.0));
+
+        let handle = tab.view_state_ports().editor().unwrap();
+        assert_eq!(
+            handle.cursor_position(),
+            9,
+            "the editor did not open at the seeded caret"
+        );
+
+        // The writer moves. Capture must report that, not the seed.
+        handle.select_range(20, 20);
+        assert_eq!(tab.capture_view_state().caret, 20);
+    }
+
+    /// A caret past the end of the document is clamped rather than landing
+    /// somewhere arbitrary. Reachable whenever a document was edited in another
+    /// window (or another split pane) between capture and restore — `New Window`
+    /// on the same project makes that an ordinary thing to do, not a corner case.
+    #[test]
+    fn a_stale_caret_past_the_end_is_clamped_to_the_document() {
+        let (tab, _tree) = mounted_scene(2);
+        let len = tab.main().unwrap().doc.character_count();
+        tab.apply_view_state(crate::view_models::ViewState {
+            caret: len + 5_000,
+            scroll: 0.0,
+        });
+        assert_eq!(
+            tab.view_state_ports().editor().unwrap().cursor_position(),
+            len
+        );
+    }
+
+    /// A rebuild that has nothing to do with the writer — a Promote, a
+    /// settings-driven relayout — mints a fresh editor over the same document.
+    /// It must not throw the caret back to wherever the tab was first opened,
+    /// which is what a naive "seed on every build" would do.
+    #[test]
+    fn rebuilding_a_pane_carries_the_caret_over() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(false),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.main()
+            .unwrap()
+            .doc
+            .cursor_at(0)
+            .insert_text("The rain kept on for three days.")
+            .unwrap();
+
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(900.0, 600.0));
+        tab.view_state_ports()
+            .editor()
+            .unwrap()
+            .select_range(17, 17);
+
+        // Rebuild, exactly as the tab factory would.
+        let mut tree2 = crate::test_support::tree_with_events(&ctx);
+        tree2.add_boxed(tab_pane(&tab));
+        tree2.layout(bastyde::prelude::SizeProposal::exact(900.0, 600.0));
+
+        assert_eq!(
+            tab.view_state_ports().editor().unwrap().cursor_position(),
+            17,
+            "the rebuild reset the caret instead of carrying it over"
+        );
+    }
+
     /// `is_stale` distinguishes "flushed and quiet" from "flushed, then edited
     /// again" — the exact gap `OpenDoc::dirty`/`doc.is_modified()` leaves, since
     /// both are booleans a flush clears unconditionally with no memory of which
@@ -2143,7 +2519,10 @@ mod tests {
         assert!(field.is_stale(), "an edit must show stale");
         field.flush(None).expect("flush a real item's field");
         assert!(!field.is_stale(), "flush must clear staleness");
-        assert!(!field.doc.is_modified(), "flush must also clear the coarse flag");
+        assert!(
+            !field.doc.is_modified(),
+            "flush must also clear the coarse flag"
+        );
 
         // A SECOND edit after that flush: `content_revision` moves again, so
         // `is_stale` still catches it — exactly the case a boolean

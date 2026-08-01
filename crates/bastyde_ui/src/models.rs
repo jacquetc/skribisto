@@ -23,6 +23,7 @@ mod binder_stream;
 mod corkboard_cards_model;
 mod dict_word_list_model;
 mod dictionary_settings_file;
+mod distraction_free_themes_file;
 mod examples_list_model;
 mod export_styles_file;
 mod installed_dictionaries_model;
@@ -50,6 +51,7 @@ pub use binder_stream::{BinderItemRef, ordered_binder_items};
 pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
 pub use dict_word_list_model::{DictWordListModel, DictWordRow};
 pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
+pub use distraction_free_themes_file::DistractionFreeThemesService;
 pub use examples_list_model::ExamplesListModel;
 pub use export_styles_file::ExportStylesService;
 pub use installed_dictionaries_model::{
@@ -72,4 +74,6 @@ pub use text_replacement_rule_list_model::{
 pub use trash_tree_model::{TrashNode, TrashRootKind, TrashTreeKey, TrashTreeModel};
 pub use tree_expansion_file::TreeExpansionService;
 pub use work_tags_list_model::{TagRow, WorkTagsListModel, name_key, sort_rows};
-pub use workspace_layout_file::{PaneLayout, PerProjectLayout, WorkspaceLayoutService};
+pub use workspace_layout_file::{
+    PaneLayout, PerProjectLayout, TabViewState, WorkspaceLayoutService,
+};

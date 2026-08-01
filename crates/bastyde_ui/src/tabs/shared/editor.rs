@@ -117,6 +117,12 @@ pub fn writing_column(
     // Typewriter scrolling for this surface. `None` on the surfaces that never
     // pin (and in the widget tests, which build columns with no app around them).
     typewriter: Option<crate::view_models::TypewriterSettings>,
+    // Where this document's caret should start, and the ports to publish this
+    // editor's handle into so the position can be read back. `None` for every
+    // surface that is not a tab's *main* prose column — a stream shows one
+    // editor per row, so there is no single "the" caret to persist, the same
+    // reason `synopsis_column` passes no handle sink there.
+    view_state: Option<crate::view_models::ViewStateBinding>,
 ) -> CenterColumnFlowing {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -136,6 +142,17 @@ pub fn writing_column(
     // time); the handle just re-points at the same underlying editor state.
     if let Some(find) = &find {
         find.attach_handle(editor.handle());
+    }
+    // Same re-attach-on-every-rebuild contract for the view-state ports, and the
+    // caret this editor opens at. `initial` was carried over from the outgoing
+    // editor by `tab_pane` before this build started, so a rebuild (a Promote, a
+    // settings-driven relayout) puts the writer back where they were rather than
+    // at the position the tab was first opened at.
+    if let Some(vs) = &view_state {
+        let handle = editor.handle();
+        vs.ports.attach_editor(handle.clone());
+        let caret = vs.initial.caret.min(doc.character_count());
+        handle.select_range(caret, caret);
     }
     // Replace the built-in menu with our own — the standard editing actions, an
     // "Add to dictionary" item, and (in a stream) "Split scene". Installed
@@ -748,6 +765,10 @@ pub fn synopsis_column(
 /// "Text" header + the centered, capped main writing column. The column is
 /// intrinsic-height (see [`writing_column`]) so the section grows with the prose
 /// and the tab's outer `ScrollArea` scrolls it.
+// Same rationale as `writing_column`, which it forwards to almost verbatim: each
+// argument is a distinct thing this surface has to be handed, and bundling them
+// would hide which call sites opt into which session.
+#[allow(clippy::too_many_arguments)]
 pub fn writing_section(
     doc: &TextDocument,
     column_width: &Signal<f32>,
@@ -758,6 +779,7 @@ pub fn writing_section(
     replacement: Option<Rc<TextReplacementSession>>,
     format: Option<FormatViewModel>,
     typewriter: Option<crate::view_models::TypewriterSettings>,
+    view_state: Option<crate::view_models::ViewStateBinding>,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -778,15 +800,22 @@ pub fn writing_section(
             replacement,
             format,
             typewriter,
+            view_state,
         ))
 }
 
-/// A flat, edge-to-edge Content-surface backdrop wrapping the tab body (the
-/// `TabWidget` doesn't paint a content background).
-pub fn tab_backdrop(body: impl Widget + 'static) -> Box<dyn Widget> {
+/// A flat, edge-to-edge backdrop wrapping the tab body (the `TabWidget` doesn't
+/// paint a content background).
+///
+/// `background` is the tab's own answer ([`ContentTab::backdrop_role`]) rather
+/// than a constant, and this is the **one** place any of the twelve
+/// combinations paints its background — so the distraction-free surface can ask
+/// for `Transparent` and paint its own page underneath, without a second
+/// renderer and without any per-combination branching.
+pub fn tab_backdrop(background: SurfaceRole, body: impl Widget + 'static) -> Box<dyn Widget> {
     Box::new(bati!(
         Panel {
-            background: SurfaceRole::Content
+            background: background
             corner_radius: 0.0
             padding: 0.0
             child: Expand {
@@ -808,7 +837,11 @@ pub fn tab_backdrop(body: impl Widget + 'static) -> Box<dyn Widget> {
 /// [`VisibleWhen`] (not `Switcher`/`Collapse` — see its docs): dormant when
 /// closed, so the prose sits flush at the top and the banner is out of the a11y
 /// tree and Tab order until Ctrl+F opens it.
-pub fn tab_backdrop_with_find(find: FindViewModel, body: impl Widget + 'static) -> Box<dyn Widget> {
+pub fn tab_backdrop_with_find(
+    background: SurfaceRole,
+    find: FindViewModel,
+    body: impl Widget + 'static,
+) -> Box<dyn Widget> {
     let column = VStack::new()
         .spacing(0.0)
         .child(VisibleWhen::new(
@@ -818,7 +851,7 @@ pub fn tab_backdrop_with_find(find: FindViewModel, body: impl Widget + 'static) 
         .child(Expand::new().child(body));
     Box::new(bati!(
         Panel {
-            background: SurfaceRole::Content
+            background: background
             corner_radius: 0.0
             padding: 0.0
             child: column
@@ -1723,6 +1756,7 @@ mod frame_loop_tests {
             Some(session.clone()),
             None,
             None,
+            None,
         );
         let mut tree = WidgetTree::new();
         tree.add(col);
@@ -1964,6 +1998,7 @@ mod typewriter_tests {
             None,
             None,
             typewriter,
+            None,
         );
         let mut tree = WidgetTree::new();
         tree.add(col);
@@ -2026,6 +2061,10 @@ mod typewriter_tests {
         );
 
         enabled.set(false);
-        assert_eq!(handle.get_typewriter(), None, "and turning it off must stop it");
+        assert_eq!(
+            handle.get_typewriter(),
+            None,
+            "and turning it off must stop it"
+        );
     }
 }

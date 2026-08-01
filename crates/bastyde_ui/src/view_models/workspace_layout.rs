@@ -46,8 +46,8 @@ use uuid::Uuid;
 
 use crate::app_ids::AppIds;
 use crate::models::{
-    BinderItemRef, PaneLayout, PerProjectLayout, WorkspaceLayoutService, ordered_binder_items,
-    uid_is_usable,
+    BinderItemRef, PaneLayout, PerProjectLayout, TabViewState, WorkspaceLayoutService,
+    ordered_binder_items, uid_is_usable,
 };
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{EditorsViewModel, OutlineViewModel, Side, TreeExpansionViewModel};
@@ -173,6 +173,23 @@ impl WorkspaceLayoutViewModel {
             selected: editors
                 .selected_item(side)
                 .and_then(|id| uid_of.get(&id).copied()),
+            // Where the writer was in each tab. Captured from the live editors,
+            // falling back to whatever a never-visited tab was seeded with, so a
+            // save right after a restore does not erase the positions it just
+            // restored (see `ViewStatePorts::capture`).
+            view_states: editors
+                .tab_item_ids(side)
+                .into_iter()
+                .filter_map(|id| {
+                    let uid = uid_of.get(&id).copied()?;
+                    let s = editors.view_state_of(id)?;
+                    Some(TabViewState {
+                        uid,
+                        caret: s.caret,
+                        scroll: s.scroll,
+                    })
+                })
+                .collect(),
         };
         let split_active = editors.split_active().get();
 
@@ -307,6 +324,32 @@ impl WorkspaceLayoutViewModel {
             if let Some(sp) = &rec.editor_splitter {
                 editors.splitter().import_state(sp);
             }
+        }
+
+        // Put each tab's caret and page scroll back. `open_in` only pushes a
+        // `TabHandle` — the pane widget has not built yet — so this *seeds* the
+        // position, to be read once when it does. Doing it after both `open_in`
+        // loops rather than inside them keeps the split decision above the only
+        // thing that decides whether the secondary side exists at all.
+        let seed = |side: Side, tabs: &[(u64, String)], states: &[TabViewState]| {
+            for (id, _) in tabs {
+                if let Some(uid) = order.iter().find(|r| r.id == *id).map(|r| r.uid)
+                    && let Some(s) = states.iter().find(|s| s.uid == uid)
+                {
+                    editors.seed_view_state(
+                        side,
+                        *id,
+                        crate::view_models::ViewState {
+                            caret: s.caret,
+                            scroll: s.scroll,
+                        },
+                    );
+                }
+            }
+        };
+        seed(Side::Primary, &primary_tabs, &rec.primary.view_states);
+        if split {
+            seed(Side::Secondary, &secondary_tabs, &rec.secondary.view_states);
         }
 
         // Re-select the tabs that were selected (open_in leaves the last-opened one

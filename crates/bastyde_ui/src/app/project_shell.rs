@@ -12,8 +12,8 @@ use bastyde::prelude::*;
 use bastyde::widgets::{
     Divider, DockCorner, DockOpenLocation, DockRail, DockRailItemSize, DockSide, DockingLayout,
     DropRegion, DropTarget, DropTargetVariant, Expand, HStack, IconButton, IconButtonSize,
-    NotificationArchiveModel, RowDragData, Spacer, Splitter, StatusBar, TextWidget,
-    VStack,
+    NotificationArchiveModel, RowDragData, Spacer, Splitter, StatusBar, TabBarVisibility,
+    TextWidget, VStack,
 };
 
 use crate::models::TreeNode;
@@ -22,9 +22,7 @@ use crate::view_models::{
     EditorsViewModel, OutlineViewModel, SearchReplaceViewModel, SettingsViewModel, Side,
 };
 
-use super::{
-    App, build_pane_tabs, drain_dropped, tab_bar_policy,
-};
+use super::{App, build_pane_tabs, drain_dropped};
 
 /// Locals the shell tree needs from `App::build` (everything not already on `App`).
 pub(super) struct ShellParts {
@@ -45,11 +43,7 @@ pub(super) struct ShellParts {
 
 impl App {
     /// Build the docking layout + status bar + banners; return the root widget id.
-    pub(super) fn build_shell(
-        &mut self,
-        ctx: &mut BuildContext,
-        parts: ShellParts,
-    ) -> WidgetId {
+    pub(super) fn build_shell(&mut self, ctx: &mut BuildContext, parts: ShellParts) -> WidgetId {
         let ShellParts {
             editors,
             outline,
@@ -114,19 +108,12 @@ impl App {
             });
         }
 
-        // The editor tab strip is chrome like the menu bar and the docks, so
-        // distraction-free mode takes it away too — unless the writer ticked
-        // Settings ▸ Editor ▸ Editor Behavior ▸ Distraction-free ▸ "Editor tabs".
-        // Bound (not swapped): `TabWidget::bar_visibility` takes a `Prop`, so
-        // the strip appears and disappears in place and the panes below it are
-        // never rebuilt — entering the mode must not cost the writer their
-        // caret or scroll position. Both panes share the one signal so their
-        // chrome can't drift, the same reason `build_pane_tabs` exists at all.
-        let tab_bar_visibility = self
-            .focus
-            .active_signal()
-            .zip(&settings.distraction_free_tab_bar())
-            .map(|(focus_active, keep)| tab_bar_policy(*focus_active, *keep));
+        // The editor tab strip is always shown. Distraction-free mode no longer
+        // takes it away here: the mode does not undress this shell, it covers it
+        // — and its own surface shows exactly one document, with no tab row at
+        // all. (The "Editor tabs" setting that used to override this went with
+        // it: there is nothing left for it to act on.)
+        let tab_bar_visibility = Signal::new(TabBarVisibility::Always);
 
         let primary_pane = {
             let e = editors.clone();
@@ -268,32 +255,12 @@ impl App {
                 self.trash_dock,
                 on_open,
             ));
-        // Increment 2 of distraction-free: "the editor takes the whole
-        // surface" is this — disabling the three sides that carry chrome
-        // (never the centre, which is the editor itself) rather than hiding
-        // the whole `DockingLayout`. `set_side_enabled` is documented as
-        // reactive (`docs/docking.md`'s "Locking the layout" section) and,
-        // unlike `set_side_visible`, also drops the leading/trailing rail —
-        // the reopen affordance a hidden-but-enabled side otherwise keeps —
-        // so nothing but the editor remains. Non-destructive: docks already
-        // open on a disabled side stay in the model and reappear exactly as
-        // they were the moment the side is re-enabled. `Top` is never docked
-        // anywhere in this app, so it is left alone.
-        //
-        // A plain `ctx.effect` on the MUTABLE `active_signal()` (never a
-        // derived/zip/map read via `ctx.effect` — that panics, see the house
-        // rule); it only fires on a *change*, which is exactly right since a
-        // freshly built window's sides already start enabled, matching
-        // "not in the mode" by construction.
-        {
-            let docking = outline.docking();
-            ctx.effect(&self.focus.active_signal(), move |active| {
-                let enabled = !*active;
-                docking.set_side_enabled(DockSide::Leading, enabled);
-                docking.set_side_enabled(DockSide::Trailing, enabled);
-                docking.set_side_enabled(DockSide::Bottom, enabled);
-            });
-        }
+        // The docks used to be *disabled* while the mode was active, so "the
+        // editor takes the whole surface". They are not any more: the mode
+        // parks this entire shell dormant behind its own surface, so there is
+        // nothing to disable — and disabling a side never stopped the dock
+        // *commands* from firing anyway, which is handled where those commands
+        // live (`app/commands/view.rs`).
         // First-build-only default arrangement (see the config block above on why
         // it must not re-run on rebuilds).
         if !self.initial_loaded {
@@ -474,69 +441,48 @@ impl App {
             single_work.clone(),
         );
 
-        // Increment 2 of distraction-free: the banner, the divider under the
-        // (now possibly-collapsed) title bar, and the normal status bar all
-        // collapse together — `VisibleWhen`, the same dormant-not-torn-down
-        // gate the synopsis toggle already uses, keyed off the SAME derived
-        // "chrome visible" reading of `FocusViewModel::active_signal()` the
-        // title bar's own menu/trailing/center content uses in
-        // `shell::windows`. The always-visible strip (word count + writing
-        // session + Go Previous/Next + Exit — never hover-reveal, see
-        // `FocusStrip`'s doc) takes the status bar's place while the mode is
-        // active.
-        let chrome_visible = self.focus.active_signal().map(|active| !*active);
-        let focus_active = self.focus.active_signal();
-        let focus_strip = crate::statusbar::focus_strip::FocusStrip::new(
-            self.go_to.clone(),
-            stats.clone(),
-            session_vm.clone(),
-            single_work_info.shape().map(|s| s.is_some()),
-            settings.show_characters(),
-            crate::statusbar::focus_strip::FocusStripChrome::from_settings(&settings),
-        );
+        // Distraction-free mode collapses **nothing** here any more. The whole
+        // shell — this tree and the title bar above it — is parked dormant by a
+        // single `VisibleWhen` at the window root while the mode's own surface
+        // is up (`shell::windows`), so the banner, the divider and the status bar
+        // need no gates of their own, and the control strip lives on the surface
+        // rather than standing in for the status bar here.
+        //
+        // What this replaced: seven independent gates, one per piece of chrome,
+        // each of which had to be remembered. The one that was forgotten shipped
+        // — an empty 40px title bar with three floating window buttons over a
+        // full-screen manuscript — and the automation script passed, because it
+        // only checked what it already knew to check.
+        //
+        // Hand the surface what only exists in here. Idempotent: `build` re-runs
+        // on every rebuild of the shell and re-attaching just re-points the
+        // handles.
+        self.df_surface.attach(crate::view_models::SurfaceDeps {
+            editors: editors.clone(),
+            stats: stats.clone(),
+            session_vm: session_vm.clone(),
+            has_work: single_work_info.shape().map(|s| s.is_some()),
+            show_characters: settings.show_characters(),
+            chrome: crate::statusbar::focus_strip::FocusStripChrome::from_settings(&settings),
+            themes: ctx
+                .app_state::<crate::view_models::DistractionFreeThemesViewModel>()
+                .cloned()
+                .expect("main registers the distraction-free theme library"),
+            theme_id: settings.distraction_free_theme(),
+            settings: settings.clone(),
+        });
 
-        let root = ctx.add(
+        // Escape-to-leave-the-mode used to hang here. It moved onto the surface
+        // itself (`distraction_free::surface`): this subtree is dormant while the
+        // mode is up, and a dormant widget receives no events at all, so an
+        // Escape handler left here would be dead code pretending to be a way out.
+        ctx.add(
             VStack::new()
                 .spacing(0.0)
-                .child(VisibleWhen::new(chrome_visible.clone(), backup_banner))
-                .child(VisibleWhen::new(chrome_visible.clone(), Divider::new()))
+                .child(backup_banner)
+                .child(Divider::new())
                 .child(Expand::new().child(layout))
-                .child(VisibleWhen::new(chrome_visible, status))
-                .child(VisibleWhen::new(focus_active.clone(), focus_strip))
-                .on_key({
-                    let focus = self.focus.clone();
-                    move |ev, ctx| match ev {
-                        // A contextless Escape leaves the mode. This is a
-                        // widget-level key handler, not a global shortcut —
-                        // `RichTextEditor` already consumes Escape for IME
-                        // composition cancel, clearing a selection, and
-                        // dismissing its spell-suggestion popup, and a
-                        // *global* `register_shortcut_global(Escape)` would
-                        // be resolved BEFORE the focused editor ever saw the
-                        // key (see `app/commands.rs`'s module doc on why
-                        // globals go first), firing underneath whatever the
-                        // editor just did with the same keypress — exactly
-                        // backwards. Raw key events bubble from the focused
-                        // widget up through its ancestors instead, so this
-                        // handler on the root only ever sees an Escape
-                        // nothing more local already claimed. Guarded on
-                        // `focus_active` so it is a no-op — and lets the key
-                        // keep bubbling — outside the mode, same precedent as
-                        // the find banner's own local Escape handling
-                        // (`tabs/shared/editor.rs`'s `FindBanner`).
-                        WidgetEvent::KeyDown {
-                            key: Key::Escape, ..
-                        } if focus_active.get() => {
-                            if let Some(window) = ctx.window() {
-                                focus.exit(window);
-                            }
-                            EventResponse::Handled
-                        }
-                        _ => EventResponse::Ignored,
-                    }
-                }),
-        );
-        root
-
+                .child(status),
+        )
     }
 }

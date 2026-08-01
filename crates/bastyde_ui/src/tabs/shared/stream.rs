@@ -50,34 +50,53 @@ const EDIT_SVG: &str = include_str!("../../../resources/icons/edit.svg");
 /// `VStack`) so the flowing writing columns size correctly; a zero-size [`WireOnBuild`]
 /// child subscribes the view-model when this pane first mounts.
 pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> impl Widget {
-    let cw = tab.column_width.clone();
+    // Two widths, not one. The chrome around the manuscript — the container
+    // header, each row's header, the add button — stays on the tab's normal
+    // column so the page furniture keeps its usual measure; the *prose* follows
+    // whichever surface this tab belongs to, so a Full Chapter read in the
+    // distraction-free surface is typeset like the mode's single-scene view
+    // rather than like a docked editor.
+    //
+    // Without this the surface's whole point stops at the container's first
+    // segment: `main_column_width()`/`main_typography()` are exactly the
+    // per-surface axis, and a stream that reads `tab.column_width` /
+    // `tab.typography.scene` directly opts out of it.
+    let header_cw = tab.column_width.clone();
     let mut col = VStack::new().spacing(0.0);
 
     if let Some(vm) = tab.stream().cloned() {
         let mark_dirty: Rc<dyn Fn()> = Rc::new(tab.mark_dirty_fn());
-        // A row's editor is a scene's, whichever flavour: prose uses the Scene bundle,
-        // synopses use the Synopsis bundle.
-        let typo = match flavour {
-            SplitFlavour::Prose => tab.typography.scene.clone(),
-            SplitFlavour::Synopsis => tab.typography.synopsis.clone(),
+        // A row's editor is a scene's, whichever flavour: prose uses the tab's
+        // main bundle (Scene, or the distraction-free one on the surface),
+        // synopses use the Synopsis bundle — a synopsis is a working note at any
+        // size of window, so it does not follow the surface.
+        let (editor_cw, editor_typo) = match flavour {
+            SplitFlavour::Prose => (
+                tab.main_column_width().clone(),
+                tab.main_typography().clone(),
+            ),
+            SplitFlavour::Synopsis => (tab.column_width.clone(), tab.typography.synopsis.clone()),
         };
         let format = tab.format.clone();
         let factory = {
             let vm = vm.clone();
-            let cw = cw.clone();
+            let header_cw = header_cw.clone();
+            let editor_cw = editor_cw.clone();
             let md = mark_dirty.clone();
-            let typo = typo.clone();
+            let typo = editor_typo.clone();
             let format = format.clone();
             let tw = tab.typewriter.clone();
             move |row: &StreamRow| -> Box<dyn Widget> {
-                Box::new(stream_row(&vm, row, &cw, &typo, flavour, &md, &format, &tw))
+                Box::new(stream_row(
+                    &vm, row, &header_cw, &editor_cw, &typo, flavour, &md, &format, &tw,
+                ))
             }
         };
 
         col = col
             .child(WireOnBuild::new(vm.clone()))
             .child(vspace(12.0))
-            .child(centered(container_header(&vm), &cw))
+            .child(centered(container_header(&vm), &header_cw))
             .child(vspace(4.0));
 
         // The container's **own** content — it is the pane header, never a row. In the
@@ -92,8 +111,8 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             col = match flavour {
                 SplitFlavour::Prose => col.child(writing_column(
                     &field.doc,
-                    &cw,
-                    &typo,
+                    &editor_cw,
+                    &editor_typo,
                     MAIN_MIN_LINES,
                     tab.mark_dirty_fn(),
                     Option::None,
@@ -102,11 +121,15 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     tab.open_doc.replacement_main(),
                     Some(tab.format.clone()),
                     Some(tab.typewriter.clone()),
+                    // No view-state ports: a stream is many editors on one page,
+                    // so "the caret of this tab" has no single answer here. Same
+                    // reason the synopsis rows below take no handle sink.
+                    Option::None,
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
-                    &cw,
-                    &typo,
+                    &editor_cw,
+                    &editor_typo,
                     tab.mark_dirty_fn(),
                     Option::None,
                     tab.open_doc.spell_synopsis(),
@@ -127,7 +150,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
         col = col
             .child(Repeater::new(vm.list(), factory))
             .child(vspace(10.0))
-            .child(centered(add_button(&vm), &cw))
+            .child(centered(add_button(&vm), &header_cw))
             .child(vspace(28.0));
     }
     crate::tabs::shared::panes::writing_page_scroll(tab).child(col)
@@ -199,10 +222,17 @@ fn add_button(vm: &StreamViewModel) -> impl Widget {
 /// One row: a header, and — when the matrix allows it for this flavour — the row's
 /// editor. A chapter or part heading gets heavier chrome than a scene, so a Full Book
 /// reads as a manuscript rather than a flat pile of prose.
+// The two column widths are the reason this is over the argument limit: the
+// row's chrome and the row's prose deliberately measure differently (see
+// `stream_pane`), and collapsing them back into one is the bug being fixed.
+#[allow(clippy::too_many_arguments)]
 fn stream_row(
     vm: &StreamViewModel,
     row: &StreamRow,
-    column_width: &Signal<f32>,
+    // The row's header, on the tab's normal column.
+    header_width: &Signal<f32>,
+    // The row's prose, on whichever column this tab's surface uses.
+    editor_width: &Signal<f32>,
     typo: &EditorTypography,
     flavour: SplitFlavour,
     mark_dirty: &Rc<dyn Fn()>,
@@ -216,7 +246,7 @@ fn stream_row(
         .spacing(4.0)
         // Structure headings breathe more than the scenes under them.
         .child(vspace(if is_heading { 22.0 } else { 10.0 }))
-        .child(centered(row_header(vm, row), column_width));
+        .child(centered(row_header(vm, row), header_width));
 
     // Does this row have a surface in *this* flavour? The constraint matrix answers —
     // a part heading has no prose, but it does have a synopsis.
@@ -250,7 +280,7 @@ fn stream_row(
                     };
                     col = col.child(writing_column(
                         &field.doc,
-                        column_width,
+                        editor_width,
                         typo,
                         min_lines,
                         on_change,
@@ -260,6 +290,8 @@ fn stream_row(
                         doc.replacement_main(),
                         Some(format.clone()),
                         Some(typewriter.clone()),
+                        // Per-row editor — see the container's own column above.
+                        Option::None,
                     ));
                 }
             }
@@ -267,7 +299,7 @@ fn stream_row(
                 if let Some(field) = doc.synopsis.as_ref() {
                     col = col.child(synopsis_column(
                         &field.doc,
-                        column_width,
+                        editor_width,
                         typo,
                         on_change,
                         split,

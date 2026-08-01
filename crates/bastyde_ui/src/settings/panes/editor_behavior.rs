@@ -2,6 +2,12 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! Editor ▸ Editor Behavior — the non-typographic writing settings.
+//!
+//! Distraction-free mode's own settings used to live here as a group, while its
+//! typography lived on a separate page. Nothing could then be handed whole to
+//! the mode's quick-access popover, and a writer looking for "the
+//! distraction-free settings" had to know to look in two places. They are all on
+//! `panes::distraction_free` now.
 
 use bastyde::prelude::*;
 use bastyde::widgets::ComboBox;
@@ -20,9 +26,8 @@ fn typewriter_anchor_label(anchor: &TypewriterAnchor) -> LocalizedString {
 }
 
 /// Editor ▸ Editor Behavior — the non-typographic writing settings: the
-/// centered-column width, the writing-view toggles, and everything
-/// distraction-free mode does differently (its own column width, and which
-/// pieces of chrome it keeps).
+/// centered-column width, the writing-view toggles, and the container-view
+/// memory.
 pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl Widget {
     let form = FormLayout::new()
         .label(tr!(settings_page_editor_behavior()))
@@ -71,52 +76,7 @@ pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl 
                 .enabled(vm.typewriter()),
             ),
         )
-        .full_width(
-            Toggle::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())),
-        )
-        // Distraction-free mode's own column width — a flat pixel measure like the
-        // two above (not a character-count cap: `bastyde-text`'s reachable surface
-        // has no horizontal glyph-advance metrics to fake one), kept as its own
-        // group + setting so widening the normal Scene column can never silently
-        // widen (or narrow) the distraction-free one.
-        .full_width(group(tr!(settings_page_distraction_free())))
-        .line(
-            field_label(tr!(settings_field_column_width())),
-            slider_field_tipped(
-                vm.distraction_free_width(),
-                400.0,
-                1200.0,
-                20.0,
-                |v| format!("{} px", v.round() as i32),
-                tr!(settings_distraction_free_width_hint()),
-            ),
-        )
-        // Which chrome the mode keeps. On = kept. There is deliberately no
-        // Exit toggle — Exit always stays; that promise is on the first chrome
-        // tip so its absence is not read as an oversight.
-        .full_width(
-            Toggle::new(vm.distraction_free_tab_bar())
-                .label(tr!(settings_distraction_free_tab_bar()))
-                .rich_tooltip_content(TooltipContent::new(
-                    "settings.df_chrome",
-                    tr!(settings_distraction_free_chrome_hint()),
-                )),
-        )
-        .full_width(
-            Toggle::new(vm.distraction_free_word_count())
-                .label(tr!(settings_distraction_free_word_count())),
-        )
-        .full_width(
-            Toggle::new(vm.distraction_free_session())
-                .label(tr!(settings_distraction_free_session())),
-        )
-        .full_width(
-            Toggle::new(vm.distraction_free_go()).label(tr!(settings_distraction_free_go())),
-        )
-        .full_width(
-            Toggle::new(vm.distraction_free_go_to())
-                .label(tr!(settings_distraction_free_go_to())),
-        )
+        .full_width(Toggle::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())))
         .full_width(group(tr!(settings_group_container_views())))
         .full_width(
             Toggle::new(vm.remember_view())

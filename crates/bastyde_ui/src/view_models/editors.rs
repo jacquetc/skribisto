@@ -24,7 +24,7 @@ use frontend::direct_access::BinderItemDto;
 use frontend::common::event::Event;
 
 use crate::app_ids::AppIds;
-use crate::models::OpenDocsStore;
+use crate::models::{OpenDoc, OpenDocsStore};
 use crate::singles::SingleBinderItem;
 use crate::tabs::ContentTab;
 
@@ -38,6 +38,17 @@ use crate::view_models::{EditorTypographySet, GoAvailability};
 pub enum Side {
     Primary,
     Secondary,
+}
+
+impl Side {
+    /// The other pane. Used wherever "look at the focused side first, then the
+    /// other one" is the right search order — the same item can be open in both.
+    pub fn other(self) -> Self {
+        match self {
+            Side::Primary => Side::Secondary,
+            Side::Secondary => Side::Primary,
+        }
+    }
 }
 
 /// One editor pane: its dynamic tab model + selection.
@@ -88,16 +99,20 @@ pub struct EditorsViewModel {
     typography: EditorTypographySet,
     /// Typewriter scrolling, shared live from Settings into every `ContentTab`.
     typewriter: crate::view_models::TypewriterSettings,
-    /// Whether *this window* is in distraction-free mode — the same `Signal`
-    /// `FocusViewModel::active_signal()` exposes for this window (never a
-    /// private copy), threaded into every `ContentTab` so its
-    /// `main_typography()`/`main_column_width()` can pick the distraction-free
-    /// bundle/width live.
+    /// The flag every **pane** tab is built with — a constant `false`, supplied
+    /// by `App::build`. A pane is never distraction-free: the mode mounts its
+    /// own surface with its own tab (see [`Self::open_surface_tab`]) rather than
+    /// re-typesetting a mounted pane, which cannot be made to work — the
+    /// typography resolves once at build time and panes are memoized.
+    ///
+    /// Kept as a field rather than inlined because it is one of
+    /// `ContentTab::new`'s arguments and [`Self::make_tab`] is the single place
+    /// those are assembled.
     distraction_free: Signal<bool>,
-    /// The distraction-free writing column's own width (Settings ▸ Editor ▸
-    /// Editor Behavior), threaded into every `ContentTab` for
-    /// `ContentTab::main_column_width()` — independent from [`Self::column_width`],
-    /// same shape as `distraction_free` just above.
+    /// The distraction-free writing column's own width (Settings ▸ Editor),
+    /// threaded into every `ContentTab` for `ContentTab::main_column_width()`.
+    /// Only the surface's tab ever reads it, but it is live: dragging the slider
+    /// while the mode is open reaches the surface without re-entering it.
     distraction_free_width: Signal<f32>,
     /// Per-container-type "last view" memory, threaded into every `ContentTab`.
     view_memory: crate::view_models::EditorViewMemory,
@@ -265,7 +280,8 @@ impl EditorsViewModel {
         self.go.set(Scene, Next, targets.next_scene.is_some());
         self.go.set(Scene, Previous, targets.prev_scene.is_some());
         self.go.set(Chapter, Next, targets.next_chapter.is_some());
-        self.go.set(Chapter, Previous, targets.prev_chapter.is_some());
+        self.go
+            .set(Chapter, Previous, targets.prev_chapter.is_some());
         self.go.set(Note, Next, targets.next_note.is_some());
         self.go.set(Note, Previous, targets.prev_note.is_some());
     }
@@ -498,22 +514,7 @@ impl EditorsViewModel {
                 TextRole::Primary
             }
         });
-        let tab = ContentTab::new(
-            self.app_ctx.clone(),
-            self.ids.clone(),
-            self.docs.clone(),
-            doc,
-            self.column_width.clone(),
-            self.show_synopsis.clone(),
-            self.typography.clone(),
-            self.typewriter.clone(),
-            self.view_memory.clone(),
-            self.corkboard_defaults.clone(),
-            self.tree_expansion.clone(),
-            self.distraction_free.clone(),
-            self.distraction_free_width.clone(),
-            self.format.clone(),
-        );
+        let tab = self.make_tab(doc, self.distraction_free.clone());
         let tab_title = if title.is_empty() {
             tr!(untitled())
         } else {
@@ -533,6 +534,105 @@ impl EditorsViewModel {
         ));
         self.pane(side).selected.set(Some(id));
         self.set_focused(side);
+    }
+
+    /// Build a `ContentTab` over `doc` with this window's shared settings
+    /// handles. The one place `ContentTab::new`'s fourteen arguments are
+    /// assembled, so a tab opened in a pane and one opened by the
+    /// distraction-free surface cannot drift apart on anything but the one axis
+    /// they are meant to differ on.
+    fn make_tab(&self, doc: Rc<OpenDoc>, distraction_free: Signal<bool>) -> ContentTab {
+        ContentTab::new(
+            self.app_ctx.clone(),
+            self.ids.clone(),
+            self.docs.clone(),
+            doc,
+            self.column_width.clone(),
+            self.show_synopsis.clone(),
+            self.typography.clone(),
+            self.typewriter.clone(),
+            self.view_memory.clone(),
+            self.corkboard_defaults.clone(),
+            self.tree_expansion.clone(),
+            distraction_free,
+            self.distraction_free_width.clone(),
+            self.format.clone(),
+        )
+    }
+
+    /// Build a tab for the **distraction-free surface**: the same shared
+    /// `OpenDoc` a pane tab would use, but with `distraction_free` pinned to a
+    /// constant `true`.
+    ///
+    /// A constant, not this window's live flag, is the whole point. The bundle
+    /// and column that `ContentTab::main_typography()`/`main_column_width()`
+    /// resolve are read once as the pane builds, and panes are memoized — so a
+    /// flag that *changes* under a mounted pane silently does nothing (which is
+    /// the defect this surface replaces). A flag that is fixed for the lifetime
+    /// of the widget tree that reads it is correct by construction.
+    ///
+    /// Takes a refcount on the shared document, which the caller **must** give
+    /// back with [`Self::release_surface_tab`] — `release_own_open_docs` only
+    /// walks the two panes' tab lists and cannot see a reference the surface
+    /// holds.
+    pub fn open_surface_tab(&self, item_id: u64) -> Option<ContentTab> {
+        let doc = self.docs.open(item_id)?;
+        Some(self.make_tab(doc, Signal::new(true)))
+    }
+
+    /// Give back the refcount [`Self::open_surface_tab`] took.
+    pub fn release_surface_tab(&self, item_id: u64, stack: Option<u64>) {
+        self.docs.release(item_id, stack);
+    }
+
+    /// Seed the caret + page scroll a **not-yet-built** tab will open at.
+    ///
+    /// Called right after `open_in` during a workspace restore: `open_in` only
+    /// pushes a `TabHandle`, so the pane widget has not built yet and the seed
+    /// is read once when it does.
+    pub fn seed_view_state(&self, side: Side, item_id: u64, state: crate::view_models::ViewState) {
+        self.with_tab(side, item_id, |t| t.seed_view_state(state));
+    }
+
+    /// The live caret + page scroll of whichever open tab shows `item_id`.
+    ///
+    /// The **focused** side is asked first: with the same item open in both split
+    /// panes, "where the writer is" is where they were last typing, not whichever
+    /// pane happens to be searched first.
+    pub fn view_state_of(&self, item_id: u64) -> Option<crate::view_models::ViewState> {
+        let focused = self.focused_side.get();
+        self.with_tab(focused, item_id, |t| t.capture_view_state())
+            .or_else(|| self.with_tab(focused.other(), item_id, |t| t.capture_view_state()))
+    }
+
+    /// Push a caret + page scroll onto whichever open tab shows `item_id`,
+    /// without rebuilding it — the surface's exit path. Focused side first, for
+    /// the same reason [`Self::view_state_of`] asks it first.
+    pub fn apply_view_state(&self, item_id: u64, state: crate::view_models::ViewState) {
+        let focused = self.focused_side.get();
+        if self
+            .with_tab(focused, item_id, |t| t.apply_view_state(state))
+            .is_none()
+        {
+            self.with_tab(focused.other(), item_id, |t| t.apply_view_state(state));
+        }
+    }
+
+    /// Run `f` against the tab in `side` showing `item_id`, if there is one.
+    fn with_tab<R>(&self, side: Side, item_id: u64, f: impl Fn(&ContentTab) -> R) -> Option<R> {
+        let pane = self.pane(side);
+        for i in 0..pane.tabs.len() {
+            let hit = pane.tabs.with_item(i, |h| {
+                h.payload
+                    .downcast_ref::<ContentTab>()
+                    .filter(|t| t.item_id() == item_id)
+                    .map(&f)
+            });
+            if let Some(Some(r)) = hit {
+                return Some(r);
+            }
+        }
+        None
     }
 
     /// Open (or focus) `item_id` in the primary pane — the default click / command
@@ -1208,6 +1308,81 @@ mod tests {
         id
     }
 
+    /// Seed the store with a Scene document for `item_id`, bypassing the backend.
+    fn seed_doc(vm: &EditorsViewModel, item_id: u64) {
+        use crate::models::OpenDoc;
+        vm.docs.insert_for_test(Rc::new(OpenDoc::build(
+            &vm.app_ctx,
+            item_id,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            Signal::new(0),
+        )));
+    }
+
+    /// The pane tab and the surface tab differ on exactly one axis, and it is the
+    /// one that decides which typography bundle and which column width the
+    /// writer actually sees.
+    ///
+    /// This is the shape that replaces the defect: the flag is fixed for the
+    /// lifetime of the tab that reads it, rather than a live signal a mounted
+    /// pane was supposed to re-read and never did.
+    #[test]
+    fn a_surface_tab_is_distraction_free_and_a_pane_tab_never_is() {
+        let app_ctx = Rc::new(AppContext::new());
+        let save_state = SaveStateViewModel::new(app_ctx.clone(), AppIds::new());
+        let vm = editors_with(app_ctx, save_state);
+        // The shared fixture gives every bundle the same face; give the
+        // distraction-free one its own so the two are distinguishable.
+        vm.typography
+            .distraction_free
+            .font_family
+            .set("Distraction Serif".to_string());
+        seed_doc(&vm, 1);
+
+        let surface = vm.open_surface_tab(1).expect("the store holds item 1");
+        assert_eq!(
+            surface.main_typography().font_family.get(),
+            "Distraction Serif"
+        );
+        assert_eq!(surface.main_column_width().get(), 620.0);
+
+        let pane = vm.make_tab(vm.docs.peek(1).unwrap(), vm.distraction_free.clone());
+        assert_eq!(pane.main_typography().font_family.get(), "Literata");
+        assert_eq!(pane.main_column_width().get(), 700.0);
+    }
+
+    /// The surface's refcount is its own to give back.
+    ///
+    /// `release_own_open_docs` — the only release that runs on a real window
+    /// close — walks the two panes' tab lists, so a document the surface holds
+    /// open is invisible to it. If the surface ever forgets to release, that
+    /// item is pinned in the store forever and never gets its flush-on-evict.
+    #[test]
+    fn a_surface_tab_takes_a_refcount_that_release_gives_back() {
+        let app_ctx = Rc::new(AppContext::new());
+        let save_state = SaveStateViewModel::new(app_ctx.clone(), AppIds::new());
+        let vm = editors_with(app_ctx, save_state);
+        seed_doc(&vm, 1);
+        let before = vm.docs.refs_for_test(1).expect("seeded");
+
+        let tab = vm.open_surface_tab(1).expect("the store holds item 1");
+        assert_eq!(
+            vm.docs.refs_for_test(1),
+            Some(before + 1),
+            "opening a surface tab must take a reference"
+        );
+
+        drop(tab);
+        vm.release_surface_tab(1, None);
+        assert_eq!(
+            vm.docs.refs_for_test(1),
+            Some(before),
+            "releasing must give exactly one reference back, not more or fewer"
+        );
+    }
+
     /// [`EditorsViewModel::release_own_open_docs`] is the on_removed-driven
     /// teardown's release step: it must release exactly the items *this*
     /// window's own tabs (both panes) held open, and never touch what a
@@ -1293,9 +1468,19 @@ mod tests {
 
         window_a.release_own_open_docs(None);
 
-        assert!(docs.refs_for_test(1).is_none(), "window A's own primary-pane item must be released");
-        assert!(docs.refs_for_test(2).is_none(), "window A's own side-pane item must be released");
-        assert_eq!(docs.refs_for_test(3), Some(1), "window B's item must be untouched");
+        assert!(
+            docs.refs_for_test(1).is_none(),
+            "window A's own primary-pane item must be released"
+        );
+        assert!(
+            docs.refs_for_test(2).is_none(),
+            "window A's own side-pane item must be released"
+        );
+        assert_eq!(
+            docs.refs_for_test(3),
+            Some(1),
+            "window B's item must be untouched"
+        );
     }
 
     #[test]
@@ -1550,7 +1735,10 @@ mod tests {
 
         save_state.bump_dirty();
         assert!(window_a.is_unsaved());
-        assert!(window_b.is_unsaved(), "both windows see the same dirty flag");
+        assert!(
+            window_b.is_unsaved(),
+            "both windows see the same dirty flag"
+        );
 
         // Window A's lifecycle settles it (e.g. its `ProjectLifecycleViewModel`
         // ran `on_load`/`on_new`/`on_close`) — window B must see the same answer,

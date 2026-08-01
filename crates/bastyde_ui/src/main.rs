@@ -75,6 +75,7 @@ mod app_ids;
 mod backup;
 mod binder;
 mod date_convert;
+mod distraction_free;
 mod docks;
 mod export;
 mod icons;
@@ -121,9 +122,7 @@ use frontend::common::event::{Event, Origin};
 use app_ids::AppIds;
 use models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
 use sessions::{WorkRegistry, WorkSession};
-use view_models::{
-    BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel,
-};
+use view_models::{BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel};
 
 /// The currently-open project's path (from its `WorkInfo`), if any.
 ///
@@ -229,13 +228,25 @@ pub const DISTRACTION_FREE_WIDTH_DEFAULT: f32 = 620.0;
 // documented way out (see `statusbar/focus_strip.rs`), so it must survive
 // every combination of these four: a wedged Escape must never be able to
 // combine with a settings choice to leave someone stuck in the mode.
-/// Keep the editor tab strip while distraction-free mode is active.
-/// Default **off** — one manuscript, no tab row, which is what Scrivener's
-/// Composition Mode, FocusWriter and Manuskript's fullscreen all present.
-/// Ctrl+Tab and the strip's own Go arrows still move between documents, so
-/// hiding the strip removes the chrome without removing the navigation.
-pub const DISTRACTION_FREE_TAB_BAR_KEY: &str = "editor.distraction_free.tab_bar";
-pub const DISTRACTION_FREE_TAB_BAR_DEFAULT: bool = false;
+// (There was a "keep the editor tab strip" setting here. The mode no longer
+// undresses the project shell — it covers it with its own surface, which shows
+// exactly one document and has no tab row for a setting to act on. The orphan
+// key left behind in an existing `settings.toml` is harmless: the store is plain
+// key/value with no migrator, and nothing reads it.)
+/// The **id** of the distraction-free theme in force. Resolved through
+/// `DistractionFreeThemesService::resolve`, which falls back to the first
+/// built-in — so a theme the writer deleted, or one named by a config synced
+/// from another machine and never imported here, leaves them with a working
+/// surface rather than an unpainted one.
+pub const DISTRACTION_FREE_THEME_KEY: &str = "editor.distraction_free.theme";
+pub const DISTRACTION_FREE_THEME_DEFAULT: &str = "paper";
+/// Keep the current item's **name** in the distraction-free strip (default
+/// **on**). With the tab strip and the title bar both gone, and a plain Scene
+/// carrying no title field in its own pane, this is the only thing on screen
+/// that says which document the writer is in — which matters most right after
+/// Alt+Up / Alt+Down have moved them to another one.
+pub const DISTRACTION_FREE_TITLE_KEY: &str = "editor.distraction_free.title";
+pub const DISTRACTION_FREE_TITLE_DEFAULT: bool = true;
 /// Keep the word-count readout in the distraction-free strip (default **on**).
 pub const DISTRACTION_FREE_WORD_COUNT_KEY: &str = "editor.distraction_free.word_count";
 pub const DISTRACTION_FREE_WORD_COUNT_DEFAULT: bool = true;
@@ -719,6 +730,17 @@ fn main() {
         })
         .unwrap_or_else(models::ExportStylesService::in_memory_default);
     let export_styles = view_models::ExportStylesViewModel::new(export_styles_service);
+    // The distraction-free theme library, on the same footing and for the same
+    // reasons (a theme outlives any project, and the settings pane and the
+    // mode's own picker must read one instance).
+    let df_themes_service = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| {
+            models::DistractionFreeThemesService::open(&paths)
+                .map_err(|e| eprintln!("distraction-free themes: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(models::DistractionFreeThemesService::in_memory_default);
+    let df_themes = view_models::DistractionFreeThemesViewModel::new(df_themes_service);
     // Backup-mode state (`backup_mode` true while a *backup file* is open — Save
     // + auto-backup off, the file read-only, the content still editable;
     // `backup_context` carries the open backup's details, driving the permanent
@@ -857,8 +879,8 @@ fn main() {
             .next()
         {
             Some(recent) => {
-                let (config, state) = project_factory
-                    .window_config(app::PendingAction::Load(recent.absolute_path));
+                let (config, state) =
+                    project_factory.window_config(app::PendingAction::Load(recent.absolute_path));
                 (config, Some(state))
             }
             None => (windows::launcher_window_config(app_ctx.clone()), None),
@@ -960,6 +982,7 @@ fn main() {
         .app_state(initial_state.session.progress_recorder.clone())
         .app_state(import_plume.clone())
         .app_state(export_styles.clone())
+        .app_state(df_themes.clone())
         .app_state(initial_state.session.user_dictionary.clone())
         .app_state(backup_settings.clone())
         .app_state(initial_state.session.backup_scheduler.clone())
@@ -1344,9 +1367,18 @@ mod tests {
         prune_orphaned_window_state(&window_state, &[known_path]);
 
         let labels: std::collections::HashSet<String> = window_state.labels().into_iter().collect();
-        assert!(labels.contains(&known_label), "the first window's row must survive");
-        assert!(labels.contains(&second), "a second window's row must survive");
-        assert!(labels.contains(&third), "any ordinal's row must survive, not just -w2");
+        assert!(
+            labels.contains(&known_label),
+            "the first window's row must survive"
+        );
+        assert!(
+            labels.contains(&second),
+            "a second window's row must survive"
+        );
+        assert!(
+            labels.contains(&third),
+            "any ordinal's row must survive, not just -w2"
+        );
         assert!(
             !labels.contains(&orphan_second),
             "a -w suffix on an unknown project must not rescue the row"
@@ -1362,13 +1394,28 @@ mod tests {
         let mut known = std::collections::HashSet::new();
         known.insert("work-abc".to_string());
 
-        assert!(is_known_window_label("work-abc", &known), "the base id itself");
+        assert!(
+            is_known_window_label("work-abc", &known),
+            "the base id itself"
+        );
         assert!(is_known_window_label("work-abc-w2", &known));
         assert!(is_known_window_label("work-abc-w13", &known));
-        assert!(!is_known_window_label("work-abc-w", &known), "no ordinal at all");
-        assert!(!is_known_window_label("work-abc-wx", &known), "not a number");
-        assert!(!is_known_window_label("work-abcd", &known), "a different project");
-        assert!(!is_known_window_label("work-def-w2", &known), "an unknown project");
+        assert!(
+            !is_known_window_label("work-abc-w", &known),
+            "no ordinal at all"
+        );
+        assert!(
+            !is_known_window_label("work-abc-wx", &known),
+            "not a number"
+        );
+        assert!(
+            !is_known_window_label("work-abcd", &known),
+            "a different project"
+        );
+        assert!(
+            !is_known_window_label("work-def-w2", &known),
+            "an unknown project"
+        );
     }
 
     /// The argv project must count as "known" even when it is in neither the

@@ -58,6 +58,12 @@
 //!     let a second project window's Go menu reflect the wrong window's
 //!     focused item.
 //!
+//! Not every file here is a view-model. [`view_state`] is a plain shared data
+//! type (`ViewState` + the ports a mounted pane publishes), on the same footing
+//! as [`long_op`] and [`save_queue`]: it lives here because two unrelated
+//! consumers need it — the distraction-free surface's caret handoff and
+//! `workspace.toml`'s per-tab restore — and neither owns it.
+//!
 //! Cross-view-model rules (keep the dependency graph a DAG):
 //!   * A view-model may hold framework model handles and call *down* into them.
 //!   * Peer view-models do **not** import each other; `App` mediates them (see the
@@ -72,6 +78,8 @@ mod backups_list;
 mod binder_ops;
 mod corkboard;
 mod dictionaries;
+mod distraction_free_surface;
+mod distraction_free_themes;
 mod editors;
 mod export;
 mod export_styles;
@@ -107,6 +115,7 @@ mod trash;
 mod tree_expansion;
 mod typewriter;
 mod user_dictionary;
+mod view_state;
 mod welcome;
 mod word_count_status;
 mod work_settings;
@@ -121,6 +130,8 @@ pub use backups_list::{BackupRow, BackupsListViewModel};
 pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};
 pub use corkboard::CorkboardViewModel;
 pub use dictionaries::{DictionariesViewModel, InstallDictError};
+pub use distraction_free_surface::{DistractionFreeSurfaceViewModel, SurfaceDeps};
+pub use distraction_free_themes::DistractionFreeThemesViewModel;
 pub use editors::{EditorsViewModel, Side};
 pub use export::{ExportViewModel, format_label, scope_label};
 pub use export_styles::ExportStylesViewModel;
@@ -145,8 +156,8 @@ pub(crate) use project_lifecycle::reload_personal_words;
 pub use project_switch::{
     PendingSwitch, ProjectSwitchViewModel, UnsavedDecision, unsaved_decision,
 };
-pub use save_as::SaveAsViewModel;
 pub use quit_sequencer::QuitSequencer;
+pub use save_as::SaveAsViewModel;
 pub(crate) use save_queue::{DeferredResume, resume_deferred};
 pub use save_state::SaveStateViewModel;
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
@@ -162,6 +173,7 @@ pub use trash::TrashViewModel;
 pub use tree_expansion::TreeExpansionViewModel;
 pub use typewriter::{TypewriterAnchor, TypewriterSettings};
 pub use user_dictionary::UserDictionaryViewModel;
+pub use view_state::{ViewState, ViewStateBinding, ViewStatePorts};
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 pub use word_count_status::{CountDisplay, count_display};
 pub use work_settings::WorkSettingsViewModel;

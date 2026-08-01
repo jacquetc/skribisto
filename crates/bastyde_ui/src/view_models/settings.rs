@@ -35,35 +35,35 @@ use crate::{
     CORKBOARD_SHOW_WORD_COUNT_DEFAULT, CORKBOARD_SHOW_WORD_COUNT_KEY, CORKBOARD_SIZE_DEFAULT,
     CORKBOARD_SIZE_KEY, DARK_KEY, DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT,
     DISTRACTION_FREE_FIRST_LINE_INDENT_KEY, DISTRACTION_FREE_FONT_FAMILY_DEFAULT,
-    DISTRACTION_FREE_FONT_FAMILY_KEY, DISTRACTION_FREE_LINE_HEIGHT_DEFAULT,
-    DISTRACTION_FREE_LINE_HEIGHT_KEY, DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
-    DISTRACTION_FREE_PARA_SPACING_AFTER_KEY, DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT,
-    DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_KEY, DISTRACTION_FREE_GO_TO_DEFAULT,
-    DISTRACTION_FREE_GO_TO_KEY,
-    DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY, DISTRACTION_FREE_SESSION_DEFAULT,
-    DISTRACTION_FREE_SESSION_KEY, DISTRACTION_FREE_SIZE_DEFAULT, DISTRACTION_FREE_SIZE_KEY,
-    DISTRACTION_FREE_TAB_BAR_DEFAULT, DISTRACTION_FREE_TAB_BAR_KEY, DISTRACTION_FREE_WIDTH_DEFAULT,
+    DISTRACTION_FREE_FONT_FAMILY_KEY, DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_KEY,
+    DISTRACTION_FREE_GO_TO_DEFAULT, DISTRACTION_FREE_GO_TO_KEY,
+    DISTRACTION_FREE_LINE_HEIGHT_DEFAULT, DISTRACTION_FREE_LINE_HEIGHT_KEY,
+    DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT, DISTRACTION_FREE_PARA_SPACING_AFTER_KEY,
+    DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT, DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY,
+    DISTRACTION_FREE_SESSION_DEFAULT, DISTRACTION_FREE_SESSION_KEY, DISTRACTION_FREE_SIZE_DEFAULT,
+    DISTRACTION_FREE_SIZE_KEY, DISTRACTION_FREE_THEME_DEFAULT, DISTRACTION_FREE_THEME_KEY,
+    DISTRACTION_FREE_TITLE_DEFAULT, DISTRACTION_FREE_TITLE_KEY, DISTRACTION_FREE_WIDTH_DEFAULT,
     DISTRACTION_FREE_WIDTH_KEY, DISTRACTION_FREE_WORD_COUNT_DEFAULT,
-    DISTRACTION_FREE_WORD_COUNT_KEY,
-    EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY,
-    GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY, HIGHLIGHT_SENTENCE_DEFAULT,
-    HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
-    NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY,
-    NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT,
-    NOTES_PARA_SPACING_AFTER_KEY, NOTES_PARA_SPACING_BEFORE_DEFAULT,
-    NOTES_PARA_SPACING_BEFORE_KEY, NOTES_SIZE_DEFAULT, NOTES_SIZE_KEY, PREVIEW_WIDTH_DEFAULT,
-    PREVIEW_WIDTH_KEY, PUNCT_DASHES_DEFAULT, PUNCT_DASHES_KEY, PUNCT_DIALOGUE_DEFAULT,
-    PUNCT_DIALOGUE_KEY, PUNCT_ELLIPSIS_DEFAULT, PUNCT_ELLIPSIS_KEY, PUNCT_QUOTE_STYLE_KEY,
-    PUNCT_QUOTES_DEFAULT, PUNCT_QUOTES_KEY, PUNCT_SPACING_DEFAULT, PUNCT_SPACING_KEY,
-    REMEMBER_VIEW_DEFAULT, REMEMBER_VIEW_KEY, SCENE_FIRST_LINE_INDENT_DEFAULT,
-    SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT, SCENE_FONT_FAMILY_KEY,
-    SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY, SCENE_PARA_SPACING_AFTER_DEFAULT,
-    SCENE_PARA_SPACING_AFTER_KEY, SCENE_PARA_SPACING_BEFORE_DEFAULT,
-    SCENE_PARA_SPACING_BEFORE_KEY, SCENE_SIZE_DEFAULT, SCENE_SIZE_KEY, SHOW_WELCOME_KEY,
-    SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY, SYNOPSIS_FIRST_LINE_INDENT_DEFAULT,
-    SYNOPSIS_FIRST_LINE_INDENT_KEY, SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY,
-    SYNOPSIS_LINE_HEIGHT_DEFAULT, SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT,
-    SYNOPSIS_PANE_KEY, SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
+    DISTRACTION_FREE_WORD_COUNT_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY,
+    GOALS_COUNTING_METHOD_KEY, GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY,
+    HIGHLIGHT_SENTENCE_DEFAULT, HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY,
+    NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT,
+    NOTES_FONT_FAMILY_KEY, NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY,
+    NOTES_PARA_SPACING_AFTER_DEFAULT, NOTES_PARA_SPACING_AFTER_KEY,
+    NOTES_PARA_SPACING_BEFORE_DEFAULT, NOTES_PARA_SPACING_BEFORE_KEY, NOTES_SIZE_DEFAULT,
+    NOTES_SIZE_KEY, PREVIEW_WIDTH_DEFAULT, PREVIEW_WIDTH_KEY, PUNCT_DASHES_DEFAULT,
+    PUNCT_DASHES_KEY, PUNCT_DIALOGUE_DEFAULT, PUNCT_DIALOGUE_KEY, PUNCT_ELLIPSIS_DEFAULT,
+    PUNCT_ELLIPSIS_KEY, PUNCT_QUOTE_STYLE_KEY, PUNCT_QUOTES_DEFAULT, PUNCT_QUOTES_KEY,
+    PUNCT_SPACING_DEFAULT, PUNCT_SPACING_KEY, REMEMBER_VIEW_DEFAULT, REMEMBER_VIEW_KEY,
+    SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FIRST_LINE_INDENT_KEY, SCENE_FONT_FAMILY_DEFAULT,
+    SCENE_FONT_FAMILY_KEY, SCENE_LINE_HEIGHT_DEFAULT, SCENE_LINE_HEIGHT_KEY,
+    SCENE_PARA_SPACING_AFTER_DEFAULT, SCENE_PARA_SPACING_AFTER_KEY,
+    SCENE_PARA_SPACING_BEFORE_DEFAULT, SCENE_PARA_SPACING_BEFORE_KEY, SCENE_SIZE_DEFAULT,
+    SCENE_SIZE_KEY, SHOW_WELCOME_KEY, SPELLCHECK_ENABLED_DEFAULT, SPELLCHECK_ENABLED_KEY,
+    SYNOPSIS_FIRST_LINE_INDENT_DEFAULT, SYNOPSIS_FIRST_LINE_INDENT_KEY,
+    SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY, SYNOPSIS_LINE_HEIGHT_DEFAULT,
+    SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PANE_KEY,
+    SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
     SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_SIZE_DEFAULT,
     SYNOPSIS_SIZE_KEY, TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
 };
@@ -227,9 +227,11 @@ pub struct SettingsViewModel {
     /// Max width (px) of the writing column while distraction-free mode is
     /// active — independent from [`Self::column_width`].
     distraction_free_width: Signal<f32>,
-    /// Which pieces of chrome distraction-free mode keeps. The Exit button is
-    /// absent by design — see `DISTRACTION_FREE_TAB_BAR_KEY`'s doc in `main.rs`.
-    distraction_free_tab_bar: Signal<bool>,
+    /// Which items the distraction-free control strip keeps. Exit is
+    /// The id of the distraction-free theme in force. An ordinary setting so
+    /// there is one live handle behind it — see `DistractionFreeThemesViewModel`.
+    distraction_free_theme: Signal<String>,
+    distraction_free_title: Signal<bool>,
     distraction_free_word_count: Signal<bool>,
     distraction_free_session: Signal<bool>,
     distraction_free_go: Signal<bool>,
@@ -366,18 +368,21 @@ impl SettingsViewModel {
             },
             distraction_free_width: store
                 .signal(DISTRACTION_FREE_WIDTH_KEY, DISTRACTION_FREE_WIDTH_DEFAULT),
-            distraction_free_tab_bar: store.signal(
-                DISTRACTION_FREE_TAB_BAR_KEY,
-                DISTRACTION_FREE_TAB_BAR_DEFAULT,
+            distraction_free_theme: store.signal(
+                DISTRACTION_FREE_THEME_KEY,
+                DISTRACTION_FREE_THEME_DEFAULT.to_string(),
             ),
+            distraction_free_title: store
+                .signal(DISTRACTION_FREE_TITLE_KEY, DISTRACTION_FREE_TITLE_DEFAULT),
             distraction_free_word_count: store.signal(
                 DISTRACTION_FREE_WORD_COUNT_KEY,
                 DISTRACTION_FREE_WORD_COUNT_DEFAULT,
             ),
-            distraction_free_session: store
-                .signal(DISTRACTION_FREE_SESSION_KEY, DISTRACTION_FREE_SESSION_DEFAULT),
-            distraction_free_go: store
-                .signal(DISTRACTION_FREE_GO_KEY, DISTRACTION_FREE_GO_DEFAULT),
+            distraction_free_session: store.signal(
+                DISTRACTION_FREE_SESSION_KEY,
+                DISTRACTION_FREE_SESSION_DEFAULT,
+            ),
+            distraction_free_go: store.signal(DISTRACTION_FREE_GO_KEY, DISTRACTION_FREE_GO_DEFAULT),
             distraction_free_go_to: store
                 .signal(DISTRACTION_FREE_GO_TO_KEY, DISTRACTION_FREE_GO_TO_DEFAULT),
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
@@ -475,10 +480,15 @@ impl SettingsViewModel {
 
     /// Keep the editor tab strip while distraction-free mode is active
     /// (default off).
-    pub fn distraction_free_tab_bar(&self) -> Signal<bool> {
-        self.distraction_free_tab_bar.clone()
-    }
     /// Keep the word count in the distraction-free strip (default on).
+    pub fn distraction_free_theme(&self) -> Signal<String> {
+        self.distraction_free_theme.clone()
+    }
+
+    pub fn distraction_free_title(&self) -> Signal<bool> {
+        self.distraction_free_title.clone()
+    }
+
     pub fn distraction_free_word_count(&self) -> Signal<bool> {
         self.distraction_free_word_count.clone()
     }
@@ -699,8 +709,10 @@ impl SettingsViewModel {
             .set(DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT);
         self.distraction_free_width
             .set(DISTRACTION_FREE_WIDTH_DEFAULT);
-        self.distraction_free_tab_bar
-            .set(DISTRACTION_FREE_TAB_BAR_DEFAULT);
+        self.distraction_free_theme
+            .set(DISTRACTION_FREE_THEME_DEFAULT.to_string());
+        self.distraction_free_title
+            .set(DISTRACTION_FREE_TITLE_DEFAULT);
         self.distraction_free_word_count
             .set(DISTRACTION_FREE_WORD_COUNT_DEFAULT);
         self.distraction_free_session
@@ -716,7 +728,8 @@ impl SettingsViewModel {
         self.punct_spacing.set(PUNCT_SPACING_DEFAULT);
         self.punct_dialogue.set(PUNCT_DIALOGUE_DEFAULT);
         self.typewriter.set(TYPEWRITER_DEFAULT);
-        self.typewriter_anchor.set(Some(TypewriterAnchor::default()));
+        self.typewriter_anchor
+            .set(Some(TypewriterAnchor::default()));
         self.highlight_sentence.set(HIGHLIGHT_SENTENCE_DEFAULT);
         self.counting_method.set(CountingMethodSetting::default());
         self.show_characters.set(GOALS_SHOW_CHARACTERS_DEFAULT);
@@ -807,22 +820,18 @@ mod tests {
     fn distraction_free_chrome_toggles_persist_and_reset() {
         use crate::{
             DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_TO_DEFAULT,
-            DISTRACTION_FREE_SESSION_DEFAULT,
-            DISTRACTION_FREE_TAB_BAR_DEFAULT, DISTRACTION_FREE_WORD_COUNT_DEFAULT,
+            DISTRACTION_FREE_SESSION_DEFAULT, DISTRACTION_FREE_WORD_COUNT_DEFAULT,
         };
         let store = temp_store();
         let vm = SettingsViewModel::new(&store);
 
-        // The mode exists to remove chrome, so the tab strip starts hidden and
-        // the three informational items start shown.
-        assert!(!vm.distraction_free_tab_bar().get());
+        // Every strip item starts shown; the writer opts each one away.
         assert!(vm.distraction_free_word_count().get());
         assert!(vm.distraction_free_session().get());
         assert!(vm.distraction_free_go().get());
         assert!(vm.distraction_free_go_to().get());
 
         // Flip every one away from its default...
-        vm.distraction_free_tab_bar().set(true);
         vm.distraction_free_word_count().set(false);
         vm.distraction_free_session().set(false);
         vm.distraction_free_go().set(false);
@@ -831,7 +840,6 @@ mod tests {
         // ...they survive a fresh view-model over the same store (persisted,
         // not merely cached in this instance)...
         let reopened = SettingsViewModel::new(&store);
-        assert!(reopened.distraction_free_tab_bar().get());
         assert!(!reopened.distraction_free_word_count().get());
         assert!(!reopened.distraction_free_session().get());
         assert!(!reopened.distraction_free_go().get());
@@ -839,10 +847,6 @@ mod tests {
 
         // ...and Reset puts all four back.
         vm.reset_editor_defaults();
-        assert_eq!(
-            vm.distraction_free_tab_bar().get(),
-            DISTRACTION_FREE_TAB_BAR_DEFAULT
-        );
         assert_eq!(
             vm.distraction_free_word_count().get(),
             DISTRACTION_FREE_WORD_COUNT_DEFAULT
