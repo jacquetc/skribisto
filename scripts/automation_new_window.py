@@ -25,12 +25,12 @@ What this asserts, in order:
      backend's entity events reaching both windows' subscribers. Not two copies
      of one file racing each other onto one path.
 
-     (Editor *prose* is not assertable here — a `RichTextEditor` exposes no
-     `value` in the AT tree — and the save indicator, though it reads the shared
-     `SaveStateViewModel`, does not currently follow an edit made in the *other*
-     window: a plain `Signal` write does not schedule a repaint of a sibling
-     window's tree. That is a framework-level gap, tracked separately; it does
-     not affect the store sharing this step pins.)
+     Both windows' **save indicators** follow it too, which is the stricter
+     half: `unsaved` is a plain `Signal<bool>` on the shared `WorkSession` with
+     no backend event behind it, so it pins that a shared *signal* reaches every
+     window — the binder rows above would still cross even if signals did not.
+     (Editor *prose* is still not assertable here: a `RichTextEditor` exposes no
+     `value` in the AT tree.)
   4. **Closing a *window* closes only that window.** With unsaved edits and a
      sibling still showing the Work, the title-bar close must not prompt, must
      not call the backend `close_work`, and must not return to the Launcher:
@@ -361,9 +361,9 @@ print("titles differ and the second carries the ordinal suffix")
 # out, and it is why New Window is not "open the same path again".
 
 
-# The save indicator's label is the one piece of chrome that legitimately
-# differs between the two windows mid-edit (see the docstring's step 3 note), so
-# it is excluded rather than allowed to make this comparison flaky.
+# The save indicator's label is chrome, not a binder row, so it is excluded from
+# the row comparison — and asserted separately, right below, because it is its
+# own claim: BOTH windows' indicators must follow the edit.
 CHROME_NOISE = ("saved", "unsaved")
 
 
@@ -373,7 +373,17 @@ def binder_labels(window_id):
                   and not any(w in l.lower() for w in CHROME_NOISE))
 
 
+def save_indicator(window_id):
+    """This window's save-indicator label, lowercased ('' if absent)."""
+    for n in s.nodes(window_id):
+        label = (n.get("label") or "").lower()
+        if any(w in label for w in CHROME_NOISE):
+            return label
+    return ""
+
+
 before_2 = binder_labels(second_key)
+indicator_2_before = save_indicator(second_key)
 create = next((n for n in s.nodes(first_key)
                if n.get("role") == "Button" and (n.get("label") or "").strip() == "Book"), None)
 if not create:
@@ -400,6 +410,29 @@ if not set(gained_2) <= set(gained_1):
     fail(f"the second window gained rows the first did not: "
          f"{sorted(set(gained_2) - set(gained_1))}", s.app, s.mcp, s.log)
 print(f"an item created in window 1 appeared in window 2's binder: {gained_2} — one shared Work")
+
+# ...and so must the chrome that reads purely shared state. `unsaved` is a plain
+# `Signal<bool>` on the shared `WorkSession` — no backend event behind it — bound
+# by `SaveIndicator` at `BindingLevel::Rebuild`. It is therefore the strictest
+# available check that a shared *signal* (not merely a shared store reached via
+# entity events) reaches every window: the binder rows above would still cross
+# even if signals did not.
+#
+# This assertion is why bastyde's dirty tracking became a per-registry generation
+# compare. It used to be one `bool` on the signal that the first `WidgetTree` to
+# reconcile read AND cleared, so window 2's indicator silently — and permanently
+# — kept saying "saved" for an edit made in window 1.
+indicator_1, indicator_2 = save_indicator(first_key), save_indicator(second_key)
+if "unsaved" not in indicator_1:
+    fail(f"window 1's own save indicator did not follow its own edit "
+         f"({indicator_1!r}) — the probe's precondition failed", s.app, s.mcp, s.log)
+if "unsaved" not in indicator_2:
+    fail(f"window 2's save indicator still reads {indicator_2!r} (was "
+         f"{indicator_2_before!r}) after window 1 dirtied the shared Work — a "
+         f"shared Signal must reach EVERY window's tree, not just whichever one "
+         f"reconciles first", s.app, s.mcp, s.log)
+print(f"both windows' save indicators followed the shared edit: "
+      f"{indicator_1!r} / {indicator_2!r}")
 
 # ── 4. Closing a WINDOW closes only that window ──────────────────────────────
 # The Work is dirty (the Book we just created is unsaved) and a sibling still
