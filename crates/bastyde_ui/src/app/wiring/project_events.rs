@@ -7,30 +7,36 @@
 //! Extracted from `App::build` so that god-function is not also the multi-window
 //! project-lifecycle bus. Guarded subscribe helpers and window binding live
 //! alongside.
+//!
+//! **Registration order is load-bearing** for `LoadWork`: seed first, then
+//! [`install_backup_sniff`] (called from here after the seed subscriber).
 
 use std::rc::Rc;
 
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    DockOpenLocation, DockSide, DockWidgetId, Toast, ToastAction,
+    DockOpenLocation, DockSide, DockWidgetId, Toast, ToastAction, ToastRegistry,
 };
 
 use frontend::AppContext;
 use frontend::common::event::{Event, Origin, WorkManagementEvent};
 
 use crate::app_ids::AppIds;
-use crate::sessions::WorkSession;
+use crate::models::OpenDocsStore;
+use crate::sessions::{WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
 use crate::singles::SingleWork;
 use crate::toast_scope::ToastWorkExt;
 use crate::view_models::{
-    BackupRestoreViewModel, BackupSchedulerViewModel, BackupSettingsViewModel, OutlineViewModel,
-    TreeExpansionViewModel, WorkspaceLayoutViewModel,
+    BackupRestoreViewModel, BackupSchedulerViewModel, BackupSettingsViewModel, DictionariesViewModel,
+    EditorsViewModel, OutlineViewModel, ProjectLifecycleViewModel, SearchReplaceViewModel,
+    TrashViewModel, TreeExpansionViewModel, WorkspaceLayoutViewModel,
 };
 
 pub(in crate::app) use super::guards::{on_own_close, on_own_load_or_new};
 pub(in crate::app) use super::window_bind::bind_window_to_work;
+
 
 /// Second `LoadWork` subscriber: sniff backup-ness, restore desk, on-open backup
 /// or choice modal. Must run **after** the first LoadWork seed (order of
@@ -210,3 +216,255 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
         }
 }
 
+// ── Load / New / Close / Attach seed ────────────────────────────────────────
+
+/// Deps for the full project lifecycle install (seed, attach, new, dict, close).
+pub(in crate::app) struct LifecycleDeps {
+    pub app_ctx: Rc<AppContext>,
+    pub session: WorkSession,
+    pub ids: AppIds,
+    pub registry: WorkRegistry,
+    pub lifecycle: ProjectLifecycleViewModel,
+    pub editors: EditorsViewModel,
+    pub outline: OutlineViewModel,
+    pub trash: TrashViewModel,
+    pub search: SearchReplaceViewModel,
+    pub backup_scheduler: BackupSchedulerViewModel,
+    pub toast_registry: Option<ToastRegistry>,
+    pub window_id: Option<BastydeWindowId>,
+    pub window_ordinal: Signal<usize>,
+    pub spell_docs: OpenDocsStore,
+    pub dictionaries: DictionariesViewModel,
+    // backup sniff (installed after Load seed, same call)
+    pub tree_expansion: TreeExpansionViewModel,
+    pub backup_mode: Signal<bool>,
+    pub backup_context: Signal<Option<crate::backup::BackupContext>>,
+    pub restore_vm: BackupRestoreViewModel,
+    pub single_work: SingleWork,
+    pub backup_settings: BackupSettingsViewModel,
+    pub workspace_layout: Option<WorkspaceLayoutViewModel>,
+    pub trash_dock: DockWidgetId,
+}
+
+/// Install Load seed, attach-seed builder, backup sniff, New seed, missing-dict
+/// offer, corpus clear, and Close. Returns the attach-seed closure for
+/// `PendingAction::AttachExisting` (fired once on first build).
+pub(in crate::app) fn install_lifecycle(
+    ctx: &mut BuildContext,
+    deps: LifecycleDeps,
+) -> Rc<dyn Fn(u64, usize)> {
+    let window_id = deps.window_id;
+
+    // ── LoadWork seed (must be the first LoadWork subscriber) ──────────────
+    {
+        let lifecycle_load = deps.lifecycle.clone();
+        let my_ids = deps.ids.clone();
+        let my_session = deps.session.clone();
+        let registry_for_load = deps.registry.clone();
+        let toast_registry_for_load = deps.toast_registry.clone();
+        let editors_for_teardown = deps.editors.clone();
+        let app_ctx_for_teardown = deps.app_ctx.clone();
+        let backup_scheduler_for_teardown = deps.backup_scheduler.clone();
+        let window_ordinal_for_load = deps.window_ordinal.clone();
+        ctx.subscribe_event(
+            Origin::WorkManagement(WorkManagementEvent::LoadWork),
+            move |event: &Event| {
+                if !my_ids.is_bootstrap_or_own(&event.ids) {
+                    return;
+                }
+                if let Some(&work_id) = event.ids.first() {
+                    lifecycle_load.on_load(work_id);
+                    registry_for_load.register(work_id, my_session.clone());
+                    if let Some(window_id) = window_id {
+                        let stack_teardown = crate::app::build_stack_teardown(
+                            app_ctx_for_teardown.clone(),
+                            my_ids.stack_id.get(),
+                        );
+                        let window_teardown = crate::app::build_window_teardown(
+                            editors_for_teardown.clone(),
+                            backup_scheduler_for_teardown.clone(),
+                            toast_registry_for_load.clone(),
+                            window_id,
+                            my_ids.stack_id.get(),
+                        );
+                        bind_window_to_work(
+                            &registry_for_load,
+                            window_id,
+                            work_id,
+                            None,
+                            stack_teardown,
+                            window_teardown,
+                            &window_ordinal_for_load,
+                            &toast_registry_for_load,
+                        );
+                    }
+                }
+            },
+        );
+    }
+
+    // ── Attach seed (Work ▸ New Window — no LoadWork will fire) ─────────────
+    let attach_seed: Rc<dyn Fn(u64, usize)> = {
+        let outline = deps.outline.clone();
+        let trash = deps.trash.clone();
+        let registry = deps.registry.clone();
+        let ids = deps.ids.clone();
+        let app_ctx = deps.app_ctx.clone();
+        let editors = deps.editors.clone();
+        let backup_scheduler = deps.backup_scheduler.clone();
+        let toast_registry = deps.toast_registry.clone();
+        let window_ordinal = deps.window_ordinal.clone();
+        let search = deps.search.clone();
+        let tree_expansion = deps.tree_expansion.clone();
+        Rc::new(move |work_id: u64, ordinal: usize| {
+            outline.set_binder_filter(None);
+            outline.clear_search();
+            outline.reload();
+            trash.reload();
+            let remembered = tree_expansion.outline_expanded();
+            if !remembered.is_empty() {
+                outline.model().set_expanded_keys(&remembered);
+            }
+            search.restore_for_project();
+            if let Some(window_id) = window_id {
+                let stack_teardown =
+                    crate::app::build_stack_teardown(app_ctx.clone(), ids.stack_id.get());
+                let window_teardown = crate::app::build_window_teardown(
+                    editors.clone(),
+                    backup_scheduler.clone(),
+                    toast_registry.clone(),
+                    window_id,
+                    ids.stack_id.get(),
+                );
+                bind_window_to_work(
+                    &registry,
+                    window_id,
+                    work_id,
+                    Some(ordinal),
+                    stack_teardown,
+                    window_teardown,
+                    &window_ordinal,
+                    &toast_registry,
+                );
+            }
+        })
+    };
+
+    // ── Second LoadWork: backup sniff (after seed) ─────────────────────────
+    install_backup_sniff(
+        ctx,
+        BackupSniffDeps {
+            app_ctx: deps.app_ctx.clone(),
+            ids: deps.ids.clone(),
+            tree_expansion: deps.tree_expansion.clone(),
+            backup_mode: deps.backup_mode.clone(),
+            backup_context: deps.backup_context.clone(),
+            restore_vm: deps.restore_vm.clone(),
+            single_work: deps.single_work.clone(),
+            backup_settings: deps.backup_settings.clone(),
+            backup_scheduler: deps.backup_scheduler.clone(),
+            workspace_layout: deps.workspace_layout.clone(),
+            outline: deps.outline.clone(),
+            trash_dock: deps.trash_dock,
+            session: deps.session.clone(),
+        },
+    );
+
+    // ── NewWork seed ───────────────────────────────────────────────────────
+    {
+        let lifecycle_new = deps.lifecycle.clone();
+        let my_ids = deps.ids.clone();
+        let my_session = deps.session.clone();
+        let registry_for_new = deps.registry.clone();
+        let toast_registry_for_new = deps.toast_registry.clone();
+        let editors_for_teardown = deps.editors.clone();
+        let app_ctx_for_teardown = deps.app_ctx.clone();
+        let backup_scheduler_for_teardown = deps.backup_scheduler.clone();
+        let window_ordinal_for_new = deps.window_ordinal.clone();
+        ctx.subscribe_event(
+            Origin::WorkManagement(WorkManagementEvent::NewWork),
+            move |event: &Event| {
+                if !my_ids.is_bootstrap_or_own(&event.ids) {
+                    return;
+                }
+                if let Some(&work_id) = event.ids.first() {
+                    lifecycle_new.on_new(work_id);
+                    registry_for_new.register(work_id, my_session.clone());
+                    if let Some(window_id) = window_id {
+                        let stack_teardown = crate::app::build_stack_teardown(
+                            app_ctx_for_teardown.clone(),
+                            my_ids.stack_id.get(),
+                        );
+                        let window_teardown = crate::app::build_window_teardown(
+                            editors_for_teardown.clone(),
+                            backup_scheduler_for_teardown.clone(),
+                            toast_registry_for_new.clone(),
+                            window_id,
+                            my_ids.stack_id.get(),
+                        );
+                        bind_window_to_work(
+                            &registry_for_new,
+                            window_id,
+                            work_id,
+                            None,
+                            stack_teardown,
+                            window_teardown,
+                            &window_ordinal_for_new,
+                            &toast_registry_for_new,
+                        );
+                    }
+                }
+            },
+        );
+    }
+
+    // ── Missing dictionaries toast ─────────────────────────────────────────
+    for event in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
+        let docs = deps.spell_docs.clone();
+        let dictionaries = deps.dictionaries.clone();
+        let my_ids = deps.ids.clone();
+        let session_for_toast = deps.session.clone();
+        ctx.subscribe_event_with_ctx(
+            Origin::WorkManagement(event),
+            move |e: &Event, c: &mut EventContext| {
+                if my_ids.is_event_for_my_work(&e.ids) {
+                    crate::app::offer_missing_dictionaries(
+                        &docs,
+                        &dictionaries,
+                        &session_for_toast,
+                        c,
+                    );
+                }
+            },
+        );
+    }
+
+    // ── Search corpus cache clear (unguarded, Tier-1) ──────────────────────
+    for event in [
+        WorkManagementEvent::LoadWork,
+        WorkManagementEvent::NewWork,
+        WorkManagementEvent::CloseWork,
+    ] {
+        ctx.subscribe_event(Origin::WorkManagement(event), move |_event: &Event| {
+            frontend::search_management::corpus_cache::clear();
+        });
+    }
+
+    // ── CloseWork ──────────────────────────────────────────────────────────
+    {
+        let lifecycle_close = deps.lifecycle.clone();
+        let my_ids = deps.ids.clone();
+        ctx.subscribe_event_with_ctx(
+            Origin::WorkManagement(WorkManagementEvent::CloseWork),
+            move |event: &Event, c: &mut EventContext| {
+                if !my_ids.is_event_for_my_work(&event.ids) {
+                    return;
+                }
+                c.dismiss_top_overlay();
+                lifecycle_close.on_close();
+            },
+        );
+    }
+
+    attach_seed
+}

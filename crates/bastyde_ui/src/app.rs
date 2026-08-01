@@ -13,6 +13,7 @@
 //! generic over closures, which the DSL doesn't express cleanly. See
 //! `settings_panel.rs` for the `bati!` style.
 
+mod project_shell;
 mod commands;
 mod window_role;
 mod wiring;
@@ -28,11 +29,8 @@ use bastyde::prelude::*;
 use bastyde::settings::{Reloadable, SettingsExt, SettingsRegistry};
 use bastyde::tokens::SurfaceRole::Hover;
 use bastyde::widgets::{
-    Divider, DockCorner, DockOpenLocation, DockRail, DockRailItemSize, DockSide, DockWidgetId,
-    DockingLayout, DropRegion, DropTarget, DropTargetVariant, EventContextMessageBoxExt, Expand,
-    HStack, IconButton, IconButtonSize, MessageBox, MessageBoxButton, MessageBoxButtons,
-    NotificationArchiveModel, RowDragData, Spacer, Splitter,
-    StandardButton, StatusBar, TabBarVisibility, TabWidget, TextWidget, ToastRegistry, VStack,
+    DockWidgetId, EventContextMessageBoxExt, MessageBox, MessageBoxButton, MessageBoxButtons, RowDragData,
+    StandardButton, TabBarVisibility, TabWidget, ToastRegistry,
 };
 
 use frontend::AppContext;
@@ -42,7 +40,7 @@ use frontend::commands::{
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::event::{
-    DirectAccessEntity, EntityEvent, Event, Origin, WorkManagementEvent,
+    DirectAccessEntity, EntityEvent, Event, Origin,
 };
 use frontend::work_management::{CloseWorkDto, LoadWorkDto, NewWorkDto};
 
@@ -53,7 +51,6 @@ use crate::panels::new_work::NewWorkPanel;
 use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
 use crate::singles::SingleSmartPunctuation;
-use crate::tabs::shared::editor::VisibleWhen;
 use crate::text_replacement::typography::SmartPunctuationFlags;
 use crate::toast_scope::ToastWorkExt;
 
@@ -583,7 +580,7 @@ fn spell_underline_color(c: bastyde::tokens::Color) -> bastyde::text_document::C
 /// but the machine lacks — one aggregated toast (never one per language), whose action opens
 /// Settings ▸ Dictionaries with the missing set highlighted. Purely additive and dismissible,
 /// so a toast, not a modal.
-fn offer_missing_dictionaries(
+pub(crate) fn offer_missing_dictionaries(
     docs: &crate::models::OpenDocsStore,
     dictionaries: &crate::view_models::DictionariesViewModel,
     session: &WorkSession,
@@ -1030,7 +1027,7 @@ pub fn can_save(unsaved: &Signal<bool>, backup_mode: &Signal<bool>) -> Signal<bo
 /// `is_last` — whether this was the last window on this Work, decided by
 /// [`WorkRegistry`] itself, never `WindowRemovedEvent::remaining_windows`
 /// (which counts every window in the process, Launcher included).
-fn build_stack_teardown(app_ctx: Rc<AppContext>, stack_id: Option<u64>) -> StackTeardown {
+pub(crate) fn build_stack_teardown(app_ctx: Rc<AppContext>, stack_id: Option<u64>) -> StackTeardown {
     Rc::new(move |is_last: bool| {
         if is_last && let Some(stack_id) = stack_id {
             let _ = undo_redo_commands::delete_stack(&app_ctx, stack_id);
@@ -1063,7 +1060,7 @@ fn build_stack_teardown(app_ctx: Rc<AppContext>, stack_id: Option<u64>) -> Stack
 /// map. `None` only in a headless/off-screen build context (no
 /// `install_toast_default()` ever ran) — a safe no-op there, same guard as
 /// `toast_registry`'s own doc.
-fn build_window_teardown(
+pub(crate) fn build_window_teardown(
     editors: EditorsViewModel,
     backup_scheduler: BackupSchedulerViewModel,
     toast_registry: Option<ToastRegistry>,
@@ -1750,236 +1747,49 @@ impl Widget for App {
         };
         commands::register_all(ctx, &command_deps);
 
-        // On project load: hand off to the lifecycle view-model (seed the ids, open the
-        // per-Work undo stack, re-point the singles, rebuild the tree, drop stale tabs).
-        // The two `BinderItem` subscribers below are not lifecycle — they run for every
-        // edit, not just at project boundaries — so they stay here.
+        // On project load/new/close/attach: lifecycle seed, backup sniff, dict offer.
+        // Binder-item tab sync is not lifecycle — stays here (every edit, not boundaries).
         {
-            // An open tab does not follow its item by itself: `TabInfo::title` is a plain
-            // string baked in at open time, and the `ContentTab` payload is built once for
-            // the item's `(role, sub_role)`. So a rename must push the new caption, and a
-            // Promote must rebuild the tab — otherwise it keeps showing a chapter's
-            // segments and editors for what is now a Part.
-            {
-                let editors = editors.clone();
-                ctx.subscribe_event(
-                    Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Updated)),
-                    move |event: &Event| editors.items_updated(&event.ids),
-                );
-            }
-            // A hard-removed item (Delete Forever / Empty Trash of an open item)
-            // must not leave a tab pointing at a vanished entity — close it.
-            {
-                let editors = editors.clone();
-                ctx.subscribe_event(
-                    Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Removed)),
-                    move |event: &Event| editors.items_removed(&event.ids),
-                );
-            }
-
-            // NOTE: the on-open backup trigger is fired from the SECOND `LoadWork`
-            // subscriber below (T2-4), once `backup_mode` is known — firing it here,
-            // before that sniff runs, could pump a freshly-opened *backup* file into the
-            // real project's retention pool before anyone knew it was a backup.
-            //
-            // The workspace-layout restore (open tabs + docks) is likewise driven from
-            // that SECOND subscriber: it already sniffs whether the file is a backup, and
-            // restore needs that answer (a backup gets a clean default desk, not the
-            // source project's) — so it is supplied there rather than re-sniffed here.
-            // Guarded (loose form): with a second Work open in a second window, its
-            // own LoadWork must not re-seed *this* window's ids/tree/singles — but
-            // THIS window's own bootstrap/in-place-switch load must still seed
-            // itself, at the instant its own `ids.work_id` is still `None` (see
-            // `AppIds::is_bootstrap_or_own`'s docs).
-            let lifecycle_load = lifecycle.clone();
-            let my_ids = session.ids.clone();
-            let my_session = session.clone();
-            let registry_for_load = self.registry.clone();
-            let toast_registry_for_load = toast_registry.clone();
-            // Ingredients for this window's own `on_removed`-driven teardown —
-            // see `build_window_teardown`'s doc. `editors`/`app_ctx`/
-            // `backup_scheduler` are cheap `Rc`-backed clones; `window_id` is
-            // `Copy`.
-            let editors_for_teardown = editors.clone();
-            let app_ctx_for_teardown = self.app_ctx.clone();
-            let backup_scheduler_for_teardown = backup_scheduler.clone();
-            // Scope D — window titles: written with whatever ordinal
-            // `register_window` actually assigns below, so `window_title_text`
-            // (built in `shell::windows`, over this very `Signal`) recomputes
-            // reactively the instant this window's Work — and its place among
-            // any siblings on it — is known.
-            let window_ordinal_for_load = self.window_ordinal.clone();
+            let editors = editors.clone();
             ctx.subscribe_event(
-                Origin::WorkManagement(WorkManagementEvent::LoadWork),
-                move |event: &Event| {
-                    if !my_ids.is_bootstrap_or_own(&event.ids) {
-                        return;
-                    }
-                    if let Some(&work_id) = event.ids.first() {
-                        lifecycle_load.on_load(work_id);
-                        // Advertise this Work as open (Phase 2's window-to-Work
-                        // binding — see `sessions::WorkRegistry`'s module doc).
-                        // Idempotent: a re-registration for a `work_id` this
-                        // window already registered just bumps a refcount it
-                        // will symmetrically drop once bastyde's `on_removed`
-                        // hook confirms this window is gone (see
-                        // `WorkRegistry::remove_window`, wired in
-                        // `shell::windows`).
-                        registry_for_load.register(work_id, my_session.clone());
-                        // Bind THIS window (if it is a real, on-screen window —
-                        // never true in a headless/off-screen build context) to
-                        // the Work it just loaded, with its stack- and
-                        // window-scoped teardowns. An in-place re-load/switch
-                        // supersedes the previous registration and tears down
-                        // whatever Work it was showing — see
-                        // `register_window`'s doc.
-                        if let Some(window_id) = window_id {
-                            let stack_teardown = build_stack_teardown(
-                                app_ctx_for_teardown.clone(),
-                                my_ids.stack_id.get(),
-                            );
-                            let window_teardown = build_window_teardown(
-                                editors_for_teardown.clone(),
-                                backup_scheduler_for_teardown.clone(),
-                                toast_registry_for_load.clone(),
-                                window_id,
-                                my_ids.stack_id.get(),
-                            );
-                            // No reservation: Load numbers on the spot. Only
-                            // Work ▸ New Window reserves ahead.
-                            wiring::project_events::bind_window_to_work(
-                                &registry_for_load,
-                                window_id,
-                                work_id,
-                                None,
-                                stack_teardown,
-                                window_teardown,
-                                &window_ordinal_for_load,
-                                &toast_registry_for_load,
-                            );
-                        }
-                    }
-                },
+                Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Updated)),
+                move |event: &Event| editors.items_updated(&event.ids),
+            );
+        }
+        {
+            let editors = editors.clone();
+            ctx.subscribe_event(
+                Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Removed)),
+                move |event: &Event| editors.items_removed(&event.ids),
             );
         }
 
-        // ── Work ▸ New Window: this window's stand-in for `LoadWork` ─────────
-        //
-        // A window opened by Work ▸ New Window shows a Work that is **already
-        // open** (`PendingAction::AttachExisting`). It performs no backend
-        // mutation, so no `LoadWork`/`NewWork` event will ever fire for it, and
-        // the subscriber just above — which is where a project window normally
-        // becomes live — never runs on its behalf.
-        //
-        // Everything that subscriber does splits cleanly in two, and only one
-        // half belongs here:
-        //
-        //   * **Per Work** — `ids.seed`, `open_stack`, `single_work.set_id`,
-        //     `single_work_info.set_id`, `mark_clean`, the open-registry claim,
-        //     the spell-checker re-point, the backup-mode sniff, the
-        //     workspace-layout restore. The sibling window did all of it, and
-        //     the `WorkSession` carrying the result is the very same instance
-        //     this window was handed (`WorkRegistry::attach`). Redoing any of it
-        //     would be wrong, not merely redundant: `mark_clean` would drop the
-        //     sibling's unsaved-edit tracking on the floor, and a second
-        //     open-registry claim would let the first window's release retire a
-        //     path this window still shows.
-        //   * **Per window** — the outline tree, the trash panel, the registry's
-        //     window→Work binding (with the teardowns bastyde's `on_removed`
-        //     hook will run for *this* window) and the toast audience. Those are
-        //     this window's own, and nobody else can have done them. That is
-        //     exactly the list below.
-        //
-        // `register` is deliberately absent: `attached_window_config` already
-        // bumped the session refcount via `attach`, which is the same +1
-        // `register` would contribute. Calling both would leave the Work
-        // permanently one window short of teardown.
-        let attach_seed: Rc<dyn Fn(u64, usize)> = {
-            let outline = self.outline.clone();
-            let trash = trash.clone();
-            let registry = self.registry.clone();
-            let ids = session.ids.clone();
-            let app_ctx = self.app_ctx.clone();
-            let editors = editors.clone();
-            let backup_scheduler = backup_scheduler.clone();
-            let toast_registry = toast_registry.clone();
-            let window_ordinal = self.window_ordinal.clone();
-            let search = search.clone();
-            let tree_expansion = session.tree_expansion.clone();
-            Rc::new(move |work_id: u64, ordinal: usize| {
-                // This window's own tree and trash panel: fresh models over a
-                // store that is already populated, so they need one read to
-                // catch up with the Work the sibling loaded.
-                outline.set_binder_filter(None);
-                outline.clear_search();
-                outline.reload();
-                trash.reload();
-                // The project's remembered chevrons, exactly as the `LoadWork`
-                // path applies them — this window's tree model is its own, so it
-                // starts fully collapsed otherwise, which for a large binder is
-                // a wall of book-level folders rather than the shape the writer
-                // was working in. Read-only here: an attached window never
-                // *captures* the expansion (see [`WindowRole::owns_desk`]), so
-                // opening a second window can never rewrite what the first remembers.
-                // No backup check, unlike the `LoadWork` path: this Work's
-                // backup-ness was already settled by the window that loaded it,
-                // and a backup's `backup_mode` is shared straight off the
-                // session — there is no second sniff to get wrong.
-                let remembered = tree_expansion.outline_expanded();
-                if !remembered.is_empty() {
-                    outline.model().set_expanded_keys(&remembered);
-                }
-                // The search dock's inputs are per window (each window has its
-                // own `SearchReplaceViewModel`), but the preferences they are
-                // seeded from are the project's. Without this the new window's
-                // search box silently ignores the project's saved
-                // case-sensitivity/whole-word overrides and searches with the
-                // app-wide defaults instead — the same re-seed the `LoadWork`
-                // subscriber above performs for a window that loads a project.
-                search.restore_for_project();
-                if let Some(window_id) = window_id {
-                    let stack_teardown = build_stack_teardown(app_ctx.clone(), ids.stack_id.get());
-                    let window_teardown = build_window_teardown(
-                        editors.clone(),
-                        backup_scheduler.clone(),
-                        toast_registry.clone(),
-                        window_id,
-                        ids.stack_id.get(),
-                    );
-                    // `Some(ordinal)`: reserved before this window existed for its
-                    // persistence id (`attached_window_id_for`).
-                    wiring::project_events::bind_window_to_work(
-                        &registry,
-                        window_id,
-                        work_id,
-                        Some(ordinal),
-                        stack_teardown,
-                        window_teardown,
-                        &window_ordinal,
-                        &toast_registry,
-                    );
-                }
-            })
-        };
-
-        // Detect "a backup file was opened" and enter backup mode (second LoadWork
-        // subscriber — must stay registered after the first seed subscriber above).
-        wiring::project_events::install_backup_sniff(
+        let attach_seed = wiring::project_events::install_lifecycle(
             ctx,
-            wiring::project_events::BackupSniffDeps {
+            wiring::project_events::LifecycleDeps {
                 app_ctx: self.app_ctx.clone(),
-                ids: ids.clone(),
+                session: session.clone(),
+                ids: session.ids.clone(),
+                registry: self.registry.clone(),
+                lifecycle: lifecycle.clone(),
+                editors: editors.clone(),
+                outline: outline.clone(),
+                trash: trash.clone(),
+                search: search.clone(),
+                backup_scheduler: backup_scheduler.clone(),
+                toast_registry: toast_registry.clone(),
+                window_id,
+                window_ordinal: self.window_ordinal.clone(),
+                spell_docs: spell_docs.clone(),
+                dictionaries: dictionaries.clone(),
                 tree_expansion: session.tree_expansion.clone(),
                 backup_mode: self.backup_mode.clone(),
                 backup_context: self.backup_context.clone(),
                 restore_vm: restore_vm.clone(),
                 single_work: single_work.clone(),
                 backup_settings: backup_settings.clone(),
-                backup_scheduler: backup_scheduler.clone(),
                 workspace_layout: workspace_layout.clone(),
-                outline: outline.clone(),
                 trash_dock: self.trash_dock,
-                session: session.clone(),
             },
         );
 
@@ -1996,166 +1806,6 @@ impl Widget for App {
             &self.session.mention_index,
             &self.session.progress_recorder,
         );
-
-        // On new work: same seeding as load (a project is now open), then write
-        // the freshly-created project to the chosen path immediately — a
-        // create-and-save. `save_to_disk` resolves the target + shape from the
-        // `WorkInfo` the use case just set (from the picker path + is_folder).
-        // The new project isn't on disk yet, so it starts `unsaved = true`; the
-        // async save is a long op, and the SaveWork-completion handler clears
-        // `unsaved` only once the write actually lands — so an exit/close during
-        // the in-flight write is caught by the guards instead of dropping the file.
-        {
-            // Guarded (loose form) — same reasoning as the LoadWork subscriber above:
-            // a sibling window's NewWork must not reseed this window, but THIS
-            // window's own bootstrap/in-place New must still seed itself while its
-            // own `ids.work_id` is still `None`.
-            let lifecycle_new = lifecycle.clone();
-            let my_ids = session.ids.clone();
-            let my_session = session.clone();
-            let registry_for_new = self.registry.clone();
-            let toast_registry_for_new = toast_registry.clone();
-            // Same teardown ingredients as the LoadWork subscriber above — see
-            // `build_window_teardown`'s doc.
-            let editors_for_teardown = editors.clone();
-            let app_ctx_for_teardown = self.app_ctx.clone();
-            let backup_scheduler_for_teardown = backup_scheduler.clone();
-            // Scope D — window titles: see the identical LoadWork subscriber's
-            // `window_ordinal_for_load` doc above.
-            let window_ordinal_for_new = self.window_ordinal.clone();
-            ctx.subscribe_event(
-                Origin::WorkManagement(WorkManagementEvent::NewWork),
-                move |event: &Event| {
-                    if !my_ids.is_bootstrap_or_own(&event.ids) {
-                        return;
-                    }
-                    if let Some(&work_id) = event.ids.first() {
-                        lifecycle_new.on_new(work_id);
-                        registry_for_new.register(work_id, my_session.clone());
-                        if let Some(window_id) = window_id {
-                            let stack_teardown = build_stack_teardown(
-                                app_ctx_for_teardown.clone(),
-                                my_ids.stack_id.get(),
-                            );
-                            let window_teardown = build_window_teardown(
-                                editors_for_teardown.clone(),
-                                backup_scheduler_for_teardown.clone(),
-                                toast_registry_for_new.clone(),
-                                window_id,
-                                my_ids.stack_id.get(),
-                            );
-                            wiring::project_events::bind_window_to_work(
-                                &registry_for_new,
-                                window_id,
-                                work_id,
-                                None,
-                                stack_teardown,
-                                window_teardown,
-                                &window_ordinal_for_new,
-                                &toast_registry_for_new,
-                            );
-                        }
-                    }
-                },
-            );
-        }
-
-        // After a project becomes live (Load or New), offer any missing dictionaries its
-        // declared languages need. Registered *after* the spell-wiring subscribers above, which
-        // set the project language `offer_missing_dictionaries` reads — so it runs once those
-        // have populated it. Needs an `EventContext` (to raise the toast), hence a separate
-        // `subscribe_event_with_ctx` per event.
-        //
-        // Guarded (strict form): by the time either event fires, this window's own
-        // `on_load`/`on_new` subscriber above (registered earlier in this same
-        // `build`) has already seeded `ids.work_id` — so a sibling window's Load/New
-        // reliably fails this check instead of popping a duplicate "install a
-        // dictionary" toast in every other open window.
-        for event in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
-            let docs = spell_docs.clone();
-            let dictionaries = dictionaries.clone();
-            let my_ids = session.ids.clone();
-            let session_for_toast = session.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::WorkManagement(event),
-                move |e: &Event, c: &mut EventContext| {
-                    if my_ids.is_event_for_my_work(&e.ids) {
-                        offer_missing_dictionaries(&docs, &dictionaries, &session_for_toast, c)
-                    }
-                },
-            );
-        }
-
-        // The search corpus cache holds the parsed, folded prose of every scene of the
-        // project that is open. When a project is **replaced or closed**, that prose is
-        // gone from the store — and because the cache is content-addressed, its keys are
-        // strings nothing will ever ask for again. Left alone it is dead weight: ~19 MB
-        // for a 300k-word novel, freed only when the 128 MB ceiling eventually trips.
-        //
-        // This is *not* a correctness hook. The cache cannot go stale (edited prose is a
-        // different key), which is the whole point of keying it on the text. It is purely
-        // about not carrying the previous manuscript around.
-        //
-        // All three events, because all three replace or drop the open project: New Work
-        // and Open Work (and the switcher's "Open here", and the import toast's "Open
-        // now") both go through `load_work`/`new_work`, which close the previous Work in
-        // the backend rather than via a UI-side `close_work`.
-        //
-        // Deliberately left **unguarded** (multi-Work migration): this cache is Tier-1
-        // (process-wide) by nature, not per-Work — with a second Work now able to be
-        // open at the same time, a sibling Work's Load/New/Close still safely clears
-        // it, because the cache is content-addressed and cannot go stale. Over-clearing
-        // on a sibling's event only costs this Work's next search a re-parse; it is not
-        // a correctness bug, so it gets no `is_event_for_my_work` guard.
-        for event in [
-            WorkManagementEvent::LoadWork,
-            WorkManagementEvent::NewWork,
-            WorkManagementEvent::CloseWork,
-        ] {
-            ctx.subscribe_event(Origin::WorkManagement(event), move |_event: &Event| {
-                frontend::search_management::corpus_cache::clear();
-            });
-        }
-
-        // On work close: forget the ids, empty the tree, drop the tabs, and clear
-        // the singles (the store no longer holds the work).
-        //
-        // Guarded (strict form): a sibling window's CloseWork must never tear down
-        // THIS window's own live Work. `subscribe_event_with_ctx` (not the plain
-        // form the single-Work version used) so this can also force-dismiss any
-        // modal this window has open — the on_close modal-dismissal gap named in
-        // the migration design doc: without it, a Settings pane (or any other
-        // InTree modal) left open over the outgoing Work would keep a live handle
-        // into a session whose backing rows this teardown just freed (`ids.clear()`,
-        // the singles unpointing below).
-        //
-        // Deliberately does **not** touch `WorkRegistry`'s session/window
-        // bookkeeping or delete the undo stack any more — both moved to
-        // `WorkRegistry::remove_window` (driven by bastyde's `on_removed`
-        // window-teardown hook — see `shell::windows`'s wiring and
-        // `build_stack_teardown`'s doc) for a real window close, and to
-        // `WorkRegistry::register_window`'s own replace path for an in-place
-        // switch (`CloseWork` never fires for that case — see
-        // `ProjectSwitchViewModel`'s doc). Those two are the only reliable
-        // answer to "am I the last window on this Work" once Phase 3 ships
-        // `AttachExisting` (a second window sharing one Work) — deciding it
-        // here, at `CloseWork` time, would already be too early for a window
-        // that isn't closing itself (a sibling's own `CloseWork` subscriber
-        // firing the same event).
-        {
-            let lifecycle_close = lifecycle.clone();
-            let my_ids = session.ids.clone();
-            ctx.subscribe_event_with_ctx(
-                Origin::WorkManagement(WorkManagementEvent::CloseWork),
-                move |event: &Event, c: &mut EventContext| {
-                    if !my_ids.is_event_for_my_work(&event.ids) {
-                        return;
-                    }
-                    c.dismiss_top_overlay();
-                    lifecycle_close.on_close();
-                },
-            );
-        }
 
         // App mediates the two peer view-models: *activating* a binder item
         // (click or Enter — NOT arrow navigation, which only moves the selection)
@@ -2434,477 +2084,26 @@ impl Widget for App {
         ctx.register_action_global(
             Action::new("app.about").on_invoke(|_i, c| crate::panels::about::present_about(c)),
         );
-        let active_item = editors.active_item();
-        let split_active = editors.split_active();
-
-        // ── Center: split editor — two panes in a Splitter ───────────────────
-        // Each pane is a zoned `DropTarget` wrapping a `TabWidget`, so a binder
-        // row dragged from the outline opens on the pane it's dropped over. The
-        // primary pane's `Trailing` (right-edge) zone opens to the side; it
-        // deactivates once split (`enabled(split_active.not())`). Closing a tab
-        // saves it first (`on_close` is a pre-close intercept). Tabs migrate
-        // between panes (`accept_external_tabs` + `on_tab_received` dedup).
-        let split_button = {
-            let editors = editors.clone();
-            IconButton::new(crate::icons::editor::split())
-                .tooltip(tr!(split_editor()))
-                .icon_role(split_active.map(|on| {
-                    if *on {
-                        TextRole::Accent
-                    } else {
-                        TextRole::Primary
-                    }
-                }))
-                .on_activate_fn(move |_ctx| editors.toggle_split())
-        };
-        let close_split_button = {
-            let editors = editors.clone();
-            IconButton::new(crate::icons::editor::close_split())
-                .tooltip(tr!(close_split_view()))
-                .on_activate_fn(move |_ctx| editors.close_split())
-        };
-
-        // Follow keyboard focus, not just tab selection: when focus enters a
-        // pane's content (e.g. clicking into its editor), mark that pane focused so
-        // the Inspector + open-item marker track the pane you're actually working
-        // in. `focus_within` is set by the framework when a descendant has focus.
-        let primary_focus = Signal::new(false);
-        let secondary_focus = Signal::new(false);
-        for (sig, side) in [
-            (&primary_focus, Side::Primary),
-            (&secondary_focus, Side::Secondary),
-        ] {
-            let editors = editors.clone();
-            ctx.effect(sig, move |&focused| {
-                if focused {
-                    editors.set_focused(side);
-                }
-            });
-        }
-
-        // The editor tab strip is chrome like the menu bar and the docks, so
-        // distraction-free mode takes it away too — unless the writer ticked
-        // Settings ▸ Editor ▸ Editor Behavior ▸ Distraction-free ▸ "Editor tabs".
-        // Bound (not swapped): `TabWidget::bar_visibility` takes a `Prop`, so
-        // the strip appears and disappears in place and the panes below it are
-        // never rebuilt — entering the mode must not cost the writer their
-        // caret or scroll position. Both panes share the one signal so their
-        // chrome can't drift, the same reason `build_pane_tabs` exists at all.
-        let tab_bar_visibility = self
-            .focus
-            .active_signal()
-            .zip(&settings.distraction_free_tab_bar())
-            .map(|(focus_active, keep)| tab_bar_policy(*focus_active, *keep));
-
-        let primary_pane = {
-            let e = editors.clone();
-            DropTarget::new()
-                .variant(DropTargetVariant::Prominent)
-                .zone_size_factor(0.3)
-                .accept_when(|p| {
-                    p.get_typed::<RowDragData<TreeNode>>()
-                        .is_some_and(|d| d.is_export())
-                })
-                .region(DropRegion::Center, |z| {
-                    z.hint(TextWidget::new(tr!(drop_open_here())))
-                })
-                .region(DropRegion::Trailing, |z| {
-                    z.hint(TextWidget::new(tr!(drop_open_to_side())))
-                        .enabled(split_active.not())
-                })
-                .on_region_drop(move |region, payload, _pos, _ctx| {
-                    drain_dropped(payload, |item_id, title| match region {
-                        DropRegion::Trailing => e.open_to_side(item_id, title),
-                        _ => e.open_in(Side::Primary, item_id, title),
-                    })
-                })
-                .child(build_pane_tabs(
-                    &editors,
-                    Side::Primary,
-                    split_button,
-                    tab_bar_visibility.clone(),
-                ))
-                .focus_within(primary_focus.clone())
-        };
-
-        let secondary_pane = {
-            let e = editors.clone();
-            DropTarget::new()
-                .variant(DropTargetVariant::Prominent)
-                .accept_when(|p| {
-                    p.get_typed::<RowDragData<TreeNode>>()
-                        .is_some_and(|d| d.is_export())
-                })
-                .region(DropRegion::Center, |z| {
-                    z.hint(TextWidget::new(tr!(drop_open_here())))
-                })
-                .on_region_drop(move |_region, payload, _pos, _ctx| {
-                    drain_dropped(payload, |item_id, title| {
-                        e.open_in(Side::Secondary, item_id, title)
-                    })
-                })
-                .child(build_pane_tabs(
-                    &editors,
-                    Side::Secondary,
-                    close_split_button,
-                    tab_bar_visibility,
-                ))
-                .focus_within(secondary_focus.clone())
-        };
-
-        let center = Splitter::new(editors.splitter())
-            .pane(primary_pane)
-            .pane(secondary_pane);
-
-        // ── Leading dock: the binder tree, fronted by a VS Code-style activity
-        //    bar (icon rail). The OutlineViewModel owns the DockingModel; the
-        //    dock content itself lives in `docks::outline`. ───────────────────
-        // The trailing side hosts the context Inspector (a rail dock, like the
-        // outline), sized + rail-fronted on the shared DockingModel.
-        //
-        // These are the DEFAULT dock config + arrangement, established **once** (on
-        // first build): the shared `DockingModel` persists across widget rebuilds,
-        // and the per-work restore below imports each project's saved sizes /
-        // selected side-tab on `LoadWork`, so re-running these on every rebuild would
-        // stomp a restored (or user-adjusted) layout. The `.dock(...)` registrations
-        // on `DockingLayout::new(...)` still run every build — they rebuild the dock
-        // *content*, not the arrangement.
-        if !self.initial_loaded {
-            let docking = outline.docking();
-            docking.set_side_size(DockSide::Trailing, 300.0);
-            docking.set_side_rail(DockSide::Trailing, 48.0);
-            // The bottom search-preview band. The bottom-LEADING corner belongs to
-            // the Leading side, so the binder column runs full height and the preview
-            // spans only the width beside it. (Default is `Bottom`, i.e. a full-width
-            // band under everything.)
-            docking.set_side_size(DockSide::Bottom, 180.0);
-            docking.set_corner(DockCorner::BottomLeading, DockSide::Leading);
-            // An activity bar, not a tab strip: `set_side_rail` switches the side's
-            // presentation from tabs to a rail of activity glyphs, and `Compact` keeps
-            // them at the standard icon-button size so the band spends its height on
-            // prose rather than on chrome.
-            docking.set_side_rail(DockSide::Bottom, 36.0);
-            docking.set_side_rail_size(DockSide::Bottom, DockRailItemSize::Compact);
-        }
-        let layout = DockingLayout::new(outline.docking())
-            .rail(
-                DockRail::new(DockSide::Leading)
-                    .background(SurfaceRole::Main)
-                    .divider(),
-            )
-            .rail(
-                DockRail::new(DockSide::Trailing)
-                    .background(SurfaceRole::Main)
-                    .divider(),
-            )
-            .rail(
-                DockRail::new(DockSide::Bottom)
-                    .background(SurfaceRole::Main)
-                    .divider(),
-            )
-            .center(center)
-            .dock(crate::docks::outline::outline_dock(
-                outline.clone(),
-                self.app_ctx.clone(),
-                on_open.clone(),
-                active_item.clone(),
-            ))
-            .dock(crate::docks::inspector::inspector_dock(
-                self.app_ctx.clone(),
-                outline.clone(),
-                active_item,
-                self.inspector_dock,
-                session.tags.clone(),
-                session.mention_index.clone(),
-                session.open_docs.clone(),
-            ))
-            .dock(crate::docks::format::format_dock(
-                format.clone(),
-                self.format_dock,
-            ))
-            .dock(crate::docks::search::search_dock(
-                search.clone(),
-                self.search_dock,
-            ))
-            .dock(crate::docks::search_preview::search_preview_dock(
-                search.clone(),
-                self.format.clone(),
-                self.preview_dock,
-            ))
-            .dock(crate::docks::trash::trash_dock(
-                trash.clone(),
-                self.trash_dock,
-                on_open,
-            ));
-        // Increment 2 of distraction-free: "the editor takes the whole
-        // surface" is this — disabling the three sides that carry chrome
-        // (never the centre, which is the editor itself) rather than hiding
-        // the whole `DockingLayout`. `set_side_enabled` is documented as
-        // reactive (`docs/docking.md`'s "Locking the layout" section) and,
-        // unlike `set_side_visible`, also drops the leading/trailing rail —
-        // the reopen affordance a hidden-but-enabled side otherwise keeps —
-        // so nothing but the editor remains. Non-destructive: docks already
-        // open on a disabled side stay in the model and reappear exactly as
-        // they were the moment the side is re-enabled. `Top` is never docked
-        // anywhere in this app, so it is left alone.
-        //
-        // A plain `ctx.effect` on the MUTABLE `active_signal()` (never a
-        // derived/zip/map read via `ctx.effect` — that panics, see the house
-        // rule); it only fires on a *change*, which is exactly right since a
-        // freshly built window's sides already start enabled, matching
-        // "not in the mode" by construction.
-        {
-            let docking = outline.docking();
-            ctx.effect(&self.focus.active_signal(), move |active| {
-                let enabled = !*active;
-                docking.set_side_enabled(DockSide::Leading, enabled);
-                docking.set_side_enabled(DockSide::Trailing, enabled);
-                docking.set_side_enabled(DockSide::Bottom, enabled);
-            });
-        }
-        // First-build-only default arrangement (see the config block above on why
-        // it must not re-run on rebuilds).
-        if !self.initial_loaded {
-            // The leading side hosts TWO activity docks (binder + search) as separate
-            // switchable rail tabs — VS Code style: the rail shows both glyphs, and
-            // selecting one shows only its panel. `.new_tab()` is what makes them
-            // distinct tabs; the default `side()` placement *stacks* (a vertical
-            // split showing both at once, which starves the binder). The binder is
-            // revealed last so it is the selected leading panel on launch.
-            let docking = outline.docking();
-            docking.open_dock(
-                outline.dock_id(),
-                DockOpenLocation::side(DockSide::Leading).new_tab(),
-            );
-            docking.open_dock(
-                self.search_dock,
-                DockOpenLocation::side(DockSide::Leading).new_tab(),
-            );
-            docking.open_dock(
-                self.trash_dock,
-                DockOpenLocation::side(DockSide::Leading).new_tab(),
-            );
-            docking.reveal_dock(outline.dock_id());
-            // Mount the inspector on the trailing side (otherwise the side shows the
-            // empty "drop a panel here" placeholder).
-            docking.open_dock(
-                self.inspector_dock,
-                DockOpenLocation::side(DockSide::Trailing),
-            );
-            // Format joins it as a second rail tab rather than a second side.
-            // Inspector answers "what is this item", Format answers "how does
-            // this text read" — same trailing rail, one visible at a time,
-            // because a writer wants one question answered at a time and the
-            // 300px side has no room to stack both.
-            docking.open_dock(
-                self.format_dock,
-                DockOpenLocation::side(DockSide::Trailing).new_tab(),
-            );
-            // Inspector is the one that starts showing: it is the older habit,
-            // and Format is reachable in one click on the rail.
-            docking.reveal_dock(self.inspector_dock);
-            // Mount the bottom preview band, then hide it: it is the transient
-            // search-preview band, always hidden at start (a result click reveals it
-            // thereafter). `open_dock` makes its side visible as a side effect, so the
-            // hide must follow the mount — and it is *immediate* to avoid an
-            // opening-then-closing flash on launch.
-            docking.open_dock(self.preview_dock, DockOpenLocation::side(DockSide::Bottom));
-            docking.set_side_visible_immediate(DockSide::Bottom, false);
-            // Snapshot this pristine arrangement as the reset target for a project
-            // that has no saved layout (so an in-place switch to an unconfigured
-            // project doesn't inherit the previous one's docks).
-            //
-            // Skipped for an attached window — see [`WindowRole::owns_desk`].
-            if self.role.owns_desk() {
-                session
-                    .workspace_layout
-                    .set_default_docks(docking.export_state());
-            }
-        }
-
-        // ── Status bar (thin) with the notification bell ─────────────────────
-        let archive = ctx
-            .app_state::<Rc<NotificationArchiveModel>>()
-            .cloned()
-            .expect("install_toast_default registers the notification archive");
-        // Status-bar dock toggles: hide/show the leading (binder) and trailing
-        // (inspector) sides — like Bastyde's `docking` example.
-        let dock_lead = outline.docking();
-        let dock_trail = outline.docking();
-        // The save indicator sits right after the binder toggle: the quiet, always-
-        // there answer to "is my last paragraph on disk?" — the one thing autosave
-        // mode had no way to tell you (it hides Save + Ctrl+S). Failures are toasts;
-        // this is only the steady state.
-        let save_indicator = crate::statusbar::save_indicator::SaveIndicator::new(
-            editors.clone(),
-            self.unsaved.clone(),
-            settings.autosave(),
-            self.backup_mode.clone(),
-            // A work is open iff its `WorkInfo` shape is known (same test the File
-            // menu uses to collapse its project-only items).
-            single_work_info.shape().map(|s| s.is_some()),
-            self.save_spinner.clone(),
-            self.save_spinner_visible.clone(),
-        );
-        // The focused item's live word count sits right after the save glyph — the
-        // quiet "how many words in this scene" a writer glances at. Counts the open
-        // document's live text (so it tracks typing), off `StatsModel` over the shared
-        // `OpenDocsStore`.
-        let stats = crate::models::StatsModel::new(
-            session.open_docs.clone(),
-            editors.active_item(),
-            settings.counting_method(),
-        );
-        let word_count_indicator = crate::statusbar::word_count_indicator::WordCountIndicator::new(
-            stats.clone(),
-            single_work_info.shape().map(|s| s.is_some()),
-            settings.show_characters(),
-        );
-        // The writing session: a play/pause sprint timer + word tracker (ephemeral —
-        // only its targets persist). Sits on the right of the status bar.
-        let session_vm =
-            crate::view_models::WritingSessionViewModel::new(stats.clone(), ctx.settings());
-        let session_item = crate::statusbar::session_status_item::SessionStatusItem::new(
-            session_vm.clone(),
-            single_work_info.shape().map(|s| s.is_some()),
-        );
-        // `session.toggle` — scriptable start/pause (palette / automation); the play
-        // button is the primary control. Global so it fires regardless of focus.
-        {
-            let vm = session_vm.clone();
-            ctx.register_action_global(
-                Action::new("session.toggle").on_invoke(move |_i, _c| vm.toggle()),
-            );
-        }
-        // A work is open iff its `WorkInfo` shape is known — the same test the
-        // word count, the session readout and the File menu already use.
-        let has_work = single_work_info.shape().map(|s| s.is_some());
-        // The Go-to popup's own tree model needs the backend subscription, like
-        // the outline's; and `App` is the only place that can hand it the
-        // "open this item" edge, since a view-model may not import a peer.
-        self.go_to.wire(ctx);
-        {
-            let e = editors.clone();
-            self.go_to
-                .set_open_fn(std::rc::Rc::new(move |item_id, title| {
-                    e.open_or_focus(item_id, title)
-                }));
-        }
-        let status = StatusBar::new().background(SurfaceRole::Main).child(
-            HStack::new()
-                .spacing(8.0)
-                // Leading (binder) toggle on the left; trailing (inspector) toggle
-                // pushed to the right next to the notification bell.
-                .child(
-                    IconButton::new(crate::icons::activity::sidebar_icon())
-                        .size(IconButtonSize::Compact)
-                        .tooltip(tr!(statusbar_toggle_outline()))
-                        .on_activate_fn(move |_| dock_lead.toggle_side_visible(DockSide::Leading)),
-                )
-                .child(save_indicator)
-                .child(word_count_indicator)
-                .child(Spacer::new())
-                // "Go to…" sits before the session readout, on the trailing
-                // side: it is an action, and the two items to its right are
-                // readouts. Hidden with no project — there is nothing to jump
-                // to, the same `has_work` test the readouts already use.
-                .child(VisibleWhen::new(
-                    has_work.clone(),
-                    crate::statusbar::go_to_button::GoToButton::new(
-                        self.go_to.clone(),
-                        crate::statusbar::go_to_button::GO_TO_MAIN,
-                    ),
-                ))
-                .child(session_item)
-                .child(
-                    IconButton::new(crate::icons::activity::inspector_icon())
-                        .size(IconButtonSize::Compact)
-                        .tooltip(tr!(statusbar_toggle_inspector()))
-                        .on_activate_fn(move |_| {
-                            dock_trail.toggle_side_visible(DockSide::Trailing)
-                        }),
-                )
-                .child(
-                    crate::statusbar::notification_bell::NotificationBell::new(
-                        archive,
-                        ids.work_id.clone(),
-                    )
-                    .size(IconButtonSize::Compact),
-                ),
-        );
-
-        // The permanent backup banner sits above everything while a backup file is
-        // open (zero height otherwise).
-        let backup_banner = crate::backup::banner::BackupBanner::new(
-            self.backup_context.clone(),
-            restore_vm.clone(),
-            save_as_vm.clone(),
-            single_work.clone(),
-        );
-
-        // Increment 2 of distraction-free: the banner, the divider under the
-        // (now possibly-collapsed) title bar, and the normal status bar all
-        // collapse together — `VisibleWhen`, the same dormant-not-torn-down
-        // gate the synopsis toggle already uses, keyed off the SAME derived
-        // "chrome visible" reading of `FocusViewModel::active_signal()` the
-        // title bar's own menu/trailing/center content uses in
-        // `shell::windows`. The always-visible strip (word count + writing
-        // session + Go Previous/Next + Exit — never hover-reveal, see
-        // `FocusStrip`'s doc) takes the status bar's place while the mode is
-        // active.
-        let chrome_visible = self.focus.active_signal().map(|active| !*active);
-        let focus_active = self.focus.active_signal();
-        let focus_strip = crate::statusbar::focus_strip::FocusStrip::new(
-            self.go_to.clone(),
-            stats.clone(),
-            session_vm.clone(),
-            single_work_info.shape().map(|s| s.is_some()),
-            settings.show_characters(),
-            crate::statusbar::focus_strip::FocusStripChrome::from_settings(&settings),
-        );
-
-        let root = ctx.add(
-            VStack::new()
-                .spacing(0.0)
-                .child(VisibleWhen::new(chrome_visible.clone(), backup_banner))
-                .child(VisibleWhen::new(chrome_visible.clone(), Divider::new()))
-                .child(Expand::new().child(layout))
-                .child(VisibleWhen::new(chrome_visible, status))
-                .child(VisibleWhen::new(focus_active.clone(), focus_strip))
-                .on_key({
-                    let focus = self.focus.clone();
-                    move |ev, ctx| match ev {
-                        // A contextless Escape leaves the mode. This is a
-                        // widget-level key handler, not a global shortcut —
-                        // `RichTextEditor` already consumes Escape for IME
-                        // composition cancel, clearing a selection, and
-                        // dismissing its spell-suggestion popup, and a
-                        // *global* `register_shortcut_global(Escape)` would
-                        // be resolved BEFORE the focused editor ever saw the
-                        // key (see `app/commands.rs`'s module doc on why
-                        // globals go first), firing underneath whatever the
-                        // editor just did with the same keypress — exactly
-                        // backwards. Raw key events bubble from the focused
-                        // widget up through its ancestors instead, so this
-                        // handler on the root only ever sees an Escape
-                        // nothing more local already claimed. Guarded on
-                        // `focus_active` so it is a no-op — and lets the key
-                        // keep bubbling — outside the mode, same precedent as
-                        // the find banner's own local Escape handling
-                        // (`tabs/shared/editor.rs`'s `FindBanner`).
-                        WidgetEvent::KeyDown {
-                            key: Key::Escape, ..
-                        } if focus_active.get() => {
-                            if let Some(window) = ctx.window() {
-                                focus.exit(window);
-                            }
-                            EventResponse::Handled
-                        }
-                        _ => EventResponse::Ignored,
-                    }
-                }),
+        let root = self.build_shell(
+            ctx,
+            project_shell::ShellParts {
+                editors: editors.clone(),
+                outline: outline.clone(),
+                search: search.clone(),
+                trash: trash.clone(),
+                format: self.format.clone(),
+                settings: settings.clone(),
+                session: session.clone(),
+                ids: ids.clone(),
+                on_open: on_open.clone(),
+                single_work: single_work.clone(),
+                single_work_info: single_work_info.clone(),
+                restore_vm: restore_vm.clone(),
+                save_as_vm: save_as_vm.clone(),
+            },
         );
         self.root_child = Some(root);
+
 
         // Perform this project window's one backend mutation (load the argv
         // path / a Launcher-picked recent, or create a brand-new work)
