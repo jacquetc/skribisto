@@ -336,10 +336,22 @@ impl Widget for LanguagePillField {
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        self.root_child
-            .and_then(|id| ctx.child_size(id, proposal))
-            .map(LayoutResponse::from)
-            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        // Same height-for-width as TagPillField: measure the Wrap against a
+        // concrete width and claim the full offered column so chips reflow.
+        let wrap_w = proposal.width.or(Some(280.0));
+        let measured = self
+            .root_child
+            .and_then(|id| {
+                ctx.child_size(
+                    id,
+                    SizeProposal {
+                        width: wrap_w,
+                        height: None,
+                    },
+                )
+            })
+            .unwrap_or(Size::ZERO);
+        Size::new(proposal.width.unwrap_or(measured.width), measured.height).into()
     }
 
     fn children(&self) -> Vec<WidgetId> {

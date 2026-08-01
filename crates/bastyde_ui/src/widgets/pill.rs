@@ -611,6 +611,45 @@ mod tests {
         assert!(!activated && !removed, "ArrowDown must be left alone");
     }
 
+    /// Coloured tag chips in a narrow wrap must reflow to multiple lines — same as
+    /// language/alias pills. If a chip greedily reports the full proposal width, Wrap
+    /// puts one pill per line and the Inspector "flow" looks broken.
+    #[test]
+    fn coloured_pills_wrap_instead_of_each_taking_a_full_line() {
+        use bastyde::widgets::Wrap;
+        use crate::tags::contrast;
+        let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
+        let mut flow = Wrap::new().spacing(6.0).line_spacing(6.0);
+        for name in ["Character", "Place", "status/draft", "needs research", "Plot"] {
+            let fill = contrast::parse("#2980b9");
+            flow = flow.child(
+                Pill::new(name, lit!(name))
+                    .background(fill)
+                    .outline(contrast::outline_on(fill))
+                    .text_color(contrast::text_on(fill))
+                    .on_remove(lit!("remove"), |_| {}),
+            );
+        }
+        let id = tree.add(flow);
+        // Inspector dock is ~280–320 dp wide; force a narrow wrap.
+        tree.layout(SizeProposal::exact(220.0, 400.0));
+        let b = tree.bounds(id);
+        assert!(
+            b.height > 40.0,
+            "several removable coloured pills in 220 dp should wrap to >1 line, height={}",
+            b.height
+        );
+        // Each pill's placed width must be content-hugging, not the full 220.
+        let mut max_pill_w = 0.0_f32;
+        for child in tree.children(id) {
+            max_pill_w = max_pill_w.max(tree.bounds(child).width);
+        }
+        assert!(
+            max_pill_w < 200.0,
+            "a chip must not stretch to the wrap width (got max pill width {max_pill_w})"
+        );
+    }
+
     /// The leading slot is always laid out; only its paint changes. If it were collapsed out
     /// of layout when hidden, toggling it would resize the chip and reflow the whole row
     /// under the pointer.

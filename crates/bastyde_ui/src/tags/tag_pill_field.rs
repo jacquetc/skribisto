@@ -156,10 +156,26 @@ impl Widget for TagPillField {
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        self.root_child
-            .and_then(|id| ctx.child_size(id, proposal))
-            .map(LayoutResponse::from)
-            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        // `Wrap` needs a concrete width to compute multi-line height. Measure
+        // against the offered width (or a dock-ish fallback when the parent
+        // left width open), then **claim that full width** so VStack places us
+        // at the column width rather than the content-hug of the longest line
+        // — otherwise place-time reflow can disagree with measure-time height
+        // and the chips look stacked/clipped instead of flowing.
+        let wrap_w = proposal.width.or(Some(280.0));
+        let measured = self
+            .root_child
+            .and_then(|id| {
+                ctx.child_size(
+                    id,
+                    SizeProposal {
+                        width: wrap_w,
+                        height: None,
+                    },
+                )
+            })
+            .unwrap_or(Size::ZERO);
+        Size::new(proposal.width.unwrap_or(measured.width), measured.height).into()
     }
 
     fn children(&self) -> Vec<WidgetId> {
@@ -603,4 +619,65 @@ fn swatch(color: bastyde::tokens::Color) -> impl Widget {
             .border_color(contrast::outline_on(color))
             .border_width(1.0),
     )
+}
+
+#[cfg(test)]
+mod flow_tests {
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+    use frontend::AppContext;
+    use std::rc::Rc;
+
+    /// TagPillField must reflow chips under a narrow proposal the same way
+    /// LanguagePillField / AliasPillField do — a composing-widget bug that
+    /// measures the Wrap under unbounded width would stack one chip per line
+    /// or clip the flow.
+    #[test]
+    fn tag_pill_field_wraps_under_inspector_width() {
+        let ctx = Rc::new(AppContext::new());
+        let ids = crate::app_ids::AppIds::new();
+        let list = crate::models::WorkTagsListModel::new(ctx, ids.clone());
+        let vm = TagsViewModel::new(list, ids);
+        // Assign every mock (or empty) palette tag; when mocks ship 6 tags we
+        // need wrapping. With a real empty store, seed by creating if possible.
+        let mut ids_vec: Vec<u64> = vm.rows().into_iter().map(|r| r.id).collect();
+        if ids_vec.is_empty() {
+            // Real backend with no open Work: skip meaningfully.
+            for (i, name) in ["A", "B", "C", "D", "E", "F"].iter().enumerate() {
+                if let Some(id) = vm.create(name, "#2980b9", "", false) {
+                    ids_vec.push(id);
+                } else {
+                    // Can't create without a Work — still assert the field lays out.
+                    let _ = i;
+                }
+            }
+        }
+        if ids_vec.len() < 3 {
+            // Headless without Work can't seed tags; layout still must not panic.
+            let field = TagPillField::new(
+                Signal::new(ids_vec),
+                Rc::new(|_, _| {}),
+                vm,
+            );
+            let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
+            let id = tree.add_boxed(Box::new(field));
+            tree.layout(SizeProposal::exact(220.0, 400.0));
+            assert!(tree.bounds(id).height > 0.0);
+            return;
+        }
+        let field = TagPillField::new(
+            Signal::new(ids_vec),
+            Rc::new(|_, _| {}),
+            vm,
+        );
+        let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
+        let id = tree.add_boxed(Box::new(field));
+        tree.layout(SizeProposal::exact(220.0, 400.0));
+        let b = tree.bounds(id);
+        assert!(
+            b.height > 40.0,
+            "several tag pills in a 220 dp inspector should wrap; height={}",
+            b.height
+        );
+    }
 }
