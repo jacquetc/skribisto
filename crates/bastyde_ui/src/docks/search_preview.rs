@@ -236,6 +236,30 @@ impl Widget for PreviewBody {
                     let token = crate::tabs::shared::editor::wire_spell(ctx, &handle, spell);
                     self.spell_view = Some((spell.clone(), token));
                 }
+                // …and the ambient caret band, for the same reason: this is a real writing
+                // surface, so the setting must reach it like every other one. Wired by hand
+                // here because this editor deliberately bypasses `TypographyBoundEditor`, which
+                // is where every other surface picks the band up.
+                {
+                    let handle = editor.handle();
+                    let band = crate::view_models::CaretBand::new(
+                        crate::view_models::CaretHighlightSettings::from_context(ctx),
+                        self.vm.preview_locale(open_doc.item_id),
+                    );
+                    handle.set_caret_highlight(band.resolve());
+                    {
+                        let (h, b) = (handle.clone(), band.clone());
+                        ctx.effect(&band.settings.scope, move |_| {
+                            h.set_caret_highlight(b.resolve())
+                        });
+                    }
+                    {
+                        let (h, b) = (handle.clone(), band.clone());
+                        ctx.effect(&band.settings.color, move |_| {
+                            h.set_caret_highlight(b.resolve())
+                        });
+                    }
+                }
                 // The preview band is a real editing surface — it writes through to
                 // the shared document — so the formatting surfaces must reach it too.
                 // Registered here rather than through `TypographyBoundEditor` (which

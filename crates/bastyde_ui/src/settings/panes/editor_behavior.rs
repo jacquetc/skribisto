@@ -10,7 +10,7 @@
 //! `panes::distraction_free` now.
 
 use bastyde::prelude::*;
-use bastyde::widgets::ComboBox;
+use bastyde::widgets::{ComboBox, Segment, SegmentedControl};
 use bastyde::widgets::tooltip::TooltipContent;
 
 #[allow(unused_imports)]
@@ -25,10 +25,75 @@ fn typewriter_anchor_label(anchor: &TypewriterAnchor) -> LocalizedString {
     }
 }
 
+/// Display name for each caret-band scope.
+fn highlight_scope_label(scope: HighlightScope) -> LocalizedString {
+    match scope {
+        HighlightScope::None => tr!(settings_highlight_scope_none()),
+        HighlightScope::Sentence => tr!(settings_highlight_scope_sentence()),
+        HighlightScope::Paragraph => tr!(settings_highlight_scope_paragraph()),
+    }
+}
+
+/// What each scope does, as a per-segment tooltip — the self-documenting shape the backup
+/// pane's retention control uses, and the reason the three choices need no prose beside them.
+fn highlight_scope_tip(scope: HighlightScope) -> TooltipContent {
+    let (key, text) = match scope {
+        HighlightScope::None => (
+            "settings.highlight_scope.none",
+            tr!(settings_highlight_scope_tip_none()),
+        ),
+        HighlightScope::Sentence => (
+            "settings.highlight_scope.sentence",
+            tr!(settings_highlight_scope_tip_sentence()),
+        ),
+        HighlightScope::Paragraph => (
+            "settings.highlight_scope.paragraph",
+            tr!(settings_highlight_scope_tip_paragraph()),
+        ),
+    };
+    TooltipContent::new(key, text)
+}
+
 /// Editor ▸ Editor Behavior — the non-typographic writing settings: the
 /// centered-column width, the writing-view toggles, and the container-view
 /// memory.
-pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl Widget {
+pub(in crate::settings) fn editor_behavior_pane(
+    ctx: &mut BuildContext,
+    vm: &SettingsViewModel,
+) -> impl Widget {
+    // The caret band's scope ⟷ the `SegmentedControl`'s `usize` selection, bridged by two
+    // guarded effects — the shape `goals_pane` uses for `CountingMethodSetting` and
+    // `work_structure_pane` for `ChapterMode`. The `!=` guards are what stop the two signals
+    // from writing each other back and forth forever.
+    let scope = vm.highlight_scope();
+    let scope_index: Signal<usize> = Signal::new(scope.get().to_index());
+    {
+        let scope_index = scope_index.clone();
+        ctx.effect(&scope, move |s| {
+            let i = s.to_index();
+            if scope_index.get() != i {
+                scope_index.set(i);
+            }
+        });
+    }
+    {
+        let scope = scope.clone();
+        ctx.effect(&scope_index, move |i| {
+            let s = HighlightScope::from_index(*i);
+            if scope.get() != s {
+                scope.set(s);
+            }
+        });
+    }
+    let highlight_control = HighlightScope::all().into_iter().fold(
+        SegmentedControl::new(scope_index),
+        |control, s| {
+            control.segment(
+                Segment::new(highlight_scope_label(s)).rich_tooltip_content(highlight_scope_tip(s)),
+            )
+        },
+    );
+
     let form = FormLayout::new()
         .label(tr!(settings_page_editor_behavior()))
         .label_gap(16.0)
@@ -76,7 +141,13 @@ pub(in crate::settings) fn editor_behavior_pane(vm: &SettingsViewModel) -> impl 
                 .enabled(vm.typewriter()),
             ),
         )
-        .full_width(Toggle::new(vm.highlight_sentence()).label(tr!(settings_highlight_sentence())))
+        // How much of the text around the caret is shaded while you write. A three-way choice
+        // rather than a toggle: a sentence is the unit you shape word by word, a paragraph the
+        // one you shape whole, and neither subsumes the other.
+        .line(
+            field_label(tr!(settings_highlight_scope())),
+            highlight_control,
+        )
         .full_width(group(tr!(settings_group_container_views())))
         .full_width(
             Toggle::new(vm.remember_view())

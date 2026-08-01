@@ -46,7 +46,7 @@ use bastyde::widgets::{
 
 use crate::sessions::WorkSession;
 use crate::view_models::{
-    BackupSettingsViewModel, EditorTypography, SettingsViewModel, TypewriterAnchor,
+    BackupSettingsViewModel, EditorTypography, HighlightScope, SettingsViewModel, TypewriterAnchor,
     WorkSettingsViewModel,
 };
 use crate::{
@@ -56,7 +56,7 @@ use crate::{
     DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT, DISTRACTION_FREE_SESSION_DEFAULT,
     DISTRACTION_FREE_SIZE_DEFAULT, DISTRACTION_FREE_TITLE_DEFAULT, DISTRACTION_FREE_WIDTH_DEFAULT,
     DISTRACTION_FREE_WORD_COUNT_DEFAULT, EDITOR_WIDTH_DEFAULT, GOALS_SHOW_CHARACTERS_DEFAULT,
-    HIGHLIGHT_SENTENCE_DEFAULT, NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FONT_FAMILY_DEFAULT,
+    NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FONT_FAMILY_DEFAULT,
     NOTES_LINE_HEIGHT_DEFAULT, NOTES_PARA_SPACING_AFTER_DEFAULT, NOTES_PARA_SPACING_BEFORE_DEFAULT,
     NOTES_SIZE_DEFAULT, SCENE_FIRST_LINE_INDENT_DEFAULT, SCENE_FONT_FAMILY_DEFAULT,
     SCENE_LINE_HEIGHT_DEFAULT, SCENE_PARA_SPACING_AFTER_DEFAULT, SCENE_PARA_SPACING_BEFORE_DEFAULT,
@@ -391,8 +391,7 @@ fn build_not_defaults(
         vm.typewriter().map(|s| *s != TYPEWRITER_DEFAULT),
         vm.typewriter_anchor()
             .map(|a| *a != Some(TypewriterAnchor::default())),
-        vm.highlight_sentence()
-            .map(|s| *s != HIGHLIGHT_SENTENCE_DEFAULT),
+        vm.highlight_scope().map(|s| *s != HighlightScope::default()),
         // ── Goals & word count ──
         vm.counting_method()
             .map(|m| *m != CountingMethodSetting::default()),
@@ -905,7 +904,7 @@ impl SettingsPanel {
             (tr!(settings_text_width()), Pane::EditorBehavior),
             (tr!(settings_synopsis_pane()), Pane::EditorBehavior),
             (tr!(settings_typewriter()), Pane::EditorBehavior),
-            (tr!(settings_highlight_sentence()), Pane::EditorBehavior),
+            (tr!(settings_highlight_scope()), Pane::EditorBehavior),
             // The distraction-free settings are all on their own page now —
             // typography, the column width and the strip's toggles together —
             // so every one of them searches there.
@@ -1348,7 +1347,7 @@ impl Widget for SettingsPanel {
             ),
             (
                 Pane::EditorBehavior,
-                Box::new(panes::editor_behavior::editor_behavior_pane(&vm)),
+                Box::new(panes::editor_behavior::editor_behavior_pane(ctx, &vm)),
             ),
             (Pane::Goals, Box::new(panes::goals::goals_pane(ctx, &vm))),
             (

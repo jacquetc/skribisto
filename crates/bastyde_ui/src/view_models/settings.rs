@@ -23,7 +23,7 @@ use skribisto_model::counting::CountingMethodSetting;
 
 use frontend::common::entities::QuoteStyle;
 
-use super::TypewriterAnchor;
+use super::{HighlightScope, TypewriterAnchor};
 
 use crate::{
     AUTOSAVE_KEY, CORKBOARD_CARD_SIZE_DEFAULT, CORKBOARD_CARD_SIZE_KEY,
@@ -46,7 +46,7 @@ use crate::{
     DISTRACTION_FREE_WIDTH_KEY, DISTRACTION_FREE_WORD_COUNT_DEFAULT,
     DISTRACTION_FREE_WORD_COUNT_KEY, EDITOR_WIDTH_DEFAULT, EDITOR_WIDTH_KEY,
     GOALS_COUNTING_METHOD_KEY, GOALS_SHOW_CHARACTERS_DEFAULT, GOALS_SHOW_CHARACTERS_KEY,
-    HIGHLIGHT_SENTENCE_DEFAULT, HIGHLIGHT_SENTENCE_KEY, LOCALE_KEY,
+    HIGHLIGHT_SCOPE_KEY, LOCALE_KEY,
     NOTES_FIRST_LINE_INDENT_DEFAULT, NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT,
     NOTES_FONT_FAMILY_KEY, NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY,
     NOTES_PARA_SPACING_AFTER_DEFAULT, NOTES_PARA_SPACING_AFTER_KEY,
@@ -249,7 +249,7 @@ pub struct SettingsViewModel {
     punct_dialogue: Signal<bool>,
     typewriter: Signal<bool>,
     typewriter_anchor: Signal<Option<TypewriterAnchor>>,
-    highlight_sentence: Signal<bool>,
+    highlight_scope: Signal<HighlightScope>,
     remember_view: Signal<bool>,
     // ── Goals & word count ──
     counting_method: Signal<CountingMethodSetting>,
@@ -396,7 +396,7 @@ impl SettingsViewModel {
             typewriter: store.signal(TYPEWRITER_KEY, TYPEWRITER_DEFAULT),
             typewriter_anchor: store
                 .signal(TYPEWRITER_ANCHOR_KEY, Some(TypewriterAnchor::default())),
-            highlight_sentence: store.signal(HIGHLIGHT_SENTENCE_KEY, HIGHLIGHT_SENTENCE_DEFAULT),
+            highlight_scope: store.signal(HIGHLIGHT_SCOPE_KEY, HighlightScope::default()),
             remember_view: store.signal(REMEMBER_VIEW_KEY, REMEMBER_VIEW_DEFAULT),
             counting_method: store
                 .signal(GOALS_COUNTING_METHOD_KEY, CountingMethodSetting::default()),
@@ -542,9 +542,9 @@ impl SettingsViewModel {
     pub fn typewriter_anchor(&self) -> Signal<Option<TypewriterAnchor>> {
         self.typewriter_anchor.clone()
     }
-    /// Highlight the current sentence.
-    pub fn highlight_sentence(&self) -> Signal<bool> {
-        self.highlight_sentence.clone()
+    /// How much text around the caret gets an ambient band while you write.
+    pub fn highlight_scope(&self) -> Signal<HighlightScope> {
+        self.highlight_scope.clone()
     }
     /// Remember the last `SegmentedControl` view per container type (Book / Part /
     /// Chapter). Same cached `REMEMBER_VIEW_KEY` signal [`EditorViewMemory`] reads.
@@ -731,7 +731,7 @@ impl SettingsViewModel {
         self.typewriter.set(TYPEWRITER_DEFAULT);
         self.typewriter_anchor
             .set(Some(TypewriterAnchor::default()));
-        self.highlight_sentence.set(HIGHLIGHT_SENTENCE_DEFAULT);
+        self.highlight_scope.set(HighlightScope::default());
         self.counting_method.set(CountingMethodSetting::default());
         self.show_characters.set(GOALS_SHOW_CHARACTERS_DEFAULT);
         self.corkboard_nested.set(CORKBOARD_NESTED_DEFAULT);
@@ -817,6 +817,38 @@ mod tests {
     /// The four distraction-free chrome toggles round-trip through the store
     /// and are restored by Reset. Easy to add a setting and forget the reset
     /// arm — the typography test above only covers the bundles.
+    /// The caret band's scope is an enum in a store that speaks TOML scalars, so each variant
+    /// has to survive the round trip — and Reset has to reach it like every other editor
+    /// preference.
+    #[test]
+    fn the_highlight_scope_persists_every_variant_and_resets() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        assert_eq!(
+            vm.highlight_scope().get(),
+            HighlightScope::None,
+            "a writing app looks plain until asked otherwise"
+        );
+
+        for scope in [
+            HighlightScope::Sentence,
+            HighlightScope::Paragraph,
+            HighlightScope::None,
+        ] {
+            vm.highlight_scope().set(scope);
+            let reopened = SettingsViewModel::new(&store);
+            assert_eq!(
+                reopened.highlight_scope().get(),
+                scope,
+                "{scope:?} must survive a fresh view-model over the same store"
+            );
+        }
+
+        vm.highlight_scope().set(HighlightScope::Paragraph);
+        vm.reset_editor_defaults();
+        assert_eq!(vm.highlight_scope().get(), HighlightScope::default());
+    }
+
     #[test]
     fn distraction_free_chrome_toggles_persist_and_reset() {
         use crate::{

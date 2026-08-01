@@ -586,6 +586,7 @@ fn spell_underline_color(c: bastyde::tokens::Color) -> bastyde::text_document::C
     bastyde::text_document::Color::rgb(to_u8(r), to_u8(g), to_u8(b))
 }
 
+
 /// After a project becomes live, offer to install any dictionary its declared languages need
 /// but the machine lacks — one aggregated toast (never one per language), whose action opens
 /// Settings ▸ Dictionaries with the missing set highlighted. Purely additive and dismissible,
@@ -1186,6 +1187,13 @@ impl Widget for App {
             settings.typewriter(),
             settings.typewriter_anchor(),
         );
+        // The caret band. Its colour is a *resolved* theme colour, because it crosses into the
+        // document as a `HighlightFormat` field rather than staying a paintable role — the same
+        // trip the spell-check squiggle colour makes — so the bundle owns a source signal kept
+        // current by a theme effect. Built through the shared constructor, which the Search &
+        // Replace preview dock also uses; duplicating it here is how one of the two ends up not
+        // following a light/dark switch.
+        let caret_highlight = crate::view_models::CaretHighlightSettings::from_context(ctx);
         let view_memory = crate::view_models::EditorViewMemory::new(ctx.settings());
         let corkboard_defaults = settings.corkboard_defaults();
         let ids = self.outline.ids();
@@ -1228,6 +1236,7 @@ impl Widget for App {
                     show_synopsis,
                     typography,
                     typewriter,
+                    caret_highlight,
                     view_memory,
                     corkboard_defaults,
                     ids,
@@ -2664,6 +2673,7 @@ mod tests {
             Signal::new(true),
             typography,
             crate::view_models::TypewriterSettings::off(),
+            crate::view_models::CaretHighlightSettings::off(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
             ids.clone(),

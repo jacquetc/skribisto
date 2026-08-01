@@ -54,6 +54,7 @@ pub(super) fn synopsis_editor(
         spell,
         open_doc.replacement_synopsis(),
         Some(vm.format()),
+        Some(vm.caret_band()),
     )
 }
 

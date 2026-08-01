@@ -259,6 +259,12 @@ impl SearchReplaceViewModel {
     pub fn results(&self) -> SearchResultsModel {
         self.results.clone()
     }
+    /// The language of one previewed item's prose, for the caret band's sentence scope — read
+    /// through the same shared store, and so the same answer, the spell dictionaries get.
+    pub fn preview_locale(&self, item_id: u64) -> Option<String> {
+        self.docs.effective_language(item_id).first().cloned()
+    }
+
     pub fn preview_dock_id(&self) -> DockWidgetId {
         self.preview_dock_id
     }

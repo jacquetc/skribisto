@@ -86,9 +86,11 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let typo = editor_typo.clone();
             let format = format.clone();
             let tw = tab.typewriter.clone();
+            let band = tab.caret_band();
             move |row: &StreamRow| -> Box<dyn Widget> {
                 Box::new(stream_row(
                     &vm, row, &header_cw, &editor_cw, &typo, flavour, &md, &format, &tw,
+                    &band,
                 ))
             }
         };
@@ -121,6 +123,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     tab.open_doc.replacement_main(),
                     Some(tab.format.clone()),
                     Some(tab.typewriter.clone()),
+                    Some(tab.caret_band()),
                     // No view-state ports: a stream is many editors on one page,
                     // so "the caret of this tab" has no single answer here. Same
                     // reason the synopsis rows below take no handle sink.
@@ -142,6 +145,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Option::None,
                     Some(tab.format.clone()),
                     Some(tab.typewriter.clone()),
+                    Some(tab.caret_band()),
                 )),
             };
             col = col.child(vspace(6.0));
@@ -238,6 +242,7 @@ fn stream_row(
     mark_dirty: &Rc<dyn Fn()>,
     format: &crate::view_models::FormatViewModel,
     typewriter: &crate::view_models::TypewriterSettings,
+    caret: &crate::view_models::CaretBand,
 ) -> impl Widget {
     let id = row.item_id;
     let is_heading = row.sub_role.opens_chapter() || row.sub_role.opens_part();
@@ -290,6 +295,7 @@ fn stream_row(
                         doc.replacement_main(),
                         Some(format.clone()),
                         Some(typewriter.clone()),
+                        Some(caret.clone()),
                         // Per-row editor — see the container's own column above.
                         Option::None,
                     ));
@@ -310,6 +316,7 @@ fn stream_row(
                         Option::None,
                         Some(format.clone()),
                         Some(typewriter.clone()),
+                        Some(caret.clone()),
                     ));
                 }
             }

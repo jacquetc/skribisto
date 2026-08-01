@@ -167,6 +167,12 @@ pub struct ContentTab {
     /// reads it, and the tab's `ScrollArea` buys its scroll-past-end range from
     /// it, so the two can never disagree about whether pinning is on.
     pub typewriter: crate::view_models::TypewriterSettings,
+    /// The ambient caret band, shared live from Settings — how much text around the caret
+    /// is shaded, and in what colour. Every writing surface this tab builds reads it.
+    pub caret_highlight: crate::view_models::CaretHighlightSettings,
+    /// The language of this tab's document, resolved once at build from the same
+    /// `effective_language` the spell-checker reads. Only the band's sentence scope needs it.
+    caret_locale: Option<String>,
     /// Whether *this tab's window* is currently in distraction-free mode — the
     /// same `Signal` `FocusViewModel::active_signal()` exposes, threaded down
     /// through `EditorsViewModel` (never a private copy: a copy would go stale
@@ -300,6 +306,8 @@ pub fn tab_for(
         // A standalone tab is never a real project window; the tab tests that
         // exercise pinning build a `ContentTab` directly and pass a live one.
         crate::view_models::TypewriterSettings::off(),
+        // Likewise for the caret band: no Settings behind a standalone tab, so it draws none.
+        crate::view_models::CaretHighlightSettings::off(),
         view_memory,
         crate::view_models::CorkboardDefaults::detached(),
         crate::view_models::TreeExpansionViewModel::new(
@@ -457,6 +465,7 @@ impl ContentTab {
         show_synopsis: Signal<bool>,
         typography: EditorTypographySet,
         typewriter: crate::view_models::TypewriterSettings,
+        caret_highlight: crate::view_models::CaretHighlightSettings,
         view_memory: crate::view_models::EditorViewMemory,
         corkboard_defaults: crate::view_models::CorkboardDefaults,
         tree_expansion: crate::view_models::TreeExpansionViewModel,
@@ -474,6 +483,10 @@ impl ContentTab {
             &open_doc.role,
             &open_doc.sub_role,
         );
+        // The language this tab's prose is written in, for the caret band's sentence scope.
+        // Read here, while `docs` is still in hand — `stream` takes it below. Resolved once
+        // per tab build, exactly as the typography and the spell dictionaries are.
+        let caret_locale = docs.effective_language(open_doc.item_id).first().cloned();
         // The Corkboard exists for exactly the folder containers a stream does. Built
         // before `stream` consumes `app_ctx`.
         let corkboard =
@@ -490,6 +503,10 @@ impl ContentTab {
                         cd.show_word_count.clone(),
                         cd.counting_method.clone(),
                         typography.corkboard.clone(),
+                        crate::view_models::CaretBand::new(
+                            caret_highlight.clone(),
+                            caret_locale.clone(),
+                        ),
                         format.clone(),
                     )
                 },
@@ -540,6 +557,8 @@ impl ContentTab {
             show_synopsis,
             typography,
             typewriter,
+            caret_highlight,
+            caret_locale,
             distraction_free,
             distraction_free_width,
             view_memory,
@@ -684,6 +703,11 @@ impl ContentTab {
     /// content-type one, so it must win regardless of Scene vs Note); otherwise
     /// the Notes bundle for a Note, the Scene bundle for everything else (Scene /
     /// ChapterScene, and a safe fallback for any layout without a `kind`).
+    /// This tab's caret band: the shared preference plus this document's language.
+    pub fn caret_band(&self) -> crate::view_models::CaretBand {
+        crate::view_models::CaretBand::new(self.caret_highlight.clone(), self.caret_locale.clone())
+    }
+
     pub fn main_typography(&self) -> &EditorTypography {
         if self.distraction_free.get() {
             return &self.typography.distraction_free;
@@ -1595,6 +1619,7 @@ mod tests {
             Signal::new(true),
             test_typography(),
             typewriter,
+            crate::view_models::CaretHighlightSettings::off(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
             crate::view_models::TreeExpansionViewModel::new(
@@ -2149,6 +2174,7 @@ mod tests {
                 Signal::new(true),
                 typo.clone(),
                 crate::view_models::TypewriterSettings::off(),
+            crate::view_models::CaretHighlightSettings::off(),
                 crate::view_models::EditorViewMemory::detached(false),
                 crate::view_models::CorkboardDefaults::detached(),
                 crate::view_models::TreeExpansionViewModel::new(
@@ -2235,6 +2261,7 @@ mod tests {
             Signal::new(true),
             typo,
             crate::view_models::TypewriterSettings::off(),
+            crate::view_models::CaretHighlightSettings::off(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
             crate::view_models::TreeExpansionViewModel::new(

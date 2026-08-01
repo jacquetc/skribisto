@@ -117,6 +117,10 @@ pub fn writing_column(
     // Typewriter scrolling for this surface. `None` on the surfaces that never
     // pin (and in the widget tests, which build columns with no app around them).
     typewriter: Option<crate::view_models::TypewriterSettings>,
+    // The ambient caret band for this surface — the shared preference plus this
+    // document's language. `None` on the surfaces built without an app around
+    // them (the widget tests), which draw no band.
+    caret: Option<crate::view_models::CaretBand>,
     // Where this document's caret should start, and the ports to publish this
     // editor's handle into so the position can be read back. `None` for every
     // surface that is not a tab's *main* prose column — a stream shows one
@@ -186,6 +190,9 @@ pub fn writing_column(
     );
     if let Some(tw) = typewriter {
         bound = bound.with_typewriter(tw);
+    }
+    if let Some(band) = caret {
+        bound = bound.with_caret_band(band);
     }
     CenterColumnFlowing::new(bati!(
         MaxSize::width(column_width.get()) {
@@ -437,6 +444,10 @@ pub fn synopsis_editor(
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
     typewriter: Option<crate::view_models::TypewriterSettings>,
+    // The ambient caret band for this surface — the shared preference plus this
+    // document's language. `None` on the surfaces built without an app around
+    // them (the widget tests), which draw no band.
+    caret: Option<crate::view_models::CaretBand>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -495,6 +506,9 @@ pub fn synopsis_editor(
     if let (SynopsisFit::Growing, Some(tw)) = (fit, typewriter) {
         bound = bound.with_typewriter(tw);
     }
+    if let Some(band) = caret {
+        bound = bound.with_caret_band(band);
+    }
     bati!(
         Panel {
             background: SurfaceRole::Content
@@ -540,6 +554,10 @@ pub fn card_synopsis_editor(
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
     format: Option<FormatViewModel>,
+    // The ambient caret band for this surface — the shared preference plus this
+    // document's language. `None` on the surfaces built without an app around
+    // them (the widget tests), which draw no band.
+    caret: Option<crate::view_models::CaretBand>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -564,14 +582,18 @@ pub fn card_synopsis_editor(
             )))
         });
     }
-    TypographyBoundEditor::new(
+    let bound = TypographyBoundEditor::new(
         editor,
         typo.clone(),
         spell,
         replacement.map(|s| (doc.clone(), s)),
         EditorKind::Synopsis,
         format,
-    )
+    );
+    match caret {
+        Some(band) => bound.with_caret_band(band),
+        None => bound,
+    }
 }
 
 /// A one-line name input bound to `field.value`, wired so an edit marks the tab dirty.
@@ -683,6 +705,10 @@ pub fn synopsis_section(
     // (the format dock) can act on the synopsis the caret is actually in.
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
+    // The ambient caret band for this surface — the shared preference plus this
+    // document's language. `None` on the surfaces built without an app around
+    // them (the widget tests), which draw no band.
+    caret: Option<crate::view_models::CaretBand>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
@@ -708,6 +734,7 @@ pub fn synopsis_section(
                             format,
                             // Compact: a bounded six-line box, never pinned.
                             Option::None,
+                            caret,
                         )
                     }
                 }
@@ -740,6 +767,10 @@ pub fn synopsis_column(
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
     typewriter: Option<crate::view_models::TypewriterSettings>,
+    // The ambient caret band for this surface — the shared preference plus this
+    // document's language. `None` on the surfaces built without an app around
+    // them (the widget tests), which draw no band.
+    caret: Option<crate::view_models::CaretBand>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(
@@ -757,6 +788,7 @@ pub fn synopsis_column(
                     handle_sink,
                     format,
                     typewriter,
+                    caret,
                 )
             }
         }
@@ -780,6 +812,10 @@ pub fn writing_section(
     replacement: Option<Rc<TextReplacementSession>>,
     format: Option<FormatViewModel>,
     typewriter: Option<crate::view_models::TypewriterSettings>,
+    // The ambient caret band for this surface — the shared preference plus this
+    // document's language. `None` on the surfaces built without an app around
+    // them (the widget tests), which draw no band.
+    caret: Option<crate::view_models::CaretBand>,
     view_state: Option<crate::view_models::ViewStateBinding>,
 ) -> impl Widget {
     VStack::new()
@@ -801,6 +837,7 @@ pub fn writing_section(
             replacement,
             format,
             typewriter,
+            caret,
             view_state,
         ))
 }
@@ -1300,6 +1337,13 @@ fn push_typography(handle: &EditorHandle, typo: &EditorTypography) {
     handle.set_font_size_scale(typo.size.get());
 }
 
+/// Push `band`'s current scope + colour onto a live editor. Idempotent — called on mount and on
+/// every change to either, the same shape [`push_typography`] has and for the same reason: the
+/// whole bundle goes over whichever single field changed, so the two can never disagree.
+fn push_caret_band(handle: &EditorHandle, band: &crate::view_models::CaretBand) {
+    handle.set_caret_highlight(band.resolve());
+}
+
 /// Wraps a `RichTextEditor`, keeping its per-editor-type typography live for the
 /// life of the tab. Initial values are already baked onto `editor` by the caller
 /// (`typography_defaults` + `font_size_scale`); this registers one `ctx.effect`
@@ -1405,6 +1449,9 @@ struct TypographyBoundEditor {
     /// compact synopsis box and the corkboard cards, both small bounded boxes
     /// where holding a line at a fixed height means nothing.
     typewriter: Option<crate::view_models::TypewriterSettings>,
+    /// The ambient caret band for this editor. `None` on the surfaces built with no app
+    /// around them (the widget tests), which draw none.
+    caret: Option<crate::view_models::CaretBand>,
 }
 
 impl TypographyBoundEditor {
@@ -1427,6 +1474,7 @@ impl TypographyBoundEditor {
             format: None,
             format_vm,
             typewriter: None,
+            caret: None,
         }
     }
 
@@ -1434,6 +1482,13 @@ impl TypographyBoundEditor {
     /// because only the full-page writing surfaces want it.
     fn with_typewriter(mut self, typewriter: crate::view_models::TypewriterSettings) -> Self {
         self.typewriter = Some(typewriter);
+        self
+    }
+
+    /// Shade the sentence or paragraph the caret is in, per the shared setting. Opt-in
+    /// only because a surface built with no app behind it has no setting to read.
+    fn with_caret_band(mut self, caret: crate::view_models::CaretBand) -> Self {
+        self.caret = Some(caret);
         self
     }
 }
@@ -1519,6 +1574,23 @@ impl Widget for TypographyBoundEditor {
             {
                 let (h, t) = (handle.clone(), tw.clone());
                 ctx.effect(&tw.preset, move |_| h.set_typewriter(t.editor_anchor()));
+            }
+        }
+        // The ambient caret band, on the same footing as typography and typewriter, and for the
+        // same reason: two separate effects, because a combined `zip` signal is derived and
+        // would panic on observe. Pushed once up front so an editor built while the setting is
+        // already on bands from its first frame, not only after the next settings change.
+        if let Some(band) = self.caret.clone() {
+            push_caret_band(&handle, &band);
+            {
+                let (h, b) = (handle.clone(), band.clone());
+                ctx.effect(&band.settings.scope, move |_| push_caret_band(&h, &b));
+            }
+            {
+                let (h, b) = (handle.clone(), band.clone());
+                // The colour signal is driven by `app.rs`'s theme effect, so this is what makes
+                // an open band follow a light/dark switch.
+                ctx.effect(&band.settings.color, move |_| push_caret_band(&h, &b));
             }
         }
         // Caret-aware spell-check: feed this view's focus + caret and drive the per-frame recompute.
@@ -1758,6 +1830,7 @@ mod frame_loop_tests {
             None,
             None,
             None,
+            None,
         );
         let mut tree = WidgetTree::new();
         tree.add(col);
@@ -1863,7 +1936,7 @@ mod tests {
         let doc = TextDocument::new();
         let _ =
             doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(60));
-        let editor = card_synopsis_editor(doc, test_typo(), || {}, None, None, None, None);
+        let editor = card_synopsis_editor(doc, test_typo(), || {}, None, None, None, None, None);
         let mut tree = WidgetTree::new();
         let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
         // Propose an *unbounded* height, the way the corkboard's GridView tile does —
@@ -1984,6 +2057,30 @@ mod typewriter_tests {
     /// to. A detached editor over the same document would share the text but
     /// not the state under test.
     fn column_with(typewriter: Option<TypewriterSettings>) -> (EditorHandle, WidgetTree) {
+        column_with_band(typewriter, None)
+    }
+
+    /// As [`column_with`], with an explicit caret band — the shape the band tests need.
+    fn column_with_band(
+        typewriter: Option<TypewriterSettings>,
+        caret: Option<crate::view_models::CaretBand>,
+    ) -> (EditorHandle, WidgetTree) {
+        let (_doc, handle, tree) = column_with_document_and(typewriter, caret);
+        (handle, tree)
+    }
+
+    /// As [`column_with_band`], handing back the document too — the caret-band tests assert
+    /// on its paint spans, which is where the whole chain ends up.
+    pub(super) fn column_with_document(
+        caret: Option<crate::view_models::CaretBand>,
+    ) -> (TextDocument, EditorHandle, WidgetTree) {
+        column_with_document_and(None, caret)
+    }
+
+    fn column_with_document_and(
+        typewriter: Option<TypewriterSettings>,
+        caret: Option<crate::view_models::CaretBand>,
+    ) -> (TextDocument, EditorHandle, WidgetTree) {
         let doc = TextDocument::new();
         doc.set_plain_text("Some prose to write in.").unwrap();
         let find = crate::view_models::FindViewModel::new(doc.clone());
@@ -1999,6 +2096,7 @@ mod typewriter_tests {
             None,
             None,
             typewriter,
+            caret,
             None,
         );
         let mut tree = WidgetTree::new();
@@ -2007,7 +2105,7 @@ mod typewriter_tests {
         let handle = find
             .editor_handle()
             .expect("writing_column attached its handle");
-        (handle, tree)
+        (doc, handle, tree)
     }
 
     #[test]
@@ -2067,5 +2165,145 @@ mod typewriter_tests {
             None,
             "and turning it off must stop it"
         );
+    }
+}
+
+/// The caret band, from the settings signal all the way into the document.
+///
+/// The layers below this have their own tests — the segmenter in `text-document`, the session
+/// and the frame loop in `bastyde`. What only this level can prove is that the *chain* is
+/// connected: `SettingsViewModel` → `CaretHighlightSettings` → `ContentTab` →
+/// `writing_column` → `TypographyBoundEditor` → `EditorHandle` → the document's paint spans.
+#[cfg(all(test, feature = "mocks"))]
+mod caret_band_tests {
+    use super::typewriter_tests::*;
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+    use bastyde::text_document::{Color, FlowElementSnapshot, HighlightMask};
+
+    use crate::view_models::{CaretBand, CaretHighlightSettings, HighlightScope};
+
+    const BAND: Color = Color {
+        red: 255,
+        green: 254,
+        blue: 235,
+        alpha: 255,
+    };
+
+    fn band(scope: HighlightScope) -> (CaretBand, Signal<HighlightScope>, Signal<Color>) {
+        let scope_sig = Signal::new(scope);
+        let color_sig = Signal::new(BAND);
+        let settings = CaretHighlightSettings::new(scope_sig.clone(), color_sig.clone());
+        (
+            CaretBand::new(settings, Some("en".into())),
+            scope_sig,
+            color_sig,
+        )
+    }
+
+    /// The banded extents on the document's first block, as `(start, length)`.
+    fn banded(doc: &TextDocument, color: Color) -> Vec<(usize, usize)> {
+        match &doc.snapshot_flow_masked(&HighlightMask::all()).elements[0] {
+            FlowElementSnapshot::Block(b) => b
+                .paint_highlights
+                .iter()
+                .filter(|s| s.background_color == Some(color))
+                .map(|s| (s.start, s.length))
+                .collect(),
+            _ => panic!("expected a block"),
+        }
+    }
+
+    fn pump(tree: &mut WidgetTree) {
+        tree.request_frame();
+        tree.tick_animations(std::time::Duration::from_millis(16));
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+    }
+
+    /// Click into the column so the editor takes focus. The band deliberately shows only in
+    /// the **focused** view (that is what keeps a split banding once, not twice), so a test
+    /// that never focuses would see nothing however well the wiring works.
+    fn click_into(tree: &mut WidgetTree) {
+        let _ = tree.render();
+        tree.dispatch_event(bastyde::core::WidgetEvent::PointerDown {
+            position: bastyde::canvas::Point::new(450.0, 20.0),
+            button: bastyde::core::PointerButton::Primary,
+            modifiers: bastyde::core::Modifiers::NONE,
+        });
+        pump(tree);
+        assert!(tree.focused().is_some(), "the click must focus the editor");
+    }
+
+    /// Turning the setting on bands the caret's sentence in a real writing column — no test
+    /// double anywhere between the preference and the paint span.
+    #[test]
+    fn the_setting_reaches_a_real_writing_column() {
+        let (band, _scope, _color) = band(HighlightScope::Sentence);
+        let (doc, handle, mut tree) = column_with_document(Some(band));
+
+        click_into(&mut tree);
+        handle.select_range(2, 2);
+        pump(&mut tree);
+
+        assert_eq!(
+            banded(&doc, BAND),
+            [(0, 23)],
+            "the caret's sentence is banded"
+        );
+    }
+
+    /// Changing the preference on an already-open editor must reach it, which is what the
+    /// per-signal effects in `TypographyBoundEditor::build` are for.
+    #[test]
+    fn changing_the_scope_reaches_an_already_open_editor() {
+        let (band, scope, _color) = band(HighlightScope::None);
+        let (doc, handle, mut tree) = column_with_document(Some(band));
+        click_into(&mut tree);
+        handle.select_range(2, 2);
+        pump(&mut tree);
+        assert!(banded(&doc, BAND).is_empty(), "off by default here");
+
+        scope.set(HighlightScope::Sentence);
+        pump(&mut tree);
+        assert_eq!(banded(&doc, BAND), [(0, 23)], "the band appeared");
+
+        scope.set(HighlightScope::None);
+        pump(&mut tree);
+        assert!(banded(&doc, BAND).is_empty(), "and went away again");
+    }
+
+    /// A live theme switch drives the colour signal, and the band must follow it — otherwise
+    /// going dark would leave every open editor banded in the light theme's shade.
+    #[test]
+    fn changing_the_colour_repaints_an_open_band() {
+        const DARK: Color = Color {
+            red: 38,
+            green: 40,
+            blue: 46,
+            alpha: 255,
+        };
+        let (band, _scope, color) = band(HighlightScope::Sentence);
+        let (doc, handle, mut tree) = column_with_document(Some(band));
+        click_into(&mut tree);
+        handle.select_range(2, 2);
+        pump(&mut tree);
+        assert_eq!(banded(&doc, BAND), [(0, 23)]);
+
+        color.set(DARK);
+        pump(&mut tree);
+        assert!(banded(&doc, BAND).is_empty(), "the old shade is gone");
+        assert_eq!(banded(&doc, DARK), [(0, 23)], "repainted in the new one");
+    }
+
+    /// A surface built with no settings behind it draws nothing — the contract every widget
+    /// test in this file relies on.
+    #[test]
+    fn a_column_without_a_band_draws_none() {
+        let (doc, handle, mut tree) = column_with_document(None);
+        click_into(&mut tree);
+        handle.select_range(2, 2);
+        pump(&mut tree);
+        assert!(banded(&doc, BAND).is_empty());
+        assert!(handle.get_caret_highlight().is_none());
     }
 }

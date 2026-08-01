@@ -432,6 +432,7 @@ mod tests {
             Signal::new(false),
             typography(),
             crate::view_models::TypewriterSettings::off(),
+            crate::view_models::CaretHighlightSettings::off(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
             ids.clone(),

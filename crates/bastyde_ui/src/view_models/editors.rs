@@ -99,6 +99,8 @@ pub struct EditorsViewModel {
     typography: EditorTypographySet,
     /// Typewriter scrolling, shared live from Settings into every `ContentTab`.
     typewriter: crate::view_models::TypewriterSettings,
+    /// The ambient caret band, shared live from Settings into every `ContentTab`.
+    caret_highlight: crate::view_models::CaretHighlightSettings,
     /// The flag every **pane** tab is built with — a constant `false`, supplied
     /// by `App::build`. A pane is never distraction-free: the mode mounts its
     /// own surface with its own tab (see [`Self::open_surface_tab`]) rather than
@@ -149,6 +151,7 @@ impl EditorsViewModel {
         show_synopsis: Signal<bool>,
         typography: EditorTypographySet,
         typewriter: crate::view_models::TypewriterSettings,
+        caret_highlight: crate::view_models::CaretHighlightSettings,
         view_memory: crate::view_models::EditorViewMemory,
         corkboard_defaults: crate::view_models::CorkboardDefaults,
         ids: AppIds,
@@ -194,6 +197,7 @@ impl EditorsViewModel {
             show_synopsis,
             typography,
             typewriter,
+            caret_highlight,
             distraction_free,
             distraction_free_width,
             view_memory,
@@ -551,6 +555,7 @@ impl EditorsViewModel {
             self.show_synopsis.clone(),
             self.typography.clone(),
             self.typewriter.clone(),
+            self.caret_highlight.clone(),
             self.view_memory.clone(),
             self.corkboard_defaults.clone(),
             self.tree_expansion.clone(),
@@ -1112,6 +1117,7 @@ impl EditorsViewModel {
                     self.show_synopsis.clone(),
                     self.typography.clone(),
                     self.typewriter.clone(),
+                    self.caret_highlight.clone(),
                     self.view_memory.clone(),
                     self.corkboard_defaults.clone(),
                     self.tree_expansion.clone(),
@@ -1268,6 +1274,7 @@ mod tests {
             Signal::new(true),
             test_typography(),
             crate::view_models::TypewriterSettings::off(),
+            crate::view_models::CaretHighlightSettings::off(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
             ids,
@@ -1411,6 +1418,7 @@ mod tests {
             Signal::new(true),
             test_typography(),
             crate::view_models::TypewriterSettings::off(),
+            crate::view_models::CaretHighlightSettings::off(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
             ids_a,
@@ -1436,6 +1444,7 @@ mod tests {
             Signal::new(true),
             test_typography(),
             crate::view_models::TypewriterSettings::off(),
+            crate::view_models::CaretHighlightSettings::off(),
             crate::view_models::EditorViewMemory::detached(false),
             crate::view_models::CorkboardDefaults::detached(),
             ids_b,

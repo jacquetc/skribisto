@@ -92,6 +92,7 @@ struct Inner {
     /// Synopsis typography, so the card's synopsis editor renders like the scene
     /// editor.
     synopsis_typo: EditorTypography,
+    caret_band: crate::view_models::CaretBand,
     /// This window's Format surfaces — card synopsis editors register with it.
     format: FormatViewModel,
 
@@ -124,6 +125,7 @@ impl CorkboardViewModel {
         show_word_count: Signal<bool>,
         counting_method: Signal<CountingMethodSetting>,
         synopsis_typo: EditorTypography,
+        caret_band: crate::view_models::CaretBand,
         format: FormatViewModel,
     ) -> Self {
         let current_container = Signal::new(container_id);
@@ -157,6 +159,7 @@ impl CorkboardViewModel {
                 open_synopses: RefCell::new(HashMap::new()),
                 docs,
                 synopsis_typo,
+                caret_band,
                 format,
                 cards,
                 projection,
@@ -405,6 +408,11 @@ impl CorkboardViewModel {
     /// Synopsis typography — so the card's editor matches the Full-Synopsis view.
     pub fn synopsis_typo(&self) -> EditorTypography {
         self.inner.synopsis_typo.clone()
+    }
+
+    /// The ambient caret band for card synopsis editors.
+    pub fn caret_band(&self) -> crate::view_models::CaretBand {
+        self.inner.caret_band.clone()
     }
 
     /// This window's Format surfaces for card synopsis editors.
@@ -765,6 +773,7 @@ mod tests {
             Signal::new(true),
             Signal::new(CountingMethodSetting::default()),
             typo(),
+            crate::view_models::CaretBand::off(),
             FormatViewModel::detached(),
         )
     }

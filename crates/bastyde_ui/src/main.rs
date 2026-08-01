@@ -425,9 +425,14 @@ pub const PUNCT_DIALOGUE_KEY: &str = "editor.punctuation.dialogue_marker";
 /// glyph inside it, and it is wrong outright in the languages that quote their
 /// dialogue instead of dashing it.
 pub const PUNCT_DIALOGUE_DEFAULT: bool = false;
-/// Highlight the sentence the caret is in.
-pub const HIGHLIGHT_SENTENCE_KEY: &str = "editor.highlight_sentence";
-pub const HIGHLIGHT_SENTENCE_DEFAULT: bool = false;
+/// How much text around the caret gets an ambient band — none, the sentence, or the whole
+/// paragraph. See [`HighlightScope`](crate::view_models::HighlightScope).
+///
+/// A **new key**, not the `editor.highlight_sentence` boolean this replaces: the stored value
+/// went from a `bool` to a scope, and a key named `highlight_sentence` holding `Paragraph`
+/// would be a lie. The old key is simply never read again — it never had an effect to lose,
+/// since nothing outside the settings pane ever consumed it.
+pub const HIGHLIGHT_SCOPE_KEY: &str = "editor.highlight_scope";
 
 // ── Goals & word count (Settings ▸ Editor ▸ Goals) ────────────────────────────
 /// How words are counted for the live status-bar / focused count: `Auto` (per the

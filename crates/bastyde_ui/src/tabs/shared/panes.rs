@@ -113,6 +113,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 Some(tab.synopsis_handle_sink()),
                 Some(tab.format.clone()),
                 Some(tab.typewriter.clone()),
+                Some(tab.caret_band()),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -128,6 +129,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             tab.open_doc.replacement_main(),
             Some(tab.format.clone()),
             Some(tab.typewriter.clone()),
+            Some(tab.caret_band()),
             Some(tab.view_state_binding()),
         ));
     }
@@ -185,6 +187,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
                 tab.open_doc.replacement_synopsis(),
                 Some(tab.synopsis_handle_sink()),
                 Some(tab.format.clone()),
+                Some(tab.caret_band()),
             ),
         ));
     }
@@ -203,6 +206,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             tab.open_doc.replacement_main(),
             Some(tab.format.clone()),
             Some(tab.typewriter.clone()),
+            Some(tab.caret_band()),
             Some(tab.view_state_binding()),
         ));
     }
@@ -279,6 +283,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 Some(tab.synopsis_handle_sink()),
                 Some(tab.format.clone()),
                 Some(tab.typewriter.clone()),
+                Some(tab.caret_band()),
             ));
     }
     tab_backdrop(
@@ -336,6 +341,7 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
                 Some(tab.synopsis_handle_sink()),
                 Some(tab.format.clone()),
                 Some(tab.typewriter.clone()),
+                Some(tab.caret_band()),
             ));
     }
     writing_page_scroll(tab).child(col.child(vspace(28.0)))
