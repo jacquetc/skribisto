@@ -37,11 +37,14 @@
 //!   there is one.
 //! - Picking / creating / importing a project from the Launcher opens a
 //!   **project window**, then closes the Launcher.
-//! - Closing a project (its window's own close, Ctrl+Q, Ctrl+W / File ▸ Close
-//!   Work, or File ▸ Welcome…) opens a fresh Launcher window,
-//!   then closes the project window — see
-//!   [`app::close_work_and_return_to_launcher`]. The process stays alive; it
-//!   only quits once the Launcher itself is closed.
+//! - Closing a project (its window's own close, Ctrl+W / File ▸ Close Work, or
+//!   File ▸ Welcome…) closes every window on that Work and, **only when no
+//!   other Work still has an open window**, opens a fresh Launcher — see
+//!   [`app::close_work_and_return_to_launcher`]. With another Work open
+//!   elsewhere, the Launcher stays closed and a surviving project window is
+//!   focused. The process stays alive while any window remains; it only quits
+//!   once the last window (Launcher or otherwise) is closed. Ctrl+Q / File ▸
+//!   Quit is separate: it terminates the whole process (every Work).
 //!
 //! **Critical ordering rule**: the process quits when its last window closes,
 //! so every transition above always opens the new window *before* closing the

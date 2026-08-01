@@ -168,19 +168,20 @@ fn drain_dropped(mut payload: DragPayload, mut open: impl FnMut(u64, &str)) -> b
 ///
 /// Two outcomes today. Every guarded close of a project window that still
 /// goes through `close_window()` (title-bar X, Alt+F4, Ctrl+W, File ▸ Close
-/// Work, File ▸ Welcome…) returns to the Launcher — see
-/// [`close_work_and_return_to_launcher`]. Ctrl+Q / File ▸ Quit is the one
+/// Work, File ▸ Welcome…) closes that Work via
+/// [`close_work_and_return_to_launcher`] — which opens the Launcher only when
+/// no other Work still has an open window. Ctrl+Q / File ▸ Quit is the
 /// exception: it never calls `close_window()` at all — `app.quit`'s action
-/// runs the same unsaved-changes guard ([`guard_unsaved_exit`]) but ends in
-/// [`quit_app`], which really terminates the process instead of reopening the
-/// Launcher. Both outcomes share the exact same branch order
-/// (`unsaved_decision`/`UnsavedDecision`); only the terminal action differs.
+/// runs through [`QuitSequencer`] and terminates the process. Both outcomes
+/// share the exact same branch order (`unsaved_decision`/`UnsavedDecision`);
+/// only the terminal action differs.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum PendingExit {
     #[default]
     None,
-    /// Release the open project and return to the Launcher, once saved (and,
-    /// if configured, once the on-close backup finishes).
+    /// Release the open project once saved (and, if configured, once the
+    /// on-close backup finishes). Opens the Launcher only when no other Work
+    /// still has an open window — see [`close_work_and_return_to_launcher`].
     ReturnToLauncher,
     /// Release the open project and terminate the process entirely, once
     /// saved (and, if configured, once the on-close backup finishes).
@@ -258,17 +259,22 @@ impl PendingAction {
     }
 }
 
-/// Release the open project and return to the Launcher: fires `CloseWork`
-/// (releases the open-registry claim and clears `AppIds`/the tree/the
-/// singles via the subscriber below), opens a fresh Launcher window, **then**
-/// force-closes this project window.
+/// Release the open project: fires `CloseWork` (releases the open-registry
+/// claim and clears `AppIds`/the tree/the singles via the subscriber below),
+/// force-closes every window showing that Work, and — **only when no other
+/// Work still has an open window** — opens (or focuses) the Launcher so the
+/// process is never briefly windowless (which would quit it; see `main.rs`).
 ///
-/// Order matters: opening the Launcher before closing this window means the
-/// process is never briefly windowless mid-transition — which would quit it
-/// (see `main.rs`'s module docs). Callers invoking this from inside a
-/// `on_close_requested` guard must return `CloseResponse::Veto` afterward:
-/// this function performs the actual close itself, via `close_window_forced`,
-/// rather than deferring to the guard's own return value.
+/// When another Work is still open elsewhere, the Launcher stays closed: the
+/// survivor project window(s) keep the process alive, and dropping the user
+/// on Welcome while they still have a manuscript open is wrong. The first
+/// surviving project window is focused instead so the closed Work does not
+/// leave focus stranded on a dying frame.
+///
+/// Callers invoking this from inside a `on_close_requested` guard must return
+/// `CloseResponse::Veto` afterward: this function performs the actual close
+/// itself, via `close_window_forced`, rather than deferring to the guard's own
+/// return value.
 ///
 /// **This closes the WORK, so it closes every window showing it.** Since
 /// Work ▸ New Window, a project can have several windows
@@ -312,15 +318,19 @@ pub fn close_work_and_return_to_launcher(
     // own close guards must not run — the project is already gone, so there is
     // nothing left for them to guard, and letting each one open its own Launcher
     // would spawn one per window.
-    let siblings = ids
-        .work_id
-        .get()
+    //
+    // Tier 1 — genuinely one registry per process, so unlike
+    // `AppIds`/`WorkspaceLayoutViewModel` this `app_state` lookup is the right
+    // way to reach it, not a first-window-wins trap.
+    let registry = ctx
+        .app_state::<crate::sessions::WorkRegistry>()
+        .cloned();
+    let my_work_id = ids.work_id.get();
+    let me = ctx.window().map(|w| w.id());
+    let siblings = my_work_id
         .map(|work_id| {
-            let me = ctx.window().map(|w| w.id());
-            ctx.app_state::<crate::sessions::WorkRegistry>()
-                // Tier 1 — genuinely one registry per process, so unlike
-                // `AppIds`/`WorkspaceLayoutViewModel` this `app_state` lookup is
-                // the right way to reach it, not a first-window-wins trap.
+            registry
+                .as_ref()
                 .map(|reg| reg.windows_for(work_id))
                 .unwrap_or_default()
                 .into_iter()
@@ -328,24 +338,43 @@ pub fn close_work_and_return_to_launcher(
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
-    if let Some(work_id) = ids.work_id.get() {
+    // Another Work still has at least one open window? Then Welcome must not
+    // open — only the *last* project Work's close returns to the Launcher.
+    // Read before `close_work` tears this Work's session out of the registry.
+    let survivor = registry.as_ref().and_then(|reg| {
+        reg.open_work_ids()
+            .into_iter()
+            .filter(|&wid| Some(wid) != my_work_id)
+            .find_map(|wid| reg.windows_for(wid).into_iter().next())
+    });
+    if let Some(work_id) = my_work_id {
         let _ = work_management_commands::close_work(app_ctx, &CloseWorkDto { work_id });
     }
     for window in siblings {
         ctx.close_window_by_id(window);
     }
-    // Scope E fix: with M Works open, a DIFFERENT window's own close-to-launcher
-    // may already have opened the Launcher (bastyde's `WindowManager::create_window`
-    // has no string-id dedup of its own — it just overwrites `string_to_id`, so a
-    // second `open_window` with the same `.id(LAUNCHER_WINDOW_ID)` would spawn a
-    // SECOND, orphaned Launcher window, violating "the Launcher is the one
-    // singleton window"). Reuse and focus the existing one if it's already open.
-    match ctx.find_window(crate::shell::windows::LAUNCHER_WINDOW_ID) {
-        Some(existing) => ctx.focus_window(existing),
-        None => {
-            ctx.open_window(crate::shell::windows::launcher_window_config(
-                app_ctx.clone(),
-            ));
+    if let Some(survivor) = survivor {
+        // Other project windows remain: raise one of them so focus does not
+        // die with the Work we just closed.
+        ctx.focus_window(survivor);
+    } else {
+        // Last open Work: open (or reuse) the Launcher *before* force-closing
+        // this window so the process is never briefly windowless mid-transition
+        // (that would quit it — see `main.rs`'s module docs).
+        //
+        // Scope E: with M Works open, a DIFFERENT window's own last-Work close
+        // may already have opened the Launcher (bastyde's `WindowManager::create_window`
+        // has no string-id dedup of its own — it just overwrites `string_to_id`, so a
+        // second `open_window` with the same `.id(LAUNCHER_WINDOW_ID)` would spawn a
+        // SECOND, orphaned Launcher window, violating "the Launcher is the one
+        // singleton window"). Reuse and focus the existing one if it's already open.
+        match ctx.find_window(crate::shell::windows::LAUNCHER_WINDOW_ID) {
+            Some(existing) => ctx.focus_window(existing),
+            None => {
+                ctx.open_window(crate::shell::windows::launcher_window_config(
+                    app_ctx.clone(),
+                ));
+            }
         }
     }
     ctx.close_window_forced();
