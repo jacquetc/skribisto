@@ -99,8 +99,39 @@ def assert_no_running_instance(binary=None):
         )
 
 
-def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True):
-    """A private `XDG_CONFIG_HOME` pinning the app's locale. Returns an env dict.
+def toml_scalar(value):
+    """Render a Python scalar as a TOML value.
+
+    Bool before int on purpose: `bool` is a subclass of `int` in Python, so the
+    obvious ordering writes `dark = 1`, which the settings store then rejects as
+    the wrong type for a boolean key.
+    """
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return repr(value)
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(toml_scalar(v) for v in value) + "]"
+    escaped = str(value).replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def toml_pins(pins):
+    """Render a dict of dotted keys → values as flat dotted TOML.
+
+    Flat rather than `[sections]`: dotted keys are valid TOML at the top level,
+    several of them may share a prefix, and the result is order-independent — so a
+    caller can hand over any mix of keys without first grouping them by table. It
+    is also exactly the shape `skribisto --dump-config` emits, so a dump can be
+    trimmed and handed straight back.
+    """
+    return "".join(f"{key} = {toml_scalar(value)}\n" for key, value in sorted(pins.items()))
+
+
+def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True, pins=None):
+    """A private `XDG_CONFIG_HOME` with the app's settings pinned. Returns an env dict.
 
     A probe that asserts on translated text must SET the language, never inherit
     it. This one learned that the expensive way: `automation_tag_presets.py`
@@ -115,29 +146,79 @@ def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True):
     own output turned out to be printing its French constants unconditionally.
 
     Pointing `XDG_CONFIG_HOME` at a scratch directory fixes both halves: the
-    locale is whatever the probe says, and the run cannot read or write the
+    settings are whatever the probe says, and the run cannot read or write the
     operator's real settings. It also side-steps a settings file written by a
     newer build (`workspace.toml` on schema v3 against a v2 reader), which
     otherwise makes every launch fall back to in-memory defaults.
+
+    `pins` takes any dotted key from the app's settings schema. `locale`, `dark`
+    and `show_welcome` are just the three most-wanted keys promoted to named
+    arguments with defaults (`label` names the sandbox, and is not a setting);
+    anything in `pins` overrides them. Run `skribisto --dump-config` for the full
+    list with types and current values.
+
+        env = isolated_config(pins={"editor.autosave": False,
+                                    "editor.typewriter_scroll": False,
+                                    "editor.scene.size": 1.25})
+
+    **Nothing validates these keys.** This function writes `general.toml`
+    directly, and the store silently ignores a key nothing reads — so a typo is
+    not an error, it is a probe quietly running on defaults. Where that matters,
+    write the same dict with `config_pins_file` and pass `--config` on the command
+    line instead: the app validates every key against its schema and refuses to
+    start on an unknown one. Use both together — this for the sandbox, the flag
+    for the pins.
 
     `AppPaths::new("eu", "skribisto", "Skribisto")` resolves to
     `$XDG_CONFIG_HOME/skribisto` on Linux, and `config_file("general")` appends
     `.toml` — hence the layout written here.
     """
+    settings = {
+        "ui.dark": bool(dark),
+        "ui.locale": locale,
+        "ui.show_welcome": bool(show_welcome),
+    }
+    settings.update(pins or {})
+
     base = SCRATCH if os.path.isdir(SCRATCH) else tempfile.gettempdir()
     root = os.path.join(base, f"probe-config-{label}-{os.getpid()}")
     cfg = os.path.join(root, "skribisto")
     os.makedirs(cfg, exist_ok=True)
     with open(os.path.join(cfg, "general.toml"), "w", encoding="utf-8") as fh:
-        fh.write(
-            "[ui]\n"
-            f"dark = {str(bool(dark)).lower()}\n"
-            f'locale = "{locale}"\n'
-            f"show_welcome = {str(bool(show_welcome)).lower()}\n"
-        )
+        fh.write(toml_pins(settings))
     env = dict(os.environ)
     env["XDG_CONFIG_HOME"] = root
     return env
+
+
+def config_pins_file(pins, label="pins"):
+    """Write `pins` to a scratchpad TOML file and return its path, for `--config`.
+
+    The validating half of the pair with `isolated_config`. Passing the returned
+    path as `skribisto --config <path>` makes the app check every key against its
+    schema (`crates/bastyde_ui/src/settings_keys.rs`) before it starts, and exit
+    non-zero naming the offender — with its nearest legal neighbour — on an
+    unknown key or a value of the wrong type. That turns the one failure mode this
+    whole area keeps producing (a pin that silently did nothing, and a probe that
+    then asserts against a state it never reached) into a refusal to launch.
+
+    `--config` also implies `--new-instance`, so a run holding pins can never be
+    elected away to a primary that is not holding them.
+
+    It merges into whatever configuration directory the process resolves, so it
+    belongs with a sandboxed `XDG_CONFIG_HOME` — pass the env from
+    `isolated_config` and the two compose:
+
+        env = isolated_config(label="mine")
+        pins = config_pins_file({"editor.autosave": False}, label="mine")
+        subprocess.Popen([SKRIBISTO, "--config", pins, project], env=env)
+    """
+    base = SCRATCH if os.path.isdir(SCRATCH) else tempfile.gettempdir()
+    os.makedirs(base, exist_ok=True)
+    path = os.path.join(base, f"probe-pins-{label}-{os.getpid()}.toml")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(toml_pins(pins))
+    return path
 
 
 def _make_writable(path):

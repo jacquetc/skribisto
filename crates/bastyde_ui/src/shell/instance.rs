@@ -217,27 +217,82 @@ pub fn handoff(mut stream: Stream, request: &InstanceRequest) -> bool {
 /// test of nothing. Also the escape hatch for running two builds side by side.
 pub const NEW_INSTANCE_FLAG: &str = "--new-instance";
 
-/// Split `argv` (excluding argv\[0\]) into the `--new-instance` opt-out and the
-/// optional project path.
+/// Pin app settings for this run from a TOML file (debug builds only).
+///
+/// See `crate::settings_keys` for the schema and why it exists. Takes a value,
+/// either attached (`--config=pins.toml`) or as the next argument
+/// (`--config pins.toml`) — the latter is why this parser consumes arguments
+/// through an iterator rather than looping over them independently: the old
+/// reader took the first non-flag argument as the project path, so a
+/// space-separated value would have been opened as a `.skrib`.
+pub const CONFIG_FLAG: &str = "--config";
+
+/// Print every settable key with its effective value and exit (debug builds only).
+pub const DUMP_CONFIG_FLAG: &str = "--dump-config";
+
+/// Everything the command line can say, in the order `main` acts on it.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct LaunchArgs {
+    /// `--new-instance`: skip the election, run standalone.
+    pub new_instance: bool,
+    /// The optional `.skrib` path to open.
+    pub project: Option<String>,
+    /// `--config <file>`: the settings-pin file to apply before startup.
+    pub config: Option<String>,
+    /// `--dump-config`: print the effective settings and exit.
+    pub dump_config: bool,
+    /// A malformed argument. Reported by `main`, which exits rather than launching
+    /// — a probe that asked to pin settings and silently got none is worse than one
+    /// that does not start, since it goes on to assert against the wrong state.
+    pub error: Option<String>,
+}
+
+/// Split `argv` (excluding argv\[0\]) into the flags and the optional project path.
 ///
 /// A pure function so the whole argument surface is unit-testable without a
 /// process: `main` calls it with `std::env::args().skip(1)`.
-pub fn parse_args<I, S>(args: I) -> (bool, Option<String>)
+///
+/// Unknown `--flags` are left alone (the first one becomes the project path, as it
+/// always did). Only the flags named here are interpreted.
+pub fn parse_args<I, S>(args: I) -> LaunchArgs
 where
     I: IntoIterator<Item = S>,
     S: AsRef<str>,
 {
-    let mut new_instance = false;
-    let mut path = None;
-    for arg in args {
+    let mut out = LaunchArgs::default();
+    let mut rest = args.into_iter().peekable();
+
+    while let Some(arg) = rest.next() {
         let arg = arg.as_ref();
         if arg == NEW_INSTANCE_FLAG {
-            new_instance = true;
-        } else if path.is_none() && !arg.trim().is_empty() {
-            path = Some(arg.to_string());
+            out.new_instance = true;
+        } else if arg == DUMP_CONFIG_FLAG {
+            out.dump_config = true;
+        } else if let Some(value) = arg.strip_prefix("--config=") {
+            if value.trim().is_empty() {
+                out.error = Some(format!("{CONFIG_FLAG} needs a file path"));
+            } else {
+                out.config = Some(value.to_string());
+            }
+        } else if arg == CONFIG_FLAG {
+            // Peek rather than take: a value that is itself a flag means the path
+            // was forgotten, and *consuming* it would disable that flag as well as
+            // failing here — one mistake turned into two. Leaving it in the stream
+            // means the rest of the command line still parses as written.
+            let is_value = rest
+                .peek()
+                .is_some_and(|v| !v.as_ref().trim().is_empty() && !v.as_ref().starts_with("--"));
+            if is_value {
+                let value = rest.next().expect("just peeked");
+                out.config = Some(value.as_ref().to_string());
+            } else {
+                out.error = Some(format!("{CONFIG_FLAG} needs a file path"));
+            }
+        } else if out.project.is_none() && !arg.trim().is_empty() {
+            out.project = Some(arg.to_string());
         }
     }
-    (new_instance, path)
+    out
 }
 
 #[cfg(test)]
@@ -261,18 +316,20 @@ mod tests {
 
     #[test]
     fn a_bare_launch_has_no_path_and_no_opt_out() {
-        let (new_instance, path) = parse_args(Vec::<String>::new());
-        assert!(!new_instance);
-        assert_eq!(path, None);
+        let args = parse_args(Vec::<String>::new());
+        assert_eq!(args, LaunchArgs::default());
     }
 
     #[test]
     fn a_path_is_taken_whichever_side_of_the_flag_it_sits() {
-        let (n1, p1) = parse_args(["--new-instance", "/tmp/a.skrib"]);
-        let (n2, p2) = parse_args(["/tmp/a.skrib", "--new-instance"]);
-        assert!(n1 && n2, "the flag is positional-independent");
-        assert_eq!(p1.as_deref(), Some("/tmp/a.skrib"));
-        assert_eq!(p2.as_deref(), Some("/tmp/a.skrib"));
+        let a = parse_args(["--new-instance", "/tmp/a.skrib"]);
+        let b = parse_args(["/tmp/a.skrib", "--new-instance"]);
+        assert!(
+            a.new_instance && b.new_instance,
+            "the flag is positional-independent"
+        );
+        assert_eq!(a.project.as_deref(), Some("/tmp/a.skrib"));
+        assert_eq!(b.project.as_deref(), Some("/tmp/a.skrib"));
     }
 
     /// The pre-Phase-4 reader was `std::env::args().nth(1).filter(non-empty)`.
@@ -280,18 +337,80 @@ mod tests {
     /// loader then fails on.
     #[test]
     fn a_blank_argument_is_not_a_path() {
-        let (_, path) = parse_args(["   "]);
-        assert_eq!(path, None);
+        assert_eq!(parse_args(["   "]).project, None);
     }
 
     #[test]
     fn only_the_first_path_wins() {
-        let (_, path) = parse_args(["/tmp/a.skrib", "/tmp/b.skrib"]);
+        let args = parse_args(["/tmp/a.skrib", "/tmp/b.skrib"]);
         assert_eq!(
-            path.as_deref(),
+            args.project.as_deref(),
             Some("/tmp/a.skrib"),
             "a second path is ignored, matching the old nth(1) reader"
         );
+    }
+
+    /// Both spellings must reach the same place. The attached form is the safe one
+    /// to hand a shell; the separated form is what anyone types by hand.
+    #[test]
+    fn config_takes_its_value_attached_or_separated() {
+        assert_eq!(
+            parse_args(["--config=/tmp/pins.toml"]).config.as_deref(),
+            Some("/tmp/pins.toml")
+        );
+        assert_eq!(
+            parse_args(["--config", "/tmp/pins.toml"]).config.as_deref(),
+            Some("/tmp/pins.toml")
+        );
+    }
+
+    /// The regression this parser exists to prevent: the old reader took the first
+    /// non-flag argument as the project, so `--config pins.toml` opened `pins.toml`
+    /// as a `.skrib` and pinned nothing.
+    #[test]
+    fn a_config_value_is_not_mistaken_for_the_project() {
+        let args = parse_args(["--config", "/tmp/pins.toml", "/tmp/a.skrib"]);
+        assert_eq!(args.config.as_deref(), Some("/tmp/pins.toml"));
+        assert_eq!(args.project.as_deref(), Some("/tmp/a.skrib"));
+    }
+
+    /// A forgotten path must not swallow the next flag: that would disable the flag
+    /// *and* try to parse it as TOML, reporting a parse error about a filename.
+    #[test]
+    fn config_without_a_value_is_an_error_not_a_swallowed_flag() {
+        let args = parse_args(["--config", "--new-instance"]);
+        assert!(args.error.is_some(), "a missing value must be reported");
+        assert_eq!(args.config, None);
+        assert!(
+            args.new_instance,
+            "and the flag it would have swallowed still applies"
+        );
+
+        assert!(parse_args(["--config"]).error.is_some());
+        assert!(parse_args(["--config="]).error.is_some());
+    }
+
+    #[test]
+    fn dump_config_is_a_bare_flag() {
+        let args = parse_args(["--dump-config"]);
+        assert!(args.dump_config);
+        assert_eq!(args.project, None, "it takes no value");
+    }
+
+    /// Every flag composes with every other, and with a project path.
+    #[test]
+    fn the_flags_compose() {
+        let args = parse_args([
+            "/tmp/a.skrib",
+            "--new-instance",
+            "--config=/tmp/pins.toml",
+            "--dump-config",
+        ]);
+        assert_eq!(args.project.as_deref(), Some("/tmp/a.skrib"));
+        assert!(args.new_instance);
+        assert_eq!(args.config.as_deref(), Some("/tmp/pins.toml"));
+        assert!(args.dump_config);
+        assert_eq!(args.error, None);
     }
 
     /// Election is a real socket dance. On Unix it is drivable against a temp

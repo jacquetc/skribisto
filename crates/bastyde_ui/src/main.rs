@@ -84,6 +84,7 @@ mod models;
 mod panels;
 mod sessions;
 mod settings;
+mod settings_keys;
 mod shell;
 mod singles;
 mod spellcheck;
@@ -533,16 +534,46 @@ fn main() {
     // behalf of a process that is about to exit. Everything below this block is
     // therefore reachable only by a primary or a standalone instance.
     //
-    // `--new-instance` and a bare `.skrib` path are the whole argument surface;
-    // `parse_args` is a pure function so that surface is unit-tested.
-    let (want_new_instance, initial_project) =
-        shell::instance::parse_args(std::env::args().skip(1));
+    // `--new-instance`, `--config`, `--dump-config` and a bare `.skrib` path are
+    // the whole argument surface; `parse_args` is a pure function so that surface
+    // is unit-tested.
+    let args = shell::instance::parse_args(std::env::args().skip(1));
+    let initial_project = args.project.clone();
+    if let Some(error) = &args.error {
+        eprintln!("skribisto: {error}");
+        std::process::exit(2);
+    }
+
+    // ── The settings-schema flags, before anything else touches settings ──────
+    //
+    // Both are debug-only and both run ahead of the election: `--config` must
+    // land its pins on disk before `read_prefs` (below) reads the very keys it
+    // may be pinning, and `--dump-config` exits without building anything.
+    //
+    // Pins are applied *before* a dump, so `--config pins.toml --dump-config`
+    // reads as "apply these, then show me what I get" — a validate-and-preview
+    // pass that needs no window. Ordering the other way would print the state a
+    // launch was about to leave behind, which is a strictly less useful answer to
+    // the question the pair asks.
+    if let Some(path) = &args.config {
+        apply_config_pins(path);
+    }
+    if args.dump_config {
+        run_dump_config();
+        return;
+    }
+
     // The desktop's own startup token (a file-manager double-click sets it), so
     // whichever window the primary ends up showing can actually come forward on
     // Wayland — a process cannot raise itself unprompted.
     let launch_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
 
-    let role = if want_new_instance {
+    // `--config` implies standalone. A remote hands its command line to the
+    // primary and exits, and the primary's windows are already running against
+    // their own settings — so an elected-away `--config` run would pin nothing
+    // and silently observe a differently-configured app, which is precisely the
+    // failure this flag exists to remove.
+    let role = if args.new_instance || args.config.is_some() {
         shell::instance::InstanceRole::Standalone
     } else {
         shell::instance::elect()
@@ -1110,6 +1141,89 @@ fn focus_with_token(
         state.set_activation_token(token);
     }
     ctx.focus_window(id);
+}
+
+/// The settings store's own file, resolved exactly as `read_prefs` and the app
+/// builder's `SettingsBundle` resolve it (`AppPaths` → `config_file("general")`,
+/// which appends `.toml`). `--config` merges into this file and `--dump-config`
+/// reads it, so all four agree on one path by construction.
+fn general_settings_path() -> Option<std::path::PathBuf> {
+    AppPaths::new("eu", "skribisto", "Skribisto").map(|paths| paths.config_file("general"))
+}
+
+/// `--dump-config`: print every settable key with its effective value, then exit.
+///
+/// Exits rather than launching. It is a question about configuration, asked most
+/// often before any app is running, and answering it *and* opening a window would
+/// make it useless in a shell pipeline.
+fn run_dump_config() {
+    #[cfg(not(debug_assertions))]
+    {
+        eprintln!(
+            "skribisto: {} is available in debug builds only",
+            shell::instance::DUMP_CONFIG_FLAG
+        );
+        std::process::exit(2);
+    }
+    #[cfg(debug_assertions)]
+    {
+        let Some(path) = general_settings_path() else {
+            eprintln!("skribisto: cannot resolve the configuration directory");
+            std::process::exit(2);
+        };
+        print!("{}", settings_keys::dump(&path));
+    }
+}
+
+/// `--config <file>`: validate a pins file and merge it into the settings store.
+///
+/// Debug-only, and deliberately fatal on any problem. The whole point of the flag
+/// is that a probe knows what state it is in; a run that was asked to pin settings
+/// and silently pinned none would assert against a state it never reached, which
+/// is the failure mode the schema exists to remove — see `settings_keys`' module
+/// docs for the one that cost a wrong diagnosis of bastyde's i18n layer.
+///
+/// Prints the file it writes to. That path is the flag's one sharp edge: pins land
+/// in whatever configuration directory this process resolves, so a run against the
+/// operator's own `XDG_CONFIG_HOME` changes their real settings. Isolation is the
+/// caller's to arrange (`automation_fixture.isolated_config` does it), so the least
+/// this can do is say out loud which directory it just wrote into.
+#[cfg_attr(not(debug_assertions), allow(unused_variables))]
+fn apply_config_pins(path: &str) {
+    #[cfg(not(debug_assertions))]
+    {
+        eprintln!(
+            "skribisto: {} is available in debug builds only",
+            shell::instance::CONFIG_FLAG
+        );
+        std::process::exit(2);
+    }
+    #[cfg(debug_assertions)]
+    {
+        let Some(general) = general_settings_path() else {
+            eprintln!("skribisto: cannot resolve the configuration directory");
+            std::process::exit(2);
+        };
+
+        let pins = match settings_keys::load_pins(std::path::Path::new(path)) {
+            Ok(pins) => pins,
+            Err(e) => {
+                eprintln!("skribisto: {e}");
+                std::process::exit(2);
+            }
+        };
+        if let Err(e) = settings_keys::merge_into(&general, &pins) {
+            eprintln!("skribisto: {e}");
+            std::process::exit(2);
+        }
+
+        eprintln!(
+            "skribisto: pinned {} setting{} from {path} into {}",
+            pins.len(),
+            if pins.len() == 1 { "" } else { "s" },
+            general.display()
+        );
+    }
 }
 
 /// Best-effort read of persisted theme/locale/autosave/show-welcome; defaults
