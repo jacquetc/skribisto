@@ -17,6 +17,18 @@
 //! outright, and a wedged primary degrades to one — which is why the open registry and the
 //! per-pid socket remain rather than being folded away.
 
+/// Logical-pixel height of every window's title bar — the project windows and the
+/// Launcher alike, so the two never disagree by a couple of pixels.
+///
+/// Below Bastyde's own 40 dp default: this app's chrome is a thin strip that has to
+/// stay out of the writer's way, and 40 read as heavy next to the content. The floor
+/// is set by what the bar *contains*, since [`bastyde::widgets::TitleBar`] reports its
+/// configured height and lets a taller child overflow rather than growing:
+/// the window-control cells are 32 dp, and the leading/trailing icon buttons must
+/// therefore stay at [`IconButtonSize::Toolbar`](bastyde::widgets::IconButtonSize)
+/// (30 dp) — `Large` is 40 and would spill out of the strip.
+pub(crate) const TITLE_BAR_HEIGHT: f32 = 34.0;
+
 pub(crate) mod instance;
 pub(crate) mod ipc;
 pub(crate) mod open_registry;

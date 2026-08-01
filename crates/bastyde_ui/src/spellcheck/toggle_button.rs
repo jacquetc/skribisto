@@ -67,7 +67,10 @@ impl Widget for SpellcheckToggleButton {
             } else {
                 TextRole::Disabled
             }))
-            .size(IconButtonSize::Large)
+            // `Toolbar` (30 dp) and not `Large` (40): this lives in the title bar,
+            // which is `shell::TITLE_BAR_HEIGHT` tall and lets an oversized child
+            // overflow rather than growing to fit it.
+            .size(IconButtonSize::Toolbar)
             .tooltip(if on {
                 tr!(titlebar_spellcheck_on())
             } else {

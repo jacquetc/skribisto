@@ -570,9 +570,12 @@ impl ProjectWindowFactory {
                                 placement: state.placement().clone(),
                             },
                         );
+                        // `Toolbar` (30 dp), not `Large` (40): the bar is
+                        // `TITLE_BAR_HEIGHT` tall and does not grow for an oversized
+                        // child — a `Large` hamburger simply overflows the strip.
                         let menubar = MenuBar::from_model(menu)
                             .collapse_policy(CollapsePolicy::Always)
-                            .hamburger_size(IconButtonSize::Large);
+                            .hamburger_size(IconButtonSize::Toolbar);
 
                         // Distraction-free gates nothing in here any more: the
                         // whole title bar is parked dormant along with the rest of
@@ -658,6 +661,7 @@ impl ProjectWindowFactory {
 
                         tree.add_boxed(Box::new(bati!(
                             TitleBar::new(host) {
+                                height: super::TITLE_BAR_HEIGHT
                                 background: SurfaceRole::Main
                                 leading: leading
                                 // Left of the window buttons: the master spell-check switch,

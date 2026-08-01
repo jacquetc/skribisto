@@ -82,6 +82,7 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
                     );
                     tree.add_boxed(Box::new(bati!(
                     TitleBar::new(host) {
+                        height: super::TITLE_BAR_HEIGHT
                         background: SurfaceRole::Main
                         center: Expand::horizontal {
                             HStack {
