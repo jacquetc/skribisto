@@ -102,3 +102,60 @@ impl Widget for ExportSplitButton {
             .into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tabs::shared::editor::VisibleWhen;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    /// A `SplitButton` pre-builds its dropdown as a child parked with
+    /// `ctx.set_dormant` and shows it through an overlay on demand. Parking an
+    /// **ancestor** dormant and waking it again must not wake that dropdown.
+    ///
+    /// It did: the distraction-free surface parks the whole project shell,
+    /// including the title bar, so leaving the mode left the Export button's
+    /// menu-item labels rendered inline underneath it — text with no popup
+    /// behind it, because the overlay presentation never ran.
+    ///
+    /// Raw `SplitButton`, not `ExportSplitButton`: the behaviour under test
+    /// belongs to the framework, and naming it here is what keeps the fix from
+    /// being mistaken for something about export.
+    #[test]
+    fn a_closed_dropdown_survives_an_ancestors_dormancy_cycle() {
+        let gate = Signal::new(true);
+        let mut tree = WidgetTree::new();
+        tree.add(VisibleWhen::new(
+            gate.clone(),
+            SplitButton::new_static()
+                .item(MenuItem::new(lit!("Export Book")))
+                .item(MenuItem::new(lit!("Export Chapter"))),
+        ));
+
+        // The a11y walk skips dormant nodes, so it answers exactly the question
+        // that matters: is the closed dropdown on screen?
+        let mut menu_is_showing = |tree: &mut WidgetTree| {
+            tree.layout(SizeProposal::exact(400.0, 200.0));
+            tree.sync_accessibility()
+                .nodes
+                .iter()
+                .filter_map(|(_, n)| n.label().map(|s| s.to_string()))
+                .any(|l| l == "Export Chapter")
+        };
+
+        assert!(
+            !menu_is_showing(&mut tree),
+            "the dropdown is showing before anything was even hidden"
+        );
+
+        gate.set(false);
+        assert!(!menu_is_showing(&mut tree), "hidden: nothing should show");
+
+        gate.set(true);
+        assert!(
+            !menu_is_showing(&mut tree),
+            "waking the ancestor also woke the closed dropdown — its items are \
+             now rendered inline under the button"
+        );
+    }
+}
