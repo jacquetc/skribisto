@@ -358,3 +358,36 @@ fn an_unopen_work_is_rejected() {
     .expect_err("an unknown work must fail");
     assert!(format!("{err:#}").contains("not open"), "got: {err:#}");
 }
+
+/// The result DTO must report what was **created**, not what was requested.
+///
+/// The UI builds its "N templates imported" summary from this, and the use case silently
+/// drops a blank name — a file whose stem is only punctuation tidies to one. Reporting the
+/// request count would tell the writer a file imported that did not, with no warning
+/// anywhere, which is exactly what the frontend did until this was pinned.
+#[test]
+fn created_ids_counts_rows_actually_made_not_rows_requested() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+
+    let out = note_template_management_commands::import_note_templates(
+        &fx.ctx,
+        Some(stack),
+        &dto(
+            fx.work,
+            &[
+                ("Kept", "a", false),
+                ("   ", "dropped", false),
+                ("Also kept", "b", false),
+            ],
+        ),
+    )
+    .expect("import");
+
+    assert_eq!(
+        out.created_ids.len(),
+        2,
+        "the blank-named row is dropped, so two were created from three requested"
+    );
+    assert_eq!(rows(&fx).len(), 2, "and the store agrees");
+}

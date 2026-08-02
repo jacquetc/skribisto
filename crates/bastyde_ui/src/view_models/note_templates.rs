@@ -186,11 +186,13 @@ impl NoteTemplatesViewModel {
         let (Some(work_id), false) = (self.ids.work_id.get(), rows.is_empty()) else {
             return TemplateImportSummary::default();
         };
-        let requested = rows.len();
-        let renamed = self.list.import(&rows, work_id, self.stack());
+        // `added` is what the backend *created*, never what it was handed: the use case
+        // drops a blank name (a file stem of only punctuation tidies to one), so reporting
+        // the request count would tell the writer a file imported that did not.
+        let outcome = self.list.import(&rows, work_id, self.stack());
         TemplateImportSummary {
-            added: requested,
-            renamed,
+            added: outcome.created,
+            renamed: outcome.renamed,
             skipped_files: Vec::new(),
         }
     }
@@ -230,11 +232,21 @@ impl NoteTemplatesViewModel {
     /// exact shape `import_files` reads back, so export→import round-trips. File names go
     /// through `slugify`, so a name containing a slash or a reserved stem still lands on
     /// one safe segment.
+    ///
+    /// **Every name is made unique before it is written.** `slugify` is many-to-one —
+    /// "Character Sheet" and "character-sheet!" both reduce to `character-sheet` — and two
+    /// templates can legitimately reach here with names that collide, because the pane's
+    /// inline rename only *warns* on a duplicate and still commits it. Writing both to one
+    /// path would silently drop the first while the toast reported them all exported. The
+    /// bundle writer avoids this by prefixing the row's `file_id`; that would be an ugly
+    /// name for a file the writer is about to look at, so a `-2` suffix is appended only
+    /// where one is actually needed.
     pub fn export_to_dir(&self, dir: &Path) -> Result<usize> {
         let rows = self.rows();
+        let mut used: std::collections::HashSet<String> = std::collections::HashSet::new();
         for r in &rows {
-            let name = format!("{}.djot", skrib_format::slug::slugify(&r.name));
-            let path = dir.join(name);
+            let stem = unique_stem(&skrib_format::slug::slugify(&r.name), &mut used);
+            let path = dir.join(format!("{stem}.djot"));
             std::fs::write(&path, &r.body)
                 .with_context(|| format!("writing {}", path.display()))?;
         }
@@ -252,6 +264,25 @@ impl NoteTemplatesViewModel {
 impl HasWorkId for NoteTemplatesViewModel {
     fn app_ids(&self) -> &AppIds {
         &self.ids
+    }
+}
+
+/// The first free `<base>`, `<base>-2`, `<base>-3`… for a stem, recording what it took.
+///
+/// `slugify` can return an empty string (a name of only punctuation), which would write to
+/// a bare `.djot` — a hidden file on Unix. `template` stands in for that.
+fn unique_stem(base: &str, used: &mut std::collections::HashSet<String>) -> String {
+    let base = if base.is_empty() { "template" } else { base };
+    if used.insert(base.to_string()) {
+        return base.to_string();
+    }
+    let mut n = 2usize;
+    loop {
+        let candidate = format!("{base}-{n}");
+        if used.insert(candidate.clone()) {
+            return candidate;
+        }
+        n += 1;
     }
 }
 
@@ -330,6 +361,56 @@ fn markdown_to_djot(markdown: &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// `slugify` is many-to-one, and two templates can legitimately reach export with
+    /// names that collide — the pane's inline rename only warns. Writing both to one path
+    /// would drop the first silently while the toast claimed both were exported.
+    #[test]
+    fn export_stems_are_disambiguated() {
+        let mut used = std::collections::HashSet::new();
+        assert_eq!(unique_stem("character-sheet", &mut used), "character-sheet");
+        assert_eq!(
+            unique_stem("character-sheet", &mut used),
+            "character-sheet-2"
+        );
+        assert_eq!(
+            unique_stem("character-sheet", &mut used),
+            "character-sheet-3"
+        );
+        assert_eq!(unique_stem("location", &mut used), "location");
+    }
+
+    /// A name of only punctuation slugifies to nothing, which would write a bare `.djot`
+    /// — a hidden file on Unix, and invisible to the importer that reads the folder back.
+    #[test]
+    fn an_empty_slug_gets_a_real_name() {
+        let mut used = std::collections::HashSet::new();
+        assert_eq!(unique_stem("", &mut used), "template");
+        assert_eq!(unique_stem("", &mut used), "template-2");
+    }
+
+    /// Export writes one file per row even when every name collides — the count the toast
+    /// reports must match what is actually on disk.
+    #[test]
+    fn exporting_colliding_names_writes_one_file_each() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut used = std::collections::HashSet::new();
+        // Three names that all reduce to the same slug.
+        for name in ["Character Sheet", "character-sheet", "CHARACTER SHEET!"] {
+            let stem = unique_stem(&skrib_format::slug::slugify(name), &mut used);
+            std::fs::write(dir.path().join(format!("{stem}.djot")), name).unwrap();
+        }
+        let written: Vec<_> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
+        assert_eq!(
+            written.len(),
+            3,
+            "three templates must produce three files, got {written:?}"
+        );
+    }
 
     #[test]
     fn a_file_stem_becomes_a_readable_name() {

@@ -640,8 +640,18 @@ impl FormatViewModel {
     /// `if surface != None { … }` would pass while the real pump did something else.
     #[cfg(test)]
     pub(crate) fn set_note_focused_for_test_from(&self, surface: FormatSurface) {
+        self.apply_note_gate_for_test(Some(()), surface);
+    }
+
+    /// The exact rule [`Self::refresh`] applies, minus the editor plumbing. `target`
+    /// stands in for "is there a handle at all"; kept in one place so a test cannot pass
+    /// while the real pump does something else.
+    #[cfg(test)]
+    pub(crate) fn apply_note_gate_for_test(&self, target: Option<()>, surface: FormatSurface) {
         self.set_surface(surface);
-        if surface != FormatSurface::None {
+        if target.is_none() {
+            set_if_changed(&self.note_focused, false);
+        } else if surface != FormatSurface::None {
             set_if_changed(&self.note_focused, surface == FormatSurface::Note);
         }
     }
@@ -687,12 +697,19 @@ impl FormatViewModel {
         let (handle, surface) = self.target();
         self.set_surface(surface);
         set_if_changed(&self.has_target, handle.is_some());
-        // Latched, not mirrored. `surface` is `None` while the menu overlay holds focus, so
-        // writing the gate straight from it would disable the very rows the writer just
-        // opened the menu to click. Only a *real* change of surface moves it — which still
-        // covers the cases that matter: focusing a scene flips it off, because the resolver
-        // reports `Scene`, not `None`.
-        if surface != FormatSurface::None {
+        // Latched against the **target**, not mirrored off `surface`.
+        //
+        // `surface` alone cannot tell the two `None`s apart: "a menu overlay took focus,
+        // the editor is still there" and "the editor is gone". Mirroring it disables the
+        // rows the writer just opened the menu to click; latching on it alone leaves them
+        // enabled forever after the last note tab closes, pointing at nothing.
+        //
+        // The handle separates them, and it is the same one the commands act on
+        // (`handle_for_commands` is `target().0`), so the gate now says exactly what those
+        // commands can do rather than approximating it.
+        if handle.is_none() {
+            set_if_changed(&self.note_focused, false);
+        } else if surface != FormatSurface::None {
             set_if_changed(&self.note_focused, surface == FormatSurface::Note);
         }
 
@@ -1618,6 +1635,29 @@ mod tests {
         assert!(
             vm.note_focused().get(),
             "the gate must stay on while the menu overlay holds focus"
+        );
+    }
+
+    /// Closing the last note tab must clear the gate, not latch it on forever.
+    ///
+    /// The sticky rule exists to survive a menu overlay taking focus — where the editor is
+    /// still there. When the editor is genuinely gone the target goes with it, and leaving
+    /// the rows enabled would offer commands that silently do nothing. This is the hole the
+    /// first version of the latch had.
+    #[test]
+    fn losing_the_target_entirely_clears_the_gate() {
+        let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
+        vm.set_note_focused_for_test(true);
+
+        // Menu overlay: no surface, but the editor is still latched. Gate holds.
+        vm.apply_note_gate_for_test(Some(()), FormatSurface::None);
+        assert!(vm.note_focused().get(), "a menu must not clear it");
+
+        // Tab closed: no target at all. Gate clears.
+        vm.apply_note_gate_for_test(None, FormatSurface::None);
+        assert!(
+            !vm.note_focused().get(),
+            "with no editor left there is nothing for the template commands to act on"
         );
     }
 

@@ -75,7 +75,7 @@ pub use text_replacement_rule_list_model::{
 pub use trash_tree_model::{TrashNode, TrashRootKind, TrashTreeKey, TrashTreeModel};
 pub use tree_expansion_file::TreeExpansionService;
 pub use work_note_templates_list_model::{
-    TemplateRow, WorkNoteTemplatesListModel, moved_index, starred_first,
+    ImportOutcome, TemplateRow, WorkNoteTemplatesListModel, moved_index, starred_first,
 };
 pub use work_tags_list_model::{TagRow, WorkTagsListModel, name_key, sort_rows};
 pub use workspace_layout_file::{

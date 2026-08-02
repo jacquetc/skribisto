@@ -76,8 +76,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 );
                 return;
             }
-            present_save_as_template(&templates, body, c);
-            let _ = &format;
+            present_save_as_template(&templates, format.clone(), body, c);
         }));
     }
 }
@@ -94,6 +93,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 /// That is the whole reason `InputDialog::validate` exists — it was added for this.
 fn present_save_as_template(
     templates: &crate::view_models::NoteTemplatesViewModel,
+    format: crate::view_models::FormatViewModel,
     body: String,
     ctx: &mut EventContext,
 ) {
@@ -115,6 +115,11 @@ fn present_save_as_template(
             }
         })
         .on_result(move |result, c| {
+            // Focus went to the menu overlay, then to the dialog. Put it back in the note
+            // either way — including on Cancel, which is the case where the writer most
+            // clearly meant to carry on where they were. Same fix, same reason, as the
+            // insert command's own `refocus`.
+            format.refocus(c);
             // The validator has already refused every name that cannot be used, so this
             // only ever sees a usable one — or `None`, for Cancel.
             let Some(name) = result else { return };

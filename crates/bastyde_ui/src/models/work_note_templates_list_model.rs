@@ -69,6 +69,18 @@ pub fn starred_first(rows: &[TemplateRow]) -> Vec<TemplateRow> {
     out
 }
 
+/// What a bulk import actually did.
+///
+/// `created` is the number of rows the **backend** made, not the number handed to it: the
+/// use case drops a blank name, so the two differ and reporting the request count would
+/// tell the writer a file imported that did not.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct ImportOutcome {
+    pub created: usize,
+    /// Names that collided and were given a numeric suffix.
+    pub renamed: Vec<String>,
+}
+
 /// The index `from` moves to when nudged by `delta`, or `None` if that would fall off
 /// either end (so the caller can disable the button rather than silently no-op).
 pub fn moved_index(len: usize, from: usize, delta: isize) -> Option<usize> {
@@ -350,15 +362,18 @@ mod imp {
         }
 
         /// Bulk-create as ONE undoable step (a file import, or applying a preset).
-        /// Returns the names that had to be suffixed, for the summary toast.
+        ///
+        /// Reports what the backend actually created — not what it was asked to — because
+        /// the use case drops a blank name, and a summary built from the request count
+        /// would claim a file imported that did not.
         pub fn import(
             &self,
             rows: &[TemplateRow],
             work_id: u64,
             stack_id: Option<u64>,
-        ) -> Vec<String> {
+        ) -> super::ImportOutcome {
             if rows.is_empty() {
-                return Vec::new();
+                return super::ImportOutcome::default();
             }
             let dto = ImportNoteTemplatesDto {
                 work_id,
@@ -371,10 +386,13 @@ mod imp {
                 stack_id,
                 &dto,
             ) {
-                Ok(res) => res.renamed_to,
+                Ok(res) => super::ImportOutcome {
+                    created: res.created_ids.len(),
+                    renamed: res.renamed_to,
+                },
                 Err(e) => {
                     eprintln!("note templates: import failed: {e}");
-                    Vec::new()
+                    super::ImportOutcome::default()
                 }
             }
         }
@@ -585,9 +603,10 @@ mod imp {
             rows: &[TemplateRow],
             _work_id: u64,
             _stack_id: Option<u64>,
-        ) -> Vec<String> {
+        ) -> super::ImportOutcome {
             let mut current = self.rows();
             let mut renamed = Vec::new();
+            let mut created = 0usize;
             for r in rows {
                 let raw = r.name.trim();
                 if raw.is_empty() {
@@ -612,9 +631,10 @@ mod imp {
                 let id = self.inner.next_id.get();
                 self.inner.next_id.set(id + 1);
                 current.push(row(id, &name, &r.body, r.starred));
+                created += 1;
             }
             self.replace(current);
-            renamed
+            super::ImportOutcome { created, renamed }
         }
 
         /// No sort — the writer's order is the order, as in the real model.
