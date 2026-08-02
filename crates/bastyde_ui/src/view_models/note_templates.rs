@@ -116,7 +116,18 @@ impl NoteTemplatesViewModel {
     }
 
     /// Create one template. `None` when no project is open or the name is blank.
-    pub fn create(&self, name: &str, body: &str, starred: bool) -> Option<u64> {
+    ///
+    /// **Private on purpose.** It performs no uniqueness check, and a template name is
+    /// what the insert menu is picked by — two identical rows there are genuinely
+    /// ambiguous (see [`Self::duplicate_name`]). Every route into this therefore has to
+    /// pass [`Self::save_as_template`], which refuses a collision. Making it `pub` again
+    /// would mean a future quick-create control could silently mint the duplicate the
+    /// dialog exists to prevent, with nothing to notice it by.
+    ///
+    /// Bulk creation (importing a file, applying a preset) deliberately does **not** come
+    /// through here — it goes to `WorkNoteTemplatesListModel::create_all`, so the whole
+    /// batch is one undo step rather than N.
+    fn create(&self, name: &str, body: &str, starred: bool) -> Option<u64> {
         if name.trim().is_empty() {
             return None;
         }
@@ -124,9 +135,13 @@ impl NoteTemplatesViewModel {
             .create(name, body, starred, self.ids.work_id.get(), self.stack())
     }
 
-    /// Capture the given prose as a new template. The caller has already validated the
-    /// name against [`Self::duplicate_name`]; this re-checks so a race between the dialog's
-    /// last keystroke and its OK cannot create a duplicate.
+    /// Capture the given prose as a new template — the **only** way to create one
+    /// singly, which is what makes the uniqueness rule below unconditional rather than
+    /// a convention callers have to remember.
+    ///
+    /// The caller has already validated the name against [`Self::duplicate_name`]; this
+    /// re-checks so a race between the dialog's last keystroke and its OK cannot create a
+    /// duplicate.
     pub fn save_as_template(&self, name: &str, body: &str) -> Result<u64> {
         let name = name.trim();
         if name.is_empty() {
