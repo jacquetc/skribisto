@@ -77,6 +77,87 @@ fn highlight_scope_tip(scope: HighlightScope) -> TooltipContent {
     TooltipContent::new(key, text)
 }
 
+/// Which segment a `(shown, placement)` pair selects.
+fn synopsis_choice_of(shown: bool, placement: SynopsisPlacement) -> usize {
+    if shown { placement.to_index() + 1 } else { 0 }
+}
+
+/// Bridge the synopsis `SegmentedControl`'s index to the **two** settings it writes —
+/// whether there is a synopsis, and where it goes — and return the index signal.
+///
+/// The two stay separate because distraction-free mode needs the boolean axis on its own
+/// (its strip toggle shows and hides; placement there is always Beside). Only the control
+/// is unified; the stored state stays two answers.
+///
+/// # Why this needs a guard the caret band's bridge does not
+///
+/// That one is an index against a *single* enum, so its `!=` pair can only ever disagree
+/// in one place. This is an index against a **pair**, and the pair cannot be written
+/// atomically. A click that changes both at once — off → "Side", or off-with-remembered-
+/// Side → "Top" — runs `shown.set(..)` first, which synchronously re-enters `sync` before
+/// `placement.set(..)` has happened. `sync` reads the half-applied pair, derives an index
+/// the writer never chose, and writes *that* back into the index — which re-enters this
+/// effect in turn.
+///
+/// It does converge, because every `!=` guard eventually agrees. But it converges by
+/// accident rather than by construction: it walks every index observer twice more per
+/// click and briefly publishes a selection nobody asked for. `settling` is the same guard
+/// `SideSync::suppress` and `WidthProbe::last_mode` use against the same hazard class
+/// elsewhere in this feature.
+///
+/// Skipping the sync while settling costs nothing: making the pair agree with the index
+/// is precisely what the index effect does, so `synopsis_choice_of(shown, placement) ==
+/// index` already holds by the time it returns.
+fn bridge_synopsis_choice(
+    ctx: &mut BuildContext,
+    shown: Signal<bool>,
+    placement: Signal<SynopsisPlacement>,
+) -> Signal<usize> {
+    let choice_index: Signal<usize> =
+        Signal::new(synopsis_choice_of(shown.get(), placement.get()));
+    let settling = std::rc::Rc::new(std::cell::Cell::new(false));
+    {
+        let sync = {
+            let (choice_index, placement, shown, settling) = (
+                choice_index.clone(),
+                placement.clone(),
+                shown.clone(),
+                settling.clone(),
+            );
+            std::rc::Rc::new(move || {
+                if settling.get() {
+                    return;
+                }
+                let want = synopsis_choice_of(shown.get(), placement.get());
+                if choice_index.get() != want {
+                    choice_index.set(want);
+                }
+            })
+        };
+        let also = sync.clone();
+        ctx.effect(&shown, move |_| also());
+        ctx.effect(&placement, move |_| sync());
+    }
+    {
+        ctx.effect(&choice_index, move |i| {
+            settling.set(true);
+            // "None" leaves the placement alone rather than resetting it, so
+            // switching the synopsis back on returns it to the side it was on.
+            let want_shown = *i > 0;
+            if shown.get() != want_shown {
+                shown.set(want_shown);
+            }
+            if let Some(p) = SYNOPSIS_CHOICES.get(*i).copied().flatten()
+                && placement.get() != p
+            {
+                placement.set(p);
+            }
+            settling.set(false);
+        });
+    }
+    choice_index
+}
+
 /// Editor ▸ Editor Behavior — the non-typographic writing settings: the
 /// centered-column width, the writing-view toggles, and the container-view
 /// memory.
@@ -108,49 +189,7 @@ pub(in crate::settings) fn editor_behavior_pane(
             }
         });
     }
-    // The synopsis: whether there is one, and where it goes. Same guarded index
-    // bridge as the caret band below, but over *two* settings — the visibility flag
-    // and the placement — because distraction-free mode needs the boolean axis on
-    // its own (its strip toggle shows and hides; placement there is always Beside).
-    // Only the control is unified; the stored state stays two answers.
-    let synopsis_shown = vm.synopsis_pane();
-    let placement = vm.synopsis_placement();
-    let choice_of = |shown: bool, p: SynopsisPlacement| if shown { p.to_index() + 1 } else { 0 };
-    let choice_index: Signal<usize> = Signal::new(choice_of(synopsis_shown.get(), placement.get()));
-    {
-        let sync = {
-            let (choice_index, placement, shown) = (
-                choice_index.clone(),
-                placement.clone(),
-                synopsis_shown.clone(),
-            );
-            std::rc::Rc::new(move || {
-                let want = choice_of(shown.get(), placement.get());
-                if choice_index.get() != want {
-                    choice_index.set(want);
-                }
-            })
-        };
-        let also = sync.clone();
-        ctx.effect(&synopsis_shown, move |_| also());
-        ctx.effect(&placement, move |_| sync());
-    }
-    {
-        let (shown, placement) = (synopsis_shown.clone(), placement.clone());
-        ctx.effect(&choice_index, move |i| {
-            // "None" leaves the placement alone rather than resetting it, so
-            // switching the synopsis back on returns it to the side it was on.
-            let want_shown = *i > 0;
-            if shown.get() != want_shown {
-                shown.set(want_shown);
-            }
-            if let Some(p) = SYNOPSIS_CHOICES.get(*i).copied().flatten()
-                && placement.get() != p
-            {
-                placement.set(p);
-            }
-        });
-    }
+    let choice_index = bridge_synopsis_choice(ctx, vm.synopsis_pane(), vm.synopsis_placement());
     let synopsis_control = SYNOPSIS_CHOICES
         .into_iter()
         .fold(SegmentedControl::new(choice_index), |control, choice| {
@@ -244,4 +283,158 @@ pub(in crate::settings) fn editor_behavior_pane(
         ),
         form,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+    use bastyde::core::{LayoutContext, LayoutResponse, Widget, WidgetId};
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    /// Registers the bridge inside a real `BuildContext` and hands the index signal back,
+    /// so a test can act as the `SegmentedControl` does: write the index, observe the pair.
+    struct BridgeHost {
+        shown: Signal<bool>,
+        placement: Signal<SynopsisPlacement>,
+        out: Rc<std::cell::RefCell<Option<Signal<usize>>>>,
+    }
+    impl std::fmt::Debug for BridgeHost {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("BridgeHost").finish()
+        }
+    }
+    impl Widget for BridgeHost {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            let index =
+                bridge_synopsis_choice(ctx, self.shown.clone(), self.placement.clone());
+            *self.out.borrow_mut() = Some(index);
+            Vec::new()
+        }
+        fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+            proposal.resolve(0.0, 0.0).into()
+        }
+    }
+
+    /// A live bridge plus everything a test needs to drive and watch it.
+    struct Bridge {
+        shown: Signal<bool>,
+        placement: Signal<SynopsisPlacement>,
+        index: Signal<usize>,
+        /// Writes to `index` *after* construction — that is, every write the bridge makes
+        /// on top of the caller's own. A click is one; anything more is the write-back
+        /// cascade the guard exists to stop.
+        writes: Rc<Cell<usize>>,
+        /// Both kept alive deliberately: `ctx.effect`'s observers are owned by the tree,
+        /// so dropping it would quietly unregister the bridge under test and leave every
+        /// assertion below passing against nothing.
+        _tree: WidgetTree,
+        _observer: bastyde::core::signal::ObserverHandle,
+    }
+
+    fn bridge(shown: bool, placement: SynopsisPlacement) -> Bridge {
+        let shown = Signal::new(shown);
+        let placement = Signal::new(placement);
+        let out = Rc::new(std::cell::RefCell::new(None));
+        let mut tree = WidgetTree::new();
+        tree.add(BridgeHost {
+            shown: shown.clone(),
+            placement: placement.clone(),
+            out: out.clone(),
+        });
+        tree.layout(SizeProposal::exact(100.0, 100.0));
+        let index: Signal<usize> = out.borrow().clone().expect("the bridge was built");
+
+        let writes = Rc::new(Cell::new(0usize));
+        let w = writes.clone();
+        let observer = index.observe(move |_| w.set(w.get() + 1));
+        Bridge {
+            shown,
+            placement,
+            index,
+            writes,
+            _tree: tree,
+            _observer: observer,
+        }
+    }
+
+    /// The one-axis clicks were never at risk; assert them anyway so the guard cannot be
+    /// "fixed" by breaking the ordinary path.
+    #[test]
+    fn a_single_axis_click_applies_cleanly() {
+        // Off → "Top": only `shown` changes.
+        let b = bridge(false, SynopsisPlacement::Top);
+        b.index.set(1);
+        assert!(b.shown.get());
+        assert_eq!(b.placement.get(), SynopsisPlacement::Top);
+        assert_eq!(b.index.get(), 1);
+        assert_eq!(b.writes.get(), 1, "only the click itself");
+    }
+
+    /// Turning the synopsis off must leave the remembered placement alone, so switching
+    /// it back on returns it to the side it was on.
+    #[test]
+    fn turning_it_off_remembers_where_it_was() {
+        let b = bridge(true, SynopsisPlacement::Side);
+        b.index.set(0);
+        assert!(!b.shown.get());
+        assert_eq!(
+            b.placement.get(),
+            SynopsisPlacement::Side,
+            "placement must survive the round trip"
+        );
+        b.index.set(2);
+        assert!(b.shown.get());
+        assert_eq!(b.placement.get(), SynopsisPlacement::Side);
+    }
+
+    /// The regression. Off → "Side" changes **both** settings in one click, and the pair
+    /// cannot be written atomically: without the `settling` guard, `b.shown.set(true)`
+    /// re-enters the sync before the placement lands, so the sync derives index 1 (the
+    /// remembered Top) and writes it back — publishing a segment the writer never chose —
+    /// before the placement write drags it to 2 again.
+    #[test]
+    fn a_two_axis_click_does_not_write_the_index_back() {
+        let b = bridge(false, SynopsisPlacement::Top);
+
+        b.index.set(2); // the writer clicks "Side" while the synopsis is off
+
+        assert!(b.shown.get());
+        assert_eq!(b.placement.get(), SynopsisPlacement::Side);
+        assert_eq!(b.index.get(), 2, "the chosen segment must stick");
+        assert_eq!(
+            b.writes.get(),
+            1,
+            "the click is the only write; a higher count is the write-back cascade"
+        );
+    }
+
+    /// The other two-axis case, reached from a remembered placement: off-with-Side → Top.
+    #[test]
+    fn a_two_axis_click_from_a_remembered_placement_is_also_clean() {
+        let b = bridge(false, SynopsisPlacement::Side);
+
+        b.index.set(1); // "Top", from off-but-remembering-Side
+
+        assert!(b.shown.get());
+        assert_eq!(b.placement.get(), SynopsisPlacement::Top);
+        assert_eq!(b.index.get(), 1);
+        assert_eq!(b.writes.get(), 1);
+    }
+
+    /// The guard must not deafen the bridge to changes made *elsewhere* — the
+    /// distraction-free strip toggles `shown` on its own, and the control has to follow.
+    #[test]
+    fn an_external_change_still_moves_the_control() {
+        let b = bridge(true, SynopsisPlacement::Side);
+        assert_eq!(b.index.get(), 2);
+
+        b.shown.set(false); // as the distraction-free strip toggle does
+        assert_eq!(b.index.get(), 0, "the control must follow the setting");
+
+        b.shown.set(true);
+        assert_eq!(b.index.get(), 2, "…back to the remembered placement");
+        assert_eq!(b.placement.get(), SynopsisPlacement::Side);
+    }
 }
