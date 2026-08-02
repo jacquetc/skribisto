@@ -19,6 +19,28 @@ fn ts() -> DateTime<Utc> {
     DateTime::from_timestamp(1_700_000_000, 0).unwrap()
 }
 
+/// Assert a write→read cycle preserved everything, allowing for the **one** field the
+/// writer legitimately computes rather than copies.
+///
+/// `folder_io::write_folder` stamps `format_min_read_version` from the bundle's real
+/// content at the manifest commit (see [`crate::version_gate`]), which is why neither
+/// producer sets it — so a bundle handed in with `None` reads back carrying its actual
+/// floor. That difference is the feature working, not loss, so this asserts the stamp is
+/// right and then compares everything else exactly.
+fn assert_round_trip(input: &WorkBundle, read: &WorkBundle) {
+    assert_eq!(
+        read.manifest.format_min_read_version,
+        Some(crate::version_gate::compute_min_read_version(input)),
+        "the writer must stamp the content-derived read floor"
+    );
+    let mut normalized = read.clone();
+    normalized.manifest.format_min_read_version = input.manifest.format_min_read_version;
+    assert_eq!(
+        input, &normalized,
+        "everything but the computed floor must round-trip unchanged"
+    );
+}
+
 /// Every valid (role, sub_role) combination in the constraint matrix.
 fn all_combinations() -> Vec<(BinderItemRole, BinderItemSubRole)> {
     use BinderItemRole::*;
@@ -283,7 +305,7 @@ fn folder_round_trip_is_lossless() {
     let root = dir.path().join("MyNovel");
     write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
     let read = read_bundle(root.to_str().unwrap()).unwrap();
-    assert_eq!(bundle, read);
+    assert_round_trip(&bundle, &read);
 }
 
 #[test]
@@ -322,7 +344,7 @@ fn zip_round_trip_matches_folder() {
         SkribShape::ZipFile
     );
     let read = read_bundle(target.to_str().unwrap()).unwrap();
-    assert_eq!(bundle, read);
+    assert_round_trip(&bundle, &read);
 }
 
 #[test]
@@ -520,7 +542,7 @@ fn write_zip_round_trips_through_the_durable_persist_path() {
     write_bundle(target.to_str().unwrap(), SkribShape::ZipFile, &bundle).unwrap();
     assert!(target.exists());
     let read = read_bundle(target.to_str().unwrap()).unwrap();
-    assert_eq!(bundle, read);
+    assert_round_trip(&bundle, &read);
 }
 
 // ---------------------------------------------------------------------------
@@ -715,14 +737,52 @@ fn migration_is_idempotent_and_never_re_mints_an_existing_uid() {
     );
 }
 
+/// A bundle needing a format newer than ours must be refused, not silently downgraded.
+///
+/// **Retargeted from `migrate_bundle` to the gate**, deliberately. The refusal moved:
+/// `migrate_bundle` ran after the whole bundle was parsed, which made it unreachable for
+/// the only forward-incompatible change this project actually makes (a new enum variant
+/// blows up in `ron::from_str` several frames earlier), and it compared the raw writer
+/// stamp rather than the content floor — so it would have refused exactly the files the
+/// floor scheme exists to keep openable. The coverage is kept; only its target changed.
 #[test]
 fn a_bundle_from_a_newer_format_is_refused_not_silently_migrated() {
-    let mut bundle = build_bundle(ShapeTag::Folder);
-    bundle.manifest.format_version = FORMAT_VERSION + 1;
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("FromTheFuture");
+    let bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    set_manifest_floor(&root.join("project.skrib"), FORMAT_VERSION + 1);
+
+    let err = read_bundle(root.to_str().unwrap()).expect_err("a newer .skrib must be refused");
     assert!(
-        migration::migrate_bundle(&mut bundle).is_err(),
-        "a newer .skrib must be refused, not downgraded"
+        matches!(err, SkribFormatError::TooNew { .. }),
+        "expected TooNew, got: {err:?}"
     );
+}
+
+/// Rewrite an already-written manifest's read floor to `floor`, in place.
+///
+/// A too-new bundle **cannot** be produced through `write_bundle` — the writer computes
+/// the floor from content, so by construction it never emits a file it could not read
+/// back. That is the right property, and it means every "from the future" test has to
+/// doctor the manifest afterwards. Textual rather than parse-edit-reserialize, because
+/// several tests below deliberately hand the reader a manifest it *cannot* fully parse,
+/// and going through `ProjectManifest` would defeat them.
+fn set_manifest_floor(manifest_path: &Path, floor: u32) {
+    let text = fs::read_to_string(manifest_path).unwrap();
+    let start = text
+        .find("format_min_read_version:")
+        .expect("the writer must have stamped a floor");
+    let end = start
+        + text[start..]
+            .find(',')
+            .expect("the field must be comma-terminated");
+    let replaced = format!(
+        "{}format_min_read_version: Some({floor}){}",
+        &text[..start],
+        &text[end..]
+    );
+    fs::write(manifest_path, replaced).unwrap();
 }
 
 #[test]
@@ -1263,15 +1323,440 @@ fn a_missing_template_blob_fails_the_load_rather_than_emptying_it() {
 
 /// The v5 bump exists so an older build refuses the file instead of silently dropping
 /// its templates on the next save. Guard the refusal itself.
+///
+/// Retargeted at the gate for the reasons on
+/// `a_bundle_from_a_newer_format_is_refused_not_silently_migrated`, and rephrased in the
+/// terms the gate actually judges: a template-bearing bundle's *floor* is what makes it
+/// unopenable by a pre-v5 build, so that is what this asserts.
 #[test]
 fn a_bundle_from_a_newer_format_is_refused() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    assert!(
+        !bundle.note_templates.is_empty(),
+        "the fixture must carry templates for this to be the v5 case"
+    );
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&bundle),
+        5,
+        "templates are what raise the floor to 5"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("HasTemplates");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    // Stand in for a build older than the floor by raising the floor above ours instead
+    // — the comparison the gate makes is identical either way.
+    set_manifest_floor(&root.join("project.skrib"), FORMAT_VERSION + 1);
+
+    let err = read_bundle(root.to_str().unwrap()).expect_err("newer must be refused");
+    assert!(
+        matches!(err, SkribFormatError::TooNew { requires_at_least, supported, .. }
+                 if requires_at_least == FORMAT_VERSION + 1 && supported == FORMAT_VERSION),
+        "got: {err:?}"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// The pre-flight version gate (`version_gate`)
+// ---------------------------------------------------------------------------
+
+/// The gate must fire **before** the binder manifests are parsed.
+///
+/// This is the whole bug: `migrate_bundle` owned the refusal and ran last, so a bundle
+/// from a future format — which in practice means one carrying an enum variant we do not
+/// know — died in `ron::from_str` on `items.ron` with a raw `Unexpected variant named
+/// "…"`, several call frames before any version was compared. Simulated here with an
+/// `items.ron` that cannot parse at all: if the ordering ever regresses, this reports a
+/// RON error instead of `TooNew`.
+#[test]
+fn the_gate_refuses_a_too_new_folder_bundle_without_parsing_its_binders() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("FromTheFuture");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    set_manifest_floor(&root.join("project.skrib"), FORMAT_VERSION + 1);
+    for entry in fs::read_dir(root.join("binders")).unwrap() {
+        fs::write(
+            entry.unwrap().path().join("items.ron"),
+            "ItemsFile(binder: NotAThing(sub_role: EpigraphFromTheFuture))",
+        )
+        .unwrap();
+    }
+
+    let err = read_bundle(path).expect_err("a too-new bundle must be refused");
+    assert!(
+        matches!(err, SkribFormatError::TooNew { .. }),
+        "expected the version refusal to win over the parse error, got: {err:?}"
+    );
+}
+
+/// Same for the zip shape, and one step stronger: the archive here **cannot be
+/// extracted**, so reaching `TooNew` proves the gate never called `extract`.
+///
+/// That matters beyond ordering. `read_zip` unpacks the entire archive — every `.djot`
+/// blob — into a tempdir before a single field is read, so gating afterwards means paying
+/// the full cost of a read that was always going to be refused. The gate's zip arm
+/// streams only the `project.skrib` entry via `by_name`.
+#[test]
+fn the_gate_refuses_a_too_new_zip_without_extracting_it() {
+    use std::io::Write as _;
+
+    let dir = tempfile::tempdir().unwrap();
+
+    // Start from a manifest the writer really produced, then raise its floor — so this
+    // exercises the actual on-disk spelling rather than a hand-written approximation.
+    let staging = dir.path().join("staging");
+    write_bundle(
+        staging.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Zip),
+    )
+    .unwrap();
+    set_manifest_floor(&staging.join("project.skrib"), FORMAT_VERSION + 3);
+    let manifest_text = fs::read_to_string(staging.join("project.skrib")).unwrap();
+
+    // Hand-build an archive whose one non-manifest entry is *stored* (uncompressed) and
+    // then overwritten in place with the same number of bytes: the zip stays structurally
+    // valid and `by_name` still works, but the recorded CRC32 no longer matches, so any
+    // attempt to extract fails.
+    let target = dir.path().join("FromTheFuture.skrib");
+    let payload = b"AAAAAAAAAAAAAAAA";
+    {
+        let f = fs::File::create(&target).unwrap();
+        let mut zw = zip::ZipWriter::new(f);
+        let stored = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        zw.start_file("project.skrib", stored).unwrap();
+        zw.write_all(manifest_text.as_bytes()).unwrap();
+        zw.start_file("binders/00-b/items.ron", stored).unwrap();
+        zw.write_all(payload).unwrap();
+        zw.finish().unwrap();
+    }
+    let mut bytes = fs::read(&target).unwrap();
+    let at = bytes
+        .windows(payload.len())
+        .position(|w| w == payload)
+        .expect("the stored payload must be findable verbatim");
+    bytes[at..at + payload.len()].fill(b'B');
+    fs::write(&target, &bytes).unwrap();
+
+    // Control: extraction really is fatal for this fixture, so the assertion below is
+    // about the gate's behaviour and not about a lenient reader.
+    assert!(
+        zip::ZipArchive::new(fs::File::open(&target).unwrap())
+            .unwrap()
+            .extract(dir.path().join("control"))
+            .is_err(),
+        "the fixture must be an archive that cannot be extracted"
+    );
+
+    let err = read_bundle(target.to_str().unwrap()).expect_err("a too-new zip must be refused");
+    assert!(
+        matches!(err, SkribFormatError::TooNew { requires_at_least, .. }
+                 if requires_at_least == FORMAT_VERSION + 3),
+        "expected TooNew without extracting, got: {err:?}"
+    );
+}
+
+/// The direct regression test for the ceiling deletion.
+///
+/// A newer build that saves a project containing nothing new stamps `format_version`
+/// above ours but a floor we understand. That file must open. While `migrate_bundle`
+/// kept its own `v > FORMAT_VERSION` check it would have refused exactly this file —
+/// *after* the gate admitted it and the whole bundle was parsed.
+#[test]
+fn a_floor_we_understand_opens_even_when_format_version_is_ahead() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("NewerWriterOldContent");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    let manifest_path = root.join("project.skrib");
+    let text = fs::read_to_string(&manifest_path).unwrap();
+    fs::write(
+        &manifest_path,
+        text.replacen(
+            &format!("format_version: {FORMAT_VERSION}"),
+            &format!("format_version: {}", FORMAT_VERSION + 1),
+            1,
+        ),
+    )
+    .unwrap();
+    // Floor stays at what the writer computed, i.e. something this build implements.
+
+    let bundle = read_bundle(path).expect("a floor we understand must open");
+    assert_eq!(
+        bundle.manifest.format_version,
+        FORMAT_VERSION + 1,
+        "migration must leave a from-the-future stamp alone rather than downgrade it"
+    );
+}
+
+/// Every `.skrib` in a real user's hands predates this field. Absent → fall back to
+/// `format_version`, which is precisely the refuse-if-greater rule the crate always had.
+#[test]
+fn an_absent_floor_falls_back_to_format_version() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Legacyish");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    // Strip the field entirely, exactly as a pre-scheme manifest has it.
+    let manifest_path = root.join("project.skrib");
+    let text = fs::read_to_string(&manifest_path).unwrap();
+    let start = text.find("format_min_read_version:").unwrap();
+    let end = start + text[start..].find(',').unwrap() + 1;
+    fs::write(
+        &manifest_path,
+        format!("{}{}", &text[..start], &text[end..].trim_start()),
+    )
+    .unwrap();
+    assert!(!fs::read_to_string(&manifest_path)
+        .unwrap()
+        .contains("format_min_read_version"));
+
+    read_bundle(path).expect("a manifest without the field must open exactly as before");
+}
+
+/// `format_version: 0` is refused before anything else is parsed.
+#[test]
+fn format_version_zero_is_refused_pre_parse() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Bogus");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    let manifest_path = root.join("project.skrib");
+    let text = fs::read_to_string(&manifest_path).unwrap();
+    fs::write(
+        &manifest_path,
+        text.replacen(&format!("format_version: {FORMAT_VERSION}"), "format_version: 0", 1),
+    )
+    .unwrap();
+    for entry in fs::read_dir(root.join("binders")).unwrap() {
+        fs::write(entry.unwrap().path().join("items.ron"), "not ron at all").unwrap();
+    }
+
+    let err = read_bundle(path).expect_err("format_version 0 must be refused");
+    assert!(
+        matches!(err, SkribFormatError::InvalidVersion),
+        "expected InvalidVersion before any binder parsing, got: {err:?}"
+    );
+}
+
+/// The probe must survive a manifest from an arbitrarily distant future — and this is the
+/// test that would have caught reusing `peek_manifest` for it.
+///
+/// `peek_manifest` parses the whole `ProjectManifest`, including `shape: ShapeTag` and
+/// `kind: BundleKind` — plain derived enums with no `#[serde(other)]`. A future third
+/// `ShapeTag` would hard-fail *the probe itself*, reopening the very bug the gate closes,
+/// one level up. The control assertion pins that difference rather than describing it.
+#[test]
+fn the_probe_survives_an_unrecognised_shape_tag_variant() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("FutureShape");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    let manifest_path = root.join("project.skrib");
+    let text = fs::read_to_string(&manifest_path).unwrap();
+    let doctored = text.replacen("shape: Folder", "shape: HolographicCrystal", 1);
+    assert_ne!(doctored, text, "the shape field must have been rewritten");
+    fs::write(&manifest_path, &doctored).unwrap();
+
+    // Control: the full-manifest reader cannot cope with it…
+    assert!(
+        peek_manifest(path).is_err(),
+        "peek_manifest must choke on an unknown ShapeTag — that is why it is not the probe"
+    );
+    // …while the gate reads its two integers regardless. (The full read still fails
+    // afterwards, as it must; what matters is that the *gate* got its answer.)
+    assert!(
+        crate::version_gate::check_version_gate(path, SkribShape::ExplodedFolder).is_ok(),
+        "the narrow probe must be immune to unknown enum values elsewhere in the manifest"
+    );
+}
+
+/// The probe is coupled to `ProjectManifest`'s **type name**, because `to_ron` writes
+/// with `struct_names(true)` and RON checks that name before any field. Round-trip a real
+/// serialized manifest rather than a hand-written string, so a rename of the manifest
+/// type breaks this test rather than every project open.
+#[test]
+fn the_probe_reads_a_real_serialized_manifest() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Real");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    assert!(
+        fs::read_to_string(root.join("project.skrib"))
+            .unwrap()
+            .starts_with("ProjectManifest("),
+        "the writer emits the struct name; the probe's rename depends on it"
+    );
+    assert!(crate::version_gate::check_version_gate(path, SkribShape::ExplodedFolder).is_ok());
+}
+
+/// `migrate_bundle`'s narrowed contract: a stamp above ours is no longer its business.
+#[test]
+fn migrate_bundle_no_longer_bails_on_a_stamp_above_current() {
     let mut bundle = build_bundle(ShapeTag::Folder);
     bundle.manifest.format_version = FORMAT_VERSION + 1;
-    let err = crate::migration::migrate_bundle(&mut bundle).expect_err("newer must be refused");
-    assert!(
-        format!("{err:#}").contains("newer Skribisto"),
-        "got: {err:#}"
+    crate::migration::migrate_bundle(&mut bundle)
+        .expect("the gate, not the migration chain, judges what is too new");
+    assert_eq!(
+        bundle.manifest.format_version,
+        FORMAT_VERSION + 1,
+        "the chain must no-op rather than downgrade"
     );
+}
+
+// ---------------------------------------------------------------------------
+// The content-derived floor (`compute_min_read_version`)
+// ---------------------------------------------------------------------------
+
+/// Templates are the one content kind that currently raises the floor, and they raise it
+/// only when actually present. This is the payoff of the two-number scheme: `format_version`
+/// is stamped unconditionally on every write, autosave included, so a single number would
+/// lock a template-free project out of the previous build the instant one tick landed.
+#[test]
+fn the_floor_rises_only_for_content_that_needs_it() {
+    let with_templates = build_bundle(ShapeTag::Folder);
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&with_templates),
+        5
+    );
+
+    let mut without = build_bundle(ShapeTag::Folder);
+    without.note_templates.clear();
+    without.note_template_bodies.clear();
+    assert_eq!(crate::version_gate::compute_min_read_version(&without), 4);
+}
+
+/// The floor is recomputed from content at every write, never carried over from what was
+/// loaded — otherwise deleting the content that justified it would leave the project
+/// permanently pinned to a version it no longer needs.
+#[test]
+fn the_floor_is_recomputed_at_every_write_not_carried_over() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("Shedding");
+    let path = root.to_str().unwrap();
+
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+    assert_eq!(
+        peek_manifest(path).unwrap().format_min_read_version,
+        Some(5),
+        "templates must have raised the stamped floor"
+    );
+
+    let mut shed = read_bundle(path).unwrap();
+    assert_eq!(shed.manifest.format_min_read_version, Some(5));
+    shed.note_templates.clear();
+    shed.note_template_bodies.clear();
+    write_bundle(path, SkribShape::ExplodedFolder, &shed).unwrap();
+
+    assert_eq!(
+        peek_manifest(path).unwrap().format_min_read_version,
+        Some(4),
+        "dropping the templates must drop the floor back — nothing is sticky"
+    );
+}
+
+/// The floor must be scored on what actually reaches disk. `from_entities` drops content
+/// failing `content_allowed` before bundling it, so scoring the pre-filter store entities
+/// would count rows that were never written and needlessly refuse readers.
+#[test]
+fn the_floor_ignores_content_dropped_by_content_allowed() {
+    let mut s = sample_inputs();
+
+    // A Folder/Book may not carry SceneText — `from_entities` filters it out.
+    assert!(
+        !allowed_content(&BinderItemRole::Folder, &BinderItemSubRole::Book)
+            .contains(&ContentRole::SceneText),
+        "the fixture must actually be an invalid triple"
+    );
+    let victim = &mut s.binders[0].items[0];
+    victim.item.role = BinderItemRole::Folder;
+    victim.item.sub_role = BinderItemSubRole::Book;
+    victim.contents = vec![Content {
+        id: 9001,
+        created_at: ts(),
+        updated_at: ts(),
+        activated: true,
+        role: ContentRole::SceneText,
+        data: "should never be written".into(),
+    }];
+
+    let bundle = from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &s.binders,
+        ShapeTag::Folder,
+    );
+
+    let written = &bundle.binders[0].items[0].item;
+    assert!(
+        written.inline_contents.is_empty() && written.prose_refs.is_empty(),
+        "the filter must have dropped the invalid content before it could be scored"
+    );
+    // Walking the bundle rather than the pre-filter store input is what makes that hold:
+    // the dropped row is simply not there to score.
+    crate::version_gate::compute_min_read_version(&bundle);
+}
+
+/// The floor is a pure function of content already hashed elsewhere in the same bundle,
+/// so it must not participate in the fingerprint. Otherwise every future refinement of
+/// the scoring logic — with not one word of prose edited — re-triggers a backup cascade
+/// on the next save of every project.
+#[test]
+fn the_content_fingerprint_ignores_the_floor() {
+    let a = build_bundle(ShapeTag::Folder);
+    let mut b = a.clone();
+    b.manifest.format_min_read_version = Some(FORMAT_VERSION + 7);
+    assert_eq!(content_fingerprint(&a), content_fingerprint(&b));
 }
 
 /// A v4 bundle migrates forward to v5 with no templates and no complaint.

@@ -484,6 +484,7 @@ mod tests {
     ) -> PathBuf {
         let manifest = ProjectManifest {
             format_version: FORMAT_VERSION,
+            format_min_read_version: None,
             shape: ShapeTag::Zip,
             work: WorkFile {
                 file_id: 1,

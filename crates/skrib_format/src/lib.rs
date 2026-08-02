@@ -22,6 +22,7 @@
 
 mod bundle;
 pub mod convert;
+mod errors;
 mod fingerprint;
 mod folder_io;
 mod loaded;
@@ -40,6 +41,12 @@ mod tests;
 /// One ordered, relationship-hydrated read of the open Work tree, shared by every use
 /// case that snapshots it (`save_work` / `save_as` / `backup_now` / `export_work`).
 pub mod tree_read;
+/// The single authority on "can this build open this bundle" — the pre-parse version
+/// gate and the content-derived read floor it judges. `pub` because
+/// [`compute_min_read_version`](version_gate::compute_min_read_version) is the forcing
+/// function a future format change has to reckon with, and hiding it would make that
+/// contract invisible from outside the crate.
+pub mod version_gate;
 mod writer;
 mod zip_io;
 
@@ -54,6 +61,7 @@ pub use bundle::{
     TrashInfoFile, WorkBundle, WorkFile,
 };
 pub use convert::{html_to_djot, markdown_to_html};
+pub use errors::SkribFormatError;
 pub use fingerprint::content_fingerprint;
 pub use loaded::{
     LoadedBinder, LoadedHoliday, LoadedItem, LoadedMilestone, LoadedPace, LoadedProgressSnapshot,

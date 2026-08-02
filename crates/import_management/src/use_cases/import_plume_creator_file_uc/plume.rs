@@ -507,6 +507,33 @@ mod tests {
         assert!(words.contains(&"wibble") && words.contains(&"wobble"));
     }
 
+    /// The importer builds its `ProjectManifest` as a hand-written literal, never through
+    /// `from_entities` — exactly the kind of second construction site that gets forgotten
+    /// when a new manifest field lands. It does not stamp the read floor itself, and must
+    /// not have to: `folder_io::write_folder` computes it at the manifest commit, which
+    /// every write path (this one included) funnels through. This is the test that says so.
+    ///
+    /// The expected value is the floor for template-free content — Plume has no template
+    /// concept — so an imported project stays openable by the widest range of builds.
+    #[test]
+    fn an_imported_bundle_gets_a_correct_read_floor_without_the_importer_stamping_it() {
+        let (_summary, bundle) = import_zip(&terminal_members());
+
+        assert!(
+            bundle.note_templates.is_empty(),
+            "Plume has no templates to import"
+        );
+        assert_eq!(
+            bundle.manifest.format_min_read_version,
+            Some(skrib_format::version_gate::compute_min_read_version(&bundle)),
+            "the writer must have stamped the content-derived floor on the way out"
+        );
+        assert!(
+            bundle.manifest.format_min_read_version <= Some(skrib_format::FORMAT_VERSION),
+            "an importer must never produce a file this very build could not reopen"
+        );
+    }
+
     #[test]
     fn imported_bundle_carries_a_distinct_uid_for_every_row_on_disk() {
         // The importer WRITES a v3 bundle, so it must mint identities itself

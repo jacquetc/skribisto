@@ -176,6 +176,12 @@ pub fn from_entities(
     WorkBundle {
         manifest: ProjectManifest {
             format_version: FORMAT_VERSION,
+            // Left unset on purpose: `folder_io::write_folder` computes and stamps the
+            // read floor at the manifest commit, for every write path at once. Setting
+            // a value here would be dead — overwritten a moment later — and would
+            // suggest producers are each responsible for it, which is the arrangement
+            // that lets one of them silently forget.
+            format_min_read_version: None,
             shape,
             work: WorkFile {
                 file_id: work.id,

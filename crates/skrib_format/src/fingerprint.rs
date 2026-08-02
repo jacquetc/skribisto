@@ -38,6 +38,12 @@ fn strip_volatile(b: &mut WorkBundle) {
     b.manifest.kind = BundleKind::Regular;
     b.manifest.backup_of = None;
     b.manifest.backup_created_at = None;
+    // The read floor is a pure function of content already hashed elsewhere in this very
+    // bundle, so stripping it loses no signal. Leaving it in would mean every future
+    // refinement of `compute_min_read_version`'s scoring — with not one word of prose
+    // edited — re-triggers a full backup cascade on the next save of every project: a
+    // repeatable version of the one-off `dict_language` churn documented above.
+    b.manifest.format_min_read_version = None;
 
     let w = &mut b.manifest.work;
     w.created_at.clear();
@@ -122,6 +128,7 @@ mod tests {
         WorkBundle {
             manifest: ProjectManifest {
                 format_version: FORMAT_VERSION,
+                format_min_read_version: None,
                 shape: ShapeTag::Zip,
                 work: WorkFile {
                     file_id: 1,

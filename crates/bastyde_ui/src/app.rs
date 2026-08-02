@@ -2233,7 +2233,21 @@ impl Widget for App {
                             file_name: path.clone(),
                         },
                     ) {
-                        eprintln!("skribisto: could not open '{path}': {e}");
+                        // A toast, not the `eprintln!` this used to be: an argv launch
+                        // is the one open path with no dialog behind it, so a failure
+                        // here left the writer looking at an empty window with the
+                        // explanation on a terminal nobody is watching. `build` has only
+                        // a `BuildContext`, which cannot present anything — but
+                        // `run_after_mount` hands back a real `EventContext` once this
+                        // window exists, which is exactly what a toast needs. The
+                        // enclosing `initial_loaded` guard already makes this a genuine
+                        // one-shot, so the per-enqueue caveat on `run_after_mount`
+                        // (a rebuilding widget enqueuing twice) cannot apply.
+                        let toast = crate::view_models::open_failure_toast(&path, &e);
+                        eprintln!("skribisto: could not open '{path}': {e:#}");
+                        ctx.run_after_mount(move |ctx| {
+                            ctx.show_toast(toast);
+                        });
                     }
                 }
                 Some(PendingAction::New(dto)) => {

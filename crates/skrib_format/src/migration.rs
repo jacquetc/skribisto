@@ -23,15 +23,27 @@ use anyhow::Result;
 
 use super::bundle::{FORMAT_VERSION, WorkBundle};
 
+/// Walk `bundle` forward to [`FORMAT_VERSION`], one arm per transition.
+///
+/// **This does not decide whether the bundle is too new** — [`crate::version_gate`] does,
+/// before any parsing, and it is the sole authority. A ceiling check here used to exist
+/// and had to go: the gate judges `format_min_read_version` (the content-derived floor),
+/// not the raw writer stamp, so `format_version` can legitimately exceed `FORMAT_VERSION`
+/// on entry. That is the entire point of the floor scheme — a newer build saving a
+/// project that contains nothing new stamps a higher version but a floor we understand.
+/// Re-checking the stamp here would refuse exactly the file the gate just admitted, after
+/// paying the full parse cost.
+///
+/// The loop below correctly no-ops for such a bundle, and the next save re-stamps
+/// `format_version` to ours regardless (`folder_io::write_folder` writes the manifest,
+/// `mapping::from_entities` builds it), so a from-the-future in-memory value never
+/// reaches disk.
 pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
     let v = bundle.manifest.format_version;
     if v == 0 {
+        // The gate catches this pre-parse for every `read_bundle` call; kept here so the
+        // function's own contract holds for a caller that builds a bundle in memory.
         anyhow::bail!("invalid .skrib format_version 0");
-    }
-    if v > FORMAT_VERSION {
-        anyhow::bail!(
-            "this .skrib was written by a newer Skribisto (format_version {v} > {FORMAT_VERSION}); please upgrade"
-        );
     }
     // One arm per transition, so the chain reads as the sequence it is and a
     // future v3→v4 step cannot be bolted onto an arm that already means

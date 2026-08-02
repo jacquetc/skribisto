@@ -426,6 +426,80 @@ fn save_load_round_trip_through_store() {
     assert_eq!(resaved.manifest.work.unique_id, "the-lighthouse-uid");
 }
 
+/// The typed "too new" refusal must survive the whole backend stack.
+///
+/// `skrib_format` decides it, the use case adds `reading project '…'`, the frontend
+/// command adds `load_work`, and the UI leaf recovers it with `downcast_ref` to show an
+/// actionable message instead of the generic one. That recovery is the only reason the
+/// error is typed at all, and it holds only if every layer between propagates with `?`
+/// rather than re-wrapping the message — which no unit test on either end can check.
+///
+/// It also pins the second half: the refusal happens **before** the bundle is parsed.
+/// The binder manifests here are deliberately unparseable, standing in for the real
+/// future-format case (an enum variant we do not know), so a regression in the ordering
+/// surfaces as a RON error rather than as `TooNew`.
+#[test]
+fn a_too_new_project_is_refused_with_a_typed_error_all_the_way_up() {
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("FromTheFuture");
+    let path = src.to_str().unwrap().to_string();
+
+    skrib::write_bundle(&path, SkribShape::ExplodedFolder, &sample_bundle()).unwrap();
+
+    // Raise the stamped read floor above what this build supports. A too-new bundle
+    // cannot be produced through `write_bundle` — the writer derives the floor from
+    // content, so it never emits a file it could not read back — hence the doctoring.
+    let manifest_path = src.join("project.skrib");
+    let text = std::fs::read_to_string(&manifest_path).unwrap();
+    let start = text.find("format_min_read_version:").expect("writer stamps a floor");
+    let end = start + text[start..].find(',').unwrap();
+    std::fs::write(
+        &manifest_path,
+        format!(
+            "{}format_min_read_version: Some({}){}",
+            &text[..start],
+            skrib::FORMAT_VERSION + 1,
+            &text[end..]
+        ),
+    )
+    .unwrap();
+    for entry in std::fs::read_dir(src.join("binders")).unwrap() {
+        std::fs::write(entry.unwrap().path().join("items.ron"), "}{ not ron").unwrap();
+    }
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    let err = work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: path.clone(),
+        },
+    )
+    .expect_err("a too-new project must be refused");
+
+    match err.downcast_ref::<skrib::SkribFormatError>() {
+        Some(skrib::SkribFormatError::TooNew {
+            requires_at_least,
+            supported,
+            ..
+        }) => {
+            assert_eq!(*requires_at_least, skrib::FORMAT_VERSION + 1);
+            assert_eq!(*supported, skrib::FORMAT_VERSION);
+        }
+        other => panic!("expected TooNew to survive the context layers, got: {other:?} / {err:#}"),
+    }
+
+    // And nothing was materialised — a refused open must not half-create a Work. The
+    // gate runs in the use case's stage 1, before it opens a transaction at all, so this
+    // holds for free; assert it anyway, because "refused" quietly meaning "refused after
+    // writing half a project into the store" is exactly the failure nobody would look for.
+    assert!(
+        db.get_store().works.read().unwrap().is_empty(),
+        "a refused open must leave the store untouched"
+    );
+}
+
 // ── unique_id: migration / persistence / heal ────────────────────────────────
 
 /// The 7 template labels in the documented order (values don't matter here).

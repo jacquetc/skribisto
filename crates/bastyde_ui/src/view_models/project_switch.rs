@@ -362,9 +362,7 @@ impl ProjectSwitchViewModel {
                     // above), so there is no live Work to target any more —
                     // this window's own audience is about to become the new
                     // (never-opened) one. Origin-window default is correct.
-                    ctx.show_toast(Toast::error(tr!(could_not_open_work(
-                        error = e.to_string()
-                    ))));
+                    ctx.show_toast(super::open_failure_toast(&path, &e));
                 }
             }
         }

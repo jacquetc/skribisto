@@ -546,7 +546,15 @@ close-save-not-started = The work couldn't be saved, so it wasn't closed.
 save-not-started = The work couldn't be saved.
 
 ## Toasts
-could-not-open-work = Could not open work: { $error }
+# Toast title. Kept short because a toast title is one line and truncates; the cause goes
+# in the body, which is the untranslated error text itself. $file is the file's base name.
+could-not-open-work = Could not open "{ $file }"
+# A project saved by a newer Skribisto than this one — title and body.
+# $written_by is the version that wrote it, $requires the lowest version that can open it
+# (the two differ when the newer build happened to use nothing new), $supported the newest
+# this build understands.
+could-not-open-work-too-new = "{ $file }" needs a newer Skribisto
+could-not-open-work-too-new-detail = Saved by Skribisto format { $written_by }; opening it needs format { $requires } or newer, and this build supports up to format { $supported }. Update Skribisto to open it.
 could-not-open-example = Could not open example: { $error }
 # The browser (or whatever handles http links) could not be started for one of
 # the Welcome sidebar's links. $url is shown so the address can still be copied.

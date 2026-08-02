@@ -38,8 +38,24 @@ pub fn upgrade_to_v2(conn: &Connection) -> Result<()> {
     conn.pragma_update(None, "foreign_keys", false)?;
 
     let mut v = detect_version(conn)?;
-    if v >= 20 {
+    if v == 20 {
         return Ok(()); // already current
+    }
+    // The ceiling the `.skrib` side gets from `skrib_format::version_gate` — the legacy
+    // path needs its own, because it never constructs a `WorkBundle` and so never enters
+    // `read_bundle`. That asymmetry has bitten this codebase before, in exactly this
+    // shape: see `migration.rs`'s module doc on uid minting, and the
+    // `a_legacy_project_gets_a_distinct_uid_for_every_row` test that pins it.
+    //
+    // `v >= 20` used to mean "already current", which silently treated a *newer* database
+    // as current and ran the whole importer against a schema it does not understand.
+    // Moot in practice — the format is retired and nothing will ever write a 2.1 — but it
+    // is three lines and the bug class is not hypothetical here.
+    if v > 20 {
+        bail!(
+            "unsupported legacy database version {} (newer than this build's upgrade chain, which stops at 2.0)",
+            v as f64 / 10.0
+        );
     }
     if v < 10 {
         bail!("unsupported legacy database version {}", v as f64 / 10.0);
@@ -613,6 +629,41 @@ mod tests {
     fn version_detected_as_tenths() {
         let conn = make_v1_4_db();
         assert_eq!(detect_version(&conn).unwrap(), 14);
+    }
+
+    /// The legacy path's own ceiling — the counterpart to `skrib_format::version_gate`,
+    /// which it can never reach: `load_work_uc` dispatches a legacy file straight to
+    /// `legacy::read_project` without ever constructing a `WorkBundle`, so a fix confined
+    /// to the format crate would silently miss every legacy project. That asymmetry has
+    /// already bitten this codebase once, over uid minting (see `migration.rs`'s module
+    /// doc and `a_legacy_project_gets_a_distinct_uid_for_every_row`).
+    ///
+    /// `v >= 20` used to read "already current", which quietly treated a *newer* database
+    /// as current and then ran the importer against a schema it does not understand.
+    /// Moot in practice — the format is retired — but the class of bug is not.
+    #[test]
+    fn a_legacy_database_above_the_supported_ceiling_is_refused_not_called_current() {
+        let conn = make_v1_4_db();
+        conn.execute("UPDATE tbl_project SET dbl_database_version = 2.1", [])
+            .unwrap();
+        assert_eq!(detect_version(&conn).unwrap(), 21);
+
+        let err = upgrade_to_v2(&conn).expect_err("a 2.1 database must be refused");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("2.1") && msg.contains("2.0"),
+            "the message should name both the file's version and our ceiling, got: {msg}"
+        );
+    }
+
+    /// The exact-2.0 fast path must survive the ceiling being added above it.
+    #[test]
+    fn a_legacy_database_already_at_2_0_is_left_alone() {
+        let conn = make_v1_4_db();
+        conn.execute("UPDATE tbl_project SET dbl_database_version = 2.0", [])
+            .unwrap();
+        upgrade_to_v2(&conn).expect("2.0 is current, not an error");
+        assert_eq!(detect_version(&conn).unwrap(), 20);
     }
 
     #[test]

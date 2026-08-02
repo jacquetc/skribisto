@@ -159,6 +159,11 @@ pub fn build_bundle(
     let bundle = WorkBundle {
         manifest: ProjectManifest {
             format_version: FORMAT_VERSION,
+            // The read floor is stamped by the writer (`folder_io::write_folder`), not
+            // here — see the same note in `skrib_format::mapping::from_entities`. This
+            // hand-written literal is exactly the kind of second construction site that
+            // would otherwise have been forgotten.
+            format_min_read_version: None,
             shape: ShapeTag::Zip,
             work,
             binder_order,

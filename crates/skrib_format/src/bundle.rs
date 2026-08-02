@@ -41,9 +41,28 @@ use std::collections::BTreeMap;
 /// staging dir on every save, so an older build — whose `WorkBundle` has no
 /// `note_templates` field — would silently drop every template the first time it saved
 /// a project that had them. Permanently, with nothing to notice it by. The bump makes
-/// [`migration::migrate_bundle`] refuse the file up front ("written by a newer
-/// Skribisto") instead, turning silent data loss into a loud, recoverable error.
+/// [`crate::version_gate`] refuse the file up front ("needs format 5 or newer")
+/// instead, turning silent data loss into a loud, recoverable error.
 /// That is the whole value of the bump; `step_v4_to_v5` itself has nothing to do.
+///
+/// # Before bumping this, answer one question
+///
+/// *Does this change need an arm in
+/// [`compute_min_read_version`](crate::version_gate::compute_min_read_version) — or can
+/// it be made tolerant instead?*
+///
+/// A new **enum variant** answers itself: the exhaustive matches there stop compiling
+/// until you give it a version. Everything else is on you. Note that none of the four
+/// bumps to date would have needed a floor arm on any other axis: v1 → v2, v2 → v3 and
+/// v4 → v5 were purely additive, and v3 → v4's type change was absorbed by a **tolerant
+/// deserializer** ([`tags_or_legacy_string`], and cf. `quote_style` above) rather than by
+/// a gate. Tolerance keeps files openable; a floor only refuses them. Prefer tolerance
+/// wherever the change admits it, and reserve the floor for what genuinely cannot
+/// round-trip through an older build.
+///
+/// A required field added without `#[serde(default)]` is the one shape that is *not*
+/// caught mechanically. It degrades to a raw parse error — never to data loss — but it
+/// degrades, so give every additive field its `default` and the question stays easy.
 pub const FORMAT_VERSION: u32 = 5;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
@@ -118,6 +137,27 @@ pub enum BundleKind {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProjectManifest {
     pub format_version: u32,
+    /// The lowest `format_version` a reader must implement to open this bundle
+    /// **without loss** — the content-derived floor the version gate actually judges,
+    /// as opposed to `format_version` above, which is only the writer's generation.
+    ///
+    /// Recomputed fresh at save time from what the bundle really contains
+    /// ([`version_gate::compute_min_read_version`](crate::version_gate::compute_min_read_version),
+    /// called from `folder_io::write_folder`'s manifest commit) — never carried over
+    /// from what was loaded, or a project would keep a high floor forever after the
+    /// content that justified it was deleted.
+    ///
+    /// The pair exists because `format_version` is stamped unconditionally on every
+    /// write, autosave included: judging on it alone would lock a project out of the
+    /// previous build the instant one autosave tick landed, regardless of content. See
+    /// [`crate::version_gate`] for the full rationale.
+    ///
+    /// `#[serde(default)]` — absent on every manifest written before this field existed
+    /// (that is, every file in any real user's hands, all `format_version <= 2`), in
+    /// which case the gate falls back to `format_version` itself, which is exactly the
+    /// refuse-if-greater rule this crate always had.
+    #[serde(default)]
+    pub format_min_read_version: Option<u32>,
     pub shape: ShapeTag,
     pub work: WorkFile,
     /// Ordered binder `file_id`s (authoritative binder order).
@@ -241,11 +281,17 @@ pub struct SmartPunctuationFile {
 /// * *Reading older bundles still works*: the new fields default, and serde ignores the
 ///   now-unknown `text_color` (no `deny_unknown_fields` anywhere in this crate).
 /// * *Older builds cannot read what we now write*: `text_color` is absent and they
-///   require it. `FORMAT_VERSION` is deliberately left at 2 anyway, because the project
-///   has no external users and no back-compat obligation — but be aware that the failure
-///   mode is a raw serde "missing field" error rather than `migrate_bundle`'s friendly
-///   "written by a newer Skribisto", which only triggers on a version *greater* than ours.
-///   Bump `FORMAT_VERSION` if that error quality ever starts to matter.
+///   require it. `FORMAT_VERSION` was deliberately not bumped for it, because the project
+///   had no external users and no back-compat obligation at the time.
+///
+/// The original note here proposed bumping `FORMAT_VERSION` if the error quality ever
+/// started to matter. **That remedy would not have worked**: the version check ran
+/// *after* the sibling manifests were parsed, so a raw serde "missing field" error fired
+/// several frames before the integer was ever compared. The ordering was the bug, not the
+/// number — see [`crate::version_gate`], which fixed it by moving the check ahead of
+/// parsing. This particular break stays unbumped and is now purely historical: it
+/// predates the floor scheme, and the affected builds are all older than the oldest floor
+/// any bundle claims.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinderTagFile {
     pub file_id: u64,

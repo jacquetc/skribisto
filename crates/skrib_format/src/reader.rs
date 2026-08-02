@@ -9,21 +9,41 @@ use std::io::Read;
 use std::path::Path;
 
 use super::bundle::{ProjectManifest, WorkBundle};
+use super::errors::SkribFormatError;
 use super::migration::migrate_bundle;
 use super::shape::{MANIFEST_NAME, SkribShape, detect_shape, folder_root};
+use super::version_gate;
 use super::{folder_io, zip_io};
 
 /// Read a new-format bundle (zip or exploded folder). Legacy SQLite is handled
 /// by the dedicated legacy reader, not here.
-pub fn read_bundle(path: &str) -> Result<WorkBundle> {
-    let mut bundle = match detect_shape(path)? {
-        SkribShape::ExplodedFolder => folder_io::read_folder(&folder_root(path))?,
-        SkribShape::ZipFile => zip_io::read_zip(Path::new(path))?,
+///
+/// The version gate runs **first**, on the manifest alone. That ordering is the whole
+/// point: a bundle from a future format usually fails at `ron::from_str` on `items.ron`
+/// — a raw `Unexpected variant named "…"` several frames deep — long before any
+/// version number is compared, and for the zip shape only *after* the entire archive
+/// has been extracted to a tempdir. Gating up front replaces both with one specific,
+/// actionable [`SkribFormatError::TooNew`], at the cost of reading one small file twice.
+pub fn read_bundle(path: &str) -> Result<WorkBundle, SkribFormatError> {
+    let shape = detect_shape(path).map_err(SkribFormatError::Unreadable)?;
+
+    let mut bundle = match shape {
+        SkribShape::ExplodedFolder => {
+            version_gate::check_version_gate(path, shape)?;
+            folder_io::read_folder(&folder_root(path)).map_err(SkribFormatError::Unreadable)?
+        }
+        SkribShape::ZipFile => {
+            version_gate::check_version_gate(path, shape)?;
+            zip_io::read_zip(Path::new(path)).map_err(SkribFormatError::Unreadable)?
+        }
         SkribShape::LegacySqlite => {
-            anyhow::bail!("'{path}' is a legacy SQLite file; use the legacy reader")
+            return Err(SkribFormatError::Unreadable(anyhow::anyhow!(
+                "'{path}' is a legacy SQLite file; use the legacy reader"
+            )));
         }
     };
-    migrate_bundle(&mut bundle)?;
+
+    migrate_bundle(&mut bundle).map_err(SkribFormatError::Unreadable)?;
     Ok(bundle)
 }
 

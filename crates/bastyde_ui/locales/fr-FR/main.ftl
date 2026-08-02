@@ -549,7 +549,16 @@ close-save-not-started = L'œuvre n'a pas pu être enregistrée, elle n'a donc p
 save-not-started = L'œuvre n'a pas pu être enregistrée.
 
 ## Notifications
-could-not-open-work = Impossible d'ouvrir l'œuvre : { $error }
+# Titre de notification. Court, car le titre tient sur une ligne et se voit tronqué ; la
+# cause va dans le corps, qui est le texte d'erreur non traduit. $file est le nom du
+# fichier, sans son chemin.
+could-not-open-work = Impossible d'ouvrir « { $file } »
+# Un projet enregistré par une version de Skribisto plus récente que celle-ci — titre et
+# corps. $written_by est la version qui l'a écrit, $requires la plus ancienne version
+# capable de l'ouvrir (les deux diffèrent lorsque la version récente n'a rien utilisé de
+# nouveau), $supported la plus récente que cette version comprend.
+could-not-open-work-too-new = « { $file } » nécessite une version plus récente de Skribisto
+could-not-open-work-too-new-detail = Enregistré au format Skribisto { $written_by } ; son ouverture nécessite le format { $requires } ou plus récent, or cette version ne prend en charge que le format { $supported } au maximum. Mettez Skribisto à jour pour l'ouvrir.
 could-not-open-example = Impossible d'ouvrir l'exemple : { $error }
 # Le navigateur (ou ce qui traite les liens http) n'a pas pu être lancé pour l'un
 # des liens de la barre latérale d'accueil. $url est affichée pour pouvoir être

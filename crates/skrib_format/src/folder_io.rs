@@ -18,6 +18,7 @@ use tempfile::NamedTempFile;
 use super::bundle::*;
 use super::shape::MANIFEST_NAME;
 use super::slug::{TEMPLATES_DIR, binder_dir_name};
+use super::version_gate::compute_min_read_version;
 use super::writer::persist_durably;
 
 fn to_ron<T: Serialize>(value: &T) -> Result<String> {
@@ -147,10 +148,20 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
     prune_binder_dirs(&binders_dir, &expected_binder_dirs)?;
 
     // Commit point — written last.
-    write_if_changed(
-        &root.join(MANIFEST_NAME),
-        to_ron(&bundle.manifest)?.as_bytes(),
-    )?;
+    //
+    // The content-derived read floor is stamped **here**, not by whoever built the
+    // bundle. This is the single site every write path funnels through — `save_work` /
+    // `save_as` / `backup_now` via `from_entities`, the Plume importer via its own
+    // hand-written manifest literal, `mark_existing_as_backup` via read-modify-write,
+    // and the zip shape via `write_zip`'s staging dir — so a producer cannot forget it,
+    // and a future producer gets it for free. Doing it at the construction sites instead
+    // would mean one more place to wire up (and to notice was missing) per producer.
+    //
+    // Only the manifest is cloned, so this costs nothing measurable next to the prose
+    // blobs already written above.
+    let mut manifest = bundle.manifest.clone();
+    manifest.format_min_read_version = Some(compute_min_read_version(bundle));
+    write_if_changed(&root.join(MANIFEST_NAME), to_ron(&manifest)?.as_bytes())?;
     Ok(())
 }
 
