@@ -16,3 +16,4 @@ pub mod presets;
 pub mod save_as_dialog;
 
 pub use presets::Preset;
+pub use save_as_dialog::SaveAsTemplatePanel;

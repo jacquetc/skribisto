@@ -732,6 +732,7 @@ pub struct App {
     /// title-bar's Format menu so its entries grey out off a scene. Written by
     /// `EditorsViewModel`, which is the only thing that can compute it.
     scene_focused: Signal<bool>,
+    binder_has_selection: Signal<bool>,
     /// Live "is there a target" mirrors for the title-bar's Go menu (Increment 4 —
     /// six Next/Previous × Scene/Chapter/Note rows), the same shape as
     /// `scene_focused` just above: minted in `shell/windows.rs` (which builds the
@@ -832,6 +833,7 @@ impl App {
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
         scene_focused: Signal<bool>,
+        binder_has_selection: Signal<bool>,
         go: crate::view_models::GoAvailability,
         go_to: crate::view_models::GoToViewModel,
         unsaved: Signal<bool>,
@@ -868,6 +870,7 @@ impl App {
             autosave_menu,
             spellcheck_menu,
             scene_focused,
+            binder_has_selection,
             go,
             go_to,
             unsaved,
@@ -1777,6 +1780,7 @@ impl Widget for App {
             registry: self.registry.clone(),
             quit: self.quit.clone(),
             outline: outline.clone(),
+            format: self.format.clone(),
             fullscreen: self.fullscreen.clone(),
             focus: self.focus.clone(),
             editors: editors.clone(),
@@ -1863,6 +1867,20 @@ impl Widget for App {
             &self.session.mention_index,
             &self.session.progress_recorder,
         );
+
+        // Keep the Document menu's per-item gate in step with this window's binder
+        // selection. `MenuEntry::enabled` wants a concrete `Signal<bool>`, so the set is
+        // projected into one here rather than handed over as a lazy `.map()`.
+        {
+            let has_selection = self.binder_has_selection.clone();
+            let sig = self.outline.selection_signal();
+            ctx.effect(&sig, move |set: &std::collections::HashSet<_>| {
+                let now = !set.is_empty();
+                if has_selection.get() != now {
+                    has_selection.set(now);
+                }
+            });
+        }
 
         // App mediates the two peer view-models: *activating* a binder item
         // (click or Enter — NOT arrow navigation, which only moves the selection)

@@ -343,6 +343,13 @@ impl ProjectWindowFactory {
         // has focused. A process-wide one would let a second project window
         // grey out this window's Format menu.
         let scene_focused = Signal::new(false);
+        // The Document menu's per-item rows (Rename / Duplicate / Indent / Outdent /
+        // Move to Trash) grey out with nothing selected. Per WINDOW for the same reason
+        // `scene_focused` is: it mirrors *this* window's own binder selection, and a
+        // process-wide one would let a second project window enable this one's rows.
+        // Kept concrete rather than mapped off the selection set — `MenuEntry::enabled`
+        // wants a real `Signal<bool>`; `App::build` keeps it in step.
+        let binder_has_selection = Signal::new(false);
         // Increment 4 (the Go menu). Per WINDOW, same rationale as `scene_focused`
         // just above: it mirrors *this* window's own focused item, so a second
         // simultaneously-open project window's Go menu never reflects the wrong
@@ -560,6 +567,8 @@ impl ProjectWindowFactory {
                                 autosave_menu: autosave_menu.clone(),
                                 spellcheck_menu: spellcheck_menu.clone(),
                                 scene_focused: scene_focused.clone(),
+                                binder_has_selection: binder_has_selection.clone(),
+                                note_templates: session.note_templates.clone(),
                                 go: go.clone(),
                                 format: format.clone(),
                                 save_as: save_as_vm.clone(),
@@ -692,6 +701,7 @@ impl ProjectWindowFactory {
                     autosave_menu.clone(),
                     spellcheck_menu.clone(),
                     scene_focused.clone(),
+                    binder_has_selection.clone(),
                     go.clone(),
                     go_to.clone(),
                     unsaved.clone(),

@@ -63,6 +63,7 @@ mod export;
 mod file;
 mod format;
 mod go;
+mod templates;
 mod trash;
 mod view;
 
@@ -97,6 +98,9 @@ pub(super) struct CommandDeps {
     /// running their own sequence over the same Works would prompt twice for each.
     pub quit: crate::view_models::QuitSequencer,
     pub outline: OutlineViewModel,
+    /// This window's formatting resolver — the only thing that can answer "which editor has
+    /// the caret, and is it a note's prose". The template commands gate and act through it.
+    pub format: crate::view_models::FormatViewModel,
     /// This window's own "was I maximized/floating before I went fullscreen"
     /// memory — minted fresh per window (never a `ctx.app_state` lookup, see
     /// `FullscreenViewModel`'s own doc for why a shared instance would answer
@@ -150,6 +154,7 @@ pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
     export::register(ctx, deps);
     file::register(ctx, deps);
     format::register(ctx, deps);
+    templates::register(ctx, deps);
     binder::register(ctx, deps);
     go::register(ctx, deps);
 }

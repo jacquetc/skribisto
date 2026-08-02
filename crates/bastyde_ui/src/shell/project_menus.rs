@@ -18,7 +18,8 @@ use crate::intents::AppIntent;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{
     ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, ExportViewModel, FocusViewModel,
-    FormatViewModel, GoAvailability, OutlineViewModel, SaveAsViewModel, scope_label,
+    FormatViewModel, GoAvailability, NoteTemplatesViewModel, OutlineViewModel, SaveAsViewModel,
+    scope_label,
 };
 
 /// A Format-menu row that reflects document state: a reflect-only checkmark
@@ -80,6 +81,11 @@ pub(crate) struct ProjectMenuParts {
     pub autosave_menu: Signal<bool>,
     pub spellcheck_menu: Signal<bool>,
     pub scene_focused: Signal<bool>,
+    /// Whether this window's binder has a selection — the Document menu's per-item rows
+    /// grey out without one.
+    pub binder_has_selection: Signal<bool>,
+    /// This window's note-template catalogue, for the Document menu's insert submenu.
+    pub note_templates: NoteTemplatesViewModel,
     pub go: GoAvailability,
     pub format: FormatViewModel,
     pub save_as: SaveAsViewModel,
@@ -101,6 +107,8 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
     let menu_autosave = parts.autosave_menu;
     let menu_spellcheck = parts.spellcheck_menu;
     let menu_scene_focused = parts.scene_focused;
+    let menu_binder_selection = parts.binder_has_selection;
+    let menu_templates = parts.note_templates;
     let menu_go = parts.go;
     let menu_format_vm = parts.format;
     let menu_save_as = parts.save_as;
@@ -425,6 +433,95 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
         // rich tooltips on their glyph pickers in
         // Settings ▸ Compile & Export, which is where a writer
         // decides what each one prints as.
+        // Document — everything scoped to the *item* you are in, sitting between the
+        // window-scoped View menu and the run-scoped Format menu so the bar reads
+        // outward-in: project, window, document, text run.
+        //
+        // The five binder rows had no menu-bar home at all before this: they were
+        // reachable only from the outline's context menu, which is a real discoverability
+        // and a11y gap (a context menu is hard to reach by keyboard and by screen reader).
+        // Every one of them is an already-registered *selection-based* global action, so
+        // these rows fire the same intent the context menu does — no second code path.
+        //
+        // Rows stay visible when disabled, exactly as the Format menu's do: a greyed row
+        // still teaches that the feature exists.
+        .menu(tr!(menu_document()), {
+            let on_selection = menu_binder_selection.clone();
+            let on_note = menu_format_vm.note_focused();
+            let templates_vm = menu_templates.clone();
+            let templates_changed = menu_templates.changed_signal();
+            move |m| {
+                let m = m
+                    .item(
+                        MenuEntry::new(tr!(ctx_rename()))
+                            .enabled(on_selection.clone())
+                            .intent("binder.rename"),
+                    )
+                    .item(
+                        MenuEntry::new(tr!(ctx_duplicate()))
+                            .enabled(on_selection.clone())
+                            .intent("binder.duplicate")
+                            .shortcut("binder.duplicate"),
+                    )
+                    .separator()
+                    .item(
+                        MenuEntry::new(tr!(ctx_indent()))
+                            .enabled(on_selection.clone())
+                            .intent("binder.indent"),
+                    )
+                    .item(
+                        MenuEntry::new(tr!(ctx_outdent()))
+                            .enabled(on_selection.clone())
+                            .intent("binder.outdent"),
+                    )
+                    .separator();
+
+                // Insert template ▸ — rebuilt whenever the catalogue changes, starred
+                // first. One shared view-model with the settings pane, so the two can
+                // never disagree about what exists.
+                let m = m.submenu(tr!(menu_insert_template()), {
+                    let vm = templates_vm.clone();
+                    let on_note = on_note.clone();
+                    // Read once per rebuild; `changed_signal` is what triggers that rebuild.
+                    let _ = templates_changed.get();
+                    move |t| {
+                        let rows = vm.menu_rows();
+                        if rows.is_empty() {
+                            // A submenu that is simply empty reads as broken. Say why.
+                            return t.item(
+                                MenuEntry::new(tr!(menu_insert_template_none())).enabled(false),
+                            );
+                        }
+                        let mut t = t;
+                        for row in rows {
+                            let id = row.id;
+                            t = t.item(
+                                MenuEntry::new(lit!(row.name.clone()))
+                                    .enabled(on_note.clone())
+                                    .on_activate(move |c| {
+                                        c.send_intent(crate::intents::AppIntent::InsertTemplate {
+                                            template_id: id,
+                                        });
+                                    }),
+                            );
+                        }
+                        t
+                    }
+                });
+
+                m.item(
+                    MenuEntry::new(tr!(menu_save_as_template()))
+                        .enabled(on_note.clone())
+                        .intent("templates.save_as"),
+                )
+                .separator()
+                .item(
+                    MenuEntry::new(tr!(ctx_trash()))
+                        .enabled(on_selection.clone())
+                        .intent("binder.trash_selected"),
+                )
+            }
+        })
         .menu(tr!(menu_format()), {
             // Enabled on the *sticky* target, not on live focus:
             // opening this menu moves focus to the menu overlay,

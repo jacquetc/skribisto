@@ -141,6 +141,14 @@ pub enum AppIntent {
     #[name = "binder.trash"]
     TrashBinder { binder_id: i64 },
 
+    /// Insert one note template's body at the caret of the focused note's prose editor.
+    ///
+    /// Data-bearing, so the Document menu's per-template rows can each carry their own id
+    /// rather than the command having to re-derive "which one was clicked". Consumed by the
+    /// `editor.insert_template` global action.
+    #[name = "editor.insert_template"]
+    InsertTemplate { template_id: u64 },
+
     /// Indent / outdent the selected items.
     #[name = "binder.indent"]
     Indent,

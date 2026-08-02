@@ -71,6 +71,7 @@ save-as-template-placeholder = Fiche de personnage
 save-as-template-empty-name = Donnez un nom au modèle
 save-as-template-duplicate = Un modèle nommé « { $name } » existe déjà
 save-as-template-empty-note = Cette note est vide — il n'y a rien à enregistrer.
+save-as-template-cancel = Annuler
 save-as-template-confirm = Enregistrer le modèle
 save-as-template-saved = « { $name } » enregistré comme modèle
 template-inserted = « { $name } » inséré

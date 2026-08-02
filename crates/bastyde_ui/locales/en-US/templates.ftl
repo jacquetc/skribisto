@@ -71,6 +71,7 @@ save-as-template-placeholder = Character sheet
 save-as-template-empty-name = Give the template a name
 save-as-template-duplicate = A template called "{ $name }" already exists
 save-as-template-empty-note = This note is empty — there is nothing to save.
+save-as-template-cancel = Cancel
 save-as-template-confirm = Save template
 save-as-template-saved = Saved "{ $name }" as a template
 template-inserted = Inserted "{ $name }"

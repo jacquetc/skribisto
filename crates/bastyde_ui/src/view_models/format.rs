@@ -305,6 +305,11 @@ pub struct FormatViewModel {
     /// Which groups apply. Read by the dock to decide what to show and by the
     /// menu to decide what to enable.
     surface: Signal<FormatSurface>,
+    /// `surface == Note`, kept as a **concrete** signal rather than derived from
+    /// `surface`. The Document menu binds it through `MenuEntry::enabled`, which wants a
+    /// real `Signal<bool>` — a lazy `.map()` is read-only and would be the wrong thing to
+    /// hand it, the same reason `GroupVisibility` holds concrete gates instead of maps.
+    note_focused: Signal<bool>,
 
     bold: Signal<bool>,
     italic: Signal<bool>,
@@ -394,6 +399,7 @@ impl FormatViewModel {
             subscript: Signal::new(false),
             blockquote: Signal::new(false),
             in_table: Signal::new(false),
+            note_focused: Signal::new(false),
             heading: Signal::new(0),
             alignment: Signal::new(ALIGN_LEFT),
             align_left: Signal::new(true),
@@ -533,6 +539,13 @@ impl FormatViewModel {
         self.target().0
     }
 
+    /// The editor a template should be inserted into — the same resolution every format
+    /// command uses, exposed for the note-template commands, which live outside this module
+    /// because templates are Work-scoped *data* rather than formatting state.
+    pub fn handle_for_commands(&self) -> Option<EditorHandle> {
+        self.handle()
+    }
+
     // ── Signals the views bind to ─────────────────────────────────────────
 
     pub fn surface_signal(&self) -> Signal<FormatSurface> {
@@ -611,7 +624,19 @@ impl FormatViewModel {
             return;
         }
         self.surface.set(surface);
+        set_if_changed(&self.note_focused, surface == FormatSurface::Note);
         self.group_visible.apply(surface);
+    }
+
+    /// Whether the caret is in a **note's** prose — the gate the Document menu's template
+    /// rows use.
+    ///
+    /// Note prose only, deliberately: a Note's *synopsis* resolves to
+    /// [`FormatSurface::Synopsis`] (see `classify`, which matches `Synopsis` before it ever
+    /// tests for `Note`), so a template can never land in a synopsis box. That falls out of
+    /// the existing classification rather than needing a guard of its own.
+    pub fn note_focused(&self) -> Signal<bool> {
+        self.note_focused.clone()
     }
 
     /// Per-group visibility gates for the dock. See [`GroupVisibility`].
@@ -1539,6 +1564,51 @@ mod tests {
         vm.toggle_bold();
         assert!(vm.bold().get(), "bold must apply to a synopsis");
         assert!(editor.handle().is_bold());
+    }
+
+    /// `note_focused` is the Document menu's gate for both template rows. It must be true
+    /// for a note's **prose** and false everywhere else — including a note's *synopsis*,
+    /// which classifies as `Synopsis` before `Note` is ever considered. That is what stops
+    /// a character sheet landing in a synopsis box, so it is worth a test of its own rather
+    /// than being left to the reader of `classify`.
+    #[test]
+    fn note_focused_tracks_note_prose_only() {
+        let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
+        assert!(!vm.note_focused().get(), "nothing focused yet");
+
+        vm.set_surface(FormatSurface::Note);
+        assert!(
+            vm.note_focused().get(),
+            "a note's prose is the one true case"
+        );
+
+        for other in [
+            FormatSurface::Scene,
+            FormatSurface::Synopsis,
+            FormatSurface::None,
+        ] {
+            vm.set_surface(other);
+            assert!(
+                !vm.note_focused().get(),
+                "{other:?} must not enable the template rows"
+            );
+        }
+    }
+
+    /// A note's synopsis classifies as `Synopsis`, never `Note` — the structural reason the
+    /// insert command cannot reach a synopsis box.
+    #[test]
+    fn a_notes_synopsis_classifies_as_synopsis_not_note() {
+        let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
+        assert_eq!(
+            vm.classify(EditorKind::Synopsis, FormatSurface::Note),
+            FormatSurface::Synopsis,
+            "the editor kind wins over the tab's own note-ness"
+        );
+        assert_eq!(
+            vm.classify(EditorKind::Prose, FormatSurface::Note),
+            FormatSurface::Note
+        );
     }
 
     #[test]
