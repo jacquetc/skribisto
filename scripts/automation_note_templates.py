@@ -11,7 +11,17 @@ whether the caret is in a note).
 The mnemonic clash that took the app down on first launch is exactly the class of bug
 only a real run catches: `MenuList` panics at build time on two items sharing a
 mnemonic, and no headless test builds the whole menu model. Opening the Document menu
-here is that regression guard."""
+here is that regression guard.
+
+Deliberately NOT covered here: that the two template rows are *enabled* when the caret
+sits in a note's prose. Staging that state through the bridge proved unreliable — a note
+created from the binder is selected but its tab is not opened, so the probe kept
+asserting against whatever chapter happened to be open and failing for a reason that had
+nothing to do with the gate. A check that red-flags its own staging is worse than none.
+The gate's real hazard — that it must survive the focus loss of opening the menu, since
+`FormatViewModel::surface` drops to `None` there — is pinned by
+`note_focused_survives_the_focus_loss_of_opening_a_menu` and
+`a_real_change_of_surface_still_clears_the_gate` in `view_models/format.rs`."""
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
 import pathlib
@@ -209,6 +219,12 @@ def check(cond, msg):
     print(("  ok   " if cond else "  FAIL ") + msg)
     if not cond:
         failures.append(msg)
+
+
+def esc():
+    for _ in range(4):
+        s.call("inject_key", {"key": "Escape"})
+        time.sleep(0.3)
 
 
 def open_menu(title):
