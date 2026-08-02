@@ -77,14 +77,14 @@ use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
 use crate::models::{
     DictWordListModel, OpenDocsStore, TextReplacementRuleListModel, TreeExpansionService,
-    WorkTagsListModel, WorkspaceLayoutService,
+    WorkNoteTemplatesListModel, WorkTagsListModel, WorkspaceLayoutService,
 };
 use crate::singles::{SingleDictWord, SingleSmartPunctuation, SingleWork, SingleWorkInfo};
 use crate::spellcheck::SpellcheckService;
 use crate::view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, MentionIndex, ProgressRecorder,
-    SaveStateViewModel, TagsViewModel, TextReplacementRulesViewModel, TreeExpansionViewModel,
-    UserDictionaryViewModel, WorkspaceLayoutViewModel,
+    BackupSchedulerViewModel, BackupSettingsViewModel, MentionIndex, NoteTemplatesViewModel,
+    ProgressRecorder, SaveStateViewModel, TagsViewModel, TextReplacementRulesViewModel,
+    TreeExpansionViewModel, UserDictionaryViewModel, WorkspaceLayoutViewModel,
 };
 
 /// Every Tier-2 ("per open Work") view-model/single/model, bundled. Cloneable —
@@ -103,6 +103,9 @@ pub struct WorkSession {
     /// window on the same Work exists.
     pub save_state: SaveStateViewModel,
     pub tags: TagsViewModel,
+    /// This Work's note templates — Settings ▸ Work ▸ Templates and the Document menu's
+    /// insert submenu both read it, so both always agree about what exists.
+    pub note_templates: NoteTemplatesViewModel,
     pub user_dictionary: UserDictionaryViewModel,
     /// The project's punctuation house style (`Work.smart_punctuation`), and
     /// the per-project custom replacement lexicon ("btw" → "by the way",
@@ -195,6 +198,10 @@ impl WorkSession {
 
         let work_tags = WorkTagsListModel::new(app_ctx.clone(), ids.clone());
         let tags = TagsViewModel::new(work_tags, ids.clone());
+        let note_templates = NoteTemplatesViewModel::new(
+            WorkNoteTemplatesListModel::new(app_ctx.clone(), ids.clone()),
+            ids.clone(),
+        );
 
         let dict_words = DictWordListModel::new(app_ctx.clone(), ids.clone());
         let single_dict_word = SingleDictWord::new(app_ctx.clone());
@@ -242,6 +249,7 @@ impl WorkSession {
             single_work_info,
             save_state,
             tags,
+            note_templates,
             user_dictionary,
             smart_punctuation,
             text_replacements,

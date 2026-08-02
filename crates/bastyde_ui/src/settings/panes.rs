@@ -46,3 +46,4 @@ pub(super) mod work_language;
 pub(super) mod work_punctuation;
 pub(super) mod work_structure;
 pub(super) mod work_tags;
+pub(super) mod work_templates;

@@ -136,6 +136,9 @@ enum Pane {
     /// Appended last, same rule as every one above it: the discriminant fixes the
     /// `Switcher` slot, the tree position is `build_tree`'s business.
     DistractionFreeThemes,
+    /// Per-project note templates (under the open Work's section, beside Tags). Appended
+    /// last, same rule as every one above it.
+    WorkTemplates,
 }
 
 impl Pane {
@@ -166,6 +169,7 @@ impl Pane {
             Pane::WorkLanguage => tr!(settings_page_language()),
             Pane::WorkDictionary => tr!(settings_page_personal_dictionary()),
             Pane::WorkTags => tr!(settings_page_tags()),
+            Pane::WorkTemplates => tr!(settings_page_templates()),
             Pane::WorkAuthor => tr!(settings_page_author()),
             Pane::WorkTextReplacements => tr!(settings_page_text_replacements()),
             Pane::Spellcheck => tr!(settings_page_spellcheck()),
@@ -749,17 +753,23 @@ impl SettingsPanel {
                 Pane::WorkTags,
                 model.insert_child(wk, 5, Node::Page(Pane::WorkTags)),
             );
+            // Beside the tag palette: the other per-project catalogue the writer curates
+            // and that travels inside the `.skrib`.
+            nodes.insert(
+                Pane::WorkTemplates,
+                model.insert_child(wk, 6, Node::Page(Pane::WorkTemplates)),
+            );
             // Beside the personal dictionary and the tag palette: the third per-project
             // vocabulary the writer curates.
             nodes.insert(
                 Pane::WorkTextReplacements,
-                model.insert_child(wk, 6, Node::Page(Pane::WorkTextReplacements)),
+                model.insert_child(wk, 7, Node::Page(Pane::WorkTextReplacements)),
             );
             // Next to the lexicon: the other thing that rewrites prose as it is
             // typed, and the other one that travels inside the `.skrib`.
             nodes.insert(
                 Pane::WorkPunctuation,
-                model.insert_child(wk, 7, Node::Page(Pane::WorkPunctuation)),
+                model.insert_child(wk, 8, Node::Page(Pane::WorkPunctuation)),
             );
             work_node = Some(wk);
         }
@@ -855,6 +865,7 @@ impl SettingsPanel {
             | Pane::WorkBackup
             | Pane::WorkDictionary
             | Pane::WorkTags
+            | Pane::WorkTemplates
             | Pane::WorkAuthor
             | Pane::WorkTextReplacements => work_node,
             Pane::Keymap => None,
@@ -1233,6 +1244,31 @@ impl Widget for SettingsPanel {
             )),
         };
 
+        // Work ▸ Templates — the per-project note-template catalogue, over THIS WINDOW's
+        // own `WorkSession::note_templates`, same reasoning as `tags_pane` above.
+        let templates_pane: Box<dyn Widget> =
+            match (Some(self.session.note_templates.clone()), &work) {
+                (Some(nvm), Some(w)) if w.id().is_some() => {
+                    let title = w.title().get();
+                    Box::new(pane_frame(
+                        crumb(
+                            Some(lit!(format!(
+                                "{}: {}",
+                                tr!(settings_sec_work()).resolve_now(),
+                                title
+                            ))),
+                            tr!(settings_page_templates()),
+                        ),
+                        crate::settings::panes::work_templates::work_templates_pane(ctx, &nvm),
+                    ))
+                }
+                _ => Box::new(empty_pane(
+                    None,
+                    tr!(settings_page_templates()),
+                    res!("assets/icons/binder/book.svg"),
+                )),
+            };
+
         // Work ▸ Text replacements — the per-project custom lexicon, over THIS
         // WINDOW's own `WorkSession::text_replacements` (never `ctx.app_state`),
         // same reasoning as `tags_pane`/`dictionary_pane`/`punctuation` above.
@@ -1377,6 +1413,7 @@ impl Widget for SettingsPanel {
                 Box::new(panes::spellcheck::spellcheck_pane(&vm)),
             ),
             (Pane::WorkTags, tags_pane),
+            (Pane::WorkTemplates, templates_pane),
             (Pane::WorkAuthor, author_pane),
             (Pane::WorkTextReplacements, text_replacements_pane),
             (
