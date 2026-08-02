@@ -6,7 +6,6 @@
 // ═══════════════════════════════════════════════════════════════════════
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
-
 use crate::database::hashmap_store::{
     HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
 };
@@ -37,6 +36,9 @@ impl<'a> WorkHashMapTable<'a> {
         match field {
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
+            WorkRelationshipField::NoteTemplates => {
+                &self.store.jn_note_template_from_work_note_templates
+            }
             WorkRelationshipField::Paces => &self.store.jn_pace_from_work_paces,
             WorkRelationshipField::SmartPunctuation => {
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation
@@ -59,6 +61,10 @@ impl<'a> WorkHashMapTable<'a> {
             &self
                 .store
                 .jn_text_replacement_rule_from_work_text_replacement_rules,
+            &entity.id,
+        );
+        entity.note_templates = junction_get(
+            &self.store.jn_note_template_from_work_note_templates,
             &entity.id,
         );
         if let Some(val) = junction_get(
@@ -133,6 +139,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 &self.store.jn_dict_word_from_work_dict_words,
                 new_entity.id,
                 new_entity.dict_words.clone(),
+            );
+            junction_set(
+                &self.store.jn_note_template_from_work_note_templates,
+                new_entity.id,
+                new_entity.note_templates.clone(),
             );
             junction_set(
                 &self.store.jn_pace_from_work_paces,
@@ -269,6 +280,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 entity.text_replacement_rules.clone(),
             );
             junction_set(
+                &self.store.jn_note_template_from_work_note_templates,
+                entity.id,
+                entity.note_templates.clone(),
+            );
+            junction_set(
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation,
                 entity.id,
                 vec![entity.smart_punctuation],
@@ -310,6 +326,7 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                     .jn_text_replacement_rule_from_work_text_replacement_rules,
                 id,
             );
+            junction_remove(&self.store.jn_note_template_from_work_note_templates, id);
             junction_remove(
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation,
                 id,
@@ -344,6 +361,9 @@ impl<'a> WorkHashMapTableRO<'a> {
         match field {
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
+            WorkRelationshipField::NoteTemplates => {
+                &self.store.jn_note_template_from_work_note_templates
+            }
             WorkRelationshipField::Paces => &self.store.jn_pace_from_work_paces,
             WorkRelationshipField::SmartPunctuation => {
                 &self.store.jn_smart_punctuation_from_work_smart_punctuation
@@ -366,6 +386,10 @@ impl<'a> WorkHashMapTableRO<'a> {
             &self
                 .store
                 .jn_text_replacement_rule_from_work_text_replacement_rules,
+            &entity.id,
+        );
+        entity.note_templates = junction_get(
+            &self.store.jn_note_template_from_work_note_templates,
             &entity.id,
         );
         if let Some(val) = junction_get(

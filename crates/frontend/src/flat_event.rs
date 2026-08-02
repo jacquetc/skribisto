@@ -13,8 +13,9 @@
 use common::event::{
     AllEvent, BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event,
     ExportManagementEvent, HandlingAppLifecycleEvent, ImportManagementEvent, LongOperationEvent,
-    MentionManagementEvent, Origin, ProgressManagementEvent, SearchManagementEvent,
-    TagManagementEvent, TrashManagementEvent, UndoRedoEvent, WorkManagementEvent,
+    MentionManagementEvent, NoteTemplateManagementEvent, Origin, ProgressManagementEvent,
+    SearchManagementEvent, TagManagementEvent, TrashManagementEvent, UndoRedoEvent,
+    WorkManagementEvent,
 };
 use common::types::EntityId;
 
@@ -83,6 +84,9 @@ pub enum FlatEventKind {
     TextReplacementRuleCreated,
     TextReplacementRuleUpdated,
     TextReplacementRuleRemoved,
+    NoteTemplateCreated,
+    NoteTemplateUpdated,
+    NoteTemplateRemoved,
 
     // Per-feature use case events
     WorkManagementLoadWork,
@@ -107,6 +111,7 @@ pub enum FlatEventKind {
     TrashManagementDeleteTrashEntries,
 
     TagManagementImportTags,
+    NoteTemplateManagementImportNoteTemplates,
 
     BinderItemManagementDuplicate,
     BinderItemManagementMoveItems,
@@ -277,6 +282,15 @@ impl From<Event> for FlatEvent {
                 DirectAccessEntity::TextReplacementRule(EntityEvent::Removed) => {
                     FlatEventKind::TextReplacementRuleRemoved
                 }
+                DirectAccessEntity::NoteTemplate(EntityEvent::Created) => {
+                    FlatEventKind::NoteTemplateCreated
+                }
+                DirectAccessEntity::NoteTemplate(EntityEvent::Updated) => {
+                    FlatEventKind::NoteTemplateUpdated
+                }
+                DirectAccessEntity::NoteTemplate(EntityEvent::Removed) => {
+                    FlatEventKind::NoteTemplateRemoved
+                }
             },
 
             Origin::WorkManagement(fe) => match fe {
@@ -313,6 +327,11 @@ impl From<Event> for FlatEvent {
                 }
                 TrashManagementEvent::DeleteTrashEntries => {
                     FlatEventKind::TrashManagementDeleteTrashEntries
+                }
+            },
+            Origin::NoteTemplateManagement(fe) => match fe {
+                NoteTemplateManagementEvent::ImportNoteTemplates => {
+                    FlatEventKind::NoteTemplateManagementImportNoteTemplates
                 }
             },
             Origin::TagManagement(fe) => match fe {
@@ -437,6 +456,9 @@ pub fn is_mutation(kind: &FlatEventKind) -> bool {
             | TextReplacementRuleCreated
             | TextReplacementRuleUpdated
             | TextReplacementRuleRemoved
+            | NoteTemplateCreated
+            | NoteTemplateUpdated
+            | NoteTemplateRemoved
     )
 }
 

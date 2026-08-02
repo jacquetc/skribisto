@@ -42,6 +42,15 @@ pub trait ExportWorkUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
 // Map the generated read methods onto the shared `TreeReader` surface. The three defaulted
 // methods (work_info / trash / dict) are omitted — export does not read those entities.
 impl<'a> TreeReader for dyn ExportWorkUnitOfWorkTrait + 'a {
+    /// Export / analysis reads no templates: they are project furniture, not manuscript
+    /// content, and nothing downstream of here consumes them. Explicit rather than
+    /// defaulted — see [`TreeReader::note_template_multi`].
+    fn note_template_multi(
+        &self,
+        _ids: &[EntityId],
+    ) -> Result<Vec<Option<common::entities::NoteTemplate>>> {
+        Ok(Vec::new())
+    }
     fn all_work(&self) -> Result<Vec<Work>> {
         self.get_all_work()
     }
@@ -78,8 +87,14 @@ pub struct ExportWorkUseCase {
 }
 
 impl ExportWorkUseCase {
-    pub fn new(uow_factory: Box<dyn ExportWorkUnitOfWorkFactoryTrait>, dto: &ExportWorkDto) -> Self {
-        ExportWorkUseCase { uow_factory, dto: dto.clone() }
+    pub fn new(
+        uow_factory: Box<dyn ExportWorkUnitOfWorkFactoryTrait>,
+        dto: &ExportWorkDto,
+    ) -> Self {
+        ExportWorkUseCase {
+            uow_factory,
+            dto: dto.clone(),
+        }
     }
 }
 
@@ -123,8 +138,8 @@ fn run_export(
     let include = resolve_include(dto, &items)?;
 
     // The style travels as JSON so its schema stays owned by `skribisto_compiler`.
-    let preset: skribisto_compiler::Preset = serde_json::from_str(&dto.preset_json)
-        .map_err(|e| anyhow!("invalid export style: {e}"))?;
+    let preset: skribisto_compiler::Preset =
+        serde_json::from_str(&dto.preset_json).map_err(|e| anyhow!("invalid export style: {e}"))?;
 
     // The compiler renders in one language: the primary. Resolved here, at the boundary,
     // rather than leaving a list to be flattened somewhere downstream.
@@ -146,8 +161,12 @@ fn run_export(
     };
 
     // gather already reported up to ~90 %; map the renderer's 0..1 into the final 90..100.
-    let render_progress =
-        |p: f32| progress(OperationProgress::new(90.0 + 10.0 * p, Some("Writing…".to_string())));
+    let render_progress = |p: f32| {
+        progress(OperationProgress::new(
+            90.0 + 10.0 * p,
+            Some("Writing…".to_string()),
+        ))
+    };
     let path = std::path::Path::new(&dto.output_path);
     // Flatten to the full `{:#}` chain so the failure toast keeps the root cause.
     let stats = skribisto_compiler::render_to_file(&req, path, &render_progress, cancel)

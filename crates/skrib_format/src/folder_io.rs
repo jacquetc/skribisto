@@ -17,7 +17,7 @@ use tempfile::NamedTempFile;
 
 use super::bundle::*;
 use super::shape::MANIFEST_NAME;
-use super::slug::binder_dir_name;
+use super::slug::{TEMPLATES_DIR, binder_dir_name};
 use super::writer::persist_durably;
 
 fn to_ron<T: Serialize>(value: &T) -> Result<String> {
@@ -75,6 +75,38 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         &root.join("snapshots.ron"),
         to_ron(&bundle.progress_snapshots)?.as_bytes(),
     )?;
+
+    // Note templates: an index plus one Djot blob each, mirroring the prose split.
+    //
+    // The prune is not optional bookkeeping. A rename changes the slug and therefore the
+    // blob's filename, and a delete drops the row entirely — without this, every rename
+    // and every delete would leave an orphan `.djot` behind for good, growing the
+    // git-tracked tree and undoing the whole reason the bodies are separate files.
+    write_if_changed(
+        &root.join("templates.ron"),
+        to_ron(&bundle.note_templates)?.as_bytes(),
+    )?;
+    let templates_dir = root.join(TEMPLATES_DIR);
+    let mut expected_templates: BTreeSet<String> = BTreeSet::new();
+    if !bundle.note_templates.is_empty() {
+        fs::create_dir_all(&templates_dir)
+            .with_context(|| format!("creating {}", templates_dir.display()))?;
+    }
+    for t in &bundle.note_templates {
+        let rel = Path::new(&t.path);
+        let fname = rel
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| anyhow::anyhow!("bad note-template path '{}'", t.path))?
+            .to_string();
+        let body = bundle
+            .note_template_bodies
+            .get(&t.file_id)
+            .ok_or_else(|| anyhow::anyhow!("missing body blob for note template {}", t.file_id))?;
+        write_if_changed(&root.join(rel), body.as_bytes())?;
+        expected_templates.insert(fname);
+    }
+    prune_dir(&templates_dir, &expected_templates, "djot")?;
 
     let mut expected_binder_dirs: BTreeSet<String> = BTreeSet::new();
 
@@ -170,6 +202,20 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     // file as an empty vec, so old projects load with zero paces (no version bump).
     let paces = read_ron_vec(&root.join("paces.ron"), "paces.ron")?;
     let progress_snapshots = read_ron_vec(&root.join("snapshots.ron"), "snapshots.ron")?;
+    // Additive like its neighbours: a pre-v5 bundle has no `templates.ron` and reads back
+    // as zero templates. A *malformed* one is a hard error, matching every sibling here —
+    // and for a sharper reason than consistency. Degrading to "no templates" would let
+    // autosave rewrite the file from that empty state within seconds of opening, so a
+    // typo in a hand-edited manifest would cost the writer every template permanently.
+    // Refusing to open keeps the bytes on disk and is recoverable.
+    let note_templates: Vec<NoteTemplateFile> =
+        read_ron_vec(&root.join("templates.ron"), "templates.ron")?;
+    let mut note_template_bodies = std::collections::BTreeMap::new();
+    for t in &note_templates {
+        let text = fs::read_to_string(root.join(&t.path))
+            .with_context(|| format!("reading note-template body {}", t.path))?;
+        note_template_bodies.insert(t.file_id, text);
+    }
 
     // Index every binder by its file id (dir names are cosmetic).
     let mut by_id: std::collections::HashMap<u64, (ItemsFile, PathBuf)> =
@@ -213,6 +259,8 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         tags,
         dict_words,
         text_replacement_rules,
+        note_templates,
+        note_template_bodies,
         trash_infos,
         paces,
         progress_snapshots,

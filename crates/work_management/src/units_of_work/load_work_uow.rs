@@ -18,8 +18,9 @@ use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot, RecentWork, Root,
-    Search, SmartPunctuation, System, TextReplacementRule, TrashInfo, Work, WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, NoteTemplate, Pace,
+    ProgressSnapshot, RecentWork, Root, Search, SmartPunctuation, System, TextReplacementRule,
+    TrashInfo, Work, WorkInfo,
 };
 use common::event::WorkManagementEvent::LoadWork;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
@@ -146,6 +147,7 @@ impl CommandUnitOfWork for LoadWorkUnitOfWork {
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
 #[macros::uow_action(entity = "DictWord", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "CreateOrphan")]
+#[macros::uow_action(entity = "NoteTemplate", action = "CreateOrphan")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
 #[macros::uow_action(entity = "WorkInfo", action = "CreateOrphan")]

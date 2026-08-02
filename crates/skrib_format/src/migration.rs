@@ -42,6 +42,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             1 => step_v1_to_v2(bundle),
             2 => step_v2_to_v3(bundle),
             3 => step_v3_to_v4(bundle),
+            4 => step_v4_to_v5(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -62,6 +63,12 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
 /// file would never reach it. So this arm only advances the stamp, exactly as v1 → v2 does
 /// for a field healed elsewhere. It still has to exist: a version with no arm fails loudly.
 fn step_v3_to_v4(_bundle: &mut WorkBundle) {}
+
+/// v4 → v5 added the note templates. Nothing to heal: a v4 bundle simply had none, and
+/// `read_folder` already yields an empty list for the absent `templates.ron`. The bump
+/// exists to stop an *older* build opening (and then silently re-saving without) a
+/// project that has templates — see [`FORMAT_VERSION`](crate::bundle::FORMAT_VERSION).
+fn step_v4_to_v5(_bundle: &mut WorkBundle) {}
 
 fn step_v2_to_v3(bundle: &mut WorkBundle) {
     for bb in &mut bundle.binders {

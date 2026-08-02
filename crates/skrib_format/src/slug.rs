@@ -72,6 +72,19 @@ pub fn prose_relpath(binder_dir: &str, file_name: &str) -> String {
     format!("binders/{binder_dir}/text/{file_name}")
 }
 
+/// The directory holding the note-template bodies, relative to the bundle root.
+pub const TEMPLATES_DIR: &str = "templates";
+
+/// Bundle-root-relative path of one note template's Djot body.
+///
+/// `slugify` is what makes this safe for a name the writer typed: a template called
+/// `Fiche/perso` or `CON` or `..` still lands on a legal, non-escaping single path
+/// segment. The `file_id` prefix keeps two same-slug templates from colliding, exactly
+/// as it does for prose blobs.
+pub fn note_template_relpath(file_id: u64, name: &str) -> String {
+    format!("{TEMPLATES_DIR}/{file_id}-{}.djot", slugify(name))
+}
+
 #[cfg(test)]
 mod tests {
     use super::slugify;

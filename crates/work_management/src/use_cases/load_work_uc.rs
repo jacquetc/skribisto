@@ -25,9 +25,9 @@ use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
-    RecentWork, Root, Search, SmartPunctuation, System, TextReplacementRule, TrashInfo, Work,
-    WorkInfo, WorkShape,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, NoteTemplate, Pace,
+    ProgressSnapshot, RecentWork, Root, Search, SmartPunctuation, System, TextReplacementRule,
+    TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use skrib_format::{self as skrib, LoadedWork, SkribShape};
@@ -48,6 +48,7 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
 #[macros::uow_action(entity = "DictWord", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "CreateOrphan")]
+#[macros::uow_action(entity = "NoteTemplate", action = "CreateOrphan")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
 #[macros::uow_action(entity = "WorkInfo", action = "CreateOrphan")]
@@ -182,36 +183,37 @@ pub(crate) fn materialize(
     // whole file avoids `..Default::default()`: a struct-update tail would let a
     // future field be added to `SmartPunctuation` and silently dropped on every
     // load, which is exactly how `chapter_mode` was lost.
-    let smart_punctuation = uow.create_orphan_smart_punctuation(&match &loaded.smart_punctuation {
-        Some(sp) => SmartPunctuation {
-            id: 0,
-            created_at: sp.created_at,
-            updated_at: sp.updated_at,
-            override_app_default: sp.override_app_default,
-            dashes: sp.dashes,
-            ellipsis: sp.ellipsis,
-            quotes: sp.quotes,
-            quote_style: sp.quote_style.clone(),
-            pre_punctuation_spacing: sp.pre_punctuation_spacing,
-            dialogue_marker: sp.dialogue_marker,
-        },
-        None => SmartPunctuation {
-            id: 0,
-            created_at: lw.created_at,
-            updated_at: lw.updated_at,
-            // All false, and `override_app_default` false above all: that is
-            // what tells the UI to follow the app-level preference rather than
-            // this row, so a pre-feature project behaves as if the setting had
-            // never been asked about.
-            override_app_default: false,
-            dashes: false,
-            ellipsis: false,
-            quotes: false,
-            quote_style: common::entities::QuoteStyle::LocaleDefault,
-            pre_punctuation_spacing: false,
-            dialogue_marker: false,
-        },
-    })?;
+    let smart_punctuation =
+        uow.create_orphan_smart_punctuation(&match &loaded.smart_punctuation {
+            Some(sp) => SmartPunctuation {
+                id: 0,
+                created_at: sp.created_at,
+                updated_at: sp.updated_at,
+                override_app_default: sp.override_app_default,
+                dashes: sp.dashes,
+                ellipsis: sp.ellipsis,
+                quotes: sp.quotes,
+                quote_style: sp.quote_style.clone(),
+                pre_punctuation_spacing: sp.pre_punctuation_spacing,
+                dialogue_marker: sp.dialogue_marker,
+            },
+            None => SmartPunctuation {
+                id: 0,
+                created_at: lw.created_at,
+                updated_at: lw.updated_at,
+                // All false, and `override_app_default` false above all: that is
+                // what tells the UI to follow the app-level preference rather than
+                // this row, so a pre-feature project behaves as if the setting had
+                // never been asked about.
+                override_app_default: false,
+                dashes: false,
+                ellipsis: false,
+                quotes: false,
+                quote_style: common::entities::QuoteStyle::LocaleDefault,
+                pre_punctuation_spacing: false,
+                dialogue_marker: false,
+            },
+        })?;
 
     // The relationship vectors are deliberately empty: `create_orphan_*` makes the
     // rows, and the ids are wired on afterwards by `set_work_relationship`.
@@ -235,6 +237,7 @@ pub(crate) fn materialize(
         tags: Vec::new(),
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
+        note_templates: Vec::new(),
         // The real id, not a placeholder — which is why the row above is created
         // BEFORE the Work rather than after it, unlike every collection here.
         // A one-to-one field seeds its junction at create time, so two Works
@@ -245,7 +248,6 @@ pub(crate) fn materialize(
         trash_infos: Vec::new(),
         paces: Vec::new(),
     })?;
-
 
     // Tags (file id -> new id).
     let mut tag_map: HashMap<u64, EntityId> = HashMap::new();
@@ -288,6 +290,20 @@ pub(crate) fn materialize(
             id: 0,
         })?;
         text_replacement_rule_ids.push(created.id);
+    }
+
+    // Per-project note templates, in their stored order.
+    let mut note_template_ids: Vec<EntityId> = Vec::new();
+    for t in &loaded.note_templates {
+        let created = uow.create_orphan_note_template(&NoteTemplate {
+            created_at: t.created_at,
+            updated_at: t.updated_at,
+            name: t.name.clone(),
+            body: t.body.clone(),
+            starred: t.starred,
+            id: 0,
+        })?;
+        note_template_ids.push(created.id);
     }
 
     // Binders -> items -> contents.
@@ -530,6 +546,13 @@ pub(crate) fn materialize(
             &text_replacement_rule_ids,
         )?;
     }
+    if !note_template_ids.is_empty() {
+        uow.set_work_relationship(
+            &work.id,
+            &WorkRelationshipField::NoteTemplates,
+            &note_template_ids,
+        )?;
+    }
     // Unconditional, unlike every collection above: there is always exactly one
     // punctuation row, so there is no "empty" case to skip.
     uow.set_work_relationship(
@@ -768,6 +791,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         tags: Vec::new(),
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
+        note_templates: Vec::new(),
         // `materialize` mints the default row — see the note at its own literal.
         smart_punctuation: 0,
         trash_infos: Vec::new(),
@@ -927,6 +951,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         dict_words,
         // Legacy (pre-.skrib-v4) SQLite projects predate this feature entirely.
         text_replacement_rules: Vec::new(),
+        // Legacy projects have no templates either.
+        note_templates: Vec::new(),
         // Likewise — and `None` rather than an all-false row, so `materialize`
         // treats it as "never configured" and leaves the project following the
         // app default instead of recording a house style nobody chose.
@@ -989,7 +1015,10 @@ mod legacy_uid_tests {
         let mut seen = std::collections::HashSet::new();
         for b in &loaded.binders {
             assert!(!b.binder.uid.is_nil(), "legacy binder left unidentified");
-            assert!(seen.insert(b.binder.uid), "duplicate uid across legacy rows");
+            assert!(
+                seen.insert(b.binder.uid),
+                "duplicate uid across legacy rows"
+            );
             for i in &b.items {
                 assert!(!i.item.uid.is_nil(), "legacy item left unidentified");
                 assert!(seen.insert(i.item.uid), "duplicate uid across legacy rows");

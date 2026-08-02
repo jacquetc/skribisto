@@ -10,6 +10,7 @@ pub mod content;
 pub mod dict_word;
 pub mod holiday;
 pub mod milestone;
+pub mod note_template;
 pub mod pace;
 pub mod progress_snapshot;
 pub mod recent_work;

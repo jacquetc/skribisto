@@ -62,6 +62,13 @@ fn strip_volatile(b: &mut WorkBundle) {
         r.created_at.clear();
         r.updated_at.clear();
     }
+    // The body is real content and stays; only the bookkeeping stamps go. Without this
+    // arm every save would fingerprint differently even when nothing changed, and
+    // backup dedup ("skip if identical to the last one") would never skip again.
+    for t in &mut b.note_templates {
+        t.created_at.clear();
+        t.updated_at.clear();
+    }
     for ti in &mut b.trash_infos {
         ti.created_at.clear();
         ti.updated_at.clear();
@@ -138,6 +145,8 @@ mod tests {
             },
             tags: vec![],
             dict_words: vec![],
+            note_templates: vec![],
+            note_template_bodies: Default::default(),
             text_replacement_rules: vec![],
             trash_infos: vec![],
             paces: vec![],

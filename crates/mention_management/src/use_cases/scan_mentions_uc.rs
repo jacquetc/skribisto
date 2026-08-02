@@ -61,6 +61,15 @@ pub trait ScanMentionsUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
 // Map the generated read methods onto the shared `TreeReader`. The defaulted methods
 // (work_info / trash / dict / pace / snapshot) are omitted — a scan reads none of them.
 impl<'a> TreeReader for dyn ScanMentionsUnitOfWorkTrait + 'a {
+    /// Export / analysis reads no templates: they are project furniture, not manuscript
+    /// content, and nothing downstream of here consumes them. Explicit rather than
+    /// defaulted — see [`TreeReader::note_template_multi`].
+    fn note_template_multi(
+        &self,
+        _ids: &[EntityId],
+    ) -> Result<Vec<Option<common::entities::NoteTemplate>>> {
+        Ok(Vec::new())
+    }
     fn all_work(&self) -> Result<Vec<Work>> {
         self.get_all_work()
     }

@@ -44,6 +44,7 @@
 //! which Work the random seed favours, so every test here fails deterministically on
 //! every run when the bug is present, not on half of them.
 
+use binder_item_management::MergeTwoScenesDto;
 use frontend::AppContext;
 use frontend::commands::{
     binder_commands, binder_item_commands, binder_item_management_commands,
@@ -65,7 +66,6 @@ use frontend::direct_access::{
     CreateTrashInfoDto, CreateWorkDto, CreateWorkInfoDto, RootRelationshipDto,
     SystemRelationshipDto, WorkInfoRelationshipDto, WorkRelationshipDto,
 };
-use binder_item_management::MergeTwoScenesDto;
 use mention_management::ScanMentionsDto;
 use progress_management::{CountWordsDto, RecordProgressSnapshotDto};
 use search_management::{ReplaceInProjectDto, RunSearchDto};
@@ -158,6 +158,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
             custom_replacement_rules_enabled: false,
             binders: vec![],
             tags: vec![],
+            note_templates: vec![],
             dict_words: vec![],
             text_replacement_rules: vec![],
             smart_punctuation: smart_punctuation.id,
@@ -236,7 +237,11 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
     // System and Root are process-wide singletons already seeded by Work A's `new_work` —
     // reused, not recreated, mirroring `load_work_uc::create_trunk`'s own "reuse if present"
     // branch.
-    let system_id = system_commands::get_all_system(ctx).unwrap().pop().unwrap().id;
+    let system_id = system_commands::get_all_system(ctx)
+        .unwrap()
+        .pop()
+        .unwrap()
+        .id;
     let mut work_infos = system_commands::get_system_relationship(
         ctx,
         &system_id,
@@ -256,8 +261,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
 
     let root_id = root_commands::get_all_root(ctx).unwrap().pop().unwrap().id;
     let mut works =
-        root_commands::get_root_relationship(ctx, &root_id, &RootRelationshipField::Works)
-            .unwrap();
+        root_commands::get_root_relationship(ctx, &root_id, &RootRelationshipField::Works).unwrap();
     works.push(work.id);
     root_commands::set_root_relationship(
         ctx,
@@ -278,10 +282,17 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
 
 /// A discoverable note + a scene naming it, for `scan_mentions`. Returns the scene id (the
 /// one whose roster the scan should report a hit for).
-fn seed_mentionable_scene(ctx: &AppContext, work_id: EntityId, binder_id: EntityId, needle: &str) -> EntityId {
-    use frontend::direct_access::{BinderItemRelationshipDto, CreateBinderItemDto, CreateBinderTagDto};
+fn seed_mentionable_scene(
+    ctx: &AppContext,
+    work_id: EntityId,
+    binder_id: EntityId,
+    needle: &str,
+) -> EntityId {
     use frontend::commands::{binder_item_commands, binder_tag_commands};
     use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::direct_access::{
+        BinderItemRelationshipDto, CreateBinderItemDto, CreateBinderTagDto,
+    };
 
     let n = now();
     let mk = |sub_role, title: &str| CreateBinderItemDto {
@@ -431,7 +442,11 @@ fn seed_prose_scene(ctx: &AppContext, binder_id: EntityId, words: usize) {
 /// still resolves its own Work via the unscoped `get_all_work().next()` — see the scouts'
 /// classification corrections — so it is not a safe fixture builder for a two-Works test).
 /// Returns `(trash_info_id, binder_item_id)`.
-fn seed_trashed_item(ctx: &AppContext, work_id: EntityId, binder_id: EntityId) -> (EntityId, EntityId) {
+fn seed_trashed_item(
+    ctx: &AppContext,
+    work_id: EntityId,
+    binder_id: EntityId,
+) -> (EntityId, EntityId) {
     let n = now();
     let created = binder_item_commands::create_binder_item_multi(
         ctx,
@@ -497,10 +512,11 @@ fn seed_trashed_item(ctx: &AppContext, work_id: EntityId, binder_id: EntityId) -
 #[test]
 fn scan_mentions_only_scans_the_requested_work() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
     let scene_a = seed_mentionable_scene(&ctx, work_a, binder_a, "Alpha");
 
     let b = seed_second_work(&ctx, "Work B");
@@ -512,7 +528,11 @@ fn scan_mentions_only_scans_the_requested_work() {
         // Take the completion signal and release the manager lock before blocking — waiting
         // while holding it would stall every other operation query for the scan's whole
         // duration (see the qleany 1.9.0 migration guide's long-operation section).
-        let completion = ctx.long_operation_manager.lock().unwrap().completion_signal();
+        let completion = ctx
+            .long_operation_manager
+            .lock()
+            .unwrap()
+            .completion_signal();
         let finished = completion.wait_for(&op, Some(std::time::Duration::from_secs(30)));
         assert!(finished, "scan must complete");
         mention_management_commands::get_scan_mentions_result(&ctx, &op)
@@ -565,10 +585,11 @@ fn scan_mentions_only_scans_the_requested_work() {
 #[test]
 fn count_words_only_counts_the_requested_work() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
     seed_prose_scene(&ctx, binder_a, 3);
 
     let b = seed_second_work(&ctx, "Work B");
@@ -580,7 +601,11 @@ fn count_words_only_counts_the_requested_work() {
         // Take the completion signal and release the manager lock before blocking — waiting
         // while holding it would stall every other operation query for the count's whole
         // duration (see the qleany 1.9.0 migration guide's long-operation section).
-        let completion = ctx.long_operation_manager.lock().unwrap().completion_signal();
+        let completion = ctx
+            .long_operation_manager
+            .lock()
+            .unwrap()
+            .completion_signal();
         let finished = completion.wait_for(&op, Some(std::time::Duration::from_secs(30)));
         assert!(finished);
         progress_management_commands::get_count_words_result(&ctx, &op)
@@ -608,14 +633,19 @@ fn count_words_only_counts_the_requested_work() {
 #[test]
 fn record_progress_snapshot_records_onto_the_requested_works_workinfo() {
     let (ctx, _work_a) = ctx_with_work_a();
-    let work_info_a = work_info_commands::get_all_work_info(&ctx).unwrap().pop().unwrap();
+    let work_info_a = work_info_commands::get_all_work_info(&ctx)
+        .unwrap()
+        .pop()
+        .unwrap();
 
     let b = seed_second_work(&ctx, "Work B");
 
     progress_management_commands::record_progress_snapshot(
         &ctx,
         &RecordProgressSnapshotDto {
-            work_id: work_info_a.work.expect("Work A's WorkInfo must point back at Work A"),
+            work_id: work_info_a
+                .work
+                .expect("Work A's WorkInfo must point back at Work A"),
             day: now(),
             total_word_count: 333,
             total_char_count: 1665,
@@ -714,7 +744,8 @@ fn import_tags_only_imports_into_the_requested_work() {
         "the new tag must land on Work A when Work A is named"
     );
     let tags_b_after_first =
-        work_commands::get_work_relationship(&ctx, &b.work_id, &WorkRelationshipField::Tags).unwrap();
+        work_commands::get_work_relationship(&ctx, &b.work_id, &WorkRelationshipField::Tags)
+            .unwrap();
     assert!(
         tags_b_after_first.is_empty(),
         "Work B's palette must stay empty after a call naming Work A"
@@ -742,7 +773,8 @@ fn import_tags_only_imports_into_the_requested_work() {
     );
 
     let tags_b_after_second =
-        work_commands::get_work_relationship(&ctx, &b.work_id, &WorkRelationshipField::Tags).unwrap();
+        work_commands::get_work_relationship(&ctx, &b.work_id, &WorkRelationshipField::Tags)
+            .unwrap();
     assert_eq!(
         tags_b_after_second, result_b.created_ids,
         "the new tag must land on Work B when Work B is named"
@@ -805,14 +837,25 @@ fn seed_needle_scene(ctx: &AppContext, binder_id: EntityId, title: &str, prose: 
 #[test]
 fn run_search_only_searches_the_requested_work() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
-    seed_needle_scene(&ctx, binder_a, "A scene", "unobtainable veins ran through the rock");
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
+    seed_needle_scene(
+        &ctx,
+        binder_a,
+        "A scene",
+        "unobtainable veins ran through the rock",
+    );
 
     let b = seed_second_work(&ctx, "Work B");
-    seed_needle_scene(&ctx, b.binder_id, "B scene", "unobtainium veins ran through the rock");
+    seed_needle_scene(
+        &ctx,
+        b.binder_id,
+        "B scene",
+        "unobtainium veins ran through the rock",
+    );
 
     let search = |work_id: EntityId, query: &str| {
         search_management_commands::run_search(
@@ -849,18 +892,28 @@ fn run_search_only_searches_the_requested_work() {
          against Work A must not somehow find Work B's word"
     );
     let out_a2 = search(work_a, "unobtainable");
-    assert!(out_a2.match_count > 0, "must find Work A's own word when Work A is named");
+    assert!(
+        out_a2.match_count > 0,
+        "must find Work A's own word when Work A is named"
+    );
     let search_b_id = search_id_for(b.work_id);
-    let search_b = search_commands::get_search(&ctx, &search_b_id).unwrap().unwrap();
+    let search_b = search_commands::get_search(&ctx, &search_b_id)
+        .unwrap()
+        .unwrap();
     assert!(
         search_b.query.is_empty(),
         "Work B's Search must be untouched by a search run against Work A"
     );
 
     let out_b = search(b.work_id, "unobtainium");
-    assert!(out_b.match_count > 0, "must find Work B's own word when Work B is named");
+    assert!(
+        out_b.match_count > 0,
+        "must find Work B's own word when Work B is named"
+    );
     let search_a_id = search_id_for(work_a);
-    let search_a = search_commands::get_search(&ctx, &search_a_id).unwrap().unwrap();
+    let search_a = search_commands::get_search(&ctx, &search_a_id)
+        .unwrap()
+        .unwrap();
     assert_eq!(
         search_a.query, "unobtainable",
         "Work A's Search must still hold its own last query after a search run against Work B"
@@ -873,10 +926,11 @@ fn run_search_only_searches_the_requested_work() {
 #[test]
 fn replace_in_project_only_replaces_in_the_requested_work() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
     seed_needle_scene(&ctx, binder_a, "A scene", "Aurelien walked in A.");
 
     let b = seed_second_work(&ctx, "Work B");
@@ -957,10 +1011,11 @@ fn replace_in_project_only_replaces_in_the_requested_work() {
 #[test]
 fn empty_trash_only_empties_the_requested_works_trash() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
     let (_trash_info_a, item_a) = seed_trashed_item(&ctx, work_a, binder_a);
 
     let b = seed_second_work(&ctx, "Work B");
@@ -979,7 +1034,9 @@ fn empty_trash_only_empties_the_requested_works_trash() {
         "Work A's trash index must be empty when Work A is named"
     );
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &item_a).unwrap().is_none(),
+        binder_item_commands::get_binder_item(&ctx, &item_a)
+            .unwrap()
+            .is_none(),
         "Work A's trashed item must actually be gone"
     );
     let trash_b_after_first =
@@ -991,7 +1048,9 @@ fn empty_trash_only_empties_the_requested_works_trash() {
         "Work B's trash index must survive emptying Work A's trash completely unchanged"
     );
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &item_b).unwrap().is_some(),
+        binder_item_commands::get_binder_item(&ctx, &item_b)
+            .unwrap()
+            .is_some(),
         "Work B's trashed item must survive — emptying A's trash must never reach into B"
     );
 
@@ -1009,7 +1068,9 @@ fn empty_trash_only_empties_the_requested_works_trash() {
         "Work B's trash index must be empty when Work B is named"
     );
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &item_b).unwrap().is_none(),
+        binder_item_commands::get_binder_item(&ctx, &item_b)
+            .unwrap()
+            .is_none(),
         "Work B's trashed item must actually be gone"
     );
     let trash_a_after_second =
@@ -1134,10 +1195,11 @@ fn seed_scene_pair(
 #[test]
 fn trash_binder_items_only_indexes_under_the_requested_work() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
     let item_a = seed_active_item(&ctx, binder_a, 4001);
 
     let b = seed_second_work(&ctx, "Work B");
@@ -1155,7 +1217,10 @@ fn trash_binder_items_only_indexes_under_the_requested_work() {
     .expect("trash in A");
 
     assert!(
-        !binder_item_commands::get_binder_item(&ctx, &item_a).unwrap().unwrap().activated,
+        !binder_item_commands::get_binder_item(&ctx, &item_a)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work A's item must be trashed when Work A is named"
     );
     let trash_a =
@@ -1174,7 +1239,10 @@ fn trash_binder_items_only_indexes_under_the_requested_work() {
         "Work B's trash index must stay empty after a call naming Work A"
     );
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &item_b).unwrap().unwrap().activated,
+        binder_item_commands::get_binder_item(&ctx, &item_b)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work B's item must be untouched by a call naming Work A"
     );
 
@@ -1190,7 +1258,10 @@ fn trash_binder_items_only_indexes_under_the_requested_work() {
     .expect("trash in B");
 
     assert!(
-        !binder_item_commands::get_binder_item(&ctx, &item_b).unwrap().unwrap().activated,
+        !binder_item_commands::get_binder_item(&ctx, &item_b)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work B's item must be trashed when Work B is named"
     );
     let trash_b_after =
@@ -1216,10 +1287,11 @@ fn trash_binder_items_only_indexes_under_the_requested_work() {
 #[test]
 fn trash_binder_only_indexes_under_the_requested_work() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
 
     let b = seed_second_work(&ctx, "Work B");
 
@@ -1234,7 +1306,10 @@ fn trash_binder_only_indexes_under_the_requested_work() {
     .expect("trash binder in A");
 
     assert!(
-        !binder_commands::get_binder(&ctx, &binder_a).unwrap().unwrap().activated,
+        !binder_commands::get_binder(&ctx, &binder_a)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work A's binder must be trashed when Work A is named"
     );
     let trash_a =
@@ -1253,7 +1328,10 @@ fn trash_binder_only_indexes_under_the_requested_work() {
         "Work B's trash index must stay empty after a call naming Work A"
     );
     assert!(
-        binder_commands::get_binder(&ctx, &b.binder_id).unwrap().unwrap().activated,
+        binder_commands::get_binder(&ctx, &b.binder_id)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work B's binder must be untouched by a call naming Work A"
     );
 
@@ -1268,7 +1346,10 @@ fn trash_binder_only_indexes_under_the_requested_work() {
     .expect("trash binder in B");
 
     assert!(
-        !binder_commands::get_binder(&ctx, &b.binder_id).unwrap().unwrap().activated,
+        !binder_commands::get_binder(&ctx, &b.binder_id)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work B's binder must be trashed when Work B is named"
     );
     let trash_b_after =
@@ -1297,10 +1378,11 @@ fn trash_binder_only_indexes_under_the_requested_work() {
 #[test]
 fn restore_items_only_unlinks_from_the_requested_works_index() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
     let (trash_info_a, item_a) = seed_trashed_item(&ctx, work_a, binder_a);
 
     let b = seed_second_work(&ctx, "Work B");
@@ -1333,7 +1415,10 @@ fn restore_items_only_unlinks_from_the_requested_works_index() {
         "Work B's trash index must survive a restore naming Work A completely unchanged"
     );
     assert!(
-        !binder_item_commands::get_binder_item(&ctx, &item_b).unwrap().unwrap().activated,
+        !binder_item_commands::get_binder_item(&ctx, &item_b)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work B's item must stay trashed — a restore naming Work A must never reach into B"
     );
 
@@ -1370,10 +1455,11 @@ fn restore_items_only_unlinks_from_the_requested_works_index() {
 #[test]
 fn restore_items_to_only_sweeps_the_requested_works_index() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
     let (trash_info_a, item_a) = seed_trashed_item(&ctx, work_a, binder_a);
 
     let b = seed_second_work(&ctx, "Work B");
@@ -1394,7 +1480,10 @@ fn restore_items_to_only_sweeps_the_requested_works_index() {
     assert_eq!(res_a.restored_count, 1);
     assert!(!res_a.orphaned);
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &item_a).unwrap().unwrap().activated,
+        binder_item_commands::get_binder_item(&ctx, &item_a)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work A's item must be reactivated when Work A is named"
     );
     let trash_a =
@@ -1428,7 +1517,10 @@ fn restore_items_to_only_sweeps_the_requested_works_index() {
     assert_eq!(res_b.restored_count, 1);
     assert!(!res_b.orphaned);
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &item_b).unwrap().unwrap().activated,
+        binder_item_commands::get_binder_item(&ctx, &item_b)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work B's item must be reactivated when Work B is named"
     );
     let trash_b_after =
@@ -1456,10 +1548,11 @@ fn restore_items_to_only_sweeps_the_requested_works_index() {
 #[test]
 fn delete_trash_entries_only_purges_from_the_requested_work() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
     let (trash_info_a, item_a) = seed_trashed_item(&ctx, work_a, binder_a);
 
     let b = seed_second_work(&ctx, "Work B");
@@ -1476,7 +1569,9 @@ fn delete_trash_entries_only_purges_from_the_requested_work() {
     .expect("delete in A");
 
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &item_a).unwrap().is_none(),
+        binder_item_commands::get_binder_item(&ctx, &item_a)
+            .unwrap()
+            .is_none(),
         "Work A's trashed item must actually be hard-removed when Work A is named — a \
          silent no-op here (Ok(()) but nothing deleted) is exactly the bug this guards \
          against"
@@ -1497,7 +1592,9 @@ fn delete_trash_entries_only_purges_from_the_requested_work() {
         "Work B's trash index must survive a delete naming Work A completely unchanged"
     );
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &item_b).unwrap().is_some(),
+        binder_item_commands::get_binder_item(&ctx, &item_b)
+            .unwrap()
+            .is_some(),
         "Work B's trashed item must survive — a delete naming Work A must never reach into B"
     );
 
@@ -1512,7 +1609,9 @@ fn delete_trash_entries_only_purges_from_the_requested_work() {
     .expect("delete in B");
 
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &item_b).unwrap().is_none(),
+        binder_item_commands::get_binder_item(&ctx, &item_b)
+            .unwrap()
+            .is_none(),
         "Work B's trashed item must actually be hard-removed when Work B is named"
     );
     let trash_b_after =
@@ -1536,10 +1635,11 @@ fn delete_trash_entries_only_purges_from_the_requested_work() {
 #[test]
 fn merge_two_scenes_only_indexes_under_the_requested_work() {
     let (ctx, work_a) = ctx_with_work_a();
-    let binder_a = work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
-        .unwrap()
-        .pop()
-        .unwrap();
+    let binder_a =
+        work_commands::get_work_relationship(&ctx, &work_a, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .unwrap();
     let (target_a, source_a) = seed_scene_pair(&ctx, binder_a, 5001, "Alpha one.", "Alpha two.");
 
     let b = seed_second_work(&ctx, "Work B");
@@ -1557,7 +1657,10 @@ fn merge_two_scenes_only_indexes_under_the_requested_work() {
     .expect("merge in A");
 
     assert!(
-        !binder_item_commands::get_binder_item(&ctx, &source_a).unwrap().unwrap().activated,
+        !binder_item_commands::get_binder_item(&ctx, &source_a)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work A's absorbed scene must be trashed when Work A is named"
     );
     let trash_a =
@@ -1576,7 +1679,10 @@ fn merge_two_scenes_only_indexes_under_the_requested_work() {
         "Work B's trash index must stay empty after a merge naming Work A"
     );
     assert!(
-        binder_item_commands::get_binder_item(&ctx, &source_b).unwrap().unwrap().activated,
+        binder_item_commands::get_binder_item(&ctx, &source_b)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work B's scene must be untouched by a merge naming Work A"
     );
 
@@ -1592,7 +1698,10 @@ fn merge_two_scenes_only_indexes_under_the_requested_work() {
     .expect("merge in B");
 
     assert!(
-        !binder_item_commands::get_binder_item(&ctx, &source_b).unwrap().unwrap().activated,
+        !binder_item_commands::get_binder_item(&ctx, &source_b)
+            .unwrap()
+            .unwrap()
+            .activated,
         "Work B's absorbed scene must be trashed when Work B is named"
     );
     let trash_b_after =
@@ -1705,10 +1814,7 @@ fn new_work_leaves_every_other_open_work_intact() {
         "sanity: Work A's own WorkInfo must exist before the second new_work"
     );
 
-    let dir = std::env::temp_dir().join(format!(
-        "skrib-multiwork-coexist-{}",
-        std::process::id()
-    ));
+    let dir = std::env::temp_dir().join(format!("skrib-multiwork-coexist-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     work_management_commands::new_work(
         &ctx,
@@ -1775,8 +1881,13 @@ fn three_works_loaded_in_sequence_all_coexist() {
         "{}/../../resources/test/skribisto_test_project.skrib",
         env!("CARGO_MANIFEST_DIR")
     );
-    work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture.clone() })
-        .expect("load_work B");
+    work_management_commands::load_work(
+        &ctx,
+        &LoadWorkDto {
+            file_name: fixture.clone(),
+        },
+    )
+    .expect("load_work B");
     work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture })
         .expect("load_work C");
 
@@ -1793,5 +1904,9 @@ fn three_works_loaded_in_sequence_all_coexist() {
     );
     let distinct_ids: std::collections::HashSet<EntityId> =
         works_after.iter().map(|w| w.id).collect();
-    assert_eq!(distinct_ids.len(), 3, "all three Works must have distinct ids");
+    assert_eq!(
+        distinct_ids.len(),
+        3,
+        "all three Works must have distinct ids"
+    );
 }

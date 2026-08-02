@@ -32,7 +32,19 @@ use std::collections::BTreeMap;
 /// cross-links) instead of by a position that every load renumbers. Also
 /// `#[serde(default)]`; `migration::step_v2_to_v3` mints the empties, which is
 /// the first real step the migration chain has ever had to run.
-pub const FORMAT_VERSION: u32 = 4;
+///
+/// v5 added the per-project **note templates** (`templates.ron` + the
+/// `templates/*.djot` bodies). The data itself is purely additive — a missing
+/// `templates.ron` reads back as an empty list — so by the rule the fields above
+/// follow it would need no bump at all. It gets one anyway, and the reason is the
+/// *other* direction: [`crate::zip_io::write_zip`] rebuilds the archive from a fresh
+/// staging dir on every save, so an older build — whose `WorkBundle` has no
+/// `note_templates` field — would silently drop every template the first time it saved
+/// a project that had them. Permanently, with nothing to notice it by. The bump makes
+/// [`migration::migrate_bundle`] refuse the file up front ("written by a newer
+/// Skribisto") instead, turning silent data loss into a loud, recoverable error.
+/// That is the whole value of the bump; `step_v4_to_v5` itself has nothing to do.
+pub const FORMAT_VERSION: u32 = 5;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -81,7 +93,6 @@ where
 
     d.deserialize_any(TagsOrString)
 }
-
 
 /// The shape recorded in `project.skrib` (informational; the real shape is the
 /// physical layout). Mirrors `common::entities::WorkShape`.
@@ -270,6 +281,24 @@ pub struct TextReplacementRuleFile {
     pub enabled: bool,
 }
 
+/// One row of `templates.ron`.
+///
+/// The body is **not** inline: it lives in a sibling `templates/<file_id>-<slug>.djot`
+/// blob at `path`, exactly as a scene's prose does. Two reasons, both about the
+/// exploded-folder shape: a multi-paragraph Djot document inside a RON string is
+/// unreadable in a diff, and a writer who wants to hand-author a template should be
+/// able to drop a `.djot` file in beside the others rather than escape it into RON.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NoteTemplateFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub name: String,
+    pub starred: bool,
+    /// Path to this template's Djot body, relative to the bundle root.
+    pub path: String,
+}
+
 /// `trash.ron`
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TrashInfoFile {
@@ -433,6 +462,10 @@ pub struct WorkBundle {
     pub tags: Vec<BinderTagFile>,
     pub dict_words: Vec<DictWordFile>,
     pub text_replacement_rules: Vec<TextReplacementRuleFile>,
+    pub note_templates: Vec<NoteTemplateFile>,
+    /// Template body text keyed by template `file_id` (the `templates/*.djot` blobs) —
+    /// the same split `BundledItem::prose` uses for scene text.
+    pub note_template_bodies: BTreeMap<u64, String>,
     pub trash_infos: Vec<TrashInfoFile>,
     pub paces: Vec<PaceFile>,
     pub progress_snapshots: Vec<ProgressSnapshotFile>,

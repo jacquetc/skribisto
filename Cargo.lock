@@ -5582,6 +5582,7 @@ dependencies = [
  "skribisto-import-management",
  "skribisto-mention-management",
  "skribisto-model",
+ "skribisto-note-template-management",
  "skribisto-progress-management",
  "skribisto-search-management",
  "skribisto-tag-management",
@@ -5653,6 +5654,19 @@ dependencies = [
  "serde",
  "skribisto-common",
  "text-document",
+]
+
+[[package]]
+name = "skribisto-note-template-management"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-macros",
+ "uuid",
 ]
 
 [[package]]

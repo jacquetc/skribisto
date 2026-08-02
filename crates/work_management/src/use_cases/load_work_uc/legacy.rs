@@ -471,8 +471,8 @@ fn read_v2(conn: &Connection, path: &str) -> Result<LegacyProject> {
             let is_separator = row.t_type == "SECTION"
                 && section_types.get(&row.old_id).map(String::as_str) == Some("separator");
             if is_separator {
-                let tier = scene_break::tier_of_plain_line(&row.title)
-                    .unwrap_or(SceneBreakTier::Minor);
+                let tier =
+                    scene_break::tier_of_plain_line(&row.title).unwrap_or(SceneBreakTier::Minor);
                 // If nothing precedes it, hold the mark for the next scene rather
                 // than dropping it — there is no warnings channel here, so a
                 // silent drop would be indistinguishable from a clean import.
@@ -551,26 +551,50 @@ mod tests {
     fn a_separator_walks_past_a_scene_that_has_no_prose_row() {
         let mut items = vec![
             LegacyItem {
-                old_id: 1, title: "A".into(), sub_title: String::new(),
-                role: BinderItemRole::Item, sub_role: BinderItemSubRole::Scene,
-                label: String::new(), activated: true, indent: 0,
-                word_count_goal: 0, char_count_goal: 0,
-                contents: vec![LegacyContent { role: ContentRole::SceneText, data: "One.".into() }],
+                old_id: 1,
+                title: "A".into(),
+                sub_title: String::new(),
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+                label: String::new(),
+                activated: true,
+                indent: 0,
+                word_count_goal: 0,
+                char_count_goal: 0,
+                contents: vec![LegacyContent {
+                    role: ContentRole::SceneText,
+                    data: "One.".into(),
+                }],
                 tag_old_ids: Vec::new(),
             },
             // A scene carrying only a synopsis: no SceneText row to append to.
             LegacyItem {
-                old_id: 2, title: "B".into(), sub_title: String::new(),
-                role: BinderItemRole::Item, sub_role: BinderItemSubRole::Scene,
-                label: String::new(), activated: true, indent: 0,
-                word_count_goal: 0, char_count_goal: 0,
-                contents: vec![LegacyContent { role: ContentRole::SynopsisText, data: "S".into() }],
+                old_id: 2,
+                title: "B".into(),
+                sub_title: String::new(),
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+                label: String::new(),
+                activated: true,
+                indent: 0,
+                word_count_goal: 0,
+                char_count_goal: 0,
+                contents: vec![LegacyContent {
+                    role: ContentRole::SynopsisText,
+                    data: "S".into(),
+                }],
                 tag_old_ids: Vec::new(),
             },
         ];
-        assert!(append_marker_to_previous_scene(&mut items, SceneBreakTier::Minor));
+        assert!(append_marker_to_previous_scene(
+            &mut items,
+            SceneBreakTier::Minor
+        ));
         let a = &items[0].contents[0].data;
-        assert!(a.ends_with("\\* \\* \\*"), "must fall back to the scene before: {a:?}");
+        assert!(
+            a.ends_with("\\* \\* \\*"),
+            "must fall back to the scene before: {a:?}"
+        );
     }
 
     #[test]
@@ -579,14 +603,26 @@ mod tests {
         // scene — work_management has no warnings channel, so a drop would be
         // completely silent.
         let mut items: Vec<LegacyItem> = Vec::new();
-        assert!(!append_marker_to_previous_scene(&mut items, SceneBreakTier::Minor));
+        assert!(!append_marker_to_previous_scene(
+            &mut items,
+            SceneBreakTier::Minor
+        ));
 
         let mut next = LegacyItem {
-            old_id: 3, title: "C".into(), sub_title: String::new(),
-            role: BinderItemRole::Item, sub_role: BinderItemSubRole::Scene,
-            label: String::new(), activated: true, indent: 0,
-            word_count_goal: 0, char_count_goal: 0,
-            contents: vec![LegacyContent { role: ContentRole::SceneText, data: "Later.".into() }],
+            old_id: 3,
+            title: "C".into(),
+            sub_title: String::new(),
+            role: BinderItemRole::Item,
+            sub_role: BinderItemSubRole::Scene,
+            label: String::new(),
+            activated: true,
+            indent: 0,
+            word_count_goal: 0,
+            char_count_goal: 0,
+            contents: vec![LegacyContent {
+                role: ContentRole::SceneText,
+                data: "Later.".into(),
+            }],
             tag_old_ids: Vec::new(),
         };
         assert!(prepend_marker_to_item(&mut next, SceneBreakTier::Minor));

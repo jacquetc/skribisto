@@ -182,6 +182,7 @@ pub struct Work {
     pub tags: Vec<EntityId>,
     pub dict_words: Vec<EntityId>,
     pub text_replacement_rules: Vec<EntityId>,
+    pub note_templates: Vec<EntityId>,
     pub smart_punctuation: EntityId,
     pub trash_infos: Vec<EntityId>,
     pub paces: Vec<EntityId>,
@@ -460,6 +461,24 @@ pub struct TextReplacementRule {
 }
 
 impl HasId for TextReplacementRule {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct NoteTemplate {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub name: String,
+    pub body: String,
+    pub starred: bool,
+}
+
+impl HasId for NoteTemplate {
     fn id(&self) -> EntityId {
         self.id
     }

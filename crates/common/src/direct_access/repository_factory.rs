@@ -24,6 +24,10 @@ pub mod write {
             milestone::{
                 milestone_repository::MilestoneRepository, milestone_table::MilestoneHashMapTable,
             },
+            note_template::{
+                note_template_repository::NoteTemplateRepository,
+                note_template_table::NoteTemplateHashMapTable,
+            },
             pace::{pace_repository::PaceRepository, pace_table::PaceHashMapTable},
             progress_snapshot::{
                 progress_snapshot_repository::ProgressSnapshotRepository,
@@ -213,6 +217,16 @@ pub mod write {
             transaction,
         ))
     }
+
+    pub fn create_note_template_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<NoteTemplateRepository<'_>> {
+        let note_template_table = NoteTemplateHashMapTable::new(transaction.get_store());
+        Ok(NoteTemplateRepository::new(
+            Box::new(note_template_table),
+            transaction,
+        ))
+    }
 }
 
 pub mod read {
@@ -240,6 +254,10 @@ pub mod read {
             milestone::{
                 milestone_repository::MilestoneRepositoryRO,
                 milestone_table::MilestoneHashMapTableRO,
+            },
+            note_template::{
+                note_template_repository::NoteTemplateRepositoryRO,
+                note_template_table::NoteTemplateHashMapTableRO,
             },
             pace::{pace_repository::PaceRepositoryRO, pace_table::PaceHashMapTableRO},
             progress_snapshot::{
@@ -409,5 +427,12 @@ pub mod read {
         Ok(TextReplacementRuleRepositoryRO::new(Box::new(
             text_replacement_rule_table,
         )))
+    }
+
+    pub fn create_note_template_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<NoteTemplateRepositoryRO<'_>> {
+        let note_template_table = NoteTemplateHashMapTableRO::new(transaction.get_store());
+        Ok(NoteTemplateRepositoryRO::new(Box::new(note_template_table)))
     }
 }

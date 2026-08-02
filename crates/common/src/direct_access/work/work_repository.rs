@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 pub enum WorkRelationshipField {
     Binders,
     DictWords,
+    NoteTemplates,
     Paces,
     SmartPunctuation,
     Tags,
@@ -304,6 +305,7 @@ impl<'a> WorkRepository<'a> {
         let tags = entity.tags.clone();
         let dict_words = entity.dict_words.clone();
         let text_replacement_rules = entity.text_replacement_rules.clone();
+        let note_templates = entity.note_templates.clone();
         let smart_punctuation = entity.smart_punctuation.clone();
         let trash_infos = entity.trash_infos.clone();
         let paces = entity.paces.clone();
@@ -318,6 +320,8 @@ impl<'a> WorkRepository<'a> {
             .remove_multi(event_buffer, &dict_words)?;
         repository_factory::write::create_text_replacement_rule_repository(self.transaction)?
             .remove_multi(event_buffer, &text_replacement_rules)?;
+        repository_factory::write::create_note_template_repository(self.transaction)?
+            .remove_multi(event_buffer, &note_templates)?;
         repository_factory::write::create_smart_punctuation_repository(self.transaction)?
             .remove(event_buffer, &smart_punctuation)?;
         repository_factory::write::create_trash_info_repository(self.transaction)?
@@ -407,6 +411,14 @@ impl<'a> WorkRepository<'a> {
         // remove duplicates
         text_replacement_rules_ids.sort();
         text_replacement_rules_ids.dedup();
+        let mut note_templates_ids: Vec<EntityId> = entities
+            .iter()
+            .flat_map(|entity| entity.as_ref().map(|entity| entity.note_templates.clone()))
+            .flatten()
+            .collect();
+        // remove duplicates
+        note_templates_ids.sort();
+        note_templates_ids.dedup();
         let smart_punctuation_ids: Vec<EntityId> = entities
             .iter()
             .filter_map(|entity| entity.as_ref().map(|entity| entity.smart_punctuation))
@@ -438,6 +450,8 @@ impl<'a> WorkRepository<'a> {
             .remove_multi(event_buffer, &dict_words_ids)?;
         repository_factory::write::create_text_replacement_rule_repository(self.transaction)?
             .remove_multi(event_buffer, &text_replacement_rules_ids)?;
+        repository_factory::write::create_note_template_repository(self.transaction)?
+            .remove_multi(event_buffer, &note_templates_ids)?;
         repository_factory::write::create_smart_punctuation_repository(self.transaction)?
             .remove_multi(event_buffer, &smart_punctuation_ids)?;
         repository_factory::write::create_trash_info_repository(self.transaction)?
@@ -556,6 +570,24 @@ impl<'a> WorkRepository<'a> {
                 WorkRelationshipField::DictWords => {
                     let child_repo =
                         repository_factory::write::create_dict_word_repository(self.transaction)?;
+                    let found = child_repo.get_multi(&all_right_ids)?;
+                    let missing: Vec<_> = all_right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship_multi",
+                            ids: missing,
+                        });
+                    }
+                }
+                WorkRelationshipField::NoteTemplates => {
+                    let child_repo = repository_factory::write::create_note_template_repository(
+                        self.transaction,
+                    )?;
                     let found = child_repo.get_multi(&all_right_ids)?;
                     let missing: Vec<_> = all_right_ids
                         .iter()
@@ -711,6 +743,24 @@ impl<'a> WorkRepository<'a> {
                 WorkRelationshipField::DictWords => {
                     let child_repo =
                         repository_factory::write::create_dict_word_repository(self.transaction)?;
+                    let found = child_repo.get_multi(right_ids)?;
+                    let missing: Vec<_> = right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship",
+                            ids: missing,
+                        });
+                    }
+                }
+                WorkRelationshipField::NoteTemplates => {
+                    let child_repo = repository_factory::write::create_note_template_repository(
+                        self.transaction,
+                    )?;
                     let found = child_repo.get_multi(right_ids)?;
                     let missing: Vec<_> = right_ids
                         .iter()
@@ -1052,6 +1102,31 @@ impl<'a> WorkRepository<'a> {
         {
             let mut child_ids: Vec<EntityId> = Vec::new();
             for id in to_create.iter().chain(to_update.iter()) {
+                if let Some(list) = snap.jn_note_template_from_work_note_templates.get(id) {
+                    child_ids.extend(list.iter().copied());
+                }
+            }
+            {
+                let live_jn = store
+                    .jn_note_template_from_work_note_templates
+                    .read()
+                    .unwrap();
+                for id in &ids {
+                    if let Some(list) = live_jn.get(id) {
+                        child_ids.extend(list.iter().copied());
+                    }
+                }
+            }
+            child_ids.sort();
+            child_ids.dedup();
+            if !child_ids.is_empty() {
+                repository_factory::write::create_note_template_repository(self.transaction)?
+                    .restore_subtree(event_buffer, snap, &child_ids, visited)?;
+            }
+        }
+        {
+            let mut child_ids: Vec<EntityId> = Vec::new();
+            for id in to_create.iter().chain(to_update.iter()) {
                 if let Some(list) = snap
                     .jn_smart_punctuation_from_work_smart_punctuation
                     .get(id)
@@ -1157,6 +1232,25 @@ impl<'a> WorkRepository<'a> {
             let mut live_jn = store.jn_dict_word_from_work_dict_words.write().unwrap();
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_dict_word_from_work_dict_words.get(id) {
+                    Some(v) => {
+                        live_jn.insert(*id, v.clone());
+                    }
+                    None => {
+                        live_jn.remove(id);
+                    }
+                }
+            }
+            for id in &to_delete {
+                live_jn.remove(id);
+            }
+        }
+        {
+            let mut live_jn = store
+                .jn_note_template_from_work_note_templates
+                .write()
+                .unwrap();
+            for id in to_create.iter().chain(to_update.iter()) {
+                match snap.jn_note_template_from_work_note_templates.get(id) {
                     Some(v) => {
                         live_jn.insert(*id, v.clone());
                     }

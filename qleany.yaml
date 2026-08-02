@@ -255,6 +255,15 @@ entities:
     entity: TextReplacementRule
     relationship: one_to_many
     strong: true
+  # Ordered, unlike tags/dict_words/replacements: the writer arranges this list by hand
+  # and the insert menu shows it in that order (starred rows floated to the top).
+  - name: note_templates
+    type: entity
+    entity: NoteTemplate
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: name
   - name: smart_punctuation
     type: entity
     entity: SmartPunctuation
@@ -553,6 +562,33 @@ entities:
   - name: enabled
     type: boolean
   undoable: true
+# A reusable body of prose a writer can drop into a Note — a blank character sheet, a
+# location profile, a beat sheet. Per-project (it travels in the .skrib, so a co-author
+# opening the file gets the same scaffolds), which is why it hangs off Work rather than
+# being a machine preference like EditorTypography.
+#
+# `body` is Djot, exactly as `Content.data` is — a template is inserted verbatim at the
+# caret via `TextCursor::insert_djot`, so anything Djot can express (headings, lists,
+# tables) survives the trip. It is deliberately inert text: no placeholder substitution,
+# no field schema. Every comparable tool that tried a fixed character-sheet schema
+# (Plottr, Manuskript) ended up backing off into free text or user-authored field lists,
+# because no two novelists agree on the field set.
+#
+# `starred` floats a template to the top of the insert menu; ordering below that is the
+# relationship's own (`ordered_one_to_many`), so a writer can arrange the list by hand.
+#
+# `undoable: true`, and not by preference: `qleany check` refuses a non-undoable strong
+# child under an undoable parent — the same constraint SmartPunctuation documents above.
+- name: NoteTemplate
+  inherits_from: EntityBase
+  fields:
+  - name: name
+    type: string
+  - name: body
+    type: string
+  - name: starred
+    type: boolean
+  undoable: true
 features:
 - name: work_management
   use_cases:
@@ -571,6 +607,7 @@ features:
     - Content
     - DictWord
     - TextReplacementRule
+    - NoteTemplate
     undoable: false
     dto_in:
       name: LoadWorkDto
@@ -586,6 +623,7 @@ features:
     - Content
     - DictWord
     - TextReplacementRule
+    - NoteTemplate
     - TrashInfo
     - WorkInfo
     undoable: false
@@ -616,6 +654,7 @@ features:
     - Content
     - DictWord
     - TextReplacementRule
+    - NoteTemplate
     - TrashInfo
     - WorkInfo
     undoable: false
@@ -645,6 +684,7 @@ features:
     - Content
     - DictWord
     - TextReplacementRule
+    - NoteTemplate
     - TrashInfo
     - WorkInfo
     undoable: false
@@ -736,6 +776,7 @@ features:
     - Content
     - DictWord
     - TextReplacementRule
+    - NoteTemplate
     - TrashInfo
     - WorkInfo
     - Search
@@ -1096,6 +1137,51 @@ features:
         type: uinteger
       - name: trash_info_ids
         type: uinteger
+        is_list: true
+- name: note_template_management
+  use_cases:
+  # One use case, for the same reason `tag_management` has one: the generated
+  # NoteTemplate CRUD already covers create/rename/edit/star/delete, so the only real
+  # gap is batching. Importing five `.md` files, or applying a six-template preset, must
+  # be a single Ctrl+Z rather than five or six — which the per-row create command cannot
+  # give.
+  #
+  # Unlike `import_tags`, a name collision here does NOT skip the row: a skipped tag
+  # loses a label and a colour, but a skipped template silently discards an entire
+  # document the writer explicitly picked a file for, and makes "re-import my edited
+  # character-sheet.md" a permanent no-op. Colliding names are disambiguated with a
+  # numeric suffix instead, and the suffixed names are reported so the UI can say so.
+  - name: import_note_templates
+    entities:
+    - Work
+    - NoteTemplate
+    undoable: true
+    dto_in:
+      name: ImportNoteTemplatesDto
+      fields:
+      # Which open Work's templates to import into -- see work_management's
+      # SaveWorkDto.work_id.
+      - name: work_id
+        type: uinteger
+      - name: names
+        type: string
+        is_list: true
+      - name: bodies
+        type: string
+        is_list: true
+      - name: starreds
+        type: boolean
+        is_list: true
+    dto_out:
+      name: ImportNoteTemplatesResultDto
+      fields:
+      - name: created_ids
+        type: uinteger
+        is_list: true
+      # Names that collided and were given a numeric suffix, in the form the row was
+      # actually created under, so the UI can report exactly what it did.
+      - name: renamed_to
+        type: string
         is_list: true
 - name: tag_management
   use_cases:

@@ -42,6 +42,7 @@ pub struct HashMapStore {
     pub contents: RwLock<HashMap<EntityId, Content>>,
     pub dict_words: RwLock<HashMap<EntityId, DictWord>>,
     pub text_replacement_rules: RwLock<HashMap<EntityId, TextReplacementRule>>,
+    pub note_templates: RwLock<HashMap<EntityId, NoteTemplate>>,
 
     // ── Junction tables (one per forward relationship, shared for backward cleanup) ─
     pub jn_system_from_root_system: RwLock<HashMap<EntityId, Vec<EntityId>>>,
@@ -55,6 +56,7 @@ pub struct HashMapStore {
     pub jn_search_result_from_search_results: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_from_work_binders: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_dict_word_from_work_dict_words: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_note_template_from_work_note_templates: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_pace_from_work_paces: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_smart_punctuation_from_work_smart_punctuation: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_tag_from_work_tags: RwLock<HashMap<EntityId, Vec<EntityId>>>,
@@ -111,6 +113,7 @@ impl HashMapStore {
             contents: read_or_recover(&self.contents).clone(),
             dict_words: read_or_recover(&self.dict_words).clone(),
             text_replacement_rules: read_or_recover(&self.text_replacement_rules).clone(),
+            note_templates: read_or_recover(&self.note_templates).clone(),
             jn_system_from_root_system: read_or_recover(&self.jn_system_from_root_system).clone(),
             jn_work_from_root_works: read_or_recover(&self.jn_work_from_root_works).clone(),
             jn_recent_work_from_system_recent_works: read_or_recover(
@@ -135,6 +138,10 @@ impl HashMapStore {
             jn_binder_from_work_binders: read_or_recover(&self.jn_binder_from_work_binders).clone(),
             jn_dict_word_from_work_dict_words: read_or_recover(
                 &self.jn_dict_word_from_work_dict_words,
+            )
+            .clone(),
+            jn_note_template_from_work_note_templates: read_or_recover(
+                &self.jn_note_template_from_work_note_templates,
             )
             .clone(),
             jn_pace_from_work_paces: read_or_recover(&self.jn_pace_from_work_paces).clone(),
@@ -242,6 +249,7 @@ impl HashMapStore {
         let g_contents = read_or_recover(&self.contents);
         let g_dict_words = read_or_recover(&self.dict_words);
         let g_text_replacement_rules = read_or_recover(&self.text_replacement_rules);
+        let g_note_templates = read_or_recover(&self.note_templates);
         let g_jn_system_from_root_system = read_or_recover(&self.jn_system_from_root_system);
         let g_jn_work_from_root_works = read_or_recover(&self.jn_work_from_root_works);
         let g_jn_recent_work_from_system_recent_works =
@@ -258,6 +266,8 @@ impl HashMapStore {
         let g_jn_binder_from_work_binders = read_or_recover(&self.jn_binder_from_work_binders);
         let g_jn_dict_word_from_work_dict_words =
             read_or_recover(&self.jn_dict_word_from_work_dict_words);
+        let g_jn_note_template_from_work_note_templates =
+            read_or_recover(&self.jn_note_template_from_work_note_templates);
         let g_jn_pace_from_work_paces = read_or_recover(&self.jn_pace_from_work_paces);
         let g_jn_smart_punctuation_from_work_smart_punctuation =
             read_or_recover(&self.jn_smart_punctuation_from_work_smart_punctuation);
@@ -307,6 +317,7 @@ impl HashMapStore {
             contents: RwLock::new(g_contents.clone()),
             dict_words: RwLock::new(g_dict_words.clone()),
             text_replacement_rules: RwLock::new(g_text_replacement_rules.clone()),
+            note_templates: RwLock::new(g_note_templates.clone()),
             jn_system_from_root_system: RwLock::new(g_jn_system_from_root_system.clone()),
             jn_work_from_root_works: RwLock::new(g_jn_work_from_root_works.clone()),
             jn_recent_work_from_system_recent_works: RwLock::new(
@@ -326,6 +337,9 @@ impl HashMapStore {
             jn_binder_from_work_binders: RwLock::new(g_jn_binder_from_work_binders.clone()),
             jn_dict_word_from_work_dict_words: RwLock::new(
                 g_jn_dict_word_from_work_dict_words.clone(),
+            ),
+            jn_note_template_from_work_note_templates: RwLock::new(
+                g_jn_note_template_from_work_note_templates.clone(),
             ),
             jn_pace_from_work_paces: RwLock::new(g_jn_pace_from_work_paces.clone()),
             jn_smart_punctuation_from_work_smart_punctuation: RwLock::new(
@@ -393,6 +407,7 @@ impl HashMapStore {
         *write_or_recover(&self.contents) = snap.contents.clone();
         *write_or_recover(&self.dict_words) = snap.dict_words.clone();
         *write_or_recover(&self.text_replacement_rules) = snap.text_replacement_rules.clone();
+        *write_or_recover(&self.note_templates) = snap.note_templates.clone();
         *write_or_recover(&self.jn_system_from_root_system) =
             snap.jn_system_from_root_system.clone();
         *write_or_recover(&self.jn_work_from_root_works) = snap.jn_work_from_root_works.clone();
@@ -413,6 +428,8 @@ impl HashMapStore {
             snap.jn_binder_from_work_binders.clone();
         *write_or_recover(&self.jn_dict_word_from_work_dict_words) =
             snap.jn_dict_word_from_work_dict_words.clone();
+        *write_or_recover(&self.jn_note_template_from_work_note_templates) =
+            snap.jn_note_template_from_work_note_templates.clone();
         *write_or_recover(&self.jn_pace_from_work_paces) = snap.jn_pace_from_work_paces.clone();
         *write_or_recover(&self.jn_smart_punctuation_from_work_smart_punctuation) = snap
             .jn_smart_punctuation_from_work_smart_punctuation
@@ -505,6 +522,7 @@ impl HashMapStore {
         *write_or_recover(&self.contents) = snap.contents.clone();
         *write_or_recover(&self.dict_words) = snap.dict_words.clone();
         *write_or_recover(&self.text_replacement_rules) = snap.text_replacement_rules.clone();
+        *write_or_recover(&self.note_templates) = snap.note_templates.clone();
         *write_or_recover(&self.jn_system_from_root_system) =
             snap.jn_system_from_root_system.clone();
         *write_or_recover(&self.jn_work_from_root_works) = snap.jn_work_from_root_works.clone();
@@ -525,6 +543,8 @@ impl HashMapStore {
             snap.jn_binder_from_work_binders.clone();
         *write_or_recover(&self.jn_dict_word_from_work_dict_words) =
             snap.jn_dict_word_from_work_dict_words.clone();
+        *write_or_recover(&self.jn_note_template_from_work_note_templates) =
+            snap.jn_note_template_from_work_note_templates.clone();
         *write_or_recover(&self.jn_pace_from_work_paces) = snap.jn_pace_from_work_paces.clone();
         *write_or_recover(&self.jn_smart_punctuation_from_work_smart_punctuation) = snap
             .jn_smart_punctuation_from_work_smart_punctuation
@@ -600,6 +620,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) contents: HashMap<EntityId, Content>,
     pub(crate) dict_words: HashMap<EntityId, DictWord>,
     pub(crate) text_replacement_rules: HashMap<EntityId, TextReplacementRule>,
+    pub(crate) note_templates: HashMap<EntityId, NoteTemplate>,
     pub(crate) jn_system_from_root_system: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_work_from_root_works: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_recent_work_from_system_recent_works: HashMap<EntityId, Vec<EntityId>>,
@@ -611,6 +632,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) jn_search_result_from_search_results: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_from_work_binders: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_dict_word_from_work_dict_words: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_note_template_from_work_note_templates: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_pace_from_work_paces: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_smart_punctuation_from_work_smart_punctuation: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_tag_from_work_tags: HashMap<EntityId, Vec<EntityId>>,

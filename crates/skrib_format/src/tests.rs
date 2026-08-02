@@ -53,14 +53,17 @@ fn prose_text(role: &ContentRole) -> String {
 
 /// Build a fixture covering every combination, with each item carrying exactly
 /// its allowed content roles. `content_id` is bumped to keep ids unique.
-fn sample_inputs() -> (
-    Work,
-    Vec<BinderTag>,
-    Vec<DictWord>,
-    common::entities::SmartPunctuation,
-    Vec<TrashInfo>,
-    Vec<BinderWithItems>,
-) {
+struct SampleInputs {
+    work: Work,
+    tags: Vec<BinderTag>,
+    dict_words: Vec<DictWord>,
+    note_templates: Vec<common::entities::NoteTemplate>,
+    smart_punctuation: common::entities::SmartPunctuation,
+    trash: Vec<TrashInfo>,
+    binders: Vec<BinderWithItems>,
+}
+
+fn sample_inputs() -> SampleInputs {
     let now = ts();
     let work = Work {
         id: 1,
@@ -75,6 +78,7 @@ fn sample_inputs() -> (
         tags: vec![10, 11],
         dict_words: vec![20, 21],
         text_replacement_rules: vec![],
+        note_templates: vec![40, 41],
         smart_punctuation: 30,
         binders: vec![100],
         trash_infos: vec![],
@@ -84,6 +88,29 @@ fn sample_inputs() -> (
     // tags below: the round-trip tests compare whole bundles, and a row left at
     // its derived defaults would compare equal even if the field were dropped
     // end to end. That is exactly how `chapter_mode` was silently lost.
+    // Two templates, both off-default (starred differs between them, bodies are
+    // non-empty multi-block Djot) for the reason the comment above gives: a row left
+    // at its defaults would compare equal even if the field were dropped end to end.
+    // These ride the whole-bundle round-trip assertions below, which is what makes
+    // "someone forgot the `gather()` fetch" a failing test rather than silent data loss.
+    let note_templates = vec![
+        common::entities::NoteTemplate {
+            id: 40,
+            created_at: now,
+            updated_at: now,
+            name: "Character sheet".into(),
+            body: "# Character sheet\n\n## Identity\n\n- Full name:\n- Age:\n".into(),
+            starred: true,
+        },
+        common::entities::NoteTemplate {
+            id: 41,
+            created_at: now,
+            updated_at: now,
+            name: "Location".into(),
+            body: "# Location\n\nSensory detail:\n".into(),
+            starred: false,
+        },
+    ];
     let smart_punctuation = common::entities::SmartPunctuation {
         id: 30,
         created_at: now,
@@ -221,21 +248,30 @@ fn sample_inputs() -> (
         },
     ];
 
-    (work, tags, dict_words, smart_punctuation, trash, binders)
+    SampleInputs {
+        work,
+        tags,
+        dict_words,
+        note_templates,
+        smart_punctuation,
+        trash,
+        binders,
+    }
 }
 
 fn build_bundle(shape: ShapeTag) -> WorkBundle {
-    let (work, tags, dict_words, smart_punctuation, trash, binders) = sample_inputs();
+    let s = sample_inputs();
     from_entities(
-        &work,
-        &tags,
-        &dict_words,
+        &s.work,
+        &s.tags,
+        &s.dict_words,
         &[],
-        Some(&smart_punctuation),
-        &trash,
+        &s.note_templates,
+        Some(&s.smart_punctuation),
+        &s.trash,
         &[],
         &[],
-        &binders,
+        &s.binders,
         shape,
     )
 }
@@ -364,6 +400,7 @@ fn disallowed_content_is_dropped() {
     }];
     let bundle = from_entities(
         &work,
+        &[],
         &[],
         &[],
         &[],
@@ -617,16 +654,12 @@ fn uids_survive_a_write_read_round_trip_unchanged() {
     let before: Vec<uuid::Uuid> = bundle
         .binders
         .iter()
-        .flat_map(|b| {
-            std::iter::once(b.binder.uid).chain(b.items.iter().map(|i| i.item.uid))
-        })
+        .flat_map(|b| std::iter::once(b.binder.uid).chain(b.items.iter().map(|i| i.item.uid)))
         .collect();
     let after: Vec<uuid::Uuid> = read
         .binders
         .iter()
-        .flat_map(|b| {
-            std::iter::once(b.binder.uid).chain(b.items.iter().map(|i| i.item.uid))
-        })
+        .flat_map(|b| std::iter::once(b.binder.uid).chain(b.items.iter().map(|i| i.item.uid)))
         .collect();
     assert!(!before.is_empty(), "fixture must carry uids");
     assert_eq!(before, after, "every uid must round-trip byte-identical");
@@ -667,20 +700,12 @@ fn migration_is_idempotent_and_never_re_mints_an_existing_uid() {
     let mut bundle = build_bundle(ShapeTag::Folder);
     bundle.manifest.format_version = 2;
     // Only the FIRST item loses its uid: the rest must survive untouched.
-    let kept: Vec<uuid::Uuid> = bundle.binders[0]
-        .items
-        .iter()
-        .map(|i| i.item.uid)
-        .collect();
+    let kept: Vec<uuid::Uuid> = bundle.binders[0].items.iter().map(|i| i.item.uid).collect();
     bundle.binders[0].items[0].item.uid = uuid::Uuid::nil();
 
     migration::migrate_bundle(&mut bundle).unwrap();
 
-    let after: Vec<uuid::Uuid> = bundle.binders[0]
-        .items
-        .iter()
-        .map(|i| i.item.uid)
-        .collect();
+    let after: Vec<uuid::Uuid> = bundle.binders[0].items.iter().map(|i| i.item.uid).collect();
     assert!(!after[0].is_nil(), "the nil one was filled");
     assert_ne!(after[0], kept[0], "…with a fresh value");
     assert_eq!(
@@ -1084,4 +1109,178 @@ fn a_malformed_language_names_what_was_expected() {
         !msg.contains("untagged"),
         "and should not leak an internal enum, got: {msg}"
     );
+}
+
+// ---------------------------------------------------------------------------
+// Note templates
+// ---------------------------------------------------------------------------
+
+/// The bodies live in `templates/`, not inline in `templates.ron` — the split that makes
+/// a template edit diff as a prose change in an exploded project.
+#[test]
+fn template_bodies_are_written_as_sibling_djot_blobs() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    write_bundle(
+        root.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    let index = std::fs::read_to_string(root.join("templates.ron")).unwrap();
+    assert!(
+        index.contains("Character sheet"),
+        "the index carries the name"
+    );
+    assert!(
+        !index.contains("## Identity"),
+        "but never the body — that belongs in the blob, got:\n{index}"
+    );
+
+    let blob = root.join("templates/40-character-sheet.djot");
+    assert!(blob.is_file(), "expected a blob at {}", blob.display());
+    assert!(
+        std::fs::read_to_string(&blob)
+            .unwrap()
+            .contains("## Identity"),
+        "the body is the blob's content"
+    );
+}
+
+/// A rename changes the slug and therefore the blob's filename. Without the prune in
+/// `write_folder` the old file would survive forever, so this is the regression guard
+/// for that specific omission.
+#[test]
+fn renaming_a_template_prunes_its_old_blob() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    let path = root.to_str().unwrap();
+
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert!(root.join("templates/40-character-sheet.djot").is_file());
+
+    bundle.note_templates[0].name = "Dramatis persona".into();
+    bundle.note_templates[0].path = crate::slug::note_template_relpath(40, "Dramatis persona");
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    assert!(
+        !root.join("templates/40-character-sheet.djot").exists(),
+        "the pre-rename blob must be pruned, not orphaned"
+    );
+    assert!(root.join("templates/40-dramatis-persona.djot").is_file());
+}
+
+/// Deleting the last template leaves no orphan blobs behind.
+#[test]
+fn deleting_templates_prunes_every_blob() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    let path = root.to_str().unwrap();
+
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    bundle.note_templates.clear();
+    bundle.note_template_bodies.clear();
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let leftovers: Vec<_> = std::fs::read_dir(root.join("templates"))
+        .map(|d| {
+            d.flatten()
+                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .collect()
+        })
+        .unwrap_or_default();
+    assert!(
+        leftovers.is_empty(),
+        "expected no orphan blobs, found {leftovers:?}"
+    );
+}
+
+/// A name that is not a legal file name still lands on one safe path segment — the
+/// export/import surfaces take user-typed names, so this must not be able to escape.
+#[test]
+fn a_hostile_template_name_still_yields_one_safe_path_segment() {
+    for hostile in ["../../etc/passwd", "CON", "a/b\\c", "  ..  ", "Fiche/perso"] {
+        let rel = crate::slug::note_template_relpath(7, hostile);
+        assert_eq!(
+            std::path::Path::new(&rel).components().count(),
+            2,
+            "'{hostile}' must stay `templates/<one-segment>`, got '{rel}'"
+        );
+        assert!(rel.starts_with("templates/"), "got '{rel}'");
+        assert!(!rel.contains(".."), "got '{rel}'");
+    }
+}
+
+/// A project with no `templates.ron` at all (every bundle written before v5) loads as
+/// zero templates rather than failing — the additive half of the format change.
+#[test]
+fn a_bundle_without_templates_ron_loads_as_empty() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    std::fs::remove_file(root.join("templates.ron")).unwrap();
+    std::fs::remove_dir_all(root.join("templates")).unwrap();
+
+    let reread = read_bundle(path).expect("a pre-v5 project must still open");
+    assert!(reread.note_templates.is_empty());
+}
+
+/// A listed template whose blob has gone missing is a **hard error**, never a silently
+/// empty body. Degrading quietly would let autosave rewrite `templates.ron` from that
+/// empty state seconds later and destroy the text for good.
+#[test]
+fn a_missing_template_blob_fails_the_load_rather_than_emptying_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("p");
+    let path = root.to_str().unwrap();
+    write_bundle(
+        path,
+        SkribShape::ExplodedFolder,
+        &build_bundle(ShapeTag::Folder),
+    )
+    .unwrap();
+
+    std::fs::remove_file(root.join("templates/40-character-sheet.djot")).unwrap();
+
+    let err = read_bundle(path).expect_err("a missing body blob must not load as empty");
+    let msg = format!("{err:#}");
+    assert!(
+        msg.contains("40-character-sheet.djot"),
+        "the error should name the missing blob, got: {msg}"
+    );
+}
+
+/// The v5 bump exists so an older build refuses the file instead of silently dropping
+/// its templates on the next save. Guard the refusal itself.
+#[test]
+fn a_bundle_from_a_newer_format_is_refused() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = FORMAT_VERSION + 1;
+    let err = crate::migration::migrate_bundle(&mut bundle).expect_err("newer must be refused");
+    assert!(
+        format!("{err:#}").contains("newer Skribisto"),
+        "got: {err:#}"
+    );
+}
+
+/// A v4 bundle migrates forward to v5 with no templates and no complaint.
+#[test]
+fn a_v4_bundle_migrates_to_v5() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 4;
+    bundle.note_templates.clear();
+    bundle.note_template_bodies.clear();
+    crate::migration::migrate_bundle(&mut bundle).expect("v4 must migrate");
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
 }

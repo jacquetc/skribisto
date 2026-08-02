@@ -410,13 +410,34 @@ mod tests {
             word: w.to_string(),
             ..Default::default()
         };
-        let a = create(&ctx.db, &ctx.hub, &mut ctx.undo, None, &word("alpha"), work_id, -1).unwrap();
-        let b = create(&ctx.db, &ctx.hub, &mut ctx.undo, None, &word("beta"), work_id, -1).unwrap();
+        let a = create(
+            &ctx.db,
+            &ctx.hub,
+            &mut ctx.undo,
+            None,
+            &word("alpha"),
+            work_id,
+            -1,
+        )
+        .unwrap();
+        let b = create(
+            &ctx.db,
+            &ctx.hub,
+            &mut ctx.undo,
+            None,
+            &word("beta"),
+            work_id,
+            -1,
+        )
+        .unwrap();
 
         let words = |ctx: &TestContext| {
-            let mut ids =
-                work_controller::get_relationship(&ctx.db, &work_id, &WorkRelationshipField::DictWords)
-                    .unwrap();
+            let mut ids = work_controller::get_relationship(
+                &ctx.db,
+                &work_id,
+                &WorkRelationshipField::DictWords,
+            )
+            .unwrap();
             ids.sort();
             ids
         };

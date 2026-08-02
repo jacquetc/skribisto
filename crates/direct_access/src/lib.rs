@@ -64,6 +64,9 @@ pub mod dict_word;
 // TextReplacementRule
 pub mod text_replacement_rule;
 
+// NoteTemplate
+pub mod note_template;
+
 // Re-exports for all project entities
 
 pub use root::dtos::*;
@@ -122,3 +125,6 @@ pub use dict_word::dtos::*;
 
 pub use text_replacement_rule::dtos::*;
 pub use text_replacement_rule::text_replacement_rule_controller;
+
+pub use note_template::dtos::*;
+pub use note_template::note_template_controller;

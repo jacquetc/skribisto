@@ -37,8 +37,8 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
-    SmartPunctuation, TextReplacementRule, TrashInfo, Work, WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, NoteTemplate, Pace,
+    ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
@@ -68,6 +68,7 @@ pub trait BackupNowUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "GetMultiRO")]
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "GetMultiRO")]
+#[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
 #[macros::uow_action(entity = "Pace", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Pace", action = "GetRelationshipRO")]
@@ -119,6 +120,9 @@ impl<'a> TreeReader for dyn BackupNowUnitOfWorkTrait + 'a {
         ids: &[EntityId],
     ) -> Result<Vec<Option<TextReplacementRule>>> {
         self.get_text_replacement_rule_multi(ids)
+    }
+    fn note_template_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<NoteTemplate>>> {
+        self.get_note_template_multi(ids)
     }
     fn smart_punctuation(&self, id: &EntityId) -> Result<Option<SmartPunctuation>> {
         self.get_smart_punctuation(id)
@@ -222,6 +226,7 @@ fn run_backup(
         &g.tags,
         &g.dict_words,
         &g.text_replacement_rules,
+        &g.note_templates,
         g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,

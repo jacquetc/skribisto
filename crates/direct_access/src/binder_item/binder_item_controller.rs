@@ -15,8 +15,6 @@ use common::undo_redo::UndoRedoManager;
 use common::{database::db_context::DbContext, event::EventHub, types::EntityId};
 use std::sync::Arc;
 
-
-
 /// Guarantee every newly **created** row has a durable identity.
 ///
 /// Minting here rather than at each call site makes this a property of the
@@ -59,8 +57,10 @@ pub fn create_orphan_multi(
     entities: &[CreateBinderItemDto],
 ) -> Result<Vec<BinderItemDto>> {
     let uow_factory = BinderItemWriteUoWFactory::new(db_context, event_hub);
-    let entities_in: Vec<common::entities::BinderItem> =
-        entities.iter().map(|dto| with_identity(dto.into())).collect();
+    let entities_in: Vec<common::entities::BinderItem> = entities
+        .iter()
+        .map(|dto| with_identity(dto.into()))
+        .collect();
     let mut uc = use_cases::UndoableCreateOrphanUseCase::new(uow_factory);
     let result = uc.execute_multi(&entities_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
@@ -95,8 +95,10 @@ pub fn create_multi(
     index: i32,
 ) -> Result<Vec<BinderItemDto>> {
     let uow_factory = BinderItemWriteUoWFactory::new(db_context, event_hub);
-    let entities_in: Vec<common::entities::BinderItem> =
-        entities.iter().map(|dto| with_identity(dto.into())).collect();
+    let entities_in: Vec<common::entities::BinderItem> = entities
+        .iter()
+        .map(|dto| with_identity(dto.into()))
+        .collect();
     let strategy = use_cases::OwnerStrategy::Appending;
     let mut uc = use_cases::UndoableCreateUseCase::new(uow_factory, strategy);
     let result = uc.execute_multi(&entities_in, owner_id, index)?;

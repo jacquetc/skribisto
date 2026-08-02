@@ -170,6 +170,10 @@ pub fn build_bundle(
         tags: b.tags,
         dict_words: dict,
         text_replacement_rules: Vec::new(),
+        // Plume has no template concept, so an imported project starts with none —
+        // the writer applies a preset from Settings ▸ Templates if they want any.
+        note_templates: Vec::new(),
+        note_template_bodies: Default::default(),
         trash_infos: Vec::new(),
         // Plume has no writing-plan or progress-history concept to import.
         paces: Vec::new(),

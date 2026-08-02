@@ -30,7 +30,7 @@ pub use skrib_format::tree_read::{Gathered, TreeReader, gather};
 /// to be (see git history): the generated per-entity repositories ALREADY
 /// cascade-delete correctly through every STRONG relationship a `Work` owns
 /// (`Work::remove_multi` → Binders → BinderItems → Contents, Tags, DictWords,
-/// TrashInfos, Paces → Holidays/Milestones — confirmed by direct read of
+/// NoteTemplates, TrashInfos, Paces → Holidays/Milestones — confirmed by direct read of
 /// `common/src/direct_access/{work,binder,binder_item,pace}/*_repository.rs`)
 /// AND reconcile the external owner (`Root.works`) on removal — there is nothing
 /// left for this trait to re-derive by hand. The ONE relationship `Work` does NOT
@@ -118,6 +118,7 @@ pub fn serialize_and_write(
         &g.tags,
         &g.dict_words,
         &g.text_replacement_rules,
+        &g.note_templates,
         g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,

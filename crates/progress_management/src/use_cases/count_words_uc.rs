@@ -48,6 +48,13 @@ pub trait CountWordsUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
 // Map the generated read methods onto the shared `TreeReader`. The defaulted methods
 // (work_info / trash / dict / pace / snapshot) are omitted — counting reads none of them.
 impl<'a> TreeReader for dyn CountWordsUnitOfWorkTrait + 'a {
+    /// Word counting reads no templates — see [`TreeReader::note_template_multi`].
+    fn note_template_multi(
+        &self,
+        _ids: &[EntityId],
+    ) -> Result<Vec<Option<common::entities::NoteTemplate>>> {
+        Ok(Vec::new())
+    }
     fn all_work(&self) -> Result<Vec<Work>> {
         self.get_all_work()
     }
@@ -84,8 +91,14 @@ pub struct CountWordsUseCase {
 }
 
 impl CountWordsUseCase {
-    pub fn new(uow_factory: Box<dyn CountWordsUnitOfWorkFactoryTrait>, dto: &CountWordsDto) -> Self {
-        CountWordsUseCase { uow_factory, dto: dto.clone() }
+    pub fn new(
+        uow_factory: Box<dyn CountWordsUnitOfWorkFactoryTrait>,
+        dto: &CountWordsDto,
+    ) -> Self {
+        CountWordsUseCase {
+            uow_factory,
+            dto: dto.clone(),
+        }
     }
 }
 
@@ -209,7 +222,14 @@ mod tests {
     use skribisto_model::compile::ItemMeta;
 
     fn meta(id: u64, role: BinderItemRole, sub_role: BinderItemSubRole) -> ItemMeta {
-        ItemMeta { id, role, sub_role, indent: 0, activated: true, is_exportable: true }
+        ItemMeta {
+            id,
+            role,
+            sub_role,
+            indent: 0,
+            activated: true,
+            is_exportable: true,
+        }
     }
 
     #[test]
@@ -244,7 +264,10 @@ mod tests {
         prose.insert(15, vec!["a note here".into()]); // excluded (Note not prose-bearing)
 
         let out = fold_counts(&stream, &prose, CountMethod::WhitespaceSplit);
-        assert_eq!(out.total_word_count, 7, "only the head (3) + the live scene (4)");
+        assert_eq!(
+            out.total_word_count, 7,
+            "only the head (3) + the live scene (4)"
+        );
         assert_eq!(out.book_item_ids, vec![10]);
         assert_eq!(out.book_word_counts, vec![7]);
     }

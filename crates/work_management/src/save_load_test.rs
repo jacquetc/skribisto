@@ -120,6 +120,7 @@ fn sample_bundle() -> WorkBundle {
         tags: vec![10, 11],
         dict_words: vec![20],
         text_replacement_rules: vec![],
+        note_templates: vec![],
         // Non-default too, and for the same reason as chapter_mode above: an
         // all-default row would round-trip equal even if the field were dropped.
         smart_punctuation: 30,
@@ -245,6 +246,7 @@ fn sample_bundle() -> WorkBundle {
         &work,
         &tags,
         &dict_words,
+        &[],
         &[],
         Some(&common::entities::SmartPunctuation {
             id: 30,
@@ -1030,7 +1032,11 @@ fn new_work_mints_a_punctuation_house_style() {
         "a new project follows the app default rather than adopting a house style"
     );
     assert!(
-        !sp.dashes && !sp.ellipsis && !sp.quotes && !sp.pre_punctuation_spacing && !sp.dialogue_marker,
+        !sp.dashes
+            && !sp.ellipsis
+            && !sp.quotes
+            && !sp.pre_punctuation_spacing
+            && !sp.dialogue_marker,
         "every rule starts off on a new project"
     );
 }
@@ -1275,8 +1281,14 @@ fn new_work_replaces_open_project() {
     // "both stay open" proof) — this test is about a *closed-then-reopened*
     // project starting from a clean tree, so it closes the existing project
     // explicitly first, exactly as a real "Close Work" then "New Work" would.
-    work_management_controller::close_work(&db, &hub, &CloseWorkDto { work_id: existing_work_id })
-        .expect("close_work Existing");
+    work_management_controller::close_work(
+        &db,
+        &hub,
+        &CloseWorkDto {
+            work_id: existing_work_id,
+        },
+    )
+    .expect("close_work Existing");
 
     // Creating a new (None) work over a closed project must start from a
     // clean tree, not inherit the old one's binders.
@@ -1427,7 +1439,11 @@ fn failed_save_as_does_not_roll_back_the_store() {
 /// A `BackupNowDto` with every retention/skip field at its "do nothing extra"
 /// default (no pruning, no skip-if-unchanged) — the shape every pre-existing
 /// test wants; tests that exercise T1-3/T1-7/T2-2/T2-11 build their own.
-fn plain_backup_dto(work_id: u64, directories: Vec<String>, last_known_hashes: Vec<String>) -> BackupNowDto {
+fn plain_backup_dto(
+    work_id: u64,
+    directories: Vec<String>,
+    last_known_hashes: Vec<String>,
+) -> BackupNowDto {
     BackupNowDto {
         work_id,
         directories,
@@ -1458,7 +1474,11 @@ fn backup_serializes_current_store_not_disk() {
     std::fs::create_dir_all(&backup_dir).unwrap();
     let uc = BackupNowUseCase::new(
         Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
-        &plain_backup_dto(live_work_id(&db), vec![backup_dir.to_str().unwrap().to_string()], vec![]),
+        &plain_backup_dto(
+            live_work_id(&db),
+            vec![backup_dir.to_str().unwrap().to_string()],
+            vec![],
+        ),
     );
     let res = uc
         .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
@@ -1497,7 +1517,8 @@ fn backup_multi_destination_is_resilient_and_dedups() {
     let bad = blocker.join("nested"); // parent is a file ⇒ unwritable
 
     let run = |hashes: Vec<String>, paths: Vec<String>| {
-        let mut dto = plain_backup_dto(live_work_id(&db), 
+        let mut dto = plain_backup_dto(
+            live_work_id(&db),
             vec![
                 good.to_str().unwrap().to_string(),
                 bad.to_str().unwrap().to_string(),
@@ -1584,7 +1605,11 @@ fn skip_if_unchanged_does_not_skip_when_the_backup_file_is_gone() {
     let dest = dir.path().join("dest");
     std::fs::create_dir_all(&dest).unwrap();
 
-    let dto1 = plain_backup_dto(live_work_id(&db), vec![dest.to_str().unwrap().to_string()], vec![]);
+    let dto1 = plain_backup_dto(
+        live_work_id(&db),
+        vec![dest.to_str().unwrap().to_string()],
+        vec![],
+    );
     let res1 = BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto1)
         .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
         .expect("backup_now");
@@ -1596,7 +1621,8 @@ fn skip_if_unchanged_does_not_skip_when_the_backup_file_is_gone() {
     assert!(!std::path::Path::new(&written).exists());
 
     // A matching hash AND the now-deleted path must NOT be enough to skip.
-    let mut dto2 = plain_backup_dto(live_work_id(&db), 
+    let mut dto2 = plain_backup_dto(
+        live_work_id(&db),
         vec![dest.to_str().unwrap().to_string()],
         vec![res1.content_hash.clone()],
     );
@@ -1649,7 +1675,8 @@ fn retention_runs_inside_the_operation_and_protects_the_just_written_backup() {
         ));
     }
 
-    let mut dto = plain_backup_dto(live_work_id(&db), 
+    let mut dto = plain_backup_dto(
+        live_work_id(&db),
         vec![
             dest_a.to_str().unwrap().to_string(),
             dest_b.to_str().unwrap().to_string(),
@@ -1714,7 +1741,11 @@ fn destination_failing_verification_is_reported_failed_not_succeeded() {
 
     backup_now_uc::force_verify_failure_for(&dest);
 
-    let dto = plain_backup_dto(live_work_id(&db), vec![dest.to_str().unwrap().to_string()], vec![]);
+    let dto = plain_backup_dto(
+        live_work_id(&db),
+        vec![dest.to_str().unwrap().to_string()],
+        vec![],
+    );
     let res = BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto)
         .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
         .expect("backup_now");
@@ -1763,7 +1794,11 @@ fn a_failed_deletion_is_reported_in_delete_errors() {
     perms.set_mode(0o555);
     std::fs::set_permissions(&stale, perms).unwrap();
 
-    let mut dto = plain_backup_dto(live_work_id(&db), vec![dest.to_str().unwrap().to_string()], vec![]);
+    let mut dto = plain_backup_dto(
+        live_work_id(&db),
+        vec![dest.to_str().unwrap().to_string()],
+        vec![],
+    );
     dto.prune = true;
     dto.retention_mode = RetentionMode::KeepLastN;
     dto.keep_last_n = 1;
@@ -1820,7 +1855,10 @@ fn panicking_long_operation_is_reported_failed_not_stuck() {
     // section: "A panicking operation is now observable").
     let completion = mgr.completion_signal();
     let finished = completion.wait_for(&id, Some(std::time::Duration::from_secs(3)));
-    assert!(finished, "the panicking operation should settle within the timeout");
+    assert!(
+        finished,
+        "the panicking operation should settle within the timeout"
+    );
     assert!(
         matches!(
             mgr.get_operation_status(&id),
@@ -1883,8 +1921,7 @@ fn restore_savepoint_recovers_a_poisoned_table_lock() {
 /// new Work's id.
 fn load_additional_work(db: &DbContext, hub: &Arc<EventHub>, path: &std::path::Path) -> u64 {
     let bundle = skrib::read_bundle(path.to_str().unwrap()).expect("read fixture bundle");
-    let loaded =
-        skrib::bundle_to_loaded(bundle, path.to_str().unwrap()).expect("bundle_to_loaded");
+    let loaded = skrib::bundle_to_loaded(bundle, path.to_str().unwrap()).expect("bundle_to_loaded");
     let factory = LoadWorkUnitOfWorkFactory::new(db, hub);
     let mut uow = factory.create();
     uow.begin_transaction().expect("begin_transaction");
@@ -1950,7 +1987,12 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
     bundle_a.manifest.work.title = "First Project".into();
     bundle_a.manifest.work.unique_id = "first-project-uid".into();
     let path_a = dir.path().join("A");
-    skrib::write_bundle(path_a.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle_a).unwrap();
+    skrib::write_bundle(
+        path_a.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle_a,
+    )
+    .unwrap();
     work_management_controller::load_work(
         &db,
         &hub,
@@ -1978,7 +2020,12 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
     bundle_b.manifest.work.title = "Second Project".into();
     bundle_b.manifest.work.unique_id = "second-project-uid".into();
     let path_b = dir.path().join("B");
-    skrib::write_bundle(path_b.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle_b).unwrap();
+    skrib::write_bundle(
+        path_b.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle_b,
+    )
+    .unwrap();
     let work_b_id = load_additional_work(&db, &hub, &path_b);
     assert_ne!(work_a_id, work_b_id);
 
@@ -2005,7 +2052,12 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
 
     // Checkpoint 1: loading B must not perturb A at all.
     assert_eq!(
-        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .get(&work_a_id)
+            .cloned(),
         Some(row_a_before.clone()),
         "A's row must be byte-for-byte the same object after B is loaded"
     );
@@ -2026,7 +2078,12 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
         works.insert(work_b_id, b);
     }
     assert_eq!(
-        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .get(&work_a_id)
+            .cloned(),
         Some(row_a_before.clone()),
         "A unaffected by B's in-store mutation"
     );
@@ -2054,7 +2111,12 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
         "save_work(work_id=B) must save B's content, not A's or an arbitrary Work's"
     );
     assert_eq!(
-        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .get(&work_a_id)
+            .cloned(),
         Some(row_a_before.clone()),
         "A unaffected by B's save"
     );
@@ -2070,7 +2132,12 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
         .expect("close_work B");
 
     assert!(
-        db.get_store().works.read().unwrap().get(&work_b_id).is_none(),
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .get(&work_b_id)
+            .is_none(),
         "B's Work row must be fully removed"
     );
     assert_eq!(
@@ -2105,7 +2172,12 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
         );
     }
     assert_eq!(
-        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .get(&work_a_id)
+            .cloned(),
         Some(row_a_before),
         "A survives B's whole lifecycle (load, mutate, save, close), byte-identical"
     );
@@ -2155,7 +2227,12 @@ fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first
     bundle_a.manifest.work.title = "First Project".into();
     bundle_a.manifest.work.unique_id = "first-project-uid".into();
     let path_a = dir.path().join("A");
-    skrib::write_bundle(path_a.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle_a).unwrap();
+    skrib::write_bundle(
+        path_a.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle_a,
+    )
+    .unwrap();
     work_management_controller::load_work(
         &db,
         &hub,
@@ -2183,7 +2260,12 @@ fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first
     bundle_b.manifest.work.title = "Second Project".into();
     bundle_b.manifest.work.unique_id = "second-project-uid".into();
     let path_b = dir.path().join("B");
-    skrib::write_bundle(path_b.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle_b).unwrap();
+    skrib::write_bundle(
+        path_b.to_str().unwrap(),
+        SkribShape::ExplodedFolder,
+        &bundle_b,
+    )
+    .unwrap();
     work_management_controller::load_work(
         &db,
         &hub,
@@ -2207,7 +2289,12 @@ fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first
         "both A and B must be resident after loading B through the real path"
     );
     assert_eq!(
-        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .get(&work_a_id)
+            .cloned(),
         Some(row_a_before.clone()),
         "A's row must be byte-for-byte the same object after B loads through the real path"
     );
@@ -2240,7 +2327,12 @@ fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first
     let saved_b_bundle = skrib::read_bundle(&save_b_result.output_path).unwrap();
     assert_eq!(saved_b_bundle.manifest.work.title, "Mutated B (real path)");
     assert_eq!(
-        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .get(&work_a_id)
+            .cloned(),
         Some(row_a_before.clone()),
         "A unaffected by B's mutate + save"
     );
@@ -2256,7 +2348,12 @@ fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first
         .expect("close_work B");
 
     assert!(
-        db.get_store().works.read().unwrap().get(&work_b_id).is_none(),
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .get(&work_b_id)
+            .is_none(),
         "B's Work row must be fully removed by the real close_work path"
     );
     assert_eq!(
@@ -2265,7 +2362,12 @@ fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first
         "only A remains resident after B closes"
     );
     assert_eq!(
-        db.get_store().works.read().unwrap().get(&work_a_id).cloned(),
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .get(&work_a_id)
+            .cloned(),
         Some(row_a_before),
         "A survives B's whole real-path lifecycle (load, mutate, save, close), byte-identical"
     );
@@ -2297,12 +2399,13 @@ fn a_second_write_transaction_on_the_same_store_is_rejected_while_the_first_is_o
 
     let factory = LoadWorkUnitOfWorkFactory::new(&db, &hub);
     let mut first = factory.create();
-    first.begin_transaction().expect("first write transaction opens");
+    first
+        .begin_transaction()
+        .expect("first write transaction opens");
 
     let mut second = factory.create();
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        second.begin_transaction()
-    }));
+    let result =
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| second.begin_transaction()));
     assert!(
         result.is_err(),
         "a second concurrent write transaction on the same store must panic (debug build)"
@@ -2317,4 +2420,92 @@ fn a_second_write_transaction_on_the_same_store_is_rejected_while_the_first_is_o
         "the slot must be free once the first transaction ended"
     );
     third.rollback().ok();
+}
+
+/// Note templates must survive the **full store round-trip**: written, read, materialised
+/// into store rows, gathered back out, written again.
+///
+/// This is the guard for the one step in that chain the compiler cannot check. Every
+/// other site that had to learn about `NoteTemplate` is a struct literal or a trait impl,
+/// so forgetting one is a build error — but the relationship fetch in
+/// `skrib_format::tree_read::gather` is a plain method call. Omit it and everything still
+/// compiles, `gather` simply reports zero templates, and the very next save writes the
+/// project with none. Values here are deliberately off-default (`starred` differs between
+/// the two rows, the bodies are non-empty) for the reason the fixture comments above give.
+#[test]
+fn note_templates_survive_a_save_load_round_trip() {
+    const T: &str = "2020-01-01T00:00:00+00:00";
+    let mut bundle = sample_bundle();
+    bundle.note_templates = vec![
+        skrib::NoteTemplateFile {
+            file_id: 700,
+            created_at: T.into(),
+            updated_at: T.into(),
+            name: "Character sheet".into(),
+            starred: true,
+            path: "templates/700-character-sheet.djot".into(),
+        },
+        skrib::NoteTemplateFile {
+            file_id: 701,
+            created_at: T.into(),
+            updated_at: T.into(),
+            name: "Location".into(),
+            starred: false,
+            path: "templates/701-location.djot".into(),
+        },
+    ];
+    bundle.note_template_bodies = [
+        (700u64, "# Character sheet\n\n- Full name:\n".to_string()),
+        (701u64, "# Location\n\nSensory detail:\n".to_string()),
+    ]
+    .into_iter()
+    .collect();
+
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("WithTemplates");
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load bundle with note templates");
+
+    let out = store_to_bundle(&db, &hub, &dir.path().join("out"));
+
+    let got: Vec<_> = out
+        .note_templates
+        .iter()
+        .map(|t| {
+            (
+                t.name.clone(),
+                t.starred,
+                out.note_template_bodies
+                    .get(&t.file_id)
+                    .cloned()
+                    .unwrap_or_default(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        got,
+        vec![
+            (
+                "Character sheet".to_string(),
+                true,
+                "# Character sheet\n\n- Full name:\n".to_string()
+            ),
+            (
+                "Location".to_string(),
+                false,
+                "# Location\n\nSensory detail:\n".to_string()
+            ),
+        ],
+        "every template must round-trip with its body and its starred flag, in order"
+    );
 }

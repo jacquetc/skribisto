@@ -638,9 +638,13 @@ impl ExportViewModel {
     /// below for the same reasoning.
     fn client_gather(&self) -> anyhow::Result<Gathered> {
         let ctx = &self.app_ctx;
-        let work_id = self.ids.work_id.get().ok_or_else(|| anyhow::anyhow!("no open work"))?;
-        let work_dto =
-            work_commands::get_work(ctx, &work_id)?.ok_or_else(|| anyhow::anyhow!("no open work"))?;
+        let work_id = self
+            .ids
+            .work_id
+            .get()
+            .ok_or_else(|| anyhow::anyhow!("no open work"))?;
+        let work_dto = work_commands::get_work(ctx, &work_id)?
+            .ok_or_else(|| anyhow::anyhow!("no open work"))?;
         let work: Work = work_dto.into();
         let binder_ids =
             work_commands::get_work_relationship(ctx, &work.id, &WorkRelationshipField::Binders)?;
@@ -677,6 +681,8 @@ impl ExportViewModel {
             tags: Vec::new(),
             dict_words: Vec::new(),
             text_replacement_rules: Vec::new(),
+            // Templates are authoring furniture, never part of the compiled manuscript.
+            note_templates: Vec::new(),
             // Punctuation settings shape prose as it is typed; by export time the
             // substitutions are already in the text, so there is nothing to read.
             smart_punctuation: None,
@@ -745,7 +751,12 @@ impl ExportViewModel {
     /// `on_long_op_*`.
     fn run_export(&self, ctx: &mut EventContext) {
         let Some(dto) = self.dto() else {
-            self.show_error(ctx, "no project is open to export", self.ids.work_id.get(), None);
+            self.show_error(
+                ctx,
+                "no project is open to export",
+                self.ids.work_id.get(),
+                None,
+            );
             return;
         };
         match export_management_commands::export_work(&self.app_ctx, &dto) {
@@ -952,18 +963,18 @@ impl ExportViewModel {
                 Some(op) => toast.scoped_op_id(EXPORT_TOAST_ID, work_id, op),
                 None => toast.scoped_id(EXPORT_TOAST_ID, work_id),
             }
-                .body(lit!(message.to_string()))
-                .persistent()
-                .target_work(work_id)
-                .action(ToastAction::primary(
-                    tr!(export_error_details()),
-                    move |c| {
-                        MessageBox::warning(tr!(export_error_title()))
-                            .text(lit!(details.clone()))
-                            .buttons(MessageBoxButtons::Ok)
-                            .present(c);
-                    },
-                )),
+            .body(lit!(message.to_string()))
+            .persistent()
+            .target_work(work_id)
+            .action(ToastAction::primary(
+                tr!(export_error_details()),
+                move |c| {
+                    MessageBox::warning(tr!(export_error_title()))
+                        .text(lit!(details.clone()))
+                        .buttons(MessageBoxButtons::Ok)
+                        .present(c);
+                },
+            )),
         );
     }
 }
@@ -985,8 +996,13 @@ mod tests {
     fn loaded_vm() -> (ExportViewModel, Vec<u64>) {
         let app_ctx = Rc::new(AppContext::new());
         let ids = AppIds::new();
-        work_management_commands::load_work(&app_ctx, &LoadWorkDto { file_name: fixture() })
-            .expect("load fixture");
+        work_management_commands::load_work(
+            &app_ctx,
+            &LoadWorkDto {
+                file_name: fixture(),
+            },
+        )
+        .expect("load fixture");
         // A fresh, single-project store: the one `Work` the load just created.
         let work_id = frontend::commands::work_commands::get_all_work(&app_ctx)
             .expect("work")
@@ -1132,7 +1148,10 @@ mod tests {
         // retarget/steal it.
         let id_a = crate::toast_scope::work_scoped_toast_id(EXPORT_TOAST_ID, Some(1));
         let id_b = crate::toast_scope::work_scoped_toast_id(EXPORT_TOAST_ID, Some(2));
-        assert_ne!(id_a, id_b, "two different Works' export toasts must never collide");
+        assert_ne!(
+            id_a, id_b,
+            "two different Works' export toasts must never collide"
+        );
     }
 
     /// The test above only proves `work_scoped_toast_id` itself is collision-free —
@@ -1164,8 +1183,7 @@ mod tests {
             archive: None,
             ..ToastInstallOptions::default()
         });
-        let mut tree =
-            crate::test_support::tree_with_toast_registry(&vm_a.app_ctx, &registry);
+        let mut tree = crate::test_support::tree_with_toast_registry(&vm_a.app_ctx, &registry);
 
         let a = vm_a.clone();
         let b = vm_b.clone();

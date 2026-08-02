@@ -36,6 +36,7 @@ mention_management = { workspace = true }
 progress_management = { workspace = true }
 trash_management = { workspace = true }
 tag_management = { workspace = true }
+note_template_management = { workspace = true }
 binder_item_management = { workspace = true }
 handling_app_lifecycle = { workspace = true }
 import_management = { workspace = true }

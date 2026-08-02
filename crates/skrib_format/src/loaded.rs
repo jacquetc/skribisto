@@ -10,7 +10,8 @@
 //! remaps them to fresh store ids while preserving order and M2M links.
 
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, SmartPunctuation, TextReplacementRule, Work,
+    Binder, BinderItem, BinderTag, Content, DictWord, NoteTemplate, SmartPunctuation,
+    TextReplacementRule, Work,
 };
 
 pub struct LoadedWork {
@@ -20,6 +21,10 @@ pub struct LoadedWork {
     pub tags: Vec<BinderTag>,
     pub dict_words: Vec<DictWord>,
     pub text_replacement_rules: Vec<TextReplacementRule>,
+    /// Per-project note templates, in the order the writer arranged them. Each carries
+    /// its Djot `body` inline here — the manifest/blob split is an on-disk concern that
+    /// `bundle_to_loaded` has already reassembled by this point.
+    pub note_templates: Vec<NoteTemplate>,
     /// The punctuation house style, or `None` for a bundle written before the
     /// setting existed.
     ///

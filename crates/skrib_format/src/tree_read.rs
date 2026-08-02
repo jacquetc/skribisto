@@ -15,6 +15,10 @@
 //! [`TreeReader::dict_multi`] and [`TreeReader::text_replacement_rule_multi`] have
 //! **default no-op** bodies — an implementor that has no such generated getter simply
 //! omits them.
+//!
+//! [`TreeReader::note_template_multi`] is the one exception to that convenience: it is
+//! **required**, so the analysis readers carry an explicit empty stub. See its own doc
+//! for why a silent default would be dangerous rather than merely convenient here.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -25,8 +29,8 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, Pace, ProgressSnapshot,
-    SmartPunctuation, TextReplacementRule, TrashInfo, Work, WorkInfo,
+    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, NoteTemplate, Pace,
+    ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::OperationProgress;
 use common::types::EntityId;
@@ -62,6 +66,15 @@ pub trait TreeReader {
     ) -> Result<Vec<Option<TextReplacementRule>>> {
         Ok(Vec::new())
     }
+    /// The per-project note templates.
+    ///
+    /// **Required, deliberately undefaulted** — unlike its two neighbours above. A
+    /// defaulted `Ok(Vec::new())` is exactly the shape of bug this feature is most
+    /// exposed to: a save path that forgot to override it would compile, run, and
+    /// silently write every project with zero templates, destroying them on the first
+    /// save. Making it required turns that into a compile error, and costs the three
+    /// analysis readers (export / mentions / word count) one explicit empty stub each.
+    fn note_template_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<NoteTemplate>>>;
     /// The punctuation house style. Singular, not a `_multi`, because the
     /// relationship is one-to-one — there is exactly one row or none.
     ///
@@ -109,6 +122,7 @@ pub struct Gathered {
     pub tags: Vec<BinderTag>,
     pub dict_words: Vec<DictWord>,
     pub text_replacement_rules: Vec<TextReplacementRule>,
+    pub note_templates: Vec<NoteTemplate>,
     /// `None` when the reader does not read settings (export), or when the row
     /// genuinely does not resolve — never fabricated here, so the writer can
     /// record its absence faithfully.
@@ -157,6 +171,7 @@ pub fn gather<R: TreeReader + ?Sized>(
     work.dict_words = reader.work_rel(&work_id, &WorkRelationshipField::DictWords)?;
     work.text_replacement_rules =
         reader.work_rel(&work_id, &WorkRelationshipField::TextReplacementRules)?;
+    work.note_templates = reader.work_rel(&work_id, &WorkRelationshipField::NoteTemplates)?;
     // A one-to-one relationship still comes back as a vector — take the first,
     // and treat an empty one as "no row", which is what a Work loaded from a
     // pre-feature bundle looks like before the materialiser heals it.
@@ -179,6 +194,7 @@ pub fn gather<R: TreeReader + ?Sized>(
     let text_replacement_rules = fetch_multi(&work.text_replacement_rules, |ids| {
         reader.text_replacement_rule_multi(ids)
     })?;
+    let note_templates = fetch_multi(&work.note_templates, |ids| reader.note_template_multi(ids))?;
     // Skip the read entirely for an unwired Work rather than asking for id 0,
     // which no store row can have.
     let smart_punctuation = if work.smart_punctuation == 0 {
@@ -217,7 +233,8 @@ pub fn gather<R: TreeReader + ?Sized>(
     // but its ProgressSnapshots must round-trip. Only save has a WorkInfo (export's is None).
     let progress_snapshots = match &work_info {
         Some(wi) => {
-            let ids = reader.work_info_rel(&wi.id, &WorkInfoRelationshipField::ProgressSnapshots)?;
+            let ids =
+                reader.work_info_rel(&wi.id, &WorkInfoRelationshipField::ProgressSnapshots)?;
             fetch_multi(&ids, |ids| reader.progress_snapshot_multi(ids))?
         }
         None => Vec::new(),
@@ -255,6 +272,7 @@ pub fn gather<R: TreeReader + ?Sized>(
         tags,
         dict_words,
         text_replacement_rules,
+        note_templates,
         smart_punctuation,
         trash_infos,
         paces,
@@ -282,7 +300,11 @@ fn hydrate_paces<R: TreeReader + ?Sized>(
         pace.milestones = reader.pace_rel(&pace.id, &PaceRelationshipField::Milestones)?;
         let holidays = fetch_multi(&pace.holidays, |ids| reader.holiday_multi(ids))?;
         let milestones = fetch_multi(&pace.milestones, |ids| reader.milestone_multi(ids))?;
-        paces.push(PaceWithChildren { pace, holidays, milestones });
+        paces.push(PaceWithChildren {
+            pace,
+            holidays,
+            milestones,
+        });
     }
     Ok(paces)
 }

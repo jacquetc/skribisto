@@ -7,15 +7,17 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::entities::{
-    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, ProgressSnapshot, QuoteStyle,
-    SmartPunctuation, TextReplacementRule, TrashInfo, Work,
+    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, NoteTemplate, ProgressSnapshot,
+    QuoteStyle, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
 };
 use skribisto_model::content_allowed;
 use std::collections::BTreeMap;
 
 use super::bundle::*;
 use super::loaded::*;
-use super::slug::{binder_dir_name, prose_file_name, prose_kind, prose_relpath};
+use super::slug::{
+    binder_dir_name, note_template_relpath, prose_file_name, prose_kind, prose_relpath,
+};
 
 fn fmt_dt(dt: &DateTime<Utc>) -> String {
     dt.to_rfc3339()
@@ -75,6 +77,7 @@ pub fn from_entities(
     tags: &[BinderTag],
     dict_words: &[DictWord],
     text_replacement_rules: &[TextReplacementRule],
+    note_templates: &[NoteTemplate],
     // Deliberately **not** a slice, though every neighbour here is one: this is
     // a one-to-one child, and taking `&Option<_>` means a caller cannot pass it
     // in the wrong positional slot — the two `&[...]` parameters on either side
@@ -237,6 +240,25 @@ pub fn from_entities(
                 enabled: r.enabled,
             })
             .collect(),
+        // The manifest row carries only the metadata + the blob path; the body itself
+        // goes in `note_template_bodies` and is written as a sibling `.djot`, so an
+        // exploded project diffs a template edit as a prose change rather than as one
+        // enormous re-quoted RON string.
+        note_templates: note_templates
+            .iter()
+            .map(|t| NoteTemplateFile {
+                file_id: t.id,
+                created_at: fmt_dt(&t.created_at),
+                updated_at: fmt_dt(&t.updated_at),
+                name: t.name.clone(),
+                starred: t.starred,
+                path: note_template_relpath(t.id, &t.name),
+            })
+            .collect(),
+        note_template_bodies: note_templates
+            .iter()
+            .map(|t| (t.id, t.body.clone()))
+            .collect(),
         trash_infos: trash_infos
             .iter()
             .map(|ti| TrashInfoFile {
@@ -346,6 +368,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         tags: Vec::new(),
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
+        note_templates: Vec::new(),
         // Zero for the same reason the vectors are empty — `materialize` mints
         // the row and writes its store id back. Unlike them, zero is not a
         // valid resting state: a `Work` whose one-to-one child is still 0 has a
@@ -397,6 +420,34 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                 trigger: r.trigger.clone(),
                 replacement: r.replacement.clone(),
                 enabled: r.enabled,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    // The body comes from the blob map, not the manifest row.
+    //
+    // A listed row with no blob is a **hard error**, exactly as a missing prose blob is,
+    // and deliberately not a silent empty body. Degrading quietly here would be the worse
+    // failure by far: the writer opens a project whose templates look blank, autosave
+    // rewrites `templates.ron` from that empty state moments later, and the text is gone
+    // for good. Failing the load leaves every byte on disk and is recoverable.
+    let note_templates = bundle
+        .note_templates
+        .iter()
+        .map(|t| {
+            Ok(NoteTemplate {
+                id: t.file_id,
+                created_at: parse_dt(&t.created_at)?,
+                updated_at: parse_dt(&t.updated_at)?,
+                name: t.name.clone(),
+                body: bundle
+                    .note_template_bodies
+                    .get(&t.file_id)
+                    .cloned()
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("missing body blob for note template {}", t.file_id)
+                    })?,
+                starred: t.starred,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -595,6 +646,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         tags,
         dict_words,
         text_replacement_rules,
+        note_templates,
         smart_punctuation,
         binders: loaded_binders,
         trash_infos,
