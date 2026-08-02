@@ -733,6 +733,13 @@ pub struct App {
     /// `EditorsViewModel`, which is the only thing that can compute it.
     scene_focused: Signal<bool>,
     binder_has_selection: Signal<bool>,
+    /// This window's menu model plus the id of its "Insert template" submenu, so
+    /// `build` can refill that submenu as the catalogue changes. `None` where the
+    /// platform gives no title-bar host and there is no model to refill.
+    templates_menu: Option<(
+        bastyde::widgets::MenuModel,
+        bastyde::core::menu_item_id::MenuItemId,
+    )>,
     /// Live "is there a target" mirrors for the title-bar's Go menu (Increment 4 —
     /// six Next/Previous × Scene/Chapter/Note rows), the same shape as
     /// `scene_focused` just above: minted in `shell/windows.rs` (which builds the
@@ -834,6 +841,10 @@ impl App {
         spellcheck_menu: Signal<bool>,
         scene_focused: Signal<bool>,
         binder_has_selection: Signal<bool>,
+        templates_menu: Option<(
+            bastyde::widgets::MenuModel,
+            bastyde::core::menu_item_id::MenuItemId,
+        )>,
         go: crate::view_models::GoAvailability,
         go_to: crate::view_models::GoToViewModel,
         unsaved: Signal<bool>,
@@ -871,6 +882,7 @@ impl App {
             spellcheck_menu,
             scene_focused,
             binder_has_selection,
+            templates_menu,
             go,
             go_to,
             unsaved,
@@ -1858,6 +1870,25 @@ impl Widget for App {
         // time — which is nothing, because `work_id` is not seeded yet — and applying a
         // preset writes rows the pane never hears about.
         session.note_templates.wire(ctx);
+        // Refill Document ▸ Insert template whenever the catalogue changes.
+        //
+        // The submenu's own contents cannot be produced where the menu is declared: that
+        // builder is `FnOnce` and runs at window construction, before a project exists.
+        // The framework's answer (bastyde/docs/native-menu.md, "Dynamic structure") is a
+        // pre-allocated submenu id plus runtime mutation, which is what this drives — each
+        // refill bumps `MenuModel::version`, and the bar re-derives its dropdowns from it.
+        if let Some((menu, submenu_id)) = self.templates_menu.clone() {
+            let templates = session.note_templates.clone();
+            let note_focused = self.format.note_focused();
+            ctx.effect(&templates.changed_signal(), move |_| {
+                crate::shell::project_menus::sync_insert_template_submenu(
+                    &menu,
+                    submenu_id,
+                    &templates,
+                    &note_focused,
+                );
+            });
+        }
 
         // Long-operation routing: every background job (import, export, save-as, backup,
         // restore, the progress recorder) reports through the same four events and filters

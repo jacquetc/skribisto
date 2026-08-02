@@ -8,8 +8,9 @@
 
 use std::rc::Rc;
 
+use bastyde::core::menu_item_id::MenuItemId;
 use bastyde::prelude::*;
-use bastyde::widgets::{DockSide, MenuEntry, MenuModel};
+use bastyde::widgets::{DockSide, MenuEntry, MenuModel, MenuNode};
 use export_management::ExportScopeKind;
 use frontend::AppContext;
 use frontend::common::entities::WorkShape;
@@ -84,8 +85,10 @@ pub(crate) struct ProjectMenuParts {
     /// Whether this window's binder has a selection — the Document menu's per-item rows
     /// grey out without one.
     pub binder_has_selection: Signal<bool>,
-    /// This window's note-template catalogue, for the Document menu's insert submenu.
-    pub note_templates: NoteTemplatesViewModel,
+    /// The pre-allocated id of the Document menu's "Insert template" submenu, so its
+    /// contents can be repopulated at runtime — see the submenu's own comment, and
+    /// [`sync_insert_template_submenu`].
+    pub templates_submenu_id: MenuItemId,
     pub go: GoAvailability,
     pub format: FormatViewModel,
     pub save_as: SaveAsViewModel,
@@ -95,6 +98,76 @@ pub(crate) struct ProjectMenuParts {
     pub focus: FocusViewModel,
     /// Live window placement for the fullscreen checkmark (View ▸ Fullscreen).
     pub placement: Signal<WindowPlacement>,
+}
+
+/// Refill the Document ▸ **Insert template** submenu from the current catalogue.
+///
+/// Called once when the window's menu is built and again on every change to the
+/// catalogue (`App::build` drives it off `NoteTemplatesViewModel::changed_signal`).
+/// `MenuModel::modify` is the doc's sanctioned escape hatch for a bulk structural edit;
+/// it bumps `version`, and a `MenuBar::from_model` bar binds that at `Rebuild` level, so
+/// the dropdown re-derives on its own.
+///
+/// Replaces the submenu's children wholesale rather than diffing: the list is a handful
+/// of rows, and rebuilding it is the only way to honour a reorder or a rename without
+/// tracking a per-row id map that would have to stay in step with the writer's
+/// arrangement.
+pub(crate) fn sync_insert_template_submenu(
+    model: &MenuModel,
+    submenu_id: MenuItemId,
+    templates: &NoteTemplatesViewModel,
+    note_focused: &Signal<bool>,
+) {
+    let rows = templates.menu_rows();
+    let note_focused = note_focused.clone();
+    model.modify(|nodes| {
+        let Some(children) = find_submenu_children(nodes, submenu_id) else {
+            return;
+        };
+        children.clear();
+        if rows.is_empty() {
+            // An empty submenu reads as broken. Say why instead.
+            children.push(MenuNode::Item(
+                MenuEntry::new(tr!(menu_insert_template_none())).enabled(false),
+            ));
+            return;
+        }
+        for row in &rows {
+            let id = row.id;
+            children.push(MenuNode::Item(
+                MenuEntry::new(lit!(row.name.clone()))
+                    .enabled(note_focused.clone())
+                    .on_activate(move |c| {
+                        c.send_intent(crate::intents::AppIntent::InsertTemplate {
+                            template_id: id,
+                        });
+                    }),
+            ));
+        }
+    });
+}
+
+/// The children vector of the submenu with `id`, searched recursively.
+///
+/// `MenuModel::modify` hands out the top-level nodes, and the target sits one level down
+/// inside the Document menu, so the walk is this function's job rather than the model's.
+fn find_submenu_children(nodes: &mut Vec<MenuNode>, id: MenuItemId) -> Option<&mut Vec<MenuNode>> {
+    for node in nodes.iter_mut() {
+        if let MenuNode::Submenu {
+            id: node_id,
+            children,
+            ..
+        } = node
+        {
+            if *node_id == id {
+                return Some(children);
+            }
+            if let Some(found) = find_submenu_children(children, id) {
+                return Some(found);
+            }
+        }
+    }
+    None
 }
 
 /// Build the full File / Edit / Format / Go / Tools / Help menu model for a project window.
@@ -108,7 +181,7 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
     let menu_spellcheck = parts.spellcheck_menu;
     let menu_scene_focused = parts.scene_focused;
     let menu_binder_selection = parts.binder_has_selection;
-    let menu_templates = parts.note_templates;
+    let templates_submenu_id = parts.templates_submenu_id;
     let menu_go = parts.go;
     let menu_format_vm = parts.format;
     let menu_save_as = parts.save_as;
@@ -448,8 +521,6 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
         .menu(tr!(menu_document()), {
             let on_selection = menu_binder_selection.clone();
             let on_note = menu_format_vm.note_focused();
-            let templates_vm = menu_templates.clone();
-            let templates_changed = menu_templates.changed_signal();
             move |m| {
                 let m = m
                     .item(
@@ -476,38 +547,24 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                     )
                     .separator();
 
-                // Insert template ▸ — rebuilt whenever the catalogue changes, starred
-                // first. One shared view-model with the settings pane, so the two can
-                // never disagree about what exists.
-                let m = m.submenu(tr!(menu_insert_template()), {
-                    let vm = templates_vm.clone();
-                    let on_note = on_note.clone();
-                    // Read once per rebuild; `changed_signal` is what triggers that rebuild.
-                    let _ = templates_changed.get();
-                    move |t| {
-                        let rows = vm.menu_rows();
-                        if rows.is_empty() {
-                            // A submenu that is simply empty reads as broken. Say why.
-                            return t.item(
-                                MenuEntry::new(tr!(menu_insert_template_none())).enabled(false),
-                            );
-                        }
-                        let mut t = t;
-                        for row in rows {
-                            let id = row.id;
-                            t = t.item(
-                                MenuEntry::new(lit!(row.name.clone()))
-                                    .enabled(on_note.clone())
-                                    .on_activate(move |c| {
-                                        c.send_intent(crate::intents::AppIntent::InsertTemplate {
-                                            template_id: id,
-                                        });
-                                    }),
-                            );
-                        }
-                        t
-                    }
-                });
+                // Insert template ▸ — the one menu in this app whose item list is DATA,
+                // not a fixed set of commands.
+                //
+                // `MenuItems::submenu`'s builder is `FnOnce` and runs right here, at
+                // window construction — long before any project is loaded. So the list
+                // cannot be produced by reading the catalogue from inside it: it would
+                // bake in whatever existed at that instant, which is nothing, forever.
+                // (It did exactly that.)
+                //
+                // The framework's answer is the `Open Recent` pattern from
+                // `bastyde/docs/native-menu.md` §"Dynamic structure": give the submenu a
+                // **pre-allocated id**, leave it empty here, and repopulate it through the
+                // model's `&self` mutators whenever the data changes. Each mutation bumps
+                // `MenuModel::version`, which a `from_model` bar binds at `Rebuild` level,
+                // so the dropdown re-derives (and the native menu re-installs) on its own.
+                // `sync_insert_template_submenu` below is the repopulation; `App::build`
+                // drives it from the catalogue's own change signal.
+                let m = m.submenu_with_id(templates_submenu_id, tr!(menu_insert_template()), |t| t);
 
                 m.item(
                     MenuEntry::new(tr!(menu_save_as_template()))
@@ -929,4 +986,126 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
         .menu(tr!(menu_help()), |m| {
             m.item(MenuEntry::new(tr!(menu_about())).intent("app.about"))
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A model shaped like the real Document menu: a top-level menu with a couple of items
+    /// and the addressable template submenu nested inside it.
+    fn model_with_submenu(id: MenuItemId) -> MenuModel {
+        MenuModel::new().menu(lit!("Document"), move |m| {
+            m.item(MenuEntry::new(lit!("Rename")))
+                .submenu_with_id(id, lit!("Insert template"), |t| t)
+                .item(MenuEntry::new(lit!("Save as template…")))
+        })
+    }
+
+    fn submenu_len(model: &MenuModel, id: MenuItemId) -> usize {
+        let mut n = 0;
+        model.modify(|nodes| {
+            n = find_submenu_children(nodes, id)
+                .map(|c| c.len())
+                .unwrap_or(0);
+        });
+        n
+    }
+
+    /// The submenu is one level down inside the Document menu, so the lookup has to
+    /// recurse — `MenuModel::modify` only hands out the top-level nodes.
+    #[test]
+    fn a_nested_submenu_is_found_by_id() {
+        let id = MenuItemId::next();
+        let model = model_with_submenu(id);
+        model.modify(|nodes| {
+            assert!(
+                find_submenu_children(nodes, id).is_some(),
+                "the nested submenu must be reachable by its pre-allocated id"
+            );
+        });
+    }
+
+    #[test]
+    fn an_unknown_id_finds_nothing() {
+        let model = model_with_submenu(MenuItemId::next());
+        model.modify(|nodes| {
+            assert!(find_submenu_children(nodes, MenuItemId::next()).is_none());
+        });
+    }
+
+    /// Refilling must **replace** the children, never append to them.
+    ///
+    /// This is the failure mode a live-updating menu invites: the sync runs on every
+    /// catalogue change, so an appending implementation would show each template twice
+    /// after the second change, three times after the third. Asserted on the empty case
+    /// because that is the one this test can build without a loaded project — the count is
+    /// what matters, not the contents.
+    #[test]
+    fn refilling_replaces_the_children_rather_than_appending() {
+        let id = MenuItemId::next();
+        let model = model_with_submenu(id);
+        let templates = NoteTemplatesViewModel::new(
+            crate::models::WorkNoteTemplatesListModel::new(
+                std::rc::Rc::new(frontend::AppContext::new()),
+                crate::app_ids::AppIds::default(),
+            ),
+            crate::app_ids::AppIds::default(),
+        );
+        let note_focused = Signal::new(false);
+
+        sync_insert_template_submenu(&model, id, &templates, &note_focused);
+        let after_one = submenu_len(&model, id);
+        sync_insert_template_submenu(&model, id, &templates, &note_focused);
+        let after_two = submenu_len(&model, id);
+
+        assert_eq!(
+            after_one, after_two,
+            "a second refill must not grow the submenu (got {after_one} then {after_two})"
+        );
+    }
+
+    /// Every refill must bump `version`: a `MenuBar::from_model` bar binds that at
+    /// `Rebuild` level, and it is the only thing that makes the dropdown re-derive. Without
+    /// the bump the model would be correct and the menu would still render stale — which is
+    /// indistinguishable, from the writer's side, from the bug this whole path fixes.
+    #[test]
+    fn refilling_bumps_the_model_version() {
+        let id = MenuItemId::next();
+        let model = model_with_submenu(id);
+        let templates = NoteTemplatesViewModel::new(
+            crate::models::WorkNoteTemplatesListModel::new(
+                std::rc::Rc::new(frontend::AppContext::new()),
+                crate::app_ids::AppIds::default(),
+            ),
+            crate::app_ids::AppIds::default(),
+        );
+        let before = model.version().get();
+        sync_insert_template_submenu(&model, id, &templates, &Signal::new(false));
+        assert!(
+            model.version().get() > before,
+            "the bar re-derives on a version bump; without one the menu renders stale"
+        );
+    }
+
+    /// An empty catalogue yields the explanatory placeholder, not a blank submenu — a
+    /// submenu that opens onto nothing reads as broken.
+    #[test]
+    fn an_empty_catalogue_yields_one_placeholder_row() {
+        let id = MenuItemId::next();
+        let model = model_with_submenu(id);
+        let templates = NoteTemplatesViewModel::new(
+            crate::models::WorkNoteTemplatesListModel::new(
+                std::rc::Rc::new(frontend::AppContext::new()),
+                crate::app_ids::AppIds::default(),
+            ),
+            crate::app_ids::AppIds::default(),
+        );
+        sync_insert_template_submenu(&model, id, &templates, &Signal::new(false));
+        assert_eq!(
+            submenu_len(&model, id),
+            1,
+            "exactly the placeholder while the project has no templates"
+        );
+    }
 }

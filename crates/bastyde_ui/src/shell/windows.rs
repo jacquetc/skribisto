@@ -37,8 +37,10 @@
 
 use std::rc::Rc;
 
+use bastyde::core::menu_item_id::MenuItemId;
 use bastyde::prelude::*;
 use bastyde::res;
+use bastyde::widgets::MenuModel;
 use bastyde::widgets::primitives::icon_widget::IconMode;
 use bastyde::widgets::{
     Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, IconWidget, MenuBar, Padding,
@@ -350,6 +352,11 @@ impl ProjectWindowFactory {
         // Kept concrete rather than mapped off the selection set — `MenuEntry::enabled`
         // wants a real `Signal<bool>`; `App::build` keeps it in step.
         let binder_has_selection = Signal::new(false);
+        // Pre-allocated so the Document menu's "Insert template" submenu stays addressable
+        // after the model is built — its contents are DATA and have to be refilled as the
+        // catalogue changes. Per WINDOW, like everything else here: two windows each own a
+        // menu model, and one window's id must not address the other's submenu.
+        let templates_submenu_id = bastyde::core::menu_item_id::MenuItemId::next();
         // Increment 4 (the Go menu). Per WINDOW, same rationale as `scene_focused`
         // just above: it mirrors *this* window's own focused item, so a second
         // simultaneously-open project window's Go menu never reflects the wrong
@@ -554,6 +561,10 @@ impl ProjectWindowFactory {
                 // Custom Bastyde title bar with a model-driven hamburger menu
                 // in the leading slot (falls back to a plain label on any
                 // platform whose host is unavailable).
+                // A clone of the menu model, kept alive past the match so `App::build` can
+                // refill the template submenu as the catalogue changes. `None` on a
+                // platform with no title-bar host, where there is no model to refill.
+                let mut templates_menu: Option<(MenuModel, MenuItemId)> = None;
                 let title_bar = match tree.title_bar_host() {
                     Some(host) => {
                         // Model-style menu, collapsed to a hamburger (☰).
@@ -568,7 +579,7 @@ impl ProjectWindowFactory {
                                 spellcheck_menu: spellcheck_menu.clone(),
                                 scene_focused: scene_focused.clone(),
                                 binder_has_selection: binder_has_selection.clone(),
-                                note_templates: session.note_templates.clone(),
+                                templates_submenu_id,
                                 go: go.clone(),
                                 format: format.clone(),
                                 save_as: save_as_vm.clone(),
@@ -579,6 +590,18 @@ impl ProjectWindowFactory {
                                 placement: state.placement().clone(),
                             },
                         );
+                        // Fill the template submenu once now, so a window opened on a
+                        // project that already has templates shows them before anything
+                        // changes. `App::build` keeps it in step from there.
+                        super::project_menus::sync_insert_template_submenu(
+                            &menu,
+                            templates_submenu_id,
+                            &session.note_templates,
+                            &format.note_focused(),
+                        );
+
+                        templates_menu = Some((menu.clone(), templates_submenu_id));
+
                         // `Toolbar` (30 dp), not `Large` (40): the bar is
                         // `TITLE_BAR_HEIGHT` tall and does not grow for an oversized
                         // child — a `Large` hamburger simply overflows the strip.
@@ -702,6 +725,7 @@ impl ProjectWindowFactory {
                     spellcheck_menu.clone(),
                     scene_focused.clone(),
                     binder_has_selection.clone(),
+                    templates_menu,
                     go.clone(),
                     go_to.clone(),
                     unsaved.clone(),
