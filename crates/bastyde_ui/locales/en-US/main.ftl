@@ -155,6 +155,7 @@ session-readout-timed = { $words } words · { $time } left
 statusbar-focus-exit = Exit distraction-free mode
 # The strip's Next/Previous buttons (Increment 4) — fire the same go.next/go.prev
 # actions as the shortcut and the Go menu's generic pair.
+statusbar-focus-synopsis = Synopsis
 statusbar-focus-go-prev = Previous item (Alt+Up)
 statusbar-focus-go-next = Next item (Alt+Down)
 
@@ -238,7 +239,10 @@ settings-distraction-free-chrome-hint = The Exit button always stays, whatever y
 settings-field-app-theme = Theme
 settings-field-text-scale = Interface text size
 settings-field-language = Interface language
-settings-synopsis-pane = Show synopsis pane above the manuscript
+settings-synopsis-placement = Synopsis position
+settings-synopsis-placement-none = None
+settings-synopsis-placement-top = Above
+settings-synopsis-placement-side = Beside
 settings-typewriter = Typewriter scrolling
 settings-typewriter-tip = Holds the line you are writing at a fixed height while the manuscript scrolls under it. Clicking still puts the caret where you click.
 settings-typewriter-position = Line position
@@ -351,6 +355,7 @@ nav-about = About
 
 ## Editor tabs & panes
 synopsis = Synopsis
+pane-manuscript = Manuscript
 corkboard = Corkboard
 overview = Overview
 

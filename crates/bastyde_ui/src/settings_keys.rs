@@ -171,6 +171,22 @@ pub static SETTINGS: &[SettingSpec] = &[
         doc: "Show the synopsis pane above the manuscript in the dual-pane editor.",
     },
     SettingSpec {
+        key: crate::SYNOPSIS_PLACEMENT_KEY,
+        ty: "one of: Top | Side",
+        default: || val(crate::view_models::SynopsisPlacement::default()),
+        check: check::<crate::view_models::SynopsisPlacement>,
+        doc: "Where the synopsis sits: Top (above the manuscript) or Side (beside it). \
+              Side needs room for two columns — a tab too narrow for both falls back to Top.",
+    },
+    SettingSpec {
+        key: crate::SYNOPSIS_SIDE_WIDTH_KEY,
+        ty: "float (px, 180–560)",
+        default: || val(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
+        check: check::<f32>,
+        doc: "Width of the Side synopsis column. Updated by dragging its divider; the \
+              range is enforced by the app, not by this schema.",
+    },
+    SettingSpec {
         key: crate::REMEMBER_VIEW_KEY,
         ty: "bool",
         default: || val(crate::REMEMBER_VIEW_DEFAULT),

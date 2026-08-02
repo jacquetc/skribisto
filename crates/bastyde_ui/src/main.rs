@@ -384,6 +384,19 @@ pub const DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
 /// (Skribisto's signature layout). Consumed live by the `shared::prose` body.
 pub const SYNOPSIS_PANE_KEY: &str = "editor.synopsis_pane";
 pub const SYNOPSIS_PANE_DEFAULT: bool = true;
+/// Where that pane sits: above the manuscript (the default, and what every
+/// existing project looks like) or beside it in its own column. A
+/// [`view_models::SynopsisPlacement`], stored by variant name.
+pub const SYNOPSIS_PLACEMENT_KEY: &str = "editor.synopsis_placement";
+/// Width (px) of the Side synopsis column. Written back when the divider is
+/// dragged, and read as the seed by every tab opened afterwards.
+pub const SYNOPSIS_SIDE_WIDTH_KEY: &str = "editor.synopsis_side_width";
+pub const SYNOPSIS_SIDE_WIDTH_DEFAULT: f32 = 280.0;
+/// Bounds the Side column can be dragged between. Wide enough to read a sentence
+/// of synopsis at the low end; never more than a third of a typical window at the
+/// high end, since the manuscript is what the writer came for.
+pub const SYNOPSIS_SIDE_WIDTH_MIN: f32 = 180.0;
+pub const SYNOPSIS_SIDE_WIDTH_MAX: f32 = 560.0;
 /// Remember, per container item type (Book / Part / Chapter), the last
 /// `SegmentedControl` view used — so opening a new chapter lands on the same view
 /// (e.g. Full Chapter) as the last chapter. The per-type indices live under

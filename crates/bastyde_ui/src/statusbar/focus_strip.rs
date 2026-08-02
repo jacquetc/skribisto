@@ -37,8 +37,8 @@
 use bastyde::core::binding::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, Divider, Expand, MaxSize, StatusBar, TextWidget, Toolbar, ToolbarAction,
-    ToolbarItem, VStack,
+    Button, ButtonVariant, Divider, Expand, IconButton, IconButtonSize, MaxSize, StatusBar,
+    TextWidget, Toolbar, ToolbarAction, ToolbarItem, VStack,
 };
 
 use crate::models::StatsModel;
@@ -118,6 +118,15 @@ pub struct FocusStrip {
     has_work: Signal<bool>,
     show_characters: Signal<bool>,
     chrome: FocusStripChrome,
+    /// Whether the synopsis shows inside the mode — this window's own flag, not
+    /// the global preference (see `FocusViewModel::synopsis_visible_signal`).
+    synopsis_visible: Signal<bool>,
+    /// Whether the open item even *has* a toggleable synopsis. The one control
+    /// here that is disabled rather than absent: unlike the four chrome-gated
+    /// gadgets it is not a preference the writer turned off, it is a thing this
+    /// particular document cannot do — and a button that vanished as you navigated
+    /// between a scene and a folder would read as the strip glitching.
+    synopsis_capable: Signal<bool>,
     root_child: Option<WidgetId>,
 }
 
@@ -138,6 +147,8 @@ impl FocusStrip {
         has_work: Signal<bool>,
         show_characters: Signal<bool>,
         chrome: FocusStripChrome,
+        synopsis_visible: Signal<bool>,
+        synopsis_capable: Signal<bool>,
     ) -> Self {
         Self {
             go_to_vm,
@@ -148,6 +159,8 @@ impl FocusStrip {
             has_work,
             show_characters,
             chrome,
+            synopsis_visible,
+            synopsis_capable,
             root_child: None,
         }
     }
@@ -226,6 +239,25 @@ impl Widget for FocusStrip {
         }
 
         bar = bar.item(ToolbarItem::flexible_space());
+
+        // The synopsis toggle, before the Go cluster. Not gated by a
+        // `FocusStripChrome` field, and deliberately: the other four gadgets are
+        // ambient readouts a writer may not want, while this is the only way to
+        // reach the synopsis at all once the chrome is gone — the same reason Exit
+        // has no setting either.
+        //
+        // **Pinned**, not a collapsible `.action`. A `ToolbarAction` renders its
+        // overflow form as a `MenuItem`, and a menu row cannot carry an icon *and*
+        // a checkmark — so a toggling action with a glyph is rejected outright by
+        // the framework. Pinning it also matches what it is: like Exit, a control
+        // that only exists inside this mode and must stay reachable.
+        bar = bar.item(ToolbarItem::custom(
+            IconButton::new(crate::icons::editor::synopsis_side())
+                .size(IconButtonSize::Compact)
+                .toggle(self.synopsis_visible.clone())
+                .enabled(self.synopsis_capable.clone())
+                .tooltip(tr!(statusbar_focus_synopsis())),
+        ));
 
         if self.chrome.go.get() {
             // Plain actions: an icon button inline, a real menu row when
@@ -403,6 +435,8 @@ mod tests {
             Signal::new(true),
             Signal::new(false),
             chrome.clone(),
+            Signal::new(false),
+            Signal::new(true),
         ));
         tree.layout(SizeProposal::exact(width, 40.0));
         (tree, chrome)

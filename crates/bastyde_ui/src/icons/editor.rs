@@ -43,3 +43,16 @@ pub fn spellcheck_on() -> IconWidget {
 pub fn spellcheck_off() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/editor/spellcheck-off.svg")).icon_size(ICON_SIZE)
 }
+
+/// "Synopsis beside the manuscript" — the distraction-free strip's toggle for the
+/// Side synopsis column.
+pub fn synopsis_side() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/synopsis-side.svg")).icon_size(ICON_SIZE)
+}
+
+/// "Fold the synopsis column away" — the button in the Side pane's own header, so
+/// a writer can reclaim the width for one document without a trip to Settings.
+pub fn synopsis_collapse() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/synopsis-collapse.svg"))
+        .icon_size(ICON_SIZE)
+}

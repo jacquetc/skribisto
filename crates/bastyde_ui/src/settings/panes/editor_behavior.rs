@@ -13,6 +13,8 @@ use bastyde::prelude::*;
 use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{ComboBox, Segment, SegmentedControl};
 
+use crate::view_models::SynopsisPlacement;
+
 #[allow(unused_imports)]
 use super::super::*;
 
@@ -22,6 +24,27 @@ fn typewriter_anchor_label(anchor: &TypewriterAnchor) -> LocalizedString {
         TypewriterAnchor::TopThird => tr!(settings_typewriter_position_top_third()),
         TypewriterAnchor::Middle => tr!(settings_typewriter_position_middle()),
         TypewriterAnchor::BottomQuarter => tr!(settings_typewriter_position_bottom_quarter()),
+    }
+}
+
+/// The synopsis control's three choices — one control over the two settings it
+/// writes (whether there is a synopsis, and where it goes).
+///
+/// A checkbox plus a two-way placement control encoded three choices in four
+/// states, one of which ("hidden, but beside") means nothing — and the checkbox's
+/// label had to claim a position, so it read wrongly the moment the synopsis could
+/// sit anywhere else.
+const SYNOPSIS_CHOICES: [Option<SynopsisPlacement>; 3] = [
+    Option::None,
+    Some(SynopsisPlacement::Top),
+    Some(SynopsisPlacement::Side),
+];
+
+fn synopsis_choice_label(choice: Option<SynopsisPlacement>) -> LocalizedString {
+    match choice {
+        Option::None => tr!(settings_synopsis_placement_none()),
+        Some(SynopsisPlacement::Top) => tr!(settings_synopsis_placement_top()),
+        Some(SynopsisPlacement::Side) => tr!(settings_synopsis_placement_side()),
     }
 }
 
@@ -85,6 +108,55 @@ pub(in crate::settings) fn editor_behavior_pane(
             }
         });
     }
+    // The synopsis: whether there is one, and where it goes. Same guarded index
+    // bridge as the caret band below, but over *two* settings — the visibility flag
+    // and the placement — because distraction-free mode needs the boolean axis on
+    // its own (its strip toggle shows and hides; placement there is always Beside).
+    // Only the control is unified; the stored state stays two answers.
+    let synopsis_shown = vm.synopsis_pane();
+    let placement = vm.synopsis_placement();
+    let choice_of = |shown: bool, p: SynopsisPlacement| if shown { p.to_index() + 1 } else { 0 };
+    let choice_index: Signal<usize> = Signal::new(choice_of(synopsis_shown.get(), placement.get()));
+    {
+        let sync = {
+            let (choice_index, placement, shown) = (
+                choice_index.clone(),
+                placement.clone(),
+                synopsis_shown.clone(),
+            );
+            std::rc::Rc::new(move || {
+                let want = choice_of(shown.get(), placement.get());
+                if choice_index.get() != want {
+                    choice_index.set(want);
+                }
+            })
+        };
+        let also = sync.clone();
+        ctx.effect(&synopsis_shown, move |_| also());
+        ctx.effect(&placement, move |_| sync());
+    }
+    {
+        let (shown, placement) = (synopsis_shown.clone(), placement.clone());
+        ctx.effect(&choice_index, move |i| {
+            // "None" leaves the placement alone rather than resetting it, so
+            // switching the synopsis back on returns it to the side it was on.
+            let want_shown = *i > 0;
+            if shown.get() != want_shown {
+                shown.set(want_shown);
+            }
+            if let Some(p) = SYNOPSIS_CHOICES.get(*i).copied().flatten()
+                && placement.get() != p
+            {
+                placement.set(p);
+            }
+        });
+    }
+    let synopsis_control = SYNOPSIS_CHOICES
+        .into_iter()
+        .fold(SegmentedControl::new(choice_index), |control, choice| {
+            control.segment(Segment::new(synopsis_choice_label(choice)))
+        });
+
     let highlight_control =
         HighlightScope::all()
             .into_iter()
@@ -118,7 +190,10 @@ pub(in crate::settings) fn editor_behavior_pane(
         // they rendered before, the group heading having been inserted above
         // them when the distraction-free column width was added.
         .full_width(group(tr!(settings_group_writing_view())))
-        .full_width(Toggle::new(vm.synopsis_pane()).label(tr!(settings_synopsis_pane())))
+        .line(
+            field_label(tr!(settings_synopsis_placement())),
+            synopsis_control,
+        )
         .full_width(
             Toggle::new(vm.typewriter())
                 .label(tr!(settings_typewriter()))

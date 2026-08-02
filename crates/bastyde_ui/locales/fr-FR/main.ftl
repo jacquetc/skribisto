@@ -155,6 +155,7 @@ session-readout-timed = { $words } mots · { $time } restant
 statusbar-focus-exit = Quitter le mode sans distraction
 # Les boutons Suivant/Précédent de la bande (étape 4) — déclenchent les mêmes
 # actions go.next/go.prev que le raccourci et la paire générique du menu Aller à.
+statusbar-focus-synopsis = Synopsis
 statusbar-focus-go-prev = Élément précédent (Alt+Haut)
 statusbar-focus-go-next = Élément suivant (Alt+Bas)
 
@@ -239,7 +240,10 @@ settings-distraction-free-chrome-hint = Le bouton Quitter reste toujours affich�
 settings-field-app-theme = Thème
 settings-field-text-scale = Taille du texte de l'interface
 settings-field-language = Langue de l'interface
-settings-synopsis-pane = Afficher le synopsis au-dessus du manuscrit
+settings-synopsis-placement = Position du synopsis
+settings-synopsis-placement-none = Aucun
+settings-synopsis-placement-top = Au-dessus
+settings-synopsis-placement-side = À côté
 settings-typewriter = Défilement machine à écrire
 settings-typewriter-tip = Maintient la ligne en cours d'écriture à une hauteur fixe pendant que le manuscrit défile en dessous. Un clic place toujours le curseur là où vous cliquez.
 settings-typewriter-position = Position de la ligne
@@ -353,6 +357,7 @@ nav-about = À propos
 
 ## Onglets & volets d'édition
 synopsis = Synopsis
+pane-manuscript = Manuscrit
 corkboard = Tableau d'affichage
 overview = Aperçu
 

@@ -17,18 +17,19 @@ use bastyde::core::widget::WidgetPlacement;
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Center, Expand, GroupHeader, HStack, ScrollArea, Segment, SegmentedControl, Spacer, Switcher,
-    TextWidget, VStack,
+    Center, Expand, GroupHeader, HStack, IconButton, IconButtonSize, Padding, RectWidget,
+    ScrollArea, Segment, SegmentedControl, Spacer, Splitter, Switcher, TextWidget, VStack, ZStack,
 };
 
 use frontend::common::entities::BinderItemSubRole;
 
-use crate::tabs::ContentTab;
+use crate::tabs::{Boxed, ContentTab};
 use crate::view_models::{EditorViewMemory, SplitFlavour};
 
+use super::editor::SideSync;
 use super::{
-    VisibleWhen, centered, stream_pane, synopsis_column, synopsis_section, tab_backdrop,
-    title_input, vspace, writing_section,
+    VisibleWhen, centered, side_synopsis_editor, stream_pane, synopsis_column, synopsis_section,
+    tab_backdrop, title_input, vspace, writing_section,
 };
 
 /// The `ScrollArea` every writing surface in the app scrolls inside — the one
@@ -54,6 +55,26 @@ pub(crate) fn writing_page_scroll(tab: &ContentTab) -> ScrollArea {
         area.max_scroll_y_signal().clone(),
     );
     area
+}
+
+/// As [`writing_page_scroll`], but for a page that is **one of several** a tab can
+/// show — it hands back a zero-size companion that claims the tab's view-state
+/// ports only while this page is the one on screen.
+///
+/// The plain function above attaches immediately, which is right for a body with a
+/// single scrolling page. The dual-pane editor has two (the Top layout's flowing
+/// page, and the Side layout's manuscript column), and the ports hold one slot: an
+/// immediate attach from both would leave the tab restoring, and reporting, the
+/// scroll of whichever happened to be built last. Mount the companion anywhere
+/// inside the same page.
+pub(crate) fn switchable_page_scroll(tab: &ContentTab) -> (ScrollArea, impl Widget) {
+    let area = ScrollArea::new().scroll_past_end(tab.typewriter.scroll_past_end_signal());
+    let port = super::editor::PageScrollPort::new(
+        tab.view_state_ports(),
+        area.scroll_y_signal().clone(),
+        area.max_scroll_y_signal().clone(),
+    );
+    (area, port)
 }
 
 /// The container's **own page** — the first segment of every folder container tab.
@@ -143,6 +164,69 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
 /// as one flowing page. Shared by Item/Scene, Item/ChapterScene (which adds the
 /// chapter-title field) and Item/Note (which switches to Notes typography).
 pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
+    use crate::tabs::shared::editor::{SideSync, SynopsisPaneEffects, WidthProbe};
+
+    let wants_side = tab.synopsis_placement.map(|p| p.is_side());
+
+    // The Top layout — today's flowing page, unchanged: title, tags, the compact
+    // synopsis box and the prose all scroll together.
+    let top = manuscript_page(tab, Some(tab.show_synopsis.clone()));
+
+    // The Side layout, built lazily by the `WidthProbe`'s `Switcher` and only if the
+    // writer ever actually gets it — a Top-placement project never pays for it.
+    let side = {
+        // One handle, shared by the effects widget (which drives the pane from the
+        // setting) and the header's fold button — so "folded" has a single owner.
+        let sync = SideSync::new(tab.side_splitter.clone(), tab.synopsis_side_width.clone());
+        let synopsis = side_synopsis_pane(tab, sync.clone());
+        let manuscript = manuscript_page(tab, None);
+        let mut splitter = Splitter::new(tab.side_splitter.clone())
+            .pane(synopsis)
+            .pane(manuscript);
+        splitter = splitter
+            .pane_label(0, tr!(synopsis()))
+            .pane_label(1, tr!(pane_manuscript()));
+        // Drives pane 0's visibility (and its weight — see `SideSync`) from the same
+        // boolean that decides whether the synopsis is on screen, and owns the spell
+        // session's dormancy while this branch is the live one.
+        VStack::new()
+            .spacing(0.0)
+            .child(SynopsisPaneEffects::new(
+                tab.open_doc.clone(),
+                tab.show_synopsis.clone(),
+                Some(sync),
+            ))
+            .child(Expand::new().child(splitter))
+    };
+
+    // Placement is a preference; the width is the veto. `WidthProbe` measures what
+    // it was actually given and falls back to Top when a Side layout would leave a
+    // prose column too narrow to write in — see its docs.
+    let body = WidthProbe::new(
+        wants_side,
+        tab.synopsis_side_width.clone(),
+        Box::new(top),
+        Box::new(side),
+    );
+
+    // `prose` is the only one of the five `tab_backdrop` composites that gets the
+    // find banner: `heading` / `placeholder` / `folder_synopsis_only` have no main
+    // writing surface to search, and `folder_segmented` wraps a stream `Switcher`
+    // whose rows have no single "focused editor" to target.
+    //
+    // The banner is applied **inside** each layout's manuscript column rather than
+    // over the whole tab, so under Side it spans the prose it searches instead of
+    // stretching across the synopsis strip as well.
+    crate::tabs::shared::editor::tab_backdrop(tab.backdrop_role(), body)
+}
+
+/// The manuscript as a flowing page: the optional chapter title, the tag row, an
+/// optional compact synopsis box, and the prose — all scrolling together.
+///
+/// `compact_synopsis` is the Top layout's gate. `None` means this page is the
+/// manuscript **column of the Side layout**, where the synopsis lives in its own
+/// splitter pane and must not also appear here.
+fn manuscript_page(tab: &ContentTab, compact_synopsis: Option<Signal<bool>>) -> impl Widget {
     let mut col = VStack::new().spacing(5.0).child(vspace(10.0));
 
     // ChapterScene opens a chapter — show its title field above the prose.
@@ -163,8 +247,8 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
     // only place its tags can appear while it is being written. Untagged scenes, which are
     // most of them, get nothing: the row collapses to zero.
     col = col.child(centered(subtitle_tag_dots(tab), &tab.column_width));
-    if let Some(s) = tab.synopsis() {
-        // The synopsis pane is user-toggleable (Settings ▸ Manuscript & Fonts).
+
+    if let (Some(s), Some(showing)) = (tab.synopsis(), compact_synopsis) {
         // Hidden, it goes dormant: no space, no paint, out of the a11y tree and the
         // Tab order — while the writing editor stays mounted and the synopsis's own
         // document (owned by the shared `OpenDoc`) survives to be re-shown.
@@ -176,8 +260,13 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
         // the renderer: the inspector striped the overflow, and a single hazard band
         // across a scene-tall strip became a 229 MB path the atlas re-rasterized every
         // frame. See `shared::editor::VisibleWhen`.
-        col = col.child(VisibleWhen::new(
+        col = col.child(crate::tabs::shared::editor::SynopsisPaneEffects::new(
+            tab.open_doc.clone(),
             tab.show_synopsis.clone(),
+            None,
+        ));
+        col = col.child(VisibleWhen::new(
+            showing,
             synopsis_section(
                 &s.doc,
                 &tab.column_width,
@@ -191,6 +280,7 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             ),
         ));
     }
+
     // The per-editor find banner's view-model (Ctrl+F). `Some` for every prose
     // tab — Scene / ChapterScene / Note all have a main field. The editor built by
     // `writing_section` attaches its handle to this vm; the banner above binds it.
@@ -210,26 +300,69 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
             Some(tab.view_state_binding()),
         ));
     }
-    // The whole dual-pane body scrolls as one flowing page: the main editor is
-    // intrinsic-sized with its own scroll bar suppressed (see
-    // `shared::writing_column`), so title, synopsis and prose scroll together here
-    // instead of the prose scrolling inside a fixed pane.
-    //
-    // `prose` is the only one of the five `tab_backdrop` composites that gets the
-    // find banner: `heading` / `placeholder` / `folder_synopsis_only` have no main
-    // writing surface to search, and `folder_segmented` wraps a stream `Switcher`
-    // whose rows have no single "focused editor" to target.
-    match find {
-        Some(find) => crate::tabs::shared::editor::tab_backdrop_with_find(
-            tab.backdrop_role(),
-            find,
-            writing_page_scroll(tab).child(col),
+
+    // This page owns the tab's scroll only while it is the page on screen — the two
+    // layouts each have one, and the tab remembers a single scroll position.
+    let (area, port) = switchable_page_scroll(tab);
+    let page = area.child(col.child(port));
+    let body: Box<dyn Widget> = match find {
+        Some(find) => Box::new(crate::tabs::shared::editor::find_banner_over(find, page)),
+        None => Box::new(page),
+    };
+    Boxed::new(body)
+}
+
+/// The Side layout's left pane: the synopsis on the window's own chrome colour,
+/// filling the pane and scrolling inside it.
+///
+/// Painted with a `RectWidget`, not a `Panel` — the distraction-free surface
+/// mounts this very pane under a theme-token override where `Panel` resolved its
+/// background against the base palette instead of the theme, and every paint there
+/// has had to be a `RectWidget` since.
+fn side_synopsis_pane(tab: &ContentTab, sync: SideSync) -> impl Widget {
+    let body: Box<dyn Widget> = match tab.synopsis() {
+        Some(s) => Box::new(
+            VStack::new()
+                .spacing(6.0)
+                .child(vspace(10.0))
+                .child(
+                    HStack::new()
+                        .spacing(4.0)
+                        .child(
+                            Expand::horizontal().child(
+                                GroupHeader::new(tr!(synopsis()))
+                                    .style(TextStyleRole::SmallBold)
+                                    .color(TextRole::Secondary),
+                            ),
+                        )
+                        // Fold this column away for *this* document. Side costs a
+                        // permanent slice of the tab's width — far more than Top's
+                        // few lines of height — so reclaiming it must not mean a
+                        // Settings trip that changes every tab and every project.
+                        .child(
+                            IconButton::new(crate::icons::editor::synopsis_collapse())
+                                .size(IconButtonSize::Compact)
+                                .icon_role(TextRole::Secondary)
+                                .tooltip(tr!(synopsis_collapse_tooltip()))
+                                .on_activate_fn(move |_| sync.fold()),
+                        ),
+                )
+                .child(Expand::new().child(side_synopsis_editor(
+                    &s.doc,
+                    &tab.typography.synopsis,
+                    tab.mark_dirty_fn(),
+                    tab.open_doc.spell_synopsis(),
+                    tab.open_doc.replacement_synopsis(),
+                    Some(tab.synopsis_handle_sink()),
+                    Some(tab.format.clone()),
+                    Some(tab.caret_band()),
+                ))),
         ),
-        None => crate::tabs::shared::editor::tab_backdrop(
-            tab.backdrop_role(),
-            writing_page_scroll(tab).child(col),
-        ),
-    }
+        None => Box::new(vspace(0.0)),
+    };
+    ZStack::new()
+        .child(RectWidget::new().background(SurfaceRole::Main))
+        .child(Padding::new(0.0, 12.0, 0.0, 12.0).child(Boxed::new(body)))
 }
 
 /// A title (+ optional subtitle / synopsis) form. Shared by the title-bearing item

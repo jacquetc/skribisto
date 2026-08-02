@@ -96,6 +96,12 @@ pub struct EditorsViewModel {
     go: GoAvailability,
     column_width: Signal<f32>,
     show_synopsis: Signal<bool>,
+    /// Synopsis placement (above vs beside the manuscript), shared live from
+    /// Settings into every `ContentTab`.
+    synopsis_placement: Signal<crate::view_models::SynopsisPlacement>,
+    /// Width of the Side synopsis column, shared live from Settings into every
+    /// `ContentTab`, which seeds its own divider from it.
+    synopsis_side_width: Signal<f32>,
     typography: EditorTypographySet,
     /// Typewriter scrolling, shared live from Settings into every `ContentTab`.
     typewriter: crate::view_models::TypewriterSettings,
@@ -149,6 +155,8 @@ impl EditorsViewModel {
         app_ctx: Rc<AppContext>,
         column_width: Signal<f32>,
         show_synopsis: Signal<bool>,
+        synopsis_placement: Signal<crate::view_models::SynopsisPlacement>,
+        synopsis_side_width: Signal<f32>,
         typography: EditorTypographySet,
         typewriter: crate::view_models::TypewriterSettings,
         caret_highlight: crate::view_models::CaretHighlightSettings,
@@ -195,6 +203,8 @@ impl EditorsViewModel {
             format,
             column_width,
             show_synopsis,
+            synopsis_placement,
+            synopsis_side_width,
             typography,
             typewriter,
             caret_highlight,
@@ -518,7 +528,12 @@ impl EditorsViewModel {
                 TextRole::Primary
             }
         });
-        let tab = self.make_tab(doc, self.distraction_free.clone());
+        let tab = self.make_tab(
+            doc,
+            self.distraction_free.clone(),
+            self.show_synopsis.clone(),
+            self.synopsis_placement.clone(),
+        );
         let tab_title = if title.is_empty() {
             tr!(untitled())
         } else {
@@ -540,19 +555,33 @@ impl EditorsViewModel {
         self.set_focused(side);
     }
 
+    /// This window's own synopsis-visibility signal — what a **pane** tab is
+    /// built with. The distraction-free surface passes its own instead.
+    pub fn show_synopsis(&self) -> Signal<bool> {
+        self.show_synopsis.clone()
+    }
+
     /// Build a `ContentTab` over `doc` with this window's shared settings
-    /// handles. The one place `ContentTab::new`'s fourteen arguments are
-    /// assembled, so a tab opened in a pane and one opened by the
-    /// distraction-free surface cannot drift apart on anything but the one axis
+    /// handles. The one place `ContentTab::new`'s arguments are assembled, so a
+    /// tab opened in a pane, one rebuilt by a Promote, and one opened by the
+    /// distraction-free surface cannot drift apart on anything but the two axes
     /// they are meant to differ on.
-    fn make_tab(&self, doc: Rc<OpenDoc>, distraction_free: Signal<bool>) -> ContentTab {
+    fn make_tab(
+        &self,
+        doc: Rc<OpenDoc>,
+        distraction_free: Signal<bool>,
+        show_synopsis: Signal<bool>,
+        synopsis_placement: Signal<crate::view_models::SynopsisPlacement>,
+    ) -> ContentTab {
         ContentTab::new(
             self.app_ctx.clone(),
             self.ids.clone(),
             self.docs.clone(),
             doc,
             self.column_width.clone(),
-            self.show_synopsis.clone(),
+            show_synopsis,
+            synopsis_placement,
+            self.synopsis_side_width.clone(),
             self.typography.clone(),
             self.typewriter.clone(),
             self.caret_highlight.clone(),
@@ -580,9 +609,28 @@ impl EditorsViewModel {
     /// back with [`Self::release_surface_tab`] — `release_own_open_docs` only
     /// walks the two panes' tab lists and cannot see a reference the surface
     /// holds.
-    pub fn open_surface_tab(&self, item_id: u64) -> Option<ContentTab> {
+    ///
+    /// `show_synopsis` is the surface's **own** flag rather than this window's
+    /// setting: revealing the synopsis while writing full-screen is a thing you do
+    /// for the next few minutes, not a preference change that should follow you
+    /// back out and into every other window.
+    pub fn open_surface_tab(
+        &self,
+        item_id: u64,
+        show_synopsis: Signal<bool>,
+    ) -> Option<ContentTab> {
         let doc = self.docs.open(item_id)?;
-        Some(self.make_tab(doc, Signal::new(true)))
+        // Placement is pinned to Side in this mode rather than following the
+        // setting. The mode has one document, a whole screen, and no docks — the
+        // reasons a writer chooses Top (a narrow pane, a busy window) are all
+        // absent, and the strip's toggle is the only way in, so "shown" and
+        // "beside" are the same gesture here.
+        Some(self.make_tab(
+            doc,
+            Signal::new(true),
+            show_synopsis,
+            Signal::new(crate::view_models::SynopsisPlacement::Side),
+        ))
     }
 
     /// Give back the refcount [`Self::open_surface_tab`] took.
@@ -1108,22 +1156,18 @@ impl EditorsViewModel {
                         .then(|| h.clone())
                 });
                 let Some(Some(h)) = hit else { continue };
-                let tab = ContentTab::new(
-                    self.app_ctx.clone(),
-                    self.ids.clone(),
-                    self.docs.clone(),
+                // Through `make_tab`, not a second inline `ContentTab::new`. This
+                // used to duplicate the whole argument list, which meant every new
+                // piece of per-tab state had to be remembered in two places — and a
+                // Promote silently produced a tab configured differently from a
+                // freshly opened one when it wasn't. Like `segment`, per-tab state
+                // (the folded-away Side synopsis, its divider position) resets here:
+                // this is a new tab of a new type.
+                let tab = self.make_tab(
                     doc.clone(),
-                    self.column_width.clone(),
-                    self.show_synopsis.clone(),
-                    self.typography.clone(),
-                    self.typewriter.clone(),
-                    self.caret_highlight.clone(),
-                    self.view_memory.clone(),
-                    self.corkboard_defaults.clone(),
-                    self.tree_expansion.clone(),
                     self.distraction_free.clone(),
-                    self.distraction_free_width.clone(),
-                    self.format.clone(),
+                    self.show_synopsis.clone(),
+                    self.synopsis_placement.clone(),
                 );
                 let caption = if it.title.is_empty() {
                     tr!(untitled())
@@ -1272,6 +1316,8 @@ mod tests {
             app_ctx,
             Signal::new(700.0),
             Signal::new(true),
+            Signal::new(crate::view_models::SynopsisPlacement::default()),
+            Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
             test_typography(),
             crate::view_models::TypewriterSettings::off(),
             crate::view_models::CaretHighlightSettings::off(),
@@ -1348,14 +1394,21 @@ mod tests {
             .set("Distraction Serif".to_string());
         seed_doc(&vm, 1);
 
-        let surface = vm.open_surface_tab(1).expect("the store holds item 1");
+        let surface = vm
+            .open_surface_tab(1, vm.show_synopsis())
+            .expect("the store holds item 1");
         assert_eq!(
             surface.main_typography().font_family.get(),
             "Distraction Serif"
         );
         assert_eq!(surface.main_column_width().get(), 620.0);
 
-        let pane = vm.make_tab(vm.docs.peek(1).unwrap(), vm.distraction_free.clone());
+        let pane = vm.make_tab(
+            vm.docs.peek(1).unwrap(),
+            vm.distraction_free.clone(),
+            vm.show_synopsis.clone(),
+            vm.synopsis_placement.clone(),
+        );
         assert_eq!(pane.main_typography().font_family.get(), "Literata");
         assert_eq!(pane.main_column_width().get(), 700.0);
     }
@@ -1374,7 +1427,9 @@ mod tests {
         seed_doc(&vm, 1);
         let before = vm.docs.refs_for_test(1).expect("seeded");
 
-        let tab = vm.open_surface_tab(1).expect("the store holds item 1");
+        let tab = vm
+            .open_surface_tab(1, vm.show_synopsis())
+            .expect("the store holds item 1");
         assert_eq!(
             vm.docs.refs_for_test(1),
             Some(before + 1),
@@ -1416,6 +1471,8 @@ mod tests {
             app_ctx.clone(),
             Signal::new(700.0),
             Signal::new(true),
+            Signal::new(crate::view_models::SynopsisPlacement::default()),
+            Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
             test_typography(),
             crate::view_models::TypewriterSettings::off(),
             crate::view_models::CaretHighlightSettings::off(),
@@ -1442,6 +1499,8 @@ mod tests {
             app_ctx.clone(),
             Signal::new(700.0),
             Signal::new(true),
+            Signal::new(crate::view_models::SynopsisPlacement::default()),
+            Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
             test_typography(),
             crate::view_models::TypewriterSettings::off(),
             crate::view_models::CaretHighlightSettings::off(),

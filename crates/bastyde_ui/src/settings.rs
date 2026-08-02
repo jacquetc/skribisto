@@ -914,7 +914,7 @@ impl SettingsPanel {
                 Pane::WorkTextReplacements,
             ),
             (tr!(settings_text_width()), Pane::EditorBehavior),
-            (tr!(settings_synopsis_pane()), Pane::EditorBehavior),
+            (tr!(settings_synopsis_placement()), Pane::EditorBehavior),
             (tr!(settings_typewriter()), Pane::EditorBehavior),
             (tr!(settings_highlight_scope()), Pane::EditorBehavior),
             // The distraction-free settings are all on their own page now —

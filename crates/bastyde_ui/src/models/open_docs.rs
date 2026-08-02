@@ -94,6 +94,35 @@ pub struct OpenDoc {
     /// rebuild, which is exactly why it hangs here and not on the widget.
     replacement_main: RefCell<Option<Rc<TextReplacementSession>>>,
     replacement_synopsis: RefCell<Option<Rc<TextReplacementSession>>>,
+    /// How many mounted views are currently *showing* this doc's synopsis.
+    ///
+    /// Visibility stopped being one global answer once the synopsis could be
+    /// hidden per tab (folded away under Side placement) and per window (the
+    /// distraction-free toggle). One document can be on screen several times at
+    /// once — both panes of a split, plus the distraction-free surface — so the
+    /// question "may this spell session sleep?" is genuinely "is *nobody*
+    /// showing it?", which is a count, not a flag.
+    ///
+    /// Maintained through [`acquire_synopsis_viewer`](Self::acquire_synopsis_viewer)
+    /// and its guard, mirroring the store's own open/release refcount above.
+    synopsis_viewers: Cell<u32>,
+}
+
+/// Keeps a doc's synopsis spell session awake for as long as it is held.
+///
+/// A guard rather than paired calls because the *unbalanced* path is the common
+/// one: a tab can be closed, retyped by a Promote, or torn down with its window
+/// while its synopsis is on screen, and none of those run a tidy "now hide it"
+/// step. Dropping the widget that owns the guard is the one event all of them
+/// share.
+pub struct SynopsisViewerGuard {
+    doc: Rc<OpenDoc>,
+}
+
+impl Drop for SynopsisViewerGuard {
+    fn drop(&mut self) {
+        self.doc.release_synopsis_viewer();
+    }
 }
 
 impl OpenDoc {
@@ -139,6 +168,7 @@ impl OpenDoc {
             spell_synopsis: None,
             replacement_main: RefCell::new(None),
             replacement_synopsis: RefCell::new(None),
+            synopsis_viewers: Cell::new(0),
         };
         for cr in skribisto_model::allowed_content(role, sub_role) {
             let existing = contents.iter().find(|c| &c.role == cr);
@@ -281,6 +311,43 @@ impl OpenDoc {
         self.spell_synopsis.clone()
     }
 
+    /// Register a mounted view as *showing* this doc's synopsis, waking its spell
+    /// session if it was the first. Release by dropping the returned guard.
+    ///
+    /// Only the 0→1 edge does any work: a synopsis shown in two panes at once is
+    /// already awake, and waking it twice would buy a second catch-up rebuild of
+    /// the same text.
+    pub fn acquire_synopsis_viewer(self: &Rc<Self>) -> SynopsisViewerGuard {
+        let next = self.synopsis_viewers.get() + 1;
+        self.synopsis_viewers.set(next);
+        if next == 1
+            && let Some(s) = &self.spell_synopsis
+        {
+            s.set_active(true);
+        }
+        SynopsisViewerGuard { doc: self.clone() }
+    }
+
+    /// The 1→0 edge: the last view showing this synopsis has gone, so the session
+    /// stops paying for re-attaches it cannot display. Private — reached only by
+    /// dropping a [`SynopsisViewerGuard`], so the count cannot be driven negative
+    /// or left unbalanced by an early return.
+    fn release_synopsis_viewer(&self) {
+        let next = self.synopsis_viewers.get().saturating_sub(1);
+        self.synopsis_viewers.set(next);
+        if next == 0
+            && let Some(s) = &self.spell_synopsis
+        {
+            s.set_active(false);
+        }
+    }
+
+    /// How many mounted views currently show this doc's synopsis.
+    #[cfg(test)]
+    pub fn synopsis_viewers(&self) -> u32 {
+        self.synopsis_viewers.get()
+    }
+
     /// Give each present prose document its replace-while-typing session.
     ///
     /// Idempotent: a doc already carrying sessions keeps them, so re-opening an
@@ -367,7 +434,6 @@ struct Inner {
     /// Whether the synopsis pane is currently shown (the global setting, mirrored here by `App`).
     /// A freshly-opened doc's synopsis spell session inherits this, so a re-attach never
     /// re-tokenises a hidden synopsis. Default `true`.
-    synopsis_visible: Cell<bool>,
     /// The open project, for resolving each item's effective language (its own tag, else
     /// the Work's). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
@@ -437,7 +503,6 @@ impl OpenDocsStore {
                 text_replacements: RefCell::new(None),
                 // A sensible default until `App` resolves the theme's error role.
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
-                synopsis_visible: Cell::new(true),
                 work_id: Cell::new(None),
                 work_lang: RefCell::new(Vec::new()),
                 punctuation: RefCell::new(None),
@@ -507,19 +572,6 @@ impl OpenDocsStore {
         if self.inner.squiggle.get() != color {
             self.inner.squiggle.set(color);
             self.attach_all();
-        }
-    }
-
-    /// Track whether the synopsis pane is shown (the global setting), and push it to every open
-    /// doc's synopsis spell session. Hidden → that session goes inactive and stops paying for
-    /// re-attaches it can't display; shown → it schedules one catch-up rebuild. `App` calls this
-    /// on the setting's change and once to seed it.
-    pub fn set_synopsis_visible(&self, visible: bool) {
-        self.inner.synopsis_visible.set(visible);
-        for entry in self.inner.open.borrow().values() {
-            if let Some(s) = entry.doc.spell_synopsis() {
-                s.set_active(visible);
-            }
         }
     }
 
@@ -634,11 +686,12 @@ impl OpenDocsStore {
         let Some(spell) = self.inner.spell.borrow().clone() else {
             return;
         };
-        // Inherit the current synopsis visibility *before* attaching, so a doc opened while the
-        // synopsis pane is hidden never eagerly tokenises its (possibly huge) synopsis — its
-        // `set_checker` sees the inactive flag and defers.
+        // A freshly opened doc has no viewer yet, so its synopsis session starts
+        // asleep and never eagerly tokenises a (possibly huge) synopsis nobody is
+        // looking at. The first mounted view that shows it wakes it — see
+        // `OpenDoc::acquire_synopsis_viewer`.
         if let Some(s) = doc.spell_synopsis() {
-            s.set_active(self.inner.synopsis_visible.get());
+            s.set_active(doc.synopsis_viewers.get() > 0);
         }
         let tags = self.language_for(doc.item_id);
         doc.attach_spell(

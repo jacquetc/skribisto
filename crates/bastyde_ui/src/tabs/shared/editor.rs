@@ -6,7 +6,7 @@
 //! the title field, and the live typography plumbing. Composite pane renders
 //! (heading form, dual-pane prose, folder synopsis) live in [`super::panes`].
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use bastyde::core::binding::BindingLevel;
@@ -17,11 +17,12 @@ use bastyde::text::EditorTypographyDefaults;
 use bastyde::text_document::TextDocument;
 use bastyde::text_document::{Color as DocColor, HighlightFormat};
 use bastyde::tokens::{BorderRole, CornerRadius, SurfaceRole};
+use bastyde::widgets::SplitterModel;
 use bastyde::widgets::rich_text::{EditorHandle, RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
     Button, ButtonVariant, Checkbox, Expand, FixedSize, GroupHeader, HStack, IconButton,
-    IconWidget, MaxSize, MenuItem, MenuList, Padding, Panel, RectWidget, TextInput, TextWidget,
-    VStack, ZStack,
+    IconWidget, MaxSize, MenuItem, MenuList, Padding, Panel, RectWidget, Switcher, TextInput,
+    TextWidget, VStack, ZStack,
 };
 
 /// The find banner's query field caps at this width — a full-width field reads as
@@ -419,6 +420,19 @@ pub enum SynopsisFit {
     /// This is what a synopsis needs wherever it *is* the writing surface: a Full
     /// Synopsis stream row, or a container's own page.
     Growing,
+    /// Fills a `Splitter` pane and scrolls **inside** it — the synopsis beside the
+    /// prose rather than above it (Side placement).
+    ///
+    /// Greedy like [`card_synopsis_editor`]: neither `min_lines` nor `max_lines`,
+    /// so it consumes the exact height the pane hands it. A `Splitter` places each
+    /// pane at a concrete pixel height, which is precisely the "give it an exact
+    /// height, never an unbounded one" the greedy recipe requires.
+    ///
+    /// It also paints **nothing** of its own — no bordered box, and the editor body
+    /// is transparent — so the pane's `SurfaceRole::Main` shows through and the
+    /// strip reads as dock chrome rather than as a second sheet of paper laid on
+    /// the manuscript.
+    Side,
 }
 
 /// The bordered synopsis editor box (caller sizes/centres it). User edits flip the
@@ -456,6 +470,14 @@ pub fn synopsis_editor(
         .text_color(TextRole::Secondary)
         .typography_defaults(typo_defaults(typo))
         .font_size_scale(typo.size.get());
+    if fit == SynopsisFit::Side {
+        // Sit flush on the pane's own Main fill. Dropping the bordered `Panel`
+        // below is not enough on its own: `WritingEditorStyle` paints a Content
+        // rect behind the viewport too, and that rect covers nearly the whole
+        // strip. This is the framework's supported way to say "no surface of your
+        // own" — no second style type needed.
+        editor = editor.background(SurfaceRole::Transparent);
+    }
     // Re-attached on every rebuild, exactly as `writing_column` does for the
     // prose handle: a tab rebuild mints a fresh editor, so a stored handle would
     // address the one the writer *used* to be typing in.
@@ -475,6 +497,12 @@ pub fn synopsis_editor(
             .min_lines(SYNOPSIS_MIN_LINES)
             .v_scroll_policy(ScrollPolicy::AlwaysOff)
             .window_to_clip(true),
+        // Greedy (no line bounds) so it takes the pane's exact height, and
+        // self-scrolling because nothing outside the pane will scroll it. Not
+        // `window_to_clip`: that is for an editor laid out at full document
+        // height inside someone else's scroll — this one culls from its own
+        // scroll offset, exactly as `Compact` does.
+        SynopsisFit::Side => editor.v_scroll_policy(ScrollPolicy::Auto),
     };
     {
         let handle = editor.handle();
@@ -509,12 +537,21 @@ pub fn synopsis_editor(
     if let Some(band) = caret {
         bound = bound.with_caret_band(band);
     }
+    // Side draws no box: the strip's own Main fill is the background, and a
+    // bordered Content card on top of it would re-paper the dock chrome the
+    // placement exists to match. A *transparent* Panel (rather than dropping the
+    // wrapper) keeps one return type here — and paints nothing, so it also sidesteps
+    // the Panel-vs-theme-override hazard the distraction-free surface documents.
+    let (fill, border_width, radius) = match fit {
+        SynopsisFit::Side => (SurfaceRole::Transparent, 0.0, 0.0),
+        SynopsisFit::Compact | SynopsisFit::Growing => (SurfaceRole::Content, 1.0, 6.0),
+    };
     bati!(
         Panel {
-            background: SurfaceRole::Content
+            background: fill
             border_color: BorderRole::Default
-            border_width: 1.0
-            corner_radius: 6.0
+            border_width: border_width
+            corner_radius: radius
             child: bound
         }
     )
@@ -880,13 +917,7 @@ pub fn tab_backdrop_with_find(
     find: FindViewModel,
     body: impl Widget + 'static,
 ) -> Box<dyn Widget> {
-    let column = VStack::new()
-        .spacing(0.0)
-        .child(VisibleWhen::new(
-            find.visible_signal(),
-            FindBanner::new(find),
-        ))
-        .child(Expand::new().child(body));
+    let column = find_banner_over(find, body);
     Box::new(bati!(
         Panel {
             background: background
@@ -895,6 +926,24 @@ pub fn tab_backdrop_with_find(
             child: column
         }
     ))
+}
+
+/// The find banner stacked above `body`, pinned (it never scrolls with the prose).
+///
+/// Split out from [`tab_backdrop_with_find`] because *what* the banner spans is not
+/// always the whole tab. Under Side placement the tab is two columns — a synopsis
+/// strip on the window's own chrome colour, and the manuscript — and a banner
+/// stretched across both would read as a tab-wide toolbar while searching only one
+/// of them. Wrapping just the prose column keeps the banner over the text it
+/// actually searches.
+pub fn find_banner_over(find: FindViewModel, body: impl Widget + 'static) -> impl Widget {
+    VStack::new()
+        .spacing(0.0)
+        .child(VisibleWhen::new(
+            find.visible_signal(),
+            FindBanner::new(find),
+        ))
+        .child(Expand::new().child(body))
 }
 
 /// Shows `child` only while `visible`, and occupies **nothing** when hidden.
@@ -967,6 +1016,521 @@ impl Widget for VisibleWhen {
 
     fn children(&self) -> Vec<WidgetId> {
         self.child_id.into_iter().collect()
+    }
+}
+
+/// Minimum width the **prose** column keeps when the synopsis sits beside it.
+///
+/// Side placement is a preference the layout cannot always honour. The outer
+/// editor split already floors a pane at `PANE_MIN_WIDTH` (320px) — that is the
+/// entire budget a secondary pane gets — so subtracting a ~280px synopsis from it
+/// would leave a prose column too narrow to write in. Below
+/// `side_width + PROSE_MIN_WIDTH` of available width, [`WidthProbe`] renders the
+/// Top layout instead, rather than honouring the setting into unusability.
+pub const PROSE_MIN_WIDTH: f32 = 320.0;
+
+/// Dead band around the Top/Side breakpoint, in px.
+///
+/// Without it a window left to rest exactly on the threshold flips layout on
+/// every pixel of jitter — and since each flip is a relayout that feeds the next
+/// decision, the two can chase each other indefinitely. The band makes the
+/// crossing points asymmetric (enter Side higher than you leave it), so a width
+/// has to move a real distance to change the answer.
+const SIDE_BREAKPOINT_HYSTERESIS: f32 = 24.0;
+
+const MODE_TOP: usize = 0;
+const MODE_SIDE: usize = 1;
+
+/// Picks the **Top** or **Side** synopsis layout from the width actually
+/// available, and shows the chosen one.
+///
+/// Placement is a global setting, but whether it can be *honoured* is local: the
+/// same preference has to produce a side-by-side scene in a maximised window and
+/// a stacked one in a 320px secondary pane. Only layout knows which, so the
+/// decision is made in [`place_children`](Widget::place_children) — where the
+/// resolved width is finally known — and published to a `Signal<usize>` that a
+/// [`Switcher`] consumes as its page index.
+///
+/// **Writing a signal from inside layout** is the [`MenuBar`]-collapse idiom, and
+/// it is safe for the same two reasons: the write is guarded by a plain `Cell`
+/// shadow so it only happens when the answer actually changes (no churn, no
+/// oscillation), and the consumer is a `bind_to`/`visible_when` binding, which the
+/// framework *defers* to the next pass rather than running re-entrantly. Nothing
+/// downstream of `mode` may use `ctx.effect`: observers fire synchronously inside
+/// `Signal::set`, which would re-enter layout from the middle of a layout pass.
+///
+/// The two branches are `Switcher` pages, so each is built at most once and
+/// thereafter only shown or hidden — crossing the breakpoint back and forth keeps
+/// the editors' carets, scroll offsets and spell sessions intact instead of
+/// rebuilding a scene's worth of widgets on a window drag.
+pub(crate) struct WidthProbe {
+    /// Whether Side is wanted at all (the placement setting). Derived signals are
+    /// fine here: `bind_to` walks a derived signal's mutable roots, and only
+    /// `observe()` rejects them.
+    side_enabled: Signal<bool>,
+    /// Current width of the synopsis pane, so the breakpoint tracks the divider.
+    side_width: Signal<f32>,
+    mode: Signal<usize>,
+    /// Non-reactive mirror of the last value written to `mode` — the guard that
+    /// makes the layout-time write idempotent.
+    last_mode: Cell<usize>,
+    switcher_id: Option<WidgetId>,
+    pending: Option<(Box<dyn Widget>, Box<dyn Widget>)>,
+}
+
+impl WidthProbe {
+    pub fn new(
+        side_enabled: Signal<bool>,
+        side_width: Signal<f32>,
+        top: Box<dyn Widget>,
+        side: Box<dyn Widget>,
+    ) -> Self {
+        Self {
+            side_enabled,
+            side_width,
+            // Start on Top: the available width is unknown until the first
+            // layout pass, and Top is the layout that fits every width. A tab
+            // that should be Side flips on that first pass, before paint.
+            mode: Signal::new(MODE_TOP),
+            last_mode: Cell::new(MODE_TOP),
+            switcher_id: None,
+            pending: Some((top, side)),
+        }
+    }
+
+    /// The live page index (`0` = Top, `1` = Side). Read it before handing the
+    /// probe to the tree.
+    pub fn mode_signal(&self) -> Signal<usize> {
+        self.mode.clone()
+    }
+
+    /// The breakpoint decision, factored out so it can be tested without a tree.
+    fn resolve_mode(&self, available: f32) -> usize {
+        if !self.side_enabled.get() {
+            return MODE_TOP;
+        }
+        let threshold = self.side_width.get() + PROSE_MIN_WIDTH;
+        // Asymmetric crossing points: harder to enter Side than to stay in it.
+        let limit = if self.last_mode.get() == MODE_SIDE {
+            threshold - SIDE_BREAKPOINT_HYSTERESIS
+        } else {
+            threshold + SIDE_BREAKPOINT_HYSTERESIS
+        };
+        if available >= limit {
+            MODE_SIDE
+        } else {
+            MODE_TOP
+        }
+    }
+}
+
+impl std::fmt::Debug for WidthProbe {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WidthProbe")
+            .field("mode", &self.mode.get())
+            .finish()
+    }
+}
+
+impl Widget for WidthProbe {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let self_id = ctx.self_id();
+        // A placement or width change must re-run `place_children` so the
+        // breakpoint is re-evaluated. `Relayout` (not `Rebuild`) — the widget
+        // tree is unchanged, only the decision it feeds.
+        self.side_enabled
+            .bind_to(self_id, ctx.binding_registry(), BindingLevel::Relayout);
+        self.side_width
+            .bind_to(self_id, ctx.binding_registry(), BindingLevel::Relayout);
+
+        if let Some((top, side)) = self.pending.take() {
+            let switcher = Switcher::new(self.mode.clone())
+                .child_boxed(top)
+                .child_boxed(side);
+            self.switcher_id = Some(ctx.add(switcher));
+        }
+        self.switcher_id.into_iter().collect()
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.switcher_id
+            .and_then(|id| ctx.child_size(id, proposal))
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0))
+            .into()
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        let next = self.resolve_mode(bounds.width);
+        if self.last_mode.get() != next {
+            self.last_mode.set(next);
+            self.mode.set(next);
+        }
+        for child in children.iter_mut() {
+            child.origin = Point::new(bounds.x, bounds.y);
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.switcher_id.into_iter().collect()
+    }
+}
+
+/// The synopsis as the **left column** of a Side-placed dual-pane editor: no box
+/// of its own, filling its splitter pane and scrolling inside it.
+///
+/// A thin call onto [`synopsis_editor`] with [`SynopsisFit::Side`] — the wiring
+/// (context menu, handle re-attach, live typography, spell, replace-while-typing,
+/// caret band, format registration) is identical to the other two placements and
+/// must stay that way; only the sizing and the chrome differ, which is exactly
+/// what `SynopsisFit` decides.
+///
+/// No `split` action and no typewriter: splitting a scene is an operation on the
+/// manuscript, and pinning a line means nothing in a box that scrolls itself.
+#[allow(clippy::too_many_arguments)]
+pub fn side_synopsis_editor(
+    doc: &TextDocument,
+    typo: &EditorTypography,
+    on_change: impl Fn() + 'static,
+    spell: Option<Rc<SpellSession>>,
+    replacement: Option<Rc<TextReplacementSession>>,
+    handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
+    format: Option<FormatViewModel>,
+    caret: Option<crate::view_models::CaretBand>,
+) -> impl Widget {
+    synopsis_editor(
+        doc,
+        typo,
+        SynopsisFit::Side,
+        on_change,
+        None,
+        spell,
+        replacement,
+        handle_sink,
+        format,
+        None,
+        caret,
+    )
+}
+
+/// Index of the synopsis pane in a tab's Side splitter.
+pub(crate) const SYNOPSIS_PANE: usize = 0;
+
+/// Publishes one scroll area's offset/max to the tab's view-state ports — but only
+/// while the branch it sits in is the one on screen.
+///
+/// A tab's remembered caret and page scroll live in a single slot, last write
+/// wins. That was fine while a prose tab had exactly one scrolling page; the Top
+/// and Side layouts each have their own, so whichever was *constructed* last would
+/// otherwise own the slot regardless of which is *displayed* — and the tab would
+/// restore, and report, the scroll of a page nobody is looking at.
+///
+/// Re-attaching on activation makes the answer "the visible one" by construction,
+/// including on the way back to a branch that was built earlier and will not build
+/// again (a `Switcher` keeps its pages, so a second `build()` never comes).
+pub(crate) struct PageScrollPort {
+    ports: Rc<crate::view_models::ViewStatePorts>,
+    offset: Signal<f32>,
+    max: Signal<f32>,
+}
+
+impl PageScrollPort {
+    pub fn new(
+        ports: Rc<crate::view_models::ViewStatePorts>,
+        offset: Signal<f32>,
+        max: Signal<f32>,
+    ) -> Self {
+        Self { ports, offset, max }
+    }
+}
+
+impl std::fmt::Debug for PageScrollPort {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PageScrollPort").finish()
+    }
+}
+
+impl Widget for PageScrollPort {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let active = ctx.activation_signal(ctx.self_id());
+        let attach: Rc<dyn Fn()> = {
+            let ports = self.ports.clone();
+            let offset = self.offset.clone();
+            let max = self.max.clone();
+            let active = active.clone();
+            Rc::new(move || {
+                if active.get() {
+                    ports.attach_page_scroll(offset.clone(), max.clone());
+                }
+            })
+        };
+        attach();
+        let f = attach.clone();
+        ctx.effect(&active, move |_| f());
+        Vec::new()
+    }
+
+    fn layout_response(&self, _proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+        Size::new(0.0, 0.0).into()
+    }
+
+    fn place_children(
+        &self,
+        _bounds: Rect,
+        _proposal: SizeProposal,
+        _children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        Vec::new()
+    }
+}
+
+/// Drives a tab's Side divider from the same boolean that decides whether the
+/// synopsis is on screen at all.
+///
+/// Showing and hiding a splitter pane is not just a visibility flip: a `Splitter`
+/// folds **every** pane's `min_size` into its own intrinsic minimum, visible or
+/// not, so a hidden pane left holding a real minimum keeps setting a floor under
+/// the whole tab's width. The minimum is therefore raised only while the pane is
+/// up and dropped to zero on the way down — the same dance
+/// `EditorsViewModel::set_split` performs for the editor's own side pane, and in
+/// the same order (minimum first, both ways).
+#[derive(Clone)]
+pub(crate) struct SideSync {
+    model: SplitterModel,
+    /// Where a user-dragged width is persisted, and what the next tab seeds from.
+    width: Signal<f32>,
+    /// Set while *this* code is mutating the model, so the width write-back can
+    /// tell the app's own bookkeeping apart from a real drag. See
+    /// [`SideSync::watch_width`].
+    suppress: Rc<Cell<bool>>,
+}
+
+impl SideSync {
+    pub fn new(model: SplitterModel, width: Signal<f32>) -> Self {
+        Self {
+            model,
+            width,
+            suppress: Rc::new(Cell::new(false)),
+        }
+    }
+
+    /// Whether the *setting* puts a synopsis column in this tab at all.
+    ///
+    /// Distinct from folding it away, and both states are used: hidden removes the
+    /// pane **and its gutter**, which is right when there is no synopsis to reach;
+    /// folded keeps the gutter, which is what lets the writer pull it back.
+    fn set_visible(&self, visible: bool) {
+        // Idempotent, and that is load-bearing rather than an optimisation: the
+        // dormancy effect re-runs on the model's own `version`, so a `set_visible`
+        // that mutated unconditionally would bump the version it is reacting to and
+        // spin. Re-entrancy here is a hang, not a wasted call.
+        if self.model.is_pane_visible(SYNOPSIS_PANE) == visible {
+            return;
+        }
+        self.suppress.set(true);
+        if visible {
+            self.model
+                .set_min_size(SYNOPSIS_PANE, crate::SYNOPSIS_SIDE_WIDTH_MIN);
+            self.model.set_pane_visible(SYNOPSIS_PANE, true);
+        } else {
+            self.model.set_min_size(SYNOPSIS_PANE, 0.0);
+            self.model.set_pane_visible(SYNOPSIS_PANE, false);
+        }
+        self.suppress.set(false);
+    }
+
+    /// Fold the column away, leaving the divider behind as the way back.
+    pub fn fold(&self) {
+        self.model.set_collapsed(SYNOPSIS_PANE, true);
+    }
+
+    fn is_folded(&self) -> bool {
+        self.model.is_collapsed(SYNOPSIS_PANE)
+    }
+
+    /// Whether this handle is part-way through its own mutation of the model.
+    ///
+    /// The model bumps `version` from *inside* `set_pane_visible`, before the flag
+    /// it is setting has landed — so a version observer that re-entered here would
+    /// read the old value, mutate again, and recurse until the framework's
+    /// nesting limit killed it. Reading the flag is not enough; the observer has
+    /// to know the write is still in flight.
+    fn is_settling(&self) -> bool {
+        self.suppress.get()
+    }
+
+    fn version(&self) -> Signal<u64> {
+        self.model.version()
+    }
+
+    /// Persist the synopsis column's width when the **writer** drags the divider.
+    ///
+    /// `SplitterModel::version()` is one coarse signal bumped by every mutation
+    /// there is, so it cannot be taken at face value: this widget's own show/hide
+    /// dance bumps it twice on every toggle, and a drag past the minimum bumps it
+    /// while collapsing the pane to nothing. Persisting either would quietly
+    /// rewrite the writer's chosen width with a number they never chose — a zero,
+    /// in the collapse case.
+    ///
+    /// Three filters, in order of what they exclude: the suppression flag (our own
+    /// mutations, set synchronously around them because observers run inside
+    /// `Signal::set`), the pane's own state (a hidden or collapsed pane's width is
+    /// not a width anyone picked), and a last-written shadow (so an unrelated bump
+    /// is not a write).
+    fn watch_width(&self, ctx: &mut BuildContext) {
+        let model = self.model.clone();
+        let target = self.width.clone();
+        let suppress = self.suppress.clone();
+        let last = Rc::new(Cell::new(model.stored_size(SYNOPSIS_PANE)));
+        ctx.effect(&model.version(), move |_| {
+            if suppress.get() {
+                return;
+            }
+            if !model.is_pane_visible(SYNOPSIS_PANE) || model.is_collapsed(SYNOPSIS_PANE) {
+                return;
+            }
+            let width = model.stored_size(SYNOPSIS_PANE).clamp(
+                crate::SYNOPSIS_SIDE_WIDTH_MIN,
+                crate::SYNOPSIS_SIDE_WIDTH_MAX,
+            );
+            if (width - last.get()).abs() > 0.5 {
+                last.set(width);
+                target.set(width);
+            }
+        });
+    }
+}
+
+/// Keeps a tab's synopsis **plumbing** in step with whether the synopsis is
+/// actually on screen: the spell session's dormancy, and (under Side placement)
+/// the divider.
+///
+/// A widget rather than a call in `prose()` because both jobs need a
+/// `BuildContext` to register effects on, and `prose()` is a plain builder
+/// function. It draws nothing and occupies nothing — it is mounted purely so that
+/// its lifetime, and the framework's own activation gate, can be borrowed.
+///
+/// Used by **both** placements, so "is the synopsis being shown?" has exactly one
+/// answer in the codebase rather than one per layout. Under Top the divider half
+/// is simply absent.
+pub(crate) struct SynopsisPaneEffects {
+    doc: Rc<crate::models::OpenDoc>,
+    /// The window's or the mode's "show synopsis" flag.
+    show: Signal<bool>,
+    side: Option<SideSync>,
+    guard: Rc<RefCell<Option<crate::models::SynopsisViewerGuard>>>,
+}
+
+impl SynopsisPaneEffects {
+    pub fn new(
+        doc: Rc<crate::models::OpenDoc>,
+        show: Signal<bool>,
+        side: Option<SideSync>,
+    ) -> Self {
+        Self {
+            doc,
+            show,
+            side,
+            guard: Rc::new(RefCell::new(None)),
+        }
+    }
+}
+
+impl std::fmt::Debug for SynopsisPaneEffects {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SynopsisPaneEffects")
+            .field("item", &self.doc.item_id)
+            .finish()
+    }
+}
+
+impl Widget for SynopsisPaneEffects {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let self_id = ctx.self_id();
+        // Activation, not just the two flags. A `TabWidget` pre-mounts every open
+        // tab and a `Switcher` keeps the branch it switched away from alive, so
+        // effects keep firing for panes nobody can see — and a synopsis session
+        // pinned awake by a background tab is exactly the cost this refcount
+        // exists to avoid. Same gate `wire_spell`/`wire_replacements` already use.
+        let active = ctx.activation_signal(self_id);
+
+        let apply: Rc<dyn Fn()> = {
+            let doc = self.doc.clone();
+            let guard = self.guard.clone();
+            let side = self.side.clone();
+            let show = self.show.clone();
+            let active = active.clone();
+            Rc::new(move || {
+                let shown = active.get() && show.get();
+                if let Some(side) = &side {
+                    side.set_visible(shown);
+                }
+                // A folded column is on screen in name only — the framework parks
+                // its content dormant behind the divider — so it must not hold the
+                // spell session awake either. Asked of the splitter rather than
+                // mirrored into a second flag: the divider can also be dragged
+                // shut, and a mirror would go stale the moment the writer did that.
+                let reachable = shown && !side.as_ref().is_some_and(SideSync::is_folded);
+                let mut slot = guard.borrow_mut();
+                match (reachable, slot.is_some()) {
+                    // Dropping the guard is what puts the session to sleep, and
+                    // it only reaches a `Cell` on the doc — no re-entry into the
+                    // borrow held here.
+                    (true, false) => *slot = Some(doc.acquire_synopsis_viewer()),
+                    (false, true) => *slot = None,
+                    _ => {}
+                }
+            })
+        };
+
+        // Seed: `ctx.effect` fires on later changes only, and the pane may well be
+        // built with the synopsis already showing.
+        apply();
+        if let Some(side) = &self.side {
+            side.watch_width(ctx);
+            // Folding and unfolding are splitter mutations, so this is how a fold
+            // reaches dormancy — including one done by dragging the divider shut
+            // or double-clicking it, not just by pressing the button.
+            let f = apply.clone();
+            let guard = side.clone();
+            ctx.effect(&side.version(), move |_| {
+                if !guard.is_settling() {
+                    f();
+                }
+            });
+        }
+        for src in [&self.show, &active] {
+            let f = apply.clone();
+            ctx.effect(src, move |_| f());
+        }
+        Vec::new()
+    }
+
+    fn layout_response(&self, _proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+        Size::new(0.0, 0.0).into()
+    }
+
+    fn place_children(
+        &self,
+        _bounds: Rect,
+        _proposal: SizeProposal,
+        _children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        Vec::new()
     }
 }
 
@@ -1657,9 +2221,18 @@ impl RichTextEditorStyle for WritingEditorStyle {
                 None => cfg.viewport,
             };
         }
+        // Honour an app-supplied fill (`RichTextEditor::background`) the way the
+        // framework's own recipe style does, defaulting to the writing surface.
+        // Without this the Side synopsis could not sit flush on its pane: this rect
+        // covers the whole padded viewport, so a caller that drops the outer box
+        // would still get a Content slab where the dock chrome should be.
         let bg = ctx.add(
             RectWidget::new()
-                .background(SurfaceRole::Content)
+                .background(
+                    cfg.background
+                        .clone()
+                        .unwrap_or_else(|| SurfaceRole::Content.into()),
+                )
                 .border_color(BorderRole::Default)
                 .border_width(0.0)
                 .corner_radius(CornerRadius::uniform(6.0)),
@@ -1949,6 +2522,70 @@ mod tests {
              overflow), got {h:.1}px — a taller value means it grew past the card/modal"
         );
     }
+    /// Lay out a 60-paragraph synopsis at `fit` and report the height it claimed.
+    /// `pane_height` stands in for a `Splitter` pane: a hard box the editor is
+    /// expected to stay inside. `None` proposes an unbounded height, the way a
+    /// flowing page does.
+    fn synopsis_height(fit: SynopsisFit, pane_height: Option<f32>) -> f32 {
+        use bastyde::widgets::FixedSize;
+        let doc = TextDocument::new();
+        let _ =
+            doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(60));
+        let typo = test_typo();
+        let editor = synopsis_editor(
+            &doc,
+            &typo,
+            fit,
+            || {},
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
+        let mut tree = WidgetTree::new();
+        let id = match pane_height {
+            Some(h) => tree.add(FixedSize::new().width(320.0).height(h).child(editor)),
+            None => tree.add(editor),
+        };
+        tree.layout(SizeProposal::with_width(320.0));
+        tree.bounds(id).height
+    }
+
+    /// The Side fit fills the pane it is given and scrolls **inside** it, rather
+    /// than growing to its content the way `Growing` does. A `Splitter` places a
+    /// pane at an exact pixel height, so this is the sizing that makes a
+    /// side-by-side synopsis a fixed viewport instead of a column that runs off
+    /// the bottom of the tab.
+    ///
+    /// (The pane's *colour* — Main showing through rather than a Content card —
+    /// is not observable from a headless layout tree; it is checked in the app.)
+    #[test]
+    fn the_side_fit_is_greedy_so_it_takes_its_panes_exact_height() {
+        let h = synopsis_height(SynopsisFit::Side, Some(200.0));
+        assert!(
+            (h - 200.0).abs() < 2.0,
+            "a Side synopsis must stay inside its pane (200px) and scroll the \
+             overflow, got {h:.1}px — a taller value means it reverted to \
+             intrinsic sizing and would run past the bottom of the pane"
+        );
+    }
+
+    /// Adding the Side arm must not have disturbed the two fits that were already
+    /// there: Compact stays a short capped box, Growing still grows past it.
+    #[test]
+    fn the_existing_fits_keep_their_sizing() {
+        let compact_h = synopsis_height(SynopsisFit::Compact, None);
+        let growing_h = synopsis_height(SynopsisFit::Growing, None);
+        assert!(
+            compact_h > 0.0 && compact_h < growing_h,
+            "Compact ({compact_h:.1}px) must stay capped well under a 60-paragraph \
+             Growing synopsis ({growing_h:.1}px)"
+        );
+    }
+
     /// A menu built over a selection must open with the marks the selection
     /// already carries — a bold phrase should show Bold lit, not off.
     #[test]
@@ -2305,5 +2942,174 @@ mod caret_band_tests {
         pump(&mut tree);
         assert!(banded(&doc, BAND).is_empty());
         assert!(handle.get_caret_highlight().is_none());
+    }
+}
+
+#[cfg(test)]
+mod width_probe_tests {
+    use super::*;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    /// A leaf that records how many times it was built, so a test can prove the
+    /// `Switcher` under [`WidthProbe`] *keeps* a branch alive across breakpoint
+    /// crossings instead of rebuilding it.
+    #[derive(Debug)]
+    struct Tagged {
+        builds: Rc<Cell<u32>>,
+    }
+
+    impl Tagged {
+        fn new() -> (Self, Rc<Cell<u32>>) {
+            let builds = Rc::new(Cell::new(0));
+            (
+                Self {
+                    builds: builds.clone(),
+                },
+                builds,
+            )
+        }
+    }
+
+    impl Widget for Tagged {
+        fn build(&mut self, _ctx: &mut BuildContext) -> Vec<WidgetId> {
+            self.builds.set(self.builds.get() + 1);
+            Vec::new()
+        }
+
+        fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+            proposal.resolve(10.0, 10.0).into()
+        }
+
+        fn place_children(
+            &self,
+            _bounds: Rect,
+            _proposal: SizeProposal,
+            _children: &mut [WidgetPlacement],
+            _ctx: &LayoutContext,
+        ) {
+        }
+
+        fn children(&self) -> Vec<WidgetId> {
+            Vec::new()
+        }
+    }
+
+    struct Probe {
+        tree: WidgetTree,
+        mode: Signal<usize>,
+        top_builds: Rc<Cell<u32>>,
+        side_builds: Rc<Cell<u32>>,
+    }
+
+    impl Probe {
+        fn new(enabled: bool, side_width: f32) -> Self {
+            let (top, top_builds) = Tagged::new();
+            let (side, side_builds) = Tagged::new();
+            let probe = WidthProbe::new(
+                Signal::new(enabled),
+                Signal::new(side_width),
+                Box::new(top),
+                Box::new(side),
+            );
+            let mode = probe.mode_signal();
+            let mut tree = WidgetTree::new();
+            tree.add_boxed(Box::new(probe));
+            Self {
+                tree,
+                mode,
+                top_builds,
+                side_builds,
+            }
+        }
+
+        /// Lay out at `width` and let the decision settle. The breakpoint is
+        /// published from `place_children`, and the `Switcher` consumes it as a
+        /// *deferred* rebuild binding — so a mode change costs one extra pass
+        /// before the new branch is mounted. Two passes is the contract; the
+        /// third proves it has converged rather than oscillating.
+        fn settle(&mut self, width: f32) -> usize {
+            for _ in 0..3 {
+                self.tree
+                    .layout(bastyde::prelude::SizeProposal::exact(width, 600.0));
+            }
+            self.mode.get()
+        }
+    }
+
+    /// Wide enough for a synopsis *and* a writable prose column → Side.
+    /// Too narrow → Top, even though the setting says Side. The setting is a
+    /// preference; the width is the veto.
+    #[test]
+    fn the_breakpoint_vetoes_side_when_the_prose_column_would_not_fit() {
+        // threshold = side_width (280) + PROSE_MIN_WIDTH (320) = 600
+        let mut wide = Probe::new(true, 280.0);
+        assert_eq!(wide.settle(900.0), MODE_SIDE, "900px fits both columns");
+
+        let mut narrow = Probe::new(true, 280.0);
+        assert_eq!(
+            narrow.settle(500.0),
+            MODE_TOP,
+            "500px cannot seat a 280px synopsis beside a 320px prose column"
+        );
+    }
+
+    /// Placement Top is honoured at every width — the probe never promotes a tab
+    /// to Side on its own.
+    #[test]
+    fn top_placement_is_never_overridden_by_available_width() {
+        let mut probe = Probe::new(false, 280.0);
+        assert_eq!(probe.settle(1600.0), MODE_TOP);
+    }
+
+    /// The crossing points are asymmetric, so a width parked on the threshold
+    /// cannot flip the layout back and forth. Entering Side needs
+    /// `threshold + hysteresis`; leaving it needs to fall below
+    /// `threshold - hysteresis`.
+    #[test]
+    fn the_breakpoint_has_hysteresis_so_a_parked_width_cannot_oscillate() {
+        let mut probe = Probe::new(true, 280.0); // threshold 600, band 576..=624
+        assert_eq!(probe.settle(900.0), MODE_SIDE);
+
+        assert_eq!(
+            probe.settle(590.0),
+            MODE_SIDE,
+            "inside the band from above: stay in Side rather than flip on jitter"
+        );
+        assert_eq!(probe.settle(570.0), MODE_TOP, "below the band: leave Side");
+        assert_eq!(
+            probe.settle(590.0),
+            MODE_TOP,
+            "the same 590px that kept Side must not re-enter it — that asymmetry \
+             is what makes the breakpoint stable"
+        );
+        assert_eq!(probe.settle(630.0), MODE_SIDE, "above the band: enter Side");
+    }
+
+    /// Crossing the breakpoint must not rebuild the branch being returned to.
+    /// `Switcher::preserves_children_on_rebuild` is what keeps a scene's caret,
+    /// scroll offset and spell session alive while the writer drags the window —
+    /// this pins that we actually get it.
+    #[test]
+    fn crossing_the_breakpoint_keeps_each_branch_alive() {
+        let mut probe = Probe::new(true, 280.0);
+
+        probe.settle(900.0);
+        assert_eq!(probe.side_builds.get(), 1, "Side mounted once");
+        let top_after_first = probe.top_builds.get();
+
+        probe.settle(400.0);
+        probe.settle(900.0);
+        probe.settle(400.0);
+
+        assert_eq!(
+            probe.side_builds.get(),
+            1,
+            "Side was rebuilt on a later crossing — the Switcher is not preserving it"
+        );
+        assert_eq!(
+            probe.top_builds.get(),
+            top_after_first,
+            "Top was rebuilt on a later crossing — the Switcher is not preserving it"
+        );
     }
 }

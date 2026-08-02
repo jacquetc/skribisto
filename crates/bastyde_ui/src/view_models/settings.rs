@@ -23,7 +23,7 @@ use skribisto_model::counting::CountingMethodSetting;
 
 use frontend::common::entities::QuoteStyle;
 
-use super::{HighlightScope, TypewriterAnchor};
+use super::{HighlightScope, SynopsisPlacement, TypewriterAnchor};
 
 use crate::{
     AUTOSAVE_KEY, CORKBOARD_CARD_SIZE_DEFAULT, CORKBOARD_CARD_SIZE_KEY,
@@ -63,8 +63,9 @@ use crate::{
     SYNOPSIS_FONT_FAMILY_DEFAULT, SYNOPSIS_FONT_FAMILY_KEY, SYNOPSIS_LINE_HEIGHT_DEFAULT,
     SYNOPSIS_LINE_HEIGHT_KEY, SYNOPSIS_PANE_DEFAULT, SYNOPSIS_PANE_KEY,
     SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
-    SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_SIZE_DEFAULT,
-    SYNOPSIS_SIZE_KEY, TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
+    SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_PLACEMENT_KEY,
+    SYNOPSIS_SIDE_WIDTH_DEFAULT, SYNOPSIS_SIDE_WIDTH_KEY, SYNOPSIS_SIZE_DEFAULT, SYNOPSIS_SIZE_KEY,
+    TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
 };
 
 /// One editor type's four typography knobs. Cheap to clone — every field is a
@@ -238,6 +239,8 @@ pub struct SettingsViewModel {
     distraction_free_go_to: Signal<bool>,
     // ── Editor behaviour ──
     synopsis_pane: Signal<bool>,
+    synopsis_placement: Signal<SynopsisPlacement>,
+    synopsis_side_width: Signal<f32>,
     /// Application-level smart punctuation — the tier a project follows when
     /// its own `SmartPunctuation` row leaves `override_app_default` off.
     punct_dashes: Signal<bool>,
@@ -386,6 +389,8 @@ impl SettingsViewModel {
             distraction_free_go_to: store
                 .signal(DISTRACTION_FREE_GO_TO_KEY, DISTRACTION_FREE_GO_TO_DEFAULT),
             synopsis_pane: store.signal(SYNOPSIS_PANE_KEY, SYNOPSIS_PANE_DEFAULT),
+            synopsis_placement: store.signal(SYNOPSIS_PLACEMENT_KEY, SynopsisPlacement::default()),
+            synopsis_side_width: store.signal(SYNOPSIS_SIDE_WIDTH_KEY, SYNOPSIS_SIDE_WIDTH_DEFAULT),
             punct_dashes: store.signal(PUNCT_DASHES_KEY, PUNCT_DASHES_DEFAULT),
             punct_ellipsis: store.signal(PUNCT_ELLIPSIS_KEY, PUNCT_ELLIPSIS_DEFAULT),
             punct_quotes: store.signal(PUNCT_QUOTES_KEY, PUNCT_QUOTES_DEFAULT),
@@ -510,6 +515,18 @@ impl SettingsViewModel {
     /// editor (`tabs::shared::prose`).
     pub fn synopsis_pane(&self) -> Signal<bool> {
         self.synopsis_pane.clone()
+    }
+
+    /// Where that pane sits — above the manuscript or beside it. A preference,
+    /// not a guarantee: a tab too narrow for two columns renders Top regardless.
+    pub fn synopsis_placement(&self) -> Signal<SynopsisPlacement> {
+        self.synopsis_placement.clone()
+    }
+
+    /// Width of the Side synopsis column. Written back when its divider is
+    /// dragged, so the next tab opens at the width the writer settled on.
+    pub fn synopsis_side_width(&self) -> Signal<f32> {
+        self.synopsis_side_width.clone()
     }
     // ── Smart punctuation, application-level ─────────────────────────────
     pub fn punct_dashes(&self) -> Signal<bool> {
@@ -721,6 +738,8 @@ impl SettingsViewModel {
         self.distraction_free_go_to
             .set(DISTRACTION_FREE_GO_TO_DEFAULT);
         self.synopsis_pane.set(SYNOPSIS_PANE_DEFAULT);
+        self.synopsis_placement.set(SynopsisPlacement::default());
+        self.synopsis_side_width.set(SYNOPSIS_SIDE_WIDTH_DEFAULT);
         self.punct_dashes.set(PUNCT_DASHES_DEFAULT);
         self.punct_ellipsis.set(PUNCT_ELLIPSIS_DEFAULT);
         self.punct_quotes.set(PUNCT_QUOTES_DEFAULT);
@@ -846,6 +865,50 @@ mod tests {
         vm.highlight_scope().set(HighlightScope::Paragraph);
         vm.reset_editor_defaults();
         assert_eq!(vm.highlight_scope().get(), HighlightScope::default());
+    }
+
+    /// The synopsis placement and its column width round-trip the store and come
+    /// back from "Reset to defaults" — the latter being the step with no drift
+    /// test behind it, so a new setting silently escapes the reset button unless
+    /// something like this pins it.
+    #[test]
+    fn the_synopsis_placement_and_width_persist_and_reset() {
+        let store = temp_store();
+        let vm = SettingsViewModel::new(&store);
+        assert_eq!(
+            vm.synopsis_placement().get(),
+            SynopsisPlacement::Top,
+            "existing projects must look exactly as they did"
+        );
+        assert_eq!(
+            vm.synopsis_side_width().get(),
+            crate::SYNOPSIS_SIDE_WIDTH_DEFAULT
+        );
+
+        for placement in SynopsisPlacement::all() {
+            vm.synopsis_placement().set(placement);
+            let reopened = SettingsViewModel::new(&store);
+            assert_eq!(
+                reopened.synopsis_placement().get(),
+                placement,
+                "{placement:?} must survive a fresh view-model over the same store"
+            );
+        }
+
+        vm.synopsis_side_width().set(340.0);
+        assert_eq!(
+            SettingsViewModel::new(&store).synopsis_side_width().get(),
+            340.0,
+            "a dragged divider width is remembered for the next tab"
+        );
+
+        vm.synopsis_placement().set(SynopsisPlacement::Side);
+        vm.reset_editor_defaults();
+        assert_eq!(vm.synopsis_placement().get(), SynopsisPlacement::default());
+        assert_eq!(
+            vm.synopsis_side_width().get(),
+            crate::SYNOPSIS_SIDE_WIDTH_DEFAULT
+        );
     }
 
     #[test]

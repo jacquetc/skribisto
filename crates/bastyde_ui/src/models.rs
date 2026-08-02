@@ -58,7 +58,7 @@ pub use export_styles_file::ExportStylesService;
 pub use installed_dictionaries_model::{
     DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
 };
-pub use open_docs::{OpenDoc, OpenDocsStore};
+pub use open_docs::{OpenDoc, OpenDocsStore, SynopsisViewerGuard};
 pub use overview_rows_model::{
     COL_LABEL, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters,
     OverviewRow, OverviewRowsModel,

@@ -1193,6 +1193,8 @@ impl Widget for App {
         let app_ctx = self.app_ctx.clone();
         let column_width = settings.column_width();
         let show_synopsis = settings.synopsis_pane();
+        let synopsis_placement = settings.synopsis_placement();
+        let synopsis_side_width = settings.synopsis_side_width();
         let typography = settings.editor_typography();
         // Typewriter scrolling: the two source signals, straight from the store,
         // so a settings change reaches every open tab's editors and its page's
@@ -1248,6 +1250,8 @@ impl Widget for App {
                     app_ctx,
                     column_width,
                     show_synopsis,
+                    synopsis_placement,
+                    synopsis_side_width,
                     typography,
                     typewriter,
                     caret_highlight,
@@ -1985,17 +1989,13 @@ impl Widget for App {
                 }
             });
         }
-        // A hidden synopsis pane should not cost a full re-tokenise of its (often huge) text on
-        // every re-attach. Mirror the global synopsis-pane setting into the store, which puts each
-        // open doc's synopsis spell session to sleep while the pane is hidden and wakes it (with
-        // one catch-up rebuild) when it returns. Seed it before the first document opens.
-        {
-            let docs = spell_docs.clone();
-            docs.set_synopsis_visible(settings.synopsis_pane().get());
-            ctx.effect(&settings.synopsis_pane(), move |v| {
-                docs.set_synopsis_visible(*v)
-            });
-        }
+        // Synopsis spell dormancy is *not* wired here any more. It used to mirror
+        // one global setting into every open doc, which stopped being the right
+        // question once the synopsis could also be folded away per tab (Side
+        // placement) and toggled per window (distraction-free). A doc can be on
+        // screen several times at once, so "may this session sleep?" is answered by
+        // counting the views that actually show it — see
+        // `OpenDoc::acquire_synopsis_viewer`, held by the mounted pane itself.
         // Dirty tracking + debounced autosave-to-disk. Every mutation (editor
         // typing via the editors' `edited` signal, plus tree/metadata events)
         // marks the work `unsaved` and — when autosave is on — (re)schedules a
@@ -2724,6 +2724,8 @@ mod tests {
             app_ctx.clone(),
             Signal::new(700.0),
             Signal::new(true),
+            Signal::new(crate::view_models::SynopsisPlacement::default()),
+            Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
             typography,
             crate::view_models::TypewriterSettings::off(),
             crate::view_models::CaretHighlightSettings::off(),

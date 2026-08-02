@@ -73,6 +73,17 @@ fn next_focus_placement(
 pub struct FocusViewModel {
     active: Signal<bool>,
     remembered: Signal<Option<WindowPlacement>>,
+    /// Whether the synopsis is showing **inside** distraction-free mode.
+    ///
+    /// Deliberately not the global `editor.synopsis_pane` setting: revealing the
+    /// synopsis to check a beat, mid-session, is a thing you do for the next few
+    /// minutes — it should not follow you back out of the mode and into every
+    /// other window. It is *seeded* from that setting on entry (see
+    /// [`Self::toggle`]) so a writer who always keeps the synopsis up still finds
+    /// it there, and then diverges freely.
+    ///
+    /// Per window, like the rest of this view-model, and never persisted.
+    synopsis_visible: Signal<bool>,
 }
 
 impl FocusViewModel {
@@ -80,6 +91,7 @@ impl FocusViewModel {
         Self {
             active: Signal::new(false),
             remembered: Signal::new(None),
+            synopsis_visible: Signal::new(false),
         }
     }
 
@@ -89,11 +101,25 @@ impl FocusViewModel {
         self.active.clone()
     }
 
+    /// Whether the synopsis shows inside the mode — the FocusStrip's toggle, and
+    /// what the surface's own `ContentTab` is built with in place of the global
+    /// setting. See the field's doc.
+    pub fn synopsis_visible_signal(&self) -> Signal<bool> {
+        self.synopsis_visible.clone()
+    }
+
     /// Toggle distraction-free mode on `window` — resolved by the caller from
     /// `EventContext::window()`, so this always acts on the window that fired
     /// the command, correct with several project windows open.
-    pub fn toggle(&self, window: &WindowState) {
+    ///
+    /// `seed_synopsis` is the global "show synopsis" preference, read on the way
+    /// **in** so the mode starts the way the writer's normal editor looks rather
+    /// than overriding a choice they already made.
+    pub fn toggle(&self, window: &WindowState, seed_synopsis: bool) {
         let entering = !self.active.get();
+        if entering {
+            self.synopsis_visible.set(seed_synopsis);
+        }
         let (placement, remembered) =
             next_focus_placement(entering, window.placement().get(), self.remembered.get());
         if let Some(p) = placement {
@@ -109,7 +135,8 @@ impl FocusViewModel {
     /// to toggle the mode back *on*.
     pub fn exit(&self, window: &WindowState) {
         if self.active.get() {
-            self.toggle(window);
+            // The seed is only read when *entering*, so any value does here.
+            self.toggle(window, false);
         }
     }
 
@@ -119,6 +146,7 @@ impl FocusViewModel {
     pub fn reset(&self) {
         self.active.set(false);
         self.remembered.set(None);
+        self.synopsis_visible.set(false);
     }
 }
 
@@ -194,7 +222,7 @@ mod tests {
     fn toggle_enters_fullscreen_and_marks_active() {
         let vm = FocusViewModel::new();
         let window = test_window(WindowPlacement::Floating);
-        vm.toggle(&window);
+        vm.toggle(&window, false);
         assert_eq!(window.placement().get(), WindowPlacement::Fullscreen);
         assert!(vm.active_signal().get());
     }
@@ -203,9 +231,9 @@ mod tests {
     fn toggle_back_restores_maximized_and_marks_inactive() {
         let vm = FocusViewModel::new();
         let window = test_window(WindowPlacement::Maximized);
-        vm.toggle(&window);
+        vm.toggle(&window, false);
         assert_eq!(window.placement().get(), WindowPlacement::Fullscreen);
-        vm.toggle(&window);
+        vm.toggle(&window, false);
         assert_eq!(window.placement().get(), WindowPlacement::Maximized);
         assert!(!vm.active_signal().get());
     }
@@ -223,7 +251,7 @@ mod tests {
     fn exit_while_active_restores_and_never_toggles_back_on() {
         let vm = FocusViewModel::new();
         let window = test_window(WindowPlacement::Maximized);
-        vm.toggle(&window); // enter
+        vm.toggle(&window, false); // enter
         vm.exit(&window); // leave
         assert_eq!(window.placement().get(), WindowPlacement::Maximized);
         assert!(!vm.active_signal().get());
@@ -233,11 +261,57 @@ mod tests {
         assert!(!vm.active_signal().get());
     }
 
+    /// Entering the mode starts the synopsis where the writer's ordinary editor
+    /// has it, rather than hidden.
+    ///
+    /// A blanket "off on entry" reads as tidy until you notice it overrides a
+    /// preference the writer already set, on *every* trip into the mode — so
+    /// someone who always keeps the synopsis up has to switch it back on each
+    /// time. Seeding costs nothing and is right for both kinds of writer.
+    #[test]
+    fn entering_the_mode_seeds_the_synopsis_from_the_ordinary_preference() {
+        let window = test_window(WindowPlacement::Maximized);
+
+        let vm = FocusViewModel::new();
+        vm.toggle(&window, true);
+        assert!(
+            vm.synopsis_visible_signal().get(),
+            "a writer who keeps the synopsis up keeps it up here too"
+        );
+
+        let vm = FocusViewModel::new();
+        vm.toggle(&window, false);
+        assert!(
+            !vm.synopsis_visible_signal().get(),
+            "and a writer who keeps it off is not handed one"
+        );
+    }
+
+    /// The mode's flag is its own: toggling it inside must never write back to
+    /// the preference every other window reads.
+    #[test]
+    fn the_modes_synopsis_flag_is_forgotten_on_the_way_out() {
+        let window = test_window(WindowPlacement::Maximized);
+        let vm = FocusViewModel::new();
+
+        vm.toggle(&window, false);
+        vm.synopsis_visible_signal().set(true);
+        vm.exit(&window);
+        assert!(!vm.active_signal().get());
+
+        // Re-entering re-seeds rather than restoring what the last visit left.
+        vm.toggle(&window, false);
+        assert!(
+            !vm.synopsis_visible_signal().get(),
+            "the seed decides, not the previous visit"
+        );
+    }
+
     #[test]
     fn reset_forgets_state_without_touching_the_window() {
         let vm = FocusViewModel::new();
         let window = test_window(WindowPlacement::Maximized);
-        vm.toggle(&window); // enter: fullscreen, remembers Maximized
+        vm.toggle(&window, false); // enter: fullscreen, remembers Maximized
         assert_eq!(window.placement().get(), WindowPlacement::Fullscreen);
 
         vm.reset();
@@ -248,9 +322,9 @@ mod tests {
 
         // Now inactive per its own bookkeeping: the *next* toggle treats this
         // as a fresh entry rather than trying to "leave" using stale memory.
-        vm.toggle(&window);
+        vm.toggle(&window, false);
         assert_eq!(window.placement().get(), WindowPlacement::Fullscreen);
-        vm.toggle(&window);
+        vm.toggle(&window, false);
         assert_eq!(window.placement().get(), WindowPlacement::Fullscreen);
     }
 
@@ -261,12 +335,12 @@ mod tests {
         let window_a = test_window(WindowPlacement::Maximized);
         let window_b = test_window(WindowPlacement::Floating);
 
-        vm_a.toggle(&window_a);
-        vm_b.toggle(&window_b);
+        vm_a.toggle(&window_a, false);
+        vm_b.toggle(&window_b, false);
         assert_eq!(window_a.placement().get(), WindowPlacement::Fullscreen);
         assert_eq!(window_b.placement().get(), WindowPlacement::Fullscreen);
 
-        vm_a.toggle(&window_a);
+        vm_a.toggle(&window_a, false);
         assert_eq!(
             window_a.placement().get(),
             WindowPlacement::Maximized,

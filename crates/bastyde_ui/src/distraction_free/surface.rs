@@ -22,7 +22,7 @@
 
 use bastyde::core::binding::BindingLevel;
 use bastyde::prelude::*;
-use bastyde::widgets::{Expand, HStack, MaxSize, RectWidget, Spacer, VStack, ZStack};
+use bastyde::widgets::{Expand, FixedSize, HStack, MaxSize, RectWidget, Spacer, VStack, ZStack};
 
 use crate::tabs::{Boxed, ContentTab, tab_pane};
 use crate::view_models::DistractionFreeSurfaceViewModel;
@@ -184,6 +184,13 @@ impl Widget for DistractionFreeSurface {
                 .floats_on_a_page()
                 .then(|| m.tab.main_column_width().clone())
         });
+        // How much wider than the manuscript the card has to be to seat the
+        // synopsis column beside it — zero unless one is actually showing.
+        let side = self
+            .mounted
+            .as_ref()
+            .map(|m| m.tab.side_pane_extent())
+            .unwrap_or_else(|| Signal::new(0.0));
         let mut manuscript: Option<Box<dyn Widget>> = None;
         if let Some(m) = &self.mounted {
             manuscript = Some(tab_pane(&m.tab));
@@ -256,8 +263,12 @@ impl Widget for DistractionFreeSurface {
                 HStack::new()
                     .child(Spacer::new())
                     .child(
-                        MaxSize::width(width.get() + 2.0 * PAGE_GUTTER)
-                            .max_width(width.map(|w| *w + 2.0 * PAGE_GUTTER))
+                        MaxSize::width(width.get() + 2.0 * PAGE_GUTTER + side.get())
+                            .max_width(
+                                width
+                                    .zip(&side)
+                                    .map(|(w, side)| *w + 2.0 * PAGE_GUTTER + *side),
+                            )
                             // `Expand` between the cap and the stack on purpose:
                             // `ZStack` answers with `rigid(max of its children
                             // measured unconstrained)`, so without it the card
@@ -270,7 +281,16 @@ impl Widget for DistractionFreeSurface {
                                 ),
                             ),
                     )
-                    .child(Spacer::new()),
+                    .child(Spacer::new())
+                    // **The manuscript must not move when the synopsis appears.**
+                    // Two equal spacers centre the card, so a card that grew on its
+                    // left by the width of the synopsis column would slide the prose
+                    // right by half of it — re-centring the page under the writer's
+                    // cursor every time they glanced at their synopsis. Taking the
+                    // same amount back off the trailing side cancels that exactly:
+                    // the manuscript half of the card stays where it was, and the
+                    // synopsis grows into the margin beside it.
+                    .child(FixedSize::new().width(side.clone())),
             ),
             // A corkboard, an overview table or a segmented container has no
             // column to float — a narrow card behind a full-width board would
@@ -430,6 +450,8 @@ mod tests {
             app_ctx.clone(),
             Signal::new(NORMAL_COLUMN),
             Signal::new(false),
+            Signal::new(crate::view_models::SynopsisPlacement::default()),
+            Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
             typography(),
             crate::view_models::TypewriterSettings::off(),
             crate::view_models::CaretHighlightSettings::off(),
@@ -667,6 +689,97 @@ mod tests {
         assert!(
             !caps.iter().any(|w| (*w - NORMAL_COLUMN).abs() < 0.5),
             "the surface used the docked editor's column. Widths seen: {caps:?}"
+        );
+    }
+
+    /// Every laid-out prose editor's rect on the surface, dormant branches skipped.
+    fn all_editor_rects(tree: &WidgetTree) -> Vec<bastyde::prelude::Rect> {
+        let mut out = Vec::new();
+        for r in tree.roots() {
+            editor_rects(tree, r, &mut out);
+        }
+        out
+    }
+
+    fn editor_rects(tree: &WidgetTree, id: WidgetId, out: &mut Vec<bastyde::prelude::Rect>) {
+        if !tree.is_active(id) {
+            return;
+        }
+        let bounds = tree.bounds(id);
+        if tree
+            .widget_type_name(id)
+            .is_some_and(|t| t.contains("RichTextEditor"))
+            && bounds.width > 0.0
+            && bounds.height > 0.0
+        {
+            out.push(bounds);
+            return;
+        }
+        for c in tree.children(id) {
+            editor_rects(tree, c, out);
+        }
+    }
+
+    /// **Showing the synopsis must not move the manuscript.**
+    ///
+    /// The page card is centred between two spacers, so widening it to seat a
+    /// synopsis column would slide the prose sideways by half that width — and
+    /// this is a control a writer reaches for *mid-sentence*, to check a beat. A
+    /// page that jumps out from under the cursor on a glance is the opposite of
+    /// what the mode is for, so the column grows into the margin instead and the
+    /// manuscript stays exactly where it was.
+    #[test]
+    fn revealing_the_synopsis_grows_into_the_margin_without_moving_the_manuscript() {
+        let fx = fixture();
+        fx.editors.active_item().set(Some(1));
+        fx.focus.active_signal().set(true);
+
+        let mut tree = mount(&fx);
+        let settle = |tree: &mut WidgetTree| {
+            for _ in 0..4 {
+                tree.layout(SizeProposal::exact(1200.0, 800.0));
+            }
+            tree.tick_animations(std::time::Duration::from_millis(400));
+            tree.layout(SizeProposal::exact(1200.0, 800.0));
+        };
+
+        settle(&mut tree);
+        let before = all_editor_rects(&tree);
+        assert_eq!(
+            before.len(),
+            1,
+            "the mode starts on the manuscript alone, got {before:?}"
+        );
+        let manuscript_before = before[0];
+
+        fx.focus.synopsis_visible_signal().set(true);
+        settle(&mut tree);
+        let after = all_editor_rects(&tree);
+        assert_eq!(
+            after.len(),
+            2,
+            "the synopsis column joins the manuscript, got {after:?}"
+        );
+        let (synopsis, manuscript) = (after[0], after[1]);
+
+        assert!(
+            synopsis.x < manuscript.x,
+            "the synopsis sits in the left margin (synopsis x={}, manuscript x={})",
+            synopsis.x,
+            manuscript.x
+        );
+        assert!(
+            (manuscript.x - manuscript_before.x).abs() < 1.0,
+            "the manuscript moved from x={} to x={} — a writer glancing at their \
+             synopsis must not have the page slide under the caret",
+            manuscript_before.x,
+            manuscript.x
+        );
+        assert!(
+            (manuscript.width - manuscript_before.width).abs() < 1.0,
+            "the manuscript column also kept its width ({} -> {}) — nothing re-wraps",
+            manuscript_before.width,
+            manuscript.width
         );
     }
 

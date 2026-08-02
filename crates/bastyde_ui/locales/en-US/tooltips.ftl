@@ -39,3 +39,4 @@ wm-story-bible = Skribisto looks for this item in your prose.
 wm-story-bible-more = Turn this on for tags that name things you write about: characters, places, objects. Any item carrying such a tag is matched against your prose by its title and by the other names you give it, so each [scene](:wm-scene) lists who and what appears in it without you linking anything by hand. Leave it off for tags that describe an item rather than name one, such as a draft status or a reminder to check continuity.
 
 tooltip-go-to = Jump to any item in the binder (Ctrl+G)
+synopsis-collapse-tooltip = Hide the synopsis column

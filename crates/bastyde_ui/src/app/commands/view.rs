@@ -106,6 +106,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     );
     {
         let focus = deps.focus.clone();
+        let seed_synopsis = deps.editors.show_synopsis();
         ctx.register_action_global(Action::new("view.focus_mode").on_invoke(move |_i, c| {
             // Same resolve-the-firing-window rationale as `view.fullscreen`
             // above; also the target of the strip's Exit button, which fires
@@ -117,7 +118,10 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             // raw key handler, not a discoverable command, same precedent as
             // the find banner's own local Escape handling.
             if let Some(window) = c.window() {
-                focus.toggle(window);
+                // Seed the mode's synopsis from the ordinary editor preference, so
+                // entering distraction-free looks like the editor the writer just
+                // left rather than silently overriding a choice they made.
+                focus.toggle(window, seed_synopsis.get());
             }
         }));
     }

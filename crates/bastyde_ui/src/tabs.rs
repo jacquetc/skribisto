@@ -34,7 +34,9 @@ use std::rc::Rc;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::text_document::TextDocument;
-use bastyde::widgets::{Banner, Button, ButtonVariant, Expand, VStack};
+use bastyde::widgets::{
+    Banner, Button, ButtonVariant, Expand, Orientation, PaneDescriptor, SplitterModel, VStack,
+};
 use frontend::AppContext;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::direct_access::ContentDto;
@@ -42,7 +44,9 @@ use frontend::direct_access::ContentDto;
 use crate::app_ids::AppIds;
 use crate::models::{OpenDoc, OpenDocsStore};
 use crate::singles::{SingleBinderItem, SingleContent};
-use crate::view_models::{EditorTypography, EditorTypographySet, PaceViewModel, StreamViewModel};
+use crate::view_models::{
+    EditorTypography, EditorTypographySet, PaceViewModel, StreamViewModel, SynopsisPlacement,
+};
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
 // (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
@@ -155,9 +159,28 @@ pub struct ContentTab {
     /// (each pane keeps its own segment).
     pub segment: Signal<usize>,
     pub column_width: Signal<f32>,
-    /// Persisted "show synopsis pane above the manuscript" setting (Settings ▸
-    /// Manuscript & Fonts). Consumed live by the dual-pane writing editor.
+    /// Persisted "show synopsis pane" setting (Settings ▸ Manuscript & Fonts),
+    /// consumed live by the dual-pane writing editor.
+    ///
+    /// **Per-caller, not simply the global signal.** A pane tab is handed the
+    /// setting itself; the distraction-free surface's tab is handed that mode's own
+    /// local flag instead, so showing the synopsis while writing full-screen does
+    /// not rewrite a preference that governs every other window.
     pub show_synopsis: Signal<bool>,
+    /// Persisted synopsis placement (above vs beside the manuscript), shared live
+    /// from Settings like [`Self::column_width`].
+    pub synopsis_placement: Signal<SynopsisPlacement>,
+    /// Persisted width of the Side synopsis column, shared live from Settings. Seeds
+    /// [`Self::side_splitter`] and sets the width below which Side is not attempted.
+    pub synopsis_side_width: Signal<f32>,
+    /// The divider between the Side synopsis and the manuscript. One model per tab:
+    /// every open tab can be showing Side at once, in either pane of the split.
+    ///
+    /// Pane 0 is the synopsis, pane 1 the manuscript. The synopsis pane starts
+    /// hidden with `min_size` 0 for the same reason the editor's own side pane does
+    /// — a `Splitter` sums *every* pane's minimum into its own, visible or not, so a
+    /// hidden pane holding a real minimum would inflate the tab's minimum width.
+    pub side_splitter: SplitterModel,
     /// The three per-editor-type typography bundles (Scene / Synopsis / Notes),
     /// shared live from Settings. Every editor this tab builds reads its bundle
     /// from here, so a preference change fans out to all open tabs at once.
@@ -218,6 +241,21 @@ pub(crate) fn prose_kind_for(
         // `None` is shadowed by `BinderItemSubRole::None` under the glob import.
         _ => Option::None,
     }
+}
+
+/// Whether `(role, sub_role)` renders through [`shared::prose`] — the dual-pane
+/// writing editor, and the only body with a synopsis the writer can show, hide or
+/// place beside the manuscript.
+///
+/// Exactly `{Item/Scene, Item/ChapterScene, Item/Note}`. Two nearby predicates
+/// look like they answer this and do not: `is_synopsis_bearing` is true for ten of
+/// the twelve combinations (a Book folder has a synopsis, but an unconditional one
+/// on its own page), and [`prose_kind_for`] alone includes `Folder/ChapterScene`,
+/// which carries scene prose for typography's sake but renders through
+/// `folder_segmented`. Gating a synopsis control on either lights it up on tabs
+/// that have nothing for it to act on.
+pub(crate) fn renders_prose(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> bool {
+    matches!(role, BinderItemRole::Item) && prose_kind_for(role, sub_role).is_some()
 }
 
 /// A prose field seeded from its [`SingleContent`], **not** from `existing` directly —
@@ -302,6 +340,12 @@ pub fn tab_for(
         open_doc,
         column_width,
         show_synopsis,
+        // Its own unshared placement, defaulting to Top like a fresh install. A
+        // caller that wants Side sets `tab.synopsis_placement` afterwards — these
+        // are live signals, so nothing needs threading through this helper's
+        // already-long argument list to do it.
+        Signal::new(SynopsisPlacement::default()),
+        Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
         typography,
         // A standalone tab is never a real project window; the tab tests that
         // exercise pinning build a `ContentTab` directly and pass a live one.
@@ -463,6 +507,8 @@ impl ContentTab {
         open_doc: Rc<OpenDoc>,
         column_width: Signal<f32>,
         show_synopsis: Signal<bool>,
+        synopsis_placement: Signal<SynopsisPlacement>,
+        synopsis_side_width: Signal<f32>,
         typography: EditorTypographySet,
         typewriter: crate::view_models::TypewriterSettings,
         caret_highlight: crate::view_models::CaretHighlightSettings,
@@ -539,6 +585,31 @@ impl ContentTab {
         // Seed the container's view from the per-type memory (own page = 0 when
         // disabled or for a non-segmented type).
         let segment = Signal::new(view_memory.initial(&open_doc.sub_role));
+        // Synopsis | manuscript. Seeded from the persisted width, but *hidden* and
+        // at `min_size` 0 until something shows it: a Splitter counts hidden panes'
+        // minimums into its own, so a pane parked at its real minimum would set a
+        // floor under every tab — including the Top ones that never draw it.
+        let side_splitter = SplitterModel::from_panes(
+            vec![
+                PaneDescriptor::new()
+                    .size(synopsis_side_width.get())
+                    .stretch(0.0)
+                    .min_size(0.0)
+                    .visible(false)
+                    // Collapsible, so folding the column away leaves the divider
+                    // behind as the way back. `visible(false)` removes the gutter
+                    // too and would strand the writer with no affordance at all —
+                    // which is exactly what the first cut of this got wrong. The
+                    // two states are different things and both are used: hidden
+                    // is "the setting says no synopsis", collapsed is "this tab
+                    // folded it away for now".
+                    .collapsible(true),
+                PaneDescriptor::new()
+                    .stretch(1.0)
+                    .min_size(crate::tabs::shared::editor::PROSE_MIN_WIDTH),
+            ],
+            Orientation::Horizontal,
+        );
         Self {
             open_doc,
             stream,
@@ -553,6 +624,9 @@ impl ContentTab {
             segment,
             column_width,
             show_synopsis,
+            synopsis_placement,
+            synopsis_side_width,
+            side_splitter,
             typography,
             typewriter,
             caret_highlight,
@@ -736,9 +810,39 @@ impl ContentTab {
     /// corkboard. The three tabs that render `panes::prose` are exactly the
     /// `Item`-role ones with prose, so the role is the part that matters.
     pub fn floats_on_a_page(&self) -> bool {
-        self.distraction_free.get()
-            && self.open_doc.kind.is_some()
-            && matches!(self.open_doc.role, BinderItemRole::Item)
+        self.distraction_free.get() && self.renders_prose()
+    }
+
+    /// Whether this tab is one of the three that render the dual-pane writing
+    /// editor — see [`renders_prose`].
+    pub fn renders_prose(&self) -> bool {
+        renders_prose(&self.open_doc.role, &self.open_doc.sub_role)
+    }
+
+    /// How much horizontal room this tab's Side synopsis is claiming right now —
+    /// its column plus the divider, or zero whenever the synopsis is not beside
+    /// the manuscript.
+    ///
+    /// Read by the distraction-free surface, which centres a page card and needs
+    /// to know that the card grew on one side only. Everything else can read the
+    /// splitter directly; the surface cannot, because it sizes the card *around*
+    /// the tab rather than inside it.
+    pub fn side_pane_extent(&self) -> Signal<f32> {
+        let model = self.side_splitter.clone();
+        self.synopsis_placement
+            .zip3(&self.show_synopsis, &model.version())
+            .zip(&self.synopsis_side_width)
+            .map(move |((placement, show, _version), width)| {
+                // `version` is in the zip purely so this recomputes when the
+                // divider is folded or dragged — the fold lives on the splitter
+                // now, and a derived signal has no other way to hear about it.
+                let folded = model.is_collapsed(crate::tabs::shared::editor::SYNOPSIS_PANE);
+                if placement.is_side() && *show && !folded {
+                    *width + bastyde::widgets::splitter::SPLITTER_GUTTER_THICKNESS
+                } else {
+                    0.0
+                }
+            })
     }
 
     /// What `tab_backdrop` should paint behind this tab's body.
@@ -1615,6 +1719,8 @@ mod tests {
             open_doc,
             Signal::new(700.0),
             Signal::new(true),
+            Signal::new(SynopsisPlacement::default()),
+            Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
             test_typography(),
             typewriter,
             crate::view_models::CaretHighlightSettings::off(),
@@ -1955,6 +2061,451 @@ mod tests {
 
     /// Hiding the synopsis pane must give its space back to the prose.
     ///
+    /// Every **on-screen** prose editor's rect, in tree order.
+    ///
+    /// Two filters, both load-bearing. Dormant subtrees are skipped: a `Switcher`
+    /// keeps the page it switched away from mounted, and a parked node still
+    /// reports the bounds it had when it was last laid out — so a naive walk sees
+    /// the Top *and* Side layouts at once and counts four editors where the writer
+    /// sees two. And recursion stops at an editor, because each one nests its own
+    /// padded viewport under the same type name and would otherwise be counted
+    /// twice.
+    fn editor_rects(tree: &WidgetTree, id: WidgetId, out: &mut Vec<bastyde::prelude::Rect>) {
+        if !tree.is_active(id) {
+            return;
+        }
+        let bounds = tree.bounds(id);
+        let is_editor = tree
+            .widget_type_name(id)
+            .is_some_and(|t| t.contains("RichTextEditor"));
+        if is_editor && bounds.height > 0.0 && bounds.width > 0.0 {
+            out.push(bounds);
+            return;
+        }
+        for c in tree.children(id) {
+            editor_rects(tree, c, out);
+        }
+    }
+
+    /// Mount a Side-placed scene at `width` and report the laid-out editor rects.
+    ///
+    /// Settling takes more than one pass on purpose. The breakpoint is decided
+    /// during layout and published to a signal the `Switcher` consumes as a
+    /// *deferred* rebuild, and showing a splitter pane is an animated tween — so a
+    /// single `layout()` reads a half-open divider, which is exactly the trap a
+    /// test written by analogy to the instant `VisibleWhen` hide would fall into.
+    fn side_scene_editors(width: f32, collapsed: bool) -> Vec<bastyde::prelude::Rect> {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.synopsis_placement
+            .set(crate::view_models::SynopsisPlacement::Side);
+        if collapsed {
+            tab.side_splitter
+                .set_collapsed(crate::tabs::shared::editor::SYNOPSIS_PANE, true);
+        }
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(tab_pane(&tab));
+        for _ in 0..4 {
+            tree.layout(bastyde::prelude::SizeProposal::exact(width, 700.0));
+        }
+        tree.tick_animations(std::time::Duration::from_millis(400));
+        tree.layout(bastyde::prelude::SizeProposal::exact(width, 700.0));
+
+        let mut rects = Vec::new();
+        editor_rects(&tree, id, &mut rects);
+        rects
+    }
+
+    /// Side placement puts the synopsis in its own column **beside** the prose —
+    /// the whole point of the setting.
+    #[test]
+    fn side_placement_seats_the_synopsis_left_of_the_manuscript() {
+        let rects = side_scene_editors(1200.0, false);
+        assert_eq!(
+            rects.len(),
+            2,
+            "a Side scene lays out both its synopsis and its prose, got {rects:?}"
+        );
+        let (synopsis, prose) = (rects[0], rects[1]);
+        assert!(
+            synopsis.x < prose.x,
+            "the synopsis column must sit to the left of the manuscript \
+             (synopsis at x={}, prose at x={})",
+            synopsis.x,
+            prose.x
+        );
+        assert!(
+            synopsis.x + synopsis.width <= prose.x + 1.0,
+            "the two columns must not overlap — the divider separates them"
+        );
+    }
+
+    /// …but only where there is room for it. The editor can be split down to a
+    /// 320px pane, and a 280px synopsis taken out of that leaves a prose column
+    /// nobody can write in. Below the threshold the tab renders Top instead —
+    /// stacked, not side by side — rather than honouring the setting into
+    /// uselessness.
+    #[test]
+    fn a_pane_too_narrow_for_two_columns_falls_back_to_the_top_layout() {
+        let rects = side_scene_editors(460.0, false);
+        assert_eq!(
+            rects.len(),
+            2,
+            "the synopsis is still shown — only its placement changed, got {rects:?}"
+        );
+        let (synopsis, prose) = (rects[0], rects[1]);
+        assert!(
+            (synopsis.x - prose.x).abs() < 60.0,
+            "the fallback must stack the two in one column, not seat them side by \
+             side (synopsis at x={}, prose at x={})",
+            synopsis.x,
+            prose.x
+        );
+        assert!(
+            synopsis.y < prose.y,
+            "stacked means the synopsis is above the prose"
+        );
+    }
+
+    /// Count the laid-out splitter dividers under `id`.
+    fn gutters(tree: &WidgetTree, id: WidgetId, out: &mut usize) {
+        if !tree.is_active(id) {
+            return;
+        }
+        if tree
+            .widget_type_name(id)
+            .is_some_and(|t| t.contains("SplitterHandleBody"))
+            && tree.bounds(id).width > 0.0
+        {
+            *out += 1;
+        }
+        for c in tree.children(id) {
+            gutters(tree, c, out);
+        }
+    }
+
+    /// The Side pane's own fold-away control gives the width back to the
+    /// manuscript — **and leaves a way to get it back.**
+    ///
+    /// The first cut of this folded with `set_pane_visible(false)`, which removes
+    /// the pane *and its divider*. The only control that could restore the column
+    /// lived inside the column, so folding it was a one-way door: the writer was
+    /// left with no affordance at all and no way back short of the Settings window.
+    /// Folding is a **collapse** instead, which is the framework's other state
+    /// precisely because it keeps the divider — draggable, double-clickable and
+    /// keyboard-reachable — as the way back.
+    #[test]
+    fn folding_the_side_column_leaves_the_divider_as_the_way_back() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.synopsis_placement
+            .set(crate::view_models::SynopsisPlacement::Side);
+
+        let mut tree = WidgetTree::new();
+        let root = tree.add_boxed(tab_pane(&tab));
+        // Collapsing a pane is an animated tween, and the breakpoint decision is
+        // published from layout for the `Switcher` to pick up on the *next* pass —
+        // so settling means interleaving layouts and clock ticks until both have
+        // finished, not one of each.
+        let settle = |tree: &mut WidgetTree| {
+            for _ in 0..8 {
+                tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
+                tree.tick_animations(std::time::Duration::from_millis(120));
+            }
+            tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
+        };
+        let survey = |tree: &WidgetTree| {
+            let (mut rects, mut n) = (Vec::new(), 0);
+            editor_rects(tree, root, &mut rects);
+            gutters(tree, root, &mut n);
+            (rects, n)
+        };
+
+        settle(&mut tree);
+        let (open, open_gutters) = survey(&tree);
+        assert_eq!(open.len(), 2, "open: synopsis + manuscript");
+        assert_eq!(open_gutters, 1, "one divider between the two columns");
+
+        tab.side_splitter
+            .set_collapsed(crate::tabs::shared::editor::SYNOPSIS_PANE, true);
+        settle(&mut tree);
+        let (folded, folded_gutters) = survey(&tree);
+        assert_eq!(
+            folded.len(),
+            1,
+            "folded: the synopsis column is gone, got {folded:?}"
+        );
+        assert_eq!(
+            folded_gutters, 1,
+            "the divider must SURVIVE the fold — it is the only thing left to \
+             pull the column back with"
+        );
+        // The writing column is width-capped by design, so it does not get *wider*
+        // — it re-centres in the space the synopsis gave back.
+        assert!(
+            folded[0].x < open[1].x,
+            "the manuscript reclaims the space and re-centres (x {} -> {})",
+            open[1].x,
+            folded[0].x
+        );
+
+        tab.side_splitter
+            .set_collapsed(crate::tabs::shared::editor::SYNOPSIS_PANE, false);
+        settle(&mut tree);
+        let (restored, _) = survey(&tree);
+        assert_eq!(
+            restored.len(),
+            2,
+            "and dragging it back open restores the column, got {restored:?}"
+        );
+    }
+
+    /// Dragging the divider persists the new width; the app's own show/hide
+    /// bookkeeping does not.
+    ///
+    /// The divider's `version` signal is one coarse notification bumped by every
+    /// mutation there is — including the two the show/hide dance makes on every
+    /// toggle. Writing back on every bump would let hiding the synopsis overwrite
+    /// the width the writer chose with whatever the model happened to hold
+    /// mid-dance, so the next tab would open at a width nobody picked.
+    #[test]
+    fn only_a_real_drag_persists_the_synopsis_column_width() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+
+        let ctx = Rc::new(AppContext::new());
+        let show = Signal::new(true);
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            show.clone(),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.synopsis_placement
+            .set(crate::view_models::SynopsisPlacement::Side);
+        let stored = tab.synopsis_side_width.clone();
+
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(tab_pane(&tab));
+        let settle = |tree: &mut WidgetTree| {
+            for _ in 0..4 {
+                tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
+            }
+            tree.tick_animations(std::time::Duration::from_millis(400));
+        };
+        settle(&mut tree);
+        assert_eq!(
+            stored.get(),
+            crate::SYNOPSIS_SIDE_WIDTH_DEFAULT,
+            "merely showing the column is not the writer choosing a width"
+        );
+
+        // What a drag does to the model.
+        tab.side_splitter.set_stored_size(0, 350.0);
+        assert_eq!(stored.get(), 350.0, "a drag is the one thing that persists");
+
+        // …and the dance that runs when the synopsis is folded away must leave it.
+        show.set(false);
+        settle(&mut tree);
+        assert_eq!(
+            stored.get(),
+            350.0,
+            "hiding the column must not overwrite the width the writer chose"
+        );
+
+        show.set(true);
+        settle(&mut tree);
+        assert_eq!(stored.get(), 350.0, "nor must showing it again");
+    }
+
+    /// A synopsis spell session is awake exactly while some mounted view is
+    /// showing it — no more, and no less.
+    ///
+    /// This used to be one global flag pushed into every open document, which was
+    /// the right shape only while "is the synopsis visible?" had a single
+    /// app-wide answer. It no longer does: a tab can fold its Side synopsis away
+    /// on its own, and distraction-free mode has its own toggle. So the question
+    /// became a count, and the thing that must not happen is a **leak** — a tab
+    /// closed while its synopsis was up, pinning a session awake for the rest of
+    /// the session with nothing on screen to justify it.
+    #[test]
+    fn a_synopsis_session_sleeps_unless_a_mounted_view_is_showing_it() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+
+        let ctx = Rc::new(AppContext::new());
+        let show = Signal::new(true);
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            show.clone(),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        let doc = tab.open_doc.clone();
+        let layout = |tree: &mut WidgetTree| {
+            tree.layout(bastyde::prelude::SizeProposal::exact(900.0, 700.0))
+        };
+
+        assert_eq!(
+            doc.synopsis_viewers(),
+            0,
+            "a document nobody has mounted yet is not being shown"
+        );
+
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(tab_pane(&tab));
+        layout(&mut tree);
+        assert_eq!(doc.synopsis_viewers(), 1, "the mounted pane shows it");
+
+        show.set(false);
+        layout(&mut tree);
+        assert_eq!(doc.synopsis_viewers(), 0, "hidden — the session may sleep");
+
+        show.set(true);
+        layout(&mut tree);
+        assert_eq!(doc.synopsis_viewers(), 1, "shown again — awake again");
+
+        drop(tree);
+        assert_eq!(
+            doc.synopsis_viewers(),
+            0,
+            "a pane torn down while the synopsis was showing must release its \
+             claim — otherwise closing a tab pins the session awake forever"
+        );
+    }
+
+    /// The same document open twice (both panes of a split, or a pane plus the
+    /// distraction-free surface) is shown once as far as its spell session is
+    /// concerned — and closing *one* of the two must not put it to sleep while the
+    /// other is still displaying it.
+    #[test]
+    fn two_views_of_one_document_count_as_one_awake_synopsis() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        let doc = tab.open_doc.clone();
+
+        let mut both = WidgetTree::new();
+        both.add_boxed(tab_pane(&tab));
+        both.add_boxed(tab_pane(&tab));
+        both.layout(bastyde::prelude::SizeProposal::exact(900.0, 700.0));
+        assert_eq!(doc.synopsis_viewers(), 2, "two mounted views, two claims");
+
+        drop(both);
+        assert_eq!(doc.synopsis_viewers(), 0);
+    }
+
+    /// Every tab is born with a Side-synopsis divider, and it must be **weightless**
+    /// until something shows it.
+    ///
+    /// A `Splitter` folds every pane's `min_size` into its own intrinsic minimum
+    /// whether or not that pane is visible. So a synopsis pane parked at a real
+    /// minimum would put a floor under the width of *every* tab — including the Top
+    /// ones that never draw it, and including a secondary editor pane that is only
+    /// 320px wide to begin with. Hidden means `min_size` 0; the width is raised only
+    /// while the pane is actually on screen.
+    #[test]
+    fn a_new_tabs_side_divider_starts_hidden_and_weightless() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        let m = &tab.side_splitter;
+
+        assert_eq!(m.pane_count(), 2, "synopsis | manuscript");
+        assert!(
+            !m.is_pane_visible(0),
+            "the synopsis pane must start hidden — placement is Top by default"
+        );
+        assert_eq!(
+            m.min_size(0),
+            0.0,
+            "a hidden synopsis pane must contribute no minimum, or it widens every tab"
+        );
+        assert!(
+            m.min_size(1) > 0.0,
+            "the manuscript pane keeps a real floor so Side can never squeeze it away"
+        );
+        assert_eq!(
+            m.stored_size(0),
+            crate::SYNOPSIS_SIDE_WIDTH_DEFAULT,
+            "hidden, but seeded at the persisted width so showing it opens where the \
+             writer left it"
+        );
+        assert!(
+            m.is_collapsible(0),
+            "the synopsis pane must be collapsible, or folding it away would leave \
+             no divider to pull it back with"
+        );
+        assert!(!m.is_collapsed(0), "a fresh tab has not been folded away");
+    }
+
     /// It used to be a `Switcher` (which parks a zero-size page); it is now
     /// `VisibleWhen`, which sends the node *dormant* — out of layout entirely. This
     /// pins the property that actually matters to the writer: with the pane off, the
@@ -2170,6 +2721,8 @@ mod tests {
                 open_doc,
                 Signal::new(700.0),
                 Signal::new(true),
+                Signal::new(SynopsisPlacement::default()),
+                Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
                 typo.clone(),
                 crate::view_models::TypewriterSettings::off(),
                 crate::view_models::CaretHighlightSettings::off(),
@@ -2257,6 +2810,8 @@ mod tests {
             open_doc,
             Signal::new(700.0),
             Signal::new(true),
+            Signal::new(SynopsisPlacement::default()),
+            Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
             typo,
             crate::view_models::TypewriterSettings::off(),
             crate::view_models::CaretHighlightSettings::off(),

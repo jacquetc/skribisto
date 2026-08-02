@@ -71,6 +71,15 @@ pub struct DistractionFreeSurfaceViewModel {
     /// **rename** made from inside the mode (a ChapterScene's own title field is
     /// right there on the page).
     item: SingleBinderItem,
+    /// Whether the item currently on the surface is one of the three that render
+    /// the dual-pane writing editor — see `tabs::renders_prose`.
+    ///
+    /// Drives the strip's synopsis toggle's *enabled* state. Set here rather than
+    /// read off the mounted tab because the strip is built from this view-model,
+    /// which never sees the widget's private `Mounted` state; [`Self::open_tab`] is
+    /// the one place a fresh `ContentTab` passes through, and it already publishes
+    /// the item's name from the same spot.
+    synopsis_capable: Signal<bool>,
     /// Bumped whenever the surface must rebuild for a reason its own signal
     /// bindings cannot see — today, only [`Self::attach`].
     revision: Signal<u64>,
@@ -89,6 +98,7 @@ impl DistractionFreeSurfaceViewModel {
             ids,
             deps: Rc::new(RefCell::new(None)),
             item: SingleBinderItem::new(app_ctx),
+            synopsis_capable: Signal::new(false),
             revision: Signal::new(0),
         }
     }
@@ -143,9 +153,13 @@ impl DistractionFreeSurfaceViewModel {
     pub fn open_tab(&self, item_id: u64) -> Option<(ContentTab, Option<u64>)> {
         let deps = self.deps.borrow();
         let editors = &deps.as_ref()?.editors;
-        let tab = editors.open_surface_tab(item_id)?;
-        // Point the strip's name at this document.
+        // The mode's own synopsis flag, not the global setting — see
+        // `FocusViewModel::synopsis_visible_signal`.
+        let tab = editors.open_surface_tab(item_id, self.focus.synopsis_visible_signal())?;
+        // Point the strip's name — and its synopsis toggle's enabled state — at
+        // this document.
         self.item.set_id(Some(item_id));
+        self.synopsis_capable.set(tab.renders_prose());
         if let Some(state) = editors.view_state_of(item_id) {
             tab.seed_view_state(state);
         }
@@ -190,6 +204,8 @@ impl DistractionFreeSurfaceViewModel {
             d.has_work.clone(),
             d.show_characters.clone(),
             d.chrome.clone(),
+            self.focus.synopsis_visible_signal(),
+            self.synopsis_capable.clone(),
         ))
     }
 

@@ -110,6 +110,7 @@ mod save_status;
 mod search_replace;
 mod settings;
 mod stream;
+mod synopsis_placement;
 mod tags;
 mod text_replacement_rules;
 mod timers;
@@ -170,6 +171,7 @@ pub use settings::{
     CorkboardDefaults, EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel,
 };
 pub use stream::{SplitFlavour, StreamViewModel};
+pub use synopsis_placement::SynopsisPlacement;
 pub use tags::TagsViewModel;
 pub use text_replacement_rules::TextReplacementRulesViewModel;
 pub(crate) use timers::{AutosaveCountdown, IntervalCountdown, IntervalTick};
