@@ -127,6 +127,10 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // so "the caret of this tab" has no single answer here. Same
                     // reason the synopsis rows below take no handle sink.
                     Option::None,
+                    // A stream row is one editor among many with no single focused
+                    // surface — the same reason it passes no view-state binding.
+                    // Comment affordances live on the item's own tab.
+                    Option::None,
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
@@ -145,6 +149,8 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Some(tab.format.clone()),
                     Some(tab.typewriter.clone()),
                     Some(tab.caret_band()),
+                    // No comment binding on a stream row — see the prose column above.
+                    Option::None,
                 )),
             };
             col = col.child(vspace(6.0));
@@ -297,6 +303,9 @@ fn stream_row(
                         Some(caret.clone()),
                         // Per-row editor — see the container's own column above.
                         Option::None,
+                        // Likewise no comment binding: comment affordances live on
+                        // the item's own tab, where there is one focused editor.
+                        Option::None,
                     ));
                 }
             }
@@ -316,6 +325,8 @@ fn stream_row(
                         Some(format.clone()),
                         Some(typewriter.clone()),
                         Some(caret.clone()),
+                        // No comment binding on a stream row — see above.
+                        Option::None,
                     ));
                 }
             }

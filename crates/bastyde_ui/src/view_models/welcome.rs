@@ -405,6 +405,7 @@ mod tests {
             TreeExpansionService::in_memory_default(),
             Signal::new(false), // autosave_menu
             Signal::new(true),  // spellcheck_menu (default on)
+            Signal::new(true),  // comments_menu (default on)
         )
     }
 

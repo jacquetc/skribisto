@@ -35,6 +35,7 @@ impl<'a> WorkHashMapTable<'a> {
     ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
         match field {
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,
+            WorkRelationshipField::Comments => &self.store.jn_comment_from_work_comments,
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
             WorkRelationshipField::NoteTemplates => {
                 &self.store.jn_note_template_from_work_note_templates
@@ -79,6 +80,7 @@ impl<'a> WorkHashMapTable<'a> {
         entity.trash_infos =
             junction_get(&self.store.jn_trash_info_from_work_trash_infos, &entity.id);
         entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);
+        entity.comments = junction_get(&self.store.jn_comment_from_work_comments, &entity.id);
     }
 }
 
@@ -134,6 +136,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 &self.store.jn_binder_from_work_binders,
                 new_entity.id,
                 new_entity.binders.clone(),
+            );
+            junction_set(
+                &self.store.jn_comment_from_work_comments,
+                new_entity.id,
+                new_entity.comments.clone(),
             );
             junction_set(
                 &self.store.jn_dict_word_from_work_dict_words,
@@ -299,6 +306,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 entity.id,
                 entity.paces.clone(),
             );
+            junction_set(
+                &self.store.jn_comment_from_work_comments,
+                entity.id,
+                entity.comments.clone(),
+            );
         }
         drop(work_map);
         let ids: Vec<EntityId> = entities.iter().map(|e| e.id).collect();
@@ -333,6 +345,7 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
             );
             junction_remove(&self.store.jn_trash_info_from_work_trash_infos, id);
             junction_remove(&self.store.jn_pace_from_work_paces, id);
+            junction_remove(&self.store.jn_comment_from_work_comments, id);
 
             // Clean up backward references (uses the owning entity's forward junction)
 
@@ -360,6 +373,7 @@ impl<'a> WorkHashMapTableRO<'a> {
     ) -> &RwLock<HashMap<EntityId, Vec<EntityId>>> {
         match field {
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,
+            WorkRelationshipField::Comments => &self.store.jn_comment_from_work_comments,
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
             WorkRelationshipField::NoteTemplates => {
                 &self.store.jn_note_template_from_work_note_templates
@@ -404,6 +418,7 @@ impl<'a> WorkHashMapTableRO<'a> {
         entity.trash_infos =
             junction_get(&self.store.jn_trash_info_from_work_trash_infos, &entity.id);
         entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);
+        entity.comments = junction_get(&self.store.jn_comment_from_work_comments, &entity.id);
     }
 }
 

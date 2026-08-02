@@ -35,6 +35,8 @@ mod single_work_info;
 pub use single_binder::SingleBinder;
 pub use single_binder_item::SingleBinderItem;
 pub use single_content::SingleContent;
+#[cfg(feature = "mocks")]
+pub use single_content::mock_content_id;
 pub use single_corkboard_card::SingleCorkboardCard;
 pub use single_dict_word::SingleDictWord;
 pub use single_milestone::SingleMilestone;

@@ -186,6 +186,7 @@ pub struct Work {
     pub smart_punctuation: EntityId,
     pub trash_infos: Vec<EntityId>,
     pub paces: Vec<EntityId>,
+    pub comments: Vec<EntityId>,
 }
 
 impl HasId for Work {
@@ -309,6 +310,68 @@ pub struct Milestone {
 }
 
 impl HasId for Milestone {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct Comment {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub content: Option<EntityId>,
+    pub kind: CommentAnchorKind,
+    pub author_name: String,
+    pub body: String,
+    pub resolved: bool,
+    pub orphaned: bool,
+    pub orphan_reason: CommentOrphanReason,
+    pub range_start: u64,
+    pub range_length: u64,
+    pub quote_prefix: String,
+    pub quote_exact: String,
+    pub quote_exact_truncated: bool,
+    pub quote_suffix: String,
+    pub block_ordinal_hint: u64,
+    pub replies: Vec<EntityId>,
+}
+
+impl HasId for Comment {
+    fn id(&self) -> EntityId {
+        self.id
+    }
+}
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum CommentAnchorKind {
+    #[default]
+    Range,
+    Paragraph,
+    Document,
+}
+#[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]
+pub enum CommentOrphanReason {
+    #[default]
+    NotOrphaned,
+    TextNotFound,
+    Ambiguous,
+    TargetDeleted,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct CommentReply {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub author_name: String,
+    pub body: String,
+}
+
+impl HasId for CommentReply {
     fn id(&self) -> EntityId {
         self.id
     }

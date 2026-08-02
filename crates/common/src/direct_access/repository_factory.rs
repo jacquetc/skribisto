@@ -16,6 +16,11 @@ pub mod write {
             binder_tag::{
                 binder_tag_repository::BinderTagRepository, binder_tag_table::BinderTagHashMapTable,
             },
+            comment::{comment_repository::CommentRepository, comment_table::CommentHashMapTable},
+            comment_reply::{
+                comment_reply_repository::CommentReplyRepository,
+                comment_reply_table::CommentReplyHashMapTable,
+            },
             content::{content_repository::ContentRepository, content_table::ContentHashMapTable},
             dict_word::{
                 dict_word_repository::DictWordRepository, dict_word_table::DictWordHashMapTable,
@@ -165,6 +170,23 @@ pub mod write {
         ))
     }
 
+    pub fn create_comment_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<CommentRepository<'_>> {
+        let comment_table = CommentHashMapTable::new(transaction.get_store());
+        Ok(CommentRepository::new(Box::new(comment_table), transaction))
+    }
+
+    pub fn create_comment_reply_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<CommentReplyRepository<'_>> {
+        let comment_reply_table = CommentReplyHashMapTable::new(transaction.get_store());
+        Ok(CommentReplyRepository::new(
+            Box::new(comment_reply_table),
+            transaction,
+        ))
+    }
+
     pub fn create_binder_repository(transaction: &'_ Transaction) -> Result<BinderRepository<'_>> {
         let binder_table = BinderHashMapTable::new(transaction.get_store());
         Ok(BinderRepository::new(Box::new(binder_table), transaction))
@@ -241,6 +263,13 @@ pub mod read {
             binder_tag::{
                 binder_tag_repository::BinderTagRepositoryRO,
                 binder_tag_table::BinderTagHashMapTableRO,
+            },
+            comment::{
+                comment_repository::CommentRepositoryRO, comment_table::CommentHashMapTableRO,
+            },
+            comment_reply::{
+                comment_reply_repository::CommentReplyRepositoryRO,
+                comment_reply_table::CommentReplyHashMapTableRO,
             },
             content::{
                 content_repository::ContentRepositoryRO, content_table::ContentHashMapTableRO,
@@ -382,6 +411,20 @@ pub mod read {
     ) -> Result<MilestoneRepositoryRO<'_>> {
         let milestone_table = MilestoneHashMapTableRO::new(transaction.get_store());
         Ok(MilestoneRepositoryRO::new(Box::new(milestone_table)))
+    }
+
+    pub fn create_comment_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<CommentRepositoryRO<'_>> {
+        let comment_table = CommentHashMapTableRO::new(transaction.get_store());
+        Ok(CommentRepositoryRO::new(Box::new(comment_table)))
+    }
+
+    pub fn create_comment_reply_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<CommentReplyRepositoryRO<'_>> {
+        let comment_reply_table = CommentReplyHashMapTableRO::new(transaction.get_store());
+        Ok(CommentReplyRepositoryRO::new(Box::new(comment_reply_table)))
     }
 
     pub fn create_binder_repository(

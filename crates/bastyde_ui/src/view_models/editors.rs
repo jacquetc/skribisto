@@ -422,6 +422,66 @@ impl EditorsViewModel {
     /// same predicate `skribisto_compiler` uses to decide what to scan, so the
     /// command surface and the exporter cannot disagree about where a scene
     /// break is meaningful.
+    /// The focused tab's main-prose comment binding, if it has one.
+    ///
+    /// Resolves through the focused *pane's selected tab* rather than any cached
+    /// handle: a tab rebuild mints a fresh `ContentTab`, and the `OpenDoc` behind
+    /// it is the shared, refcounted one, so this always reaches the live document.
+    fn focused_comment_binding(&self) -> Option<crate::comments::binding::CommentBinding> {
+        let side = self.focused_side.get();
+        let pane = self.pane(side);
+        let tab_id = pane.selected.get()?;
+        (0..pane.tabs.len()).find_map(|i| {
+            pane.tabs
+                .with_item(i, |h| {
+                    if h.id == tab_id {
+                        h.payload
+                            .downcast_ref::<ContentTab>()
+                            .and_then(|t| t.open_doc.comment_binding_main())
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
+        })
+    }
+
+    /// Comment on the focused prose editor's selection.
+    ///
+    /// Prose-only and selection-only, deliberately: the synopsis has its own
+    /// editor (and its own `Content` row), and a zero-width range has nothing to
+    /// anchor to. The same per-EDITOR focus gate `insert_scene_break` documents
+    /// applies — without it, typing in the synopsis and pressing the shortcut
+    /// would annotate the manuscript prose at whatever stale caret it still held.
+    pub fn add_comment_at_selection(&self, _ctx: &mut bastyde::prelude::EventContext) {
+        let Some(handle) = self.focused_prose_handle() else {
+            return;
+        };
+        if !handle.focused_signal().get() {
+            return;
+        }
+        let Some(binding) = self.focused_comment_binding() else {
+            return;
+        };
+        let (a, p) = handle.selection();
+        binding.add_range(a.min(p), a.max(p));
+    }
+
+    /// Comment on the paragraph the focused prose caret is in.
+    pub fn add_paragraph_comment(&self, _ctx: &mut bastyde::prelude::EventContext) {
+        let Some(handle) = self.focused_prose_handle() else {
+            return;
+        };
+        if !handle.focused_signal().get() {
+            return;
+        }
+        let Some(binding) = self.focused_comment_binding() else {
+            return;
+        };
+        let (a, p) = handle.selection();
+        binding.add_paragraph(a.min(p), a.max(p));
+    }
+
     pub fn focused_carries_scene(&self) -> bool {
         let side = self.focused_side.get();
         let pane = self.pane(side);

@@ -128,7 +128,13 @@ pub fn writing_column(
     // editor per row, so there is no single "the" caret to persist, the same
     // reason `synopsis_column` passes no handle sink there.
     view_state: Option<crate::view_models::ViewStateBinding>,
-) -> CenterColumnFlowing {
+    // This editor's door to the comment feature — minted by the `OpenDoc` that
+    // knows which `Content` row the document came from. `None` on every surface
+    // built without a project around it (the widget tests) and on any document
+    // with no comment store, which collapses the comment affordances rather than
+    // panicking.
+    comments: Option<crate::comments::binding::CommentBinding>,
+) -> HStack {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
         .on_change(on_change)
@@ -157,8 +163,34 @@ pub fn writing_column(
     if let Some(vs) = &view_state {
         let handle = editor.handle();
         vs.ports.attach_editor(handle.clone());
-        let caret = vs.initial.caret.min(doc.character_count());
-        handle.select_range(caret, caret);
+        // A comment dock's "jump to this thread" parks a seek that only this
+        // editor can perform, because only it exists once the tab is built. It
+        // wins over the restored caret: the writer just asked to go somewhere
+        // specific, which is a stronger intent than where they last left off.
+        let seek = comments.as_ref().and_then(|c| c.take_seek());
+        match seek {
+            Some((start, end)) => {
+                let last = doc.character_count();
+                handle.select_range(start.min(last), end.min(last));
+            }
+            None => {
+                let caret = vs.initial.caret.min(doc.character_count());
+                handle.select_range(caret, caret);
+            }
+        }
+    }
+    // The margin resolves its marks against this editor's geometry, so it needs
+    // the live handle. Filled here rather than cached anywhere longer-lived: a tab
+    // rebuild mints a fresh editor, and a stale handle would report the previous
+    // one's coordinates.
+    let handle_for_margin: Rc<RefCell<Option<EditorHandle>>> =
+        Rc::new(RefCell::new(Some(editor.handle())));
+
+    // Expose this document's comment threads to AccessKit. Sighted users get the
+    // underline from the highlight session; this is its accessible counterpart,
+    // and neither is derivable from the other.
+    if let Some(binding) = &comments {
+        editor = editor.annotation_spans(binding.annotation_spans());
     }
     // Replace the built-in menu with our own — the standard editing actions, an
     // "Add to dictionary" item, and (in a stream) "Split scene". Installed
@@ -170,6 +202,7 @@ pub fn writing_column(
         let cursor = editor.cursor_position_signal();
         let doc = doc.clone();
         let spell = spell.clone();
+        let comments = comments.clone();
         editor = editor.context_menu(move |pt, _ctx| {
             handle.reposition_caret_for_context_menu(pt);
             Some(Box::new(editor_context_menu(
@@ -178,6 +211,7 @@ pub fn writing_column(
                 split.clone(),
                 doc.clone(),
                 spell.clone(),
+                comments.clone(),
             )))
         });
     }
@@ -195,14 +229,44 @@ pub fn writing_column(
     if let Some(band) = caret {
         bound = bound.with_caret_band(band);
     }
-    CenterColumnFlowing::new(bati!(
+    let capped = bati!(
         MaxSize::width(column_width.get()) {
             max_width: column_width.clone()
             Expand::horizontal {
                 child: bound
             }
         }
-    ))
+    );
+
+    // Always an `HStack`, with or without comments: a single-child stack around an
+    // `Expand` lays out identically to the bare column, and one return type keeps
+    // every caller free of boxing.
+    let row = HStack::new().spacing(0.0);
+    match comments {
+        // With comments on this document, the writing column shares the pane with
+        // a margin holding their cards — the LibreOffice arrangement. The two are
+        // placed together by `ColumnWithMargin` rather than by the stack, so the
+        // cards stay **flush** against the prose and the page only moves once the
+        // pair genuinely stops fitting centred. Letting the stack do it would pin
+        // the margin to the window edge and strand every card at the end of a long
+        // empty leader.
+        Some(binding) => {
+            let palette = binding.palette();
+            let margin = crate::comments::margin::CommentMargin::new(
+                Some(binding),
+                handle_for_margin,
+                palette,
+            );
+            row.child(Expand::horizontal().child(
+                crate::comments::pane::ColumnWithMargin::new(
+                    capped,
+                    margin,
+                    column_width.clone(),
+                ),
+            ))
+        }
+        None => row.child(Expand::horizontal().child(CenterColumnFlowing::new(capped))),
+    }
 }
 
 /// A writing editor's right-click menu: the **formatting row** (Bold / Italic /
@@ -234,6 +298,7 @@ fn editor_context_menu(
     split: Option<SplitFn>,
     doc: TextDocument,
     spell: Option<Rc<SpellSession>>,
+    comments: Option<crate::comments::binding::CommentBinding>,
 ) -> MenuList {
     // One resolution for the whole spelling group — only misspelled words are
     // offered, filtered through this editor's live spell-checker so the group
@@ -275,6 +340,38 @@ fn editor_context_menu(
                     words: words.clone(),
                 });
             }))
+            .separator();
+    }
+
+    // The comment group. A context-menu action whose span is already resolved
+    // uses a direct closure over the captured handle rather than an intent:
+    // routing it through an intent that re-resolves "the current selection" would
+    // act on a stale range if focus moved between the right-click and dispatch.
+    //
+    // "Add comment" is offered only with a real selection — a zero-width range
+    // has nothing to anchor to and the thread would be born orphaned. "Comment on
+    // paragraph" always applies, since the caret is always in some block.
+    if let Some(binding) = &comments {
+        // `selection()` returns the pair unordered (anchor, caret), so normalise.
+        let (a, p) = handle.selection();
+        let (start, end) = (a.min(p), a.max(p));
+        if end > start {
+            let b = binding.clone();
+            list = list.item(
+                MenuItem::new(tr!(comments_menu_add())).on_activate_fn(move |_ctx| {
+                    b.add_range(start, end);
+                }),
+            );
+        }
+        let b = binding.clone();
+        list = list
+            .item(
+                MenuItem::new(tr!(comments_menu_add_paragraph())).on_activate_fn(move |_ctx| {
+                        // The whole selection, so a drag across several paragraphs
+                    // comments all of them as one thread.
+                    b.add_paragraph(start, end);
+                }),
+            )
             .separator();
     }
 
@@ -462,6 +559,10 @@ pub fn synopsis_editor(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    // The synopsis is a *different* `Content` row than the body, so it carries
+    // its own binding — anchoring both to "the item" would merge two distinct
+    // annotations into one.
+    comments: Option<crate::comments::binding::CommentBinding>
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -517,6 +618,7 @@ pub fn synopsis_editor(
                 split.clone(),
                 doc.clone(),
                 spell.clone(),
+                comments.clone(),
             )))
         });
     }
@@ -616,6 +718,9 @@ pub fn card_synopsis_editor(
                 split.clone(),
                 doc.clone(),
                 spell.clone(),
+                // A corkboard card is a preview surface, not a writing surface —
+                // it offers no comment affordances.
+                None,
             )))
         });
     }
@@ -731,6 +836,12 @@ impl Widget for DirtyOnEdit {
 /// `MaxSize` reported its full cap and this box stayed ~656px wide in a 300px window,
 /// overhanging the tab to the right for the whole height of the scene. That overhang is
 /// what the renderer then tried to stripe, and it froze the app (see [`centered`]).
+//
+// One parameter per independently-optional editor service (find, spell, replacement,
+// format, typewriter, caret band, comments). Bundling them into a struct would only
+// move the same list somewhere else while hiding which surfaces opt out of what —
+// the sibling builders in this module carry the same allow for the same reason.
+#[allow(clippy::too_many_arguments)]
 pub fn synopsis_section(
     doc: &TextDocument,
     column_width: &Signal<f32>,
@@ -746,6 +857,7 @@ pub fn synopsis_section(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    comments: Option<crate::comments::binding::CommentBinding>
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
@@ -772,6 +884,7 @@ pub fn synopsis_section(
                             // Compact: a bounded six-line box, never pinned.
                             Option::None,
                             caret,
+                            comments,
                         )
                     }
                 }
@@ -808,6 +921,7 @@ pub fn synopsis_column(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    comments: Option<crate::comments::binding::CommentBinding>
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(
@@ -826,6 +940,7 @@ pub fn synopsis_column(
                     format,
                     typewriter,
                     caret,
+                    comments,
                 )
             }
         }
@@ -854,6 +969,7 @@ pub fn writing_section(
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
     view_state: Option<crate::view_models::ViewStateBinding>,
+    comments: Option<crate::comments::binding::CommentBinding>,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -876,6 +992,7 @@ pub fn writing_section(
             typewriter,
             caret,
             view_state,
+            comments,
         ))
 }
 
@@ -1203,6 +1320,11 @@ pub fn side_synopsis_editor(
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
     caret: Option<crate::view_models::CaretBand>,
+    // Threaded like every other synopsis placement. Left at `None` this column
+    // would be the one surface in the app where a synopsis quietly cannot be
+    // commented on — and it is a *placement* of the same `Content` row, not a
+    // different thing, so the annotations must follow it across the fold.
+    comments: Option<crate::comments::binding::CommentBinding>,
 ) -> impl Widget {
     synopsis_editor(
         doc,
@@ -1216,6 +1338,7 @@ pub fn side_synopsis_editor(
         format,
         None,
         caret,
+        comments,
     )
 }
 
@@ -2404,6 +2527,9 @@ mod frame_loop_tests {
             None,
             None,
             None,
+            // No project around this tree, so no comment binding: the margin
+            // collapses to nothing and the column lays out on its own.
+            None,
         );
         let mut tree = WidgetTree::new();
         tree.add(col);
@@ -2543,6 +2669,8 @@ mod tests {
             None,
             None,
             None,
+            None,
+            // No project around this tree, so no comment binding.
             None,
         );
         let mut tree = WidgetTree::new();
@@ -2734,6 +2862,7 @@ mod typewriter_tests {
             None,
             typewriter,
             caret,
+            None,
             None,
         );
         let mut tree = WidgetTree::new();

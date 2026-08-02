@@ -81,6 +81,8 @@ pub(crate) struct ProjectMenuParts {
     pub ids: crate::app_ids::AppIds,
     pub autosave_menu: Signal<bool>,
     pub spellcheck_menu: Signal<bool>,
+    /// Mirror of the persisted Tools ▸ Comments switch, for its checkmark.
+    pub comments_menu: Signal<bool>,
     pub scene_focused: Signal<bool>,
     /// Whether this window's binder has a selection — the Document menu's per-item rows
     /// grey out without one.
@@ -179,6 +181,7 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
     let menu_ids = parts.ids;
     let menu_autosave = parts.autosave_menu;
     let menu_spellcheck = parts.spellcheck_menu;
+    let menu_comments = parts.comments_menu;
     let menu_scene_focused = parts.scene_focused;
     let menu_binder_selection = parts.binder_has_selection;
     let templates_submenu_id = parts.templates_submenu_id;
@@ -898,6 +901,22 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                         .intent("format.major_scene_break")
                         .shortcut("format.major_scene_break"),
                 )
+                .separator()
+                // Gated by `.enabled()`, never `.visible()`, for the
+                // same reason the scene-break rows above are: a row
+                // that vanishes teaches nobody the shortcut exists.
+                .item(
+                    MenuEntry::new(tr!(comments_menu_add()))
+                        .enabled(on_scene.clone())
+                        .intent("comments.add")
+                        .shortcut("comments.add"),
+                )
+                .item(
+                    MenuEntry::new(tr!(comments_menu_add_paragraph()))
+                        .enabled(on_scene.clone())
+                        .intent("comments.add_paragraph")
+                        .shortcut("comments.add_paragraph"),
+                )
             }
         })
         // Go — Increment 4 of distraction-free: prev/next Scene/
@@ -981,6 +1000,20 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                     .checked(menu_spellcheck.clone())
                     .intent("spellcheck.toggle")
                     .shortcut("spellcheck.toggle"),
+            )
+            // Show or hide the anchored-comment marks and their
+            // margin. Same reflect-only `checked(..)` as its
+            // neighbour above, for the same reason: the persisted
+            // setting is the truth and the intent is its only
+            // writer, so `.checkable()` — which writes the bound
+            // signal on click — would fight it. It hides the
+            // presentation, not the data: both comment docks keep
+            // listing every thread, and a screen reader keeps
+            // announcing them.
+            .item(
+                MenuEntry::new(tr!(menu_comments()))
+                    .checked(menu_comments.clone())
+                    .intent("comments.toggle"),
             )
         })
         // Help sits last, as it does on every desktop platform.

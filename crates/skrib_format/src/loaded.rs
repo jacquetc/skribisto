@@ -10,8 +10,8 @@
 //! remaps them to fresh store ids while preserving order and M2M links.
 
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, NoteTemplate, SmartPunctuation,
-    TextReplacementRule, Work,
+    Binder, BinderItem, BinderTag, CommentAnchorKind, CommentOrphanReason, Content, DictWord,
+    NoteTemplate, SmartPunctuation, TextReplacementRule, Work,
 };
 
 pub struct LoadedWork {
@@ -38,6 +38,10 @@ pub struct LoadedWork {
     pub trash_infos: Vec<LoadedTrash>,
     pub paces: Vec<LoadedPace>,
     pub progress_snapshots: Vec<LoadedProgressSnapshot>,
+    /// Comment threads, each naming the **content file id** it annotates — or
+    /// `None` for one that arrived from the bundle-root orphanage, whose anchored
+    /// Content is already gone.
+    pub comments: Vec<LoadedComment>,
     /// (source file id, destination file id) cross-link pairs.
     pub references: Vec<(u64, u64)>,
     /// Absolute path recorded in `RecentWork` (the opened file/folder).
@@ -98,6 +102,35 @@ pub struct LoadedMilestone {
     pub target_item: Option<u64>,
     pub target_date: chrono::DateTime<chrono::Utc>,
     pub target_word_count: Option<i64>,
+}
+
+pub struct LoadedComment {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    /// Annotated Content **file id** (remapped at materialise time). `None` means
+    /// the comment came from the orphanage and has no live anchor.
+    pub content: Option<u64>,
+    pub kind: CommentAnchorKind,
+    pub author_name: String,
+    pub body: String,
+    pub resolved: bool,
+    pub orphaned: bool,
+    pub orphan_reason: CommentOrphanReason,
+    pub range_start: u64,
+    pub range_length: u64,
+    pub quote_prefix: String,
+    pub quote_exact: String,
+    pub quote_exact_truncated: bool,
+    pub quote_suffix: String,
+    pub block_ordinal_hint: u64,
+    pub replies: Vec<LoadedCommentReply>,
+}
+
+pub struct LoadedCommentReply {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub author_name: String,
+    pub body: String,
 }
 
 pub struct LoadedProgressSnapshot {

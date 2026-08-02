@@ -39,6 +39,7 @@ pub(super) struct ShellParts {
     pub outline: OutlineViewModel,
     pub search: SearchReplaceViewModel,
     pub trash: crate::view_models::TrashViewModel,
+    pub comments: crate::view_models::CommentsViewModel,
     pub format: crate::view_models::FormatViewModel,
     pub settings: SettingsViewModel,
     pub session: crate::sessions::WorkSession,
@@ -58,6 +59,7 @@ impl App {
             outline,
             search,
             trash,
+            comments,
             format,
             settings,
             session,
@@ -271,6 +273,17 @@ impl App {
             .dock(crate::docks::trash::trash_dock(
                 trash.clone(),
                 self.trash_dock,
+                on_open.clone(),
+            ))
+            .dock(crate::docks::comments::comments_project_dock(
+                comments.clone(),
+                self.comments_dock,
+                on_open.clone(),
+            ))
+            .dock(crate::docks::comments::comments_document_dock(
+                comments.clone(),
+                self.doc_comments_dock,
+                editors.active_item(),
                 on_open,
             ));
         // The docks used to be *disabled* while the mode was active, so "the
@@ -301,6 +314,12 @@ impl App {
                 self.trash_dock,
                 DockOpenLocation::side(DockSide::Leading).new_tab(),
             );
+            // Comments joins the leading rail as a fourth tab: it is project-wide
+            // navigation, which is exactly what this rail is for.
+            docking.open_dock(
+                self.comments_dock,
+                DockOpenLocation::side(DockSide::Leading).new_tab(),
+            );
             docking.reveal_dock(outline.dock_id());
             // Mount the inspector on the trailing side (otherwise the side shows the
             // empty "drop a panel here" placeholder).
@@ -315,6 +334,15 @@ impl App {
             // 300px side has no room to stack both.
             docking.open_dock(
                 self.format_dock,
+                DockOpenLocation::side(DockSide::Trailing).new_tab(),
+            );
+            // This document's comments joins as a third trailing tab. The rail is
+            // already the "what is in front of me right now" rail — Inspector
+            // answers what this item is, Format how the text reads, Comments what
+            // is annotated in it — so it is a third member of that family rather
+            // than a fourth, orthogonal concept.
+            docking.open_dock(
+                self.doc_comments_dock,
                 DockOpenLocation::side(DockSide::Trailing).new_tab(),
             );
             // Inspector is the one that starts showing: it is the older habit,

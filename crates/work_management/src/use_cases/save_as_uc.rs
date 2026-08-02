@@ -17,14 +17,16 @@ use crate::SaveAsResultDto;
 use crate::work_io::{self, TreeReader};
 use anyhow::{Result, anyhow};
 use common::database::QueryUnitOfWork;
+use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, NoteTemplate, Pace,
-    ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work, WorkInfo,
+    Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday, Milestone,
+    NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
+    WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
@@ -56,6 +58,9 @@ pub trait SaveAsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Pace", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "Holiday", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Milestone", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Comment", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Comment", action = "GetRelationshipRO")]
+#[macros::uow_action(entity = "CommentReply", action = "GetMultiRO")]
 #[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "ProgressSnapshot", action = "GetMultiRO")]
 pub trait SaveAsUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
@@ -126,6 +131,18 @@ impl<'a> TreeReader for dyn SaveAsUnitOfWorkTrait + 'a {
     }
     fn milestone_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Milestone>>> {
         self.get_milestone_multi(ids)
+    }
+    fn reads_comments(&self) -> bool {
+        true
+    }
+    fn comment_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Comment>>> {
+        self.get_comment_multi(ids)
+    }
+    fn comment_rel(&self, id: &EntityId, field: &CommentRelationshipField) -> Result<Vec<EntityId>> {
+        self.get_comment_relationship(id, field)
+    }
+    fn comment_reply_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<CommentReply>>> {
+        self.get_comment_reply_multi(ids)
     }
     fn work_info_rel(
         &self,

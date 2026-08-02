@@ -283,6 +283,17 @@ entities:
     strong: true
     list_model: true
     list_model_displayed_field: start_date
+  # Unordered, unlike binders/paces: a comment's position in this collection carries
+  # no product meaning. Both comment docks sort by their own criteria (document
+  # position, recency, resolved state), so store order is never read. Same shape as
+  # `tags` and `trash_infos` — proof that `list_model` does not imply ordering.
+  - name: comments
+    type: entity
+    entity: Comment
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: body
   undoable: true
 # Per-project smart punctuation: the "-- becomes an em dash, « » get their
 # non-breaking spaces" rules, as the DOCUMENT's house style rather than this
@@ -413,6 +424,120 @@ entities:
   - name: target_word_count
     type: integer
     optional: true
+  undoable: true
+# One comment thread anchored to one PROSE Content row (SceneText / NoteText /
+# SynopsisText — title rows are plain TextInputs with no document behind them and are
+# deliberately not comment targets).
+#
+# `content` is a weak, optional many_to_one, exactly like Milestone.target_item and
+# TrashInfo.trashed_binder_item: trashing or purging the anchored item must ORPHAN this
+# comment, never cascade-delete it. That is the whole point — a comment outliving its
+# text is a state we render explicitly, not a dangling row we lose.
+#
+# THE ANCHOR. Nothing in this stack has durable text identity: text-document re-mints
+# Block ids from 1 on every reopen, `load_work` re-mints every EntityId, `CharacterFormat`
+# is a closed struct whose runs may not overlap, and the Djot importer discards inline
+# span attributes. The only thing that survives a save→reopen is the prose text itself.
+# So the anchor is a W3C-Web-Annotation-style *selector*: a quote (prefix/exact/suffix,
+# the same shape SearchResult's snippet_* triple already uses) plus a position hint, in
+# document-absolute CHARACTER offsets — the space cursors, FindMatch and ContentsChanged
+# all speak. Never bytes, and never a block id.
+#
+# The position hint alone is right far more often than it sounds: the Djot round-trip is
+# a property-tested fixpoint preserving plain text and block count, so offsets are stable
+# across save→reopen whenever the prose is unedited. The quote is what rescues the case
+# where it was edited — including by git or by hand, outside the app.
+#
+# `undoable: true` is forced, not chosen: `qleany check` refuses a non-undoable strong
+# child under an undoable parent (see SmartPunctuation's note above).
+- name: Comment
+  inherits_from: EntityBase
+  fields:
+  - name: content
+    type: entity
+    entity: Content
+    relationship: many_to_one
+    optional: true
+  - name: kind
+    type: enum
+    enum_name: CommentAnchorKind
+    enum_values:
+      # A character range inside the prose.
+      - Range
+      # A whole paragraph: `range_start` seeds which block, and the extent is
+      # re-derived from that block on every resolve so a growing paragraph stays
+      # wholly covered. `range_length` is not authoritative for this kind.
+      - Paragraph
+      # The Content row as a whole. Carries no text anchor and can never orphan
+      # from text drift.
+      - Document
+  - name: author_name
+    type: string
+  - name: body
+    type: string
+  - name: resolved
+    type: boolean
+  # Orphan state is a stored, checkable value with a typed reason — never an implicit
+  # UI glitch. Google Docs' unpurgeable "Original content deleted" and Confluence's
+  # unreopenable "dangling" resolve are precisely what this exists to avoid.
+  - name: orphaned
+    type: boolean
+  - name: orphan_reason
+    type: enum
+    enum_name: CommentOrphanReason
+    enum_values:
+      - NotOrphaned
+      # The quoted text is nowhere in the Content any more.
+      - TextNotFound
+      # The quote occurs several times and the context could not break the tie.
+      # Deliberately distinct from TextNotFound: the text is still there, we just
+      # will not guess which one, because a wrong attachment is worse than an orphan.
+      - Ambiguous
+      # The anchored Content row itself was purged.
+      - TargetDeleted
+  - name: range_start
+    type: uinteger
+  - name: range_length
+    type: uinteger
+  # ~32 chars immediately before the anchored span.
+  - name: quote_prefix
+    type: string
+  # The anchored text itself, verbatim — or, when it is long, head + "…" + tail with
+  # `quote_exact_truncated` set, which tells the matcher to compare the two ends
+  # instead of the whole string.
+  - name: quote_exact
+    type: string
+  - name: quote_exact_truncated
+    type: boolean
+  # ~32 chars immediately after the anchored span.
+  - name: quote_suffix
+    type: string
+  # 0-based index of the block that contained the anchor when it last resolved. A
+  # tie-breaker for ambiguous quotes and the fallback for a Paragraph comment — never
+  # a Block EntityId, which is re-minted on every reopen and would be meaningless.
+  - name: block_ordinal_hint
+    type: uinteger
+  # A FLAT thread: replies are chronological, never nested. Mirrors OOXML, whose
+  # w15:paraIdParent always points at the thread root rather than at a peer reply.
+  # Ordered because chronology is real content here, unlike Work.comments above.
+  - name: replies
+    type: entity
+    entity: CommentReply
+    relationship: ordered_one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: body
+  undoable: true
+# One reply inside a Comment's thread. `author_name` is free text seeded from
+# Work.author_name at creation — this app has no identity system and this does not
+# invent one (Work.author_name is the BOOK's byline, not a user account).
+- name: CommentReply
+  inherits_from: EntityBase
+  fields:
+  - name: author_name
+    type: string
+  - name: body
+    type: string
   undoable: true
 - name: Binder
   single_model: true

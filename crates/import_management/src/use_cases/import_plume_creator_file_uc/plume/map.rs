@@ -180,6 +180,9 @@ pub fn build_bundle(
         note_templates: Vec::new(),
         note_template_bodies: Default::default(),
         trash_infos: Vec::new(),
+        // Plume has no comment/annotation concept either, so there is nothing to
+        // import and nothing that could already be orphaned.
+        orphan_comments: Vec::new(),
         // Plume has no writing-plan or progress-history concept to import.
         paces: Vec::new(),
         progress_snapshots: Vec::new(),
@@ -833,6 +836,8 @@ impl<'a> Builder<'a> {
                     tag_ids: Vec::new(),
                 },
                 prose,
+                // Plume carries no annotations, so an imported item starts unannotated.
+                comments: std::collections::BTreeMap::new(),
             },
         )
     }

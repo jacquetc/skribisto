@@ -325,6 +325,29 @@ mod imp {
         }
     }
 
+    /// A deterministic, per-field id for a fabricated `Content` row.
+    ///
+    /// Offset well clear of the mock binder's own item ids so the two id spaces
+    /// cannot be confused while debugging.
+    ///
+    /// Public because the fabricated *comment* set has to anchor to the same rows
+    /// this fabricates. A comment carrying a hand-written content id would point at
+    /// a document that does not exist, so the margin would be empty in every mocks
+    /// build — which is exactly the build the feature is meant to be demonstrable
+    /// in.
+    pub fn mock_content_id(item_id: u64, role: &ContentRole) -> u64 {
+        let slot = match role {
+            ContentRole::SceneText => 1,
+            ContentRole::NoteText => 2,
+            ContentRole::SynopsisText => 3,
+            ContentRole::BookTitle => 4,
+            ContentRole::BookSubtitle => 5,
+            ContentRole::PartTitle => 6,
+            ContentRole::ChapterTitle => 7,
+        };
+        900_000 + item_id * 10 + slot
+    }
+
     #[allow(dead_code)] // identical surface to the real variant; some unused under mocks
     impl SingleContent {
         pub fn for_field(
@@ -335,7 +358,15 @@ mod imp {
         ) -> Self {
             let (id, data) = match existing {
                 Some(c) => (Some(c.id), c.data.clone()),
-                None => (None, fabricate(item_id, &role)),
+                // A fabricated row still gets an id. `None` here would be a
+                // *behavioural* difference from the real build, not just a missing
+                // number: every feature keyed on "which Content is this" — comments
+                // above all — resolves to nothing and silently disappears from the
+                // mocks build, which is precisely where such a feature is meant to
+                // be demonstrable. Derived from (item, role) so it is stable across
+                // refreshes and distinct per field, the same contract
+                // `common::uid::fixture_uid` provides for items.
+                None => (Some(mock_content_id(item_id, &role)), fabricate(item_id, &role)),
             };
             Self {
                 inner: Rc::new(Inner {
@@ -403,3 +434,5 @@ mod imp {
 }
 
 pub use imp::SingleContent;
+#[cfg(feature = "mocks")]
+pub use imp::mock_content_id;

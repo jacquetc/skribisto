@@ -102,6 +102,14 @@ fn strip_volatile(b: &mut WorkBundle) {
         s.created_at.clear();
         s.updated_at.clear();
     }
+    // Comment bookkeeping timestamps are volatile; everything else about a comment
+    // is content. Its BODY above all — but also `resolved` and the anchor payload,
+    // since resolving a thread or re-anchoring it after an edit is a real change the
+    // writer would expect a backup to capture. Miss these and skip-if-unchanged
+    // silently drops a backup of genuine work.
+    for c in &mut b.orphan_comments {
+        strip_comment(c);
+    }
     for bb in &mut b.binders {
         bb.binder.created_at.clear();
         bb.binder.updated_at.clear();
@@ -116,7 +124,21 @@ fn strip_volatile(b: &mut WorkBundle) {
                 pr.created_at.clear();
                 pr.updated_at.clear();
             }
+            for list in it.comments.values_mut() {
+                for c in list {
+                    strip_comment(c);
+                }
+            }
         }
+    }
+}
+
+fn strip_comment(c: &mut crate::bundle::CommentFile) {
+    c.created_at.clear();
+    c.updated_at.clear();
+    for r in &mut c.replies {
+        r.created_at.clear();
+        r.updated_at.clear();
     }
 }
 
@@ -158,6 +180,7 @@ mod tests {
             trash_infos: vec![],
             paces: vec![],
             progress_snapshots: vec![],
+            orphan_comments: vec![],
             binders: vec![],
         }
     }

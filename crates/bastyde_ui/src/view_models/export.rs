@@ -691,6 +691,9 @@ impl ExportViewModel {
             // or the progress history.
             paces: Vec::new(),
             progress_snapshots: Vec::new(),
+            // Comments are working notes and never reach a compiled manuscript, so
+            // the export path has no reason to read them (see `TreeReader::reads_comments`).
+            comments: Vec::new(),
             binders,
             work_info: None,
         })

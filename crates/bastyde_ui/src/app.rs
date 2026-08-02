@@ -728,6 +728,10 @@ pub struct App {
     /// (outside `App`) for the toggle's icon + the View ▸ Check spelling checkmark.
     /// `App::build` mirrors the store-backed setting into it.
     spellcheck_menu: Signal<bool>,
+    /// Plain mirror of the persisted Tools ▸ Comments switch, read by the title-bar's
+    /// menu (built outside `App`) for its checkmark. `App::build` mirrors the
+    /// store-backed setting into it — the menu row never writes it back.
+    comments_menu: Signal<bool>,
     /// Live "a scene's prose is the active surface" flag, shared with the
     /// title-bar's Format menu so its entries grey out off a scene. Written by
     /// `EditorsViewModel`, which is the only thing that can compute it.
@@ -807,8 +811,11 @@ pub struct App {
     search: Option<SearchReplaceViewModel>,
     /// Stable id for the leading trash dock (third rail tab).
     trash_dock: DockWidgetId,
+    comments_dock: DockWidgetId,
+    doc_comments_dock: DockWidgetId,
     /// The trash feature's shared view-model, created once on first build.
     trash: Option<crate::view_models::TrashViewModel>,
+    comments: Option<crate::view_models::CommentsViewModel>,
     /// Keeps this window's `SearchSettingsService` `Reloadable` registration alive
     /// in the shared `SettingsRegistry`, so a peer process's `search.toml` writes
     /// are picked up live — the same story as [`backup_settings_reloadable`](Self::backup_settings_reloadable).
@@ -839,6 +846,7 @@ impl App {
         export: crate::view_models::ExportViewModel,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
+        comments_menu: Signal<bool>,
         scene_focused: Signal<bool>,
         binder_has_selection: Signal<bool>,
         templates_menu: Option<(
@@ -880,6 +888,7 @@ impl App {
             window_ordinal,
             autosave_menu,
             spellcheck_menu,
+            comments_menu,
             scene_focused,
             binder_has_selection,
             templates_menu,
@@ -903,7 +912,10 @@ impl App {
             preview_dock: DockWidgetId::from_raw(crate::docks::PREVIEW_DOCK_ID),
             search_dock: DockWidgetId::from_raw(crate::docks::SEARCH_DOCK_ID),
             search: None,
+            comments: None,
             trash_dock: DockWidgetId::from_raw(crate::docks::TRASH_DOCK_ID),
+            comments_dock: DockWidgetId::from_raw(crate::docks::COMMENTS_DOCK_ID),
+            doc_comments_dock: DockWidgetId::from_raw(crate::docks::DOC_COMMENTS_DOCK_ID),
             trash: None,
             search_settings_reloadable: None,
             root_child: None,
@@ -1482,6 +1494,34 @@ impl Widget for App {
                 })
                 .clone()
         };
+        // ── The comments feature's shared view-model ─────────────────────────
+        // One instance for both docks: the project-wide dock binds the whole list,
+        // the per-document dock the same handle narrowed to the focused item. Two
+        // models over one entity set would drift the moment a thread was resolved
+        // in one and not the other.
+        let comments = {
+            let app_ctx = self.app_ctx.clone();
+            let ids = self.outline.ids();
+            self.comments
+                .get_or_insert_with(|| {
+                    let model = crate::models::CommentsListModel::new(app_ctx.clone(), ids.clone());
+                    crate::view_models::CommentsViewModel::new(model, app_ctx, ids.stack_id.clone())
+                })
+                .clone()
+        };
+        // The default author for new threads is the book's byline — the only name
+        // the app knows. There is no identity system and this does not invent one.
+        comments.set_default_author(&session.single_work.author_name().get());
+        comments.model().wire(ctx);
+        // Hand the view-model to the open-document store so every document — the
+        // ones already open from a workspace restore, and every one opened later —
+        // gets its highlight layer seeded from the persisted anchors.
+        session.open_docs.set_comments(comments.clone());
+        // The comment palette follows the theme: its light-page values are a glare
+        // on a dark one. Re-resolved on every build, which is when a theme change
+        // lands (the same cadence the spell squiggle's colour uses).
+        comments.set_dark(ctx.theme().is_dark());
+
         // Live cross-process reload for `search.toml` — register this window's
         // service into the shared `SettingsRegistry` once (same story as
         // `backup_settings` above).
@@ -1989,6 +2029,28 @@ impl Widget for App {
                 }
             });
         }
+        // ── Tools ▸ Comments ─────────────────────────────────────────────────
+        // Same shape as the spell-check switch above, and deliberately the same scope: one
+        // persisted app-wide key, mirrored into the menu's checkmark and pushed into the
+        // store, which owns both halves of the hide (the view-model flag the margin binds,
+        // and every open document's highlight layer).
+        //
+        // Presentation only. The docks keep listing every thread and the AccessKit
+        // annotations keep announcing them — a writer who decluttered the page must still
+        // be able to act on the notes they hid, and a screen-reader user gets nothing from
+        // losing them.
+        {
+            self.comments_menu.set(settings.comments_visible().get());
+            let menu = self.comments_menu.clone();
+            let docs = spell_docs.clone();
+            // Seeded before the first document opens, so a launch with comments hidden
+            // never paints a frame of ochre before the effect catches up.
+            docs.set_comments_visible(settings.comments_visible().get());
+            ctx.effect(&settings.comments_visible(), move |on| {
+                menu.set(*on);
+                docs.set_comments_visible(*on);
+            });
+        }
         // Synopsis spell dormancy is *not* wired here any more. It used to mirror
         // one global setting into every open doc, which stopped being the right
         // question once the synopsis could also be folded away per tab (Side
@@ -2199,6 +2261,7 @@ impl Widget for App {
             ctx,
             project_shell::ShellParts {
                 editors: editors.clone(),
+                comments: comments.clone(),
                 outline: outline.clone(),
                 search: search.clone(),
                 trash: trash.clone(),

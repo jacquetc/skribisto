@@ -46,6 +46,12 @@ pub mod holiday;
 // Milestone
 pub mod milestone;
 
+// Comment
+pub mod comment;
+
+// CommentReply
+pub mod comment_reply;
+
 // Binder
 pub mod binder;
 
@@ -107,6 +113,12 @@ pub use holiday::holiday_controller;
 
 pub use milestone::dtos::*;
 pub use milestone::milestone_controller;
+
+pub use comment::comment_controller;
+pub use comment::dtos::*;
+
+pub use comment_reply::comment_reply_controller;
+pub use comment_reply::dtos::*;
 
 pub use binder::binder_controller;
 pub use binder::dtos::*;

@@ -123,6 +123,7 @@ pub fn serialize_and_write(
         &g.trash_infos,
         &g.paces,
         &g.progress_snapshots,
+        &g.comments,
         &g.binders,
         shape_tag,
     );

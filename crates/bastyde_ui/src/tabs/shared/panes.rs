@@ -135,6 +135,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 Some(tab.format.clone()),
                 Some(tab.typewriter.clone()),
                 Some(tab.caret_band()),
+                tab.open_doc.comment_binding_synopsis(),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -152,6 +153,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             Some(tab.typewriter.clone()),
             Some(tab.caret_band()),
             Some(tab.view_state_binding()),
+            tab.open_doc.comment_binding_main(),
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
@@ -277,6 +279,7 @@ fn manuscript_page(tab: &ContentTab, compact_synopsis: Option<Signal<bool>>) -> 
                 Some(tab.synopsis_handle_sink()),
                 Some(tab.format.clone()),
                 Some(tab.caret_band()),
+                tab.open_doc.comment_binding_synopsis(),
             ),
         ));
     }
@@ -298,6 +301,7 @@ fn manuscript_page(tab: &ContentTab, compact_synopsis: Option<Signal<bool>>) -> 
             Some(tab.typewriter.clone()),
             Some(tab.caret_band()),
             Some(tab.view_state_binding()),
+            tab.open_doc.comment_binding_main(),
         ));
     }
 
@@ -356,6 +360,7 @@ fn side_synopsis_pane(tab: &ContentTab, sync: SideSync) -> impl Widget {
                     Some(tab.synopsis_handle_sink()),
                     Some(tab.format.clone()),
                     Some(tab.caret_band()),
+                    tab.open_doc.comment_binding_synopsis(),
                 ))),
         ),
         None => Box::new(vspace(0.0)),
@@ -417,6 +422,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 Some(tab.format.clone()),
                 Some(tab.typewriter.clone()),
                 Some(tab.caret_band()),
+                tab.open_doc.comment_binding_synopsis(),
             ));
     }
     tab_backdrop(
@@ -478,6 +484,7 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
                 Some(tab.format.clone()),
                 Some(tab.typewriter.clone()),
                 Some(tab.caret_band()),
+                tab.open_doc.comment_binding_synopsis(),
             ));
     }
     writing_page_scroll(tab).child(col.child(vspace(28.0)))

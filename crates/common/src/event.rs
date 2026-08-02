@@ -58,6 +58,8 @@ pub enum DirectAccessEntity {
     Pace(EntityEvent),
     Holiday(EntityEvent),
     Milestone(EntityEvent),
+    Comment(EntityEvent),
+    CommentReply(EntityEvent),
     Binder(EntityEvent),
     BinderItem(EntityEvent),
     BinderTag(EntityEvent),
@@ -197,6 +199,10 @@ impl Event {
                 DirectAccessEntity::Holiday(event) => format!("direct_access_holiday_{:?}", event),
                 DirectAccessEntity::Milestone(event) => {
                     format!("direct_access_milestone_{:?}", event)
+                }
+                DirectAccessEntity::Comment(event) => format!("direct_access_comment_{:?}", event),
+                DirectAccessEntity::CommentReply(event) => {
+                    format!("direct_access_comment_reply_{:?}", event)
                 }
                 DirectAccessEntity::Binder(event) => format!("direct_access_binder_{:?}", event),
                 DirectAccessEntity::BinderItem(event) => {

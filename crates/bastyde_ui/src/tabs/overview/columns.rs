@@ -22,7 +22,10 @@ use std::rc::Rc;
 
 use uuid::Uuid;
 
-use crate::models::{COL_LABEL, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_WORDS, COL_TYPE};
+use crate::models::{
+    COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_COMMENTS,
+    COL_TOTAL_WORDS, COL_TYPE,
+};
 
 /// Build the column set for a table bound to `vm`.
 ///
@@ -41,6 +44,8 @@ pub(super) fn overview_columns(vm: &OverviewViewModel) -> Vec<Column<OverviewRow
         tags_column(vm),
         own_words_column(vm),
         total_words_column(vm),
+        open_comments_column(vm),
+        total_comments_column(vm),
     ]
 }
 
@@ -239,6 +244,43 @@ fn total_words_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
         COL_TOTAL_WORDS,
         tr!(overview_col_total_words()),
         move |row, _cx| with_row_menu(&vm, row, word_cell(Some(row.total_words))),
+    )
+    .width(ColumnWidth::Fixed(76.0))
+    .alignment(TableAlignment::Trailing)
+    .sortable(true)
+}
+
+/// **Comments** — open threads anchored to this row's own prose.
+///
+/// Open rather than total, and blank rather than `0`: a row with nothing left to
+/// address should read as quiet. Printing `0` on every settled scene would turn a
+/// column meant to draw the eye into visual noise on the majority of rows.
+fn open_comments_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
+    let vm = vm.clone();
+    Column::new(
+        COL_OPEN_COMMENTS,
+        tr!(overview_col_comments()),
+        move |row: &OverviewRow, _cx| {
+            let n = row.own_comments;
+            with_row_menu(&vm, row, word_cell((n > 0).then_some(n)))
+        },
+    )
+    .width(ColumnWidth::Fixed(76.0))
+    .alignment(TableAlignment::Trailing)
+    .sortable(true)
+}
+
+/// **Total comments** — this row plus its whole subtree, correct while collapsed.
+/// The number that makes a collapsed chapter say "there is still work inside me".
+fn total_comments_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
+    let vm = vm.clone();
+    Column::new(
+        COL_TOTAL_COMMENTS,
+        tr!(overview_col_total_comments()),
+        move |row: &OverviewRow, _cx| {
+            let n = row.total_comments;
+            with_row_menu(&vm, row, word_cell((n > 0).then_some(n)))
+        },
     )
     .width(ColumnWidth::Fixed(76.0))
     .alignment(TableAlignment::Trailing)

@@ -61,6 +61,7 @@ mod binder;
 mod editor;
 mod export;
 mod file;
+mod comments;
 mod format;
 mod go;
 mod templates;
@@ -155,6 +156,7 @@ pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
     editor::register(ctx, deps);
     export::register(ctx, deps);
     file::register(ctx, deps);
+    comments::register(ctx, deps);
     format::register(ctx, deps);
     templates::register(ctx, deps);
     binder::register(ctx, deps);

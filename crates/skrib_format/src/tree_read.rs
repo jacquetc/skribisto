@@ -25,17 +25,19 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use anyhow::{Result, anyhow};
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
+use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, NoteTemplate, Pace,
-    ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work, WorkInfo,
+    Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday, Milestone,
+    NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
+    WorkInfo,
 };
 use common::long_operation::OperationProgress;
 use common::types::EntityId;
 
-use crate::{BinderWithItems, ItemWithContents, PaceWithChildren};
+use crate::{BinderWithItems, CommentWithReplies, ItemWithContents, PaceWithChildren};
 
 /// The read surface needed to snapshot the Work subtree. Implemented for each use case's
 /// `dyn …UnitOfWorkTrait` (the generated method names are identical).
@@ -103,6 +105,27 @@ pub trait TreeReader {
         Ok(Vec::new())
     }
 
+    // ── Comments (save-only). Export deliberately never serialises them: comments are
+    // working notes that must not reach the compiled manuscript, which is Scrivener's
+    // rule too. So export leaves `reads_comments` false and these defaulted, and the
+    // guarantee is structural rather than a flag someone can get wrong. ──
+    fn reads_comments(&self) -> bool {
+        false
+    }
+    fn comment_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<Comment>>> {
+        Ok(Vec::new())
+    }
+    fn comment_rel(
+        &self,
+        _id: &EntityId,
+        _field: &CommentRelationshipField,
+    ) -> Result<Vec<EntityId>> {
+        Ok(Vec::new())
+    }
+    fn comment_reply_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<CommentReply>>> {
+        Ok(Vec::new())
+    }
+
     // ── ProgressSnapshots (save-only, and only when a WorkInfo is present). Export never
     // reads WorkInfo, so its `work_info` is None and these are never called. ──
     fn work_info_rel(
@@ -130,6 +153,8 @@ pub struct Gathered {
     pub trash_infos: Vec<TrashInfo>,
     pub paces: Vec<PaceWithChildren>,
     pub progress_snapshots: Vec<ProgressSnapshot>,
+    /// Empty on the export path, which never reads comments (see `reads_comments`).
+    pub comments: Vec<CommentWithReplies>,
     pub binders: Vec<BinderWithItems>,
     pub work_info: Option<WorkInfo>,
 }
@@ -229,6 +254,11 @@ pub fn gather<R: TreeReader + ?Sized>(
     } else {
         Vec::new()
     };
+    let comments = if reader.reads_comments() {
+        hydrate_comments(reader, &work_id)?
+    } else {
+        Vec::new()
+    };
     // The deliberate reach through WorkInfo: it is otherwise dropped before serialisation,
     // but its ProgressSnapshots must round-trip. Only save has a WorkInfo (export's is None).
     let progress_snapshots = match &work_info {
@@ -277,9 +307,36 @@ pub fn gather<R: TreeReader + ?Sized>(
         trash_infos,
         paces,
         progress_snapshots,
+        comments,
         binders,
         work_info,
     })
+}
+
+/// Read `Work.comments` and each comment's ordered reply thread into
+/// [`CommentWithReplies`]. Only called on the save path (`reads_comments()` true).
+///
+/// `comment.content` is hydrated here too: it is a weak `many_to_one`, so an empty
+/// result means the anchored Content is gone — which is exactly what
+/// `from_entities` turns into an entry in the bundle-root orphanage rather than a
+/// dropped note.
+fn hydrate_comments<R: TreeReader + ?Sized>(
+    reader: &R,
+    work_id: &EntityId,
+) -> Result<Vec<CommentWithReplies>> {
+    let comment_ids = reader.work_rel(work_id, &WorkRelationshipField::Comments)?;
+    let comment_entities = fetch_multi(&comment_ids, |ids| reader.comment_multi(ids))?;
+    let mut comments = Vec::with_capacity(comment_entities.len());
+    for mut comment in comment_entities {
+        comment.content = reader
+            .comment_rel(&comment.id, &CommentRelationshipField::Content)?
+            .into_iter()
+            .next();
+        comment.replies = reader.comment_rel(&comment.id, &CommentRelationshipField::Replies)?;
+        let replies = fetch_multi(&comment.replies, |ids| reader.comment_reply_multi(ids))?;
+        comments.push(CommentWithReplies { comment, replies });
+    }
+    Ok(comments)
 }
 
 /// Read `Work.paces` and each pace's Holiday/Milestone children into ordered

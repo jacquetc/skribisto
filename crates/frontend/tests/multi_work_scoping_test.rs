@@ -164,6 +164,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
             smart_punctuation: smart_punctuation.id,
             trash_infos: vec![],
             paces: vec![],
+            comments: vec![],
         },
     )
     .unwrap_or_else(|e| panic!("create work {title}: {e}"));

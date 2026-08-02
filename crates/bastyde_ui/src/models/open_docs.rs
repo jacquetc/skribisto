@@ -40,6 +40,8 @@ use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 use frontend::direct_access::ContentDto;
 
 use crate::singles::SingleBinderItem;
+use crate::comments::binding::CommentBinding;
+use crate::comments::session::CommentHighlightSession;
 use crate::spellcheck::{SpellSession, SpellcheckService};
 use crate::tabs::{
     ProseField, ProseKind, TitleField, TitlePart, prose_field, prose_kind_for, title_field,
@@ -87,6 +89,20 @@ pub struct OpenDoc {
     /// `Rc` so the editor build can hold a clone to drive it.
     spell_main: Option<Rc<SpellSession>>,
     spell_synopsis: Option<Rc<SpellSession>>,
+    /// The comment highlight layer on each prose document, if that field exists.
+    ///
+    /// It hangs here rather than on a tab or an editor widget for the same reason
+    /// the spell sessions do: an `OpenDoc` is shared by every simultaneous view of
+    /// one item (its own tab, a split pane, a stream row, a corkboard card), so a
+    /// session owned by a widget would paint in whichever view happened to create
+    /// it and nowhere else.
+    comments_main: Option<Rc<CommentHighlightSession>>,
+    comments_synopsis: Option<Rc<CommentHighlightSession>>,
+    /// The comment feature's view-model, installed by `App` once a project is
+    /// open (mirroring `attach_spell`). `None` in the widget tests and in any
+    /// build with no comment store behind it, which is what makes the whole
+    /// feature degrade to "no comment affordances" rather than to a panic.
+    comments_vm: RefCell<Option<crate::view_models::CommentsViewModel>>,
     /// The replace-while-typing state machine for each prose document, if the
     /// lexicon view-model was installed on the store. Set by
     /// [`attach_replacements`](Self::attach_replacements) on open, and living as
@@ -166,6 +182,9 @@ impl OpenDoc {
             edit_gen: Signal::new(0),
             spell_main: None,
             spell_synopsis: None,
+            comments_main: None,
+            comments_synopsis: None,
+            comments_vm: RefCell::new(None),
             replacement_main: RefCell::new(None),
             replacement_synopsis: RefCell::new(None),
             synopsis_viewers: Cell::new(0),
@@ -195,6 +214,13 @@ impl OpenDoc {
         // highlight layer).
         doc.spell_main = doc.main.as_ref().map(|f| SpellSession::new(&f.doc));
         doc.spell_synopsis = doc.synopsis.as_ref().map(|f| SpellSession::new(&f.doc));
+        // Empty until the comments view-model seeds it with a re-anchor pass; the
+        // layer itself lives as long as the `OpenDoc` (its `Drop` retires it).
+        doc.comments_main = doc.main.as_ref().map(|f| CommentHighlightSession::new(&f.doc));
+        doc.comments_synopsis = doc
+            .synopsis
+            .as_ref()
+            .map(|f| CommentHighlightSession::new(&f.doc));
         doc
     }
 
@@ -309,6 +335,71 @@ impl OpenDoc {
     /// The caret-aware spell session on the synopsis document, if any.
     pub fn spell_synopsis(&self) -> Option<Rc<SpellSession>> {
         self.spell_synopsis.clone()
+    }
+
+    /// The comment highlight layer on the main prose document, if any.
+    pub fn comments_main(&self) -> Option<Rc<CommentHighlightSession>> {
+        self.comments_main.clone()
+    }
+
+    /// The comment highlight layer on the synopsis document, if any.
+    pub fn comments_synopsis(&self) -> Option<Rc<CommentHighlightSession>> {
+        self.comments_synopsis.clone()
+    }
+
+    /// Install the comment view-model and seed both documents' highlight layers.
+    ///
+    /// Mirrors [`attach_spell`](Self::attach_spell): called once per open, so an
+    /// item reopened after an external edit re-anchors from its stored quotes
+    /// rather than trusting offsets that may have rotted.
+    pub fn attach_comments(&self, vm: crate::view_models::CommentsViewModel) {
+        *self.comments_vm.borrow_mut() = Some(vm);
+        if let Some(b) = self.comment_binding_main() {
+            b.push_live();
+        }
+        if let Some(b) = self.comment_binding_synopsis() {
+            b.push_live();
+        }
+    }
+
+    /// This item's main prose editor's door to the comment feature, if the
+    /// document, its highlight layer, its `Content` row and the view-model are all
+    /// present. `None` collapses every comment affordance in that editor, which is
+    /// the correct degrade for a container with no prose or a test with no app.
+    pub fn comment_binding_main(&self) -> Option<CommentBinding> {
+        Some(CommentBinding::new(
+            self.comments_vm.borrow().clone()?,
+            self.main.as_ref()?.doc.clone(),
+            self.comments_main.clone()?,
+            self.main_content_id()?,
+        ))
+    }
+
+    /// The synopsis editor's binding — a *different* `Content` row than the body's,
+    /// so the two never merge.
+    pub fn comment_binding_synopsis(&self) -> Option<CommentBinding> {
+        Some(CommentBinding::new(
+            self.comments_vm.borrow().clone()?,
+            self.synopsis.as_ref()?.doc.clone(),
+            self.comments_synopsis.clone()?,
+            self.synopsis_content_id()?,
+        ))
+    }
+
+    /// The `Content` row id behind the main prose document, if any — what a
+    /// comment created in that editor anchors to.
+    pub fn main_content_id(&self) -> Option<u64> {
+        self.main.as_ref().and_then(|f| f.content_id())
+    }
+
+    /// The `Content` row id behind the synopsis document, if any.
+    ///
+    /// Separate from [`main_content_id`](Self::main_content_id) because a
+    /// `BinderItem` owns up to three `Content` rows, and a comment on the synopsis
+    /// is a comment on a *different row* than one on the body — anchoring both to
+    /// "the item" would silently merge them.
+    pub fn synopsis_content_id(&self) -> Option<u64> {
+        self.synopsis.as_ref().and_then(|f| f.content_id())
     }
 
     /// Register a mounted view as *showing* this doc's synopsis, waking its spell
@@ -429,11 +520,11 @@ struct Inner {
     /// `spell`. `None` until then, and then every attach is a no-op — a headless
     /// test opens documents that simply never expand anything.
     text_replacements: RefCell<Option<TextReplacementRulesViewModel>>,
+    /// The comments view-model, installed once per window and handed to every
+    /// document as it opens (mirroring `text_replacements`).
+    comments: RefCell<Option<crate::view_models::CommentsViewModel>>,
     /// The squiggle colour, resolved from a theme role by `App` (updated on theme change).
     squiggle: Cell<Color>,
-    /// Whether the synopsis pane is currently shown (the global setting, mirrored here by `App`).
-    /// A freshly-opened doc's synopsis spell session inherits this, so a re-attach never
-    /// re-tokenises a hidden synopsis. Default `true`.
     /// The open project, for resolving each item's effective language (its own tag, else
     /// the Work's). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
@@ -501,6 +592,7 @@ impl OpenDocsStore {
                 edited: Signal::new(0),
                 spell: RefCell::new(None),
                 text_replacements: RefCell::new(None),
+                comments: RefCell::new(None),
                 // A sensible default until `App` resolves the theme's error role.
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
                 work_id: Cell::new(None),
@@ -524,6 +616,25 @@ impl OpenDocsStore {
     /// and a project restoring its remembered tabs can have opened documents by
     /// then. Without it those tabs would silently never expand anything until
     /// they were closed and reopened.
+    /// Install the comments view-model and seed every already-open document.
+    ///
+    /// Seeding the open ones matters: the store is populated before `App` finishes
+    /// wiring, so a document opened by workspace restore would otherwise show no
+    /// comment highlights until it was closed and reopened.
+    pub fn set_comments(&self, vm: crate::view_models::CommentsViewModel) {
+        *self.inner.comments.borrow_mut() = Some(vm.clone());
+        let docs: Vec<Rc<OpenDoc>> = self
+            .inner
+            .open
+            .borrow()
+            .values()
+            .map(|e| e.doc.clone())
+            .collect();
+        for doc in docs {
+            doc.attach_comments(vm.clone());
+        }
+    }
+
     pub fn set_text_replacements(&self, vm: TextReplacementRulesViewModel) {
         *self.inner.text_replacements.borrow_mut() = Some(vm.clone());
         let docs: Vec<Rc<OpenDoc>> = self
@@ -575,6 +686,36 @@ impl OpenDocsStore {
         }
     }
 
+    /// Show or hide anchored comments across every open document — Tools ▸ Comments.
+    ///
+    /// Writes the view-model's own flag first (the margin binds it and rebuilds), then
+    /// walks the open documents' highlight layers so the marks in the prose go with it.
+    /// One door for both halves: two callers setting them separately is how a margin
+    /// with no cards ends up beside prose that is still washed ochre.
+    ///
+    /// The layers are deactivated, never dropped — they keep folding edits into their
+    /// anchors while hidden, so showing again does not resurrect stale offsets.
+    pub fn set_comments_visible(&self, visible: bool) {
+        if let Some(vm) = self.inner.comments.borrow().clone() {
+            vm.set_visible(visible);
+        }
+        for entry in self.inner.open.borrow().values() {
+            if let Some(s) = entry.doc.comments_main() {
+                s.set_active(visible);
+            }
+            if let Some(s) = entry.doc.comments_synopsis() {
+                s.set_active(visible);
+            }
+        }
+    }
+
+    // There is no `set_synopsis_visible` here any more. It used to mirror one
+    // global "is the synopsis pane shown" setting into every open doc's spell
+    // session; that stopped being the right question once the synopsis could
+    // also be folded away per tab (Side placement) and toggled per window
+    // (distraction-free). "May this session sleep?" is now answered by counting
+    // the views that actually show it — see `OpenDoc::acquire_synopsis_viewer`,
+    // held by the mounted pane itself.
     /// Point the store at the open project's default language, for the effective-language
     /// resolution. Called on `LoadWork`/`NewWork`; does not itself re-attach (the caller pairs
     /// it with [`attach_all`](Self::attach_all) once personal words are also loaded).
@@ -669,6 +810,12 @@ impl OpenDocsStore {
 
     /// Attach the spell-checker to one freshly-built doc (on open / rebuild).
     fn attach_one(&self, doc: &Rc<OpenDoc>) {
+        // Comments first and unconditionally: unlike spell-check it needs no
+        // engine and no installed dictionary, so a freshly-opened document must
+        // re-anchor its threads even in a project with nothing else configured.
+        if let Some(vm) = self.inner.comments.borrow().clone() {
+            doc.attach_comments(vm);
+        }
         // The replacement lexicon first, and outside the spell early-return: the
         // two features are independent, and a project with no dictionary
         // installed must still expand its own shorthand.
@@ -1221,6 +1368,42 @@ mod tests {
             b.to_djot().unwrap().contains("shared edit"),
             "an edit through one handle must be visible through the other"
         );
+    }
+
+    /// Tools ▸ Comments reaches **both** halves of the hide from one call.
+    ///
+    /// The failure this guards is a half-applied toggle: the margin's cards gone
+    /// while the prose is still washed ochre, or the reverse. Two callers setting
+    /// the view-model flag and the documents' layers separately is exactly how that
+    /// happens, which is why `set_comments_visible` is the single door.
+    ///
+    /// Mocks-only because it needs a document with real content behind it, which is
+    /// what the fabricated binder supplies without a project on disk.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn hiding_comments_reaches_the_view_model_and_every_open_document() {
+        use crate::app_ids::AppIds;
+        use crate::models::CommentsListModel;
+        use crate::view_models::CommentsViewModel;
+
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx.clone());
+        let vm = CommentsViewModel::new(
+            CommentsListModel::new(ctx.clone(), AppIds::new()),
+            ctx,
+            Signal::new(None),
+        );
+        store.set_comments(vm.clone());
+        let doc = store.open(201).expect("the mock binder's Scene 1");
+        let main = doc.comments_main().expect("a prose highlight layer");
+
+        store.set_comments_visible(false);
+        assert!(!vm.is_visible(), "the margin's own flag was left showing");
+        assert!(!main.is_active(), "the prose layer was left painting");
+
+        store.set_comments_visible(true);
+        assert!(vm.is_visible());
+        assert!(main.is_active(), "showing again must wake the layer back up");
     }
 
     /// `mark_dirty_fn` flips the doc's dirty flag and bumps the store's aggregate

@@ -20,6 +20,7 @@ crate::impl_leaf_entity_table!(
     table_ro_struct: ContentHashMapTableRO,
     backward_junctions: [
 
+        (jn_content_from_comment_content),
         (jn_content_from_binder_item_contents),
     ],
 );

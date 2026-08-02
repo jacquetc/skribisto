@@ -963,6 +963,12 @@ impl TitleField {
 }
 
 impl ProseField {
+    /// The `Content` row this field reads and writes — the anchor target for any
+    /// comment created in its editor.
+    pub fn content_id(&self) -> Option<u64> {
+        self.content.id()
+    }
+
     pub(crate) fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
         if !self.doc.is_modified() {
             return Ok(());

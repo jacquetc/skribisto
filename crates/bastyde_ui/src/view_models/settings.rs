@@ -26,7 +26,8 @@ use frontend::common::entities::QuoteStyle;
 use super::{HighlightScope, SynopsisPlacement, TypewriterAnchor};
 
 use crate::{
-    AUTOSAVE_KEY, CORKBOARD_CARD_SIZE_DEFAULT, CORKBOARD_CARD_SIZE_KEY,
+    AUTOSAVE_KEY, COMMENTS_VISIBLE_DEFAULT, COMMENTS_VISIBLE_KEY, CORKBOARD_CARD_SIZE_DEFAULT,
+    CORKBOARD_CARD_SIZE_KEY,
     CORKBOARD_FIRST_LINE_INDENT_DEFAULT, CORKBOARD_FIRST_LINE_INDENT_KEY,
     CORKBOARD_FONT_FAMILY_DEFAULT, CORKBOARD_FONT_FAMILY_KEY, CORKBOARD_LINE_HEIGHT_DEFAULT,
     CORKBOARD_LINE_HEIGHT_KEY, CORKBOARD_NESTED_DEFAULT, CORKBOARD_NESTED_KEY,
@@ -218,6 +219,7 @@ pub struct SettingsViewModel {
     preview_width: Signal<f32>,
     autosave: Signal<bool>,
     spellcheck_enabled: Signal<bool>,
+    comments_visible: Signal<bool>,
     show_welcome: Signal<bool>,
     // ── Editor typography (per type) ──
     scene_typo: EditorTypography,
@@ -273,6 +275,7 @@ impl SettingsViewModel {
             preview_width: store.signal(PREVIEW_WIDTH_KEY, PREVIEW_WIDTH_DEFAULT),
             autosave: store.signal(AUTOSAVE_KEY, false),
             spellcheck_enabled: store.signal(SPELLCHECK_ENABLED_KEY, SPELLCHECK_ENABLED_DEFAULT),
+            comments_visible: store.signal(COMMENTS_VISIBLE_KEY, COMMENTS_VISIBLE_DEFAULT),
             show_welcome: store.signal(SHOW_WELCOME_KEY, true),
             scene_typo: EditorTypography {
                 font_family: store
@@ -428,6 +431,11 @@ impl SettingsViewModel {
     /// the "no squiggles at all" answer a writer actually looks for.
     pub fn spellcheck_enabled(&self) -> Signal<bool> {
         self.spellcheck_enabled.clone()
+    }
+
+    /// Whether anchored comments are drawn in the editor — Tools ▸ Comments.
+    pub fn comments_visible(&self) -> Signal<bool> {
+        self.comments_visible.clone()
     }
 
     /// Whether to show the Welcome modal at startup (default on). Same cached
@@ -640,6 +648,7 @@ impl SettingsViewModel {
         self.preview_width.set(PREVIEW_WIDTH_DEFAULT);
         self.autosave.set(false);
         self.spellcheck_enabled.set(SPELLCHECK_ENABLED_DEFAULT);
+        self.comments_visible.set(COMMENTS_VISIBLE_DEFAULT);
         self.show_welcome.set(true);
         // Scene
         self.scene_typo

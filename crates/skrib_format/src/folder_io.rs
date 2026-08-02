@@ -76,6 +76,15 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         &root.join("snapshots.ron"),
         to_ron(&bundle.progress_snapshots)?.as_bytes(),
     )?;
+    // Only materialise the orphanage when it has something in it, so a project that
+    // has never lost a comment's anchor carries no extra file at all. When it empties
+    // again, remove the file rather than leaving an empty list behind.
+    let orphans_path = root.join("orphan_comments.ron");
+    if bundle.orphan_comments.is_empty() {
+        fs::remove_file(&orphans_path).ok();
+    } else {
+        write_if_changed(&orphans_path, to_ron(&bundle.orphan_comments)?.as_bytes())?;
+    }
 
     // Note templates: an index plus one Djot blob each, mirroring the prose split.
     //
@@ -118,8 +127,11 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         let tdir = bdir.join("text");
         fs::create_dir_all(&tdir).with_context(|| format!("creating {}", tdir.display()))?;
 
-        // Prose blobs + the set of expected `.djot` file names.
+        // Prose blobs + the set of expected `.djot` file names, and beside each one
+        // its `.comments.ron` sidecar (written only when that content actually has
+        // comments, so an uncommented project grows no files at all).
         let mut expected_prose: BTreeSet<String> = BTreeSet::new();
+        let mut expected_comments: BTreeSet<String> = BTreeSet::new();
         for item in &bb.items {
             for pr in &item.item.prose_refs {
                 let rel = Path::new(&pr.path);
@@ -132,10 +144,22 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
                     anyhow::anyhow!("missing prose blob for content {}", pr.file_id)
                 })?;
                 write_if_changed(&root.join(rel), data.as_bytes())?;
-                expected_prose.insert(fname);
+                expected_prose.insert(fname.clone());
+
+                if let Some(comments) = item.comments.get(&pr.file_id)
+                    && !comments.is_empty()
+                {
+                    let cname = comments_file_name(&fname);
+                    write_if_changed(&tdir.join(&cname), to_ron(comments)?.as_bytes())?;
+                    expected_comments.insert(cname);
+                }
             }
         }
         prune_dir(&tdir, &expected_prose, "djot")?;
+        // Prunes a sidecar whose last comment was deleted, too — `expected_comments`
+        // only holds the ones that still have content. `items.ron` lives in the binder
+        // dir, not `text/`, so pruning "ron" here cannot reach it.
+        prune_dir(&tdir, &expected_comments, "ron")?;
 
         // items.ron (after its prose blobs exist).
         let items_file = ItemsFile {
@@ -163,6 +187,17 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
     manifest.format_min_read_version = Some(compute_min_read_version(bundle));
     write_if_changed(&root.join(MANIFEST_NAME), to_ron(&manifest)?.as_bytes())?;
     Ok(())
+}
+
+/// The comment sidecar's name for a prose blob: `12-the-lamp.djot` →
+/// `12-the-lamp.comments.ron`. Derived from the blob's own file name so the two
+/// always sort together and a reader can find one from the other without a lookup
+/// table — the same reason the prose name already carries its content `file_id`.
+pub(crate) fn comments_file_name(prose_file_name: &str) -> String {
+    let stem = prose_file_name
+        .strip_suffix(".djot")
+        .unwrap_or(prose_file_name);
+    format!("{stem}.comments.ron")
 }
 
 /// Remove files in `dir` with extension `ext` whose name is not in `keep`.
@@ -213,6 +248,9 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     // file as an empty vec, so old projects load with zero paces (no version bump).
     let paces = read_ron_vec(&root.join("paces.ron"), "paces.ron")?;
     let progress_snapshots = read_ron_vec(&root.join("snapshots.ron"), "snapshots.ron")?;
+    // Additive: a bundle written before comments existed has no orphanage, which
+    // `read_ron_vec` reads back as an empty vec — no `format_version` bump needed.
+    let orphan_comments = read_ron_vec(&root.join("orphan_comments.ron"), "orphan_comments.ron")?;
     // Additive like its neighbours: a pre-v5 bundle has no `templates.ron` and reads back
     // as zero templates. A *malformed* one is a hard error, matching every sibling here —
     // and for a sharper reason than consistency. Degrading to "no templates" would let
@@ -252,12 +290,35 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         let mut items = Vec::with_capacity(itf.items.len());
         for item in itf.items {
             let mut prose = std::collections::BTreeMap::new();
+            let mut comments = std::collections::BTreeMap::new();
             for pr in &item.prose_refs {
-                let text = fs::read_to_string(root.join(&pr.path))
+                let prose_path = root.join(&pr.path);
+                let text = fs::read_to_string(&prose_path)
                     .with_context(|| format!("reading prose {}", pr.path))?;
                 prose.insert(pr.file_id, text);
+
+                // Additive and optional: a bundle written before comments existed —
+                // or any content the writer never annotated — simply has no sidecar,
+                // which reads back as "no comments" rather than as an error. That is
+                // what lets this ship without a `format_version` bump.
+                if let (Some(dir), Some(fname)) = (
+                    prose_path.parent(),
+                    prose_path.file_name().and_then(|n| n.to_str()),
+                ) {
+                    let cpath = dir.join(comments_file_name(fname));
+                    if let Ok(ctext) = fs::read_to_string(&cpath) {
+                        let list: Vec<CommentFile> = from_ron(&ctext, "comments.ron")?;
+                        if !list.is_empty() {
+                            comments.insert(pr.file_id, list);
+                        }
+                    }
+                }
             }
-            items.push(BundledItem { item, prose });
+            items.push(BundledItem {
+                item,
+                prose,
+                comments,
+            });
         }
         binders.push(BundledBinder {
             binder: itf.binder,
@@ -275,6 +336,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         trash_infos,
         paces,
         progress_snapshots,
+        orphan_comments,
         binders,
     })
 }

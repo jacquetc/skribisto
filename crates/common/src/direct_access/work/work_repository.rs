@@ -22,6 +22,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum WorkRelationshipField {
     Binders,
+    Comments,
     DictWords,
     NoteTemplates,
     Paces,
@@ -309,6 +310,7 @@ impl<'a> WorkRepository<'a> {
         let smart_punctuation = entity.smart_punctuation.clone();
         let trash_infos = entity.trash_infos.clone();
         let paces = entity.paces.clone();
+        let comments = entity.comments.clone();
 
         // remove all strong relationships, initiating a cascade remove
 
@@ -328,6 +330,8 @@ impl<'a> WorkRepository<'a> {
             .remove_multi(event_buffer, &trash_infos)?;
         repository_factory::write::create_pace_repository(self.transaction)?
             .remove_multi(event_buffer, &paces)?;
+        repository_factory::write::create_comment_repository(self.transaction)?
+            .remove_multi(event_buffer, &comments)?;
         // Before removal, find which owner(s) reference this entity
         let affected_owner_ids: Vec<EntityId> = {
             let owner_repo = repository_factory::write::create_root_repository(self.transaction)?;
@@ -439,6 +443,14 @@ impl<'a> WorkRepository<'a> {
         // remove duplicates
         paces_ids.sort();
         paces_ids.dedup();
+        let mut comments_ids: Vec<EntityId> = entities
+            .iter()
+            .flat_map(|entity| entity.as_ref().map(|entity| entity.comments.clone()))
+            .flatten()
+            .collect();
+        // remove duplicates
+        comments_ids.sort();
+        comments_ids.dedup();
 
         // remove all strong relationships, initiating a cascade remove
 
@@ -458,6 +470,8 @@ impl<'a> WorkRepository<'a> {
             .remove_multi(event_buffer, &trash_infos_ids)?;
         repository_factory::write::create_pace_repository(self.transaction)?
             .remove_multi(event_buffer, &paces_ids)?;
+        repository_factory::write::create_comment_repository(self.transaction)?
+            .remove_multi(event_buffer, &comments_ids)?;
         // Before removal, find which owner(s) reference these entities
         let affected_owner_ids: Vec<EntityId> = {
             let owner_repo = repository_factory::write::create_root_repository(self.transaction)?;
@@ -553,6 +567,23 @@ impl<'a> WorkRepository<'a> {
                 WorkRelationshipField::Binders => {
                     let child_repo =
                         repository_factory::write::create_binder_repository(self.transaction)?;
+                    let found = child_repo.get_multi(&all_right_ids)?;
+                    let missing: Vec<_> = all_right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship_multi",
+                            ids: missing,
+                        });
+                    }
+                }
+                WorkRelationshipField::Comments => {
+                    let child_repo =
+                        repository_factory::write::create_comment_repository(self.transaction)?;
                     let found = child_repo.get_multi(&all_right_ids)?;
                     let missing: Vec<_> = all_right_ids
                         .iter()
@@ -726,6 +757,23 @@ impl<'a> WorkRepository<'a> {
                 WorkRelationshipField::Binders => {
                     let child_repo =
                         repository_factory::write::create_binder_repository(self.transaction)?;
+                    let found = child_repo.get_multi(right_ids)?;
+                    let missing: Vec<_> = right_ids
+                        .iter()
+                        .zip(found.iter())
+                        .filter(|(_, entity)| entity.is_none())
+                        .map(|(id, _)| *id)
+                        .collect();
+                    if !missing.is_empty() {
+                        return Err(RepositoryError::MissingRelationshipTarget {
+                            operation: "set_relationship",
+                            ids: missing,
+                        });
+                    }
+                }
+                WorkRelationshipField::Comments => {
+                    let child_repo =
+                        repository_factory::write::create_comment_repository(self.transaction)?;
                     let found = child_repo.get_multi(right_ids)?;
                     let missing: Vec<_> = right_ids
                         .iter()
@@ -1196,6 +1244,28 @@ impl<'a> WorkRepository<'a> {
                     .restore_subtree(event_buffer, snap, &child_ids, visited)?;
             }
         }
+        {
+            let mut child_ids: Vec<EntityId> = Vec::new();
+            for id in to_create.iter().chain(to_update.iter()) {
+                if let Some(list) = snap.jn_comment_from_work_comments.get(id) {
+                    child_ids.extend(list.iter().copied());
+                }
+            }
+            {
+                let live_jn = store.jn_comment_from_work_comments.read().unwrap();
+                for id in &ids {
+                    if let Some(list) = live_jn.get(id) {
+                        child_ids.extend(list.iter().copied());
+                    }
+                }
+            }
+            child_ids.sort();
+            child_ids.dedup();
+            if !child_ids.is_empty() {
+                repository_factory::write::create_comment_repository(self.transaction)?
+                    .restore_subtree(event_buffer, snap, &child_ids, visited)?;
+            }
+        }
 
         // 2. Entity rows: revert/re-add from snapshot, delete the ones created after it.
         {
@@ -1216,6 +1286,22 @@ impl<'a> WorkRepository<'a> {
             let mut live_jn = store.jn_binder_from_work_binders.write().unwrap();
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_binder_from_work_binders.get(id) {
+                    Some(v) => {
+                        live_jn.insert(*id, v.clone());
+                    }
+                    None => {
+                        live_jn.remove(id);
+                    }
+                }
+            }
+            for id in &to_delete {
+                live_jn.remove(id);
+            }
+        }
+        {
+            let mut live_jn = store.jn_comment_from_work_comments.write().unwrap();
+            for id in to_create.iter().chain(to_update.iter()) {
+                match snap.jn_comment_from_work_comments.get(id) {
                     Some(v) => {
                         live_jn.insert(*id, v.clone());
                     }

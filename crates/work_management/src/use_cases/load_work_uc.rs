@@ -17,6 +17,7 @@ use chrono::{DateTime, Utc};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
+use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::milestone::MilestoneRelationshipField;
 use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::root::RootRelationshipField;
@@ -25,9 +26,9 @@ use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Content, DictWord, Holiday, Milestone, NoteTemplate, Pace,
-    ProgressSnapshot, RecentWork, Root, Search, SmartPunctuation, System, TextReplacementRule,
-    TrashInfo, Work, WorkInfo, WorkShape,
+    Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday, Milestone,
+    NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search, SmartPunctuation, System,
+    TextReplacementRule, TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use skrib_format::{self as skrib, LoadedWork, SkribShape};
@@ -56,6 +57,8 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Pace", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Holiday", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Milestone", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Comment", action = "CreateOrphan")]
+#[macros::uow_action(entity = "CommentReply", action = "CreateOrphan")]
 #[macros::uow_action(entity = "ProgressSnapshot", action = "CreateOrphan")]
 #[macros::uow_action(entity = "System", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Root", action = "CreateOrphan")]
@@ -65,6 +68,7 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "TrashInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "Pace", action = "SetRelationship")]
 #[macros::uow_action(entity = "Milestone", action = "SetRelationship")]
+#[macros::uow_action(entity = "Comment", action = "SetRelationship")]
 #[macros::uow_action(entity = "System", action = "SetRelationship")]
 #[macros::uow_action(entity = "WorkInfo", action = "SetRelationship")]
 #[macros::uow_action(entity = "Search", action = "CreateOrphan")]
@@ -247,6 +251,7 @@ pub(crate) fn materialize(
         smart_punctuation: smart_punctuation.id,
         trash_infos: Vec::new(),
         paces: Vec::new(),
+        comments: Vec::new(),
     })?;
 
     // Tags (file id -> new id).
@@ -309,6 +314,10 @@ pub(crate) fn materialize(
     // Binders -> items -> contents.
     let mut binder_map: HashMap<u64, EntityId> = HashMap::new();
     let mut item_map: HashMap<u64, EntityId> = HashMap::new();
+    // Content file id -> fresh store id, so a comment's anchor can be re-pointed at
+    // the row it actually annotates. Every `EntityId` is re-minted on load, so the
+    // file id a comment was saved against is meaningless until it is remapped here.
+    let mut content_map: HashMap<u64, EntityId> = HashMap::new();
     let mut binder_ids: Vec<EntityId> = Vec::new();
     let mut item_tag_links: Vec<(EntityId, Vec<u64>)> = Vec::new();
 
@@ -340,6 +349,7 @@ pub(crate) fn materialize(
                     data: c.data.clone(),
                     id: 0,
                 })?;
+                content_map.insert(c.id, created_content.id);
                 content_ids.push(created_content.id);
             }
 
@@ -531,6 +541,68 @@ pub(crate) fn materialize(
         pace_ids.push(pace.id);
     }
 
+    // Comments (Work trunk). Replies are created first, then the Comment, then the
+    // two relationships. The `content` back-link is weak and remapped through
+    // `content_map`: an anchor whose Content no longer resolves is left unset and the
+    // row is flagged orphaned here rather than dropped — which is also exactly the
+    // state a comment restored from the bundle-root orphanage arrives in.
+    let mut comment_ids: Vec<EntityId> = Vec::new();
+    for lc in &loaded.comments {
+        let mut reply_ids: Vec<EntityId> = Vec::new();
+        for r in &lc.replies {
+            let created = uow.create_orphan_comment_reply(&CommentReply {
+                created_at: r.created_at,
+                updated_at: r.updated_at,
+                author_name: r.author_name.clone(),
+                body: r.body.clone(),
+                id: 0,
+            })?;
+            reply_ids.push(created.id);
+        }
+
+        let resolved_content = lc.content.and_then(|i| content_map.get(&i).copied());
+        // A comment that named a Content the bundle no longer contains has lost its
+        // anchor for good — record *why*, so the dock can say so instead of showing a
+        // thread that silently points nowhere.
+        let lost_target = lc.content.is_some() && resolved_content.is_none();
+        let created = uow.create_orphan_comment(&Comment {
+            created_at: lc.created_at,
+            updated_at: lc.updated_at,
+            kind: lc.kind.clone(),
+            author_name: lc.author_name.clone(),
+            body: lc.body.clone(),
+            resolved: lc.resolved,
+            orphaned: lc.orphaned || lost_target || lc.content.is_none(),
+            orphan_reason: if lost_target || lc.content.is_none() {
+                common::entities::CommentOrphanReason::TargetDeleted
+            } else {
+                lc.orphan_reason.clone()
+            },
+            range_start: lc.range_start,
+            range_length: lc.range_length,
+            quote_prefix: lc.quote_prefix.clone(),
+            quote_exact: lc.quote_exact.clone(),
+            quote_exact_truncated: lc.quote_exact_truncated,
+            quote_suffix: lc.quote_suffix.clone(),
+            block_ordinal_hint: lc.block_ordinal_hint,
+            id: 0,
+            // Both wired after creation.
+            content: None,
+            replies: Vec::new(),
+        })?;
+        if let Some(cid) = resolved_content {
+            uow.set_comment_relationship(&created.id, &CommentRelationshipField::Content, &[cid])?;
+        }
+        if !reply_ids.is_empty() {
+            uow.set_comment_relationship(
+                &created.id,
+                &CommentRelationshipField::Replies,
+                &reply_ids,
+            )?;
+        }
+        comment_ids.push(created.id);
+    }
+
     // Work's owned collections.
     uow.set_work_relationship(&work.id, &WorkRelationshipField::Binders, &binder_ids)?;
     if !tag_ids.is_empty() {
@@ -570,6 +642,9 @@ pub(crate) fn materialize(
     }
     if !pace_ids.is_empty() {
         uow.set_work_relationship(&work.id, &WorkRelationshipField::Paces, &pace_ids)?;
+    }
+    if !comment_ids.is_empty() {
+        uow.set_work_relationship(&work.id, &WorkRelationshipField::Comments, &comment_ids)?;
     }
 
     // ProgressSnapshots — created here (needs `item_map` to remap the per-Book breakdown
@@ -796,6 +871,10 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         smart_punctuation: 0,
         trash_infos: Vec::new(),
         paces: Vec::new(),
+        // A legacy project has no comments to carry: the C++ Skribisto had no
+        // annotation feature at all (no comment table in any legacy schema), so
+        // this is genuinely empty rather than not-yet-read.
+        comments: Vec::new(),
     };
 
     let mut tag_map: HashMap<i64, u64> = HashMap::new();
@@ -962,6 +1041,9 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         // Legacy projects never had a writing plan.
         paces: Vec::new(),
         progress_snapshots: Vec::new(),
+        // Nor comments: the C++ Skribisto had no annotation feature, and no legacy
+        // schema version carries a comment table.
+        comments: Vec::new(),
         references,
         absolute_path: p.absolute_path.clone(),
     }

@@ -36,8 +36,13 @@ pub const PREVIEW_DOCK_ID: u64 = DOCK_ID_BASE + 4;
 pub const TRASH_DOCK_ID: u64 = DOCK_ID_BASE + 5;
 /// The trailing Format dock — the manuscript's formatting controls.
 pub const FORMAT_DOCK_ID: u64 = DOCK_ID_BASE + 6;
+/// Project-wide comments (leading rail, fourth tab).
+pub const COMMENTS_DOCK_ID: u64 = DOCK_ID_BASE + 7;
+/// This document's comments (trailing rail, third tab).
+pub const DOC_COMMENTS_DOCK_ID: u64 = DOCK_ID_BASE + 8;
 
 pub mod create_split_button;
+pub mod comments;
 pub mod format;
 pub mod inspector;
 pub mod outline;

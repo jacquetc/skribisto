@@ -151,6 +151,10 @@ pub struct ProjectWindowFactory {
     /// Plain mirror of the master spell-check switch — the title-bar toggle's icon and
     /// the View ▸ Check spelling checkmark read it. `App::build` keeps it in sync.
     spellcheck_menu: Signal<bool>,
+    /// Plain mirror of the Tools ▸ Comments switch — that menu row's checkmark reads
+    /// it. Shared process-wide exactly like `spellcheck_menu`: it mirrors one persisted
+    /// app preference, not anything this window owns.
+    comments_menu: Signal<bool>,
     /// The app-global quit sequencer, built **here** rather than per window and
     /// rather than in `main`: a quit spans every window, so two windows each
     /// running their own sequence over the same Works would prompt twice for
@@ -175,6 +179,7 @@ impl ProjectWindowFactory {
         tree_expansion_service: TreeExpansionService,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
+        comments_menu: Signal<bool>,
     ) -> Self {
         Self {
             quit: crate::view_models::QuitSequencer::new(
@@ -190,6 +195,7 @@ impl ProjectWindowFactory {
             tree_expansion_service,
             autosave_menu,
             spellcheck_menu,
+            comments_menu,
         }
     }
 
@@ -340,6 +346,7 @@ impl ProjectWindowFactory {
         let title_text = window_title_text(&single_work, &window_ordinal);
         let autosave_menu = self.autosave_menu.clone();
         let spellcheck_menu = self.spellcheck_menu.clone();
+        let comments_menu = self.comments_menu.clone();
         // Per WINDOW, not per process: unlike `spellcheck_menu` (a global
         // setting, correctly shared), this tracks which surface *this* window
         // has focused. A process-wide one would let a second project window
@@ -577,6 +584,7 @@ impl ProjectWindowFactory {
                                 ids: session.ids.clone(),
                                 autosave_menu: autosave_menu.clone(),
                                 spellcheck_menu: spellcheck_menu.clone(),
+                                comments_menu: comments_menu.clone(),
                                 scene_focused: scene_focused.clone(),
                                 binder_has_selection: binder_has_selection.clone(),
                                 templates_submenu_id,
@@ -723,6 +731,7 @@ impl ProjectWindowFactory {
                     export.clone(),
                     autosave_menu.clone(),
                     spellcheck_menu.clone(),
+                    comments_menu.clone(),
                     scene_focused.clone(),
                     binder_has_selection.clone(),
                     templates_menu,
@@ -992,6 +1001,7 @@ mod tests {
             WorkspaceLayoutService::in_memory_default(),
             TreeExpansionService::in_memory_default(),
             Signal::new(false),
+            Signal::new(true),
             Signal::new(true),
         )
     }

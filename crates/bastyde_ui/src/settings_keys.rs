@@ -164,6 +164,13 @@ pub static SETTINGS: &[SettingSpec] = &[
         doc: "The master spell-check switch.",
     },
     SettingSpec {
+        key: crate::COMMENTS_VISIBLE_KEY,
+        ty: "bool",
+        default: || val(crate::COMMENTS_VISIBLE_DEFAULT),
+        check: check::<bool>,
+        doc: "Show anchored comments in the editor (the marks and the margin).",
+    },
+    SettingSpec {
         key: crate::SYNOPSIS_PANE_KEY,
         ty: "bool",
         default: || val(crate::SYNOPSIS_PANE_DEFAULT),

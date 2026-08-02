@@ -35,6 +35,16 @@ pub fn trash_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/trash.svg"))
 }
 
+/// The Comments activity icon: a speech bubble with a second bubble behind it.
+///
+/// Two overlapping bubbles rather than one, because both docks list *threads*
+/// (a comment plus its replies), not single notes — and because the trailing rail
+/// already carries the Inspector's panel silhouette, so a second outline shape
+/// there would be indistinguishable at rail size.
+pub fn comments_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/comments.svg"))
+}
+
 /// The Format activity icon: a capital A over a baseline rule.
 ///
 /// Deliberately a *type* glyph rather than another panel outline — it shares the

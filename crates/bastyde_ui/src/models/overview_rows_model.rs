@@ -56,6 +56,8 @@ pub const COL_TYPE: &str = "type";
 pub const COL_LABEL: &str = "label";
 pub const COL_OWN_WORDS: &str = "own_words";
 pub const COL_TOTAL_WORDS: &str = "total_words";
+pub const COL_OPEN_COMMENTS: &str = "open_comments";
+pub const COL_TOTAL_COMMENTS: &str = "total_comments";
 pub const COL_TAGS: &str = "tags";
 
 /// One row of the Overview table: a single `BinderItem` in the container's subtree.
@@ -89,6 +91,16 @@ pub struct OverviewRow {
     /// `BinderItemDto` the loader already reads, and a per-cell lookup would issue one
     /// backend read per visible row per rebuild.
     pub tags: Vec<u64>,
+    /// Open (unresolved, non-orphaned) comment threads anchored to *this row's own*
+    /// Content rows.
+    ///
+    /// Open rather than total, because the number a writer acts on is "what still
+    /// needs me" — a chapter of resolved threads should read as done, not as busy.
+    /// The total is still one hover away in the dock.
+    pub own_comments: usize,
+    /// This row's own open threads plus every descendant's — the same bottom-up
+    /// fold `total_words` uses, and correct while collapsed for the same reason.
+    pub total_comments: usize,
 }
 
 /// The reactive shaping inputs, owned by
@@ -540,6 +552,8 @@ fn comparator(col_id: &str) -> impl Fn(&OverviewRow, &OverviewRow) -> std::cmp::
         // less than "counted, and it was zero".
         COL_OWN_WORDS => a.own_words.cmp(&b.own_words),
         COL_TOTAL_WORDS => a.total_words.cmp(&b.total_words),
+        COL_OPEN_COMMENTS => a.own_comments.cmp(&b.own_comments),
+        COL_TOTAL_COMMENTS => a.total_comments.cmp(&b.total_comments),
         // Structural rank, not the label's alphabet — sorting by type should group a
         // book's parts above its chapters above its scenes, in the order they nest,
         // which "Book, Chapter, Part, Scene" would not.
@@ -645,21 +659,28 @@ pub(crate) fn subtree_of<T>(
 /// collapsed container must still show a correct total — which is the only reason the
 /// column is worth having.
 pub(crate) fn fold_totals(rows: &mut [TreeRow<Uuid, OverviewRow>]) {
-    // (depth, subtree total) for each not-yet-consumed forest root, deepest last.
-    let mut stack: Vec<(usize, usize)> = Vec::new();
+    // (depth, words, comments) for each not-yet-consumed forest root, deepest last.
+    //
+    // Both totals fold in ONE reverse pass rather than two: the walk is the
+    // expensive part, the arithmetic is not, and two passes would be two chances
+    // for the stack discipline to drift apart.
+    let mut stack: Vec<(usize, usize, usize)> = Vec::new();
     for row in rows.iter_mut().rev() {
         let depth = row.depth;
         let mut total = row.item.own_words.unwrap_or(0);
-        while let Some(&(child_depth, child_total)) = stack.last() {
+        let mut total_c = row.item.own_comments;
+        while let Some(&(child_depth, child_total, child_comments)) = stack.last() {
             if child_depth > depth {
                 total += child_total;
+                total_c += child_comments;
                 stack.pop();
             } else {
                 break;
             }
         }
         row.item.total_words = total;
-        stack.push((depth, total));
+        row.item.total_comments = total_c;
+        stack.push((depth, total, total_c));
     }
 }
 
@@ -750,9 +771,10 @@ mod rows {
 
     use frontend::AppContext;
     use frontend::commands::{
-        binder_commands, binder_item_commands, content_commands, work_commands,
+        binder_commands, binder_item_commands, comment_commands, content_commands, work_commands,
     };
     use frontend::common::direct_access::binder::BinderRelationshipField;
+    use frontend::common::direct_access::comment::CommentRelationshipField;
     use frontend::common::direct_access::work::WorkRelationshipField;
     use frontend::common::entities::ContentRole;
     use frontend::direct_access::BinderItemDto;
@@ -760,6 +782,40 @@ mod rows {
     use skribisto_model::language;
 
     use super::{Loaded, OverviewRow, Subtree, fold_totals, subtree_of};
+
+    /// The annotated `Content` id of every **open** thread in `work_id`, one entry
+    /// per thread (so a content row with three open threads appears three times).
+    ///
+    /// Resolved and orphaned threads are excluded: the Overview column answers
+    /// "what still needs me", and an orphan has no scene to be counted against
+    /// anyway — it lives in the docks' "no home" bucket.
+    fn open_comment_counts(ctx: &AppContext, work_id: u64) -> Vec<u64> {
+        let ids = work_commands::get_work_relationship(
+            ctx,
+            &work_id,
+            &WorkRelationshipField::Comments,
+        )
+        .unwrap_or_default();
+        if ids.is_empty() {
+            return Vec::new();
+        }
+        comment_commands::get_comment_multi(ctx, &ids)
+            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .filter(|c| !c.resolved && !c.orphaned)
+            .filter_map(|c| {
+                comment_commands::get_comment_relationship(
+                    ctx,
+                    &c.id,
+                    &CommentRelationshipField::Content,
+                )
+                .unwrap_or_default()
+                .into_iter()
+                .next()
+            })
+            .collect()
+    }
 
     pub fn load(
         ctx: &AppContext,
@@ -806,6 +862,7 @@ mod rows {
         let contents = content_commands::get_content_multi(ctx, &content_ids).unwrap_or_default();
         // Index by owning item so each row picks up only its own scene prose.
         let mut by_item: HashMap<u64, Vec<(ContentRole, String)>> = HashMap::new();
+        let mut open_comments: HashMap<u64, usize> = HashMap::new();
         {
             let mut owner: HashMap<u64, u64> = HashMap::new();
             for (_, it) in subtree {
@@ -816,6 +873,15 @@ mod rows {
             for c in contents.into_iter().flatten() {
                 if let Some(item) = owner.get(&c.id) {
                     by_item.entry(*item).or_default().push((c.role, c.data));
+                }
+            }
+            // Open threads per item, bucketed through the very same content→item
+            // map: `Content` has no back-pointer to its `BinderItem`, so this
+            // inversion is the only way to answer "which scene is this comment in",
+            // and building it twice would be two chances to disagree.
+            for cm in open_comment_counts(ctx, work_id) {
+                if let Some(item) = owner.get(&cm) {
+                    *open_comments.entry(*item).or_default() += 1;
                 }
             }
         }
@@ -854,6 +920,8 @@ mod rows {
                         own_words,
                         total_words: 0, // filled by the fold below
                         tags: it.tags.clone(),
+                        own_comments: open_comments.get(&it.id).copied().unwrap_or(0),
+                        total_comments: 0, // filled by the same fold
                     },
                     // Rebase onto the container: its direct children are depth 0, since
                     // the container's own row is not in the table.
@@ -950,6 +1018,11 @@ mod rows {
                 own_words,
                 total_words: 0, // filled by the fold below
                 tags: tags.to_vec(),
+                // A couple of fabricated threads on the prose-bearing rows, so the
+                // mock build exercises the column and its fold rather than a
+                // uniformly-zero one that would hide an arithmetic bug.
+                own_comments: if own_words.is_some() { item_id as usize % 3 } else { 0 },
+                total_comments: 0, // filled by the same fold
             },
             depth,
         )
@@ -1138,6 +1211,34 @@ mod tests {
             rows[0].item.own_words, None,
             "and reports no prose of its own"
         );
+    }
+
+    /// Comments fold through the same single pass as words. Asserted on a shape
+    /// where the two differ (a prose-less Part carrying its own thread) so a bug
+    /// that folded one into the other could not hide behind equal numbers.
+    #[test]
+    fn open_comments_fold_bottom_up_alongside_words() {
+        let mut rows = vec![r(1, None, 0), r(2, Some(10), 1), r(3, Some(20), 2)];
+        rows[0].item.own_comments = 1; // on the Part itself
+        rows[1].item.own_comments = 0;
+        rows[2].item.own_comments = 4;
+        fold_totals(&mut rows);
+        assert_eq!(rows[0].item.total_comments, 5, "1 on the part + 4 below");
+        assert_eq!(rows[1].item.total_comments, 4, "0 of its own + 4 below");
+        assert_eq!(rows[2].item.total_comments, 4);
+        // ...and the word fold is untouched by the comment fold sharing its pass.
+        assert_eq!(rows[0].item.total_words, 30);
+    }
+
+    #[test]
+    fn comment_siblings_do_not_leak_into_each_other() {
+        let mut rows = vec![r(1, Some(1), 0), r(2, Some(1), 1), r(3, Some(1), 0)];
+        rows[0].item.own_comments = 0;
+        rows[1].item.own_comments = 7;
+        rows[2].item.own_comments = 2;
+        fold_totals(&mut rows);
+        assert_eq!(rows[0].item.total_comments, 7);
+        assert_eq!(rows[2].item.total_comments, 2, "the sibling keeps only its own");
     }
 
     #[test]

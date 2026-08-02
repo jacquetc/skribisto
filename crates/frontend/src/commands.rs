@@ -9,6 +9,8 @@
 pub mod binder_commands;
 pub mod binder_item_commands;
 pub mod binder_tag_commands;
+pub mod comment_commands;
+pub mod comment_reply_commands;
 pub mod content_commands;
 pub mod dict_word_commands;
 pub mod holiday_commands;

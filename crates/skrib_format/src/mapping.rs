@@ -86,9 +86,27 @@ pub fn from_entities(
     trash_infos: &[TrashInfo],
     paces: &[PaceWithChildren],
     progress_snapshots: &[ProgressSnapshot],
+    comments: &[CommentWithReplies],
     binders: &[BinderWithItems],
     shape: ShapeTag,
 ) -> WorkBundle {
+    // Bucket every comment by the Content it annotates, so each prose row's sidecar
+    // can be assembled in one pass below. A comment whose `content` is `None` (its
+    // target was purged) has no sidecar to live in and is collected separately into
+    // the bundle-root orphanage — dropping it here would destroy the note.
+    let mut comments_by_content: BTreeMap<u64, Vec<CommentFile>> = BTreeMap::new();
+    let mut orphan_comments: Vec<CommentFile> = Vec::new();
+    for cwr in comments {
+        let file = comment_to_file(cwr);
+        match cwr.comment.content {
+            Some(content_id) => comments_by_content
+                .entry(content_id)
+                .or_default()
+                .push(file),
+            None => orphan_comments.push(file),
+        }
+    }
+
     let mut bundled_binders = Vec::with_capacity(binders.len());
 
     for (index, bwi) in binders.iter().enumerate() {
@@ -101,6 +119,7 @@ pub fn from_entities(
             let mut inline_contents = Vec::new();
             let mut prose_refs = Vec::new();
             let mut prose = BTreeMap::new();
+            let mut item_comments: BTreeMap<u64, Vec<CommentFile>> = BTreeMap::new();
 
             for c in &iwc.contents {
                 if !content_allowed(&item.role, &item.sub_role, &c.role) {
@@ -127,6 +146,13 @@ pub fn from_entities(
                             path: prose_relpath(&dir, &name),
                         });
                         prose.insert(c.id, c.data.clone());
+                        // Only prose rows get a sidecar. A comment somehow attached
+                        // to a title row (which the UI never creates — comments are
+                        // prose-only by design) has nowhere to go and is treated as
+                        // an orphan rather than silently dropped.
+                        if let Some(list) = comments_by_content.remove(&c.id) {
+                            item_comments.insert(c.id, list);
+                        }
                     }
                 }
             }
@@ -156,6 +182,7 @@ pub fn from_entities(
                     tag_ids: item.tags.clone(),
                 },
                 prose,
+                comments: item_comments,
             });
         }
 
@@ -171,6 +198,14 @@ pub fn from_entities(
             },
             items,
         });
+    }
+
+    // Anything still bucketed here names a Content that was never written — it was
+    // filtered out by `content_allowed`, it is a title row, or it simply is not in
+    // this tree any more. Its comments have no sidecar, so they join the orphanage
+    // rather than disappear at save time.
+    for (_content_id, list) in std::mem::take(&mut comments_by_content) {
+        orphan_comments.extend(list);
     }
 
     WorkBundle {
@@ -328,7 +363,48 @@ pub fn from_entities(
                 book_word_counts: s.book_word_counts.clone(),
             })
             .collect(),
+        orphan_comments,
         binders: bundled_binders,
+    }
+}
+
+/// One store `Comment` (plus its ordered replies) as its on-disk row.
+///
+/// The `content` link is deliberately absent from [`CommentFile`]: for a live
+/// comment the sidecar's own location names the Content, and for an orphan the id
+/// would be meaningless anyway, since every `EntityId` is re-minted on the next
+/// load. What survives is the quote selector, which is what re-anchoring actually
+/// uses.
+fn comment_to_file(cwr: &CommentWithReplies) -> CommentFile {
+    let c = &cwr.comment;
+    CommentFile {
+        file_id: c.id,
+        created_at: fmt_dt(&c.created_at),
+        updated_at: fmt_dt(&c.updated_at),
+        kind: c.kind.clone(),
+        author_name: c.author_name.clone(),
+        body: c.body.clone(),
+        resolved: c.resolved,
+        orphaned: c.orphaned,
+        orphan_reason: c.orphan_reason.clone(),
+        range_start: c.range_start,
+        range_length: c.range_length,
+        quote_prefix: c.quote_prefix.clone(),
+        quote_exact: c.quote_exact.clone(),
+        quote_exact_truncated: c.quote_exact_truncated,
+        quote_suffix: c.quote_suffix.clone(),
+        block_ordinal_hint: c.block_ordinal_hint,
+        replies: cwr
+            .replies
+            .iter()
+            .map(|r| CommentReplyFile {
+                file_id: r.id,
+                created_at: fmt_dt(&r.created_at),
+                updated_at: fmt_dt(&r.updated_at),
+                author_name: r.author_name.clone(),
+                body: r.body.clone(),
+            })
+            .collect(),
     }
 }
 
@@ -384,6 +460,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         smart_punctuation: 0,
         trash_infos: Vec::new(),
         paces: Vec::new(),
+        comments: Vec::new(),
     };
 
     let tags = bundle
@@ -647,6 +724,25 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         })
         .transpose()?;
 
+    // Comments arrive from two places and are flattened into one list here, each
+    // remembering the content file id it annotates. The per-Content sidecars supply
+    // the anchored ones; the bundle-root orphanage supplies those whose Content is
+    // already gone (`content: None`) — kept rather than dropped, so an orphan the
+    // writer has not dealt with yet survives a save/load cycle intact.
+    let mut comments: Vec<LoadedComment> = Vec::new();
+    for bb in &bundle.binders {
+        for bi in &bb.items {
+            for (content_file_id, list) in &bi.comments {
+                for cf in list {
+                    comments.push(comment_from_file(cf, Some(*content_file_id))?);
+                }
+            }
+        }
+    }
+    for cf in &bundle.orphan_comments {
+        comments.push(comment_from_file(cf, None)?);
+    }
+
     Ok(LoadedWork {
         work,
         tags,
@@ -658,7 +754,44 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         trash_infos,
         paces,
         progress_snapshots,
+        comments,
         references,
         absolute_path: absolute_path.to_string(),
+    })
+}
+
+/// One on-disk [`CommentFile`] as a [`LoadedComment`], carrying the content **file
+/// id** it annotates (or `None` for an orphan). Ids stay as file ids here; the
+/// materialiser remaps them, exactly as it does for pace/trash back-links.
+fn comment_from_file(cf: &CommentFile, content: Option<u64>) -> Result<LoadedComment> {
+    Ok(LoadedComment {
+        created_at: parse_dt(&cf.created_at)?,
+        updated_at: parse_dt(&cf.updated_at)?,
+        content,
+        kind: cf.kind.clone(),
+        author_name: cf.author_name.clone(),
+        body: cf.body.clone(),
+        resolved: cf.resolved,
+        orphaned: cf.orphaned,
+        orphan_reason: cf.orphan_reason.clone(),
+        range_start: cf.range_start,
+        range_length: cf.range_length,
+        quote_prefix: cf.quote_prefix.clone(),
+        quote_exact: cf.quote_exact.clone(),
+        quote_exact_truncated: cf.quote_exact_truncated,
+        quote_suffix: cf.quote_suffix.clone(),
+        block_ordinal_hint: cf.block_ordinal_hint,
+        replies: cf
+            .replies
+            .iter()
+            .map(|r| {
+                Ok(LoadedCommentReply {
+                    created_at: parse_dt(&r.created_at)?,
+                    updated_at: parse_dt(&r.updated_at)?,
+                    author_name: r.author_name.clone(),
+                    body: r.body.clone(),
+                })
+            })
+            .collect::<Result<Vec<_>>>()?,
     })
 }

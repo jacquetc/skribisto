@@ -16,7 +16,9 @@
 //! enums as their plain variant names (`Item`, `Scene`, `SceneText`), so the
 //! manifests stay readable and isomorphic to the domain model.
 
-use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use common::entities::{
+    BinderItemRole, BinderItemSubRole, CommentAnchorKind, CommentOrphanReason, ContentRole,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -441,6 +443,53 @@ pub struct InlineContent {
     pub text: String,
 }
 
+/// One reply inside a [`CommentFile`]'s thread. Nested inline, exactly as
+/// `HolidayFile`/`MilestoneFile` nest inside `PaceFile` — the "no Vec-of-composite"
+/// rule is a Qleany *entity* constraint, not a serde one.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CommentReplyFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub author_name: String,
+    pub body: String,
+}
+
+/// One comment thread anchored to a prose `Content` row.
+///
+/// Stored in a **per-Content sidecar** — `text/<id>-<slug>.comments.ron`, beside the
+/// `.djot` blob it annotates — rather than in one project-wide file. That is not a
+/// stylistic choice: `folder_io` is diff-minimal by design and unit-tested for it
+/// (`writes_are_diff_minimal`), so a single shared comments file would rewrite on any
+/// comment anywhere and defeat exactly the property the exploded form exists for.
+///
+/// The owning Content is identified by the file's own location, which is why no
+/// `content` field appears here — and why `Content` needs no `uid` of its own.
+///
+/// The anchor is a W3C-Web-Annotation-style selector: a quote (prefix/exact/suffix)
+/// plus a position hint in document-absolute CHARACTER offsets. On load the position
+/// is tried first and the quote rescues it when the prose has moved underneath.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CommentFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    pub kind: CommentAnchorKind,
+    pub author_name: String,
+    pub body: String,
+    pub resolved: bool,
+    pub orphaned: bool,
+    pub orphan_reason: CommentOrphanReason,
+    pub range_start: u64,
+    pub range_length: u64,
+    pub quote_prefix: String,
+    pub quote_exact: String,
+    pub quote_exact_truncated: bool,
+    pub quote_suffix: String,
+    pub block_ordinal_hint: u64,
+    pub replies: Vec<CommentReplyFile>,
+}
+
 /// A prose-role content row: the text lives in a sibling `.djot` file at `path`
 /// (relative to the bundle root).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -515,6 +564,19 @@ pub struct WorkBundle {
     pub trash_infos: Vec<TrashInfoFile>,
     pub paces: Vec<PaceFile>,
     pub progress_snapshots: Vec<ProgressSnapshotFile>,
+    /// Comments whose anchored `Content` no longer exists — `orphan_comments.ron`
+    /// at the bundle root.
+    ///
+    /// Every other comment is persisted in a sidecar *beside the prose it
+    /// annotates*, which is what identifies its owning Content. A comment whose
+    /// Content was purged has no such home, and without somewhere to put it, saving
+    /// would silently destroy the writer's note — precisely the outcome the orphan
+    /// contract exists to prevent. So it moves here, stays listed in the docks'
+    /// "no home" bucket, and remains deletable or relinkable.
+    ///
+    /// Keeping them out of the per-Content sidecars also preserves diff-minimality:
+    /// this file only churns when the orphan set itself changes.
+    pub orphan_comments: Vec<CommentFile>,
     pub binders: Vec<BundledBinder>,
 }
 
@@ -529,6 +591,10 @@ pub struct BundledItem {
     pub item: BinderItemFile,
     /// Prose content text keyed by content `file_id` (the `.djot` blobs).
     pub prose: BTreeMap<u64, String>,
+    /// Comment threads keyed by the annotated content `file_id` (the
+    /// `.comments.ron` sidecars). A content row with no comments has no entry
+    /// here and no file on disk.
+    pub comments: BTreeMap<u64, Vec<CommentFile>>,
 }
 
 /// Pre-fetched, ordered store data handed to [`super::from_entities`] at save
@@ -541,6 +607,13 @@ pub struct BinderWithItems {
 pub struct ItemWithContents {
     pub item: common::entities::BinderItem,
     pub contents: Vec<common::entities::Content>,
+}
+
+/// Pre-fetched Comment + its ordered reply thread, handed to
+/// [`super::from_entities`] at save time (mirrors [`PaceWithChildren`]).
+pub struct CommentWithReplies {
+    pub comment: common::entities::Comment,
+    pub replies: Vec<common::entities::CommentReply>,
 }
 
 /// Pre-fetched Pace + its child Holiday/Milestone entities, handed to

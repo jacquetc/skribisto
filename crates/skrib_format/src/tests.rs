@@ -3,12 +3,12 @@
 
 //! Round-trip, validation, and diff-minimal tests for the `.skrib` serializer.
 
-use super::bundle::{BinderWithItems, ItemWithContents};
+use super::bundle::{BinderWithItems, CommentWithReplies, ItemWithContents};
 use super::*;
 use chrono::{DateTime, Utc};
 use common::entities::{
-    Binder, BinderItem, BinderItemRole, BinderItemSubRole, BinderTag, Content, ContentRole,
-    DictWord, TrashInfo, Work,
+    Binder, BinderItem, BinderItemRole, BinderItemSubRole, BinderTag, Comment, CommentAnchorKind,
+    CommentOrphanReason, CommentReply, Content, ContentRole, DictWord, TrashInfo, Work,
 };
 use skribisto_model::{allowed_content, validate_item};
 use std::collections::BTreeMap;
@@ -105,6 +105,7 @@ fn sample_inputs() -> SampleInputs {
         binders: vec![100],
         trash_infos: vec![],
         paces: vec![],
+        comments: vec![],
     };
     // Every field deliberately OFF-default, for the reason spelled out on the
     // tags below: the round-trip tests compare whole bundles, and a row left at
@@ -281,8 +282,122 @@ fn sample_inputs() -> SampleInputs {
     }
 }
 
+/// The `SceneText` content id of the fixture's Item/Scene row (`items[2]`) — the
+/// same row `writes_are_diff_minimal` edits.
+fn scene_text_content_id(binders: &[BinderWithItems]) -> u64 {
+    binders[0].items[2]
+        .contents
+        .iter()
+        .find(|c| c.role == ContentRole::SceneText)
+        .expect("the Item/Scene fixture row has SceneText")
+        .id
+}
+
+/// Comment fixtures with **no field left at its default**, deliberately: an
+/// all-default row round-trips equal even when a field has been dropped somewhere
+/// in the mapping, which is exactly how a persistence bug hides. Same reasoning the
+/// `chapter_mode` / `smart_punctuation` fixtures above already record.
+///
+/// Covers all three shapes that persist differently: an anchored `Range` comment
+/// with a reply thread, an anchored `Paragraph` comment, and an **orphan**
+/// (`content: None`) which has no sidecar to live in and must survive via the
+/// bundle-root orphanage.
+fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
+    let now = ts();
+    let scene = scene_text_content_id(binders);
+    vec![
+        CommentWithReplies {
+            comment: Comment {
+                id: 5000,
+                created_at: now,
+                updated_at: now,
+                content: Some(scene),
+                kind: CommentAnchorKind::Range,
+                author_name: "Jane".into(),
+                body: "Is this too on-the-nose?".into(),
+                resolved: false,
+                orphaned: false,
+                orphan_reason: CommentOrphanReason::NotOrphaned,
+                range_start: 6,
+                range_length: 5,
+                quote_prefix: "Scene ".into(),
+                quote_exact: "prose".into(),
+                quote_exact_truncated: false,
+                quote_suffix: " with ".into(),
+                block_ordinal_hint: 0,
+                replies: vec![5001, 5002],
+            },
+            replies: vec![
+                CommentReply {
+                    id: 5001,
+                    created_at: now,
+                    updated_at: now,
+                    author_name: "Jane".into(),
+                    body: "Maybe. Sleep on it.".into(),
+                },
+                CommentReply {
+                    id: 5002,
+                    created_at: now,
+                    updated_at: now,
+                    author_name: "Marc".into(),
+                    body: "Keep it — it lands.".into(),
+                },
+            ],
+        },
+        CommentWithReplies {
+            comment: Comment {
+                id: 5010,
+                created_at: now,
+                updated_at: now,
+                content: Some(scene),
+                kind: CommentAnchorKind::Paragraph,
+                author_name: "Jane".into(),
+                body: "This whole paragraph drags.".into(),
+                resolved: true,
+                orphaned: false,
+                orphan_reason: CommentOrphanReason::NotOrphaned,
+                range_start: 0,
+                range_length: 0,
+                quote_prefix: String::new(),
+                quote_exact: "Scene prose with *emphasis*".into(),
+                quote_exact_truncated: true,
+                quote_suffix: String::new(),
+                block_ordinal_hint: 1,
+                replies: vec![],
+            },
+            replies: vec![],
+        },
+        CommentWithReplies {
+            comment: Comment {
+                id: 5020,
+                created_at: now,
+                updated_at: now,
+                // No anchor: the Content this once pointed at is gone. Without the
+                // orphanage this row would be silently destroyed by a save.
+                content: None,
+                kind: CommentAnchorKind::Range,
+                author_name: "Marc".into(),
+                body: "Whatever this was about, it is gone now.".into(),
+                resolved: false,
+                orphaned: true,
+                orphan_reason: CommentOrphanReason::TargetDeleted,
+                range_start: 42,
+                range_length: 7,
+                quote_prefix: "the ".into(),
+                quote_exact: "vanished".into(),
+                quote_exact_truncated: false,
+                quote_suffix: " line".into(),
+                block_ordinal_hint: 3,
+                replies: vec![],
+            },
+            replies: vec![],
+        },
+    ]
+}
+
 fn build_bundle(shape: ShapeTag) -> WorkBundle {
     let s = sample_inputs();
+    let comments = sample_comments(&s.binders);
     from_entities(
         &s.work,
         &s.tags,
@@ -293,6 +408,7 @@ fn build_bundle(shape: ShapeTag) -> WorkBundle {
         &s.trash,
         &[],
         &[],
+        &comments,
         &s.binders,
         shape,
     )
@@ -430,6 +546,7 @@ fn disallowed_content_is_dropped() {
         &[],
         &[],
         &[],
+        &[],
         &binders,
         ShapeTag::Folder,
     );
@@ -510,6 +627,213 @@ fn writes_are_diff_minimal() {
         changed[0].contains(&target_id.to_string()),
         "the changed file {} should be the edited scene's .djot",
         changed[0]
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Comments: per-Content sidecars, the orphanage, and diff-minimality
+// ---------------------------------------------------------------------------
+
+#[test]
+fn a_comment_lands_in_a_sidecar_beside_the_prose_it_annotates() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    // Find the prose blob for the annotated scene, then assert its sidecar sits
+    // right next to it — that adjacency is what identifies the owning Content, and
+    // is why `Content` needs no `uid`.
+    let binders = sample_inputs().binders;
+    let scene = scene_text_content_id(&binders);
+    let prose: Vec<_> = walkdir::WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("djot"))
+        .map(|e| e.path().to_path_buf())
+        .filter(|p| p.file_name().unwrap().to_str().unwrap().starts_with(&format!("{scene}-")))
+        .collect();
+    assert_eq!(prose.len(), 1, "expected exactly one .djot for the scene");
+
+    let sidecar = prose[0].with_extension("").to_string_lossy().to_string() + ".comments.ron";
+    let sidecar = std::path::Path::new(&sidecar);
+    assert!(
+        sidecar.is_file(),
+        "expected a comments sidecar at {}",
+        sidecar.display()
+    );
+    let text = fs::read_to_string(sidecar).unwrap();
+    assert!(text.contains("Is this too on-the-nose?"));
+    assert!(text.contains("Keep it — it lands."), "replies must round-trip");
+}
+
+#[test]
+fn an_uncommented_project_writes_no_comment_files_at_all() {
+    let s = sample_inputs();
+    let bundle = from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &[], // no comments
+        &s.binders,
+        ShapeTag::Folder,
+    );
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let stray: Vec<String> = walkdir::WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .map(|e| e.path().to_string_lossy().to_string())
+        .filter(|p| p.contains("comments"))
+        .collect();
+    assert!(
+        stray.is_empty(),
+        "a project with no comments should grow no comment files, found {stray:?}"
+    );
+}
+
+#[test]
+fn an_orphaned_comment_survives_a_round_trip_via_the_orphanage() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    assert_eq!(
+        bundle.orphan_comments.len(),
+        1,
+        "the fixture's anchorless comment belongs in the orphanage, not a sidecar"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert!(root.join("orphan_comments.ron").is_file());
+
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+    assert_eq!(read.orphan_comments.len(), 1);
+    let o = &read.orphan_comments[0];
+    assert_eq!(o.body, "Whatever this was about, it is gone now.");
+    assert!(o.orphaned);
+    assert_eq!(o.orphan_reason, CommentOrphanReason::TargetDeleted);
+    // The quote is the only thing that could ever re-anchor it, so it must survive
+    // even though the anchor itself is dead.
+    assert_eq!(o.quote_exact, "vanished");
+}
+
+#[test]
+fn the_orphanage_file_disappears_once_the_last_orphan_is_gone() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert!(root.join("orphan_comments.ron").is_file());
+
+    // The writer deletes the orphan. An empty list must remove the file rather than
+    // leave `[]` behind, so a project that has never lost an anchor and one that has
+    // recovered look identical on disk.
+    bundle.orphan_comments.clear();
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert!(!root.join("orphan_comments.ron").exists());
+}
+
+#[test]
+fn deleting_the_last_comment_prunes_its_sidecar() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    let rs = root.to_str().unwrap();
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let sidecars = |root: &std::path::Path| -> usize {
+        walkdir::WalkDir::new(root)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().to_string_lossy().ends_with(".comments.ron"))
+            .count()
+    };
+    assert_eq!(sidecars(&root), 1);
+
+    for item in &mut bundle.binders[0].items {
+        item.comments.clear();
+    }
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    assert_eq!(
+        sidecars(&root),
+        0,
+        "a sidecar whose last comment was deleted must be pruned, not left stale"
+    );
+}
+
+#[test]
+fn editing_one_comment_touches_only_its_own_sidecar() {
+    // The comment counterpart of `writes_are_diff_minimal`: this is the property
+    // that forced per-Content sidecars instead of one project-wide comments.ron.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    let rs = root.to_str().unwrap();
+
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    let before = snapshot(&root);
+
+    // Re-writing an identical bundle must still touch nothing, comments included.
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    for (rel, (mtime, _)) in &before {
+        assert_eq!(*mtime, snapshot(&root)[rel].0, "no-op save rewrote {rel}");
+    }
+
+    for item in &mut bundle.binders[0].items {
+        for list in item.comments.values_mut() {
+            for c in list {
+                c.body = "Rewritten note.".into();
+            }
+        }
+    }
+    write_bundle(rs, SkribShape::ExplodedFolder, &bundle).unwrap();
+    let after = snapshot(&root);
+
+    let changed: Vec<&String> = before
+        .keys()
+        .filter(|rel| before[*rel].1 != after[*rel].1)
+        .collect();
+    assert_eq!(
+        changed.len(),
+        1,
+        "editing one comment should rewrite exactly one file, got {changed:?}"
+    );
+    assert!(
+        changed[0].ends_with(".comments.ron"),
+        "the changed file should be the sidecar, got {}",
+        changed[0]
+    );
+}
+
+#[test]
+fn a_bundle_written_before_comments_existed_still_reads() {
+    // Additive-and-optional is what lets this ship without a FORMAT_VERSION bump:
+    // deleting every comment artefact must read back as "no comments", not as an error.
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    fs::remove_file(root.join("orphan_comments.ron")).unwrap();
+    for entry in walkdir::WalkDir::new(&root).into_iter().filter_map(|e| e.ok()) {
+        if entry.path().to_string_lossy().ends_with(".comments.ron") {
+            fs::remove_file(entry.path()).unwrap();
+        }
+    }
+
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+    assert!(read.orphan_comments.is_empty());
+    assert!(
+        read.binders[0].items.iter().all(|i| i.comments.is_empty()),
+        "a pre-feature bundle must load with zero comments rather than failing"
     );
 }
 
@@ -1733,6 +2057,7 @@ fn the_floor_ignores_content_dropped_by_content_allowed() {
         &s.trash,
         &[],
         &[],
+        &[], // no comments
         &s.binders,
         ShapeTag::Folder,
     );

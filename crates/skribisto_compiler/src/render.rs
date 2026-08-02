@@ -898,6 +898,7 @@ mod tests {
             trash_infos: vec![],
             paces: vec![],
             progress_snapshots: vec![],
+            comments: vec![],
             binders: vec![BinderWithItems {
                 binder: Binder {
                     id: 10,

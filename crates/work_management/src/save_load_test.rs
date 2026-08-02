@@ -127,6 +127,7 @@ fn sample_bundle() -> WorkBundle {
         binders: vec![100, 101],
         trash_infos: vec![],
         paces: vec![],
+        comments: vec![],
     };
     let tags = vec![
         BinderTag {
@@ -261,6 +262,7 @@ fn sample_bundle() -> WorkBundle {
             dialogue_marker: true,
         }),
         &trash,
+        &[],
         &[],
         &[],
         &[manuscript, characters],
@@ -424,6 +426,134 @@ fn save_load_round_trip_through_store() {
 
     // The stable id survives the save → load → save round-trip through the store.
     assert_eq!(resaved.manifest.work.unique_id, "the-lighthouse-uid");
+}
+
+/// The end-to-end proof for comments: disk → store → disk, through the real
+/// `load_work` materialiser and the real `save_work` gather.
+///
+/// The store round-trip is where a comment is most likely to be quietly lost,
+/// because it is the only place its anchor has to be *re-pointed*: every
+/// `EntityId` is re-minted on load, so the content id a comment was saved against
+/// is meaningless until `materialize` remaps it. A comment that came back attached
+/// to the wrong Content — or to none — would still round-trip "successfully" at the
+/// file level, which is exactly why this asserts the anchor, not just the body.
+#[test]
+fn comments_survive_the_store_round_trip_and_stay_anchored() {
+    use common::entities::{CommentAnchorKind, CommentOrphanReason};
+
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("Original");
+    let dst = dir.path().join("Resaved");
+
+    let mut original = sample_bundle();
+
+    // Anchor a comment (with a reply) to the first prose row that exists, and add
+    // one anchorless orphan alongside it.
+    let (scene_content_id, _) = {
+        let item = original.binders[0]
+            .items
+            .iter_mut()
+            .find(|i| !i.item.prose_refs.is_empty())
+            .expect("a prose row in the fixture");
+        let pr = item.item.prose_refs[0].clone();
+        item.comments.insert(
+            pr.file_id,
+            vec![skrib::CommentFile {
+                file_id: 7001,
+                created_at: "2020-01-01T00:00:00Z".into(),
+                updated_at: "2020-01-01T00:00:00Z".into(),
+                kind: CommentAnchorKind::Range,
+                author_name: "Jane".into(),
+                body: "Does this land?".into(),
+                resolved: false,
+                orphaned: false,
+                orphan_reason: CommentOrphanReason::NotOrphaned,
+                range_start: 4,
+                range_length: 5,
+                quote_prefix: "The ".into(),
+                quote_exact: "lamp!".into(),
+                quote_exact_truncated: false,
+                quote_suffix: " guttered".into(),
+                block_ordinal_hint: 2,
+                replies: vec![skrib::CommentReplyFile {
+                    file_id: 7002,
+                    created_at: "2020-01-01T00:00:00Z".into(),
+                    updated_at: "2020-01-01T00:00:00Z".into(),
+                    author_name: "Marc".into(),
+                    body: "It does.".into(),
+                }],
+            }],
+        );
+        (pr.file_id, ())
+    };
+    original.orphan_comments.push(skrib::CommentFile {
+        file_id: 7010,
+        created_at: "2020-01-01T00:00:00Z".into(),
+        updated_at: "2020-01-01T00:00:00Z".into(),
+        kind: CommentAnchorKind::Range,
+        author_name: "Jane".into(),
+        body: "Homeless note.".into(),
+        resolved: false,
+        orphaned: true,
+        orphan_reason: CommentOrphanReason::TargetDeleted,
+        range_start: 1,
+        range_length: 2,
+        quote_prefix: "a".into(),
+        quote_exact: "bc".into(),
+        quote_exact_truncated: false,
+        quote_suffix: "d".into(),
+        block_ordinal_hint: 9,
+        replies: vec![],
+    });
+
+    skrib::write_bundle(src.to_str().unwrap(), SkribShape::ExplodedFolder, &original).unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            file_name: src.to_str().unwrap().to_string(),
+        },
+    )
+    .expect("load_work");
+
+    let resaved = store_to_bundle(&db, &hub, &dst);
+
+    // The anchored comment came back on a prose row — and on the SAME one, matched
+    // by the prose text rather than by any id (every id was re-minted on load).
+    let original_prose = original.binders[0]
+        .items
+        .iter()
+        .find_map(|i| i.prose.get(&scene_content_id).cloned())
+        .expect("original prose text");
+
+    let mut found = None;
+    for item in &resaved.binders[0].items {
+        for (cid, list) in &item.comments {
+            if item.prose.get(cid) == Some(&original_prose) {
+                found = Some(list.clone());
+            }
+        }
+    }
+    let list = found.expect("the comment must come back attached to the same prose row");
+    assert_eq!(list.len(), 1);
+    assert_eq!(list[0].body, "Does this land?");
+    assert_eq!(list[0].quote_exact, "lamp!");
+    assert_eq!(list[0].range_start, 4);
+    assert_eq!(list[0].block_ordinal_hint, 2);
+    assert_eq!(
+        list[0].replies.len(),
+        1,
+        "the reply thread must survive the store, not just the file"
+    );
+    assert_eq!(list[0].replies[0].body, "It does.");
+
+    // And the orphan is still an orphan — kept, not silently discarded.
+    assert_eq!(resaved.orphan_comments.len(), 1);
+    assert_eq!(resaved.orphan_comments[0].body, "Homeless note.");
+    assert!(resaved.orphan_comments[0].orphaned);
 }
 
 /// The typed "too new" refusal must survive the whole backend stack.

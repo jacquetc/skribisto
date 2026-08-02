@@ -6,6 +6,8 @@
 pub mod binder;
 pub mod binder_item;
 pub mod binder_tag;
+pub mod comment;
+pub mod comment_reply;
 pub mod content;
 pub mod dict_word;
 pub mod holiday;

@@ -28,6 +28,7 @@ pub struct WorkDto {
     pub smart_punctuation: EntityId,
     pub trash_infos: Vec<EntityId>,
     pub paces: Vec<EntityId>,
+    pub comments: Vec<EntityId>,
 }
 
 impl From<WorkDto> for Work {
@@ -50,6 +51,7 @@ impl From<WorkDto> for Work {
             smart_punctuation: dto.smart_punctuation,
             trash_infos: dto.trash_infos,
             paces: dto.paces,
+            comments: dto.comments,
         }
     }
 }
@@ -74,6 +76,7 @@ impl From<&WorkDto> for Work {
             smart_punctuation: dto.smart_punctuation.clone(),
             trash_infos: dto.trash_infos.clone(),
             paces: dto.paces.clone(),
+            comments: dto.comments.clone(),
         }
     }
 }
@@ -98,6 +101,7 @@ impl From<Work> for WorkDto {
             smart_punctuation: entity.smart_punctuation,
             trash_infos: entity.trash_infos,
             paces: entity.paces,
+            comments: entity.comments,
         }
     }
 }
@@ -120,6 +124,7 @@ pub struct CreateWorkDto {
     pub smart_punctuation: EntityId,
     pub trash_infos: Vec<EntityId>,
     pub paces: Vec<EntityId>,
+    pub comments: Vec<EntityId>,
 }
 
 impl From<CreateWorkDto> for Work {
@@ -142,6 +147,7 @@ impl From<CreateWorkDto> for Work {
             smart_punctuation: dto.smart_punctuation,
             trash_infos: dto.trash_infos,
             paces: dto.paces,
+            comments: dto.comments,
         }
     }
 }
@@ -166,6 +172,7 @@ impl From<&CreateWorkDto> for Work {
             smart_punctuation: dto.smart_punctuation.clone(),
             trash_infos: dto.trash_infos.clone(),
             paces: dto.paces.clone(),
+            comments: dto.comments.clone(),
         }
     }
 }
@@ -189,6 +196,7 @@ impl From<Work> for CreateWorkDto {
             smart_punctuation: entity.smart_punctuation,
             trash_infos: entity.trash_infos,
             paces: entity.paces,
+            comments: entity.comments,
         }
     }
 }
@@ -225,6 +233,7 @@ impl From<UpdateWorkDto> for Work {
             smart_punctuation: Default::default(),
             trash_infos: Default::default(),
             paces: Default::default(),
+            comments: Default::default(),
         }
     }
 }
@@ -249,6 +258,7 @@ impl From<&UpdateWorkDto> for Work {
             smart_punctuation: Default::default(),
             trash_infos: Default::default(),
             paces: Default::default(),
+            comments: Default::default(),
         }
     }
 }

@@ -21,6 +21,7 @@ mod binder_binder_items_tree_model;
 mod binder_list_model;
 mod binder_stream;
 mod corkboard_cards_model;
+mod comments_list_model;
 mod dict_word_list_model;
 mod dictionary_settings_file;
 mod distraction_free_themes_file;
@@ -50,6 +51,12 @@ pub use binder_binder_items_tree_model::{
 pub use binder_list_model::{BinderListModel, BinderRow};
 pub use binder_stream::{BinderItemRef, ordered_binder_items};
 pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
+// Layer A is complete and tested; its consumers are the two comment docks, which
+// are not built yet. Re-exported here (rather than left unreachable) so those docks
+// import it exactly like every other model, and so the surface stays under the
+// models layer's own namespace.
+#[allow(unused_imports)]
+pub use comments_list_model::{CommentRow, CommentsListModel, ReplyRow};
 pub use dict_word_list_model::{DictWordListModel, DictWordRow};
 pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
 pub use distraction_free_themes_file::DistractionFreeThemesService;
@@ -60,7 +67,8 @@ pub use installed_dictionaries_model::{
 };
 pub use open_docs::{OpenDoc, OpenDocsStore, SynopsisViewerGuard};
 pub use overview_rows_model::{
-    COL_LABEL, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_WORDS, COL_TYPE, OverviewFilters,
+    COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_COMMENTS,
+    COL_TOTAL_WORDS, COL_TYPE, OverviewFilters,
     OverviewRow, OverviewRowsModel,
 };
 pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};

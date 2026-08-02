@@ -66,6 +66,12 @@ pub enum FlatEventKind {
     MilestoneCreated,
     MilestoneUpdated,
     MilestoneRemoved,
+    CommentCreated,
+    CommentUpdated,
+    CommentRemoved,
+    CommentReplyCreated,
+    CommentReplyUpdated,
+    CommentReplyRemoved,
     BinderCreated,
     BinderUpdated,
     BinderRemoved,
@@ -239,6 +245,18 @@ impl From<Event> for FlatEvent {
                 }
                 DirectAccessEntity::Milestone(EntityEvent::Removed) => {
                     FlatEventKind::MilestoneRemoved
+                }
+                DirectAccessEntity::Comment(EntityEvent::Created) => FlatEventKind::CommentCreated,
+                DirectAccessEntity::Comment(EntityEvent::Updated) => FlatEventKind::CommentUpdated,
+                DirectAccessEntity::Comment(EntityEvent::Removed) => FlatEventKind::CommentRemoved,
+                DirectAccessEntity::CommentReply(EntityEvent::Created) => {
+                    FlatEventKind::CommentReplyCreated
+                }
+                DirectAccessEntity::CommentReply(EntityEvent::Updated) => {
+                    FlatEventKind::CommentReplyUpdated
+                }
+                DirectAccessEntity::CommentReply(EntityEvent::Removed) => {
+                    FlatEventKind::CommentReplyRemoved
                 }
                 DirectAccessEntity::Binder(EntityEvent::Created) => FlatEventKind::BinderCreated,
                 DirectAccessEntity::Binder(EntityEvent::Updated) => FlatEventKind::BinderUpdated,
@@ -457,6 +475,12 @@ pub fn is_entity_mutation(kind: &FlatEventKind) -> bool {
             | MilestoneCreated
             | MilestoneUpdated
             | MilestoneRemoved
+            | CommentCreated
+            | CommentUpdated
+            | CommentRemoved
+            | CommentReplyCreated
+            | CommentReplyUpdated
+            | CommentReplyRemoved
             | BinderCreated
             | BinderUpdated
             | BinderRemoved
@@ -560,6 +584,14 @@ mod tests {
         assert!(is_entity_mutation(&FlatEventKind::MilestoneCreated));
         assert!(is_entity_mutation(&FlatEventKind::MilestoneUpdated));
         assert!(is_entity_mutation(&FlatEventKind::MilestoneRemoved));
+
+        assert!(is_entity_mutation(&FlatEventKind::CommentCreated));
+        assert!(is_entity_mutation(&FlatEventKind::CommentUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::CommentRemoved));
+
+        assert!(is_entity_mutation(&FlatEventKind::CommentReplyCreated));
+        assert!(is_entity_mutation(&FlatEventKind::CommentReplyUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::CommentReplyRemoved));
 
         assert!(is_entity_mutation(&FlatEventKind::BinderCreated));
         assert!(is_entity_mutation(&FlatEventKind::BinderUpdated));

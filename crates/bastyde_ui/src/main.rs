@@ -74,6 +74,7 @@ mod app;
 mod app_ids;
 mod backup;
 mod binder;
+mod comments;
 mod date_convert;
 mod distraction_free;
 mod docks;
@@ -284,6 +285,20 @@ pub const AUTOSAVE_KEY: &str = "editor.autosave";
 /// which is exactly why an unmistakable master switch has to exist beside them.
 pub const SPELLCHECK_ENABLED_KEY: &str = "editor.spellcheck";
 pub const SPELLCHECK_ENABLED_DEFAULT: bool = true;
+/// Show anchored comments in the editor (default **on**) — Tools ▸ Comments.
+///
+/// App-wide and persisted here rather than on the `Work`, for the same reason the
+/// spell-check switch is: whether the ochre marks and the margin are drawn is a
+/// preference of the person reading the screen, not a property of the manuscript, so it
+/// follows the writer across projects and does not travel inside a `.skrib`.
+///
+/// It hides the *presentation*, never the data: the two comment docks keep listing every
+/// thread, and a screen reader keeps announcing them. Hiding the marks is a way to read
+/// the prose cleanly, not a way to stop having comments — a toggle that also emptied the
+/// docks would leave a writer who decluttered the page with no way to act on the notes
+/// they just hid.
+pub const COMMENTS_VISIBLE_KEY: &str = "editor.comments";
+pub const COMMENTS_VISIBLE_DEFAULT: bool = true;
 /// When on (default) and no work was passed on the command line, a bare
 /// launch opens the Launcher window (the Welcome UI). When off, a bare launch
 /// instead opens the most recent *reachable* project directly — falling back
@@ -835,6 +850,12 @@ fn main() {
     // outside `App`, so `App::build` mirrors the persisted key into this plain signal.
     // Seeded from the store so a launch with it off never flashes the "on" icon.
     let spellcheck_menu = Signal::new(spellcheck_init);
+    // Seeded from the *default*, not from `read_prefs`, unlike `spellcheck_menu` above.
+    // That one feeds a title-bar button which paints from the very first frame, so a
+    // wrong seed is a visible flicker; this one feeds only the Tools ▸ Comments
+    // checkmark, which cannot be looked at before `App::build` has already written the
+    // stored value into it in the same frame.
+    let comments_menu = Signal::new(COMMENTS_VISIBLE_DEFAULT);
     // `unsaved` (exit-guard state shared between the window close guard / Close
     // Work menu and `App`) and `pending_exit` (a deferred close/quit awaiting an
     // in-flight save) are **not** constructed here any more (Scope E): both used
@@ -898,6 +919,7 @@ fn main() {
         tree_expansion_service,
         autosave_menu.clone(),
         spellcheck_menu.clone(),
+        comments_menu.clone(),
     );
 
     // ── Decide the initial window: launcher-window model ────────────────
