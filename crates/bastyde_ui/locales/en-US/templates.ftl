@@ -59,9 +59,9 @@ templates-delete-confirm = Delete
 
 ## Document menu
 menu-document = &Document
-menu-insert-template = &Insert template
+menu-insert-template = Insert temp&late
 menu-insert-template-none = No templates in this project
-menu-save-as-template = Save as &template…
+menu-save-as-template = Sa&ve as template…
 
 ## Save as template
 save-as-template-title = Save as template

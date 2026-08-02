@@ -59,9 +59,9 @@ templates-delete-confirm = Supprimer
 
 ## Menu Document
 menu-document = &Document
-menu-insert-template = &Insérer un modèle
+menu-insert-template = Insérer un &modèle
 menu-insert-template-none = Aucun modèle dans ce projet
-menu-save-as-template = Enregistrer comme &modèle…
+menu-save-as-template = Enregi&strer comme modèle…
 
 ## Enregistrer comme modèle
 save-as-template-title = Enregistrer comme modèle

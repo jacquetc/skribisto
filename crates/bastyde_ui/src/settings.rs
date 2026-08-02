@@ -1413,7 +1413,6 @@ impl Widget for SettingsPanel {
                 Box::new(panes::spellcheck::spellcheck_pane(&vm)),
             ),
             (Pane::WorkTags, tags_pane),
-            (Pane::WorkTemplates, templates_pane),
             (Pane::WorkAuthor, author_pane),
             (Pane::WorkTextReplacements, text_replacements_pane),
             (
@@ -1425,6 +1424,11 @@ impl Widget for SettingsPanel {
                 )),
             ),
             (Pane::DistractionFreeThemes, df_themes_pane),
+            // Last, because `Pane::WorkTemplates` is the last discriminant — this list is
+            // indexed BY discriminant, not by where the page sits in the tree (which is
+            // `build_tree`'s business, beside Tags). The assertion below is what caught
+            // this being put next to `tags_pane` where it reads more naturally.
+            (Pane::WorkTemplates, templates_pane),
         ];
         if let Some((slot, (pane, _))) =
             panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)
@@ -1628,6 +1632,8 @@ mod tests {
             Pane::WorkAuthor,
             Pane::WorkTextReplacements,
             Pane::DistractionFree,
+            Pane::DistractionFreeThemes,
+            Pane::WorkTemplates,
         ];
         for (i, pane) in all.iter().enumerate() {
             assert_eq!(

@@ -1853,6 +1853,11 @@ impl Widget for App {
         // ever races seed again.
         session.user_dictionary.wire(ctx);
         session.tags.wire(ctx);
+        // Same window, same reasons: without this the note-template list never subscribes
+        // to anything, so it holds whatever `load_rows` returned at session-construction
+        // time — which is nothing, because `work_id` is not seeded yet — and applying a
+        // preset writes rows the pane never hears about.
+        session.note_templates.wire(ctx);
 
         // Long-operation routing: every background job (import, export, save-as, backup,
         // restore, the progress recorder) reports through the same four events and filters
