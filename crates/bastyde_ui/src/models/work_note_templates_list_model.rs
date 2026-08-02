@@ -142,6 +142,24 @@ mod imp {
             }
         }
 
+        /// A catalogue with **nothing in it**, for tests that need the empty case.
+        ///
+        /// Not the same as `new` on a fresh context: the mock variant deliberately
+        /// fabricates a few presets so the UI has something to render, so a test that
+        /// built one and called it empty passed against the real backend and failed
+        /// under `--features mocks`. This one is empty in both builds by construction.
+        #[cfg_attr(not(test), allow(dead_code))]
+        pub fn empty(ctx: Rc<AppContext>, ids: AppIds) -> Self {
+            Self {
+                inner: Rc::new(Inner {
+                    model: ListModel::from_vec(Vec::new()),
+                    version: Signal::new(0),
+                    ctx,
+                    ids,
+                }),
+            }
+        }
+
         /// Subscribe so the list stays live: any `NoteTemplate` mutation — the settings
         /// pane, Save as template…, a preset, an undo — re-reads it, and a project switch
         /// replaces it wholesale.
@@ -509,6 +527,23 @@ mod imp {
                     model: ListModel::from_vec(rows),
                     version: Signal::new(0),
                     next_id: Cell::new(4),
+                }),
+            }
+        }
+
+        /// A catalogue with **nothing in it**, for tests that need the empty case.
+        ///
+        /// Not the same as `new` on a fresh context: the mock variant deliberately
+        /// fabricates a few presets so the UI has something to render, so a test that
+        /// built one and called it empty passed against the real backend and failed
+        /// under `--features mocks`. This one is empty in both builds by construction.
+        #[cfg_attr(not(test), allow(dead_code))]
+        pub fn empty(_ctx: Rc<AppContext>, _ids: AppIds) -> Self {
+            Self {
+                inner: Rc::new(Inner {
+                    model: ListModel::from_vec(Vec::new()),
+                    version: Signal::new(0),
+                    next_id: Cell::new(1),
                 }),
             }
         }

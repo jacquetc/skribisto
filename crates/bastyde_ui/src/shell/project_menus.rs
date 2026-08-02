@@ -1043,14 +1043,14 @@ mod tests {
     /// This is the failure mode a live-updating menu invites: the sync runs on every
     /// catalogue change, so an appending implementation would show each template twice
     /// after the second change, three times after the third. Asserted on the empty case
-    /// because that is the one this test can build without a loaded project — the count is
+    /// — built explicitly, not merely by having no project loaded — since the count is
     /// what matters, not the contents.
     #[test]
     fn refilling_replaces_the_children_rather_than_appending() {
         let id = MenuItemId::next();
         let model = model_with_submenu(id);
         let templates = NoteTemplatesViewModel::new(
-            crate::models::WorkNoteTemplatesListModel::new(
+            crate::models::WorkNoteTemplatesListModel::empty(
                 std::rc::Rc::new(frontend::AppContext::new()),
                 crate::app_ids::AppIds::default(),
             ),
@@ -1078,7 +1078,7 @@ mod tests {
         let id = MenuItemId::next();
         let model = model_with_submenu(id);
         let templates = NoteTemplatesViewModel::new(
-            crate::models::WorkNoteTemplatesListModel::new(
+            crate::models::WorkNoteTemplatesListModel::empty(
                 std::rc::Rc::new(frontend::AppContext::new()),
                 crate::app_ids::AppIds::default(),
             ),
@@ -1099,7 +1099,7 @@ mod tests {
         let id = MenuItemId::next();
         let model = model_with_submenu(id);
         let templates = NoteTemplatesViewModel::new(
-            crate::models::WorkNoteTemplatesListModel::new(
+            crate::models::WorkNoteTemplatesListModel::empty(
                 std::rc::Rc::new(frontend::AppContext::new()),
                 crate::app_ids::AppIds::default(),
             ),
