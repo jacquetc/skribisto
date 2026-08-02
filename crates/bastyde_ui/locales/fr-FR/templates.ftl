@@ -12,7 +12,7 @@
 
 ## Réglages ▸ Projet ▸ Modèles
 settings-page-templates = Modèles
-settings-templates-description = Des morceaux de texte réutilisables à insérer dans une note : une fiche de personnage vierge, un profil de lieu, une trame de scène. Ils sont enregistrés dans ce projet, donc toute personne qui l'ouvre dispose des mêmes.
+settings-templates-description = Des morceaux de texte réutilisables à insérer dans ce que vous écrivez : une fiche de personnage vierge, un profil de lieu, une trame de scène. Ils sont enregistrés dans ce projet, donc toute personne qui l'ouvre dispose des mêmes.
 settings-templates-filter = Filtrer les modèles
 settings-templates-count = { $n ->
     [0] Aucun modèle
@@ -20,7 +20,7 @@ settings-templates-count = { $n ->
    *[other] { $n } modèles
 }
 settings-templates-empty = Ce projet ne contient encore aucun modèle.
-settings-templates-empty-hint = Ajoutez-en un depuis les modèles fournis, importez un fichier .md ou .djot, ou ouvrez une note et choisissez Document ▸ Enregistrer comme modèle.
+settings-templates-empty-hint = Ajoutez-en un depuis les modèles fournis, importez un fichier .md ou .djot, ou écrivez quelque chose et choisissez Document ▸ Enregistrer comme modèle.
 settings-templates-presets = Ajouter un modèle fourni
 settings-templates-import = Importer…
 settings-templates-export = Exporter…
@@ -65,11 +65,11 @@ menu-save-as-template = Enregi&strer comme modèle…
 
 ## Enregistrer comme modèle
 save-as-template-title = Enregistrer comme modèle
-save-as-template-explain = Le texte de cette note devient un modèle que vous pourrez insérer dans n'importe quelle autre note.
+save-as-template-explain = Le texte que vous éditez devient un modèle que vous pourrez insérer n'importe où ailleurs.
 save-as-template-name = Nom
 save-as-template-placeholder = Fiche de personnage
 save-as-template-duplicate = Un modèle nommé « { $name } » existe déjà
-save-as-template-empty-note = Cette note est vide — il n'y a rien à enregistrer.
+save-as-template-empty-editor = Cet éditeur est vide — il n'y a rien à enregistrer.
 save-as-template-confirm = Enregistrer le modèle
 save-as-template-saved = « { $name } » enregistré comme modèle
 template-inserted = « { $name } » inséré

@@ -99,7 +99,9 @@ pub(super) struct CommandDeps {
     pub quit: crate::view_models::QuitSequencer,
     pub outline: OutlineViewModel,
     /// This window's formatting resolver — the only thing that can answer "which editor has
-    /// the caret, and is it a note's prose". The template commands gate and act through it.
+    /// the caret". The template commands gate on its `has_target` and read/write through
+    /// the handle it resolves, so they reach every registered editor rather than only the
+    /// ones a tab happens to own.
     pub format: crate::view_models::FormatViewModel,
     /// This window's own "was I maximized/floating before I went fullscreen"
     /// memory — minted fresh per window (never a `ctx.app_state` lookup, see

@@ -273,9 +273,13 @@ s.shot("/tmp/templates-document-menu.png")
 
 # With no binder selection and a chapter open, the item rows are greyed and the
 # template rows are greyed for a different reason: a chapter is not a note.
+# Templates are not restricted to notes any more — a scene, a synopsis, a corkboard
+# card all qualify — so the gate is simply "is there an editor to act on"
+# (`FormatViewModel::has_target`, which is also sticky, so it survives opening this
+# menu). With a project open and a tab restored, that is satisfied.
 sat = rows.get("Save as template\u2026")
-check(sat is not None and sat.get("disabled") is True,
-      "Save as template is greyed while the caret is not in a note")
+check(sat is not None and sat.get("disabled") is not True,
+      "Save as template is enabled with an editor open, whatever kind it is")
 s.call("inject_key", {"key": "Escape"})
 time.sleep(0.6)
 
@@ -292,8 +296,10 @@ if open_menu("document"):
             state[lab] = n.get("disabled")
     for lab in ("Rename", "Duplicate", "Indent", "Outdent", "Move to Trash"):
         check(state.get(lab) is not True, f"{lab} is enabled with a binder selection")
-    check(state.get("Save as template\u2026") is True,
-          "Save as template stays greyed on a chapter (note-only)")
+    # The loosening, stated directly: a *chapter* is a scene, not a note, and the row
+    # is live all the same. This check is the inverse of the one it replaced.
+    check(state.get("Save as template\u2026") is not True,
+          "Save as template is enabled over a chapter — no longer note-only")
     s.shot("/tmp/templates-document-menu-selected.png")
     s.call("inject_key", {"key": "Escape"})
     time.sleep(0.5)

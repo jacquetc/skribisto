@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! `NoteTemplatesViewModel` — the note-template feature's business logic, shared by the
+//! `NoteTemplatesViewModel` — the template feature's business logic, shared by the
 //! Settings ▸ Work ▸ Templates pane, the Document menu's insert submenu, and the
 //! Save-as-template dialog.
+//!
+//! The entity is still called `NoteTemplate` — templates began as a Note-only feature and
+//! the name is on disk, in `templates.ron`, in every project already saved. Renaming it
+//! would be a format migration for a word. They apply to any editor now.
 //!
 //! It owns no state of its own beyond the Layer-A handles it composes: the reactive
 //! [`WorkNoteTemplatesListModel`](crate::models::WorkNoteTemplatesListModel) and

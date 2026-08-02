@@ -1879,13 +1879,13 @@ impl Widget for App {
         // refill bumps `MenuModel::version`, and the bar re-derives its dropdowns from it.
         if let Some((menu, submenu_id)) = self.templates_menu.clone() {
             let templates = session.note_templates.clone();
-            let note_focused = self.format.note_focused();
+            let has_editor = self.format.has_target();
             ctx.effect(&templates.changed_signal(), move |_| {
                 crate::shell::project_menus::sync_insert_template_submenu(
                     &menu,
                     submenu_id,
                     &templates,
-                    &note_focused,
+                    &has_editor,
                 );
             });
         }

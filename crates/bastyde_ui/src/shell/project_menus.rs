@@ -116,10 +116,10 @@ pub(crate) fn sync_insert_template_submenu(
     model: &MenuModel,
     submenu_id: MenuItemId,
     templates: &NoteTemplatesViewModel,
-    note_focused: &Signal<bool>,
+    has_editor: &Signal<bool>,
 ) {
     let rows = templates.menu_rows();
-    let note_focused = note_focused.clone();
+    let has_editor = has_editor.clone();
     model.modify(|nodes| {
         let Some(children) = find_submenu_children(nodes, submenu_id) else {
             return;
@@ -136,7 +136,7 @@ pub(crate) fn sync_insert_template_submenu(
             let id = row.id;
             children.push(MenuNode::Item(
                 MenuEntry::new(lit!(row.name.clone()))
-                    .enabled(note_focused.clone())
+                    .enabled(has_editor.clone())
                     .on_activate(move |c| {
                         c.send_intent(crate::intents::AppIntent::InsertTemplate {
                             template_id: id,
@@ -520,7 +520,11 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
         // still teaches that the feature exists.
         .menu(tr!(menu_document()), {
             let on_selection = menu_binder_selection.clone();
-            let on_note = menu_format_vm.note_focused();
+            // Any editor will do. Templates started out note-only; that restriction is
+            // gone, so the gate is simply "is there somewhere to type" — which
+            // `has_target` already answers, and answers *stickily*, surviving the focus
+            // loss that opening this very menu causes.
+            let on_editor = menu_format_vm.has_target();
             move |m| {
                 let m = m
                     .item(
@@ -568,7 +572,7 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
 
                 m.item(
                     MenuEntry::new(tr!(menu_save_as_template()))
-                        .enabled(on_note.clone())
+                        .enabled(on_editor.clone())
                         .intent("templates.save_as"),
                 )
                 .separator()

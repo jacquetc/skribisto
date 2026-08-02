@@ -12,7 +12,7 @@
 
 ## Settings ▸ Work ▸ Templates
 settings-page-templates = Templates
-settings-templates-description = Reusable pieces of writing you can drop into a note — a blank character sheet, a location profile, a beat sheet. They are stored in this project, so anyone who opens it gets the same set.
+settings-templates-description = Reusable pieces of writing you can drop into anything you are writing — a blank character sheet, a location profile, a beat sheet. They are stored in this project, so anyone who opens it gets the same set.
 settings-templates-filter = Filter templates
 settings-templates-count = { $n ->
     [0] No templates
@@ -20,7 +20,7 @@ settings-templates-count = { $n ->
    *[other] { $n } templates
 }
 settings-templates-empty = This project has no templates yet.
-settings-templates-empty-hint = Add one from a preset, import a .md or .djot file, or open a note and choose Document ▸ Save as template.
+settings-templates-empty-hint = Add one from a preset, import a .md or .djot file, or write something and choose Document ▸ Save as template.
 settings-templates-presets = Add a preset
 settings-templates-import = Import…
 settings-templates-export = Export…
@@ -65,11 +65,11 @@ menu-save-as-template = Sa&ve as template…
 
 ## Save as template
 save-as-template-title = Save as template
-save-as-template-explain = The text of this note becomes a template you can drop into any other note.
+save-as-template-explain = The text you are editing becomes a template you can drop in anywhere else.
 save-as-template-name = Name
 save-as-template-placeholder = Character sheet
 save-as-template-duplicate = A template called "{ $name }" already exists
-save-as-template-empty-note = This note is empty — there is nothing to save.
+save-as-template-empty-editor = This editor is empty — there is nothing to save.
 save-as-template-confirm = Save template
 save-as-template-saved = Saved "{ $name }" as a template
 template-inserted = Inserted "{ $name }"

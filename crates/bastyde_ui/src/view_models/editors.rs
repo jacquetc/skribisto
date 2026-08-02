@@ -357,36 +357,6 @@ impl EditorsViewModel {
         self.focused_find()?.editor_handle()
     }
 
-    /// The focused tab's **note** prose as Djot — `None` unless the focused pane's active
-    /// tab is a note with a main prose field.
-    ///
-    /// Read off the document rather than the editor handle: `EditorHandle` wraps a private
-    /// state and exposes no content reader, and the document is where the Djot lives.
-    /// Deliberately the main body only, never the synopsis — "the text of this note" is the
-    /// prose, and a synopsis captured alongside it would silently double the template.
-    pub fn focused_note_djot(&self) -> Option<String> {
-        let side = self.focused_side.get();
-        let pane = self.pane(side);
-        let tab_id = pane.selected.get()?;
-        (0..pane.tabs.len()).find_map(|i| {
-            pane.tabs
-                .with_item(i, |h| {
-                    if h.id != tab_id {
-                        return None;
-                    }
-                    let tab = h.payload.downcast_ref::<ContentTab>()?;
-                    if !matches!(
-                        tab.sub_role(),
-                        frontend::common::entities::BinderItemSubRole::Note
-                    ) {
-                        return None;
-                    }
-                    tab.open_doc.main.as_ref().map(|f| f.djot())
-                })
-                .flatten()
-        })
-    }
-
     /// Insert a scene break of `tier` at the caret of the focused prose editor.
     ///
     /// A break is a paragraph of its own, so this splits the block at the caret,

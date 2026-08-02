@@ -4,10 +4,11 @@
 //! Commands over the per-project note templates: inserting one, and capturing the note you
 //! are in as a new one.
 //!
-//! Both are gated on the caret being in a **note's prose**, which
-//! [`FormatViewModel::note_focused`] answers. A note's *synopsis* resolves to
-//! `FormatSurface::Synopsis`, so neither command can reach one — that falls out of the
-//! existing classification rather than needing a guard here.
+//! Both are gated only on there being **an editor to act on**, which
+//! [`FormatViewModel::has_target`] answers. Templates were note-only at first; that
+//! restriction is gone, so a scene, a synopsis box, a corkboard card and a stream row are
+//! all fair game. `has_target` is also *sticky*, so the gate survives the focus loss that
+//! opening the menu causes.
 //!
 //! **Insert puts the body at the caret**, replacing the selection if there is one. It does
 //! not clear the note first and does not ask: `TextCursor::insert_fragment` already brackets
@@ -62,15 +63,22 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         let templates = deps.session.note_templates.clone();
         let editors = deps.editors.clone();
         ctx.register_action_global(Action::new("templates.save_as").on_invoke(move |_i, c| {
-            // The prose comes from the *document*, not from the editor handle — `EditorHandle`
-            // deliberately exposes no content reader, and the document is where the Djot
-            // actually lives.
-            let Some(body) = editors.focused_note_djot() else {
+            // Read through the **handle**, not through the tab's `OpenDoc`.
+            //
+            // The tab route only ever sees editors the tab itself mounted, so it can reach
+            // a scene or a note's main prose and nothing else. Now that any editor can be
+            // captured, that would quietly do nothing on a synopsis box, a corkboard card
+            // or a stream row — surfaces whose editors are registered but whose documents
+            // the tab does not own. `EditorHandle::to_djot` is the same resolution the
+            // insert command already writes through, so read and write agree on what "the
+            // editor you are in" means.
+            let Some(handle) = format.handle_for_commands() else {
                 return;
             };
+            let body = handle.to_djot();
             if body.trim().is_empty() {
                 c.show_toast(
-                    Toast::warning(tr!(save_as_template_empty_note()))
+                    Toast::warning(tr!(save_as_template_empty_editor()))
                         .scoped_id("templates.empty", templates.work_id())
                         .target_work(templates.work_id()),
                 );

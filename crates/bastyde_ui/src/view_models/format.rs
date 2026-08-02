@@ -305,19 +305,6 @@ pub struct FormatViewModel {
     /// Which groups apply. Read by the dock to decide what to show and by the
     /// menu to decide what to enable.
     surface: Signal<FormatSurface>,
-    /// Whether the thing being edited is a **note's prose** — the Document menu's gate for
-    /// its two template rows.
-    ///
-    /// Tracks the *sticky* target, exactly as [`Self::has_target`] does, and deliberately
-    /// NOT [`Self::surface`]. `surface` is live by design: it drops to `None` the instant
-    /// focus leaves the editors, which is what empties the dock. Keying a **menu**
-    /// enablement on that greys every row out at the moment the writer opens the menu to
-    /// reach for one — the failure `has_target`'s own doc warns about, and which this
-    /// signal shipped with until it was reproduced live.
-    ///
-    /// Concrete rather than a `.map()` over anything: `MenuEntry::enabled` wants a real
-    /// `Signal<bool>`, the same reason `GroupVisibility` holds concrete gates.
-    note_focused: Signal<bool>,
 
     bold: Signal<bool>,
     italic: Signal<bool>,
@@ -407,7 +394,6 @@ impl FormatViewModel {
             subscript: Signal::new(false),
             blockquote: Signal::new(false),
             in_table: Signal::new(false),
-            note_focused: Signal::new(false),
             heading: Signal::new(0),
             alignment: Signal::new(ALIGN_LEFT),
             align_left: Signal::new(true),
@@ -635,46 +621,6 @@ impl FormatViewModel {
         self.group_visible.apply(surface);
     }
 
-    /// Apply the note gate exactly as [`Self::refresh`] does, for tests that have no
-    /// mounted editor to focus. Keeps the latch rule in ONE place — a test that reimplemented
-    /// `if surface != None { … }` would pass while the real pump did something else.
-    #[cfg(test)]
-    pub(crate) fn set_note_focused_for_test_from(&self, surface: FormatSurface) {
-        self.apply_note_gate_for_test(Some(()), surface);
-    }
-
-    /// The exact rule [`Self::refresh`] applies, minus the editor plumbing. `target`
-    /// stands in for "is there a handle at all"; kept in one place so a test cannot pass
-    /// while the real pump does something else.
-    #[cfg(test)]
-    pub(crate) fn apply_note_gate_for_test(&self, target: Option<()>, surface: FormatSurface) {
-        self.set_surface(surface);
-        if target.is_none() {
-            set_if_changed(&self.note_focused, false);
-        } else if surface != FormatSurface::None {
-            set_if_changed(&self.note_focused, surface == FormatSurface::Note);
-        }
-    }
-
-    /// Seed the gate directly, for the "already in a note, now open the menu" setup.
-    #[cfg(test)]
-    pub(crate) fn set_note_focused_for_test(&self, on: bool) {
-        self.note_focused.set(on);
-    }
-
-    /// Whether the editor being acted on holds a **note's** prose — the Document menu's
-    /// gate for Insert template / Save as template.
-    ///
-    /// Note prose only, deliberately: a Note's *synopsis* resolves to
-    /// [`FormatSurface::Synopsis`] (see `classify`, which matches `Synopsis` before it ever
-    /// tests for `Note`), so a template can never land in a synopsis box. That falls out of
-    /// the existing classification rather than needing a guard of its own.
-    ///
-    /// Sticky across the focus loss that opening a menu causes — see the field's own doc.
-    pub fn note_focused(&self) -> Signal<bool> {
-        self.note_focused.clone()
-    }
-
     /// Per-group visibility gates for the dock. See [`GroupVisibility`].
     pub fn groups(&self) -> &GroupVisibility {
         &self.group_visible
@@ -697,21 +643,6 @@ impl FormatViewModel {
         let (handle, surface) = self.target();
         self.set_surface(surface);
         set_if_changed(&self.has_target, handle.is_some());
-        // Latched against the **target**, not mirrored off `surface`.
-        //
-        // `surface` alone cannot tell the two `None`s apart: "a menu overlay took focus,
-        // the editor is still there" and "the editor is gone". Mirroring it disables the
-        // rows the writer just opened the menu to click; latching on it alone leaves them
-        // enabled forever after the last note tab closes, pointing at nothing.
-        //
-        // The handle separates them, and it is the same one the commands act on
-        // (`handle_for_commands` is `target().0`), so the gate now says exactly what those
-        // commands can do rather than approximating it.
-        if handle.is_none() {
-            set_if_changed(&self.note_focused, false);
-        } else if surface != FormatSurface::None {
-            set_if_changed(&self.note_focused, surface == FormatSurface::Note);
-        }
 
         let Some(handle) = handle else {
             self.clear_mirrors();
@@ -1615,66 +1546,6 @@ mod tests {
         vm.toggle_bold();
         assert!(vm.bold().get(), "bold must apply to a synopsis");
         assert!(editor.handle().is_bold());
-    }
-
-    /// `note_focused` gates the Document menu's two template rows, and must survive the
-    /// focus loss that opening that menu causes.
-    ///
-    /// `set_surface` alone must NOT move it: the menu overlay taking focus drives `surface`
-    /// to `None`, and a gate mirrored off that greys the rows out at the instant the writer
-    /// reaches for them. This is the regression test for exactly that — it shipped, and was
-    /// only caught by opening the menu in the running app.
-    #[test]
-    fn note_focused_survives_the_focus_loss_of_opening_a_menu() {
-        let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
-        vm.set_note_focused_for_test(true);
-        assert!(vm.note_focused().get());
-
-        // Opening a menu blurs the editor: the live surface collapses.
-        vm.set_surface(FormatSurface::None);
-        assert!(
-            vm.note_focused().get(),
-            "the gate must stay on while the menu overlay holds focus"
-        );
-    }
-
-    /// Closing the last note tab must clear the gate, not latch it on forever.
-    ///
-    /// The sticky rule exists to survive a menu overlay taking focus — where the editor is
-    /// still there. When the editor is genuinely gone the target goes with it, and leaving
-    /// the rows enabled would offer commands that silently do nothing. This is the hole the
-    /// first version of the latch had.
-    #[test]
-    fn losing_the_target_entirely_clears_the_gate() {
-        let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
-        vm.set_note_focused_for_test(true);
-
-        // Menu overlay: no surface, but the editor is still latched. Gate holds.
-        vm.apply_note_gate_for_test(Some(()), FormatSurface::None);
-        assert!(vm.note_focused().get(), "a menu must not clear it");
-
-        // Tab closed: no target at all. Gate clears.
-        vm.apply_note_gate_for_test(None, FormatSurface::None);
-        assert!(
-            !vm.note_focused().get(),
-            "with no editor left there is nothing for the template commands to act on"
-        );
-    }
-
-    /// It is only sticky against `None`. A real move to another kind of prose turns it off,
-    /// or a template row would stay clickable over a scene.
-    #[test]
-    fn a_real_change_of_surface_still_clears_the_gate() {
-        let vm = FormatViewModel::new(Rc::new(|| (None, FormatSurface::None)));
-        vm.set_note_focused_for_test(true);
-        vm.set_note_focused_for_test_from(FormatSurface::Scene);
-        assert!(!vm.note_focused().get(), "a scene is not a note");
-
-        vm.set_note_focused_for_test_from(FormatSurface::Synopsis);
-        assert!(!vm.note_focused().get(), "nor is a synopsis");
-
-        vm.set_note_focused_for_test_from(FormatSurface::Note);
-        assert!(vm.note_focused().get());
     }
 
     /// A note's synopsis classifies as `Synopsis`, never `Note` — the structural reason the
