@@ -76,7 +76,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 );
                 return;
             }
-            present_save_as_template(&templates, body, String::new(), c);
+            present_save_as_template(&templates, body, c);
             let _ = &format;
         }));
     }
@@ -86,46 +86,38 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 ///
 /// An `InputDialog`, not a hand-built modal: this captures exactly one short string,
 /// which is the case its own doc reserves it for ("forms longer than a single field
-/// belong in a custom `Dialog`"). It is also what `binder.rename` uses, so the two
-/// name prompts in the app look and behave the same.
+/// belong in a custom `Dialog`"). It is also what `binder.rename` uses, so the two name
+/// prompts in the app look and behave the same.
 ///
-/// `InputDialog` has no live validation and no disable-until-valid OK, so the duplicate
-/// check happens on confirm — and on a clash the dialog is **re-presented with the name
-/// still in it** rather than simply refused. Losing what you typed to a toast would be
-/// the worse half of every trade here: the writer's next move is to adjust the name they
-/// just chose, not to type it again from nothing.
+/// The duplicate check is a **live validator**, so a colliding name greys OK out and
+/// explains itself as it is typed, rather than being accepted and then apologised for.
+/// That is the whole reason `InputDialog::validate` exists — it was added for this.
 fn present_save_as_template(
     templates: &crate::view_models::NoteTemplatesViewModel,
     body: String,
-    seed: String,
     ctx: &mut EventContext,
 ) {
+    let for_validate = templates.clone();
     let templates = templates.clone();
     InputDialog::new(tr!(save_as_template_title()))
         .prompt(tr!(save_as_template_explain()))
         .placeholder(tr!(save_as_template_placeholder()))
-        .default_text(seed)
         .ok_label(tr!(save_as_template_confirm()))
-        .on_result(move |result, c| {
-            // Cancel, or an empty name: nothing to do, and nothing worth saying — the
-            // same silence `begin_rename` gives.
-            let Some(name) = result else { return };
+        .validate(move |name| {
             if name.trim().is_empty() {
-                return;
+                // Nothing to say: the writer has not finished typing a name, they have
+                // not made a mistake. The greyed OK carries it.
+                return Err(None);
             }
-            // The duplicate case is checked here rather than left to the error string
-            // `save_as_template` returns: that string is a bare `bail!`, so it would reach
-            // the writer untranslated. Every other failure is genuinely exceptional and
-            // falls through to the generic message.
-            if let Some(clash) = templates.duplicate_name(&name, None) {
-                c.show_toast(
-                    Toast::warning(tr!(save_as_template_duplicate(name = clash)))
-                        .scoped_id("templates.error", templates.work_id())
-                        .target_work(templates.work_id()),
-                );
-                present_save_as_template(&templates, body.clone(), name, c);
-                return;
+            match for_validate.duplicate_name(name, None) {
+                Some(clash) => Err(Some(tr!(save_as_template_duplicate(name = clash)))),
+                None => Ok(()),
             }
+        })
+        .on_result(move |result, c| {
+            // The validator has already refused every name that cannot be used, so this
+            // only ever sees a usable one — or `None`, for Cancel.
+            let Some(name) = result else { return };
             match templates.save_as_template(&name, &body) {
                 Ok(_) => {
                     c.show_toast(
@@ -134,14 +126,14 @@ fn present_save_as_template(
                             .target_work(templates.work_id()),
                     );
                 }
+                // Reachable only for the failures the validator cannot see — no project
+                // open, or a body over the size cap.
                 Err(e) => {
                     c.show_toast(
                         Toast::warning(lit!(format!("{e:#}")))
                             .scoped_id("templates.error", templates.work_id())
                             .target_work(templates.work_id()),
                     );
-                    // Straight back to the prompt, carrying what was typed.
-                    present_save_as_template(&templates, body.clone(), name, c);
                 }
             }
         })
