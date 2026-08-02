@@ -83,10 +83,7 @@ pub(in crate::app) fn install(
                     return; // nothing open here — cannot be my mutation
                 };
                 if !super::super::mutation_ids_belong_to_work(
-                    &app_ctx,
-                    my_work_id,
-                    entity,
-                    &event.ids,
+                    &app_ctx, my_work_id, entity, &event.ids,
                 ) {
                     return;
                 }

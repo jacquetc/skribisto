@@ -545,7 +545,12 @@ mod imp {
             // `wire`'s real subscriber gets `work_id` off the `NewWork` event itself;
             // here (no event plumbing in a headless test) fetch the one Work the
             // fresh in-memory store holds, exactly as that event's payload would.
-            let work_id = work_commands::get_all_work(&ctx).unwrap().into_iter().next().unwrap().id;
+            let work_id = work_commands::get_all_work(&ctx)
+                .unwrap()
+                .into_iter()
+                .next()
+                .unwrap()
+                .id;
             let entry = opened_entry(&ctx, work_id).expect("an open work yields an MRU entry");
             assert_eq!(entry.path, proj.to_string_lossy());
 

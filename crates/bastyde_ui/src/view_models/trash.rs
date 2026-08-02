@@ -203,7 +203,8 @@ impl TrashViewModel {
                         .collect();
                     if failed_items.is_empty() {
                         ctx.show_toast(
-                            Toast::warning(tr!(trash_restore_orphaned())).target_work(Some(work_id)),
+                            Toast::warning(tr!(trash_restore_orphaned()))
+                                .target_work(Some(work_id)),
                         );
                     } else {
                         ctx.show_toast(
@@ -394,8 +395,7 @@ impl TrashViewModel {
         let stack = self.stack();
         if let Err(e) = op(&self.app_ctx, stack) {
             ctx.show_toast(
-                Toast::error(tr!(trash_restore_error(error = e.to_string())))
-                    .target_work(work_id),
+                Toast::error(tr!(trash_restore_error(error = e.to_string()))).target_work(work_id),
             );
             return;
         }
@@ -508,8 +508,7 @@ mod tests {
             archive: None,
             ..ToastInstallOptions::default()
         });
-        let mut tree =
-            crate::test_support::tree_with_toast_registry(&vm_a.app_ctx, &registry);
+        let mut tree = crate::test_support::tree_with_toast_registry(&vm_a.app_ctx, &registry);
 
         let a = vm_a.clone();
         let b = vm_b.clone();

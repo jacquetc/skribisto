@@ -79,9 +79,7 @@ pub(in crate::settings) fn punctuation_pane(
                     tr!(settings_punctuation_app_hint()),
                 )),
         )
-        .full_width(
-            Toggle::new(vm.punct_ellipsis()).label(tr!(settings_punctuation_ellipsis())),
-        )
+        .full_width(Toggle::new(vm.punct_ellipsis()).label(tr!(settings_punctuation_ellipsis())))
         .full_width(Toggle::new(vm.punct_quotes()).label(tr!(settings_punctuation_quotes())))
         .line(
             field_label(tr!(settings_quote_style())),

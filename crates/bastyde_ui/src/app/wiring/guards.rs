@@ -22,10 +22,7 @@ pub(in crate::app) fn on_own_load_or_new(
     ids: &AppIds,
     f: impl Fn(&Event) + Clone + 'static,
 ) {
-    for event in [
-        WorkManagementEvent::LoadWork,
-        WorkManagementEvent::NewWork,
-    ] {
+    for event in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
         let ids = ids.clone();
         let f = f.clone();
         ctx.subscribe_event(Origin::WorkManagement(event), move |e: &Event| {
@@ -60,10 +57,7 @@ pub(in crate::app) fn on_own_load_or_new_with_ctx(
     ids: &AppIds,
     f: impl Fn(&Event, &mut EventContext) + Clone + 'static,
 ) {
-    for event in [
-        WorkManagementEvent::LoadWork,
-        WorkManagementEvent::NewWork,
-    ] {
+    for event in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
         let ids = ids.clone();
         let f = f.clone();
         ctx.subscribe_event_with_ctx(Origin::WorkManagement(event), move |e: &Event, c| {

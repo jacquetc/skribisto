@@ -21,13 +21,13 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use bastyde::core::WidgetEvent;
 use bastyde::core::accessibility::widget_id_to_node_id;
 use bastyde::core::event_source::{
     AppEventPoster, EventSourceAdapter, SubscriptionId, TreeAppContext,
 };
 use bastyde::core::widget_id::WidgetId;
 use bastyde::core::widget_tree::WidgetTree;
-use bastyde::core::WidgetEvent;
 use bastyde::settings::SettingsStore;
 use bastyde::widgets::ToastRegistry;
 
@@ -91,7 +91,10 @@ pub(crate) fn tree_with_settings(app_ctx: &Rc<AppContext>) -> WidgetTree {
 /// hole — a bare id collapses two Works' toasts into ONE live entry
 /// (`ToastRegistry::enqueue`'s update-in-place merge finds the matching id
 /// and overwrites it in place), which a real registry actually catches.
-pub(crate) fn tree_with_toast_registry(app_ctx: &Rc<AppContext>, registry: &ToastRegistry) -> WidgetTree {
+pub(crate) fn tree_with_toast_registry(
+    app_ctx: &Rc<AppContext>,
+    registry: &ToastRegistry,
+) -> WidgetTree {
     let mut state: HashMap<TypeId, Box<dyn Any>> = HashMap::new();
     state.insert(TypeId::of::<ToastRegistry>(), Box::new(registry.clone()));
     tree_with_events_and_state(app_ctx, state)

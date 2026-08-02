@@ -36,7 +36,8 @@ pub(in crate::settings) fn work_language_pane(
     // service, internally partitioned per `work_id` — see its own module doc),
     // not per-Work state that needs threading.
     let form = match (
-        ctx.app_state::<crate::spellcheck::SpellcheckService>().cloned(),
+        ctx.app_state::<crate::spellcheck::SpellcheckService>()
+            .cloned(),
         Some(open_docs),
     ) {
         (Some(spell), Some(open_docs)) => {
@@ -46,9 +47,11 @@ pub(in crate::settings) fn work_language_pane(
                 Rc::new(move |new: Vec<String>, _c| vm.set_dict_language(new))
             };
             // The Work is the root of the inheritance chain — nothing to inherit from.
-            base.full_width(crate::spellcheck::language_pill_field::LanguagePillField::new(
-                value, set, spell, None, open_docs,
-            ))
+            base.full_width(
+                crate::spellcheck::language_pill_field::LanguagePillField::new(
+                    value, set, spell, None, open_docs,
+                ),
+            )
         }
         _ => base.full_width(TextWidget::new(tr!(settings_field_dict_language()))),
     };

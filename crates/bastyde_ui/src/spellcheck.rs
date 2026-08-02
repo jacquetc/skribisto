@@ -605,7 +605,11 @@ impl SpellcheckService {
 
     /// The active (non-muted, installed) dictionaries for a tag list, primary first, deduped,
     /// under `work_id`'s Work's own mute set.
-    fn active_dicts(&self, tags: &[String], work_id: Option<u64>) -> Vec<Arc<spellbook::Dictionary>> {
+    fn active_dicts(
+        &self,
+        tags: &[String],
+        work_id: Option<u64>,
+    ) -> Vec<Arc<spellbook::Dictionary>> {
         let mut out = Vec::new();
         let mut seen = HashSet::new();
         let muted = self.inner.muted.borrow();
@@ -1018,7 +1022,10 @@ mod tests {
     #[test]
     fn build_checker_short_circuits_when_disabled_and_resumes_when_re_enabled() {
         let svc = service_with_tiny_dict();
-        assert!(svc.build_checker(&tags("en-US"), Some(1)).is_some(), "on by default");
+        assert!(
+            svc.build_checker(&tags("en-US"), Some(1)).is_some(),
+            "on by default"
+        );
 
         svc.set_enabled(false);
         assert!(
@@ -1036,7 +1043,10 @@ mod tests {
     #[test]
     fn the_master_switch_overrides_an_otherwise_checkable_document() {
         let svc = service_with_tiny_dict();
-        assert!(!svc.is_muted("en-US", Some(1)), "precondition: nothing muted");
+        assert!(
+            !svc.is_muted("en-US", Some(1)),
+            "precondition: nothing muted"
+        );
         svc.set_enabled(false);
         assert!(
             svc.build_checker(&tags("en-US"), Some(1)).is_none(),
@@ -1054,7 +1064,10 @@ mod tests {
         let svc = SpellcheckService::new();
         svc.set_enabled(false);
         svc.clear(1);
-        assert!(!svc.is_enabled(), "the switch is app-wide, not project state");
+        assert!(
+            !svc.is_enabled(),
+            "the switch is app-wide, not project state"
+        );
     }
 
     // ── Multi-Work isolation (Phase 2) ──────────────────────────────────────
@@ -1113,7 +1126,10 @@ mod tests {
         personal_b.insert("Bastyde".to_string());
         svc.set_personal(work_b, personal_b);
 
-        assert!(!svc.is_muted("en-US", Some(work_b)), "Work B never inherits Work A's mute");
+        assert!(
+            !svc.is_muted("en-US", Some(work_b)),
+            "Work B never inherits Work A's mute"
+        );
         let checker_b = svc
             .build_checker(&tags("en-US"), Some(work_b))
             .expect("Work B's own dictionary is still active — it never muted en-US");

@@ -296,13 +296,16 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
 /// no editable content, so opening one shows an explanatory label, not an empty
 /// editor.
 pub fn placeholder(tab: &ContentTab) -> Box<dyn Widget> {
-    tab_backdrop(tab.backdrop_role(), bati!(
-        Center {
-            child: TextWidget::new(tr!(no_content())) {
-                color: TextRole::Secondary
+    tab_backdrop(
+        tab.backdrop_role(),
+        bati!(
+            Center {
+                child: TextWidget::new(tr!(no_content())) {
+                    color: TextRole::Secondary
+                }
             }
-        }
-    ))
+        ),
+    )
 }
 
 /// A synopsis-only folder body (Folder/None): a plain grouping folder, which the matrix

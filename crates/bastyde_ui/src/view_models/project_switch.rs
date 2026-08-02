@@ -293,12 +293,15 @@ impl ProjectSwitchViewModel {
         let Some(covers) = save() else {
             // Work-scoped: about the outgoing Work's own save, not every open
             // window's.
-            ctx.show_toast(Toast::error(tr!(switch_save_not_started())).target_work(outgoing_work_id));
+            ctx.show_toast(
+                Toast::error(tr!(switch_save_not_started())).target_work(outgoing_work_id),
+            );
             return;
         };
         self.pending.set(switch);
         self.pending_seq.set(Some(covers));
-        self.pending_work_id.set(CapturedWork::given(outgoing_work_id));
+        self.pending_work_id
+            .set(CapturedWork::given(outgoing_work_id));
     }
 
     /// Do the switch. The point of no return: `OpenWork` closes the outgoing Work's
@@ -306,7 +309,12 @@ impl ProjectSwitchViewModel {
     /// before `load_work`; `NewWork` only shows the form here — the outgoing Work
     /// stays open (and closeable-again by Cancel) until `NewWorkViewModel::create`
     /// itself closes it, right before the actual `new_work` call.
-    fn perform(&self, ctx: &mut EventContext, switch: PendingSwitch, outgoing_work_id: Option<u64>) {
+    fn perform(
+        &self,
+        ctx: &mut EventContext,
+        switch: PendingSwitch,
+        outgoing_work_id: Option<u64>,
+    ) {
         // Persist the outgoing project's desk (open tabs + docks) while its store is
         // still alive — the in-place switches fire no `CloseWork` of their own before
         // this point, and `load_work` (via `close_outgoing_work`, right below) closes
@@ -506,7 +514,8 @@ mod tests {
         if let Some(covers) = save() {
             vm.pending.set(switch);
             vm.pending_seq.set(Some(covers));
-            vm.pending_work_id.set(CapturedWork::given(outgoing_work_id));
+            vm.pending_work_id
+                .set(CapturedWork::given(outgoing_work_id));
         }
     }
 

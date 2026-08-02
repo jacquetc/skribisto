@@ -31,11 +31,11 @@ pub(crate) const TITLE_BAR_HEIGHT: f32 = 34.0;
 
 pub(crate) mod instance;
 pub(crate) mod ipc;
+pub(crate) mod launcher_window;
 pub(crate) mod open_registry;
 pub(crate) mod process;
-pub(crate) mod project_switcher_button;
-pub(crate) mod launcher_window;
 pub(crate) mod project_menus;
+pub(crate) mod project_switcher_button;
 pub(crate) mod window_ids;
 pub(crate) mod windows;
 

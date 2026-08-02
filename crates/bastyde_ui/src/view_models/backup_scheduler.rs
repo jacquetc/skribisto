@@ -1140,7 +1140,10 @@ mod tests {
         // retarget/steal it.
         let id_a = crate::toast_scope::work_scoped_toast_id(BACKUP_TOAST_ID, Some(1));
         let id_b = crate::toast_scope::work_scoped_toast_id(BACKUP_TOAST_ID, Some(2));
-        assert_ne!(id_a, id_b, "two different Works' backup toasts must never collide");
+        assert_ne!(
+            id_a, id_b,
+            "two different Works' backup toasts must never collide"
+        );
     }
 
     /// The test above only proves `work_scoped_toast_id` itself is collision-free
@@ -1197,10 +1200,8 @@ mod tests {
 
         let sa = a.clone();
         let sb = b.clone();
-        let btn_a =
-            tree.add(Button::new(lit!("a")).on_activate_fn(move |ctx| sa.backup_now(ctx)));
-        let btn_b =
-            tree.add(Button::new(lit!("b")).on_activate_fn(move |ctx| sb.backup_now(ctx)));
+        let btn_a = tree.add(Button::new(lit!("a")).on_activate_fn(move |ctx| sa.backup_now(ctx)));
+        let btn_b = tree.add(Button::new(lit!("b")).on_activate_fn(move |ctx| sb.backup_now(ctx)));
         tree.layout(SizeProposal::exact(200.0, 80.0));
 
         crate::test_support::click(&mut tree, btn_a);
@@ -1265,10 +1266,8 @@ mod tests {
 
         let sa = a.clone();
         let sb = b.clone();
-        let btn_a =
-            tree.add(Button::new(lit!("a")).on_activate_fn(move |ctx| sa.backup_now(ctx)));
-        let btn_b =
-            tree.add(Button::new(lit!("b")).on_activate_fn(move |ctx| sb.backup_now(ctx)));
+        let btn_a = tree.add(Button::new(lit!("a")).on_activate_fn(move |ctx| sa.backup_now(ctx)));
+        let btn_b = tree.add(Button::new(lit!("b")).on_activate_fn(move |ctx| sb.backup_now(ctx)));
         tree.layout(SizeProposal::exact(200.0, 80.0));
 
         crate::test_support::click(&mut tree, btn_a);
@@ -1300,8 +1299,10 @@ mod tests {
         let flushed = Rc::new(Cell::new(0u32));
         {
             let flushed = flushed.clone();
-            scheduler
-                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed.set(flushed.get() + 1)));
+            scheduler.register_flush_hook(
+                BastydeWindowId::new(1),
+                Rc::new(move || flushed.set(flushed.get() + 1)),
+            );
         }
         // No project open — `on_open` returns right after the flush, via
         // `current()` returning `None`. The flush must still have happened.
@@ -1315,8 +1316,10 @@ mod tests {
         let flushed = Rc::new(Cell::new(0u32));
         {
             let flushed = flushed.clone();
-            scheduler
-                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed.set(flushed.get() + 1)));
+            scheduler.register_flush_hook(
+                BastydeWindowId::new(1),
+                Rc::new(move || flushed.set(flushed.get() + 1)),
+            );
         }
         scheduler.interval_tick();
         assert_eq!(flushed.get(), 1);
@@ -1341,8 +1344,10 @@ mod tests {
         let flushed = Rc::new(Cell::new(0u32));
         {
             let flushed = flushed.clone();
-            scheduler
-                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed.set(flushed.get() + 1)));
+            scheduler.register_flush_hook(
+                BastydeWindowId::new(1),
+                Rc::new(move || flushed.set(flushed.get() + 1)),
+            );
         }
         earlier_clone.on_open();
         assert_eq!(flushed.get(), 1, "the earlier clone must see the new hook");
@@ -1358,17 +1363,29 @@ mod tests {
         let flushed_b = Rc::new(Cell::new(0u32));
         {
             let flushed_a = flushed_a.clone();
-            scheduler
-                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed_a.set(flushed_a.get() + 1)));
+            scheduler.register_flush_hook(
+                BastydeWindowId::new(1),
+                Rc::new(move || flushed_a.set(flushed_a.get() + 1)),
+            );
         }
         {
             let flushed_b = flushed_b.clone();
-            scheduler
-                .register_flush_hook(BastydeWindowId::new(2), Rc::new(move || flushed_b.set(flushed_b.get() + 1)));
+            scheduler.register_flush_hook(
+                BastydeWindowId::new(2),
+                Rc::new(move || flushed_b.set(flushed_b.get() + 1)),
+            );
         }
         scheduler.on_open();
-        assert_eq!(flushed_a.get(), 1, "window 1's editors must still be flushed");
-        assert_eq!(flushed_b.get(), 1, "window 2's editors must also be flushed");
+        assert_eq!(
+            flushed_a.get(),
+            1,
+            "window 1's editors must still be flushed"
+        );
+        assert_eq!(
+            flushed_b.get(),
+            1,
+            "window 2's editors must also be flushed"
+        );
     }
 
     /// `unregister_flush_hook` — the on_removed-driven inverse of
@@ -1381,19 +1398,27 @@ mod tests {
         let flushed_b = Rc::new(Cell::new(0u32));
         {
             let flushed_a = flushed_a.clone();
-            scheduler
-                .register_flush_hook(BastydeWindowId::new(1), Rc::new(move || flushed_a.set(flushed_a.get() + 1)));
+            scheduler.register_flush_hook(
+                BastydeWindowId::new(1),
+                Rc::new(move || flushed_a.set(flushed_a.get() + 1)),
+            );
         }
         {
             let flushed_b = flushed_b.clone();
-            scheduler
-                .register_flush_hook(BastydeWindowId::new(2), Rc::new(move || flushed_b.set(flushed_b.get() + 1)));
+            scheduler.register_flush_hook(
+                BastydeWindowId::new(2),
+                Rc::new(move || flushed_b.set(flushed_b.get() + 1)),
+            );
         }
 
         scheduler.unregister_flush_hook(BastydeWindowId::new(1));
         scheduler.on_open();
 
-        assert_eq!(flushed_a.get(), 0, "window 1's hook must no longer run once unregistered");
+        assert_eq!(
+            flushed_a.get(),
+            0,
+            "window 1's hook must no longer run once unregistered"
+        );
         assert_eq!(flushed_b.get(), 1, "window 2's hook must still run");
     }
 

@@ -89,8 +89,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let band = tab.caret_band();
             move |row: &StreamRow| -> Box<dyn Widget> {
                 Box::new(stream_row(
-                    &vm, row, &header_cw, &editor_cw, &typo, flavour, &md, &format, &tw,
-                    &band,
+                    &vm, row, &header_cw, &editor_cw, &typo, flavour, &md, &format, &tw, &band,
                 ))
             }
         };

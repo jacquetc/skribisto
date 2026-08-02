@@ -81,6 +81,7 @@ mod export;
 mod icons;
 mod intents;
 mod models;
+mod note_templates;
 mod panels;
 mod sessions;
 mod settings;
@@ -678,6 +679,7 @@ fn main() {
                     include_str!("../locales/en-US/main.ftl"),
                     include_str!("../locales/en-US/tooltips.ftl"),
                     include_str!("../locales/en-US/tags.ftl"),
+                    include_str!("../locales/en-US/templates.ftl"),
                 ],
             ),
             (
@@ -686,6 +688,7 @@ fn main() {
                     include_str!("../locales/fr-FR/main.ftl"),
                     include_str!("../locales/fr-FR/tooltips.ftl"),
                     include_str!("../locales/fr-FR/tags.ftl"),
+                    include_str!("../locales/fr-FR/templates.ftl"),
                 ],
             ),
         ])

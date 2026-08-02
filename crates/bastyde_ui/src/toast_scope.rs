@@ -254,10 +254,14 @@ mod tests {
         let mut tree = crate::test_support::tree_with_toast_registry(&app_ctx, &registry);
 
         let btn_a = tree.add(Button::new(lit!("a")).on_activate_fn(move |ctx| {
-            ctx.show_toast(Toast::warning(lit!("nothing open")).scoped_id("backup.now", None::<u64>));
+            ctx.show_toast(
+                Toast::warning(lit!("nothing open")).scoped_id("backup.now", None::<u64>),
+            );
         }));
         let btn_b = tree.add(Button::new(lit!("b")).on_activate_fn(move |ctx| {
-            ctx.show_toast(Toast::warning(lit!("nothing open")).scoped_id("backup.now", None::<u64>));
+            ctx.show_toast(
+                Toast::warning(lit!("nothing open")).scoped_id("backup.now", None::<u64>),
+            );
         }));
         tree.layout(SizeProposal::exact(200.0, 80.0));
 

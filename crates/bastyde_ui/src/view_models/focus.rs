@@ -161,16 +161,18 @@ mod tests {
         // The plain F11 toggle (Increment 1) got here first. Distraction-free
         // must not treat "already fullscreen" as something *it* needs to undo
         // later.
-        let (placement, remembered) =
-            next_focus_placement(true, WindowPlacement::Fullscreen, None);
+        let (placement, remembered) = next_focus_placement(true, WindowPlacement::Fullscreen, None);
         assert_eq!(placement, None);
         assert_eq!(remembered, None);
     }
 
     #[test]
     fn leaving_restores_the_remembered_placement() {
-        let (placement, remembered) =
-            next_focus_placement(false, WindowPlacement::Fullscreen, Some(WindowPlacement::Maximized));
+        let (placement, remembered) = next_focus_placement(
+            false,
+            WindowPlacement::Fullscreen,
+            Some(WindowPlacement::Maximized),
+        );
         assert_eq!(placement, Some(WindowPlacement::Maximized));
         assert_eq!(remembered, None);
     }
@@ -180,7 +182,8 @@ mod tests {
         // Reachable when this mode entered while already fullscreen (see the
         // test above) and is now leaving — the fullscreen it didn't cause is
         // not this mode's to undo.
-        let (placement, remembered) = next_focus_placement(false, WindowPlacement::Fullscreen, None);
+        let (placement, remembered) =
+            next_focus_placement(false, WindowPlacement::Fullscreen, None);
         assert_eq!(placement, None);
         assert_eq!(remembered, None);
     }

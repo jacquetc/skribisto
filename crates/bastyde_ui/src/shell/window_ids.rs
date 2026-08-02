@@ -92,8 +92,7 @@ pub fn open_or_focus_project(
         return Some(id);
     }
     let factory = ctx.app_state::<super::windows::ProjectWindowFactory>()?;
-    let (config, _state) =
-        factory.window_config(crate::app::PendingAction::Load(path.to_string()));
+    let (config, _state) = factory.window_config(crate::app::PendingAction::Load(path.to_string()));
     Some(ctx.open_window(config))
 }
 

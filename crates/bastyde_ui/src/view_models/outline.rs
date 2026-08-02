@@ -931,9 +931,10 @@ impl OutlineViewModel {
             return;
         };
         let end = placement::subtree_end(&order, &meta, book_pos, book_indent);
-        let has_end = order[book_pos..end]
-            .iter()
-            .any(|id| meta.get(id).is_some_and(|(_role, _ind, sr)| sr.closes_book()));
+        let has_end = order[book_pos..end].iter().any(|id| {
+            meta.get(id)
+                .is_some_and(|(_role, _ind, sr)| sr.closes_book())
+        });
         if has_end {
             recs.retain(|r| !r.create_type.closes_book());
         }

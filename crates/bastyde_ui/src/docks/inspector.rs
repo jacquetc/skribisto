@@ -373,12 +373,8 @@ impl Widget for Inspector {
                             // prose_for already drops empty strings; cast_for treats
                             // empty as batch-only as well.
                             let live_prose = self.live_cast.prose_for(d.id);
-                            let cast = index.cast_for(
-                                d.id,
-                                live_prose.as_deref(),
-                                &d.references,
-                                &extra,
-                            );
+                            let cast =
+                                index.cast_for(d.id, live_prose.as_deref(), &d.references, &extra);
                             let cast_empty = cast.is_empty();
 
                             // Read current refs from the probe on each click — a frozen
@@ -392,10 +388,8 @@ impl Widget for Inspector {
                                 let pin_probe = pin_probe.clone();
                                 let index_for_filter = index_for_filter.clone();
                                 Rc::new(move |target, _c| {
-                                    let mut next = pin_probe
-                                        .dto()
-                                        .map(|x| x.references)
-                                        .unwrap_or_default();
+                                    let mut next =
+                                        pin_probe.dto().map(|x| x.references).unwrap_or_default();
                                     if !next.contains(&target) {
                                         next.push(target);
                                     }
@@ -442,9 +436,8 @@ impl Widget for Inspector {
                                 );
                             }
 
-                            let candidates = crate::tags::candidates_from_table(
-                                &index.discoverable_table(),
-                            );
+                            let candidates =
+                                crate::tags::candidates_from_table(&index.discoverable_table());
                             col = col.child(crate::tags::cast_add_button(
                                 candidates,
                                 d.references.clone(),
@@ -522,13 +515,15 @@ impl Widget for Inspector {
                                 .style(TextStyleRole::Tiny)
                                 .color(TextRole::Secondary),
                         )
-                        .child(crate::spellcheck::language_pill_field::LanguagePillField::new(
-                            value.clone(),
-                            set,
-                            spell,
-                            inherited.clone(),
-                            self.open_docs.clone(),
-                        ));
+                        .child(
+                            crate::spellcheck::language_pill_field::LanguagePillField::new(
+                                value.clone(),
+                                set,
+                                spell,
+                                inherited.clone(),
+                                self.open_docs.clone(),
+                            ),
+                        );
                     // Push this language down the subtree, one undo step (shown only when the
                     // item actually has a subtree — the same gate the export toggle uses).
                     //

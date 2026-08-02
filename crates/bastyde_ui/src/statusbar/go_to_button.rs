@@ -33,9 +33,8 @@ use bastyde::core::overlay::OverlayPlacement;
 use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    ActivateOn, Expand, FocusScope, IconButton, MinSize, Padding, PopoverIconButton,
-    ScrollBarMode, SearchField, StandardTreeItem, TextWidget, TraversalScopePolicy, TreeRow,
-    TreeView, VStack,
+    ActivateOn, Expand, FocusScope, IconButton, MinSize, Padding, PopoverIconButton, ScrollBarMode,
+    SearchField, StandardTreeItem, TextWidget, TraversalScopePolicy, TreeRow, TreeView, VStack,
 };
 
 use crate::models::TreeNode;
@@ -154,9 +153,11 @@ impl Widget for GoToPalette {
         let empty_query = vm.query();
         let empty = TextWidget::new(tr!(go_to_no_matches()))
             .color(TextRole::Secondary)
-            .visible_when(empty_query.zip(&model.version_signal()).map(move |(q, _)| {
-                !q.trim().is_empty() && count_model.visible_count() == 0
-            }));
+            .visible_when(
+                empty_query
+                    .zip(&model.version_signal())
+                    .map(move |(q, _)| !q.trim().is_empty() && count_model.visible_count() == 0),
+            );
 
         // Trap Tab inside the popover: a keyboard-only writer must be able to
         // reach the search field and the list without tabbing straight back out

@@ -502,10 +502,7 @@ impl Widget for ExportPreviewBody {
                 // fallback again.
                 let width = SettingsViewModel::new(ctx.settings()).preview_width();
                 let editor = RichTextEditor::read_only(doc).content_padding_symmetric(8.0, 8.0);
-                Box::new(
-                    Padding::symmetric(12.0, 8.0)
-                        .child(CenterColumnFill::new(editor, width)),
-                )
+                Box::new(Padding::symmetric(12.0, 8.0).child(CenterColumnFill::new(editor, width)))
             }
             None => Box::new(
                 Center::new().child(

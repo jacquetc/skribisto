@@ -456,10 +456,7 @@ mod tests {
     fn editor_body_height(paragraphs: usize, dock_height: f32) -> f32 {
         let (ctx, vm) = vm_previewing(paragraphs);
         let mut tree = crate::test_support::tree_with_settings(&ctx);
-        let root = tree.add(PreviewBody::new(
-            vm,
-            FormatViewModel::detached(),
-        ));
+        let root = tree.add(PreviewBody::new(vm, FormatViewModel::detached()));
         tree.layout(SizeProposal::exact(900.0, dock_height));
         let body = find(&tree, root, "RichTextEditorBody")
             .expect("the preview mounts a rich text editor over the previewed document");

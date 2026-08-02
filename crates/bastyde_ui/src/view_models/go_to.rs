@@ -66,8 +66,7 @@ impl GoToViewModel {
             // Always project-wide — see this module's doc.
             all_binders: Signal::new(true),
         };
-        let model =
-            BinderBinderItemsTreeModel::new(app_ctx, ids.work_id.clone(), filters.clone());
+        let model = BinderBinderItemsTreeModel::new(app_ctx, ids.work_id.clone(), filters.clone());
         Self {
             model,
             // Single: this picks one destination. `Multi` would let arrow keys
@@ -333,7 +332,10 @@ mod tests {
 
         assert!(!vm.activate(&binder_row("Writings")));
         assert_eq!(opened.get(), None, "nothing opened");
-        assert!(vm.is_open(), "the popup stays up so another row can be picked");
+        assert!(
+            vm.is_open(),
+            "the popup stays up so another row can be picked"
+        );
     }
 
     /// With no `open_fn` injected (a window whose `App` has not built yet) an

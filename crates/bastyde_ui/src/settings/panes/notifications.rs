@@ -39,9 +39,8 @@ pub(in crate::settings) fn notifications_pane(ctx: &mut BuildContext) -> Box<dyn
             let log = NotificationLog::new(archive);
             Box::new(pane_frame(
                 crumb(Some(ab), tr!(settings_page_notifications())),
-                Expand::horizontal().child(
-                    MinSize::new(0.0, LOG_MIN_HEIGHT).child(Expand::vertical().child(log)),
-                ),
+                Expand::horizontal()
+                    .child(MinSize::new(0.0, LOG_MIN_HEIGHT).child(Expand::vertical().child(log))),
             ))
         }
         None => Box::new(empty_pane(

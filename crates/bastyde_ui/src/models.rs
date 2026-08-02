@@ -39,6 +39,7 @@ mod stream_rows_model;
 mod text_replacement_rule_list_model;
 mod trash_tree_model;
 mod tree_expansion_file;
+mod work_note_templates_list_model;
 mod work_tags_list_model;
 mod workspace_layout_file;
 
@@ -73,6 +74,9 @@ pub use text_replacement_rule_list_model::{
 };
 pub use trash_tree_model::{TrashNode, TrashRootKind, TrashTreeKey, TrashTreeModel};
 pub use tree_expansion_file::TreeExpansionService;
+pub use work_note_templates_list_model::{
+    TemplateRow, WorkNoteTemplatesListModel, moved_index, starred_first,
+};
 pub use work_tags_list_model::{TagRow, WorkTagsListModel, name_key, sort_rows};
 pub use workspace_layout_file::{
     PaneLayout, PerProjectLayout, TabViewState, WorkspaceLayoutService,

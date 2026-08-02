@@ -206,7 +206,10 @@ pub fn handoff(mut stream: Stream, request: &InstanceRequest) -> bool {
             let _ = tx.send(parsed);
         });
 
-    matches!(rx.recv_timeout(ACK_TIMEOUT), Ok(Some(InstanceReply::Accepted)))
+    matches!(
+        rx.recv_timeout(ACK_TIMEOUT),
+        Ok(Some(InstanceReply::Accepted))
+    )
 }
 
 /// The command-line flag that opts out of the election entirely.

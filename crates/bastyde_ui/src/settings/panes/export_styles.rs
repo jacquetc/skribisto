@@ -123,9 +123,7 @@ pub fn export_styles_pane(ctx: &mut BuildContext, vm: &ExportStylesViewModel) ->
         .child(Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_user()))))
         .child(Padding::symmetric(6.0, 4.0).child(toolbar))
         .child(Padding::symmetric(4.0, 0.0).child(MaxSize::height(150.0).child(user_list)))
-        .child(
-            Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_editor_group()))),
-        )
+        .child(Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_editor_group()))))
         .child(StyleEditor::new(vm.clone(), selected))
 }
 

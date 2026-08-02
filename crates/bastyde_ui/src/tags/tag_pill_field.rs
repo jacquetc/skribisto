@@ -654,22 +654,14 @@ mod flow_tests {
         }
         if ids_vec.len() < 3 {
             // Headless without Work can't seed tags; layout still must not panic.
-            let field = TagPillField::new(
-                Signal::new(ids_vec),
-                Rc::new(|_, _| {}),
-                vm,
-            );
+            let field = TagPillField::new(Signal::new(ids_vec), Rc::new(|_, _| {}), vm);
             let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
             let id = tree.add_boxed(Box::new(field));
             tree.layout(SizeProposal::exact(220.0, 400.0));
             assert!(tree.bounds(id).height > 0.0);
             return;
         }
-        let field = TagPillField::new(
-            Signal::new(ids_vec),
-            Rc::new(|_, _| {}),
-            vm,
-        );
+        let field = TagPillField::new(Signal::new(ids_vec), Rc::new(|_, _| {}), vm);
         let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
         let id = tree.add_boxed(Box::new(field));
         tree.layout(SizeProposal::exact(220.0, 400.0));

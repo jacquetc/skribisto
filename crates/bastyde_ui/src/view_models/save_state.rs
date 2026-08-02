@@ -579,9 +579,15 @@ mod tests {
     fn a_foreign_op_is_ignored() {
         let vm = vm();
         seed_running(&vm, "op-1", 1);
-        assert_eq!(vm.on_save_completed(&completed_event("backup-op"), || {}), None);
+        assert_eq!(
+            vm.on_save_completed(&completed_event("backup-op"), || {}),
+            None
+        );
         assert_eq!(vm.on_save_failed(&failed_event("import-op", "x")), None);
-        assert!(vm.saving().get(), "our save is untouched by someone else's op");
+        assert!(
+            vm.saving().get(),
+            "our save is untouched by someone else's op"
+        );
     }
 
     #[test]
@@ -593,11 +599,17 @@ mod tests {
 
         vm.mark_clean();
 
-        assert!(!vm.is_unsaved(), "nothing pending against a freshly loaded work");
+        assert!(
+            !vm.is_unsaved(),
+            "nothing pending against a freshly loaded work"
+        );
         assert_eq!(vm.saved_seq().get(), vm.dirty_seq().get());
         assert!(!vm.saving().get());
         // The outgoing project's completion must not resurrect anything.
-        assert_eq!(vm.on_save_completed(&completed_event("op-old"), || {}), None);
+        assert_eq!(
+            vm.on_save_completed(&completed_event("op-old"), || {}),
+            None
+        );
     }
 
     #[test]
@@ -626,7 +638,10 @@ mod tests {
         let window_b = window_a.clone();
         let failure = failed_event("op-1", "disk full");
 
-        assert!(window_a.claim_generic_failure_report(&failure), "the first window reports");
+        assert!(
+            window_a.claim_generic_failure_report(&failure),
+            "the first window reports"
+        );
         assert!(
             !window_b.claim_generic_failure_report(&failure),
             "a sibling window must not stack a second identical toast"

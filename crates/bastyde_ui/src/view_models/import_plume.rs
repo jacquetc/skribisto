@@ -395,25 +395,19 @@ impl ImportPlumeViewModel {
                             )),
                     );
                 }
-                ctx.show_toast(
-                    Toast::success(done)
-                        .id(IMPORT_TOAST_ID)
-                        .broadcast()
-                        .action(ToastAction::primary(
-                            tr!(import_plume_open_now()),
-                            move |c| {
-                                // Opening the imported project *replaces* the one in this
-                                // window, so this goes through the `work.open_path` intent →
-                                // the unsaved-changes guard, which loads it once the open
-                                // project is saved or explicitly discarded. It used to call
-                                // `load_work` outright: importing from a window with unsaved
-                                // edits and clicking "Open now" binned them without a word.
-                                c.send_intent(AppIntent::OpenWorkPath {
-                                    path: output.clone(),
-                                });
-                            },
-                        )),
-                );
+                ctx.show_toast(Toast::success(done).id(IMPORT_TOAST_ID).broadcast().action(
+                    ToastAction::primary(tr!(import_plume_open_now()), move |c| {
+                        // Opening the imported project *replaces* the one in this
+                        // window, so this goes through the `work.open_path` intent →
+                        // the unsaved-changes guard, which loads it once the open
+                        // project is saved or explicitly discarded. It used to call
+                        // `load_work` outright: importing from a window with unsaved
+                        // edits and clicking "Open now" binned them without a word.
+                        c.send_intent(AppIntent::OpenWorkPath {
+                            path: output.clone(),
+                        });
+                    }),
+                ));
             }
             // Completed without a recoverable result (shouldn't happen) — clear
             // the loading toast with a neutral, self-dismissing notice.

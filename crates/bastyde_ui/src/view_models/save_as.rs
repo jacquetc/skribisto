@@ -486,7 +486,10 @@ mod tests {
         // enqueue` dedups on id alone) and silently retarget/steal it.
         let id_a = crate::toast_scope::work_scoped_toast_id(SAVE_AS_TOAST_ID, Some(1));
         let id_b = crate::toast_scope::work_scoped_toast_id(SAVE_AS_TOAST_ID, Some(2));
-        assert_ne!(id_a, id_b, "two different Works' Save-As toasts must never collide");
+        assert_ne!(
+            id_a, id_b,
+            "two different Works' Save-As toasts must never collide"
+        );
     }
 
     /// The test above only proves `work_scoped_toast_id` itself is collision-free

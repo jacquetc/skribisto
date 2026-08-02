@@ -547,7 +547,12 @@ mod imp {
             self.replace(keep);
         }
 
-        pub fn import(&self, rows: &[TagRow], _work_id: u64, _stack_id: Option<u64>) -> Vec<String> {
+        pub fn import(
+            &self,
+            rows: &[TagRow],
+            _work_id: u64,
+            _stack_id: Option<u64>,
+        ) -> Vec<String> {
             let mut current = self.rows();
             let mut skipped = Vec::new();
             for r in rows {

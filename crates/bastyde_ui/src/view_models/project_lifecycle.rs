@@ -83,7 +83,11 @@ use super::{
 /// a project switch), no re-attach — the caller re-attaches, so a project switch attaches
 /// once rather than twice. Also called directly from `App`'s `DictWord` event wiring, where
 /// a word was added or removed but the project did not change.
-pub(crate) fn reload_personal_words(app_ctx: &AppContext, spell: &SpellcheckService, work_id: Option<u64>) {
+pub(crate) fn reload_personal_words(
+    app_ctx: &AppContext,
+    spell: &SpellcheckService,
+    work_id: Option<u64>,
+) {
     let Some(work_id) = work_id else { return };
     let word_ids =
         work_commands::get_work_relationship(app_ctx, &work_id, &WorkRelationshipField::DictWords)

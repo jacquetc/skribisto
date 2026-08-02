@@ -10,8 +10,8 @@
 //! `panes::distraction_free` now.
 
 use bastyde::prelude::*;
-use bastyde::widgets::{ComboBox, Segment, SegmentedControl};
 use bastyde::widgets::tooltip::TooltipContent;
+use bastyde::widgets::{ComboBox, Segment, SegmentedControl};
 
 #[allow(unused_imports)]
 use super::super::*;
@@ -85,14 +85,15 @@ pub(in crate::settings) fn editor_behavior_pane(
             }
         });
     }
-    let highlight_control = HighlightScope::all().into_iter().fold(
-        SegmentedControl::new(scope_index),
-        |control, s| {
-            control.segment(
-                Segment::new(highlight_scope_label(s)).rich_tooltip_content(highlight_scope_tip(s)),
-            )
-        },
-    );
+    let highlight_control =
+        HighlightScope::all()
+            .into_iter()
+            .fold(SegmentedControl::new(scope_index), |control, s| {
+                control.segment(
+                    Segment::new(highlight_scope_label(s))
+                        .rich_tooltip_content(highlight_scope_tip(s)),
+                )
+            });
 
     let form = FormLayout::new()
         .label(tr!(settings_page_editor_behavior()))

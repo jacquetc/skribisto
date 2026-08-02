@@ -198,7 +198,8 @@ impl WorkSession {
 
         let dict_words = DictWordListModel::new(app_ctx.clone(), ids.clone());
         let single_dict_word = SingleDictWord::new(app_ctx.clone());
-        let user_dictionary = UserDictionaryViewModel::new(dict_words, single_dict_word, ids.clone());
+        let user_dictionary =
+            UserDictionaryViewModel::new(dict_words, single_dict_word, ids.clone());
 
         let smart_punctuation = SingleSmartPunctuation::new(app_ctx.clone());
 
@@ -291,7 +292,10 @@ mod tests {
         let b = WorkSession::for_test();
 
         a.backup_mode.set(true);
-        assert!(a.backup_mode.get(), "Work A's own flag must reflect its own write");
+        assert!(
+            a.backup_mode.get(),
+            "Work A's own flag must reflect its own write"
+        );
         assert!(
             !b.backup_mode.get(),
             "Work B's backup_mode must be untouched by Work A's write — a fresh Signal, not a shared one"
@@ -328,7 +332,10 @@ mod tests {
         let b = WorkSession::for_test();
 
         a.unsaved.set(true);
-        assert!(a.unsaved.get(), "Work A's own flag must reflect its own write");
+        assert!(
+            a.unsaved.get(),
+            "Work A's own flag must reflect its own write"
+        );
         assert!(
             !b.unsaved.get(),
             "Work B's unsaved must be untouched by Work A's write — a fresh Signal, not a shared one"

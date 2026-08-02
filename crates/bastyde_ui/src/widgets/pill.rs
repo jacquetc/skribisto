@@ -616,11 +616,17 @@ mod tests {
     /// puts one pill per line and the Inspector "flow" looks broken.
     #[test]
     fn coloured_pills_wrap_instead_of_each_taking_a_full_line() {
-        use bastyde::widgets::Wrap;
         use crate::tags::contrast;
+        use bastyde::widgets::Wrap;
         let mut tree = WidgetTree::new().with_theme(bastyde::presets::intui::light());
         let mut flow = Wrap::new().spacing(6.0).line_spacing(6.0);
-        for name in ["Character", "Place", "status/draft", "needs research", "Plot"] {
+        for name in [
+            "Character",
+            "Place",
+            "status/draft",
+            "needs research",
+            "Plot",
+        ] {
             let fill = contrast::parse("#2980b9");
             flow = flow.child(
                 Pill::new(name, lit!(name))

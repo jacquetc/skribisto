@@ -297,11 +297,7 @@ mod tests {
     #[test]
     fn suggestions_pin_and_confirmed_unpin() {
         let rows = vec![row(2, "Suggested", false, "x"), row(3, "Pinned", true, "x")];
-        assert_eq!(
-            button_count(rows, true, true),
-            2,
-            "one pin + one unpin"
-        );
+        assert_eq!(button_count(rows, true, true), 2, "one pin + one unpin");
     }
 
     /// A backlinks list has no pin/unpin at all: those write the *owner* item's

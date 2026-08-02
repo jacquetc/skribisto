@@ -239,7 +239,11 @@ mod tests {
                 .caret_highlight(Color::rgb(1, 2, 3), Some("en".into()))
                 .is_none()
         );
-        assert!(CaretHighlightSettings::off().caret_highlight(None).is_none());
+        assert!(
+            CaretHighlightSettings::off()
+                .caret_highlight(None)
+                .is_none()
+        );
     }
 
     #[test]
@@ -266,10 +270,13 @@ mod tests {
             .caret_highlight(color, None)
             .expect("a band");
         assert_eq!(band.format.background_color, Some(color));
-        assert_eq!(band.format, HighlightFormat {
-            background_color: Some(color),
-            ..Default::default()
-        });
+        assert_eq!(
+            band.format,
+            HighlightFormat {
+                background_color: Some(color),
+                ..Default::default()
+            }
+        );
     }
 
     #[test]

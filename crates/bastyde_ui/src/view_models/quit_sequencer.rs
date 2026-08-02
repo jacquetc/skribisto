@@ -64,9 +64,7 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use bastyde::prelude::*;
-use bastyde::widgets::{
-    MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton,
-};
+use bastyde::widgets::{MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton};
 use frontend::commands::work_management_commands;
 use frontend::work_management::CloseWorkDto;
 use frontend::{AppContext, Event};
@@ -203,12 +201,7 @@ impl QuitSequencer {
     }
 
     /// Prompt for a Work whose edits can still be written.
-    fn ask_save_discard_cancel(
-        &self,
-        ctx: &mut EventContext,
-        work_id: u64,
-        session: &WorkSession,
-    ) {
+    fn ask_save_discard_cancel(&self, ctx: &mut EventContext, work_id: u64, session: &WorkSession) {
         let me = self.clone();
         let session = session.clone();
         MessageBox::question(tr!(quit_save_work_question(
@@ -287,7 +280,9 @@ impl QuitSequencer {
     /// `on_close_flow` calls that immediately and this is effectively a
     /// straight-through step.
     fn back_up_then_continue(&self, ctx: &mut EventContext, session: &WorkSession) {
-        session.backup_scheduler.on_close_flow(ctx, PendingExit::Quit);
+        session
+            .backup_scheduler
+            .on_close_flow(ctx, PendingExit::Quit);
     }
 
     /// One Work's on-close backup finished (or did not apply): move on.
@@ -337,9 +332,9 @@ impl QuitSequencer {
             return self.advance(ctx);
         };
         let flush_session = session.clone();
-        session
-            .save_state
-            .on_save_completed(event, move || flush_session.backup_scheduler.flush_all_windows());
+        session.save_state.on_save_completed(event, move || {
+            flush_session.backup_scheduler.flush_all_windows()
+        });
         if session.save_state.saved_seq().get() >= covers {
             self.inner.waiting.borrow_mut().take();
             // Saved and consistent — now this Work's on-close backup, then the
@@ -534,7 +529,10 @@ mod tests {
         tree.run_with_event_context(&mut bastyde::core::NoopWindowOps, |ctx| {
             q.discard_and_continue(ctx);
         });
-        assert!(!q.is_active(), "discard finishes the quit when nothing remains");
+        assert!(
+            !q.is_active(),
+            "discard finishes the quit when nothing remains"
+        );
         assert!(q.inner.queue.borrow().is_empty());
     }
 

@@ -586,7 +586,6 @@ fn spell_underline_color(c: bastyde::tokens::Color) -> bastyde::text_document::C
     bastyde::text_document::Color::rgb(to_u8(r), to_u8(g), to_u8(b))
 }
 
-
 /// After a project becomes live, offer to install any dictionary its declared languages need
 /// but the machine lacks — one aggregated toast (never one per language), whose action opens
 /// Settings ▸ Dictionaries with the missing set highlighted. Purely additive and dismissible,

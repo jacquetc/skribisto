@@ -30,7 +30,10 @@ mod migration;
 mod reader;
 pub mod retention;
 mod shape;
-mod slug;
+/// Filesystem-safe name shaping. `pub` because the UI's template export needs the same
+/// `slugify` the bundle writer uses — a name the writer typed must land on one safe path
+/// segment on both paths, and two spellings of that rule would be two behaviours.
+pub mod slug;
 mod sniff;
 #[cfg(test)]
 mod tests;

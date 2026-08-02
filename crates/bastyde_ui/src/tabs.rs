@@ -489,28 +489,26 @@ impl ContentTab {
         let caret_locale = docs.effective_language(open_doc.item_id).first().cloned();
         // The Corkboard exists for exactly the folder containers a stream does. Built
         // before `stream` consumes `app_ctx`.
-        let corkboard =
-            crate::models::StreamLevel::for_container(&open_doc.role, &open_doc.sub_role).map(
-                |_| {
-                    let cd = &corkboard_defaults;
-                    crate::view_models::CorkboardViewModel::new(
-                        app_ctx.clone(),
-                        ids.clone(),
-                        docs.clone(),
-                        open_doc.item_id,
-                        cd.nested.clone(),
-                        cd.card_size.clone(),
-                        cd.show_word_count.clone(),
-                        cd.counting_method.clone(),
-                        typography.corkboard.clone(),
-                        crate::view_models::CaretBand::new(
-                            caret_highlight.clone(),
-                            caret_locale.clone(),
-                        ),
-                        format.clone(),
-                    )
-                },
-            );
+        let corkboard = crate::models::StreamLevel::for_container(
+            &open_doc.role,
+            &open_doc.sub_role,
+        )
+        .map(|_| {
+            let cd = &corkboard_defaults;
+            crate::view_models::CorkboardViewModel::new(
+                app_ctx.clone(),
+                ids.clone(),
+                docs.clone(),
+                open_doc.item_id,
+                cd.nested.clone(),
+                cd.card_size.clone(),
+                cd.show_word_count.clone(),
+                cd.counting_method.clone(),
+                typography.corkboard.clone(),
+                crate::view_models::CaretBand::new(caret_highlight.clone(), caret_locale.clone()),
+                format.clone(),
+            )
+        });
         // The Overview gates on `overview_capable`, which is deliberately *not* the
         // stream's gate — a notes folder gets a table but no stream. Built before
         // `stream` consumes `app_ctx`. It reuses the corkboard's counting-method setting
@@ -2174,7 +2172,7 @@ mod tests {
                 Signal::new(true),
                 typo.clone(),
                 crate::view_models::TypewriterSettings::off(),
-            crate::view_models::CaretHighlightSettings::off(),
+                crate::view_models::CaretHighlightSettings::off(),
                 crate::view_models::EditorViewMemory::detached(false),
                 crate::view_models::CorkboardDefaults::detached(),
                 crate::view_models::TreeExpansionViewModel::new(

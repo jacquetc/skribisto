@@ -110,8 +110,10 @@ mod tests {
     #[test]
     fn leaving_fullscreen_restores_the_remembered_maximized_not_floating() {
         // A hardcoded `Floating` restore would get this wrong.
-        let (placement, remembered) =
-            next_fullscreen_state(WindowPlacement::Fullscreen, Some(WindowPlacement::Maximized));
+        let (placement, remembered) = next_fullscreen_state(
+            WindowPlacement::Fullscreen,
+            Some(WindowPlacement::Maximized),
+        );
         assert_eq!(placement, WindowPlacement::Maximized);
         assert_eq!(remembered, None);
     }

@@ -498,9 +498,8 @@ mod tests {
         // Generous: longer than almost any real macOS short name.
         let long_user = "jean-baptiste-de-la";
         for user in ["bo", "cyril", long_user] {
-            let dir = format!(
-                "/Users/{user}/Library/Application Support/eu.skribisto.Skribisto/run"
-            );
+            let dir =
+                format!("/Users/{user}/Library/Application Support/eu.skribisto.Skribisto/run");
             for leaf in [
                 SocketId::Primary.leaf(),
                 SocketId::Pid(4_294_967_295).leaf(),
@@ -545,7 +544,10 @@ mod tests {
             SocketId::Primary.leaf(),
             SocketId::Pid(4_294_967_295).leaf(),
         ] {
-            assert!(!leaf.contains('/') && !leaf.contains('\\'), "{leaf} has a separator");
+            assert!(
+                !leaf.contains('/') && !leaf.contains('\\'),
+                "{leaf} has a separator"
+            );
             assert!(leaf.len() <= 16, "{leaf} is {} bytes", leaf.len());
         }
     }

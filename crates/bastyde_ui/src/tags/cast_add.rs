@@ -92,12 +92,9 @@ impl Widget for CastAddPopover {
             .filter(|c| key.is_empty() || name_key(&c.title).contains(&key))
             .collect();
 
-        let mut col = VStack::new()
-            .spacing(6.0)
-            .child(
-                TextInput::new(self.query.clone())
-                    .placeholder(tr!(cast_add_filter_placeholder())),
-            );
+        let mut col = VStack::new().spacing(6.0).child(
+            TextInput::new(self.query.clone()).placeholder(tr!(cast_add_filter_placeholder())),
+        );
 
         if rows.is_empty() {
             col = col.child(
@@ -138,10 +135,7 @@ impl Widget for CastAddPopover {
             );
         }
 
-        let id = ctx.add(
-            Panel::new()
-                .child(Padding::symmetric(8.0, 8.0).child(col)),
-        );
+        let id = ctx.add(Panel::new().child(Padding::symmetric(8.0, 8.0).child(col)));
         self.root_child = Some(id);
         vec![id]
     }
@@ -179,15 +173,12 @@ pub fn cast_add_button(
     pin: PinReference,
 ) -> impl Widget {
     PopoverButton::new(
-        bastyde::widgets::Button::new(tr!(cast_add())).variant(bastyde::widgets::ButtonVariant::Plain),
+        bastyde::widgets::Button::new(tr!(cast_add()))
+            .variant(bastyde::widgets::ButtonVariant::Plain),
     )
     .content(
-        FocusScope::new(TraversalScopePolicy::Cycle).child(CastAddPopover::new(
-            candidates,
-            already,
-            owner_id,
-            pin,
-        )),
+        FocusScope::new(TraversalScopePolicy::Cycle)
+            .child(CastAddPopover::new(candidates, already, owner_id, pin)),
     )
 }
 
@@ -252,10 +243,7 @@ impl LiveCastOverlay {
         if self.item_id.get() != Some(item_id) {
             return None;
         }
-        self.prose
-            .borrow()
-            .clone()
-            .filter(|s| !s.is_empty())
+        self.prose.borrow().clone().filter(|s| !s.is_empty())
     }
 
     /// Focus moved: clear stale prose and schedule a refresh soon.

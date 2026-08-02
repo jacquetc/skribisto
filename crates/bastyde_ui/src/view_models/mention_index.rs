@@ -39,7 +39,9 @@ use bastyde::text_document::matching::FoldLocale;
 use frontend::AppContext;
 use frontend::commands::mention_management_commands;
 use frontend::common::event::Event;
-use frontend::mention_management::{MentionEntity, MentionHit, MentionHits, MentionTable, ScanMentionsDto};
+use frontend::mention_management::{
+    MentionEntity, MentionHit, MentionHits, MentionTable, ScanMentionsDto,
+};
 use skribisto_model::mentions::{self, DiscoverableEntity};
 
 use crate::app_ids::AppIds;
@@ -284,9 +286,7 @@ impl MentionIndex {
         let confirmed_set: HashMap<u64, ()> = confirmed
             .iter()
             .copied()
-            .filter(|&id| {
-                id != owner_id && (table.is_empty() || table.iter().any(|e| e.id == id))
-            })
+            .filter(|&id| id != owner_id && (table.is_empty() || table.iter().any(|e| e.id == id)))
             .map(|id| (id, ()))
             .collect();
 
@@ -362,16 +362,18 @@ impl MentionIndex {
                     let Some(entity) = table.iter().find(|e| e.id == h.entity_id) else {
                         continue;
                     };
-                    let row = live_counts.entry(h.entity_id).or_insert_with(|| MentionRow {
-                        owner_id,
-                        target_id: h.entity_id,
-                        title: entity.title.clone(),
-                        matched_name: h.matched_name(entity).to_string(),
-                        is_title_match: h.is_title_match,
-                        hit_count: 0,
-                        is_confirmed: false,
-                        evidence: mentions::evidence_sentence(prose, h),
-                    });
+                    let row = live_counts
+                        .entry(h.entity_id)
+                        .or_insert_with(|| MentionRow {
+                            owner_id,
+                            target_id: h.entity_id,
+                            title: entity.title.clone(),
+                            matched_name: h.matched_name(entity).to_string(),
+                            is_title_match: h.is_title_match,
+                            hit_count: 0,
+                            is_confirmed: false,
+                            evidence: mentions::evidence_sentence(prose, h),
+                        });
                     row.hit_count += 1;
                 }
                 for row in live_counts.into_values() {
@@ -631,7 +633,11 @@ mod tests {
         by_owner.insert(1, vec![suggestion(1, 10, "Grace", 2, false)]);
         let index = seeded_index(vec![entity(10, "Grace")], by_owner);
         let cast = index.cast_for(1, Some(""), &[], &[]);
-        assert_eq!(cast.len(), 1, "batch suggestion must survive empty live prose");
+        assert_eq!(
+            cast.len(),
+            1,
+            "batch suggestion must survive empty live prose"
+        );
         assert_eq!(cast[0].hit_count, 2);
         assert!(!cast[0].is_confirmed);
     }
@@ -658,10 +664,7 @@ mod tests {
     fn cast_for_chapter_pin_is_independent_of_children() {
         let mut by_owner = HashMap::new();
         by_owner.insert(2, vec![suggestion(2, 10, "Grace", 1, false)]);
-        let index = seeded_index(
-            vec![entity(10, "Grace"), entity(11, "Will")],
-            by_owner,
-        );
+        let index = seeded_index(vec![entity(10, "Grace"), entity(11, "Will")], by_owner);
         // Chapter pins Will only; Grace is a child suggestion.
         let cast = index.cast_for(1, None, &[11], &[2]);
         assert_eq!(cast.len(), 2);
@@ -671,7 +674,10 @@ mod tests {
 
     #[test]
     fn filter_cast_targets_drops_self_and_unknown() {
-        let index = seeded_index(vec![entity(10, "Elena"), entity(11, "Dock")], HashMap::new());
+        let index = seeded_index(
+            vec![entity(10, "Elena"), entity(11, "Dock")],
+            HashMap::new(),
+        );
         assert_eq!(
             index.filter_cast_targets(1, &[10, 1, 10, 99, 11]),
             vec![10, 11]

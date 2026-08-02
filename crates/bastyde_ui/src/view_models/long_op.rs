@@ -240,7 +240,8 @@ mod captured_work_tests {
         let captured = CapturedWork::now(&ids);
         ids.work_id.set(Some(2));
         assert_eq!(
-            captured, Some(1),
+            captured,
+            Some(1),
             "the captured value must stay pinned to what `now` read, not follow \
              the live `AppIds` it was captured from"
         );

@@ -49,11 +49,8 @@ pub(in crate::settings) fn work_structure_pane(
             Toggle::new(flat)
                 .label(tr!(settings_chapter_flat()))
                 .rich_tooltip_content(
-                    TooltipContent::new(
-                        "settings.chapter_flat",
-                        tr!(new_work_chapter_scene_tip()),
-                    )
-                    .with_more(tr!(new_work_chapter_scene_tip_more())),
+                    TooltipContent::new("settings.chapter_flat", tr!(new_work_chapter_scene_tip()))
+                        .with_more(tr!(new_work_chapter_scene_tip_more())),
                 ),
         );
 
