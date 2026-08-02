@@ -16,9 +16,8 @@
 //! comparable tool does too — Obsidian inserts at the cursor, Scrivener spawns a new
 //! document rather than overwriting one.
 
-use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
-use bastyde::widgets::Toast;
+use bastyde::widgets::{InputDialog, Toast};
 
 use crate::app_ids::HasWorkId;
 use crate::intents::AppIntent;
@@ -77,17 +76,74 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 );
                 return;
             }
-            let vm = templates.clone();
-            c.present_modal(
-                ModalRequest::deferred(move |t| {
-                    t.add(crate::note_templates::SaveAsTemplatePanel::new(vm, body))
-                })
-                .presentation(ModalPresentation::InTree)
-                .title("Save as template")
-                .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                .size(460, 260),
-            );
+            present_save_as_template(&templates, body, String::new(), c);
             let _ = &format;
         }));
     }
+}
+
+/// Present the name prompt for **Save as template**, and create the template on OK.
+///
+/// An `InputDialog`, not a hand-built modal: this captures exactly one short string,
+/// which is the case its own doc reserves it for ("forms longer than a single field
+/// belong in a custom `Dialog`"). It is also what `binder.rename` uses, so the two
+/// name prompts in the app look and behave the same.
+///
+/// `InputDialog` has no live validation and no disable-until-valid OK, so the duplicate
+/// check happens on confirm — and on a clash the dialog is **re-presented with the name
+/// still in it** rather than simply refused. Losing what you typed to a toast would be
+/// the worse half of every trade here: the writer's next move is to adjust the name they
+/// just chose, not to type it again from nothing.
+fn present_save_as_template(
+    templates: &crate::view_models::NoteTemplatesViewModel,
+    body: String,
+    seed: String,
+    ctx: &mut EventContext,
+) {
+    let templates = templates.clone();
+    InputDialog::new(tr!(save_as_template_title()))
+        .prompt(tr!(save_as_template_explain()))
+        .placeholder(tr!(save_as_template_placeholder()))
+        .default_text(seed)
+        .ok_label(tr!(save_as_template_confirm()))
+        .on_result(move |result, c| {
+            // Cancel, or an empty name: nothing to do, and nothing worth saying — the
+            // same silence `begin_rename` gives.
+            let Some(name) = result else { return };
+            if name.trim().is_empty() {
+                return;
+            }
+            // The duplicate case is checked here rather than left to the error string
+            // `save_as_template` returns: that string is a bare `bail!`, so it would reach
+            // the writer untranslated. Every other failure is genuinely exceptional and
+            // falls through to the generic message.
+            if let Some(clash) = templates.duplicate_name(&name, None) {
+                c.show_toast(
+                    Toast::warning(tr!(save_as_template_duplicate(name = clash)))
+                        .scoped_id("templates.error", templates.work_id())
+                        .target_work(templates.work_id()),
+                );
+                present_save_as_template(&templates, body.clone(), name, c);
+                return;
+            }
+            match templates.save_as_template(&name, &body) {
+                Ok(_) => {
+                    c.show_toast(
+                        Toast::info(tr!(save_as_template_saved(name = name.trim().to_string())))
+                            .scoped_id("templates.saved", templates.work_id())
+                            .target_work(templates.work_id()),
+                    );
+                }
+                Err(e) => {
+                    c.show_toast(
+                        Toast::warning(lit!(format!("{e:#}")))
+                            .scoped_id("templates.error", templates.work_id())
+                            .target_work(templates.work_id()),
+                    );
+                    // Straight back to the prompt, carrying what was typed.
+                    present_save_as_template(&templates, body.clone(), name, c);
+                }
+            }
+        })
+        .present(ctx);
 }
