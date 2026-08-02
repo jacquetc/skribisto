@@ -394,8 +394,27 @@ impl From<Event> for FlatEvent {
     }
 }
 
-/// Returns `true` if this event kind represents an entity mutation (created, updated, or removed).
-pub fn is_mutation(kind: &FlatEventKind) -> bool {
+/// Returns `true` if this event kind is a **per-entity** mutation — one of the
+/// `…Created` / `…Updated` / `…Removed` variants.
+///
+/// ⚠ This is **not** "did the store change?", and must not be used for
+/// dirty-tracking. Every `…Management…` use-case event is excluded, and several
+/// of them mutate entities *without* emitting any per-entity event:
+///
+/// * `NoteTemplateManagementImportNoteTemplates` and `TagManagementImportTags`
+///   create their rows through the `CreateOrphan` UoW action, which writes to
+///   the store and publishes nothing per row — the whole batch is announced by
+///   the single feature-level event, so it is one undo step rather than N.
+/// * The `TrashManagement…` and `BinderItemManagement…` families are the same
+///   shape.
+///
+/// So a caller asking "does this Work have unsaved changes?" would silently miss
+/// a bulk import, a trash operation and every binder-item command. Saving is
+/// sequence-tracked through `EditorsViewModel`'s `dirty_seq` instead — see
+/// `view_models::save_queue`. If a genuine store-changed predicate is ever
+/// needed, it has to enumerate the mutating feature-level events too; widening
+/// this one in place would give it two contradictory meanings.
+pub fn is_entity_mutation(kind: &FlatEventKind) -> bool {
     use FlatEventKind::*;
     matches!(
         kind,
@@ -489,85 +508,121 @@ mod tests {
     }
 
     #[test]
-    fn test_is_mutation() {
-        assert!(is_mutation(&FlatEventKind::RootCreated));
-        assert!(is_mutation(&FlatEventKind::RootUpdated));
-        assert!(is_mutation(&FlatEventKind::RootRemoved));
+    fn test_is_entity_mutation() {
+        assert!(is_entity_mutation(&FlatEventKind::RootCreated));
+        assert!(is_entity_mutation(&FlatEventKind::RootUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::RootRemoved));
 
-        assert!(is_mutation(&FlatEventKind::SystemCreated));
-        assert!(is_mutation(&FlatEventKind::SystemUpdated));
-        assert!(is_mutation(&FlatEventKind::SystemRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::SystemCreated));
+        assert!(is_entity_mutation(&FlatEventKind::SystemUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::SystemRemoved));
 
-        assert!(is_mutation(&FlatEventKind::WorkInfoCreated));
-        assert!(is_mutation(&FlatEventKind::WorkInfoUpdated));
-        assert!(is_mutation(&FlatEventKind::WorkInfoRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::WorkInfoCreated));
+        assert!(is_entity_mutation(&FlatEventKind::WorkInfoUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::WorkInfoRemoved));
 
-        assert!(is_mutation(&FlatEventKind::ProgressSnapshotCreated));
-        assert!(is_mutation(&FlatEventKind::ProgressSnapshotUpdated));
-        assert!(is_mutation(&FlatEventKind::ProgressSnapshotRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::ProgressSnapshotCreated));
+        assert!(is_entity_mutation(&FlatEventKind::ProgressSnapshotUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::ProgressSnapshotRemoved));
 
-        assert!(is_mutation(&FlatEventKind::SearchCreated));
-        assert!(is_mutation(&FlatEventKind::SearchUpdated));
-        assert!(is_mutation(&FlatEventKind::SearchRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::SearchCreated));
+        assert!(is_entity_mutation(&FlatEventKind::SearchUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::SearchRemoved));
 
-        assert!(is_mutation(&FlatEventKind::SearchResultCreated));
-        assert!(is_mutation(&FlatEventKind::SearchResultUpdated));
-        assert!(is_mutation(&FlatEventKind::SearchResultRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::SearchResultCreated));
+        assert!(is_entity_mutation(&FlatEventKind::SearchResultUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::SearchResultRemoved));
 
-        assert!(is_mutation(&FlatEventKind::RecentWorkCreated));
-        assert!(is_mutation(&FlatEventKind::RecentWorkUpdated));
-        assert!(is_mutation(&FlatEventKind::RecentWorkRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::RecentWorkCreated));
+        assert!(is_entity_mutation(&FlatEventKind::RecentWorkUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::RecentWorkRemoved));
 
-        assert!(is_mutation(&FlatEventKind::WorkCreated));
-        assert!(is_mutation(&FlatEventKind::WorkUpdated));
-        assert!(is_mutation(&FlatEventKind::WorkRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::WorkCreated));
+        assert!(is_entity_mutation(&FlatEventKind::WorkUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::WorkRemoved));
 
-        assert!(is_mutation(&FlatEventKind::SmartPunctuationCreated));
-        assert!(is_mutation(&FlatEventKind::SmartPunctuationUpdated));
-        assert!(is_mutation(&FlatEventKind::SmartPunctuationRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::SmartPunctuationCreated));
+        assert!(is_entity_mutation(&FlatEventKind::SmartPunctuationUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::SmartPunctuationRemoved));
 
-        assert!(is_mutation(&FlatEventKind::TrashInfoCreated));
-        assert!(is_mutation(&FlatEventKind::TrashInfoUpdated));
-        assert!(is_mutation(&FlatEventKind::TrashInfoRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::TrashInfoCreated));
+        assert!(is_entity_mutation(&FlatEventKind::TrashInfoUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::TrashInfoRemoved));
 
-        assert!(is_mutation(&FlatEventKind::PaceCreated));
-        assert!(is_mutation(&FlatEventKind::PaceUpdated));
-        assert!(is_mutation(&FlatEventKind::PaceRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::PaceCreated));
+        assert!(is_entity_mutation(&FlatEventKind::PaceUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::PaceRemoved));
 
-        assert!(is_mutation(&FlatEventKind::HolidayCreated));
-        assert!(is_mutation(&FlatEventKind::HolidayUpdated));
-        assert!(is_mutation(&FlatEventKind::HolidayRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::HolidayCreated));
+        assert!(is_entity_mutation(&FlatEventKind::HolidayUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::HolidayRemoved));
 
-        assert!(is_mutation(&FlatEventKind::MilestoneCreated));
-        assert!(is_mutation(&FlatEventKind::MilestoneUpdated));
-        assert!(is_mutation(&FlatEventKind::MilestoneRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::MilestoneCreated));
+        assert!(is_entity_mutation(&FlatEventKind::MilestoneUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::MilestoneRemoved));
 
-        assert!(is_mutation(&FlatEventKind::BinderCreated));
-        assert!(is_mutation(&FlatEventKind::BinderUpdated));
-        assert!(is_mutation(&FlatEventKind::BinderRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::BinderCreated));
+        assert!(is_entity_mutation(&FlatEventKind::BinderUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::BinderRemoved));
 
-        assert!(is_mutation(&FlatEventKind::BinderItemCreated));
-        assert!(is_mutation(&FlatEventKind::BinderItemUpdated));
-        assert!(is_mutation(&FlatEventKind::BinderItemRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::BinderItemCreated));
+        assert!(is_entity_mutation(&FlatEventKind::BinderItemUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::BinderItemRemoved));
 
-        assert!(is_mutation(&FlatEventKind::BinderTagCreated));
-        assert!(is_mutation(&FlatEventKind::BinderTagUpdated));
-        assert!(is_mutation(&FlatEventKind::BinderTagRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::BinderTagCreated));
+        assert!(is_entity_mutation(&FlatEventKind::BinderTagUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::BinderTagRemoved));
 
-        assert!(is_mutation(&FlatEventKind::ContentCreated));
-        assert!(is_mutation(&FlatEventKind::ContentUpdated));
-        assert!(is_mutation(&FlatEventKind::ContentRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::ContentCreated));
+        assert!(is_entity_mutation(&FlatEventKind::ContentUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::ContentRemoved));
 
-        assert!(is_mutation(&FlatEventKind::DictWordCreated));
-        assert!(is_mutation(&FlatEventKind::DictWordUpdated));
-        assert!(is_mutation(&FlatEventKind::DictWordRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::DictWordCreated));
+        assert!(is_entity_mutation(&FlatEventKind::DictWordUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::DictWordRemoved));
 
-        assert!(is_mutation(&FlatEventKind::TextReplacementRuleCreated));
-        assert!(is_mutation(&FlatEventKind::TextReplacementRuleUpdated));
-        assert!(is_mutation(&FlatEventKind::TextReplacementRuleRemoved));
+        assert!(is_entity_mutation(&FlatEventKind::TextReplacementRuleCreated));
+        assert!(is_entity_mutation(&FlatEventKind::TextReplacementRuleUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::TextReplacementRuleRemoved));
 
-        assert!(!is_mutation(&FlatEventKind::Reset));
-        assert!(!is_mutation(&FlatEventKind::UndoPerformed));
-        assert!(!is_mutation(&FlatEventKind::LongOperationStarted));
+        assert!(is_entity_mutation(&FlatEventKind::NoteTemplateCreated));
+        assert!(is_entity_mutation(&FlatEventKind::NoteTemplateUpdated));
+        assert!(is_entity_mutation(&FlatEventKind::NoteTemplateRemoved));
+
+        assert!(!is_entity_mutation(&FlatEventKind::Reset));
+        assert!(!is_entity_mutation(&FlatEventKind::UndoPerformed));
+        assert!(!is_entity_mutation(&FlatEventKind::LongOperationStarted));
+    }
+
+    /// The boundary this predicate deliberately draws, pinned so nobody widens
+    /// it by halves. Every one of these use-case events DOES change the store,
+    /// and none of them emits a per-entity event to go with it (their rows are
+    /// written through `CreateOrphan`-style UoW actions so the batch is a single
+    /// undo step). They are excluded on purpose: `is_entity_mutation` answers
+    /// "was this a per-entity event?", never "did anything change?".
+    ///
+    /// Adding just one family back — say the two bulk imports — would leave the
+    /// predicate meaning neither thing. If a store-changed predicate is wanted,
+    /// it belongs beside this one, enumerating all of these.
+    #[test]
+    fn feature_level_mutations_are_not_entity_mutations() {
+        for kind in [
+            FlatEventKind::NoteTemplateManagementImportNoteTemplates,
+            FlatEventKind::TagManagementImportTags,
+            FlatEventKind::TrashManagementTrashBinderItems,
+            FlatEventKind::TrashManagementRestoreItems,
+            FlatEventKind::TrashManagementEmptyTrash,
+            FlatEventKind::TrashManagementDeleteTrashEntries,
+            FlatEventKind::BinderItemManagementDuplicate,
+            FlatEventKind::BinderItemManagementMoveItems,
+            FlatEventKind::BinderItemManagementMergeTwoScenes,
+            FlatEventKind::BinderItemManagementSplitScene,
+            FlatEventKind::BinderItemManagementPromote,
+        ] {
+            assert!(
+                !is_entity_mutation(&kind),
+                "{kind:?} is a feature-level use-case event, not a per-entity                  mutation — see `is_entity_mutation`'s docs before changing this"
+            );
+        }
     }
 }

@@ -5663,10 +5663,8 @@ dependencies = [
  "anyhow",
  "chrono",
  "serde",
- "serde_json",
  "skribisto-common",
  "skribisto-macros",
- "uuid",
 ]
 
 [[package]]

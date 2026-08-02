@@ -125,7 +125,7 @@ impl NoteTemplatesViewModel {
     /// dialog exists to prevent, with nothing to notice it by.
     ///
     /// Bulk creation (importing a file, applying a preset) deliberately does **not** come
-    /// through here — it goes to `WorkNoteTemplatesListModel::create_all`, so the whole
+    /// through here — it goes to [`WorkNoteTemplatesListModel::import`], so the whole
     /// batch is one undo step rather than N.
     fn create(&self, name: &str, body: &str, starred: bool) -> Option<u64> {
         if name.trim().is_empty() {

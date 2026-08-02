@@ -2059,8 +2059,6 @@ mod tests {
         );
     }
 
-    /// Hiding the synopsis pane must give its space back to the prose.
-    ///
     /// Every **on-screen** prose editor's rect, in tree order.
     ///
     /// Two filters, both load-bearing. Dormant subtrees are skipped: a `Switcher`
@@ -2506,6 +2504,8 @@ mod tests {
         assert!(!m.is_collapsed(0), "a fresh tab has not been folded away");
     }
 
+    /// Hiding the synopsis pane must give its space back to the prose.
+    ///
     /// It used to be a `Switcher` (which parks a zero-size page); it is now
     /// `VisibleWhen`, which sends the node *dormant* — out of layout entirely. This
     /// pins the property that actually matters to the writer: with the pane off, the
