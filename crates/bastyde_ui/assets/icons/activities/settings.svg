@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Settings — a cog. The teeth start ON the ring, not detached from a small
+       hub: spokes floating away from a dot read as a sun at rail glyph size. -->
+  <circle cx="8" cy="8" r="4.2"/>
+  <circle cx="8" cy="8" r="1.6"/>
+  <path d="M12.2 8h1.9M1.9 8h1.9"/>
+  <path d="M10.1 11.64l.95 1.64M4.95 2.72l.95 1.64"/>
+  <path d="M5.9 11.64l-.95 1.64M11.05 2.72l-.95 1.64"/>
+</svg>

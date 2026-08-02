@@ -156,6 +156,9 @@ statusbar-focus-exit = Quitter le mode sans distraction
 statusbar-focus-go-prev = Élément précédent (Alt+Haut)
 statusbar-focus-go-next = Élément suivant (Alt+Bas)
 
+## Actions de la barre d'activités (commandes sans dock dans la barre d'icônes)
+rail-settings = Paramètres
+
 ## Paramètres
 language = Langue
 theme = Thème

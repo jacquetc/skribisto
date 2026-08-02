@@ -10,11 +10,20 @@ use std::rc::Rc;
 
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Divider, DockCorner, DockOpenLocation, DockRail, DockRailItemSize, DockSide, DockingLayout,
-    DropRegion, DropTarget, DropTargetVariant, Expand, HStack, IconButton, IconButtonSize,
-    NotificationArchiveModel, RowDragData, Spacer, Splitter, StatusBar, TabBarVisibility,
-    TextWidget, VStack,
+    Divider, DockAction, DockActionId, DockActionPlacement, DockCorner, DockOpenLocation, DockRail,
+    DockRailItemSize, DockSide, DockingLayout, DropRegion, DropTarget, DropTargetVariant, Expand,
+    HStack, IconButton, IconButtonSize, NotificationArchiveModel, RowDragData, Spacer, Splitter,
+    StatusBar, TabBarVisibility, TextWidget, VStack,
 };
+
+/// The leading rail's Settings cog — a dockless [`DockAction`], not an activity:
+/// it opens the Settings *window*, so there is no dock for it to front.
+///
+/// Pinned past the rail's spacer (the VS Code Manage-gear position). It fires
+/// the existing `app.settings` global action rather than building the modal
+/// itself, so the rail button, the Work ▸ Settings menu item and Ctrl+, can
+/// never drift apart.
+const SETTINGS_ACTION: DockActionId = DockActionId::named("skribisto.settings");
 
 use crate::models::TreeNode;
 use crate::tabs::shared::editor::VisibleWhen;
@@ -209,7 +218,16 @@ impl App {
             .rail(
                 DockRail::new(DockSide::Leading)
                     .background(SurfaceRole::Main)
-                    .divider(),
+                    .divider()
+                    .action(
+                        DockAction::new(
+                            SETTINGS_ACTION,
+                            tr!(rail_settings()),
+                            crate::icons::activity::settings_icon,
+                            |ctx| ctx.send_intent(Intent::new("app.settings")),
+                        )
+                        .placement(DockActionPlacement::Pinned),
+                    ),
             )
             .rail(
                 DockRail::new(DockSide::Trailing)

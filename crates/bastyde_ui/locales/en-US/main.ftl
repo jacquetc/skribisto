@@ -156,6 +156,9 @@ statusbar-focus-exit = Exit distraction-free mode
 statusbar-focus-go-prev = Previous item (Alt+Up)
 statusbar-focus-go-next = Next item (Alt+Down)
 
+## Activity-rail actions (dockless commands in the icon rail)
+rail-settings = Settings
+
 ## Settings
 language = Language
 theme = Theme

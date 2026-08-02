@@ -54,3 +54,11 @@ pub fn inspector_icon() -> IconWidget {
 pub fn sidebar_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/sidebar.svg"))
 }
+
+/// The Settings cog. Unlike every other glyph here it fronts no activity — it is
+/// the leading rail's pinned `DockAction`, sitting past the spacer at the bottom
+/// of the bar (the VS Code Manage-gear position). A cog rather than a sixth
+/// panel silhouette, so it reads as "a command" and not "one more dock".
+pub fn settings_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/settings.svg"))
+}
