@@ -21,6 +21,8 @@
 //! The base is deliberately high so it can never collide with a `fresh()` id
 //! (the framework mints those from `1`, e.g. for a user-dragged dock split).
 
+use bastyde::widgets::{DockOpenLocation, DockSide, DockWidgetId};
+
 /// Base for the fixed app-dock ids (see the module docs). Chosen well above any
 /// `DockWidgetId::fresh()` value the process could reach.
 const DOCK_ID_BASE: u64 = 0xD0C_0000;
@@ -41,8 +43,105 @@ pub const COMMENTS_DOCK_ID: u64 = DOCK_ID_BASE + 7;
 /// This document's comments (trailing rail, third tab).
 pub const DOC_COMMENTS_DOCK_ID: u64 = DOCK_ID_BASE + 8;
 
-pub mod create_split_button;
+/// One app dock's declared home: its stable id plus where it mounts on a desk
+/// nobody has arranged yet.
+pub struct AppDock {
+    pub id: u64,
+    pub side: DockSide,
+    /// `true` → its own rail tab (one panel visible at a time); `false` → stacked
+    /// into the side's active tab (a vertical split showing both at once).
+    pub own_tab: bool,
+}
+
+impl AppDock {
+    pub fn widget_id(&self) -> DockWidgetId {
+        DockWidgetId::from_raw(self.id)
+    }
+
+    /// Where [`DockingModel::open_dock`](bastyde::widgets::DockingModel::open_dock)
+    /// should put it.
+    pub fn location(&self) -> DockOpenLocation {
+        let loc = DockOpenLocation::side(self.side);
+        if self.own_tab { loc.new_tab() } else { loc }
+    }
+}
+
+/// **The app's dock roster**, in first-run mount order.
+///
+/// This is a table rather than just the call sequence in
+/// [`project_shell`](crate::app::project_shell) because it has two consumers that
+/// must never disagree:
+///
+/// 1. the **first-run mount**, which walks it to arrange a fresh desk; and
+/// 2. the **restore-time reconcile**
+///    ([`WorkspaceLayoutViewModel::restore`](crate::view_models::WorkspaceLayoutViewModel::restore)),
+///    which mounts any dock a saved desk has never heard of.
+///
+/// Consumer 2 is why adding a dock here is the *whole* job. A saved
+/// `DockLayoutState` is a closed list: `import_state` rebuilds the rail purely
+/// from the snapshot, so a dock that is registered but unmentioned is silently
+/// never mounted. That is how the two comments docks vanished from every project
+/// whose desk predated them — the same way the Format dock did before, which was
+/// then papered over by dropping *everyone's* saved arrangement at `workspace.toml`
+/// v2 → v3. The reconcile removes the need for that blunt instrument, but only for
+/// docks listed here: one added straight to `project_shell` and not to this table
+/// would be invisible to every existing project all over again.
+pub const APP_DOCKS: &[AppDock] = &[
+    // Leading rail — "where am I in the project": four switchable activities.
+    AppDock {
+        id: OUTLINE_DOCK_ID,
+        side: DockSide::Leading,
+        own_tab: true,
+    },
+    AppDock {
+        id: SEARCH_DOCK_ID,
+        side: DockSide::Leading,
+        own_tab: true,
+    },
+    AppDock {
+        id: TRASH_DOCK_ID,
+        side: DockSide::Leading,
+        own_tab: true,
+    },
+    AppDock {
+        id: COMMENTS_DOCK_ID,
+        side: DockSide::Leading,
+        own_tab: true,
+    },
+    // Trailing rail — "what is in front of me right now". The inspector is the
+    // side's first tab (stacked, since the side starts empty); the other two join
+    // it as sibling tabs rather than starving it in a split.
+    AppDock {
+        id: INSPECTOR_DOCK_ID,
+        side: DockSide::Trailing,
+        own_tab: false,
+    },
+    AppDock {
+        id: FORMAT_DOCK_ID,
+        side: DockSide::Trailing,
+        own_tab: true,
+    },
+    AppDock {
+        id: DOC_COMMENTS_DOCK_ID,
+        side: DockSide::Trailing,
+        own_tab: true,
+    },
+    // The transient search-preview band. Mounted, then hidden — see
+    // `project_shell` and `WorkspaceLayoutViewModel`'s module docs.
+    AppDock {
+        id: PREVIEW_DOCK_ID,
+        side: DockSide::Bottom,
+        own_tab: false,
+    },
+];
+
+/// Every roster id, for the `known_docks` set persisted with a captured desk.
+pub fn app_dock_ids() -> Vec<u64> {
+    APP_DOCKS.iter().map(|d| d.id).collect()
+}
+
 pub mod comments;
+pub mod create_split_button;
 pub mod format;
 pub mod inspector;
 pub mod outline;

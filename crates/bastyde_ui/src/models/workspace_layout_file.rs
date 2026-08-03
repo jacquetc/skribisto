@@ -129,6 +129,28 @@ pub struct PerProjectLayout {
     /// a blob this build can't read (see [`lenient_docks`]).
     #[serde(default, deserialize_with = "lenient_docks")]
     pub docks: Option<DockLayoutState>,
+    /// Every dock id the build that wrote [`Self::docks`] **knew about**, whether or
+    /// not it was open at the time.
+    ///
+    /// This is what makes "absent from the snapshot" readable. A `DockLayoutState`
+    /// is a closed list and `import_state` rebuilds the rail purely from it, so a
+    /// dock the app registers but the snapshot never mentions is silently dropped.
+    /// Without this field the two reasons a dock can be missing are
+    /// indistinguishable:
+    ///
+    /// * **the user closed it** — `close_dock` removes it from the layout; it must
+    ///   stay closed, or every launch would overrule that choice; versus
+    /// * **it did not exist yet** — a dock shipped after this desk was last
+    ///   captured; it must be mounted, or the feature is invisible to everyone with
+    ///   an existing project.
+    ///
+    /// Recording the roster resolves it by subtraction: *listed but absent* is the
+    /// first case, *unlisted* is the second. That is what let v5 replace the
+    /// blunt "drop every saved arrangement" migration the Format dock needed at
+    /// v2 → v3 (see [`migrator`]), and what makes the next dock need no migration
+    /// at all.
+    #[serde(default)]
+    pub known_docks: Vec<u64>,
 }
 
 /// Deserialize the embedded [`DockLayoutState`] **tolerantly**: on any error, drop
@@ -202,7 +224,11 @@ impl Versioned for WorkspaceLayoutFile {
     ///
     /// **v4** adds per-tab caret + scroll ([`PaneLayout::view_states`]). Purely
     /// additive — no data is reshaped and nothing is dropped.
-    const CURRENT_VERSION: u32 = 4;
+    ///
+    /// **v5** records [`PerProjectLayout::known_docks`] so a dock added after a desk
+    /// was captured can be told apart from one the user closed (see [`migrator`]).
+    /// Additive too — and it is what retires the drop-everything approach v3 took.
+    const CURRENT_VERSION: u32 = 5;
     fn version(&self) -> u32 {
         self.version
     }
@@ -237,6 +263,14 @@ impl Versioned for WorkspaceLayoutFile {
 /// the default; tabs, splitter and focused pane are untouched, and the next close
 /// re-captures the arrangement. Cheap at alpha, and honest — the alternative is a feature
 /// nobody with an existing project can find.
+///
+/// **v4 → v5 keeps everything**, and retires that trade-off. The two comments docks hit
+/// exactly the v2 → v3 problem — every project captured before they shipped restored
+/// without them — but this time the fix records *why* a dock is missing instead of
+/// destroying the evidence: each row is stamped with the roster its author knew, so the
+/// restore-time reconcile can mount what is genuinely new and leave closed what the user
+/// closed (see [`PerProjectLayout::known_docks`]). Nothing is dropped; a customised dock
+/// layout survives, and the next dock added needs no migration step at all.
 fn migrator() -> Migrator<WorkspaceLayoutFile> {
     Migrator::new()
         .step(1, |mut raw| {
@@ -270,6 +304,46 @@ fn migrator() -> Migrator<WorkspaceLayoutFile> {
         // rewriting it and dropping everyone's caret positions. Same shape as
         // `dictionary_settings_file`'s own additive bump.
         .step(3, Ok)
+        // **v4 → v5: stamp each row with the roster its author knew.**
+        //
+        // These ids are written out as literals, and deliberately *not* read from
+        // `crate::docks`, because they are a historical fact rather than a current
+        // one: they are the docks a build that could produce a v4 file knew about —
+        // outline, search, inspector, preview, trash, format. `docks::APP_DOCKS`
+        // describes today's app and will keep growing; pointing at it here would
+        // silently rewrite history on every future release, telling the reconcile a
+        // v4 desk already knew about docks that did not exist when it was saved —
+        // which is precisely the "silently never mounted" bug this exists to fix. A
+        // migration step must stay frozen at the moment it describes.
+        //
+        // Absent from this list, and so correctly seen as new by the reconcile:
+        // `COMMENTS_DOCK_ID` (0xD0C_0007) and `DOC_COMMENTS_DOCK_ID` (0xD0C_0008).
+        .step(4, |mut raw| {
+            const V4_DOCKS: [i64; 6] = [
+                0xD0C_0001, 0xD0C_0002, 0xD0C_0003, 0xD0C_0004, 0xD0C_0005, 0xD0C_0006,
+            ];
+            if let Some(projects) = raw.get_mut("projects").and_then(|p| p.as_array_mut()) {
+                for project in projects.iter_mut() {
+                    if let Some(t) = project.as_table_mut() {
+                        // A row with no `docks` blob restores from the *defaults*,
+                        // which already carry the whole current roster — stamping it
+                        // would be a claim about a snapshot that does not exist, and
+                        // would then suppress the reconcile for a row that never
+                        // needed it.
+                        if !t.contains_key("docks") {
+                            continue;
+                        }
+                        t.insert(
+                            "known_docks".to_string(),
+                            toml::Value::Array(
+                                V4_DOCKS.iter().copied().map(toml::Value::Integer).collect(),
+                            ),
+                        );
+                    }
+                }
+            }
+            Ok(raw)
+        })
 }
 
 /// Persistent workspace-layout service. `SettingsFile` is `Clone` (shares the
@@ -412,6 +486,7 @@ mod tests {
             focus_secondary: false,
             editor_splitter: None,
             docks: Some(DockLayoutState::default()),
+            known_docks: vec![1, 2, 3],
         }
     }
 
@@ -486,6 +561,80 @@ tabs = []
         assert!(
             got.primary.view_states.is_empty(),
             "nothing remembered yet, but the field must exist rather than fail the load"
+        );
+    }
+
+    /// **v4 → v5 stamps the roster and destroys nothing.** This is the migration that
+    /// let the comments docks reach existing projects *without* repeating v2 → v3's
+    /// blanket "drop every saved arrangement": the row keeps its docks, tabs, splitter
+    /// and focused pane, and merely gains the list of docks its author knew.
+    #[test]
+    fn the_v5_migration_stamps_the_v4_roster_and_keeps_the_saved_docks() {
+        let d = tempdir().unwrap();
+        let path = d.path().join("workspace.toml");
+        // Build a genuine v4 document: a real serialized `DockLayoutState` (a
+        // hand-written partial one is silently dropped by `lenient_docks`, which
+        // would make this test pass for the wrong reason), stamped back to version 4
+        // with the v5-only key removed.
+        let mut f = WorkspaceLayoutFile {
+            version: 4,
+            projects: vec![PerProjectLayout {
+                focus_secondary: true,
+                ..sample("uid-A")
+            }],
+        };
+        f.projects[0].known_docks.clear();
+        let text = toml::to_string(&f)
+            .unwrap()
+            .replace("known_docks = []\n", "");
+        assert!(
+            !text.contains("known_docks"),
+            "the fixture must be a real v4 file — no v5 key"
+        );
+        std::fs::write(&path, text).unwrap();
+
+        let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+        let got = s.get("uid-A").expect("the row survived the migration");
+        assert_eq!(
+            got.known_docks,
+            vec![
+                0xD0C_0001, 0xD0C_0002, 0xD0C_0003, 0xD0C_0004, 0xD0C_0005, 0xD0C_0006
+            ],
+            "stamped with the six docks a v4-era build knew — comments (7, 8) deliberately absent"
+        );
+        assert!(
+            got.docks.is_some(),
+            "unlike v2 -> v3, the saved arrangement is KEPT"
+        );
+        assert_eq!(
+            got.primary.tabs,
+            vec![u(3), u(7), u(1)],
+            "and so are the tabs, in order"
+        );
+        assert_eq!(got.secondary.tabs, vec![u(9)]);
+        assert!(got.focus_secondary, "and the focused pane");
+    }
+
+    /// A row with **no** `docks` blob is not stamped. It restores from the pristine
+    /// defaults, which already carry the whole current roster, so claiming it knew
+    /// only the v4 six would be false — and would then suppress a reconcile for a row
+    /// that never needed one.
+    #[test]
+    fn the_v5_migration_does_not_stamp_a_row_that_saved_no_docks() {
+        let d = tempdir().unwrap();
+        let path = d.path().join("workspace.toml");
+        std::fs::write(
+            &path,
+            "version = 4\n\n[[projects]]\nwork_uid = \"uid-A\"\n[projects.primary]\n\
+             tabs = [\"00000000-0000-0000-0000-000000000001\"]\n",
+        )
+        .unwrap();
+        let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+        let got = s.get("uid-A").unwrap();
+        assert!(got.docks.is_none());
+        assert!(
+            got.known_docks.is_empty(),
+            "no snapshot to describe, so no claim about what its author knew"
         );
     }
 

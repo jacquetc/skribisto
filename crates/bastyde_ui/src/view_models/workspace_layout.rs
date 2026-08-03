@@ -201,6 +201,11 @@ impl WorkspaceLayoutViewModel {
             focus_secondary: editors.focused_side() == Side::Secondary,
             editor_splitter: split_active.then(|| editors.splitter().export_state()),
             docks: Some(self.docking.export_state()),
+            // Stamp the desk with the roster *this* build knows, so a later build
+            // can tell a dock it added from one the writer closed. Deliberately the
+            // whole roster, not the currently-open subset: a closed dock is exactly
+            // what has to stay distinguishable from a not-yet-invented one.
+            known_docks: crate::docks::app_dock_ids(),
         };
         if let Err(e) = self.service.set(record) {
             eprintln!("skribisto: workspace layout capture failed: {e}");
@@ -285,8 +290,14 @@ impl WorkspaceLayoutViewModel {
         // Docks first: this project's saved arrangement, or reset to the default so
         // an unconfigured project (or a backup view) never inherits the previous
         // one's docks.
-        match saved.as_ref().and_then(|r| r.docks.as_ref()) {
-            Some(docks) => self.docking.import_state(docks),
+        match saved
+            .as_ref()
+            .and_then(|r| r.docks.as_ref().map(|d| (d, &r.known_docks)))
+        {
+            Some((docks, known)) => {
+                self.docking.import_state(docks);
+                self.mount_docks_added_since(known);
+            }
             None => self.apply_default_docks(),
         }
         // Always hidden at start — the bottom band is the transient search-preview;
@@ -378,6 +389,50 @@ impl WorkspaceLayoutViewModel {
         }
     }
 
+    /// Mount every roster dock the desk we just imported had never heard of.
+    ///
+    /// A saved `DockLayoutState` is a **closed list**: `import_state` rebuilds the
+    /// rail purely from the snapshot, so a dock that is registered but unmentioned
+    /// is silently never mounted. That is the whole bug — the two comments docks
+    /// disappeared from every project captured before they shipped, exactly as the
+    /// Format dock had. `known_docks` is what makes "unmentioned" readable: a dock
+    /// the saved desk *listed* and still omitted was closed by the user and stays
+    /// closed; one it never listed did not exist yet, and belongs on the rail.
+    fn mount_docks_added_since(&self, known: &[u64]) {
+        let unknown = unknown_dock_ids(&crate::docks::app_dock_ids(), known);
+        if unknown.is_empty() {
+            return;
+        }
+        // `open_dock` reveals the target side and, for an own-tab placement, selects
+        // the tab it just created — both would overrule the desk that was just
+        // imported, so a project left showing the binder would come back showing
+        // Comments, on a side the writer had collapsed. Snapshot the two, mount, put
+        // them back. Tab *indices* survive this: an own-tab open appends, and a
+        // stacked one only adds a pane to an existing tab.
+        let before: Vec<(DockSide, bool, usize)> = DOCK_SIDES
+            .iter()
+            .map(|&s| {
+                (
+                    s,
+                    self.docking.is_side_visible(s),
+                    self.docking.side_selected_tab(s),
+                )
+            })
+            .collect();
+
+        for dock in crate::docks::APP_DOCKS
+            .iter()
+            .filter(|d| unknown.contains(&d.id))
+        {
+            self.docking.open_dock(dock.widget_id(), dock.location());
+        }
+
+        for (side, visible, selected) in before {
+            self.docking.select_tab(side, selected);
+            self.docking.set_side_visible_immediate(side, visible);
+        }
+    }
+
     // ── Backend enumeration ─────────────────────────────────────────────────────
 
     /// The open project's binder items in the flat, binder-major stream order (through
@@ -398,6 +453,29 @@ impl WorkspaceLayoutViewModel {
 // next open shifted every later ordinal, so the desk reopened a *neighbour* of each tab
 // the writer had left open, silently and with no way to tell. `BinderItem.uid` (`.skrib`
 // v3) is stable across a save → load, so a restore now reopens the item itself.
+
+/// Every dock side, for the snapshot-mount-restore in [`WorkspaceLayoutViewModel::mount_docks_added_since`].
+const DOCK_SIDES: [DockSide; 4] = [
+    DockSide::Leading,
+    DockSide::Trailing,
+    DockSide::Top,
+    DockSide::Bottom,
+];
+
+/// Roster ids that `known` does not list — the docks a saved desk had never heard
+/// of, in roster order.
+///
+/// The subtraction is the whole mechanism, so it is a free function rather than a
+/// closure inside the mount: "absent because it did not exist yet" (mount it) versus
+/// "absent because the user closed it" (leave it closed) is the distinction the
+/// `known_docks` field exists to make, and it is worth testing on its own.
+fn unknown_dock_ids(roster: &[u64], known: &[u64]) -> Vec<u64> {
+    roster
+        .iter()
+        .copied()
+        .filter(|id| !known.contains(id))
+        .collect()
+}
 
 /// Item ids → their durable uids, dropping any not present (a tab whose item left the
 /// binder since capture) and any still nil-identified (a pre-v3 item not yet healed).
@@ -437,9 +515,190 @@ fn split_and_focus(secondary_count: usize, want_focus_secondary: bool) -> (bool,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::docks::{COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID, OUTLINE_DOCK_ID, TRASH_DOCK_ID};
+    use bastyde::prelude::*;
+    use bastyde::widgets::{DockWidget, DockWidgetId, DockingLayout, RectWidget};
+
+    /// The roster a build that could write a `workspace.toml` **v4** knew — the six
+    /// docks that predate comments. The same list the v4 → v5 migration stamps.
+    const V4_ROSTER: [u64; 6] = [
+        0xD0C_0001, 0xD0C_0002, 0xD0C_0003, 0xD0C_0004, 0xD0C_0005, 0xD0C_0006,
+    ];
 
     fn u(n: u128) -> Uuid {
         Uuid::from_u128(n)
+    }
+
+    /// A `DockingModel` with every roster dock **registered** (but none mounted).
+    /// `DockingLayout::dock` registers eagerly at builder time, so the builder can
+    /// be dropped straight away — no widget tree needed.
+    fn registered_model() -> DockingModel {
+        let model = DockingModel::new();
+        let mut layout = DockingLayout::new(model.clone());
+        for dock in crate::docks::APP_DOCKS {
+            layout = layout.dock(DockWidget::new(dock.widget_id(), lit!("Dock"), |_| {
+                RectWidget::new()
+            }));
+        }
+        drop(layout);
+        model
+    }
+
+    fn vm_with(docking: DockingModel) -> WorkspaceLayoutViewModel {
+        let app_ctx = Rc::new(AppContext::new());
+        let ids = AppIds::new();
+        WorkspaceLayoutViewModel::new(
+            app_ctx.clone(),
+            crate::models::WorkspaceLayoutService::in_memory_default(),
+            docking,
+            SingleWork::new(app_ctx.clone()),
+            SingleWorkInfo::new(app_ctx.clone()),
+            ids.clone(),
+            Signal::new(false),
+            TreeExpansionViewModel::new(
+                app_ctx,
+                ids,
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+        )
+    }
+
+    /// Mount only the docks a v4-era build knew, in roster order — i.e. reproduce
+    /// the desk a pre-comments Skribisto would have captured.
+    fn desk_as_of_v4(model: &DockingModel) {
+        for dock in crate::docks::APP_DOCKS
+            .iter()
+            .filter(|d| V4_ROSTER.contains(&d.id))
+        {
+            model.open_dock(dock.widget_id(), dock.location());
+        }
+    }
+
+    fn is_open(model: &DockingModel, id: u64) -> bool {
+        model.dock_location(DockWidgetId::from_raw(id)).is_some()
+    }
+
+    /// **The bug, pinned.** A desk captured before the comments docks existed
+    /// restores without them: `import_state` rebuilds the rail purely from the
+    /// snapshot, so a registered-but-unmentioned dock is silently dropped. This is
+    /// what the user saw opening Starforgers — and it fails *before* the reconcile
+    /// exists, which is what makes the next test meaningful.
+    #[test]
+    fn a_pre_comments_desk_restores_without_the_comments_docks() {
+        let model = registered_model();
+        desk_as_of_v4(&model);
+        let v4_snapshot = model.export_state();
+
+        // A fresh process, this build: every dock registered, then the old desk imported.
+        let fresh = registered_model();
+        fresh.import_state(&v4_snapshot);
+
+        assert!(is_open(&fresh, OUTLINE_DOCK_ID), "the old docks come back");
+        assert!(
+            !is_open(&fresh, COMMENTS_DOCK_ID) && !is_open(&fresh, DOC_COMMENTS_DOCK_ID),
+            "…but a dock the snapshot never mentions is dropped, however registered it is"
+        );
+    }
+
+    /// The fix: the reconcile mounts what the saved desk had never heard of, on the
+    /// side the roster declares — **without** disturbing what the import restored.
+    #[test]
+    fn the_reconcile_mounts_docks_added_since_the_desk_was_captured() {
+        let model = registered_model();
+        desk_as_of_v4(&model);
+        // A desk left mid-arrangement: the binder selected (not the last leading
+        // tab), and the trailing side collapsed.
+        model.select_tab(DockSide::Leading, 0);
+        model.set_side_visible_immediate(DockSide::Trailing, false);
+        let v4_snapshot = model.export_state();
+
+        let fresh = registered_model();
+        let vm = vm_with(fresh.clone());
+        fresh.import_state(&v4_snapshot);
+        vm.mount_docks_added_since(&V4_ROSTER);
+
+        assert!(
+            is_open(&fresh, COMMENTS_DOCK_ID) && is_open(&fresh, DOC_COMMENTS_DOCK_ID),
+            "both comments docks are back on the rail"
+        );
+        assert_eq!(
+            fresh
+                .dock_location(DockWidgetId::from_raw(COMMENTS_DOCK_ID))
+                .map(|l| l.side),
+            Some(DockSide::Leading),
+            "project-wide comments joins the leading rail"
+        );
+        assert_eq!(
+            fresh
+                .dock_location(DockWidgetId::from_raw(DOC_COMMENTS_DOCK_ID))
+                .map(|l| l.side),
+            Some(DockSide::Trailing),
+            "this document's comments joins the trailing rail"
+        );
+        // …and the desk the writer left is untouched. `open_dock` selects the tab it
+        // creates and reveals the side, so without the snapshot-restore in
+        // `mount_docks_added_since` this project would reopen showing Comments on a
+        // side the writer had collapsed.
+        assert_eq!(
+            fresh.side_selected_tab(DockSide::Leading),
+            0,
+            "the binder is still the selected leading activity"
+        );
+        assert!(
+            !fresh.is_side_visible(DockSide::Trailing),
+            "a collapsed side stays collapsed"
+        );
+    }
+
+    /// The distinction the whole `known_docks` field exists to make: a dock the
+    /// writer **closed** is also absent from the snapshot, and must stay closed. Only
+    /// a dock the saved desk never listed is treated as new.
+    #[test]
+    fn a_dock_the_writer_closed_is_not_re_mounted() {
+        let model = registered_model();
+        desk_as_of_v4(&model);
+        model.close_dock(DockWidgetId::from_raw(TRASH_DOCK_ID));
+        // This build knows the whole roster, so *that* is what a capture stamps —
+        // trash included, even though it is closed.
+        let known = crate::docks::app_dock_ids();
+        let snapshot = model.export_state();
+
+        let fresh = registered_model();
+        let vm = vm_with(fresh.clone());
+        fresh.import_state(&snapshot);
+        vm.mount_docks_added_since(&known);
+
+        assert!(
+            !is_open(&fresh, TRASH_DOCK_ID),
+            "closed by the writer, and listed as known — it stays closed"
+        );
+    }
+
+    /// A desk captured by *this* build needs no reconcile at all — the common path,
+    /// and it must not churn the layout.
+    #[test]
+    fn a_current_desk_is_left_exactly_alone() {
+        let roster = crate::docks::app_dock_ids();
+        assert!(
+            unknown_dock_ids(&roster, &roster).is_empty(),
+            "nothing to mount when the saved desk knew every dock"
+        );
+    }
+
+    /// The subtraction itself, including the case that actually shipped: today's
+    /// roster minus a v4 stamp is exactly the two comments docks. A dock added to
+    /// `project_shell` but not to `APP_DOCKS` would leave this list short — which is
+    /// the failure mode the roster's own doc warns about.
+    #[test]
+    fn a_v4_stamp_leaves_exactly_the_two_comments_docks_unknown() {
+        assert_eq!(
+            unknown_dock_ids(&crate::docks::app_dock_ids(), &V4_ROSTER),
+            vec![COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID],
+            "these two, and only these two, postdate a v4 desk"
+        );
+        // Order follows the roster, not the known set.
+        assert_eq!(unknown_dock_ids(&[3, 1, 2], &[2]), vec![3, 1]);
+        assert!(unknown_dock_ids(&[], &[1, 2]).is_empty());
     }
 
     fn stream() -> Vec<BinderItemRef> {

@@ -10,10 +10,10 @@ use std::rc::Rc;
 
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Divider, DockAction, DockActionId, DockActionPlacement, DockCorner, DockOpenLocation, DockRail,
-    DockRailItemSize, DockSide, DockingLayout, DropRegion, DropTarget, DropTargetVariant, Expand,
-    HStack, IconButton, IconButtonSize, NotificationArchiveModel, RowDragData, Spacer, Splitter,
-    StatusBar, TabBarVisibility, TextWidget, VStack,
+    Divider, DockAction, DockActionId, DockActionPlacement, DockCorner, DockRail, DockRailItemSize,
+    DockSide, DockingLayout, DropRegion, DropTarget, DropTargetVariant, Expand, HStack, IconButton,
+    IconButtonSize, NotificationArchiveModel, RowDragData, Spacer, Splitter, StatusBar,
+    TabBarVisibility, TextWidget, VStack,
 };
 
 /// The leading rail's Settings cog — a dockless [`DockAction`], not an activity:
@@ -295,65 +295,30 @@ impl App {
         // First-build-only default arrangement (see the config block above on why
         // it must not re-run on rebuilds).
         if !self.initial_loaded {
-            // The leading side hosts TWO activity docks (binder + search) as separate
-            // switchable rail tabs — VS Code style: the rail shows both glyphs, and
-            // selecting one shows only its panel. `.new_tab()` is what makes them
-            // distinct tabs; the default `side()` placement *stacks* (a vertical
-            // split showing both at once, which starves the binder). The binder is
-            // revealed last so it is the selected leading panel on launch.
+            // Arrange the pristine desk straight from the dock roster, in its
+            // declared order. The roster — not this sequence — is the single source
+            // of truth, because the restore-time reconcile reads the same table to
+            // mount docks a saved desk has never heard of; see `docks::APP_DOCKS`
+            // for why a dock listed in only one of the two goes missing.
+            //
+            // Each side hosts its docks as separate switchable rail tabs — VS Code
+            // style: the rail shows every glyph, selecting one shows only its panel.
+            // That is `own_tab`; the stacking placement instead shows both at once in
+            // a vertical split, which starves the binder.
             let docking = outline.docking();
-            docking.open_dock(
-                outline.dock_id(),
-                DockOpenLocation::side(DockSide::Leading).new_tab(),
-            );
-            docking.open_dock(
-                self.search_dock,
-                DockOpenLocation::side(DockSide::Leading).new_tab(),
-            );
-            docking.open_dock(
-                self.trash_dock,
-                DockOpenLocation::side(DockSide::Leading).new_tab(),
-            );
-            // Comments joins the leading rail as a fourth tab: it is project-wide
-            // navigation, which is exactly what this rail is for.
-            docking.open_dock(
-                self.comments_dock,
-                DockOpenLocation::side(DockSide::Leading).new_tab(),
-            );
+            for dock in crate::docks::APP_DOCKS {
+                docking.open_dock(dock.widget_id(), dock.location());
+            }
+            // The binder is the selected leading panel on launch, and the inspector
+            // the trailing one: both are the older habit, and their rail siblings are
+            // one click away. Revealed after the whole roster is mounted, since each
+            // `own_tab` open selects the tab it just created.
             docking.reveal_dock(outline.dock_id());
-            // Mount the inspector on the trailing side (otherwise the side shows the
-            // empty "drop a panel here" placeholder).
-            docking.open_dock(
-                self.inspector_dock,
-                DockOpenLocation::side(DockSide::Trailing),
-            );
-            // Format joins it as a second rail tab rather than a second side.
-            // Inspector answers "what is this item", Format answers "how does
-            // this text read" — same trailing rail, one visible at a time,
-            // because a writer wants one question answered at a time and the
-            // 300px side has no room to stack both.
-            docking.open_dock(
-                self.format_dock,
-                DockOpenLocation::side(DockSide::Trailing).new_tab(),
-            );
-            // This document's comments joins as a third trailing tab. The rail is
-            // already the "what is in front of me right now" rail — Inspector
-            // answers what this item is, Format how the text reads, Comments what
-            // is annotated in it — so it is a third member of that family rather
-            // than a fourth, orthogonal concept.
-            docking.open_dock(
-                self.doc_comments_dock,
-                DockOpenLocation::side(DockSide::Trailing).new_tab(),
-            );
-            // Inspector is the one that starts showing: it is the older habit,
-            // and Format is reachable in one click on the rail.
             docking.reveal_dock(self.inspector_dock);
-            // Mount the bottom preview band, then hide it: it is the transient
-            // search-preview band, always hidden at start (a result click reveals it
-            // thereafter). `open_dock` makes its side visible as a side effect, so the
-            // hide must follow the mount — and it is *immediate* to avoid an
-            // opening-then-closing flash on launch.
-            docking.open_dock(self.preview_dock, DockOpenLocation::side(DockSide::Bottom));
+            // The bottom band is the transient search-preview: always hidden at start
+            // (a result click reveals it thereafter). `open_dock` makes its side
+            // visible as a side effect, so the hide must follow the mount — and it is
+            // *immediate* to avoid an opening-then-closing flash on launch.
             docking.set_side_visible_immediate(DockSide::Bottom, false);
             // Snapshot this pristine arrangement as the reset target for a project
             // that has no saved layout (so an in-place switch to an unconfigured
