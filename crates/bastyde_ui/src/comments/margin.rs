@@ -49,6 +49,20 @@ pub const MARGIN_WIDTH: f32 = 300.0;
 /// Space between the text column and the card column, which the leaders cross.
 pub const LEADER_GUTTER: f32 = 28.0;
 
+/// The full width a margin occupies once it has a card to show: the card column
+/// plus the gutter the leaders cross.
+///
+/// The one place this sum is written. A page reserving a gutter
+/// ([`page_gutter`](crate::tabs::shared::stream)) and the margin reporting its own
+/// width ([`CommentMargin::layout_response`]) have to agree to the pixel — when they
+/// disagree the commented rows sit on a different measure from the rest and the
+/// manuscript zigzags down the page. Computing the sum separately at each site
+/// still compiles after only one of them is updated, which is exactly how that
+/// mismatch gets reintroduced.
+pub const fn reserved_width() -> f32 {
+    MARGIN_WIDTH + LEADER_GUTTER
+}
+
 const TRIANGLE: f32 = 5.0;
 const BRACKET_TOOTH: f32 = 6.0;
 const DASH: f32 = 3.0;
@@ -241,19 +255,19 @@ impl CommentMargin {
         // rather than the widget top because that is the only reference the editor
         // handle actually exposes; it is short by the editor's top padding, which
         // the trailing `GAP` below more than covers.
+        // `0.0` when the editor has no laid-out rect yet — which is the same condition
+        // under which `resolve_marks` above already returned nothing, so this only ever
+        // pairs with an empty `marks` and the stack below collapses to `GAP`. (An
+        // earlier version derived a base from the marks here; it read as meaningful
+        // per-mark math but could not run, because `offset_rect` and `range_rect` share
+        // one underlying range window and so fail together before layout.)
         let base = self
             .editor
             .borrow()
             .as_ref()
             .and_then(|h| h.offset_rect(0))
             .map(|r| r.y)
-            .unwrap_or_else(|| {
-                marks
-                    .iter()
-                    .map(|m| m.y)
-                    .fold(f32::INFINITY, f32::min)
-                    .min(0.0)
-            });
+            .unwrap_or(0.0);
         layout::stack(&self.card_requests(&marks, base, ctx))
             .iter()
             .map(|p| p.y + p.height)
@@ -350,7 +364,7 @@ impl Widget for CommentMargin {
         let width = if self.cards.is_empty() {
             0.0
         } else {
-            MARGIN_WIDTH + LEADER_GUTTER
+            reserved_width()
         };
         // **Its own width, never the proposal's.** `SizeProposal::resolve` hands
         // back whatever it was proposed and only falls through to the default when

@@ -94,7 +94,19 @@ impl CommentBinding {
     /// hidden by Tools ▸ Comments produces no card, and a gutter reserved for it
     /// would be an empty column the writer cannot get rid of.
     pub fn has_live_cards(&self) -> bool {
-        self.vm.is_visible() && self.live().iter().any(|a| !a.resolved && a.end > a.start)
+        if !self.vm.is_visible() {
+            return false;
+        }
+        // The row lookup is not redundant with the anchor filter: `CommentMargin::build`
+        // skips any anchor whose id does not resolve against `rows_for_content`, so an
+        // anchor the session still lists but the model no longer backs mounts no card.
+        // Answering `true` for one of those would reserve the full column and then put
+        // nothing in it — the empty gutter this predicate exists to prevent. Both sides
+        // must ask the same question, so ask it the same way.
+        let rows = self.vm.model().rows_for_content(self.content_id);
+        self.live()
+            .iter()
+            .any(|a| !a.resolved && a.end > a.start && rows.iter().any(|r| r.id == a.comment_id))
     }
 
     pub fn view_model(&self) -> CommentsViewModel {

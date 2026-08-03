@@ -609,13 +609,6 @@ impl OpenDocsStore {
         *self.inner.spell.borrow_mut() = Some(spell);
     }
 
-    /// Install the custom replacement lexicon (once, from `App`), and give it to
-    /// every document already open.
-    ///
-    /// The back-fill matters: `App::build` installs this after the store exists,
-    /// and a project restoring its remembered tabs can have opened documents by
-    /// then. Without it those tabs would silently never expand anything until
-    /// they were closed and reopened.
     /// Install the comments view-model and seed every already-open document.
     ///
     /// Seeding the open ones matters: the store is populated before `App` finishes
@@ -635,6 +628,25 @@ impl OpenDocsStore {
         }
     }
 
+    /// The installed comments view-model, if `App` has wired one.
+    ///
+    /// The project-wide handle, reachable **without an open document**. Callers that
+    /// need to watch the comment store for a page that currently has no commentable
+    /// surface — an empty container's stream, before any row exists — must come
+    /// through here: resolving the view-model via some row's binding answers `None`
+    /// on exactly the pages that need it most, and a caller that gives up at that
+    /// point never subscribes at all.
+    pub fn comments(&self) -> Option<crate::view_models::CommentsViewModel> {
+        self.inner.comments.borrow().clone()
+    }
+
+    /// Install the custom replacement lexicon (once, from `App`), and give it to
+    /// every document already open.
+    ///
+    /// The back-fill matters: `App::build` installs this after the store exists,
+    /// and a project restoring its remembered tabs can have opened documents by
+    /// then. Without it those tabs would silently never expand anything until
+    /// they were closed and reopened.
     pub fn set_text_replacements(&self, vm: TextReplacementRulesViewModel) {
         *self.inner.text_replacements.borrow_mut() = Some(vm.clone());
         let docs: Vec<Rc<OpenDoc>> = self

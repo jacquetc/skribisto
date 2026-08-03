@@ -282,6 +282,13 @@ impl StreamViewModel {
             .into_iter()
             .find_map(|id| self.row_comments(id, flavour))
             .map(|b| b.view_model())
+            // A container with no rows *yet* — a freshly created Chapter, a Part
+            // whose scenes have not been written — has no binding to ask, but its
+            // page still has to watch the comment store: rows and their comments
+            // arrive later, and whatever subscribed at build time is all this page
+            // will ever have. Fall back to the store's project-wide handle, which
+            // exists from `App::build` onward and does not depend on a row.
+            .or_else(|| self.inner.docs.comments())
     }
 
     /// Does any row on this page carry a live comment?

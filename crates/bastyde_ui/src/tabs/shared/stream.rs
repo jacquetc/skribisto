@@ -3,10 +3,10 @@
 
 //! The **manuscript stream** pane — one body, two flavours, three containers.
 //!
-//! A Scrivener-"Scrivenings"-style continuous, editable view of everything inside a
-//! container: the chapter's scenes (Full Chapter), a part's chapters and their scenes
-//! (Full Part), or a whole book's parts, chapters and scenes (Full Book). Each row
-//! carries its own header + options menu; an "Add" action closes the pane.
+//! A continuous, editable view of everything inside a container: the chapter's scenes
+//! (Full Chapter), a part's chapters and their scenes (Full Part), or a whole book's
+//! parts, chapters and scenes (Full Book). Each row carries its own header + options
+//! menu; an "Add" action closes the pane.
 //!
 //! The **flavour** ([`SplitFlavour`]) picks which of a row's two writing surfaces the
 //! stream shows: its prose (`Prose`) or its synopsis (`Synopsis`). Everything else —
@@ -198,7 +198,7 @@ fn page_gutter(
 ) -> f32 {
     let any = own.is_some_and(|b| b.has_live_cards()) || vm.any_row_has_comments(flavour);
     if any {
-        crate::comments::margin::MARGIN_WIDTH + crate::comments::margin::LEADER_GUTTER
+        crate::comments::margin::reserved_width()
     } else {
         0.0
     }
@@ -550,6 +550,22 @@ mod tests {
             .expect("a chapter folder hosts a stream")
     }
 
+    /// A stream whose store has the project's comments view-model installed, the
+    /// way `App::build` wires it — but with no rows yet.
+    fn stream_with_comments_installed() -> StreamViewModel {
+        use crate::models::CommentsListModel;
+        use crate::view_models::CommentsViewModel;
+        let ctx = Rc::new(AppContext::new());
+        let docs = OpenDocsStore::new(ctx.clone());
+        docs.set_comments(CommentsViewModel::new(
+            CommentsListModel::new(ctx.clone(), AppIds::new()),
+            ctx.clone(),
+            Signal::new(None),
+        ));
+        StreamViewModel::new(ctx, AppIds::new(), docs, 1, &Folder, &ChapterScene)
+            .expect("a chapter folder hosts a stream")
+    }
+
     /// **The majority case, and the one that must not regress.** A page with no
     /// comments anywhere reserves nothing, so every manuscript that has never been
     /// annotated is typeset exactly as it was before the margin existed.
@@ -575,5 +591,34 @@ mod tests {
             vm.row_comments_any_view_model(SplitFlavour::Prose)
                 .is_none()
         );
+    }
+
+    /// **An empty container still has to watch the comment store.**
+    ///
+    /// `WireOnBuild` installs the gutter-recompute effect once, during the pane's
+    /// build, and only if it can resolve a comments view-model. Resolving it via
+    /// some row's binding answers `None` for a container that has no rows *yet* —
+    /// a freshly created Chapter, a Part whose scenes are unwritten — and a
+    /// container that also has no prose of its own (a Part, a Book) has no `own`
+    /// binding to fall back on either. The page then never subscribes at all, and
+    /// its gutter stays frozen at `0.0` for the life of the tab: add a scene,
+    /// comment on it, and that row's margin grows while every other row keeps the
+    /// stale reservation — the zigzag this whole mechanism exists to prevent.
+    ///
+    /// So the resolution must not depend on a row existing.
+    #[test]
+    fn a_rowless_stream_still_resolves_the_comments_view_model_to_watch() {
+        let vm = stream_with_comments_installed();
+        assert!(
+            vm.rows().is_empty(),
+            "the point of the test is a container with no rows"
+        );
+        for flavour in [SplitFlavour::Prose, SplitFlavour::Synopsis] {
+            assert!(
+                vm.row_comments_any_view_model(flavour).is_some(),
+                "a rowless page must still find a view-model to subscribe to \
+                 ({flavour:?}), or its gutter never updates again"
+            );
+        }
     }
 }
