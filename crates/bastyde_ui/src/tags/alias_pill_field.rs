@@ -92,7 +92,7 @@ impl Widget for AliasPillField {
         flow = flow.child(
             PopoverIconButton::new(IconButton::add().tooltip(tr!(tags_alias_add())))
                 .bare()
-                // // Tab must cycle *inside* the popover. Without a `FocusScope` the overlay opens
+                // Tab must cycle *inside* the popover. Without a `FocusScope` the overlay opens
                 // with focus still in the window behind it, so Tab walks straight out into the
                 // toolbar and neither the filter field nor the rows can be reached at all — a
                 // keyboard-only writer can open this and do nothing with it (WCAG 2.1.1). Same

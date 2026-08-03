@@ -11,15 +11,14 @@
 //!
 //! # Two things this fixes
 //!
-//! **The chain used to be thrown away.** `load_work`'s failure travels through three
+//! **The chain must not be thrown away.** `load_work`'s failure travels through three
 //! `anyhow` context layers — `skrib_format` states the real cause, `load_work_uc` adds
 //! `reading project '…'`, and the frontend command adds `load_work`. `anyhow`'s plain
-//! `Display` prints *only the outermost* frame, so `e.to_string()` at the leaf rendered
-//! the entire toast as the literal words **"Could not open work: load_work"** — naming
-//! neither the file nor the cause, and strictly worse than the raw error it replaced.
-//! The messages were always specific at the point of failure; only the leaf discarded
-//! them. `{e:#}` prints the whole chain on one line and repairs every open failure at
-//! once (corrupt file, missing blob, legacy too old, not a `.skrib`).
+//! `Display` prints *only the outermost* frame, so `e.to_string()` at the leaf would
+//! render the entire toast as the literal words **"Could not open work: load_work"** —
+//! naming neither the file nor the cause. `{e:#}` prints the whole chain on one line
+//! instead, covering every open failure (corrupt file, missing blob, legacy too old,
+//! not a `.skrib`).
 //!
 //! `{:#}` rather than `{:?}`: `anyhow`'s `Debug` is a multi-line report that *includes a
 //! backtrace* when `RUST_BACKTRACE` is set, which is not a toast. The alternate `Display`

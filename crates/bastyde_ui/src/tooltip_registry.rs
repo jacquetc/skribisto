@@ -25,7 +25,7 @@
 //! teaches the distinctive writing model (dual text + synopsis, the two chapter
 //! encodings, why a book needs an explicit end, that any item can be compiled).
 //! Keep the copy model-accurate and em-dash-free; both locales live in
-//! `locales/{en-US,fr-FR}.ftl` under the `wm-*` keys. The
+//! `locales/{en-US,fr-FR}/tooltips.ftl` under the `wm-*` keys. The
 //! [`crate::binder::create_labels`] mappers turn a `CreateType` / `PromoteTarget` into
 //! the matching key below, so the menu-binding side and this registration side
 //! cannot drift.

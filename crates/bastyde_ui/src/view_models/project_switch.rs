@@ -4,36 +4,29 @@
 //! `ProjectSwitchViewModel` — the unsaved-changes guard for **replacing this
 //! window's project in place**.
 //!
-//! A window shows exactly one project (see `main.rs`'s launcher-window model),
-//! and four commands swap it for another one *without going through a close*:
+//! A window shows exactly one project, and four commands swap it for another
+//! one *without going through a close*:
 //!
 //!   * **New Work** (Ctrl+N / File ▸ New Work) — `new_work`
 //!   * **Open Work** (Ctrl+O / File ▸ Open Work…) — `load_work`
 //!   * the project switcher's **"Open here"** — `load_work`
 //!   * the Plume importer's **"Open now"** toast action — `load_work`
 //!
-//! `App`'s `LoadWork`/`NewWork` subscribers then call `EditorsViewModel::close_all`
-//! — whose contract is explicitly *"does not flush — the outgoing work is
-//! saved/discarded by the close flow"*. None of these four ran a close flow, so
-//! every one of them silently destroyed the open project's unsaved edits: no
-//! prompt, no save, no undo. The close paths (window X, Alt+F4, Ctrl+Q, Ctrl+W,
-//! File ▸ Close Work) have always prompted; these simply never called that guard.
+//! `EditorsViewModel::close_all` explicitly does not flush or prompt — that's
+//! the close flow's job — so without this guard all four would silently
+//! discard unsaved edits. The close paths (window X, Alt+F4, Ctrl+Q, Ctrl+W,
+//! File ▸ Close Work) have always prompted; these simply never called it.
 //!
-//! **Phase 3 fix — the outgoing Work's backend subtree.** The backend no longer
-//! closes the previous Work as part of `new_work`/`load_work` (Phase 2 removed
-//! that sweep from `new_work_uc.rs`/`load_work_uc.rs` so two DIFFERENT Works can
-//! coexist in two windows) — so [`Self::perform`]'s `OpenWork` branch now calls
-//! `crate::app::close_outgoing_work` itself, right before `load_work`, to close
-//! the SAME window's own outgoing Work explicitly. (The `NewWork` branch only
-//! *shows the form* here — the actual replace happens later, on "Create Work",
-//! so `NewWorkViewModel::create` closes the outgoing Work itself, right before
-//! calling `new_work`; closing it here, before the form even appears, would
-//! leave the window showing no project at all if the user then cancelled.) The
-//! outgoing Work's id is threaded in as a plain parameter (`request`'s own
-//! `outgoing_work_id`, down through `defer`/`perform`), resolved by each of the
-//! four doors from THEIR OWN window's `AppIds` — never `ctx.app_state::<AppIds>()`,
-//! which would answer with the wrong window's id once a second Work is open in a
-//! second window (see `close_outgoing_work`'s own doc).
+//! **The outgoing Work's backend subtree.** `new_work`/`load_work` no longer
+//! close the previous Work themselves (so two different Works can coexist in
+//! two windows), so [`Self::perform`]'s `OpenWork` branch calls
+//! `crate::app::close_outgoing_work` itself, right before `load_work`. The
+//! `NewWork` branch only shows the form here — the actual close happens later,
+//! on "Create Work" (`NewWorkViewModel::create`), so cancelling the form never
+//! leaves the window projectless. The outgoing Work's id is threaded through as
+//! a plain parameter, resolved by each of the four doors from THEIR OWN
+//! window's `AppIds` — never `ctx.app_state::<AppIds>()`, which would answer
+//! with the wrong window's id once a second Work is open elsewhere.
 //!
 //! This view-model *is* that guard, factored so all four doors share one branch
 //! order — [`unsaved_decision`], which `work.close` also matches on, so the two
@@ -46,33 +39,24 @@
 //! | dirty, autosave off | ask: **Save** / **Discard** / **Cancel** |
 //! | dirty, backup mode | ask: **Discard** / **Cancel** — Save is off for a backup file; Save As and Restore are how those edits are kept |
 //!
-//! **The switch is deferred, not raced.** `save_work` is a long operation: it
-//! returns immediately and writes on a background thread. Switching as soon as it
-//! was *started* would tear the store out from under it (`close_current_work`
-//! wipes the entities the background gather is reading). So a Save-branch switch
-//! is parked in [`Self::pending`] and performed only when **its own** write lands.
+//! **The switch is deferred, not raced.** `save_work` returns immediately and
+//! writes on a background thread; switching as soon as it was *started* would
+//! tear the store out from under it. A Save-branch switch is parked in
+//! [`Self::pending`] and performed only when its own write lands — waited on by
+//! **edit sequence** ([`Self::on_saved`], `saved_seq >= covers`), not "a save
+//! finished": with autosave on, a `save_work` can already be in flight when the
+//! guard asks for one, its snapshot predating our flush, and the op that
+//! finally carries our edits may be a coalesced follow-up with a different id.
 //!
-//! "Its own" is the load-bearing part. The switch waits on the **edit sequence**
-//! its save covers ([`Self::on_saved`]), not on "a save finished": with autosave
-//! on, a `save_work` can already be in flight when the guard asks for one, and its
-//! snapshot may predate our flush. Firing the switch when *that* op lands would
-//! wipe the store while the edits it never contained were still unwritten — the
-//! last sentence typed would end up in no file at all. Waiting for
-//! `saved_seq >= covers` is what makes "Save, then switch" mean it. (Not the op id
-//! either: `save_queue` coalesces, so the op that finally carries our edits may be
-//! a *follow-up* one, issued only when the in-flight save lands.)
-//!
-//! Single-instance live state: created in `main.rs` (where the `unsaved` /
-//! `backup_mode` / autosave signals live) and registered as app-state; `App::build`
-//! takes it from there to install its hooks and to serve the `work.new` /
-//! `work.open` / `work.open_path` actions. The two doors that live *outside* `App`
-//! — the project-switcher popover and the import toast — do **not** reach in for
-//! this view-model: they fire the `work.open_path` intent, and `App` calls
-//! [`Self::request`] for them. That is what keeps the view-model graph a DAG (see
-//! the house rule: peers don't import peers; distant links graduate to the intent
-//! bus). The two things only the view layer can do (write the editors to disk; put
-//! the New Work form on screen) are injected by `App::build` as hooks — the same
-//! idiom the backup scheduler uses for its flush.
+//! Single-instance live state: created in `main.rs` and registered as
+//! app-state; `App::build` takes it from there to install its hooks and to
+//! serve the `work.new` / `work.open` / `work.open_path` actions. The two
+//! doors outside `App` — the project-switcher popover and the import toast —
+//! fire the `work.open_path` intent rather than reaching in for this
+//! view-model, keeping the view-model graph a DAG. The two things only the
+//! view layer can do (flush editors to disk; show the New Work form) are
+//! injected by `App::build` as hooks — the same idiom the backup scheduler
+//! uses for its flush.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -323,12 +307,13 @@ impl ProjectSwitchViewModel {
         // captured now is the one being left.)
         //
         // `ProjectSwitchViewModel` is a single, Tier-1 shared instance (see this
-        // view-model's module doc) — a known, disclosed Phase-3 boundary, the same
-        // shape as `tags::tag_chip`/`view_models::overview`'s app_state fallback. It
-        // cannot yet resolve "this window's own `WorkspaceLayoutViewModel`" the way
-        // `close_work_and_return_to_launcher`/`quit_app` now do, so it still reaches
-        // for the process-wide `app_state` registration — correct only while this is
-        // the first (and, for in-place New/Open, still the *only* still-live) window.
+        // view-model's module doc) — a known, disclosed boundary, the same shape as
+        // `tags::tag_chip`/`view_models::overview`'s app_state fallback. It cannot
+        // yet resolve "this window's own `WorkspaceLayoutViewModel`" the way
+        // `close_work_and_return_to_launcher` does (taking it as an explicit
+        // argument), so it still reaches for the process-wide `app_state`
+        // registration — correct only while this is the first (and, for in-place
+        // New/Open, still the *only* still-live) window.
         // (Unlike this, `outgoing_work_id` above is NOT resolved this way — the
         // caller supplies its own window's real id — because closing the wrong
         // window's Work is a correctness hazard `capture`-ing the wrong layout is

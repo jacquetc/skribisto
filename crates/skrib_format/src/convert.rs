@@ -7,24 +7,25 @@
 //! whose "Skribisto Markdown" dialect handled only bold/italic/underline/strike
 //! plus bullet lists — and whose escaping and line-wrapping paths were dead code
 //! (string literals mistaken for regexes). We replace it with `text-document`'s
-//! HTML/Markdown engine, so migrated content lands as proper GFM Markdown
-//! (headings, lists, links, code, tables, …) instead of the lossy legacy format.
+//! HTML/Djot engine, so migrated content lands as proper Djot instead of the
+//! lossy legacy format.
 //!
 //! Legacy content format by DB version: Qt Markdown (≤1.6), Qt HTML (1.7–1.9),
 //! Skribisto Markdown (≥2.0). The version steps convert it as the C++ did, only
-//! through `text-document` rather than Qt.
+//! through `text-document` rather than Qt — except the final hop, which targets
+//! Djot (this crate's actual prose format) instead of reproducing that dialect.
 
 use anyhow::Result;
 use text_document::TextDocument;
 
-/// Convert Qt rich-text HTML to GFM Markdown. Blank input → empty string.
+/// Convert Qt rich-text HTML to Djot. Blank input → empty string.
 pub fn html_to_djot(html: &str) -> Result<String> {
     if html.trim().is_empty() {
         return Ok(String::new());
     }
     // Qt rich text puts CSS in a `<head><style>`; text-document's HTML parser
     // emits the contents of unknown elements as text, so strip non-content
-    // blocks first to keep the stylesheet out of the Markdown.
+    // blocks first to keep the stylesheet out of the converted text.
     let cleaned = strip_block(&strip_block(html, "style"), "script");
     let doc = TextDocument::new();
     doc.set_html(&cleaned)?.wait()?;

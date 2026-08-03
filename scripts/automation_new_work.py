@@ -328,11 +328,9 @@ s.shot("/tmp/sk-new-work-invalid.png")
 # then tests the wrong widget.
 #
 # The focused node is unambiguous, and asserting it is worth doing in its own
-# right: NewWorkPanel draws its own header chrome (title strip + close X) above
-# the form, so the modal pipeline's `first_focusable_descendant` fallback used to
-# land on the close button — the dialog opened focused on "dismiss me" and
-# swallowed whatever the user typed first. `NewWorkPanel::initial_focus_hint`
-# now points at the name field.
+# right: `NewWorkPanel::initial_focus_hint` points at the name field, but the
+# panel also draws its own header chrome (title strip + close X) above the
+# form, which a naive focusable-descendant fallback could land on instead.
 raw, _ = s.call("snapshot_tree")
 focus_id = json.loads(raw["content"][0]["text"]).get("focus")
 name_field = next((n for n in s.nodes() if n.get("id") == focus_id), None)

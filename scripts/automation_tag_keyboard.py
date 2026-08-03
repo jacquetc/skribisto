@@ -61,20 +61,13 @@ roving-tabindex containers, and three controls in this probe live inside one:
 
 ## The Enter/Space-on-a-tag-row question (Phase 3)
 
-Reading the source before running anything: `TagPickRow`
-(`tag_pill_field.rs:363-417`) is `.focusable(true)` with `.on_tap(...)` and NO
-`.on_key(...)`. The central dispatcher sends a non-Tab `KeyDown` straight to
-`self.focused`'s own handler and nowhere else
-(`bastyde-core/.../event_dispatch_impl.rs:469-488`) — there is no generic
-Enter/Space-to-tap fallback anywhere in the framework (contrast `Button`/
-`IconButton`, which route through `button::build_interaction_handlers()` and
-explicitly wire `Key::Space | Key::Enter`, and `Toggle`, which wires `Key::
-Space` itself). So the prediction, before touching the app, is: the row IS
-Tab-reachable (real, individually-focusable widget) but NOT activatable by
-Enter or Space — a real gap, not a probe bug. Phase 3 is written so it reports
-whichever of the two actually happens (a framework fix could easily flip this)
-and, either way, arms a detector (rule: prove the checker would have caught a
-real toggle) before concluding.
+`TagPickRow` (`tag_pill_field.rs`) is `.focusable(true)` with both
+`.on_tap(...)` and an explicit `.on_key(...)` wiring `Key::Enter | Key::Space`
+to the same toggle — so the row is expected to be both Tab-reachable and
+key-activatable. Phase 3 still verifies this live rather than trusting the
+source read, and reports whichever of the two actually happens; either way it
+arms a detector (rule: prove the checker would have caught a real toggle)
+before concluding.
 
 Run:  python3 scripts/automation_tag_keyboard.py
 """
@@ -97,7 +90,7 @@ from automation_fixture import wait_for_load, working_copy
 
 # This probe never types or edits anything persistent (see the docstring), but
 # it still opens an editor tab and toggles a tag mid-run — never the checked-in
-# fixture. See `automation_fixture` for the three incidents that rule is from.
+# fixture.
 FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "kbdtags")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name

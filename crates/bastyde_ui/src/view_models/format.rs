@@ -42,17 +42,15 @@
 //! type headless-testable against a plain `RichTextEditor` with no `WidgetTree`.
 //!
 //! **Every surface must call `ctx.request_frame()` after invoking a command.**
-//! The commands here deliberately take no `EventContext`: threading one through
-//! would cost the headless testability above, since an `EventContext` cannot be
-//! built outside a live tree. But an edit made while the pointer is on a dock
-//! button or a menu overlay leaves the editor unfocused, and under bastyde's
-//! draw-when-needed contract nothing then schedules the frame that drains the
-//! document's events and repaints — the formatting simply does not appear.
-//! This is not hypothetical; it shipped once in the context-menu row.
-//!
-//! So each surface funnels its buttons through one local constructor that runs
-//! the command and requests the frame together, rather than repeating the pair
-//! at every call site where one can be forgotten.
+//! The commands here deliberately take no `EventContext` (threading one through
+//! would cost the headless testability above). But an edit made while the
+//! pointer is on a dock button or a menu overlay leaves the editor unfocused,
+//! and under bastyde's draw-when-needed contract nothing then schedules the
+//! frame that drains the document's events and repaints — the formatting
+//! simply does not appear. So each surface funnels its buttons through one
+//! local constructor that runs the command and requests the frame together,
+//! rather than repeating the pair at every call site where one can be
+//! forgotten.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;

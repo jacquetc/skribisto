@@ -89,7 +89,7 @@ pub fn my_pid() -> u32 {
 /// automation scripts override `XDG_CONFIG_HOME`/`XDG_DATA_HOME`/`HOME` and leave
 /// the runtime dir pointing at the real `/run/user/{uid}`. Without a suffix, a
 /// sandboxed run and the developer's own running copy share one lock directory,
-/// one set of IPC sockets, and — once `shell::instance` lands — one *primary
+/// one set of IPC sockets, and — via `shell::instance` — one *primary
 /// election*: the first automation run to start would become the primary for the
 /// real app, and every later launch would hand its project off into a tempdir.
 /// Keying on the config dir makes each sandbox its own instance universe, while a
@@ -132,14 +132,12 @@ pub fn namespace() -> Option<String> {
 /// rooted inside *this* installation's own data dir, so it is per-installation for
 /// free.
 ///
-/// This asymmetry is deliberate and was learned the hard way. An earlier revision
-/// suffixed both, for the tidiness of one naming rule — and broke macOS outright.
-/// There is no `XDG_RUNTIME_DIR` there, so the path is
-/// `~/Library/Application Support/eu.skribisto.Skribisto/run/…`, and a Unix domain
-/// socket's `sun_path` holds only **104 bytes** on Darwin. The 17 bytes of
-/// `-{16 hex}` pushed every username over the cap (104 for a two-letter name, 107
-/// for `cyril`), `bind()` failed with `ENAMETOOLONG`, and single-instance silently
-/// never engaged. `the_macos_socket_path_fits_in_sun_path` pins the budget.
+/// Namespacing the fallback too breaks macOS outright: there is no
+/// `XDG_RUNTIME_DIR` there, so the path is
+/// `~/Library/Application Support/eu.skribisto.Skribisto/run/…`, and a Unix
+/// domain socket's `sun_path` holds only **104 bytes** on Darwin — the 17-byte
+/// `-{16 hex}` suffix pushes every username over the cap and `bind()` fails
+/// with `ENAMETOOLONG`. `the_macos_socket_path_fits_in_sun_path` pins the budget.
 pub fn dir() -> Option<PathBuf> {
     if let Some(over) = DIR_OVERRIDE.with(|d| d.borrow().clone()) {
         std::fs::create_dir_all(&over).ok()?;
@@ -241,14 +239,12 @@ pub fn my_ipc_socket() -> Option<PathBuf> {
 /// **Unix** — a filesystem path under [`dir`], mapped with `GenericFilePath`.
 ///
 /// **Windows** — a *named pipe*, mapped with `GenericNamespaced`, which prepends
-/// `\\.\pipe\`. This is not a stylistic choice: `GenericFilePath` on Windows
-/// accepts only paths that already begin `\\.\pipe\` and "attempting to map any
-/// other type of path … returns an error". Our path lives under `%APPDATA%`, so
-/// every `to_fs_name` call failed, both `try_connect` and `try_bind` failed, and
-/// the election fell through to `Standalone` — single-instance never engaged on
-/// Windows at all. (The per-pid socket had the same latent bug since long before
-/// single-instance existed, which is why cross-process raise never worked there
-/// either.)
+/// `\\.\pipe\`. Not a stylistic choice: `GenericFilePath` on Windows accepts
+/// only paths that already begin `\\.\pipe\`, and our path lives under
+/// `%APPDATA%` — mapping it with `GenericFilePath` fails every `to_fs_name`
+/// call, so both `try_connect`/`try_bind` fail and the election falls through
+/// to `Standalone`, silently disabling single-instance (and cross-process
+/// raise) on Windows.
 ///
 /// The namespace hash moves into the pipe *name* on Windows, since there is no
 /// directory to put it in — the pipe namespace is machine-global, so two sandboxes
@@ -293,10 +289,7 @@ fn lock_path_for(pid: u32, project_path: &str) -> Option<PathBuf> {
 /// `CloseWork` in between) should [`release`] its own previous path first,
 /// then call this — never [`release_all`], which drops every claim the whole
 /// *process* holds, including a sibling window's untouched, still-open Work
-/// (see `view_models::project_lifecycle::ProjectLifecycleViewModel::claim`'s
-/// doc — this crate used to have a `replace_claim` helper doing exactly that
-/// blanket release; it was Phase 3's own migration bug and was removed once
-/// its three call sites were fixed to the release-then-claim pair instead).
+/// (see `view_models::project_lifecycle::ProjectLifecycleViewModel::claim`'s doc).
 pub fn claim(path: &str, title: &str) {
     let canon = canonical(path);
     let Some(lock) = lock_path_for(my_pid(), path) else {
@@ -564,9 +557,9 @@ mod tests {
 
     #[test]
     fn the_same_config_dir_always_gets_the_same_namespace() {
-        // The suffix keys lock files, IPC sockets and (once `shell::instance`
-        // lands) the primary election. An unstable answer would strand every
-        // one of them in a directory nothing looks at any more.
+        // The suffix keys lock files, IPC sockets and the primary election
+        // (`shell::instance`). An unstable answer would strand every one of
+        // them in a directory nothing looks at any more.
         let p = Path::new("/home/writer/.config/Skribisto");
         assert_eq!(namespace_for(p), namespace_for(p));
         assert_eq!(namespace_for(p), namespace_for(&PathBuf::from(p)));

@@ -399,10 +399,9 @@ impl ImportPlumeViewModel {
                     ToastAction::primary(tr!(import_plume_open_now()), move |c| {
                         // Opening the imported project *replaces* the one in this
                         // window, so this goes through the `work.open_path` intent →
-                        // the unsaved-changes guard, which loads it once the open
-                        // project is saved or explicitly discarded. It used to call
-                        // `load_work` outright: importing from a window with unsaved
-                        // edits and clicking "Open now" binned them without a word.
+                        // the unsaved-changes guard, rather than calling `load_work`
+                        // outright and silently discarding this window's unsaved
+                        // edits.
                         c.send_intent(AppIntent::OpenWorkPath {
                             path: output.clone(),
                         });

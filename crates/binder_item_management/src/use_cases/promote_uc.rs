@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-// Custom implementation: "promote" converts a binder item to another type. It is no
-// longer a single paired toggle: a folder may become any *other* kind of folder (a
-// plain folder into a chapter, a part, a book, a notes folder), which is what lets a
-// writer outline in bare folders and then declare what each one is. Among the leaves,
-// Scene <-> Note and chapter-folder <-> flat-chapter are pairs, and a Scene may also be
-// raised into a flat chapter (and back).
+// Custom implementation: "promote" converts a binder item to another type. A
+// folder may become any *other* kind of folder (plain, chapter, part, book,
+// notes folder), letting a writer outline in bare folders and declare what
+// each one is later. Among the leaves, Scene <-> Note and chapter-folder <->
+// flat-chapter are pairs, and a Scene may also be raised into a flat chapter
+// (and back).
 //
 // The caller names the target as a `skribisto_model::PromoteTarget` wire code. It is a
 // *code*, not an index into a menu: this use case re-derives the legal targets from the

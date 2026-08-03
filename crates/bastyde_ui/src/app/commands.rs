@@ -2,12 +2,10 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! The app's **scriptable command surface** — every global action and shortcut, grouped by
-//! the feature it drives.
-//!
-//! These ~520 lines used to sit inline in `App::build`, between the view-model wiring above
-//! them and the widget tree below, which is what made that function 2 000 lines long. They
-//! are pure registration: each block clones the handles it needs out of [`CommandDeps`] and
-//! hands a closure to the framework. Nothing here builds a widget.
+//! the feature it drives. Pure registration: each block clones the handles it needs out of
+//! [`CommandDeps`] and hands a closure to the framework. Nothing here builds a widget.
+//! Extracted out of `App::build` so that function is wiring + composition, not a wall of
+//! action registrations.
 //!
 //! ## Everything is `_global`
 //!
@@ -16,8 +14,7 @@
 //! when the registering widget is on that path — and the title-bar menu renders in an
 //! **overlay**, a sibling of `App`, which never touches it. The global forms are consulted
 //! as a dispatch *fallback* regardless of origin (menu overlay, global shortcut, content),
-//! which is the only thing that makes the menu work. This is the classic
-//! always-checked/dead-toggle bug; see the house rules.
+//! which is the only thing that makes the menu work.
 //!
 //! ## Why the bare function keys
 //!
@@ -30,16 +27,10 @@
 //! ## Grouping
 //!
 //! By the feature each command drives, not by where it happens to appear in a menu:
-//!
-//!   * [`view`] — docks and the find banner (outline, preview band, search, find/replace).
-//!   * [`trash`] — the trash dock's own verbs.
-//!   * [`editor`] — the editor surface: spell-check switch, open item, add-to-dictionary,
-//!     save.
-//!   * [`export`] — the two export entry points.
-//!   * [`file`] — project and application lifecycle (new/open/import/close/settings/quit).
-//!   * [`binder`] — the outline tree's verbs.
-//!   * `go` — prev/next Scene/Chapter/Note (Increment 4 of distraction-free), scoped to
-//!     the focused item's own binder.
+//! [`view`] (docks + find banner), [`trash`], [`editor`] (spell-check, open item,
+//! add-to-dictionary, save), [`export`], [`file`] (project/app lifecycle), [`comments`],
+//! [`format`], [`templates`], [`binder`] (outline tree verbs), `go` (prev/next
+//! Scene/Chapter/Note, scoped to the focused item's own binder).
 
 use std::rc::Rc;
 

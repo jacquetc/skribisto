@@ -52,10 +52,6 @@ pub use binder_binder_items_tree_model::{
 pub use binder_list_model::{BinderListModel, BinderRow};
 pub use binder_stream::{BinderItemRef, ordered_binder_items};
 pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
-// Layer A is complete and tested; its consumers are the two comment docks, which
-// are not built yet. Re-exported here (rather than left unreachable) so those docks
-// import it exactly like every other model, and so the surface stays under the
-// models layer's own namespace.
 #[allow(unused_imports)]
 pub use comments_list_model::{CommentRow, CommentsListModel, ReplyRow};
 pub use dict_word_list_model::{DictWordListModel, DictWordRow};

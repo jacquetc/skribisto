@@ -527,8 +527,7 @@ mod tests {
     ///
     /// Measured on [`controls`], not on the dock: the dock's `ScrollArea` is
     /// greedy and reports the side's height whatever it holds, so a dock-level
-    /// assertion would pass against any layout at all. (It did, at a constant
-    /// 200px, before this test was pointed at the right widget.)
+    /// assertion would pass against any layout at all.
     #[test]
     fn hiding_a_group_collapses_it() {
         fn height_at(surface: FormatSurface) -> f32 {

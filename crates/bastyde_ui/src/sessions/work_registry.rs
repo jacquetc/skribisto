@@ -163,11 +163,11 @@ impl WorkRegistry {
     }
 
     /// A further window is attaching to an *already-registered* `work_id`'s
-    /// session (Phase 3's `AttachExisting`). Returns the shared session, or
-    /// `None` if `work_id` names no currently-open Work. Bumps the refcount on
-    /// success — the caller must pair this with exactly one
-    /// [`unregister`](Self::unregister) when its window closes.
-    #[allow(dead_code)] // Phase 3's AttachExisting; exercised by this module's own tests today
+    /// session (Work ▸ New Window, `PendingAction::AttachExisting`). Returns
+    /// the shared session, or `None` if `work_id` names no currently-open
+    /// Work. Bumps the refcount on success — the caller must pair this with
+    /// exactly one [`unregister`](Self::unregister) when its window closes.
+    #[allow(dead_code)] // called by `ProjectWindowFactory::attached_window_config`
     pub fn attach(&self, work_id: u64) -> Option<WorkSession> {
         let mut sessions = self.sessions.borrow_mut();
         let entry = sessions.get_mut(&work_id)?;
@@ -198,12 +198,10 @@ impl WorkRegistry {
     }
 
     /// The session for `work_id`, if that Work is currently open in *any*
-    /// window — the create-or-share query `ProjectWindowFactory` will call
-    /// once `PendingAction::AttachExisting{work_id}` exists (Phase 3). Today
-    /// nothing in this crate calls it outside this module's own tests: Phase 2
-    /// only ever registers a `work_id` it just this instant created (via
-    /// `register`), never resolves one ahead of a window's own load.
-    #[allow(dead_code)] // Phase 3's resolution mechanism; exercised by this module's own tests today
+    /// window. Used by `shell::window_ids::find_open_project_window` (the
+    /// registry fallback for "is this project already open?") and by
+    /// `QuitSequencer` to reach each open Work's session in turn.
+    #[allow(dead_code)] // also called outside this module's own tests
     pub fn session_for(&self, work_id: u64) -> Option<WorkSession> {
         self.sessions
             .borrow()
@@ -211,24 +209,24 @@ impl WorkRegistry {
             .map(|e| e.session.clone())
     }
 
-    /// Every currently-open Work's id — the query `ProjectSwitcher`/`app.quit`'s
-    /// dirty-Works sweep will use (Phase 3). Exercised by this module's own
-    /// tests today.
+    /// Every currently-open Work's id. Used by `app.rs`'s "does another Work
+    /// still have a window open" survivor check (whether closing this Work
+    /// returns to the Launcher), `QuitSequencer`'s per-Work walk, and
+    /// `shell::window_ids::find_open_project_window`.
     pub fn open_work_ids(&self) -> Vec<u64> {
         self.sessions.borrow().keys().copied().collect()
     }
 
     /// How many windows are currently attached to `work_id` (its live
-    /// refcount) — `0` for an unregistered/unknown id. Scope D (window
-    /// titles): a window whose Work has more than one window open must
-    /// disambiguate itself; `0`/`1` never need a suffix. The title itself
-    /// disambiguates via each window's own [`register_window`](Self::register_window)-assigned
-    /// `ordinal` instead (stable per-window, unlike this live count — see
-    /// `shell::windows::window_title_text`'s doc), so nothing calls this
-    /// today; kept as the query a future "N windows open on this Work" UI
-    /// affordance (e.g. the in-process ProjectSwitcher listing flagged in the
-    /// migration report) will want, backed by tests now rather than later.
-    #[allow(dead_code)] // see doc above; exercised by this module's own tests today
+    /// refcount) — `0` for an unregistered/unknown id. Window *titles*
+    /// disambiguate via each window's own
+    /// [`register_window`](Self::register_window)-assigned `ordinal` instead
+    /// (stable per-window, unlike this live count — see
+    /// `shell::windows::window_title_text`'s doc); this count is what
+    /// `WindowRole::may_switch_in_place` and the project window's close guard
+    /// use to tell "closing a view" (a sibling window still shows this Work)
+    /// from "closing the project" (this is the only window on it).
+    #[allow(dead_code)] // also called outside this module's own tests
     pub fn window_count_for(&self, work_id: u64) -> usize {
         self.sessions
             .borrow()

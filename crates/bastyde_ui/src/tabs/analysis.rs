@@ -297,9 +297,7 @@ fn empty_toggle(ignore_empty: Signal<bool>) -> impl Widget {
         .child(Spacer::new())
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Shape
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ── Shape ─────────────────────────────────────────────────────────────────────
 
 /// Word count along the stream, plus dialogue share where the language admits one.
 ///
@@ -404,9 +402,7 @@ fn shape_view(dto: &BookAnalysisResultDto, ignore_empty: Signal<bool>) -> impl W
     col
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Repetition
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ── Repetition ────────────────────────────────────────────────────────────────
 
 /// Where each scene sits, and what it is called — the context every finding needs.
 ///
@@ -633,9 +629,7 @@ fn numbers(occurrences: i64, closest_gap: i64) -> impl Widget {
         .child(cell(tr!(analysis_repetition_gap_short(gap = closest_gap))))
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Synopsis
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ── Synopsis ──────────────────────────────────────────────────────────────────
 
 /// Scenes whose prose tracks their synopsis less closely than the rest of this book's do.
 ///
@@ -674,9 +668,7 @@ fn synopsis_view(dto: &BookAnalysisResultDto) -> impl Widget {
     col
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Voice
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ── Voice ─────────────────────────────────────────────────────────────────────
 
 /// Lexical diversity for the book as a whole.
 ///

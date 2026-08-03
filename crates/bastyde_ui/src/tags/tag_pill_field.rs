@@ -351,10 +351,8 @@ impl Widget for TagPickerList {
             list = list.child(TagPickRow {
                 tag: (*tag).clone(),
                 checked: on,
-                // Toggling does NOT clear the filter. The old add-only list cleared it so the
-                // popover was ready for the next pick, but a tick is a state you may want to
-                // flip back immediately, and losing the row you just clicked makes that
-                // impossible.
+                // Toggling does NOT clear the filter — a tick is a state you may want to flip
+                // back immediately, and clearing the filter would lose the row just clicked.
                 on_toggle: Rc::new(move |c: &mut EventContext| {
                     let mut next = value.get();
                     if on {
@@ -559,13 +557,9 @@ impl Widget for TagPickRow {
                 .add_child(check_id)
                 .child(swatch(contrast::parse(&self.tag.color)))
                 .child(TextWidget::new(lit!(self.tag.name.clone())))
-                // Role, name and selected go on the SAME node that is focusable -- the
-                // pattern `MentionList`'s rows already use. They used to live on the widget's
-                // own `accessibility()`, which is the row's OUTER node, while `.focusable`
-                // sat here: keyboard focus therefore landed on an unnamed GenericContainer
-                // and a screen reader announced nothing identifying the row. Merging the
-                // subtree instead was worse -- it prunes descendants, so the focused node
-                // vanished from the AT tree entirely.
+                // Role, name and selected go on the SAME node that is focusable -- the pattern
+                // `MentionList`'s rows already use. Splitting them across the outer node and this
+                // one leaves keyboard focus landing on an unnamed GenericContainer.
                 .access_role(Role::ListBoxOption)
                 .access_label(lit!(self.tag.name.clone()))
                 .access_customize({

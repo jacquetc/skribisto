@@ -371,8 +371,8 @@ fn merge_suggestions(
             None => break,
         }
     }
-    // Every push above is gated on a ceiling, so no trailing truncate is needed — and none should
-    // be added back: a truncate here is what silently ate the reserved slots before.
+    // Every push above is gated on a ceiling, so no trailing truncate is needed — adding one back
+    // would silently eat the reserved slots.
     out
 }
 
@@ -380,9 +380,7 @@ fn merge_suggestions(
 ///
 /// The single gate every source passes through. Deduping keeps the first (better-ranked)
 /// occurrence when two dictionaries offer the same correction; rejecting `typed` means no source
-/// can echo the input back as its own correction — a menu item that would edit nothing. Only the
-/// personal set used to be held to that rule, which left the dictionaries free to suggest the
-/// input via a case or split-word variant.
+/// can echo the input back as its own correction — a menu item that would edit nothing.
 fn push_unique(out: &mut Vec<String>, typed: &str, s: String) {
     if s != typed && !out.iter().any(|e| e == &s) {
         out.push(s);
@@ -922,8 +920,8 @@ impl SpellSession {
     /// The fast path is the point of this. The caret ticks on every move, but stays inside one
     /// word across a burst of typing; while it does, the exempted range is unchanged and the
     /// filtered set is byte-for-byte what was already pushed. Recognising that from the cached
-    /// identity skips the O(all_ranges) filter + clone — on a Lorem-Ipsum-dense document, the
-    /// dominant per-keystroke cost, previously paid every tick whether or not anything changed.
+    /// identity skips the O(all_ranges) filter + clone — the dominant per-keystroke cost on a
+    /// densely-flagged document.
     fn apply_exemption(&self, forced: bool) {
         let caret = self.focused.borrow().as_ref().map(|(_, f)| f());
         let exempt = self.caret_exempt_identity(caret);
@@ -1346,9 +1344,8 @@ mod tests {
     }
 
     /// **`near` is not exempt from the ceiling.** A glossary of similar short terms (a
-    /// Kai/Kal/Kar naming family) yields more one-edit matches than the menu holds; those used to
-    /// be pushed before the ceiling existed, so the *reserved* far slots were appended past the
-    /// cap and truncated away — the reservation silently evicted by the very list it leads.
+    /// Kai/Kal/Kar naming family) can yield more one-edit matches than the menu holds; without
+    /// the ceiling those would crowd out the reserved `far` slots.
     #[test]
     fn a_crowd_of_near_personal_words_cannot_evict_the_reserved_far_slots() {
         let personal = vec![
@@ -1669,7 +1666,7 @@ mod tests {
         );
     }
 
-    /// The B2-M0 fast path: a caret move that stays inside the same exempted word must not
+    /// The fast path: a caret move that stays inside the same exempted word must not
     /// re-run the O(all_ranges) filter+clone. Typing within a word ticks the caret on every
     /// keystroke, so on a densely-flagged document that clone was the per-keystroke cost.
     #[test]
@@ -1707,8 +1704,8 @@ mod tests {
         assert_eq!(starts(&session), vec![0], "wrld now exempt, helo flagged");
     }
 
-    /// B2-M0b: an inactive (hidden) session defers the eager rebuild `set_checker` would do,
-    /// then catches up on the first tick after it is shown. This is what stops a re-attach
+    /// An inactive (hidden) session defers the eager rebuild `set_checker` would do, then
+    /// catches up on the first tick after it is shown. This is what stops a re-attach
     /// (dictionary install / mute / language change) from re-tokenising a hidden 20k-word
     /// synopsis nobody can see.
     #[test]

@@ -139,9 +139,8 @@ mod tests {
     /// fill, against a light and a dark surface, either the fill or its ring clears SC
     /// 1.4.11's 3:1 — so the dot always has a visible boundary.
     ///
-    /// This test exists because the first implementation used a themed border token and was
-    /// wrong: `BorderRole::Default` is 1.26:1 on a white card, so a near-white tag rendered as
-    /// nothing at all while the code claimed a hairline kept it visible.
+    /// A themed border token cannot give this guarantee — `BorderRole::Default` is 1.26:1 on a
+    /// white card, well under 3:1 — which is why the outline is derived instead.
     #[test]
     fn outline_guarantees_a_visible_boundary() {
         let surfaces = [

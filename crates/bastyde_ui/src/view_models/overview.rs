@@ -203,14 +203,13 @@ impl OverviewViewModel {
     /// was written last session is what is read now, with no translation step and no
     /// ordering constraint against the workspace-layout restore.
     ///
-    /// **Scope C fix.** This used to resolve `TreeExpansionViewModel` via
-    /// `ctx.app_state`, justified by a doc comment calling "the service" app-wide —
-    /// but `TreeExpansionViewModel` (unlike the on-disk `TreeExpansionService` it
-    /// wraps, which genuinely is one shared file) is bound to its own `ids: AppIds`
-    /// at construction, i.e. Tier 2 (per open Work), not Tier 1. The `app_state`
-    /// lookup silently resolved to whichever Work's session registered it first —
-    /// a second Work's window would restore (and later capture) the FIRST Work's
-    /// chevron state instead of its own. Now threaded in at construction (via
+    /// **Never `ctx.app_state`.** `TreeExpansionViewModel` (unlike the on-disk
+    /// `TreeExpansionService` it wraps, which genuinely is one shared file) is
+    /// bound to its own `ids: AppIds` at construction, i.e. Tier 2 (per open
+    /// Work), not Tier 1 — an `app_state` lookup would silently resolve to
+    /// whichever Work's session registered it first, so a second Work's window
+    /// would restore (and later capture) the FIRST Work's chevron state instead
+    /// of its own. It is threaded in at construction instead (via
     /// `EditorsViewModel`/`ContentTab::new`, from `WorkSession::tree_expansion`),
     /// exactly like `save_state`/`tags` already are.
     fn restore_expansion(&self, _ctx: &mut BuildContext) {

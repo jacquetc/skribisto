@@ -424,20 +424,12 @@ fn run_analysis(
 /// A word must be at least this surprising to be reported as an echo: rarer than about one
 /// word in a thousand, measured against this manuscript's own distribution.
 ///
-/// The first attempt at this constant was 5.0 — "rarer than one in ~150 words" — on the
-/// reasoning that it cleared the function-word floor. It does not, and the arithmetic says
-/// why: one in 150 of an 86,000-word novel is 579 occurrences, so every word used fewer than
-/// 579 times qualified. Measured on the bundled manuscript, that admitted `is` (281), `by`
-/// (303), `this` (385), `all` (251) and `were` (545) — the entire mid-frequency function-word
-/// band, which then dominated the report because those words repeat everywhere.
-///
-/// 7.0 is where that band ends in practice. Sorting the manuscript's vocabulary by surprisal,
-/// everything below 6.5 is function words (`his`, `that`, `on`, `for`, `had`, `with`, `they`,
-/// `we`, `them`, `be`, `up`, `into`, `could`); from 7.0 up it is content (`bridge`, `dark`,
-/// `home`, `worlds`, `starships`, `battle`, `door`). Still measured against the manuscript
-/// rather than a stopword list, so it needs no per-language resource — and it correctly drops
-/// a book's own recurring furniture, since a protagonist named on every page (`devon`, 5.9)
-/// is not a repetition anyone wants flagged.
+/// Chosen empirically: sorting the bundled manuscript's vocabulary by surprisal, everything
+/// below ~6.5 is function words (`his`, `that`, `on`, `for`, `had`, `with`, `they`, `we`,
+/// `them`, `be`, `up`, `into`, `could`); from 7.0 up it is content (`bridge`, `dark`, `home`,
+/// `worlds`, `starships`, `battle`, `door`). Measured against the manuscript rather than a
+/// stopword list, so it needs no per-language resource, and it correctly drops a book's own
+/// recurring furniture — a protagonist named on every page is not a repetition worth flagging.
 const ECHO_MIN_SURPRISAL: f64 = 7.0;
 
 /// Below this containment two scenes merely share some phrasing, which every book does.

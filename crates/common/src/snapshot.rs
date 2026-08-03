@@ -23,9 +23,7 @@ pub struct EntityTreeSnapshot {
     pub root_ids: Vec<EntityId>,
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Store-level snapshot (type-erased so snapshot.rs doesn't depend on HashMapStore)
-// ─────────────────────────────────────────────────────────────────────────────
 
 /// Trait for type-erased store snapshots.
 pub trait StoreSnapshotTrait: std::fmt::Debug + Send + Sync {

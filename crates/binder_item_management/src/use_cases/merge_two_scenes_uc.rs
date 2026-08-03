@@ -17,11 +17,8 @@
 // and adjacency is what guarantees no boundary sits between them.
 //
 // Undoable via a Work-scoped snapshot/restore: both A's Content and the new
-// TrashInfo live in the Work trunk (post-reparent), so the affected Work is
-// the undo scope. Work resolution: dto.work_id, validated against the open
-// Works -- Phase 0.6: this used to pick `get_all_work().next()`, which had no
-// defined subject once a second Work was open (undo could silently roll back
-// an unrelated Work's tree while leaving the actual merge un-undone).
+// TrashInfo live in the Work trunk, so the affected Work is the undo scope.
+// dto.work_id must be validated against the open Works before use.
 use crate::MergeTwoScenesDto;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
@@ -189,16 +186,11 @@ impl MergeTwoScenesUseCase {
         let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
 
         // Ownership check: `binder` (the row target and source were just
-        // confirmed to share) must belong to the NAMED Work. Binder ownership
-        // is exclusive (Work.binders is a strong one_to_many), so this
-        // forward lookup is exact: a binder id belonging to a different Work
-        // can never appear in `work_id`'s own list. Every check above only
-        // cross-references target/source against each other and against
-        // `binder`, never against the Work -- so two scenes that legitimately
-        // share a binder belonging to Work B would otherwise sail through
-        // here under Work A's (real, open) work_id: the content merge and the
-        // trash-index update below would land on Work B while the undo/redo
-        // snapshot stayed scoped to Work A.
+        // confirmed to share) must belong to the named Work. Every check above
+        // only cross-references target/source against `binder`, never against
+        // the Work, so without this two scenes sharing a binder from Work B
+        // would sail through under Work A's work_id: the merge would land on
+        // Work B while the undo/redo snapshot stayed scoped to Work A.
         if !uow
             .get_work_relationship(&work_id, &WorkRelationshipField::Binders)?
             .contains(&binder)
@@ -277,11 +269,8 @@ impl MergeTwoScenesUseCase {
     }
 }
 
-// `get_work_relationship` does not validate that `id` is a real, open Work --
-// a junction lookup against an unknown id just comes back empty, which would
-// silently no-op instead of reporting the caller's mistake. So the id from
-// `dto.work_id` is checked against the open Works first, exactly like
-// `empty_trash_uc.rs` does.
+// `get_work_relationship` doesn't validate that `id` is a real, open Work, so
+// check `dto.work_id` against the open Works first (see `empty_trash_uc.rs`).
 fn work_id(uow: &dyn MergeTwoScenesUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()

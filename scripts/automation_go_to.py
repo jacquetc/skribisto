@@ -2,18 +2,15 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-"""Drive a live Skribisto and verify the **Go to…** jump popup.
+"""Drive a live Skribisto and verify the **Go to…** jump popup (Ctrl+G).
 
-The headless tests pin the pieces (`tab_bar_policy`, the strip's `VisibleWhen`
-gates, and — in bastyde — that a bound `TabBarVisibility` flips the strip in
-place). What they cannot see is the assembled window: that entering the mode
-really does reach `TabWidget::bar_visibility`, and that the editor tab strip
-disappears while the Exit button stays.
+Flow: load a scratch copy of an example, open a scene, then:
 
-Flow: load a scratch copy of an example →
-  1. open a scene → an editor tab strip (Role::TabList) exists
-  2. Shift+F11    → the tab strip is GONE and the strip's Exit button is present
-  3. Shift+F11    → the tab strip is BACK
+  1. Ctrl+G opens the popup, with its search field focused;
+  2. typing narrows the binder tree to matching rows;
+  3. Down + Enter jumps to the highlighted row and closes the popup;
+  4. Escape closes the popup and, inside distraction-free mode, does so
+     without also leaving the mode — one keystroke must not do two things.
 
 Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
 automation_*.py scripts.

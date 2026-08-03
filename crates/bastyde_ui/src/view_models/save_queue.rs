@@ -4,18 +4,15 @@
 //! `SaveQueue` — one `save_work` at a time, with coalescing.
 //!
 //! Three independent triggers ask for a disk save: the autosave debounce, the
-//! close/exit guard, and the project-switch guard (plus Ctrl+S). Each used to call
-//! `save_work` outright, and nothing serialized them — `LongOperationManager`
-//! spawns a fresh background thread per call, so two saves of the same project
-//! could run at once.
-//!
-//! That is not merely wasteful. Each op reads its own frozen snapshot of the store
-//! and writes the same `.skrib` path through a temp file + atomic rename, so the
-//! file is never torn — but their completion order is **unspecified**. An older
-//! op's snapshot can land *after* a newer one's, silently regressing the file to
-//! stale content. And since the close/switch guards wipe the store the moment
-//! their save reports success, that regression is unrecoverable: the edits exist
-//! in neither the file nor the store.
+//! close/exit guard, and the project-switch guard (plus Ctrl+S) — each could
+//! call `save_work` outright, and `LongOperationManager` spawns a fresh
+//! background thread per call, so two saves of the same project could run at
+//! once with **unspecified** completion order. Each op reads its own frozen
+//! store snapshot and writes the same `.skrib` path atomically (never torn),
+//! but an older op's snapshot landing *after* a newer one's silently
+//! regresses the file — and since the close/switch guards wipe the store the
+//! moment their save reports success, that regression is unrecoverable: the
+//! edits exist in neither the file nor the store.
 //!
 //! So: never two at once. The naive fix — *skip* a save while one is running, as
 //! [`crate::view_models::BackupSchedulerViewModel`]'s `busy()` does for backups —
@@ -34,10 +31,9 @@
 //! flush at seq *n* is said to *cover*
 //! *n*: when it lands, everything up to *n* is on disk. That single number drives:
 //!
-//!   * **the dirty flag** — `unsaved = dirty_seq > saved_seq`, which is finally
-//!     truthful while a save is in flight (typing during a save used to be marked
-//!     clean the moment that save — which never contained it — landed, greying out
-//!     Save on edits that were on no disk anywhere);
+//!   * **the dirty flag** — `unsaved = dirty_seq > saved_seq`, truthful even
+//!     while a save is in flight: typing during a save is never marked clean
+//!     just because that save (which never contained it) landed;
 //!   * **the deferred guards** — a close or a project switch waits for
 //!     `saved_seq >= its own covered seq`, not merely for "a save finished".
 //!

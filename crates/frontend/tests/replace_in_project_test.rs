@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Phase 0.1b vertical slice — the replace pipe, and its safety net.
+//! `replace_in_project`: the replace pipe, and its safety net.
 //!
 //! `run_search` → the writer reviews and unticks some rows → `replace_in_project`
 //! rewrites the rest through the Djot parser → **one `undo` puts the manuscript back**.
 //!
-//! The matcher is still the naive Phase-0.1 literal scan; what these tests pin is the
-//! part that must never regress: that a bulk rewrite of someone's prose is a single,
-//! reversible action, that it goes through the parser rather than string-surgering the
-//! markup, and that it refuses to guess when the text moved under it.
+//! What these tests pin is the part that must never regress: that a bulk rewrite of
+//! someone's prose is a single, reversible action, that it goes through the parser rather
+//! than string-surgering the markup, and that it refuses to guess when the text moved
+//! under it.
 
 use frontend::AppContext;
 use frontend::commands::{
@@ -362,16 +362,9 @@ fn preserve_case_keeps_the_case_it_found() {
 
 /// **A2: the splice happens inside the document, not on the markup.**
 ///
-/// The prose path used to re-export the Djot and rewrite it as a *string*. That was wrong in
-/// two ways a writer would eventually have paid for:
-///
-///   * it rewrote the query wherever it appeared in the MARKUP — inside a link's URL, an
-///     image path, an attribute — text they never typed into their sentence and cannot see;
-///   * it dropped the character formatting under every match, so renaming a character whose
-///     name reads `*Aurélien*` silently lost the emphasis.
-///
-/// Both are gone: `find_and_replace` splices at the offsets the parser reports, and the
-/// exporter re-serialises. Nothing touches the markup.
+/// `find_and_replace` splices at the offsets the parser reports and the exporter
+/// re-serialises — so a rename never rewrites the query where it happens to appear in
+/// markup (a link's URL, an image path) and never drops formatting under the match.
 #[test]
 fn a_rename_spares_the_markup_and_keeps_the_styling() {
     use frontend::commands::binder_item_commands;

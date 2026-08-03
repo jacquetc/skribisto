@@ -81,7 +81,11 @@ const TEXT_SCALE_DEFAULT: f32 = 1.0;
 // ── Category tree model ──────────────────────────────────────────────────────
 
 /// A selectable settings page (a tree *leaf* → its own pane). The discriminant
-/// order is the `Switcher` child order, so `pane as usize` is the page index.
+/// order is the `Switcher` child order, so `pane as usize` is the page index —
+/// a new variant must be *appended*, never inserted, or it renumbers every
+/// later `Switcher` slot. Tree position is entirely `build_tree`'s business
+/// and unrelated to this order (e.g. `WorkAuthor` shows first in the tree
+/// despite a late discriminant).
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum Pane {
     Appearance = 0,
@@ -110,34 +114,22 @@ enum Pane {
     WorkBackup,
     /// Per-project spell-check language(s) (under the open Work's section).
     WorkLanguage,
-    /// Per-project personal dictionary (under the open Work's section). Appended last so
-    /// the earlier discriminants — and the `Switcher` order they index — stay put.
+    /// Per-project personal dictionary (under the open Work's section).
     WorkDictionary,
-    /// The app-wide master spell-check switch (under Spelling, above Dictionaries in the
-    /// tree). Appended last, same rule: a new discriminant must never renumber the ones the
-    /// `Switcher` already indexes.
+    /// The app-wide master spell-check switch (under Spelling, above Dictionaries).
     Spellcheck,
-    /// Per-project tag palette (under the open Work's section). Appended last for the same
-    /// reason — its tree position is chosen in `build_tree`, not by this number.
+    /// Per-project tag palette (under the open Work's section).
     WorkTags,
-    /// Per-project author name (under the open Work's section). Appended last, same rule —
-    /// it is shown *first* in the tree, but that is `build_tree`'s business, not this
-    /// number's: renumbering here would re-point every later `Switcher` slot.
+    /// Per-project author name (under the open Work's section).
     WorkAuthor,
-    /// Per-project custom replacement lexicon (under the open Work's section). Appended
-    /// last, same rule as every one above it.
+    /// Per-project custom replacement lexicon (under the open Work's section).
     WorkTextReplacements,
     /// Distraction-free mode's own typography bundle (nested under Editor ▸
-    /// Typography, alongside Scene/Synopsis/Notes/Corkboard). Appended last, same
-    /// rule as every one above it — its tree position (inside the new
-    /// `GroupKind::Typography` node) is `build_tree`'s business, not this number's.
+    /// Typography, alongside Scene/Synopsis/Notes/Corkboard).
     DistractionFree,
     /// The distraction-free **theme library** (built-ins + the writer's own).
-    /// Appended last, same rule as every one above it: the discriminant fixes the
-    /// `Switcher` slot, the tree position is `build_tree`'s business.
     DistractionFreeThemes,
-    /// Per-project note templates (under the open Work's section, beside Tags). Appended
-    /// last, same rule as every one above it.
+    /// Per-project note templates (under the open Work's section, beside Tags).
     WorkTemplates,
 }
 
@@ -218,12 +210,12 @@ impl Sec {
 
 /// A nested grouping node *inside* a section — one level deeper than [`Sec`],
 /// for a cluster of pages that would otherwise crowd their section's flat
-/// list. Currently only Editor ▸ Typography (Scene / Synopsis / Notes /
-/// Corkboard / Distraction-free — five pages that all start with the same
-/// Typeface/Size/Line height/First-line indent shape). No pane of its own
-/// (expands only, like [`Sec`]) and no icon (design shows icons only on
-/// top-level sections plus the Keymap leaf — a nested group is indented like
-/// any other sub-page).
+/// list. Currently only Editor ▸ Typography: Scene / Synopsis / Notes /
+/// Corkboard / Distraction-free (the shared Typeface/Size/Line height/
+/// First-line indent shape) plus the Distraction-free theme library. No pane
+/// of its own (expands only, like [`Sec`]) and no icon (design shows icons
+/// only on top-level sections plus the Keymap leaf — a nested group is
+/// indented like any other sub-page).
 #[derive(Clone, Copy)]
 enum GroupKind {
     Typography,
@@ -416,8 +408,8 @@ fn build_not_defaults(
 // ── Small view helpers ───────────────────────────────────────────────────────
 
 /// A left-column field label (dimmed, small) — matches the design's `--tx2`.
-/// `pub(crate)` so the backup panes (`settings_backup`) share the exact same
-/// row-label style as every built-in pane.
+/// `pub(crate)` so `panes::backup` shares the exact same row-label style as
+/// every built-in pane.
 pub(crate) fn field_label(text: LocalizedString) -> TextWidget {
     TextWidget::new(text)
         .style(TextStyleRole::Small)
@@ -567,23 +559,13 @@ pub struct SettingsPanel {
     /// tree selection + the content `Switcher`). Defaults to Editor ▸ Scene.
     selected_pane: Signal<Pane>,
     root_child: Option<WidgetId>,
-    /// The Tier-2 bundle for the Work the OPENING window shows — never
-    /// resolved via `ctx.app_state::<SingleWork/SingleWorkInfo/AppIds/
-    /// TagsViewModel/UserDictionaryViewModel>()` any more (Phase 3 fix).
+    /// The Tier-2 bundle for the Work the OPENING window shows.
     ///
-    /// **Why this was a bug**: `ctx.app_state::<T>()` is one process-wide slot
-    /// per type (confirmed against `bastyde-app`'s `app_state_registry`, a
-    /// single `HashMap<TypeId, Box<dyn Any>>` for the whole process), seeded
-    /// once from the FIRST window's session in `main.rs`'s bootstrap and never
-    /// updated thereafter. With a second Work open in a second window,
-    /// `SettingsPanel::build()` used to silently read/write the FIRST Work's
-    /// structure, language, author, backup override, tags and personal
-    /// dictionary — regardless of which window's Settings the user actually
-    /// opened. Every call site now threads the opening window's own
-    /// `WorkSession` (available at each of the three construction sites:
-    /// `app::commands::file`'s `app.settings` action via `CommandDeps::session`,
-    /// and `app.rs`'s two toast call sites via `self.session`), the same
-    /// pattern `SaveAsViewModel`/`BackupRestoreViewModel` already use.
+    /// Never resolve the equivalent state via `ctx.app_state::<SingleWork/
+    /// SingleWorkInfo/AppIds/TagsViewModel/UserDictionaryViewModel>()` — that
+    /// slot is one per process, seeded from the first window's session, so a
+    /// second open Work would silently read/write the wrong project's
+    /// settings. Same pattern as `SaveAsViewModel`/`BackupRestoreViewModel`.
     session: WorkSession,
 }
 
@@ -645,9 +627,10 @@ impl SettingsPanel {
 
         let ed = model.insert_root(1, Node::Section(Sec::Editor));
         // The five typography-shaped pages (Scene / Synopsis / Notes / Corkboard /
-        // Distraction-free — all four fields + font/size/line-height/indent) live
-        // under their own nested "Typography" group rather than as five more flat
-        // siblings in an already-crowded Editor list.
+        // Distraction-free — all four fields + font/size/line-height/indent), plus
+        // the Distraction-free theme library, live under their own nested
+        // "Typography" group rather than as six more flat siblings in an
+        // already-crowded Editor list.
         let typo_group = model.insert_child(ed, 0, Node::Group(GroupKind::Typography));
         nodes.insert(
             Pane::SceneTypography,
@@ -717,8 +700,7 @@ impl SettingsPanel {
         nodes.insert(Pane::Keymap, model.insert_root(5, Node::Page(Pane::Keymap)));
 
         // The open project's own section (multi-project-ready): shown only when a
-        // Work is open, labelled "Work: `<title>`" — for now its single page is
-        // Structure (the chapter mode). Read through THIS window's own
+        // Work is open, labelled "Work: `<title>`". Read through THIS window's own
         // `WorkSession::single_work` (never `ctx.app_state`, see this struct's
         // `session` field doc).
         let work_title = Some(&self.session.single_work)
@@ -1335,11 +1317,9 @@ impl Widget for SettingsPanel {
 
         // ── Right pane: the per-page content behind the selection Switcher ──
         // The Switcher is indexed by `Pane::index()`, so its child at position i must
-        // be pane i's body. Rather than trust a hand-kept `.child()` chain — where a
-        // pane inserted mid-list silently shifts every later pane's content by one (a
-        // real bug: the app-wide Spellcheck pane, its discriminant appended last but
-        // its child slotted in the middle, made every Work pane show its neighbour) —
-        // each child is tagged with the `Pane` it serves and the order is asserted.
+        // be pane i's body. Each child is tagged with the `Pane` it serves and the
+        // order is asserted below, rather than trusted from a hand-kept `.child()`
+        // chain (see `pane_discriminants_are_a_gap_free_range` for why).
         let typo = vm.editor_typography();
         let panes: Vec<(Pane, Box<dyn Widget>)> = vec![
             (
@@ -1593,16 +1573,15 @@ mod tests {
     // the settings-dependent `WelcomePanel` sits on.
 
     /// The `Switcher` is indexed by `Pane::index()`, so its child at slot i must be pane i's
-    /// body. `build()` tags each child with the `Pane` it serves and a `debug_assert` trips if
-    /// any lands at the wrong slot — the failure that shipped when the Spellcheck pane's child
-    /// was inserted mid-chain while its discriminant went last, shifting ten Work/Spelling panes
-    /// onto their neighbour's content.
+    /// body; `build()` tags each child with the `Pane` it serves and a `debug_assert` trips on
+    /// a mismatch (a pane once shipped inserted at the wrong slot, silently shifting every
+    /// later pane's content onto its neighbour).
     ///
-    /// This test guards the half of the contract reachable headlessly: the discriminants form a
-    /// gap-free `0..N` from `Appearance`, so `index()` is a valid dense `Switcher` slot for every
-    /// pane. (The child↔pane pairing needs a built panel, which depends on `SettingsStore`
-    /// app-state a bare `WidgetTree` can't provide — hence the build-time `debug_assert` and the
-    /// live `run-app` check.)
+    /// This test guards the half of the contract reachable headlessly — that the discriminants
+    /// form a gap-free `0..N`, so `index()` is a valid `Switcher` slot for every pane. The
+    /// child↔pane pairing itself needs a built panel (`SettingsStore` app-state a bare
+    /// `WidgetTree` can't provide), so that half is only checked by the `debug_assert` above
+    /// plus `run-app`.
     #[test]
     fn pane_discriminants_are_a_gap_free_range() {
         // Every variant, in declaration order — a new pane must be appended here too.

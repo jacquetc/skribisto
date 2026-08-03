@@ -14,8 +14,7 @@
 //!
 //! `read_only: true`, `undoable: false` and `QueryUnitOfWork` express the intent, but none of
 //! them is enforced at compile time against a future edit that adds a write action to the
-//! uow trait — the macros would happily generate it. The `scan_mentions_uc` header already
-//! claimed "`scan_writes_no_entities` guards that" before this file existed; now it does.
+//! uow trait — the macros would happily generate it. This file is that guard.
 //!
 //! The assertion is stated as **no `DirectAccess` event of any kind**, deliberately broader
 //! than the UI's mutation allowlist: mirroring that list here would mean maintaining a second

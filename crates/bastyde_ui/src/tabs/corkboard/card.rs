@@ -71,7 +71,6 @@ impl Widget for CorkboardTile {
 
         // Footer: an "expand synopsis" button at the bottom-left, then the count
         // pushed to the bottom-right (pinned there by the filling synopsis above).
-        // The label is no longer here — it reads directly under the title now.
         let expand = {
             let vm = self.vm.clone();
             let card = self.card.clone();

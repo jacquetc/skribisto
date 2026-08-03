@@ -7,11 +7,12 @@
 // application startup, and returns the Root id so the UI can point its id-only
 // global state at it before any Work is opened.
 //
-// There is exactly ONE Root and ONE System for the whole process; multiple open
-// Works (roadmap: several projects at once) all hang off that single `Root.works`.
-// `load_work`/`new_work` therefore *reuse* this frame rather than minting a fresh
-// pair each time. This use case is idempotent: if a Root already exists (a second
-// call, or a work was loaded before init), it reuses it instead of duplicating.
+// There is exactly ONE Root and ONE System for the whole process; every open Work
+// (a single-instance process can hold several at once) hangs off that single
+// `Root.works`. `load_work`/`new_work` therefore *reuse* this frame rather than
+// minting a fresh pair each time. This use case is idempotent: if a Root already
+// exists (a second call, or a work was loaded before init), it reuses it instead
+// of duplicating.
 use crate::InitializeAppResultDto;
 use anyhow::Result;
 use common::database::CommandUnitOfWork;

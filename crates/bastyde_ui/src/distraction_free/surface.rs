@@ -150,23 +150,17 @@ impl Widget for DistractionFreeSurface {
             );
         }
 
-        // Outside the mode the surface holds nothing open, and **builds
-        // nothing at all**.
+        // Outside the mode the surface builds **nothing at all**: no refcount
+        // pinned on whatever document happened to be focused, no focusable
+        // node, nothing painted — and no occupied slot to swallow the
+        // pointer. This widget is a `ZStack` sibling of the whole project
+        // shell, painted on top of it, so anything it leaves occupying the
+        // window while the mode is off is a full-window click target over
+        // the binder, the tabs and the editor.
         //
-        // Building nothing is what makes it harmless when it is not in use: no
-        // refcount pinned on whatever document happened to be focused, no
-        // focusable node, nothing painted — and, the part that bit, **no
-        // occupied slot to swallow the pointer**. This widget is a sibling of
-        // the whole project shell in a `ZStack`, painted on top of it; anything
-        // it leaves occupying the window while the mode is off is a full-window
-        // click target sitting over the binder, the tabs and the editor. That is
-        // exactly what an always-present, always-full-size `Expand` in here did:
-        // the shell stayed visible (the content inside was parked) but became
-        // completely unclickable.
-        //
-        // The travel distance the slide needs comes from this same fact rather
-        // than from a filler widget: while active the content below reports the
-        // full window, which is what `Slide` translates; while inactive there is
+        // The slide's travel distance comes from this same fact rather than a
+        // filler widget: while active the content below reports the full
+        // window, which is what `Slide` translates; while inactive there is
         // no child, so the slot collapses to nothing.
         let want = if active.get() {
             self.vm.desired_item().get()
@@ -311,14 +305,10 @@ impl Widget for DistractionFreeSurface {
         }
 
         // The margin: the theme's general background, edge to edge behind
-        // everything, with the strip sitting on it as the mode's one gadget row.
-        //
-        // **Every painted surface here is a `RectWidget`** — `Panel` resolved its
-        // background differently and came out carrying the base palette's
-        // `surface_main` (#F7F8FA) instead of the theme's margin colour, while the
-        // card beside it themed correctly. `RectWidget` resolves its paint against
-        // the live theme at paint time, which is what the surface's token override
-        // needs.
+        // everything, with the strip sitting on it as the mode's one gadget
+        // row. Every painted surface here is a `RectWidget`, not a `Panel` —
+        // it resolves its paint against the live theme at paint time, which
+        // the surface's token override needs.
         let body: Box<dyn Widget> = Box::new(
             ZStack::new()
                 .child(RectWidget::new().background(SurfaceRole::Main))
@@ -354,30 +344,18 @@ impl Widget for DistractionFreeSurface {
     fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
         match self.root_child {
             // **The whole window, taken from the proposal — never from the
-            // body.** This surface is all-or-nothing by construction, and that
-            // is a property of the surface, not of whichever of the twelve tab
-            // bodies it happens to be showing.
-            //
-            // Asking the body instead (`ctx.child_size(child, proposal)`) is
-            // what broke it: the body is a `ZStack`, and `ZStack` answers with
-            // `rigid(max of its children measured at unspecified)` — it ignores
-            // the proposal on purpose, so a background `RectWidget` cannot
-            // inflate the stack. A `RectWidget` reports 0×0 unconstrained, so
-            // the margin and the page contributed nothing and the surface
-            // asked for **532×35 of a 1200×800 window** — the strip's own
-            // height, with the manuscript squeezed to nothing. The parent's
-            // `place_children` still handed the body the surface's full bounds,
-            // so the tree looked entirely correct and only the *slot* was wrong.
-            //
-            // Every test but one mounts this widget as the tree root, which is
-            // handed the whole window whatever it answers — which is exactly
-            // why this got through them all.
+            // body.** This surface is all-or-nothing by construction,
+            // regardless of which of the twelve tab bodies it shows.
+            // Delegating to the body (`ctx.child_size`) is wrong: the body is
+            // a `ZStack`, which answers `rigid(max of its children measured
+            // unconstrained)` — a background `RectWidget` reports 0×0 and
+            // can't inflate it, so the surface would ask for far less than
+            // the window (the strip's own height, with nothing else counted).
             Some(_) => proposal.resolve(0.0, 0.0).into(),
             // **Rigid zero, not `proposal.resolve(0, 0)`.** Against an exact
-            // proposal — which is what a `ZStack` hands every child — `resolve`
-            // answers with the proposal, so the "empty" surface still claimed the
-            // whole window and went on swallowing every click meant for the shell
-            // underneath it. Nothing built means nothing occupied.
+            // proposal — what a `ZStack` hands every child — `resolve` echoes
+            // the proposal back, so an "empty" surface would still claim the
+            // whole window and swallow every click meant for the shell below.
             None => LayoutResponse::rigid(Size::ZERO),
         }
     }
@@ -606,18 +584,10 @@ mod tests {
         assert_eq!(fx.docs.refs_for_test(1), before);
     }
 
-    /// **The surface occupies nothing while the mode is off.**
-    ///
-    /// It is a `ZStack` sibling of the whole project shell, painted on top of
-    /// it, so any slot it leaves behind is a full-window click target lying over
-    /// the binder, the tabs and the editor — with nothing drawn in it to explain
-    /// why the app stopped responding. That shipped once: an always-full-size
-    /// `Expand` between the slide and the visibility gate (added to give the
-    /// slide something to travel) made the entire main view unclickable while
-    /// looking completely normal.
-    ///
-    /// Zero size is the whole assertion. A widget that occupies nothing cannot
-    /// take a click meant for what is underneath it.
+    /// **The surface occupies nothing while the mode is off.** It is a
+    /// `ZStack` sibling of the whole project shell, painted on top of it, so
+    /// any slot it leaves behind is a full-window click target over the
+    /// binder, the tabs and the editor. Zero size is the whole assertion.
     #[test]
     fn the_surface_occupies_nothing_while_the_mode_is_off() {
         let fx = fixture();
@@ -643,15 +613,9 @@ mod tests {
         );
     }
 
-    /// **The whole window, not merely a non-zero slot.**
-    ///
-    /// The sibling test above asserts the surface occupies *nothing* while the
-    /// mode is off, and was for a while the only one that mounted it under a
-    /// parent at all — every other test uses the surface as the tree root,
-    /// which is handed the full window whatever it answers. So "greater than
-    /// zero" was the only claim being made about the active case, and a body
-    /// that reported its *intrinsic* size passed it while rendering as a small
-    /// island of content on a blank window.
+    /// **The whole window, not merely a non-zero slot.** Mounted under a
+    /// parent rather than as the tree root, since a root is always handed the
+    /// full window regardless of what it reports.
     #[test]
     fn the_surface_fills_the_window_while_the_mode_is_on() {
         let fx = fixture();
@@ -671,9 +635,7 @@ mod tests {
 
     /// **The assertion this whole feature exists for.** Entering the mode must
     /// put the writer's document on the mode's own column, not the docked
-    /// editor's — which is exactly what the in-place chrome collapse never did,
-    /// because the typography resolved once at build time and the pane was
-    /// memoized.
+    /// editor's.
     #[test]
     fn entering_the_mode_mounts_the_document_on_the_distraction_free_column() {
         let fx = fixture();
@@ -869,11 +831,7 @@ mod tests {
     }
 
     /// The manuscript floats on a **card**, narrower than the surface, so the
-    /// theme's general-background axis has an area of its own.
-    ///
-    /// Before this the tab body painted its own page edge to edge and the margin
-    /// colour had nowhere to show — it existed in the data and surfaced only by
-    /// accident, through the idle fill of `Plain` buttons on the strip.
+    /// theme's general-background axis has a visible area of its own.
     #[test]
     fn a_prose_page_floats_as_a_card_narrower_than_the_surface() {
         let fx = fixture();

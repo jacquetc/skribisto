@@ -380,14 +380,9 @@ mod tests {
         )
     }
 
-    /// A card must actually build and lay out.
-    ///
-    /// Trivial-looking, and it is the test that was missing: the margin's own
-    /// tests only ever exercised the `binding: None` path, so **no test built a
-    /// card at all**. That let a card ship whose `IconButton` had no tooltip —
-    /// which `IconButton` treats as a hard error, since the tooltip is its
-    /// accessible name — and the first thing that ran the code was the app,
-    /// panicking on the user's screen.
+    /// A card must actually build and lay out — including its `IconButton`, which
+    /// `IconButton` treats a missing tooltip on as a hard error (the tooltip is its
+    /// accessible name).
     #[test]
     fn a_card_builds_and_lays_out() {
         let ctx = std::rc::Rc::new(frontend::AppContext::new());

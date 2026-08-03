@@ -282,12 +282,7 @@ pub(crate) fn apply_purge<U: PurgeAccess + ?Sized>(
 
     // Drop removed binders from their Work. A trashed Binder always belongs to
     // the same Work whose trash is being purged (TrashInfo lives in the Work
-    // trunk), so this can go straight to `work_id` -- Phase 0.6: this used to
-    // scan every open Work with `get_all_work()` looking for whichever one
-    // listed the binder, which happened to always land on the right Work
-    // (ids are globally unique) but did so by re-deriving what `work_id`
-    // already told the caller, an unscoped-resolution shape indistinguishable
-    // at a glance from the real bug this phase hunts.
+    // trunk), so this can go straight to `work_id`.
     if !plan.remove_binders.is_empty() {
         let rb: HashSet<EntityId> = plan.remove_binders.iter().copied().collect();
         let binders = uow.get_work_relationship(&work_id, &WorkRelationshipField::Binders)?;

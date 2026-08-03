@@ -170,11 +170,8 @@ impl RunSearchUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // Phase 0.5: search the caller-named Work's own WorkInfo — it owns the
-        // Search — not whichever WorkInfo a HashMap-backed store happens to
-        // iterate first once a second Work is open. (`load_work` / `new_work`
-        // create both Work and WorkInfo; see the eager-creation patch in
-        // those use cases.)
+        // Search the caller-named Work's own WorkInfo — it owns the Search.
+        // (`load_work` / `new_work` create both Work and WorkInfo eagerly.)
         let work_id = dto.work_id as EntityId;
         let work_info: WorkInfo = uow
             .get_all_work_info()?
@@ -462,10 +459,9 @@ impl RunSearchUseCase {
             // stay global: the language decides *how* to fold, never *whether* to, or the
             // same checkbox would mean different things in different chapters of one book.
             //
-            // Both `whole_word` and `diacritic_sensitive` reach the matcher now. Both spent
-            // time as dead fields — the DTO accepted them, the `Search` entity stored them,
-            // and nothing read them. A toggle that silently does nothing is worse than a
-            // missing one: the writer believes the search was narrowed when it was not.
+            // Both `whole_word` and `diacritic_sensitive` must actually reach the matcher —
+            // a toggle that silently does nothing is worse than a missing one: the writer
+            // believes the search was narrowed when it was not.
             let options = MatchOptions {
                 case_sensitive: dto.case_sensitive,
                 diacritic_sensitive: dto.diacritic_sensitive,

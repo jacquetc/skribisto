@@ -262,8 +262,7 @@ def want(label, why, minx=None):
 #
 # FIRST, before any dock is visited: the comment docks share the leading rail
 # with the binder, so opening one *replaces* the binder tree and every later
-# binder-row lookup would fail. (Learned the hard way — this probe's first
-# version checked the docks first and then reported the binder as missing.)
+# binder-row lookup would fail.
 print("\n=== editor context menu ===")
 
 

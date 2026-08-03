@@ -20,11 +20,12 @@
 //!   fire no `CloseWork` at all — so by the time any teardown event lands there is
 //!   no store left to translate a tab's item id into its persistable ordinal.
 //!
-//! ## Why ordinals
+//! ## Why uids
 //!
-//! A tab is persisted by its **position** in the work's ordered binder-item stream,
-//! not by its `BinderItem` store id: store ids are remapped on every load and are
-//! not stable across a save→load cycle. See
+//! A tab is persisted by its `BinderItem`'s durable **uid** — not its store id
+//! (remapped on every load, so unstable across a save→load cycle) and not its
+//! stream position either (an insertion ahead of an open tab would shift every
+//! later ordinal, reopening a neighbour). See
 //! [`workspace_layout_file`](crate::models::WorkspaceLayoutService)'s module docs.
 //!
 //! ## The bottom band
@@ -78,10 +79,10 @@ pub struct WorkspaceLayoutViewModel {
     /// This Work's own tree-expansion service (Tier 2 — see its own module doc),
     /// bundled in here so [`Self::capture_tree_expansion`] can be reached from
     /// every "leaving the project" door with a single `WorkspaceLayoutViewModel`
-    /// argument, exactly like [`Self::capture`] already is. Scope C fix: this used
-    /// to be resolved separately via `ctx.app_state::<TreeExpansionViewModel>()`
-    /// at each door, which silently answered with whichever Work's session
-    /// registered first — see `capture_tree_expansion`'s own doc for the full story.
+    /// argument, exactly like [`Self::capture`] already is — never resolved via
+    /// `ctx.app_state::<TreeExpansionViewModel>()`, which would silently answer
+    /// with whichever Work's session registered first (see
+    /// `capture_tree_expansion`'s own doc).
     tree_expansion: TreeExpansionViewModel,
     /// The pristine dock arrangement, snapshotted once on first build — the state a
     /// project with no saved layout is reset to (so switching to an unconfigured
@@ -142,13 +143,12 @@ impl WorkspaceLayoutViewModel {
     /// (a brand-new unsaved project), in backup mode, before the editors are wired,
     /// or while there are **unsaved edits**.
     ///
-    /// Tabs are persisted as ordinals into the on-disk item stream, so a capture is
-    /// only meaningful when the store matches disk. Capturing while dirty (e.g. a
-    /// discard-close still holding an unsaved reorder) would record ordinals a
-    /// reload — which reads the *saved* file — resolves against a different stream.
-    /// So capture runs only when clean; the on-save trigger then keeps the persisted
-    /// desk fresh and disk-aligned after every write (surviving a later hard exit),
-    /// and a clean graceful close captures the final tab set.
+    /// Tabs are persisted by durable uid, but a capture is only meaningful when
+    /// the store matches disk: a tab left open on an item created since the last
+    /// save would persist a uid the next load's file doesn't have yet. So
+    /// capture runs only when clean; the on-save trigger then keeps the
+    /// persisted desk fresh and disk-aligned after every write (surviving a
+    /// later hard exit), and a clean graceful close captures the final tab set.
     pub fn capture(&self) {
         if self.backup_mode.get() {
             return;
@@ -221,17 +221,11 @@ impl WorkspaceLayoutViewModel {
     /// (see [`Self::set_editors`]/[`Self::set_outline`]) — the same guard
     /// [`Self::capture`] already applies to `editors` alone.
     ///
-    /// **Scope C fix.** This used to be a free function in `app.rs` resolving
-    /// `TreeExpansionViewModel`/`EditorsViewModel`/`OutlineViewModel` via
-    /// `ctx.app_state::<T>()` — every one of them Tier 2 (per-open-Work), so the
-    /// lookup silently answered with whichever Work's session registered first.
-    /// Worse, `EditorsViewModel` was never registered as `app_state` at all
-    /// anywhere in the crate (confirmed by grep) — so that lookup always failed
-    /// and this capture was a complete, silent no-op for every Work, not merely a
-    /// misrouted one. Now a method on the Tier-2 `WorkspaceLayoutViewModel`
-    /// itself, using the same injected `editors`/`outline` cells `capture` already
-    /// relies on, so every "leaving the project" door reaches the right Work's
-    /// data through one argument, exactly like `capture` does.
+    /// **Never resolved via `ctx.app_state::<T>()`.** `TreeExpansionViewModel`/
+    /// `EditorsViewModel`/`OutlineViewModel` are all Tier 2 (per-open-Work), so
+    /// that lookup would silently answer with whichever Work's session
+    /// registered first. This method reaches the right Work's data through the
+    /// injected `editors`/`outline` cells instead, exactly like `capture` does.
     pub fn capture_tree_expansion(&self) {
         let Some(editors) = self.editors.borrow().clone() else {
             return;

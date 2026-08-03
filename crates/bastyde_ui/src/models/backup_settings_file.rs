@@ -22,11 +22,11 @@
 //! `skrib_format::retention::RetentionPolicy` from them — one conversion, in one
 //! place, next to the engine that consumes it.
 //!
-//! **T1-6 — cross-process safety.** Skribisto runs **one process per
-//! project**, and every instance shares this same `<config_dir>/backup.toml` —
-//! two windows editing overrides for two different projects (or the general
-//! policy) must never clobber each other. That is now `SettingsFile<T>`'s
-//! **only** mode (`load_shared` is gone — `load` performs the locked
+//! **T1-6 — cross-process safety.** Skribisto is single-instance: normally one
+//! process hosts every open project window, sharing this same
+//! `<config_dir>/backup.toml` — two windows editing overrides for two different
+//! projects (or the general policy) must never clobber each other. That is now
+//! `SettingsFile<T>`'s **only** mode (`load_shared` is gone — `load` performs the locked
 //! read-modify-write unconditionally, see `bastyde_settings::file`'s module
 //! docs), so this service just calls [`SettingsFile::load`] like any other
 //! persisted type.
@@ -516,9 +516,9 @@ mod tests {
         // Mirrors bastyde-settings' own
         // `shared_mode_two_concurrent_handles_both_writes_survive` headline test,
         // at this crate's own level: two `BackupSettingsService`s standing in for
-        // two Skribisto processes (one process per project) sharing one
-        // `backup.toml`, each writing a *different* project's override. Without
-        // `SettingsFile::load`'s locked read-modify-write (now the only mode —
+        // two windows sharing one `backup.toml`, each writing a *different*
+        // project's override. Without
+        // `SettingsFile::load`'s locked read-modify-write (the only mode —
         // `load_shared` no longer exists as a separate opt-in), the second
         // write's stale in-memory snapshot would silently drop the first.
         let d = tempdir().unwrap();

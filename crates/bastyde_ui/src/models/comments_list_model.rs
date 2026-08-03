@@ -136,12 +136,6 @@ impl CommentRow {
     }
 }
 
-/// Document order within one item, then by creation time.
-///
-/// Comments sort by where they sit in the prose because that is the order a writer
-/// scrolls past them; recency is only the tie-break (and the explicit alternative
-/// sort the dock header offers). Orphans have no meaningful position, so they sort
-/// last within their group rather than pretending to be at offset 0.
 /// A fingerprint of everything about the comment set **except body text**.
 ///
 /// The margin rebuilds on this rather than on every change, and that distinction
@@ -172,6 +166,12 @@ fn structure_key(rows: &[CommentRow]) -> u64 {
     h.finish()
 }
 
+/// Document order within one item, then by creation time.
+///
+/// Comments sort by where they sit in the prose because that is the order a writer
+/// scrolls past them; recency is only the tie-break (and the explicit alternative
+/// sort the dock header offers). Orphans have no meaningful position, so they sort
+/// last within their group rather than pretending to be at offset 0.
 fn sort_rows(rows: &mut [CommentRow]) {
     rows.sort_by(|a, b| {
         a.item_id

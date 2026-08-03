@@ -27,21 +27,12 @@
 //! Never by string surgery on `Content.data`. That field holds **Djot**, and the prose a
 //! writer sees is not the markup that carries it. Every prose rewrite goes through a
 //! `BatchDocument`: parse the Djot, splice **inside the document** at the offsets the parser
-//! itself reports (`find_and_replace`), serialise back. The parser owns the markup, so we
-//! cannot break it.
-//!
-//! That is not a nicety. Rewriting the exported Djot as a string — which is what this used to
-//! do — was wrong in two ways a writer would eventually have paid for:
-//!
-//!   * it rewrote the query wherever it appeared in the **markup**: inside a link's URL, an
-//!     image path, an attribute. Text they never typed into their sentence and cannot see.
-//!   * it **dropped the character formatting** under every match, so renaming a character
-//!     whose name reads `*Aurélien*` silently lost the emphasis — across the whole
-//!     manuscript, in one action, with autosave writing it to disk seconds later.
-//!
+//! itself reports (`find_and_replace`), serialise back. A string rewrite of the exported Djot
+//! would instead match inside the markup itself (a link's URL, an attribute — text the writer
+//! never typed) and drop the formatting under every match (`*Aurélien*` losing its emphasis).
 //! `find_and_replace` also closes a race: it scans and splices without ever letting go of the
-//! document, so the ranges cannot address text that moved in between. Finding and then
-//! replacing in two calls does not *fail* when that happens — it rewrites the wrong words.
+//! document, so the ranges cannot address text that moved in between — finding and replacing
+//! in two calls would rewrite the wrong words instead of failing.
 //!
 //! ## Offsets never cross the review→commit boundary
 //!
@@ -123,9 +114,8 @@ impl ReplaceInProjectUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // Phase 0.5: replace across the caller-named Work only — see
-        // run_search_uc's identical fix (Search hangs off this Work's own
-        // WorkInfo, found via its `work` back-pointer).
+        // Replace across the caller-named Work only: Search hangs off this
+        // Work's own WorkInfo, found via its `work` back-pointer.
         let work_id = dto.work_id as EntityId;
         let work_info: WorkInfo = uow
             .get_all_work_info()?
@@ -219,8 +209,7 @@ impl ReplaceInProjectUseCase {
             };
 
             // How each individual occurrence is rewritten. With `preserve_case`, a rename
-            // keeps the case it found (AURÉLIEN → AURÉLIAN, not aurélian) — which is the
-            // whole point of a rename, and was silently ignored before.
+            // keeps the case it found (AURÉLIEN → AURÉLIAN, not aurélian).
             let case_of = |matched: &str| -> String {
                 if dto.preserve_case {
                     text_document::matching::preserve_case(matched, &dto.replacement, locale)
@@ -280,22 +269,11 @@ impl ReplaceInProjectUseCase {
                     }
 
                     // The splice happens in the DOCUMENT, at the offsets the parser itself
-                    // reports, and the result is re-serialised by the exporter.
-                    //
-                    // This replaces a string rewrite of the re-exported Djot, which was wrong
-                    // in two ways a writer would eventually have paid for:
-                    //
-                    //   * it rewrote the query wherever it appeared in the MARKUP — inside a
-                    //     link's URL, an image's path, an attribute — text they never typed
-                    //     into their sentence and cannot see;
-                    //   * it dropped the character formatting under every match, so renaming a
-                    //     character whose name reads `*Aurélien*` silently lost the emphasis.
-                    //
-                    // `find_and_replace` scans and splices without letting go of the document,
-                    // so the ranges cannot address text that has moved in between; and
-                    // `PreserveIfFullyCovered` keeps the styling of a name that was wholly
-                    // styled, falling back to the historical behaviour when the range is only
-                    // partly styled rather than guessing.
+                    // reports (see the module doc for why this isn't a string rewrite), and
+                    // the result is re-serialised by the exporter. `PreserveIfFullyCovered`
+                    // keeps the styling of a name that was wholly styled, falling back to
+                    // the previous behaviour when the range is only partly styled rather
+                    // than guessing.
                     let replaced = batch.find_and_replace(
                         &search.query,
                         &ReplaceOptions::new(find_opts.clone())

@@ -18,23 +18,19 @@ pub(in crate::settings) fn work_language_pane(
     open_docs: crate::models::OpenDocsStore,
 ) -> impl Widget {
     // Build the whole form per branch so the pill field is added through FormLayout's own
-    // `full_width(widget)` **deferred insertion** (which parents it to the FormLayout). The
-    // earlier `ctx.add_boxed(field)` + `full_width_id` route parented the field to *this*
-    // build context instead, orphaning it into an arena root — which the layout pass then
-    // placed at the window origin (0,0) with the full window size, leaking a stray pill row
-    // to the top-left that even survived closing Settings.
+    // `full_width(widget)` **deferred insertion**, which parents it to the FormLayout —
+    // parenting it to this build context instead orphans it into an arena root that the
+    // layout pass then places at the window origin with the full window size.
     let base = FormLayout::new()
         .label(tr!(settings_page_language()))
         .label_gap(16.0)
         .row_spacing(14.0)
         .full_width(group(tr!(settings_field_dict_language())));
-    // `open_docs` is now the OPENING WINDOW's own `WorkSession::open_docs`,
-    // threaded in by `SettingsPanel::build` (Phase 3 fix) — never
-    // `ctx.app_state::<OpenDocsStore>()`, which would silently resolve to
-    // whichever Work's session registered it first. `SpellcheckService` stays
-    // resolved via `ctx.app_state`: it is genuinely Tier-1 (one process-wide
-    // service, internally partitioned per `work_id` — see its own module doc),
-    // not per-Work state that needs threading.
+    // `open_docs` is the OPENING WINDOW's own `WorkSession::open_docs`, threaded in by
+    // `SettingsPanel::build` — never `ctx.app_state::<OpenDocsStore>()`, which would
+    // silently resolve to whichever Work's session registered it first. `SpellcheckService`
+    // stays resolved via `ctx.app_state`: it is genuinely process-wide (internally
+    // partitioned per `work_id` — see its own module doc), not per-Work state.
     let form = match (
         ctx.app_state::<crate::spellcheck::SpellcheckService>()
             .cloned(),

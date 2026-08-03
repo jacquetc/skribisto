@@ -3,26 +3,21 @@
 
 //! Replace-side helpers, over the **shared** matcher.
 //!
-//! Finding is *not* done here. It is done by `text_document::matching`, the one
-//! definition of "a match" — the same one the editor's own find and find-and-replace
-//! use. This crate used to carry its own copy, and two matchers drift: the writer meets
-//! that as "the editor found it but the search panel didn't", or worse, as a whole-word
-//! Replace All that renames a character everywhere except in the possessives.
-//!
-//! It also inherits the rule that copy existed to enforce, for free: **an offset computed
-//! in folded text is not valid in the original text** (`'İ'.to_lowercase()` is two chars,
-//! so a match found in a lowercased haystack lands in the wrong place in the source).
+//! Finding is done by `text_document::matching`, the one definition of "a match" — the same
+//! one the editor's own find and find-and-replace use, so the search panel can never disagree
+//! with the editor about a hit. It also means an offset computed in folded text is never
+//! reused as-is in the original text (`'İ'.to_lowercase()` is two chars, so a match found in
+//! a lowercased haystack must be mapped back to the source).
 //!
 //! What stays here is the one thing text-document cannot do for us: rewrite a **plain
 //! string**. A title and a label are not documents — there is no parser, no format run and
-//! no `BatchDocument` to splice inside — so they get a string rewrite. Prose does not: it
-//! goes through `BatchDocument::find_and_replace`, which splices inside the parsed document
-//! at the offsets the parser itself reports.
+//! no `BatchDocument` to splice inside — so they get a string rewrite. Prose goes through
+//! `BatchDocument::find_and_replace` instead, splicing inside the parsed document at the
+//! offsets the parser itself reports.
 //!
-//! `preserve_case` used to live here too. It now comes from `text_document::matching`,
-//! because it needs the scene's **locale**: in Turkish the uppercase of `i` is `İ`, and a
-//! case-preserver blind to that would rewrite Turkish prose into a different word. That is
-//! the same class of knowledge as the fold, so it lives with the fold.
+//! `preserve_case` comes from `text_document::matching` because it needs the scene's
+//! **locale**: in Turkish the uppercase of `i` is `İ`, and a locale-blind case-preserver
+//! would rewrite Turkish prose into a different word.
 
 use text_document::matching::{MatchOptions, find_all};
 

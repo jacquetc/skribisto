@@ -282,12 +282,10 @@ if not disabled:
     fail("Save stayed enabled after a successful save", s.app, s.mcp, s.log)
 
 # ── 4. A *structural* edit must dirty the work too ────────────────────────────
-# The regression that made this whole feature unsafe: a lone Enter changes the
-# block count but inserts no character. RichTextEditor used to lump the resulting
-# BlockCountChanged in with DocumentReset and skip `on_change` (bastyde 7fa39918),
-# so the edit was never marked unsaved — and with Save gated on that flag, it
-# became unsavable. Assert the document really changed (block count, straight from
-# the a11y tree) *and* that Save went live, so a null result can't pass silently.
+# A lone Enter changes the block count but inserts no character, a case that
+# has previously been missed and left Save unreachable for that edit. Assert
+# the document really changed (block count, straight from the a11y tree) *and*
+# that Save went live, so a null result can't pass silently.
 print("== a lone Enter (block split, no character typed) must enable Save ==")
 s.call("invoke_action", {"node": main["id"], "action": "focus"})
 time.sleep(0.5)

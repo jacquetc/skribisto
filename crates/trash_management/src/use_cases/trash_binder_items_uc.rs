@@ -10,11 +10,7 @@
 // created. Post-reparent TrashInfo lives in the Work trunk alongside the items,
 // so no cross-trunk snapshot is needed.
 //
-// Work resolution: dto.work_id, validated against the open Works -- Phase 0.6:
-// this used to pick `get_all_work().next()`, which had no defined subject once
-// a second Work was open (whichever Work a HashMap happened to iterate first
-// got the new TrashInfo, while the caller's own Work lost the item with no
-// trash-bin trace of it).
+// dto.work_id must be validated against the open Works before use.
 use crate::TrashBinderItemsDto;
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
@@ -98,15 +94,11 @@ impl TrashBinderItemsUseCase {
         self.work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
 
         // Ownership check: origin_binder_id must be one of THIS Work's own
-        // binders. Binder ownership is exclusive (Work.binders is a strong
-        // one_to_many), so this forward lookup is exact: a binder id
-        // belonging to a different Work can never appear in `work_id`'s own
-        // list. The roots/cascade above are resolved purely from
-        // `origin_binder`'s own order, with no cross-check against the Work
-        // at all -- so without this, a caller passing Work B's
-        // origin_binder_id (with Work B's own item ids) under Work A's (real,
-        // open) work_id would trash Work B's cascade while the new TrashInfo
-        // landed under Work A's index, with no undo record on Work B's side.
+        // binders. The roots/cascade above are resolved purely from
+        // `origin_binder`'s own order with no cross-check against the Work,
+        // so without this a caller pairing Work B's origin_binder_id with
+        // Work A's work_id would trash Work B's cascade while the new
+        // TrashInfo landed under Work A's index.
         if !uow
             .get_work_relationship(&self.work_id, &WorkRelationshipField::Binders)?
             .contains(&origin_binder)
@@ -233,11 +225,8 @@ pub(crate) fn roots_and_cascade(
     (roots, cascade)
 }
 
-// `get_work_relationship` does not validate that `id` is a real, open Work --
-// a junction lookup against an unknown id just comes back empty, which would
-// silently no-op instead of reporting the caller's mistake. So the id from
-// `dto.work_id` is checked against the open Works first, exactly like
-// `empty_trash_uc.rs` does.
+// `get_work_relationship` doesn't validate that `id` is a real, open Work, so
+// check `dto.work_id` against the open Works first (see `empty_trash_uc.rs`).
 pub(crate) fn work_id(
     uow: &dyn TrashBinderItemsUnitOfWorkTrait,
     requested: EntityId,

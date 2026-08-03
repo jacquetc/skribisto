@@ -118,9 +118,8 @@ pub fn render_to_file(
             let out = path.to_string_lossy().into_owned();
             let w = &req.gathered.work;
             // The book's language drives the EPUB `dc:language` + reading direction; fall back
-            // to the work-level language when the document carries none.
-            // `dc:language` takes ONE tag. Cloning the field wholesale used to emit
-            // "fr-FR en-US" for a bilingual work; the list type made that visible.
+            // to the work-level language when the document carries none. `dc:language` takes
+            // ONE tag, so this must be the primary, not the whole (possibly multi-tag) field.
             let primary = skribisto_model::language::primary(&w.dict_language);
             let lang = if primary.is_empty() {
                 req.work_lang.to_string()
@@ -140,8 +139,7 @@ pub fn render_to_file(
         ExportFormat::Pdf => {
             let out = path.to_string_lossy().into_owned();
             let w = &req.gathered.work;
-            // `dc:language` takes ONE tag. Cloning the field wholesale used to emit
-            // "fr-FR en-US" for a bilingual work; the list type made that visible.
+            // Same single-tag requirement as the EPUB arm above.
             let primary = skribisto_model::language::primary(&w.dict_language);
             let lang = if primary.is_empty() {
                 req.work_lang.to_string()
@@ -316,8 +314,7 @@ fn assemble(
             push_heading(&mut out, 1, &w.title, work_rtl);
         }
         // The author's name is *data*, never markup — escaped so a name that
-        // happens to start like a list marker survives intact. "A. Writer"
-        // reached the page as "Writer" until this was added.
+        // happens to start like a list marker survives intact.
         if !w.author_name.trim().is_empty() {
             push_para(
                 &mut out,
@@ -701,10 +698,6 @@ fn push_scene_break(
 ///   Escape the *punctuation*, not the leading character: `A\. Writer` → `A. Writer`,
 ///   whereas `\A. Writer` renders the backslash literally and `A. Writer` silently
 ///   loses the `A.` — the marker is consumed and only "Writer" survives.
-///
-/// That second family is why an author named "A. Writer" reached the compiled title
-/// page as "Writer". The digit case was mishandled the same way in the opposite
-/// direction: `\1.` printed a visible backslash instead of escaping anything.
 fn escape_block_leading(s: &str) -> String {
     let mut chars = s.chars();
     match (chars.next(), chars.next()) {
@@ -1079,9 +1072,8 @@ mod tests {
 
     #[test]
     fn adjacent_scene_items_do_not_break_by_default() {
-        // The flagship guarantee: the binder is organisational, so two scenes
-        // sitting next to each other say nothing about typography. Without a
-        // marker the prose must run straight on, even with a glyph configured.
+        // The binder is organisational: two adjacent scenes say nothing about typography,
+        // so without a marker the prose must run straight on, even with a glyph configured.
         let g = flat_book();
         let mut p = preset("neutral");
         p.scene_break = SceneBreak::Glyph("###".to_string());
@@ -1150,11 +1142,8 @@ mod tests {
         );
     }
 
-    /// An author whose name starts like an ordered-list marker must survive.
-    /// "A. Writer" reached the page as "Writer": Djot read `A.` as an alphabetic
-    /// list marker and consumed it. A backslash before the *letter* does not fix
-    /// it (Djot only escapes punctuation, so `\A.` prints the backslash) — the
-    /// `.` is what must be escaped.
+    /// An author whose name starts like an ordered-list marker must survive — see
+    /// [`escape_block_leading`] for why the escape goes before the `.`, not the letter.
     #[test]
     fn an_author_named_like_a_list_marker_is_not_eaten() {
         for name in ["A. Writer", "1. Writer", "i. Writer", "J.R.R. Writer"] {
@@ -1300,9 +1289,8 @@ mod tests {
 
     #[test]
     fn a_blank_line_break_is_no_longer_identical_to_none() {
-        // `BlankLine` used to be a byte-for-byte no-op. It now renders as real
-        // leading plus a suppressed indent on the following paragraph, which is
-        // what most of the world's publishing traditions actually use.
+        // `BlankLine` renders as real leading plus a suppressed indent on the following
+        // paragraph — what most of the world's publishing traditions actually use.
         let g = book_with_marker("\\* \\* \\*");
         let mut blank = preset("neutral");
         blank.scene_break = SceneBreak::BlankLine;
@@ -1368,9 +1356,8 @@ mod tests {
 
     #[test]
     fn a_break_does_not_leak_across_a_chapter_boundary() {
-        // A marker ending one chapter must not style the first paragraph of the
-        // next. The old adjacency machinery had exactly this leak whenever a
-        // preset emitted no chapter heading.
+        // A marker ending one chapter must not style the first paragraph of the next,
+        // even when the preset emits no chapter heading to reset the flow.
         let g = gathered(
             vec![
                 iwc(

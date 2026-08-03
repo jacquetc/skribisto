@@ -206,13 +206,11 @@ impl Widget for PreviewBody {
                 // shape the scene tabs use — so the band scrolls a long paragraph.
                 //
                 // `min_lines` is what *makes* it flowing, and it is load-bearing:
-                // with neither `min_lines` nor `max_lines` the editor is **greedy**,
-                // and `centered`'s `CenterColumnFlowing` measures its child
-                // width-only — so a greedy editor fell through to `RichTextEditor`'s
-                // `proposal.height.unwrap_or(100.0)` and pinned the band at 100 px of
-                // text: dragging the dock taller revealed only empty surface, and
-                // (inner scroll off, 100 px of content in the outer `ScrollArea`)
-                // everything past the fourth line was unreachable.
+                // without it the editor is greedy, and `centered`'s
+                // `CenterColumnFlowing` measures its child width-only — so a
+                // greedy editor falls through to `RichTextEditor`'s
+                // `proposal.height.unwrap_or(100.0)` fallback instead of
+                // growing with the prose.
                 let width =
                     crate::view_models::SettingsViewModel::new(ctx.settings()).preview_width();
                 let editor = RichTextEditor::editor(prose.doc.clone())
@@ -474,23 +472,18 @@ mod tests {
         tree.bounds(body).height
     }
 
-    /// The preview editor must size **intrinsically** (`min_lines`), never greedily.
+    /// The preview editor must size **intrinsically** (`min_lines`), never
+    /// greedily — [`centered`](crate::tabs::shared::editor::centered)'s
+    /// `CenterColumnFlowing` measures its child **width-only**, so a greedy
+    /// editor falls straight through to `RichTextEditor`'s
+    /// `proposal.height.unwrap_or(100.0)` fallback and never grows with the
+    /// prose.
     ///
-    /// It was greedy — neither `min_lines` nor `max_lines` — and
-    /// [`centered`](crate::tabs::shared::editor::centered)'s `CenterColumnFlowing`
-    /// measures its child **width-only**, so the editor fell straight through to
-    /// `RichTextEditor`'s `proposal.height.unwrap_or(100.0)` fallback and the band
-    /// was pinned at 100 px of text forever. Dragging the dock taller revealed only
-    /// empty surface, and with `ScrollPolicy::AlwaysOff` inside and 100 px of content
-    /// in the outer `ScrollArea`, everything past the fourth line was unreachable.
-    ///
-    /// **What this can and cannot see.** The editor shapes its document in `paint`
-    /// (`engine.layout_full`), not in `layout_response`, so headless layout always
-    /// reports the `min_lines` floor rather than the real content height — bastyde's
-    /// own intrinsic-sizing tests measure empty documents for the same reason. What
-    /// is provable here is the *mode*, which is exactly what regressed: an intrinsic
-    /// editor reports one line, a greedy one reports the 100 px fallback. Growth with
-    /// the prose then follows from the mode.
+    /// **What this can and cannot see.** The editor shapes its document in
+    /// `paint` (`engine.layout_full`), not `layout_response`, so headless
+    /// layout always reports the `min_lines` floor rather than the real
+    /// content height. What is provable here is the *mode*: an intrinsic
+    /// editor reports one line, a greedy one reports the 100 px fallback.
     #[test]
     fn the_preview_editor_is_intrinsic_not_the_greedy_100px_fallback() {
         let h = editor_body_height(40, 400.0);

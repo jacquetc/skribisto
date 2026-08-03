@@ -3,26 +3,19 @@
 
 //! One module per Settings page body.
 //!
-//! `settings_panel.rs` keeps the *shell* — the category tree, the search field, the
-//! pane-switcher and the footer — and each page's form lives here. Five pages were already
-//! their own top-level files (`settings_backup`, `settings_dictionaries`,
-//! `settings_export_styles`, `settings_user_dictionary`); these are the nine that were still
-//! inline, finishing a split that had been started and left half-done.
+//! `settings.rs` keeps the *shell* — the category tree, the search field, the
+//! pane-switcher and the footer — and each page's form lives here, one `*_pane` function per
+//! module (23 today). Each reaches the shell's shared helpers (`field_label`, `hint`, `group`,
+//! `slider_field`, `pane_frame`, `crumb`) through `use super::super::*` — child modules can
+//! see a parent's private items, so none of those had to be widened for this.
 //!
-//! Each module exposes one `*_pane` function returning the page's widget, and they all reach
-//! the shell's shared helpers (`field_label`, `hint`, `group`, `slider_field`, `pane_frame`,
-//! `crumb`) through `use super::super::*` — child modules can see a parent's private items,
-//! so none of those had to be widened to make this move.
+//! One page is still an `empty_pane` placeholder (Menus & Toolbars) and has no module until
+//! it has a body. Keymap hosts Bastyde's [`ShortcutSettings`]; Notifications hosts the toast
+//! archive [`NotificationLog`].
 //!
-//! One page is still an `empty_pane` placeholder (Menus & Toolbars) and has no module
-//! until it has a body. Keymap hosts Bastyde's [`ShortcutSettings`]; Notifications hosts
-//! the toast archive [`NotificationLog`].
-//!
-//! The four that were already split live here too, having been top-level `settings_*.rs`
-//! files: [`backup`], [`dictionaries`], [`export_styles`] and [`user_dictionary`]. A
-//! settings page is a page in the Settings window — its chrome, navigation and lifecycle
-//! belong to this shell — so all thirteen sit together rather than being scattered across
-//! the feature directories their view-models live in.
+//! A settings page is a page in the Settings window — its chrome, navigation and lifecycle
+//! belong to this shell — so every page sits here rather than being scattered across the
+//! feature directories their view-models live in.
 
 pub(super) mod appearance;
 pub(super) mod autosave;

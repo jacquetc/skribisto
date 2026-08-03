@@ -284,9 +284,8 @@ mod tests {
         assert!(absent.missing.iter().any(|m| m == "Constantine"), "got {absent:?}");
     }
 
-    /// Regression: the entity-term skip used to be `name.contains(token)`, so an entity
-    /// called "Constantine" swallowed any synopsis word that happened to be a substring of
-    /// it — "tine" here — dropping a real term from the measurement without a trace.
+    /// The skip is word-level, not a substring scan: an entity called "Constantine" must
+    /// not swallow an unrelated synopsis word like "tine" that merely substring-matches it.
     #[test]
     fn an_entity_name_does_not_swallow_an_unrelated_substring_of_itself() {
         let v = manuscript("constantine tine");
@@ -389,10 +388,8 @@ mod tests {
         );
     }
 
-    /// Regression: a sigma test alone reported the 0.88 in this book as drift, because a
-    /// standard deviation of ~0.011 makes a 0.02 shortfall look like 1.5σ. A book this
-    /// consistent has no drift in it, and saying otherwise is exactly the false positive
-    /// this module is built to avoid.
+    /// A sigma test alone would flag this: a ~0.011 standard deviation makes a 0.02
+    /// shortfall look like 1.5σ, but a book this consistent has no drift in it.
     #[test]
     fn a_tight_distribution_does_not_manufacture_an_outlier() {
         let scenes = vec![cov(0.9, 5), cov(0.88, 5), cov(0.91, 5), cov(0.9, 5), cov(0.89, 5)];

@@ -418,26 +418,13 @@ impl From<Event> for FlatEvent {
     }
 }
 
-/// Returns `true` if this event kind is a **per-entity** mutation — one of the
-/// `…Created` / `…Updated` / `…Removed` variants.
+/// Returns `true` if this event kind is a per-entity `…Created`/`…Updated`/`…Removed` variant.
 ///
-/// ⚠ This is **not** "did the store change?", and must not be used for
-/// dirty-tracking. Every `…Management…` use-case event is excluded, and several
-/// of them mutate entities *without* emitting any per-entity event:
-///
-/// * `NoteTemplateManagementImportNoteTemplates` and `TagManagementImportTags`
-///   create their rows through the `CreateOrphan` UoW action, which writes to
-///   the store and publishes nothing per row — the whole batch is announced by
-///   the single feature-level event, so it is one undo step rather than N.
-/// * The `TrashManagement…` and `BinderItemManagement…` families are the same
-///   shape.
-///
-/// So a caller asking "does this Work have unsaved changes?" would silently miss
-/// a bulk import, a trash operation and every binder-item command. Saving is
-/// sequence-tracked through `EditorsViewModel`'s `dirty_seq` instead — see
-/// `view_models::save_queue`. If a genuine store-changed predicate is ever
-/// needed, it has to enumerate the mutating feature-level events too; widening
-/// this one in place would give it two contradictory meanings.
+/// ⚠ Not "did the store change?" — every `…Management…` use-case event is excluded even
+/// though several (bulk imports, trash ops, binder-item ops) mutate entities via a
+/// `CreateOrphan`-style UoW action that publishes only the one feature-level event, not a
+/// per-row one, so those batches would be silently missed by dirty-tracking. Saving is
+/// sequence-tracked through `EditorsViewModel`'s `dirty_seq` instead (`view_models::save_queue`).
 pub fn is_entity_mutation(kind: &FlatEventKind) -> bool {
     use FlatEventKind::*;
     matches!(
@@ -638,16 +625,10 @@ mod tests {
         assert!(!is_entity_mutation(&FlatEventKind::LongOperationStarted));
     }
 
-    /// The boundary this predicate deliberately draws, pinned so nobody widens
-    /// it by halves. Every one of these use-case events DOES change the store,
-    /// and none of them emits a per-entity event to go with it (their rows are
-    /// written through `CreateOrphan`-style UoW actions so the batch is a single
-    /// undo step). They are excluded on purpose: `is_entity_mutation` answers
-    /// "was this a per-entity event?", never "did anything change?".
-    ///
-    /// Adding just one family back — say the two bulk imports — would leave the
-    /// predicate meaning neither thing. If a store-changed predicate is wanted,
-    /// it belongs beside this one, enumerating all of these.
+    /// Pins the boundary `is_entity_mutation` deliberately draws: every event listed here
+    /// does change the store but has no per-entity event to go with it, so it must stay
+    /// excluded — widening the predicate for just one family would leave it meaning neither
+    /// "per-entity event" nor "did anything change".
     #[test]
     fn feature_level_mutations_are_not_entity_mutations() {
         for kind in [

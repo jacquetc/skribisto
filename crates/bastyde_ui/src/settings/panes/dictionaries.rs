@@ -11,7 +11,7 @@
 //!   (gated behind the licence-accept modal). A row already installed says so instead.
 //!
 //! Needs generic-closure widgets (`ListView`, `TabWidget`) the `bati!` DSL can't express, so —
-//! like `settings_backup` — it is a chained-builder module rather than a `bati!` tree.
+//! like `panes::backup` — it is a chained-builder module rather than a `bati!` tree.
 
 use bastyde::data::{ListModel, SortFilterListModel};
 use bastyde::prelude::*;

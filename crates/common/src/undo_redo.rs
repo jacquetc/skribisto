@@ -26,71 +26,25 @@ pub trait UndoRedoCommand: Send {
     /// Returns true if this command can be merged with the other command.
     ///
     /// By default, commands cannot be merged. Override this method to enable
-    /// merging for specific command types.
-    ///
-    /// # Example
-    /// ```test
-    /// fn can_merge(&self, other: &dyn UndoRedoCommand) -> bool {
-    ///     // Check if the other command is of the same type
-    ///     if let Some(_) = other.as_any().downcast_ref::<Self>() {
-    ///         return true;
-    ///     }
-    ///     false
-    /// }
-    /// ```
+    /// merging for specific command types (typically via
+    /// `other.as_any().downcast_ref::<Self>()`).
     fn can_merge(&self, _other: &dyn UndoRedoCommand) -> bool {
         false
     }
 
-    /// Merges this command with the other command.
-    /// Returns true if the merge was successful.
-    ///
-    /// This method is called only if `can_merge` returns true.
-    ///
-    /// # Example
-    /// ```test
-    /// use common::undo_redo::UndoRedoCommand;
-    ///
-    /// fn merge(&mut self, other: &dyn UndoRedoCommand) -> bool {
-    ///     if let Some(other_cmd) = other.as_any().downcast_ref::<Self>() {
-    ///         // Merge the commands
-    ///         self.value += other_cmd.value;
-    ///         return true;
-    ///     }
-    ///     false
-    /// }
-    /// ```
+    /// Merges this command with the other command, called only if `can_merge`
+    /// returned true. Returns true if the merge was successful.
     fn merge(&mut self, _other: &dyn UndoRedoCommand) -> bool {
         false
     }
 
-    /// Returns the type ID of this command for type checking.
-    ///
-    /// This is used for downcasting in the `can_merge` and `merge` methods.
-    ///
-    /// # Example
-    /// ```test
-    /// fn as_any(&self) -> &dyn Any {
-    ///     self
-    /// }
-    /// ```
+    /// Enables downcasting for `can_merge`/`merge`. Implementations simply
+    /// return `self`.
     fn as_any(&self) -> &dyn Any;
 }
 
-/// A composite command that groups multiple commands as one.
-///
-/// This allows treating a sequence of commands as a single unit for undo/redo operations.
-/// When a composite command is undone or redone, all its contained commands are undone
-/// or redone in the appropriate order.
-///
-/// # Example
-/// ```test
-/// use common::undo_redo::CompositeCommand;
-/// let mut composite = CompositeCommand::new();
-/// composite.add_command(Box::new(Command1::new()));
-/// composite.add_command(Box::new(Command2::new()));
-/// // Now composite can be treated as a single command
-/// ```
+/// A composite command that groups multiple commands as one, undone/redone together
+/// in reverse/original order.
 pub struct CompositeCommand {
     commands: Vec<Box<dyn UndoRedoCommand>>,
     pub stack_id: u64,
@@ -296,21 +250,8 @@ impl UndoRedoManager {
         Ok(())
     }
 
-    /// Begins a composite command group.
-    ///
-    /// All commands added between begin_composite and end_composite will be treated as a single command.
-    /// This is useful for operations that logically represent a single action but require multiple
-    /// commands to implement.
-    ///
-    /// # Example
-    /// ```test
-    /// let mut manager = UndoRedoManager::new();
-    /// manager.begin_composite();
-    /// manager.add_command(Box::new(Command1::new()));
-    /// manager.add_command(Box::new(Command2::new()));
-    /// manager.end_composite();
-    /// // Now undo() will undo both commands as a single unit
-    /// ```
+    /// Begins a composite command group: every command added before the matching
+    /// `end_composite` is undone/redone as a single unit.
     pub fn begin_composite(&mut self, stack_id: Option<u64>) -> Result<()> {
         if self.composite_stack_id.is_some() && self.composite_stack_id != stack_id {
             return Err(anyhow!(
@@ -329,7 +270,6 @@ impl UndoRedoManager {
             self.in_progress_composite = Some(CompositeCommand::new(stack_id));
         }
 
-        // not sure if we want to send events for composites
         if let Some(event_hub) = &self.event_hub {
             event_hub.send_event(Event {
                 origin: Origin::UndoRedo(UndoRedoEvent::BeginComposite),
@@ -363,7 +303,6 @@ impl UndoRedoManager {
                 stack.undo_stack.push(Box::new(composite));
                 stack.redo_stack.clear();
             }
-            // not sure if we want to send events for composites
             if let Some(event_hub) = &self.event_hub {
                 event_hub.send_event(Event {
                     origin: Origin::UndoRedo(UndoRedoEvent::EndComposite),
@@ -388,7 +327,6 @@ impl UndoRedoManager {
         self.in_progress_composite = None;
         self.composite_stack_id = None;
 
-        // not sure if we want to send events for composites
         if let Some(event_hub) = &self.event_hub {
             event_hub.send_event(Event {
                 origin: Origin::UndoRedo(UndoRedoEvent::CancelComposite),

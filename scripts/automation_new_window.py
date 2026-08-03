@@ -226,14 +226,6 @@ class Session:
         top-level entry's centre does not open its submenu into the AT tree —
         the items simply are not there to click — while `invoke_action` opens it
         reliably. Everything else in this probe uses ordinary pointer clicks.
-
-        (This is no longer about window ops. `bastyde-automation`'s executor
-        used to route `inject_pointer`/`inject_key` through `WidgetTree`'s
-        *test* API, which dispatches with a `NoopWindowOps` whose `open_window`
-        panics — so an injected click or keystroke on a window-opening command
-        killed the app mid-probe. Fixed: the executor now dispatches synthetic
-        input with the caller's real ops, and a plain injected Ctrl+Shift+N
-        opens the second window fine.)
         """
         args = {"node": node["id"], "action": "Click"}
         if window_id is not None:
@@ -417,11 +409,6 @@ print(f"an item created in window 1 appeared in window 2's binder: {gained_2} �
 # available check that a shared *signal* (not merely a shared store reached via
 # entity events) reaches every window: the binder rows above would still cross
 # even if signals did not.
-#
-# This assertion is why bastyde's dirty tracking became a per-registry generation
-# compare. It used to be one `bool` on the signal that the first `WidgetTree` to
-# reconcile read AND cleared, so window 2's indicator silently — and permanently
-# — kept saying "saved" for an edit made in window 1.
 indicator_1, indicator_2 = save_indicator(first_key), save_indicator(second_key)
 if "unsaved" not in indicator_1:
     fail(f"window 1's own save indicator did not follow its own edit "

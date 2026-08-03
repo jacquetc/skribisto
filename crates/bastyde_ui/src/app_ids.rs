@@ -14,16 +14,12 @@
 //! point at and refresh themselves on fine-grained backend events thereafter.
 //!
 //! **`root_id` lives on [`crate::sessions::WorkRegistry`], not here.** Every
-//! field that remains below is per-open-`Work` (Tier 2 in the multi-Work
-//! migration's terms — see `crate::sessions`'s module doc): a second
-//! simultaneously-open Work needs its *own* `work_id`/`work_info_id`/
-//! `stack_id`. `root_id` does not — there is exactly one shared `Root` per
-//! process ([qleany.yaml](../../../qleany.yaml)'s `Root` entity), so it is
-//! genuinely Tier 1 (app-global), and duplicating it into every `WorkSession`
-//! would just be N copies of the same value. It was also, in practice,
-//! write-only here: nothing in this crate ever read `AppIds.root_id` back —
-//! confirmed by grep — so lifting it out cost no consumer a rewrite.
-//! `AppIds` itself is the type `WorkSession` bundles as its `ids` field.
+//! field below is per-open-`Work` (Tier 2 in the multi-Work migration's terms
+//! — see `crate::sessions`'s module doc): a second simultaneously-open Work
+//! needs its *own* `work_id`/`work_info_id`/`stack_id`. `root_id` does not —
+//! there is exactly one shared `Root` per process, so it is genuinely Tier 1
+//! (app-global). `AppIds` itself is the type `WorkSession` bundles as its
+//! `ids` field.
 
 use bastyde::prelude::Signal;
 
@@ -91,24 +87,15 @@ impl AppIds {
     /// "Is this `LoadWork`/`NewWork` event about my Work?" — loose form, for the
     /// two events that **seed** [`Self::work_id`] in the first place.
     ///
-    /// Every open window/[`crate::sessions::WorkSession`] shares the one process-
-    /// wide [`frontend::EventHubClient`], so a second simultaneously-open Work's
-    /// `LoadWork` fires this window's subscribers too — each must answer "is this
-    /// about my Work" before acting (the migration's whole Phase-2 point). For a
-    /// window whose Work is already known, that is exactly `event_ids.contains(&mine)`.
-    ///
-    /// But the window whose *own* bootstrap load (or in-place New/Open-Work
-    /// switch) is what fired this very event has `work_id == None` at the instant
-    /// its subscribers run — seeding `work_id` from the event's own ids is that
-    /// subscriber's job, so it cannot already hold the answer. Treating "not yet
-    /// seeded" as "mine" is exact, not a guess: bastyde's event dispatch is
-    /// synchronous and single-threaded, and a project window performs its own
-    /// `load_work`/`new_work` call synchronously, inline in the same build/action
-    /// that subscribed — so at most one not-yet-seeded window can be "in between"
-    /// subscribing and its own seed landing at any instant (no second window's
-    /// `App::build` can be mid-construction at the same time; see `main.rs`'s
-    /// module docs on window construction). Phase 4 (multi-file-select) may need
-    /// to revisit this if it ever queues more than one bootstrap load in flight.
+    /// Every open window shares one process-wide event hub, so a second
+    /// simultaneously-open Work's `LoadWork` fires this window's subscribers
+    /// too. For a window whose Work is already known, that's exactly
+    /// `event_ids.contains(&mine)`. But the window whose *own* bootstrap load
+    /// fired this very event still has `work_id == None` at the instant its
+    /// subscribers run — seeding is that subscriber's own job. Treating "not
+    /// yet seeded" as "mine" is exact, not a guess: event dispatch is
+    /// synchronous and single-threaded, so at most one not-yet-seeded window
+    /// can be mid-subscribe at any instant.
     ///
     /// Do NOT use this for `CloseWork` or for anything that must never fire
     /// against a window with nothing open yet — see [`Self::is_event_for_my_work`].
@@ -131,17 +118,9 @@ impl AppIds {
 
 /// A view-model that holds its own [`AppIds`] and wants the open Work's id
 /// directly, rather than spelling out `self.ids.work_id.get()` at every call
-/// site.
-///
-/// Before this trait, `SearchReplaceViewModel`, `TagsViewModel`,
-/// `TextReplacementRulesViewModel` and `UserDictionaryViewModel` each
-/// hand-wrote an identical `pub fn work_id(&self) -> Option<u64> { self.ids
-/// .work_id.get() }` — the same scattered-copy pattern
-/// [`crate::toast_scope::ToastWorkExt`] was written to eliminate for toast
-/// ids. `app_ids` is infrastructure every view-model already imports (it is
-/// never a peer view-model importing another peer), so a default method here
-/// gives the accessor one shared home without breaking the cross-VM-talk DAG
-/// rule.
+/// site. `app_ids` is infrastructure every view-model already imports (never
+/// a peer view-model importing another peer), so this default method gives
+/// the accessor one shared home without breaking the cross-VM-talk DAG rule.
 pub trait HasWorkId {
     /// This view-model's own [`AppIds`].
     fn app_ids(&self) -> &AppIds;

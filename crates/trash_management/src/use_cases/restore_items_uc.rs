@@ -8,10 +8,9 @@
 // through restore_items_to — when its binder no longer exists, or when the row
 // it was nested in is no longer a Folder (its container was collapsed to a leaf
 // while it sat in the trash).
-// The restored TrashInfos are unlinked from System.trash_infos.
+// Restored TrashInfos are unlinked from Work.trash_infos.
 //
-// Undoable via a Root-scoped snapshot/restore (the op spans the Work trunk +
-// the System trunk; see trash_binder_items_uc for the rationale).
+// Undoable via a Work-scoped snapshot/restore.
 use crate::RestoreItemsDto;
 use crate::RestoreResultDto;
 use anyhow::{Result, anyhow};
@@ -73,27 +72,19 @@ impl RestoreItemsUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // Work resolution: dto.work_id, validated against the open Works --
-        // Phase 0.6: this used to pick `get_all_work().next()`, which had no
-        // defined subject once a second Work was open. Scopes both the
-        // undo/redo snapshot AND which Work's trash_infos index gets the
-        // consumed ids unlinked; getting it wrong here leaves the real
-        // owning Work with dangling trash rows pointing at now-reactivated
-        // items, on top of an undo/redo pair scoped to the wrong tree.
+        // dto.work_id must be validated against the open Works: it scopes both
+        // the undo/redo snapshot and which Work's trash_infos index gets the
+        // consumed ids unlinked.
         let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
 
         // Ownership check: every requested TrashInfo must be indexed under
-        // THIS Work, not merely exist somewhere in the store. `work_id()`
-        // above only validates the *scalar* dto.work_id against the open
-        // Works -- it says nothing about whether `dto.trash_info_ids` are
-        // actually this Work's own rows. Without this, an id copied from a
-        // different (also open) Work's trash bin would sail straight through:
-        // the loop below resolves `trashed_binder`/`trashed_binder_item` from
-        // the TrashInfo itself and reactivates whatever Binder/BinderItem it
-        // points at, regardless of which Work owns them, while the
-        // snapshot/restore pair stays scoped to `work_id` -- the real owning
-        // Work's tree gets mutated with no undo record, and this Work's index
-        // loses a row it never held.
+        // THIS Work, not merely exist somewhere in the store -- `work_id()`
+        // above only validates the scalar dto.work_id, not that
+        // dto.trash_info_ids are this Work's own rows. Without this, an id
+        // copied from a different open Work's trash bin would reactivate
+        // whatever it points at while the snapshot/restore pair stays scoped
+        // to `work_id`: the real owning Work's tree gets mutated with no undo
+        // record.
         let indexed: HashSet<EntityId> = uow
             .get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?
             .into_iter()
@@ -166,14 +157,11 @@ impl RestoreItemsUseCase {
                             indent.insert(it.id, it.indent);
                             role.insert(it.id, it.role);
                         }
-                        // Only a *Folder* may hold nested rows. The container this item
-                        // sat in can have been collapsed to a leaf while the item was in
-                        // the trash — the demote guard counts only live children, so
-                        // trashing them all is precisely what unblocks that conversion.
-                        // Reactivating in place would then strand a live row nested under
-                        // a leaf, so report it orphaned instead and leave its TrashInfo
-                        // indexed: the caller opens the destination picker, and
-                        // `restore_items_to` re-indents it onto a real parent.
+                        // Only a Folder may hold nested rows, and the container this item
+                        // sat in can have been collapsed to a leaf while it was trashed
+                        // (the demote guard counts only live children). Reactivating in
+                        // place would then strand it under a leaf, so report it orphaned
+                        // instead and leave its TrashInfo indexed for restore_items_to.
                         let nested_under_a_leaf = parent_of(&order, &indent, item_id)
                             .and_then(|p| role.get(&p))
                             .is_some_and(|r| *r != BinderItemRole::Folder);
@@ -277,11 +265,8 @@ fn subtree_of(
     out
 }
 
-// `get_work_relationship` does not validate that `id` is a real, open Work --
-// a junction lookup against an unknown id just comes back empty, which would
-// silently no-op instead of reporting the caller's mistake. So the id from
-// `dto.work_id` is checked against the open Works first, exactly like
-// `empty_trash_uc.rs` does.
+// `get_work_relationship` doesn't validate that `id` is a real, open Work, so
+// check `dto.work_id` against the open Works first (see `empty_trash_uc.rs`).
 fn work_id(uow: &dyn RestoreItemsUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()

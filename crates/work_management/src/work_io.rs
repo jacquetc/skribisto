@@ -30,8 +30,10 @@ pub use skrib_format::tree_read::{Gathered, TreeReader, gather};
 /// to be (see git history): the generated per-entity repositories ALREADY
 /// cascade-delete correctly through every STRONG relationship a `Work` owns
 /// (`Work::remove_multi` → Binders → BinderItems → Contents, Tags, DictWords,
-/// NoteTemplates, TrashInfos, Paces → Holidays/Milestones — confirmed by direct read of
-/// `common/src/direct_access/{work,binder,binder_item,pace}/*_repository.rs`)
+/// TextReplacementRules, NoteTemplates, SmartPunctuation, TrashInfos,
+/// Paces → Holidays/Milestones, Comments → CommentReplies — confirmed by direct
+/// read of
+/// `common/src/direct_access/{work,binder,binder_item,pace,comment}/*_repository.rs`)
 /// AND reconcile the external owner (`Root.works`) on removal — there is nothing
 /// left for this trait to re-derive by hand. The ONE relationship `Work` does NOT
 /// own is `WorkInfo` (`WorkInfo.work` is a WEAK `many_to_one` FROM `WorkInfo`, not
@@ -47,8 +49,8 @@ pub trait WorkCloser {
     /// Cascades to `Search` + `ProgressSnapshot`s and reconciles `System.work_infos`.
     fn remove_work_infos(&self, ids: &[EntityId]) -> Result<()>;
     /// Cascades to Binders/Tags/DictWords/TextReplacementRules/SmartPunctuation/
-    /// TrashInfos/Paces (and, transitively, their own children) and reconciles
-    /// `Root.works`.
+    /// TrashInfos/Paces/Comments (and, transitively, their own children) and
+    /// reconciles `Root.works`.
     fn remove_works(&self, ids: &[EntityId]) -> Result<()>;
 }
 

@@ -12,12 +12,12 @@
 //! a11y). All business logic lives on [`NewWorkViewModel`]; this view is thin —
 //! it binds the VM's signals and forwards the footer buttons to its methods.
 //!
-//! Format and Template are, *for now*, rendered as `SegmentedControl`s (the
-//! design's rich tile / radio-row variants are kept as comments for a later
-//! pass). Location uses a [`FilePickerField`] with its embedded browse
-//! affordance — no separate Browse button. The only runtime-computed string is
-//! the "Will create `…/<slug>.skrib`" path preview (`text` on the VM's derived
-//! signal); every other string is `tr!`-localized.
+//! Format is two [`RadioTile`]s in a row; Template is a vertical
+//! [`RadioTileGroup`] of compact rows (radio · icon · title · trailing count),
+//! one per `NewWorkTemplate`. Location uses a [`FilePickerField`] with its
+//! embedded browse affordance — no separate Browse button. The only
+//! runtime-computed string is the "Will create `…/<slug>.skrib`" path preview
+//! (`text` on the VM's derived signal); every other string is `tr!`-localized.
 
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -398,7 +398,7 @@ mod tests {
     use bastyde::core::widget_tree::WidgetTree;
 
     /// The whole panel — header, the `FormLayout` body with its
-    /// `SegmentedControl`s / `FilePickerField` / `ComboBox`, and the footer —
+    /// `RadioTileGroup`s / `FilePickerField` / `ComboBox`, and the footer —
     /// must build and lay out headlessly without panicking. This exercises the
     /// full widget tree (any wrong builder/DSL usage would panic here), and the
     /// panel's own `layout_response` must report the fixed card size the modal
@@ -412,7 +412,7 @@ mod tests {
             crate::app_ids::AppIds::new(),
         )));
         // Lay out at the modal's card size; every child (FormLayout rows, the
-        // SegmentedControls, FilePickerField, ComboBox, ScrollArea, footer) must
+        // RadioTileGroups, FilePickerField, ComboBox, ScrollArea, footer) must
         // build and place without panicking.
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
         let b = tree.bounds(id);

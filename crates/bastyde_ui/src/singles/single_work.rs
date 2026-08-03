@@ -138,11 +138,12 @@ mod imp {
         pub fn dirty(&self) -> Signal<bool> {
             self.inner.dirty.clone()
         }
-        /// The open project's stable UUID (empty when no work is loaded). Read-only —
-        /// the key backup settings/retention correlate this project on.
+        /// The id of this Work's `SmartPunctuation` row. Read-only.
         pub fn smart_punctuation(&self) -> Signal<u64> {
             self.inner.smart_punctuation.clone()
         }
+        /// The open project's stable UUID (empty when no work is loaded). Read-only —
+        /// the key backup settings/retention correlate this project on.
         pub fn unique_id(&self) -> Signal<String> {
             self.inner.unique_id.clone()
         }

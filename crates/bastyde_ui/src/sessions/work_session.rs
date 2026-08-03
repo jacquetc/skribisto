@@ -13,16 +13,12 @@
 //! state that is shared by every window looking at the *same* Work, but must
 //! be a fresh, independent instance for a *different* Work.
 //!
-//! Phase 1 (this struct's introduction) is a pure refactor: `main.rs` still
-//! constructs exactly **one** `WorkSession` at startup, and the app still opens
-//! one Work at a time — the "close every other open Work" backend sweep is
-//! untouched (see `frontend::tests::multi_work_scoping_test`'s tripwire tests).
-//! The point is only to give Phase 2 a seam to multiply: once
-//! `ProjectWindowFactory::window_config` can resolve a `work_id` up front, it
-//! asks [`super::WorkRegistry::session_for`] for a `WorkSession` instead of
-//! reaching into a dozen independent `app_state` singletons, and opening a
-//! second Work becomes "construct a second `WorkSession`", not "audit every
-//! consumer".
+//! Multiple `WorkSession`s coexist today: `ProjectWindowFactory::window_config`
+//! mints a fresh one for each newly-opened Work, and `WorkRegistry::attach`
+//! shares an existing one with a second window on the same Work (Work ▸ New
+//! Window). Loading a Work no longer closes any other open Work first — that
+//! backend sweep was removed as part of the same migration (see
+//! `work_management::load_work_uc`).
 //!
 //! **What moved here, and why `main.rs`'s existing `.app_state(...)`
 //! registrations for these same instances are left in place.** Every field
@@ -39,17 +35,16 @@
 //! piece from `app_state` — the concrete slice of the "resolution mechanism"
 //! this phase implements.
 //!
-//! **What did *not* move, on purpose.** `AppIds.root_id` lifted OUT to
+//! **What did *not* move.** `AppIds.root_id` lifted OUT to
 //! [`super::WorkRegistry`] (Tier 1 — one `Root` per process, not per Work; see
-//! `app_ids.rs`'s module doc). `BackupSchedulerViewModel` moves here whole,
-//! not split into its arbitration half (`pending`/`completed_epoch`) and its
-//! `flush_hook` — that split, and fixing `flush_hook` from a single overwritten
-//! slot into a per-window collection, is explicitly Phase 2 work (design doc
-//! §3/§8): today there is only one window per Work, so the existing single
-//! slot is not yet wrong. Likewise `WorkspaceLayoutViewModel`/
-//! `TreeExpansionViewModel` move here as whole instances; splitting their
-//! Tier-3 `DockingModel`/`EditorsViewModel`-reference half out is future work
-//! the design doc flags but does not schedule for Phase 1.
+//! `app_ids.rs`'s module doc). `BackupSchedulerViewModel` lives here as one
+//! whole Tier-2 instance, shared by every window on a Work; its `flush_hook`
+//! is itself a per-window keyed collection internally
+//! (`BackupSchedulerViewModel::register_flush_hook`/`unregister_flush_hook`),
+//! not a single overwritten slot. `WorkspaceLayoutViewModel`/
+//! `TreeExpansionViewModel` still move here as whole instances with their
+//! Tier-3 `DockingModel` reference bundled in — a second window on the same
+//! Work shares the first window's desk arrangement rather than getting its own.
 //!
 //! **Phase 3 correction — `backup_mode`/`backup_context` are minted here, not
 //! passed in.** Through Phase 2 these were a *caller-supplied* `Signal<bool>`/

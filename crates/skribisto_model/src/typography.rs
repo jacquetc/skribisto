@@ -8,22 +8,15 @@
 //! here beside [`crate::language`], the other BCP-47-keyed table, rather than in the widget
 //! crate that happens to have needed them first.
 //!
-//! ## Why this moved
+//! ## Why this lives here, not in the UI crate
 //!
 //! Two features need these facts for opposite reasons: smart punctuation *inserts* the
 //! glyphs as the writer types, and [`crate::analysis::prose_stats`] *recognises* them to
-//! measure how much of a scene is dialogue. While this table lived in the UI crate the
-//! analysis could not reach it, so it kept a second copy of the dialogue-relevant rows,
-//! guarded by a test asserting the two agreed row for row.
-//!
-//! That guard held exactly as long as the question was "do the rows match". It missed the
-//! one that mattered: the copy resolved `en-US` — the app's own default — to "no convention"
-//! while [`ruleset_for`] resolved it to English, because only one of them normalised the tag
-//! and fell back to its primary subtag. Rows are where a duplicated table agrees; resolution
-//! is where it drifts. One table, one lookup, and there is nothing left to disagree.
-//!
-//! The *stateful* half — which rules a project has switched on, and the per-keystroke engine
-//! that applies them — stays in the UI crate. Only the facts moved.
+//! measure how much of a scene is dialogue. A single table + lookup lets both agree, not
+//! just on the rows but on *resolution* (e.g. `en-US` falling back to `en`) — a duplicated
+//! table can match row for row and still disagree on a tag neither copy normalises the same
+//! way. The *stateful* half — which rules a project has switched on, and the per-keystroke
+//! engine that applies them — stays in the UI crate. Only the facts moved.
 
 use crate::language;
 

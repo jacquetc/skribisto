@@ -61,14 +61,10 @@ impl EmptyTrashUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // Purge EVERYTHING currently indexed by Work.trash_infos, for the
-        // caller-named Work only — Phase 0.5: this used to pick
-        // `get_all_work().next()`, which had no defined subject once a second
-        // Work was open (whichever Work a HashMap happened to iterate first
-        // had ITS trash purged, data-loss-shaped). The planning pass is
-        // read-only; the Work-scoped snapshot is taken right before the first
-        // mutation. (The shared purge core is also used by
-        // delete_trash_entries for a caller-chosen subset.)
+        // Purge everything indexed by Work.trash_infos, for the caller-named
+        // Work only. Planning is read-only; the Work-scoped snapshot is taken
+        // right before the first mutation. The shared purge core is also used
+        // by delete_trash_entries for a caller-chosen subset.
         let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
         let all_ids = uow.get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?;
         let plan = purge::plan_purge(uow.as_ref(), work_id, &all_ids)?;
@@ -84,11 +80,10 @@ impl EmptyTrashUseCase {
     }
 }
 
-// `get_work_relationship` does not validate that `id` is a real, open Work — a
-// junction lookup against an unknown id just comes back empty, which for
-// `empty_trash` would silently no-op instead of reporting the caller's
-// mistake. So the id from `dto.work_id` is checked against the open Works
-// first, exactly like `skrib_format::tree_read::gather` does.
+// `get_work_relationship` doesn't validate that `id` is a real, open Work — an
+// unknown id just comes back empty, which would silently no-op instead of
+// reporting the caller's mistake. So check `dto.work_id` against the open
+// Works first.
 fn work_id(uow: &dyn EmptyTrashUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()

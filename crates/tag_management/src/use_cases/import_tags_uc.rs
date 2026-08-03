@@ -88,10 +88,7 @@ impl ImportTagsUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
 
-        // Phase 0.5: import into the caller-named Work only — this used to
-        // pick `get_all_work().next()`, silently landing a batch of tags on
-        // whichever Work a HashMap happened to iterate first once a second
-        // Work was open.
+        // Import into the caller-named Work only — several may be open at once.
         let work_id = dto.work_id as EntityId;
         uow.get_all_work()?
             .into_iter()

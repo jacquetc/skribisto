@@ -62,12 +62,6 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
     Ok(())
 }
 
-/// Mint a durable `uid` for every binder and item that lacks one.
-///
-/// Idempotent: a row that already carries a uid keeps it, so re-running the
-/// step (or meeting a partially-migrated bundle) never re-mints and never
-/// breaks an existing reference. v1 bundles pass through here too — they are
-/// missing the field for the same reason v2 ones are.
 /// v3 → v4 turned `dict_language` from a space-separated string into a real list.
 ///
 /// The split itself happens in the deserializer (`bundle::tags_or_legacy_string`), because a
@@ -82,6 +76,12 @@ fn step_v3_to_v4(_bundle: &mut WorkBundle) {}
 /// project that has templates — see [`FORMAT_VERSION`](crate::bundle::FORMAT_VERSION).
 fn step_v4_to_v5(_bundle: &mut WorkBundle) {}
 
+/// Mint a durable `uid` for every binder and item that lacks one.
+///
+/// Idempotent: a row that already carries a uid keeps it, so re-running the
+/// step (or meeting a partially-migrated bundle) never re-mints and never
+/// breaks an existing reference. v1 bundles pass through here too — they are
+/// missing the field for the same reason v2 ones are.
 fn step_v2_to_v3(bundle: &mut WorkBundle) {
     for bb in &mut bundle.binders {
         bb.binder.uid = common::uid::heal_uid(bb.binder.uid);

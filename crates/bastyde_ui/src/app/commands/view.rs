@@ -12,14 +12,12 @@ use super::CommandDeps;
 
 /// Run a dock command, unless this window's distraction-free surface is up.
 ///
-/// The one place the policy lives, so a fifth dock command is written next to a
-/// name that says what it has to do. Disabling a dock side does **not** disable
-/// its commands — `DockingModel::reveal_dock` sets `visible = true` and picks a
-/// tab regardless — and with the shell merely dormant behind the surface,
-/// nothing disables anything at all. Left unguarded these look like no-ops while
-/// quietly rearranging the desk behind the surface: Ctrl+Shift+F in the mode did
-/// nothing you could see, and then the leading rail came back showing Search
-/// instead of the binder you left there.
+/// Disabling a dock side does **not** disable its commands — `DockingModel::
+/// reveal_dock` sets `visible = true` and picks a tab regardless — and with the
+/// shell merely dormant behind the surface, nothing disables anything at all.
+/// Left unguarded, a dock command fired in the mode silently rearranges the
+/// desk behind the surface (e.g. the leading rail switches to Search) with no
+/// visible effect until the mode is exited.
 fn unless_distraction_free(focus: &crate::view_models::FocusViewModel, f: impl FnOnce()) {
     if !focus.active_signal().get() {
         f();
@@ -36,26 +34,15 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .primary(KeyStroke::new(Key::F9, Modifiers::NONE))
             .build(),
     );
-    // Phase 0.2 stub — F10 collapses/reveals the BOTTOM band, so the probe can exercise the
-    // `visible_when` park/unpark path that dock content takes when its side hides. (F9 only
-    // relayouts; it never parks the bottom content.)
+    // F10 collapses/reveals the bottom band (the search-preview dock). Unlike F9, which
+    // only relayouts, F10 parks/unparks the bottom content via `visible_when`.
     ctx.register_shortcut_global(
         Shortcut::new("preview.toggle")
             .name("Toggle Preview Band")
             .primary(KeyStroke::new(Key::F10, Modifiers::NONE))
             .build(),
     );
-    // Every dock command below runs through `unless_distraction_free`.
-    //
-    // Disabling a dock side does not disable its commands: `DockingModel::
-    // reveal_dock` sets `visible = true` and picks a tab regardless of whether
-    // the side is enabled, and `toggle_side_visible` flips the flag the same
-    // way. So these used to *look* like no-ops in the mode while quietly
-    // rearranging the desk behind it — Ctrl+Shift+F in the mode did nothing you
-    // could see, and then the leading rail came back showing Search instead of
-    // the binder you left there. Now the shell is merely dormant behind the
-    // surface, nothing disables anything, and a guard is the only thing that
-    // keeps a hidden desk from being edited.
+    // Every dock command below runs through `unless_distraction_free` — see its own doc.
     {
         let docking = deps.outline.docking();
         let focus = deps.focus.clone();

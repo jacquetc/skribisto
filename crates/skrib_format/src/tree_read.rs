@@ -42,8 +42,10 @@ use crate::{BinderWithItems, CommentWithReplies, ItemWithContents, PaceWithChild
 /// The read surface needed to snapshot the Work subtree. Implemented for each use case's
 /// `dyn …UnitOfWorkTrait` (the generated method names are identical).
 ///
-/// The three defaulted methods cover entities that only *save* lists; an implementor that
-/// does not read them (e.g. `export_work`) leaves them defaulted.
+/// `all_work_info`/`all_trash_info`/`dict_multi`/`text_replacement_rule_multi` cover
+/// entities that only *save* lists; an implementor that does not read them (e.g.
+/// `export_work`) leaves them defaulted — likewise the Paces/Comments/ProgressSnapshots
+/// groups further down, each gated by its own `reads_*` flag.
 pub trait TreeReader {
     fn all_work(&self) -> Result<Vec<Work>>;
     fn all_work_info(&self) -> Result<Vec<WorkInfo>> {

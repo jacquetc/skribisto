@@ -8,16 +8,14 @@
 //! **search**: the query signal the `SearchField` writes into, the projection
 //! that filters the list through it, and the cursor that follows.
 //!
-//! **Single-instance live state**, not a store-backed facade. It used to be the
-//! latter (`SettingsViewModel`-shaped: only the `show_welcome` signal, the app
-//! handle and the window factory — so a fresh instance was a view over the same
-//! truth and the panel could rebuild it on every `build()`). Now that it owns
-//! the query and the projection wired to it, a second instance would be a
-//! *second* query — the field would write into one and the list would read the
-//! other. So `WelcomePanel` creates it once (`Option` + `get_or_insert_with`,
-//! since `SettingsStore` only exists at build time) and shares it by `.clone()`,
-//! the same shape `App` uses for `EditorsViewModel`. The `show_welcome` signal is
-//! still store-cached, so it stays shared per key across instances regardless.
+//! **Single-instance live state**, not a store-backed facade like
+//! `SettingsViewModel`: it owns the search query and the projection wired to
+//! it, so a second instance would be a *second* query — the field would write
+//! into one and the list would read the other. So `WelcomePanel` creates it
+//! once (`Option` + `get_or_insert_with`, since `SettingsStore` only exists at
+//! build time) and shares it by `.clone()`, the same shape `App` uses for
+//! `EditorsViewModel`. The `show_welcome` signal is still store-cached, so it
+//! stays shared per key across instances regardless.
 //!
 //! **Launcher-window model**: none of these methods touch the backend
 //! directly any more. Loading/creating a work here — in the Launcher window,
@@ -193,16 +191,11 @@ impl WelcomeViewModel {
     /// Open a recent/known work by path: opens a project window on it, then
     /// closes the Launcher.
     ///
-    /// **No backup sniff any more.** This used to probe the file off the UI
-    /// thread (`crate::backup::is_backup_path` — a blocking `File::open` + zip
-    /// parse with no timeout) purely to decide *where* the project went: a
-    /// backup had to open in its own process, anything else opened as this
-    /// process's project. Phase 3 moved `backup_mode`/`backup_context` onto
-    /// `WorkSession`, so a window is now isolation enough, and Phase 4 opens
-    /// both in a window of this process — which makes the two branches the same
-    /// action and the probe pure cost on every click. A backup still enters
-    /// backup mode: the `LoadWork` subscriber in `app.rs` sniffs the loaded path
-    /// itself, in the window that loaded it.
+    /// **No backup sniff here.** Opening any known path — backup or otherwise —
+    /// goes through the same window-open call, since a window is isolation
+    /// enough (`WorkSession`'s `backup_mode`/`backup_context`). A backup still
+    /// enters backup mode: the `LoadWork` subscriber in `app.rs` sniffs the
+    /// loaded path itself, in the window that loaded it.
     pub fn open_work(&self, path: String, ctx: &mut EventContext) {
         // Open the project window *before* closing the Launcher — the ordering
         // rule in `main.rs`'s module docs. Backwards, the process is briefly

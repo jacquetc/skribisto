@@ -94,9 +94,9 @@ pub fn get_dict_word_multi(ctx: &AppContext, ids: &[EntityId]) -> Result<Vec<Opt
 }
 
 /// Get all dict_word entities.
-/// Note: returns entities in database key order (by EntityId), not insertion order
-/// or any user-defined sort. For ordered collections, use relationship-based
-/// retrieval (e.g. get_*_relationship for ordered_one_to_many fields).
+/// Note: iteration order is unspecified (`HashMap`-backed) — not insertion order
+/// or `EntityId` order. For ordered collections, use relationship-based retrieval
+/// (e.g. get_*_relationship for ordered_one_to_many fields).
 pub fn get_all_dict_word(ctx: &AppContext) -> Result<Vec<DictWordDto>> {
     dict_word_controller::get_all(&ctx.db_context).context("getting all dict_word entities")
 }

@@ -9,8 +9,8 @@
 //! reach the live app through an `EventContext`; pure-state ops (column width,
 //! editor typography) do not.
 //!
-//! The full-preferences window (`settings_panel.rs`) binds these signals into its
-//! category panes. Theme and interface language are driven there by the
+//! The full-preferences window (`settings.rs`'s `SettingsPanel`) binds these signals
+//! into its category panes. Theme and interface language are driven there by the
 //! framework's drop-in `ThemeSwitcher` / `LanguageSwitcher` (which apply live via
 //! `EventContext`); this VM still owns the persisted `dark` / `locale` mirrors so
 //! `App` can keep `DARK_KEY` / `LOCALE_KEY` in sync for the startup restore.

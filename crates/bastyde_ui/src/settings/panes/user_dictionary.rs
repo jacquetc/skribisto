@@ -10,7 +10,7 @@
 //! [`DictWordListModel`](crate::models::DictWordListModel) through a `SortFilterListModel` search
 //! projection, so a word added here or from the editor's "Add to dictionary" appears live either way.
 //!
-//! Like `settings_dictionaries`, it needs generic-closure widgets (`ListView`)
+//! Like `panes::dictionaries`, it needs generic-closure widgets (`ListView`)
 //! the `bati!` DSL can't express, so it is a chained-builder module.
 
 use bastyde::core::styles::TextInputVariant;

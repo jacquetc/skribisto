@@ -45,7 +45,7 @@ Skribisto is built under the following seven rules. They apply to your contribut
 ### Submitting Code
 
 1. Fork the repository
-2. Create a feature branch from `bastyde-migration` (the active development branch)
+2. Create a feature branch from `dev` (the active development branch)
 3. Make your changes
 4. Ensure your code follows the project's conventions (see `.claude/CLAUDE.md` for the working guide)
 5. Build **both** feature sets green (`cargo build` and `cargo build -p bastyde_ui --features mocks`) and run `cargo test`

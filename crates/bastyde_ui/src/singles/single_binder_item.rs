@@ -237,14 +237,6 @@ mod imp {
             Ok(())
         }
 
-        /// Set which palette tags this item carries.
-        ///
-        /// Unlike every other writer here this is a **relationship**, so it must NOT go
-        /// through `update_dto`: `UpdateBinderItemDto` deliberately carries no relationship
-        /// vectors, precisely so a scalar patch cannot clobber them (see
-        /// `view_models::binder_ops::update_item_dto`). Writing the junction directly is
-        /// also already undoable — `set_binder_item_relationship` is backed by
-        /// `UndoableSetRelationshipUseCase`, which stores the before-list itself.
         /// Persist the item's confirmed references — the story-bible entries a writer has
         /// pinned. Same relationship write as `set_tags`, and undoable on the same stack: a
         /// pin is an edit, and mis-pinning must be one Ctrl+Z.
@@ -325,6 +317,14 @@ mod imp {
             Ok(())
         }
 
+        /// Set which palette tags this item carries.
+        ///
+        /// Unlike every other writer here this is a **relationship**, so it must NOT go
+        /// through `update_dto`: `UpdateBinderItemDto` deliberately carries no relationship
+        /// vectors, precisely so a scalar patch cannot clobber them (see
+        /// `view_models::binder_ops::update_item_dto`). Writing the junction directly is
+        /// also already undoable — `set_binder_item_relationship` is backed by
+        /// `UndoableSetRelationshipUseCase`, which stores the before-list itself.
         pub fn set_tags(&self, tag_ids: &[u64], stack: Option<u64>) -> anyhow::Result<()> {
             let Some(id) = self.inner.id.get() else {
                 anyhow::bail!("SingleBinderItem: no id");

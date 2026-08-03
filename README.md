@@ -5,7 +5,6 @@
 
 - [Skribisto](#skribisto)
   * [What it does today](#what-it-does-today)
-  * [Planned](#planned)
   * [User manual](#user-manual)
   * [Discussions](#discussions)
   * [Support](#support)
@@ -53,6 +52,16 @@ touch if you hit a glaring gap.
 - Dual editor pane (prose plus synopsis), with split panes and tabs
 - Manuscript streams: read a whole Chapter, Part or Book, or every synopsis, as one document
 - Corkboard, writing sessions, live word count, pace tracking
+- An Analysis tab for the Book: pacing/shape, repetition, synopsis-vs-prose drift, and
+  vocabulary variety, always measured against the manuscript's own numbers, never a norm
+- Anchored comments in the margin (LibreOffice-style), with threaded replies and both a
+  project-wide and a per-document comments dock
+- Note templates: built-in presets (character sheet, location, object, beat sheet, faction,
+  research note) or save your own
+- Colour tags per project, with curated genre presets, and point-of-view marking on scenes
+- Replace-while-typing: a custom lexicon plus locale-aware smart punctuation (curly quotes,
+  dashes, ellipsis, French spacing…)
+- Distraction-free writing mode, with its own colour themes
 - Search and replace across the project
 - Trash and restore, with undo
 - Autosave, manual save, save-as, and backups (retention policy, multiple destinations,
@@ -62,8 +71,9 @@ touch if you hit a glaring gap.
 - Exports to DOCX, EPUB, PDF, HTML, Markdown, Djot, LaTeX and plain text, with a live preview
 - Spell checking with downloadable dictionaries
 - Light and dark themes, per-editor typography, adjustable text scale
-- English and French user interface, for now.
-- One process per project, so several projects can be open side by side
+- English and French user interface, for now
+- Single instance: several projects can be open at once, each in its own window, without
+  spawning a new process per project
 
 ## User manual
 
@@ -135,8 +145,9 @@ A cargo workspace under `crates/`:
 - `skrib_format`, the `.skrib` bundle reader and writer
 - `skribisto_compiler` and `skribisto-fonts`, the export pipeline and its bundled typefaces
 - `work_management`, `binder_item_management`, `trash_management`, `search_management`,
-  `import_management`, `export_management`, `handling_app_lifecycle` and
-  `progress_management`, the Qleany features
+  `import_management`, `export_management`, `handling_app_lifecycle`, `progress_management`,
+  `analysis_management`, `mention_management`, `note_template_management` and
+  `tag_management`, the Qleany features
 - `common`, `direct_access`, `frontend`, `macros` and `binder_ordering`, the shared backend
   layers
 
@@ -165,10 +176,16 @@ Skribisto points at `bastyde` and `text-document` itself; `bastyde` in turn reso
 side by side.
 
 This sibling layout is a **local-development requirement only**. CI never clones the other
-repositories: every workflow first runs
-[.github/actions/strip-path-deps](.github/actions/strip-path-deps/action.yml), which drops the
-`path = "../…"` attribute from each external dependency so that the `version =` beside it
-resolves from crates.io instead. Internal `crates/…` paths are left untouched.
+repositories: workflows (and jobs) that need to resolve the Rust dependency graph first run
+[.github/actions/strip-path-deps](.github/actions/strip-path-deps/action.yml) (5 of the 8
+workflow files: `audit.yml`, `ci.yml`, `release-macos.yml`, `release.yml`, `rust-next.yml`),
+which drops the `path = "../…"` attribute from each external dependency so that the `version =`
+beside it resolves from crates.io instead. Internal `crates/…` paths are left untouched. Jobs
+that never touch Cargo — `packaging-lint.yml`, `generate-release-in-appdata.yml`,
+`spelling.yml`, and `ci.yml`'s rustfmt/spdx/locales jobs — skip this step entirely, and
+`release.yml`'s `flatpak` job strips paths via its own
+[package/flatpak/gen-cargo-sources.sh](package/flatpak/gen-cargo-sources.sh) script (which
+duplicates the same sed logic) rather than via this composite action.
 
 ### Building and running
 
@@ -222,8 +239,10 @@ cargo build --release --target x86_64-pc-windows-msvc -p bastyde_ui --features p
 ISCC.exe package\windows\setup.iss
 ```
 
-CI does exactly this on a version tag. See
-[.github/workflows/release.yml](.github/workflows/release.yml).
+CI runs an equivalent (but not verbatim) sequence: the same `cargo build` line above, followed
+by a fuller `ISCC.exe` invocation that passes `/DMyAppVersion`, `/DMySourceExe`, `/O` and `/F`
+switches and calls the tool via its full install path rather than bare `ISCC.exe`. See
+[.github/workflows/release.yml](.github/workflows/release.yml) (lines 120 and 141-145).
 
 ### macOS
 
@@ -235,11 +254,11 @@ CI does exactly this on a version tag. See
 
 The interface is translated with [Fluent](https://projectfluent.org). The catalogues are plain
 `.ftl` files under [crates/bastyde_ui/locales/](crates/bastyde_ui/locales/), one directory per
-locale:
+locale, split into four files each (`main.ftl`, `tooltips.ftl`, `tags.ftl`, `templates.ftl`):
 
 ```
-crates/bastyde_ui/locales/en-US/main.ftl
-crates/bastyde_ui/locales/fr-FR/main.ftl
+crates/bastyde_ui/locales/en-US/{main,tooltips,tags,templates}.ftl
+crates/bastyde_ui/locales/fr-FR/{main,tooltips,tags,templates}.ftl
 ```
 
 `en-US` is the source language and the one keys are validated against at compile time; other

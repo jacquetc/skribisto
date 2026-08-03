@@ -11,9 +11,8 @@
 //! **One popover, three ways in.** The trigger opens it; so do the Go menu's
 //! "Go to…" entry and Ctrl+G, through `PopoverWidget::open_action("go.to")` —
 //! which registers a *global* action running the very same toggle closure the
-//! trigger runs, so the keyboard and the pointer cannot drift apart. (That
-//! mechanism did not exist until this feature needed it; `open_signal()` is a
-//! read-back mirror and writing it opens nothing.)
+//! trigger runs, so the keyboard and the pointer cannot drift apart.
+//! `open_signal()` is a read-back mirror only; writing it opens nothing.
 //!
 //! **Escape is scoped to the popover.** The popover's own dismiss consumes it,
 //! so pressing Escape here closes the list and leaves you exactly where you

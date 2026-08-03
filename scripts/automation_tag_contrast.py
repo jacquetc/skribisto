@@ -6,58 +6,42 @@
 visible in BOTH themes, by sampling actual rendered pixels rather than trusting
 the accessibility tree.
 
-Tag colours are user data and constant across themes (`contrast.rs`'s own
-module doc says so), which is exactly the setup that breaks: a near-black tag
-is invisible on a dark card, a near-white one vanishes on a light card, and
-where tags render as dots (`tag_chip.rs`) there is no text to fall back on at
-all. The fix (`contrast::outline_on`) draws every dot's hairline from the
-fill's own best-contrast extreme rather than a themed border token — the
-`BorderRole::Default` token that shipped first was 1.26:1 against a white
-card, i.e. present and still invisible. `contrast.rs` has five unit tests
-pinning that arithmetic. None of them can see whether the *rasterizer* — text
-shaping, anti-aliasing, corner radius, the render target's actual sRGB
-encoding — agrees with the arithmetic. That gap is what this probe closes.
+Tag colours are user data and constant across themes, so a near-black tag can
+go invisible on a dark card and a near-white one on a light card; where tags
+render as dots (`tag_chip.rs`) there is no text to fall back on. The fix
+(`contrast::outline_on`) draws every dot's hairline from the fill's own
+best-contrast extreme rather than a themed border token. `contrast.rs` has
+unit tests pinning that arithmetic, but none of them can see whether the
+*rasterizer* — anti-aliasing, corner radius, the render target's sRGB
+encoding — agrees with it. That gap is what this probe closes.
 
-The fixture is the case the feature exists for: legacy tag "A" is `#FFFAFA`
-(near-white) and "very looooooooooong tag" is `#000000` (near-black), both
-attached to binder item "1.1 Zeus" (`automation_tags.py` proved this reachable
-end to end already, which is why this probe does not re-derive that path).
-
-What "proof" means here, concretely: locate the tag-dots row via its
-accessibility bounds, screenshot *just that node* (so the crop is the
-server's job, in already-scaled physical pixels, not a guess about DPI on
-this end), decode the PNG with nothing but `zlib` and a hand-rolled chunk
-walk (Pillow is used only as an optional cross-check on the decoder, never as
-the thing being tested), and for each dot compute the actual WCAG contrast
-ratio between every pixel in its cell and a sampled corner of the surface
-behind it. That is SC 1.4.11 applied to a screenshot, not to a colour value
-read out of the widget tree.
+The fixture: legacy tag "A" is `#FFFAFA` (near-white) and "very
+looooooooooong tag" is `#000000` (near-black), both on binder item "1.1
+Zeus". "Proof" means: locate the tag-dots row via its accessibility bounds,
+screenshot just that node, decode the PNG with a hand-rolled `zlib` chunk
+walk (Pillow is an optional cross-check on the decoder only), and for each
+dot compute the actual WCAG contrast ratio between every pixel in its cell
+and a sampled corner of the surface behind it — SC 1.4.11 applied to a
+screenshot, not to a widget-tree colour value.
 
 Two things stop this from quietly proving nothing:
 
   * an ARMED DETECTOR (assertion 4): the LIGHT and DARK screenshots' own card
-    luminance must differ by a wide margin. Without this, a `set_theme` call
-    that reported success in the AT tree but never actually repainted the
-    window would make the "DARK" screenshot secretly still light — and the
-    near-black tag would then pass on ~21:1 contrast against a card that was
-    never dark, proving nothing about the border at all.
+    luminance must differ by a wide margin, or a `set_theme` call that never
+    actually repainted the window would let a near-black tag "pass" against a
+    card that was secretly never dark.
   * a POSITIVE CONTROL (assertion 5): dot "B" (`#FF0000`) needs no border to
-    clear 3:1 against either card. If it ever fails, the fault is in this
-    harness's crop/decode/sampling, never in the product — B's contrast does
-    not run through `contrast::outline_on`.
+    clear 3:1 against either card — its own colour doesn't run through
+    `contrast::outline_on`, so its failure could only be a harness bug.
 
-Only once both of those hold do the two REGRESSION assertions (6 and 7) mean
-what they claim: "A" clears 3:1 on its own LIGHT card, and "very looooooooooong
-tag" clears 3:1 on its own DARK card. Two more (assertion 8) cover the
-opposite-extreme pairing for completeness, labelled as expected to pass even
+Only once both hold do the two REGRESSION assertions (6 and 7) mean what they
+claim. Assertion 8 covers the opposite-extreme pairing, expected to pass even
 without the border, so a reader is not alarmed if only 6/7 regress.
 
-Honesty note, up front: if pixel sampling turns out not to be achievable on
-this machine (no readable screenshot, a PNG shape the manual decoder does not
-understand), this script says so loudly and falls back to the weakest thing
-that still means something — that the AT tree's own outline colour differs
-from the fill — rather than printing a green line for nothing. See the
-`decode_png` failure path.
+If pixel sampling turns out not to be achievable on this machine, the script
+says so loudly and falls back to the weakest thing that still means
+something (see `decode_png`'s failure path) rather than printing a green line
+for nothing.
 
 Run:  python3 scripts/automation_tag_contrast.py
 """
@@ -81,8 +65,7 @@ from automation_fixture import wait_for_load, working_copy
 
 # This probe saves nothing on purpose (no Ctrl+S anywhere below) but it still
 # opens the project live, and a legacy load can itself rewrite the file on
-# disk during migration — never the checked-in fixture. See `automation_fixture`
-# for the three incidents that rule exists to prevent.
+# disk during migration — never the checked-in fixture.
 FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "tagcontrast")
 
 try:
@@ -237,11 +220,10 @@ class Session:
     def stop(self):
         """Terminate and *wait*.
 
-        Waiting is not politeness. Skribisto is one process per project, guarded
-        by an open-registry lock file: relaunching on the same path while the
-        old process still holds the lock makes the new one hand off to it and
-        exit immediately — which surfaces as "app exited before printing the
-        bridge socket" and reads like a crash.
+        Relaunching on the same path while the old process still holds its
+        open-registry lock hands the new launch off to it and exits it
+        immediately — surfacing as "app exited before printing the bridge
+        socket", not as the timeout it actually is.
         """
         for p in (self.mcp, self.app):
             if p and p.poll() is None:
@@ -297,21 +279,12 @@ def open_item(s, title):
 def click_node(s, n):
     """Prefer `invoke_action(click)` over a synthesised pointer click (a
     near-miss pointer click lands on the neighbouring widget and opens ITS
-    tooltip, leaving a popover shut in a way that looks like "the popover is
-    empty") -- but gate on the node actually ADVERTISING the action first,
-    rather than trying it and reacting to an error.
-
-    Read `dispatch_action_and_settle` in bastyde-automation's executor: it
-    dispatches whatever action is asked for to whatever node id is asked for
-    with no check that the node supports it, and reports success either way.
-    A Settings-rail row (role "Unknown", no actions at all --
-    `automation_tags.py` documents this) would make `invoke_action(click)`
-    return no error while doing precisely nothing, and a "fall back only on
-    error" policy would then never fall back -- it would silently no-op on
-    every rail row. Checking `"click" in actions` up front is what
-    `automation_settings.py`'s own `click_node` does, and is the only way to
-    tell "this will really do something" from "this will be silently
-    swallowed" ahead of time.
+    tooltip instead) -- but gate on the node actually ADVERTISING the click
+    action first. The bridge dispatches whatever action is asked for with no
+    check that the node supports it and reports success either way, so a
+    node with no actions (e.g. a Settings-rail row, role "Unknown") would
+    make `invoke_action(click)` report success while doing nothing, and a
+    "fall back only on error" policy would never fall back.
     """
     if not n:
         return False
@@ -403,14 +376,11 @@ def theme_combo(s):
 
 
 def open_appearance_pane(s):
-    """Reach Settings ▸ Appearance ▸ Theme. Cheap fast path first (the page is
-    almost certainly already reachable, since `settings.rs` expands the
-    Appearance & Behaviour section unconditionally -- `tree.expand(ab)` runs
-    with no guard, unlike the Work/Spelling/Backup sections which start
-    collapsed); a keyboard-walk fallback in case the row's bounds sit below
-    the rail's scroll viewport, mirroring `automation_tags.py`'s
-    `select_page` -- clicking a row's reported bounds does nothing when
-    nothing is actually painted there.
+    """Reach Settings ▸ Appearance ▸ Theme. Cheap fast path first (the
+    Appearance & Behaviour section is expanded unconditionally, unlike
+    Work/Spelling/Backup which start collapsed); a keyboard-walk fallback in
+    case the row's bounds sit below the rail's scroll viewport, where a click
+    at its reported bounds does nothing.
     """
     if theme_combo(s):
         return True
@@ -438,32 +408,21 @@ def open_appearance_pane(s):
 
 THEME_TOUCHED = [False]  # mutable box so nested functions can flip it
 ORIGINAL_THEME_VALUE = [None]
-# Reentrancy guard: `restore_theme_best_effort` calls `set_theme` to put the
-# ORIGINAL value back. If THAT call hits one of `set_theme`'s own failure
-# branches, calling `fail_restoring` again would call
-# `restore_theme_best_effort` again, which would call `set_theme` again for
-# the identical, presumably identically-failing, restore -- unbounded
-# recursion instead of a clean exit. `bail()` below checks this flag and
-# drops to a plain `fail()` (no further restore attempt) whenever a restore
-# is already in flight further up the call stack.
+# Reentrancy guard: without this, a failure inside `set_theme`'s own restore
+# attempt would call `fail_restoring` -> `restore_theme_best_effort` ->
+# `set_theme` again, recursing instead of exiting cleanly.
 RESTORING = [False]
 
 
 def set_theme(s, target_variants, label):
     """Pick `label` (one of `target_variants`, e.g. THEME_LIGHT) in the Theme
     ComboBox. Requires Settings ▸ Appearance to already be open. Returns the
-    combo's own freshly-read `value` after the click, which is what assertion
-    3 checks -- not "no error", since a near-miss click landing on a
-    neighbouring row is a real, previously-seen failure shape that reports no
-    error at all."""
+    combo's own freshly-read `value` after the click, since a near-miss click
+    can land on a neighbouring row while reporting no error at all."""
 
     def bail(msg):
-        # `fail_restoring`, not `fail`, in the common case: this function runs
-        # both before AND after the theme has changed from ORIGINAL, and
-        # `restore_theme_best_effort` is a safe no-op when nothing has been
-        # touched yet (it checks `THEME_TOUCHED[0]` itself). But see
-        # `RESTORING` above -- if we are already inside a restore attempt,
-        # fall back to a plain `fail()` rather than recursing into another one.
+        # `fail_restoring` unless already inside a restore attempt (see
+        # `RESTORING` above), to avoid recursing into another one.
         if RESTORING[0]:
             fail(msg, s)
         else:
@@ -487,8 +446,7 @@ def set_theme(s, target_variants, label):
     time.sleep(0.6)
 
     # The dropdown floats in a child overlay of the modal -- search the main
-    # tree first (proven to work for Sec 3b's regression check in
-    # automation_settings.py), then the overlay layer as a fallback.
+    # tree first, then the overlay layer as a fallback.
     opt = None
     for n in s.nodes():
         if (n.get("role") in ("ListBoxOption", "ListItem", "MenuItem", "Button")
@@ -521,14 +479,11 @@ def set_theme(s, target_variants, label):
     if not click_node(s, opt):
         bail(f"clicking the {label!r} option in the Theme dropdown failed "
              f"(both invoke_action and the pointer fallback)")
-    # Mark it touched as soon as a click was actually dispatched into the
-    # dropdown, BEFORE checking whether it landed where intended. If the
-    # confirmation below fails, the live theme may still have changed to
-    # *something* (a near-miss can land on a different row, not just fail
-    # outright) -- and if this is the very first click of the run, leaving
-    # `THEME_TOUCHED` False until a successful confirmation would make
-    # `restore_theme_best_effort` skip the restore entirely, on the one
-    # failure path where it is most likely to be needed.
+    # Mark it touched as soon as a click was dispatched, BEFORE checking
+    # whether it landed where intended -- a near-miss can still change the
+    # live theme to something, and leaving THEME_TOUCHED False until a
+    # confirmed success would skip the restore on the failure path that
+    # needs it most.
     THEME_TOUCHED[0] = True
     s.settle()
     time.sleep(0.8)
@@ -547,22 +502,16 @@ def restore_theme_best_effort(s):
     """Put the global theme back to what it was before this probe touched it,
     even on a failure path.
 
-    Selecting a theme here is instant-apply (no OK/Apply button on the
-    footer) and, per every other instant-apply setting in this panel,
-    persists to the writer's real settings file immediately -- not just in
-    this process's memory. A probe that dies mid-run without this would leave
-    the *developer's actual desktop* switched to whichever theme this run
-    happened to fail on. Same hygiene class `automation_fixture.py` exists to
-    prevent for the project file; this is its equivalent for global settings.
+    Theme selection is instant-apply and persists to the writer's real
+    settings file immediately, not just in-process — a probe that dies
+    mid-run without this leaves the developer's actual desktop switched.
     Best-effort and silent-on-failure: we are already failing, and a second
     failure here must not mask the first one.
     """
     if not THEME_TOUCHED[0] or ORIGINAL_THEME_VALUE[0] is None:
         return
     if RESTORING[0]:
-        # Already attempting a restore further up the call stack (a failure
-        # inside `set_theme`'s own restore attempt bounced back here) --
-        # do not start a second, identically-doomed one.
+        # Already attempting a restore further up the call stack.
         return
     RESTORING[0] = True
     try:
@@ -598,13 +547,10 @@ def find_dot_row(s, context, bail):
     """The Label-role node naming every tag on the current item.
 
     `TagChipRow::accessibility` (`tag_chip.rs`) sets exactly `Role::Label` +
-    the joined tag names as the node's name, and its own doc comment says it
-    emits no per-dot nodes -- so this is structurally the only place all
-    three tag names co-occur in one node. Enforcing "exactly one match" (not
-    "at least one") is the same non-vacuity discipline `automation_tags.py`
-    needed for its Inspector check: a stray match would mean either the item
-    is no longer open/selected, or (per that probe's own war story) a
-    leftover node from a panel that has since closed is being swept in.
+    the joined tag names, with no per-dot nodes — so this is structurally the
+    only place all three tag names co-occur in one node. Enforcing "exactly
+    one match" (not "at least one"): a stray match means either the item is
+    no longer open/selected, or a leftover node from a closed panel.
     """
     matches = [n for n in s.nodes()
                if n.get("role") == "Label"
@@ -638,13 +584,10 @@ def _paeth(a, b, c):
 def decode_png(data):
     """Decode an 8-bit RGBA, non-interlaced PNG to (width, height, rgba_bytes).
 
-    This is the exact shape the bridge always emits: `encode_png` in
-    `bastyde-app/src/automation_bridge.rs` hardcodes
-    `png::ColorType::Rgba` + `png::BitDepth::Eight` with no interlacing set.
-    If a future bridge change ever emits something else, this fails loudly
-    naming the actual header fields rather than silently misreading pixels —
-    the "assert the strongest thing achievable, honestly" rule this whole
-    probe is built around.
+    This is the exact shape `automation_bridge.rs`'s `encode_png` always
+    emits (`png::ColorType::Rgba` + `png::BitDepth::Eight`, no interlacing).
+    If that ever changes, fail loudly naming the actual header fields rather
+    than silently misreading pixels.
     """
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError("not a PNG (bad signature) — the screenshot tool returned something "
@@ -769,14 +712,10 @@ def analyze_cell(pixels, width, height, x0, x1):
     inset corner patch as the "surface behind the dot" reference, then find
     the pixel in the cell with the HIGHEST contrast against that reference.
 
-    The corner is inset rather than taken from the exact edge because the
-    node crop's own boundary can carry a sliver of anti-aliasing that belongs
-    to neither the dot nor a clean sample of the surface. The dot itself
-    (`FixedDot`, `tag_chip.rs`) is centred within an 18dp cell at a painted
-    size of at most 14dp (fill + ring), so an inset corner patch is reliably
-    clear of it regardless of the display's scale factor — no dp/px
-    conversion needed here at all, only a fraction of the cell we already
-    have in pixels.
+    Inset rather than the exact edge, since the node crop's boundary can
+    carry a sliver of anti-aliasing. The dot itself (`FixedDot`, at most 14dp
+    within an 18dp cell) is reliably clear of an inset corner patch
+    regardless of display scale factor — no dp/px conversion needed.
     """
     cw = x1 - x0
     dim = min(cw, height)
@@ -803,20 +742,16 @@ def analyze_row_png(data, theme_label):
     """Decode one dot-row screenshot and return `{tag_name: {ref, ratio, at}}`
     for all three tags, splitting the row into three equal-width cells.
 
-    Proportional thirds, not a dp measurement: the row is
-    `HStack::new().spacing(0.0)` (`tag_chip.rs`) of exactly 3 cells at
-    `HIT=18.0` dp each (3 tags ≤ `MAX_VISIBLE_EDITOR=8`, so no overflow "+N"
-    cell exists to throw the count off), and cells abut with zero gap. Any
-    uniform scale factor divides that into three equal PNG-pixel thirds, so
-    there is nothing here that depends on knowing the display's DPI.
+    Proportional thirds, not a dp measurement: the row is 3 cells of equal
+    width with zero gap (3 tags is under the overflow threshold, so no "+N"
+    cell), so any uniform scale factor divides it into equal PNG-pixel
+    thirds regardless of display DPI.
     """
     w, h, pixels = decode_png(data)
     print(f"  [{theme_label}] decoded {w}x{h} px")
     if w < 3 or h < 1:
-        # `fail_restoring`, not `fail` -- this runs after the theme has already
-        # been switched away from ORIGINAL, so a bare `fail()` here would exit
-        # with the writer's real desktop left on Light/Dark and the app process
-        # still up (see the module docstring's hygiene note on assertion 9).
+        # `fail_restoring`, not `fail`: the theme has already been switched
+        # away from ORIGINAL, and a bare `fail()` would leave it there.
         fail_restoring(f"[{theme_label}] decoded a {w}x{h} image from the dot row — too small "
                         f"to contain 3 dot cells; the node crop likely returned the wrong node "
                         f"or nothing")
@@ -938,12 +873,10 @@ try:
               "process is currently in (DARK — the last one selected). This does NOT prove the "
               "rendered boundary is visible; it only proves the row still exists and still "
               "names them.")
-        # NOT a substring `has_any()` scan of the whole tree: one of this fixture's own tag
-        # names is the single letter "A", which — as automation_tags.py's own war story spells
-        # out — is a substring of virtually every sentence of chrome on screen, so a bare
-        # substring check would read "found" no matter what was on screen. Reuse the same
-        # "exactly one Label names all three tags" predicate assertion 1 already proved
-        # non-vacuous, scoped to a single node's content rather than the whole tree's text.
+        # NOT a substring `has_any()` scan of the whole tree: one of this fixture's tag
+        # names is the single letter "A", a substring of nearly every sentence of chrome
+        # on screen, so a bare substring check would read "found" regardless. Reuse the
+        # same "exactly one Label names all three tags" predicate as assertion 1.
         fallback_matches = [n for n in s.nodes()
                             if n.get("role") == "Label"
                             and all(t.lower() in (n.get("value") or n.get("label") or "").lower()

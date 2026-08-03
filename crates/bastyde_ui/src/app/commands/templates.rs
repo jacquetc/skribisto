@@ -13,9 +13,7 @@
 //! **Insert puts the body at the caret**, replacing the selection if there is one. It does
 //! not clear the note first and does not ask: `TextCursor::insert_fragment` already brackets
 //! the whole thing in a composite, so one Ctrl+Z takes it back, and a modal on every
-//! non-empty note would train the writer to dismiss it unread. That is what every
-//! comparable tool does too — Obsidian inserts at the cursor, Scrivener spawns a new
-//! document rather than overwriting one.
+//! non-empty note would train the writer to dismiss it unread.
 
 use bastyde::prelude::*;
 use bastyde::widgets::{InputDialog, Toast};

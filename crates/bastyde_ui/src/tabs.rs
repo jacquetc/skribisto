@@ -119,7 +119,7 @@ pub struct ContentTab {
     /// The Book's writing-plan view-model — `Some` only for a `Folder/Book`
     /// container, the one combination with a "Pace" segment. Like `stream`, it
     /// lives on the tab (not the shared `OpenDoc`) and reads through the backend,
-    /// not through documents. Consumed by the Pace pane (built out over M4c/M4d).
+    /// not through documents. Consumed by the Pace pane.
     #[allow(dead_code)]
     pace: Option<PaceViewModel>,
     /// The Analysis view-model — `Some` only for a `Folder/Book` container, gated exactly
@@ -789,7 +789,7 @@ impl ContentTab {
 
     /// The Book's writing-plan (Pace) view-model — `Some` only for a `Folder/Book`
     /// container. The Pace pane binds its signals and calls its methods.
-    #[allow(dead_code)] // consumed by the Pace pane (M4c/M4d)
+    #[allow(dead_code)] // consumed by the Pace pane
     pub fn pace(&self) -> Option<&PaceViewModel> {
         self.pace.as_ref()
     }
@@ -801,17 +801,17 @@ impl ContentTab {
         self.open_doc.flush(stack)
     }
 
+    /// This tab's caret band: the shared preference plus this document's language.
+    pub fn caret_band(&self) -> crate::view_models::CaretBand {
+        crate::view_models::CaretBand::new(self.caret_highlight.clone(), self.caret_locale.clone())
+    }
+
     /// The typography bundle for this tab's **main** prose editor: the
     /// distraction-free bundle whenever this tab's window is in distraction-free
     /// mode (checked *before* the `ProseKind` match — a window-mode axis, not a
     /// content-type one, so it must win regardless of Scene vs Note); otherwise
     /// the Notes bundle for a Note, the Scene bundle for everything else (Scene /
     /// ChapterScene, and a safe fallback for any layout without a `kind`).
-    /// This tab's caret band: the shared preference plus this document's language.
-    pub fn caret_band(&self) -> crate::view_models::CaretBand {
-        crate::view_models::CaretBand::new(self.caret_highlight.clone(), self.caret_locale.clone())
-    }
-
     pub fn main_typography(&self) -> &EditorTypography {
         if self.distraction_free.get() {
             return &self.typography.distraction_free;
@@ -1790,8 +1790,6 @@ mod tests {
             .find_map(|c| first_containing(tree, c, needle))
     }
 
-    /// First node at/under `root` whose fully-qualified type name ends with `suffix`
-    /// (DFS pre-order); type names come from `std::any::type_name`, so match the leaf.
     /// A Scene tab built with the given typewriter setting, laid out, plus the
     /// page `ScrollArea`'s maximum scroll offset.
     ///
@@ -1904,6 +1902,8 @@ mod tests {
         );
     }
 
+    /// First node at/under `root` whose fully-qualified type name ends with `suffix`
+    /// (DFS pre-order); type names come from `std::any::type_name`, so match the leaf.
     fn first_of_type(tree: &WidgetTree, root: WidgetId, suffix: &str) -> Option<WidgetId> {
         if tree
             .widget_type_name(root)

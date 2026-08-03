@@ -274,28 +274,19 @@ pub fn writing_column(
 }
 
 /// A writing editor's right-click menu: the **formatting row** (Bold / Italic /
-/// Underline / Strikethrough), the **spelling group** (corrections for the
-/// right-clicked word, then *Add to dictionary*), the standard edit actions (Cut /
-/// Copy / Paste / Paste Unformatted / Select All, via the editor handle), and —
-/// when a split is offered — **Split scene** at the caret.
+/// Underline / Strikethrough) as a chrome strip above the list, the **spelling
+/// group** (corrections for the right-clicked word, then *Add to dictionary*)
+/// leading the actual items, the standard edit actions (Cut / Copy / Paste / Paste
+/// Unformatted / Select All), and — when a split is offered — **Split scene** at
+/// the caret.
 ///
 /// Built fresh on each right-click, *after* the factory has moved the caret to the
 /// click point, so the resolved word and any Paste act where the user clicked.
 ///
-/// The formatting row leads, but it does not displace the spelling group's claim
-/// to the top: a horizontal strip of icons reads as chrome rather than as a list
-/// row, so the corrections are still the first thing the eye lands on among the
-/// menu's *items*. This is where macOS and Word's mini-toolbar put the same strip.
-///
-/// The spelling group then leads the items, as it does in every browser and word
-/// processor: the corrections are the reason the menu was opened on a squiggle, and
-/// they sit flat rather than behind a submenu, one click from the fix. "Add to
-/// dictionary" belongs with them — it is the other answer to the same squiggle, and
-/// its label names the word so a wrong target is visible before committing.
-///
-/// The whole group is **omitted** when nothing flagged resolves here, rather than
-/// shown greyed out: a right-click on ordinary prose opens straight at Cut instead
-/// of pinning a dead item to the top of the most-used menu in the app.
+/// The spelling group leads because the corrections are the reason the menu was
+/// opened on a squiggle, one click from the fix rather than behind a submenu. It is
+/// **omitted** entirely when nothing flagged resolves here, rather than shown
+/// greyed out — a right-click on ordinary prose opens straight at Cut.
 fn editor_context_menu(
     handle: EditorHandle,
     cursor: Signal<usize>,
@@ -2035,14 +2026,6 @@ fn push_caret_band(handle: &EditorHandle, band: &crate::view_models::CaretBand) 
     handle.set_caret_highlight(band.resolve());
 }
 
-/// Wraps a `RichTextEditor`, keeping its per-editor-type typography live for the
-/// life of the tab. Initial values are already baked onto `editor` by the caller
-/// (`typography_defaults` + `font_size_scale`); this registers one `ctx.effect`
-/// per settings field so a preference edit re-pushes the whole bundle through
-/// the editor handle to every open tab. Four *separate* effects rather than one
-/// combined `zip` signal — `zip`/`zip3` build a *derived* signal, which panics
-/// on `.observe()`; the `SettingsStore` signals are mutable, so per-field
-/// effects are safe.
 /// Wire a prose editor's `handle` to its document's caret-aware [`SpellSession`]: feed this view's
 /// focus + caret (read **live** via `EditorHandle::cursor_position()` — the caret signal lags a
 /// frame behind a just-typed character, so the effects only *ping* "something changed") and drive
@@ -2111,6 +2094,14 @@ pub(crate) fn wire_spell(
     token
 }
 
+/// Wraps a `RichTextEditor`, keeping its per-editor-type typography live for the
+/// life of the tab. Initial values are already baked onto `editor` by the caller
+/// (`typography_defaults` + `font_size_scale`); this registers one `ctx.effect`
+/// per settings field so a preference edit re-pushes the whole bundle through
+/// the editor handle to every open tab. Six *separate* effects rather than one
+/// combined `zip` signal — `zip`/`zip3` build a *derived* signal, which panics
+/// on `.observe()`; the `SettingsStore` signals are mutable, so per-field
+/// effects are safe.
 struct TypographyBoundEditor {
     editor: Option<RichTextEditor>,
     typo: EditorTypography,
@@ -2443,28 +2434,20 @@ impl Widget for CenterColumnFlowing {
     }
 }
 
-/// The writing surface driven by the **real frame loop** — the integration that
-/// both shipped crashes came through, and that nothing else tests.
+/// The writing surface driven by the **real frame loop** — the integration nothing
+/// else tests.
 ///
-/// The other replace-while-typing tests
-/// (`text_replacement::session::live_editor_tests`) build a bare
-/// `RichTextEditor` and call `session.tick(...)` directly. That proves the state
-/// machine, and proves nothing about *how it is invoked*: the first version of
-/// this feature drove the session from the editor's `on_change`, which runs
-/// inside `frame_loop::tick` while the editor's state is mutably borrowed, so
-/// the first character typed panicked with "RefCell already mutably borrowed".
-/// Every session test passed anyway, because none of them went through a frame.
+/// The other replace-while-typing tests (`text_replacement::session::live_editor_tests`)
+/// build a bare `RichTextEditor` and call `session.tick(...)` directly — proving the state
+/// machine, not how it is invoked. Replace-while-typing is wired from the editor's
+/// `on_change`, which runs inside `frame_loop::tick` while the editor's own state is
+/// mutably borrowed; a bare `tick()` call never exercises that borrow.
 ///
-/// These do. `WidgetTree::request_frame()` arms the tick and `layout()` advances
-/// it (`layout_impl` calls `advance_frame_tick` on every pass), so the effect
-/// registered by [`wire_replacements`] fires exactly as it does in the running
-/// app — same `BuildContext`, same borrow order, same everything.
-///
-/// **No bastyde change was needed for this.** `advance_frame_tick` is
-/// `pub(crate)`, but it does not have to be reachable: the two public calls
-/// above drive it between them, which is also precisely what the winit loop
-/// does each frame. Reaching for a wider framework API would have bought a
-/// less faithful test.
+/// `WidgetTree::request_frame()` arms the tick and `layout()` advances it
+/// (`layout_impl` calls `advance_frame_tick` on every pass), so the effect registered by
+/// [`wire_replacements`] fires with the same `BuildContext` and borrow order as the
+/// running app. `advance_frame_tick` stays `pub(crate)` — the two public calls above
+/// already drive it exactly as the winit loop does each frame.
 #[cfg(all(test, feature = "mocks"))]
 mod frame_loop_tests {
     use super::*;

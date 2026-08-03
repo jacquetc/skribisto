@@ -98,12 +98,9 @@ impl RestoreItemsToUseCase {
 
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        // Work resolution: dto.work_id, validated against the open Works --
-        // Phase 0.6: this used to pick `get_all_work().next()`, which had no
-        // defined subject once a second Work was open. Scopes both the
-        // undo/redo snapshot AND the post-pass sweep of Work.trash_infos;
-        // getting it wrong leaves the real owning Work's trash index with a
-        // permanently dangling row for an item that is now active elsewhere.
+        // dto.work_id must be validated against the open Works: it scopes
+        // both the undo/redo snapshot and the post-pass sweep of
+        // Work.trash_infos.
         let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
 
         // --- destination resolution (read-only) ---
@@ -195,18 +192,13 @@ impl RestoreItemsToUseCase {
             ));
         }
 
-        // Ownership check: every binder this op touches -- each item's
-        // *source* binder (resolved above from the item itself, with no
-        // reference to `work_id`) and the *destination* -- must belong to the
-        // NAMED Work. Binder ownership is exclusive (Work.binders is a strong
-        // one_to_many), so this forward lookup is exact: a binder id copied
-        // from a different Work's tree can never appear in `work_id`'s own
-        // list. Every check so far only cross-references binder/item ids
-        // against EACH OTHER, never against the Work, so a caller handing in
-        // Work B's binder_item_ids (and Work B's own destination binder)
-        // under Work A's (real, open) work_id would otherwise sail through:
-        // the mutation below would move Work B's rows while the undo/redo
-        // snapshot stayed scoped to Work A.
+        // Ownership check: every binder this op touches -- each item's source
+        // binder (resolved above from the item itself, with no reference to
+        // `work_id`) and the destination -- must belong to the named Work.
+        // Every check so far cross-references binder/item ids only against
+        // each other, never against the Work, so without this a caller
+        // handing in Work B's ids under Work A's work_id would move Work B's
+        // rows while the undo/redo snapshot stayed scoped to Work A.
         let owned_binders: HashSet<EntityId> = uow
             .get_work_relationship(&work_id, &WorkRelationshipField::Binders)?
             .into_iter()
@@ -397,11 +389,8 @@ fn trashed_subtree_of(
     out
 }
 
-// `get_work_relationship` does not validate that `id` is a real, open Work --
-// a junction lookup against an unknown id just comes back empty, which would
-// silently no-op instead of reporting the caller's mistake. So the id from
-// `dto.work_id` is checked against the open Works first, exactly like
-// `empty_trash_uc.rs` does.
+// `get_work_relationship` doesn't validate that `id` is a real, open Work, so
+// check `dto.work_id` against the open Works first (see `empty_trash_uc.rs`).
 fn work_id(uow: &dyn RestoreItemsToUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()

@@ -2,38 +2,30 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! The Welcome content — Skribisto's start screen, hosted as the Launcher
-//! window's root (see [`crate::shell::windows::launcher_window_config`]) rather than
-//! a modal — the launcher-window model. Two panes: a left **sidebar** (brand
-//! block + a bottom-pinned vertical nav) and a right **content** area that
-//! switches with the nav selection.
+//! window's root (see [`crate::shell::windows::launcher_window_config`]),
+//! not a modal. Two panes: a left **sidebar** (brand block + a bottom-pinned
+//! vertical nav) and a right **content** area that switches with the nav
+//! selection.
 //!
-//! **It IS the window, it is not a card inside one.** The two columns fill the
-//! Launcher edge to edge: no rounded `Panel` card, no gutter, and no inner
-//! title strip — the window's own [`TitleBar`](bastyde::widgets::TitleBar)
-//! carries "Welcome to Skribisto" (`welcome_title()`, set in
-//! `windows::launcher_window_config`). Back when this was a modal it was a
-//! fixed 780×548 card centred in the window, which — once the modal became a
-//! real window — read as a second window drawn inside the first: a raised
-//! rectangle floating in a 20 dp margin, under a title strip that repeated
-//! what the title bar above it already said. Keep this greedy: anything that
-//! pins the root to a fixed size brings the gutters back.
+//! **It IS the window, not a card inside one** — no rounded `Panel`, no
+//! gutter, no inner title strip; the window's own
+//! [`TitleBar`](bastyde::widgets::TitleBar) carries the title. Keep this
+//! greedy: anything that pins the root to a fixed size brings the gutters
+//! back.
 //!
-//! The nav is the framework's standalone vertical [`TabBar`] — it gives the 2 dp
-//! leading accent indicator, accent-on-selected label, keyboard nav, and
-//! `Role::TabList`/`Tab` accessibility for free (tablist/tab is the correct AT
-//! semantics for *in-place* pane switching; see the a11y note in the plan). The
-//! right pane is a sibling [`Switcher`] keyed off the bar's `selected_tab`
-//! signal — we compose `[branding, Spacer, TabBar]` ourselves so the nav pins
-//! to the **bottom** (a vertical `TabWidget` keeps its tabs top-aligned under
-//! the leading slot; only owning the layout lets the `Spacer` claim the
-//! slack). No inline "show at startup" control here — that setting lives in
-//! Settings ▸ Appearance & Behaviour (a launcher-local copy would be a
-//! footgun: it would hide the very screen you're looking at).
+//! The nav is a standalone vertical [`TabBar`] — it gives the accent
+//! indicator, keyboard nav and `Role::TabList`/`Tab` accessibility for free.
+//! The content pane is a sibling [`Switcher`] keyed off the bar's
+//! `selected_tab` signal; `[branding, Spacer, TabBar]` is composed by hand so
+//! the nav pins to the bottom (a vertical `TabWidget` keeps its tabs
+//! top-aligned otherwise). No "show at startup" control here — that setting
+//! lives in Settings ▸ Appearance & Behaviour, or a launcher-local copy would
+//! hide the very screen you're looking at.
 //!
 //! All business logic lives on [`WelcomeViewModel`]; this view is thin. The
-//! layout is built with the `bati!` DSL; only the nav [`TabBar`] and the content
-//! [`Switcher`] stay as plain builders — they're generic over closures, which the
-//! DSL can't express (same rationale as `app.rs`).
+//! layout is built with the `bati!` DSL; only the nav [`TabBar`] and the
+//! content [`Switcher`] stay as plain builders — they're generic over
+//! closures, which the DSL can't express.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -261,16 +253,10 @@ impl WelcomePanel {
     fn examples_list(&self, vm: &WelcomeViewModel) -> impl Widget + 'static {
         let model = self.examples.list_model();
 
-        // Preselect the first example, exactly as `recents_list` does — and for
-        // the same reason. Attaching a `SelectionModel` only makes a highlight
-        // *possible*; something has to put the cursor somewhere for one to
-        // exist. Recents get theirs seeded here; examples used to get theirs
-        // from nowhere at all: rows are `ActivateOn::SingleClick`, so a click
-        // opens the example and tears the Launcher down rather than leaving a
-        // selected row behind, and the pane is never the window's initial focus.
-        // The result was a list that never showed a cursor in any state.
-        // Guarded on "nothing selected yet" so a rebuild can't yank the
-        // highlight back to the top after the user has arrowed away from it.
+        // Preselect the first example, exactly as `recents_list` does: a
+        // `SelectionModel` only makes a highlight *possible*, something has to
+        // place the cursor. Guarded on "nothing selected yet" so a rebuild
+        // can't yank the highlight back after the user has arrowed away.
         if !model.is_empty() && self.examples_selection.selected_indices().is_empty() {
             self.examples_selection.select(0);
         }
@@ -301,30 +287,16 @@ impl WelcomePanel {
 /// A recent-work row: icon, title + middle-ellipsized path, trailing date.
 ///
 /// **The layout is hand-rolled; the chrome is not.** The selection background,
-/// corner radius, hover wash, WCAG selection edge and `:focus-visible` keyboard
-/// ring all come from the *same* [`StandardItemStyle`] recipe
+/// hover wash and focus ring come from the same [`StandardItemStyle`] recipe
 /// [`StandardListItem`] uses (`theme.style_slots.standard_item`), so a
-/// highlighted recents row is indistinguishable from a highlighted Examples row
-/// — in both themes, and including the muted `SelectedInactive` wash when focus
-/// sits elsewhere. That seam is exactly what `StandardItemStyleConfig` is for:
-/// its own docs say the style owns "the chrome (selection background, corner
-/// radius, padding) but **not** row-internal layout". The recipe already pads
-/// and insets its content, so the row hands it the bare `HStack` (as
-/// `StandardListItem` does) and adds no `Padding` of its own.
+/// highlighted recents row matches a highlighted Examples row exactly.
 ///
-/// Why not simply *be* a [`StandardListItem`], then? Its `label_column` is a
-/// plain (non-flex) child of the row's outer `HStack`, measured at its own
-/// intrinsic/natural width before that HStack's trailing `Spacer` claims the
-/// rest. `Expand`'s default flex basis is **zero** (it contributes nothing to
-/// an intrinsic-size query), so nesting an `Expand` inside
-/// `subtitle_leading_slot` never widens `label_column` itself — it can only
-/// ever fill whatever (already-narrow, title-width-sized) box
-/// `StandardListItem` handed it. Owning the row lets the path's `Expand`
-/// compete for the *row's* remaining width directly, so a long path (e.g.
-/// `/home/cyril/Nextcloud/…/Faux-semblants.skrib`) stays one line, on one row
-/// height, with the filename still readable — the "wrap in `Expand` (fill mode)
-/// to make it fill a box" layout gotcha, applied at the right level. Borrowing
-/// the chrome recipe keeps that layout freedom *and* the stock look.
+/// Not a plain [`StandardListItem`] because its `label_column` is a non-flex
+/// child measured at intrinsic width before the row's trailing `Spacer` claims
+/// the rest — an `Expand` nested inside `subtitle_leading_slot` can only fill
+/// that already-narrow box, never widen it. Owning the row lets the path's
+/// `Expand` compete for the row's actual remaining width, so a long path stays
+/// on one line, filename still readable.
 struct RecentRow {
     /// `Option` only so `build` can move it into the tree (built once).
     icon: Option<IconWidget>,
@@ -487,23 +459,15 @@ fn flat_icon_button_style() -> RecipeButtonStyle {
 /// [`WelcomeViewModel::open_link`] opens in the browser, re-declared to
 /// assistive tech as a **link** rather than a button.
 ///
-/// **Why `.access_role(Role::Link)`.** A `Button` announces as `Role::Button`
-/// unconditionally ([`Button::accessibility`] hardcodes it) — but these controls
-/// *navigate* to an external URL, and for a screen-reader user "link" and
-/// "button" are different things they reach with different keys, from different
-/// lists. The generic builder override wins here because the a11y walker applies
-/// it *after* the widget's own `accessibility()`
-/// (`build_overridden_builder`: `widget.accessibility(b)` then
-/// `overrides.apply(b)`, whose `set_role` is unconditional), so no bespoke
-/// link-with-an-icon widget — or framework change — is needed to get the right
-/// role. Built as a plain builder (not a `bati!` `Button {}` block) because the
-/// override wraps the button in a `WidgetWithHandlers`, which must be the last
-/// call in the chain — after every `Button`-specific one.
+/// `.access_role(Role::Link)` overrides the `Role::Button`
+/// [`Button::accessibility`] hardcodes — applied after the widget's own
+/// `accessibility()`, so no bespoke widget is needed. Built as a plain builder
+/// (not `bati!`) because the override wraps the button in a
+/// `WidgetWithHandlers`, which must be the last call in the chain.
 ///
-/// `label` serves triple duty: the drawn content drops it
-/// ([`IconLocation::IconOnly`]), but `Button` still reads it for the AT name,
-/// and it is the tooltip — one string, so the tooltip and the spoken name can't
-/// drift.
+/// `label` serves triple duty: dropped from the drawn content
+/// ([`IconLocation::IconOnly`]), but still the AT name and the tooltip — one
+/// string, so they can't drift.
 ///
 /// The chrome is [`flat_icon_button_style`]; the mark stays
 /// [`IconMode::Tintable`] (see [`social_links`]).
@@ -522,19 +486,14 @@ fn link_button(
         .access_role(bastyde::core::accesskit::Role::Link)
 }
 
-/// The project's two public links, tucked under the sidebar nav — the pair
-/// v1.9.x offered: the GitHub repository and the Discord server. Each is a flat
-/// icon [`link_button`].
+/// The project's two public links, tucked under the sidebar nav: the GitHub
+/// repository and the Discord server, each a flat icon [`link_button`].
 ///
-/// **Both marks stay [`IconMode::Tintable`]** (the `IconWidget` default), so
-/// they resolve through the button's text role: they follow the theme into dark
-/// mode and pick up the same hover/press tint as everything else in the sidebar.
-/// The shipped artwork cannot do that by itself — the Octicons mark is a
-/// near-black `#1B1F23` silhouette (invisible on a dark sidebar) and the Discord
-/// logo is brand blurple, so drawing either in its own colors would leave a
-/// two-icon footer that agrees with neither the theme nor itself. Tinting costs
-/// only the blurple, which is not information here: the shape already says
-/// "Discord".
+/// **Both marks stay [`IconMode::Tintable`]**, so they follow the theme into
+/// dark mode and pick up the sidebar's hover/press tint. The shipped artwork
+/// can't do that by itself — the Octicons mark is a near-black silhouette
+/// (invisible on a dark sidebar) and the Discord logo is brand blurple; the
+/// shape alone already says "Discord", so tinting costs no information.
 fn social_links(vm: &WelcomeViewModel) -> impl Widget + 'static {
     // The Discord logo's viewBox is 71×55, not square — `SvgIcon` fits it into
     // the icon box preserving aspect and centring, so it lands ~18×14 next to
@@ -564,24 +523,15 @@ fn social_links(vm: &WelcomeViewModel) -> impl Widget + 'static {
 }
 
 /// The sidebar column: the brand block at the top, then — pushed to the bottom
-/// by the `Spacer` between them — the nav with the social row under it.
+/// by the `Spacer` between them — the nav with the social row under it. Split
+/// out of [`WelcomePanel::build`] so the geometry can be laid out headlessly
+/// (see this module's tests); nothing here decides what the three blocks
+/// *contain*.
 ///
-/// Split out of [`WelcomePanel::build`] for the same reason as
-/// [`welcome_body`]: the geometry is what regresses, and it can be laid out
-/// headlessly (see this module's tests) while the real panel needs a live
-/// backend. Nothing here decides what the three blocks *contain*.
-///
-/// The `Spacer` is what pins the bottom group, so nothing in this column may be
-/// given an unbounded height — a width-only `FixedSize` around the nav (which
-/// proposes `None` on the other axis) would collapse the `Spacer` and float the
-/// nav up under the brand block. It is also why the nav takes no height pin at
-/// all: a vertical `TabBar` already reports its own content height, and pinning
-/// it would additionally hide the sidebar's width from it and defeat
-/// `TabSizing::Fill`.
-///
-/// No "show at startup" control here — that setting lives in Settings ▸
-/// Appearance & Behaviour only (a launcher-local copy would hide the very screen
-/// you're looking at, with no way back).
+/// Nothing in this column may be given an unbounded height, or the `Spacer`
+/// collapses and the nav floats up under the brand block. The nav itself takes
+/// no height pin: a vertical `TabBar` reports its own content height, and
+/// pinning it would hide the sidebar's width and defeat `TabSizing::Fill`.
 fn welcome_sidebar(
     branding: impl Widget + 'static,
     nav: impl Widget + 'static,
@@ -604,29 +554,20 @@ fn welcome_sidebar(
 }
 
 /// The Welcome body: fixed-width **sidebar** · vertical rule · flexible
-/// **content pane**, all three filling whatever the window offers — the whole
-/// layout, in one expression. Split out of [`WelcomePanel::build`] so the
-/// geometry can be laid out headlessly (see this module's tests): the panel
-/// itself needs a live backend and the project-window factory, its two panes
-/// don't decide any of the column geometry, and the column geometry is exactly
-/// what regressed.
+/// **content pane**, all three filling whatever the window offers. Split out
+/// of [`WelcomePanel::build`] so the geometry can be laid out headlessly (see
+/// this module's tests).
 ///
-/// **Why `MinSize::width` and not `FixedSize::width` for the sidebar.** A
-/// `FixedSize` proposes `None` on the axis it doesn't bind, so a width-only one
-/// would hand the sidebar an *unbounded height* — its `Spacer` would collapse
-/// and the nav would ride up under the brand block instead of pinning to the
-/// bottom. `MinSize` clamps the axis it constrains and passes the other one
-/// through untouched, so the sidebar is measured at 264 × the body height. It
-/// can't overflow that width either: the brand text wraps
-/// (`TextOverflow::Wrap`) against the 264 dp it is offered.
+/// **`MinSize::width`, not `FixedSize::width`, for the sidebar.** `FixedSize`
+/// proposes `None` on the axis it doesn't bind, so a width-only one would give
+/// the sidebar unbounded height and collapse its `Spacer`. `MinSize` clamps
+/// only the axis it constrains, so the sidebar is measured at 264 × the body
+/// height; its brand text wraps rather than overflowing that width.
 ///
-/// Each column claims the body height without a pin: `HStack` offers its height
-/// to every child (and defaults to `VAlignment::Center`, so a *content*-sized
-/// column would float in the middle instead). `Expand::vertical` takes that
-/// offered height while reporting `flex = 0` on the horizontal axis the stack
-/// is distributing — it claims height without stealing width from the content
-/// pane, which is the one column that does compete for it
-/// (`Expand::horizontal`).
+/// Each column claims the body height without a pin: `HStack` offers its
+/// height to every child, and `Expand::vertical` takes it while reporting zero
+/// horizontal flex, so it doesn't steal width from the content pane's own
+/// `Expand::horizontal`.
 fn welcome_body(
     sidebar: impl Widget + 'static,
     content: impl Widget + 'static,
@@ -696,18 +637,13 @@ impl Widget for WelcomePanel {
             .get_or_insert_with(|| WelcomeViewModel::new(ctx.settings(), app_ctx, factory))
             .clone();
 
-        // Ctrl+Q / File ▸ Quit on the bare Launcher (no project open, hence no
-        // `App`, no unsaved state, no `on_close_requested` guard — this window's
-        // own doc comment already states that closing it while it's the only
-        // open window quits the process, by design). A plain guarded
-        // `close_window()` is correct here: there is nothing to veto. This is
-        // deliberately simpler than the project window's `app.quit` (which runs
-        // through `guard_unsaved_exit` — see `app.rs`) — registering *that*
-        // version here would have zero effect anyway: each `WidgetTree` (one per
-        // OS window) has its own independent `global_actions`/`shortcut_registry`,
-        // so `App::build`'s own `app.quit` registration is unreachable from a
-        // window that never builds an `App`. Must be registered inside a widget
-        // that is actually built into the Launcher's own window tree — this one.
+        // Ctrl+Q / File ▸ Quit on the bare Launcher: no project is open, so
+        // there's nothing to veto — a plain guarded `close_window()` suffices,
+        // unlike the project window's `app.quit` (`guard_unsaved_exit` in
+        // `app.rs`). Registered here rather than reused from `App` because each
+        // `WidgetTree` (one per OS window) has its own independent
+        // `global_actions`/`shortcut_registry`, so `App::build`'s registration
+        // is unreachable from a window that never builds an `App`.
         ctx.register_shortcut_global(
             Shortcut::new("app.quit")
                 .name("Quit")
@@ -722,17 +658,13 @@ impl Widget for WelcomePanel {
         vm.wire(ctx);
         self.examples.wire(ctx);
 
-        // ── Brand block (top of the sidebar) ───────────────────────────────
+        // Brand block (top of the sidebar).
         let mut title_style = ctx.theme().typography.body_bold.clone();
         title_style.size = 22.0;
-        // The tagline is set in one of the bundled writing serifs, italic, so the
-        // brand block closes on a line that looks *written* rather than chromed.
-        // The italic run comes from the `*…*` in the tagline's ftl value, which
-        // only means anything with `markup: true` below — without it the asterisks
-        // render literally. It needs the family's italic face: every serif in
-        // `register_editor_fonts` ships one, upright and italic under the same
-        // family name. EB Garamond is the calligraphic one of the three.
-        // `small` (12 px) is too small for Garamond's short x-height, hence 15.
+        // Tagline in EB Garamond italic, so the brand block reads as *written*
+        // rather than chromed. The italic run comes from the `*…*` markup in
+        // the ftl value (needs `markup: true` below); `small` (12px) is too
+        // small for Garamond's short x-height, hence 15.
         let mut tagline_style = ctx.theme().typography.small.clone();
         tagline_style.family = "EB Garamond".to_string();
         tagline_style.size = 15.0;
@@ -760,7 +692,7 @@ impl Widget for WelcomePanel {
             }
         );
 
-        // ── Vertical nav TabBar (bottom of the sidebar) ─────────────────────
+        // Vertical nav TabBar (bottom of the sidebar).
         let nav_model = ListModel::from_vec(vec![
             NavItem::Works,
             NavItem::Examples,
@@ -798,9 +730,9 @@ impl Widget for WelcomePanel {
         .show_overflow_dropdown(false)
         .access_label_literal("Welcome sections");
 
-        // ── Right pane: a Switcher keyed off the bar's selection ────────────
-        // `TabBar` and `Switcher` are generic over closures, so they stay plain
-        // builders and join the bati! tree below via `child:`.
+        // Right pane: a Switcher keyed off the bar's selection. `TabBar` and
+        // `Switcher` are generic over closures, so they stay plain builders
+        // and join the bati! tree below via `child:`.
         let ids_for_idx = self.tab_ids.clone();
         let switch_index = self.selected_tab.map(move |opt: &Option<TabId>| {
             (*opt)
@@ -813,7 +745,7 @@ impl Widget for WelcomePanel {
             .child(placeholder(tr!(welcome_learn_soon())))
             .child(placeholder(tr!(welcome_about_blurb())));
 
-        // ── Sidebar: brand block, a Spacer, the bottom-pinned nav + links ───
+        // Sidebar: brand block, a Spacer, the bottom-pinned nav + links.
         let sidebar = welcome_sidebar(branding, bar, social_links(&vm));
 
         // Two-tone: the content pane sits on a darker (Sunken) base, against the
@@ -874,13 +806,9 @@ mod tests {
         FixedSize::new().width(w).height(h).child(Spacer::new())
     }
 
-    /// **The two link marks announce to assistive tech as *links*, not buttons.**
-    /// They navigate to an external URL, so "link" is the role a screen-reader
-    /// user expects — and it is what `.access_role(Role::Link)` in
-    /// [`link_button`] declares, overriding the `Role::Button` a `Button` emits
-    /// by default. This is the crux of the whole helper; assert the role really
-    /// reaches the AT tree (and that the overridden Button role leaves nothing
-    /// behind on a sibling node).
+    /// The two link marks must announce to assistive tech as *links*, not
+    /// buttons — the override [`link_button`] declares must actually reach the
+    /// AT tree, and leave nothing behind on a sibling node.
     #[test]
     fn link_button_announces_as_a_link() {
         use bastyde::core::accessibility::widget_id_to_node_id;
@@ -913,14 +841,10 @@ mod tests {
         );
     }
 
-    /// **The social links sit under the nav, and the pair stays pinned to the
-    /// sidebar's bottom.** The `Spacer` above them is the only thing holding
-    /// them there, so this is the piece that breaks if anything in the column is
-    /// ever handed an unbounded height (see [`welcome_sidebar`]): the group
-    /// would ride up under the brand block instead.
-    ///
-    /// Laid out on stand-in blocks — the nav's own height is `TabBar`'s business,
-    /// and the column geometry must not depend on it.
+    /// The social links stay pinned to the sidebar's bottom, under the nav —
+    /// the piece that breaks if anything in the column is ever handed an
+    /// unbounded height (see [`welcome_sidebar`]). Laid out on stand-in blocks
+    /// so the column geometry doesn't depend on `TabBar`'s own height.
     #[test]
     fn the_social_links_sit_below_the_bottom_pinned_nav() {
         const H: f32 = 546.0;
@@ -968,20 +892,13 @@ mod tests {
         );
     }
 
-    /// **The Welcome content is the window, not a card inside it.**
+    /// **The Welcome content is the window, not a card inside it**: the body
+    /// starts at x = 0, the content pane ends at the right edge, and both
+    /// columns are as tall as the window.
     ///
-    /// It used to be a fixed 780×548 `Panel` centred in the 820×590 Launcher —
-    /// a leftover from its modal days. Once the modal became a real window that
-    /// read as a window drawn inside a window: a raised, rounded rectangle
-    /// floating in a ~20 dp gutter, topped by its own title strip repeating the
-    /// title bar right above it. So: the body starts at x = 0, the content pane
-    /// ends at the right edge, and both columns are as tall as the window.
-    ///
-    /// Laid out on stand-in panes — the columns' geometry is what is under
-    /// test, and neither pane has a say in it. The sidebar stub keeps a
-    /// `Spacer`, like the real one: it is the piece that needs a *bounded*
-    /// height to push the nav to the bottom, so a sidebar that failed to fill
-    /// the body would collapse here rather than pass by accident.
+    /// Laid out on stand-in panes. The sidebar stub keeps a `Spacer`, like the
+    /// real one, so a sidebar that fails to fill the body collapses here
+    /// rather than passing by accident.
     #[test]
     fn the_body_fills_the_window_edge_to_edge() {
         const W: f32 = 820.0;

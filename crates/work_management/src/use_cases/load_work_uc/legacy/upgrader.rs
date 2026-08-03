@@ -14,7 +14,7 @@
 //!
 //! Fidelity notes — we reproduce every *semantically meaningful* step (the
 //! sheet/note → tree migration, parent→folder transformation, synopsis →
-//! secondary-content move, HTML↔Markdown conversion). We deliberately omit parts
+//! secondary-content move, Markdown↔HTML→Djot conversion). We deliberately omit parts
 //! that only matter for a *persisted* SQLite file and are invisible to the
 //! in-memory read-and-discard model:
 //!   * the legacy 2.0 Trash folder + trashed-item relocation — Skribisto-rs keeps
@@ -488,10 +488,10 @@ fn step_1_8_to_1_9(conn: &Connection) -> Result<()> {
     .context("step 1.8→1.9")
 }
 
-// ── 1.9 → 2.0 : HTML → Markdown ───────────────────────────────────────────────
+// ── 1.9 → 2.0 : HTML → Djot ────────────────────────────────────────────────────
 fn step_1_9_to_2_0(conn: &Connection) -> Result<()> {
     // The only 1.9→2.0 change meaningful to the in-memory model is the content
-    // format: Qt HTML → Markdown — primary content of TEXT items, then secondary
+    // format: Qt HTML → Djot — primary content of TEXT items, then secondary
     // content of every item.
     //
     // We deliberately skip the legacy Trash folder + trashed-item relocation:
@@ -559,7 +559,8 @@ fn trim_orphans(conn: &Connection) -> Result<()> {
 }
 
 /// Read a BLOB content column for each selected tree id, run it through `convert`,
-/// and write the result back. Used for the HTML↔Markdown conversion steps.
+/// and write the result back. Used for the Markdown↔HTML (1.6→1.7) and HTML→Djot
+/// (1.9→2.0) conversion steps.
 fn convert_column(
     conn: &Connection,
     select_ids: &str,

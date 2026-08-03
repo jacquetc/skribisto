@@ -64,15 +64,11 @@ impl DeleteTrashEntriesUseCase {
     pub fn execute(&mut self, dto: &DeleteTrashEntriesDto) -> Result<()> {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
-        // Work resolution: dto.work_id, validated against the open Works --
-        // Phase 0.6: this used to pick `get_all_work().next()`, which had no
-        // defined subject once a second Work was open. This is the sneakiest
-        // variant of the bug: filtering dto.trash_info_ids against the WRONG
-        // Work's index leaves `ids` empty (TrashInfo ids never coincide
-        // across Works), and the existing "stale id -> no-op, not error"
-        // tolerance below then swallows it with zero error -- "Delete
-        // forever" reports success and deletes nothing. Validating here
-        // turns a closed/wrong work_id into a real error instead.
+        // dto.work_id must be validated against the open Works: filtering
+        // trash_info_ids against the wrong Work's index would silently leave
+        // `ids` empty, and the "stale id -> no-op" tolerance below would
+        // swallow it -- "Delete forever" reporting success while deleting
+        // nothing.
         let work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
 
         // Keep only ids still in the index (stale ids → no-op, not error).
@@ -87,16 +83,11 @@ impl DeleteTrashEntriesUseCase {
             .filter(|id| !indexed.contains(id))
             .collect();
         if !missing.is_empty() {
-            // A missing id is one of two very different things: a genuinely
-            // stale row (already purged elsewhere -- tolerate, per this file's
-            // documented "stale id -> no-op" contract) or a row that is very
-            // much alive under a DIFFERENT open Work (the caller passed the
-            // wrong work_id alongside a real id it doesn't own). The plain
-            // `indexed` filter above cannot tell these apart -- both look like
-            // "not in `work_id`'s own list". Only a reverse lookup on the
-            // missing ids does: this is the "sneakiest variant" this file's
-            // header warns about, where the tolerant filter would otherwise
-            // swallow a real cross-Work mismatch as a silent, successful no-op.
+            // A missing id is either a genuinely stale row (tolerate) or one
+            // that belongs to a DIFFERENT open Work (the caller passed the
+            // wrong work_id). The `indexed` filter can't distinguish these, so
+            // reverse-lookup the missing ids' real owners to catch the
+            // cross-Work case instead of silently no-opping it.
             let owners = uow.get_work_relationships_from_right_ids(
                 &WorkRelationshipField::TrashInfos,
                 &missing,
@@ -137,11 +128,8 @@ impl DeleteTrashEntriesUseCase {
     }
 }
 
-// `get_work_relationship` does not validate that `id` is a real, open Work --
-// a junction lookup against an unknown id just comes back empty, which would
-// silently no-op instead of reporting the caller's mistake. So the id from
-// `dto.work_id` is checked against the open Works first, exactly like
-// `empty_trash_uc.rs` does.
+// `get_work_relationship` doesn't validate that `id` is a real, open Work, so
+// check `dto.work_id` against the open Works first (see `empty_trash_uc.rs`).
 fn work_id(uow: &dyn DeleteTrashEntriesUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()

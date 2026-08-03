@@ -67,9 +67,9 @@ pub fn get_recent_work_multi(
 }
 
 /// Get all recent_work entities.
-/// Note: returns entities in database key order (by EntityId), not insertion order
-/// or any user-defined sort. For ordered collections, use relationship-based
-/// retrieval (e.g. get_*_relationship for ordered_one_to_many fields).
+/// Note: iteration order is unspecified (`HashMap`-backed) — not insertion order
+/// or `EntityId` order. For ordered collections, use relationship-based retrieval
+/// (e.g. get_*_relationship for ordered_one_to_many fields).
 pub fn get_all_recent_work(ctx: &AppContext) -> Result<Vec<RecentWorkDto>> {
     recent_work_controller::get_all(&ctx.db_context).context("getting all recent_work entities")
 }

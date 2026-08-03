@@ -98,8 +98,8 @@ impl Mention {
     }
 }
 
-/// The one matching configuration Stage 5 uses. Not caller-configurable: see the module
-/// docs for why case-sensitivity and whole-word are not preferences.
+/// The one matching configuration mention-scanning uses. Not caller-configurable: see the
+/// module docs for why case-sensitivity and whole-word are not preferences.
 pub fn mention_options(locale: FoldLocale) -> MatchOptions {
     MatchOptions {
         case_sensitive: true,
@@ -225,8 +225,9 @@ pub fn fingerprint_alias_table(table: &[DiscoverableEntity]) -> AliasTableFinger
 /// strings held as keys, not the hits.
 const MAX_HEAP: usize = 64 * 1024 * 1024;
 
-/// Process-global, exactly as `counting`'s is and for the same reason: one process per
-/// project, so a global *is* project-scoped.
+/// Process-global, exactly as [`counting`](crate::counting)'s is: keyed by a content
+/// fingerprint of the alias table, so one cache stays correct across several projects open
+/// in the same process at once.
 static CACHE: RwLock<Option<Store>> = RwLock::new(None);
 
 /// The cache proper, with no global in it, so tests exercise it deterministically.
@@ -330,10 +331,10 @@ pub fn cached_mentions(
     hits
 }
 
-/// Drop everything — called when a project closes.
+/// Drop everything.
 ///
 /// Not for correctness: the key is compound and content-addressed, so nothing can go stale.
-/// The previous manuscript's entries are simply unreachable.
+/// Frees the heap a closed project's entries were holding.
 pub fn clear() {
     if let Ok(mut guard) = CACHE.write() {
         *guard = None;

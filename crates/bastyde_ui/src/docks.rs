@@ -5,8 +5,10 @@
 //! content builder and packages it as a `DockWidget` for `App` to mount on a
 //! side; `App` only wires the cross-view-model effects around them.
 //!
-//! Currently the sole dock is the binder [`outline`]; further container docks
-//! (corkboard, search results, …) will land here beside it.
+//! The roster: [`outline`] (binder tree), [`search`], [`trash`], [`comments`]
+//! (project-wide) on the leading rail; [`inspector`], [`format`], and a
+//! per-document comments dock on the trailing rail; [`search_preview`] on the
+//! bottom. See [`APP_DOCKS`] for the authoritative list and mount order.
 //!
 //! ## Stable dock ids
 //!
@@ -80,12 +82,9 @@ impl AppDock {
 /// Consumer 2 is why adding a dock here is the *whole* job. A saved
 /// `DockLayoutState` is a closed list: `import_state` rebuilds the rail purely
 /// from the snapshot, so a dock that is registered but unmentioned is silently
-/// never mounted. That is how the two comments docks vanished from every project
-/// whose desk predated them — the same way the Format dock did before, which was
-/// then papered over by dropping *everyone's* saved arrangement at `workspace.toml`
-/// v2 → v3. The reconcile removes the need for that blunt instrument, but only for
-/// docks listed here: one added straight to `project_shell` and not to this table
-/// would be invisible to every existing project all over again.
+/// never mounted on a desk saved before it existed. One added straight to
+/// `project_shell` and not to this table would be invisible to every existing
+/// project.
 pub const APP_DOCKS: &[AppDock] = &[
     // Leading rail — "where am I in the project": four switchable activities.
     AppDock {

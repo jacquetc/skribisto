@@ -3,9 +3,11 @@
 
 //! `ExportViewModel` — the Export feature's business logic.
 //!
-//! Single-instance live state, created once in `main.rs` and registered as app-state so the
-//! title-bar menu + split-button (built outside `App`) and `App::build`'s wiring can all
-//! reach the one instance. It owns:
+//! Per-window live state, minted in `shell::windows::ProjectWindowFactory` and bound to
+//! that window's own `AppIds`, so an export always scopes to *this* window's Work — never
+//! `ctx.app_state::<ExportViewModel>()`, which would answer with whichever window's instance
+//! registered first. The title-bar menu + split-button (built outside `App`) and
+//! `App::build`'s wiring both take it as an explicit handle for the same reason. It owns:
 //!
 //! - the **focus-adaptive scope list** (`applicable`) that drives *both* the title-bar
 //!   Export split-button and the File ▸ Export submenu — one source, two surfaces. `App`
@@ -185,18 +187,13 @@ pub struct ExportViewModel {
     /// The destination file path.
     output_path: Signal<String>,
     /// The in-flight export: its long-operation id bundled with the Work it
-    /// was captured for (F4 — see `long_op::TrackedOp`'s doc), set on start
-    /// and cleared on completion / cancel / failure. Every handler below
-    /// routes and scopes its toast on THIS captured value (via
-    /// [`Self::active_work_id`]), never a live `self.ids.work_id.get()`.
-    ///
-    /// Before `TrackedOp` existed this was two independent fields (`active:
-    /// Signal<Option<String>>` for the op id, `active_work_id:
-    /// Rc<Cell<CapturedWork>>` for the captured Work) that nothing forced to
-    /// stay in lockstep — only hand discipline (setting/clearing both, always
-    /// adjacent) kept them paired. Bundling them into one `TrackedOp` makes
-    /// that pairing structural: there is no longer a "set one, forget the
-    /// other" spelling available at all.
+    /// was captured for (see `long_op::TrackedOp`'s doc), set on start and
+    /// cleared on completion / cancel / failure. Every handler below routes
+    /// and scopes its toast on THIS captured value (via
+    /// [`Self::active_work_id`]), never a live `self.ids.work_id.get()`. One
+    /// `TrackedOp` field rather than two independent ones (op id, captured
+    /// Work) makes the pairing structural — "set one, forget the other" is
+    /// not a spelling available at all.
     active: Signal<Option<TrackedOp>>,
 
     // ── Choose… (Custom scope) state ─────────────────────────────────────────
@@ -464,7 +461,10 @@ impl ExportViewModel {
         self.output_path.set(path);
     }
 
-    /// The styles the picker offers. Built-ins for now; M4 unions the user's styles in.
+    /// Built-in styles only — the fallback the picker uses when
+    /// `ExportStylesViewModel` isn't registered as `app_state` (e.g. headless
+    /// tests). The real picker unions these with the user's saved styles via
+    /// `ExportStylesViewModel::all_presets()`; see `export/panel.rs`.
     pub fn presets(&self) -> Vec<Preset> {
         builtin_presets()
     }

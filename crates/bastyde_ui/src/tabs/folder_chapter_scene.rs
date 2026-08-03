@@ -6,9 +6,9 @@
 //! converts between them losslessly).
 //!
 //! Shares the [`folder_segmented`](super::shared::folder_segmented) body with the Part
-//! and Book containers: **Synopsis**, **Full Chapter** (a Scrivenings-style continuous
-//! manuscript of every scene in the chapter, above the chapter's own prose), and **Full
-//! Synopsis** (the same rows as an editable outline).
+//! and Book containers: **Chapter**, **Full Chapter** (a continuous manuscript of every
+//! scene in the chapter, above the chapter's own prose), and **Full Synopsis** (the same
+//! rows as an editable outline).
 
 use bastyde::prelude::*;
 

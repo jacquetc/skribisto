@@ -111,11 +111,9 @@ impl TagChipRow {
 
     /// How many dots are drawn, and which tags the "+N" cell is hiding.
     ///
-    /// Split out of `build` so the claim can be tested. "The overflow cell names what it is
-    /// hiding, so the count is not a dead end" is the whole reason the cell carries a
-    /// tooltip, and it was previously computed inline inside a closure — reachable only by
-    /// opening a real tooltip on a live app, which is to say untested. An off-by-one here
-    /// produces a "+2" that names three tags, or names the wrong two, and nothing catches it.
+    /// Split out of `build` so the claim can be tested: the overflow cell names what it is
+    /// hiding (the whole reason it carries a tooltip), and an off-by-one here would silently
+    /// produce a "+2" that names three tags, or names the wrong two.
     fn split_at_cap(&self) -> (usize, Vec<String>) {
         let shown = self.tags.len().min(self.max_visible);
         let hidden = self.tags[shown..].iter().map(|t| t.name.clone()).collect();
@@ -368,11 +366,9 @@ impl Widget for TagDotsRow {
         };
 
         // Deliberately binds NOTHING. This widget owns the `Popover`, and a rebuild here
-        // replaces that popover with a fresh one — tearing down the open overlay. Binding
-        // `value` here meant ticking a tag closed the picker, so unticking three tags was
-        // three separate open-and-click cycles: exactly the click-fest the feature exists to
-        // remove. The reactive part lives one level down in [`ChipDots`], so the dots
-        // repaint while the popover above them stays open.
+        // replaces that popover with a fresh one — tearing down the open overlay on every tag
+        // toggle. The reactive part lives one level down in [`ChipDots`], so the dots repaint
+        // while the popover above them stays open.
         let chips = ChipDots {
             value: self.value.clone(),
             vm: vm.clone(),
@@ -455,15 +451,10 @@ impl Widget for ChipDots {
         );
 
         let assigned = self.value.get();
-        // Resolve through the id → row map, not by scanning the palette.
-        //
-        // `WorkTagsListModel::lookup_signal` exists for exactly this, is rebuilt once per
-        // mutation, and documents itself as what "every chip on every stream row and
-        // corkboard card resolves its tag through". It was reaching `TagsViewModel` and
-        // stopping — nothing called it, the compiler said so, and this renderer was calling
-        // `rows()`, which *clones the whole palette* (`snapshot` clones every row's three
-        // Strings) and then filters. Per chip, per rebuild, on every row of a stream. That
-        // is the O(rows × tags) scan the map was built to avoid, with a full clone on top.
+        // Resolve through the id → row map (`WorkTagsListModel::lookup_signal`), not by
+        // scanning the palette: `rows()` clones every row's three Strings, and doing that per
+        // chip per rebuild on every row of a stream is an O(rows × tags) scan with a full
+        // clone on top.
         //
         // Ids with no palette row are skipped rather than drawn as a placeholder: that only
         // happens mid-delete, and a phantom dot would outlive the tag.
@@ -764,15 +755,10 @@ mod tests {
         );
     }
 
-    /// A cap of zero would render an overflow cell and nothing else, which reads as broken.
-    /// The dots come out in palette order whatever order the ids were assigned in.
-    ///
-    /// This used to fall out for free: the renderer scanned the already-sorted palette and
-    /// kept the ids it recognised. It now resolves through the id → row *map* — which is
-    /// what the map was built for, and what stops every chip from cloning the whole palette
-    /// — and a `HashMap` has no order at all, so the ordering has to be restored explicitly.
-    /// Without this test that regression is invisible in a unit run and shows up as dots
-    /// that shuffle between two rows carrying the same tags.
+    /// The dots come out in palette order whatever order the ids were assigned in — resolved
+    /// through the id → row `HashMap`, which has no order of its own, so the ordering has to
+    /// be restored explicitly. Without this test the regression shows up only as dots that
+    /// shuffle between two rows carrying the same tags.
     #[test]
     fn dots_follow_palette_order_not_assignment_order() {
         let mut rows = vec![

@@ -128,9 +128,7 @@ fn run_export(
     progress: &(dyn Fn(OperationProgress) + Send),
     cancel: &AtomicBool,
 ) -> Result<(EntityId, ExportResultDto)> {
-    // `ExportWorkDto.work_id` already existed but was dead — `gather` had no way
-    // to be told which Work to read, so it silently picked whichever the store
-    // returned first. Now consumed for real.
+    // `gather` reads exactly `dto.work_id` — the Work to export, named explicitly.
     let g = gather(uow, dto.work_id as EntityId, progress, cancel)?;
     let work_id = g.work.id;
 

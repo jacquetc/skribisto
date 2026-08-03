@@ -72,10 +72,8 @@ impl RecordProgressSnapshotUseCase {
         uow: &dyn RecordProgressSnapshotUnitOfWorkTrait,
         dto: &RecordProgressSnapshotDto,
     ) -> Result<EntityId> {
-        // Phase 0.5: record onto the caller-named Work's own WorkInfo, not
-        // whichever WorkInfo a HashMap-backed store happens to iterate first
-        // — `WorkInfo.work` is the back-pointer `gather` filters on for the
-        // exact same reason.
+        // Record onto the caller-named Work's own WorkInfo, found via its
+        // `WorkInfo.work` back-pointer.
         let work_id = dto.work_id as EntityId;
         let work_info: WorkInfo = uow
             .get_all_work_info()?
@@ -106,10 +104,9 @@ impl RecordProgressSnapshotUseCase {
         }
 
         // `created_at`/`updated_at` must be set explicitly: `DateTime<Utc>::default()` is
-        // the Unix epoch, not "now", so letting `..Default::default()` cover them stamps
-        // every snapshot 1970-01-01 — and those two fields are persisted into the bundle
-        // by `ProgressSnapshotFile`. Every other entity-creation site in the workspace
-        // passes a real timestamp; this one was the outlier.
+        // the Unix epoch, not "now", so letting `..Default::default()` cover them would
+        // stamp every snapshot 1970-01-01 — and both fields are persisted into the bundle
+        // by `ProgressSnapshotFile`.
         let now = chrono::Utc::now();
         let created = uow.create_orphan_progress_snapshot(&ProgressSnapshot {
             created_at: now,

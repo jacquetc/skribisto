@@ -74,21 +74,15 @@ impl TrashBinderUseCase {
             uow.get_binder_relationship(&binder_id, &BinderRelationshipField::BinderItems)?;
 
         self.binder_id = binder_id;
-        // Work resolution: dto.work_id, validated against the open Works --
-        // Phase 0.6: this used to pick `get_all_work().next()`, which had no
-        // defined subject once a second Work was open (the trash entry could
-        // land under an unrelated Work while the caller's own Work lost the
-        // binder with no trash-bin trace of it).
+        // dto.work_id must be validated against the open Works.
         self.work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
 
         // Ownership check: binder_id must be one of THIS Work's own binders.
-        // Binder ownership is exclusive (Work.binders is a strong
-        // one_to_many), so this forward lookup is exact: a binder id
-        // belonging to a different Work can never appear in `work_id`'s own
-        // list. Without this, a caller passing Work B's binder_id under Work
-        // A's (real, open) work_id would trash Work B's binder + items while
-        // the new TrashInfo landed under Work A's index, with no undo record
-        // on Work B's side.
+        // Work.binders is a strong one_to_many so this forward lookup is
+        // exact. Without it, a caller passing Work B's binder_id alongside
+        // Work A's work_id would trash Work B's binder while the new
+        // TrashInfo landed under Work A's index, with no undo record on
+        // Work B's side.
         if !uow
             .get_work_relationship(&self.work_id, &WorkRelationshipField::Binders)?
             .contains(&binder_id)
@@ -186,11 +180,8 @@ fn set_items_activated(
     Ok(())
 }
 
-// `get_work_relationship` does not validate that `id` is a real, open Work --
-// a junction lookup against an unknown id just comes back empty, which would
-// silently no-op instead of reporting the caller's mistake. So the id from
-// `dto.work_id` is checked against the open Works first, exactly like
-// `empty_trash_uc.rs` does.
+// `get_work_relationship` doesn't validate that `id` is a real, open Work, so
+// check `dto.work_id` against the open Works first (see `empty_trash_uc.rs`).
 fn work_id(uow: &dyn TrashBinderUnitOfWorkTrait, requested: EntityId) -> Result<EntityId> {
     uow.get_all_work()?
         .into_iter()

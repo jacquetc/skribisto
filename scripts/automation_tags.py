@@ -59,8 +59,7 @@ import time
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
 MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
-# A throwaway copy, never the checked-in fixture — this probe saves. See
-# `automation_fixture` for the three incidents that rule comes from.
+# A throwaway copy, never the checked-in fixture — this probe saves.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import working_copy
 

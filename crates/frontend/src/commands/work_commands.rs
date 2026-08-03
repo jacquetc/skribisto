@@ -96,9 +96,9 @@ pub fn get_work_multi(ctx: &AppContext, ids: &[EntityId]) -> Result<Vec<Option<W
 }
 
 /// Get all work entities.
-/// Note: returns entities in database key order (by EntityId), not insertion order
-/// or any user-defined sort. For ordered collections, use relationship-based
-/// retrieval (e.g. get_*_relationship for ordered_one_to_many fields).
+/// Note: iteration order is unspecified (`HashMap`-backed) — not insertion order
+/// or `EntityId` order. For ordered collections, use relationship-based retrieval
+/// (e.g. get_*_relationship for ordered_one_to_many fields).
 pub fn get_all_work(ctx: &AppContext) -> Result<Vec<WorkDto>> {
     work_controller::get_all(&ctx.db_context).context("getting all work entities")
 }

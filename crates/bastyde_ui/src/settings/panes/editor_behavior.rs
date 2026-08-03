@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Editor ▸ Editor Behavior — the non-typographic writing settings.
-//!
-//! Distraction-free mode's own settings used to live here as a group, while its
-//! typography lived on a separate page. Nothing could then be handed whole to
-//! the mode's quick-access popover, and a writer looking for "the
-//! distraction-free settings" had to know to look in two places. They are all on
-//! `panes::distraction_free` now.
+//! Editor ▸ Editor Behavior — the non-typographic writing settings. Distraction-free
+//! mode's own settings (typography, column width, strip toggles) live on
+//! `panes::distraction_free` instead, so its quick-access popover has one body to reuse.
 
 use bastyde::prelude::*;
 use bastyde::widgets::tooltip::TooltipContent;
@@ -89,25 +85,11 @@ fn synopsis_choice_of(shown: bool, placement: SynopsisPlacement) -> usize {
 /// (its strip toggle shows and hides; placement there is always Beside). Only the control
 /// is unified; the stored state stays two answers.
 ///
-/// # Why this needs a guard the caret band's bridge does not
-///
-/// That one is an index against a *single* enum, so its `!=` pair can only ever disagree
-/// in one place. This is an index against a **pair**, and the pair cannot be written
-/// atomically. A click that changes both at once — off → "Side", or off-with-remembered-
-/// Side → "Top" — runs `shown.set(..)` first, which synchronously re-enters `sync` before
-/// `placement.set(..)` has happened. `sync` reads the half-applied pair, derives an index
-/// the writer never chose, and writes *that* back into the index — which re-enters this
-/// effect in turn.
-///
-/// It does converge, because every `!=` guard eventually agrees. But it converges by
-/// accident rather than by construction: it walks every index observer twice more per
-/// click and briefly publishes a selection nobody asked for. `settling` is the same guard
-/// `SideSync::suppress` and `WidthProbe::last_mode` use against the same hazard class
-/// elsewhere in this feature.
-///
-/// Skipping the sync while settling costs nothing: making the pair agree with the index
-/// is precisely what the index effect does, so `synopsis_choice_of(shown, placement) ==
-/// index` already holds by the time it returns.
+/// Unlike the caret band's single-enum bridge, this index maps to a *pair* that cannot be
+/// written atomically: a click changing both (e.g. off → "Side") sets `shown` first, which
+/// would re-enter `sync` on the half-applied pair and briefly publish a selection nobody
+/// chose. `settling` suppresses that re-entrant sync — the same guard `SideSync::suppress`
+/// and `WidthProbe::last_mode` use elsewhere in this feature.
 fn bridge_synopsis_choice(
     ctx: &mut BuildContext,
     shown: Signal<bool>,
@@ -223,11 +205,8 @@ pub(in crate::settings) fn editor_behavior_pane(
                 format!("{} px", v.round() as i32)
             }),
         )
-        // These three are general writing-surface options and apply in every
-        // mode. They carry their own group heading so they cannot be read as
-        // belonging to the "Distraction-free" one below — which is exactly how
-        // they rendered before, the group heading having been inserted above
-        // them when the distraction-free column width was added.
+        // These three are general writing-surface options and apply in every mode; their
+        // own group heading keeps them from reading as part of "Distraction-free" below.
         .full_width(group(tr!(settings_group_writing_view())))
         .line(
             field_label(tr!(settings_synopsis_placement())),

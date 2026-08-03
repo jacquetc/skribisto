@@ -60,10 +60,9 @@ pub(in crate::app) fn install(
     //
     // Guarded — `DictWord` events carry no `work_id`, only the changed entity's own id, so a
     // sibling window's DictWord edit (a *different* open Work) would otherwise reload *this*
-    // window's personal words from the wrong Work's `DictWord` set (or, before this guard,
-    // `reload_personal_words` used to read `get_all_dict_word` and merge every open Work's
-    // words together regardless). `mutation_ids_belong_to_work` is the same relationship-walk
-    // guard `App`'s autosave `mutation_origins()` loop uses for the identical problem.
+    // window's personal words from the wrong Work's `DictWord` set.
+    // `mutation_ids_belong_to_work` is the same relationship-walk guard `App`'s autosave
+    // `mutation_origins()` loop uses for the identical problem.
     for dict_word_event in [
         EntityEvent::Created,
         EntityEvent::Updated,

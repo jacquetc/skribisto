@@ -7,7 +7,16 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <description>
-    <p>Skribisto is geared toward helping anyone write anything, be it a novel or course notes. The user is free to use tags to define texts or write hundreds of notes. The tools are designed to be most unobtrusive, so you can write, write and write a bit more without too much distraction.</p>
+    <p>Skribisto helps you write anything, from a novel to course notes, without fighting formatting along the way. Organise a project in a binder tree of folders and items; the book's structure — Part, Chapter, Scene, Note — comes from the role you give each row, not from where it sits in the tree. Every writing row keeps its prose and its synopsis side by side.</p>
+    <p>Skribisto is not a word processor: a project exports to DOCX, EPUB, PDF, HTML, Markdown, Djot, LaTeX or plain text, so the final formatting happens in whichever program you prefer.</p>
+    <ul>
+      <li>Dual editor pane (prose and synopsis), with split panes and tabs</li>
+      <li>Read a whole chapter, part or book as one continuous document, or every synopsis at once</li>
+      <li>Corkboard, writing sessions, pace tracking and manuscript analysis</li>
+      <li>Search and replace across the project, trash with restore and undo, autosave and backups</li>
+      <li>Spell checking with downloadable dictionaries, light and dark themes, per-editor typography</li>
+      <li>Open several projects at once, each in its own window</li>
+    </ul>
   </description>
   <developer>
     <name>Cyril Jacquet</name>

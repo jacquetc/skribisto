@@ -4,15 +4,11 @@
 //! The two frame-driven countdowns the app runs while a project is open: the
 //! debounced autosave, and the "back up every N hours" interval.
 //!
-//! Both used to be written out longhand inside `App::build` — a `Cell<Option<Instant>>`,
-//! a `wake_at` handle and a `frame_tick` effect each, ~110 lines of deadline arithmetic
-//! interleaved with the widget tree. That made them impossible to test: reaching the
-//! branch where a deadline lapses meant building a `WidgetTree` and waiting real seconds.
-//!
-//! Here the *policy* is a pure function of `(now, settings, internal deadline)` returning
-//! what the caller should do. `App` keeps the two side effects it cannot own — calling
-//! `wake_at` and actually saving/backing up — and this module owns every decision about
-//! *when*. Injecting `now` is what makes the whole thing testable in microseconds.
+//! The *policy* is a pure function of `(now, settings, internal deadline)`
+//! returning what the caller should do — injecting `now` makes the whole thing
+//! testable in microseconds, without a `WidgetTree` or real sleeps. `App` keeps
+//! the two side effects it cannot own — calling `wake_at` and actually
+//! saving/backing up — and this module owns every decision about *when*.
 //!
 //! ## Why `wake_at` at all
 //!

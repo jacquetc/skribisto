@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! M1 acceptance: the `Comment` / `CommentReply` entities exist, carry their anchor
+//! Acceptance tests: the `Comment` / `CommentReply` entities exist, carry their anchor
 //! payload, thread their replies in order, survive undo/redo, and — the property the
 //! whole feature is built on — **orphan rather than vanish** when the prose they were
 //! anchored to is deleted.

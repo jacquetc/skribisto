@@ -3,16 +3,11 @@
 
 //! Path helpers shared by the surfaces that reach outside this window.
 //!
-//! This module used to own `spawn_new_process`, and existed because **four** unrelated
-//! surfaces needed it — the project switcher popover, the Launcher's recents, the
-//! open-a-backup redirect and the backups list — back when Skribisto was one process per
-//! project and "open that project" meant launching a second copy of itself.
-//!
-//! Phase 4 removed all four. Skribisto is single-instance now: a spawned child would elect,
-//! find this very process as the primary, hand the path straight back over a socket and exit,
-//! so every one of those callers goes through
-//! [`crate::shell::windows::open_or_focus_project`] instead. What is left here is the two
-//! helpers that were never about spawning at all.
+//! Skribisto is single-instance: "open that project" goes through
+//! [`crate::shell::windows::open_or_focus_project`], never a spawned second
+//! process (a spawned child would just elect, find this process as the
+//! primary, and hand the path back over a socket). What is left here are the
+//! two helpers that were never about spawning at all.
 
 use std::path::Path;
 

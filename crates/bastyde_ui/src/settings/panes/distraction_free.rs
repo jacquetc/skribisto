@@ -1,14 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Editor ▸ Distraction-free — everything the mode does differently, on one page.
-//!
-//! It used to be two: the typography sat on its own page (nothing but the shared
-//! [`typography_rows`](super::typography::typography_rows)), while the column
-//! width and the control-strip toggles were a group inside Editor Behavior. A
-//! writer looking for "the distraction-free settings" had to know to look in two
-//! places, and there was no single body the mode's own quick-access popover
-//! could show.
+//! Editor ▸ Distraction-free — everything the mode does differently, on one page:
+//! typography (via the shared [`typography_rows`](super::typography::typography_rows)),
+//! the mode's own column width, and which items its control strip keeps.
 //!
 //! [`distraction_free_form`] is that body. The popover reuses its *rows* rather
 //! than the whole page — it is a picker you reach mid-sentence, not a settings

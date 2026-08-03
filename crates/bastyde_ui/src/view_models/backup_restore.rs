@@ -8,12 +8,12 @@
 //! content plus any in-session edits — over the **original** project
 //! (`backup_of`), reusing the existing `save_as` command. Before overwriting,
 //! the current on-disk original is copied aside as a safety backup (and
-//! promoted to a *real*, prunable backup — T2-7, see [`mark_existing_as_backup`]
+//! promoted to a *real*, prunable backup, see [`mark_existing_as_backup`]
 //! below), so a restore is always reversible. If the original is open in
 //! another window, the user is asked to close it there first (with a "Focus
 //! that window" shortcut); restore never force-closes a peer.
 //!
-//! **T2-6 — crash-safe for folder-shape projects.** `save_as` writes to a
+//! **Crash-safe for folder-shape projects.** `save_as` writes to a
 //! **temp sibling** path next to the original, never in place. Only once that
 //! write fully succeeds does [`Self::on_long_op_completed`] swap it over the
 //! real target — a same-filesystem `rename`, atomic for a zip file, and a
@@ -71,7 +71,7 @@ struct BackupRestorePending {
     tracked: TrackedOp,
     /// The real project path being restored over.
     target: String,
-    /// Where `save_as` actually wrote (T2-6): a temp sibling of `target`, never
+    /// Where `save_as` actually wrote: a temp sibling of `target`, never
     /// `target` itself — swapped in atomically once the write is confirmed done.
     temp_target: String,
     as_folder: bool,
@@ -144,12 +144,11 @@ impl BackupRestoreViewModel {
     /// Refuse to overwrite an original that some *other window* has open; ask the
     /// user to close it there (offering to focus that window), then retry.
     ///
-    /// **Matched on path alone, not on `pid != my_pid()`.** That pid test was
-    /// correct only while Skribisto was one process per project. Since Phase 4 the
-    /// usual way to have two projects open is two windows of *one* process, so a
-    /// pid filter would wave through the exact case it exists to catch — a sibling
-    /// window holding the original while this one overwrites it. It is the same
-    /// class of bug Phase 3 fixed in `project_switcher::sections`.
+    /// **Matched on path alone, not on `pid != my_pid()`.** Two windows of one
+    /// process is the usual way to have two projects open, so a pid filter would
+    /// wave through the exact case it exists to catch — a sibling window holding
+    /// the original while this one overwrites it (the same class of bug
+    /// `project_switcher::sections` guards against).
     ///
     /// There is no risk of matching *ourselves*: this window is in backup mode, so
     /// its own open-registry claim is on the backup, and `target` is the original
@@ -208,7 +207,7 @@ impl BackupRestoreViewModel {
     }
 
     /// Safety-copy the original, then write the restored content to a temp
-    /// sibling (T2-6) — never in place.
+    /// sibling — never in place.
     fn do_restore(&self, ctx: &mut EventContext, target: String) {
         // The background `save_as` below is read-only: it serializes the store as
         // it finds it. Push the live editor buffers in first, or the restored file
@@ -236,10 +235,10 @@ impl BackupRestoreViewModel {
                 return;
             }
         };
-        // T2-7: the safety copy is a raw byte copy, so as written it still
-        // carries `kind: Regular` — retention would never prune it and the
-        // backups list would never show it, a permanent invisible orphan on
-        // every restore. Mark it as a real backup of `target` in place.
+        // The safety copy is a raw byte copy, so as written it still carries
+        // `kind: Regular` — retention would never prune it and the backups
+        // list would never show it, a permanent invisible orphan on every
+        // restore. Mark it as a real backup of `target` in place.
         if let Some(path) = &safety_backup_path {
             let when = chrono::Utc::now();
             if let Err(e) = mark_existing_as_backup(path, &target, when) {
@@ -247,8 +246,8 @@ impl BackupRestoreViewModel {
             }
         }
 
-        // 2) Write the restored content to a TEMP SIBLING of the original
-        // (T2-6), preserving its shape — never in place. A mid-write failure
+        // 2) Write the restored content to a TEMP SIBLING of the original,
+        // preserving its shape — never in place. A mid-write failure
         // therefore can't touch `target` at all; the swap happens only once
         // this write is confirmed done (`on_long_op_completed`).
         let as_folder = matches!(
@@ -286,7 +285,7 @@ impl BackupRestoreViewModel {
     }
 
     /// The write to the temp sibling finished: swap it over the real target
-    /// (T2-6 — a rename, never an in-place overwrite), then record the new
+    /// (a rename, never an in-place overwrite), then record the new
     /// path/shape into `WorkInfo` and leave backup mode — this window becomes
     /// the live restored project in place.
     pub fn on_long_op_completed(&self, ctx: &mut EventContext, event: &Event) {
@@ -350,11 +349,11 @@ impl BackupRestoreViewModel {
         // was holding a claim on the *backup's* path (or an earlier restored
         // path) with no `LoadWork`/`CloseWork` in between, so release THIS
         // window's own previous claim (`previous_path`, captured above) and
-        // claim the new one. NOT `replace_claim`/`release_all()` (T1-5's
-        // original choice): with a second Work open in a second window,
-        // dropping every claim the whole *process* holds would silently
-        // un-claim that sibling's untouched, still-open project too — see
-        // `project_lifecycle::claim`'s doc for the identical Phase-3 fix.
+        // claim the new one. NOT `replace_claim`/`release_all()`: with a second
+        // Work open in a second window, dropping every claim the whole
+        // *process* holds would silently un-claim that sibling's untouched,
+        // still-open project too — see `project_lifecycle::claim`'s doc for
+        // the identical fix.
         self.backup_mode.set(false);
         self.backup_context.set(None);
         if let Some(prev) = previous_path.as_deref() {
@@ -446,8 +445,8 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
 }
 
 /// A sibling path next to `path`, tagged and disambiguated by this process's
-/// pid (two restores in two windows never collide) — used both for the T2-6
-/// temp write target and the atomic-replace "old" aside.
+/// pid (two restores in two windows never collide) — used both for the temp
+/// write target and the atomic-replace "old" aside.
 fn temp_sibling_path(path: &Path, tag: &str) -> PathBuf {
     let name = path
         .file_name()
@@ -459,7 +458,7 @@ fn temp_sibling_path(path: &Path, tag: &str) -> PathBuf {
 }
 
 /// Atomically replace `target` with the freshly-written `temp` (same directory
-/// ⇒ same filesystem, so `rename` is atomic) — T2-6.
+/// ⇒ same filesystem, so `rename` is atomic).
 ///
 /// A zip bundle is a single `rename`: POSIX `rename()` replaces an existing
 /// destination *file* in one atomic step, so this is the whole operation.

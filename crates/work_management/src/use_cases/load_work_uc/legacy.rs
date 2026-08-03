@@ -5,14 +5,14 @@
 //!
 //! Two stages, mirroring the C++ `LegacyUpgrader`:
 //!   1. [`upgrader::upgrade_to_v2`] runs the in-schema version steps (1.0 → 2.0)
-//!      on a private in-memory copy — including the HTML→Markdown content
+//!      on a private in-memory copy — including the HTML→Djot content
 //!      conversion (via `text-document`). The user's file is never mutated.
 //!   2. [`read_v2`] maps the resulting `tbl_tree` schema to plain data, which the
 //!      use case turns into entities. Unlike the C++ `migrateToV3`, no
 //!      intermediate v3 SQLite tables are written — the HashMap store is the
 //!      target, so the mapping builds structs directly.
 //!
-//! By the time `read_v2` runs, all content is Markdown (the 2.0 step converted
+//! By the time `read_v2` runs, all content is Djot (the 2.0 step converted
 //! it), so content blobs are taken verbatim.
 
 mod upgrader;
@@ -177,7 +177,7 @@ pub fn read_project(path: &str) -> Result<LegacyProject> {
     )
     .with_context(|| format!("loading '{path}'"))?;
 
-    // Stage 1: bring the schema up to v2.0 (version steps + HTML→Markdown).
+    // Stage 1: bring the schema up to v2.0 (version steps + HTML→Djot).
     upgrader::upgrade_to_v2(&conn).context("upgrading legacy schema")?;
 
     // Stage 2: map the v2.0 tree to plain data.

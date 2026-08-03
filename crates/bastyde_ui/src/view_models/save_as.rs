@@ -12,8 +12,8 @@
 //! `update_work_info`, which fires `WorkInfo Updated` and refreshes
 //! `SingleWorkInfo` (flipping the "Save as…" menu). Built fresh per window
 //! (`shell::windows::ProjectWindowFactory::window_config`), bound to that
-//! window's own `ids` — never a shared instance (Phase 2: a second
-//! simultaneously-open Work must never see, or drive, this window's Save As).
+//! window's own `ids` — never a shared instance, since a second
+//! simultaneously-open Work must never see, or drive, this window's Save As.
 //!
 //! In-flight ops are keyed by their long-operation id, and each records the
 //! `WorkInfo` id **and** the Work id captured **when the op started** — so
@@ -21,23 +21,19 @@
 //! user switched projects while the background save was running, and
 //! concurrent Save-As ops don't drop each other's completion.
 //!
-//! **F1.** Every completion/failure toast below routes on
-//! [`Pending::tracked`]'s `work_id()` — a [`super::long_op::CapturedWork`]
-//! bundled with the op id in a [`super::long_op::TrackedOp`], captured once
-//! in [`SaveAsViewModel::start`] — never a live `self.ids.work_id.get()`.
-//! This view-model is minted once per window (see above) and outlives any
-//! one Save As, including across an in-place project switch in the SAME
-//! window while the background op is still running
-//! (`ProjectSwitchViewModel::request` gates a switch only on unsaved
-//! edits/autosave, never on "is a Save As running"). A switch reseeds
-//! `ids.work_id` on the SAME `Signal` this view-model holds, so a handler
-//! reading it live would silently answer with whichever Work this window
-//! shows *at completion time*, not the Work that was actually saved —
-//! misrouting the toast to the new Work while the Work that was really saved
-//! never hears it finished. `ExportViewModel`, `BackupSchedulerViewModel` and
-//! `BackupRestoreViewModel` were fixed for the identical pattern first; this
-//! view-model was missed, and is now on the same shared mechanism (see
-//! `long_op::CapturedWork`'s and `long_op::TrackedOp`'s own docs).
+//! Every completion/failure toast below routes on [`Pending::tracked`]'s
+//! `work_id()` — a [`super::long_op::CapturedWork`] bundled with the op id in
+//! a [`super::long_op::TrackedOp`], captured once in [`SaveAsViewModel::start`]
+//! — never a live `self.ids.work_id.get()`. This view-model outlives any one
+//! Save As, including across an in-place project switch in the SAME window
+//! while the background op is still running (`ProjectSwitchViewModel::request`
+//! gates a switch only on unsaved edits/autosave, never on "is a Save As
+//! running"). A switch reseeds `ids.work_id` on the SAME `Signal` this
+//! view-model holds, so a handler reading it live would silently answer with
+//! whichever Work this window shows *at completion time*, not the Work that
+//! was actually saved — misrouting the toast to the new Work while the Work
+//! that was really saved never hears it finished (see `long_op::CapturedWork`'s
+//! and `long_op::TrackedOp`'s own docs).
 //!
 //! [`SaveAsViewModel::begin`] is the **only** door to the backend `save_as`: it
 //! flushes the live editor buffers into the store before the background op reads
@@ -291,18 +287,17 @@ impl SaveAsViewModel {
                 // This window now points at the freshly-written output path with no
                 // `LoadWork`/`CloseWork` in between, so release whatever claim it held
                 // before (`cur.file_name`, read above before this update overwrote it) and
-                // claim the new path. NOT `replace_claim`/`release_all()` (T1-5's original
-                // choice): that drops every claim the whole *process* holds, which with a
-                // second Work open in a second window would silently un-claim that
-                // sibling's still-open, untouched project too (Phase 3 fix — see
-                // `open_registry::release`'s own doc anticipating exactly this).
+                // claim the new path. NOT `replace_claim`/`release_all()`: that drops every
+                // claim the whole *process* holds, which with a second Work open in a
+                // second window would silently un-claim that sibling's still-open,
+                // untouched project too — see `open_registry::release`'s own doc
+                // anticipating exactly this.
                 if let Some(prev) = cur.file_name.as_deref() {
                     crate::shell::open_registry::release(prev);
                 }
                 crate::shell::open_registry::claim(&output_path, &self.single_work.title().get());
-                // F1: routes AND scopes on the Work THIS Save As started for
-                // — see `Pending::tracked`'s doc — never a live
-                // `self.ids.work_id.get()`.
+                // Routes AND scopes on the Work THIS Save As started for — see
+                // `Pending::tracked`'s doc — never a live `self.ids.work_id.get()`.
                 ctx.show_toast(
                     Toast::success(tr!(saved_as(target = output_path)))
                         .scoped_op_id(SAVE_AS_TOAST_ID, pending.tracked.work_id(), &op_id)
@@ -331,7 +326,7 @@ impl SaveAsViewModel {
         let error = parse_payload(event)
             .and_then(|p| p.get("error").and_then(|e| e.as_str()).map(str::to_string))
             .unwrap_or_default();
-        // F1: routes AND scopes on the Work THIS Save As started for — see
+        // Routes AND scopes on the Work THIS Save As started for — see
         // `Pending::tracked`'s doc — never a live `self.ids.work_id.get()`.
         ctx.show_toast(
             Toast::error(tr!(save_error(error = error)))

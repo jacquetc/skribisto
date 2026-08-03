@@ -1,19 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Phase 0.1 vertical slice — the search pipe, end to end.
+//! The search pipe, end to end: `load_work` → eager `Search` under `WorkInfo` →
+//! `run_search` → bulk-written `SearchResult` rows → readable back through the generated
+//! commands.
 //!
-//! Loads a real project, runs a search, and asserts the whole chain works before any
-//! of the linguistic machinery goes in on top of it:
-//!
-//!   `load_work` → eager `Search` under `WorkInfo` → `run_search` → bulk-written
-//!   `SearchResult` rows → readable back through the generated commands.
-//!
-//! The matcher itself is deliberately naive here (literal, ASCII); what these tests
-//! pin down is the *structure*: that the entities exist and are reachable, that a
-//! search rewrites the result set rather than appending to it, that rows are per
-//! FIELD with an occurrence count (not per occurrence), that the cap reports
-//! truncation honestly, and that trashed items stay out unless asked for.
+//! Pins the structure: the entities exist and are reachable, a search rewrites the result
+//! set rather than appending to it, rows are per FIELD with an occurrence count (not per
+//! occurrence), the cap reports truncation honestly, and trashed items stay out unless
+//! asked for — plus the matcher itself (locale fold, whole-word, diacritics), covered by
+//! the tests further down.
 
 use frontend::AppContext;
 use frontend::commands::{

@@ -129,14 +129,11 @@ use view_models::{BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewMode
 
 /// The currently-open project's path (from its `WorkInfo`), if any.
 ///
-/// Resolved through the Phase-1 seam — `ids.work_info_id`, the id `WorkSession`
-/// carries for exactly this project — rather than `get_all_work_info(ctx)`'s
-/// first entry: the backend's `WorkInfo` list is no longer guaranteed to hold
-/// only this window's project (Phase 0 scoped `Root.works`/`System.work_infos`
-/// to support more than one open `Work`), so "whichever the store returns
-/// first" stopped being a safe stand-in for "the one this window means" the
-/// moment that scoping landed, even though today's single-Work-open sweep
-/// still makes the two answers coincide in practice.
+/// Resolved through `ids.work_info_id` — the id `WorkSession` carries for
+/// exactly this window's project — never `get_all_work_info(ctx)`'s first
+/// entry: several Works can be open at once (each project window mints its
+/// own `WorkSession`), so "whichever the store returns first" is not this
+/// window's project in general.
 pub(crate) fn current_project_path(ctx: &AppContext, ids: &AppIds) -> Option<String> {
     let work_info_id = ids.work_info_id.get()?;
     work_info_commands::get_work_info(ctx, &work_info_id)
@@ -643,7 +640,7 @@ fn main() {
     // is load-bearing, not incidental. The prune forgets every `work-*` row whose
     // project it cannot account for, and a path handed to us on argv is a project
     // we are about to open *right now* — but it need not be in the recents MRU
-    // (it can have aged out of the 12-entry cap) nor in the open registry
+    // (it can have aged out of the 30-entry cap) nor in the open registry
     // (nothing has claimed it yet). Pruning first would therefore delete the
     // saved geometry of the very window we are seconds away from restoring.
 
@@ -938,8 +935,8 @@ fn main() {
     // very first window. `None` when the initial window is the Launcher (no
     // Work open yet).
     let (initial_window_config, initial_state) = if let Some(path) = initial_project.clone() {
-        // Launch with a path on argv (file manager, CLI, `spawn_new_process`):
-        // always skip the Launcher.
+        // Launch with a path on argv (file manager, CLI): always skip the
+        // Launcher.
         let (config, state) = project_factory.window_config(app::PendingAction::Load(path));
         (config, Some(state))
     } else if show_welcome_init {
@@ -1322,7 +1319,7 @@ fn read_prefs() -> (bool, String, bool, bool, bool) {
 /// 3. **`initial_project`** — the path handed to us on argv. This one is easy to
 ///    forget and is exactly the bug this function exists to make untestable-by-
 ///    omission: a file-manager double-click on a project that has aged out of the
-///    12-entry MRU is in neither (1) nor (2), yet we are about to open it. Prune
+///    30-entry MRU is in neither (1) nor (2), yet we are about to open it. Prune
 ///    without it and we delete the saved geometry of the very window we are
 ///    seconds away from restoring.
 fn known_project_paths(initial_project: Option<&str>) -> Vec<String> {
@@ -1580,7 +1577,7 @@ mod tests {
     /// recents MRU nor the open registry.
     ///
     /// The bug this pins: the startup prune ran *before* argv was read, so a
-    /// file-manager double-click on a project that had aged out of the 12-entry
+    /// file-manager double-click on a project that had aged out of the 30-entry
     /// MRU had its saved geometry forgotten milliseconds before that very window
     /// was restored — the window then opened at the default size and position,
     /// and the row was silently gone from `window_state.toml`.

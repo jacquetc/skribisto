@@ -666,9 +666,9 @@ impl CorkboardViewModel {
 
     // -- backend helpers --
     //
-    // The binder round-trips this used to carry (`chapter_mode`, `item_dto`, `locate`,
-    // `item_meta`, `create_by_recommendation`, `move_relative`) now live in
-    // `view_models::binder_ops`, shared with the stream and the outline.
+    // The binder round-trips (`chapter_mode`, `item_dto`, `locate`, `item_meta`,
+    // `create_by_recommendation`, `move_relative`) live in `view_models::binder_ops`,
+    // shared with the stream and the outline.
 
     fn stack(&self) -> Option<u64> {
         self.inner.ids.stack_id.get()

@@ -16,13 +16,9 @@
 //!   [`editor`].
 //!
 //! All are re-exported here, so every tab module calls `shared::foo` without caring which
-//! file it lives in.
-//!
-//! The Corkboard and Pace panes used to live here too, at ~1 250 and ~860 lines with a
-//! dozen bespoke widgets between them — and exactly **one call site each**. They were whole
-//! features filed under "shared" because that is where the tab tree happened to be, so they
-//! now sit beside the tab modules that use them, in [`crate::tabs::corkboard`] and
-//! [`crate::tabs::pace`].
+//! file it lives in. Corkboard, Pace and Analysis are whole features with one call site
+//! each, so they live beside the tab modules that use them ([`crate::tabs::corkboard`],
+//! [`crate::tabs::pace`], [`crate::tabs::analysis`]), not here.
 
 pub(crate) mod charts;
 pub(crate) mod dictionary_menu;

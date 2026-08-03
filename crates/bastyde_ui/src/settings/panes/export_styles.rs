@@ -14,7 +14,7 @@
 //! signal (never on the styles-changed bump), so editing a field never rebuilds the form under
 //! the user's cursor — the lists, which *do* bind the bump, refresh names live.
 //!
-//! Like `settings_dictionaries`, it needs generic-closure widgets (`ListView`) the `bati!` DSL
+//! Like `panes::dictionaries`, it needs generic-closure widgets (`ListView`) the `bati!` DSL
 //! can't express, so it is a chained-builder module.
 
 use bastyde::core::binding::BindingLevel;

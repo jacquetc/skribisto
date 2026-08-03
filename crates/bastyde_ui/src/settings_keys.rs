@@ -7,11 +7,10 @@
 //! first time somebody calls `store.signal(key, default)`, and nothing anywhere knows the
 //! set of legal keys. That is fine for the app (it only ever asks for keys it declares)
 //! and actively hostile to anyone *writing* a settings file by hand — an agent driving a
-//! probe, most of all. A typo is not an error; it is silence. The app boots on defaults,
-//! the probe asserts against a state it never actually reached, and the failure surfaces
-//! several layers from its cause. `automation_fixture::isolated_config`'s docstring
-//! records one such chase, over `ui.locale`, that cost a diagnosis of a bug in bastyde's
-//! i18n layer that did not exist.
+//! probe, most of all. A typo is not an error; it is silence: the app boots on defaults and
+//! the probe asserts against a state it never reached, several layers from the real cause
+//! (see `automation_fixture::isolated_config`'s docstring for a worked example, over
+//! `ui.locale`).
 //!
 //! So this module states the schema once: for each key its type, its default, a
 //! validator, and a line of prose. That buys three things which do not otherwise exist:
@@ -57,26 +56,17 @@ pub struct SettingSpec {
     /// The value the app uses when the key is absent. Must equal the default passed to
     /// the matching `store.signal(key, default)` call.
     ///
-    /// That pairing is hand-maintained, like the use-case/UoW macro lists in the backend:
-    /// no test can check it, because the defaults live at the `signal` call sites (spread
-    /// across the view-models) as typed Rust values, and reaching them would mean
-    /// constructing every view-model — which needs a `SettingsStore`, whose contents are
-    /// the very thing under test. A wrong default here is not a correctness bug in the
-    /// app, which reads its own constant either way; it only makes [`dump`] misreport an
-    /// unset key. The drift test still catches the case that matters — a key with no spec
-    /// at all.
+    /// Hand-maintained, like the use-case/UoW macro lists in the backend — no test can
+    /// check the pairing, since the real defaults live at the `signal` call sites as typed
+    /// Rust values a test would need a full `SettingsStore` to reach. A wrong default here
+    /// only makes [`dump`] misreport an unset key; the drift test still catches the case
+    /// that matters, a key with no spec at all.
     pub default: fn() -> toml::Value,
-    /// Rejects a value of the wrong shape, by attempting the real deserialization the
-    /// store would attempt. Returns serde's own message on failure.
-    ///
-    /// "The real deserialization" is load-bearing, not a turn of phrase:
-    /// `SettingsStore::signal` seeds a key with `T::deserialize(value)` and, on error,
-    /// falls back to `default` — *silently*. So a value of the wrong type is not
-    /// half-applied or reported; it simply never arrives. Validating through the same
-    /// call makes this check agree with the store by construction, including its
-    /// coercions (a bare `1` is accepted for an `f32` key, because the store accepts it
-    /// too). Anything looser would pass a pins file the store then ignores; anything
-    /// stricter would refuse one that would have worked.
+    /// Rejects a value of the wrong shape, by running the real deserialization
+    /// `SettingsStore::signal` would run (which otherwise falls back to `default`
+    /// *silently* on a type mismatch, so a bad value would simply never arrive). Validating
+    /// through the same call keeps this in lockstep with the store's own coercions — e.g. a
+    /// bare `1` is accepted for an `f32` key because the store accepts it too.
     pub check: fn(&toml::Value) -> Result<(), String>,
     /// One line on what the setting does, for [`dump`].
     pub doc: &'static str,

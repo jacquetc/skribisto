@@ -72,24 +72,16 @@ mod tests {
     /// Opening an anchored overlay leaves the traversal order rooted in the window behind
     /// it, so Tab walks straight out of the open popover and into the toolbar: a
     /// keyboard-only writer can open the thing and then do nothing with it (WCAG 2.1.1).
-    /// `FocusScope` with [`TraversalScopePolicy::Cycle`] is the framework's answer, and
-    /// `ProjectSwitcherButton` has documented and used it since it was written.
-    ///
-    /// It was nevertheless missing from **seven of this crate's twelve popovers** — the
-    /// tag picker, the language pills, the session-configure form, the corkboard and
-    /// stream row menus, the Inspector's promote menu, and both preset menus — because
-    /// nothing made the omission visible. Hence this test.
+    /// `FocusScope` with [`TraversalScopePolicy::Cycle`] is the framework's answer.
     ///
     /// **What it actually checks, and what it does not.** The guarantee is per *file*:
-    /// a file that opens a popover must also mention the trap. It deliberately does not
-    /// try to pair each constructor with its own content expression, because the content
-    /// is often a `let`-bound widget assembled several lines earlier
-    /// (`TagPillField` builds a `Panel` around the scope and passes that), and matching
-    /// those lexically would be guesswork dressed up as rigour. So this catches the
-    /// observed failure — a popover added to a file with no trap anywhere, which is how
-    /// all seven arose — and would miss a file that wraps one popover and forgets a
-    /// second. Pairing them properly needs the type system, not a regex: the real fix is
-    /// for `Popover` to scope its own content in bastyde, which is not this crate's call.
+    /// a file that opens a popover must also mention the trap somewhere in it. It does
+    /// not try to pair each constructor with its own content expression — the content is
+    /// often a `let`-bound widget assembled several lines earlier, and matching those
+    /// lexically would be guesswork dressed up as rigour — so this would miss a file that
+    /// wraps one popover and forgets a second. Pairing them properly needs the type
+    /// system, not a regex: the real fix is for `Popover` to scope its own content in
+    /// bastyde, which is not this crate's call.
     #[test]
     fn every_file_with_a_popover_also_traps_tab() {
         let mut checked = 0usize;

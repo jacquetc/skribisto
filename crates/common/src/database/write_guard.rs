@@ -5,149 +5,43 @@
 
 //! Enforces the single-write-transaction-per-store invariant.
 //!
-//! ## Why this exists
-//!
 //! [`Transaction::begin_write_transaction`](super::transactions::Transaction::begin_write_transaction)
-//! takes an unconditional WHOLE-STORE savepoint via
-//! `HashMapStore::create_savepoint`, whose own doc comment states the
-//! assumption directly: taken "on the single writer thread with no
-//! concurrent writer". `rollback()` and the `Drop` safety net on
-//! `Transaction` both restore that savepoint wholesale — not just the rows
-//! the transaction itself touched. That is intended behaviour for a single
-//! writer; it silently breaks the moment two write transactions on the same
-//! store are ever open at once. If a second write transaction were opened
-//! concurrently with one already in flight, the second transaction's own
-//! `commit`/`rollback`/`Drop` would silently roll back to a savepoint taken
-//! *before* the first transaction's edits ever existed, erasing them with no
-//! error and no event.
+//! takes a whole-store savepoint; `rollback`/`Drop` restore it wholesale. A second
+//! concurrent write transaction on the same store would silently roll back to a
+//! savepoint taken *before* the first transaction's edits, erasing them with no error.
+//! [`WriteTransactionGuard`] turns that assumption into an assertion: every generated
+//! `CommandUnitOfWork::begin_transaction` acquires one for the whole span its write
+//! transaction may be open (cleared by `commit`/`rollback`); a second concurrent
+//! acquisition on the same store panics in debug builds and returns an error in release
+//! builds. Being generated into every write-transaction call site, this coverage can't
+//! drift the way a hand-maintained list of call sites would.
 //!
-//! [`WriteTransactionGuard`] turns that assumption into an assertion. Every
-//! generated `CommandUnitOfWork::begin_transaction` acquires one for the
-//! entire span its write transaction may be open (see `commit`/`rollback` on
-//! any generated `*WriteUoW`/`*UnitOfWork`, which clear it). A second
-//! concurrent acquisition **on the same store** panics in debug builds —
-//! loud, immediate, naming the call site — and returns an error in release
-//! builds, so a shipped build degrades to a reported failure instead of
-//! silently corrupting the store.
+//! **Scoped per store (keyed by `Arc<HashMapStore>` pointer identity), not one global
+//! flag** — `cargo test` runs many independent stores concurrently on separate threads,
+//! and a process-wide flag would make those spuriously trip each other's guard.
 //!
-//! Because the acquire/release is generated into every write-transaction
-//! call site's `begin_transaction`/`commit`/`rollback` (both the per-entity
-//! `direct_access` `WriteUoW`s and the per-use-case feature `UnitOfWork`s),
-//! this coverage never drifts out of sync with the rest of the generated
-//! backend the way a hand-maintained list of call sites would: a new entity
-//! or use case picks up the guard the moment it is generated, with nothing
-//! left for the application developer to remember.
+//! **Holds a clone of the `Arc`, not just its address.** Keying only by the raw pointer
+//! would be unsound: if the originating `DbContext` drops while a guard still lives, the
+//! allocator could reuse that exact address for an unrelated new store, which would then
+//! find the slot already "held" — or have its own guard's `Drop` silently free the stale
+//! entry. Holding the clone keeps the address alive and unique for as long as any guard
+//! referencing it exists.
 //!
-//! ## Why scoped per store, not one bare global flag
+//! **Diagnoses contention, not just refuses it.** Each slot records the holding thread
+//! ([`ThreadId`](std::thread::ThreadId) + name) and the `site` string passed to
+//! `acquire`, so a collision names both parties. Same-thread re-acquisition — a
+//! `CommandUnitOfWork` whose `begin_transaction` ran again before its previous guard was
+//! cleared — is reported distinctly ("re-entrant/retried, not a second writer") from
+//! genuine cross-thread contention, since the two would otherwise look identical.
 //!
-//! A production app constructs exactly one `DbContext` (hence one store) for
-//! the whole process, so a single process-wide flag would be an equally
-//! correct proxy for "a write transaction is open on THE store" there. But
-//! tests often build a fresh, independent `DbContext`/store per `#[test]`
-//! fn, and `cargo test`'s default runner executes those fns concurrently on
-//! separate threads — two fns opening a write transaction on their OWN
-//! unrelated stores can legitimately overlap in wall-clock time. A bare
-//! process-wide flag would make those spuriously trip each other's guard.
-//! Keying by the store's `Arc` pointer identity models the real invariant
-//! (one writer *per store*, not one writer *ever*) without that flakiness —
-//! and needs no test-only carve-out to stay correct.
+//! **No reclaim machinery for a leaked guard** (timeout, generation counter, "steal the
+//! lock"): the `Arc` clone above already confines a leak to the one store it leaked on,
+//! and a heuristic like "held too long ⇒ leaked" would race a legitimately long
+//! transaction and reintroduce the silent-corruption failure this guard exists to
+//! prevent. The recorded thread id/site instead makes a leak immediately diagnosable.
 //!
-//! ## Holding the `Arc` — no stale-pointer ABA
-//!
-//! The map is keyed by `Arc::as_ptr(db_context.get_store())`, a raw address —
-//! not by anything that keeps that address meaningful on its own. Storing
-//! only that `usize` without cloning the `Arc` would be unsound: if the
-//! `DbContext` a guard was acquired from is dropped (its last other clone
-//! going out of scope) while the guard still lives, the allocator is free to
-//! reuse that exact address for an unrelated, brand-new `HashMapStore`. The
-//! new store's *first* real write transaction would then find the address
-//! already marked as held — tripping the guard for a store that never had a
-//! concurrent writer — and worse, when the stale guard eventually dropped it
-//! would remove the *new* store's entry, silently re-opening the door the
-//! guard exists to close.
-//!
-//! [`WriteTransactionGuard`] therefore clones the `Arc<HashMapStore>` itself
-//! (the `store` field below) and holds that clone for its entire lifetime, in
-//! addition to using its address as the map key. Holding the clone keeps the
-//! allocation alive — the address cannot be freed, let alone reused for a
-//! different store, for as long as any guard referencing it exists. The
-//! pointer is still fine to use as a `HashMap` key (it is still unique among
-//! *currently live* stores); what changed is that the guard now makes that
-//! uniqueness durable for its own lifetime instead of merely observing it at
-//! acquire time.
-//!
-//! ## Diagnosing contention: naming both the current holder and the new claimant
-//!
-//! Each slot records not just "held", but who holds it: the owning thread's
-//! [`ThreadId`](std::thread::ThreadId) and name, plus the `site` string passed
-//! to `acquire`. A contending `acquire` call reads that record before failing,
-//! so the panic/error names **both** parties — "`{new_site}` on thread {new}
-//! collided with `{holder_site}` still held by thread {holder}" — not just the
-//! new claimant. That is enough to `grep` straight to the offending call site
-//! without attaching a debugger, which is the entire point of a guard whose
-//! job is to fail loudly instead of silently.
-//!
-//! This module deliberately does **not** add any machinery to reclaim a slot
-//! left held by a leaked or `mem::forget`-ed guard (a timeout, a generation
-//! counter, a "steal the lock" escape hatch). Two things make that
-//! unnecessary rather than merely deferred:
-//!
-//! * The ABA fix above already rules out the scenario that would make a stale
-//!   key *dangerous* — a leaked guard cannot cause a *different, live* store to
-//!   be wrongly blocked, because it holds the `Arc` that keeps its own store's
-//!   address from ever being handed to a different store while the leak
-//!   persists. A leak only ever poisons the one store it actually leaked on.
-//! * For that one store, "a write-transaction slot that is held and never
-//!   released" and "a write transaction that is still legitimately in
-//!   progress" are the same observable state from this module's point of view.
-//!   Any reclaim heuristic (e.g. "assume held-for-N-seconds means leaked") is a
-//!   race against a legitimately long transaction and would trade a loud,
-//!   honest failure for an occasional silent one — reintroducing exactly the
-//!   failure mode this guard exists to prevent. The recorded thread id/site
-//!   above turn that failure into an immediately diagnosable one (which call
-//!   site leaked it), which is the correct fix for a bug, not a runtime
-//!   work-around for one.
-//!
-//! ## Re-entrant `begin_transaction` on the same unit of work is diagnosed honestly
-//!
-//! Every generated `CommandUnitOfWork::begin_transaction` follows the same
-//! shape:
-//!
-//! ```ignore
-//! self.write_guard = Some(WriteTransactionGuard::acquire(&self.context, "some_use_case")?);
-//! ```
-//!
-//! Assignment evaluates its right-hand side — the whole `acquire` call —
-//! *before* dropping whatever `self.write_guard` held previously. So if
-//! `begin_transaction` were ever called again on the *same* `CommandUnitOfWork`
-//! instance while its own previous guard is still `Some` (a re-entrant call, or
-//! a retry loop that calls `begin_transaction` again without going through
-//! `commit`/`rollback` first — both of which clear the field), the new
-//! `acquire` runs while the old guard is still registered as held. Naively that
-//! looks identical to a genuine second writer, and the resulting panic/error
-//! would misidentify a single UoW talking to itself as two concurrent writers
-//! — plausible-sounding, and wrong, which is worse than no diagnostic at all.
-//!
-//! `acquire` tells the two apart using exactly the holder record described
-//! above: if the slot is already held **by the current thread**, the message
-//! says so explicitly — "this thread already holds this store's slot,
-//! acquired at `{holder_site}`, this looks like a re-entrant/retried
-//! `begin_transaction`, not a second writer" — instead of the generic
-//! cross-thread contention wording. It still fails (the underlying invariant
-//! violation — two live guards on one store — is exactly as real as in the
-//! cross-thread case, and this module cannot see into the caller's struct to
-//! silently drop the stale one for it), but the diagnostic now points at the
-//! actual bug (a UoW re-entering `begin_transaction` without clearing its own
-//! previous guard) instead of a phantom concurrent writer.
-//!
-//! ## RAII — cannot be defeated by an early return or a panic
-//!
-//! [`WriteTransactionGuard`] is a plain owned struct with only a `Drop` impl to
-//! release its slot; there is no separate "release" method to forget to call.
-//! Binding it to a named local for the whole span a write transaction may be
-//! open means the slot is freed on every exit path — the happy path, an early
-//! `?` return, or an unwinding panic — exactly like `Transaction`'s own `Drop`
-//! safety net that it sits beside.
+//! RAII only, no separate release method — the slot frees via `Drop` on every exit path
+//! (return, `?`, panic), the same as `Transaction`'s own safety net.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -157,8 +51,7 @@ use crate::database::db_context::DbContext;
 use crate::database::hashmap_store::HashMapStore;
 
 /// Who currently holds a store's write-transaction slot — enough to name them
-/// in a contention panic/error (see the module doc's "Diagnosing contention"
-/// section) instead of just saying "someone already holds it".
+/// in a contention panic/error instead of just saying "someone already holds it".
 #[derive(Clone, Debug)]
 struct Holder {
     thread_id: ThreadId,
@@ -191,7 +84,7 @@ pub struct WriteTransactionGuard {
     key: usize,
     /// Never read directly — its only job is to keep the store's allocation
     /// (and hence `key`'s validity as a pointer identity) alive for as long as
-    /// this guard exists. See the module doc's "Holding the `Arc`" section.
+    /// this guard exists. See the module doc.
     #[allow(dead_code)]
     store: Arc<HashMapStore>,
 }
@@ -215,7 +108,7 @@ impl WriteTransactionGuard {
         // Clone (not just dereference) the `Arc`: the guard keeps this clone
         // alive for its whole lifetime so `key` can never be handed out to a
         // different store by the allocator while a guard referencing it
-        // exists. See the module doc's "Holding the `Arc`" section.
+        // exists. See the module doc.
         let store = Arc::clone(db_context.get_store());
         let key = Arc::as_ptr(&store) as usize;
 
@@ -324,15 +217,10 @@ mod tests {
     /// Drive a contending `acquire` and return its failure message, whichever
     /// way this build reports failure.
     ///
-    /// `acquire` deliberately fails *differently* per profile — it panics
-    /// under `debug_assertions` and returns an error without them — while
-    /// producing an identical message either way. Tests that hard-coded the
-    /// debug behaviour would fail the moment a generated app ran
-    /// `cargo test --release`, and since this module is generated, a
-    /// downstream developer could not fix those tests without their edit
-    /// being erased by the next `qleany generate`. Absorbing the difference
-    /// here keeps the suite green under both profiles and, more usefully,
-    /// means the release path is genuinely exercised rather than assumed.
+    /// `acquire` fails *differently* per profile (panics under
+    /// `debug_assertions`, returns an error without them) but with an identical
+    /// message either way; absorbing that difference here keeps the suite green
+    /// under both profiles and actually exercises the release path.
     fn contention_message(db: &DbContext, site: &'static str) -> String {
         let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             WriteTransactionGuard::acquire(db, site)
@@ -340,11 +228,8 @@ mod tests {
 
         match outcome {
             Err(payload) => {
-                // `if !cfg!(..) { panic!(..) }` rather than `assert!(cfg!(..), ..)`:
-                // the condition is a compile-time constant, which clippy's
-                // `assertions_on_constants` rejects under `-D warnings`. The
-                // check is worth keeping — it is what proves the profile and the
-                // observed behaviour agree — so it is restated, not removed.
+                // clippy's `assertions_on_constants` rejects `assert!(cfg!(..))`,
+                // hence the `if` form for a compile-time-constant check.
                 if !cfg!(debug_assertions) {
                     panic!(
                         "`{site}`: a release build must report contention by returning an \

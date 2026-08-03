@@ -45,9 +45,7 @@ the fixture's Lorem Ipsum scenes (checked against the checked-in text, not
 assumed) so a hit is a real match and not a coincidence with existing prose.
 
 Runs on a COPY of the fixture (`automation_fixture.working_copy`) — this probe
-saves, twice, and relaunches once. Never the checked-in file: see
-`automation_fixture`'s module docs for the three incidents that rule exists
-to prevent.
+saves, twice, and relaunches once. Never the checked-in file.
 
 Run:  python3 scripts/automation_mentions.py
 """
@@ -234,11 +232,10 @@ class Session:
     def stop(self):
         """Terminate and *wait*.
 
-        Waiting is not politeness. Skribisto is one process per project, guarded
-        by an open-registry lock file: relaunching on the same path while the
-        old process still holds the lock makes the new one hand off to it and
-        exit immediately — which surfaces as "app exited before printing the
-        bridge socket" and reads like a crash.
+        Relaunching on the same path while the old process still holds its
+        open-registry lock hands the new launch off to it and exits it
+        immediately — surfacing as "app exited before printing the bridge
+        socket", not as the timeout it actually is.
         """
         for p in (self.mcp, self.app):
             if p and p.poll() is None:

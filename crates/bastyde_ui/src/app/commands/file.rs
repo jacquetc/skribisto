@@ -205,14 +205,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     }
 
     // Quit (Ctrl+Q): really terminates the process, accounting for **every** open Work
-    // first — see `QuitSequencer`'s module doc.
-    //
-    // It used to guard only the ONE window it was invoked from and then force-close that
-    // window, which with a second window open neither asked about that project's edits nor
-    // actually quit; a later revision made it *refuse* whenever another Work was dirty. Both
-    // were defensible while two simultaneous projects were exotic. Phase 4 made
-    // single-instance the deployment model, so several windows in one process is now the
-    // ordinary shape and Quit has to mean quit.
+    // first — see `QuitSequencer`'s module doc. Single-instance means several project
+    // windows in one process is the ordinary shape, so Quit must guard all of them, not
+    // just the invoking window's.
     //
     // Deliberately still NOT `close_window()`: that lands on the project window's close
     // guard, which always returns to the Launcher rather than terminating. The title-bar

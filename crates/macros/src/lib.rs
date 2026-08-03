@@ -7,9 +7,9 @@ mod direct_access;
 
 use proc_macro::TokenStream;
 
-/// This macro is used to generate a unit of work (UoW) action for a given entity (e.g. Root)
-/// and specific action (e.g., create, update). Apply to a trait or an impl block.
-/// ex: #[unit_of_work::uow_action(entity = "Root", action = "Create", thread_safe = true)]
+/// Generates a unit of work (UoW) action for a given entity (e.g. Root) and
+/// specific action (e.g. Create, Update). Apply to a trait or an impl block.
+/// ex: #[macros::uow_action(entity = "Root", action = "Create", thread_safe = true)]
 #[proc_macro_attribute]
 pub fn uow_action(args: TokenStream, input: TokenStream) -> TokenStream {
     direct_access::uow_action_impl(args, input)

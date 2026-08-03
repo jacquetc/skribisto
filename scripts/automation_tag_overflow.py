@@ -6,14 +6,11 @@
 
 `tag_chip.rs` caps how many dots a row paints before the rest collapse into one
 overflow cell: 4 on the corkboard, 5 on the stream, 8 in the editor. The
-fixture's tagged item ("1.1 Zeus") carries exactly three tags, and a previous
-live run pushed that to exactly four — the corkboard's cap, never past it. So
-the collapse itself, the "+N" cell it paints, and the tooltip that is supposed
-to name what it hides have never been rendered by a real app. They are covered
-by a `#[cfg(test)]` unit (`the_overflow_cell_names_exactly_the_hidden_tags`),
-and that test's own doc comment says plainly why a unit test is not enough:
-"it needs a real tooltip on a real hover, on an item carrying more tags than
-any surface's cap" — which is exactly what this script sets up and drives.
+fixture's tagged item ("1.1 Zeus") only ever carries 3-4 tags, so the
+collapse, the "+N" cell, and the tooltip naming what it hides have never been
+rendered by a real app — a `#[cfg(test)]` unit
+(`the_overflow_cell_names_exactly_the_hidden_tags`) covers the arithmetic but
+cannot reach a real tooltip on a real hover, which is what this script does.
 
 This probe **creates its own tags**, through the "+" popover's own
 create-and-assign row, to push Zeus to six: `Chip-Extra-1/2/3` beside the
@@ -47,18 +44,15 @@ Asserts, precisely (no "is something shown", always "is exactly this shown"):
      more).
 
 The row is located by width, in multiples of the 18dp hit cell (`HIT` in
-`tag_chip.rs`) — not height. A previous probe (`automation_tag_chips.py`)
-learned the hard way that height is not a reliable discriminator: a stream row
-header stretches to its own line height (24dp observed) while the dots inside
-it stay round, so pinning height rejects a row that is rendering correctly.
+`tag_chip.rs`) — not height, since a stream row header stretches to its own
+line height while the dots inside it stay round, so pinning height rejects a
+row that is rendering correctly.
 
-A second, independent structural fact this script leans on: `TagChipRow`'s
-accessible name (`row_label()`, tag_chip.rs:103-109) joins *every* assigned
-tag, not just the ones painted as dots. That is what lets one locator work
-identically on all three surfaces — search for a `Label` node whose text
-contains a marker tag name — and it is itself worth asserting once (a screen
-reader always hears the complete set, cap or no cap, which is not obvious from
-looking at the screen).
+A second structural fact this script leans on: `TagChipRow`'s accessible name
+(`row_label()`) joins *every* assigned tag, not just the ones painted as
+dots — which is what lets one locator (a `Label` node containing a marker tag
+name) work identically on all three surfaces, and is itself worth asserting
+once (a screen reader always hears the complete set, cap or no cap).
 
 Run:  python3 scripts/automation_tag_overflow.py
 """
@@ -80,8 +74,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import wait_for_load, working_copy
 
 # This probe creates tags and saves nothing explicitly, but the app autosaves
-# on its own timer — never the checked-in fixture. See `automation_fixture`
-# for the three incidents that rule comes from.
+# on its own timer — never the checked-in fixture.
 FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "overflow")
 
 # ── Locale-safe strings, each keyed to its ftl entry ─────────────────────────
@@ -246,11 +239,10 @@ class Session:
     def stop(self):
         """Terminate and *wait*.
 
-        Waiting is not politeness. Skribisto is one process per project, guarded
-        by an open-registry lock file: relaunching on the same path while the
-        old process still holds the lock makes the new one hand off to it and
-        exit immediately — which surfaces as "app exited before printing the
-        bridge socket" and reads like a crash.
+        Relaunching on the same path while the old process still holds its
+        open-registry lock hands the new launch off to it and exits it
+        immediately — surfacing as "app exited before printing the bridge
+        socket", not as the timeout it actually is.
         """
         for p in (self.mcp, self.app):
             if p and p.poll() is None:
@@ -422,13 +414,9 @@ def select_segment(name):
             return
         print(f"    (segment {name[0]!r} not selected after attempt {attempt + 1}, retrying)")
 
-    # Verifying matters more than it looks. When the click silently failed, the
-    # pane kept showing whatever segment was remembered from a previous run — and
-    # the probe went on to measure THAT pane's dot row and blame the wrong
-    # surface. It reported "corkboard: expected 5 hit-cells, got 6" while the
-    # screenshot showed Full Synopsis selected and a perfectly correct stream row
-    # (5 dots + "+1"). The measurement was right; the pane was not the one asked
-    # for. A wrong-pane failure must never be reported as a cap regression.
+    # Verifying matters: a silently-failed click leaves the pane showing
+    # whatever segment a previous run remembered, and measuring that pane's
+    # dot row would misreport a wrong-pane failure as a cap regression.
     s.dump(f"segment {name!r} would not select")
     s.shot("/tmp/overflow-segment-fail.png")
     fail(f"could not select the {name[0]!r} segment after 3 attempts; segment "
@@ -467,12 +455,9 @@ def tag_pill_names():
     """The tag names on the currently-open item, read from the Inspector's
     Tags List — from the pills' `Remove …` controls, not the pill itself.
 
-    `tags-pill-remove` ("Remove { $name }" / "Retirer { $name }") is
-    word-for-word identical to `tags-alias-remove`, so an unscoped search for
-    "Remove …" also pulls in the Aliases section's pills. Anchored on the
-    `tags-pill-list` `List` node's own bounding box, the same shape
-    `automation_languages.py`'s `language_pills()` uses to dodge the same trap
-    one section over.
+    `tags-pill-remove` is word-for-word identical to `tags-alias-remove`, so
+    an unscoped search for "Remove …" also pulls in the Aliases section's
+    pills; anchored on the `tags-pill-list` `List` node's own bounding box.
     """
     lst = next((n for n in s.nodes()
                 if n.get("role") == "List"
@@ -524,21 +509,14 @@ def create_tag(name):
 
     The popover does NOT close after a create — `vm.create()` both makes the
     palette row and appends its id to the item's tags in the same click, and
-    only the query text and the discoverable toggle reset (tag_pill_field.rs's
-    `TagPicker::build`, the `on_tap` closure). So this is called three times
-    in one open/close cycle rather than three: each call re-locates the field
-    and the create row fresh, because the whole `TagPicker` subtree rebuilds
-    (its `query`/`value` signals are bound at `BindingLevel::Rebuild`) and the
+    only the query text resets. Each call re-locates the field and the create
+    row fresh, because the whole `TagPicker` subtree rebuilds and the
     previous call's widget ids are no longer valid.
     """
-    # Locate the filter field INSIDE the picker's own Dialog box.
-    #
-    # "any TextInput at x>400" matched a different field entirely (the Inspector
-    # column has several), so typing went somewhere else and the Create row never
-    # appeared -- reported as "the picker offers no Create row" for a picker that
-    # was working fine. The popover is a `Dialog` whose label is the add button's
-    # own name; scoping to its bounds is unambiguous, and is the same
-    # scope-to-the-owning-panel rule that fixed the Inspector false pass.
+    # Locate the filter field INSIDE the picker's own Dialog box: "any
+    # TextInput at x>400" also matches other Inspector fields. The popover is
+    # a `Dialog` whose label is the add button's own name, so scoping to its
+    # bounds is unambiguous.
     field = None
     for _ in range(15):
         field = picker_field_now()
@@ -558,10 +536,9 @@ def create_tag(name):
         s.settle()
         time.sleep(0.4)
 
-    # Focus first, then type. Without the focus call, `type_text` sets the
-    # node's AccessKit value but the text never reaches the widget's signal —
-    # the field renders empty and the "Create" row never appears, which reads
-    # exactly like "the picker is broken" (rule learned on the language pills).
+    # Focus first, then type: without it, `type_text` sets the node's
+    # AccessKit value but the text never reaches the widget's signal, so the
+    # field renders empty and the "Create" row never appears.
     s.call("invoke_action", {"node": field["id"], "action": "focus"})
     time.sleep(0.3)
     s.call("type_text", {"node": field["id"], "text": name})
@@ -572,13 +549,9 @@ def create_tag(name):
               or find(s, ("create", "créer")))
     if not create:
         # Distinguish "the text never landed" from "the row is named something
-        # else": these need opposite fixes and look identical in a dump.
-        #
-        # Re-LOCATE the field rather than re-reading `field["id"]`. Typing changes
-        # the picker's `query`, which is bound at `BindingLevel::Rebuild`, so the
-        # whole subtree — the TextInput included — is replaced and the pre-typing
-        # id no longer exists. Reading it back reported `None` every time, which
-        # reads as "the text never landed" even on runs where it landed perfectly.
+        # else" -- these need opposite fixes. Re-LOCATE the field rather than
+        # re-reading `field["id"]`: typing rebuilds the whole `TagPicker`
+        # subtree, so the pre-typing id no longer exists.
         now = picker_field_now()
         print(f"    field now holds {(now or {}).get('value')!r} (typed {name!r})")
         dlg = next((n for n in s.nodes()
@@ -600,34 +573,21 @@ def create_tag(name):
         s.dump(f"no create row for {name!r}")
         fail(f"the picker offers no 'Create' row for {name!r} "
              f"(typed into field id={field['id']})", s)
-    # A synthesised pointer click, NOT `invoke_action(click)`.
-    #
-    # The Create row is an `HStack` carrying `access_role(Role::Button)` and an
-    # `on_tap`. `access_role` only changes what the node *claims* to be; it
-    # registers no AccessKit Click handler, and bastyde only wires one for stock
-    # widgets (`Button`, `IconButton`). So `invoke_action(click)` returns success
-    # and does absolutely nothing — the create silently never happens, and the
-    # next iteration reports "no Create row" for a picker that is working. That
-    # cost two full runs to see, because the no-op is indistinguishable from
-    # success in the response.
-    #
-    # The near-miss worry that argued for `invoke_action` does not apply here:
-    # the Create row's neighbours are a Toggle and a static hint, not other tag
-    # rows, and the row is the full width of the popover.
+    # A synthesised pointer click, NOT `invoke_action(click)`: the Create row
+    # is an `HStack` with `access_role(Role::Button)` but no AccessKit Click
+    # handler (bastyde only wires one for stock widgets), so `invoke_action`
+    # would report success while doing nothing. The near-miss risk that
+    # normally argues for `invoke_action` doesn't apply: the row is the full
+    # width of the popover, with no neighbouring tag rows to miss into.
     before = tag_pill_names() or []
     click(s, create.get("bounds") or {})
     s.settle()
     time.sleep(1.0)
 
-    # Verify rather than assume, and verify against the INSPECTOR's pills, not the
-    # picker's rows: the popover closes on a create, so any check that reads the
-    # picker's own list necessarily finds nothing and reports failure on a create
-    # that worked perfectly.
-    #
-    # Verifying at all matters because `vm.create()` returns an `Option` and the
-    # click path is silent on failure — which is how three "created and assigned"
-    # lines printed for tags that were never created, and the run then failed two
-    # steps later naming the wrong cause.
+    # Verify against the INSPECTOR's pills, not the picker's rows: the
+    # popover closes on a create, so reading the picker's own list would
+    # report failure on a create that worked perfectly. `vm.create()` is
+    # silent on failure, so this must be checked, not assumed.
     for _ in range(12):
         now = tag_pill_names() or []
         if any(n.lower() == name.lower() for n in now):
@@ -642,14 +602,12 @@ def overflow_cells_in_box(row):
     """Every `Label` node whose `value` matches `+<digits>` and whose bounds
     fall strictly inside `row`'s own box.
 
-    Scoped to the row's box, not a `+/-` band around it: a whole-tree scan for
-    "+N" text is exactly the shape of check that previously produced a false
-    pass elsewhere in this app (the Inspector tag check matching stale nodes
-    from a just-closed Settings pane). Used both as the negative check (the
-    editor must return an empty list) and the positive one (corkboard/stream
-    must return exactly the expected cell) — the SAME function, so the
-    negative result is only trustworthy because the positive calls below prove
-    it can find something when something is really there.
+    Scoped to the row's box rather than a whole-tree scan, which risks
+    matching stale nodes from an unrelated panel. Used both as the negative
+    check (the editor must return an empty list) and the positive one
+    (corkboard/stream) — the same function, so the negative result is only
+    trustworthy because the positive calls prove it can find something when
+    something is really there.
     """
     rb = row.get("bounds") or {}
     rx, ry = rb.get("x", 0), rb.get("y", 0)
@@ -670,11 +628,9 @@ def overflow_cells_in_box(row):
 def assert_cell_count(surface, row, expected):
     """The row's width, in whole 18dp hit cells, must equal `expected` exactly.
 
-    Stated as a concrete integer before the check runs: stream and editor both
-    render 6 cells at 108dp (5 dots + overflow vs. 6 dots + none), so width
-    alone cannot tell them apart — this check only proves the CELL COUNT is
-    right; `assert_overflow`/`overflow_cells_in_box` are what tell "6 dots"
-    apart from "5 dots and a +1".
+    Width alone cannot distinguish stream (5 dots + overflow) from editor (6
+    dots, no overflow) — both render 6 cells at 108dp. This check only proves
+    the cell count is right; `assert_overflow` is what tells them apart.
     """
     b = row.get("bounds") or {}
     w = b.get("width", 0)
@@ -703,12 +659,9 @@ def assert_row_label(surface, row, expected):
 def assert_overflow(surface, row, n, hidden_names, shot_prefix):
     """The "+n" cell exists inside `row`'s own box, its tooltip announces
     itself via `tags-chip-more`, and the tooltip's body names EXACTLY
-    `hidden_names` — no more, no fewer.
-
-    This is the assertion the whole probe exists for. `tag_chip.rs`'s own
-    unit test for the hidden-name list (`the_overflow_cell_names_exactly_...`)
-    says outright that it cannot reach a real tooltip on a real hover; this is
-    that live check.
+    `hidden_names` — no more, no fewer. This is the live counterpart of
+    `tag_chip.rs`'s `the_overflow_cell_names_exactly_...` unit test, which
+    cannot reach a real tooltip on a real hover.
     """
     expect = f"+{n}"
     cells = overflow_cells_in_box(row)
@@ -753,11 +706,9 @@ def assert_overflow(surface, row, n, hidden_names, shot_prefix):
     print(f"  {surface}: tooltip names exactly {hidden_names}")
     s.shot(f"/tmp/overflow-{shot_prefix}.png")
 
-    # Move away and dismiss. A dwelled composite tooltip is promoted to a
-    # sticky `Dialog` that can take focus (composite.rs's dwell-to-sticky
-    # timer), and the same trap already bit `automation_tags.py`'s
-    # duplicate-name check when a leftover tooltip swallowed the next typed
-    # keystroke. Clear it before the next step touches anything.
+    # Move away and dismiss: a dwelled composite tooltip is promoted to a
+    # sticky `Dialog` that can take focus, which can swallow the next typed
+    # keystroke if left open.
     s.call("inject_pointer", {"x": 40, "y": 400, "action": "move"})
     time.sleep(0.3)
     s.call("inject_key", {"key": "Escape"})
@@ -809,11 +760,9 @@ def picker_dialog():
 def open_picker():
     """Open the Inspector's "+" tag popover, and CONFIRM it opened.
 
-    Idempotent and verified, because the "+" is a toggle: clicking it while the
-    popover is already up closes it. A blind click-then-proceed therefore worked
-    on the first tag and silently closed the popover on the second, which
-    surfaced two steps later as "no filter field" -- a failure a long way from
-    its cause.
+    Idempotent and verified, because the "+" is a toggle: clicking it while
+    the popover is already up closes it, so a blind click-then-proceed can
+    silently close a popover that was already open.
     """
     if picker_dialog():
         return
@@ -834,10 +783,7 @@ def open_picker():
     fail("the tag picker never opened after three attempts", s)
 
 
-# One open/close cycle PER tag. The popover was assumed to survive a create --
-# it does not, so the second iteration typed into whatever TextInput happened to
-# sit at x>400 with the popover already gone, and reported "the picker offers no
-# Create row" for a picker that was not on screen at all.
+# One open/close cycle PER tag: the popover does not survive a create.
 for name in NEW_TAGS:
     open_picker()
     create_tag(name)

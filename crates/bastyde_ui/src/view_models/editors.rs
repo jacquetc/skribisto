@@ -141,8 +141,8 @@ pub struct EditorsViewModel {
     save_state: SaveStateViewModel,
     /// Threaded into every `ContentTab` (its Overview pane's remembered chevron
     /// expansion) — see `view_models::overview::OverviewViewModel::restore_expansion`'s
-    /// doc for why this moved from an `OverviewViewModel`-local `ctx.app_state`
-    /// lookup to a constructor-threaded handle (Scope C fix).
+    /// doc for why this is a constructor-threaded handle, not an
+    /// `OverviewViewModel`-local `ctx.app_state` lookup.
     tree_expansion: crate::view_models::TreeExpansionViewModel,
     /// This window's Format surfaces — threaded into every `ContentTab` so
     /// editors register with the right registry (never process-wide app_state).
@@ -1085,8 +1085,8 @@ impl EditorsViewModel {
     /// window and no other window shares its `WorkSession` yet). This one runs
     /// once bastyde confirms the window itself is gone — there is no tab list
     /// left worth clearing, only the shared store's refcounts *this* window
-    /// itself was holding. With a second window sharing this Work (Phase 3's
-    /// `AttachExisting`), `docs.clear()` here would drop items a sibling
+    /// itself was holding. With a second window sharing this Work
+    /// (`AttachExisting`), `docs.clear()` here would drop items a sibling
     /// window still has open; releasing exactly this window's own
     /// `tab_item_ids` never does.
     pub fn release_own_open_docs(&self, stack: Option<u64>) {
@@ -1216,13 +1216,12 @@ impl EditorsViewModel {
                         .then(|| h.clone())
                 });
                 let Some(Some(h)) = hit else { continue };
-                // Through `make_tab`, not a second inline `ContentTab::new`. This
-                // used to duplicate the whole argument list, which meant every new
-                // piece of per-tab state had to be remembered in two places — and a
-                // Promote silently produced a tab configured differently from a
-                // freshly opened one when it wasn't. Like `segment`, per-tab state
-                // (the folded-away Side synopsis, its divider position) resets here:
-                // this is a new tab of a new type.
+                // Through `make_tab`, not a second inline `ContentTab::new` — a
+                // duplicated argument list would let per-tab state drift between
+                // the two, so a Promote could silently produce a tab configured
+                // differently from a freshly opened one. Like `segment`, per-tab
+                // state (the folded-away Side synopsis, its divider position)
+                // resets here: this is a new tab of a new type.
                 let tab = self.make_tab(
                     doc.clone(),
                     self.distraction_free.clone(),

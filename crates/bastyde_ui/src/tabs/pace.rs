@@ -5,12 +5,11 @@
 //!
 //! Only the Book container shows it (see `folder_book`): the writer sets a
 //! word-count goal and a deadline, picks which weekdays count, and Skribisto
-//! derives a pace and shows the statistics (streak, % done, days left, needed
-//! rate, ahead/behind) from the recorded `ProgressSnapshot` history. All state +
-//! logic live in [`PaceViewModel`](crate::view_models::PaceViewModel); this pane
-//! is a thin reactive view over it.
-//!
-//! Milestones, holidays and the progression / words-per-day charts land in M4d.
+//! derives a pace and shows the statistics (words written, % done, needed rate,
+//! days left, streak, ahead/behind) from the recorded `ProgressSnapshot` history,
+//! plus milestones, holidays and the progression / words-per-day charts. All
+//! state + logic live in [`PaceViewModel`](crate::view_models::PaceViewModel);
+//! this pane is a thin reactive view over it.
 
 use bastyde::core::BindingLevel;
 use bastyde::data::{ChartDatum, ChartModel, ChartSeries};

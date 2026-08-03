@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 //! The application body: a `DockingLayout` whose leading dock is the binder
-//! tree and whose center is a `TabWidget` of editor tabs (Phase 3), with a thin
-//! status bar underneath. The window chrome (custom `TitleBar` + hamburger menu)
+//! tree and whose center is a `TabWidget` of editor tabs, with a thin status
+//! bar underneath. The window chrome (custom `TitleBar` + hamburger menu)
 //! lives at the window root in `main.rs`.
 //!
 //! Clicking a binder item opens (or focuses) its editor tab via the tree's
@@ -11,7 +11,7 @@
 //!
 //! Plain builder calls rather than `bati!`: the docking/tab/editor widgets are
 //! generic over closures, which the DSL doesn't express cleanly. See
-//! `settings_panel.rs` for the `bati!` style.
+//! `settings.rs` for the `bati!` style.
 
 mod commands;
 mod project_shell;
@@ -145,19 +145,18 @@ fn drain_dropped(mut payload: DragPayload, mut open: impl FnMut(u64, &str)) -> b
 
 /// A close gesture deferred until the in-flight save finishes. The window's
 /// close guard, the `work.close` action, `app.quit`'s action, and
-/// `welcome.show` (aliased to `work.close` — see its action below) all set
-/// this; `App` kicks the save, and the SaveWork-completion event performs the
-/// action — so the async save is awaited.
+/// `welcome.show` (aliased to `work.close`) all set this; `App` kicks the
+/// save, and the SaveWork-completion event performs the action — so the
+/// async save is awaited.
 ///
-/// Two outcomes today. Every guarded close of a project window that still
-/// goes through `close_window()` (title-bar X, Alt+F4, Ctrl+W, File ▸ Close
-/// Work, File ▸ Welcome…) closes that Work via
-/// [`close_work_and_return_to_launcher`] — which opens the Launcher only when
-/// no other Work still has an open window. Ctrl+Q / File ▸ Quit is the
-/// exception: it never calls `close_window()` at all — `app.quit`'s action
-/// runs through [`QuitSequencer`] and terminates the process. Both outcomes
-/// share the exact same branch order (`unsaved_decision`/`UnsavedDecision`);
-/// only the terminal action differs.
+/// Two outcomes. Every guarded close that still goes through `close_window()`
+/// (title-bar X, Alt+F4, Ctrl+W, File ▸ Close Work, File ▸ Welcome…) closes
+/// that Work via [`close_work_and_return_to_launcher`] — which opens the
+/// Launcher only when no other Work still has an open window. Ctrl+Q / File ▸
+/// Quit never calls `close_window()` at all — `app.quit`'s action runs
+/// through [`QuitSequencer`] and terminates the process. Both outcomes share
+/// the exact same branch order (`unsaved_decision`/`UnsavedDecision`); only
+/// the terminal action differs.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum PendingExit {
     #[default]
@@ -167,13 +166,12 @@ pub enum PendingExit {
     /// still has an open window — see [`close_work_and_return_to_launcher`].
     ReturnToLauncher,
     /// Release the open project and terminate the process entirely, once
-    /// saved (and, if configured, once the on-close backup finishes).
-    /// Unlike `ReturnToLauncher`, this does NOT open a fresh Launcher
-    /// window — `quit_app` force-closes the project window with nothing
-    /// reopened, so `WindowManager::is_empty()` trips and the event loop
-    /// exits (bastyde-app/src/app.rs, `maybe_exit`/`event_loop.exit()`).
-    /// Only valid when this project window is the sole open window, which
-    /// is Skribisto's steady state.
+    /// saved (and, if configured, once the on-close backup finishes) —
+    /// [`QuitSequencer`]'s continuation, run from
+    /// `BackupSchedulerViewModel::do_close`. Unlike `ReturnToLauncher` this
+    /// does NOT open a fresh Launcher window: the project window force-closes
+    /// with nothing reopened, so `WindowManager::is_empty()` trips and the
+    /// event loop exits.
     Quit,
 }
 
@@ -199,8 +197,9 @@ pub enum PendingAction {
     /// all: the `Work` is loaded, its `AppIds` are seeded, its singles point at
     /// it, and its undo stack is open, because a sibling window did all of that
     /// already. What is left is purely this window's own share of the seeding —
-    /// see `App::build`'s `attach_to_open_work`, which stands in for the
-    /// `LoadWork` event that will never fire here.
+    /// see the `attach_seed` closure `wiring::project_events::install_lifecycle`
+    /// returns, which stands in for the `LoadWork` event that will never fire
+    /// here.
     ///
     /// `work_id` is resolved (and its session refcount bumped, via
     /// [`crate::sessions::WorkRegistry::attach`]) by
@@ -248,27 +247,21 @@ impl PendingAction {
 /// Work still has an open window** — opens (or focuses) the Launcher so the
 /// process is never briefly windowless (which would quit it; see `main.rs`).
 ///
-/// When another Work is still open elsewhere, the Launcher stays closed: the
-/// survivor project window(s) keep the process alive, and dropping the user
-/// on Welcome while they still have a manuscript open is wrong. The first
-/// surviving project window is focused instead so the closed Work does not
-/// leave focus stranded on a dying frame.
+/// When another Work is still open elsewhere, the Launcher stays closed and
+/// the first surviving project window is focused instead.
 ///
-/// Callers invoking this from inside a `on_close_requested` guard must return
+/// Callers invoking this from inside an `on_close_requested` guard must return
 /// `CloseResponse::Veto` afterward: this function performs the actual close
 /// itself, via `close_window_forced`, rather than deferring to the guard's own
 /// return value.
 ///
-/// **This closes the WORK, so it closes every window showing it.** Since
-/// Work ▸ New Window, a project can have several windows
-/// (`WorkRegistry::windows_for`), and `close_work` tears out the one backend
-/// subtree they all read: a sibling left open would be a window onto nothing —
-/// tabs closed by the shared `CloseWork` subscriber, an empty tree, and a title
-/// still naming a project that no longer exists. Closing *a window* rather than
-/// the project is the other, narrower gesture (the title-bar X / Alt+F4 with a
-/// sibling still open), and it never reaches here — see the close guard in
-/// `shell::windows`, which resolves that case before consulting the unsaved
-/// guard at all.
+/// **This closes the WORK, so it closes every window showing it** (Work ▸ New
+/// Window can open several on one Work, via `WorkRegistry::windows_for`) —
+/// `close_work` tears out the one backend subtree they all read, so a sibling
+/// left open would be a window onto nothing. Closing *a window* rather than
+/// the project is the narrower gesture (title-bar X / Alt+F4 with a sibling
+/// still open); it never reaches here — see the close guard in
+/// `shell::windows`, which resolves that case first.
 pub fn close_work_and_return_to_launcher(
     app_ctx: &Rc<AppContext>,
     ids: &AppIds,
@@ -278,33 +271,25 @@ pub fn close_work_and_return_to_launcher(
     // Capture the desk (open tabs + docks) while the store is still alive —
     // `close_work` tears the Work subtree out *before* publishing `CloseWork`, so a
     // subscriber could no longer translate a tab into its persistable ordinal.
-    // `workspace_layout` is the **calling window's own** instance, passed in
-    // explicitly for the identical reason `ids` is (see the comment just below):
-    // `ctx.app_state::<WorkspaceLayoutViewModel>()` can only ever answer with
-    // whichever window built `main`'s bootstrap session.
+    // `workspace_layout`/`ids` are the **calling window's own** instances, passed
+    // in explicitly: `ctx.app_state::<T>()` can only ever answer with whichever
+    // window built `main`'s bootstrap session — reading it here with a second Work
+    // open in a second window would close the WRONG Work.
     capture_workspace_layout(workspace_layout);
-    // Phase 0 (backend): `close_work` now takes a `CloseWorkDto{work_id}` — the
-    // caller names which Work to close rather than the backend picking one.
-    // Resolved from `ids` — the **calling window's own** `AppIds`, passed in
-    // explicitly rather than `ctx.app_state::<AppIds>()` (multi-Work migration:
-    // `app_state` is one process-wide slot fixed at builder time, before any
-    // window exists — it can never answer "this window's Work" once a second
-    // Work's window is open; reading it here would close the WRONG Work).
-    // Skipped entirely when none is open, the same no-op today's unconditional
-    // call silently was against an empty store.
+    // `close_work` takes a `CloseWorkDto{work_id}` resolved from `ids` (see above);
+    // skipped entirely when none is open.
     //
     // The sibling windows on this same Work are collected *before* the close, so
     // the list is read while the registry bindings are still intact, and closed
     // *after* it, so each one's `CloseWork` subscriber has already run in its own
     // window (clearing its tabs and unpointing its tree) before its window goes
     // away. `close_window_by_id` is deliberately the unconditional close: their
-    // own close guards must not run — the project is already gone, so there is
-    // nothing left for them to guard, and letting each one open its own Launcher
+    // own close guards must not run, and letting each one open its own Launcher
     // would spawn one per window.
     //
-    // Tier 1 — genuinely one registry per process, so unlike
+    // `WorkRegistry` is genuinely one registry per process, so unlike
     // `AppIds`/`WorkspaceLayoutViewModel` this `app_state` lookup is the right
-    // way to reach it, not a first-window-wins trap.
+    // way to reach it.
     let registry = ctx.app_state::<crate::sessions::WorkRegistry>().cloned();
     let my_work_id = ids.work_id.get();
     let me = ctx.window().map(|w| w.id());
@@ -343,12 +328,11 @@ pub fn close_work_and_return_to_launcher(
         // this window so the process is never briefly windowless mid-transition
         // (that would quit it — see `main.rs`'s module docs).
         //
-        // Scope E: with M Works open, a DIFFERENT window's own last-Work close
-        // may already have opened the Launcher (bastyde's `WindowManager::create_window`
-        // has no string-id dedup of its own — it just overwrites `string_to_id`, so a
-        // second `open_window` with the same `.id(LAUNCHER_WINDOW_ID)` would spawn a
-        // SECOND, orphaned Launcher window, violating "the Launcher is the one
-        // singleton window"). Reuse and focus the existing one if it's already open.
+        // A different window's own last-Work close may already have opened the
+        // Launcher — `WindowManager::create_window` has no string-id dedup of its
+        // own, so a second `open_window` with the same `.id(LAUNCHER_WINDOW_ID)`
+        // would spawn a second, orphaned Launcher window. Reuse and focus the
+        // existing one if it's already open.
         match ctx.find_window(crate::shell::windows::LAUNCHER_WINDOW_ID) {
             Some(existing) => ctx.focus_window(existing),
             None => {
@@ -365,9 +349,8 @@ pub fn close_work_and_return_to_launcher(
 /// open the incoming project in a *new* window instead — the answer every one of
 /// the four switch doors (File ▸ New Work, File ▸ Open Work…, the switcher's
 /// "Open here", the import toast's "Open now") consults before doing anything.
-///
-/// Whether this window may replace its project in place. Delegates to
-/// [`WindowRole::may_switch_in_place`] — the one home for attach/sibling policy.
+/// Delegates to [`WindowRole::may_switch_in_place`] — the one home for
+/// attach/sibling policy.
 pub(crate) fn may_switch_project_in_place(
     registry: &WorkRegistry,
     ids: &AppIds,
@@ -376,17 +359,6 @@ pub(crate) fn may_switch_project_in_place(
     role.may_switch_in_place(registry, ids)
 }
 
-/// Release the open project and terminate the process — the `Quit` sibling
-/// of [`close_work_and_return_to_launcher`]. Deliberately does NOT open a
-/// fresh Launcher window: once this (normally sole) window force-closes,
-/// `WindowManager::is_empty()` trips and the event loop exits for real — the
-/// framework's only process-exit mechanism (there is no
-/// `EventContext::quit()`/`terminate()`).
-///
-/// Callers invoking this from inside a close guard must return
-/// `CloseResponse::Veto` afterward, exactly like its Launcher-returning
-/// sibling: this function performs the actual close itself, via
-/// `close_window_forced`, rather than deferring to the guard's own return
 /// Persist the open project's workspace layout (open tabs + dock arrangement)
 /// through `workspace_layout` — the **calling window's own** [`WorkspaceLayoutViewModel`]
 /// handle, passed in explicitly rather than resolved via
@@ -396,10 +368,9 @@ pub(crate) fn may_switch_project_in_place(
 /// close/quit, and never the closing/quitting window's own). Called at each "leave
 /// the project" door while its store is still alive.
 ///
-/// **Scope C fix — no longer takes `ctx`.** `workspace_layout.capture()` and
-/// `workspace_layout.capture_tree_expansion()` (see the latter's own doc for why
-/// it moved here from a free function) both read entirely off this Tier-2
-/// view-model's own injected/held state; neither ever needed an `EventContext`.
+/// `workspace_layout.capture()` and `workspace_layout.capture_tree_expansion()`
+/// both read entirely off this Tier-2 view-model's own injected/held state;
+/// neither needs an `EventContext`.
 pub(crate) fn capture_workspace_layout(
     workspace_layout: &crate::view_models::WorkspaceLayoutViewModel,
 ) {
@@ -412,36 +383,22 @@ pub(crate) fn capture_workspace_layout(
 /// here" / the import toast's "Open now") swaps in a different one. `work_id`
 /// is `None` when nothing was open yet (a no-op).
 ///
-/// Phase 2 deliberately removed `load_work`'s/`new_work`'s own "close every
-/// other open Work" sweep from the backend (`load_work_uc.rs`/`new_work_uc.rs`)
-/// so two DIFFERENT Works can coexist in two windows. Nothing then closed the
-/// SAME window's own outgoing Work for an in-place replace — every ordinary
-/// New-Work-after-a-project-is-open / Open-Work-after-a-project-is-open action
-/// silently leaked that Work's whole backend subtree (`Work`/`WorkInfo`/
-/// `Binder`/`BinderItem`/`Content`/`DictWord`/…, never freed for the rest of
-/// the process's life) and its `SpellcheckService` personal-word/mute map
-/// entry (dropped only by `ProjectLifecycleViewModel::on_close`, which only a
-/// real `CloseWork` event drives — an in-place switch fires none on its own).
+/// `load_work`/`new_work` no longer close other open Works themselves (two
+/// DIFFERENT Works can coexist in two windows), so nothing else closes THIS
+/// window's own outgoing Work on an in-place replace — without this call its
+/// whole backend subtree (`Work`/`WorkInfo`/`Binder`/`BinderItem`/`Content`/
+/// `DictWord`/…) and its `SpellcheckService` personal-word/mute entry leak for
+/// the rest of the process's life, since only a real `CloseWork` event drives
+/// `ProjectLifecycleViewModel::on_close`.
 ///
-/// Calling `close_work` here is what supplies that missing `CloseWork`.
 /// **The caller must resolve `work_id` from the window's OWN `AppIds`
 /// (`ids.work_id.get()`), captured before anything re-points it** — never
 /// `ctx.app_state::<AppIds>()`, which is one process-wide slot fixed at
-/// builder time from the *first* window's session (see
-/// `close_work_and_return_to_launcher`'s identical warning about
-/// `ctx.app_state::<AppIds>()`): with a second Work open in a second window,
-/// that slot answers with the WRONG window's `work_id`,
-/// and closing it would tear a sibling window's live, untouched Work out from
-/// under it. Every call site today reaches this from inside that window's own
-/// `App::build` (`commands::CommandDeps::ids` / `NewWorkViewModel`'s own
-/// `ids`), where the correct, per-window `AppIds` is already at hand.
+/// builder time from the *first* window's session: with a second Work open in
+/// a second window, that slot answers with the WRONG window's `work_id`, and
+/// closing it would tear a sibling window's live, untouched Work out from
+/// under it.
 ///
-/// While `work_id` still names the outgoing Work, the ordinary guarded
-/// `CloseWork` subscriber (`is_event_for_my_work`, in `App::build`) matches
-/// and runs `ProjectLifecycleViewModel::on_close` exactly as a real close
-/// would — releasing the open-registry claim, clearing this Work's
-/// spell-check entry, and unpointing the tree/tabs/singles — before the
-/// caller's own `load_work`/`new_work` seeds them again for the new Work.
 /// `WorkRegistry`'s session/undo-stack bookkeeping is untouched by this (by
 /// design — see `on_close`'s own doc): that half already runs from
 /// `register_window`'s replace path once the new `LoadWork`/`NewWork` lands.
@@ -451,11 +408,11 @@ pub(crate) fn close_outgoing_work(app_ctx: &Rc<AppContext>, work_id: Option<u64>
     }
 }
 
-/// Perform `outcome` immediately — `close_work_and_return_to_launcher` for
-/// `ReturnToLauncher`, `quit_app` for `Quit`. Shared by every "user picked
-/// Discard" branch in [`guard_unsaved_exit`], so discarding unsaved edits
-/// always skips the on-close backup (the last-saved state is what's kept),
-/// exactly as it did before the guard's three call sites were unified.
+/// Perform `outcome` immediately — [`close_work_and_return_to_launcher`] for
+/// `ReturnToLauncher`; `Quit` is a no-op here (see the match arm below).
+/// Shared by every "user picked Discard" branch in [`guard_unsaved_exit`], so
+/// discarding unsaved edits always skips the on-close backup (the
+/// last-saved state is what's kept).
 fn perform_exit(
     outcome: PendingExit,
     app_ctx: &Rc<AppContext>,
@@ -635,42 +592,34 @@ pub struct App {
     app_ctx: Rc<AppContext>,
     /// The Tier-2 per-open-Work bundle (see `sessions::WorkSession`'s module
     /// doc) — built **fresh for this window** by `ProjectWindowFactory::window_config`
-    /// (Phase 2: a second simultaneously-open Work gets its own independent
+    /// (a second simultaneously-open Work gets its own independent
     /// `WorkSession`, not a second handle onto the first window's) and handed to
     /// `App::new` the way `outline` already is. `App::build` reads its fields
-    /// straight off `self.session` instead of doing its own
-    /// `ctx.app_state::<T>()` lookup for each one — the concrete piece of the
-    /// migration's "resolution mechanism" (design doc §2). Every field here is
-    /// *also* still registered as its own `app_state` entry for a handful of
-    /// residual consumers (save_state excepted — see its own doc); that
-    /// registration is last-write-wins across windows — a known residual of
-    /// the multi-Work migration. Prefer `session` over `app_state` for any
-    /// new code.
+    /// straight off `self.session` rather than `ctx.app_state::<T>()` per field
+    /// — that lookup is one process-wide slot, last-write-wins across windows,
+    /// and only still used by a handful of residual consumers. Prefer
+    /// `session` over `app_state` for any new code.
+    ///
+    /// Most of the fields below share this same "minted fresh per window in
+    /// the factory, never `ctx.app_state`" shape, for the identical reason:
+    /// two simultaneously-open windows — even on the same Work — must never
+    /// share UI state that names one window's own placement/selection/target.
     session: WorkSession,
-    /// Built **fresh for this window** alongside `session` (see its doc) —
-    /// each simultaneously-open Work gets its own outline/tree, never a second
-    /// window's.
+    /// Built fresh alongside `session` — each simultaneously-open Work gets
+    /// its own outline/tree, never a second window's.
     outline: OutlineViewModel,
     /// This window's own "was I maximized/floating before I went fullscreen"
-    /// memory (Increment 1 of distraction-free — plain fullscreen). Minted
-    /// fresh per window in `ProjectWindowFactory::window_config`, the same
-    /// shape as [`Self::scene_focused`]: it names a *window's* own UI state,
-    /// not the Work's data, so two simultaneously-open windows — even on the
-    /// same Work — must never share it. See `FullscreenViewModel`'s doc.
+    /// memory (Increment 1 of distraction-free — plain fullscreen). See
+    /// `FullscreenViewModel`'s doc.
     fullscreen: crate::view_models::FullscreenViewModel,
     /// This window's own distraction-free state (Increment 2 — chrome
-    /// collapse). Minted fresh per window in
-    /// `ProjectWindowFactory::window_config`, the same shape as
-    /// [`Self::fullscreen`] just above, but with its own independent
-    /// placement memory — see `FocusViewModel`'s module doc for why the two
-    /// toggles never share one. Reset on Close-Work/Load-Work (see the
-    /// subscribers in `build`) so a stale "mode was on" never leaks into the
-    /// next project this window shows.
+    /// collapse), with its own independent placement memory from
+    /// [`Self::fullscreen`] — see `FocusViewModel`'s module doc for why the
+    /// two toggles never share one. Reset on Close-Work/Load-Work so a stale
+    /// "mode was on" never leaks into the next project this window shows.
     focus: crate::view_models::FocusViewModel,
-    /// Built **fresh for this window** alongside `session`/`outline`: bound to
-    /// this window's own `ids`, so an export from this window scopes to *this*
-    /// Work, not whichever Work's `App` constructed the shared registration
-    /// last. See `app::commands::CommandDeps::export`'s doc.
+    /// Bound to this window's own `ids`, so an export from this window scopes
+    /// to *this* Work. See `app::commands::CommandDeps::export`'s doc.
     export: crate::view_models::ExportViewModel,
     /// The Tier-1 registry every open Work registers into once its own
     /// `LoadWork`/`NewWork` resolves a real `work_id` (see the `LoadWork`/
@@ -686,19 +635,15 @@ pub struct App {
     /// unlike almost everything else on this struct: a quit spans them all.
     quit: crate::view_models::QuitSequencer,
     /// Built fresh alongside `session`, bound to *this* window's own `ids`/
-    /// `single_work` — see `shell::windows::ProjectWindowFactory::window_config`'s
-    /// doc for why these can no longer be the single `ctx.app_state`-registered
-    /// instances every window used to share.
+    /// `single_work`.
     save_as_vm: SaveAsViewModel,
     restore_vm: crate::view_models::BackupRestoreViewModel,
     /// This window's own formatting surfaces (dock + menu + editor registry).
-    /// Minted fresh per window in the factory — never shared, never
-    /// `app_state` (a shared instance made the last-built window win the
-    /// Format dock's live target).
+    /// Never shared — a shared instance made the last-built window win the
+    /// Format dock's live target.
     format: crate::view_models::FormatViewModel,
-    /// This window's own in-place project-switch guard. Minted fresh per
-    /// window with *this* Work's `unsaved`/`backup_mode` — never a process-
-    /// wide slot whose hooks the last owner overwrote.
+    /// This window's own in-place project-switch guard, with *this* Work's
+    /// `unsaved`/`backup_mode`.
     project_switch: ProjectSwitchViewModel,
     /// Scope D — window titles. The live `"{Work title} — Skribisto"` string
     /// (see `shell::windows::window_title_text`'s doc), built once in
@@ -760,11 +705,10 @@ pub struct App {
     ///
     /// **Derived**, not set by hand: `dirty_seq > saved_seq`, both read off the
     /// shared [`crate::view_models::SaveStateViewModel`] (Work-scoped, not owned
-    /// here — see its module docs). It used to be a flag set on mutation and
-    /// cleared whenever *a* save landed — which lied while a save was in flight,
-    /// because typing during that save was marked clean the moment it finished,
-    /// even though its snapshot never contained those edits. Save then greyed out
-    /// on prose that was on no disk anywhere.
+    /// here — see its module docs). A plain flag cleared on save completion
+    /// would lie while a save is in flight: typing during that save would be
+    /// marked clean the moment it finished, even though its snapshot never
+    /// contained those edits.
     unsaved: Signal<bool>,
     /// A deferred close: performed once the save it asked for actually covers the
     /// edits (see `exit_seq`). Shared with `main`'s window close guard.
@@ -1104,18 +1048,12 @@ pub(crate) fn build_stack_teardown(
 /// `WorkRegistry::register_window`'s doc.
 ///
 /// **F3.** Also tells the toast registry to forget this window
-/// (`ToastRegistry::forget_window`) — the counterpart `set_window_audience`
-/// above this window's `LoadWork`/`NewWork` subscriber calls has no forget
-/// half of its own: `set_window_audience(id, None)` only clears the audience
-/// *signal's value*, leaving the map entry (and its `Signal` allocation)
-/// alive in `window_audiences` forever, and `window_versions` (bumped on
-/// every toast) accumulates the same way. Without this, every window ever
-/// opened over a session leaks one entry in each map — unbounded over a long
-/// session that opens and closes many windows, the exact class of leak
-/// `unregister_flush_hook` just above closes for the backup scheduler's own
-/// map. `None` only in a headless/off-screen build context (no
-/// `install_toast_default()` ever ran) — a safe no-op there, same guard as
-/// `toast_registry`'s own doc.
+/// (`ToastRegistry::forget_window`) — `set_window_audience(id, None)` alone
+/// only clears the audience *signal's value*, leaving the map entry (and its
+/// `Signal` allocation) alive in `window_audiences`/`window_versions`
+/// forever, so every window ever opened over a session would otherwise leak
+/// one entry in each map. `None` only in a headless/off-screen build context
+/// (no `install_toast_default()` ever ran) — a safe no-op there.
 pub(crate) fn build_window_teardown(
     editors: EditorsViewModel,
     backup_scheduler: BackupSchedulerViewModel,
@@ -1239,18 +1177,13 @@ impl Widget for App {
         let backup_mode_for_editors = self.backup_mode.clone();
         let save_state_for_editors = save_state.clone();
         let scene_focused_for_editors = self.scene_focused.clone();
-        // A **pane** tab is never distraction-free. This used to be
-        // `self.focus.active_signal()`, on the theory that a mounted pane would
-        // re-typeset itself when Shift+F11 flipped it — but `main_typography()`
-        // and `main_column_width()` resolve as the pane *builds*, `TabWidget`
-        // memoizes its panes and `DockingLayout` preserves its centre across
-        // rebuilds, so nothing ever re-read the flag: a scene opened before
-        // entering the mode kept its normal typeface and its normal column for
-        // the whole session. Making it reactive is closed off — the six
-        // typography pushes go through `ctx.effect`, which panics on a derived
-        // signal — so the mode now mounts its own surface with its own tab
-        // instead, and that tab's flag is a constant `true`
-        // (`EditorsViewModel::open_surface_tab`).
+        // A **pane** tab is never distraction-free — a constant `false`, not
+        // `self.focus.active_signal()`. `TabWidget` memoizes its panes and
+        // `DockingLayout` preserves its centre across rebuilds, so a signal here
+        // would never actually be re-read once a pane is built: a scene opened
+        // before entering the mode would keep its normal typeface/column for the
+        // whole session. The mode instead mounts its own surface with its own
+        // tab, whose flag is a constant `true` (`EditorsViewModel::open_surface_tab`).
         let distraction_free_for_editors = Signal::new(false);
         let distraction_free_width = settings.distraction_free_width();
         let go_for_editors = self.go.clone();
@@ -1730,14 +1663,14 @@ impl Widget for App {
         // this window's `BackupSettingsService` into the app's shared
         // `SettingsRegistry` once, so the settings-file watcher (installed by
         // `BastydeAppBuilder` whenever a settings bundle is configured — see
-        // `main.rs`) reloads it in place the moment a peer window (another
-        // Skribisto process, one per project) writes an override / policy /
-        // bookkeeping change. Without this, `backup_settings`'s reads would
-        // only ever see this process's own last write (reads no longer poll —
-        // see `models::backup_settings_file`'s module docs). Absent registry
-        // (e.g. a headless/test build with no settings bundle) is a silent
-        // no-op: the service still works, peer writes just aren't picked up
-        // live until this process next writes something itself.
+        // `main.rs`) reloads it in place the moment a peer window — another
+        // project's window in this process, or a `--new-instance` process —
+        // writes an override / policy / bookkeeping change. Without this,
+        // `backup_settings`'s reads would only ever see this process's own
+        // last write. Absent registry (e.g. a headless/test build with no
+        // settings bundle) is a silent no-op: the service still works, peer
+        // writes just aren't picked up live until this process next writes
+        // something itself.
         if self.backup_settings_reloadable.is_none()
             && let Some(registry) = ctx.app_state::<SettingsRegistry>().cloned()
         {
@@ -2051,13 +1984,10 @@ impl Widget for App {
                 docs.set_comments_visible(*on);
             });
         }
-        // Synopsis spell dormancy is *not* wired here any more. It used to mirror
-        // one global setting into every open doc, which stopped being the right
-        // question once the synopsis could also be folded away per tab (Side
-        // placement) and toggled per window (distraction-free). A doc can be on
-        // screen several times at once, so "may this session sleep?" is answered by
-        // counting the views that actually show it — see
-        // `OpenDoc::acquire_synopsis_viewer`, held by the mounted pane itself.
+        // Synopsis spell dormancy is not wired here: a doc can be on screen
+        // several times at once (split pane, distraction-free), so "may this
+        // session sleep?" is answered by counting the views that actually show
+        // it — see `OpenDoc::acquire_synopsis_viewer`, held by the mounted pane.
         // Dirty tracking + debounced autosave-to-disk. Every mutation (editor
         // typing via the editors' `edited` signal, plus tree/metadata events)
         // marks the work `unsaved` and — when autosave is on — (re)schedules a
@@ -2369,10 +2299,10 @@ impl Widget for App {
 ///
 /// Loading replaces this window's project **in place**, so the load itself goes
 /// through the unsaved-changes guard (`ProjectSwitchViewModel`) rather than
-/// straight to `load_work` — which is what used to throw away the open project's
-/// unsaved edits without a word. The guard runs *after* the pick and *after* the
+/// straight to `load_work`, which would throw away the open project's unsaved
+/// edits without a word. The guard runs *after* the pick and *after* the
 /// backup sniff, so neither cancelling the picker nor choosing a backup (which
-/// opens in its own process, leaving this project alone) prompts about anything.
+/// opens in its own window, leaving this project alone) prompts about anything.
 ///
 /// `ids` is THIS window's own `AppIds` — read (`.work_id.get()`) only at the
 /// final `switch.request` call below, not snapshotted here, so the outgoing Work

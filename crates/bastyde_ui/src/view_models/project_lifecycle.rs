@@ -10,10 +10,8 @@
 //! and New differ only in a tail (a new project is not on disk yet, so it is born dirty and
 //! immediately written); Close is the same walk in reverse.
 //!
-//! That sequence used to live as three ~60-line closures inside `App::build`, each capturing
-//! ten to thirteen clones, with the Load and New bodies kept in step by hand. Nothing tested
-//! any of it, and the two copies had every opportunity to drift — a step added to one and
-//! forgotten in the other is invisible until a user hits it.
+//! Extracted from `App::build` (previously three near-duplicate closures kept in step by
+//! hand) so Load/New/Close cannot silently drift apart and the sequence is unit-testable.
 //!
 //! ## Ordering that is load-bearing
 //!
@@ -27,7 +25,7 @@
 //!   window's own previous claim (captured before `seed()` overwrites it), then claim the new
 //!   path — never `replace_claim`/`release_all()`, which would drop every claim the whole
 //!   *process* holds, including a sibling window's untouched, still-open Work (see `claim`'s
-//!   own doc for the Phase-3 fix this was).
+//!   own doc).
 //! * `refresh_spellcheck` **after** the tabs are closed — documents re-open afterwards and
 //!   attach with the right language, so the `attach_all` inside it is a no-op at this point.
 //! * `mark_clean` then the `dirty_seq` bump, in that order, on New only — "everything the
@@ -197,21 +195,17 @@ impl ProjectLifecycleViewModel {
     /// Claim the project in the open registry and re-point the spell-checker — the tail of
     /// becoming live, shared by Load and New.
     ///
-    /// **Phase 3 fix — releases only THIS window's own previous claim, never
-    /// `replace_claim`/`release_all()`.** With one project per process (Phase 2 and
-    /// earlier), dropping every claim this *process* held before claiming the new path
-    /// was equivalent to "drop this window's own previous claim" — there was only ever
-    /// one. With two Works simultaneously open in one process (Phase 2's own multi-Work
-    /// commit), `release_all()` from window B's own Load/New/Restore silently wiped
-    /// window A's still-open, untouched Work out of the open registry too — it would
-    /// vanish from every peer process's ProjectSwitcher and from IPC-raise reachability,
-    /// with no error and no visible cause. `previous_path` is `self`'s own path from
-    /// *before* [`Self::seed`] overwrote `single_work_info` (captured by the caller,
-    /// `on_load`/`on_new`, which is why this takes it as a parameter rather than reading
-    /// it here) — `None` for this window's very first Load/New, when it held no claim
-    /// yet. `open_registry::release`'s own doc already anticipated this exact fix: "once
-    /// multiple projects can be open in one window/process, those call sites move to
-    /// plain claim/release."
+    /// **Releases only THIS window's own previous claim, never
+    /// `replace_claim`/`release_all()`.** The latter drops every claim the whole
+    /// *process* holds, so with two Works open in one process it would silently
+    /// wipe a sibling window's still-open, untouched Work out of the open
+    /// registry — vanished from every peer process's ProjectSwitcher and from
+    /// IPC-raise reachability, with no error and no visible cause.
+    /// `previous_path` is `self`'s own path from *before* [`Self::seed`]
+    /// overwrote `single_work_info` (captured by the caller, `on_load`/`on_new`,
+    /// which is why this takes it as a parameter rather than reading it here)
+    /// — `None` for this window's very first Load/New, when it held no claim
+    /// yet.
     fn claim(&self, previous_path: Option<&str>) {
         let i = &self.inner;
         if let Some(prev) = previous_path {
@@ -299,8 +293,8 @@ impl ProjectLifecycleViewModel {
         }
         // Deleting this Work's own undo/redo stack (`create_new_stack` minted it on
         // `on_load`/`on_new` above) does **not** happen here. `CloseWork` fires once
-        // per window that had this Work open (Phase 3's `AttachExisting`: several
-        // windows can share one Work), so deleting the stack unconditionally in every
+        // per window that had this Work open (`AttachExisting`: several windows
+        // can share one Work), so deleting the stack unconditionally in every
         // one of those windows' own `on_close` would delete it out from under a
         // sibling window that still needs it. The real "is anyone still using this
         // stack" answer is Skribisto's own window→Work bookkeeping, not this

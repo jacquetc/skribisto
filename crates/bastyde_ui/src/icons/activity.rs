@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Activity-rail icons — the glyphs shown in the leading dock's VS Code-style
-//! activity bar (one per activity: Outline, and later Search/Characters/…).
+//! Activity-rail icons — the glyphs shown in the leading and trailing docks'
+//! VS Code-style activity bars: one per activity (Outline, Search, Trash,
+//! Comments, Format, Inspector), plus the sidebar toggle and the pinned
+//! Settings cog.
 //!
 //! Icons default to `TextRole::Primary` and follow the theme; the rail tints the
 //! selected item with the accent role. The **rail owns glyph sizing** — it

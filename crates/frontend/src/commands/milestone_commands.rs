@@ -99,9 +99,9 @@ pub fn get_milestone_multi(
 }
 
 /// Get all milestone entities.
-/// Note: returns entities in database key order (by EntityId), not insertion order
-/// or any user-defined sort. For ordered collections, use relationship-based
-/// retrieval (e.g. get_*_relationship for ordered_one_to_many fields).
+/// Note: iteration order is unspecified (`HashMap`-backed) — not insertion order
+/// or `EntityId` order. For ordered collections, use relationship-based retrieval
+/// (e.g. get_*_relationship for ordered_one_to_many fields).
 pub fn get_all_milestone(ctx: &AppContext) -> Result<Vec<MilestoneDto>> {
     milestone_controller::get_all(&ctx.db_context).context("getting all milestone entities")
 }

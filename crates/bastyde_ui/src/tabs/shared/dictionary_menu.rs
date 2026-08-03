@@ -32,12 +32,7 @@ const MAX_SELECTION_CHARS: usize = 120;
 const MAX_SELECTION_WORDS: usize = 15;
 
 /// Everything the right-click menu's spelling group needs, resolved from the editor's live
-/// caret/selection in **one** pass.
-///
-/// One resolution rather than two: "which words can be added" and "which word can be corrected"
-/// are the same question asked twice, and answering them independently meant walking the blocks,
-/// tokenising and spell-checking the same token twice per right-click — with two code paths that
-/// had to keep agreeing forever about where a word begins.
+/// caret/selection in **one** pass — see the module docs for why one pass, not two.
 #[derive(Default)]
 pub(crate) struct SpellingMenu {
     /// The flagged words "Add to dictionary" should act on. Empty ⇒ the item is disabled.

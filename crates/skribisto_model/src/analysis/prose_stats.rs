@@ -53,12 +53,6 @@ impl DialogueMarkers {
 /// editor uses to *insert* these glyphs as the writer types, so recognising dialogue and
 /// producing it can no longer disagree.
 ///
-/// This used to be a second copy of the dialogue-relevant rows, guarded by a test asserting
-/// the two tables matched row for row. The guard held for the rows and missed what actually
-/// drifted: the copy answered "no convention" for `en-US` — the app's own default, and what
-/// `language::primary` really hands over — while `ruleset_for` normalised the tag and fell
-/// back to its primary subtag. There is no second table to drift now.
-///
 /// A tag with no curated row resolves to the default English-ish ruleset, which is right for
 /// *inserting* punctuation (better than nothing) and wrong for *measuring* it (a guess is not
 /// a measurement) — so that case returns [`DialogueMarkers::none`] and everything downstream
@@ -295,9 +289,8 @@ mod tests {
         assert_eq!(s.punctuation_per_1k, 0.0);
     }
 
-    /// Regression: a scene with no prose reported `Some(0.0)` dialogue, which draws a real
-    /// 0% bar and reads as "this scene has no dialogue" — a finding — where the truth is
-    /// that there is nothing to measure. A freshly created scene is in exactly this state.
+    /// A scene with no prose (a freshly created one) must report no dialogue share at all,
+    /// not `Some(0.0)` — the latter draws a real 0% bar and reads as a finding.
     #[test]
     fn prose_with_no_words_has_no_dialogue_share_to_report() {
         assert_eq!(measure("   \n\n  ", Some("en"), EN).dialogue, None);
@@ -388,10 +381,8 @@ mod tests {
         }
     }
 
-    /// Regression: `language::primary` hands over the writer's tag as written, so a flat
-    /// match on bare subtags reported "not measurable" for `en-US` — the app default and the
-    /// bundled example's own language — while the editor inserted English quotes into that
-    /// very scene.
+    /// `language::primary` hands over the writer's tag as written (e.g. `en-US`), so a
+    /// regional tag must resolve through its base language rather than report unmeasurable.
     #[test]
     fn a_regional_tag_resolves_through_its_language() {
         for tag in ["en-US", "en_US", "EN-us", " en-GB ", "fr-CA", "fr_FR", "pt-PT"] {

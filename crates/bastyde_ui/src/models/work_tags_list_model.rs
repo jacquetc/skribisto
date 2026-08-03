@@ -8,11 +8,12 @@
 //! and a **lookup** signal every chip renderer reads — see [`lookup_signal`].
 //!
 //! Two `#[cfg]`-gated `mod imp` variants share one public surface: the real one reads via
-//! `get_all_binder_tag` (there is one Work per process) and stays live on `BinderTag`
-//! events, tag-management events and project switches, with writes going through the
-//! generated `binder_tag_commands` plus `tag_management_commands::import_tags` for the
-//! bulk path; the mock one holds a fabricated palette and mutates it in place, since
-//! `--features mocks` has no real `Work` to own a created `BinderTag`.
+//! `Work.tags` (scoped to this window's own open Work — a process can host several) and
+//! stays live on `BinderTag` events, tag-management events and project switches, with
+//! writes going through the generated `binder_tag_commands` plus
+//! `tag_management_commands::import_tags` for the bulk path; the mock one holds a
+//! fabricated palette and mutates it in place, since `--features mocks` has no real
+//! `Work` to own a created `BinderTag`.
 //!
 //! Rows are sorted case-insensitively by name. That ordering is load-bearing rather than
 //! cosmetic: it is what makes the `status/…` naming convention cluster in every list,

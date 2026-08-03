@@ -1140,7 +1140,7 @@ mod tests {
     // English can collide in French. Every supported locale is checked.
 
     /// Menu scopes, mirroring the `MenuModel` built in
-    /// [`ProjectWindow::window_config`]. Add an entry to that menu, add its
+    /// [`ProjectWindowFactory::window_config`]. Add an entry to that menu, add its
     /// key here — an unlisted key is simply unchecked, which is the one
     /// failure mode this table has.
     const MENU_MNEMONIC_SCOPES: &[(&str, &[&str])] = &[

@@ -3,52 +3,32 @@
 
 //! The prose of every scene, parsed and folded — kept between keystrokes.
 //!
-//! ## What it is for
-//!
-//! `run_search` runs on **every keystroke** of the search box, and it re-does the same work
-//! on the same unchanged prose each time. Measured over a 300k-word manuscript (4000 scenes),
-//! in release:
-//!
-//! | | |
-//! |---|---|
-//! | parse the Djot into prose (`djot_to_plain_text`) | 33 ms |
-//! | fold the prose for matching | 14 ms |
-//! | actually scan it | 16 ms |
-//!
-//! …and none of the first two changes between one keystroke and the next. All of it happens
-//! **synchronously on the UI thread**, so it is not "a slow feature", it is a stall in the
-//! writer's typing every time they pause.
+//! `run_search` runs on **every keystroke** and redoes the same work on the same unchanged
+//! prose each time, synchronously on the UI thread. Measured over a 300k-word manuscript
+//! (4000 scenes), in release: parsing Djot to prose (`djot_to_plain_text`) is ~33 ms, folding
+//! ~14 ms, scanning ~16 ms — the first two never change between keystrokes, so caching them
+//! turns a typing stall into a scan.
 //!
 //! ## Content-addressed, so there is nothing to invalidate
 //!
-//! The obvious cache keys on the entity — `content_id`, versioned by `updated_at` — and then
-//! has to be told when to forget: on `Content` updated, on removed, on a project close, on a
-//! language change. Every one of those is a place to get it wrong, and the failure mode is
-//! **serving a writer stale prose**: a search that finds a word they deleted, or misses one
-//! they just typed.
+//! The cache keys on the **prose itself** — `(Djot source, fold rules)` — not the entity id.
+//! An edit to a scene is a different string, hence a different key, hence a miss: no
+//! invalidation logic, no events to subscribe to (update/remove/close/language-change), and
+//! no way to serve stale prose. It also makes the cache safe to share across `AppContext`s
+//! (the test suite creates many in one process): two stores holding the same prose get the
+//! same answer, where an id-keyed cache would need per-store scoping.
 //!
-//! So it keys on the **prose itself**. The entry for a given `(Djot source, fold rules)` is
-//! the parse and the fold of exactly that text, and it cannot go stale — if the writer edits
-//! a scene, the source is a different string, which is a different key, which is a miss. No
-//! invalidation, no events to subscribe to, no ordering to get right.
-//!
-//! It also makes the cache safe to share across `AppContext`s (which the test suite creates
-//! by the dozen, in one process): two stores holding the same prose *should* get the same
-//! answer. An id-keyed cache would have had to be scoped per store, and a store's identity is
-//! its address — which is reused after it is dropped.
-//!
-//! The key is the source `String`, not a hash of it. A 64-bit hash collision would serve one
-//! scene's prose as another's — silently, and in a *writer's manuscript*. `HashMap` compares
-//! the keys it stores, so there is no such window; the cost is holding the Djot a second time
-//! (~1.7 MB for that 300k-word novel), which is the smallest of the four things kept here.
+//! The key is the source `String`, not a hash of it: a 64-bit hash collision would silently
+//! serve one scene's prose as another's, in a writer's manuscript. `HashMap` compares the
+//! keys it stores, so there is no such window — the cost is holding the Djot a second time
+//! (~1.7 MB for that 300k-word novel).
 //!
 //! ## Bounded
 //!
-//! Every edit to a scene mints a new key, so an afternoon's writing accumulates entries for
-//! prose that no longer exists. The cache is bounded by total heap and **cleared wholesale**
-//! when it overflows, rather than evicted one entry at a time: the working set is "the
-//! manuscript open right now", not a recency distribution, and the cost of being wrong is one
-//! cold search.
+//! Every edit mints a new key, so a session accumulates entries for prose that no longer
+//! exists. The cache is bounded by total heap and **cleared wholesale** on overflow rather
+//! than evicted one entry at a time: the working set is "the manuscript open right now", not
+//! a recency distribution, so the cost of being wrong is one cold search.
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -64,25 +44,19 @@ pub type Corpus = FoldedText;
 /// 20 MB, so this holds one comfortably, plus a long session's worth of edits.
 const MAX_HEAP: usize = 128 * 1024 * 1024;
 
-/// The cache. Process-global on purpose: Skribisto is **one process per project**, so a global
-/// *is* project-scoped — and being content-addressed, it would be correct even if it were not.
+/// The cache. Process-global: one process can hold several open `Work`s at once (the
+/// single-instance primary), but being content-addressed the cache stays correct regardless
+/// — two Works with identical prose simply share an entry.
 static CACHE: RwLock<Option<Store>> = RwLock::new(None);
 
-/// The cache proper, with no global in it — so the tests below can exercise it
-/// deterministically. Rust runs tests in **parallel threads of one process**, and a global
-/// would make `clear()` in one test race an `Arc::ptr_eq` in another.
+/// The cache proper, with no global in it, so the tests below can exercise it
+/// deterministically — Rust runs tests in parallel threads of one process, and a global
+/// `clear()` in one test would race an `Arc::ptr_eq` in another.
 ///
-/// ## Why the map is nested
-///
-/// The obvious shape is one map keyed by `(source, spec)`. It costs a **full copy of every
-/// scene's Djot on every lookup**, including hits: you cannot probe a `HashMap<(String, _), _>`
-/// without materialising the `String` half of the key. On a 300k-word manuscript that is
-/// ~1.7 MB allocated, memcpy'd and thrown away *per keystroke* — on the exact hot path this
-/// cache exists to make fast.
-///
-/// Nesting it by `FoldSpec` (of which there are a handful) leaves an inner map keyed by
-/// `String` alone, and `String: Borrow<str>` means it can be probed with a plain `&str`. The
-/// allocation now happens only on a **miss**, where a parse and a fold dwarf it anyway.
+/// Nested by `FoldSpec` rather than one map keyed by `(source, spec)`: `String: Borrow<str>`
+/// lets the inner map be probed with a plain `&str`, so a hit costs no allocation. A flat
+/// `(String, _)` key would force materialising the ~1.7 MB Djot string on every lookup, hit
+/// or miss — on the exact hot path this cache exists to make fast.
 struct Store {
     by_spec: HashMap<FoldSpec, HashMap<String, Arc<Corpus>>>,
     heap: usize,
@@ -145,12 +119,9 @@ impl Store {
     /// [`corpus_for`]).
     fn build(djot: &str, spec: &FoldSpec) -> Arc<Corpus> {
         // Scene-break markers are deliberately NOT stripped here, unlike in
-        // `skribisto_model::counting`. This corpus is pinned as *exactly* the
-        // text the document itself searches, so that a match found here maps to
-        // a replace performed there; removing blocks would shift every later
-        // offset and silently corrupt replacements. A marker is part of the
-        // manuscript as written, so search sees it — that is the consistent
-        // answer, and the reason not to "fix" this later.
+        // `skribisto_model::counting`: this corpus must be exactly what the document
+        // searches, so a match found here maps to a replace performed there. Stripping
+        // markers would shift every later offset and corrupt replacements.
         let prose = djot_to_plain_text(djot, &DjotImportOptions::default());
         Arc::new(FoldedText::new(&prose, spec))
     }

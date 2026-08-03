@@ -68,9 +68,9 @@ pub fn get_search_result_multi(
 }
 
 /// Get all search_result entities.
-/// Note: returns entities in database key order (by EntityId), not insertion order
-/// or any user-defined sort. For ordered collections, use relationship-based
-/// retrieval (e.g. get_*_relationship for ordered_one_to_many fields).
+/// Note: iteration order is unspecified (`HashMap`-backed) — not insertion order
+/// or `EntityId` order. For ordered collections, use relationship-based retrieval
+/// (e.g. get_*_relationship for ordered_one_to_many fields).
 pub fn get_all_search_result(ctx: &AppContext) -> Result<Vec<SearchResultDto>> {
     search_result_controller::get_all(&ctx.db_context).context("getting all search_result entities")
 }

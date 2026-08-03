@@ -5,37 +5,15 @@
 """Drive a live Skribisto via the bastyde automation MCP bridge and verify that
 tag presets apply, translate, dedupe, and (attempt to) undo in one step.
 
-This is plan-verification item 9. `crates/bastyde_ui/src/tags/presets.rs`
-builds every preset row IN CODE, through `tr!()`, precisely so a French
-project gets French tag names ("personnage", "lieu", "statut/brouillon", ...)
-rather than an English wordlist imported once at authoring time. Its own
-module doc says so outright: "That is the whole point ... a data file would
-have to pick one language at authoring time." presets.rs and
-models/work_tags_list_model.rs already carry unit tests for the pure logic —
-every genre preset extends Basic, no preset repeats a name, the `status/`
-prefix clusters when the rows are sorted, `import_tags` skips names already
-present. None of them can see what a writer running a FRENCH build of the app
-actually reads on screen when they open a brand-new, empty-palette project
-and click "Appliquer un préréglage…" twice.
-
-That gap is the whole point of running this live. Three ways the wiring
-could break the pure logic's promises without failing a single headless
-test:
-
-  * `tr!()` could resolve at the wrong locale, or a stale English literal
-    could slip back into `work_tags.rs` — invisible to a test that never
-    boots the i18n runtime;
-  * the palette `ListView` is virtualised (its own module doc: "renders only
-    the rows visible in its viewport, plus a buffer") and sits inside a
-    `Switcher` whose inactive page is not even *built* until selected
-    (`switcher.rs`: "Pending slots ... contribute zero work to the arena
-    until visited") — so the empty-to-Basic transition exercises a
-    lazy-mount + virtualised-scroll path no headless layout test walks;
-  * `import_tags`'s skip-on-duplicate logic runs through the same
-    undo/redo command whether it is handed 10 rows against an empty palette
-    or 3 rows against Basic's 10 already there — a live re-apply is the only
-    way to see the *rendered* list still reads 13 distinct rows, not 23 or a
-    palette with "vaisseau" listed twice.
+`crates/bastyde_ui/src/tags/presets.rs` builds every preset row IN CODE,
+through `tr!()`, so a French project gets French tag names ("personnage",
+"lieu", "statut/brouillon", ...) rather than an English wordlist imported
+once at authoring time. presets.rs and models/work_tags_list_model.rs already
+unit-test the pure logic (extends-Basic, no repeated name, the `status/`
+prefix clusters when sorted, `import_tags` skips names already present); this
+probe covers what those tests cannot see: a French build's actual rendered
+palette, including the virtualised/lazy-mounted `ListView` path and the
+undo/redo command shared between a fresh apply and a re-apply.
 
 Asserts (every expected string/count is read from `presets.rs` and both
 `tags.ftl` files, not guessed — see the constants below):
@@ -47,42 +25,26 @@ Asserts (every expected string/count is read from `presets.rs` and both
      the other;
   2. applying "Basique" adds exactly its 10 rows, all in FRENCH, confirmed
      both by the toast's own numbers (10 added, 0 skipped) and by reading
-     every row back off its delete control — the assertion that proves
-     presets are translated at apply time, not shipped as English data;
+     every row back off its delete control;
   3. those 10 rows form a run of exactly 4 `statut/…` names, ADJACENT in
-     alphabetical order — the live proof of presets.rs's own
-     `the_status_prefix_clusters_when_sorted` unit test, this time through
-     the real `ListView` + `WorkTagsListModel::sort_rows`, not the pure
-     function it tests headlessly;
+     alphabetical order, through the real `ListView` +
+     `WorkTagsListModel::sort_rows`;
   4. applying "Science-fiction" afterwards adds ONLY its 3 extras (vaisseau,
      planète, organisation) — 13 rows total, no name repeated, Basic's 10
      exactly as they were;
-  5. NOT asserted pass/fail — see the note below and the KNOWN GAP block
-     printed at the end of the run.
+  5. NOT asserted pass/fail — see the KNOWN GAP block printed at the end of
+     the run.
 
-A note on item 5, "ONE Ctrl+Z reverts the entire preset apply": the backend
-guarantee is real — `tag_management/src/use_cases/import_tags_uc.rs` pushes
-one `UndoRedoCommand` per `import_tags` call (snapshot/restore), and its own
-header comment is explicit that this "must be a single Ctrl+Z". What is NOT
-real, as of this probe, is a way to *reach* that undo from the keyboard. A
-repo-wide search of `bastyde_ui/src` for `KeyStroke::ctrl(Key::Z)` (`app.rs`,
-every file under `app/commands/`, `docks/outline.rs`, `panels/welcome.rs`)
-returns zero hits, and `docks/search_replace_flow.rs`'s own module doc says
-so outright: "App-level undo is not wired to any keystroke in `bastyde_ui`
-... `Ctrl+Z` reaches only a focused editor's own local buffer undo." The two
-preset-apply toasts in `work_tags.rs` (the add-row's and the empty-state's,
-both `Toast::info(...).id("tags.preset")`) carry no `.action(...)` — unlike
-`search_replace_flow.rs` and `view_models/trash.rs`, which both attach a real
-Undo action to their own completion toast. So Ctrl+Z is, today, a dead key
-for this feature: sending it and finding "nothing changed" would be
-indistinguishable from a real regression, and this probe must not report
-that as a pass. It DOES send Ctrl+Z anyway, with focus moved off every text
-field first (so this cannot be confused with a `TextInput`'s own local
-Ctrl+Z/Y — a real, separate binding, registered in the same breath as
-Ctrl+A: `primitives/text_input_field.rs`), and prints what happened as a
-diagnostic. The fix is a one-line `.action(...)` add to `work_tags.rs`'s two
-toasts (mirroring `trash.rs`); this probe does not make that product change
-unasked.
+Item 5, "ONE Ctrl+Z reverts the entire preset apply": the backend guarantee is
+real (`import_tags_uc.rs` pushes one `UndoRedoCommand` per call), but nothing
+in `bastyde_ui` binds `Ctrl+Z` at the app level (zero `KeyStroke::ctrl(Key::Z)`
+registrations), and the preset-apply toasts in `work_tags.rs` carry no
+`.action(...)` the way `trash.rs`'s does — so there is no UI path to that
+undo yet. This probe sends Ctrl+Z anyway (focus moved off every text field
+first, so it can't be mistaken for a `TextInput`'s own local undo) and prints
+what happened as a diagnostic rather than asserting on a known gap. Fix is a
+one-line `.action(...)` add to `work_tags.rs`'s two toasts, mirroring
+`trash.rs` — a product change this probe does not make unasked.
 
 Run:  python3 scripts/automation_tag_presets.py
 """
@@ -293,16 +255,10 @@ class Session:
     def wait_role(self, role, timeout=20):
         """Poll until a node of `role` exists. Returns True, or False on timeout.
 
-        A modal is NOT queryable the instant its opening click returns. Measured
-        on the New Work modal: `invoke_action(click)` answers in 0.0s, then
-        `snapshot_tree` times out for ~4-6s while the overlay animates, and only
-        then reports the modal — 196 nodes including the `Form` landmark.
-
-        A one-shot check after a fixed `sleep(0.8)` therefore reports "the modal
-        did not open" for a modal that opens perfectly a few seconds later. That
-        cost a full diagnostic detour chasing a `Form`-landmark regression that
-        does not exist. Same failure shape `wait_for_load` exists to prevent, one
-        level in: wait for the thing, never sleep-and-hope.
+        A modal is NOT queryable the instant its opening click returns — the
+        overlay animates for a few seconds before `snapshot_tree` reports it —
+        so a one-shot check after a fixed sleep is a false failure. Poll, never
+        sleep-and-hope.
         """
         end = time.time() + timeout
         while time.time() < end:
@@ -331,11 +287,10 @@ class Session:
     def stop(self):
         """Terminate and *wait*.
 
-        Waiting is not politeness. Skribisto is one process per project, guarded
-        by an open-registry lock file: relaunching on the same path while the
-        old process still holds the lock makes the new one hand off to it and
-        exit immediately — which surfaces as "app exited before printing the
-        bridge socket" and reads like a crash.
+        Relaunching on the same path while the old process still holds its
+        open-registry lock hands the new launch off to it and exits it
+        immediately — surfacing as "app exited before printing the bridge
+        socket", not as the timeout it actually is.
         """
         for p in (self.mcp, self.app):
             if p and p.poll() is None:
@@ -429,11 +384,8 @@ def dump(s, title):
 def binder_tree_rows(s):
     """The binder's own tree rows: role "Unknown" at x≈48.
 
-    The x window is narrow on purpose (learned on `automation_tags.py`):
-    `x < 120` alone also sweeps up the activity bar (Binder / Search / Trash /
-    Settings) and the hamburger menu — clicking through those by accident
-    would close the project and every later assertion would silently be
-    measuring the Launcher instead.
+    The x window is narrow on purpose: `x < 120` alone also sweeps up the
+    activity bar (Binder / Search / Trash / Settings) and the hamburger menu.
     """
     return [n for n in s.nodes()
             if n.get("role") == "Unknown"
@@ -519,14 +471,10 @@ def settings_search_field(s):
 def search_page(s, target):
     """Filter the rail to `target`, then click the row that survives.
 
-    Preferred over walking. The Work section's pages sit below the rail's scroll
-    viewport on a real project (`Structure`, `Langue`, `Copies de secours`, …
-    push `Étiquettes` off the bottom), and the previous strategy — click the
-    section header to seed focus, then arrow down — does not work from a header:
-    clicking one toggles its expansion instead of focusing a row, so the arrows
-    went nowhere and the page was reported unreachable. The field is always on
-    screen and filtering lifts the wanted page to the top, where a click cannot
-    miss and no geometry has to be guessed.
+    Preferred over walking to it: the Work section's pages sit below the
+    rail's scroll viewport on a real project, and clicking a section header to
+    seed focus toggles its expansion instead — filtering lifts the wanted page
+    to the top instead, where a click cannot miss.
     """
     fld = settings_search_field(s)
     if not fld:
@@ -555,12 +503,11 @@ def search_page(s, target):
 
 def select_page(s, target, anchor_node, steps=14):
     """Select a rail page by walking to it (keyboard) from a visible anchor
-    row — a row far enough down the rail is laid out below the scroll
-    viewport, so a pointer click at its reported bounds lands on empty
-    chrome. `bastyde` scrolls the focused row into view on arrow-key
-    navigation, so: click a row that IS visible to seed focus, then step.
-    Tries both directions since `anchor_node`'s position relative to the
-    target is not known ahead of time.
+    row — a row far enough down the rail lies below the scroll viewport, so a
+    pointer click at its reported bounds lands on empty chrome. `bastyde`
+    scrolls the focused row into view on arrow-key navigation, so: click a
+    row that IS visible to seed focus, then step. Tries both directions since
+    `anchor_node`'s position relative to the target is not known ahead of time.
     """
     got = page_reached(s, target)
     if got:
@@ -588,27 +535,19 @@ def read_all_tag_rows(s, max_passes=10):
     """Every tag name in the palette, read off each row's own delete control.
 
     Not the row's name `TextInput` or the swatch: the delete `IconButton`'s
-    tooltip DOUBLES AS its accessible name (`IconButton::tooltip`'s own doc:
-    "the tooltip text doubles as the AT name for icon-only buttons"), it is
-    exactly `Delete { $name }` / `Supprimer { $name }`, and there is exactly
-    one per row — so the remainder after the fixed prefix is the tag name,
-    no further disambiguation needed. This is the same trick
-    `automation_languages.py` uses for a pill's "Remove X" control rather
-    than the pill's own (differently-worded) label.
+    tooltip doubles as its accessible name (`IconButton::tooltip`), exactly
+    `Delete { $name }` / `Supprimer { $name }`, one per row — so the
+    remainder after the fixed prefix is the tag name.
 
-    The list is virtualised (`list_view.rs`'s own module doc: renders only
-    the rows visible in its viewport, plus a small buffer) and, before the
-    first tag exists, is not even MOUNTED: the palette card wraps it in a
-    `Switcher` whose inactive page "contribute[s] zero work to the arena
-    until visited" (`switcher.rs`). So: no `ListBox` node at all means a
-    genuinely empty, not-yet-mounted list — return `[]` rather than
-    crashing on a missing node. Once it exists, scroll to the very top, then
-    walk down in less-than-a-viewport steps, collecting every row's name as
-    it enters the realized window; a `seen` dict makes re-reading the same
-    row across overlapping windows harmless, and two consecutive passes with
-    nothing new is the signal that the rest has already been seen (the step
-    is smaller than the viewport, so a genuinely new row can never be
-    skipped between two reads).
+    The list is virtualised (renders only the rows visible in its viewport,
+    plus a buffer) and, before the first tag exists, is not even mounted (the
+    palette card wraps it in a `Switcher` whose inactive page contributes no
+    work until visited) — so no `ListBox` node means a genuinely empty list;
+    return `[]` rather than crashing on a missing node. Once it exists,
+    scroll to the top, then walk down in less-than-a-viewport steps,
+    collecting each row's name as it enters the realized window; two
+    consecutive passes with nothing new signals the rest has already been
+    seen.
     """
     lst = next((n for n in s.nodes() if n.get("role") == "ListBox"), None)
     if not lst:
@@ -617,13 +556,9 @@ def read_all_tag_rows(s, max_passes=10):
     def scroll_by(dy):
         """Scroll the list AND the pane's scroll view.
 
-        Sending this only to the `ListBox` silently did nothing: the palette card
-        sits inside the pane's own `ScrollView`, and that is what actually moves.
-        The failure was invisible for a long time because the viewport happens to
-        fit eleven rows — with ten tags everything was on screen and the reader
-        looked correct, and only at thirteen did it start losing the last two
-        (`vaisseau` and `vérifier la continuité`, alphabetically last) and report
-        "expected 13 rows, got 11" as though the preset had under-applied.
+        Sending this only to the `ListBox` silently does nothing: the palette
+        card sits inside the pane's own `ScrollView`, and that is what
+        actually moves.
         """
         targets = [lst["id"]]
         targets += [n["id"] for n in s.nodes()

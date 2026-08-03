@@ -5,82 +5,51 @@
 //!
 //! One place that starts a `backup_now` long operation (manual / on-open /
 //! interval / on-close), records the per-destination success hash + path on
-//! completion, and surfaces a summary toast. Retention now runs **inside** the
-//! long operation (the engine resolves the same directories the UI used to
-//! sweep — see `work_management::backup_now_uc`), so this view-model no longer
-//! touches the filesystem for pruning at all. It holds the reactive singles (to
-//! read the open project's `unique_id`/path without a context) and the backup
-//! settings, and is registered as `app_state` so `App::build` can route the
-//! long-operation events to it and fire its triggers.
+//! completion, and surfaces a summary toast. Retention runs **inside** the long
+//! operation itself (`work_management::backup_now_uc`); this view-model never
+//! touches the filesystem for pruning. It holds the reactive singles (to read
+//! the open project's `unique_id`/path without a context) and the backup
+//! settings, and is registered as `app_state` so `App::build` can route
+//! long-operation events to it.
 //!
-//! **T1-2 — the flush invariant.** Editor text lives in a UI widget's buffer
-//! until `EditorsViewModel::flush_all()` copies it into the store; a backup
-//! only ever sees the store. Every trigger below therefore calls
-//! [`Self::flush`] as its very first action, unconditionally — a two-hour
-//! typing session in an unfocused tab must never be invisible to skip-if-
-//! unchanged. The hook is installed once (`App::build`, as
-//! `editors.flush_all()`) via [`Self::set_flush_hook`] and shared through every
-//! clone of this view-model (the project window's close guard in `windows.rs`,
-//! `App`'s own exit-guard effect, …) via an `Rc<RefCell<..>>` cell, so installing it on one
-//! clone is visible everywhere at once. It defaults to a no-op so headless
+//! **The flush invariant.** Editor text lives in a UI widget's buffer until
+//! `EditorsViewModel::flush_all()` copies it into the store; a backup only ever
+//! sees the store. Every trigger below therefore calls [`Self::flush`] first,
+//! unconditionally — a typing session in an unfocused tab must never be
+//! invisible to skip-if-unchanged. The hook is installed once (`App::build`)
+//! via [`Self::set_flush_hook`] and shared through every clone of this
+//! view-model via an `Rc<RefCell<..>>` cell; it defaults to a no-op so headless
 //! tests can construct the scheduler without an `EditorsViewModel`.
 //!
-//! **On close** it also orchestrates the "back up before quitting" step: the
-//! close guards defer to [`BackupSchedulerViewModel::on_close_flow`], which — if a destination is
-//! reachable — runs the backup and only then performs the real (forced) close;
-//! if *no* destination is reachable it shows a blocking **Retry / Discard-and-
-//! exit** prompt so the user can plug a drive in and retry. The reachability
-//! probe itself (T2-3: an untimed `fs::metadata` per destination) runs off the
-//! UI thread — a hung network destination must not be able to block the user
-//! from quitting the app at all.
+//! **On close**, the close guards defer to
+//! [`BackupSchedulerViewModel::on_close_flow`]: if a destination is reachable
+//! it runs the backup before the real (forced) close; if none is, it shows a
+//! blocking Retry/Discard-and-exit prompt. The reachability probe (`fs::metadata`
+//! per destination) runs off the UI thread, so a hung network destination
+//! can't block quitting.
 //!
-//! **T1-6.** The skip-if-unchanged "does the previous backup still exist"
-//! check (T1-3) needs both the last-known hash *and* the exact path it was
-//! written to. Both now live in [`crate::models::DestinationState`]
-//! (`BackupSettingsService::destination_state`) rather than the hash being
-//! persisted while the path was only cached in this process's memory — a
-//! restart used to forget the path and force one redundant write per
-//! destination before the (in-process-only) cache repopulated. Persisting it
-//! is safe across the two windows that may share `backup.toml` (one process
-//! per project) because the settings service opens the file in cross-process
-//! shared mode (see `models::backup_settings_file`'s module docs).
+//! **Skip-if-unchanged** needs both the last-known hash and the exact path it
+//! was written to — both live in [`crate::models::DestinationState`]
+//! (`BackupSettingsService::destination_state`), persisted rather than cached
+//! only in this process's memory, so a restart doesn't force one redundant
+//! write per destination. Safe across windows sharing `backup.toml` (the
+//! settings service opens it in cross-process shared mode).
 //!
-//! **Phase 3 — toast routing across simultaneously-open Works.** This
-//! view-model is now genuinely per-Work (constructed inside
-//! `sessions::WorkSession::new`, using this Work's own `single_work`/
-//! `single_work_info`/`ids` — never a shared instance), so two Works can
-//! legitimately run their own backup at the same time. Two things follow:
+//! **Per-Work, not shared.** Constructed inside `sessions::WorkSession::new`
+//! using that Work's own `single_work`/`single_work_info`/`ids`, so two Works
+//! can back up concurrently. Every toast is dedup-scoped to this Work's
+//! `work_id` ([`BACKUP_TOAST_ID`] + `crate::toast_scope::ToastWorkExt::scoped_id`,
+//! never a fixed string) and routed with `.target_work(self.ids.work_id.get())`,
+//! which resolves to bastyde's window-scoped toast routing — so a Work B
+//! backup toast renders only in windows currently showing Work B.
 //!
-//! 1. **Dedup id.** Every toast this view-model shows is scoped to this
-//!    Work's own `work_id` via [`BACKUP_TOAST_ID`] +
-//!    `crate::toast_scope::ToastWorkExt::scoped_id`, not a fixed string — see
-//!    [`crate::toast_scope::work_scoped_toast_id`]'s doc for why, and F4's
-//!    note on `backup_now`'s doc for which "current Work" source is
-//!    authoritative here (`self.ids.work_id`, always — never
-//!    `self.single_work.id()`).
-//! 2. **Routing.** Every toast below is built with
-//!    `.target_work(self.ids.work_id.get())` (`crate::toast_scope::ToastWorkExt`),
-//!    which resolves to bastyde's window-scoped toast routing
-//!    (`Toast::target`/`ToastAudience`): `App::build` mints each project
-//!    window's `ToastAudience` from that same `work_id`
-//!    (`ToastRegistry::set_window_audience`), so a Work B backup toast now
-//!    renders — and archives into the bell — only in windows currently
-//!    showing Work B, never in a sibling window on Work A. This used to be a
-//!    real, documented gap (`bastyde`'s toast system was process-wide: one
-//!    `ToastRegistry`, one `ToastHost` per window, all rendering the same
-//!    unfiltered queue) — fixed upstream in `bastyde`, not worked around
-//!    here.
-//!
-//! **Phase 3 correction — capture, don't re-read live.** This view-model is
-//! per-Work, but its `ids`/`single_work` are the *window's* own long-lived
-//! handles (this scheduler outlives any one backup) — an in-place project
-//! switch (`ProjectSwitchViewModel`, gated only on unsaved edits, never on a
-//! backup in flight) reseeds those SAME signals mid-flight. [`Pending::tracked`]
-//! is a [`super::long_op::TrackedOp`], bundling the op id with a
-//! [`super::long_op::CapturedWork`] captured once in [`Self::start`] — see
-//! those types' docs for the full hazard and why every `on_long_op_*`
-//! handler below routes and scopes its toast on `tracked.work_id()`, never
-//! `self.ids.work_id.get()`.
+//! **Capture, don't re-read live.** `ids`/`single_work` are the *window's* own
+//! long-lived handles (this scheduler outlives any one backup), and an
+//! in-place project switch can reseed those same signals mid-flight.
+//! [`Pending::tracked`] is a [`super::long_op::TrackedOp`], bundling the op id
+//! with a [`super::long_op::CapturedWork`] captured once in [`Self::start`] —
+//! every `on_long_op_*` handler below routes and scopes its toast on
+//! `tracked.work_id()`, never `self.ids.work_id.get()`.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -139,16 +108,16 @@ struct Pending {
 pub struct BackupSchedulerViewModel {
     app_ctx: Rc<AppContext>,
     /// This session's own id-only state — needed so [`Self::do_close`] can name
-    /// the *right* Work when it calls `close_work_and_return_to_launcher`/
-    /// `quit_app` (multi-Work migration: those two used to resolve "which Work"
-    /// via `ctx.app_state::<AppIds>()`, a single process-wide slot that can only
+    /// the *right* Work when it calls `close_work_and_return_to_launcher`
+    /// (multi-Work migration: it used to resolve "which Work" via
+    /// `ctx.app_state::<AppIds>()`, a single process-wide slot that can only
     /// ever answer with whichever window's `AppIds` the builder happened to
     /// register — wrong the instant a second Work's window exists).
     ids: AppIds,
     /// This session's own `WorkspaceLayoutViewModel` — needed for the same reason as
     /// `ids`: [`Self::do_close`] hands it straight to
-    /// `close_work_and_return_to_launcher`/`quit_app` so they capture *this* window's
-    /// desk, not whichever window's instance last won `ctx.app_state`'s single slot.
+    /// `close_work_and_return_to_launcher` so it captures *this* window's desk,
+    /// not whichever window's instance last won `ctx.app_state`'s single slot.
     workspace_layout: WorkspaceLayoutViewModel,
     settings: BackupSettingsViewModel,
     single_work: SingleWork,
@@ -162,9 +131,8 @@ pub struct BackupSchedulerViewModel {
     /// "every N hours" means N hours since the *last backup*, whatever triggered
     /// it — not N hours since the timer last armed.
     completed_epoch: Signal<u64>,
-    /// See the module doc's "T1-2 — the flush invariant" section. A Work with
-    /// two windows must flush *both* before a backup, so this is keyed per
-    /// window, not the single last-writer-wins cell it used to be.
+    /// See the module doc's "the flush invariant" section. A Work with two
+    /// windows must flush *both* before a backup, so this is keyed per window.
     flush_hooks: FlushHooks,
     /// The app-global quit sequencer, if one has been injected
     /// ([`Self::set_quit_sequencer`]). `None` in tests and in the throwaway
@@ -199,8 +167,8 @@ impl BackupSchedulerViewModel {
     }
 
     /// This session's own `WorkspaceLayoutViewModel` — see the field's doc.
-    /// Exposed so `guard_unsaved_exit`'s immediate-discard branches (which call
-    /// `close_work_and_return_to_launcher`/`quit_app` directly, bypassing
+    /// Exposed so `guard_unsaved_exit`'s immediate-discard branch (which calls
+    /// `close_work_and_return_to_launcher` directly, bypassing
     /// [`Self::do_close`]) can pass the *right* one too.
     pub(crate) fn workspace_layout(&self) -> &WorkspaceLayoutViewModel {
         &self.workspace_layout
@@ -239,9 +207,9 @@ impl BackupSchedulerViewModel {
         self.flush_hooks.borrow_mut().remove(&window_id);
     }
 
-    /// T1-2: flush every registered window's live editor buffers into the
-    /// store. Called unconditionally as the first statement of every trigger —
-    /// see the module doc.
+    /// Flush every registered window's live editor buffers into the store.
+    /// Called unconditionally as the first statement of every trigger — see
+    /// the module doc.
     fn flush(&self) {
         let hooks: Vec<Rc<dyn Fn()>> = self.flush_hooks.borrow().values().cloned().collect();
         for hook in hooks {
@@ -300,20 +268,17 @@ impl BackupSchedulerViewModel {
     /// [`crate::toast_scope::ToastWorkExt::scoped_id`], reading `self.ids.work_id`
     /// — the SAME source `.target_work(...)` reads right next to it.
     ///
-    /// **F4 — one source, not two.** This used to read `self.single_work.id()`
-    /// for the dedup id while `.target_work(self.ids.work_id.get())` routed on
-    /// a *different* "current Work" signal right next to it. They agreed only
-    /// because `ProjectLifecycleViewModel::seed` happens to set both,
-    /// `ids.work_id` first, `single_work.set_id` one line later, in the same
-    /// synchronous call — nothing enforced that ordering, and nothing would
-    /// fail loudly if a future change set one without the other.
-    /// `self.ids.work_id` is the authoritative answer to "which Work"
-    /// throughout this file already — it's what every captured
-    /// `Pending::tracked`'s `work_id()` derives from (`CapturedWork::now(&self.ids)`) and
-    /// what every post-capture toast below routes on — so every toast here
-    /// reads that one signal, never `self.single_work.id()`.
+    /// **One source, not two.** `self.ids.work_id` is the authoritative answer
+    /// to "which Work" throughout this file — it's what every captured
+    /// `Pending::tracked`'s `work_id()` derives from
+    /// (`CapturedWork::now(&self.ids)`) and what every post-capture toast
+    /// routes on — so every toast here, including the dedup id, reads that one
+    /// signal, never `self.single_work.id()` (a *different* "current Work"
+    /// signal that only agrees with `ids.work_id` because
+    /// `ProjectLifecycleViewModel::seed` happens to set both, in order, with
+    /// nothing enforcing it).
     ///
-    /// **F2 — no id at all when no Work is open.** `scoped_id` skips the
+    /// **No id at all when no Work is open.** `scoped_id` skips the
     /// `.id(...)` call entirely when `work_id` is `None` (see
     /// [`crate::toast_scope::work_scoped_toast_id`]'s doc): two windows with
     /// no Work open yet (both have this globally-registered action live
@@ -403,7 +368,7 @@ impl BackupSchedulerViewModel {
     /// perform `then`. Called from the close guards / the SaveWork-completion
     /// handler once the project is in a saved-consistent state.
     ///
-    /// The reachability probe (T2-3) runs off the UI thread: `is_destination_available`
+    /// The reachability probe runs off the UI thread: `is_destination_available`
     /// is an untimed `fs::metadata` per destination, and this runs during app
     /// exit — a hung destination must not be able to block quitting.
     pub fn on_close_flow(&self, ctx: &mut EventContext, then: PendingExit) {
@@ -469,18 +434,15 @@ impl BackupSchedulerViewModel {
 
     /// The Work id the BACKEND `BackupNowDto` itself is tagged with.
     ///
-    /// **F1 — one source, not two.** This used to read
-    /// `self.single_work.id()` while, two lines below in [`Self::start`],
-    /// `Pending::tracked`'s `work_id()` captures `self.ids` via `CapturedWork::now` for the
-    /// exact same operation. They agreed today only because
-    /// `ProjectLifecycleViewModel::seed` sets `ids.work_id` then
-    /// `single_work.set_id` one line later, with nothing enforcing that
-    /// ordering — in that window, a backup could be dispatched to the
-    /// backend tagged with one Work while its own completion toast (routed
-    /// through the `Pending::tracked`'s `work_id()` captured right next to it) reports a
-    /// different one. `self.ids.work_id` is the authoritative "current Work"
-    /// signal throughout this file already, so this reads that one signal,
-    /// never `self.single_work.id()`. Split out so a test can pin it without
+    /// **One source, not two.** `self.ids.work_id` is the authoritative
+    /// "current Work" signal throughout this file, so this reads that one
+    /// signal, never `self.single_work.id()` — a *different* signal that
+    /// [`Self::start`]'s `Pending::tracked`'s `work_id()` (which captures
+    /// `self.ids` via `CapturedWork::now` for the exact same operation) only
+    /// agrees with because `ProjectLifecycleViewModel::seed` happens to set
+    /// both, in order, with nothing enforcing it — reading the wrong one here
+    /// could dispatch a backup tagged with one Work while its own completion
+    /// toast reports a different one. Split out so a test can pin it without
     /// driving the real long-operation command.
     fn backup_now_dto_work_id(&self) -> u64 {
         self.ids.work_id.get().unwrap_or_default()
@@ -500,9 +462,8 @@ impl BackupSchedulerViewModel {
         let dirs = Self::dirs(policy);
         let uid_owned = uid.to_string();
         let settings = self.settings.clone();
-        // T1-6: both the hash and the exact written path now come from the
-        // same persisted `DestinationState`, so this survives a restart —
-        // no more in-process-only path cache.
+        // Both the hash and the exact written path come from the same
+        // persisted `DestinationState`, so this survives a restart.
         let (hashes, paths) = Self::build_last_known(&dirs, force, policy.skip_if_unchanged, |d| {
             match settings.service().destination_state(&uid_owned, d) {
                 Some(s) => (s.last_success_hash, s.last_success_path),
@@ -515,9 +476,8 @@ impl BackupSchedulerViewModel {
             directories: dirs.clone(),
             last_known_hashes: hashes,
             last_known_paths: paths,
-            // Retention now runs inside the operation, off the UI thread (T1-7):
-            // every backup run also sweeps its destinations, exactly like the UI
-            // used to after every write/skip.
+            // Retention runs inside the operation, off the UI thread: every
+            // backup run also sweeps its destinations.
             prune: true,
             retention_mode: to_engine_retention_mode(policy.retention_mode),
             keep_last_n: policy.keep_last_n as u64,
@@ -568,7 +528,7 @@ impl BackupSchedulerViewModel {
     /// unchanged check consumes. `force` (manual "Back up now") and
     /// `skip_if_unchanged = false` both bypass `lookup` entirely, forcing a
     /// fresh write everywhere. Split out from [`Self::start`] so it's
-    /// unit-testable without a running app (T2-10).
+    /// unit-testable without a running app.
     fn build_last_known(
         dirs: &[String],
         force: bool,
@@ -587,9 +547,9 @@ impl BackupSchedulerViewModel {
     }
 
     /// Perform the deferred close: either return to the Launcher (see
-    /// `crate::app::close_work_and_return_to_launcher`) or really terminate
-    /// the process (see `crate::app::quit_app`) — the two outcomes a guarded
-    /// close can end in.
+    /// `crate::app::close_work_and_return_to_launcher`) or hand control back to
+    /// the quit sequencer ([`Self::set_quit_sequencer`]) — the two outcomes a
+    /// guarded close can end in.
     fn do_close(&self, ctx: &mut EventContext, then: PendingExit) {
         match then {
             PendingExit::ReturnToLauncher => crate::app::close_work_and_return_to_launcher(
@@ -627,8 +587,7 @@ impl BackupSchedulerViewModel {
 
     /// A progress tick: update the "backing up…" toast in place. The engine
     /// reports stable machine keys (it has no i18n layer — see
-    /// `backup_now_uc.rs`), mapped through `tr!()` here (T2-9) rather than shown
-    /// raw.
+    /// `backup_now_uc.rs`), mapped through `tr!()` here rather than shown raw.
     pub fn on_long_op_progress(&self, ctx: &mut EventContext, event: &Event) {
         let Some(pending) = self.pending.get() else {
             return;
@@ -677,11 +636,11 @@ impl BackupSchedulerViewModel {
             let now = chrono::Utc::now().to_rfc3339();
             let c = classify_result(&pending.dirs, &res);
 
-            // Record the hash + the exact written path (T1-6 — both persisted
-            // now, see `DestinationState::last_success_path`) for every
-            // destination this run actually wrote to, in lockstep with
-            // `res.succeeded_paths` (built by the engine in the same directory
-            // order, skipping skipped/failed).
+            // Record the hash + the exact written path (see
+            // `DestinationState::last_success_path`) for every destination this
+            // run actually wrote to, in lockstep with `res.succeeded_paths`
+            // (built by the engine in the same directory order, skipping
+            // skipped/failed).
             for (d, p) in c.succeeded_dirs.iter().zip(res.succeeded_paths.iter()) {
                 self.settings.record_destination_success(
                     &pending.uid,
@@ -704,10 +663,10 @@ impl BackupSchedulerViewModel {
                 e.set(e.get().wrapping_add(1));
             }
 
-            // T2-8: thread the engine's failure reasons + retention delete
-            // errors into the toast as a details line (never the headline —
-            // that stays a translated sentence; the raw OS/anyhow strings are
-            // data, shown behind a "Details" action).
+            // Thread the engine's failure reasons + retention delete errors into
+            // the toast as a details line (never the headline — that stays a
+            // translated sentence; the raw OS/anyhow strings are data, shown
+            // behind a "Details" action).
             let detail = failure_detail(&res.failed_reasons, &res.delete_errors);
 
             // Quiet on a pure no-op close (nothing written, nothing failed); noisy
@@ -792,7 +751,7 @@ impl BackupSchedulerViewModel {
         if let Some(then) = pending.close {
             return self.prompt_backup_failed(ctx, then);
         }
-        // T2-8: headline stays a translated sentence; the raw error string is a
+        // Headline stays a translated sentence; the raw error string is a
         // detail behind a "Details" action, not the headline itself.
         show_result_toast(
             ctx,
@@ -894,7 +853,7 @@ fn failure_detail(reasons: &[String], delete_errors: &[String]) -> Option<String
 
 /// Show `toast`, attaching a **Details** action (opening a plain message box
 /// with the raw content) when `detail` is `Some` — the raw OS/anyhow strings
-/// stay a detail, never the headline (T2-8).
+/// stay a detail, never the headline.
 fn show_result_toast(ctx: &mut EventContext, toast: Toast, detail: Option<String>) {
     let toast = match detail {
         Some(d) => toast.action(ToastAction::primary(tr!(backup_details()), move |c| {
@@ -913,7 +872,7 @@ fn show_result_toast(ctx: &mut EventContext, toast: Toast, detail: Option<String
 /// whether the whole run produced nothing at all (every destination failed —
 /// the on-close backstop cares about exactly this). Pure — takes only the
 /// plain lists a [`BackupResultDto`] carries, so it's unit-testable without a
-/// running app (T2-10).
+/// running app.
 struct ResultClassification {
     succeeded_dirs: Vec<String>,
     ok: usize,

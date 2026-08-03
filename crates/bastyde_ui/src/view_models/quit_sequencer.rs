@@ -3,18 +3,8 @@
 
 //! `QuitSequencer` — Ctrl+Q with several projects open.
 //!
-//! ## What it replaces
-//!
-//! Quit used to *refuse*: with any other Work dirty it named them in a message box
-//! and did nothing (`other_dirty_work_titles`), and with none dirty it force-closed
-//! only **its own** window — so with two windows open, "Quit" did not quit. Both
-//! halves were defensible while two simultaneous projects were an exotic case. Since
-//! Phase 4 made Skribisto single-instance, several windows in one process is the
-//! ordinary shape, and a Quit that neither quits nor explains itself is not.
-//!
-//! ## What it does instead
-//!
-//! Accounts for **every** open Work in turn, then closes **every** window:
+//! Accounts for **every** open Work in turn (not just this window's), then
+//! closes **every** window:
 //!
 //! 1. Snapshot the open Works ([`WorkRegistry::open_work_ids`]) — once, at the
 //!    start. A window opened while the sequence is running is deliberately not

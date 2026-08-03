@@ -26,12 +26,14 @@
 //! See [`WorkspaceLayoutViewModel`](crate::view_models::WorkspaceLayoutViewModel)
 //! for the capture/restore that translates ordinals ↔ store ids.
 //!
-//! **Cross-process safety.** Skribisto runs **one process per project**, and every
-//! instance shares this same `workspace.toml`. Two instances only ever touch two
-//! *different* projects' rows, and `SettingsFile`'s locked read-modify-write
-//! ([`mutate`](bastyde::settings::SettingsFile::mutate)) keeps those writes from
-//! clobbering each other. A process never needs another's live layout, so — unlike
-//! `search.toml` — this file is not registered as a `Reloadable`.
+//! **Cross-process safety.** Skribisto is single-instance: normally one process
+//! hosts every open project window, sharing this same `workspace.toml`. Two
+//! windows (or, rarely, a `--new-instance` fallback process) writing different
+//! projects' rows never clobber each other — `SettingsFile`'s locked
+//! read-modify-write ([`mutate`](bastyde::settings::SettingsFile::mutate)) is the
+//! only write mode. No window needs another's *live* layout (each
+//! captures/restores its own at close/load), so — unlike `search.toml` — this
+//! file is not registered as a `Reloadable`.
 
 use std::time::Duration;
 

@@ -3,10 +3,10 @@
 
 //! The Overview table's columns.
 //!
-//! Six: **Title** (the tree column — twist, indent, icon), **Type**, **Label**, **Tags**,
-//! **Own words** and **Total words**. Title and Label are editable in place; Tags is
-//! edited through its own picker; the derived columns are read-only, because a word count
-//! is not something you type.
+//! Eight: **Title** (the tree column — twist, indent, icon), **Type**, **Label**, **Tags**,
+//! **Own words**, **Total words**, **Comments** (open) and **Total comments**. Title and
+//! Label are editable in place; Tags is edited through its own picker; the derived columns
+//! are read-only, because a word count is not something you type.
 //!
 //! Every column id is a constant from `crate::models`, beside the comparator it selects —
 //! a column whose id drifted from its comparator would render fine and silently stop
@@ -29,13 +29,12 @@ use crate::models::{
 
 /// Build the column set for a table bound to `vm`.
 ///
-/// **The widths are a budget, not preferences.** The table has no horizontal scrolling
-/// yet, so a column that doesn't fit is a column that is *clipped* — and the first
-/// casualty is the trailing one, which is `Total`, the number the writer most wants. The
-/// four fixed columns therefore cost 312 dp between them and the two flexible ones carry
-/// low minimums (120 + 72), so the whole set still fits an editor pane in a split window
-/// (~610 dp) with the outline and inspector docks open. Widen any of them and check that
-/// case — the margin is now thin.
+/// **The widths are a budget.** `TreeTableView` falls back to an internal horizontal
+/// scrollbar for overflow, but the goal is a set that never needs it: the six fixed
+/// columns cost 464 dp between them and the two flexible ones carry low minimums (120 +
+/// 72), so the whole set still fits an editor pane in a split window (~610 dp) with the
+/// outline and inspector docks open. Widen any of them and check that case — the margin
+/// is now thin.
 pub(super) fn overview_columns(vm: &OverviewViewModel) -> Vec<Column<OverviewRow>> {
     vec![
         title_column(vm),

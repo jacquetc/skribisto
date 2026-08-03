@@ -9,9 +9,8 @@
 //! its own operation id. That is why an export's completion does not confuse the backup
 //! scheduler: the scheduler sees the event and drops it.
 //!
-//! Six view-models × up to four events used to mean twenty-odd near-identical
-//! `subscribe_event_with_ctx` blocks written out longhand — about 170 lines whose only
-//! variation was a method name. [`route`] collapses that to one line per event.
+//! [`route`] collapses the resulting six-view-models × up-to-four-events grid of
+//! near-identical `subscribe_event_with_ctx` blocks to one line per event.
 //!
 //! `EditorsViewModel`'s own save routing is **not** here: it lives in `App::build` beside
 //! the exit guards, because its completion handler also drives the deferred close/switch

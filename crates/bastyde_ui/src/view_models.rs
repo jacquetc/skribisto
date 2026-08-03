@@ -11,14 +11,17 @@
 //! The three MVVM layers in `bastyde_ui`:
 //!   * **Model** — `models/` (reactive `bastyde::data` adapters over the Qleany
 //!     backend) + the Qleany controllers/use-cases below them.
-//!   * **View** — the widgets (`app.rs`, `editor_tab.rs`, `settings_panel.rs`).
+//!   * **View** — the widgets (`app.rs`, `tabs/`, `settings.rs`, the `panels/` modals).
 //!   * **ViewModel** — this module. Sits between the two; plain Rust, so it
 //!     unit-tests headless with no `WidgetTree`/GPU.
 //!
 //! "Controller" is Qleany's (backend: UI → Controllers → Use Cases); view-models
 //! sit *above* that line.
 //!
-//! One file per view-model (each self-documents its ownership shape):
+//! One file per view-model — most are `<name>::<Name>ViewModel`; a couple ([`go`]'s
+//! `GoAvailability`, [`quit_sequencer`]'s `QuitSequencer`) skip the suffix but are
+//! view-models all the same. This list is not exhaustive — each file self-documents
+//! its own ownership shape — it highlights the shapes worth knowing before adding one:
 //!   * [`editors`] — `EditorsViewModel`: single-instance live state (owns the tab
 //!     list + selection).
 //!   * [`stream`] — `StreamViewModel`: per-container-tab live state (owns the
@@ -58,11 +61,25 @@
 //!     let a second project window's Go menu reflect the wrong window's
 //!     focused item.
 //!
-//! Not every file here is a view-model. [`view_state`] is a plain shared data
-//! type (`ViewState` + the ports a mounted pane publishes), on the same footing
-//! as [`long_op`] and [`save_queue`]: it lives here because two unrelated
-//! consumers need it — the distraction-free surface's caret handoff and
-//! `workspace.toml`'s per-tab restore — and neither owns it.
+//! Not every file here is a view-model — pure support/data, owned by no widget:
+//!   * [`view_state`] — `ViewState` + the ports a mounted pane publishes: shared
+//!     by the distraction-free surface's caret handoff and `workspace.toml`'s
+//!     per-tab restore, neither of which owns it.
+//!   * [`long_op`], [`save_queue`], [`save_status`], [`open_failure`] — shared
+//!     `Origin::LongOperation` payload parsing, the save-coalescing state
+//!     machine, the save indicator's pure decision table, and the "couldn't
+//!     open" toast text.
+//!   * [`binder_ops`], [`project_switcher`] — shared plumbing for the four
+//!     binder-editing view-models, and the pure functions behind the
+//!     project-switcher popover.
+//!   * [`caret_highlight`], [`typewriter`], [`synopsis_placement`],
+//!     [`word_count_status`] — pure preference vocabulary read by both a
+//!     settings pane and the editor/status-bar wiring (each says so in its own
+//!     module doc).
+//!   * [`progress_recorder`], [`mention_index`] — app-level services with no
+//!     view of their own (word-count history, the cross-work mention index),
+//!     wired once in `App::build` and registered as `app_state`.
+//!   * [`timers`] — the pure autosave/backup countdown policy.
 //!
 //! Cross-view-model rules (keep the dependency graph a DAG):
 //!   * A view-model may hold framework model handles and call *down* into them.

@@ -10,20 +10,15 @@ use bastyde::widgets::tooltip::TooltipContent;
 use super::super::*;
 
 /// Work: `<name>` ▸ Structure — the per-project chapter storage mode, backed by
-/// the shared `SingleWork` (entity-backed, undoable via the Work's stack). The
-/// `Toggle` is bridged to `chapter_mode` (checked = flat) with two effects: one
-/// mirrors external changes (refresh/undo) into the toggle, the other writes +
-/// saves on a user toggle. Both guard on the current value to avoid a loop.
+/// the shared `SingleWork` (entity-backed, undoable via the Work's stack).
 pub(in crate::settings) fn work_structure_pane(
     ctx: &mut BuildContext,
     vm: &WorkSettingsViewModel,
     work_title: String,
 ) -> impl Widget {
-    // The `Toggle` is bridged to the entity's `chapter_mode` with two effects: one mirrors
-    // external changes (a refresh, an undo) into the toggle, the other pushes a user toggle
-    // back. Both guard on the current value — without that they would drive each other in a
-    // loop. The write-and-persist half is `WorkSettingsViewModel::set_flat_chapters`, which
-    // owns its own no-op guard too, since this effect also fires on every rebuild.
+    // The `Toggle` is bridged to the entity's `chapter_mode` (checked = flat) with two
+    // guarded effects — one mirrors external changes (refresh/undo) in, the other pushes a
+    // user toggle back via `WorkSettingsViewModel::set_flat_chapters` — to avoid a loop.
     let mode = vm.chapter_mode();
     let flat: Signal<bool> = Signal::new(vm.flat_chapters());
     {

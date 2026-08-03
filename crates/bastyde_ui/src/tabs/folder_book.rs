@@ -4,10 +4,10 @@
 //! `Folder/Book` — the manuscript root container: its parts, chapters and scenes.
 //!
 //! Shares the [`folder_segmented`](super::shared::folder_segmented) body with the
-//! Chapter and Part containers: **Synopsis** (book title + subtitle + synopsis), **Full
-//! Book** (every part heading, chapter heading and scene, as one continuous
-//! manuscript), and **Full Synopsis** (the same rows as an editable outline of the whole
-//! book).
+//! Chapter and Part containers: **Book** (title + subtitle + synopsis), **Full Book**
+//! (every part heading, chapter heading and scene, as one continuous manuscript), and
+//! **Full Synopsis** (the same rows as an editable outline of the whole book) — plus the
+//! Book-only **Pace** and **Analysis** segments below.
 
 use bastyde::prelude::*;
 

@@ -24,19 +24,12 @@
 //!
 //! ## Why there is no implicit scope
 //!
-//! An earlier design let the nearest preceding `Book` supply a language to everything after
-//! it. It was removed deliberately: the binder tree is **organisational only** and book
-//! structure is a state machine over the flat item stream, so "the Book above" was a
-//! stream-position rule that no other container could share. A language set on a *chapter*
-//! folder silently did nothing, which is exactly the confusion a writer meets first — and the
-//! rule could not be generalised, because `Work.chapter_mode` encodes a chapter either as a
-//! real indent-nested folder (`Folder`) or as a bare positional marker with no nesting at all
-//! (`Flat`).
-//!
-//! Propagation is now **explicit**: an item with a subtree offers "Apply to children", which
-//! writes the value onto every descendant in one undo step (see
-//! `OutlineViewModel::apply_dict_language_to_subtree`). Every item then means exactly what it
-//! says, and what the Inspector shows on an item is what that item is checked against.
+//! No container lends its language to descendants — the binder tree is organisational only,
+//! so "the nearest Book above" would be a stream-position rule no other container could
+//! share. Propagation is instead **explicit**: an item with a subtree offers "Apply to
+//! children", writing the value onto every descendant in one undo step (see
+//! `OutlineViewModel::apply_dict_language_to_subtree`). Every item then means exactly what
+//! it says, and what the Inspector shows on an item is what that item is checked against.
 //!
 //! Both `run_search` and `replace_in_project` resolve through this one function. Two copies
 //! would drift, and the way a writer meets that drift is a rename that finds a word under
@@ -296,14 +289,9 @@ mod tests {
         assert_eq!(got[&2], tags("tr-TR"));
     }
 
-    /// **A Book no longer supplies a language to anything but itself.** An untagged scene
-    /// takes the *Work's* language even when it sits after a tagged Book — the writer
-    /// propagates a language with "Apply to children", which writes a real tag onto each
-    /// descendant, and this function then simply reads it back.
-    ///
-    /// This is the deliberate replacement for the old Book-scope rule; it is what makes a
-    /// language set on a *chapter* folder behave the same as one set on a Book (neither
-    /// reaches a descendant on its own).
+    /// A Book supplies a language to nothing but itself. An untagged scene takes the
+    /// *Work's* language even when it sits after a tagged Book — the writer propagates one
+    /// explicitly with "Apply to children".
     #[test]
     fn a_book_does_not_lend_its_language_to_what_follows_it() {
         let got = resolve(
@@ -337,8 +325,7 @@ mod tests {
     }
 
     /// Resolution is per-item, so order carries no meaning — the same items shuffled resolve
-    /// identically. (Under the old Book-scope rule this was false, which is why the caller
-    /// had to promise document order.)
+    /// identically.
     #[test]
     fn order_does_not_change_any_items_answer() {
         let forward = resolve("fr-FR", &[book(1, "tr-TR"), scene(2, ""), scene(3, "la")]);
@@ -374,13 +361,9 @@ mod tests {
         assert!(got.values().all(|t| *t == tags("tr")));
     }
 
-    /// The bug the blank guard exists to prevent, at the level where it *changes behaviour*
-    /// rather than merely degrading: an item holding a blank must still inherit.
-    ///
-    /// Testing `Vec::is_empty()` here let `[""]` count as tagged, so the item resolved to
-    /// `[""]` — untailored — while `LanguagePillField` and the Inspector, which both ignore
-    /// blanks, went on showing the writer the inherited language. The displayed language and
-    /// the one used for folding disagreed.
+    /// An item holding only a blank tag must still inherit — `Vec::is_empty()` would count
+    /// `[""]` as tagged and stop it inheriting, while the pill field and Inspector (which
+    /// ignore blanks) would keep showing it as inherited.
     #[test]
     fn an_item_holding_only_a_blank_still_inherits() {
         let mut blank = scene(1, "");
@@ -411,10 +394,8 @@ mod tests {
         assert!(has_tags(&tags("fr-FR")));
     }
 
-    /// The hazard the list shape introduces that the string never could: a real `Vec` can
-    /// hold an empty element. The UI's pill field can leave one behind, and a blank primary
-    /// while a real tag remains would silently untailor the fold — the exact class of bug the
-    /// old `split_whitespace` grammar made impossible by construction.
+    /// A real `Vec` can hold an empty element (the UI's pill field can leave one behind); a
+    /// blank primary while a real tag remains would silently untailor the fold.
     #[test]
     fn a_blank_entry_never_becomes_the_primary() {
         let list = vec![String::new(), "  ".to_string(), "tr-TR".to_string()];

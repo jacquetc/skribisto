@@ -79,18 +79,13 @@ pub(crate) fn tree_with_settings(app_ctx: &Rc<AppContext>) -> WidgetTree {
 /// `ctx.show_toast(...)` inside a wired handler reaches the SAME registry the
 /// caller can then inspect via [`ToastRegistry::live_count`].
 ///
-/// **Why this exists.** The Phase 3 toast-routing fix (F1/F2: a static
-/// `Toast::id` must be folded through `work_scoped_toast_id` per Work, or two
-/// windows showing different Works collide in the process-wide
-/// `ToastRegistry`) is easy to "prove" with a test that only calls
-/// `work_scoped_toast_id(...)` twice and asserts the two strings differ — but
-/// that kind of test never touches the real call site at all: reverting the
-/// call site back to a bare static id still passes it. Driving the ACTUAL
-/// view-model method through a real `EventContext` (wire a `Button` to it,
-/// then [`click`] it) and asserting on `registry.live_count()` closes that
-/// hole — a bare id collapses two Works' toasts into ONE live entry
-/// (`ToastRegistry::enqueue`'s update-in-place merge finds the matching id
-/// and overwrites it in place), which a real registry actually catches.
+/// **Why this exists.** A test that only calls `work_scoped_toast_id(...)`
+/// twice and compares the strings never touches the real call site — reverting
+/// it to a bare static id would still pass. Driving the ACTUAL view-model
+/// method through a real `EventContext` (wire a `Button` to it, then
+/// [`click`] it) and asserting on `registry.live_count()` catches that: a bare
+/// id collapses two Works' toasts into one live entry via
+/// `ToastRegistry::enqueue`'s update-in-place merge.
 pub(crate) fn tree_with_toast_registry(
     app_ctx: &Rc<AppContext>,
     registry: &ToastRegistry,

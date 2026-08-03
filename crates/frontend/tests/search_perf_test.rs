@@ -9,8 +9,8 @@
 //! thread**.
 //!
 //! This is the measurement the corpus cache is designed against — run it with
-//! `--nocapture -- --ignored` to see the numbers. The `#[test]` below it is the guard that
-//! keeps the answer honest once the cache exists.
+//! `--nocapture -- --ignored` to see the numbers. The two `#[test]`s below it are the
+//! guards that keep the answer honest.
 
 use std::time::Instant;
 

@@ -432,13 +432,9 @@ impl<'a> Builder<'a> {
                     "",
                 );
                 // Set after construction rather than as two more `make_item` parameters:
-                // it already takes ten, and only story-bible objects have either.
-                //
-                // Plume has carried these aliases all along; the importer used to flatten
-                // them into the synopsis metadata line, where they were prose rather than
-                // data. As a real field they make an imported project's mention index work
-                // on day one with no author effort — the single strongest reason to import
-                // them at all.
+                // it already takes ten, and only story-bible objects have either. As a
+                // real field (not synopsis prose) aliases make the mention index work
+                // on an imported project with no author effort.
                 obi.item.aliases = obj.aliases.clone();
                 obi.item.tag_ids = vec![group_tag_id];
                 out.push(obi);
@@ -820,15 +816,9 @@ impl<'a> Builder<'a> {
                     word_count_goal: 0,
                     char_count_goal: 0,
                     dict_language: Vec::new(),
-                    // `make_item` is the single item constructor — it builds both ordinary
-                    // tree items AND the story-bible objects (see the `for obj in
-                    // &group.objs` loop), and it is those objects that carry Plume's
-                    // `aliases` attribute. That attribute is currently flattened into the
-                    // note's prose metadata line by `build_obj_synopsis` instead of landing
-                    // here, so structured alias data is lost on import. Threading it
-                    // through (with a per-caller argument, since tree items have none) is
-                    // its own change, together with synthesising tags from the story-bible
-                    // group names and status badges.
+                    // Empty here; story-bible objects (the only nodes with aliases) get
+                    // theirs set post-construction in `build_story_bible` — tree items
+                    // never have any.
                     aliases: Vec::new(),
                     inline_contents,
                     prose_refs,
@@ -917,15 +907,11 @@ impl IdGen {
     }
 }
 
-/// Compose an attendance obj's synopsis (plain Djot text, *not* HTML): its
-/// quick-details paragraph, then a metadata line of aliases · box labels ·
-/// `<spinbox_label> <value>`.
 /// The synopsis shown on an imported story-bible note: the quick-details paragraph, then a
 /// metadata line of box labels · spin-box value.
 ///
-/// `obj.aliases` is deliberately absent. It used to lead this line, which turned structured
-/// data into prose — the aliases now live on `BinderItem.aliases`, where the mention index
-/// can actually use them, and repeating them here would only be noise.
+/// `obj.aliases` is deliberately absent from this text — they live on `BinderItem.aliases`
+/// instead, where the mention index can actually use them.
 fn build_obj_synopsis(obj: &PlumeObj, spinbox_label: &str) -> String {
     let mut meta: Vec<String> = Vec::new();
     for label in &obj.box_labels {

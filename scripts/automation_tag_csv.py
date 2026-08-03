@@ -4,47 +4,17 @@
 
 """Drive a live Skribisto and check what the Settings > Work > Tags CSV
 Import.../Export... feature can actually be verified through a GUI-automation
-bridge -- which, after tracing the whole chain from the button to the OS, is
-NOT the CSV round trip the plan originally asked for.
+bridge -- which is NOT the CSV round trip the plan originally asked for.
 
-Both buttons (`crates/bastyde_ui/src/settings/panes/work_tags.rs:236,267`)
-build a `FileDialogRequest` and hand it to `ctx.pick_file`/`ctx.save_file`.
-That opens a real OS file chooser (on this Linux/KDE session, the
-`org.freedesktop.portal.FileChooser` D-Bus service) -- a window that belongs
-to a different process entirely. Tracing why that is unreachable, not assumed:
-
-  * `bastyde-app/src/app.rs::install_file_dialog` always registers the real
-    `RfdAsyncBackend`. The test-only `MemoryFileDialog` backend exists in
-    `bastyde-platform/src/file_dialog.rs`, but Skribisto's `main.rs` never
-    wires it in -- there is no automation-mode swap.
-  * `bastyde-automation/src/mcp_schema.rs` lists every tool this bridge
-    exposes (`snapshot_tree`, `inject_pointer`, `inject_key`, ...). None of
-    them is a file-dialog tool, and there is no scripted-result queue like
-    `MemoryFileDialog::enqueue` reachable from outside the process.
-  * `bastyde-automation/src/executor.rs` marks `ListWindows` as "served by
-    the host (window manager / headless shim)" -- i.e. bastyde-owned windows
-    only. There is no OS-level input path anywhere in the stack (no
-    XTest/uinput/enigo), so even a located dialog window could not be typed
-    into or clicked.
-  * `inject_key` (rule of this house, learned the hard way) reaches the
-    FOCUSED BASTYDE WIDGET, not whatever window the compositor currently
-    gives keyboard focus to -- so not even Escape can dismiss a portal
-    dialog once it is open.
-  * The view-model's own test author already hit this exact wall:
-    `crates/bastyde_ui/src/view_models/tags.rs`, doc comment on
-    `an_exported_file_is_readable_back_from_disk`, says outright "the UI path
-    around it goes through a native file dialog, which no automation probe
-    can drive, so this is the furthest out the export can be checked at all."
-  * `scripts/automation_unsaved_guard.py` independently notes that New Work's
-    confirmation is "the only one [door] whose confirmation isn't a native OS
-    file dialog the bridge cannot see" -- i.e. every other probe in this
-    directory already treats a file dialog as a hard stop, not a target.
-
-Given that wall, clicking Import.../Export... here would not just fail to
-verify anything -- it would pop a real, un-dismissable file-chooser window on
-the desktop this happens to run on and leave it there after the probe exits,
-because no teardown path this bridge has can close a window it cannot even
-enumerate. That is a worse outcome than a probe that declines to try. So:
+Both buttons build a `FileDialogRequest` and hand it to
+`ctx.pick_file`/`ctx.save_file`, which opens a real OS file chooser
+(`org.freedesktop.portal.FileChooser` on this Linux/KDE session) belonging to
+a different process. Skribisto wires no test-only file-dialog backend, the
+automation bridge exposes no file-dialog tool, and `inject_key` only reaches
+the focused bastyde widget, not whatever window the compositor gives
+keyboard focus to -- so this bridge cannot see, type into, or even dismiss
+that dialog. Clicking Import.../Export... here would pop a real,
+un-dismissable file-chooser window with no way to close it. So:
 
     THIS PROBE NEVER INVOKES EITHER BUTTON.
 
@@ -52,35 +22,24 @@ What it verifies instead, live, without opening the dialog:
 
   1. the fixture's baseline palette in the Settings > Work > Tags pane is
      exactly the three fixture tags with their real colours (#FFFAFA /
-     #FF0000 / #000000) and the pane's own "3 tags"/"3 étiquettes"
-     count pill agrees -- the data half of the plan's assertion 1, read
-     directly rather than through a file no click can ever produce;
+     #FF0000 / #000000) and the pane's own "3 tags"/"3 étiquettes" count
+     pill agrees;
   2. the Import.../Export... buttons exist, are each found EXACTLY ONCE
-     inside the pane (not the title bar's unrelated "Export" split-button,
-     not a hypothetical Export command-palette entry sharing the word), are
-     enabled, and are not clipped past the pane's right edge -- i.e. the
-     wiring the plan's assertions 1-5 would ride on, if the dialog were not
-     in the way.
+     inside the pane, are enabled, and are not clipped past the pane's right
+     edge -- the wiring the CSV round trip would ride on, if the dialog were
+     not in the way.
 
 None of the plan's five CSV-round-trip assertions (write + parse the export,
 edit externally, re-import with a case-insensitive skip, 3 -> 5 -> one-undo
--> 3) are exercised here. They cannot be, by any GUI-automation probe against
-this binary, for the reasons above. Every place below where this probe stops
-short says so explicitly, with the assertion number it would have covered --
-this script must never be mistaken for a green light on the CSV round trip.
-The CSV format and the case-insensitive dedup themselves already have
-`#[cfg(test)]` coverage that does not need a window at all:
+-> 3) are exercised here; they cannot be, by any GUI-automation probe against
+this binary. That coverage instead lives in
 `crates/bastyde_ui/src/view_models/tags.rs::tests::csv_round_trips` and
-`::an_exported_file_is_readable_back_from_disk`. Driving the round trip and
-the single-undo behaviour through the real `TagsViewModel` (bypassing only
-the dialog, the same boundary that existing test already sits on) is a Rust
-test, not a Python probe -- there is no live-app substitute for it.
+`::an_exported_file_is_readable_back_from_disk`, which drive the real
+`TagsViewModel` directly, bypassing only the dialog.
 
-Navigation is copied from `scripts/automation_tags.py`'s proven
-`open_settings`/`rail_node`/`select_page`/`page_reached` (handles the Work
-section's collapsed start state, the Tags row landing below the rail's
-scroll viewport, and both locales). `Session`, `fail`, `text_of`, `find` and
-`click` are copied from `scripts/automation_languages.py`.
+Navigation is copied from `scripts/automation_tags.py`'s
+`open_settings`/`rail_node`/`select_page`/`page_reached`. `Session`, `fail`,
+`text_of`, `find` and `click` are copied from `scripts/automation_languages.py`.
 
 Run:  python3 scripts/automation_tag_csv.py
 """
@@ -103,8 +62,7 @@ from automation_fixture import wait_for_load, working_copy
 
 # This probe launches the app on a copy and never the checked-in fixture, even
 # though it does not itself save -- opening the real file at all risks a
-# silent format-migration write on load. See `automation_fixture` for the
-# three incidents that rule comes from.
+# silent format-migration write on load.
 FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "tagcsv")
 
 # The app follows the SYSTEM locale (French on this machine). Every
@@ -231,11 +189,10 @@ class Session:
     def stop(self):
         """Terminate and *wait*.
 
-        Waiting is not politeness. Skribisto is one process per project, guarded
-        by an open-registry lock file: relaunching on the same path while the
-        old process still holds the lock makes the new one hand off to it and
-        exit immediately -- which surfaces as "app exited before printing the
-        bridge socket" and reads like a crash.
+        Relaunching on the same path while the old process still holds its
+        open-registry lock hands the new launch off to it and exits it
+        immediately -- surfacing as "app exited before printing the bridge
+        socket", not as the timeout it actually is.
         """
         for p in (self.mcp, self.app):
             if p and p.poll() is None:
@@ -417,14 +374,10 @@ def pane_button(s, variants):
     the settings pane (x > 280, past the rail), or a diagnostic list of every
     candidate if the exactly-one invariant doesn't hold.
 
-    Exact match, not substring: `crates/bastyde_ui/src/app/commands/export.rs`
-    registers an unrelated global shortcut named literally "Export…" (no
-    ellipsis-locale variance, no relation to the CSV feature), and the
-    title-bar Export split-button's own label ("Export"/"Export Scene", no
-    ellipsis) sits in the same x>280 region. A substring match on "export"
-    would happily return either. Requiring the ellipsis and requiring exactly
-    one hit turns a coincidental label collision into a loud failure instead
-    of a silently wrong node.
+    Exact match, not substring: an unrelated global "Export…" shortcut and
+    the title-bar Export split-button's own label ("Export", no ellipsis)
+    both sit in the same x>280 region, so a substring match on "export"
+    would happily return either.
     """
     vs = tuple(v.lower() for v in variants)
     hits = []
@@ -536,12 +489,10 @@ for name, btn in (("Import", import_btn), ("Export", export_btn)):
              f"a writer with tags to export could never reach the dialog", s)
 print("  both buttons enabled")
 
-# Neither button may overflow the pane's right edge -- "Export…" specifically
-# was previously clipped off by a toolbar that overflowed (see
-# automation_tags.py's PANE_BUTTONS clipping check, same technique reused
-# here). `pane_right` is the rightmost edge of any Label-role node inside the
-# pane; there is always at least one (the section description text), so an
-# empty max() would itself be a sign the pane never rendered.
+# Neither button may overflow the pane's right edge. `pane_right` is the
+# rightmost edge of any Label-role node inside the pane; there is always at
+# least one (the section description text), so an empty max() would itself
+# be a sign the pane never rendered.
 pane_labels_right = [
     (n.get("bounds") or {}).get("x", 0) + (n.get("bounds") or {}).get("width", 0)
     for n in s.nodes()

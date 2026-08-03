@@ -4,12 +4,17 @@
 
 """Two-process end-to-end test for cross-process settings correctness.
 
-Launches TWO live `skribisto` instances — one process per project, exactly
-Skribisto's real deployment model — each opening a DISTINCT project file, both
-sharing one sandboxed config/data directory (`XDG_CONFIG_HOME` /
+Launches TWO live `skribisto` instances, each opening a DISTINCT project
+file, both sharing one sandboxed config/data directory (`XDG_CONFIG_HOME` /
 `XDG_DATA_HOME`, so this never touches the real user's `~/.config/skribisto` /
-`~/.local/share/skribisto`), and asserts against the now cross-process-correct
+`~/.local/share/skribisto`), and asserts against the cross-process-correct
 `bastyde-settings` layer:
+
+KNOWN GAP: since the single-instance election (spawn_new_process was
+removed), the second launch below hands off to the first instead of starting
+its own process, unless it passes `--new-instance`. It does not yet — see
+`Session.__init__`'s `args` — so this script currently exercises one process,
+not two, until that flag is added to instance B's launch.
 
   (a) opening a distinct project in each instance -> BOTH end up recorded in
       the shared `recents.toml` (previously, a naive re-serialize-on-write

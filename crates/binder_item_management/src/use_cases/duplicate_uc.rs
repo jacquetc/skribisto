@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 // Custom implementation: deep-copy each selected BinderItem subtree (items +
-// their Content rows + tag links + confirmed references / cast pins) and insert
-// each new subtree immediately after its source subtree in the binder. Undoable
-// via a scoped snapshot/restore of the source binder subtree.
+// their Content rows + tag links + confirmed references / cast pins + point of
+// view) and insert each new subtree immediately after its source subtree in the
+// binder. Undoable via a scoped snapshot/restore of the source binder subtree.
 use crate::DuplicateDto;
 use crate::DuplicateReturnDto;
 use anyhow::{Result, anyhow};

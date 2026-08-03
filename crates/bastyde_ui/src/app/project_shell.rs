@@ -459,12 +459,6 @@ impl App {
         // need no gates of their own, and the control strip lives on the surface
         // rather than standing in for the status bar here.
         //
-        // What this replaced: seven independent gates, one per piece of chrome,
-        // each of which had to be remembered. The one that was forgotten shipped
-        // — an empty 40px title bar with three floating window buttons over a
-        // full-screen manuscript — and the automation script passed, because it
-        // only checked what it already knew to check.
-        //
         // Hand the surface what only exists in here. Idempotent: `build` re-runs
         // on every rebuild of the shell and re-attaching just re-points the
         // handles.
@@ -483,10 +477,9 @@ impl App {
             settings: settings.clone(),
         });
 
-        // Escape-to-leave-the-mode used to hang here. It moved onto the surface
-        // itself (`distraction_free::surface`): this subtree is dormant while the
-        // mode is up, and a dormant widget receives no events at all, so an
-        // Escape handler left here would be dead code pretending to be a way out.
+        // Escape-to-leave-the-mode lives on the surface itself
+        // (`distraction_free::surface`), not here: this subtree is dormant while
+        // the mode is up, and a dormant widget receives no events at all.
         ctx.add(
             VStack::new()
                 .spacing(0.0)

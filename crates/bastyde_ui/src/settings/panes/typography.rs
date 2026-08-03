@@ -87,8 +87,10 @@ pub(crate) fn typography_rows(
         )
 }
 
-/// One per-editor-type typography page (Scene / Synopsis / Notes / Corkboard):
-/// nothing but [`typography_rows`] under its own page heading.
+/// One per-editor-type typography page (Scene / Synopsis / Notes): nothing but
+/// [`typography_rows`] under its own page heading. Distraction-free appends the same
+/// rows into a page of its own alongside other fields; Corkboard reimplements them
+/// by hand rather than sharing the helper.
 pub(in crate::settings) fn typography_pane(
     ctx: &mut BuildContext,
     page: LocalizedString,

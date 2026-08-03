@@ -4,15 +4,11 @@
 //! Integration tests for tag lifecycle: `tag_management::import_tags`, and the *generated*
 //! delete path it deliberately does not wrap.
 //!
-//! There is no `delete_tag` use case. An earlier draft added one on the belief that
-//! `BinderTagRepository::remove` cleans only the owning `Work.tags` list and leaves the
-//! `jn_binder_tag_from_binder_item_tags` junction dangling. That is wrong: `remove`
-//! delegates to `table.remove`, which is `impl_leaf_entity_table!`, and that macro's
-//! `remove_multi` calls `delete_from_backward_junction` for every declared backward
-//! junction — `binder_tag_table.rs` lists the item junction among them. Scoped restore
-//! puts the same junctions back on undo. The deletion tests below pin that behaviour on
-//! the generic command precisely because nothing else did, and because the belief was
-//! plausible enough to have already cost one redundant use case.
+//! There is no `delete_tag` use case: `BinderTagRepository::remove` already cleans the
+//! `jn_binder_tag_from_binder_item_tags` junction via `impl_leaf_entity_table!`'s
+//! `delete_from_backward_junction` (see `binder_tag_table.rs`), and scoped restore puts it
+//! back on undo. The deletion tests below pin that behaviour on the generic command, since
+//! nothing else did.
 
 use frontend::AppContext;
 use frontend::commands::{

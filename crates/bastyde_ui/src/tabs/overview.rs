@@ -6,12 +6,9 @@
 //! One segment of a Book / Part / Chapter-folder / Note-folder tab. A header (count ·
 //! search · expand/collapse · ＋ New) sits over a virtualized [`TreeTableView`] whose rows
 //! come straight from the [`OverviewRowsModel`](crate::models::OverviewRowsModel) — a
-//! `TreeDataSlice` keyed by durable uid, no `TreeModel` mirror.
-//!
-//! This is the outliner every competing novel tool ships (Scrivener's Outliner,
-//! Manuskript's and novelWriter's Outline, yWriter's scene list): the view where you see
-//! the shape of the book rather than the words of it — what is where, how long each piece
-//! is, and what is still a stub.
+//! `TreeDataSlice` keyed by durable uid, no `TreeModel` mirror. The view where you see the
+//! shape of the book rather than the words of it — what is where, how long each piece is,
+//! and what is still a stub.
 //!
 //! **Search reveals, it does not rearrange.** A match keeps its ancestors so it stays in
 //! context, and the reveal is an override: clearing the box restores exactly the collapse

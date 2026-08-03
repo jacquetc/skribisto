@@ -60,7 +60,7 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
     // Detect "a backup file was opened" and enter backup mode. A separate
     // `subscribe_event_with_ctx` (needs an `EventContext` to present the choice
     // modal) reads the just-loaded path and sniffs its manifest. Opening a
-    // backup always happens in its own process (the redirect in the open entry
+    // backup always happens in its own window (the redirect in the open entry
     // points), so this only ever fires in a window dedicated to that backup.
     {
         let app_ctx = deps.app_ctx;

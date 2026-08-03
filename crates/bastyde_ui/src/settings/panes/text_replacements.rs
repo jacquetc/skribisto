@@ -530,15 +530,10 @@ fn empty_state() -> impl Widget {
 
 /// Headless layout tests for the pane and its rows.
 ///
-/// These exist because of a real crash: `RuleRowView`'s enable switch was built
-/// with `.tooltip(..)` and no `.label(..)`, and `Toggle::accessibility` asserts
-/// on a switch with no accessible name. Nothing in the suite ever *built* a row,
-/// so every engine, view-model and live-editor test passed while the pane took
-/// the whole app down the moment a project had one rule to render.
-///
-/// The lesson generalises past that one widget: a11y assertions, missing
-/// `BuildContext` wiring and layout panics only fire when a widget is actually
-/// mounted and laid out. So mount them.
+/// `Toggle::accessibility` asserts on a switch with no accessible name — a real crash a
+/// `.tooltip(..)`-only enable switch shipped, invisible to every non-building test. A11y
+/// assertions and layout panics only fire when a widget is actually mounted and laid out,
+/// so mount them.
 #[cfg(all(test, feature = "mocks"))]
 mod tests {
     use std::rc::Rc;

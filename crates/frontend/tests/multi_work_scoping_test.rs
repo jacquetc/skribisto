@@ -1,48 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Phase 0.5 + 0.6 acceptance tests: the use cases that gained a `work_id` must actually
-//! act on the Work the caller named, not on whichever Work a `HashMap`-backed store
-//! happens to iterate first. Phase 0.5 covered 7 use cases (`scan_mentions` through
-//! `empty_trash` below); Phase 0.6 adds the 6 that were misclassified as already-safe —
-//! `trash_binder_items`, `trash_binder`, `restore_items`, `restore_items_to`,
-//! `delete_trash_entries`, `merge_two_scenes` — each of which had its own private
-//! `get_all_work().next()` work_id() helper despite the DTO already carrying an id for
-//! something else.
+//! Acceptance tests: use cases that take a `work_id` must act on the named Work, not on
+//! whichever Work the `im::HashMap`-backed store happens to iterate first. Covers 13 use
+//! cases: `scan_mentions` through `merge_two_scenes` below, each of which used to resolve
+//! its Work through a private `get_all_work().next()` helper instead of `dto.work_id`.
 //!
-//! Every test here builds **two Works in one store** — the only way this class of bug can
-//! be observed at all with one Work open, `all_work().next()` and "the one the caller
-//! asked for" are the same row by accident, and the bug is invisible. `seed_second_work`
-//! adds Work B onto the same `AppContext` that `new_work` already populated with Work A,
-//! bypassing `new_work`/`load_work`'s own "close every other open Work first" sweep the
-//! same way `work_management`'s own `load_additional_work` test helper does (see
-//! `work_management::save_load_test::a_second_work_never_perturbs_the_first_through_mutate_save_close`)
-//! — but through the *public* generated entity commands only (`work_commands`,
-//! `binder_commands`, `search_commands`, `work_info_commands`, `system_commands`,
-//! `root_commands`), since those `pub(crate)` helpers are not reachable from here.
+//! Every test builds **two Works in one store** — with only one Work open, `.next()` and
+//! "the Work the caller named" are the same row by accident and the bug is invisible.
+//! `seed_second_work` adds Work B onto the same `AppContext` that `new_work` already
+//! populated with Work A, through the *public* generated entity commands only, bypassing
+//! `new_work`/`load_work`'s own Work-closing sweep the way `work_management`'s
+//! `load_additional_work` test helper does.
 //!
-//! `empty_trash` is the data-loss-shaped one the whole migration exists for: with two
-//! Works open, "empty the trash" used to have no defined subject at all.
-//!
-//! **Why every test below runs the operation against BOTH Works, not just one:**
-//! `im::HashMap` iteration order is seeded from a per-process random key (`RandomState`),
-//! not insertion order — an earlier draft of this file assumed "the second-created Work
-//! sorts after the first" and picked that one as the single discriminating target. That
-//! assumption is false: `store.works.read().unwrap().values()` can hand back either Work
-//! first depending on the process's random seed, so a single-direction test (act on B,
-//! assert A untouched) only fails a `get_all_work().next()`-style regression on the runs
-//! where the random seed happens to put A first — observed at ~50% failure detection
-//! across repeated runs, i.e. a coin flip, not a guard.
-//!
-//! The fix is structural, not statistical: within ONE test (one store, one fixed random
-//! seed for its whole lifetime), invoke the use case once naming Work A and once naming
-//! Work B, and assert the effect landed on the NAMED Work both times. A regression that
-//! ignores `dto.work_id` and always resolves to whichever Work its `.next()` picks can
-//! match the caller's intent for AT MOST one of those two calls (there are only two
-//! Works, and `.next()` returns one fixed one for the run) — the other call is
-//! guaranteed to act on the wrong Work and trip an assertion. This holds regardless of
-//! which Work the random seed favours, so every test here fails deterministically on
-//! every run when the bug is present, not on half of them.
+//! **Why every test runs the operation against BOTH Works:** `im::HashMap` iteration order
+//! is seeded from a per-process random key, not insertion order, so a single-direction test
+//! (act on B, assert A untouched) only catches a `.next()`-style regression on the runs
+//! where the seed happens to favour the wrong Work — a coin flip, not a guard. Invoking the
+//! use case once naming Work A and once naming Work B in the *same* store means a
+//! regression that ignores `dto.work_id` can satisfy at most one of the two calls, so every
+//! test here fails deterministically, every run.
 
 use binder_item_management::MergeTwoScenesDto;
 use frontend::AppContext;
@@ -110,23 +87,17 @@ struct SecondWork {
     binder_id: EntityId,
 }
 
-/// Seed a second Work directly onto `ctx`'s already-populated store, via nothing but
-/// public generated entity commands — replicating exactly what `new_work`/`load_work`'s
-/// own trunk-building does, without the overhead of a real template/legacy-upgrade
-/// pipeline. Legal per the entity model: `Root.works` is `one_to_many`, so more than one
-/// `Work` coexisting is a supported shape — since Phase 2 (see the tests below this
-/// file's tripwire section), `load_work`/`new_work` themselves reach it too, not just
-/// this hand-built bypass.
+/// Seed a second Work directly onto `ctx`'s already-populated store, via public generated
+/// entity commands only — replicating `new_work`/`load_work`'s own trunk-building without
+/// the template/legacy-upgrade overhead. Legal per the entity model (`Root.works` is
+/// `one_to_many`); `load_work`/`new_work` themselves reach this same two-Works-open state
+/// too, not just this hand-built bypass — see the tests near the end of this file.
 fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
     let n = now();
 
-    // Every Work owns exactly one punctuation row (one_to_one, strong), created
-    // BEFORE the Work so the Work can be built with its real id — see
-    // `new_work_uc.rs`'s own comment on this exact ordering. Leaving the
-    // placeholder `0` here (e.g. via `..Default::default()`) would make this
-    // helper's *second* call collide under the generated uniqueness check
-    // ("SmartPunctuation 0 is already referenced by Work ..."), since two
-    // Works cannot legally reference the same SmartPunctuation row.
+    // Created before the Work, which needs its real id: each Work owns exactly one
+    // SmartPunctuation (one_to_one, strong), so leaving the id at the `0` placeholder
+    // would collide on this helper's second call under the generated uniqueness check.
     let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
         ctx,
         None,
@@ -441,10 +412,9 @@ fn seed_prose_scene(ctx: &AppContext, binder_id: EntityId, words: usize) {
     .expect("create prose");
 }
 
-/// Trash one freshly created BinderItem directly (bypassing `trash_binder_items`, which
-/// still resolves its own Work via the unscoped `get_all_work().next()` — see the scouts'
-/// classification corrections — so it is not a safe fixture builder for a two-Works test).
-/// Returns `(trash_info_id, binder_item_id)`.
+/// Trash one freshly created BinderItem directly, without going through the
+/// `trash_binder_items` use case — a plain fixture builder for tests that just need an
+/// already-trashed item. Returns `(trash_info_id, binder_item_id)`.
 fn seed_trashed_item(
     ctx: &AppContext,
     work_id: EntityId,
@@ -1087,16 +1057,10 @@ fn empty_trash_only_empties_the_requested_works_trash() {
     );
 }
 
-// ───────────────────────── Phase 0.6: the 6 misclassified use cases ─────────────────────────
+// ───────────── The 6 use cases misclassified as already-safe ─────────────
 //
-// Each of these had its own private `work_id(uow) -> get_all_work().next()` helper — the
-// exact bug shape above, just not yet wired to a DTO field. Same "both directions" proof
-// as every test above: within ONE store (one fixed random iteration order for its whole
-// lifetime), the operation is invoked once naming Work A and once naming Work B. A
-// regression that ignores `dto.work_id` resolves to whichever Work `.next()` fixes on for
-// the run, which can match the caller's intent for AT MOST one of the two calls — so
-// exactly one of the two directions is guaranteed to trip an assertion, on every run,
-// regardless of which Work the process's random seed favours.
+// Same shape as above: each had its own `get_all_work().next()` helper, not wired to a DTO
+// field. Same both-directions proof (see the file doc comment).
 
 /// One active `Item/Scene`, appended to `binder_id` — a plain trash/merge target with no
 /// content, distinguishable from other seeded items via `uid_seed`.
@@ -1729,24 +1693,13 @@ fn merge_two_scenes_only_indexes_under_the_requested_work() {
     );
 }
 
-// ───────────────────── Phase 2: a second Work genuinely stays open ─────────────────────
+// ───── `load_work`/`new_work` leave every other open Work untouched ─────
 //
-// Until Phase 2, the real, public entry points (`load_work`/`new_work`) ran a "close every
-// other open Work" sweep first (`work_io::close_current_work`, looped over
-// `uow.get_all_work()`), so the app itself could never actually reach the two-Works-open
-// state the tests above construct by hand via `seed_second_work`. Phase 2 deletes that sweep
-// (see `load_work_uc.rs`/`new_work_uc.rs`) — opening a second Work now genuinely leaves the
-// first one open, exactly like a second window onto a second project.
-//
-// The two tests below replace the sweep-pinning tripwire tests that used to live here
-// (`load_work_closes_every_other_open_work_today` / `new_work_closes_every_other_open_work_today`,
-// which asserted the OLD behaviour and were written to fail the moment this landed — see
-// their retired doc comments in git history). They go through the actual public
-// `load_work`/`new_work` commands (no `seed_second_work` bypass) and assert the NEW
-// behaviour: Work A survives a second `load_work`/`new_work` call untouched — still present,
-// still in `Root.works`, still carrying its own `WorkInfo` — alongside the newly
-// opened/created Work B. Each test also asserts Work B's own presence, so a regression that
-// silently drops the NEW Work (rather than the old one) still fails loudly.
+// Unlike the tests above, these go through the real public `load_work`/`new_work` commands
+// (no `seed_second_work` bypass) and assert: Work A survives a second call untouched — still
+// present, in `Root.works`, with its own `WorkInfo` — alongside the newly opened/created
+// Work B. Each test also asserts Work B's own presence, so a regression that silently drops
+// the new Work instead of the old one still fails loudly.
 
 /// `load_work` no longer closes Work A before opening Work B: after loading a second project
 /// through the real, public `load_work` path, BOTH Works are in the store, both are listed in
@@ -1810,8 +1763,8 @@ fn load_work_leaves_every_other_open_work_intact() {
     );
 }
 
-/// `new_work` shares `load_work`'s Phase-2 behaviour (no more sweep) — pinned independently
-/// so a regression applied to one use case but not the other still trips a failing test.
+/// `new_work` shares `load_work`'s "leave every other Work open" behaviour — pinned
+/// independently so a regression in one use case but not the other still trips a test.
 #[test]
 fn new_work_leaves_every_other_open_work_intact() {
     let (ctx, work_a) = ctx_with_work_a();

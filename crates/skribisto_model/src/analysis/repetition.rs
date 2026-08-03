@@ -67,11 +67,9 @@ pub fn echoes(
     window: usize,
     min_surprisal: f64,
 ) -> Vec<Echo> {
-    // A text shorter than the window cannot be judged by it. Every pair of occurrences in
-    // one is inside the window by construction, so the window stops discriminating and the
-    // measure degenerates into "every word used twice" — which is why an 11-word dedication
-    // and a 79-word copyright page were the noisiest entries in the whole report, the latter
-    // volunteering nine findings about the author's own name.
+    // A text shorter than the window cannot be judged by it: every pair of occurrences is
+    // inside the window by construction, so the measure degenerates into "every word used
+    // twice" — noisiest on the shortest texts (a dedication, a copyright page).
     if ids.len() < window {
         return Vec::new();
     }
@@ -266,10 +264,8 @@ mod tests {
         );
     }
 
-    /// A text shorter than the window has no echoes, because in one every pair of
-    /// occurrences is inside the window and the measure stops saying anything. The
-    /// manuscript this was found on has a 79-word copyright page and an 11-word dedication;
-    /// both outranked real prose until this gate existed.
+    /// A text shorter than the window has no echoes: every pair of occurrences in one is
+    /// inside the window, so the measure stops saying anything.
     #[test]
     fn a_text_shorter_than_the_window_has_no_echoes() {
         let (ids, toks, v) = prep("She glanced away. He glanced back.");

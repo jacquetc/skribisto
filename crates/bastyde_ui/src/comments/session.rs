@@ -459,12 +459,10 @@ mod tests {
         );
     }
 
-    /// The fallback colour must be an ochre, not whatever was convenient.
-    ///
-    /// Regression: this defaulted to `rgb(120, 120, 200)` — violet — and because
-    /// nothing ever called `set_colors`, that default *was* what shipped. The
-    /// wash came out violet while the margin drew ochre, from two separate colour
-    /// sources. Red-dominant-over-blue is the cheap invariant that catches it.
+    /// The fallback colour must be an ochre, not whatever was convenient — a
+    /// session built with no view-model behind it still needs to match the
+    /// margin's own ochre. Red-dominant-over-blue is the cheap invariant that
+    /// catches a mismatch.
     #[test]
     fn the_fallback_wash_colour_is_an_ochre() {
         let doc = bastyde::text_document::TextDocument::new();
@@ -477,11 +475,10 @@ mod tests {
         );
     }
 
-    /// Hiding takes effect **now**, not at the next keystroke.
-    ///
-    /// The trap: `set_active(false)` used only to stop *future* repaints, leaving
-    /// whatever was last pushed on screen. A "hide" you have to type to see is not
-    /// a hide, and Tools ▸ Comments is exactly the surface that would show it.
+    /// Hiding takes effect **now**, not at the next keystroke — `set_active(false)`
+    /// must clear what was last pushed, not merely stop future repaints. A "hide"
+    /// you have to type to see is not a hide, and Tools ▸ Comments is exactly the
+    /// surface that would show it.
     #[test]
     fn going_inactive_clears_the_wash_immediately() {
         let doc = bastyde::text_document::TextDocument::new();

@@ -6,52 +6,30 @@
 //!
 //! ## Why this exists
 //!
-//! Skribisto is moving to N top-level windows over one project in one process. The
-//! save operation is already global (one `.skrib` on disk, one `SaveQueue` making
-//! sure at most one `save_work` runs at a time), but until this type existed the
-//! *tracking* of it — the monotonic edit sequence (`dirty_seq`), the highest
-//! sequence actually written (`saved_seq`), the "a write is in flight" flag
-//! (`saving`), and the [`SaveQueue`] itself — was allocated **per window**
-//! (`App::new` minted a fresh `dirty_seq`, `EditorsViewModel::new` a fresh
-//! `saved_seq`/`saving`/queue). That is the same mistake as putting a document's
-//! change count on a window controller instead of the document: AppKit's
-//! `NSDocument` tracks `updateChangeCount:` once and fans it out to every window
-//! controller; Qt's dirty flag lives on `QTextDocument`/`QUndoStack`, not on a
-//! `QWidget`. Dirty state belongs to the document, never to a view or a window.
-//!
-//! With per-window state, a second window broke it outright: `SaveQueue::completed`
-//! is **one-shot-consuming** (`Option::take_if`), so when the same broadcast
-//! `LongOperation::Completed` event reached both windows' own queues, only the
-//! window whose queue actually held that op got `Some(SaveCompleted)` back — the
-//! other's `take_if` found `running` already gone (it was never `Some` there to
-//! begin with, or held a different op) and returned `None`. That window's
-//! `saved_seq` then never advanced again while its `dirty_seq` kept climbing off
-//! the same global mutation events: permanently "unsaved", or — worse — a stale
-//! `false` reported earlier that let a close proceed with real edits still
-//! pending.
-//!
-//! The fix is this type: one instance, created once in `main`, registered as
-//! `app_state`, and read/driven by every window's `App`/`EditorsViewModel` by
-//! clone (cheap — `Rc`-backed) rather than by construction.
+//! A Work can have several windows (Work ▸ New Window), but the save operation is
+//! global: one `.skrib` on disk, one [`SaveQueue`] making sure at most one
+//! `save_work` runs at a time. So the tracking of it — the monotonic edit sequence
+//! (`dirty_seq`), the highest sequence actually written (`saved_seq`), the "a
+//! write is in flight" flag (`saving`), and the queue itself — is owned by this
+//! one Work-scoped object, created once in `main`, registered as `app_state`, and
+//! shared by every window's `App`/`EditorsViewModel` by clone (cheap —
+//! `Rc`-backed). A per-window copy of any of this breaks the moment a second
+//! window opens onto the same Work: `SaveQueue`'s completion/failure are
+//! one-shot-consuming, so only the window whose queue happened to hold the op
+//! would see it land — every sibling's `saved_seq` would stall while `dirty_seq`
+//! kept climbing off the same shared mutation events.
 //!
 //! ## Idempotency
 //!
-//! Sharing the object does not by itself fix the one-shot-consuming problem —
-//! it *relocates* it. With one `SaveStateViewModel`, the *same* broadcast event
-//! is now delivered to N windows' `App::build` subscriptions, each of which calls
-//! [`Self::on_save_completed`] (or [`Self::on_save_failed`]) on the **same**
-//! shared handle. The first call still finds the op `running` and consumes it;
-//! every later call for that identical event must not see a used-up queue and
-//! bail with `None` — every window needs the same true answer.
-//!
-//! So both handlers cache the outcome of the last op id they actually processed.
-//! A repeat delivery for that same op id is answered from the cache — the real
-//! queue transition, the `saved_seq` advance and any follow-up save are each
-//! performed **exactly once**, no matter how many windows observe the event, and
-//! every caller (first or Nth) gets back the identical [`SaveLanded`] /
-//! error. `saved_seq` itself is additionally advanced with `max`, never a blind
-//! overwrite — belt and braces against a stale or out-of-order completion ever
-//! moving it backwards.
+//! Sharing the object relocates that one-shot problem rather than solving it: the
+//! *same* broadcast event now reaches every window's subscription, and each calls
+//! [`Self::on_save_completed`] / [`Self::on_save_failed`] on this same shared
+//! handle. Both methods cache the outcome keyed by op id and replay it for repeat
+//! deliveries, so the real queue transition, `saved_seq` advance and any
+//! follow-up save each run **exactly once**, and every window — first or Nth —
+//! gets back the identical [`SaveLanded`] / error. `saved_seq` is advanced with
+//! `max`, never overwritten, so a stale or out-of-order completion can never move
+//! it backwards.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -218,11 +196,10 @@ impl SaveStateViewModel {
     /// `work_id` is read from this view-model's own `AppIds` (mirroring
     /// `SaveAsViewModel`) — the same `AppIds` shared by every other Tier-2
     /// view-model on this Work's `WorkSession` — rather than resolved via
-    /// `get_all_work(ctx).next()`. The latter is only correct under the
-    /// single-Work-at-a-time invariant Phase 0/1 still preserve; the moment a
-    /// second `Work` is open in-process, "the first Work `get_all_work`
-    /// happens to return" is not necessarily the Work this session (and the
-    /// window calling `request_save`) is showing.
+    /// `get_all_work(ctx).next()`, which only answers correctly when exactly
+    /// one Work is open: the moment a second `Work` is open in-process, "the
+    /// first Work `get_all_work` happens to return" is not necessarily the
+    /// Work this session (and the window calling `request_save`) is showing.
     fn start_save(&self, covers: u64) -> bool {
         let work_id = self.inner.ids.work_id.get().unwrap_or_default();
         match work_management_commands::save_work(
@@ -328,27 +305,17 @@ impl SaveStateViewModel {
 
     // ── Who reports a failed save ────────────────────────────────────────────
     //
-    // [`Self::on_save_failed`] answers every window, on purpose: each has to
-    // decide what its own deferred close/switch does about the failure. But the
-    // *toast* is about the Work, not the window — and since Work ▸ New Window a
-    // Work can have several — so N windows each reporting the same failed write
-    // would stack N identical error toasts.
+    // `on_save_failed` answers every window (each decides what its own deferred
+    // close/switch does about the failure), but the *toast* is about the Work —
+    // and a Work can have several windows (Work ▸ New Window) — so it needs its
+    // own arbitration, or N windows would stack N identical toasts.
     //
-    // Two kinds of report, and they are not equal:
-    //
-    //   * **specific** — this window had a close or a project switch parked
-    //     behind that save, and it was dropped. Only that window knows, and the
-    //     dropped command is the more confusing half of the failure, so it
-    //     always speaks.
-    //   * **generic** — "couldn't save". Any window can say it, so exactly one
-    //     should, and only if nobody said the specific thing.
-    //
-    // Both toasts carry the same Work-scoped dedup id, so the registry keeps one
-    // entry either way (it matches on id and updates in place). That plus the
-    // rules below makes the outcome independent of the order the windows'
-    // subscribers happen to run in: a specific report always ends up the visible
-    // one, whether it arrives before the generic one (which is then suppressed)
-    // or after it (replacing it in place).
+    // Two kinds, not equal: **specific** (this window's close/switch was
+    // dropped — always speaks, it's the more informative half) and **generic**
+    // ("couldn't save" — exactly one speaks, only if nobody spoke specific).
+    // Both share one Work-scoped dedup id, so a specific report always ends up
+    // the visible one regardless of arrival order — replacing a generic one in
+    // place, or suppressing one that would follow.
 
     /// Record that this window is reporting the failure *specifically* — its own
     /// deferred command was dropped. Always report after calling this; the call

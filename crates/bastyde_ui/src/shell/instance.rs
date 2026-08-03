@@ -54,17 +54,13 @@ use crate::shell::open_registry::{self, SocketId};
 /// giving up and launching standalone.
 ///
 /// **Must exceed the primary's own patience** ([`crate::shell::ipc::UI_ACK_BUDGET`],
-/// the window `serve_one` gives its UI thread to answer). The two are the same
-/// handshake seen from opposite ends, and getting the inequality backwards is not
-/// a tuning nit — it produces a *duplicate launch*. An earlier revision had the
-/// remote give up after 2 s while the primary was still willing to wait 3 s: under
-/// any load the remote timed out, launched standalone and claimed the project,
-/// while the primary went on to serve the very same request. Two processes, two
-/// windows, one project — observed in the live trace as a third open-registry lock
-/// under a second pid.
+/// the window `serve_one` gives its UI thread to answer) — the two are the same
+/// handshake seen from opposite ends, and getting the inequality backwards
+/// produces a *duplicate launch*: the remote gives up and launches standalone
+/// while the primary is still about to serve the very same request.
 ///
-/// The absolute value only has to keep a user who double-clicked a `.skrib` from
-/// staring at nothing for long; the *ordering* is what has to hold.
+/// The absolute value only has to keep a user who double-clicked a `.skrib`
+/// from staring at nothing for long; the *ordering* is what has to hold.
 const ACK_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// The well-known socket every instance of this installation elects on — as a
@@ -178,22 +174,14 @@ pub fn handoff(mut stream: Stream, request: &InstanceRequest) -> bool {
     }
 
     // Read the acknowledgement on a scratch thread and wait on a channel, rather
-    // than arming a receive timeout on the socket itself.
+    // than a receive timeout on the socket itself: `set_recv_timeout` returns
+    // `ErrorKind::Unsupported` on Windows named pipes, which would leave the
+    // read unbounded there — a primary that accepted the connection and then
+    // wedged would hang this process forever, with no window to show for it.
     //
-    // `set_recv_timeout` is **not portable**: on Windows named pipes interprocess
-    // returns `ErrorKind::Unsupported` ("named pipes do not support I/O
-    // timeouts"). An earlier revision ignored that error, which on Windows left
-    // the read unbounded — so a primary that accepted the connection and then
-    // wedged would hang this process forever, with no window to show for it,
-    // since a remote never builds one. That is the exact failure the timeout
-    // exists to prevent, so it cannot be the one platform where it is absent.
-    //
-    // The thread may outlive the timeout, still blocked in `read_line`. That is
-    // deliberate and bounded: it holds nothing but its own connection, and it
-    // ends the moment the primary answers or dies. Abandoning it costs one parked
-    // thread in an already-degraded launch; the alternative (`CancelSynchronousIo`
-    // and friends) is a platform-specific unsafe dance for a case that resolves
-    // itself.
+    // The thread may outlive the timeout, still blocked in `read_line` —
+    // bounded and harmless: it holds nothing but its own connection, and it
+    // ends the moment the primary answers or dies.
     let (tx, rx) = std::sync::mpsc::sync_channel::<Option<InstanceReply>>(1);
     let _ = std::thread::Builder::new()
         .name("skribisto-handoff".into())

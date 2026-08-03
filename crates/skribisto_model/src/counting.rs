@@ -65,8 +65,9 @@ fn is_cjk_language(primary: &str) -> bool {
 /// holds one comfortably plus a long session's edits.
 const MAX_HEAP: usize = 64 * 1024 * 1024;
 
-/// Process-global on purpose: Skribisto is one process per project, so a global *is*
-/// project-scoped — and being content-addressed it would be correct even if it were not.
+/// Process-global rather than per-Work: content-addressed on `(Djot source, method)`, so a
+/// single cache stays correct even with several projects open in one process at once —
+/// identical prose and method always count identically, whichever Work it came from.
 static CACHE: RwLock<Option<Store>> = RwLock::new(None);
 
 /// The cache proper, with no global in it — so the tests exercise it deterministically.
@@ -143,9 +144,8 @@ pub fn cached_count(djot: &str, method: CountMethod) -> WordCharCounts {
     counts
 }
 
-/// Drop everything — called when a project closes (the app replaces the open project in the
-/// same process on four paths). Not for correctness: the cache is content-addressed and
-/// cannot go stale; the previous manuscript's entries are just permanently unreachable.
+/// Drop everything. Not for correctness — the cache is content-addressed and cannot go
+/// stale — but frees the heap a closed project's entries were holding.
 pub fn clear() {
     if let Ok(mut guard) = CACHE.write() {
         *guard = None;

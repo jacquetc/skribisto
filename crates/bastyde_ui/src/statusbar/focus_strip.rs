@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! `FocusStrip` — distraction-free mode's always-visible control strip
-//! (Increment 2): word count + writing session + Go Next/Previous (Increment 4)
-//! + Exit, replacing the normal status bar's content while the mode is active.
+//! `FocusStrip` — distraction-free mode's always-visible control strip: word
+//! count + writing session + Go Next/Previous + Exit, replacing the normal
+//! status bar's content while the mode is active.
 //!
 //! **Always visible, never hover-reveal** — this app's documented EN 301 549
 //! / RGAA accessibility posture rules out a hover-only strip: both Scrivener
@@ -11,28 +11,20 @@
 //! brought back once dismissed. The strip exists only while the mode's surface
 //! does (`distraction_free::surface` builds it), never on hover.
 //!
-//! `WordCountIndicator` and `SessionStatusItem` drop in unchanged — both
-//! already take only a view-model + `Signal<bool>`, so this simply builds a
-//! second instance of each over the *same* live `StatsModel`/
-//! `WritingSessionViewModel` the normal status bar uses, rather than
-//! duplicating their logic.
+//! `WordCountIndicator` and `SessionStatusItem` drop in unchanged, over the
+//! *same* live `StatsModel`/`WritingSessionViewModel` the normal status bar
+//! uses.
 //!
 //! **Every item here is optional except Exit** ([`FocusStripChrome`], bound to
-//! the Settings ▸ Editor ▸ Distraction-free checkboxes). Exit
-//! is not a setting and must not become one: it is this strip's documented way
-//! out, and the mode's other exits are a keystroke the focused editor may
-//! legitimately swallow (Escape) and one the writer has to remember
-//! (Shift+F11). A settings combination that can leave someone with no visible
-//! way out is the failure mode this whole strip exists to avoid — see the
-//! always-visible note above.
+//! the Settings ▸ Editor ▸ Distraction-free checkboxes). Exit is not a setting
+//! and must not become one: it is this strip's documented way out, and the
+//! mode's other exits are a keystroke the focused editor may legitimately
+//! swallow (Escape) and one the writer has to remember (Shift+F11).
 //!
 //! **Go reuse, not reimplementation** — the Previous/Next icon buttons fire the
-//! exact same `go.prev`/`go.next` named actions the Go menu's generic pair and
-//! the Alt+Up/Alt+Down shortcut already drive (`app/commands/go.rs`), the same
-//! way the Exit button above fires `view.focus_mode` rather than duplicating
-//! `FocusViewModel::toggle`. Always enabled: like the shortcut, a target-less
-//! press is a quiet no-op (`app/commands/go.rs`'s own doc), so there is no
-//! separate "can I go" signal to bind here.
+//! same `go.prev`/`go.next` named actions the Go menu and the Alt+Up/Alt+Down
+//! shortcut already drive (`app/commands/go.rs`), the same way Exit fires
+//! `view.focus_mode` rather than duplicating `FocusViewModel::toggle`.
 
 use bastyde::core::binding::BindingLevel;
 use bastyde::prelude::*;
@@ -43,12 +35,12 @@ use bastyde::widgets::{
 
 use crate::models::StatsModel;
 
-/// Overflow priorities — **lowest collapses first**. The two readouts keep the
-/// implicit 0, so they go before either navigation control; between themselves
-/// the later-declared (the writing session) goes first.
 /// How much of the bar the item name may take before it elides.
 const TITLE_MAX_WIDTH: f32 = 260.0;
 
+// Overflow priorities — **lowest collapses first**. The two readouts keep the
+// implicit 0, so they go before either navigation control; between themselves
+// the later-declared (the writing session) goes first.
 const GO_TO_PRIORITY: i32 = 1;
 const GO_PRIORITY: i32 = 2;
 use crate::statusbar::session_status_item::SessionStatusItem;

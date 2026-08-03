@@ -60,9 +60,8 @@ pub fn tag_tooltip_body(tag: &TagRow) -> impl Widget {
     // against an arbitrary fill, and `BorderRole::Default` here would additionally be a
     // content-surface token sitting on the tooltip surface.
     // `FixedSize` inside a `Center`, not `MinSize`: a minimum only floors the size, so the
-    // greedy `RectWidget` stretched to the full height of the tooltip body — which is what
-    // made a one-word tag tooltip 244 dp tall. The same mistake the settings pane's swatch
-    // made before it was pinned.
+    // greedy `RectWidget` would stretch to the full height of the tooltip body instead of
+    // staying a dot.
     let swatch = Center::new().child(
         FixedSize::new().width(SWATCH).height(SWATCH).child(
             RectWidget::new()

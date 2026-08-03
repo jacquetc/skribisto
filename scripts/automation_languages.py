@@ -5,11 +5,11 @@
 """Drive a live Skribisto and verify the language pill field end to end.
 
 This is the live half of Stage 6, where `dict_language` stopped being a
-space-separated string and became a `Vec<String>`. 1055 tests cover the format,
-the migration, the resolver and the parse-time tolerance for pre-v4 files — all
-of which are reachable without a window. What none of them touch is the path a
-writer actually takes: open a project, add a language to an item, remove one,
-and have the change survive a save and a reload.
+space-separated string and became a `Vec<String>`. Unit tests already cover
+the format, the migration, the resolver and the parse-time tolerance for
+pre-v4 files — all of which are reachable without a window. What none of them
+touch is the path a writer actually takes: open a project, add a language to
+an item, remove one, and have the change survive a save and a reload.
 
 That gap is the whole point of running this. The refactor's riskiest edges are
 exactly the ones a unit test cannot see:
@@ -163,11 +163,10 @@ class Session:
     def stop(self):
         """Terminate and *wait*.
 
-        Waiting is not politeness. Skribisto is one process per project, guarded
-        by an open-registry lock file: relaunching on the same path while the
-        old process still holds the lock makes the new one hand off to it and
-        exit immediately — which surfaces as "app exited before printing the
-        bridge socket" and reads like a crash.
+        Relaunching on the same path while the old process still holds its
+        open-registry lock hands the new launch off to it and exits it
+        immediately — surfacing as "app exited before printing the bridge
+        socket", not as the timeout it actually is.
         """
         for p in (self.mcp, self.app):
             if p and p.poll() is None:

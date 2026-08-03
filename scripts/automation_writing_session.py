@@ -2,15 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-"""Drive a live Skribisto and verify the **status-bar focused word count**.
-
-The word count is the quiet "how many words in this scene" a writer glances at,
-sitting just after the save glyph. It counts the *live* document, so it tracks
-typing.
+"""Drive a live Skribisto and verify the status-bar **writing session** (play
+button + live readout).
 
 Flow: load a scratch copy of an example →
-  1. open a scene → a "N words" count appears in the status bar
-  2. type prose   → the count goes UP by (roughly) the words typed
+  1. open a scene → a writing-session play button appears in the status bar
+  2. click it     → a live "words · mm:ss" readout starts running
+  3. type prose   → the session keeps running with the typed text in the editor
 
 Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
 automation_*.py scripts.

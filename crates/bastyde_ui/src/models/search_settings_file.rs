@@ -20,11 +20,12 @@
 //! build, exactly like [`BackupSettingsService`](super::BackupSettingsService)
 //! and `WindowStateService`.
 //!
-//! **Cross-process safety.** Skribisto runs **one process per project**, and
-//! every instance shares this same `<config_dir>/search.toml`. `SettingsFile`'s
-//! locked read-modify-write is the only write mode, so two windows persisting two
-//! different projects' preferences never clobber each other; [`as_reloadable`]
-//! lets the app's `SettingsWatcher` refresh this handle when a peer writes.
+//! **Cross-process safety.** Skribisto is single-instance: normally one process
+//! hosts every open project window, sharing this same `<config_dir>/search.toml`.
+//! `SettingsFile`'s locked read-modify-write is the only write mode, so two
+//! windows (or a rare second process) persisting different projects'
+//! preferences never clobber each other; [`as_reloadable`] lets the app's
+//! `SettingsWatcher` refresh this handle when a peer writes.
 
 use std::rc::Rc;
 use std::time::Duration;
@@ -431,7 +432,7 @@ mod tests {
 
     #[test]
     fn two_shared_services_over_one_file_do_not_clobber_each_others_projects() {
-        // Two processes (one per project) sharing one search.toml, each writing a
+        // Two windows (or processes) sharing one search.toml, each writing a
         // different project's override. Without the locked read-modify-write, the
         // second write's stale snapshot would drop the first.
         let d = tempdir().unwrap();

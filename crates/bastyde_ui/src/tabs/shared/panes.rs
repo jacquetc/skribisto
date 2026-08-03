@@ -7,11 +7,11 @@
 //! the [`heading`] form (Item Chapter / Part / BookBegin), the dual-pane
 //! [`prose`] editor (Item Scene / ChapterScene / Note), the [`placeholder`] for
 //! contentless rows (Item BookEnd / Text), and the folder-container bodies
-//! ([`folder_synopsis_only`] for plain grouping folders, [`folder_segmented`] for
-//! the three structural containers). The fields each body shows are decided by the
-//! constraint matrix (via `tab_for`), so one body covers every combination in its
-//! group. The manuscript-stream pane the containers share lives in
-//! [`stream`](super::stream).
+//! ([`folder_synopsis_only`] for a plain grouping folder, [`folder_synopsis_with_overview`]
+//! for a notes folder, [`folder_segmented`] for the three structural containers). The
+//! fields each body shows are decided by the constraint matrix (via `tab_for`), so one
+//! body covers every combination in its group. The manuscript-stream pane the
+//! containers share lives in [`stream`](super::stream).
 
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::i18n::LocalizedString;
@@ -211,10 +211,10 @@ pub fn prose(tab: &ContentTab) -> Box<dyn Widget> {
         Box::new(side),
     );
 
-    // `prose` is the only one of the five `tab_backdrop` composites that gets the
+    // `prose` is the only one of this file's `tab_backdrop` composites that gets the
     // find banner: `heading` / `placeholder` / `folder_synopsis_only` have no main
-    // writing surface to search, and `folder_segmented` wraps a stream `Switcher`
-    // whose rows have no single "focused editor" to target.
+    // writing surface to search, and `folder_segmented` / `folder_synopsis_with_overview`
+    // wrap a `Switcher` whose pages have no single "focused editor" to target.
     //
     // The banner is applied **inside** each layout's manuscript column rather than
     // over the whole tab, so under Side it spans the prose it searches instead of
@@ -528,14 +528,13 @@ pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
 ///
 /// 1. the container's **own page** — named after the container itself ("Chapter" /
 ///    "Part" / "Book"), because it *is* that item as a writing surface: title,
-///    synopsis, and — for a chapter — its own prose. (It used to be called "Synopsis";
-///    that became a lie the moment a chapter folder started carrying prose.)
+///    synopsis, and — for a chapter — its own prose;
 /// 2. the **manuscript stream** — Full Chapter / Full Part / Full Book: the container
 ///    *and everything inside it*, as one continuous manuscript;
 /// 3. **Full Synopsis** — the same rows, showing each one's synopsis instead;
-///
-/// 4. the **Corkboard** — the same rows as index cards;
-/// 5. the **Overview** — the same rows as a sortable table.
+/// 4. `extras`, in order (a Book's "Pace" and "Analysis"; empty for Chapter/Part);
+/// 5. the **Corkboard** — the same rows as index cards;
+/// 6. the **Overview** — the same rows as a sortable table.
 ///
 /// The pairing reads as "this one" vs "this one and all of it": `Chapter` /
 /// `Full Chapter`.

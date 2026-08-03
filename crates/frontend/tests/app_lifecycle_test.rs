@@ -102,8 +102,8 @@ fn new_work_reuses_the_shared_frame() {
         "Root id unchanged across new_work"
     );
 
-    // The historically-buggy path: a SECOND new/open in one session used to leak a
-    // second Root + System. It must remain exactly one of each.
+    // A second new_work in one session used to leak a second Root + System —
+    // must remain exactly one of each.
     work_management_commands::new_work(&ctx, &new_work_dto("two")).expect("new_work two");
     assert_eq!(
         root_count(&ctx),
@@ -120,11 +120,9 @@ fn new_work_reuses_the_shared_frame() {
         init.root_id,
         "Root id stable across opens"
     );
-    // Phase 2 of the multi-Work migration: opening a second Work no longer
-    // replaces the first (the "close every other open Work" sweep was
-    // deleted from `new_work_uc.rs`/`load_work_uc.rs` — see
-    // `frontend::tests::multi_work_scoping_test`) — both remain open,
-    // exactly as two simultaneously-open project windows require.
+    // Opening a second Work no longer replaces the first (see
+    // `frontend::tests::multi_work_scoping_test`) — both remain open, exactly
+    // as two simultaneously-open project windows require.
     assert_eq!(
         work_commands::get_all_work(&ctx).unwrap().len(),
         2,

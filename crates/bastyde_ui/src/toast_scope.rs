@@ -3,38 +3,25 @@
 
 //! Route a toast to the Work it is about.
 //!
-//! bastyde's window-scoped toast routing (see the framework's
-//! `Toast::target`/`ToastAudience`) needs an app-chosen `u64` token per
-//! audience. Skribisto's natural audience is the open `Work`: two windows
-//! showing two different Works must never leak a backup/export/save toast
-//! into each other's corner, and a Work's own bell must show only its own
-//! history plus anything genuinely app-wide. The `Work`'s id already
-//! uniquely and durably names it (see `app_ids::AppIds`), so it doubles as
-//! the [`ToastAudience`] token with nothing new to mint or keep in sync —
+//! bastyde's window-scoped toast routing (`Toast::target`/`ToastAudience`)
+//! needs an app-chosen `u64` token per audience. Skribisto's natural audience
+//! is the open `Work`: two windows on two different Works must never leak a
+//! backup/export/save toast into each other's corner. The `Work`'s id already
+//! uniquely names it, so it doubles as the [`ToastAudience`] token —
 //! `App::build`'s `LoadWork`/`NewWork` handlers call
 //! `ToastRegistry::set_window_audience(window_id, Some(ToastAudience::new(work_id)))`
-//! with the very same id every per-Work view-model uses here.
+//! with the same id every per-Work view-model uses here via
+//! [`ToastWorkExt::target_work`]: `.target_work(self.ids.work_id.get())`.
 //!
-//! Every per-Work view-model already resolves its own `AppIds::work_id`
-//! before raising a toast — the "no open project" guards that predate this
-//! module (e.g. `TrashViewModel::restore`'s early return) read it for
-//! exactly that reason. [`ToastWorkExt::target_work`] is the one-line bridge
-//! from that `Option<u64>` to the framework's routing, so a Work-scoped
-//! call site reads the same way everywhere: `.target_work(self.ids.work_id.get())`.
-//!
-//! `None` (no Work open yet, or a call site that legitimately has none to
-//! give — the Launcher, a New Work failure before any Work exists) leaves
-//! the toast at the framework's own default: the presenting window only.
-//! That is the correct fallback, not a degraded case — those toasts were
-//! never "about" a Work in the first place.
+//! `None` (no Work open, or a call site with none to give) leaves the toast
+//! at the framework's default: the presenting window only.
 //!
 //! **Routing is only half of Work-scoping.** A call site that also passes a
-//! static [`Toast::id`] (for the framework's update-in-place dedup — a
-//! progress toast, a "replace, don't stack" burst guard) must fold `work_id`
-//! into THAT id too, via [`ToastWorkExt::scoped_id`], or two Works sharing one
-//! static id collide in the registry regardless of how correctly their
-//! routes are set — see that method's own doc for the exact failure mode,
-//! and [`work_scoped_toast_id`]'s doc for the `None` case specifically (F2).
+//! static [`Toast::id`] (for update-in-place dedup — a progress toast, a
+//! burst guard) must fold `work_id` into THAT id too, via
+//! [`ToastWorkExt::scoped_id`], or two Works sharing one static id collide in
+//! the registry regardless of how correctly their routes are set — see
+//! [`work_scoped_toast_id`]'s doc for the `None` case specifically (F2).
 
 use bastyde::widgets::{Toast, ToastAudience};
 
@@ -45,48 +32,23 @@ pub trait ToastWorkExt {
     /// Route to `work_id`'s audience when one is known; otherwise leave the
     /// toast's target unset (framework default: the presenting window).
     ///
-    /// Generic over `impl Into<Option<u64>>` (not just a bare `Option<u64>`)
-    /// so a long-operation view-model's `view_models::long_op::CapturedWork`
-    /// — the Work an operation started for, captured once and never re-read
-    /// live — plugs straight in here with no `.into()` at the call site.
+    /// Generic over `impl Into<Option<u64>>` so a long-operation view-model's
+    /// `view_models::long_op::CapturedWork` plugs straight in with no
+    /// `.into()` at the call site.
     fn target_work(self, work_id: impl Into<Option<u64>>) -> Self;
 
     /// Fold `work_id` into a static dedup id (`base`, e.g. `"backup.now"`)
-    /// and attach it — **or don't**, when `work_id` is `None` — this is the
-    /// *only* sanctioned way to pair a static id with `.target_work(...)`.
-    ///
-    /// See [`work_scoped_toast_id`] for the full "why `None` skips the id
-    /// entirely" rationale (F2). This method exists so a call site can never
-    /// reproduce that bug by hand: there is no `.id(work_scoped_toast_id(...))`
-    /// spelling left to get wrong, because `work_scoped_toast_id` itself
-    /// returns `Option<String>` — not a `String` that quietly degrades to a
-    /// collidable `"{base}.0"` — and this is the one place that unwraps it,
-    /// correctly, every time.
+    /// and attach it — or don't, when `work_id` is `None`. The only
+    /// sanctioned way to pair a static id with `.target_work(...)`; see
+    /// [`work_scoped_toast_id`] for why `None` must skip the id entirely (F2).
     fn scoped_id(self, base: &str, work_id: impl Into<Option<u64>>) -> Self;
 
-    /// [`Self::scoped_id`] for a toast that follows **one long operation** from
-    /// start to finish (loading → progress → success/cancelled/error): the op's
-    /// own id joins `work_id` in the dedup key.
-    ///
-    /// Work-scoping alone was enough while one Work meant one window, because
-    /// the view-models that drive these toasts (`ExportViewModel`,
-    /// `SaveAsViewModel`) are per **window** and each allows one operation at a
-    /// time — so "this Work's export" and "this window's export" were the same
-    /// thing. Work ▸ New Window separates them: two windows on one Work can each
-    /// start an export, and with only the Work in the key the second one's
-    /// enqueue finds the first's still-live entry, overwrites it in place and
-    /// retargets it — the first export's progress bar and its Cancel button
-    /// vanish mid-flight while the operation itself carries on running,
-    /// uncancellable.
-    ///
-    /// The op id is unique per operation, so it distinguishes the two without
-    /// the view-model needing to know anything about windows — and, being the
-    /// *same* string for every update of one operation, it keeps the
-    /// update-in-place behaviour those toasts depend on.
-    ///
-    /// A caller with no operation (nothing was ever started — "no project is
-    /// open to export") has no op id and keeps [`Self::scoped_id`]: there is no
-    /// operation for a second toast to be confused with.
+    /// [`Self::scoped_id`] for a toast that follows **one long operation**
+    /// from start to finish: the op's own id joins `work_id` in the dedup
+    /// key, so two windows on the same Work (Work ▸ New Window) can each run
+    /// one without the second's enqueue retargeting/killing the first's
+    /// still-live progress toast. A caller with no operation at all (nothing
+    /// was ever started) keeps [`Self::scoped_id`].
     fn scoped_op_id(self, base: &str, work_id: impl Into<Option<u64>>, op_id: &str) -> Self;
 }
 
@@ -117,66 +79,30 @@ impl ToastWorkExt for Toast {
     }
 }
 
-/// Fold `work_id` into a static `Toast::id(...)` base, the dedup-id half of
-/// Work-scoping — [`ToastWorkExt::target_work`] is the *routing* half,
-/// [`ToastWorkExt::scoped_id`] is the sanctioned way to apply this to a
-/// `Toast` under construction.
-///
-/// `ToastRegistry::enqueue` (bastyde) finds an update-in-place match by dedup
-/// id **alone** — no route check — and then overwrites the matched entry's
-/// route with the new toast's. That is deliberate upstream (a progress toast
-/// whose audience becomes known partway through must retarget in place; see
-/// `Toast::id`'s own doc for the framework's reasoning and the exact hazard
-/// this creates). It means a *static* id shared by every window is an
-/// app-level bug the moment two windows can raise "the same" toast about two
-/// different Works at once: window B's enqueue finds window A's still-live
-/// entry (same id), mutates it in place, and retargets it to B's audience —
-/// A's toast silently vanishes, mis-attributed to B. This is exactly
-/// [`ToastWorkExt::target_work`]'s own scenario, one layer up: the id needs
-/// the same per-Work identity the route already gets. So for a known
-/// `work_id`, this folds it in: `"export.work"` for Work 7 and Work 9 become
-/// distinct `"export.work.7"` / `"export.work.9"` entries in the registry,
-/// never colliding.
+/// Fold `work_id` into a static `Toast::id(...)` base — the dedup-id half of
+/// Work-scoping. `ToastRegistry::enqueue` matches an update-in-place toast by
+/// dedup id alone, no route check, and overwrites the match's route with the
+/// new toast's — so a static id shared by every window lets window B's
+/// enqueue steal window A's still-live entry the moment two windows raise
+/// "the same" toast about two different Works. Folding `work_id` in
+/// (`"export.work.7"` vs `"export.work.9"`) fixes that the same way
+/// [`ToastWorkExt::target_work`] fixes routing.
 ///
 /// # F2 — `None` returns `None`, not a collidable id
 ///
-/// The first cut of this function collapsed `None` (no Work open yet, or a
-/// call site with no Work to give) to a fixed `"{base}.0"` suffix
-/// (`work_id.unwrap_or_default()`). That was itself the bug F2 found: **every
-/// window with no Work open shares that one id.** Two project windows opened
-/// in quick succession both have `backup.now`'s "nothing open"/"already
-/// running" toasts live *before* their own `LoadWork`/`NewWork` resolves a
-/// `work_id` — both build the same `"backup.now.0"`, and the second window's
-/// enqueue finds the first's still-live entry and steals it, exactly the
-/// [`ToastWorkExt::target_work`] hazard this function exists to prevent, just
-/// smuggled back in through the one case that looked "safe" to default.
+/// `None` (no Work open yet) must NOT collapse to a fixed `"{base}.0"`
+/// suffix — that was itself a real bug: two project windows opened in quick
+/// succession, both with no `work_id` resolved yet, would build the same
+/// `"backup.now.0"` and the second's enqueue would steal the first's toast.
+/// Returning `Option<String>` (not `String`) makes the `None` case something
+/// a caller must handle rather than silently defaulting away — only
+/// [`ToastWorkExt::scoped_id`] unwraps it, and correctly skips `.id(...)`
+/// entirely when it's `None`, leaving no dedup id at all (which never merges
+/// with anything, the correct behaviour when there is no Work to dedup
+/// against).
 ///
-/// The honest fix: **there is no Work to dedup against, so don't invent an
-/// id that pretends there is.** Returning `None` here — and having
-/// [`ToastWorkExt::scoped_id`] skip the `.id(...)` call entirely for it —
-/// leaves such a toast with no dedup id at all, which is `Toast`'s own
-/// default for a toast that was never given one: it never merges with
-/// anything (see `Toast::id`'s doc), which is the correct behaviour for two
-/// windows independently discovering "no Work is open" — those are two
-/// unrelated, simultaneously true facts about two different windows, not one
-/// operation that a second call should update in place. A *stale* progress
-/// toast for a Work that has since closed is the one case this could, in
-/// principle, leave un-deduped against a fresh one for the same still-`None`
-/// state — accepted, because with no Work there is no operation identity
-/// for two calls to even conceptually be "the same" logical toast.
-///
-/// Returning `Option<String>` (rather than `String`) is deliberate too: it
-/// makes the `None` case a type-level fact a caller has to handle, not a
-/// value a caller can silently misuse by feeding it straight into `.id(...)`
-/// — that misuse (`.id(work_scoped_toast_id(base, work_id))`, unwrapping the
-/// old `unwrap_or_default()` fallback back in) is exactly what produced F2.
-/// Every call site in this crate goes through [`ToastWorkExt::scoped_id`]
-/// instead, which is the only place that unwraps this `Option`.
-///
-/// **Do not use this for a `.broadcast()` toast.** An app-wide toast SHOULD
-/// dedup across every window — e.g. "downloading a dictionary…" showing
-/// twice because two windows are both waiting on the same download would be
-/// the bug, not the fix — so broadcast call sites (`dictionaries.rs`,
+/// **Do not use this for a `.broadcast()` toast** — an app-wide toast SHOULD
+/// dedup across every window, so broadcast call sites (`dictionaries.rs`,
 /// `import_plume.rs`) keep their bare static id.
 pub fn work_scoped_toast_id(base: &str, work_id: impl Into<Option<u64>>) -> Option<String> {
     work_id.into().map(|id| format!("{base}.{id}"))
@@ -229,17 +155,11 @@ mod tests {
         );
     }
 
-    /// The pure check above only proves the helper itself no longer invents a
-    /// collidable id — it never touches an actual `.id(...)`/`.scoped_id(...)`
-    /// call site, so a reverted call site (back to
-    /// `.id(work_scoped_toast_id(base, work_id).unwrap_or_default())`, say)
-    /// would still leave it green. This drives two toasts through a real
-    /// `ToastRegistry` via a wired `Button` + [`crate::test_support::click`]
-    /// (the same idiom every other Phase-3 regression test in this crate
-    /// uses), both built the way `BackupSchedulerViewModel`'s "nothing open"
-    /// branch does — `.scoped_id("backup.now", None::<u64>)` — and asserts
-    /// both stay live: two windows with no Work open yet must never let the
-    /// second one's "no Work open" toast steal the first's slot.
+    /// The pure check above doesn't touch a real `.scoped_id(...)` call site,
+    /// so this drives two toasts through a real `ToastRegistry` via a wired
+    /// `Button` + [`crate::test_support::click`] and asserts both stay live —
+    /// two windows with no Work open must never let the second one's toast
+    /// steal the first's slot.
     #[test]
     fn two_no_work_toasts_via_scoped_id_both_stay_live_in_a_real_registry() {
         use bastyde::i18n::lit;

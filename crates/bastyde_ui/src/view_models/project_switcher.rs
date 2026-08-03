@@ -58,13 +58,13 @@ impl SwitcherSections {
 /// `SingleWorkInfo::file_name()` (already canonicalized the same way `open_registry` claims
 /// are — see the module doc — so a plain string comparison is enough).
 ///
-/// **`is_self` is "this window's own open path", never "any entry from my process"** — the
-/// Phase-3 fix. Before it, `is_self = e.pid == my_pid` was correct for one project per process,
-/// but with two in-process Works sharing one `my_pid()`, every entry from this process —
-/// including a SIBLING window's different, still-open Work — was marked `is_self` and its row
-/// went inert (`if is_self { return; }` in `project_switcher_button.rs`), so clicking it did
-/// nothing instead of raising that other window. `my_path` being `None` (this window hasn't
-/// finished its own Load/New yet) marks nothing as self, rather than guessing.
+/// **`is_self` is "this window's own open path", never "any entry from my process"** —
+/// `is_self = e.pid == my_pid` alone would be wrong with two in-process Works sharing
+/// one `my_pid()`: every entry from this process, including a SIBLING window's
+/// different, still-open Work, would be marked `is_self` and its row would go inert
+/// (`if is_self { return; }` in `project_switcher_button.rs`), so clicking it would do
+/// nothing instead of raising that other window. `my_path` being `None` (this window
+/// hasn't finished its own Load/New yet) marks nothing as self, rather than guessing.
 pub fn sections(
     entries: Vec<OpenEntry>,
     recents: &[RecentWorkDto],
@@ -99,9 +99,9 @@ pub fn sections(
 
 /// Raise the window already showing `path`, rather than opening it twice.
 ///
-/// **Two routes, and the split matters.** Since Phase 4 the common case is that the project
-/// is open in a window of *this very process* — single-instance means a second launch hands
-/// off rather than forking — so `pid == my_pid()` is resolved directly through
+/// **Two routes, and the split matters.** The common case is that the project is
+/// open in a window of *this very process* — single-instance means a second launch
+/// hands off rather than forking — so `pid == my_pid()` is resolved directly through
 /// [`crate::shell::windows::resolve_project_window`] (first window string id, then registry
 /// fallback for a secondary-only open) and `focus_window` raises it. Going out over a socket
 /// to ourselves would arrive at the same handler by a longer road.
@@ -128,12 +128,12 @@ pub fn raise_instance(ctx: &mut EventContext, pid: u32, path: &str) {
 
 /// Open `path` in a brand-new window of **this** process, leaving the current one alone.
 ///
-/// This used to spawn a whole second `skribisto`. Under single-instance that would be a
-/// round trip to nowhere: the child would elect, find this very process as the primary, hand
-/// the path back over a socket and exit — so it now does directly what the handoff would have
-/// asked for. Backed by the same `ProjectWindowFactory` every other project window comes
-/// from, so window 2 gets its own `WorkSession`/`AppIds`/undo stack exactly as a second
-/// process used to give it.
+/// Spawning a second `skribisto` process would be a round trip to nowhere under
+/// single-instance: the child would elect, find this very process as the primary,
+/// hand the path back over a socket and exit — so this does directly what that
+/// handoff would ask for. Backed by the same `ProjectWindowFactory` every other
+/// project window comes from, so window 2 gets its own
+/// `WorkSession`/`AppIds`/undo stack, same as a second process would have given it.
 pub fn open_in_new_window(ctx: &mut EventContext, path: &str) {
     crate::shell::windows::open_or_focus_project(ctx, path);
 }

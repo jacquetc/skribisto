@@ -4,21 +4,11 @@
 """One rule, in one place: a live-app probe never opens a checked-in fixture.
 
 Driving the real app means Ctrl+S, autosave, and format migration all happen for
-real. Any of them rewrites whatever file was passed on the command line. Three
-separate incidents came from forgetting that:
+real, and any of them rewrites whatever file was passed on the command line —
+silently corrupting the repo's fixture for the next run. A probe that mutates
+its own fixture still passes, so nothing catches it.
 
-  * a probe saved into `resources/test/skribisto_test_project.skrib`, so the next
-    run's toggle silently undid the previous run's;
-  * a run migrated the same fixture from format v2 to v3, which broke a test that
-    had pinned the version — the test looked wrong, the probe was;
-  * the same file was later reverted on the assumption a *test* had rewritten it.
-    No test does. Bisecting the suite proved it, after the fact.
-
-None of those were caught by the probe that caused them, because a probe that
-mutates its own fixture still passes — it just stops testing what it claims to,
-and takes the repo's copy with it.
-
-So: `working_copy()` hands back a throwaway in the scratchpad, and probes open
+`working_copy()` hands back a throwaway in the scratchpad, and probes open
 *that*. Cheap enough (a few MB) that there is no reason to skip it.
 """
 
@@ -28,11 +18,7 @@ import subprocess
 import tempfile
 
 #: Session scratchpad when one is set, else the system temp dir. Never inside the repo.
-#:
-#: The fallback is deliberately generic. An earlier version hard-coded one session's
-#: scratchpad path, which stops existing the moment that session ends — so every later
-#: run silently fell through to the temp dir anyway, while the dead path sat in the
-#: source looking authoritative. Set `SKRIBISTO_AUTOMATION_SCRATCH` to steer it.
+#: Set `SKRIBISTO_AUTOMATION_SCRATCH` to steer it.
 SCRATCH = os.environ.get("SKRIBISTO_AUTOMATION_SCRATCH", tempfile.gettempdir())
 
 
@@ -64,17 +50,11 @@ def wait_for_load(nodes_fn, markers, timeout=30.0, interval=0.5):
 def assert_no_running_instance(binary=None):
     """Refuse to launch while another instance of the same build is up.
 
-    Skribisto runs one process per project behind an open-registry lock, and a
-    second launch HANDS OFF to the existing instance and exits. A probe that
-    launches into that situation still scrapes a `bridge socket = ...` line out
-    of its log — belonging to a process which is on its way out — and then every
-    single call times out. The probe reports "the modal did not open" or "the
-    fixture did not load", naming a symptom several layers from the cause.
-
-    That happened three runs in a row here, and the diagnosis (a `Form` landmark
-    that had supposedly regressed) was entirely wrong: the landmark was fine, the
-    probe was talking to a corpse. Failing loudly up front costs one line and
-    saves that whole detour.
+    The single-instance election hands a second launch off to the existing
+    process and exits, so a probe that launches into that situation scrapes a
+    `bridge socket = ...` line belonging to a process on its way out, and every
+    call then times out — reporting a symptom (e.g. "the modal did not open")
+    several layers from the real cause. Failing loudly up front costs one line.
 
     Deliberately does NOT kill anything. The match is on this worktree's debug
     binary, which is also what `run-app` launches, so a stray instance may well
@@ -134,22 +114,14 @@ def isolated_config(locale="fr-FR", label="cfg", dark=False, show_welcome=True, 
     """A private `XDG_CONFIG_HOME` with the app's settings pinned. Returns an env dict.
 
     A probe that asserts on translated text must SET the language, never inherit
-    it. This one learned that the expensive way: `automation_tag_presets.py`
-    asserts the Basic preset's tags come out in French (plan step 9 — presets are
-    generated through `tr!`, so they must translate), but the app reads its
-    locale from `~/.config/skribisto/general.toml` and that file says
-    `[ui] locale = "en-US"`, with `auto_detect_os_locale(false)` in main.rs
-    meaning the machine's French locale is never consulted. The probe therefore
-    compared French expectations against a correctly-English app and reported a
-    translation bug that did not exist — and the diagnosis that followed chased a
-    non-existent fault in bastyde's i18n layer for some time before the probe's
-    own output turned out to be printing its French constants unconditionally.
+    it — `auto_detect_os_locale(false)` in main.rs means the OS locale is never
+    consulted, so a probe reading the operator's real `general.toml` compares
+    expectations against whatever locale happens to be pinned there instead.
 
-    Pointing `XDG_CONFIG_HOME` at a scratch directory fixes both halves: the
-    settings are whatever the probe says, and the run cannot read or write the
-    operator's real settings. It also side-steps a settings file written by a
-    newer build (`workspace.toml` on schema v3 against a v2 reader), which
-    otherwise makes every launch fall back to in-memory defaults.
+    Pointing `XDG_CONFIG_HOME` at a scratch directory fixes that, and also
+    side-steps a settings file written by a newer build (e.g. `workspace.toml`
+    on a schema version the running binary predates), which otherwise makes
+    every launch fall back to in-memory defaults.
 
     `pins` takes any dotted key from the app's settings schema. `locale`, `dark`
     and `show_welcome` are just the three most-wanted keys promoted to named
@@ -198,9 +170,8 @@ def config_pins_file(pins, label="pins"):
     path as `skribisto --config <path>` makes the app check every key against its
     schema (`crates/bastyde_ui/src/settings_keys.rs`) before it starts, and exit
     non-zero naming the offender — with its nearest legal neighbour — on an
-    unknown key or a value of the wrong type. That turns the one failure mode this
-    whole area keeps producing (a pin that silently did nothing, and a probe that
-    then asserts against a state it never reached) into a refusal to launch.
+    unknown key or a value of the wrong type, rather than silently ignoring a
+    typo'd pin.
 
     `--config` also implies `--new-instance`, so a run holding pins can never be
     elected away to a primary that is not holding them.

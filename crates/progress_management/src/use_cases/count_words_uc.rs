@@ -131,9 +131,7 @@ fn run_count(
     progress: &(dyn Fn(OperationProgress) + Send),
     cancel: &AtomicBool,
 ) -> Result<(EntityId, WordCountResultDto)> {
-    // Phase 0.5: count exactly the Work the caller named, not whichever one a
-    // HashMap-backed store happens to iterate first — the same "which Work?"
-    // fix `gather` already makes for save/export/backup.
+    // Count exactly the Work the caller named — `gather` requires it explicitly.
     let g = gather(uow, dto.work_id as EntityId, progress, cancel)?;
     let work_id = g.work.id;
 
