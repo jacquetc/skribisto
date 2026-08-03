@@ -185,14 +185,56 @@ pub struct CommentPalette {
     /// The card's fill — and the fill behind each turn's body editor, focused or
     /// not, so a note reads as written text rather than as a form to fill in.
     pub card: Color,
+    /// Secondary text **on the card**: the author and the timestamp.
+    ///
+    /// Derived from [`Self::card`] rather than taken from `TextRole::Secondary`,
+    /// which is what it used to be and is why it is now here. The card is a raw
+    /// colour the theme knows nothing about, so a role tuned against the app's own
+    /// surface lands on it by accident: in the dark theme `#9198A0` — a cool grey
+    /// chosen against `#1E1F22`, where it clears 7:1 — sat on the warm olive card
+    /// at **2.73:1**, measured off the rendered pixels. Well under AA, and at
+    /// `TextStyleRole::Tiny`.
+    ///
+    /// The light theme got away with it at 5.81:1, which is exactly what made it
+    /// easy to miss: the pairing was never wrong on purpose, it was never checked.
+    pub meta: Color,
+}
+
+/// WCAG AA for normal-size text. The metadata is `Tiny`, so the large-text 3:1
+/// allowance does not apply to it.
+const META_MIN_CONTRAST: f32 = 4.5;
+
+/// The card's secondary-text colour: muted toward the card's own best-contrast
+/// extreme, and only as far as AA requires.
+///
+/// Deriving it — instead of picking two hex values that happen to work for today's
+/// two cards — is the same move `tags::contrast` makes for tag text, and for the
+/// same reason: it turns a heuristic into a guarantee. At `t = 1.0` this is
+/// [`Color::best_contrast_text`], which `contrast.rs` proves clears AA for *every*
+/// possible fill, so the search always terminates on something legible whatever the
+/// card is later tuned to. Stopping at the first step that clears the bar is what
+/// keeps it reading as metadata rather than as a second body line.
+fn meta_on(card: Color) -> Color {
+    let extreme = card.best_contrast_text();
+    let mut t = 0.0;
+    while t < 1.0 {
+        let candidate = card.mix(extreme, t);
+        if candidate.contrast_ratio(card) >= META_MIN_CONTRAST {
+            return candidate;
+        }
+        t += 0.02;
+    }
+    extreme
 }
 
 impl Default for CommentPalette {
     fn default() -> Self {
+        let card = Color::from_hex("#FFFFC1");
         Self {
             wash: Color::from_hex("#F1E4BF"),
             ink: Color::from_hex("#C69200"),
-            card: Color::from_hex("#FFFFC1"),
+            card,
+            meta: meta_on(card),
         }
     }
 }
@@ -209,16 +251,25 @@ impl CommentPalette {
         if !dark {
             return base;
         }
+        let card = base.card.darken(0.68);
         Self {
             wash: base.wash.darken(0.62),
             ink: base.ink.lighten(0.08),
-            card: base.card.darken(0.68),
+            card,
+            // Re-derived from the *darkened* card, never carried over from the light
+            // one — the metadata's whole problem was a colour that had not been
+            // checked against the surface it was actually painted on.
+            meta: meta_on(card),
         }
     }
 }
 
 impl CommentsViewModel {
-    pub fn new(model: CommentsListModel, app_ctx: Rc<AppContext>, stack: Signal<Option<u64>>) -> Self {
+    pub fn new(
+        model: CommentsListModel,
+        app_ctx: Rc<AppContext>,
+        stack: Signal<Option<u64>>,
+    ) -> Self {
         Self {
             model,
             app_ctx,
@@ -394,7 +445,11 @@ impl CommentsViewModel {
             .filter(|r| author.is_empty() || r.author_name == author)
             .collect();
         if self.sort.get() == CommentSort::NewestFirst {
-            rows.sort_by(|a, b| b.created_at.cmp(&a.created_at).then_with(|| b.id.cmp(&a.id)));
+            rows.sort_by(|a, b| {
+                b.created_at
+                    .cmp(&a.created_at)
+                    .then_with(|| b.id.cmp(&a.id))
+            });
         }
         // DocumentOrder is the model's own sort, already applied.
         rows
@@ -598,7 +653,11 @@ impl CommentsViewModel {
             return;
         }
         self.delete_all_on_content(content_id, stack);
-        self.offer_undo(ctx, tr!(comments_deleted_all_toast(count = n as i64)), stack);
+        self.offer_undo(
+            ctx,
+            tr!(comments_deleted_all_toast(count = n as i64)),
+            stack,
+        );
     }
 
     /// The shared "deleted — Undo" snackbar.
@@ -763,6 +822,86 @@ fn span_of(block_starts: &[usize], start: usize, end: usize) -> usize {
 /// `App` builds this once and shares it by `.clone()`; the `Rc` keeps the
 /// single-instance shape explicit at call sites that store it.
 pub type SharedCommentsViewModel = Rc<CommentsViewModel>;
+
+#[cfg(test)]
+mod palette_tests {
+    use super::*;
+
+    /// **The bug this fixes.** The card's author and timestamp must clear WCAG AA
+    /// against the card they are painted on — in *both* themes, which is the half
+    /// that was never checked.
+    #[test]
+    fn card_metadata_clears_aa_on_the_card_in_both_themes() {
+        for dark in [false, true] {
+            let p = CommentPalette::for_theme(dark);
+            let ratio = p.meta.contrast_ratio(p.card);
+            assert!(
+                ratio >= META_MIN_CONTRAST,
+                "dark={dark}: metadata {:?} on card {:?} is {ratio:.2}:1",
+                p.meta,
+                p.card
+            );
+        }
+    }
+
+    /// The role it replaced, named so the regression is unmistakable.
+    ///
+    /// `TextRole::Secondary` resolves to `#9198A0` in the dark theme — a cool grey
+    /// picked against the app surface `#1E1F22`, where it is fine. On the warm olive
+    /// card it measured 2.73:1 off the rendered pixels. If someone ever puts a theme
+    /// role back on this surface, this is the number they will be choosing.
+    #[test]
+    fn the_theme_role_it_replaced_really_did_fail_on_the_dark_card() {
+        let card = CommentPalette::for_theme(true).card;
+        let was = Color::from_hex("#9198A0");
+        let ratio = was.contrast_ratio(card);
+        assert!(
+            ratio < META_MIN_CONTRAST,
+            "the dark theme's text_secondary now clears AA on the card at {ratio:.2}:1 — \
+             if the card was re-tuned, re-check whether `meta` is still needed"
+        );
+        assert!(
+            CommentPalette::for_theme(true).meta.contrast_ratio(card) > ratio,
+            "the derived colour must actually be an improvement on it"
+        );
+    }
+
+    /// Muted, not maximal. Metadata that reached full contrast would read as a
+    /// second line of body text and pull the eye off the comment itself — the
+    /// reason `meta_on` stops at the first step that clears the bar.
+    #[test]
+    fn the_metadata_stays_quieter_than_the_body() {
+        for dark in [false, true] {
+            let p = CommentPalette::for_theme(dark);
+            let body = p.card.best_contrast_text();
+            assert!(
+                p.meta.contrast_ratio(p.card) < body.contrast_ratio(p.card),
+                "dark={dark}: metadata is as loud as the body text"
+            );
+        }
+    }
+
+    /// The derivation is a **guarantee**, not a pair of values tuned for today's two
+    /// cards: whatever the card is later changed to, its metadata still clears AA.
+    ///
+    /// Same shape as `tags::contrast`'s own cube walk, and for the same reason — it
+    /// is what makes deriving preferable to hardcoding.
+    #[test]
+    fn metadata_clears_aa_for_any_card_colour() {
+        for r in (0..=255).step_by(17) {
+            for g in (0..=255).step_by(17) {
+                for b in (0..=255).step_by(17) {
+                    let card = Color::from_hex(&format!("#{r:02x}{g:02x}{b:02x}"));
+                    let ratio = meta_on(card).contrast_ratio(card);
+                    assert!(
+                        ratio >= META_MIN_CONTRAST,
+                        "card #{r:02x}{g:02x}{b:02x} got {ratio:.2}:1"
+                    );
+                }
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

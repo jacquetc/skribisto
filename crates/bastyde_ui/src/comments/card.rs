@@ -49,8 +49,8 @@ use bastyde::prelude::*;
 use bastyde::tokens::CornerRadius;
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
-    Divider, Expand, FocusScope, HStack, IconButton, IconWidget, MenuItem, MenuList, Padding, Panel,
-    PopoverIconButton, RectWidget, Spacer, TextWidget, TraversalScopePolicy, VStack, ZStack,
+    Divider, Expand, FocusScope, HStack, IconButton, IconWidget, MenuItem, MenuList, Padding,
+    Panel, PopoverIconButton, RectWidget, Spacer, TextWidget, TraversalScopePolicy, VStack, ZStack,
 };
 
 use crate::models::CommentRow;
@@ -63,7 +63,11 @@ const CHEVRON: f32 = 12.0;
 const REPLY_INDENT: f32 = 10.0;
 
 /// Build the card for one thread: the opening comment, then every reply.
-pub fn comment_card(vm: CommentsViewModel, row: CommentRow, palette: CommentPalette) -> impl Widget {
+pub fn comment_card(
+    vm: CommentsViewModel,
+    row: CommentRow,
+    palette: CommentPalette,
+) -> impl Widget {
     let mut col = VStack::new().spacing(4.0).child(Turn {
         vm: vm.clone(),
         comment_id: row.id,
@@ -81,19 +85,17 @@ pub fn comment_card(vm: CommentsViewModel, row: CommentRow, palette: CommentPale
         // turns, the indent says which one started the thread.
         col = col
             .child(Divider::horizontal().thickness(1.0).color(palette.ink))
-            .child(
-                Padding::new(0.0, 0.0, 0.0, REPLY_INDENT).child(Turn {
-                    vm: vm.clone(),
-                    comment_id: row.id,
-                    entry: ThreadEntry::Reply(reply.id),
-                    author: reply.author_name.clone(),
-                    body: reply.body.clone(),
-                    created_at: reply.created_at,
-                    resolved: row.resolved,
-                    palette,
-                    root: None,
-                }),
-            );
+            .child(Padding::new(0.0, 0.0, 0.0, REPLY_INDENT).child(Turn {
+                vm: vm.clone(),
+                comment_id: row.id,
+                entry: ThreadEntry::Reply(reply.id),
+                author: reply.author_name.clone(),
+                body: reply.body.clone(),
+                created_at: reply.created_at,
+                resolved: row.resolved,
+                palette,
+                root: None,
+            }));
     }
 
     Panel::new()
@@ -139,9 +141,7 @@ impl RichTextEditorStyle for CommentBodyStyle {
         }
         let ink = self.palette.ink;
         let ring = ctx.theme_signal().get().shape.focus_ring_width;
-        let border = cfg
-            .is_focused
-            .map(move |f| if *f { ring } else { 0.0 });
+        let border = cfg.is_focused.map(move |f| if *f { ring } else { 0.0 });
         let bg = ctx.add(
             RectWidget::new()
                 .background(self.palette.card)
@@ -320,18 +320,22 @@ impl Turn {
         } else {
             lit!(self.author.clone())
         };
+        // The card's own muted colour, not `TextRole::Secondary`: the card is a raw
+        // fill the theme has never seen, and the role's dark-theme grey sat on it at
+        // 2.73:1. See `CommentPalette::meta`.
+        let meta_color = self.palette.meta;
         let meta = HStack::new()
             .spacing(6.0)
             .child(
                 TextWidget::new(author)
                     .style(TextStyleRole::Tiny)
-                    .color(TextRole::Secondary),
+                    .color(meta_color),
             )
             .child(Spacer::new())
             .child(
                 TextWidget::new(lit!(stamp(self.created_at)))
                     .style(TextStyleRole::Tiny)
-                    .color(TextRole::Secondary),
+                    .color(meta_color),
             );
 
         VStack::new()
@@ -486,7 +490,11 @@ mod tests {
         vm.request_entry_focus(ThreadEntry::Comment(row.id));
 
         let mut tree = crate::test_support::tree_with_events(&ctx);
-        tree.add_boxed(Box::new(comment_card(vm.clone(), row, CommentPalette::default())));
+        tree.add_boxed(Box::new(comment_card(
+            vm.clone(),
+            row,
+            CommentPalette::default(),
+        )));
         tree.layout(bastyde::prelude::SizeProposal::exact(300.0, 400.0));
 
         assert!(
@@ -556,7 +564,10 @@ mod tests {
                 CommentPalette::for_theme(dark),
             )));
             tree.layout(bastyde::prelude::SizeProposal::exact(300.0, 400.0));
-            assert!(tree.bounds(id).height > 0.0, "dark={dark} laid out to nothing");
+            assert!(
+                tree.bounds(id).height > 0.0,
+                "dark={dark} laid out to nothing"
+            );
         }
     }
 
