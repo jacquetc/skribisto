@@ -1,7 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Item/Text — plain paragraph, frameless (the default item) -->
-  <path d="M3.5 4.5h9"/>
-  <path d="M3.5 7h9"/>
-  <path d="M3.5 9.5h9"/>
-  <path d="M3.5 12h5.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Item/Text — plain paragraph, frameless (the default item). Frameless is the
+       whole distinction from Scene, which is the same prose inside a page.
+       Bars on the half-grid at a 3-unit pitch: a 1-wide stroke centred on y.5
+       covers exactly one pixel row, so all four render at the same weight. The
+       old 1.3 stroke at a 2.5 pitch alternated black/grey down the glyph. -->
+  <path d="M3 3.5H13"/>
+  <path d="M3 6.5H13"/>
+  <path d="M3 9.5H13"/>
+  <path d="M3 12.5H9"/>
 </svg>

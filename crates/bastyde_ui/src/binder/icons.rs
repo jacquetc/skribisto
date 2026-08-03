@@ -16,6 +16,34 @@
 //!
 //! `res!` embeds each asset at compile time and needs a literal path per call
 //! site, so the mapping is a `match` with one `res!(...)` per arm.
+//!
+//! # Drawing rules for this set
+//!
+//! These glyphs ship at [`ICON_SIZE`] — 16 dp, which on a 1× display is 16
+//! physical pixels. That is small enough that two of the obvious ways to tell
+//! icons apart simply do not survive rasterisation, and both had produced real
+//! collisions here before:
+//!
+//! * **Differentiate by silhouette or by ink mass, never by counting interior
+//!   strokes.** Anything closer than about two units merges into one grey smear,
+//!   so "one bar vs two bars" is not a distinction at this size. Scene and
+//!   Chapter share a frame and are separated by two thin strokes against one
+//!   solid band; Part is the set's only diagonal; Note keeps its tail.
+//! * **Never distinguish a pair by mirroring it.** Left/right mirrored glyphs are
+//!   the hardest pair to tell apart at a glance, and RTL layout flips them again.
+//!   BookBegin and BookEnd are unrelated shapes for exactly this reason.
+//! * **Axis-aligned strokes belong on the half-grid**, at `stroke-width: 1` with
+//!   butt caps: a 1-wide stroke centred on `y.5` covers exactly one pixel row.
+//!   Off-grid strokes render at inconsistent weight — `text.svg` used to draw
+//!   four identical bars as black, grey, black, grey. Filled shapes take integer
+//!   bounds for the same reason. One weight (1) across the whole set.
+//! * **Check both themes.** Light-on-dark blooms, so a gap that just barely reads
+//!   on the light theme closes up on the dark one. Every collision this set has
+//!   had showed up worse in dark.
+//!
+//! The tree gives an icon the help of indentation and an expand chevron; the
+//! editor tab headers, which share this mapping, give it none. Judge a new glyph
+//! in the tab strip, where it stands alone.
 
 use bastyde::res;
 use bastyde::widgets::IconWidget;

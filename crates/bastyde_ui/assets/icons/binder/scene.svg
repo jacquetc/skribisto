@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Item/Scene — framed document, body lines (no heading). The two bars sit
-       2.8 apart rather than 2.0, matching `chapter-scene.svg`'s rhythm. -->
-  <path d="M9 2.5H4.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V6z"/>
-  <path d="M9 2.5V6h3.5"/>
-  <path d="M6 8.8 H10"/>
-  <path d="M6 11.6 H10"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Item/Scene — framed document, two equal prose bars (no heading).
+       Scene and Chapter share this frame, so the *interior* carries the whole
+       distinction, and it is drawn as a difference of ink mass, not of bar count:
+       two 1-unit strokes here against Chapter's one solid 2-unit band. Counting
+       strokes is what a 16px raster destroys; comparing mass is what survives it.
+       Bars on the half-grid, 2 apart, so a whole pixel row of gap is left. -->
+  <path d="M9.5 2.5H4.5a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5.5Z"/>
+  <path d="M9.5 2.5V5.5H12.5"/>
+  <path d="M5 8.5H11"/>
+  <path d="M5 10.5H11"/>
 </svg>

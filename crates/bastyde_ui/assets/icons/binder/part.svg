@@ -1,9 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
   <!-- Part (Item or Folder) — stacked layers. The lower two are flatter than the
        top plate and sit 3.6 apart rather than 2.8: parallel diagonals clear each
        other by the vertical gap divided by their slope, and the old spacing spent
-       nearly all of that on the 1.2 stroke. -->
-  <path d="M8 2.0 L13.4 4.6 L8 7.2 L2.6 4.6 Z"/>
-  <path d="M2.6 9.0 L8 10.8 L13.4 9.0"/>
-  <path d="M2.6 12.6 L8 14.4 L13.4 12.6"/>
+       nearly all of that on the stroke. Diagonals can't be pixel-aligned, so the
+       1-unit stroke buys the separation the half-grid buys elsewhere.
+       This is the only diagonal silhouette in the set — keep it that way. -->
+  <path d="M8 2 13.4 4.6 8 7.2 2.6 4.6Z"/>
+  <path d="M2.6 9 8 10.8 13.4 9"/>
+  <path d="M2.6 12.6 8 14.4 13.4 12.6"/>
 </svg>

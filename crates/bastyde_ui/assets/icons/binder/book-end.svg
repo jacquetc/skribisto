@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Item/BookEnd — open book closed by a trailing bracket -->
-  <path d="M7.4 4.2C6.5 3.6 5.2 3.3 4 3.4a.7.7 0 0 0-.7.7v6.7c0 .4.3.7.8.7 1.1-.1 2.4.2 3.3.8.9-.6 2.2-.9 3.3-.8.4 0 .8-.3.8-.7V4.1a.7.7 0 0 0-.7-.7c-1.2-.1-2.5.2-3.4.8z"/>
-  <path d="M7.4 4.2v8"/>
-  <path d="M13.6 4.4v7.2"/>
-  <path d="M13.6 4.4h-1.2"/>
-  <path d="M13.6 11.6h-1.2"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Item/BookEnd — prose running out into a solid end mark (the ∎ that closes a
+       text). See `book-begin.svg` for why the mirrored-book pair was abandoned.
+       The solid square is the whole point: it is the only filled block in the
+       set that isn't inside a frame, so this never collapses into `text.svg`'s
+       bare lines the way a third stroke would. Bars on the half-grid; the square
+       on integer bounds, sharing the bars' right edge. -->
+  <path d="M3 4.5H13"/>
+  <path d="M3 7.5H13"/>
+  <path d="M3 10.5H7"/>
+  <rect x="9" y="9" width="4" height="4" fill="currentColor" stroke="none"/>
 </svg>

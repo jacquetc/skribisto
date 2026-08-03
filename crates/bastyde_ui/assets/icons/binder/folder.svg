@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Folder/None — plain organisational folder -->
-  <path d="M2 4.6a1 1 0 0 1 1-1h2.6l1.2 1.5H13a1 1 0 0 1 1 1v5.8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Folder/None — plain organisational folder. The tab notched into the top-left
+       edge is what separates it from Binder's square-shouldered archive box, so
+       keep the two silhouettes apart if either is ever redrawn. Edges sit on the
+       half-grid (x2.5/x13.5, y12.5) so the box renders crisp rather than grey. -->
+  <path d="M2.5 5.5V4.5a1 1 0 0 1 1-1h2l1.5 2H12.5a1 1 0 0 1 1 1V11.5a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1Z"/>
 </svg>

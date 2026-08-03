@@ -1,8 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Item/BookBegin — open book opened by a leading bracket -->
-  <path d="M8.6 4.2C7.7 3.6 6.4 3.3 5.2 3.4a.7.7 0 0 0-.7.7v6.7c0 .4.3.7.8.7 1.1-.1 2.4.2 3.3.8.9-.6 2.2-.9 3.3-.8.4 0 .8-.3.8-.7V4.1a.7.7 0 0 0-.7-.7c-1.2-.1-2.5.2-3.4.8z"/>
-  <path d="M8.6 4.2v8"/>
-  <path d="M2.4 4.4v7.2"/>
-  <path d="M2.4 4.4h1.2"/>
-  <path d="M2.4 11.6h1.2"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Item/BookBegin — a start pennant on a pole.
+       This was an open book with a bracket down its left edge, and BookEnd was
+       the same drawing mirrored. Two problems at 16px: the bracket landed in the
+       same pixel column as the book's own cover, so it read as a slightly thicker
+       edge rather than a bracket; and a left/right mirrored pair is the hardest
+       kind to tell apart at a glance (and flips again under RTL layout). Both
+       markers are now unmirrored shapes that share nothing with `book.svg`.
+       Pole on the half-grid; pennant filled, on integer bounds. -->
+  <path d="M4.5 2V13.5"/>
+  <path d="M5 3H12L10.3 5.5 12 8H5Z" fill="currentColor" stroke="none"/>
 </svg>
