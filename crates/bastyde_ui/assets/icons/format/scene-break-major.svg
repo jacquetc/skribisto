@@ -1,6 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Major scene break — a ruled ornament, heavier than the minor break -->
-  <path d="M2 8 H5.8"/>
-  <path d="M10.2 8 H14"/>
-  <path d="M8 6.2 L9.8 8 L8 9.8 L6.2 8 Z"/>
+  <!-- Major scene break — a ruled ornament, heavier than the minor break. The
+       diamond is filled, and wider than it was: outlined at 3.6 across, a 1.3
+       stroke left it about one pixel of counter and the whole glyph read as a
+       dash with a lump in it. -->
+  <path d="M1.8 8 H4.6"/>
+  <path d="M11.4 8 H14.2"/>
+  <path d="M8 5.6 L10.4 8 L8 10.4 L5.6 8 Z" fill="currentColor" stroke="none"/>
 </svg>

@@ -1,5 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Configure the session goal -->
-  <circle cx="8" cy="8" r="2.1"/>
-  <path d="M8 1.6v1.8M8 12.6v1.8M1.6 8h1.8M12.6 8h1.8M3.5 3.5l1.3 1.3M11.2 11.2l1.3 1.3M12.5 3.5l-1.3 1.3M4.8 11.2l-1.3 1.3"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Configure the session goal — a cog, matching `activities/settings.svg`
+       tooth for tooth so the two "configure this" glyphs read as one idea. The
+       teeth start ON the ring: spokes floating away from a small hub read as a
+       sun, which is exactly what this icon used to be despite its name. -->
+  <circle cx="8" cy="8" r="4.2"/>
+  <circle cx="8" cy="8" r="1.6"/>
+  <path d="M12.2 8h1.9M1.9 8h1.9"/>
+  <path d="M10.1 11.64l.95 1.64M4.95 2.72l.95 1.64"/>
+  <path d="M5.9 11.64l-.95 1.64M11.05 2.72l-.95 1.64"/>
 </svg>

@@ -4,7 +4,7 @@
 //! `SaveIndicator` — the status bar's save state, next to the binder toggle.
 //!
 //! A flat icon button showing whether the manuscript is on disk: a save glyph with
-//! an **asterisk** while there are unsaved changes, with a **check** once the write
+//! a **filled dot** while there are unsaved changes, with a **check** once the write
 //! has landed, and a spinner while a genuinely slow write is running (see
 //! [`SpinnerGate`] — a local save is far too fast to be worth a flicker). Clicking
 //! saves.
@@ -127,7 +127,7 @@ impl SaveIndicator {
                 // whole job is to be alarming, and a theme that does it well would
                 // then flash an alarm on the first keystroke of every paragraph —
                 // while the genuine failures it exists for now live in toasts. Amber
-                // says "pending"; the shape (asterisk vs check) carries the meaning
+                // says "pending"; the shape (dot vs check) carries the meaning
                 // regardless of colour.
                 //
                 // **Undimmed**, because this colour is a statement, not an affordance.

@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Spell-check off — the same "AB" over a wavy underline, struck through -->
-  <path d="M1.5 8.5 L4 2.5 L6.5 8.5"/>
-  <path d="M2.4 6.6 H5.6"/>
-  <path d="M8.5 2.5 h2.2 a1.6 1.6 0 0 1 0 3.2 H8.5 z"/>
-  <path d="M8.5 5.7 h2.6 a1.6 1.6 0 0 1 0 3.2 H8.5 z"/>
-  <path d="M1.5 12.4 q1.2 -1.4 2.4 0 t2.4 0 t2.4 0"/>
-  <path d="M2 14.5 L14 1.8"/>
+  <!-- Spell-check off — the same letter and wavy underline as `spellcheck.svg`,
+       struck through. The body is identical between the two states so the toggle
+       swaps a badge rather than redrawing the glyph. -->
+  <path d="M2.0 9.2 L5.2 2.8 L8.4 9.2"/>
+  <path d="M3.2 6.7 H7.2"/>
+  <path stroke-width="1.1" d="M1.8 12.3 q1.6 -1.8 3.2 0 t3.2 0"/>
+  <path d="M2.4 13.6 L13.6 2.4"/>
 </svg>

@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Save (floppy) with an asterisk badge: changes are not yet on disk.
-       The disk is drawn small and the badge sits outside it, at the corner —
-       an asterisk inside the 16px body collapses into an unreadable blob. -->
+  <!-- Save (floppy) with a filled-dot badge: changes are not yet on disk. Same
+       disk as `save-saved.svg` so only the badge changes between the two states.
+       A dot rather than an asterisk: three strokes crossing inside a 4.6-unit
+       badge have no counters left at 16px, and the modified-dot is the marker
+       every editor's dirty tab already uses. -->
   <path d="M10.5 2.5h-7a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h5"/>
   <path d="M12.5 6.2V4.5l-2-2"/>
   <path d="M4.5 2.5v3h4"/>
-  <!-- Asterisk badge (bottom-right). Thinner than the disk (1.0 vs 1.2) and spread
-       wide: three strokes crossing at one point turn to mush at 16px otherwise. -->
-  <path stroke-width="1" d="M11.7 8.3v5.4M9.4 9.6l4.6 2.7M14 9.6l-4.6 2.7"/>
+  <circle cx="11.9" cy="11.9" r="2.1" fill="currentColor" stroke="none"/>
 </svg>

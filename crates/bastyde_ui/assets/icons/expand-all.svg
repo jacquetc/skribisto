@@ -1,6 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-  <!-- Expand all — chevrons opening away from a centre line -->
-  <path d="M5.4 5.6L8 3l2.6 2.6"/>
-  <path d="M5.4 10.4L8 13l2.6-2.6"/>
-  <path d="M3 8h10"/>
+  <!-- Expand all — two arrows opening away from a centre line, the mirror of
+       `collapse-all.svg`. Bare chevrons here read as a diamond with a bar through
+       it; the shafts give the pair a direction you can see at 16px. -->
+  <path d="M8 5.8 V2.2"/>
+  <path d="M6.1 4.1 L8 2.2 L9.9 4.1"/>
+  <path d="M8 10.2 V13.8"/>
+  <path d="M6.1 11.9 L8 13.8 L9.9 11.9"/>
+  <path d="M2.6 8h10.8"/>
 </svg>
