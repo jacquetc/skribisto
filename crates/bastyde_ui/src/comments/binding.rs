@@ -35,9 +35,7 @@ fn deepen(c: bastyde::prelude::Color) -> bastyde::prelude::Color {
 ///
 /// Two distinct `Color` types meet here: the widget/canvas one the theme speaks,
 /// and text-document's own, which `HighlightFormat` takes. Converting in one place
-/// is what keeps the wash and the margin marks the same colour — the first version
-/// of this had each side pick its own default, and the wash came out violet while
-/// the margin was ochre.
+/// is what keeps the wash and the margin marks the same colour.
 fn to_doc_color(c: bastyde::prelude::Color) -> bastyde::text_document::Color {
     let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
     bastyde::text_document::Color::rgb(q(c.r()), q(c.g()), q(c.b()))
@@ -162,6 +160,33 @@ impl CommentBinding {
     /// Tier 1 of the re-anchor (the stored offset still holds) is the overwhelming
     /// common case, so this is cheap in the normal path.
     pub fn push_live(&self) {
+        self.refresh_wash();
+        // Tell the view-model which document the margin is showing, so a card's
+        // "delete all comments here" is scoped to this document rather than to
+        // the whole project.
+        //
+        // Deliberately *not* part of [`Self::refresh_wash`]: a stream mounts one
+        // margin per row, and a refresh that claimed this slot would leave it
+        // holding whichever row happened to rebuild last.
+        self.vm.set_margin_content(self.content_id);
+    }
+
+    /// Re-derive the anchors and repaint the wash, without claiming the margin.
+    ///
+    /// The half of [`Self::push_live`] that has to run whenever the comment set
+    /// *changes shape*, not merely when one is created. The wash is painted from
+    /// [`CommentHighlightSession`]'s own anchor list, and nothing else refreshes
+    /// it — so a deleted thread's ochre stayed on the text, and a resolved one's
+    /// too, since `repaint`'s `!resolved` filter reads a flag on that same stale
+    /// list. The cards vanished on cue, which is what made it look like a paint
+    /// bug rather than a stale-model one: `build` drops a card whose id no longer
+    /// resolves against the *model*, while `repaint` needs no such lookup.
+    ///
+    /// Called from [`CommentMargin::build`](crate::comments::margin::CommentMargin),
+    /// which already rebuilds on exactly the two signals that matter — the
+    /// structure version and Tools ▸ Comments. Refreshing there rather than at each
+    /// mutation site is what keeps the next one added from re-introducing this.
+    pub fn refresh_wash(&self) {
         // One palette for the wash, the marks and the cards. Pushed here rather
         // than at construction because the theme can change under a live document,
         // and this runs on every set that matters.
@@ -173,11 +198,6 @@ impl CommentBinding {
         // over the open documents, because a document opened *while* comments are
         // hidden has no other way to learn it — and would come up painting.
         self.session.set_active(self.vm.is_visible());
-
-        // Tell the view-model which document the margin is showing, so a card's
-        // "delete all comments here" is scoped to this document rather than to
-        // the whole project.
-        self.vm.set_margin_content(self.content_id);
 
         let (text, starts) = self.snapshot();
         let live = self.vm.reanchor(self.content_id, &text, &starts, None);

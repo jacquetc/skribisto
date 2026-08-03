@@ -299,6 +299,18 @@ impl Widget for CommentMargin {
         // nothing in the prose to point at.
         vm.visible_signal()
             .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+
+        // Re-derive the anchors *before* reading them below, so the wash, the marks
+        // and the cards are all built from one snapshot of the comment set.
+        //
+        // Without this the highlight session kept whatever anchors it was last
+        // given — refreshed only on open and on create — so a deleted thread left
+        // its ochre on the text and a resolved one did too. It was invisible from
+        // here because `live()` reads that same stale list, and a card whose id no
+        // longer resolves against the model is silently skipped: the card went, the
+        // wash stayed. See `CommentBinding::refresh_wash`.
+        binding.refresh_wash();
+
         let rows = vm.model().rows_for_content(binding.content_id());
         // Hidden: no cards. Everything downstream is derived from `self.cards` — the
         // width, the stacking, the marks and the leaders — so starving this one list is
@@ -608,6 +620,72 @@ mod tests {
                 vm,
                 CommentMargin::new(Some(binding), Rc::new(RefCell::new(None)), palette),
             )
+        }
+
+        /// The same fixture, but with an extra anchor for a thread the model does
+        /// **not** have — exactly the state a delete leaves behind. Hands back the
+        /// session so the test can read what survived.
+        fn margin_with_a_ghost() -> (
+            CommentsViewModel,
+            CommentMargin,
+            std::rc::Rc<CommentHighlightSession>,
+        ) {
+            let ctx = std::rc::Rc::new(frontend::AppContext::new());
+            let vm = CommentsViewModel::new(
+                CommentsListModel::new(ctx.clone(), AppIds::new()),
+                ctx,
+                Signal::new(None),
+            );
+            let content = crate::singles::mock_content_id(201, &ContentRole::SceneText);
+            let doc = TextDocument::new();
+            doc.set_plain_text("The morning light crept over the ridgeline.")
+                .unwrap();
+            let session = CommentHighlightSession::new(&doc);
+            session.set_anchors(vec![LiveAnchor {
+                // A thread that no longer exists — deleted since the anchors were
+                // last pushed. Id far outside the fixture's range so it cannot
+                // accidentally match a real row.
+                comment_id: 9_999,
+                start: 0,
+                end: 17,
+                is_paragraph: false,
+                resolved: false,
+            }]);
+            let binding = CommentBinding::new(vm.clone(), doc, session.clone(), content);
+            let palette = Signal::new(CommentPalette::default());
+            (
+                vm,
+                CommentMargin::new(Some(binding), Rc::new(RefCell::new(None)), palette),
+                session,
+            )
+        }
+
+        /// **The delete bug.** A thread that is gone from the model must take its
+        /// wash off the text.
+        ///
+        /// The highlight session paints from its own anchor list, and that list was
+        /// only ever refreshed when a document opened or a comment was *created* —
+        /// never on delete, resolve or reopen. What made it look like a paint bug
+        /// rather than a stale-model one is that the card disappeared on cue:
+        /// `build` drops a card whose id no longer resolves against the model, while
+        /// `repaint` needs no such lookup and kept washing the text underneath.
+        ///
+        /// Laying the margin out is the whole point — the assertion is that
+        /// *mounting* it re-derives the anchors, not that a direct call to
+        /// `refresh_wash` would.
+        #[test]
+        fn a_deleted_thread_stops_washing_its_text() {
+            let (_vm, m, session) = margin_with_a_ghost();
+            assert_eq!(session.anchors().len(), 1, "the stale anchor is seeded");
+
+            let mut tree = WidgetTree::new();
+            tree.add(bastyde::widgets::HStack::new().child(m));
+            tree.layout(SizeProposal::exact(900.0, 600.0));
+
+            assert!(
+                session.anchors().iter().all(|a| a.comment_id != 9_999),
+                "a thread the model no longer has kept its wash on the text"
+            );
         }
 
         /// The width the margin claims with comments shown or hidden. Under a
