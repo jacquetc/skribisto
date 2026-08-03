@@ -32,8 +32,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use bastyde::canvas::{Canvas, Point, Rect};
-use bastyde::core::widget::{LayoutContext, LayoutResponse, PaintContext, Widget, WidgetPlacement};
 use bastyde::core::binding::BindingLevel;
+use bastyde::core::widget::{LayoutContext, LayoutResponse, PaintContext, Widget, WidgetPlacement};
 use bastyde::core::widget_id::WidgetId;
 use bastyde::prelude::*;
 use bastyde::widgets::rich_text::EditorHandle;
@@ -191,6 +191,78 @@ impl CommentMargin {
             .collect()
     }
 
+    /// The card requests for this margin, with anchors re-based on `base`.
+    ///
+    /// Shared by the measure and the place passes so the two can never disagree
+    /// about how tall the stack is — the failure that would leave a card hanging
+    /// over the row below by exactly the amount the two computations differed.
+    fn card_requests(&self, marks: &[Mark], base: f32, ctx: &LayoutContext) -> Vec<CardRequest> {
+        self.cards
+            .iter()
+            .map(|(id, wid)| CardRequest {
+                comment_id: *id,
+                // A card whose thread resolved no mark this pass sits at the top
+                // rather than vanishing — the same fallback `place_children` uses.
+                anchor_y: marks
+                    .iter()
+                    .find(|m| m.comment_id == *id)
+                    .map(|m| m.y - base)
+                    .unwrap_or(0.0),
+                height: ctx
+                    .child_size(*wid, SizeProposal::exact(MARGIN_WIDTH, f32::INFINITY))
+                    .map(|s| s.height)
+                    .unwrap_or(72.0),
+            })
+            .collect()
+    }
+
+    /// How much vertical room this margin's cards need, measured from the top of
+    /// the text they annotate.
+    ///
+    /// A single-item tab never had to ask. There the writing column *is* the page,
+    /// so the margin was handed the page's height and the cards had all of it to
+    /// stack in — which is what [`Widget::place_children`]'s "full height" comment
+    /// means. A **stream row** is only as tall as its own few lines, and a thread
+    /// with two replies is easily taller than a two-line scene, so a margin that
+    /// silently accepted the row's height would stack its cards straight over the
+    /// row below.
+    ///
+    /// Reported through `layout_response` rather than read directly, because the
+    /// only thing that needs it — [`ColumnWithMargin`](crate::comments::pane::ColumnWithMargin)
+    /// — holds this margin as a `WidgetId` and can reach it only by measuring it.
+    fn wanted_height(&self, ctx: &LayoutContext) -> f32 {
+        if self.cards.is_empty() {
+            return 0.0;
+        }
+        let marks = self.resolve_marks();
+        // Every anchor is in the editor's own coordinate space, which is a position
+        // the caller cannot interpret. Re-basing on the first line turns the answer
+        // into an *extent* it can compare against a prose height. The first line
+        // rather than the widget top because that is the only reference the editor
+        // handle actually exposes; it is short by the editor's top padding, which
+        // the trailing `GAP` below more than covers.
+        let base = self
+            .editor
+            .borrow()
+            .as_ref()
+            .and_then(|h| h.offset_rect(0))
+            .map(|r| r.y)
+            .unwrap_or_else(|| {
+                marks
+                    .iter()
+                    .map(|m| m.y)
+                    .fold(f32::INFINITY, f32::min)
+                    .min(0.0)
+            });
+        layout::stack(&self.card_requests(&marks, base, ctx))
+            .iter()
+            .map(|p| p.y + p.height)
+            .fold(0.0, f32::max)
+            // Keep the last card off whatever comes next, with the same breathing
+            // room the stack already puts between two cards.
+            + layout::GAP
+    }
+
     /// A dotted run, painted from [`dash_segments`].
     ///
     /// Discrete dashes rather than a styled stroke because the canvas has no dash
@@ -225,11 +297,8 @@ impl Widget for CommentMargin {
         // cards — a repaint-level binding would leave them mounted and merely stop
         // drawing the marks, which is the state where a card sits in the margin with
         // nothing in the prose to point at.
-        vm.visible_signal().bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Rebuild,
-        );
+        vm.visible_signal()
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
         let rows = vm.model().rows_for_content(binding.content_id());
         // Hidden: no cards. Everything downstream is derived from `self.cards` — the
         // width, the stacking, the marks and the leaders — so starving this one list is
@@ -258,7 +327,7 @@ impl Widget for CommentMargin {
         ids
     }
 
-    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
         // Zero width until this document actually has a comment.
         //
         // A margin that always reserved its column would shove the writing page
@@ -277,7 +346,16 @@ impl Widget for CommentMargin {
         // the full pane width whenever a parent measured it with a definite one.
         // It then covered the prose entirely: invisible (it paints nothing without
         // marks), but swallowing every click meant for the text underneath.
-        bastyde::canvas::Size::new(width, proposal.height.unwrap_or(0.0)).into()
+        //
+        // The **height** is the opposite case: a definite proposal is the parent
+        // saying how tall this margin is, and it is honoured. Only when asked
+        // without one — which is exactly how `ColumnWithMargin` measures — does the
+        // margin state what its cards actually need. See [`Self::wanted_height`].
+        bastyde::canvas::Size::new(
+            width,
+            proposal.height.unwrap_or_else(|| self.wanted_height(ctx)),
+        )
+        .into()
     }
 
     fn place_children(
@@ -291,27 +369,21 @@ impl Widget for CommentMargin {
         let card_x = bounds.x + bounds.width - MARGIN_WIDTH;
 
         // Ask each card how tall it wants to be, then stack them so none overlaps.
-        let mut requests = Vec::with_capacity(children.len());
-        for (i, (id, wid)) in self.cards.iter().enumerate() {
-            if i >= children.len() {
-                break;
-            }
-            let anchor_y = marks
-                .iter()
-                .find(|m| m.comment_id == *id)
-                .map(|m| m.y)
-                .unwrap_or(bounds.y);
-            let h = ctx
-                .child_size(*wid, SizeProposal::exact(MARGIN_WIDTH, f32::INFINITY))
-                .map(|s| s.height)
-                .unwrap_or(72.0);
-            requests.push(CardRequest {
-                comment_id: *id,
-                anchor_y,
-                height: h,
-            });
-        }
-        let placed = layout::stack(&requests);
+        // Anchors are re-based on this margin's own top, so a card with no resolved
+        // mark lands at the top of the margin exactly as before — and so the stack
+        // is the *same* arithmetic `wanted_height` measured with.
+        // …then shifted back into the absolute space the child origins and the
+        // painted leaders both speak. With `base = bounds.y` this is exactly the
+        // arithmetic this pass did before the split, markless-card fallback and all.
+        let placed: Vec<layout::Placement> =
+            layout::stack(&self.card_requests(&marks, bounds.y, ctx))
+                .into_iter()
+                .map(|mut p| {
+                    p.y += bounds.y;
+                    p.anchor_y += bounds.y;
+                    p
+                })
+                .collect();
 
         for (i, (id, _)) in self.cards.iter().enumerate() {
             if i >= children.len() {
@@ -407,7 +479,11 @@ mod tests {
     /// paint nothing, and silently swallow every click meant for the text.
     #[test]
     fn a_margin_with_no_binding_claims_no_width() {
-        let m = CommentMargin::new(None, Rc::new(RefCell::new(None)), Signal::new(crate::view_models::CommentPalette::default()));
+        let m = CommentMargin::new(
+            None,
+            Rc::new(RefCell::new(None)),
+            Signal::new(crate::view_models::CommentPalette::default()),
+        );
         let mut tree = WidgetTree::new();
         // Under a parent, not at the root: a root widget is simply given the
         // window, so its own `layout_response` is never what decides its bounds.
@@ -421,13 +497,38 @@ mod tests {
         );
     }
 
+    /// An empty margin asks for **no height either**, which is what keeps a stream
+    /// row with no comments exactly as tall as its prose.
+    ///
+    /// The width half of this is above; the height half is new, and is the one a
+    /// careless `unwrap_or(1.0)`-style default would break silently — every row on
+    /// every page would gain a few stray pixels and nothing would point at why.
+    #[test]
+    fn a_margin_with_no_cards_asks_for_no_height() {
+        let m = CommentMargin::new(
+            None,
+            Rc::new(RefCell::new(None)),
+            Signal::new(crate::view_models::CommentPalette::default()),
+        );
+        let mut tree = WidgetTree::new();
+        let root = tree.add(bastyde::widgets::HStack::new().child(m));
+        // Width-only: the proposal `ColumnWithMargin` measures with, and the only
+        // one under which the margin states what it wants rather than accepting.
+        tree.layout(SizeProposal::with_width(MARGIN_WIDTH));
+        assert_eq!(tree.bounds(tree.children(root)[0]).height, 0.0);
+    }
+
     /// Marks resolve to nothing before the editor has laid out.
     ///
     /// The alternative — falling back to the origin — would draw every triangle and
     /// leader in the top-left corner, pointing confidently at the wrong line.
     #[test]
     fn marks_are_empty_without_a_live_editor_handle() {
-        let m = CommentMargin::new(None, Rc::new(RefCell::new(None)), Signal::new(crate::view_models::CommentPalette::default()));
+        let m = CommentMargin::new(
+            None,
+            Rc::new(RefCell::new(None)),
+            Signal::new(crate::view_models::CommentPalette::default()),
+        );
         assert!(m.resolve_marks().is_empty());
     }
 

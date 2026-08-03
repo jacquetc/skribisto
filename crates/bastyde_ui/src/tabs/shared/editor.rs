@@ -252,18 +252,22 @@ pub fn writing_column(
         // empty leader.
         Some(binding) => {
             let palette = binding.palette();
+            let gutter = binding.gutter();
             let margin = crate::comments::margin::CommentMargin::new(
                 Some(binding),
                 handle_for_margin,
                 palette,
             );
-            row.child(Expand::horizontal().child(
-                crate::comments::pane::ColumnWithMargin::new(
-                    capped,
-                    margin,
-                    column_width.clone(),
+            row.child(
+                Expand::horizontal().child(
+                    crate::comments::pane::ColumnWithMargin::new(
+                        capped,
+                        margin,
+                        column_width.clone(),
+                    )
+                    .reserve(gutter),
                 ),
-            ))
+            )
         }
         None => row.child(Expand::horizontal().child(CenterColumnFlowing::new(capped))),
     }
@@ -367,7 +371,7 @@ fn editor_context_menu(
         list = list
             .item(
                 MenuItem::new(tr!(comments_menu_add_paragraph())).on_activate_fn(move |_ctx| {
-                        // The whole selection, so a drag across several paragraphs
+                    // The whole selection, so a drag across several paragraphs
                     // comments all of them as one thread.
                     b.add_paragraph(start, end);
                 }),
@@ -562,7 +566,7 @@ pub fn synopsis_editor(
     // The synopsis is a *different* `Content` row than the body, so it carries
     // its own binding — anchoring both to "the item" would merge two distinct
     // annotations into one.
-    comments: Option<crate::comments::binding::CommentBinding>
+    comments: Option<crate::comments::binding::CommentBinding>,
 ) -> impl Widget {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
@@ -857,7 +861,7 @@ pub fn synopsis_section(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
-    comments: Option<crate::comments::binding::CommentBinding>
+    comments: Option<crate::comments::binding::CommentBinding>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
@@ -921,7 +925,7 @@ pub fn synopsis_column(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
-    comments: Option<crate::comments::binding::CommentBinding>
+    comments: Option<crate::comments::binding::CommentBinding>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(

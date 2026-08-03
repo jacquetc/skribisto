@@ -15,6 +15,7 @@
 
 use std::rc::Rc;
 
+use bastyde::prelude::Signal;
 use bastyde::text_document::TextDocument;
 
 use crate::comments::anchor;
@@ -50,6 +51,16 @@ pub struct CommentBinding {
     session: Rc<CommentHighlightSession>,
     /// The `Content` row this editor's document reads and writes.
     content_id: u64,
+    /// The gutter this editor's **page** reserves, whatever this document holds.
+    ///
+    /// Zero for a tab, whose single margin decides for itself. A stream sets it
+    /// for every row at once — see
+    /// [`ColumnWithMargin::reserve`](crate::comments::pane::ColumnWithMargin::reserve)
+    /// for why the reservation cannot be per-row. It rides on the binding rather
+    /// than on a `writing_column` parameter because the binding is already *this
+    /// editor's door to the comment feature*, and an editor with no comments needs
+    /// no door at all.
+    gutter: Signal<f32>,
 }
 
 impl CommentBinding {
@@ -64,7 +75,28 @@ impl CommentBinding {
             doc,
             session,
             content_id,
+            gutter: Signal::new(0.0),
         }
+    }
+
+    /// Reserve a page-level gutter for this editor — see [`Self::gutter`].
+    pub fn with_gutter(mut self, gutter: Signal<f32>) -> Self {
+        self.gutter = gutter;
+        self
+    }
+
+    pub fn gutter(&self) -> Signal<f32> {
+        self.gutter.clone()
+    }
+
+    /// Whether this editor would show any card at all.
+    ///
+    /// The one predicate the margin's `build`, its marks and the page-level gutter
+    /// all have to agree on — a thread that is resolved, collapsed to nothing, or
+    /// hidden by Tools ▸ Comments produces no card, and a gutter reserved for it
+    /// would be an empty column the writer cannot get rid of.
+    pub fn has_live_cards(&self) -> bool {
+        self.vm.is_visible() && self.live().iter().any(|a| !a.resolved && a.end > a.start)
     }
 
     pub fn view_model(&self) -> CommentsViewModel {
@@ -83,7 +115,12 @@ impl CommentBinding {
     /// is no longer there.
     fn snapshot(&self) -> (String, Vec<usize>) {
         let text = self.doc.to_plain_text().unwrap_or_default();
-        let starts: Vec<usize> = self.doc.blocks().into_iter().map(|b| b.position()).collect();
+        let starts: Vec<usize> = self
+            .doc
+            .blocks()
+            .into_iter()
+            .map(|b| b.position())
+            .collect();
         (text, starts)
     }
 
@@ -207,9 +244,7 @@ impl CommentBinding {
     }
 
     /// The shared palette every mark and card for this document is painted with.
-    pub fn palette(
-        &self,
-    ) -> bastyde::prelude::Signal<crate::view_models::CommentPalette> {
+    pub fn palette(&self) -> bastyde::prelude::Signal<crate::view_models::CommentPalette> {
         self.vm.palette_signal()
     }
 

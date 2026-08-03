@@ -78,6 +78,15 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             SplitFlavour::Synopsis => (tab.column_width.clone(), tab.typography.synopsis.clone()),
         };
         let format = tab.format.clone();
+        // The container's own surface is a commentable editor like any row's.
+        let own_comments = match flavour {
+            SplitFlavour::Prose => tab.open_doc.comment_binding_main(),
+            SplitFlavour::Synopsis => tab.open_doc.comment_binding_synopsis(),
+        };
+        // One gutter for the whole page — see `ColumnWithMargin::reserve`. Seeded
+        // here and kept fresh by `WireOnBuild`, which owns the only `BuildContext`
+        // inside this pane.
+        let gutter = Signal::new(page_gutter(&vm, own_comments.as_ref(), flavour));
         let factory = {
             let vm = vm.clone();
             let header_cw = header_cw.clone();
@@ -87,15 +96,22 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let format = format.clone();
             let tw = tab.typewriter.clone();
             let band = tab.caret_band();
+            let gutter = gutter.clone();
             move |row: &StreamRow| -> Box<dyn Widget> {
                 Box::new(stream_row(
                     &vm, row, &header_cw, &editor_cw, &typo, flavour, &md, &format, &tw, &band,
+                    &gutter,
                 ))
             }
         };
 
         col = col
-            .child(WireOnBuild::new(vm.clone()))
+            .child(WireOnBuild::new(
+                vm.clone(),
+                flavour,
+                gutter.clone(),
+                own_comments.clone(),
+            ))
             .child(vspace(12.0))
             .child(centered(container_header(&vm), &header_cw))
             .child(vspace(4.0));
@@ -127,10 +143,10 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // so "the caret of this tab" has no single answer here. Same
                     // reason the synopsis rows below take no handle sink.
                     Option::None,
-                    // A stream row is one editor among many with no single focused
-                    // surface — the same reason it passes no view-state binding.
-                    // Comment affordances live on the item's own tab.
-                    Option::None,
+                    // Comments, on the other hand, are per *document* and each
+                    // surface here has its own — so the container's own prose is
+                    // commentable in the stream exactly as it is on its own tab.
+                    own_comments.clone().map(|b| b.with_gutter(gutter.clone())),
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
@@ -149,8 +165,9 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Some(tab.format.clone()),
                     Some(tab.typewriter.clone()),
                     Some(tab.caret_band()),
-                    // No comment binding on a stream row — see the prose column above.
-                    Option::None,
+                    // The synopsis is its own `Content` row with its own threads —
+                    // see the prose column above.
+                    own_comments.clone().map(|b| b.with_gutter(gutter.clone())),
                 )),
             };
             col = col.child(vspace(6.0));
@@ -165,16 +182,55 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
     crate::tabs::shared::panes::writing_page_scroll(tab).child(col)
 }
 
+/// The gutter this page reserves: the margin's full column once anything on the
+/// page has a card, nothing at all before that.
+///
+/// A stream asks the question **once for the page** rather than letting each row's
+/// margin answer for itself. The margin claims its width only when its own document
+/// has a comment, so per-row answers would put the commented rows on a different
+/// measure from the rest — invisible in a wide window, but in a pane too tight to
+/// fit the pair centred (`place_pane`'s rule 3) the commented rows shift left and
+/// the manuscript zigzags down the page.
+fn page_gutter(
+    vm: &StreamViewModel,
+    own: Option<&crate::comments::binding::CommentBinding>,
+    flavour: SplitFlavour,
+) -> f32 {
+    let any = own.is_some_and(|b| b.has_live_cards()) || vm.any_row_has_comments(flavour);
+    if any {
+        crate::comments::margin::MARGIN_WIDTH + crate::comments::margin::LEADER_GUTTER
+    } else {
+        0.0
+    }
+}
+
 /// Zero-size child that wires the stream view-model on build (subscribing the row list
 /// and the per-row metadata) — the one place inside the pane's widget tree that gets a
 /// `BuildContext`. `wire` is idempotent.
+///
+/// It also keeps the page's [gutter](page_gutter) current. That belongs here for the
+/// same reason the subscriptions do: the reservation is a fact about the whole page,
+/// and this is the only widget in the pane positioned to watch for it changing.
 struct WireOnBuild {
     vm: StreamViewModel,
+    flavour: SplitFlavour,
+    gutter: Signal<f32>,
+    own: Option<crate::comments::binding::CommentBinding>,
 }
 
 impl WireOnBuild {
-    fn new(vm: StreamViewModel) -> Self {
-        Self { vm }
+    fn new(
+        vm: StreamViewModel,
+        flavour: SplitFlavour,
+        gutter: Signal<f32>,
+        own: Option<crate::comments::binding::CommentBinding>,
+    ) -> Self {
+        Self {
+            vm,
+            flavour,
+            gutter,
+            own,
+        }
     }
 }
 
@@ -187,6 +243,37 @@ impl std::fmt::Debug for WireOnBuild {
 impl Widget for WireOnBuild {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         self.vm.wire(ctx);
+        // Recompute the page's gutter when the comment set's *shape* changes (a
+        // thread created, deleted or resolved) or when Tools ▸ Comments toggles —
+        // the same two signals each row's margin rebuilds on, so the reservation
+        // and the cards it makes room for move together.
+        if let Some(vm) = self
+            .own
+            .as_ref()
+            .map(|b| b.view_model())
+            .or_else(|| self.vm.row_comments_any_view_model(self.flavour))
+        {
+            // Two effects, not one on a `zip`: a combined signal is **read-only**,
+            // and `ctx.effect` observes — which panics on one. The pane looked fine
+            // in every headless test because they build a stream with no comments
+            // view-model at all, so this block never ran; it took launching the app
+            // to find. Two subscriptions on the same recompute cost nothing here,
+            // since the recompute is idempotent.
+            let recompute = {
+                let stream = self.vm.clone();
+                let own = self.own.clone();
+                let flavour = self.flavour;
+                let gutter = self.gutter.clone();
+                move || gutter.set(page_gutter(&stream, own.as_ref(), flavour))
+            };
+            let structure = vm.model().structure_signal();
+            let visible = vm.visible_signal();
+            {
+                let recompute = recompute.clone();
+                ctx.effect(&structure, move |_| recompute());
+            }
+            ctx.effect(&visible, move |_| recompute());
+        }
         Vec::new()
     }
 
@@ -248,6 +335,9 @@ fn stream_row(
     format: &crate::view_models::FormatViewModel,
     typewriter: &crate::view_models::TypewriterSettings,
     caret: &crate::view_models::CaretBand,
+    // The page's gutter reservation, shared by every row so the manuscript keeps
+    // one measure down the page (see `ColumnWithMargin::reserve`).
+    gutter: &Signal<f32>,
 ) -> impl Widget {
     let id = row.item_id;
     let is_heading = row.sub_role.opens_chapter() || row.sub_role.opens_part();
@@ -303,9 +393,11 @@ fn stream_row(
                         Some(caret.clone()),
                         // Per-row editor — see the container's own column above.
                         Option::None,
-                        // Likewise no comment binding: comment affordances live on
-                        // the item's own tab, where there is one focused editor.
-                        Option::None,
+                        // This row's own threads. `row_doc` shares its document with
+                        // any tab open on the same item, so the binding — and the
+                        // cards it puts in the margin — are the same either way.
+                        vm.row_comments(id, flavour)
+                            .map(|b| b.with_gutter(gutter.clone())),
                     ));
                 }
             }
@@ -325,8 +417,9 @@ fn stream_row(
                         Some(format.clone()),
                         Some(typewriter.clone()),
                         Some(caret.clone()),
-                        // No comment binding on a stream row — see above.
-                        Option::None,
+                        // This row's synopsis threads — see above.
+                        vm.row_comments(id, flavour)
+                            .map(|b| b.with_gutter(gutter.clone())),
                     ));
                 }
             }
@@ -438,5 +531,49 @@ fn insert_label(row: &StreamRow) -> LocalizedString {
     match recommended {
         Some(CreateType::Chapter) => tr!(insert_chapter()),
         _ => tr!(insert_scene()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_ids::AppIds;
+    use crate::models::OpenDocsStore;
+    use frontend::AppContext;
+    use frontend::common::entities::BinderItemRole::Folder;
+    use frontend::common::entities::BinderItemSubRole::ChapterScene;
+
+    fn stream() -> StreamViewModel {
+        let ctx = Rc::new(AppContext::new());
+        let docs = OpenDocsStore::new(ctx.clone());
+        StreamViewModel::new(ctx, AppIds::new(), docs, 1, &Folder, &ChapterScene)
+            .expect("a chapter folder hosts a stream")
+    }
+
+    /// **The majority case, and the one that must not regress.** A page with no
+    /// comments anywhere reserves nothing, so every manuscript that has never been
+    /// annotated is typeset exactly as it was before the margin existed.
+    ///
+    /// The reservation is a floor applied to *every* row at once, so getting this
+    /// wrong would not be subtle — it would put a permanent empty 328 dp column
+    /// beside every stream in the app.
+    #[test]
+    fn a_page_with_no_comments_reserves_no_gutter() {
+        let vm = stream();
+        assert_eq!(page_gutter(&vm, None, SplitFlavour::Prose), 0.0);
+        assert_eq!(page_gutter(&vm, None, SplitFlavour::Synopsis), 0.0);
+    }
+
+    /// Enumerating the page's comments is safe with no project behind it — the
+    /// state every headless widget test builds a stream in.
+    #[test]
+    fn asking_a_bare_stream_for_its_comments_is_a_safe_no() {
+        let vm = stream();
+        assert!(!vm.any_row_has_comments(SplitFlavour::Prose));
+        assert!(vm.row_comments(42, SplitFlavour::Prose).is_none());
+        assert!(
+            vm.row_comments_any_view_model(SplitFlavour::Prose)
+                .is_none()
+        );
     }
 }

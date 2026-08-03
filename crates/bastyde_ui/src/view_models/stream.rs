@@ -40,6 +40,8 @@ use bastyde::data::ListModel;
 use bastyde::prelude::*; // EventContext, Signal, BuildContext, tr!
 use bastyde::widgets::InputDialog;
 
+use crate::comments::binding::CommentBinding;
+
 use frontend::AppContext;
 use frontend::binder_item_management::{MergeTwoScenesDto, MovePlace, SplitSceneDto};
 use frontend::commands::{
@@ -247,6 +249,53 @@ impl StreamViewModel {
     /// standalone tab on the same item are one document. Cached and reused.
     pub fn row_doc(&self, id: u64) -> Option<Rc<OpenDoc>> {
         self.handle(id).map(|h| h.doc)
+    }
+
+    /// This row's door to the comment feature, for the surface `flavour` names.
+    ///
+    /// A stream row is a perfectly ordinary commentable editor: `row_doc` opens
+    /// through the **shared** store, so the row and a standalone tab on the same
+    /// item are one document, and the binding it mints is the same one that tab
+    /// would get. What a row genuinely cannot have is a *view-state* binding —
+    /// "the caret of this tab" has no answer with twelve editors on the page — and
+    /// the two were conflated when the streams were first written, which is why
+    /// comments were washed into stream prose that offered no way to read them.
+    pub fn row_comments(&self, id: u64, flavour: SplitFlavour) -> Option<CommentBinding> {
+        let doc = self.row_doc(id)?;
+        match flavour {
+            SplitFlavour::Prose => doc.comment_binding_main(),
+            SplitFlavour::Synopsis => doc.comment_binding_synopsis(),
+        }
+    }
+
+    /// Any row's comments view-model, for a page that needs to watch the store but
+    /// whose container has no commentable surface of its own (a Part or a Book has
+    /// no prose). Every binding on the page shares one view-model, so the first
+    /// that resolves answers for all of them.
+    pub fn row_comments_any_view_model(
+        &self,
+        flavour: SplitFlavour,
+    ) -> Option<crate::view_models::CommentsViewModel> {
+        self.inner
+            .rows
+            .ids()
+            .into_iter()
+            .find_map(|id| self.row_comments(id, flavour))
+            .map(|b| b.view_model())
+    }
+
+    /// Does any row on this page carry a live comment?
+    ///
+    /// The page-level question behind the gutter reservation — see
+    /// [`ColumnWithMargin::reserve`](crate::comments::pane::ColumnWithMargin::reserve).
+    /// Walks the rows rather than the comment store because it is the *rows on this
+    /// page* that decide, and a container's stream is a small slice of a project's
+    /// comments.
+    pub fn any_row_has_comments(&self, flavour: SplitFlavour) -> bool {
+        self.inner.rows.ids().into_iter().any(|id| {
+            self.row_comments(id, flavour)
+                .is_some_and(|b| b.has_live_cards())
+        })
     }
 
     pub fn row_title(&self, id: u64) -> Signal<String> {
