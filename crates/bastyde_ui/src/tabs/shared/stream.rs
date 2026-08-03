@@ -552,6 +552,12 @@ mod tests {
 
     /// A stream whose store has the project's comments view-model installed, the
     /// way `App::build` wires it — but with no rows yet.
+    ///
+    /// Real model only: the mock `StreamRowsModel` ignores the head id and hands
+    /// back a fabricated stream for every container, which is the whole point of
+    /// the mocks build but leaves no way to construct the empty one this fixture
+    /// is for.
+    #[cfg(not(feature = "mocks"))]
     fn stream_with_comments_installed() -> StreamViewModel {
         use crate::models::CommentsListModel;
         use crate::view_models::CommentsViewModel;
@@ -606,6 +612,13 @@ mod tests {
     /// stale reservation — the zigzag this whole mechanism exists to prevent.
     ///
     /// So the resolution must not depend on a row existing.
+    ///
+    /// Real model only, and not because the behaviour is: the *precondition* is
+    /// unconstructable under `mocks`, where `StreamRowsModel` fabricates rows for
+    /// every container regardless of head id. Running it there would assert
+    /// nothing — a stream with rows resolves the view-model through a row binding,
+    /// which is exactly the path this test exists to prove unnecessary.
+    #[cfg(not(feature = "mocks"))]
     #[test]
     fn a_rowless_stream_still_resolves_the_comments_view_model_to_watch() {
         let vm = stream_with_comments_installed();

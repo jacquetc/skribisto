@@ -2330,10 +2330,42 @@ mod tests {
         // published from layout for the `Switcher` to pick up on the *next* pass —
         // so settling means interleaving layouts and clock ticks until both have
         // finished, not one of each.
+        //
+        // Each round advances a whole simulated **second**, and the loop runs to a
+        // fixed point instead of a fixed count. Both halves matter, and neither is
+        // padding:
+        //
+        // `WidgetTree::layout` promotes a newly armed animation by stamping its
+        // start on the *wall* clock, while `tick_animations` only ever advances the
+        // tree's simulated one. A tween therefore makes progress only for as long
+        // as simulated time stays ahead of real time — and the margin a fixed count
+        // of frame-sized steps buys is small enough to lose on a loaded runner
+        // (this suite fills 24 cores). When it is lost the collapse progress simply
+        // freezes at "expanded": not slow, *stopped*, so no number of extra frames
+        // rescues it, and the assertions below read a fully open column. Seconds
+        // per round put the margin far beyond anything the wall clock can close.
+        //
+        // The fixed point then handles the other half — the breakpoint decision is
+        // published from layout for the `Switcher` to pick up on the *next* pass,
+        // which is passes, not time. Idle animations *and* unchanged geometry, with
+        // `MIN_ROUNDS` as a floor so a tween that has not started yet is never
+        // mistaken for one that has finished. `MAX_ROUNDS` only bounds genuine
+        // non-convergence: hitting it leaves the geometry unsettled and fails
+        // exactly as a wrong layout would.
         let settle = |tree: &mut WidgetTree| {
-            for _ in 0..8 {
+            const MIN_ROUNDS: usize = 8;
+            const MAX_ROUNDS: usize = 64;
+            let mut previous = String::new();
+            for round in 0..MAX_ROUNDS {
                 tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
-                tree.tick_animations(std::time::Duration::from_millis(120));
+                tree.tick_animations(std::time::Duration::from_secs(1));
+                let mut rects = Vec::new();
+                editor_rects(tree, root, &mut rects);
+                let current = format!("{rects:?}");
+                if round >= MIN_ROUNDS && !tree.has_active_animations() && current == previous {
+                    break;
+                }
+                previous = current;
             }
             tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
         };
