@@ -55,6 +55,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             2 => step_v2_to_v3(bundle),
             3 => step_v3_to_v4(bundle),
             4 => step_v4_to_v5(bundle),
+            5 => step_v5_to_v6(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -75,6 +76,14 @@ fn step_v3_to_v4(_bundle: &mut WorkBundle) {}
 /// exists to stop an *older* build opening (and then silently re-saving without) a
 /// project that has templates — see [`FORMAT_VERSION`](crate::bundle::FORMAT_VERSION).
 fn step_v4_to_v5(_bundle: &mut WorkBundle) {}
+
+/// v5 → v6 added epigraphs. Nothing to heal in this direction either: a v5 bundle simply
+/// has no `EpigraphText` rows, and an absent `*.epigraph.djot` is indistinguishable from a
+/// project that never wrote one. The bump exists for the *other* direction — an older
+/// build cannot deserialize the new `ContentRole` variant at all, so
+/// [`version_gate`](crate::version_gate) refuses the bundle up front instead of letting
+/// `items.ron` fail with a raw "unexpected variant".
+fn step_v5_to_v6(_bundle: &mut WorkBundle) {}
 
 /// Mint a durable `uid` for every binder and item that lacks one.
 ///

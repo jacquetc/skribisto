@@ -112,6 +112,7 @@ content-book-title = Book title
 content-book-subtitle = Book subtitle
 content-part-title = Part title
 content-chapter-title = Chapter title
+content-epigraph-text = Epigraph
 promote-blocked-title = Chapter not empty
 promote-blocked-text = This chapter still holds { $count } item(s). Move or trash them before converting it to a flat chapter.
 
@@ -314,6 +315,7 @@ settings-styles-field-justify = Justify text
 settings-styles-field-notes = Include notes
 settings-styles-field-synopses = Include synopses
 settings-styles-field-scene-titles = Include scene titles
+settings-styles-field-epigraphs = Include epigraphs
 # Heading-scheme options
 settings-styles-heading-none = No heading
 settings-styles-heading-numbered = Number only
@@ -355,6 +357,7 @@ nav-about = About
 
 ## Editor tabs & panes
 synopsis = Synopsis
+epigraph = Epigraph
 pane-manuscript = Manuscript
 corkboard = Corkboard
 overview = Overview
@@ -883,6 +886,7 @@ search-field-body = Body
 search-field-title = Title
 search-field-synopsis = Synopsis
 search-field-label = Label
+search-field-epigraph = Epigraph
 search-field-comment = Comment
 search-field-comment-reply = Reply
 search-include-in-replace = Include in Replace All

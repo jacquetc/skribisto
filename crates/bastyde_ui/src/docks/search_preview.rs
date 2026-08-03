@@ -352,13 +352,30 @@ fn editable_field(
                 EditorKind::Prose,
             ),
         },
+        // An epigraph match names its own field, so it resolves exactly rather than
+        // through the fallback chain — which matters because a chapter can hold scene
+        // prose *and* an epigraph, and preferring `main` would show the writer a
+        // document their search never matched. Falls back only if the field is gone
+        // (the item was converted out from under a stale result).
+        Some(MatchField::Epigraph) => match open_doc.epigraph.as_ref() {
+            Some(p) => (p, open_doc.spell_epigraph(), EditorKind::Prose),
+            None => (
+                open_doc.main.as_ref()?,
+                open_doc.spell_main(),
+                EditorKind::Prose,
+            ),
+        },
+        // Body, and the title/label matches, which have no rich field of their own.
         _ => match open_doc.main.as_ref() {
             Some(p) => (p, open_doc.spell_main(), EditorKind::Prose),
-            None => (
-                open_doc.synopsis.as_ref()?,
-                open_doc.spell_synopsis(),
-                EditorKind::Synopsis,
-            ),
+            None => match open_doc.epigraph.as_ref() {
+                Some(p) => (p, open_doc.spell_epigraph(), EditorKind::Prose),
+                None => (
+                    open_doc.synopsis.as_ref()?,
+                    open_doc.spell_synopsis(),
+                    EditorKind::Synopsis,
+                ),
+            },
         },
     };
     Some((open_doc.clone(), prose, spell, kind))

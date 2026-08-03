@@ -258,7 +258,12 @@ fn manuscript_header(title: &str, author: &str) -> Option<String> {
 fn text_render(doc: &TextDocument, format: ExportFormat) -> Result<String> {
     Ok(match format {
         ExportFormat::Djot => doc.to_djot()?,
-        ExportFormat::PlainText => doc.to_plain_text()?,
+        // The *indented* plain text: `.txt` has no markup to mark quoted matter, so an
+        // epigraph (or any block quotation) would otherwise dissolve into the body. The
+        // flush `to_plain_text()` is the addressable view search computes offsets against
+        // and deliberately stays unindented — this is a file being written out, so it
+        // wants the presentation form.
+        ExportFormat::PlainText => doc.to_plain_text_indented()?,
         ExportFormat::Markdown => doc.to_markdown()?,
         ExportFormat::Html => doc.to_html()?,
         ExportFormat::Latex => doc.to_latex("article", true)?,
@@ -388,7 +393,41 @@ fn assemble(
             }
         }
 
-        // 2. The main prose (a scene's SceneText, a note's NoteText) — appended verbatim
+        // 2. The epigraph, if this row heads a book/part/chapter and the preset keeps it.
+        //    Between the heading and the prose, which is where CMOS puts it: after the
+        //    chapter number/title, before the body text.
+        if preset.include_epigraphs
+            && let Some(epi) = content_of(row.contents, ContentRole::EpigraphText)
+            && !epi.trim().is_empty()
+        {
+            // Never scanned for break markers: an epigraph is quoted matter, not the
+            // scene flow a break divides. Its words are not the manuscript's either, so
+            // the count is discarded exactly as the synopsis's is below — an epigraph
+            // must not move a pace target.
+            let (_, emitted) = push_prose(&mut out, epi, row_rtl, preset, false, &mut pending_attrs);
+            if emitted {
+                contributed = true;
+                // New Hart's Rule: the first line after a heading, an epigraph or a
+                // section break carries no first-line indent. Queued the same way a
+                // scene break queues it, and consumed by this row's own prose below —
+                // `push_prose` only lets manuscript prose (`scan_markers`) inherit the
+                // queue, so a synopsis can never swallow it by mistake.
+                //
+                // **Only when this row has prose of its own.** A Part or a Book has none,
+                // so the queue would outlive the row and land on whatever prose came
+                // next — a following Scene's opening paragraph, which is a different
+                // paragraph entirely and is entitled to its indent. Relying on "the next
+                // structural heading clears it" is not enough: the binder is
+                // organisational, so nothing guarantees a heading row comes next.
+                if main_prose_role(&row.item.sub_role)
+                    .is_some_and(|role| content_of(row.contents, role).is_some())
+                {
+                    pending_attrs.push("text_indent=0".to_string());
+                }
+            }
+        }
+
+        // 3. The main prose (a scene's SceneText, a note's NoteText) — appended verbatim
         //    since it is already Djot.
         if let Some(role) = main_prose_role(&row.item.sub_role)
             && let Some(prose) = content_of(row.contents, role)
@@ -406,7 +445,7 @@ fn assemble(
             contributed |= emitted;
         }
 
-        // 3. The synopsis, if the preset keeps it.
+        // 4. The synopsis, if the preset keeps it.
         if preset.include_synopses
             && let Some(syn) = content_of(row.contents, ContentRole::SynopsisText)
         {
@@ -931,6 +970,37 @@ mod tests {
                     SR::Scene,
                     "en",
                     vec![c(4, ContentRole::SceneText, "She walked on into the dark.")],
+                ),
+            ],
+            "en",
+        )
+    }
+
+    /// A chapter carrying an epigraph, so the ordering and word-count rules have
+    /// something to bite on. The attribution rides inside the same blockquote, which is
+    /// what keeps it attached to its quotation through every writer.
+    fn book_with_epigraph() -> Gathered {
+        gathered(
+            vec![
+                iwc(
+                    100,
+                    SR::BookBegin,
+                    "en",
+                    vec![c(1, ContentRole::BookTitle, "My Novel")],
+                ),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "en",
+                    vec![
+                        c(2, ContentRole::ChapterTitle, "Storms"),
+                        c(
+                            5,
+                            ContentRole::EpigraphText,
+                            "> Salt is the only honest preservative.\n>\n> {alignment=right}\n> — M. Ferrand",
+                        ),
+                        c(3, ContentRole::SceneText, "The wind rose over the hills."),
+                    ],
                 ),
             ],
             "en",
@@ -1892,4 +1962,241 @@ mod tests {
             "an already-spaced preset must not get the full extra gap"
         );
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Epigraphs
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// Heading, then epigraph, then prose — CMOS §13.36's order, and the order the
+    /// editor page shows, so what the writer sees is what the export writes.
+    #[test]
+    fn an_epigraph_renders_between_the_heading_and_the_prose() {
+        let g = book_with_epigraph();
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Djot)).unwrap();
+        let heading = out.find("Storms").expect("chapter heading");
+        let epi = out.find("Salt is the only").expect("epigraph");
+        let prose = out.find("The wind rose").expect("prose");
+        assert!(
+            heading < epi && epi < prose,
+            "expected heading < epigraph < prose, got {heading}/{epi}/{prose} in:\n{out}"
+        );
+    }
+
+    /// Quoted matter is not the author's word count. An epigraph that moved the total
+    /// would inflate every pace goal and progress snapshot in the project, silently.
+    #[test]
+    fn an_epigraph_adds_no_words_to_the_manuscript() {
+        let p = preset("neutral");
+
+        let with = book_with_epigraph();
+        let without = {
+            let mut g = book_with_epigraph();
+            g.binders[0].items[1]
+                .contents
+                .retain(|c| c.role != ContentRole::EpigraphText);
+            g
+        };
+
+        let words = |g: &Gathered| {
+            assemble(
+                &req(g, &[100, 101], &p, ExportFormat::Djot),
+                &|_| {},
+                &AtomicBool::new(false),
+            )
+            .unwrap()
+            .1
+            .words
+        };
+        assert_eq!(
+            words(&with),
+            words(&without),
+            "the epigraph must not be counted"
+        );
+        assert!(words(&with) > 0, "the fixture must count its real prose");
+    }
+
+    /// The preset toggle actually removes it — the clean-submission case.
+    #[test]
+    fn the_preset_can_drop_the_epigraph() {
+        let g = book_with_epigraph();
+        let mut p = preset("neutral");
+        assert!(
+            p.include_epigraphs,
+            "epigraphs ship by default: authored matter is finished-book content"
+        );
+
+        p.include_epigraphs = false;
+        let out = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Djot)).unwrap();
+        assert!(!out.contains("Salt is the only"), "dropped: {out}");
+        assert!(out.contains("The wind rose"), "prose stays: {out}");
+    }
+
+    /// A preset written before the field existed has no `include_epigraphs` key. Plain
+    /// `#[serde(default)]` would read that absence as `false` and silently strip
+    /// epigraphs from every custom style while the built-ins kept them — a divergence
+    /// nobody would think to look for.
+    #[test]
+    fn a_preset_saved_before_the_field_existed_still_keeps_epigraphs() {
+        // Exactly what one looks like: a real preset serialized, with the key that did
+        // not exist yet removed.
+        let mut v = serde_json::to_value(preset("neutral")).unwrap();
+        let obj = v.as_object_mut().unwrap();
+        assert!(
+            obj.remove("include_epigraphs").is_some(),
+            "the field must be serialized, or this test proves nothing"
+        );
+
+        let old: Preset = serde_json::from_value(v).expect("an older preset must still load");
+        assert!(
+            old.include_epigraphs,
+            "absence must read as on, not as a silent opt-out"
+        );
+    }
+
+    /// The first line after an epigraph carries no first-line indent (New Hart's Rule),
+    /// queued through the same mechanism a scene break uses.
+    #[test]
+    fn the_paragraph_after_an_epigraph_is_not_indented() {
+        let g = book_with_epigraph();
+        let mut p = preset("neutral");
+        p.first_line_indent_in = 0.5;
+        let out = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Djot)).unwrap();
+        let prose = out.find("The wind rose").expect("prose");
+        let before = &out[..prose];
+        let attrs = before.rfind('{').expect("an attribute block before the prose");
+        assert!(
+            before[attrs..].contains("text_indent=0"),
+            "the prose after an epigraph must carry text_indent=0, got: {:?}",
+            &before[attrs..]
+        );
+    }
+
+    /// Switching the plain-text export to the indented walk changes every `.txt` that
+    /// contains a blockquote, not only the epigraphs — a quoted letter inside a scene
+    /// starts arriving indented too. That is the correct reading of a blockquote in a
+    /// format with no markup, so it is pinned deliberately rather than left to be
+    /// discovered as a surprise by someone whose manuscript already used one.
+    #[test]
+    fn the_plain_text_export_also_indents_a_blockquote_inside_ordinary_prose() {
+        let g = gathered(
+            vec![iwc(
+                300,
+                SR::Scene,
+                "en",
+                vec![c(
+                    1,
+                    ContentRole::SceneText,
+                    "She unfolded it.\n\n> Come at once. Bring the key.\n\nThe hand was her \
+                     mother's.",
+                )],
+            )],
+            "en",
+        );
+        let p = preset("neutral");
+        let txt = render_to_string(&req(&g, &[300], &p, ExportFormat::PlainText)).unwrap();
+
+        let quoted = txt
+            .lines()
+            .find(|l| l.contains("Come at once"))
+            .expect("the quoted letter must survive");
+        assert!(
+            quoted.starts_with(' '),
+            "a blockquote in ordinary prose is set in too, got {quoted:?}"
+        );
+        for flush in ["She unfolded it.", "The hand was her"] {
+            assert!(
+                txt.lines()
+                    .any(|l| l.contains(flush) && !l.starts_with(' ')),
+                "surrounding prose must stay flush ({flush}): {txt}"
+            );
+        }
+    }
+
+    /// A Part or a Book has no prose of its own, so its epigraph must NOT queue an
+    /// indent reset: the queue would outlive the row and land on the next row's opening
+    /// paragraph, which is a different paragraph and is entitled to its indent. The
+    /// binder is organisational, so nothing guarantees a heading row comes between them
+    /// to clear it.
+    #[test]
+    fn a_proseless_rows_epigraph_does_not_suppress_the_next_rows_indent() {
+        let g = gathered(
+            vec![
+                iwc(
+                    200,
+                    SR::Part,
+                    "en",
+                    vec![
+                        c(1, ContentRole::PartTitle, "Part One"),
+                        c(2, ContentRole::EpigraphText, "> A part-level epigraph."),
+                    ],
+                ),
+                // Deliberately a bare Scene, not a ChapterScene: no structural heading
+                // follows, so nothing clears a leaked queue.
+                iwc(
+                    201,
+                    SR::Scene,
+                    "en",
+                    vec![c(3, ContentRole::SceneText, "The wind rose over the hills.")],
+                ),
+            ],
+            "en",
+        );
+        let mut p = preset("neutral");
+        p.first_line_indent_in = 0.5;
+        let out = render_to_string(&req(&g, &[200, 201], &p, ExportFormat::Djot)).unwrap();
+
+        let prose = out.find("The wind rose").expect("prose");
+        let before = &out[..prose];
+        let leaked = before
+            .rfind('{')
+            .is_some_and(|a| before[a..].contains("text_indent=0"));
+        assert!(
+            !leaked,
+            "the Part's epigraph must not reach the next row's paragraph: {out}"
+        );
+    }
+
+    /// An RTL row's epigraph must carry the direction attribute like any other prose on
+    /// that row — the bug that appears the moment the epigraph is pushed straight into
+    /// the buffer instead of through `push_prose`.
+    #[test]
+    fn an_epigraph_inherits_its_rows_direction() {
+        let mut g = book_with_epigraph();
+        g.binders[0].items[1].item.dict_language = language::parse_legacy_list("he");
+        g.work.dict_language = language::parse_legacy_list("he");
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Djot)).unwrap();
+        let epi = out.find("Salt is the only").expect("epigraph");
+        let before = &out[..epi];
+        let attrs = before.rfind('{').expect("an attribute block before the epigraph");
+        assert!(
+            before[attrs..].contains("direction=rtl"),
+            "an RTL row's epigraph must be marked rtl, got: {:?}",
+            &before[attrs..]
+        );
+    }
+
+    /// `.txt` has no markup for quoted matter, so the epigraph must arrive indented —
+    /// the whole reason the plain-text export uses the indented walk.
+    #[test]
+    fn the_plain_text_export_sets_the_epigraph_in() {
+        let g = book_with_epigraph();
+        let p = preset("neutral");
+        let txt = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::PlainText)).unwrap();
+        let line = txt
+            .lines()
+            .find(|l| l.contains("Salt is the only"))
+            .expect("the epigraph must be in the plain text");
+        assert!(
+            line.starts_with(' '),
+            "the epigraph line must be indented, got {line:?}"
+        );
+        assert!(
+            txt.lines()
+                .any(|l| l.contains("The wind rose") && !l.starts_with(' ')),
+            "the body prose must stay flush: {txt}"
+        );
+    }
+
 }

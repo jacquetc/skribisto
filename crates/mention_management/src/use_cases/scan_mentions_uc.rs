@@ -153,7 +153,14 @@ impl LongOperation for ScanMentionsUseCase {
 fn is_prose(role: &ContentRole) -> bool {
     matches!(
         role,
-        ContentRole::SceneText | ContentRole::SynopsisText | ContentRole::NoteText
+        ContentRole::SceneText
+            | ContentRole::SynopsisText
+            | ContentRole::NoteText
+            // An epigraph names people and works, and a recurring in-world source is
+            // exactly the kind of thing the cast index should know about — the
+            // Dune-style "from The Sayings of Muad'Dib" attribution repeated across
+            // forty chapters is a tracked entity, not decoration.
+            | ContentRole::EpigraphText
     )
 }
 

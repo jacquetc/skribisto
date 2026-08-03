@@ -70,6 +70,13 @@ fn prose_text(role: &ContentRole) -> String {
         ContentRole::BookSubtitle => "A Novel".to_string(),
         ContentRole::PartTitle => "Part One — Arrival".to_string(),
         ContentRole::ChapterTitle => "Chapter One".to_string(),
+        // Two quotations in one row, separated by a genuine blank line — a `>`-only
+        // continuation would fold them into a single blockquote. The round-trip test
+        // is what pins that they stay two.
+        ContentRole::EpigraphText => {
+            "> The sea is not a place; it is a going.\n>\n> {alignment=right}\n> — Anon., *Tidewater*\n\n> Salt is the only honest preservative.\n>\n> {alignment=right}\n> — M. Ferrand"
+                .to_string()
+        }
     }
 }
 
@@ -1705,7 +1712,10 @@ fn a_missing_template_blob_fails_the_load_rather_than_emptying_it() {
 /// unopenable by a pre-v5 build, so that is what this asserts.
 #[test]
 fn a_bundle_from_a_newer_format_is_refused() {
-    let bundle = build_bundle(ShapeTag::Folder);
+    // Isolated to the template axis: the fixture also carries epigraphs, which would
+    // hold the floor at 6 and stop this asserting the v5 case it is named for.
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    strip_epigraphs(&mut bundle);
     assert!(
         !bundle.note_templates.is_empty(),
         "the fixture must carry templates for this to be the v5 case"
@@ -2021,19 +2031,57 @@ fn migrate_bundle_no_longer_bails_on_a_stamp_above_current() {
 // The content-derived floor (`compute_min_read_version`)
 // ---------------------------------------------------------------------------
 
-/// Templates are the one content kind that currently raises the floor, and they raise it
-/// only when actually present. This is the payoff of the two-number scheme: `format_version`
-/// is stamped unconditionally on every write, autosave included, so a single number would
-/// lock a template-free project out of the previous build the instant one tick landed.
+/// Drop every epigraph row (and its blob) from a bundle, so a test can isolate one
+/// floor axis from the other. Epigraph text is prose-role, so it lives in `prose_refs`
+/// with its body in `BundledItem::prose`, keyed by the same `file_id`.
+fn strip_epigraphs(bundle: &mut WorkBundle) {
+    for binder in &mut bundle.binders {
+        for item in &mut binder.items {
+            let dropped: Vec<u64> = item
+                .item
+                .prose_refs
+                .iter()
+                .filter(|p| p.role == ContentRole::EpigraphText)
+                .map(|p| p.file_id)
+                .collect();
+            item.item
+                .prose_refs
+                .retain(|p| p.role != ContentRole::EpigraphText);
+            for id in dropped {
+                item.prose.remove(&id);
+            }
+        }
+    }
+}
+
+/// Each content kind raises the floor only when actually present, and each axis is
+/// independent of the others. This is the payoff of the two-number scheme:
+/// `format_version` is stamped unconditionally on every write, autosave included, so a
+/// single number would lock a plain project out of the previous build the instant one
+/// tick landed.
+///
+/// Peeled one axis at a time — epigraphs (v6) then templates (v5) — because the axes
+/// have to be separable to be worth anything: a project with templates but no epigraph
+/// must still claim 5, not 6, or every v5 build loses files it can read perfectly well.
 #[test]
 fn the_floor_rises_only_for_content_that_needs_it() {
-    let with_templates = build_bundle(ShapeTag::Folder);
+    let everything = build_bundle(ShapeTag::Folder);
     assert_eq!(
-        crate::version_gate::compute_min_read_version(&with_templates),
-        5
+        crate::version_gate::compute_min_read_version(&everything),
+        6,
+        "epigraphs are the v6 axis and the fixture carries them"
+    );
+
+    let mut no_epigraphs = build_bundle(ShapeTag::Folder);
+    strip_epigraphs(&mut no_epigraphs);
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&no_epigraphs),
+        5,
+        "templates still hold the floor at 5 once the epigraphs are gone"
     );
 
     let mut without = build_bundle(ShapeTag::Folder);
+    strip_epigraphs(&mut without);
     without.note_templates.clear();
     without.note_template_bodies.clear();
     assert_eq!(crate::version_gate::compute_min_read_version(&without), 4);
@@ -2056,12 +2104,13 @@ fn the_floor_is_recomputed_at_every_write_not_carried_over() {
     .unwrap();
     assert_eq!(
         peek_manifest(path).unwrap().format_min_read_version,
-        Some(5),
-        "templates must have raised the stamped floor"
+        Some(6),
+        "epigraphs must have raised the stamped floor"
     );
 
     let mut shed = read_bundle(path).unwrap();
-    assert_eq!(shed.manifest.format_min_read_version, Some(5));
+    assert_eq!(shed.manifest.format_min_read_version, Some(6));
+    strip_epigraphs(&mut shed);
     shed.note_templates.clear();
     shed.note_template_bodies.clear();
     write_bundle(path, SkribShape::ExplodedFolder, &shed).unwrap();

@@ -79,8 +79,8 @@ use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::search::SearchRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    Binder, BinderItem, Comment, CommentReply, Content, ContentRole, MatchField, Search,
-    SearchResult, Work, WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, MatchField, Search, SearchResult, Work,
+    WorkInfo,
 };
 use common::types::EntityId;
 use skribisto_model::{SearchFacet, search_facet_of};
@@ -557,13 +557,30 @@ impl RunSearchUseCase {
             if content.data.is_empty() {
                 continue;
             }
-            let field = match content.role {
-                ContentRole::SceneText | ContentRole::NoteText if dto.search_body => {
-                    MatchField::Body
-                }
-                ContentRole::SynopsisText if dto.search_synopsis => MatchField::Synopsis,
-                _ => continue,
+            // Which field this row reports is `match_field`'s business, not this loop's
+            // — Replace All resolves a result back to its row through the same mapping,
+            // and the two drifting apart is how a hit gets rewritten into the wrong
+            // document. Which *toggle* governs it stays here: an epigraph is searched
+            // when the writer ticks "body text", because quoted matter is part of the
+            // manuscript, even though it reports `MatchField::Epigraph`.
+            let Some(field) = crate::match_field::field_of_role(&content.role) else {
+                continue;
             };
+            let wanted = match field {
+                MatchField::Body | MatchField::Epigraph => dto.search_body,
+                MatchField::Synopsis => dto.search_synopsis,
+                // Not reachable from a `Content` row: titles and labels live on the
+                // `BinderItem`, comments on their own entities, and all four are scanned
+                // in their own passes. `field_of_role` never returns them, and the
+                // exhaustive match is what keeps that true as the enum grows.
+                MatchField::Title
+                | MatchField::Label
+                | MatchField::Comment
+                | MatchField::CommentReply => false,
+            };
+            if !wanted {
+                continue;
+            }
             // `Content.data` is **Djot**, i.e. markup. Searching it directly would match
             // text the writer never wrote and cannot see: `http` inside a link's URL, `*`
             // on an emphasis marker, `#` on a heading. Worse, an occurrence count taken

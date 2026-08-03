@@ -17,8 +17,9 @@ use bastyde::core::widget::WidgetPlacement;
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Center, Expand, GroupHeader, HStack, IconButton, IconButtonSize, Padding, RectWidget,
-    ScrollArea, Segment, SegmentedControl, Spacer, Splitter, Switcher, TextWidget, VStack, ZStack,
+    Accordion, Center, Expand, GroupHeader, HStack, IconButton, IconButtonSize, Padding,
+    RectWidget, ScrollArea, Segment, SegmentedControl, Spacer, Splitter, Switcher, TextWidget,
+    VStack, ZStack,
 };
 
 use frontend::common::entities::BinderItemSubRole;
@@ -31,6 +32,43 @@ use super::{
     VisibleWhen, centered, side_synopsis_editor, stream_pane, synopsis_column, synopsis_section,
     tab_backdrop, title_input, vspace, writing_section,
 };
+
+/// The epigraph disclosure — the quotation set at the head of this book, part or chapter.
+///
+/// `None` for the combinations the matrix gives no `EpigraphText`, which is what keeps a
+/// scene or a note from sprouting one even though `prose()` is shared with the chapter
+/// that can have it. Folded away when empty and open when authored (see
+/// [`ContentTab::epigraph_expanded`]), so a project that never uses epigraphs never pays
+/// for the affordance and one that does never has to go looking for it.
+///
+/// An `Accordion` rather than a fourth segment on purpose: the container bars pair a
+/// `SegmentedControl` with a `Switcher` **by index**, so a segment added out of order
+/// silently shows the previous view under the new label. This lives inside segment 0 and
+/// touches none of that.
+fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
+    let field = tab.epigraph()?;
+    Some(
+        Accordion::new(tr!(epigraph()), tab.epigraph_expanded.clone()).content(synopsis_column(
+            &field.doc,
+            &tab.column_width,
+            // Scene typography, not the synopsis's: an epigraph is finished-book matter
+            // that ships in the manuscript, not editorial commentary about it.
+            tab.main_typography(),
+            tab.mark_dirty_fn(),
+            Option::None,
+            tab.open_doc.spell_epigraph(),
+            tab.open_doc.replacement_epigraph(),
+            // No handle sink and no comment binding: the format dock acts on the
+            // manuscript the caret is in, and a comment anchors to the author's own
+            // prose — see `OpenDoc::build` for why the epigraph gets no comment layer.
+            Option::None,
+            Some(tab.format.clone()),
+            Some(tab.typewriter.clone()),
+            Some(tab.caret_band()),
+            Option::None,
+        )),
+    )
+}
 
 /// The `ScrollArea` every writing surface in the app scrolls inside — the one
 /// door, so the scroll range and the editors' pin can never be configured apart.
@@ -115,6 +153,13 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
         ));
     }
     col = col.child(centered(subtitle_tag_dots(tab), &tab.column_width));
+    // After the title, before the body — where CMOS §13.36 puts a chapter epigraph, and
+    // where the compiler emits it, so the page reads in the order the export writes.
+    if let Some(epi) = epigraph_section(tab) {
+        col = col
+            .child(vspace(4.0))
+            .child(centered(epi, &tab.column_width));
+    }
     if let Some(s) = tab.synopsis() {
         col = col
             .child(vspace(4.0))
@@ -249,6 +294,15 @@ fn manuscript_page(tab: &ContentTab, compact_synopsis: Option<Signal<bool>>) -> 
     // only place its tags can appear while it is being written. Untagged scenes, which are
     // most of them, get nothing: the row collapses to zero.
     col = col.child(centered(subtitle_tag_dots(tab), &tab.column_width));
+
+    // Self-gating: this body is shared with Item/Scene and Item/Note, and the matrix gives
+    // neither of those an `EpigraphText`, so `epigraph()` is `None` there and the section
+    // never appears. Only the flat chapter (Item/ChapterScene) shows it.
+    if let Some(epi) = epigraph_section(tab) {
+        col = col
+            .child(centered(epi, &tab.column_width))
+            .child(vspace(4.0));
+    }
 
     if let (Some(s), Some(showing)) = (tab.synopsis(), compact_synopsis) {
         // Hidden, it goes dormant: no space, no paint, out of the a11y tree and the
@@ -400,6 +454,14 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
         ));
     }
     col = col.child(centered(subtitle_tag_dots(tab), &tab.column_width));
+    // The flat encodings of the same two containers `folder_own_pane` covers, so the
+    // epigraph sits in the same place on both — a Part written flat and a Part written as
+    // a folder are the same Part.
+    if let Some(epi) = epigraph_section(tab) {
+        col = col
+            .child(vspace(8.0))
+            .child(centered(epi, &tab.column_width));
+    }
     if let Some(s) = tab.synopsis() {
         // On a heading tab the synopsis *is* the page — it grows, like any primary
         // writing surface (contrast the compact box above a scene's prose).

@@ -70,7 +70,7 @@ const COMBINATIONS: &[Combination] = &[
         // Symmetric with the `Folder/Book` container: the flat book-start marker
         // carries the book's synopsis too, so a book outline has no hole whichever
         // encoding the book uses.
-        allowed: &[BookTitle, BookSubtitle, SynopsisText],
+        allowed: &[BookTitle, BookSubtitle, EpigraphText, SynopsisText],
     },
     Combination {
         role: Role::Item,
@@ -85,12 +85,12 @@ const COMBINATIONS: &[Combination] = &[
     Combination {
         role: Role::Item,
         sub_role: SubRole::ChapterScene,
-        allowed: &[ChapterTitle, SceneText, SynopsisText],
+        allowed: &[ChapterTitle, EpigraphText, SceneText, SynopsisText],
     },
     Combination {
         role: Role::Item,
         sub_role: SubRole::Part,
-        allowed: &[PartTitle, SynopsisText],
+        allowed: &[PartTitle, EpigraphText, SynopsisText],
     },
     Combination {
         role: Role::Item,
@@ -118,17 +118,17 @@ const COMBINATIONS: &[Combination] = &[
         // is lossless by construction. There is no prose-less chapter, so there is no
         // separate `Chapter` sub_role at all.
         sub_role: SubRole::ChapterScene,
-        allowed: &[ChapterTitle, SceneText, SynopsisText],
+        allowed: &[ChapterTitle, EpigraphText, SceneText, SynopsisText],
     },
     Combination {
         role: Role::Folder,
         sub_role: SubRole::Part,
-        allowed: &[PartTitle, SynopsisText],
+        allowed: &[PartTitle, EpigraphText, SynopsisText],
     },
     Combination {
         role: Role::Folder,
         sub_role: SubRole::Book,
-        allowed: &[BookTitle, BookSubtitle, SynopsisText],
+        allowed: &[BookTitle, BookSubtitle, EpigraphText, SynopsisText],
     },
     Combination {
         role: Role::Folder,
@@ -866,6 +866,60 @@ mod tests {
     #[test]
     fn the_matrix_has_twelve_combinations() {
         assert_eq!(COMBINATIONS.len(), 12);
+    }
+
+    /// An epigraph heads a book, a part or a chapter — and nothing else. Six rows, and
+    /// exactly six: both encodings of each of the three headed levels, so a Part written
+    /// flat and a Part written as a folder offer the same thing. A Scene, a Note and the
+    /// two contentless markers get none, because no editorial convention puts an epigraph
+    /// there and giving them one would mean rewriting the hardcoded role lists in
+    /// `merge_two_scenes` and `split_scene` for a placement nobody uses.
+    #[test]
+    fn an_epigraph_belongs_only_to_the_headed_combinations() {
+        let headed = [
+            (Role::Item, SubRole::BookBegin),
+            (Role::Item, SubRole::Part),
+            (Role::Item, SubRole::ChapterScene),
+            (Role::Folder, SubRole::Book),
+            (Role::Folder, SubRole::Part),
+            (Role::Folder, SubRole::ChapterScene),
+        ];
+        for c in COMBINATIONS {
+            let expected = headed.iter().any(|(r, s)| r == &c.role && s == &c.sub_role);
+            assert_eq!(
+                c.allowed.contains(&EpigraphText),
+                expected,
+                "{:?}/{:?} disagrees about carrying an epigraph",
+                c.role,
+                c.sub_role
+            );
+        }
+        assert_eq!(
+            COMBINATIONS
+                .iter()
+                .filter(|c| c.allowed.contains(&EpigraphText))
+                .count(),
+            headed.len()
+        );
+    }
+
+    /// An epigraph is quoted matter, not the author's manuscript, so it must never reach
+    /// the word count — which it cannot, because the count keys off `SceneText` alone.
+    /// Pinned because the failure is silent: an epigraph swept into the total would
+    /// inflate every pace goal and progress snapshot in the project by a few dozen words
+    /// per chapter, and nothing would look wrong.
+    #[test]
+    fn an_epigraph_is_never_counted_as_prose() {
+        assert!(!counts_prose(&Role::Folder, &SubRole::Part));
+        assert!(!counts_prose(&Role::Item, &SubRole::Part));
+        assert!(!counts_prose(&Role::Folder, &SubRole::Book));
+        // The chapter *does* count — for its own SceneText, not for its epigraph.
+        assert!(counts_prose(&Role::Folder, &SubRole::ChapterScene));
+        assert!(content_allowed(
+            &Role::Folder,
+            &SubRole::ChapterScene,
+            &EpigraphText
+        ));
     }
 
     /// The Overview table is offered by exactly the four folder containers — and by no

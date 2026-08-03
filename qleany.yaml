@@ -189,6 +189,7 @@ entities:
       - Title
       - Synopsis
       - Label
+      - Epigraph
       # A comment thread's own body.
       - Comment
       # One reply inside a thread. Distinct from `Comment` because the two are
@@ -709,6 +710,7 @@ entities:
       - BookSubtitle
       - PartTitle
       - ChapterTitle
+      - EpigraphText
   - name: data
     type: string
   undoable: true

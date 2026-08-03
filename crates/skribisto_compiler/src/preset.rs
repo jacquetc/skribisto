@@ -208,6 +208,16 @@ pub struct Preset {
     pub include_notes: bool,
     #[serde(default)]
     pub include_scene_titles: bool,
+    /// Keep the epigraphs. Unlike its three neighbours this defaults to **true**, and it
+    /// needs `default = "yes"` to do it: an epigraph is finished-book content, not a
+    /// working note, so "I wrote it, publish it" is the right answer — but a bare
+    /// `#[serde(default)]` gives `false` for a bool, and every user preset saved before
+    /// this field existed has no such key. Those presets would silently start dropping
+    /// epigraphs while the built-ins kept them, which is exactly the kind of divergence
+    /// nobody would think to look for. The toggle exists for the clean-submission case,
+    /// where quoted matter is stripped from the manuscript.
+    #[serde(default = "yes")]
+    pub include_epigraphs: bool,
 
     // Localization.
     #[serde(default)]
@@ -220,6 +230,13 @@ pub struct Preset {
     /// Which formats this style is offered for (a UI hint). Empty ⇒ all.
     #[serde(default)]
     pub formats: Vec<ExportFormat>,
+}
+
+/// `#[serde(default)]` for a bool is `false`; this is for the fields whose absence must
+/// read as *on*, so a preset saved before the field existed keeps the shipped behaviour
+/// instead of silently opting out of it.
+fn yes() -> bool {
+    true
 }
 
 impl Preset {
@@ -247,6 +264,7 @@ impl Preset {
             include_synopses: false,
             include_notes: false,
             include_scene_titles: false,
+            include_epigraphs: true,
             heading_language: HeadingLanguage::Auto,
             digit_style: DigitStyle::Western,
             direction: DirectionMode::Auto,

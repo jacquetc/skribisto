@@ -344,6 +344,7 @@ fn field_label(field: &MatchField) -> LocalizedString {
         MatchField::Title => tr!(search_field_title()),
         MatchField::Synopsis => tr!(search_field_synopsis()),
         MatchField::Label => tr!(search_field_label()),
+        MatchField::Epigraph => tr!(search_field_epigraph()),
         MatchField::Comment => tr!(search_field_comment()),
         MatchField::CommentReply => tr!(search_field_comment_reply()),
     }

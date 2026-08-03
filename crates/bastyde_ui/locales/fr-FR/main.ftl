@@ -112,6 +112,7 @@ content-book-title = Titre du livre
 content-book-subtitle = Sous-titre du livre
 content-part-title = Titre de la partie
 content-chapter-title = Titre du chapitre
+content-epigraph-text = Épigraphe
 promote-blocked-title = Chapitre non vide
 promote-blocked-text = Ce chapitre contient encore { $count } élément(s). Déplacez-les ou mettez-les à la corbeille avant de le convertir en chapitre à plat.
 
@@ -316,6 +317,7 @@ settings-styles-field-justify = Justifier le texte
 settings-styles-field-notes = Inclure les notes
 settings-styles-field-synopses = Inclure les synopsis
 settings-styles-field-scene-titles = Inclure les titres de scène
+settings-styles-field-epigraphs = Inclure les épigraphes
 # Options de schéma de titre
 settings-styles-heading-none = Aucun titre
 settings-styles-heading-numbered = Numéro seul
@@ -357,6 +359,7 @@ nav-about = À propos
 
 ## Onglets & volets d'édition
 synopsis = Synopsis
+epigraph = Épigraphe
 pane-manuscript = Manuscrit
 corkboard = Tableau d'affichage
 overview = Aperçu
@@ -888,6 +891,7 @@ search-field-body = Corps
 search-field-title = Titre
 search-field-synopsis = Synopsis
 search-field-label = Étiquette
+search-field-epigraph = Épigraphe
 search-field-comment = Commentaire
 search-field-comment-reply = Réponse
 search-include-in-replace = Inclure dans « Tout remplacer »

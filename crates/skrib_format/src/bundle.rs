@@ -47,6 +47,16 @@ use std::collections::BTreeMap;
 /// instead, turning silent data loss into a loud, recoverable error.
 /// That is the whole value of the bump; `step_v4_to_v5` itself has nothing to do.
 ///
+/// v6 added **epigraphs** — `ContentRole::EpigraphText`, a `Content` row on the six
+/// headed combinations, stored as `*.epigraph.djot` beside the scene and synopsis prose.
+/// This one *is* caught mechanically, and by the intended mechanism: a new enum variant
+/// stops [`compute_min_read_version`](crate::version_gate::compute_min_read_version)'s
+/// exhaustive match from compiling until it is given a version. An older build cannot
+/// deserialize the variant at all, so the floor refuses the bundle rather than letting
+/// `items.ron` fail with a raw "unexpected variant". Like v5, the floor is claimed only
+/// by projects that actually carry one: delete every epigraph and the next save drops
+/// back to 4. `step_v5_to_v6` has nothing to do — the data is additive on read.
+///
 /// # Before bumping this, answer one question
 ///
 /// *Does this change need an arm in
@@ -65,7 +75,7 @@ use std::collections::BTreeMap;
 /// A required field added without `#[serde(default)]` is the one shape that is *not*
 /// caught mechanically. It degrades to a raw parse error — never to data loss — but it
 /// degrades, so give every additive field its `default` and the question stays easy.
-pub const FORMAT_VERSION: u32 = 5;
+pub const FORMAT_VERSION: u32 = 6;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///

@@ -60,6 +60,17 @@ pub struct OpenDoc {
     pub subtitle: Option<TitleField>,
     pub main: Option<ProseField>,
     pub synopsis: Option<ProseField>,
+    /// The epigraph — the quotation set at the head of a book, part or chapter, with its
+    /// attribution. Present only on the six headed combinations the matrix allows it on,
+    /// so a scene or a note never has one.
+    ///
+    /// A third prose field rather than a structured pair of rows: the attribution is
+    /// free text inside the same blockquote (CMOS asks only for a name and usually a
+    /// title, never a citation), and several quotations live in *one* row as several
+    /// blockquotes. That last part is forced, not stylistic — every consumer of a
+    /// `Content` row finds it by `.find(|c| c.role == role)`, first match wins, so a
+    /// second row of the same role would be invisible to all of them forever.
+    pub epigraph: Option<ProseField>,
     /// `true` once any editor bound to this doc edited a field since the last
     /// save. Cleared by [`flush`](Self::flush).
     pub dirty: Signal<bool>,
@@ -89,6 +100,7 @@ pub struct OpenDoc {
     /// `Rc` so the editor build can hold a clone to drive it.
     spell_main: Option<Rc<SpellSession>>,
     spell_synopsis: Option<Rc<SpellSession>>,
+    spell_epigraph: Option<Rc<SpellSession>>,
     /// The comment highlight layer on each prose document, if that field exists.
     ///
     /// It hangs here rather than on a tab or an editor widget for the same reason
@@ -110,6 +122,11 @@ pub struct OpenDoc {
     /// rebuild, which is exactly why it hangs here and not on the widget.
     replacement_main: RefCell<Option<Rc<TextReplacementSession>>>,
     replacement_synopsis: RefCell<Option<Rc<TextReplacementSession>>>,
+    /// The epigraph gets one too, and it is the field that needs it most: an epigraph is
+    /// almost entirely quotation marks, dashes and ellipses, which is exactly what the
+    /// smart-punctuation engine exists for — and the locale-aware quote pairs matter more
+    /// here than anywhere else in the manuscript.
+    replacement_epigraph: RefCell<Option<Rc<TextReplacementSession>>>,
     /// How many mounted views are currently *showing* this doc's synopsis.
     ///
     /// Visibility stopped being one global answer once the synopsis could be
@@ -170,6 +187,7 @@ impl OpenDoc {
             subtitle: None,
             main: None,
             synopsis: None,
+            epigraph: None,
             dirty: Signal::new(false),
             trashed: Signal::new(false),
             tags: Signal::new(Vec::new()),
@@ -182,11 +200,13 @@ impl OpenDoc {
             edit_gen: Signal::new(0),
             spell_main: None,
             spell_synopsis: None,
+            spell_epigraph: None,
             comments_main: None,
             comments_synopsis: None,
             comments_vm: RefCell::new(None),
             replacement_main: RefCell::new(None),
             replacement_synopsis: RefCell::new(None),
+            replacement_epigraph: RefCell::new(None),
             synopsis_viewers: Cell::new(0),
         };
         for cr in skribisto_model::allowed_content(role, sub_role) {
@@ -197,6 +217,9 @@ impl OpenDoc {
                 }
                 ContentRole::SceneText | ContentRole::NoteText => {
                     doc.main = Some(prose_field(ctx, item_id, cr.clone(), existing))
+                }
+                ContentRole::EpigraphText => {
+                    doc.epigraph = Some(prose_field(ctx, item_id, cr.clone(), existing))
                 }
                 // The two *names*. They are edited as the item's title/subtitle (what the
                 // outline tree and the tab show) and mirrored into these content rows on
@@ -214,8 +237,12 @@ impl OpenDoc {
         // highlight layer).
         doc.spell_main = doc.main.as_ref().map(|f| SpellSession::new(&f.doc));
         doc.spell_synopsis = doc.synopsis.as_ref().map(|f| SpellSession::new(&f.doc));
+        doc.spell_epigraph = doc.epigraph.as_ref().map(|f| SpellSession::new(&f.doc));
         // Empty until the comments view-model seeds it with a re-anchor pass; the
         // layer itself lives as long as the `OpenDoc` (its `Drop` retires it).
+        // No comment layer on the epigraph, deliberately. A comment anchors to a quote of
+        // the *manuscript* — the two docks are scoped to the streams — and an epigraph is
+        // quoted matter that is not the author's own text to annotate in place.
         doc.comments_main = doc.main.as_ref().map(|f| CommentHighlightSession::new(&f.doc));
         doc.comments_synopsis = doc
             .synopsis
@@ -259,6 +286,9 @@ impl OpenDoc {
         if let Some(f) = &self.synopsis {
             f.flush(stack)?;
         }
+        if let Some(f) = &self.epigraph {
+            f.flush(stack)?;
+        }
         self.dirty.set(false);
         Ok(())
     }
@@ -280,6 +310,7 @@ impl OpenDoc {
     pub fn is_stale(&self) -> bool {
         self.main.as_ref().is_some_and(ProseField::is_stale)
             || self.synopsis.as_ref().is_some_and(ProseField::is_stale)
+            || self.epigraph.as_ref().is_some_and(ProseField::is_stale)
     }
 
     /// Discard the live edits and re-read every present field from its persisted
@@ -302,6 +333,9 @@ impl OpenDoc {
         if let Some(f) = &self.synopsis {
             f.reload();
         }
+        if let Some(f) = &self.epigraph {
+            f.reload();
+        }
         self.dirty.set(false);
     }
 
@@ -322,6 +356,9 @@ impl OpenDoc {
             s.set_checker(checker.clone(), color);
         }
         if let Some(s) = &self.spell_synopsis {
+            s.set_checker(checker.clone(), color);
+        }
+        if let Some(s) = &self.spell_epigraph {
             s.set_checker(checker, color);
         }
     }
@@ -395,9 +432,10 @@ impl OpenDoc {
     /// The `Content` row id behind the synopsis document, if any.
     ///
     /// Separate from [`main_content_id`](Self::main_content_id) because a
-    /// `BinderItem` owns up to three `Content` rows, and a comment on the synopsis
-    /// is a comment on a *different row* than one on the body — anchoring both to
-    /// "the item" would silently merge them.
+    /// `BinderItem` owns several `Content` rows — up to four, on a chapter carrying a
+    /// title, an epigraph, its prose and a synopsis — and a comment on the synopsis is a
+    /// comment on a *different row* than one on the body; anchoring both to "the item"
+    /// would silently merge them.
     pub fn synopsis_content_id(&self) -> Option<u64> {
         self.synopsis.as_ref().and_then(|f| f.content_id())
     }
@@ -450,6 +488,9 @@ impl OpenDoc {
         if self.synopsis.is_some() && self.replacement_synopsis.borrow().is_none() {
             *self.replacement_synopsis.borrow_mut() = Some(TextReplacementSession::new(vm.clone()));
         }
+        if self.epigraph.is_some() && self.replacement_epigraph.borrow().is_none() {
+            *self.replacement_epigraph.borrow_mut() = Some(TextReplacementSession::new(vm.clone()));
+        }
     }
 
     /// Tell both replace-while-typing sessions what language this document is
@@ -462,7 +503,11 @@ impl OpenDoc {
     /// one, so a stale locale means the rule silently stops matching.
     pub fn set_replacement_locale(&self, languages: &[String]) {
         let tag = skribisto_model::language::primary(languages);
-        for session in [&self.replacement_main, &self.replacement_synopsis] {
+        for session in [
+            &self.replacement_main,
+            &self.replacement_synopsis,
+            &self.replacement_epigraph,
+        ] {
             if let Some(s) = session.borrow().as_ref() {
                 s.set_locale(tag);
             }
@@ -479,7 +524,11 @@ impl OpenDoc {
     /// `None` means "not resolved yet" and substitutes nothing — see
     /// [`TextReplacementSession::set_punctuation`].
     pub fn set_punctuation(&self, flags: Option<SmartPunctuationFlags>) {
-        for session in [&self.replacement_main, &self.replacement_synopsis] {
+        for session in [
+            &self.replacement_main,
+            &self.replacement_synopsis,
+            &self.replacement_epigraph,
+        ] {
             if let Some(s) = session.borrow().as_ref() {
                 s.set_punctuation(flags.clone());
             }
@@ -494,6 +543,16 @@ impl OpenDoc {
     /// The replace-while-typing session on the synopsis document, if any.
     pub fn replacement_synopsis(&self) -> Option<Rc<TextReplacementSession>> {
         self.replacement_synopsis.borrow().clone()
+    }
+
+    /// The replace-while-typing session on the epigraph document, if any.
+    pub fn replacement_epigraph(&self) -> Option<Rc<TextReplacementSession>> {
+        self.replacement_epigraph.borrow().clone()
+    }
+
+    /// The caret-aware spell session on the epigraph document, if any.
+    pub fn spell_epigraph(&self) -> Option<Rc<SpellSession>> {
+        self.spell_epigraph.clone()
     }
 }
 

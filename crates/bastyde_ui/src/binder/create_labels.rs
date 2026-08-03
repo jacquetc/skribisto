@@ -129,6 +129,7 @@ pub fn content_role_label(role: &ContentRole) -> LocalizedString {
         ContentRole::BookSubtitle => tr!(content_book_subtitle()),
         ContentRole::PartTitle => tr!(content_part_title()),
         ContentRole::ChapterTitle => tr!(content_chapter_title()),
+        ContentRole::EpigraphText => tr!(content_epigraph_text()),
     }
 }
 

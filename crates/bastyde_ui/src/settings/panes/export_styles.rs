@@ -493,6 +493,10 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
             yes_no(p.include_scene_titles),
         ),
         (
+            tr!(settings_styles_field_epigraphs()),
+            yes_no(p.include_epigraphs),
+        ),
+        (
             tr!(settings_styles_sheet_heading_language()),
             match &p.heading_language {
                 HeadingLanguage::Auto => tr!(settings_styles_sheet_auto()),
@@ -728,6 +732,10 @@ impl Widget for StyleEditor {
         bind_field(ctx, &self.vm, &id, &scene_titles, |p, v| {
             p.include_scene_titles = v
         });
+        let epigraphs = Signal::new(preset.include_epigraphs);
+        bind_field(ctx, &self.vm, &id, &epigraphs, |p, v| {
+            p.include_epigraphs = v
+        });
 
         let form = FormLayout::new()
             .label(tr!(settings_styles_editor_title()))
@@ -774,6 +782,10 @@ impl Widget for StyleEditor {
             .line(
                 field_label(tr!(settings_styles_field_scene_titles())),
                 Toggle::new(scene_titles).labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_epigraphs())),
+                Toggle::new(epigraphs).labelled_externally(),
             );
 
         let child = ctx.add(Padding::new(16.0, 0.0, 0.0, 0.0).child(form));

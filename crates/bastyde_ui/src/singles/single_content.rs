@@ -322,6 +322,13 @@ mod imp {
             ContentRole::BookSubtitle => "a novel".to_string(),
             ContentRole::ChapterTitle => format!("Chapter {item_id}"),
             ContentRole::PartTitle => format!("Part {item_id}"),
+            // A real epigraph shape: the quotation, a blank line, then the attribution
+            // right-aligned — all inside one blockquote, which is what the export relies
+            // on to keep the two together.
+            ContentRole::EpigraphText => {
+                "> The sea is not a place; it is a going.\n>\n> {alignment=right}\n> — Anon., *Tidewater*"
+                    .to_string()
+            }
         }
     }
 
@@ -344,6 +351,7 @@ mod imp {
             ContentRole::BookSubtitle => 5,
             ContentRole::PartTitle => 6,
             ContentRole::ChapterTitle => 7,
+            ContentRole::EpigraphText => 8,
         };
         900_000 + item_id * 10 + slot
     }

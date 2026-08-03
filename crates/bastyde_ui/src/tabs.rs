@@ -173,6 +173,15 @@ pub struct ContentTab {
     /// local flag instead, so showing the synopsis while writing full-screen does
     /// not rewrite a preference that governs every other window.
     pub show_synopsis: Signal<bool>,
+    /// Whether the epigraph disclosure is open. Per-tab view state, seeded on build from
+    /// whether there is an epigraph to show: an authored one is open so it is not hidden
+    /// from its own author, an empty one is folded away so a book that has no epigraph
+    /// does not carry an empty box on every chapter page.
+    ///
+    /// Lives here rather than on `ProseField` for the same reason `show_synopsis` does —
+    /// a `ProseField` owns a document and its write-back, nothing about presentation, and
+    /// one document is shared by every simultaneous view of the item.
+    pub epigraph_expanded: Signal<bool>,
     /// Persisted synopsis placement (above vs beside the manuscript), shared live
     /// from Settings like [`Self::column_width`].
     pub synopsis_placement: Signal<SynopsisPlacement>,
@@ -636,6 +645,15 @@ impl ContentTab {
             ],
             Orientation::Horizontal,
         );
+        // Seed the disclosure from whether there is anything to disclose. Read once, at
+        // build: this is the *initial* state of a per-tab toggle, not a binding — once the
+        // author opens or folds the box, that choice is theirs for the life of the tab and
+        // must not be overwritten by their next keystroke emptying it.
+        let open_doc_epigraph_seed = open_doc
+            .epigraph
+            .as_ref()
+            .and_then(|f| f.doc.to_plain_text().ok())
+            .is_some_and(|t| !t.trim().is_empty());
         Self {
             open_doc,
             stream,
@@ -650,6 +668,9 @@ impl ContentTab {
             view_state_ports: Rc::new(crate::view_models::ViewStatePorts::default()),
             segment,
             column_width,
+            epigraph_expanded: Signal::new(
+                open_doc_epigraph_seed,
+            ),
             show_synopsis,
             synopsis_placement,
             synopsis_side_width,
@@ -780,6 +801,11 @@ impl ContentTab {
     }
     pub fn synopsis(&self) -> Option<&ProseField> {
         self.open_doc.synopsis.as_ref()
+    }
+    /// The epigraph field — `Some` only for the six headed combinations the matrix
+    /// allows one on (book / part / chapter, either encoding).
+    pub fn epigraph(&self) -> Option<&ProseField> {
+        self.open_doc.epigraph.as_ref()
     }
     /// The manuscript-stream view-model — only a folder container (Chapter / Part /
     /// Book) has one.
@@ -1145,6 +1171,117 @@ mod tests {
                 "{role:?}/{sub_role:?} laid out to zero width"
             );
         }
+    }
+
+    /// The epigraph box appears on exactly the six combinations the matrix gives an
+    /// `EpigraphText`, and on no others — the gate is the model, not the pane, which is
+    /// what keeps `prose()` (shared with Scene and Note) from sprouting one.
+    #[test]
+    fn only_the_headed_combinations_offer_an_epigraph() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let headed = [
+            (Item, BookBegin),
+            (Item, Part),
+            (Item, ChapterScene),
+            (Folder, Book),
+            (Folder, Part),
+            (Folder, ChapterScene),
+        ];
+        let all = [
+            (Item, Scene),
+            (Item, ChapterScene),
+            (Item, Note),
+            (Item, Part),
+            (Item, BookBegin),
+            (Item, BookEnd),
+            (Item, Text),
+            (Folder, None),
+            (Folder, ChapterScene),
+            (Folder, Part),
+            (Folder, Book),
+            (Folder, Note),
+        ];
+        let ctx = Rc::new(AppContext::new());
+        for (role, sub_role) in all {
+            let tab = tab_for(
+                &ctx,
+                1,
+                &role,
+                &sub_role,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
+                &AppIds::new(),
+            );
+            let expected = headed.iter().any(|(r, s)| r == &role && s == &sub_role);
+            assert_eq!(
+                tab.epigraph().is_some(),
+                expected,
+                "{role:?}/{sub_role:?} disagrees with the matrix about the epigraph"
+            );
+
+            let mut tree = WidgetTree::new();
+            let id = tree.add_boxed(tab_pane(&tab));
+            tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+            assert_eq!(
+                first_of_type(&tree, id, "Accordion").is_some(),
+                expected,
+                "{role:?}/{sub_role:?} disagrees about mounting the epigraph disclosure"
+            );
+        }
+    }
+
+    /// An empty epigraph starts folded and an authored one starts open, so a project that
+    /// never uses epigraphs carries no open box on every chapter page — and one that does
+    /// never has to go looking for its own text.
+    #[test]
+    fn the_epigraph_box_opens_only_when_there_is_something_in_it() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+
+        let empty = tab_for(
+            &ctx,
+            1,
+            &Folder,
+            &Book,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        assert!(
+            !empty.epigraph_expanded.get(),
+            "an empty epigraph must start folded away"
+        );
+
+        let filled = tab_for(
+            &ctx,
+            2,
+            &Folder,
+            &Book,
+            &[ContentDto {
+                id: 77,
+                role: ContentRole::EpigraphText,
+                data: "> Salt is the only honest preservative.".to_string(),
+                activated: true,
+                ..Default::default()
+            }],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        assert!(
+            filled.epigraph_expanded.get(),
+            "an authored epigraph must start open"
+        );
     }
 
     /// A trashed open item shows the permanent "in the Trash" warning banner above

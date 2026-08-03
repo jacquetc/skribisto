@@ -51,8 +51,8 @@ use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::search::SearchRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    Binder, BinderItem, Comment, CommentReply, Content, ContentRole, MatchField, Search,
-    SearchResult, Work, WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, MatchField, Search, SearchResult, Work,
+    WorkInfo,
 };
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
@@ -314,7 +314,7 @@ impl ReplaceInProjectUseCase {
                     occurrences_replaced += hits.len() as u64;
                 }
                 // Prose. Spliced INSIDE the document — never surgery on the markup.
-                MatchField::Body | MatchField::Synopsis => {
+                MatchField::Body | MatchField::Synopsis | MatchField::Epigraph => {
                     let Some(mut content) = Self::content_of(&mut uow, row)? else {
                         skipped_stale.push(row.id);
                         continue;
@@ -418,13 +418,11 @@ impl ReplaceInProjectUseCase {
             .into_iter()
             .flatten()
             .find(|c| {
-                matches!(
-                    (&row.match_field, &c.role),
-                    (
-                        MatchField::Body,
-                        ContentRole::SceneText | ContentRole::NoteText
-                    ) | (MatchField::Synopsis, ContentRole::SynopsisText)
-                )
+                // The same mapping `run_search_uc` recorded the result with, inverted.
+                // Shared rather than restated so the two cannot drift: a role findable
+                // under one field and replaceable under another silently rewrites the
+                // wrong row, or skips every hit.
+                crate::match_field::role_matches_field(&row.match_field, &c.role)
             }))
     }
 }

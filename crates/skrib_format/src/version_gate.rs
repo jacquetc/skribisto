@@ -107,6 +107,11 @@ fn content_role_min_version(role: &ContentRole) -> u32 {
         | ContentRole::BookSubtitle
         | ContentRole::PartTitle
         | ContentRole::ChapterTitle => MIN_READ_BASELINE,
+        // v6. A build that predates epigraphs has no such variant, so `items.ron` fails
+        // to deserialize outright — the raw "unexpected variant" error this module
+        // exists to turn into a refusal. Only bundles that actually carry an epigraph
+        // claim the floor; a project that has none stays open to every v4/v5 build.
+        ContentRole::EpigraphText => 6,
     }
 }
 
