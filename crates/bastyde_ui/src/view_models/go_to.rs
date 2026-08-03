@@ -64,6 +64,7 @@ impl GoToViewModel {
             binder: Signal::new(None),
             query: Signal::new(String::new()),
             // Always project-wide — see this module's doc.
+            match_counts: Signal::new((0, 0)),
             all_binders: Signal::new(true),
         };
         let model = BinderBinderItemsTreeModel::new(app_ctx, ids.work_id.clone(), filters.clone());

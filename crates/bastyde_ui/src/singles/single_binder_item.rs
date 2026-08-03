@@ -30,7 +30,7 @@ mod imp {
     use bastyde::prelude::*;
 
     use frontend::AppContext;
-    use frontend::commands::{binder_item_commands, content_commands};
+    use frontend::commands::{binder_item_commands, content_commands, undo_redo_commands};
     use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
     use frontend::common::entities::ContentRole;
     use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
@@ -261,6 +261,66 @@ mod imp {
                     right_ids: item_ids.to_vec(),
                 },
             )?;
+            self.refresh();
+            Ok(())
+        }
+
+        /// Persist whose eyes this row is told through.
+        ///
+        /// Wrapped in a composite with a cast write, because picking a point of view is two
+        /// edits that must undo as one: a POV character is by definition present in the
+        /// scene, so choosing one also adds them to the cast when they are not already
+        /// there. Two separate writes would let Ctrl+Z revert only the POV and strand the
+        /// character in the cast list — the `single_milestone` lesson applied here.
+        ///
+        /// A UI-layer invariant, not a model one: `point_of_view` is an unconstrained weak
+        /// M2M and the store will happily hold a POV that is not in the cast. Enforcing it
+        /// here keeps the two lists agreeing without pretending the schema guarantees it.
+        pub fn set_point_of_view(
+            &self,
+            item_ids: &[u64],
+            stack: Option<u64>,
+        ) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            let mut cast = self.dto().map(|x| x.references).unwrap_or_default();
+            let missing: Vec<u64> =
+                item_ids.iter().copied().filter(|t| !cast.contains(t)).collect();
+            let grouped = !missing.is_empty();
+
+            if grouped {
+                let _ = undo_redo_commands::begin_composite(&self.inner.ctx, stack);
+            }
+            let wrote = (|| -> anyhow::Result<()> {
+                binder_item_commands::set_binder_item_relationship(
+                    &self.inner.ctx,
+                    stack,
+                    &frontend::direct_access::BinderItemRelationshipDto {
+                        id,
+                        field: BinderItemRelationshipField::PointOfView,
+                        right_ids: item_ids.to_vec(),
+                    },
+                )?;
+                if grouped {
+                    cast.extend(missing.iter().copied());
+                    binder_item_commands::set_binder_item_relationship(
+                        &self.inner.ctx,
+                        stack,
+                        &frontend::direct_access::BinderItemRelationshipDto {
+                            id,
+                            field: BinderItemRelationshipField::References,
+                            right_ids: cast,
+                        },
+                    )?;
+                }
+                Ok(())
+            })();
+            // Closed on every path, so a failed write never leaves the group open.
+            if grouped {
+                undo_redo_commands::end_composite(&self.inner.ctx);
+            }
+            wrote?;
             self.refresh();
             Ok(())
         }
@@ -500,6 +560,14 @@ mod imp {
                 d.sub_title = sub_title.to_string();
                 self.inner.dto.set(Some(d));
             }
+            Ok(())
+        }
+
+        pub fn set_point_of_view(
+            &self,
+            _item_ids: &[u64],
+            _stack: Option<u64>,
+        ) -> anyhow::Result<()> {
             Ok(())
         }
 

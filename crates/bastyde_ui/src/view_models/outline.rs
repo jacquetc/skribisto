@@ -111,6 +111,7 @@ impl OutlineViewModel {
         let filters = TreeFilters {
             binder: Signal::new(None),
             query: Signal::new(String::new()),
+            match_counts: Signal::new((0, 0)),
             all_binders: Signal::new(false),
         };
         let model =
@@ -224,6 +225,21 @@ impl OutlineViewModel {
     /// Clear the text search (e.g. on project load).
     pub fn clear_search(&self) {
         self.filters.query.set(String::new());
+    }
+
+    /// `(matched, total)` item rows under the active filter — see
+    /// [`TreeFilters::match_counts`]. Bind it to show what the filter is doing.
+    pub fn match_counts_signal(&self) -> Signal<(usize, usize)> {
+        self.filters.match_counts.clone()
+    }
+
+    /// Whether a text filter is currently narrowing the tree.
+    ///
+    /// The one thing the dock cannot see for itself: the search field lives in a popover,
+    /// so once dismissed there is nothing on screen to distinguish "filtered to nothing"
+    /// from "this project is empty".
+    pub fn is_filtering(&self) -> bool {
+        !self.filters.query.get().trim().is_empty()
     }
 
     /// Resolve a tree key to its `(item_id, title)` (binder rows: `item_id` None).

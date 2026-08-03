@@ -379,6 +379,7 @@ pub(crate) fn materialize(
                 // once the contents exist and the file ids have been remapped.
                 contents: Vec::new(),
                 references: Vec::new(),
+                point_of_view: Vec::new(),
                 tags: Vec::new(),
             })?;
 
@@ -428,6 +429,20 @@ pub(crate) fn materialize(
     }
     for (s, dsts) in &refs_by_source {
         uow.set_binder_item_relationship(s, &BinderItemRelationshipField::References, dsts)?;
+    }
+
+    // Point of view, the same shape: (scene, story-bible item) pairs remapped onto the
+    // freshly minted store ids. Kept separate from References rather than folded into it
+    // because the two answer different questions — who appears here, versus whose eyes this
+    // is told through — and a scene routinely has one without the other.
+    let mut pov_by_source: HashMap<EntityId, Vec<EntityId>> = HashMap::new();
+    for (src, dst) in &loaded.point_of_view {
+        if let (Some(&s), Some(&d)) = (item_map.get(src), item_map.get(dst)) {
+            pov_by_source.entry(s).or_default().push(d);
+        }
+    }
+    for (s, dsts) in &pov_by_source {
+        uow.set_binder_item_relationship(s, &BinderItemRelationshipField::PointOfView, dsts)?;
     }
 
     // Trash index (remap origin + trashed targets).
@@ -990,6 +1005,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     // Carried beside the item, in `LoadedItem`.
                     contents: Vec::new(),
                     references: Vec::new(),
+                    point_of_view: Vec::new(),
                     tags: Vec::new(),
                 },
                 contents,
@@ -1045,6 +1061,8 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         // schema version carries a comment table.
         comments: Vec::new(),
         references,
+        // Legacy projects had no point-of-view concept.
+        point_of_view: Vec::new(),
         absolute_path: p.absolute_path.clone(),
     }
 }

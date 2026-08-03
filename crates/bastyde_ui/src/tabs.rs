@@ -50,6 +50,7 @@ use crate::view_models::{
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
 // (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
+pub(crate) mod analysis;
 pub(crate) mod corkboard;
 mod folder_book;
 mod folder_chapter_scene;
@@ -121,6 +122,11 @@ pub struct ContentTab {
     /// not through documents. Consumed by the Pace pane (built out over M4c/M4d).
     #[allow(dead_code)]
     pace: Option<PaceViewModel>,
+    /// The Analysis view-model — `Some` only for a `Folder/Book` container, gated exactly
+    /// as `pace` is. Per-tab rather than shared: two containers open side by side are two
+    /// analyses of two different scopes, and one shared instance would have the second
+    /// overwrite the first.
+    analysis: Option<crate::view_models::AnalysisViewModel>,
     /// The Corkboard view-model — `Some` only for a folder container (Chapter /
     /// Part / Book), gated on the same [`StreamLevel::for_container`] as `stream`.
     corkboard: Option<crate::view_models::CorkboardViewModel>,
@@ -529,6 +535,26 @@ impl ContentTab {
             &open_doc.role,
             &open_doc.sub_role,
         );
+        // The Analysis view-model, gated to the Book exactly as Pace is: Shape and the
+        // balance chart are book-scale questions, and proving the segment on the Book first
+        // is what keeps the positional bar honest before it is widened to Part/Chapter.
+        // Staleness rides on the shared open-document edit counter, so the panel and the
+        // save indicator cannot disagree about whether the manuscript has moved.
+        let analysis = matches!(
+            (&open_doc.role, &open_doc.sub_role),
+            (
+                frontend::common::entities::BinderItemRole::Folder,
+                frontend::common::entities::BinderItemSubRole::Book
+            )
+        )
+        .then(|| {
+            crate::view_models::AnalysisViewModel::new(
+                app_ctx.clone(),
+                ids.clone(),
+                open_doc.item_id,
+                docs.edited_any(),
+            )
+        });
         // The language this tab's prose is written in, for the caret band's sentence scope.
         // Read here, while `docs` is still in hand — `stream` takes it below. Resolved once
         // per tab build, exactly as the typography and the spell dictionaries are.
@@ -614,6 +640,7 @@ impl ContentTab {
             open_doc,
             stream,
             pace,
+            analysis,
             corkboard,
             overview,
             ids,
@@ -729,6 +756,11 @@ impl ContentTab {
     pub fn role(&self) -> &BinderItemRole {
         &self.open_doc.role
     }
+    /// This tab's Analysis view-model — `Some` only on a `Folder/Book`.
+    pub(crate) fn analysis(&self) -> Option<&crate::view_models::AnalysisViewModel> {
+        self.analysis.as_ref()
+    }
+
     pub fn sub_role(&self) -> &BinderItemSubRole {
         &self.open_doc.sub_role
     }
@@ -1277,7 +1309,7 @@ mod tests {
         use BinderItemSubRole::*;
         let ctx = Rc::new(AppContext::new());
         // (sub_role, the Overview's index in that container's bar)
-        for (sub_role, overview_index) in [(ChapterScene, 4), (Part, 4), (Book, 5), (Note, 1)] {
+        for (sub_role, overview_index) in [(ChapterScene, 4), (Part, 4), (Book, 6), (Note, 1)] {
             let tab = tab_for(
                 &ctx,
                 101, // the mock Book container — its fixture subtree has rows
@@ -1310,6 +1342,64 @@ mod tests {
         }
     }
 
+    /// The Analysis segment mounts its own pane, and only on a Book.
+    ///
+    /// Same reasoning as the Overview test above, and the same trap: the bar and the
+    /// `Switcher` are matched by position, so an inserted segment whose child was forgotten
+    /// compiles cleanly and silently shows the neighbouring view under the new label. This
+    /// selects Analysis by index and insists on finding the pane that belongs there.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn only_the_book_mounts_an_analysis_segment() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+
+        // Book: own page / Full Book / Full Synopsis / Pace / Analysis / Corkboard / Overview
+        let tab = tab_for(
+            &ctx,
+            101,
+            &Folder,
+            &Book,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.segment.set(4);
+        assert!(tab.analysis().is_some(), "a Book carries an Analysis view-model");
+
+        // The pane starts an analysis on open and subscribes to long-operation events, so
+        // it needs a tree with an event source.
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let id = tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+        let pane = first_containing(&tree, id, "AnalysisPane").expect(
+            "segment 4 of a Book mounted no AnalysisPane — the segment and its Switcher \
+             child have drifted out of step",
+        );
+        let b = tree.bounds(pane);
+        assert!(b.width > 0.0 && b.height > 0.0, "the Analysis pane laid out to zero size ({b:?})");
+
+        // A Part has no Analysis at all: the gate is the same Book-only one Pace uses, and
+        // widening it by accident would put a book-scale report on a chapter.
+        let part = tab_for(
+            &ctx,
+            101,
+            &Folder,
+            &Part,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        assert!(part.analysis().is_none(), "only a Book is analysed for now");
+    }
+
     /// The tags column reaches the table, and renders dots only for rows that have tags.
     ///
     /// The Overview was the last view showing binder rows that did not surface tags (the
@@ -1334,7 +1424,7 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(5); // the Book's Overview
+        tab.segment.set(6); // the Book's Overview (Pace and Analysis sit before it)
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
@@ -1407,7 +1497,7 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(5);
+        tab.segment.set(6); // the Book's Overview, after Pace and Analysis
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let root = tree.add_boxed(tab_pane(&tab));
         tree.layout(bastyde::prelude::SizeProposal::exact(1200.0, 700.0));
@@ -1485,7 +1575,7 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(5);
+        tab.segment.set(6); // the Book's Overview, after Pace and Analysis
 
         // The pane is rebuilt at each step rather than mutated: the editing signal is
         // bound at `BindingLevel::Rebuild`, so a rebuild is exactly what the framework
@@ -1534,7 +1624,7 @@ mod tests {
     /// number that only the bar's construction order justifies.
     #[cfg(feature = "mocks")]
     #[test]
-    fn only_a_book_has_the_extra_pace_segment() {
+    fn only_a_book_has_the_extra_book_only_segments() {
         use BinderItemRole::*;
         use BinderItemSubRole::*;
         let ctx = Rc::new(AppContext::new());
@@ -1565,8 +1655,8 @@ mod tests {
         );
         assert_eq!(
             segments(Book),
-            chapter + 1,
-            "a Book adds Pace, which is why its Overview index is one higher"
+            chapter + 2,
+            "a Book adds Pace and Analysis, which is why its Overview index is two higher"
         );
     }
 

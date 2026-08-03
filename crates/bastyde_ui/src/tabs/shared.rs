@@ -24,11 +24,13 @@
 //! now sit beside the tab modules that use them, in [`crate::tabs::corkboard`] and
 //! [`crate::tabs::pace`].
 
+pub(crate) mod charts;
 pub(crate) mod dictionary_menu;
 pub(crate) mod editor;
 mod panes;
 mod stream;
 
+pub use charts::*;
 pub use editor::*;
 pub use panes::*;
 pub use stream::*;

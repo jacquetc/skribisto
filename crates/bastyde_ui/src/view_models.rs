@@ -102,6 +102,7 @@ mod pace;
 mod progress_recorder;
 mod project_lifecycle;
 mod project_switch;
+pub mod analysis;
 pub mod project_switcher;
 mod quit_sequencer;
 mod save_as;
@@ -128,6 +129,7 @@ mod workspace_layout;
 mod writing_session;
 
 pub use add_dictionary::AddDictionaryViewModel;
+pub use analysis::{AnalysisCategory, AnalysisState, AnalysisViewModel};
 pub use backup_restore::BackupRestoreViewModel;
 pub use backup_scheduler::BackupSchedulerViewModel;
 pub use backup_settings::BackupSettingsViewModel;

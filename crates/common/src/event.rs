@@ -90,6 +90,11 @@ pub enum MentionManagementEvent {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
+pub enum AnalysisManagementEvent {
+    AnalyzeBook,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub enum ProgressManagementEvent {
     CountWords,
     RecordProgressSnapshot,
@@ -150,6 +155,7 @@ pub enum Origin {
     WorkManagement(WorkManagementEvent),
     ExportManagement(ExportManagementEvent),
     MentionManagement(MentionManagementEvent),
+    AnalysisManagement(AnalysisManagementEvent),
     ProgressManagement(ProgressManagementEvent),
     TrashManagement(TrashManagementEvent),
     NoteTemplateManagement(NoteTemplateManagementEvent),
@@ -228,6 +234,7 @@ impl Event {
             Origin::WorkManagement(event) => format!("work_management_{:?}", event),
             Origin::ExportManagement(event) => format!("export_management_{:?}", event),
             Origin::MentionManagement(event) => format!("mention_management_{:?}", event),
+            Origin::AnalysisManagement(event) => format!("analysis_management_{:?}", event),
             Origin::ProgressManagement(event) => format!("progress_management_{:?}", event),
             Origin::TrashManagement(event) => format!("trash_management_{:?}", event),
             Origin::NoteTemplateManagement(event) => {

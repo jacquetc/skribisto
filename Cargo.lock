@@ -5479,6 +5479,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "skribisto-analysis-management"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
+ "skribisto-common",
+ "skribisto-compiler",
+ "skribisto-macros",
+ "skribisto-model",
+ "skribisto-skrib-format",
+ "text-document",
+ "uuid",
+]
+
+[[package]]
 name = "skribisto-binder-item-management"
 version = "0.0.1"
 dependencies = [
@@ -5574,6 +5591,7 @@ dependencies = [
  "chrono",
  "flume",
  "log",
+ "skribisto-analysis-management",
  "skribisto-binder-item-management",
  "skribisto-common",
  "skribisto-direct-access",
@@ -5654,6 +5672,7 @@ dependencies = [
  "serde",
  "skribisto-common",
  "text-document",
+ "unicode-segmentation",
 ]
 
 [[package]]
@@ -5710,6 +5729,7 @@ dependencies = [
  "chrono",
  "ron",
  "serde",
+ "serde_json",
  "skribisto-common",
  "skribisto-model",
  "tempfile",

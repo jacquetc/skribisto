@@ -117,3 +117,13 @@ mentions-hit-count = { $n ->
 ## Legacy keys kept so older scripts/tests that still reference them compile
 mentions-roster = Cast
 mentions-pin = Add { $name } to cast
+
+# ── Point of view ────────────────────────────────────────────────────────────
+# Whose eyes a scene is told through. Distinct from the cast above: the cast is
+# who appears, the point of view is who holds the camera. A scene may have none
+# (unassigned) or, deliberately, more than one — which is what head-hopping is.
+pov-section = Point of view
+pov-empty = No point of view set
+pov-add = Set point of view…
+pov-multiple = This scene has two points of view.
+pov-remove = Remove { $name } as point of view

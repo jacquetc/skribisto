@@ -144,10 +144,20 @@ impl Widget for PaceCharts {
                 }
             })
             .collect();
+        let per_day_len = points.len();
         let per_day = ChartSeries::new(tr!(pace_series_words_per_day()).resolve_now()).data(points);
-        let bars = BarChart::new(ChartModel::from_series_vec(vec![per_day]))
+        let mut bars = BarChart::new(ChartModel::from_series_vec(vec![per_day]))
             .grid(true)
             .legend(false);
+        // The rate the bars are tinted against, drawn. The progression chart above plots its
+        // target as a series and so has always shown it; this one compared every bar to a
+        // number that appeared nowhere on it.
+        if let Some(r) = rate {
+            bars = bars.reference_line(ReferenceLine::new(
+                r as f32,
+                tr!(pace_daily_target_line(count = r as i64)),
+            ));
+        }
 
         let col = VStack::new()
             .spacing(12.0)
@@ -156,13 +166,26 @@ impl Widget for PaceCharts {
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary),
             )
-            .child(FixedSize::new().height(180.0).child(line))
+            // Sized from the day count, not the viewport: a project running for a year
+            // squeezed a line chart into a thumbnail, and its companion bar chart below hit
+            // `BarChart`'s 4px bar floor and drew past its own plot. Same helper the
+            // Analysis charts use, so the two panes render the same manuscript at the same
+            // scale.
+            .child(crate::tabs::shared::wide_chart(
+                actual.len(),
+                crate::tabs::shared::CHART_HEIGHT,
+                line,
+            ))
             .child(
                 TextWidget::new(tr!(pace_chart_words_per_day()))
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary),
             )
-            .child(FixedSize::new().height(140.0).child(bars));
+            .child(crate::tabs::shared::wide_chart(
+                per_day_len,
+                crate::tabs::shared::STRIP_HEIGHT,
+                bars,
+            ));
         self.root = Some(ctx.add(col));
         self.root.into_iter().collect()
     }

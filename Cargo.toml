@@ -14,6 +14,7 @@ members = [
     "crates/progress_management",
     "crates/trash_management",
     "crates/mention_management",
+    "crates/analysis_management",
     "crates/tag_management",
     "crates/note_template_management",
     "crates/binder_item_management",
@@ -66,6 +67,7 @@ export_management = { package = "skribisto-export-management", version = "0.0.1"
 progress_management = { package = "skribisto-progress-management", version = "0.0.1", path = "crates/progress_management" }
 trash_management = { package = "skribisto-trash-management", version = "0.0.1", path = "crates/trash_management" }
 mention_management = { package = "skribisto-mention-management", version = "0.0.1", path = "crates/mention_management" }
+analysis_management = { package = "skribisto-analysis-management", version = "0.0.1", path = "crates/analysis_management" }
 tag_management = { package = "skribisto-tag-management", version = "0.0.1", path = "crates/tag_management" }
 note_template_management = { package = "skribisto-note-template-management", version = "0.0.1", path = "crates/note_template_management" }
 binder_item_management = { package = "skribisto-binder-item-management", version = "0.0.1", path = "crates/binder_item_management" }

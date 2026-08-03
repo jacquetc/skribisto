@@ -16,9 +16,10 @@ use bastyde::core::widget::WidgetPlacement;
 use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    ActivateOn, DockOpenLocation, DockSide, DockWidget, DragTransferMode, Expand, FocusScope,
-    HStack, MenuItem, MenuList, MessageBox, MessageBoxButtons, Padding, ScrollBarMode,
-    StandardTreeItem, ToolbarItem, TraversalScopePolicy, TreeRow, TreeView, VStack,
+    ActivateOn, Button, ButtonVariant, DockOpenLocation, DockSide, DockWidget, DragTransferMode,
+    Expand, FocusScope, HStack, MenuItem, MenuList, MessageBox, MessageBoxButtons, Padding,
+    ScrollBarMode, Spacer, StandardTreeItem, TextWidget, ToolbarItem, TraversalScopePolicy,
+    TreeRow, TreeView, VStack,
 };
 
 use frontend::AppContext;
@@ -211,6 +212,9 @@ fn binder_tree(
     VStack::new()
         .spacing(0.0)
         .child(header)
+        // Says what the filter is doing, and offers the way out. Only rendered while a
+        // filter is active; see `BinderFilterBar`.
+        .child(BinderFilterBar::new(outline.clone()))
         .child(Expand::new().child(tree))
         .on_key(move |ev, ctx| match ev {
             WidgetEvent::KeyDown {
@@ -499,5 +503,117 @@ impl Widget for OutlineKeys {
 
     fn children(&self) -> Vec<WidgetId> {
         self.child_id.into_iter().collect()
+    }
+}
+
+/// The binder's filter feedback: how much the search is hiding, and a way to stop.
+///
+/// The search field lives in a popover, so dismissing it leaves a live filter with nothing
+/// on screen to show for it. A writer who searched for something that matches nothing sees
+/// an empty binder and an idle-looking magnifier — indistinguishable from a project with no
+/// rows in it, and there is no affordance to undo it because the field is gone.
+///
+/// So the dock says it itself: a count while the filter is narrowing anything, and — when it
+/// has hidden *everything* — the query it is filtering by, so the writer can see what to
+/// clear. Both collapse to nothing when no filter is active, which is the normal case.
+struct BinderFilterBar {
+    outline: OutlineViewModel,
+    root: Option<WidgetId>,
+}
+
+impl BinderFilterBar {
+    fn new(outline: OutlineViewModel) -> Self {
+        Self { outline, root: None }
+    }
+}
+
+impl std::fmt::Debug for BinderFilterBar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BinderFilterBar").finish_non_exhaustive()
+    }
+}
+
+impl Widget for BinderFilterBar {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        use bastyde::core::BindingLevel;
+
+        // Both inputs rebuild this: the query decides whether the bar exists at all, the
+        // counts decide what it says.
+        self.outline.search_query_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        self.outline.match_counts_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+
+        let query = self.outline.search_query_signal().get();
+        if query.trim().is_empty() {
+            self.root = None;
+            return Vec::new();
+        }
+
+        let (shown, total) = self.outline.match_counts_signal().get();
+        let clearer = self.outline.clone();
+        let mut col = VStack::new().spacing(2.0).child(
+            HStack::new()
+                .spacing(6.0)
+                .child(
+                    TextWidget::new(tr!(binder_filter_count(
+                        shown = shown as i64,
+                        total = total as i64
+                    )))
+                    .style(TextStyleRole::Tiny)
+                    .color(TextRole::Secondary),
+                )
+                .child(Spacer::new())
+                .child(
+                    Button::new(tr!(binder_filter_clear()))
+                        .variant(ButtonVariant::Plain)
+                        .on_activate_fn(move |_| clearer.clear_search()),
+                ),
+        );
+
+        // Naming the query matters most in exactly the case where the tree is blank: it is
+        // the only thing left on screen that explains the blankness.
+        if shown == 0 {
+            col = col.child(
+                TextWidget::new(tr!(binder_filter_none(query = query.clone())))
+                    .style(TextStyleRole::Tiny)
+                    .color(TextRole::Secondary),
+            );
+        }
+
+        let id = ctx.add(Padding::symmetric(8.0, 4.0).child(col));
+        self.root = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        // No filter, no bar — and no height, so the tree keeps the whole dock.
+        self.root
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn place_children(
+        &self,
+        bounds: Rect,
+        _proposal: SizeProposal,
+        children: &mut [WidgetPlacement],
+        _ctx: &LayoutContext,
+    ) {
+        for child in children.iter_mut() {
+            child.origin = Point::new(bounds.x, bounds.y);
+            child.size = bounds.size();
+        }
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root.into_iter().collect()
     }
 }

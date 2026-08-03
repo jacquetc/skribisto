@@ -118,3 +118,10 @@ mentions-hit-count = { $n ->
 ## Anciennes clés conservées pour les scripts/tests qui y font encore référence
 mentions-roster = Présence
 mentions-pin = Ajouter { $name } à la présence
+
+# ── Point de vue ─────────────────────────────────────────────────────────────
+pov-section = Point de vue
+pov-empty = Aucun point de vue défini
+pov-add = Définir le point de vue…
+pov-multiple = Cette scène a deux points de vue.
+pov-remove = Retirer { $name } comme point de vue

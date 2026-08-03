@@ -94,6 +94,7 @@ fn item(
             },
             contents: Vec::new(),
             references: Vec::new(),
+            point_of_view: Vec::new(),
             tags: Vec::new(),
         },
         contents,

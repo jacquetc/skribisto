@@ -209,6 +209,22 @@ impl DuplicateUseCase {
                     )?;
                 }
 
+                // Copy the point of view. A duplicated scene is the same scene again — it
+                // is told through the same eyes until the writer says otherwise, and
+                // silently dropping the POV would leave the copy in the unassigned bucket
+                // where nothing about the duplicate suggests it should be.
+                let pov_ids = uow.get_binder_item_relationship(
+                    &src.id,
+                    &BinderItemRelationshipField::PointOfView,
+                )?;
+                if !pov_ids.is_empty() {
+                    uow.set_binder_item_relationship(
+                        &created_item.id,
+                        &BinderItemRelationshipField::PointOfView,
+                        &pov_ids,
+                    )?;
+                }
+
                 new_block.push(created_item.id);
             }
             new_root_ids.push(new_block[0]);

@@ -536,6 +536,15 @@ pub struct BinderItemFile {
     pub prose_refs: Vec<ProseRef>,
     /// M2M self-references (cross-links), as `file_id`s.
     pub reference_ids: Vec<u64>,
+    /// Whose eyes this row is told through, as `file_id`s of story-bible items.
+    ///
+    /// Purely additive — an empty vector is a legal, ordinary state (an unassigned scene,
+    /// a front-matter row), so an existing `items.ron` reads back correctly with `default`
+    /// and FORMAT_VERSION does not move. That is the `aliases` / `discoverable` precedent,
+    /// not the `uid` one: a nil uid was never a valid value, which is why *that* addition
+    /// needed a version bump and a heal step.
+    #[serde(default)]
+    pub point_of_view_ids: Vec<u64>,
     /// M2M tag `file_id`s.
     pub tag_ids: Vec<u64>,
 }

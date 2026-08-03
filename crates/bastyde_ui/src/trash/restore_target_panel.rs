@@ -84,6 +84,7 @@ impl TrashRestoreTargetPanel {
         let filters = TreeFilters {
             binder: Signal::new(None),
             query: Signal::new(String::new()),
+            match_counts: Signal::new((0, 0)),
             all_binders: Signal::new(false),
         };
         let picker_model =

@@ -44,6 +44,8 @@ pub struct LoadedWork {
     pub comments: Vec<LoadedComment>,
     /// (source file id, destination file id) cross-link pairs.
     pub references: Vec<(u64, u64)>,
+    /// (scene file id, story-bible item file id) point-of-view pairs.
+    pub point_of_view: Vec<(u64, u64)>,
     /// Absolute path recorded in `RecentWork` (the opened file/folder).
     pub absolute_path: String,
 }

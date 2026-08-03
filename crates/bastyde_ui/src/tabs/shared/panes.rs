@@ -546,12 +546,13 @@ pub fn folder_segmented(
     tab: &ContentTab,
     own_label: impl Into<LocalizedString>,
     manuscript_label: impl Into<LocalizedString>,
-    extra: Option<(LocalizedString, Box<dyn Widget>)>,
+    extras: Vec<(LocalizedString, Box<dyn Widget>)>,
 ) -> Box<dyn Widget> {
-    // An optional container-specific segment (the Book's "Pace") is inserted **before**
-    // the two disabled placeholders, so every existing index stays put and the
-    // SegmentedControl↔Switcher positional contract holds (disabled segments never become
-    // the current index).
+    // Container-specific segments (the Book's "Pace" and "Analysis") are inserted here, in
+    // order, before Corkboard and Overview. A `Vec` rather than a single `Option` because
+    // the Book now has two of them, and because the positional SegmentedControl↔Switcher
+    // contract is easier to keep honest when both lists are appended from the same loop
+    // than when a second `Option` has to be threaded through in the same order twice.
     let mut bar = SegmentedControl::new(tab.segment.clone())
         .segment(Segment::new(own_label))
         .segment(Segment::new(manuscript_label))
@@ -560,7 +561,7 @@ pub fn folder_segmented(
         .child(folder_own_pane(tab))
         .child(stream_pane(tab, SplitFlavour::Prose))
         .child(stream_pane(tab, SplitFlavour::Synopsis));
-    if let Some((label, pane)) = extra {
+    for (label, pane) in extras {
         bar = bar.segment(Segment::new(label));
         content = content.child_boxed(pane);
     }

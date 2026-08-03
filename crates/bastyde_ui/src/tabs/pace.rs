@@ -21,6 +21,7 @@ use bastyde::widgets::{
     HStack, IconButton, Padding, Panel, RectWidget, ScrollArea, SpinBox, StepType, TextInput,
     TextWidget, Toggle, VStack, Wrap, ZStack,
 };
+use bastyde_charts::reference_line::ReferenceLine;
 use bastyde_charts::{BarChart, LineChart};
 
 use chrono::{Datelike, Duration, NaiveDate, Utc};

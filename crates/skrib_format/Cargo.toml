@@ -33,5 +33,10 @@ tempfile = "3"
 walkdir = "2"
 unicode-normalization = "0.1"
 
+# Used only by the `enrich_example_fixture` example, which reads the reading
+# pass's JSON output.
+[dev-dependencies]
+serde_json = "1"
+
 [lints]
 workspace = true

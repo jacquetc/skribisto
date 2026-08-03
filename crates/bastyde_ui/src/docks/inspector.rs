@@ -436,14 +436,97 @@ impl Widget for Inspector {
                                 );
                             }
 
-                            let candidates =
-                                crate::tags::candidates_from_table(&index.discoverable_table());
+                            // Cloned once per rebuild, not once per consumer: the POV
+                            // section below needs the same table, and `discoverable_table()`
+                            // deep-clones every story-bible entry each call.
+                            let table = index.discoverable_table();
+                            let candidates = crate::tags::candidates_from_table(&table);
                             col = col.child(crate::tags::cast_add_button(
-                                candidates,
+                                candidates.clone(),
                                 d.references.clone(),
                                 d.id,
                                 pin,
                             ));
+
+                            // Point of view: whose eyes this scene is told through.
+                            //
+                            // Its own section rather than a badge on a cast row, because it
+                            // answers a different question — the cast is who appears, the POV
+                            // is who holds the camera — and a scene routinely has one without
+                            // the other. Candidates are the full discoverable table, not just
+                            // the confirmed cast, which is what makes picking a POV able to
+                            // add someone to the cast rather than requiring them there first.
+                            //
+                            // Rendered as a chip row rather than a `MentionList`: that row
+                            // type carries scan evidence (hit counts, the matched name, the
+                            // sentence it was found in) which means nothing for a POV, since
+                            // a scene told in deep POV may never name its own viewpoint
+                            // character at all.
+                            {
+                                let pov_probe = SingleBinderItem::new(self.app_ctx.clone());
+                                pov_probe.set_id(Some(d.id));
+                                let set_pov: crate::tags::mention_list::PinReference = {
+                                    let pov_probe = pov_probe.clone();
+                                    Rc::new(move |target, _c| {
+                                        let mut next = pov_probe
+                                            .dto()
+                                            .map(|x| x.point_of_view)
+                                            .unwrap_or_default();
+                                        if !next.contains(&target) {
+                                            next.push(target);
+                                        }
+                                        let _ = pov_probe.set_point_of_view(&next, stack);
+                                    })
+                                };
+                                let clear_pov = {
+                                    let pov_probe = pov_probe.clone();
+                                    Rc::new(move |target: u64, _c: &mut EventContext| {
+                                        let next: Vec<u64> = pov_probe
+                                            .dto()
+                                            .map(|x| x.point_of_view)
+                                            .unwrap_or_default()
+                                            .into_iter()
+                                            .filter(|&id| id != target)
+                                            .collect();
+                                        let _ = pov_probe.set_point_of_view(&next, stack);
+                                    })
+                                };
+
+                                col = col.child(
+                                    TextWidget::new(tr!(pov_section()))
+                                        .style(TextStyleRole::Tiny)
+                                        .color(TextRole::Secondary),
+                                );
+
+                                let pov_ids = d.point_of_view.clone();
+                                if pov_ids.is_empty() {
+                                    col = col.child(
+                                        TextWidget::new(tr!(pov_empty()))
+                                            .style(TextStyleRole::Tiny)
+                                            .color(TextRole::Secondary),
+                                    );
+                                } else {
+                                    col = col.child(crate::tags::pov_chip_row(
+                                        crate::tags::pov_chips(&table, &pov_ids),
+                                        clear_pov,
+                                    ));
+                                    // Two viewpoints in one scene is head-hopping. Stated as
+                                    // an observation, not a warning: writers do it on purpose,
+                                    // and the schema allows it precisely so it can be seen
+                                    // rather than blocked.
+                                    if pov_ids.len() > 1 {
+                                        col = col.child(
+                                            TextWidget::new(tr!(pov_multiple()))
+                                                .style(TextStyleRole::Tiny)
+                                                .color(TextRole::Secondary),
+                                        );
+                                    }
+                                }
+
+                                col = col.child(crate::tags::pov_add_button(
+                                    candidates, pov_ids, d.id, set_pov,
+                                ));
+                            }
 
                             // Backlinks, on a discoverable item: where this character appears.
                             // No pin — that would write the wrong item's references.

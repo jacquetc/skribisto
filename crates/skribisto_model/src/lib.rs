@@ -28,6 +28,15 @@ pub mod casing;
 pub mod language;
 pub mod mentions;
 
+/// Locale typography facts — quote glyphs, pre-punctuation spacing, dialogue dashes.
+/// The data half of what used to live in the UI's `text_replacement::typography`; the
+/// per-keystroke engine that applies it stays there.
+pub mod typography;
+
+/// Manuscript analysis: repetition, prose shape, lexical diversity, synopsis coverage.
+/// Pure measurement over strings and ids — no store, no entities, no UI.
+pub mod analysis;
+
 /// The compile spine: fold the flat `(role, sub_role)` item stream into an export scope.
 /// Shares its structural predicates with the UI's Full Chapter/Part/Book stream view.
 pub mod compile;

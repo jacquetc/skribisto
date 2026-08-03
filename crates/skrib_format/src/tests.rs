@@ -230,12 +230,16 @@ fn sample_inputs() -> SampleInputs {
             },
             contents: Vec::new(),
             references: Vec::new(),
+            point_of_view: Vec::new(),
             tags: vec![10],
         };
         items.push(ItemWithContents { item, contents });
     }
     // A cross-reference: first item -> second item.
     items[0].item.references = vec![301];
+    // ...and a point of view on the same pair, which is a different question
+    // (who appears here vs. whose eyes this is told through) travelling the same road.
+    items[0].item.point_of_view = vec![301];
 
     let binders = vec![BinderWithItems {
         binder: Binder {
@@ -422,6 +426,48 @@ fn folder_round_trip_is_lossless() {
     write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
     let read = read_bundle(root.to_str().unwrap()).unwrap();
     assert_round_trip(&bundle, &read);
+}
+
+/// Point of view survives a save→load, and stays distinct from `references`.
+///
+/// `folder_round_trip_is_lossless` covers this too, by whole-bundle equality — but it would
+/// report a regression as a diff of two large structures. This one names the property, and
+/// in particular pins that the two relationships do not bleed into each other: they travel
+/// the same road through the format and answer different questions, so a copy-paste slip in
+/// the mapping layer would otherwise show up as "POV works" while silently writing it into
+/// the cast list.
+#[test]
+fn point_of_view_round_trips_and_stays_distinct_from_references() {
+    let bundle = build_bundle(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("PovNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    let written = &bundle.binders[0].items[0].item;
+    let loaded = &read.binders[0].items[0].item;
+    assert_eq!(written.point_of_view_ids, vec![301], "the fixture sets a POV to begin with");
+    assert_eq!(
+        loaded.point_of_view_ids, written.point_of_view_ids,
+        "point of view must survive the round trip"
+    );
+    assert_eq!(
+        loaded.reference_ids, written.reference_ids,
+        "references must survive it independently"
+    );
+
+    // An item with no POV must come back with none, not with its cast copied in.
+    let unassigned = read.binders[0]
+        .items
+        .iter()
+        .map(|b| &b.item)
+        .find(|i| i.file_id != written.file_id)
+        .expect("the fixture has more than one item");
+    assert!(
+        unassigned.point_of_view_ids.is_empty(),
+        "an unassigned scene must stay unassigned; got {:?}",
+        unassigned.point_of_view_ids
+    );
 }
 
 #[test]
@@ -1288,8 +1334,13 @@ fn parses_a_bundle_written_before_these_fields_existed() {
     // The pre-existing relationships must survive untouched...
     assert_eq!(items[0].reference_ids, vec![301]);
     assert_eq!(items[0].tag_ids, vec![10]);
-    // ...and the new field defaults rather than failing the parse.
+    // ...and the new fields default rather than failing the parse. This is what
+    // justifies leaving FORMAT_VERSION alone for `point_of_view_ids`: an empty POV
+    // is an ordinary, legal state (an unassigned scene), so `default` reads a v4
+    // file back correctly. Contrast `uid`, where nil was never valid and the
+    // addition therefore needed both a version bump and a heal step.
     assert!(items[0].aliases.is_empty());
+    assert!(items[0].point_of_view_ids.is_empty());
 }
 
 // ── dict_language: the pre-v4 string form (format v4) ───────────────────────

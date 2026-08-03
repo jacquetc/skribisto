@@ -113,6 +113,16 @@ pub struct TreeFilters {
     pub binder: Signal<Option<u64>>,
     /// Live text filter; empty = no text filtering. Driven by the search field.
     pub query: Signal<String>,
+    /// How many item rows the active filter kept, and how many there were before it.
+    ///
+    /// Published by the row source rather than derived by a consumer, because only the
+    /// source ever sees both sides of the filter. `(0, 0)` while nothing is loaded.
+    ///
+    /// This exists because a filter that hides everything is otherwise indistinguishable
+    /// from an empty project: the search field lives in a popover, so once it is dismissed
+    /// the only thing on screen is a blank tree and an idle-looking magnifier. Counting is
+    /// what lets the dock say so.
+    pub match_counts: Signal<(usize, usize)>,
     /// Search scope: `false` = current binder, `true` = all binders. Only
     /// meaningful while a query is active.
     pub all_binders: Signal<bool>,
@@ -186,6 +196,9 @@ impl BinderBinderItemsTreeModel {
                     f.binder.get()
                 };
                 let rows = rows::load(&ctx, &work_id, scope);
+                // Items only — a binder row is chrome, and "0 of 2" for a project with two
+                // binders and no items would be a confusing way to say "nothing here".
+                let total_items = rows.iter().filter(|r| r.item.kind != "binder").count();
                 *ids.borrow_mut() = rows
                     .iter()
                     .filter_map(|r| {
@@ -197,10 +210,11 @@ impl BinderBinderItemsTreeModel {
                     })
                     .collect();
                 if !searching {
+                    f.match_counts.set((total_items, total_items));
                     return rows;
                 }
                 let needle = q.to_lowercase();
-                TreeRowFilter::new()
+                let kept = TreeRowFilter::new()
                     .filter_mode(TreeFilterMode::KeepAncestors)
                     .filter(move |n: &TreeNode| {
                         // Match items only; binder rows survive as ancestors.
@@ -208,7 +222,13 @@ impl BinderBinderItemsTreeModel {
                             && (n.title.to_lowercase().contains(&needle)
                                 || n.label.to_lowercase().contains(&needle))
                     })
-                    .apply(rows)
+                    .apply(rows);
+                // Ancestors are kept for reachability but are not matches, so they must not
+                // be counted as such — "3 of 54" has to mean three rows the writer searched
+                // for, not three plus the folders they happen to live in.
+                let matched_items = kept.iter().filter(|r| r.item.kind != "binder").count();
+                f.match_counts.set((matched_items, total_items));
+                kept
             });
         }
         // Domain policy: binders can't be dragged, items can.
@@ -714,6 +734,7 @@ mod tests {
         TreeFilters {
             binder: Signal::new(None),
             query: Signal::new(String::new()),
+            match_counts: Signal::new((0, 0)),
             all_binders: Signal::new(false),
         }
     }
@@ -972,5 +993,96 @@ mod tests {
         let m = model();
         assert!(m.contains(&BinderTreeKey::Item(common::uid::fixture_uid(101))));
         assert!(!m.contains(&BinderTreeKey::Item(common::uid::fixture_uid(999))));
+    }
+}
+
+// Real-backend only: under `mocks` the row source is a static 13-row fixture with none of
+// the example's chapters in it, so these would be asserting against a different tree.
+#[cfg(all(test, not(feature = "mocks")))]
+mod filter_feedback_tests {
+    use super::*;
+
+    fn filters() -> TreeFilters {
+        TreeFilters {
+            binder: Signal::new(None),
+            query: Signal::new(String::new()),
+            match_counts: Signal::new((0, 0)),
+            all_binders: Signal::new(false),
+        }
+    }
+
+    fn loaded(f: &TreeFilters) -> (BinderBinderItemsTreeModel, std::rc::Rc<AppContext>) {
+        let ctx = std::rc::Rc::new(AppContext::new());
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/examples/Starforgers.skrib"
+        );
+        frontend::commands::work_management_commands::load_work(
+            &ctx,
+            &frontend::work_management::LoadWorkDto { file_name: path.to_string() },
+        )
+        .expect("the bundled example must load");
+        let work = frontend::commands::work_commands::get_all_work(&ctx)
+            .unwrap()
+            .pop()
+            .unwrap()
+            .id;
+        let m = BinderBinderItemsTreeModel::new(ctx.clone(), Signal::new(Some(work)), f.clone());
+        (m, ctx)
+    }
+
+    /// With no filter, the counts say "everything", so the bar that reads them stays away.
+    #[test]
+    fn an_unfiltered_tree_reports_every_row_on_both_sides() {
+        let f = filters();
+        let (m, _ctx) = loaded(&f);
+        let (shown, total) = f.match_counts.get();
+        assert!(total > 30, "the example has 30+ item rows; got {total}");
+        assert_eq!(shown, total, "nothing is hidden when nothing is filtering");
+        assert!(m.visible_count() > 0);
+    }
+
+    /// The case that started this: a filter that hides everything must be *reported*, not
+    /// left as a blank tree the writer cannot explain.
+    #[test]
+    fn a_filter_that_hides_everything_still_reports_the_total() {
+        let f = filters();
+        let (m, _ctx) = loaded(&f);
+        let total_before = f.match_counts.get().1;
+
+        f.query.set("zzzznotarealword".to_string());
+        let (shown, total) = f.match_counts.get();
+        assert_eq!(shown, 0, "nothing matches");
+        assert_eq!(total, total_before, "...but the tree still knows how much it is hiding");
+        assert_eq!(m.visible_count(), 0);
+    }
+
+    /// Ancestors are kept so a match stays reachable, but they are not matches — counting
+    /// them would inflate "N of M" by however deep the match happened to sit.
+    #[test]
+    fn kept_ancestors_are_not_counted_as_matches() {
+        let f = filters();
+        let (_m, _ctx) = loaded(&f);
+        f.query.set("Chapter 7".to_string());
+        let (shown, total) = f.match_counts.get();
+        assert!(shown >= 1, "Chapter 7 exists in the example");
+        assert!(
+            shown < total,
+            "a specific query must not match everything ({shown} of {total})"
+        );
+        assert!(shown <= 3, "only the chapter itself should match, not its ancestors: {shown}");
+    }
+
+    /// Clearing restores the full count, so the bar disappears again.
+    #[test]
+    fn clearing_the_query_restores_the_full_count() {
+        let f = filters();
+        let (m, _ctx) = loaded(&f);
+        let before = f.match_counts.get();
+        f.query.set("zzzznotarealword".to_string());
+        assert_eq!(f.match_counts.get().0, 0);
+        f.query.set(String::new());
+        assert_eq!(f.match_counts.get(), before, "clearing puts it back exactly");
+        assert!(m.visible_count() > 0);
     }
 }

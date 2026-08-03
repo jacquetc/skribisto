@@ -14,11 +14,17 @@ use bastyde::prelude::*;
 use super::{ContentTab, shared};
 
 pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
-    // Only the Book gets the "Pace" segment (the manuscript-wide writing plan).
+    // Only the Book gets these two: "Pace" (the manuscript-wide writing plan) and
+    // "Analysis" (measurements over the whole book). Both are book-scale questions, and
+    // both sit before Corkboard and Overview — adding either shifts those two indices,
+    // which is what `tabs::tests::the_overview_segment_mounts_a_table` pins.
     shared::folder_segmented(
         tab,
         tr!(segment_book()),
         tr!(full_book()),
-        Some((tr!(segment_pace()), super::pace::pace_pane(tab))),
+        vec![
+            (tr!(segment_pace()), super::pace::pace_pane(tab)),
+            (tr!(analysis_segment()), super::analysis::analysis_pane(tab)),
+        ],
     )
 }

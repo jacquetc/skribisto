@@ -454,6 +454,7 @@ mod tests {
             // update DTO — it has no fields for them.
             contents: vec![41, 42],
             references: vec![43],
+            point_of_view: vec![],
             tags: vec![44],
         };
 

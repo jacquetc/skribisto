@@ -179,6 +179,7 @@ pub fn from_entities(
                     inline_contents,
                     prose_refs,
                     reference_ids: item.references.clone(),
+                point_of_view_ids: item.point_of_view.clone(),
                     tag_ids: item.tags.clone(),
                 },
                 prose,
@@ -536,6 +537,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         .collect::<Result<Vec<_>>>()?;
 
     let mut references: Vec<(u64, u64)> = Vec::new();
+    let mut point_of_view: Vec<(u64, u64)> = Vec::new();
     let mut loaded_binders = Vec::with_capacity(bundle.binders.len());
 
     for bb in &bundle.binders {
@@ -586,6 +588,9 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
             for dst in &f.reference_ids {
                 references.push((f.file_id, *dst));
             }
+            for dst in &f.point_of_view_ids {
+                point_of_view.push((f.file_id, *dst));
+            }
 
             items.push(LoadedItem {
                 item: BinderItem {
@@ -611,6 +616,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                     // ids, and cross-item `references` are collected separately above.
                     contents: Vec::new(),
                     references: Vec::new(),
+                    point_of_view: Vec::new(),
                     tags: Vec::new(),
                 },
                 contents,
@@ -756,6 +762,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         progress_snapshots,
         comments,
         references,
+        point_of_view,
         absolute_path: absolute_path.to_string(),
     })
 }

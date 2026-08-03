@@ -68,6 +68,7 @@ fn item(sub_role: BinderItemSubRole, title: &str) -> CreateBinderItemDto {
         aliases: Vec::new(),
         contents: vec![],
         references: vec![],
+        point_of_view: vec![],
         tags: vec![],
     }
 }

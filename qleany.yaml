@@ -623,6 +623,26 @@ entities:
     type: entity
     entity: BinderItem
     relationship: many_to_many
+  # Whose eyes this row is told through. A structural twin of `references` --
+  # self-referencing, weak, unordered -- because a point of view IS one of the
+  # story-bible items the Cast/Presence panel already pins here; POV is the
+  # question of which of them holds the camera.
+  #
+  # Many-to-many on purpose. Zero POV is a legal, common state (an unassigned
+  # scene, a front-matter row), and two is the signal a writer most wants: a
+  # two-POV scene is head-hopping, surfaced for free as a by-product of the
+  # shape rather than blocked as an error. Downstream code must therefore never
+  # read the first element of an unordered Vec, and every POV-keyed view needs
+  # an explicit unassigned bucket.
+  #
+  # The model cannot enforce exactly-one-POV, POV-implies-cast, or
+  # POV-restricted-to-discoverable -- Qleany has no primitive for any of them,
+  # and `references` above lacks the third for the same reason. All three stay
+  # UI-layer invariants.
+  - name: point_of_view
+    type: entity
+    entity: BinderItem
+    relationship: many_to_many
   - name: tags
     type: entity
     entity: BinderTag
@@ -1064,6 +1084,117 @@ features:
         enum_values:
         - Empty
         - "Entities(Vec<MentionEntity>)"
+- name: analysis_management
+  use_cases:
+  # Read-only pass over one container's subtree (normally a Book): measure every
+  # prose row's shape, find repetition within and across scenes, and check each
+  # scene's prose against its own synopsis. Writes nothing -- measurement must
+  # never touch entities, dirty the project or push an undo entry. Modelled on
+  # scan_mentions (QueryUnitOfWork, long operation, same `gather`).
+  #
+  # The measurements themselves live in skribisto_model::analysis, store-free and
+  # unit-tested; this use case only feeds them and shapes the result.
+  - name: analyze_book
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - BinderTag
+    - Content
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: AnalyzeBookDto
+      fields:
+      # Which open Work to read -- see mention_management's ScanMentionsDto.
+      - name: work_id
+        type: uinteger
+      # The container the Analysis view is mounted on. Its subtree is the scope;
+      # this is deliberately NOT resolve_scope's export scope, which drops
+      # non-exportable rows -- "analyse everything I wrote" includes them.
+      - name: scope_item_id
+        type: uinteger
+    dto_out:
+      name: BookAnalysisResultDto
+      fields:
+      # Four flat lists, each row carrying the item it belongs to, rather than a
+      # tree of nested Vecs -- the same shape (and the same `row` + `rows` enum
+      # escape hatch) mention_management's hit list uses. The manifest has no
+      # float type at all, which is the other reason every real payload rides
+      # inside a variant: the variant body is raw Rust.
+      #
+      # Option<f64> throughout is load-bearing, not decoration. A language with no
+      # curated dialogue convention, a scene too short for a diversity index and a
+      # synopsis with no distinctive terms must each report "not measurable" -- a
+      # 0.0 there would read as a finding rather than as an absence.
+      - name: scene
+        type: enum
+        enum_name: SceneAnalysis
+        enum_values:
+        - Empty
+        - "Measured { item_id: EntityId, title: String, chapter_title: String, words: i64, sentence_mean: Option<f64>, sentence_stddev: Option<f64>, paragraph_mean: Option<f64>, punctuation_per_1k: f64, dialogue: Option<f64>, synopsis_words: i64, synopsis_coverage: Option<f64> }"
+      - name: scenes
+        type: enum
+        enum_name: SceneAnalyses
+        enum_values:
+        - Empty
+        - "Measured(Vec<SceneAnalysis>)"
+      # A distinctive word recurring inside the echo window. `first_at`/`first_len`
+      # are byte offsets into that scene's plain text, so the UI can jump to and
+      # highlight the occurrence.
+      - name: echo
+        type: enum
+        enum_name: EchoRow
+        enum_values:
+        - Empty
+        - "Found { item_id: EntityId, word: String, occurrences: i64, closest_gap: i64, score: f64, first_at: i64, first_len: i64 }"
+      - name: echoes
+        type: enum
+        enum_name: EchoRows
+        enum_values:
+        - Empty
+        - "Found(Vec<EchoRow>)"
+      # Containment leads and Jaccard follows, on purpose: a short scene pasted
+      # whole inside a long one scores ~1.0 containment and ~0.17 Jaccard, and it
+      # is the containment that names the writer's actual situation.
+      - name: duplicate
+        type: enum
+        enum_name: DuplicateRow
+        enum_values:
+        - Empty
+        - "Found { a_item_id: EntityId, a_title: String, b_item_id: EntityId, b_title: String, containment: f64, jaccard: f64, shared_shingles: i64 }"
+      - name: duplicates
+        type: enum
+        enum_name: DuplicateRows
+        enum_values:
+        - Empty
+        - "Found(Vec<DuplicateRow>)"
+      # `missing` is what makes this actionable: "your synopsis names Constantine
+      # and the Senate; the prose mentions neither" is a sentence a writer can act
+      # on, where a coverage score is not.
+      - name: drift
+        type: enum
+        enum_name: DriftRow
+        enum_values:
+        - Empty
+        - "Found { item_id: EntityId, title: String, covered: f64, missing: Vec<String> }"
+      - name: drifts
+        type: enum
+        enum_name: DriftRows
+        enum_values:
+        - Empty
+        - "Found(Vec<DriftRow>)"
+      # Book-level lexical diversity. `reliable` is the sample-size gate: below it
+      # the UI must say "not enough text yet" rather than print a number.
+      - name: diversity
+        type: enum
+        enum_name: BookDiversity
+        enum_values:
+        - Empty
+        - "Measured { words: i64, distinct_words: i64, mattr: Option<f64>, hdd: Option<f64>, reliable: bool }"
+      - name: total_words
+        type: uinteger
 - name: progress_management
   use_cases:
   # Read-only pass over the open Work: sum SceneText prose of every

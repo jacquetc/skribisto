@@ -317,6 +317,7 @@ fn seed_mentionable_scene(
         aliases: vec![needle.to_string()],
         contents: vec![],
         references: vec![],
+        point_of_view: vec![],
         tags: vec![],
     };
     let mut character = mk(BinderItemSubRole::Note, &format!("{needle} Sarraute"));
@@ -416,6 +417,7 @@ fn seed_prose_scene(ctx: &AppContext, binder_id: EntityId, words: usize) {
             aliases: Vec::new(),
             contents: vec![],
             references: vec![],
+            point_of_view: vec![],
             tags: vec![],
         }],
         binder_id,
@@ -471,6 +473,7 @@ fn seed_trashed_item(
             aliases: Vec::new(),
             contents: vec![],
             references: vec![],
+            point_of_view: vec![],
             tags: vec![],
         }],
         binder_id,
@@ -808,6 +811,7 @@ fn seed_needle_scene(ctx: &AppContext, binder_id: EntityId, title: &str, prose: 
             aliases: Vec::new(),
             contents: vec![],
             references: vec![],
+            point_of_view: vec![],
             tags: vec![],
         }],
         binder_id,
@@ -1121,6 +1125,7 @@ fn seed_active_item(ctx: &AppContext, binder_id: EntityId, uid_seed: u64) -> Ent
             aliases: Vec::new(),
             contents: vec![],
             references: vec![],
+            point_of_view: vec![],
             tags: vec![],
         }],
         binder_id,
@@ -1161,6 +1166,7 @@ fn seed_scene_pair(
         aliases: Vec::new(),
         contents: vec![],
         references: vec![],
+        point_of_view: vec![],
         tags: vec![],
     };
     let created = binder_item_commands::create_binder_item_multi(

@@ -46,6 +46,7 @@ pub use direct_access::work;
 pub use direct_access::work_info;
 
 // Feature modules (DTOs via frontend::{feature}::dtos::{Dto})
+pub use analysis_management;
 pub use binder_item_management;
 pub use export_management;
 pub use handling_app_lifecycle;

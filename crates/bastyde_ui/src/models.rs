@@ -43,6 +43,7 @@ mod tree_expansion_file;
 mod work_note_templates_list_model;
 mod work_tags_list_model;
 mod workspace_layout_file;
+mod repetition_tree_model;
 
 pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
 pub use binder_binder_items_tree_model::{
@@ -86,6 +87,9 @@ pub use work_note_templates_list_model::{
     ImportOutcome, TemplateRow, WorkNoteTemplatesListModel, moved_index, starred_first,
 };
 pub use work_tags_list_model::{TagRow, WorkTagsListModel, name_key, sort_rows};
+pub use repetition_tree_model::{
+    RepetitionGroup, RepetitionNode, RepetitionTreeKey, RepetitionTreeModel, rows_of,
+};
 pub use workspace_layout_file::{
     PaneLayout, PerProjectLayout, TabViewState, WorkspaceLayoutService,
 };

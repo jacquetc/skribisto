@@ -833,6 +833,8 @@ impl<'a> Builder<'a> {
                     inline_contents,
                     prose_refs,
                     reference_ids,
+                    // Plume Creator has no point-of-view concept to carry over.
+                    point_of_view_ids: Vec::new(),
                     tag_ids: Vec::new(),
                 },
                 prose,

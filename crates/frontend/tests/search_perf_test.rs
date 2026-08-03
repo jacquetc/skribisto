@@ -94,6 +94,7 @@ fn big_manuscript() -> AppContext {
             aliases: Vec::new(),
             contents: vec![],
             references: vec![],
+            point_of_view: vec![],
             tags: vec![],
         })
         .collect();

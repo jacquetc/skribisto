@@ -33,6 +33,7 @@ direct_access = { workspace = true }
 work_management = { workspace = true }
 export_management = { workspace = true }
 mention_management = { workspace = true }
+analysis_management = { workspace = true }
 progress_management = { workspace = true }
 trash_management = { workspace = true }
 tag_management = { workspace = true }

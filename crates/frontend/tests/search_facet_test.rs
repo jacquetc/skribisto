@@ -52,6 +52,7 @@ fn item(role: BinderItemRole, sub_role: BinderItemSubRole, title: &str) -> Creat
         aliases: Vec::new(),
         contents: vec![],
         references: vec![],
+        point_of_view: vec![],
         tags: vec![],
     }
 }
