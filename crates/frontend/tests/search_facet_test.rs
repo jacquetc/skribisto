@@ -154,6 +154,7 @@ fn search(ctx: &AppContext, facets: Vec<i64>) -> RunSearchDto {
         search_titles: true,
         search_synopsis: true,
         search_labels: false,
+        search_comments: false,
         include_trashed: false,
     }
 }

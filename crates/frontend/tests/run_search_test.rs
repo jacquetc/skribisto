@@ -42,7 +42,11 @@ fn loaded_ctx() -> AppContext {
 
 /// A query with every scope on and nothing else — the defaults the UI will send.
 fn dto(ctx: &AppContext, query: &str) -> RunSearchDto {
-    let work_id = work_commands::get_all_work(ctx).expect("get_all_work").pop().unwrap().id;
+    let work_id = work_commands::get_all_work(ctx)
+        .expect("get_all_work")
+        .pop()
+        .unwrap()
+        .id;
     RunSearchDto {
         work_id,
         query: query.to_string(),
@@ -54,6 +58,7 @@ fn dto(ctx: &AppContext, query: &str) -> RunSearchDto {
         search_titles: true,
         search_synopsis: true,
         search_labels: false,
+        search_comments: false,
         include_trashed: false,
     }
 }
@@ -107,7 +112,8 @@ fn run_search_finds_prose_and_writes_rows() {
 
     // NB: the fixture's prose is Lorem ipsum, so it contains no English function
     // words — "the" finds nothing here. Query something that is actually in it.
-    let out = search_management_commands::run_search(&ctx, &dto(&ctx, "ipsum")).expect("run_search");
+    let out =
+        search_management_commands::run_search(&ctx, &dto(&ctx, "ipsum")).expect("run_search");
     assert!(
         out.match_count > 0,
         "expected the fixture's Lorem-ipsum prose to contain 'ipsum'"
@@ -194,8 +200,9 @@ fn a_search_replaces_the_previous_result_set() {
     );
 
     // A query that cannot match must clear the set, not leave the old rows behind.
-    let out = search_management_commands::run_search(&ctx, &dto(&ctx, "zzqqxx-not-in-any-manuscript"))
-        .expect("miss");
+    let out =
+        search_management_commands::run_search(&ctx, &dto(&ctx, "zzqqxx-not-in-any-manuscript"))
+            .expect("miss");
     assert_eq!(out.match_count, 0);
     assert!(
         results(&ctx).is_empty(),
@@ -541,4 +548,275 @@ fn the_search_reads_the_prose_and_not_the_djot_markup() {
              shown a result for it"
         );
     }
+}
+
+// ── Comments are searchable prose too ──────────────────────────────────────────
+//
+// A comment is text the writer typed and expects to find again. It hangs off
+// `Work` rather than off a `Content` row, so `run_search` reaches it by its own
+// walk — these pin that the walk happens, that it can name the scene the thread is
+// anchored to, and that the scope switch actually gates it.
+
+/// `results`, but for a NAMED work rather than "the first `WorkInfo` in the store".
+///
+/// The store is process-global and `cargo test` runs these in parallel, so several
+/// projects are loaded at once — the shared helper's "first WorkInfo" is then some
+/// other test's project, and the assertions below read an unrelated result set.
+/// Every comment test therefore threads its own `work_id` through.
+fn results_for(
+    ctx: &AppContext,
+    work_id: u64,
+) -> Vec<frontend::direct_access::search_result::dtos::SearchResultDto> {
+    let work_info = work_info_commands::get_all_work_info(ctx)
+        .expect("get_all_work_info")
+        .into_iter()
+        .find(|wi| wi.work == Some(work_id))
+        .expect("the loaded work has a WorkInfo");
+    let ids = search_commands::get_search_relationship(
+        ctx,
+        &work_info.search,
+        &SearchRelationshipField::Results,
+    )
+    .expect("Search.results");
+    search_result_commands::get_search_result_multi(ctx, &ids)
+        .expect("get_search_result_multi")
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
+/// A DTO for a NAMED work — see [`results_for`].
+fn dto_for(work_id: u64, query: &str) -> RunSearchDto {
+    RunSearchDto {
+        work_id,
+        query: query.to_string(),
+        case_sensitive: false,
+        whole_word: false,
+        diacritic_sensitive: false,
+        facets: vec![],
+        search_body: true,
+        search_titles: true,
+        search_synopsis: true,
+        search_labels: false,
+        search_comments: true,
+        include_trashed: false,
+    }
+}
+
+/// Anchor a thread (plus one reply) to the first Content row in the fixture, and
+/// hand back `(comment_id, reply_id)`.
+fn seed_comment(ctx: &AppContext, work: u64, body: &str, reply_body: &str) -> (u64, u64) {
+    use frontend::commands::{comment_commands, comment_reply_commands};
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::direct_access::comment::CommentRelationshipField;
+    use frontend::common::direct_access::work::WorkRelationshipField;
+    use frontend::common::entities::{CommentAnchorKind, CommentOrphanReason};
+    use frontend::direct_access::comment::dtos::CreateCommentDto;
+    use frontend::direct_access::comment_reply::dtos::CreateCommentReplyDto;
+    use frontend::direct_access::work::dtos::WorkRelationshipDto;
+
+    let now = chrono::Utc::now();
+    // A Content row **belonging to this work**. `get_all_binder_item` is global and
+    // the store is shared across parallel tests, so picking the first row there can
+    // anchor the thread to another project's scene — which `run_search` then
+    // correctly skips as out of scope, and the test fails for a reason that has
+    // nothing to do with what it is testing.
+    let content = {
+        use frontend::commands::binder_commands;
+        use frontend::common::direct_access::binder::BinderRelationshipField;
+        let binders =
+            work_commands::get_work_relationship(ctx, &work, &WorkRelationshipField::Binders)
+                .expect("work binders");
+        binders
+            .into_iter()
+            .flat_map(|b| {
+                binder_commands::get_binder_relationship(
+                    ctx,
+                    &b,
+                    &BinderRelationshipField::BinderItems,
+                )
+                .expect("binder items")
+            })
+            .find_map(|item| {
+                binder_item_commands::get_binder_item_relationship(
+                    ctx,
+                    &item,
+                    &BinderItemRelationshipField::Contents,
+                )
+                .ok()
+                .and_then(|c| c.first().copied())
+            })
+            .expect("this work has at least one Content row")
+    };
+
+    let comment = comment_commands::create_orphan_comment(
+        ctx,
+        None,
+        &CreateCommentDto {
+            created_at: now,
+            updated_at: now,
+            content: Some(content),
+            kind: CommentAnchorKind::Range,
+            author_name: "Jane".into(),
+            body: body.into(),
+            resolved: false,
+            orphaned: false,
+            orphan_reason: CommentOrphanReason::NotOrphaned,
+            range_start: 0,
+            range_length: 4,
+            quote_prefix: String::new(),
+            quote_exact: "The ".into(),
+            quote_exact_truncated: false,
+            quote_suffix: String::new(),
+            block_ordinal_hint: 0,
+            replies: vec![],
+        },
+    )
+    .expect("create comment")
+    .id;
+
+    let reply = comment_reply_commands::create_orphan_comment_reply(
+        ctx,
+        None,
+        &CreateCommentReplyDto {
+            created_at: now,
+            updated_at: now,
+            author_name: "Marc".into(),
+            body: reply_body.into(),
+        },
+    )
+    .expect("create reply")
+    .id;
+    comment_commands::set_comment_relationship(
+        ctx,
+        None,
+        &frontend::direct_access::comment::dtos::CommentRelationshipDto {
+            id: comment,
+            field: CommentRelationshipField::Replies,
+            right_ids: vec![reply],
+        },
+    )
+    .expect("wire reply onto comment");
+
+    let mut ids =
+        work_commands::get_work_relationship(ctx, &work, &WorkRelationshipField::Comments)
+            .expect("work comments");
+    ids.push(comment);
+    work_commands::set_work_relationship(
+        ctx,
+        None,
+        &WorkRelationshipDto {
+            id: work,
+            field: WorkRelationshipField::Comments,
+            right_ids: ids,
+        },
+    )
+    .expect("wire comment onto work");
+    (comment, reply)
+}
+
+/// The feature: a phrase that exists only in a comment is found, the row says so,
+/// and it carries the thread id the margin needs to reveal it.
+#[test]
+fn a_phrase_only_in_a_comment_is_found_and_names_its_thread() {
+    use frontend::common::entities::MatchField;
+    let ctx = loaded_ctx();
+    let work = work_commands::get_all_work(&ctx)
+        .expect("work")
+        .pop()
+        .unwrap()
+        .id;
+    let (comment, _reply) =
+        seed_comment(&ctx, work, "Is this too heliotrope?", "Agreed, heliotrope.");
+
+    let d = dto_for(work, "heliotrope");
+    search_management_commands::run_search(&ctx, &d).expect("run_search");
+
+    let rows = results_for(&ctx, work);
+    let hit = rows
+        .iter()
+        .find(|r| r.match_field == MatchField::Comment)
+        .expect("the comment's own body should have produced a row");
+    assert_eq!(
+        hit.comment_id, comment,
+        "the row must name the thread, or the margin cannot reveal it"
+    );
+    assert_eq!(hit.reply_id, 0, "a thread's own body is not a reply");
+    assert!(
+        hit.binder_item_id != 0,
+        "an anchored thread should name the item it sits on"
+    );
+}
+
+/// Replies are searched too — a conversation is text the writer wrote, and finding
+/// only the opening comment would be arbitrary.
+#[test]
+fn a_reply_is_searched_and_carries_both_its_thread_and_its_own_row() {
+    use frontend::common::entities::MatchField;
+    let ctx = loaded_ctx();
+    let work = work_commands::get_all_work(&ctx)
+        .expect("work")
+        .pop()
+        .unwrap()
+        .id;
+    let (comment, reply) = seed_comment(&ctx, work, "Opening thought.", "Only here: chartreuse.");
+
+    // Diagnostic: did the reply actually attach?
+    {
+        use frontend::commands::comment_commands;
+        use frontend::common::direct_access::comment::CommentRelationshipField;
+        let got = comment_commands::get_comment_relationship(
+            &ctx,
+            &comment,
+            &CommentRelationshipField::Replies,
+        )
+        .expect("replies");
+        assert_eq!(got, vec![reply], "the reply must be wired onto the thread");
+    }
+    let d = dto_for(work, "chartreuse");
+    search_management_commands::run_search(&ctx, &d).expect("run_search");
+
+    let hit = results_for(&ctx, work)
+        .into_iter()
+        .find(|r| r.match_field == MatchField::CommentReply)
+        .expect("the reply should have produced a row");
+    assert_eq!(hit.comment_id, comment, "navigation targets the thread");
+    assert_eq!(
+        hit.reply_id, reply,
+        "but a replace edits the reply's own row"
+    );
+}
+
+/// The scope switch gates it. Off, the same phrase finds nothing — a writer hunting
+/// a word in the prose does not always want their notes about it back as well.
+#[test]
+fn the_comment_scope_switch_actually_gates_the_walk() {
+    use frontend::common::entities::MatchField;
+    let ctx = loaded_ctx();
+    let work = work_commands::get_all_work(&ctx)
+        .expect("work")
+        .pop()
+        .unwrap()
+        .id;
+    seed_comment(&ctx, work, "Is this too heliotrope?", "Agreed.");
+
+    let mut off = dto_for(work, "heliotrope");
+    off.search_comments = false;
+    search_management_commands::run_search(&ctx, &off).expect("run_search");
+    assert!(
+        !results_for(&ctx, work).iter().any(|r| matches!(
+            r.match_field,
+            MatchField::Comment | MatchField::CommentReply
+        )),
+        "comments must be silent with the scope off"
+    );
+
+    let on = dto_for(work, "heliotrope");
+    search_management_commands::run_search(&ctx, &on).expect("run_search");
+    assert!(
+        results_for(&ctx, work)
+            .iter()
+            .any(|r| r.match_field == MatchField::Comment),
+        "and found with it on"
+    );
 }

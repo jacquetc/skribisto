@@ -51,7 +51,8 @@ use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::search::SearchRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    Binder, BinderItem, Content, ContentRole, MatchField, Search, SearchResult, Work, WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, ContentRole, MatchField, Search,
+    SearchResult, Work, WorkInfo,
 };
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
@@ -89,6 +90,12 @@ pub trait ReplaceInProjectUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
+// A comment hit rewrites the thread's own body or one reply's — plain strings on
+// their own rows, reached by the ids the `SearchResult` carries.
+#[macros::uow_action(entity = "Comment", action = "Get")]
+#[macros::uow_action(entity = "Comment", action = "Update")]
+#[macros::uow_action(entity = "CommentReply", action = "Get")]
+#[macros::uow_action(entity = "CommentReply", action = "Update")]
 pub trait ReplaceInProjectUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_replace_in_project_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -245,6 +252,65 @@ impl ReplaceInProjectUseCase {
                     }
                     uow.update_binder_item(&item)?;
                     touched_items.insert(row.binder_item_id);
+                    occurrences_replaced += hits.len() as u64;
+                }
+                // A comment's own body, or one reply's. Plain strings on their own
+                // rows — no Djot, no parser — so this is the same direct rewrite as
+                // a title, against the ids the row carries rather than a Content.
+                //
+                // These rows only ever arrive here when the writer ticked them: the
+                // UI excludes every comment hit by default, so renaming a character
+                // cannot quietly edit the notes that discuss the old name. The guard
+                // below is the same one prose gets — a body edited since review is
+                // skipped and reported, never rewritten from a stale count.
+                MatchField::Comment | MatchField::CommentReply => {
+                    let is_reply = matches!(row.match_field, MatchField::CommentReply);
+                    let current = if is_reply {
+                        match uow.get_comment_reply(&row.reply_id)? {
+                            Some(r) => r.body,
+                            None => {
+                                skipped_stale.push(row.id);
+                                continue;
+                            }
+                        }
+                    } else {
+                        match uow.get_comment(&row.comment_id)? {
+                            Some(c) => c.body,
+                            None => {
+                                skipped_stale.push(row.id);
+                                continue;
+                            }
+                        }
+                    };
+                    let hits = crate::matching::occurrences(&current, &search.query, opts);
+                    if hits.len() as u64 != row.occurrence_count {
+                        skipped_stale.push(row.id);
+                        continue;
+                    }
+                    let rewritten =
+                        crate::matching::replace_all(&current, &search.query, opts, case_of);
+                    if is_reply {
+                        let Some(mut reply): Option<CommentReply> =
+                            uow.get_comment_reply(&row.reply_id)?
+                        else {
+                            skipped_stale.push(row.id);
+                            continue;
+                        };
+                        reply.body = rewritten;
+                        uow.update_comment_reply(&reply)?;
+                    } else {
+                        let Some(mut comment): Option<Comment> =
+                            uow.get_comment(&row.comment_id)?
+                        else {
+                            skipped_stale.push(row.id);
+                            continue;
+                        };
+                        comment.body = rewritten;
+                        uow.update_comment(&comment)?;
+                    }
+                    // Deliberately NOT added to `touched_items`: that set drives the
+                    // per-item "this scene changed" reporting, and a comment is not
+                    // the scene. An orphaned thread has no item to name at all.
                     occurrences_replaced += hits.len() as u64;
                 }
                 // Prose. Spliced INSIDE the document — never surgery on the markup.

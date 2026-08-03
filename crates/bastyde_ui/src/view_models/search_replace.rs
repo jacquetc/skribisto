@@ -75,6 +75,8 @@ pub struct SearchReplaceViewModel {
     search_titles: Signal<bool>,
     search_synopsis: Signal<bool>,
     search_labels: Signal<bool>,
+    /// Comment threads and their replies — see `RunSearchDto.search_comments`.
+    search_comments: Signal<bool>,
     include_trashed: Signal<bool>,
     /// One two-way `Signal<bool>` per facet chip, indexed by the chip's position
     /// in [`SearchFacet::ALL`]. Individual signals (not one `HashSet`) because the
@@ -157,6 +159,7 @@ impl SearchReplaceViewModel {
             search_titles: Signal::new(p.search_titles),
             search_synopsis: Signal::new(p.search_synopsis),
             search_labels: Signal::new(p.search_labels),
+            search_comments: Signal::new(p.search_comments),
             include_trashed: Signal::new(p.include_trashed),
             facets: facet_signals_from_codes(&p.facets),
             match_count: Signal::new(0),
@@ -207,6 +210,10 @@ impl SearchReplaceViewModel {
     }
     pub fn search_labels_signal(&self) -> Signal<bool> {
         self.search_labels.clone()
+    }
+
+    pub fn search_comments_signal(&self) -> Signal<bool> {
+        self.search_comments.clone()
     }
     pub fn include_trashed_signal(&self) -> Signal<bool> {
         self.include_trashed.clone()
@@ -307,6 +314,9 @@ impl SearchReplaceViewModel {
     pub fn set_search_synopsis(&self, v: bool) {
         self.search_synopsis.set(v);
     }
+    pub fn set_search_comments(&self, v: bool) {
+        self.search_comments.set(v);
+    }
     pub fn set_search_labels(&self, v: bool) {
         self.search_labels.set(v);
     }
@@ -347,6 +357,7 @@ impl SearchReplaceViewModel {
             search_titles: self.search_titles.get(),
             search_synopsis: self.search_synopsis.get(),
             search_labels: self.search_labels.get(),
+            search_comments: self.search_comments.get(),
             include_trashed: self.include_trashed.get(),
         }
     }
@@ -394,6 +405,7 @@ impl SearchReplaceViewModel {
                 self.truncated.set(r.truncated);
                 self.ran.set(has_query);
                 self.error.set(None);
+                self.exclude_comment_rows();
             }
             Err(e) => {
                 self.match_count.set(0);
@@ -499,6 +511,31 @@ impl SearchReplaceViewModel {
             && self.included_count() > 0
     }
 
+    /// Untick every comment hit, leaving prose ticked.
+    ///
+    /// Run after each search, because a fresh result set clears the exclusions and
+    /// every row would otherwise arrive included. A comment is the writer's own
+    /// record of a decision, and rewriting it changes what that record says — so
+    /// renaming a character across the manuscript must be able to fix the notes that
+    /// quote the old name, but only when the writer says so. They are listed, they
+    /// are tickable, they simply do not go along for the ride.
+    ///
+    /// Deliberately not enforced in the backend: `replace_in_project` rewrites
+    /// exactly the rows it is handed, and a second opinion there would make the
+    /// tick box a lie.
+    fn exclude_comment_rows(&self) {
+        let mut set = self.excluded.get();
+        for row in self.results.items().iter() {
+            if matches!(
+                row.match_field,
+                MatchField::Comment | MatchField::CommentReply
+            ) {
+                set.insert(row.id);
+            }
+        }
+        self.excluded.set(set);
+    }
+
     /// How many result rows are ticked (not excluded).
     pub fn included_count(&self) -> usize {
         let excluded = self.excluded.get();
@@ -591,6 +628,7 @@ impl SearchReplaceViewModel {
         self.search_titles.set(p.search_titles);
         self.search_synopsis.set(p.search_synopsis);
         self.search_labels.set(p.search_labels);
+        self.search_comments.set(p.search_comments);
         self.include_trashed.set(p.include_trashed);
         set_facets_from_codes(&self.facets, &p.facets);
         // The restored prefs are, by definition, what is on disk — cache them so
@@ -644,6 +682,7 @@ impl SearchReplaceViewModel {
         arm_on!(self.search_titles);
         arm_on!(self.search_synopsis);
         arm_on!(self.search_labels);
+        arm_on!(self.search_comments);
         arm_on!(self.include_trashed);
         for sig in &self.facets {
             arm_on!(sig);
@@ -694,6 +733,7 @@ impl SearchReplaceViewModel {
             search_titles: self.search_titles.get(),
             search_synopsis: self.search_synopsis.get(),
             search_labels: self.search_labels.get(),
+            search_comments: self.search_comments.get(),
             include_trashed: self.include_trashed.get(),
             facets: self.facet_codes(),
         }

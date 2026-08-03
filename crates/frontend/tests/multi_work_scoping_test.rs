@@ -846,6 +846,7 @@ fn run_search_only_searches_the_requested_work() {
                 search_titles: true,
                 search_synopsis: true,
                 search_labels: false,
+                search_comments: false,
                 include_trashed: false,
             },
         )
@@ -935,6 +936,7 @@ fn replace_in_project_only_replaces_in_the_requested_work() {
                 search_titles: false,
                 search_synopsis: false,
                 search_labels: false,
+                search_comments: false,
                 include_trashed: false,
             },
         )

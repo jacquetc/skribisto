@@ -337,6 +337,13 @@ fn editable_field(
     // formatting registry — the fallbacks mean the *matched* field is not always the field shown,
     // so it has to be read off the branch actually taken.
     let (prose, spell, kind) = match field {
+        // A comment hit has no prose field to preview. Falling through to the
+        // scene's body — which is what the `_` arm below would do — would show the
+        // writer a page that does not contain their query at all, with the match
+        // highlighted nowhere: the worst of both, since it looks like the preview
+        // works and simply found nothing. The thread itself lives in the margin and
+        // in the two comment docks.
+        Some(MatchField::Comment) | Some(MatchField::CommentReply) => return None,
         Some(MatchField::Synopsis) => match open_doc.synopsis.as_ref() {
             Some(p) => (p, open_doc.spell_synopsis(), EditorKind::Synopsis),
             None => (

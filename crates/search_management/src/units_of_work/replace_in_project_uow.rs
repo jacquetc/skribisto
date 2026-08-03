@@ -19,7 +19,9 @@ use common::database::CommandUnitOfWork;
 use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Content, Search, SearchResult, Work, WorkInfo};
+use common::entities::{
+    Binder, BinderItem, Comment, CommentReply, Content, Search, SearchResult, Work, WorkInfo,
+};
 use common::event::SearchManagementEvent::ReplaceInProject;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -149,6 +151,11 @@ impl CommandUnitOfWork for ReplaceInProjectUnitOfWork {
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
+// Kept in lockstep with the trait's own list in `replace_in_project_uc.rs`.
+#[macros::uow_action(entity = "Comment", action = "Get")]
+#[macros::uow_action(entity = "Comment", action = "Update")]
+#[macros::uow_action(entity = "CommentReply", action = "Get")]
+#[macros::uow_action(entity = "CommentReply", action = "Update")]
 impl ReplaceInProjectUnitOfWorkTrait for ReplaceInProjectUnitOfWork {
     fn publish_replace_in_project_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

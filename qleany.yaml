@@ -189,6 +189,27 @@ entities:
       - Title
       - Synopsis
       - Label
+      # A comment thread's own body.
+      - Comment
+      # One reply inside a thread. Distinct from `Comment` because the two are
+      # different rows to rewrite and read differently in the list ("a comment on
+      # Scene 1" vs "a reply to it"), not because the text is any different.
+      - CommentReply
+  # The comment THREAD a `Comment` / `CommentReply` hit belongs to — the opening
+  # `Comment`'s id in both cases, because that is what the margin and the docks
+  # reveal: a thread is one card, replies included. 0 for every other match field.
+  #
+  # A plain id for the same reason `binder_item_id` above is one: a SearchResult is
+  # a projection, re-derived on every search and re-validated on activation, so a
+  # relationship here would be machinery guarding a value we never trust anyway.
+  - name: comment_id
+    type: uinteger
+  # The `CommentReply` row a `CommentReply` hit is in — what a replace rewrites. 0
+  # when the hit is the thread's own body, and for every non-comment match. Kept
+  # separate from `comment_id` rather than overloading it, because a reply hit needs
+  # BOTH: its thread to navigate to, and its own row to edit.
+  - name: reply_id
+    type: uinteger
   - name: occurrence_count
     type: uinteger
   - name: snippet_before
@@ -1648,6 +1669,11 @@ features:
     - Binder
     - BinderItem
     - Content
+    # Comment bodies are prose the writer typed and expects to find again. They
+    # hang off Work, not off Content, so reaching them is a separate walk — see
+    # `run_search_uc::comment_fields`.
+    - Comment
+    - CommentReply
     undoable: false
     dto_in:
       name: RunSearchDto
@@ -1675,6 +1701,12 @@ features:
       - name: search_synopsis
         type: boolean
       - name: search_labels
+        type: boolean
+      # Comment threads and their replies. A separate switch from `search_body`
+      # because a comment is *about* the manuscript rather than part of it, and a
+      # writer hunting a phrase in the prose does not always want their own notes
+      # about that phrase back as well.
+      - name: search_comments
         type: boolean
       - name: include_trashed
         type: boolean
@@ -1708,6 +1740,12 @@ features:
     - Binder
     - BinderItem
     - Content
+    # Comment hits are replaceable, but arrive **excluded** — the writer ticks them
+    # in. Renaming a character should be able to fix the notes that quote the old
+    # name; it should not do so silently, because a comment is the writer's own
+    # record of a decision and rewriting it changes what that record says.
+    - Comment
+    - CommentReply
     undoable: true
     dto_in:
       name: ReplaceInProjectDto

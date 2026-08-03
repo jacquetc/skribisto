@@ -75,10 +75,12 @@ use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
+use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::search::SearchRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    Binder, BinderItem, Content, ContentRole, MatchField, Search, SearchResult, Work, WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, ContentRole, MatchField, Search,
+    SearchResult, Work, WorkInfo,
 };
 use common::types::EntityId;
 use skribisto_model::{SearchFacet, search_facet_of};
@@ -116,6 +118,12 @@ pub trait RunSearchUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
+// Comments hang off `Work`, not off `Content`, so reaching them is its own walk:
+// the relationship gives this Work's threads, and each thread's own relationship
+// gives its replies.
+#[macros::uow_action(entity = "Comment", action = "GetMulti")]
+#[macros::uow_action(entity = "Comment", action = "GetRelationship")]
+#[macros::uow_action(entity = "CommentReply", action = "GetMulti")]
 pub trait RunSearchUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_run_search_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -131,11 +139,25 @@ struct Field {
     match_field: MatchField,
     text: FieldText,
     trashed: bool,
+    /// The comment thread this field belongs to, and the reply inside it — both 0 for
+    /// every field that is not a comment. See `SearchResult`'s own notes in the
+    /// manifest for why a thread hit and a reply hit need two ids rather than one.
+    comment_id: EntityId,
+    reply_id: EntityId,
     /// The language *this field* is written in, resolved per item (own tag, else the Work) (see
     /// [`crate::language`]). Carried per field, not per search: one pass folds a French
     /// scene and a Turkish scene under different rules, because in Turkish the dotted and
     /// dotless `i` are different letters and folding them together turns one word into
     /// another.
+    locale: FoldLocale,
+}
+
+/// Which item a `Content` row belongs to — the reverse pointer the store does not
+/// have, collected during the item walk so the comment pass can name its scene.
+struct ContentOwner {
+    item_id: EntityId,
+    item_title: String,
+    trashed: bool,
     locale: FoldLocale,
 }
 
@@ -271,6 +293,11 @@ impl RunSearchUseCase {
         let wanted = Self::wanted_facets(dto);
 
         let mut fields = Vec::new();
+        // Which item each `Content` row belongs to, filled in as the walk goes. The
+        // comment pass needs it and there is no reverse pointer from a `Content` to
+        // its `BinderItem` — building it here costs nothing, since the walk is
+        // already visiting every row it would have to search for.
+        let mut owners: HashMap<EntityId, ContentOwner> = HashMap::new();
         let binder_ids = uow.get_work_relationship(&work.id, &WorkRelationshipField::Binders)?;
         for binder in uow.get_binder_multi(&binder_ids)?.into_iter().flatten() {
             let item_ids =
@@ -299,10 +326,109 @@ impl RunSearchUseCase {
                 let locale = tags.get(&item.id).map_or(FoldLocale::Root, |tag| {
                     FoldLocale::from_tag(crate::language::primary(tag))
                 });
-                self.item_fields(uow, item, dto, locale, wanted.as_deref(), &mut fields)?;
+                self.item_fields(
+                    uow,
+                    item,
+                    dto,
+                    locale,
+                    wanted.as_deref(),
+                    &mut fields,
+                    &mut owners,
+                )?;
             }
         }
+        if dto.search_comments {
+            self.comment_fields(uow, dto, &work, &owners, &mut fields)?;
+        }
         Ok(fields)
+    }
+
+    /// Comment threads and their replies, as searchable fields.
+    ///
+    /// A separate walk because comments hang off **`Work`**, not off `Content`: the
+    /// item loop above never reaches them. What it does leave behind is `owners` —
+    /// which item each `Content` row belongs to — and that is what lets a comment hit
+    /// say *"on Scene 1"* rather than just quoting itself.
+    ///
+    /// Three cases for a thread's anchor, and they are deliberately not the same:
+    ///
+    /// * **Anchored to a row we walked.** It inherits that item's title, trashed flag
+    ///   and language, so a comment on a French scene folds under French rules like
+    ///   the scene does.
+    /// * **Anchored to a row we skipped** — the item was facet-filtered, trashed and
+    ///   excluded, or the content was deactivated. Skipped too: the item is out of
+    ///   scope for this search, so its annotations are as well.
+    /// * **Anchored to nothing at all** — an orphan whose text was deleted, or a
+    ///   `Document`-kind thread. Kept, with no item. This follows `item_fields`'
+    ///   "never hide what we cannot name": an orphaned comment is precisely the one a
+    ///   writer needs to find in order to deal with it, and search may be the only
+    ///   surface that can still reach it.
+    fn comment_fields(
+        &self,
+        uow: &mut Box<dyn RunSearchUnitOfWorkTrait>,
+        dto: &RunSearchDto,
+        work: &Work,
+        owners: &HashMap<EntityId, ContentOwner>,
+        out: &mut Vec<Field>,
+    ) -> Result<()> {
+        let comment_ids = uow.get_work_relationship(&work.id, &WorkRelationshipField::Comments)?;
+        for comment in uow.get_comment_multi(&comment_ids)?.into_iter().flatten() {
+            let owner = match comment.content {
+                Some(content_id) => match owners.get(&content_id) {
+                    Some(o) => Some(o),
+                    // Anchored to a row this search did not walk — out of scope.
+                    None => continue,
+                },
+                None => None,
+            };
+            let (item_id, item_title, trashed, locale) = match owner {
+                Some(o) => (o.item_id, o.item_title.clone(), o.trashed, o.locale),
+                // An orphan belongs to no item. `FoldLocale::Root` rather than the
+                // Work's own tag: with no anchor there is no scene whose language
+                // this could claim to be, and Root is the untailored fold the rest of
+                // this file already uses for "no tag anywhere up the chain".
+                None => (0, String::new(), false, FoldLocale::Root),
+            };
+            if trashed && !dto.include_trashed {
+                continue;
+            }
+            if !comment.body.is_empty() {
+                out.push(Field {
+                    item_id,
+                    item_title: item_title.clone(),
+                    match_field: MatchField::Comment,
+                    text: FieldText::Plain(comment.body.clone()),
+                    trashed,
+                    locale,
+                    comment_id: comment.id,
+                    reply_id: 0,
+                });
+            }
+            let reply_ids =
+                uow.get_comment_relationship(&comment.id, &CommentRelationshipField::Replies)?;
+            for reply in uow
+                .get_comment_reply_multi(&reply_ids)?
+                .into_iter()
+                .flatten()
+            {
+                if reply.body.is_empty() {
+                    continue;
+                }
+                out.push(Field {
+                    item_id,
+                    item_title: item_title.clone(),
+                    match_field: MatchField::CommentReply,
+                    text: FieldText::Plain(reply.body.clone()),
+                    trashed,
+                    locale,
+                    // The THREAD in both cases — that is what the margin and the docks
+                    // reveal — plus this reply's own row, which is what a replace edits.
+                    comment_id: comment.id,
+                    reply_id: reply.id,
+                });
+            }
+        }
+        Ok(())
     }
 
     /// Which facet chips the writer actually ticked. `None` means **no filter**.
@@ -340,6 +466,7 @@ impl RunSearchUseCase {
         locale: FoldLocale,
         facets: Option<&[SearchFacet]>,
         out: &mut Vec<Field>,
+        owners: &mut HashMap<EntityId, ContentOwner>,
     ) -> Result<()> {
         // How this item's prose folds. `whole_word` is deliberately absent: it decides which
         // matches survive, not how a character folds, so one cached fold answers both kinds
@@ -385,6 +512,8 @@ impl RunSearchUseCase {
                 text: FieldText::Plain(item.title.clone()),
                 trashed,
                 locale,
+                comment_id: 0,
+                reply_id: 0,
             });
         }
         if dto.search_labels && !item.label.is_empty() {
@@ -395,16 +524,37 @@ impl RunSearchUseCase {
                 text: FieldText::Plain(item.label.clone()),
                 trashed,
                 locale,
+                comment_id: 0,
+                reply_id: 0,
             });
         }
 
-        if !dto.search_body && !dto.search_synopsis {
+        // Comments need this walk too, even with every prose scope off: it is the only
+        // place that learns which item a `Content` row belongs to, and a comment hit
+        // has to be able to name its scene.
+        if !dto.search_body && !dto.search_synopsis && !dto.search_comments {
             return Ok(());
         }
         let content_ids =
             uow.get_binder_item_relationship(&item.id, &BinderItemRelationshipField::Contents)?;
         for content in uow.get_content_multi(&content_ids)?.into_iter().flatten() {
-            if !content.activated || content.data.is_empty() {
+            if !content.activated {
+                continue;
+            }
+            // Recorded before the emptiness and role checks below, and for every role:
+            // a comment can be anchored to a scene whose prose has since been emptied,
+            // or to a synopsis while only the body is being searched, and in both cases
+            // the thread still belongs to this item and must be able to say so.
+            owners.insert(
+                content.id,
+                ContentOwner {
+                    item_id: item.id,
+                    item_title: title.clone(),
+                    trashed,
+                    locale,
+                },
+            );
+            if content.data.is_empty() {
                 continue;
             }
             let field = match content.role {
@@ -443,6 +593,8 @@ impl RunSearchUseCase {
                 text: FieldText::Prose(corpus),
                 trashed,
                 locale,
+                comment_id: 0,
+                reply_id: 0,
             });
         }
         Ok(())
@@ -495,6 +647,8 @@ impl RunSearchUseCase {
                 snippet_match: matched,
                 snippet_after: after,
                 trashed: field.trashed,
+                comment_id: field.comment_id,
+                reply_id: field.reply_id,
                 ..Default::default()
             });
         }

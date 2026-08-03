@@ -55,6 +55,7 @@ fn search(ctx: &AppContext, query: &str) -> RunSearchDto {
         search_titles: true,
         search_synopsis: true,
         search_labels: false,
+        search_comments: false,
         include_trashed: false,
     }
 }

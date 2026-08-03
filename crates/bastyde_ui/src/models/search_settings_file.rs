@@ -56,12 +56,24 @@ pub struct SearchPrefs {
     pub search_titles: bool,
     pub search_synopsis: bool,
     pub search_labels: bool,
+    /// Comment threads and their replies.
+    ///
+    /// `#[serde(default)]` on the struct carries a pre-comments `search.toml`
+    /// forward as `false`, which is wrong for a scope that ships on — so it has its
+    /// own default below rather than relying on `bool`'s.
+    #[serde(default = "yes")]
+    pub search_comments: bool,
     /// Include trashed items in the scan.
     pub include_trashed: bool,
     /// The ticked facet chips as `skribisto_model::SearchFacet::code()` values.
     /// **Empty ⇒ no filter (all kinds)** — the same convention the backend's
     /// `run_search` reads (see its `wanted_facets`).
     pub facets: Vec<i64>,
+}
+
+/// serde's default for a scope that ships enabled — see `search_comments`.
+fn yes() -> bool {
+    true
 }
 
 impl Default for SearchPrefs {
@@ -77,6 +89,7 @@ impl Default for SearchPrefs {
             search_titles: true,
             search_synopsis: true,
             search_labels: true,
+            search_comments: true,
             include_trashed: false,
             facets: Vec::new(),
         }
