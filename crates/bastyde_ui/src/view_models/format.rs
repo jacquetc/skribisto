@@ -300,6 +300,27 @@ pub struct FormatViewModel {
     /// the latch does it for them. Cleared when that editor unregisters, so it
     /// can never outlive the widget.
     sticky: Rc<RefCell<Option<(WidgetId, EditorHandle, EditorKind)>>>,
+    /// Set while a control the **dock itself** owns holds an overlay open.
+    ///
+    /// Every dock button is `focusable(false)` precisely so that pressing one
+    /// never blurs the editor out from under itself — but a popover is not a
+    /// button. `PopoverWidget` moves keyboard focus into its content (it has
+    /// to: the list is arrow-key navigable), and from the resolver's side that
+    /// is indistinguishable from clicking into the binder. The live surface
+    /// dropped to [`FormatSurface::None`], every group hid — *including the
+    /// group holding the trigger*, whose subtree went dormant and took the
+    /// just-opened list with it. Pressing the heading picker blanked the whole
+    /// dock, which is how this was found.
+    ///
+    /// While this is set, [`Self::refresh`] keeps the surface it was already
+    /// showing rather than collapsing to the empty state. It is the
+    /// surface-side twin of [`Self::sticky`]: the *commands* survive that focus
+    /// loss because the target is latched, and now the *dock* survives it
+    /// because the surface is too — but only for focus this dock took, and only
+    /// for as long as it holds it. Nothing has to put focus back: the overlay
+    /// manager records the pre-overlay focus and replays it on every dismiss
+    /// path, so the surface goes live again the moment the popover closes.
+    dock_overlay_open: Signal<bool>,
     /// Which groups apply. Read by the dock to decide what to show and by the
     /// menu to decide what to enable.
     surface: Signal<FormatSurface>,
@@ -383,6 +404,7 @@ impl FormatViewModel {
             resolve: Rc::new(RefCell::new(None)),
             registry: Rc::new(RefCell::new(Vec::new())),
             sticky: Rc::new(RefCell::new(None)),
+            dock_overlay_open: Signal::new(false),
             surface: Signal::new(FormatSurface::None),
             bold: Signal::new(false),
             italic: Signal::new(false),
@@ -624,6 +646,17 @@ impl FormatViewModel {
         &self.group_visible
     }
 
+    /// Report that an overlay the dock owns has opened or closed — wired to
+    /// `PopoverWidget::on_open` / `on_close` by the control that owns it, and
+    /// reset to `false` as that control is (re)built so a dock torn down with
+    /// its popover up cannot leave the surface latched.
+    ///
+    /// See [`Self::dock_overlay_open`] for what it buys and why a `focusable`
+    /// button is not enough.
+    pub fn set_dock_overlay_open(&self, open: bool) {
+        set_if_changed(&self.dock_overlay_open, open);
+    }
+
     // ── Mirroring editor state ────────────────────────────────────────────
 
     /// Pull the editor's current formatting into the mirror signals.
@@ -638,7 +671,17 @@ impl FormatViewModel {
         // than only when the caret moves: focus can move between editors — or
         // out of them entirely — without the document changing at all, and the
         // dock would otherwise keep showing the previous surface's groups.
-        let (handle, surface) = self.target();
+        let (handle, resolved) = self.target();
+        // A popover the dock itself opened holds the keyboard focus, so the
+        // resolver truthfully answers "nothing focused". Keep showing what we
+        // were showing rather than hiding the group the writer just reached
+        // into. Only the *empty* answer is overridden — a different live
+        // surface is a real move and has to win.
+        let surface = if resolved.is_empty() && self.dock_overlay_open.get() {
+            self.surface.get()
+        } else {
+            resolved
+        };
         self.set_surface(surface);
         set_if_changed(&self.has_target, handle.is_some());
 
@@ -1139,6 +1182,86 @@ mod tests {
             vm.target().1,
             FormatSurface::None,
             "the surface stays live so the dock empties — only the target is sticky"
+        );
+    }
+
+    /// A popover the **dock itself** opens takes keyboard focus, so the live
+    /// resolver reports `None` — the same answer it gives for a click into the
+    /// binder, and the reason pressing the heading picker used to blank the
+    /// whole dock. The surface has to survive that, but only that: a real blur
+    /// must still empty the dock, or the "hide, don't grey" decision would be
+    /// undone by the first popover anyone added.
+    #[test]
+    fn a_popover_the_dock_owns_does_not_blank_it() {
+        let (_editor, handle) = loose_editor("scene prose");
+        let focused = handle.focused_signal();
+        // `App`'s resolver, in miniature: sticky target, live surface.
+        let (resolved, live) = (handle.clone(), focused.clone());
+        let vm = FormatViewModel::new(Rc::new(move || {
+            let surface = if live.get() {
+                FormatSurface::Scene
+            } else {
+                FormatSurface::None
+            };
+            (Some(resolved.clone()), surface)
+        }));
+
+        focused.set(true);
+        vm.refresh();
+        assert_eq!(vm.surface_signal().get(), FormatSurface::Scene);
+        assert!(vm.groups().block.get());
+
+        // The picker opens and takes the focus with it.
+        vm.set_dock_overlay_open(true);
+        focused.set(false);
+        vm.refresh();
+        assert_eq!(
+            vm.surface_signal().get(),
+            FormatSurface::Scene,
+            "the dock's own popover borrowing focus is not a blur"
+        );
+        assert!(
+            vm.groups().block.get(),
+            "the group holding the open picker must not hide — hiding it \
+             dormants the subtree and takes the list down with it"
+        );
+        assert!(!vm.groups().empty.get());
+
+        // Dismissed: the overlay manager hands focus back to the editor.
+        vm.set_dock_overlay_open(false);
+        focused.set(true);
+        vm.refresh();
+        assert_eq!(vm.surface_signal().get(), FormatSurface::Scene);
+
+        // A genuine blur — clicking into the binder — still empties the dock.
+        focused.set(false);
+        vm.refresh();
+        assert_eq!(vm.surface_signal().get(), FormatSurface::None);
+        assert!(vm.groups().empty.get());
+    }
+
+    /// The latch holds the *last* surface, it does not pin `Scene`: with the
+    /// popover somehow still open while focus lands in another editor, the real
+    /// answer wins. Only the empty answer is overridden.
+    #[test]
+    fn the_latch_yields_to_a_real_surface() {
+        let (_editor, handle) = loose_editor("synopsis prose");
+        let surface = Signal::new(FormatSurface::Scene);
+        let (resolved, reported) = (handle.clone(), surface.clone());
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(resolved.clone()), reported.get())
+        }));
+
+        vm.refresh();
+        assert!(vm.groups().scene_breaks.get());
+
+        vm.set_dock_overlay_open(true);
+        surface.set(FormatSurface::Synopsis);
+        vm.refresh();
+        assert_eq!(vm.surface_signal().get(), FormatSurface::Synopsis);
+        assert!(
+            !vm.groups().scene_breaks.get(),
+            "a live surface is a real move and must win over the latch"
         );
     }
 

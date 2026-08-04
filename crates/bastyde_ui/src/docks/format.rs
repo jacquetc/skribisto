@@ -126,6 +126,16 @@ fn intent_button(
 /// Not the `ComboBox` bastyde's example toolbar uses — a combo has a minimum
 /// width that would force a wrap in a 300px rail of 30dp buttons, and reads as a
 /// form field among icons. A popover keeps the row's rhythm.
+///
+/// The one control here that `focusable(false)` cannot protect. Opening the
+/// popover moves keyboard focus into its list — it must, or the levels would be
+/// unreachable from the keyboard — which blurs the editor and, before
+/// [`FormatViewModel::set_dock_overlay_open`] existed, dropped the dock to its
+/// empty state: every group hid, this button among them, and the list died
+/// dormant with the subtree that held it. Telling the view-model who took the
+/// focus is what keeps the surface alive for as long as the list is up. Putting
+/// it back is not this module's job — the overlay manager restores the
+/// pre-overlay focus on every dismiss path, pick or Escape alike.
 fn heading_picker(vm: &FormatViewModel) -> PopoverIconButton {
     let mut list = MenuList::new();
     for (level, label) in [
@@ -150,6 +160,11 @@ fn heading_picker(vm: &FormatViewModel) -> PopoverIconButton {
                 }),
         );
     }
+    // A dock rebuilt while its popover was up would otherwise carry the latch
+    // in forever; the fresh trigger starts closed, so say so.
+    vm.set_dock_overlay_open(false);
+    let opened = vm.clone();
+    let closed = vm.clone();
     PopoverIconButton::new(
         IconButton::new(glyph::heading())
             .toolbar()
@@ -157,6 +172,8 @@ fn heading_picker(vm: &FormatViewModel) -> PopoverIconButton {
             .tooltip(tr!(format_heading())),
     )
     .bare()
+    .on_open(move || opened.set_dock_overlay_open(true))
+    .on_close(move || closed.set_dock_overlay_open(false))
     // Trap Tab inside the anchored overlay, as every popover must.
     .content(FocusScope::new(TraversalScopePolicy::Cycle).child(list))
 }
@@ -583,6 +600,61 @@ mod tests {
             h < 2.0 * DOCK_PADDING + 30.0,
             "the empty state is one line of text inside {DOCK_PADDING}px padding; \
              {h}px means hidden groups are still reserving their spacing"
+        );
+    }
+
+    /// Clicking the heading picker must leave the dock standing.
+    ///
+    /// Driven through a real pointer tap rather than by poking the view-model,
+    /// because the bug lived in the wiring between the two: the popover takes
+    /// keyboard focus, the resolver reports the blur honestly, and the dock used
+    /// to answer by hiding every group — the picker's own included, which
+    /// dormants the subtree the just-opened list hangs off. Pressing the button
+    /// made the dock look like there was no editor at all.
+    #[test]
+    fn opening_the_heading_picker_leaves_the_dock_standing() {
+        use bastyde::text_document::TextDocument;
+        use bastyde::widgets::rich_text::RichTextEditor;
+
+        let doc = TextDocument::new();
+        doc.set_markdown("scene prose")
+            .expect("parse")
+            .wait()
+            .expect("import");
+        let editor = RichTextEditor::editor(doc);
+        let handle = editor.handle();
+        let focused = handle.focused_signal();
+        // `App`'s resolver: the target stays, the surface follows live focus.
+        let (resolved, live) = (handle.clone(), focused.clone());
+        let vm = FormatViewModel::new(Rc::new(move || {
+            let surface = if live.get() {
+                FormatSurface::Scene
+            } else {
+                FormatSurface::None
+            };
+            (Some(resolved.clone()), surface)
+        }));
+
+        focused.set(true);
+        vm.refresh();
+        assert!(vm.groups().block.get(), "the picker's group starts visible");
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add(heading_picker(&vm));
+        tree.layout(SizeProposal::exact(300.0, 40.0));
+        tree.click(id);
+        // What the click costs: the popover's list now holds the focus.
+        focused.set(false);
+        // The per-frame refresh `App` drives off the frame tick.
+        vm.refresh();
+
+        assert!(
+            vm.groups().block.get(),
+            "the group holding the open picker must survive its own popover"
+        );
+        assert!(
+            !vm.groups().empty.get(),
+            "the dock must not fall to its 'nothing to format' placeholder"
         );
     }
 
