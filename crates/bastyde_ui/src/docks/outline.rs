@@ -523,7 +523,10 @@ struct BinderFilterBar {
 
 impl BinderFilterBar {
     fn new(outline: OutlineViewModel) -> Self {
-        Self { outline, root: None }
+        Self {
+            outline,
+            root: None,
+        }
     }
 }
 

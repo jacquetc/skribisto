@@ -287,7 +287,8 @@ impl WelcomePanel {
 /// A recent-work row: icon, title + middle-ellipsized path, trailing date.
 ///
 /// **The layout is hand-rolled; the chrome is not.** The selection background,
-/// hover wash and focus ring come from the same [`StandardItemStyle`] recipe
+/// hover wash and focus ring come from the same
+/// [`StandardItemStyle`](bastyde::core::styles::StandardItemStyle) recipe
 /// [`StandardListItem`] uses (`theme.style_slots.standard_item`), so a
 /// highlighted recents row matches a highlighted Examples row exactly.
 ///

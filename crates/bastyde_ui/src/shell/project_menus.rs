@@ -153,7 +153,7 @@ pub(crate) fn sync_insert_template_submenu(
 ///
 /// `MenuModel::modify` hands out the top-level nodes, and the target sits one level down
 /// inside the Document menu, so the walk is this function's job rather than the model's.
-fn find_submenu_children(nodes: &mut Vec<MenuNode>, id: MenuItemId) -> Option<&mut Vec<MenuNode>> {
+fn find_submenu_children(nodes: &mut [MenuNode], id: MenuItemId) -> Option<&mut Vec<MenuNode>> {
     for node in nodes.iter_mut() {
         if let MenuNode::Submenu {
             id: node_id,

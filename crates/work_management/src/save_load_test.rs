@@ -582,7 +582,9 @@ fn a_too_new_project_is_refused_with_a_typed_error_all_the_way_up() {
     // content, so it never emits a file it could not read back — hence the doctoring.
     let manifest_path = src.join("project.skrib");
     let text = std::fs::read_to_string(&manifest_path).unwrap();
-    let start = text.find("format_min_read_version:").expect("writer stamps a floor");
+    let start = text
+        .find("format_min_read_version:")
+        .expect("writer stamps a floor");
     let end = start + text[start..].find(',').unwrap();
     std::fs::write(
         &manifest_path,

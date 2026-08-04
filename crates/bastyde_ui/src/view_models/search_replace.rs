@@ -362,7 +362,7 @@ impl SearchReplaceViewModel {
         }
     }
 
-    /// The matching options as a text-document [`FindOptions`], for the bottom
+    /// The matching options as a text-document [`bastyde::text_document::FindOptions`], for the bottom
     /// preview's find-highlight session (so the previewed paragraph highlights the
     /// same matches the result list found).
     pub fn find_options(&self) -> bastyde::text_document::FindOptions {
@@ -547,7 +547,7 @@ impl SearchReplaceViewModel {
     }
 
     /// The binder-item ids Replace All will touch (ticked results only), deduped —
-    /// the set to reload afterwards if any are open in a tab (see [`reload_touched`]).
+    /// the set to reload afterwards if any are open in a tab (see [`Self::reload_touched`]).
     pub fn touched_item_ids(&self) -> Vec<u64> {
         let excluded = self.excluded.get();
         let mut ids: Vec<u64> = self

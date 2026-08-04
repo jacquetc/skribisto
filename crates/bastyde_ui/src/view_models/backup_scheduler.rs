@@ -14,10 +14,10 @@
 //!
 //! **The flush invariant.** Editor text lives in a UI widget's buffer until
 //! `EditorsViewModel::flush_all()` copies it into the store; a backup only ever
-//! sees the store. Every trigger below therefore calls [`Self::flush`] first,
+//! sees the store. Every trigger below therefore calls [`BackupSchedulerViewModel::flush`] first,
 //! unconditionally — a typing session in an unfocused tab must never be
 //! invisible to skip-if-unchanged. The hook is installed once (`App::build`)
-//! via [`Self::set_flush_hook`] and shared through every clone of this
+//! via [`BackupSchedulerViewModel::register_flush_hook`] and shared through every clone of this
 //! view-model via an `Rc<RefCell<..>>` cell; it defaults to a no-op so headless
 //! tests can construct the scheduler without an `EditorsViewModel`.
 //!
@@ -29,7 +29,7 @@
 //! can't block quitting.
 //!
 //! **Skip-if-unchanged** needs both the last-known hash and the exact path it
-//! was written to — both live in [`crate::models::DestinationState`]
+//! was written to — both live in `DestinationState`
 //! (`BackupSettingsService::destination_state`), persisted rather than cached
 //! only in this process's memory, so a restart doesn't force one redundant
 //! write per destination. Safe across windows sharing `backup.toml` (the
@@ -47,7 +47,7 @@
 //! long-lived handles (this scheduler outlives any one backup), and an
 //! in-place project switch can reseed those same signals mid-flight.
 //! [`Pending::tracked`] is a [`super::long_op::TrackedOp`], bundling the op id
-//! with a [`super::long_op::CapturedWork`] captured once in [`Self::start`] —
+//! with a [`super::long_op::CapturedWork`] captured once in [`BackupSchedulerViewModel::start`] —
 //! every `on_long_op_*` handler below routes and scopes its toast on
 //! `tracked.work_id()`, never `self.ids.work_id.get()`.
 

@@ -27,12 +27,12 @@
 //!
 //! ## Layout
 //!
-//! - [`tokens`] — the one tokenizer and word-id vocabulary everything else shares.
-//! - [`prose_stats`] — sentence/paragraph lengths, punctuation density, dialogue share.
-//! - [`lexical`] — length-robust vocabulary diversity (MATTR, HD-D).
-//! - [`repetition`] — echoes within a scene, near-duplicate scenes across a book.
-//! - [`synopsis`] — whether a scene does what its synopsis says it does.
-//! - [`stats`] — the mean/stddev/median every one of the above shares.
+//! - [`tokens`](crate::analysis::tokens) — the one tokenizer and word-id vocabulary everything else shares.
+//! - [`prose_stats`](crate::analysis::prose_stats) — sentence/paragraph lengths, punctuation density, dialogue share.
+//! - [`lexical`](crate::analysis::lexical) — length-robust vocabulary diversity (MATTR, HD-D).
+//! - [`repetition`](crate::analysis::repetition) — echoes within a scene, near-duplicate scenes across a book.
+//! - [`synopsis`](crate::analysis::synopsis) — whether a scene does what its synopsis says it does.
+//! - [`stats`](crate::analysis::stats) — the mean/stddev/median every one of the above shares.
 
 pub mod lexical;
 pub mod prose_stats;

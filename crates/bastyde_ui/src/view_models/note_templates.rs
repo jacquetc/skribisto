@@ -10,15 +10,14 @@
 //! would be a format migration for a word. They apply to any editor now.
 //!
 //! It owns no state of its own beyond the Layer-A handles it composes: the reactive
-//! [`WorkNoteTemplatesListModel`](crate::models::WorkNoteTemplatesListModel) and
-//! [`AppIds`](crate::app_ids::AppIds) (the owner `Work` and the undo stack every mutation
+//! [`WorkNoteTemplatesListModel`] and
+//! [`AppIds`] (the owner `Work` and the undo stack every mutation
 //! needs).
 //!
 //! Plain Rust, no `#[cfg]`: the real/mock seam lives in the model below it, so this is
 //! unit-testable headless and identical in both builds.
 
 use std::path::Path;
-use std::rc::Rc;
 
 use anyhow::{Context, Result, bail};
 use bastyde::data::ListModel;

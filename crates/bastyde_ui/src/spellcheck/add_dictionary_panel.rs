@@ -160,9 +160,15 @@ impl Widget for AddDictionaryPanel {
                                 }
                             }
                         }
-                        Expand::horizontal { Divider }
-                        Expand::vertical { child: body }
-                        Expand::horizontal { Divider }
+                        Expand::horizontal {
+                            Divider
+                        }
+                        Expand::vertical {
+                            child: body
+                        }
+                        Expand::horizontal {
+                            Divider
+                        }
                         FixedSize {
                             height: 56.0
                             Padding::symmetric(10.0, 22.0) {

@@ -170,13 +170,21 @@ impl Widget for LicensePanel {
                             }
                         }
                     }
-                    Expand::horizontal { Divider }
-                    Expand::vertical { child: body }
-                    Expand::horizontal { Divider }
+                    Expand::horizontal {
+                        Divider
+                    }
+                    Expand::vertical {
+                        child: body
+                    }
+                    Expand::horizontal {
+                        Divider
+                    }
                     Expand::horizontal {
                         FixedSize {
                             height: 56.0
-                            Padding::symmetric(12.0, 20.0) { child: footer }
+                            Padding::symmetric(12.0, 20.0) {
+                                child: footer
+                            }
                         }
                     }
                 }

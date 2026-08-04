@@ -19,7 +19,7 @@
 //!
 //! **The outgoing Work's backend subtree.** `new_work`/`load_work` no longer
 //! close the previous Work themselves (so two different Works can coexist in
-//! two windows), so [`Self::perform`]'s `OpenWork` branch calls
+//! two windows), so [`ProjectSwitchViewModel::perform`]'s `OpenWork` branch calls
 //! `crate::app::close_outgoing_work` itself, right before `load_work`. The
 //! `NewWork` branch only shows the form here — the actual close happens later,
 //! on "Create Work" (`NewWorkViewModel::create`), so cancelling the form never
@@ -42,8 +42,8 @@
 //! **The switch is deferred, not raced.** `save_work` returns immediately and
 //! writes on a background thread; switching as soon as it was *started* would
 //! tear the store out from under it. A Save-branch switch is parked in
-//! [`Self::pending`] and performed only when its own write lands — waited on by
-//! **edit sequence** ([`Self::on_saved`], `saved_seq >= covers`), not "a save
+//! [`ProjectSwitchViewModel::pending`] and performed only when its own write lands — waited on by
+//! **edit sequence** ([`ProjectSwitchViewModel::on_saved`], `saved_seq >= covers`), not "a save
 //! finished": with autosave on, a `save_work` can already be in flight when the
 //! guard asks for one, its snapshot predating our flush, and the op that
 //! finally carries our edits may be a coalesced follow-up with a different id.

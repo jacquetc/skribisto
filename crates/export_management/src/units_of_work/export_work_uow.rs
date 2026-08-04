@@ -10,7 +10,9 @@
 // catch it. The macro set is also hand-widened (GetAllRO / GetRelationshipRO) to feed
 // `skrib_format::gather`.
 
-use crate::use_cases::export_work_uc::{ExportWorkUnitOfWorkFactoryTrait, ExportWorkUnitOfWorkTrait};
+use crate::use_cases::export_work_uc::{
+    ExportWorkUnitOfWorkFactoryTrait, ExportWorkUnitOfWorkTrait,
+};
 use anyhow::{Ok, Result};
 use common::database::QueryUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
@@ -71,7 +73,11 @@ impl QueryUnitOfWork for ExportWorkUnitOfWork {
 #[macros::uow_action(entity = "Binder", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipRO", thread_safe = true)]
 #[macros::uow_action(entity = "BinderItem", action = "GetMultiRO", thread_safe = true)]
-#[macros::uow_action(entity = "BinderItem", action = "GetRelationshipRO", thread_safe = true)]
+#[macros::uow_action(
+    entity = "BinderItem",
+    action = "GetRelationshipRO",
+    thread_safe = true
+)]
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO", thread_safe = true)]
 impl ExportWorkUnitOfWorkTrait for ExportWorkUnitOfWork {

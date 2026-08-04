@@ -362,7 +362,7 @@ impl EditorsViewModel {
 
     /// The focused prose editor's handle — `None` when nothing is open there or
     /// the active tab has no main prose field. See
-    /// [`FindViewModel::editor_handle`] for why the handle lives there.
+    /// [`crate::view_models::FindViewModel::editor_handle`] for why the handle lives there.
     pub fn focused_prose_handle(&self) -> Option<bastyde::widgets::rich_text::EditorHandle> {
         self.focused_find()?.editor_handle()
     }

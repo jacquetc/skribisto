@@ -204,12 +204,18 @@ fn work_management_new(ctx: &AppContext, dir: &std::path::Path) {
 /// delivery and events simply accumulate in the channel — which is what makes draining it a
 /// reliable record of what the scan emitted rather than a race.
 fn scan(fx: &Fixture) -> Vec<MentionHit> {
-    let id = mention_management_commands::scan_mentions(&fx.ctx, &ScanMentionsDto { work_id: fx.work })
-        .expect("start scan");
+    let id =
+        mention_management_commands::scan_mentions(&fx.ctx, &ScanMentionsDto { work_id: fx.work })
+            .expect("start scan");
     // Take the completion signal and release the manager lock before blocking — waiting
     // while holding it would stall every other operation query for the scan's whole
     // duration (see the qleany 1.9.0 migration guide's long-operation section).
-    let completion = fx.ctx.long_operation_manager.lock().unwrap().completion_signal();
+    let completion = fx
+        .ctx
+        .long_operation_manager
+        .lock()
+        .unwrap()
+        .completion_signal();
     let finished = completion.wait_for(&id, Some(std::time::Duration::from_secs(30)));
     assert!(finished, "the scan did not finish within 30s");
 
@@ -249,8 +255,9 @@ fn hit_targets(hits: &[MentionHit]) -> Vec<(EntityId, EntityId)> {
 fn scan_writes_no_entities() {
     let fx = fixture();
     let before_stack = undo_redo_commands::get_stack_size(&fx.ctx, fx.setup);
-    let before_items = binder_item_commands::get_binder_item_multi(&fx.ctx, &[fx.character, fx.scene])
-        .expect("read items before");
+    let before_items =
+        binder_item_commands::get_binder_item_multi(&fx.ctx, &[fx.character, fx.scene])
+            .expect("read items before");
 
     // Discard everything the fixture itself emitted, so the drain below sees only the scan.
     let _ = drain(&fx.ctx);
@@ -310,8 +317,9 @@ fn scan_writes_no_entities() {
     // `updated_at` is the field a careless write touches even when the payload is unchanged,
     // and it is what `content_fingerprint` reads — so a scan that bumped it would make every
     // backup think the project had changed.
-    let after_items = binder_item_commands::get_binder_item_multi(&fx.ctx, &[fx.character, fx.scene])
-        .expect("read items after");
+    let after_items =
+        binder_item_commands::get_binder_item_multi(&fx.ctx, &[fx.character, fx.scene])
+            .expect("read items after");
     let stamps = |v: &Vec<Option<frontend::direct_access::BinderItemDto>>| {
         v.iter()
             .map(|i| i.as_ref().map(|i| i.updated_at))
@@ -391,7 +399,13 @@ fn a_pinned_reference_comes_back_confirmed() {
     let hits = scan(&fx);
     assert_eq!(
         hits.iter()
-            .filter(|h| matches!(h, MentionHit::Found { is_confirmed: true, .. }))
+            .filter(|h| matches!(
+                h,
+                MentionHit::Found {
+                    is_confirmed: true,
+                    ..
+                }
+            ))
             .count(),
         1,
         "the pinned reference must come back confirmed, not as a fresh suggestion"
@@ -409,7 +423,11 @@ fn a_pinned_reference_comes_back_confirmed() {
 fn a_project_with_nothing_discoverable_scans_clean() {
     let fx = fixture();
     // Un-discover the only tag.
-    let work = work_commands::get_all_work(&fx.ctx).unwrap().pop().unwrap().id;
+    let work = work_commands::get_all_work(&fx.ctx)
+        .unwrap()
+        .pop()
+        .unwrap()
+        .id;
     let tag = work_commands::get_work_relationship(&fx.ctx, &work, &WorkRelationshipField::Tags)
         .unwrap()
         .pop()

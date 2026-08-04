@@ -139,7 +139,11 @@ fn preset_row(vm: &ParatextPresetsViewModel, row: PresetRow) -> impl Widget {
             // A shipped preset is read-only, so making one your own means starting from
             // its text rather than retyping it.
             let dup_vm = vm.clone();
-            let id = row.preset.as_ref().map(|p| p.id.clone()).unwrap_or_default();
+            let id = row
+                .preset
+                .as_ref()
+                .map(|p| p.id.clone())
+                .unwrap_or_default();
             actions = actions.child(
                 Button::new(tr!(settings_paratext_duplicate()))
                     .variant(ButtonVariant::Plain)
@@ -158,15 +162,13 @@ fn preset_row(vm: &ParatextPresetsViewModel, row: PresetRow) -> impl Widget {
                 VStack::new()
                     .spacing(2.0)
                     .child(TextWidget::new(name))
-                    .child(
-                        TextWidget::new(subtitle)
-                            .style(TextStyleRole::Small)
-                            .color(if broken {
-                                TextRole::Error
-                            } else {
-                                TextRole::Secondary
-                            }),
-                    ),
+                    .child(TextWidget::new(subtitle).style(TextStyleRole::Small).color(
+                        if broken {
+                            TextRole::Error
+                        } else {
+                            TextRole::Secondary
+                        },
+                    )),
             )
             .child(Spacer::new())
             .child(actions),
@@ -284,8 +286,7 @@ impl Widget for PresetEditorModal {
                                     Button::new(tr!(settings_paratext_save()))
                                         .variant(ButtonVariant::Filled)
                                         .on_activate_fn(move |c| {
-                                            let text =
-                                                save_doc.to_plain_text().unwrap_or_default();
+                                            let text = save_doc.to_plain_text().unwrap_or_default();
                                             let saved = match index {
                                                 Some(i) => save_vm.replace(i, &text),
                                                 None => save_vm.add(&text),

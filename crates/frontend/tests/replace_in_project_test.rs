@@ -40,7 +40,11 @@ fn loaded_ctx() -> AppContext {
 }
 
 fn work_id(ctx: &AppContext) -> u64 {
-    work_commands::get_all_work(ctx).expect("get_all_work").pop().unwrap().id
+    work_commands::get_all_work(ctx)
+        .expect("get_all_work")
+        .pop()
+        .unwrap()
+        .id
 }
 
 fn search(ctx: &AppContext, query: &str) -> RunSearchDto {

@@ -28,7 +28,7 @@
 //!     Full Chapter/Part/Book row list and the row mutations).
 //!   * [`outline`] — `OutlineViewModel`: single-instance live state (owns the
 //!     `DockingModel` + tree model).
-//!   * [`format`] — `FormatViewModel`: single-instance live state (owns the
+//!   * [`mod@format`] — `FormatViewModel`: single-instance live state (owns the
 //!     formatting mirrors shared by the format dock, the Format menu and the
 //!     editor's context-menu row).
 //!   * [`settings`] — `SettingsViewModel`: store-backed facade over persisted UI
@@ -65,7 +65,7 @@
 //!   * [`view_state`] — `ViewState` + the ports a mounted pane publishes: shared
 //!     by the distraction-free surface's caret handoff and `workspace.toml`'s
 //!     per-tab restore, neither of which owns it.
-//!   * [`long_op`], [`save_queue`], [`save_status`], [`open_failure`] — shared
+//!   * [`long_op`], [`save_queue`], [`mod@save_status`], [`open_failure`] — shared
 //!     `Origin::LongOperation` payload parsing, the save-coalescing state
 //!     machine, the save indicator's pure decision table, and the "couldn't
 //!     open" toast text.
@@ -114,11 +114,11 @@ mod long_op;
 mod mention_index;
 mod new_work;
 mod note_templates;
-mod paratext_presets;
 mod open_failure;
 mod outline;
 mod overview;
 mod pace;
+mod paratext_presets;
 mod progress_recorder;
 mod project_lifecycle;
 mod project_switch;
@@ -174,12 +174,12 @@ pub use go_to::GoToViewModel;
 pub use import_plume::ImportPlumeViewModel;
 pub use mention_index::{MentionIndex, MentionRow};
 pub use new_work::NewWorkViewModel;
-pub use note_templates::{NoteTemplatesViewModel, TemplateImportSummary};
-pub use paratext_presets::{ParatextPresetsViewModel, PresetRow};
+pub use note_templates::NoteTemplatesViewModel;
 pub use open_failure::open_failure_toast;
 pub use outline::OutlineViewModel;
 pub use overview::OverviewViewModel;
 pub use pace::PaceViewModel;
+pub use paratext_presets::{ParatextPresetsViewModel, PresetRow};
 pub use progress_recorder::ProgressRecorder;
 pub use project_lifecycle::ProjectLifecycleViewModel;
 pub(crate) use project_lifecycle::reload_personal_words;

@@ -75,7 +75,7 @@ fn step_v3_to_v4(_bundle: &mut WorkBundle) {}
 /// v4 → v5 added the note templates. Nothing to heal: a v4 bundle simply had none, and
 /// `read_folder` already yields an empty list for the absent `templates.ron`. The bump
 /// exists to stop an *older* build opening (and then silently re-saving without) a
-/// project that has templates — see [`FORMAT_VERSION`](crate::bundle::FORMAT_VERSION).
+/// project that has templates — see [`FORMAT_VERSION`].
 fn step_v4_to_v5(_bundle: &mut WorkBundle) {}
 
 /// v5 → v6 added epigraphs. Nothing to heal in this direction either: a v5 bundle simply

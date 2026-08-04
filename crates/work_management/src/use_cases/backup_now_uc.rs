@@ -31,9 +31,9 @@ use crate::RetentionMode;
 use crate::work_io::{self, TreeReader};
 use anyhow::{Context, Result, anyhow};
 use common::database::QueryUnitOfWork;
-use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
+use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
@@ -156,7 +156,11 @@ impl<'a> TreeReader for dyn BackupNowUnitOfWorkTrait + 'a {
     fn comment_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Comment>>> {
         self.get_comment_multi(ids)
     }
-    fn comment_rel(&self, id: &EntityId, field: &CommentRelationshipField) -> Result<Vec<EntityId>> {
+    fn comment_rel(
+        &self,
+        id: &EntityId,
+        field: &CommentRelationshipField,
+    ) -> Result<Vec<EntityId>> {
         self.get_comment_relationship(id, field)
     }
     fn comment_reply_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<CommentReply>>> {

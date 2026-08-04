@@ -28,7 +28,7 @@ use skribisto_model::{Relation, SubRoleExt};
 /// need, fetched once by the caller.
 ///
 /// Carries `role` (not just `indent`/`sub_role`) so a Go-command traversal
-/// ([`crate::view_models::binder_ops::go_targets`]) can resolve each row's
+/// (`crate::view_models::binder_ops::go_targets`) can resolve each row's
 /// `skribisto_model::GoKind` — Chapter identity spans two role encodings
 /// (`Item/ChapterScene` and `Folder/ChapterScene`), so `sub_role` alone cannot answer it.
 pub type ItemMeta = HashMap<u64, (BinderItemRole, i64, BinderItemSubRole)>;
@@ -155,32 +155,28 @@ impl GoTargets {
 pub fn go_targets_in(order: &[u64], meta: &ItemMeta, pos: usize) -> GoTargets {
     use skribisto_model::GoKind;
 
-    let kind_at = |i: usize| {
-        meta.get(&order[i])
+    let kind_at = |id: u64| {
+        meta.get(&id)
             .and_then(|(role, _indent, sub_role)| skribisto_model::go_kind_of(role, sub_role))
     };
 
     let mut out = GoTargets::default();
-    for i in (pos + 1)..order.len() {
-        match kind_at(i) {
-            Some(GoKind::Scene) if out.next_scene.is_none() => out.next_scene = Some(order[i]),
-            Some(GoKind::Chapter) if out.next_chapter.is_none() => {
-                out.next_chapter = Some(order[i])
-            }
-            Some(GoKind::Note) if out.next_note.is_none() => out.next_note = Some(order[i]),
+    for &id in &order[pos + 1..] {
+        match kind_at(id) {
+            Some(GoKind::Scene) if out.next_scene.is_none() => out.next_scene = Some(id),
+            Some(GoKind::Chapter) if out.next_chapter.is_none() => out.next_chapter = Some(id),
+            Some(GoKind::Note) if out.next_note.is_none() => out.next_note = Some(id),
             _ => {}
         }
         if out.next_scene.is_some() && out.next_chapter.is_some() && out.next_note.is_some() {
             break;
         }
     }
-    for i in (0..pos).rev() {
-        match kind_at(i) {
-            Some(GoKind::Scene) if out.prev_scene.is_none() => out.prev_scene = Some(order[i]),
-            Some(GoKind::Chapter) if out.prev_chapter.is_none() => {
-                out.prev_chapter = Some(order[i])
-            }
-            Some(GoKind::Note) if out.prev_note.is_none() => out.prev_note = Some(order[i]),
+    for &id in order[..pos].iter().rev() {
+        match kind_at(id) {
+            Some(GoKind::Scene) if out.prev_scene.is_none() => out.prev_scene = Some(id),
+            Some(GoKind::Chapter) if out.prev_chapter.is_none() => out.prev_chapter = Some(id),
+            Some(GoKind::Note) if out.prev_note.is_none() => out.prev_note = Some(id),
             _ => {}
         }
         if out.prev_scene.is_some() && out.prev_chapter.is_some() && out.prev_note.is_some() {

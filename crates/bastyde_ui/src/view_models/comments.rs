@@ -16,11 +16,11 @@
 //!   deliberately never rewritten while typing — it is the ground truth the next
 //!   load's re-anchor pass depends on, so an edit must not be able to corrupt it.
 //! * The **live** half is a `(start, end)` pair held by the document's
-//!   [`CommentHighlightSession`] and folded forward on every `ContentsChanged`
+//!   [`crate::comments::session::CommentHighlightSession`] and folded forward on every `ContentsChanged`
 //!   with exclusive edges.
 //!
-//! They meet twice: at **open**, when [`reanchor`] re-derives live offsets from
-//! the quote; and at **flush**, when [`persist_live_anchors`] writes the tracked
+//! They meet twice: at **open**, when [`CommentsViewModel::reanchor`] re-derives live offsets from
+//! the quote; and at **flush**, when [`CommentsViewModel::persist_live_anchors`] writes the tracked
 //! offsets back so the next session starts from a good hint.
 
 use std::cell::{Cell, RefCell};

@@ -25,8 +25,8 @@ pub fn pdf_font_bytes(preset: &Preset, langs: &BTreeSet<String>) -> Vec<Vec<u8>>
     // Body serif: the preset's family if bundled, else EB Garamond as a deterministic
     // substitute (so a system-font preset still exports a real serif rather than Typst's
     // built-in default face). Substitution is a fixed choice, not a silent platform lookup.
-    let body =
-        skribisto_fonts::by_family(&preset.font_family).unwrap_or_else(skribisto_fonts::eb_garamond);
+    let body = skribisto_fonts::by_family(&preset.font_family)
+        .unwrap_or_else(skribisto_fonts::eb_garamond);
     fonts.push(body.to_vec());
 
     let has_rtl =

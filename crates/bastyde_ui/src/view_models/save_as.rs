@@ -67,7 +67,7 @@ use crate::toast_scope::ToastWorkExt;
 use super::long_op::{CapturedWork, TrackedOp, event_id, parse_payload};
 
 /// Update-in-place key for the single toast a Save As drives (starting →
-/// success / error) — folded through [`work_scoped_toast_id`] with the
+/// success / error) — folded through [`crate::toast_scope::work_scoped_toast_id`] with the
 /// captured [`Pending::tracked`]'s `work_id()` at every use, never bare, for the same
 /// reason [`super::export::ExportViewModel`]'s own toast id is: two Works
 /// running their own Save As at once must never collide in the shared

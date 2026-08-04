@@ -5,7 +5,7 @@
 //!
 //! The public surface is a `bastyde::data::ListModel<TagRow>` a `ListView` binds to (the
 //! Settings ▸ Tags pane), a `version` signal for consumers that observe rather than bind,
-//! and a **lookup** signal every chip renderer reads — see [`lookup_signal`].
+//! and a **lookup** signal every chip renderer reads — see [`lookup_signal`](WorkTagsListModel::lookup_signal).
 //!
 //! Two `#[cfg]`-gated `mod imp` variants share one public surface: the real one reads via
 //! `Work.tags` (scoped to this window's own open Work — a process can host several) and

@@ -5,7 +5,7 @@
 //! scrolled.
 //!
 //! This is *view* state, not document state — two split panes showing the same
-//! item have one `TextDocument` but two carets — so it hangs off [`ContentTab`]
+//! item have one `TextDocument` but two carets — so it hangs off [`crate::tabs::ContentTab`]
 //! (the per-pane view), never off the shared `OpenDoc` beside the spell and
 //! replacement sessions.
 //!

@@ -950,7 +950,11 @@ mod tests {
             &SubRole::Paratext,
             &ParatextText
         ));
-        assert!(!content_allowed(&Role::Item, &SubRole::Paratext, &SceneText));
+        assert!(!content_allowed(
+            &Role::Item,
+            &SubRole::Paratext,
+            &SceneText
+        ));
         assert!(!counts_prose(&Role::Item, &SubRole::Paratext));
         assert!(!counts_prose(&Role::Folder, &SubRole::Paratext));
 
@@ -1092,8 +1096,8 @@ mod tests {
         for c in COMBINATIONS {
             let overview = overview_capable(&c.role, &c.sub_role);
             let stream = compile::StreamLevel::for_container(&c.role, &c.sub_role).is_some();
-            let differs = (c.role == Role::Folder)
-                && matches!(c.sub_role, SubRole::Note | SubRole::Paratext);
+            let differs =
+                (c.role == Role::Folder) && matches!(c.sub_role, SubRole::Note | SubRole::Paratext);
             assert_eq!(
                 overview != stream,
                 differs,
@@ -1513,7 +1517,10 @@ mod tests {
     /// this must hold whichever `role` the project's `ChapterMode` picked.
     #[test]
     fn both_chapter_encodings_are_go_chapter() {
-        assert_eq!(go_kind_of(&Role::Item, &SubRole::ChapterScene), Some(GoKind::Chapter));
+        assert_eq!(
+            go_kind_of(&Role::Item, &SubRole::ChapterScene),
+            Some(GoKind::Chapter)
+        );
         assert_eq!(
             go_kind_of(&Role::Folder, &SubRole::ChapterScene),
             Some(GoKind::Chapter)
@@ -1522,7 +1529,10 @@ mod tests {
 
     #[test]
     fn a_leaf_scene_is_go_scene() {
-        assert_eq!(go_kind_of(&Role::Item, &SubRole::Scene), Some(GoKind::Scene));
+        assert_eq!(
+            go_kind_of(&Role::Item, &SubRole::Scene),
+            Some(GoKind::Scene)
+        );
     }
 
     #[test]

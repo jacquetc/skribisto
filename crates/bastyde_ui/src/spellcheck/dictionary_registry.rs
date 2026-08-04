@@ -5,7 +5,7 @@
 //!
 //! This is static, curated data — one entry per installable dictionary *variant* (French
 //! alone is three: Classique, Réforme 1990, Toutes variantes) — so, like
-//! [`crate::models::examples_list_model`], it has **no real/mock split**: the bytes are
+//! `examples_list_model`, it has **no real/mock split**: the bytes are
 //! identical in both builds. It lives here in the UI layer, not `skribisto_model`, because it
 //! is app-local catalogue data (URLs, licence assets, on-disk basenames), not a domain rule.
 //!

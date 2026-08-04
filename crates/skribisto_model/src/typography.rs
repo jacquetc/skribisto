@@ -60,8 +60,8 @@ pub struct TypographyRuleset {
     pub primary_quotes: QuoteSystem,
     /// Quotation marks *inside* an existing quotation.
     ///
-    /// Consulted by the nesting rule in [`TypographyEngine::check_paragraph`],
-    /// but only where it is double-width (see [`nests_with_double_key`]);
+    /// Consulted by the nesting rule in `TypographyEngine::check_paragraph`,
+    /// but only where it is double-width (see `nests_with_double_key`);
     /// recorded for every locale regardless, because Russian inverts what Polish
     /// does and a later reader must not guess it from the primary pair.
     pub secondary_quotes: QuoteSystem,
@@ -74,8 +74,8 @@ pub struct TypographyRuleset {
     pub pre_punctuation: &'static [(char, char)],
     /// The dash that opens a line of dialogue, where the locale uses one.
     ///
-    /// Read by [`TypographyEngine::check_paragraph`] rather than by the
-    /// stateless [`check`](TypographyEngine::check) — a dialogue dash is
+    /// Read by `TypographyEngine::check_paragraph` rather than by the
+    /// stateless `check` (`TypographyEngine::check`) — a dialogue dash is
     /// meaningless without knowing a paragraph just began.
     pub dialogue_dash: Option<char>,
 }

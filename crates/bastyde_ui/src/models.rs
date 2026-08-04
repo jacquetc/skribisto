@@ -60,7 +60,6 @@ pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, li
 pub use distraction_free_themes_file::DistractionFreeThemesService;
 pub use examples_list_model::ExamplesListModel;
 pub use export_styles_file::ExportStylesService;
-pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsService};
 pub use installed_dictionaries_model::{
     DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
 };
@@ -70,10 +69,9 @@ pub use overview_rows_model::{
     COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow, OverviewRowsModel,
 };
 pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};
+pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsService};
 pub use recent_work_list_model::RecentWorkListModel;
-pub use repetition_tree_model::{
-    RepetitionGroup, RepetitionNode, RepetitionTreeKey, RepetitionTreeModel, rows_of,
-};
+pub use repetition_tree_model::{RepetitionNode, RepetitionTreeKey, RepetitionTreeModel};
 pub use search_results_model::SearchResultsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use stats_model::StatsModel;
@@ -84,7 +82,7 @@ pub use text_replacement_rule_list_model::{
 pub use trash_tree_model::{TrashNode, TrashRootKind, TrashTreeKey, TrashTreeModel};
 pub use tree_expansion_file::TreeExpansionService;
 pub use work_note_templates_list_model::{
-    ImportOutcome, TemplateRow, WorkNoteTemplatesListModel, moved_index, starred_first,
+    TemplateRow, WorkNoteTemplatesListModel, moved_index, starred_first,
 };
 pub use work_tags_list_model::{TagRow, WorkTagsListModel, name_key, sort_rows};
 pub use workspace_layout_file::{

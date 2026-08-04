@@ -19,12 +19,12 @@
 //! or because the *same* window switched to a different Work in place
 //! (`register_window` superseding its own previous binding — File > New Work
 //! / Open Work, ProjectSwitcher "Open here", never destroy the window, so
-//! `on_removed` never fires for the Work being left). [`unregister`] removes
+//! `on_removed` never fires for the Work being left). [`unregister`](WorkRegistry::unregister) removes
 //! a session, but is no longer called directly from `App`: both of the paths
 //! above are, and both are what decide whether a session's teardown (its
 //! undo stack) actually runs — the framework's `on_removed` for a real close,
 //! `register_window`'s own replace path for an in-place switch.
-//! [`session_for`] is the create-**or**-share half of the design doc's
+//! [`session_for`](WorkRegistry::session_for) is the create-**or**-share half of the design doc's
 //! "create-or-share, refcounted" resolution mechanism, and Work ▸ New Window
 //! (`PendingAction::AttachExisting{work_id}`) is what finally uses it: a second
 //! window on an *already*-open Work resolves the live session through
@@ -60,12 +60,12 @@ struct Entry {
 /// `WindowRemovedEvent::remaining_windows` — see `crate::shell::windows`'s
 /// wiring for why). Unlike [`WindowTeardown`], this is safe to run in **two**
 /// situations: when the window itself is finally destroyed
-/// ([`remove_window`](Self::remove_window)), and when a still-live window
+/// ([`remove_window`](WorkRegistry::remove_window)), and when a still-live window
 /// rebinds *away* from this Work in place — an in-place File > New Work /
 /// Open Work / ProjectSwitcher "Open here" never destroys the window, so
 /// `on_removed` never fires for it, yet the Work being switched away from is
 /// exactly as gone as if its window had closed and its session/undo stack
-/// must be torn down the same way (see [`register_window`](Self::register_window)'s doc).
+/// must be torn down the same way (see [`register_window`](WorkRegistry::register_window)'s doc).
 pub type StackTeardown = Rc<dyn Fn(bool)>;
 
 /// The window-instance-scoped half of teardown: release exactly this window's
@@ -76,7 +76,7 @@ pub type StackTeardown = Rc<dyn Fn(bool)>;
 /// touch the dead window's tree, per `on_removed`'s own contract.
 ///
 /// Unlike [`StackTeardown`], this must run **only** when the window itself is
-/// really, finally gone ([`remove_window`](Self::remove_window)) — never on an
+/// really, finally gone ([`remove_window`](WorkRegistry::remove_window)) — never on an
 /// in-place Work switch: the window's `EditorsViewModel` and its backup flush
 /// hook both survive the switch (the same window keeps showing tabs and
 /// keeps needing its buffers flushed for whatever Work it shows next), so

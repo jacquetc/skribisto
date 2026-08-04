@@ -216,7 +216,10 @@ pub(crate) fn plan_purge<U: PurgeAccess + ?Sized>(
                 remove_contents.extend(cs);
             }
             remove_items.extend(subtree.iter().copied());
-            drop_from_binder.entry(binder_id).or_default().extend(subtree);
+            drop_from_binder
+                .entry(binder_id)
+                .or_default()
+                .extend(subtree);
         }
     }
 

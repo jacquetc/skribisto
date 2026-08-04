@@ -21,7 +21,7 @@
 //!
 //! It is **not owned here**, though: it is an ordinary key on
 //! `SettingsViewModel`, like every other setting, and this library only knows
-//! how to [`resolve`](Self::resolve) an id into a theme. That is not fastidious
+//! how to [`resolve`](DistractionFreeThemesViewModel::resolve) an id into a theme. That is not fastidious
 //! layering — this view-model is built in `main`, before any widget tree, and a
 //! `SettingsStore` handle opened there would have its *own* signals. The
 //! settings pane (which reads `ctx.settings()`) would then never see a change

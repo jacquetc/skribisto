@@ -6,7 +6,7 @@
 //!
 //! An editor widget knows its `TextDocument` and its selection, but nothing about
 //! which `Content` row that document came from, nor how to reach the comment
-//! store. A `CommentBinding` closes that gap: it is minted by the [`OpenDoc`] that
+//! store. A `CommentBinding` closes that gap: it is minted by the [`OpenDoc`](crate::models::OpenDoc) that
 //! already owns both facts, and handed down to `writing_column` exactly the way
 //! the spell session is. That keeps the editor free of any dependency on a
 //! view-model, and keeps "which Content is this" answered by the one place that

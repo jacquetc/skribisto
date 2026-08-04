@@ -13,9 +13,9 @@
 //! it can cover the title bar — but almost everything it needs (the editors, the
 //! stats model, the writing session, the live settings) is built inside
 //! `App::build`, which is where `ctx.settings()` first exists. So this
-//! view-model is minted empty and `App::build` calls [`Self::attach`], the same
+//! view-model is minted empty and `App::build` calls [`DistractionFreeSurfaceViewModel::attach`], the same
 //! `Rc<RefCell<Option<…>>>` shape `WorkspaceLayoutViewModel::set_editors` already
-//! uses. [`Self::revision`] is what tells the widget to rebuild when they land.
+//! uses. [`DistractionFreeSurfaceViewModel::revision`] is what tells the widget to rebuild when they land.
 //!
 //! **The surface never re-typesets a mounted pane.** It opens its *own*
 //! `ContentTab` over the same shared `OpenDoc`, with `distraction_free` pinned to

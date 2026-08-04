@@ -89,8 +89,11 @@ impl RestoreItemsUseCase {
             .get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?
             .into_iter()
             .collect();
-        let foreign: Vec<EntityId> =
-            info_ids.iter().copied().filter(|id| !indexed.contains(id)).collect();
+        let foreign: Vec<EntityId> = info_ids
+            .iter()
+            .copied()
+            .filter(|id| !indexed.contains(id))
+            .collect();
         if !foreign.is_empty() {
             return Err(anyhow!(
                 "restore_items: trash entries {foreign:?} do not belong to work {work_id}"

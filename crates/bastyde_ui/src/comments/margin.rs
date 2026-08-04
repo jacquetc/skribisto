@@ -53,7 +53,7 @@ pub const LEADER_GUTTER: f32 = 28.0;
 /// plus the gutter the leaders cross.
 ///
 /// The one place this sum is written. A page reserving a gutter
-/// ([`page_gutter`](crate::tabs::shared::stream)) and the margin reporting its own
+/// (`page_gutter`) and the margin reporting its own
 /// width ([`CommentMargin::layout_response`]) have to agree to the pixel — when they
 /// disagree the commented rows sit on a different measure from the rest and the
 /// manuscript zigzags down the page. Computing the sum separately at each site

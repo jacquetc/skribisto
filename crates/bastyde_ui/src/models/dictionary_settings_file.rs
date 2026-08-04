@@ -137,8 +137,7 @@ impl DictionarySettingsService {
     /// its retry/uniqueness logic with every sibling via
     /// [`in_memory_settings_file`](super::backup_settings_file::in_memory_settings_file).
     pub fn in_memory_default() -> Self {
-        let file =
-            super::backup_settings_file::in_memory_settings_file("dictionaries", migrator());
+        let file = super::backup_settings_file::in_memory_settings_file("dictionaries", migrator());
         Self { file }
     }
 

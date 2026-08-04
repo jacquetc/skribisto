@@ -790,12 +790,9 @@ mod rows {
     /// "what still needs me", and an orphan has no scene to be counted against
     /// anyway — it lives in the docks' "no home" bucket.
     fn open_comment_counts(ctx: &AppContext, work_id: u64) -> Vec<u64> {
-        let ids = work_commands::get_work_relationship(
-            ctx,
-            &work_id,
-            &WorkRelationshipField::Comments,
-        )
-        .unwrap_or_default();
+        let ids =
+            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Comments)
+                .unwrap_or_default();
         if ids.is_empty() {
             return Vec::new();
         }
@@ -1021,7 +1018,11 @@ mod rows {
                 // A couple of fabricated threads on the prose-bearing rows, so the
                 // mock build exercises the column and its fold rather than a
                 // uniformly-zero one that would hide an arithmetic bug.
-                own_comments: if own_words.is_some() { item_id as usize % 3 } else { 0 },
+                own_comments: if own_words.is_some() {
+                    item_id as usize % 3
+                } else {
+                    0
+                },
                 total_comments: 0, // filled by the same fold
             },
             depth,
@@ -1238,7 +1239,10 @@ mod tests {
         rows[2].item.own_comments = 2;
         fold_totals(&mut rows);
         assert_eq!(rows[0].item.total_comments, 7);
-        assert_eq!(rows[2].item.total_comments, 2, "the sibling keeps only its own");
+        assert_eq!(
+            rows[2].item.total_comments, 2,
+            "the sibling keeps only its own"
+        );
     }
 
     #[test]

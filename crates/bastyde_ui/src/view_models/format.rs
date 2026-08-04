@@ -12,7 +12,7 @@
 //! switch is enough to re-run it — a stored handle would keep addressing the
 //! editor the user *used* to be typing in. So the current editor is resolved on
 //! demand, through a closure `App` supplies, exactly as `insert_scene_break`
-//! already resolves its target. The same reason [`FindViewModel`] is re-attached
+//! already resolves its target. The same reason [`crate::view_models::FindViewModel`] is re-attached
 //! on every rebuild rather than held.
 //!
 //! The editor **registry** below does hold handles, and does not break that
@@ -1248,9 +1248,7 @@ mod tests {
         let (_editor, handle) = loose_editor("synopsis prose");
         let surface = Signal::new(FormatSurface::Scene);
         let (resolved, reported) = (handle.clone(), surface.clone());
-        let vm = FormatViewModel::new(Rc::new(move || {
-            (Some(resolved.clone()), reported.get())
-        }));
+        let vm = FormatViewModel::new(Rc::new(move || (Some(resolved.clone()), reported.get())));
 
         vm.refresh();
         assert!(vm.groups().scene_breaks.get());

@@ -128,7 +128,9 @@ pub fn coverage(
         if already.contains(&t.key) || !seen.insert(&t.key) {
             continue;
         }
-        let Some(id) = vocab.lookup(&t.key) else { continue };
+        let Some(id) = vocab.lookup(&t.key) else {
+            continue;
+        };
         let s = vocab.surprisal(id);
         if s < MIN_TERM_SURPRISAL {
             continue;
@@ -137,7 +139,11 @@ pub fn coverage(
     }
 
     let total: f64 = weighed.iter().map(|(_, w, _)| w).sum();
-    let hit: f64 = weighed.iter().filter(|(_, _, f)| *f).map(|(_, w, _)| w).sum();
+    let hit: f64 = weighed
+        .iter()
+        .filter(|(_, _, f)| *f)
+        .map(|(_, w, _)| w)
+        .sum();
 
     Coverage {
         covered: if total > 0.0 { hit / total } else { 0.0 },
@@ -192,8 +198,7 @@ pub fn drift_outliers(scenes: &[Coverage], sigmas: f64) -> Vec<DriftOutlier> {
     }
 
     let covered: Vec<f64> = usable.iter().map(|(_, c)| c.covered).collect();
-    let (Some(mean), Some(sd)) = (stats::mean(&covered), stats::population_stddev(&covered))
-    else {
+    let (Some(mean), Some(sd)) = (stats::mean(&covered), stats::population_stddev(&covered)) else {
         return Vec::new();
     };
     if sd <= f64::EPSILON {
@@ -210,7 +215,11 @@ pub fn drift_outliers(scenes: &[Coverage], sigmas: f64) -> Vec<DriftOutlier> {
             missing: c.missing.clone(),
         })
         .collect();
-    out.sort_by(|a, b| a.covered.partial_cmp(&b.covered).unwrap_or(std::cmp::Ordering::Equal));
+    out.sort_by(|a, b| {
+        a.covered
+            .partial_cmp(&b.covered)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     out
 }
 
@@ -224,7 +233,10 @@ mod tests {
         let mut v = Vocabulary::new();
         // Enough ordinary prose that function words are unsurprising.
         for _ in 0..40 {
-            intern_text(&mut v, "the and of to a in he she it was that with for on at by");
+            intern_text(
+                &mut v,
+                "the and of to a in he she it was that with for on at by",
+            );
         }
         intern_text(&mut v, extra);
         v
@@ -261,8 +273,16 @@ mod tests {
     #[test]
     fn function_words_are_not_weighed() {
         let v = manuscript("carnelian");
-        let c = coverage("He was in the room with it.", "The carnelian light fell.", &[], &v);
-        assert_eq!(c.terms_weighed, 0, "nothing distinctive was promised: {c:?}");
+        let c = coverage(
+            "He was in the room with it.",
+            "The carnelian light fell.",
+            &[],
+            &v,
+        );
+        assert_eq!(
+            c.terms_weighed, 0,
+            "nothing distinctive was promised: {c:?}"
+        );
     }
 
     #[test]
@@ -281,7 +301,10 @@ mod tests {
             &v,
         );
         assert!(present.covered > absent.covered);
-        assert!(absent.missing.iter().any(|m| m == "Constantine"), "got {absent:?}");
+        assert!(
+            absent.missing.iter().any(|m| m == "Constantine"),
+            "got {absent:?}"
+        );
     }
 
     /// The skip is word-level, not a substring scan: an entity called "Constantine" must
@@ -312,29 +335,51 @@ mod tests {
             &["Constantine".to_string()],
             &v,
         );
-        assert_eq!(c.terms_weighed, 1, "one entity, not an entity plus its own word: {c:?}");
+        assert_eq!(
+            c.terms_weighed, 1,
+            "one entity, not an entity plus its own word: {c:?}"
+        );
     }
 
     #[test]
     fn coverage_works_without_a_story_bible() {
         let v = manuscript("carnelian halyard");
-        let c = coverage("The carnelian and the halyard.", "He touched the carnelian.", &[], &v);
-        assert!(c.terms_weighed >= 2, "the fallback must still weigh something: {c:?}");
+        let c = coverage(
+            "The carnelian and the halyard.",
+            "He touched the carnelian.",
+            &[],
+            &v,
+        );
+        assert!(
+            c.terms_weighed >= 2,
+            "the fallback must still weigh something: {c:?}"
+        );
         assert!(c.missing.iter().any(|m| m == "halyard"));
     }
 
     #[test]
     fn length_ratio_reports_a_summary_that_was_never_dramatised() {
         let v = manuscript("");
-        let c = coverage("He left and never came back at all", "He left and never came back", &[], &v);
+        let c = coverage(
+            "He left and never came back at all",
+            "He left and never came back",
+            &[],
+            &v,
+        );
         let r = c.length_ratio().unwrap();
-        assert!(r > 0.9, "near-equal lengths mean the synopsis IS the scene: {r}");
+        assert!(
+            r > 0.9,
+            "near-equal lengths mean the synopsis IS the scene: {r}"
+        );
     }
 
     #[test]
     fn length_ratio_is_absent_rather_than_infinite_for_empty_prose() {
         let v = manuscript("");
-        assert_eq!(coverage("Something happens.", "", &[], &v).length_ratio(), None);
+        assert_eq!(
+            coverage("Something happens.", "", &[], &v).length_ratio(),
+            None
+        );
     }
 
     // ── outliers ──
@@ -368,8 +413,17 @@ mod tests {
     /// they are. This is what the self-referential baseline buys.
     #[test]
     fn a_uniformly_low_book_reports_nothing() {
-        let scenes = vec![cov(0.2, 5), cov(0.21, 5), cov(0.19, 5), cov(0.2, 5), cov(0.22, 5)];
-        assert!(drift_outliers(&scenes, 1.5).is_empty(), "consistent is not drifted");
+        let scenes = vec![
+            cov(0.2, 5),
+            cov(0.21, 5),
+            cov(0.19, 5),
+            cov(0.2, 5),
+            cov(0.22, 5),
+        ];
+        assert!(
+            drift_outliers(&scenes, 1.5).is_empty(),
+            "consistent is not drifted"
+        );
     }
 
     #[test]
@@ -392,7 +446,13 @@ mod tests {
     /// shortfall look like 1.5σ, but a book this consistent has no drift in it.
     #[test]
     fn a_tight_distribution_does_not_manufacture_an_outlier() {
-        let scenes = vec![cov(0.9, 5), cov(0.88, 5), cov(0.91, 5), cov(0.9, 5), cov(0.89, 5)];
+        let scenes = vec![
+            cov(0.9, 5),
+            cov(0.88, 5),
+            cov(0.91, 5),
+            cov(0.9, 5),
+            cov(0.89, 5),
+        ];
         let out = drift_outliers(&scenes, 1.5);
         assert!(out.is_empty(), "0.88 among 0.88-0.91 is not drift: {out:?}");
     }
@@ -400,7 +460,13 @@ mod tests {
     /// The guard must not silence a genuine outlier, only a trivial one.
     #[test]
     fn a_real_shortfall_still_reports_even_in_a_tight_book() {
-        let scenes = vec![cov(0.9, 5), cov(0.9, 5), cov(0.91, 5), cov(0.89, 5), cov(0.35, 5)];
+        let scenes = vec![
+            cov(0.9, 5),
+            cov(0.9, 5),
+            cov(0.91, 5),
+            cov(0.89, 5),
+            cov(0.35, 5),
+        ];
         let out = drift_outliers(&scenes, 1.5);
         assert_eq!(out.len(), 1, "got {out:?}");
         assert_eq!(out[0].index, 4);

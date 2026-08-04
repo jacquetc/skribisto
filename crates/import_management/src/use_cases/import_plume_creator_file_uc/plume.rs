@@ -427,14 +427,13 @@ mod tests {
         // prose, not an item of its own. Note that `Scene 1.1` pushed a sibling
         // Note after itself, so this also exercises the backward walk past it.
         assert!(
-            !manuscript
-                .items
-                .iter()
-                .any(|i| i.item.title == "* * *"),
+            !manuscript.items.iter().any(|i| i.item.title == "* * *"),
             "a separator must no longer occupy a binder slot"
         );
         assert!(
-            prose(scene11, ContentRole::SceneText).trim_end().ends_with("\\* \\* \\*"),
+            prose(scene11, ContentRole::SceneText)
+                .trim_end()
+                .ends_with("\\* \\* \\*"),
             "the separator must land as an escaped marker at the end of Scene 1.1: {:?}",
             prose(scene11, ContentRole::SceneText)
         );
@@ -525,7 +524,9 @@ mod tests {
         );
         assert_eq!(
             bundle.manifest.format_min_read_version,
-            Some(skrib_format::version_gate::compute_min_read_version(&bundle)),
+            Some(skrib_format::version_gate::compute_min_read_version(
+                &bundle
+            )),
             "the writer must have stamped the content-derived floor on the way out"
         );
         assert!(

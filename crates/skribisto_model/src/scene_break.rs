@@ -241,14 +241,8 @@ mod tests {
             Some(SceneBreakTier::Minor)
         );
         assert_eq!(tier_of_djot_block("\\#"), Some(SceneBreakTier::Minor));
-        assert_eq!(
-            tier_of_djot_block("\\# # #"),
-            Some(SceneBreakTier::Major)
-        );
-        assert_eq!(
-            tier_of_djot_block("\\*\\*\\*"),
-            Some(SceneBreakTier::Minor)
-        );
+        assert_eq!(tier_of_djot_block("\\# # #"), Some(SceneBreakTier::Major));
+        assert_eq!(tier_of_djot_block("\\*\\*\\*"), Some(SceneBreakTier::Minor));
     }
 
     #[test]

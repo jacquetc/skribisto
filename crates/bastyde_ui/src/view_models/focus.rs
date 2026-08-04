@@ -23,7 +23,7 @@
 //! outlives a single project (a project window is replaced in place, or
 //! closed and a fresh Launcher window opens — see `main.rs`'s module doc), so
 //! a `FocusViewModel` that isn't explicitly re-seeded would carry a stale
-//! "mode was on" into the next project this window shows. [`Self::reset`] is
+//! "mode was on" into the next project this window shows. [`FocusViewModel::reset`] is
 //! wired into this window's own `LoadWork`/`NewWork`/`CloseWork` subscribers
 //! in `App::build`, the same guarded pattern `search`'s
 //! `restore_for_project`/`clear_preview` already uses. It deliberately does

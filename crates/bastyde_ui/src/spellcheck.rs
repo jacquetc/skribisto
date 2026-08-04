@@ -158,7 +158,8 @@ pub(crate) fn validate_dictionary_files(aff_path: &Path, dic_path: &Path) -> Res
 }
 
 /// Word tokens of a block, as `(char_offset, char_length, word)` — the coordinates
-/// [`HighlightContext::set_format`] expects (character positions, not bytes). UAX#29 word
+/// [`HighlightContext::set_format`](bastyde::text_document::HighlightContext::set_format)
+/// expects (character positions, not bytes). UAX#29 word
 /// segmentation keeps contractions and elisions together (`don't`, `l'auteur`), for both the
 /// straight `'` and the curly `’`.
 ///
@@ -452,7 +453,8 @@ struct Inner {
     /// re-attempted every keystroke). Tier 1 — shared by every open Work.
     cache: RefCell<HashMap<String, Option<Arc<spellbook::Dictionary>>>>,
     /// Session-muted language keys (resolved registry ids), keyed by `work_id`. Tier 2 — a
-    /// Work's own entry is dropped on `close_work` (see [`Self::clear`]), never every Work's.
+    /// Work's own entry is dropped on `close_work` (see [`SpellcheckService::clear`]), never
+    /// every Work's.
     muted: RefCell<HashMap<u64, HashSet<String>>>,
     /// Bumped on every mute change **and every master-switch flip** so a language-pill field
     /// rebuilds its check marks — the pills bind this and nothing else, so a switch that did

@@ -467,14 +467,9 @@ fn duplicate_mints_a_fresh_uid_and_never_inherits_the_source_s() {
     let mut seen = std::collections::HashSet::new();
     for it in &all {
         assert!(!it.uid.is_nil(), "item {} has no uid", it.id);
-        assert!(
-            seen.insert(it.uid),
-            "two items share the uid {}",
-            it.uid
-        );
+        assert!(seen.insert(it.uid), "two items share the uid {}", it.uid);
     }
 }
-
 
 #[test]
 fn duplicate_folder_subtree_clones_items_and_content() {
@@ -732,7 +727,8 @@ fn empty_trash_hard_removes_item_subtree_and_contents() {
     .expect("trash");
 
     let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
-    trash_management_commands::empty_trash(&fx.ctx, Some(s2), &EmptyTrashDto { work_id: fx.work }).expect("empty");
+    trash_management_commands::empty_trash(&fx.ctx, Some(s2), &EmptyTrashDto { work_id: fx.work })
+        .expect("empty");
 
     // A subtree gone from the store and the binder order.
     assert!(
@@ -786,7 +782,8 @@ fn empty_trash_removes_trashed_binder_from_work() {
     .expect("trash binder");
 
     let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
-    trash_management_commands::empty_trash(&fx.ctx, Some(s2), &EmptyTrashDto { work_id: fx.work }).expect("empty");
+    trash_management_commands::empty_trash(&fx.ctx, Some(s2), &EmptyTrashDto { work_id: fx.work })
+        .expect("empty");
 
     assert!(
         binder_commands::get_binder(&fx.ctx, &fx.binder2)
@@ -2006,7 +2003,9 @@ fn delete_trash_entries_sweeps_collateral_stale_entries() {
     let s2 = undo_redo_commands::create_new_stack(&fx.ctx);
     let info_a = trash_item(&fx, s2, fx.a);
     assert_eq!(
-        trash_info_commands::get_all_trash_info(&fx.ctx).unwrap().len(),
+        trash_info_commands::get_all_trash_info(&fx.ctx)
+            .unwrap()
+            .len(),
         2
     );
 

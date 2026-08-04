@@ -23,7 +23,7 @@
 //! `LoadWork`/`NewWork` subscription and silently skip the seed flow
 //! (`AppIds::seed`, `SingleWork::set_id`, the tree reload, …). Instead every
 //! action here opens a **project window** carrying the action as a
-//! [`PendingAction`], performed on that window's own first build once its
+//! [`crate::app::PendingAction`], performed on that window's own first build once its
 //! subscriptions are live (mirrors the pre-existing argv-launch mechanism),
 //! then closes the Launcher — opening the new window *before* closing this
 //! one, per the ordering rule in `main.rs`'s module docs.
@@ -52,7 +52,7 @@ use crate::shell::windows::ProjectWindowFactory;
 /// list has a single query over the whole row, so the id never leaves this file.
 const RECENTS_QUERY: &str = "query";
 
-/// Pages of the recents region, in the order [`WelcomePanel`] stacks them into
+/// Pages of the recents region, in the order [`crate::panels::welcome::WelcomePanel`] stacks them into
 /// its `Switcher` (`crate::panels::welcome::WelcomePanel::recents_list`). Three,
 /// not two: "you have no recent works" and "your search matched none of them"
 /// are different facts, and showing the first when the second is true reads as

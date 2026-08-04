@@ -36,7 +36,10 @@ pub trait CloseWorkUnitOfWorkTrait: CommandUnitOfWork {
 impl<'a> WorkCloser for dyn CloseWorkUnitOfWorkTrait + 'a {
     fn work_info_ids_for_work(&self, work_id: EntityId) -> Result<Vec<EntityId>> {
         Ok(self
-            .get_work_info_relationships_from_right_ids(&WorkInfoRelationshipField::Work, &[work_id])?
+            .get_work_info_relationships_from_right_ids(
+                &WorkInfoRelationshipField::Work,
+                &[work_id],
+            )?
             .into_iter()
             .map(|(work_info_id, _)| work_info_id)
             .collect())

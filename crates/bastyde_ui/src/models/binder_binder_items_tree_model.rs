@@ -1019,7 +1019,9 @@ mod filter_feedback_tests {
         );
         frontend::commands::work_management_commands::load_work(
             &ctx,
-            &frontend::work_management::LoadWorkDto { file_name: path.to_string() },
+            &frontend::work_management::LoadWorkDto {
+                file_name: path.to_string(),
+            },
         )
         .expect("the bundled example must load");
         let work = frontend::commands::work_commands::get_all_work(&ctx)
@@ -1053,7 +1055,10 @@ mod filter_feedback_tests {
         f.query.set("zzzznotarealword".to_string());
         let (shown, total) = f.match_counts.get();
         assert_eq!(shown, 0, "nothing matches");
-        assert_eq!(total, total_before, "...but the tree still knows how much it is hiding");
+        assert_eq!(
+            total, total_before,
+            "...but the tree still knows how much it is hiding"
+        );
         assert_eq!(m.visible_count(), 0);
     }
 
@@ -1070,7 +1075,10 @@ mod filter_feedback_tests {
             shown < total,
             "a specific query must not match everything ({shown} of {total})"
         );
-        assert!(shown <= 3, "only the chapter itself should match, not its ancestors: {shown}");
+        assert!(
+            shown <= 3,
+            "only the chapter itself should match, not its ancestors: {shown}"
+        );
     }
 
     /// Clearing restores the full count, so the bar disappears again.
@@ -1082,7 +1090,11 @@ mod filter_feedback_tests {
         f.query.set("zzzznotarealword".to_string());
         assert_eq!(f.match_counts.get().0, 0);
         f.query.set(String::new());
-        assert_eq!(f.match_counts.get(), before, "clearing puts it back exactly");
+        assert_eq!(
+            f.match_counts.get(),
+            before,
+            "clearing puts it back exactly"
+        );
         assert!(m.visible_count() > 0);
     }
 }

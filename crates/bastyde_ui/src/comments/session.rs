@@ -309,11 +309,20 @@ impl CommentHighlightSession {
         if !anchors.iter().any(|a| a.is_paragraph) {
             return;
         }
-        let starts: Vec<usize> = self.doc.blocks().into_iter().map(|b| b.position()).collect();
+        let starts: Vec<usize> = self
+            .doc
+            .blocks()
+            .into_iter()
+            .map(|b| b.position())
+            .collect();
         if starts.is_empty() {
             return;
         }
-        let total = self.doc.to_plain_text().map(|t| t.chars().count()).unwrap_or(0);
+        let total = self
+            .doc
+            .to_plain_text()
+            .map(|t| t.chars().count())
+            .unwrap_or(0);
         for a in anchors.iter_mut().filter(|a| a.is_paragraph) {
             if a.is_empty() {
                 continue;
@@ -428,7 +437,12 @@ mod tests {
         let anchors = vec![a(1, 0, 30), a(2, 5, 12), a(3, 11, 25), a(4, 24, 40)];
         let got = flatten(&anchors);
         for w in got.windows(2) {
-            assert!(w[0].1 <= w[1].0, "segments overlap: {:?} then {:?}", w[0], w[1]);
+            assert!(
+                w[0].1 <= w[1].0,
+                "segments overlap: {:?} then {:?}",
+                w[0],
+                w[1]
+            );
         }
     }
 

@@ -15,7 +15,7 @@
 //!
 //! **Crash-safe for folder-shape projects.** `save_as` writes to a
 //! **temp sibling** path next to the original, never in place. Only once that
-//! write fully succeeds does [`Self::on_long_op_completed`] swap it over the
+//! write fully succeeds does [`BackupRestoreViewModel::on_long_op_completed`] swap it over the
 //! real target — a same-filesystem `rename`, atomic for a zip file, and a
 //! 3-step rename-aside/rename-in/remove-old dance for a folder bundle (`rename`
 //! refuses to replace a non-empty directory directly). A mid-write failure
@@ -31,8 +31,8 @@
 //! (no reload).
 //!
 //! Because it bypasses `SaveAsViewModel::begin`, it owns the same
-//! flush-before-serialize invariant itself: [`Self::set_flush_hook`] installs
-//! `editors.flush_all()`, and [`Self::do_restore`] runs it before the read-only
+//! flush-before-serialize invariant itself: [`BackupRestoreViewModel::set_flush_hook`] installs
+//! `editors.flush_all()`, and [`BackupRestoreViewModel::do_restore`] runs it before the read-only
 //! background op reads the store. Typing only marks a doc dirty until an explicit
 //! flush, so without it a restore would write the *pre-edit* prose — silently
 //! dropping everything typed in the backup window since the last flush boundary,

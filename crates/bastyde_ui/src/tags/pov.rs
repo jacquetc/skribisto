@@ -45,10 +45,10 @@ pub struct PovChip {
 pub fn pov_chips(table: &[DiscoverableEntity], ids: &[u64]) -> Vec<PovChip> {
     ids.iter()
         .filter_map(|id| {
-            table
-                .iter()
-                .find(|e| e.id == *id)
-                .map(|e| PovChip { id: e.id, title: e.title.clone() })
+            table.iter().find(|e| e.id == *id).map(|e| PovChip {
+                id: e.id,
+                title: e.title.clone(),
+            })
         })
         .collect()
 }
@@ -82,9 +82,8 @@ pub fn pov_add_button(
     set: PinReference,
 ) -> impl Widget {
     PopoverButton::new(Button::new(tr!(pov_add())).variant(ButtonVariant::Plain)).content(
-        FocusScope::new(TraversalScopePolicy::Cycle).child(CastAddPopover::new(
-            candidates, already, owner_id, set,
-        )),
+        FocusScope::new(TraversalScopePolicy::Cycle)
+            .child(CastAddPopover::new(candidates, already, owner_id, set)),
     )
 }
 
@@ -93,7 +92,11 @@ mod tests {
     use super::*;
 
     fn entity(id: u64, title: &str) -> DiscoverableEntity {
-        DiscoverableEntity { id, title: title.to_string(), aliases: vec![] }
+        DiscoverableEntity {
+            id,
+            title: title.to_string(),
+            aliases: vec![],
+        }
     }
 
     #[test]
@@ -131,8 +134,10 @@ mod tests {
     #[test]
     fn chip_order_follows_the_stored_ids() {
         let table = vec![entity(1, "Devon"), entity(2, "Hap")];
-        let titles: Vec<String> =
-            pov_chips(&table, &[2, 1]).into_iter().map(|c| c.title).collect();
+        let titles: Vec<String> = pov_chips(&table, &[2, 1])
+            .into_iter()
+            .map(|c| c.title)
+            .collect();
         assert_eq!(titles, ["Hap", "Devon"]);
     }
 }

@@ -226,7 +226,7 @@ impl OverviewViewModel {
     }
 
     /// This container's uid and its live expand set — what `App` gathers at a door to
-    /// hand to [`TreeExpansionViewModel::capture`]. `None` before the container probe has
+    /// hand to [`crate::view_models::TreeExpansionViewModel::capture`]. `None` before the container probe has
     /// resolved, which is also when there is nothing worth remembering.
     pub fn expansion_snapshot(&self) -> Option<(Uuid, Vec<Uuid>)> {
         let container_uid = self.inner.container_probe.dto().map(|d| d.uid)?;

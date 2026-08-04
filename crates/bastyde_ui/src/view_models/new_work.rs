@@ -9,7 +9,7 @@
 //! actions (derive the target path, assemble the `NewWorkDto`, create the work)
 //! live here, not in the view's `build()`.
 //!
-//! Three presentation contexts, one behaviour split on [`Self::create`] — see
+//! Three presentation contexts, one behaviour split on [`NewWorkViewModel::create`] — see
 //! [`CreateTarget`]:
 //!   * **From an already-open project** (`NewWorkPanel::new` — File ▸ New
 //!     Work / Ctrl+N): creates the work in place, replacing this window's

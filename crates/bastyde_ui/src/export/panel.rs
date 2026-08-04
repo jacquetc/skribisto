@@ -259,7 +259,9 @@ impl Widget for ExportPanel {
                                 }
                             }
                         }
-                        Expand::horizontal { Divider }
+                        Expand::horizontal {
+                            Divider
+                        }
                         // Body: tree | options, both full height.
                         Expand::vertical {
                             HStack {
@@ -268,11 +270,17 @@ impl Widget for ExportPanel {
                                 Divider::vertical
                                 // Takes the rest of the width; the options column measures at
                                 // its own fixed width, so the surplus is space around it.
-                                Expand { child: options }
+                                Expand {
+                                    child: options
+                                }
                             }
                         }
-                        Expand::horizontal { Divider }
-                        Expand::horizontal { child: footer }
+                        Expand::horizontal {
+                            Divider
+                        }
+                        Expand::horizontal {
+                            child: footer
+                        }
                     }
                 }
             }
@@ -346,7 +354,9 @@ impl Widget for SelectionColumn {
         }
 
         let body = Padding::symmetric(16.0, 16.0).child(col);
-        let root = bati!(ctx => Expand::vertical { child: body });
+        let root = bati!(ctx => Expand::vertical {
+            child: body
+        });
         self.root_child = Some(root);
         vec![root]
     }
@@ -427,7 +437,9 @@ impl Widget for OptionsColumn {
             .child(Spacer::new());
 
         let body = Padding::symmetric(16.0, 16.0).child(col);
-        let root = bati!(ctx => Expand::vertical { child: body });
+        let root = bati!(ctx => Expand::vertical {
+            child: body
+        });
         self.root_child = Some(root);
         vec![root]
     }
@@ -511,8 +523,12 @@ impl Widget for ChoosePane {
             padding: 0.0
             VStack {
                 spacing: 0.0
-                Expand::vertical { child: tree }
-                Expand::horizontal { Divider }
+                Expand::vertical {
+                    child: tree
+                }
+                Expand::horizontal {
+                    Divider
+                }
                 FixedSize {
                     height: 34.0
                     child: footer_bar
@@ -695,7 +711,7 @@ mod tests {
         let custom = ExportViewModel::new(Rc::new(AppContext::new()), AppIds::new());
         custom.prepare(ExportScopeKind::Custom, None);
         assert_eq!(ExportPanel::new(custom).card_height.get(), CARD_H_CUSTOM);
-        assert!(CARD_H_QUICK < CARD_H_CUSTOM);
+        const { assert!(CARD_H_QUICK < CARD_H_CUSTOM) };
     }
 
     /// The options column takes the width the tree leaves rather than staying pinned at its

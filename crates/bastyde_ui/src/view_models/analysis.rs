@@ -36,8 +36,8 @@ use frontend::analysis_management::{AnalyzeBookDto, BookAnalysisResultDto};
 
 use crate::app_ids::AppIds;
 use crate::models::{RepetitionTreeKey, RepetitionTreeModel};
-use bastyde::data::{KeyedSelectionModel, SelectionMode};
 use crate::view_models::long_op::{TrackedOp, event_id, parse_payload};
+use bastyde::data::{KeyedSelectionModel, SelectionMode};
 
 /// Which analysis the panel is showing.
 ///
@@ -204,7 +204,10 @@ impl AnalysisViewModel {
         };
         match analysis_management_commands::analyze_book(
             &self.ctx,
-            &AnalyzeBookDto { work_id, scope_item_id: self.scope_item_id },
+            &AnalyzeBookDto {
+                work_id,
+                scope_item_id: self.scope_item_id,
+            },
         ) {
             Ok(op_id) => {
                 // The Work is captured now, not read back on completion: an in-place
@@ -298,8 +301,14 @@ mod tests {
 
     #[test]
     fn categories_map_to_bar_positions_and_stop_at_the_end() {
-        assert_eq!(AnalysisCategory::from_index(0), Some(AnalysisCategory::Shape));
-        assert_eq!(AnalysisCategory::from_index(3), Some(AnalysisCategory::Voice));
+        assert_eq!(
+            AnalysisCategory::from_index(0),
+            Some(AnalysisCategory::Shape)
+        );
+        assert_eq!(
+            AnalysisCategory::from_index(3),
+            Some(AnalysisCategory::Voice)
+        );
         assert_eq!(
             AnalysisCategory::from_index(4),
             None,
@@ -361,8 +370,10 @@ mod tests {
     fn an_event_for_another_operation_is_ignored() {
         let vm = vm(Signal::new(0));
         vm.state.set(AnalysisState::Running);
-        *vm.pending.borrow_mut() =
-            Some(TrackedOp::given("ours".into(), crate::view_models::long_op::CapturedWork::for_test(Some(1))));
+        *vm.pending.borrow_mut() = Some(TrackedOp::given(
+            "ours".into(),
+            crate::view_models::long_op::CapturedWork::for_test(Some(1)),
+        ));
 
         let foreign = Event {
             origin: Origin::LongOperation(frontend::common::event::LongOperationEvent::Cancelled),
@@ -381,8 +392,10 @@ mod tests {
     fn cancelling_returns_to_idle_rather_than_reporting_a_failure() {
         let vm = vm(Signal::new(0));
         vm.state.set(AnalysisState::Running);
-        *vm.pending.borrow_mut() =
-            Some(TrackedOp::given("op-1".into(), crate::view_models::long_op::CapturedWork::for_test(Some(1))));
+        *vm.pending.borrow_mut() = Some(TrackedOp::given(
+            "op-1".into(),
+            crate::view_models::long_op::CapturedWork::for_test(Some(1)),
+        ));
 
         let cancelled = Event {
             origin: Origin::LongOperation(frontend::common::event::LongOperationEvent::Cancelled),
@@ -391,15 +404,20 @@ mod tests {
         };
         vm.on_long_op_event(&cancelled);
         assert_eq!(vm.state().get(), AnalysisState::Idle);
-        assert!(vm.pending.borrow().is_none(), "the slot is released for the next run");
+        assert!(
+            vm.pending.borrow().is_none(),
+            "the slot is released for the next run"
+        );
     }
 
     #[test]
     fn a_failure_is_stated_rather_than_shown_as_an_empty_report() {
         let vm = vm(Signal::new(0));
         vm.state.set(AnalysisState::Running);
-        *vm.pending.borrow_mut() =
-            Some(TrackedOp::given("op-2".into(), crate::view_models::long_op::CapturedWork::for_test(Some(1))));
+        *vm.pending.borrow_mut() = Some(TrackedOp::given(
+            "op-2".into(),
+            crate::view_models::long_op::CapturedWork::for_test(Some(1)),
+        ));
 
         let failed = Event {
             origin: Origin::LongOperation(frontend::common::event::LongOperationEvent::Failed),

@@ -55,7 +55,12 @@ pub fn wide_chart(n: usize, height: f32, chart: impl Widget + 'static) -> impl W
     ScrollArea::new()
         .vertical_scroll_bar_policy(ScrollBarPolicy::AlwaysOff)
         .preferred_height(height)
-        .child(FixedSize::new().width(content_width(n)).height(height).child(chart))
+        .child(
+            FixedSize::new()
+                .width(content_width(n))
+                .height(height)
+                .child(chart),
+        )
 }
 
 /// The width `n` data points need. Never narrower than a comfortable viewport, so a short

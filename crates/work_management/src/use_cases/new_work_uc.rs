@@ -159,7 +159,6 @@ impl NewWorkUseCase {
             ..Default::default()
         })?;
 
-
         // Template subtree: binders → items → content (already model-valid).
         let mut binder_ids: Vec<EntityId> = Vec::new();
         let paratexts = ParatextPlan {

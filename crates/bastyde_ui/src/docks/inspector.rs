@@ -7,7 +7,8 @@
 //! folder) — a "Promote to `<target>`" button, the Chapter/ChapterScene inspectors'
 //! headline affordance. Rebuilds when the focused item changes.
 //!
-//! It reuses the shared [`promote_with_guard`] so the button behaves exactly like
+//! It reuses the shared
+//! [`promote_with_guard`](crate::docks::outline::promote_with_guard) so the button behaves exactly like
 //! the outline context menu (incl. the demote-empty MessageBox).
 
 use std::rc::Rc;

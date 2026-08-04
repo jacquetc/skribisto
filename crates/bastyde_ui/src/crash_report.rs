@@ -7,7 +7,7 @@
 //!
 //! The workspace release profile used to set `panic = "abort"`. That silently
 //! disabled [`std::panic::catch_unwind`] in
-//! [`common::long_operation`](common::long_operation), the boundary that turns a
+//! [`common::long_operation`], the boundary that turns a
 //! panic inside a long operation (save, export, analysis, import…) into a
 //! reported `Failed` instead of a dead process. Restoring `unwind` (see the
 //! comment on `[profile.release]` in the workspace `Cargo.toml`) is what
@@ -174,7 +174,7 @@ pub fn existing_reports(dir: &Path) -> Vec<PathBuf> {
             (when, p)
         })
         .collect();
-    found.sort_by(|a, b| b.0.cmp(&a.0));
+    found.sort_by_key(|b| std::cmp::Reverse(b.0));
     found.into_iter().map(|(_, p)| p).collect()
 }
 
@@ -227,8 +227,7 @@ mod tests {
         let _ = std::panic::take_hook();
         outcome.expect("the capture thread must not fail to join");
 
-        let text = captured.lock().unwrap_or_else(|e| e.into_inner()).clone();
-        text
+        captured.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     /// The report must name the thread, the location and the message — the three
@@ -275,7 +274,10 @@ mod tests {
         let a = file_name(4242);
         let b = file_name(4242);
         assert_ne!(a, b, "same-pid reports must still get distinct names");
-        assert!(a.starts_with("skribisto-crash-4242-"), "unexpected name: {a}");
+        assert!(
+            a.starts_with("skribisto-crash-4242-"),
+            "unexpected name: {a}"
+        );
         assert!(a.ends_with(".log"), "unexpected name: {a}");
     }
 

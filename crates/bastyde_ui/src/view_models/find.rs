@@ -128,7 +128,7 @@ impl FindViewModel {
     /// tab", which this view-model happens to own because it was the first
     /// feature to need it, and which it keeps correctly re-pointed across tab
     /// rebuilds. Other prose-editing commands read it through
-    /// [`EditorsViewModel::focused_prose_handle`] rather than re-plumbing the
+    /// [`crate::view_models::EditorsViewModel::focused_prose_handle`] rather than re-plumbing the
     /// same attachment through every `writing_column` call site.
     pub fn editor_handle(&self) -> Option<EditorHandle> {
         self.handle.borrow().clone()

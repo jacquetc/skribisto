@@ -350,7 +350,10 @@ mod pane_tests {
         // 1400 wide, 600 column → centred at 400, margin at 1000..1300. Fits, so
         // the page must not move at all.
         let p = place_pane(1400.0, 600.0, Some(300.0));
-        assert_eq!(p.column_x, 400.0, "the page should not lurch when a comment appears");
+        assert_eq!(
+            p.column_x, 400.0,
+            "the page should not lurch when a comment appears"
+        );
         assert_eq!(p.column_width, 600.0);
     }
 
@@ -360,7 +363,10 @@ mod pane_tests {
         // 100px off-screen. It should shift exactly 100px, not to the far left.
         let p = place_pane(1000.0, 600.0, Some(300.0));
         assert_eq!(p.column_x, 100.0);
-        assert_eq!(p.column_width, 600.0, "and it does not shrink while shifting can do the job");
+        assert_eq!(
+            p.column_width, 600.0,
+            "and it does not shrink while shifting can do the job"
+        );
         assert_eq!(p.margin_x, Some(700.0));
     }
 

@@ -277,8 +277,11 @@ mod imp {
                 anyhow::bail!("SingleBinderItem: no id");
             };
             let mut cast = self.dto().map(|x| x.references).unwrap_or_default();
-            let missing: Vec<u64> =
-                item_ids.iter().copied().filter(|t| !cast.contains(t)).collect();
+            let missing: Vec<u64> = item_ids
+                .iter()
+                .copied()
+                .filter(|t| !cast.contains(t))
+                .collect();
             let grouped = !missing.is_empty();
 
             if grouped {

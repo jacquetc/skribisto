@@ -218,7 +218,10 @@ mod tests {
     fn hdd_ranks_variety_the_same_way_mattr_does() {
         let dull = hdd(&cycle(5, 2_000)).unwrap();
         let varied = hdd(&cycle(200, 2_000)).unwrap();
-        assert!(varied > dull, "HD-D must agree on direction: {varied} vs {dull}");
+        assert!(
+            varied > dull,
+            "HD-D must agree on direction: {varied} vs {dull}"
+        );
     }
 
     #[test]
@@ -232,7 +235,10 @@ mod tests {
         let d = measure(&cycle(20, 120));
         assert!(!d.reliable, "120 words cannot support a diversity claim");
         assert_eq!(d.words, 120);
-        assert!(d.mattr.is_some(), "the figure still exists; the caller decides to show it");
+        assert!(
+            d.mattr.is_some(),
+            "the figure still exists; the caller decides to show it"
+        );
     }
 
     #[test]

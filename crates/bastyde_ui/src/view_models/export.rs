@@ -46,7 +46,7 @@ use frontend::common::event::Event;
 use skrib_format::{BinderWithItems, Gathered, ItemWithContents};
 use skribisto_compiler::{HeadingScheme, LineSpacing, Preset, SceneBreak, builtin_presets};
 use skribisto_model::compile::{
-    ItemMeta, ScopeKind, StreamLevel, enclosing_head, primary_scope, resolve_scope,
+    ScopeKind, StreamLevel, enclosing_head, primary_scope, resolve_scope,
 };
 
 use super::long_op::{CapturedWork, TrackedOp, event_id, parse_payload, payload_id};
@@ -55,7 +55,7 @@ use crate::export::choose::ChooseModel;
 use crate::toast_scope::ToastWorkExt;
 
 /// Update-in-place key for the single toast an export drives (loading → progress →
-/// success / cancelled / error) — folded through [`work_scoped_toast_id`] with
+/// success / cancelled / error) — folded through [`crate::toast_scope::work_scoped_toast_id`] with
 /// [`ExportViewModel::active_work_id`] at every use, never bare: see that
 /// method's doc (and `long_op::TrackedOp`'s) for why a bare static id would
 /// let a second Work's export silently collide with this one's still-in-flight
@@ -173,7 +173,7 @@ pub struct ExportViewModel {
     /// (opened from Choose… with nothing focused, so only Custom is offered).
     quick_scope: Signal<Option<ExportScopeKind>>,
     /// The scope segmented control's selection: 0 = the quick scope, 1 = Custom selection.
-    /// An effect maps a change here onto [`scope`] via [`apply_segment`].
+    /// An effect maps a change here onto [`ExportViewModel::scope`] via [`ExportViewModel::apply_segment`].
     segment_index: Signal<usize>,
     /// The focused item the quick scope resolves from (the backend re-resolves the extent
     /// against its frozen snapshot from this anchor).
@@ -520,7 +520,7 @@ impl ExportViewModel {
     }
 
     /// The localized name of the currently-chosen output format — the preview header's
-    /// "compiled · <format> · …" subtitle (rebuilt on a `format_index` change).
+    /// "compiled · `<format>` · …" subtitle (rebuilt on a `format_index` change).
     pub fn current_format_label(&self) -> bastyde::i18n::LocalizedString {
         format_label(&self.selected_format())
     }

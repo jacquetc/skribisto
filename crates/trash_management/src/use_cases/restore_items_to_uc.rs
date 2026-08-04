@@ -116,7 +116,11 @@ impl RestoreItemsToUseCase {
         let dest_order =
             uow.get_binder_relationship(&dest_binder_id, &BinderRelationshipField::BinderItems)?;
         let mut dest_indent: HashMap<EntityId, i64> = HashMap::new();
-        for it in uow.get_binder_item_multi(&dest_order)?.into_iter().flatten() {
+        for it in uow
+            .get_binder_item_multi(&dest_order)?
+            .into_iter()
+            .flatten()
+        {
             dest_indent.insert(it.id, it.indent);
         }
 
@@ -271,7 +275,10 @@ impl RestoreItemsToUseCase {
         }
 
         // 2) The moving block (all subtrees, in plan order).
-        let block: Vec<EntityId> = plan.iter().flat_map(|p| p.subtree.iter().copied()).collect();
+        let block: Vec<EntityId> = plan
+            .iter()
+            .flat_map(|p| p.subtree.iter().copied())
+            .collect();
         let moving_set = &all_moving;
 
         // 3) Remove the moving ids from every SOURCE binder (except the
@@ -281,10 +288,11 @@ impl RestoreItemsToUseCase {
             if src == dest_binder_id {
                 continue;
             }
-            let order =
-                uow.get_binder_relationship(&src, &BinderRelationshipField::BinderItems)?;
-            let new_order: Vec<EntityId> =
-                order.into_iter().filter(|id| !moving_set.contains(id)).collect();
+            let order = uow.get_binder_relationship(&src, &BinderRelationshipField::BinderItems)?;
+            let new_order: Vec<EntityId> = order
+                .into_iter()
+                .filter(|id| !moving_set.contains(id))
+                .collect();
             uow.set_binder_relationship(&src, &BinderRelationshipField::BinderItems, &new_order)?;
         }
 
@@ -304,7 +312,8 @@ impl RestoreItemsToUseCase {
         // 5) Post-pass sweep: consume any TrashInfo whose item became active or
         // vanished; keep partially-peeled roots and every whole-binder entry.
         let mut consumed: HashSet<EntityId> = HashSet::new();
-        let trash_infos = uow.get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?;
+        let trash_infos =
+            uow.get_work_relationship(&work_id, &WorkRelationshipField::TrashInfos)?;
         for info_id in &trash_infos {
             if uow
                 .get_trash_info_relationship(info_id, &TrashInfoRelationshipField::TrashedBinder)?

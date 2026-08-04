@@ -35,7 +35,7 @@ use crate::toast_scope::ToastWorkExt;
 use super::long_op::CapturedWork;
 
 /// Toast id base, so a burst of delete failures replaces rather than stacks —
-/// folded through [`work_scoped_toast_id`] with `self.work_id`/`me.work_id` at
+/// folded through [`crate::toast_scope::work_scoped_toast_id`] with `self.work_id`/`me.work_id` at
 /// every use, never bare: two windows browsing two different Works' backups
 /// must not collide in the shared `ToastRegistry`.
 const DELETE_TOAST_ID: &str = "backups.delete";

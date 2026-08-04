@@ -82,7 +82,7 @@ fn group_thousands(n: usize, lang: &str, style: DigitStyle) -> String {
     let plain = n.to_string();
     let mut grouped = String::with_capacity(plain.len() + plain.len() / 3);
     for (i, ch) in plain.chars().enumerate() {
-        if i > 0 && (plain.len() - i) % 3 == 0 {
+        if i > 0 && (plain.len() - i).is_multiple_of(3) {
             grouped.push_str(sep);
         }
         grouped.push(ch);

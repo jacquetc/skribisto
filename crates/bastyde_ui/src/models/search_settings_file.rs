@@ -24,7 +24,7 @@
 //! hosts every open project window, sharing this same `<config_dir>/search.toml`.
 //! `SettingsFile`'s locked read-modify-write is the only write mode, so two
 //! windows (or a rare second process) persisting different projects'
-//! preferences never clobber each other; [`as_reloadable`] lets the app's
+//! preferences never clobber each other; [`as_reloadable`](SearchSettingsService::as_reloadable) lets the app's
 //! `SettingsWatcher` refresh this handle when a peer writes.
 
 use std::rc::Rc;

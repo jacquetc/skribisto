@@ -62,8 +62,8 @@ impl WindowRole {
         if !self.owns_desk() {
             return false;
         }
-        !ids.work_id
+        ids.work_id
             .get()
-            .is_some_and(|work_id| registry.window_count_for(work_id) > 1)
+            .is_none_or(|work_id| registry.window_count_for(work_id) <= 1)
     }
 }

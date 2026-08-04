@@ -458,6 +458,7 @@ impl RunSearchUseCase {
     }
 
     /// The searchable fields of one item, filtered by the requested scopes.
+    #[allow(clippy::too_many_arguments)]
     fn item_fields(
         &self,
         uow: &mut Box<dyn RunSearchUnitOfWorkTrait>,

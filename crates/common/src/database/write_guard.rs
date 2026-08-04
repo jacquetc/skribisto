@@ -28,7 +28,7 @@
 //! referencing it exists.
 //!
 //! **Diagnoses contention, not just refuses it.** Each slot records the holding thread
-//! ([`ThreadId`](std::thread::ThreadId) + name) and the `site` string passed to
+//! ([`ThreadId`] + name) and the `site` string passed to
 //! `acquire`, so a collision names both parties. Same-thread re-acquisition — a
 //! `CommandUnitOfWork` whose `begin_transaction` ran again before its previous guard was
 //! cleared — is reported distinctly ("re-entrant/retried, not a second writer") from

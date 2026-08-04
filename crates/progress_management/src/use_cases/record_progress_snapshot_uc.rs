@@ -81,8 +81,10 @@ impl RecordProgressSnapshotUseCase {
             .find(|wi| wi.work == Some(work_id))
             .ok_or_else(|| anyhow!("work {work_id} is not open"))?;
 
-        let existing_ids =
-            uow.get_work_info_relationship(&work_info.id, &WorkInfoRelationshipField::ProgressSnapshots)?;
+        let existing_ids = uow.get_work_info_relationship(
+            &work_info.id,
+            &WorkInfoRelationshipField::ProgressSnapshots,
+        )?;
         let existing: Vec<ProgressSnapshot> = uow
             .get_progress_snapshot_multi(&existing_ids)?
             .into_iter()
@@ -154,6 +156,9 @@ mod tests {
         assert_eq!(truncate_to_day(morning), truncate_to_day(evening));
         assert_ne!(truncate_to_day(morning), truncate_to_day(next_day));
         // The key is midnight UTC.
-        assert_eq!(truncate_to_day(evening).to_rfc3339(), "2020-05-01T00:00:00+00:00");
+        assert_eq!(
+            truncate_to_day(evening).to_rfc3339(),
+            "2020-05-01T00:00:00+00:00"
+        );
     }
 }

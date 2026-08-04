@@ -17,7 +17,7 @@
 //!
 //! A tab owns **no documents of its own**: its live editing state (main text +
 //! synopsis + titles, the dirty flag) lives in a
-//! shared [`OpenDoc`] held by the [`OpenDocsStore`](crate::models::OpenDocsStore),
+//! shared [`OpenDoc`] held by the [`OpenDocsStore`],
 //! keyed by item id. A `ContentTab` is a thin **view** that references that
 //! `Rc<OpenDoc>` plus its own per-tab presentation state (segment, column width,
 //! typography). Opening the same item in two panes yields two `ContentTab`s over
@@ -55,8 +55,8 @@ pub(crate) mod corkboard;
 mod folder_book;
 mod folder_chapter_scene;
 mod folder_none;
-mod folder_paratext;
 mod folder_note;
+mod folder_paratext;
 mod folder_part;
 mod item_book_begin;
 mod item_book_end;
@@ -130,7 +130,8 @@ pub struct ContentTab {
     /// overwrite the first.
     analysis: Option<crate::view_models::AnalysisViewModel>,
     /// The Corkboard view-model — `Some` only for a folder container (Chapter /
-    /// Part / Book), gated on the same [`StreamLevel::for_container`] as `stream`.
+    /// Part / Book), gated on the same
+    /// [`StreamLevel::for_container`](crate::models::StreamLevel::for_container) as `stream`.
     corkboard: Option<crate::view_models::CorkboardViewModel>,
     /// The Overview view-model — `Some` for every container that offers the segment,
     /// gated on [`skribisto_model::overview_capable`]. That is a **wider** gate than the
@@ -446,7 +447,8 @@ pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
 }
 
 /// The permanent "this item is in the Trash" warning banner shown above a trashed
-/// item's editor. Its Restore button fires [`AppIntent::RestoreTrashedItem`], which
+/// item's editor. Its Restore button fires
+/// [`AppIntent::RestoreTrashedItem`](crate::intents::AppIntent::RestoreTrashedItem), which
 /// the trash view-model turns into the destination picker. No `on_dismiss` ⇒ a
 /// permanent reminder (the [`crate::backup::banner`] technique).
 fn trash_banner(item_id: u64) -> impl Widget {
@@ -678,9 +680,7 @@ impl ContentTab {
             view_state_ports: Rc::new(crate::view_models::ViewStatePorts::default()),
             segment,
             column_width,
-            epigraph_expanded: Signal::new(
-                open_doc_epigraph_seed,
-            ),
+            epigraph_expanded: Signal::new(open_doc_epigraph_seed),
             show_synopsis,
             synopsis_placement,
             synopsis_side_width,

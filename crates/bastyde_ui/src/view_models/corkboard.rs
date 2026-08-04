@@ -546,7 +546,7 @@ impl CorkboardViewModel {
 
     /// Split the item at `caret` in its **synopsis**: the synopsis text before the
     /// caret stays on the source and the rest moves to a new scene; the prose stays
-    /// whole on the source. Mirrors [`StreamViewModel::split_row`] for the synopsis
+    /// whole on the source. Mirrors [`crate::view_models::StreamViewModel::split_row`] for the synopsis
     /// flavour, over the same shared `OpenDoc`.
     pub fn split_synopsis(&self, ctx: &mut EventContext, id: u64, caret: usize) {
         let Some(doc) = self.synopsis_doc_for(id) else {

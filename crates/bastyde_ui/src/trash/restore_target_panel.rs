@@ -255,9 +255,15 @@ impl Widget for TrashRestoreTargetPanel {
                             }
                         }
                     }
-                    Expand::horizontal { Divider }
-                    Expand::vertical { child: body }
-                    Expand::horizontal { Divider }
+                    Expand::horizontal {
+                        Divider
+                    }
+                    Expand::vertical {
+                        child: body
+                    }
+                    Expand::horizontal {
+                        Divider
+                    }
                     Expand::horizontal {
                         FixedSize {
                             height: 52.0

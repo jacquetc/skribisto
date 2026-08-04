@@ -833,8 +833,7 @@ fn main() {
                 .ok()
         })
         .unwrap_or_else(models::ParatextPresetsService::in_memory_default);
-    let paratext_presets =
-        view_models::ParatextPresetsViewModel::new(paratext_presets_service);
+    let paratext_presets = view_models::ParatextPresetsViewModel::new(paratext_presets_service);
     // The distraction-free theme library, on the same footing and for the same
     // reasons (a theme outlives any project, and the settings pane and the
     // mode's own picker must read one instance).
@@ -1545,7 +1544,7 @@ mod tests {
         let third = windows::attached_window_id_for(&known_path, 7);
         // Same shape, unknown project — must still be pruned: the suffix is not
         // a licence to keep anything, only to trace a row back to its project.
-        let orphan_second = format!("work-0000000000000000-w2");
+        let orphan_second = "work-0000000000000000-w2".to_string();
 
         let sample = |label: &str| PerWindowState {
             label: label.to_string(),

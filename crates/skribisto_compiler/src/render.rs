@@ -600,7 +600,7 @@ fn flatten<'a>(req: &'a RenderRequest) -> Vec<Row<'a>> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// The `direction` attribute pair for a row, or `None` for LTR. The single
-/// encoding of the key — [`dir_attr`] and every attribute set below build from
+/// encoding of the key — [`dir_pair`] and every attribute set below build from
 /// it, so the spelling lives in one place.
 fn dir_pair(rtl: bool) -> Option<&'static str> {
     rtl.then_some("direction=rtl")

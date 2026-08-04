@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Reactive list of the open project's [`SearchResult`] rows — the data behind
+//! Reactive list of the open project's [`SearchResult`](frontend::common::entities::SearchResult) rows — the data behind
 //! the search dock's result list.
 //!
 //! One row per matching **field** (a scene's body, its synopsis, an item's title

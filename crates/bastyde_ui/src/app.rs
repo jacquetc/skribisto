@@ -92,10 +92,19 @@ use crate::view_models::{
     unsaved_decision,
 };
 
+/// Narrowest an editor tab may be squeezed, in dp — well above bastyde's 96 dp
+/// default. A writing project's tabs are near-identical by design ("Chapter 11",
+/// "Chapter 12", "Chapter 13"), and the default truncates every one of them to
+/// the same useless "Chap…" as soon as a handful are open: the strip stops
+/// naming anything, which is the one job it has. This fits a two-word title
+/// before the ellipsis; past it the bar scrolls (arrows + the overflow
+/// dropdown) rather than squeezing further.
+const MIN_EDITOR_TAB_WIDTH: f32 = 160.0;
+
 /// Build one editor pane's `TabWidget`: dynamic tabs, cross-pane migration
 /// (`accept_external_tabs` + `on_tab_received` dedup + `on_transfer_out`
 /// collapse), close, and `trailing` in the tab-strip trailing slot. Shared by
-/// both panes so their chrome can't drift.
+/// both panes — main and side — so their chrome can't drift.
 fn build_pane_tabs(
     editors: &EditorsViewModel,
     side: Side,
@@ -115,6 +124,7 @@ fn build_pane_tabs(
         .accept_external_tabs(true)
         .bar_visibility(bar_visibility)
         .compact_bar()
+        .min_tab_width(MIN_EDITOR_TAB_WIDTH)
         .selected_tab_background(SurfaceRole::Content)
         .hover_tab_background(Hover)
         .tab_dividers()
@@ -154,7 +164,7 @@ fn drain_dropped(mut payload: DragPayload, mut open: impl FnMut(u64, &str)) -> b
 /// that Work via [`close_work_and_return_to_launcher`] — which opens the
 /// Launcher only when no other Work still has an open window. Ctrl+Q / File ▸
 /// Quit never calls `close_window()` at all — `app.quit`'s action runs
-/// through [`QuitSequencer`] and terminates the process. Both outcomes share
+/// through [`QuitSequencer`](crate::view_models::QuitSequencer) and terminates the process. Both outcomes share
 /// the exact same branch order (`unsaved_decision`/`UnsavedDecision`); only
 /// the terminal action differs.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
@@ -167,7 +177,7 @@ pub enum PendingExit {
     ReturnToLauncher,
     /// Release the open project and terminate the process entirely, once
     /// saved (and, if configured, once the on-close backup finishes) —
-    /// [`QuitSequencer`]'s continuation, run from
+    /// [`QuitSequencer`](crate::view_models::QuitSequencer)'s continuation, run from
     /// `BackupSchedulerViewModel::do_close`. Unlike `ReturnToLauncher` this
     /// does NOT open a fresh Launcher window: the project window force-closes
     /// with nothing reopened, so `WindowManager::is_empty()` trips and the
@@ -360,7 +370,7 @@ pub(crate) fn may_switch_project_in_place(
 }
 
 /// Persist the open project's workspace layout (open tabs + dock arrangement)
-/// through `workspace_layout` — the **calling window's own** [`WorkspaceLayoutViewModel`]
+/// through `workspace_layout` — the **calling window's own** [`WorkspaceLayoutViewModel`](crate::view_models::WorkspaceLayoutViewModel)
 /// handle, passed in explicitly rather than resolved via
 /// `ctx.app_state::<WorkspaceLayoutViewModel>()` (multi-Work migration: that slot is
 /// one process-wide registration fixed at builder time from the *first* window's

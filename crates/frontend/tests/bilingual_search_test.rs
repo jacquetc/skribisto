@@ -47,7 +47,11 @@ fn loaded_ctx() -> AppContext {
 }
 
 fn search(ctx: &AppContext, query: &str) -> RunSearchDto {
-    let work_id = work_commands::get_all_work(ctx).expect("get_all_work").pop().unwrap().id;
+    let work_id = work_commands::get_all_work(ctx)
+        .expect("get_all_work")
+        .pop()
+        .unwrap()
+        .id;
     RunSearchDto {
         work_id,
         query: query.to_string(),
@@ -208,7 +212,11 @@ fn one_rename_uppercases_each_scene_under_its_own_rules() {
         &ctx,
         None,
         &ReplaceInProjectDto {
-            work_id: work_commands::get_all_work(&ctx).expect("get_all_work").pop().unwrap().id,
+            work_id: work_commands::get_all_work(&ctx)
+                .expect("get_all_work")
+                .pop()
+                .unwrap()
+                .id,
             replacement: "irene".to_string(),
             preserve_case: true,
             excluded_result_ids: vec![],

@@ -7,11 +7,11 @@
 //! session that watches for a fired trigger.
 //!
 //! It owns no state of its own beyond the Layer-A handles it composes: the
-//! reactive [`TextReplacementRuleListModel`](crate::models::TextReplacementRuleListModel)
+//! reactive [`TextReplacementRuleListModel`]
 //! (the lexicon + its collection writes), the shared
-//! [`SingleWork`](crate::singles::SingleWork) handle (the per-project master
+//! [`SingleWork`] handle (the per-project master
 //! switch, `Work.custom_replacement_rules_enabled`), and
-//! [`AppIds`](crate::app_ids::AppIds) (the owner `Work` + undo stack every
+//! [`AppIds`] (the owner `Work` + undo stack every
 //! mutation needs).
 //!
 //! Plain Rust, no `#[cfg]`: the real/mock seam lives in the model below it, so

@@ -236,13 +236,20 @@ mod tests {
         (
             id,
             title.to_string(),
-            words.iter().map(|(w, c, g)| (w.to_string(), *c, *g)).collect(),
+            words
+                .iter()
+                .map(|(w, c, g)| (w.to_string(), *c, *g))
+                .collect(),
         )
     }
 
     #[test]
     fn a_group_becomes_a_parent_at_depth_zero_with_its_words_beneath() {
-        let rows = rows_of(&[group(7, "The lamp", &[("glanced", 3, 12), ("suddenly", 2, 40)])]);
+        let rows = rows_of(&[group(
+            7,
+            "The lamp",
+            &[("glanced", 3, 12), ("suddenly", 2, 40)],
+        )]);
         assert_eq!(rows.len(), 3);
         assert_eq!(rows[0].depth, 0);
         assert_eq!(rows[1].depth, 1);

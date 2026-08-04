@@ -116,8 +116,9 @@ fn load_legacy_fixture_populates_store() {
     // invisibly, and nothing verified they survived the trip. The fixture holds three
     // tags, all attached to one tree item.
     let work_id = works[0].id;
-    let work_tag_ids = work_commands::get_work_relationship(&ctx, &work_id, &WorkRelationshipField::Tags)
-        .expect("Work Tags relationship");
+    let work_tag_ids =
+        work_commands::get_work_relationship(&ctx, &work_id, &WorkRelationshipField::Tags)
+            .expect("Work Tags relationship");
     let mut tags: Vec<_> = binder_tag_commands::get_binder_tag_multi(&ctx, &work_tag_ids)
         .expect("get_binder_tag_multi")
         .into_iter()

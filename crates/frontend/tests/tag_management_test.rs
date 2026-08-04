@@ -180,7 +180,11 @@ fn deleting_a_tag_in_use_leaves_no_dangling_junction() {
     binder_tag_commands::remove_binder_tag_multi(&fx.ctx, Some(stack), &[doomed])
         .expect("remove tag");
 
-    assert_eq!(item_tags(&fx, a), vec![keeper], "the other tag is untouched");
+    assert_eq!(
+        item_tags(&fx, a),
+        vec![keeper],
+        "the other tag is untouched"
+    );
     assert!(item_tags(&fx, b).is_empty());
     assert!(
         !work_tags(&fx).contains(&doomed),
@@ -301,7 +305,11 @@ fn items_carrying_a_tag_are_discoverable_before_deleting_it() {
     assert!(!carriers.contains(&untagged));
 }
 
-fn import(fx: &Fixture, stack: u64, rows: &[(&str, &str, &str, bool)]) -> tag_management::ImportTagsResultDto {
+fn import(
+    fx: &Fixture,
+    stack: u64,
+    rows: &[(&str, &str, &str, bool)],
+) -> tag_management::ImportTagsResultDto {
     tag_management_commands::import_tags(
         &fx.ctx,
         Some(stack),

@@ -38,9 +38,9 @@
 //! change-notification path. Now there is one: this handle is registered
 //! into the app's shared `bastyde::settings::SettingsRegistry` (see
 //! `App::build` in `app.rs`), and the app's `SettingsWatcher` calls
-//! [`Reloadable::reload_from_disk`](bastyde::settings::Reloadable::reload_from_disk)
+//! [`Reloadable::reload_from_disk`]
 //! on it the moment a peer's write lands on disk — no polling, and reads in
-//! between two writes are just plain in-memory reads. [`as_reloadable`]
+//! between two writes are just plain in-memory reads. [`as_reloadable`](BackupSettingsService::as_reloadable)
 //! exposes the hook that registration needs. Tests that stand in for two
 //! processes (no live app, no watcher) call `as_reloadable().reload_from_disk()`
 //! directly to simulate the watcher firing.
@@ -54,7 +54,7 @@ use bastyde::settings::{
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-/// Debounce parameter accepted by [`open_with_delay`]/[`open_at`] for call-site
+/// Debounce parameter accepted by [`open_with_delay`](BackupSettingsService::open_with_delay)/[`open_at`](BackupSettingsService::open_at) for call-site
 /// stability only. `SettingsFile::load`'s writes are always a synchronous
 /// locked read-modify-write now (see the module docs) — there is no debounce
 /// left to configure, exactly like `bastyde-settings`' own `WindowStateService`.
@@ -579,7 +579,10 @@ mod tests {
         let mut policy = svc.general();
         policy.on_open = true;
         svc.set_general(policy).unwrap();
-        assert!(svc.general().on_open, "the fallback handle is really writable");
+        assert!(
+            svc.general().on_open,
+            "the fallback handle is really writable"
+        );
     }
 
     #[test]

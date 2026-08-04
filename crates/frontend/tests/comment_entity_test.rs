@@ -135,12 +135,8 @@ fn mk_comment(fx: &Fixture, stack: u64, body: &str) -> EntityId {
 }
 
 fn work_comments(fx: &Fixture) -> Vec<EntityId> {
-    work_commands::get_work_relationship(
-        &fx.ctx,
-        &fx.work,
-        &WorkRelationshipField::Comments,
-    )
-    .expect("read work comments")
+    work_commands::get_work_relationship(&fx.ctx, &fx.work, &WorkRelationshipField::Comments)
+        .expect("read work comments")
 }
 
 #[test]

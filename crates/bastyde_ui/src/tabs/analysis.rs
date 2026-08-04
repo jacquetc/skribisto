@@ -60,7 +60,11 @@ pub fn analysis_pane(tab: &ContentTab) -> Box<dyn Widget> {
         // renders nothing is better than one that panics if the gate ever widens.
         return Box::new(VStack::new());
     };
-    Box::new(AnalysisPane { vm: vm.clone(), backdrop: tab.backdrop_role(), root: None })
+    Box::new(AnalysisPane {
+        vm: vm.clone(),
+        backdrop: tab.backdrop_role(),
+        root: None,
+    })
 }
 
 struct AnalysisPane {
@@ -81,7 +85,9 @@ impl Widget for AnalysisPane {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         use bastyde::core::BindingLevel;
 
-        self.vm.state().bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        self.vm
+            .state()
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
         // Shape reads this while building its charts, so flipping it has to rebuild the
         // pane — the whole result is already in hand, nothing is re-analysed.
         self.vm.ignore_empty().bind_to(
@@ -102,9 +108,10 @@ impl Widget for AnalysisPane {
         use frontend::common::event::LongOperationEvent as L;
         for event in [L::Completed, L::Failed, L::Cancelled] {
             let vm = self.vm.clone();
-            ctx.subscribe_event(frontend::common::event::Origin::LongOperation(event), move |e| {
-                vm.on_long_op_event(e)
-            });
+            ctx.subscribe_event(
+                frontend::common::event::Origin::LongOperation(event),
+                move |e| vm.on_long_op_event(e),
+            );
         }
 
         let id = ctx.add_boxed(self.body());
@@ -232,11 +239,15 @@ fn scrolled(inner: impl Widget + 'static) -> Box<dyn Widget> {
 }
 
 fn note(text: impl Into<LocalizedString>) -> impl Widget {
-    TextWidget::new(text).style(TextStyleRole::Small).color(TextRole::Secondary)
+    TextWidget::new(text)
+        .style(TextStyleRole::Small)
+        .color(TextRole::Secondary)
 }
 
 fn heading(text: impl Into<LocalizedString>) -> impl Widget {
-    TextWidget::new(text).style(TextStyleRole::Tiny).color(TextRole::Secondary)
+    TextWidget::new(text)
+        .style(TextStyleRole::Tiny)
+        .color(TextRole::Secondary)
 }
 
 /// The leading paragraph of a section: what the reader is looking at, in plain language.
@@ -343,7 +354,13 @@ fn shape_view(dto: &BookAnalysisResultDto, ignore_empty: Signal<bool>) -> impl W
     let mut points: Vec<ChartDatum<String>> = Vec::new();
     let mut dialogue_points: Vec<ChartDatum<String>> = Vec::new();
     for s in &scenes {
-        let SceneAnalysis::Measured { title, words, dialogue, .. } = s else {
+        let SceneAnalysis::Measured {
+            title,
+            words,
+            dialogue,
+            ..
+        } = s
+        else {
             continue;
         };
         // One colour for the whole series, and the median drawn as a line below. The
@@ -355,12 +372,15 @@ fn shape_view(dto: &BookAnalysisResultDto, ignore_empty: Signal<bool>) -> impl W
         // threshold. The line says the same thing and cannot disappear into the page.
         points.push(ChartDatum::new(title.clone(), *words as f32).with_color(SurfaceRole::Accent));
         if let Some(d) = dialogue {
-            dialogue_points
-                .push(ChartDatum::new(title.clone(), (*d * 100.0) as f32).with_color(SurfaceRole::Accent));
+            dialogue_points.push(
+                ChartDatum::new(title.clone(), (*d * 100.0) as f32).with_color(SurfaceRole::Accent),
+            );
         }
     }
 
-    let mut col = VStack::new().spacing(10.0).child(empty_toggle(ignore_empty));
+    let mut col = VStack::new()
+        .spacing(10.0)
+        .child(empty_toggle(ignore_empty));
     if hiding && hidden > 0 {
         col = col.child(note(tr!(analysis_empty_hidden(count = hidden as i64))));
     }
@@ -382,22 +402,28 @@ fn shape_view(dto: &BookAnalysisResultDto, ignore_empty: Signal<bool>) -> impl W
                 tr!(analysis_median_line(count = median.round() as i64)),
             )),
         ))
-        .child(note(tr!(analysis_median_words(count = median.round() as i64))));
+        .child(note(tr!(analysis_median_words(
+            count = median.round() as i64
+        ))));
 
     if dialogue_points.is_empty() {
         // Not "0% dialogue" — the language has no curated convention, which is a different
         // and honest statement.
-        col = col.child(heading(tr!(analysis_dialogue()))).child(note(tr!(analysis_dialogue_unsupported())));
+        col = col
+            .child(heading(tr!(analysis_dialogue())))
+            .child(note(tr!(analysis_dialogue_unsupported())));
     } else {
-        col = col.child(heading(tr!(analysis_dialogue()))).child(wide_chart(
-            dialogue_points.len(),
-            STRIP_HEIGHT,
-            BarChart::new(ChartModel::from_series_vec(vec![
-                ChartSeries::new(tr!(analysis_dialogue()).resolve_now()).data(dialogue_points),
-            ]))
-            .grid(true)
-            .legend(false),
-        ));
+        col = col
+            .child(heading(tr!(analysis_dialogue())))
+            .child(wide_chart(
+                dialogue_points.len(),
+                STRIP_HEIGHT,
+                BarChart::new(ChartModel::from_series_vec(vec![
+                    ChartSeries::new(tr!(analysis_dialogue()).resolve_now()).data(dialogue_points),
+                ]))
+                .grid(true)
+                .legend(false),
+            ));
     }
     col
 }
@@ -422,7 +448,13 @@ impl SceneIndex {
         let mut by_id = std::collections::HashMap::new();
         let mut order = Vec::new();
         for s in scenes_of(dto) {
-            if let SceneAnalysis::Measured { item_id, title, chapter_title, .. } = s {
+            if let SceneAnalysis::Measured {
+                item_id,
+                title,
+                chapter_title,
+                ..
+            } = s
+            {
                 by_id.insert(*item_id, (title.clone(), chapter_title.clone()));
                 order.push(*item_id);
             }
@@ -431,7 +463,10 @@ impl SceneIndex {
     }
 
     fn title(&self, id: u64) -> String {
-        self.by_id.get(&id).map(|(t, _)| t.clone()).unwrap_or_default()
+        self.by_id
+            .get(&id)
+            .map(|(t, _)| t.clone())
+            .unwrap_or_default()
     }
 
     /// The chapter heading to draw above a scene, or `None` when it would say nothing.
@@ -445,14 +480,14 @@ impl SceneIndex {
 }
 
 /// Findings for one scene, in the book's own order.
-fn grouped_by_scene<T: Clone>(
-    index: &SceneIndex,
-    rows: &[(u64, T)],
-) -> Vec<(u64, Vec<T>)> {
+fn grouped_by_scene<T: Clone>(index: &SceneIndex, rows: &[(u64, T)]) -> Vec<(u64, Vec<T>)> {
     let mut out: Vec<(u64, Vec<T>)> = Vec::new();
     for id in &index.order {
-        let mine: Vec<T> =
-            rows.iter().filter(|(owner, _)| owner == id).map(|(_, r)| r.clone()).collect();
+        let mine: Vec<T> = rows
+            .iter()
+            .filter(|(owner, _)| owner == id)
+            .map(|(_, r)| r.clone())
+            .collect();
         if !mine.is_empty() {
             out.push((*id, mine));
         }
@@ -477,9 +512,13 @@ fn repetition_view(vm: &AnalysisViewModel, dto: &BookAnalysisResultDto) -> impl 
         EchoRows::Found(rows) => rows
             .iter()
             .filter_map(|r| match r {
-                EchoRow::Found { item_id, word, occurrences, closest_gap, .. } => {
-                    Some((*item_id, (word.clone(), *occurrences, *closest_gap)))
-                }
+                EchoRow::Found {
+                    item_id,
+                    word,
+                    occurrences,
+                    closest_gap,
+                    ..
+                } => Some((*item_id, (word.clone(), *occurrences, *closest_gap))),
                 EchoRow::Empty => None,
             })
             .collect(),
@@ -535,7 +574,12 @@ fn repetition_view(vm: &AnalysisViewModel, dto: &BookAnalysisResultDto) -> impl 
                                 .color(TextRole::Secondary),
                         )
                         .tooltip(tr!(analysis_repetition_text_tooltip(count = *words as i64))),
-                    RepetitionNode::Word { word, occurrences, closest_gap, .. } => item
+                    RepetitionNode::Word {
+                        word,
+                        occurrences,
+                        closest_gap,
+                        ..
+                    } => item
                         .trailing_slot(numbers(*occurrences, *closest_gap))
                         .tooltip(tr!(analysis_repetition_word_tooltip(
                             word = word.clone(),
@@ -560,7 +604,10 @@ fn repetition_view(vm: &AnalysisViewModel, dto: &BookAnalysisResultDto) -> impl 
                 && let Some(node) = activate.node_of(&key)
                 && let Some(title) = activate.title_of(node.item_id())
             {
-                ctx.send_intent(AppIntent::OpenItem { item_id: node.item_id(), title });
+                ctx.send_intent(AppIntent::OpenItem {
+                    item_id: node.item_id(),
+                    title,
+                });
             }
         });
         // The tree sits inside the pane's own vertical `ScrollArea`, which proposes an
@@ -585,7 +632,13 @@ fn repetition_view(vm: &AnalysisViewModel, dto: &BookAnalysisResultDto) -> impl 
     // A near-duplicate pair belongs to two scenes at once, so it is not grouped under
     // either — it already names both, which is the context this finding needs.
     for row in duplicates.iter().take(MAX_ROWS) {
-        if let DuplicateRow::Found { a_title, b_title, containment, .. } = row {
+        if let DuplicateRow::Found {
+            a_title,
+            b_title,
+            containment,
+            ..
+        } = row
+        {
             col = col.child(TextWidget::new(tr!(analysis_similar_row(
                 a = a_title.clone(),
                 b = b_title.clone(),
@@ -594,7 +647,9 @@ fn repetition_view(vm: &AnalysisViewModel, dto: &BookAnalysisResultDto) -> impl 
         }
     }
     if duplicates.len() > MAX_ROWS {
-        col = col.child(note(tr!(analysis_more_rows(count = (duplicates.len() - MAX_ROWS) as i64))));
+        col = col.child(note(tr!(analysis_more_rows(
+            count = (duplicates.len() - MAX_ROWS) as i64
+        ))));
     }
     col
 }
@@ -614,13 +669,11 @@ fn numbers(occurrences: i64, closest_gap: i64) -> impl Widget {
     // freeze the row in the locale it was built in, and the gap cell is translated.
     let cell = |text: LocalizedString| {
         FixedSize::new().width(44.0).child(
-            HStack::new()
-                .child(Spacer::new())
-                .child(
-                    TextWidget::new(text)
-                        .style(TextStyleRole::Small)
-                        .color(TextRole::Secondary),
-                ),
+            HStack::new().child(Spacer::new()).child(
+                TextWidget::new(text)
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+            ),
         )
     };
     HStack::new()
@@ -641,11 +694,13 @@ fn synopsis_view(dto: &BookAnalysisResultDto) -> impl Widget {
         DriftRows::Found(rows) => rows.iter().collect(),
         DriftRows::Empty => vec![],
     };
-    let any_synopsis = scenes_of(dto).iter().any(|s| {
-        matches!(s, SceneAnalysis::Measured { synopsis_words, .. } if *synopsis_words > 0)
-    });
+    let any_synopsis = scenes_of(dto).iter().any(
+        |s| matches!(s, SceneAnalysis::Measured { synopsis_words, .. } if *synopsis_words > 0),
+    );
 
-    let mut col = VStack::new().spacing(6.0).child(heading(tr!(analysis_synopsis_drift())));
+    let mut col = VStack::new()
+        .spacing(6.0)
+        .child(heading(tr!(analysis_synopsis_drift())));
     if !any_synopsis {
         // Distinct from "no findings": there is nothing to compare against, which is not
         // the same as everything matching.
@@ -663,7 +718,9 @@ fn synopsis_view(dto: &BookAnalysisResultDto) -> impl Widget {
         }
     }
     if drifts.len() > MAX_ROWS {
-        col = col.child(note(tr!(analysis_more_rows(count = (drifts.len() - MAX_ROWS) as i64))));
+        col = col.child(note(tr!(analysis_more_rows(
+            count = (drifts.len() - MAX_ROWS) as i64
+        ))));
     }
     col
 }
@@ -682,7 +739,13 @@ fn voice_view(dto: &BookAnalysisResultDto) -> impl Widget {
         // nothing except that something was measured.
         .child(explainer(tr!(analysis_vocabulary_explainer())));
     match &dto.diversity {
-        BookDiversity::Measured { words, distinct_words, mattr, reliable, .. } => {
+        BookDiversity::Measured {
+            words,
+            distinct_words,
+            mattr,
+            reliable,
+            ..
+        } => {
             col = col.child(note(tr!(analysis_words_measured(
                 words = *words,
                 distinct = *distinct_words
@@ -716,9 +779,7 @@ mod tests {
     /// property it buys is what this panel depends on: a single very long chapter must not
     /// drag the comparison line up with it.
     use super::SceneIndex;
-    use frontend::analysis_management::{
-        BookAnalysisResultDto, SceneAnalyses, SceneAnalysis,
-    };
+    use frontend::analysis_management::{BookAnalysisResultDto, SceneAnalyses, SceneAnalysis};
 
     fn scene(item_id: u64, title: &str, chapter: &str) -> SceneAnalysis {
         SceneAnalysis::Measured {
@@ -769,20 +830,22 @@ mod tests {
     /// about the manuscript is harder to work through than one that reads front to back.
     #[test]
     fn groups_follow_stream_order_not_finding_order() {
-        let index =
-            SceneIndex::build(&dto(vec![scene(10, "First", ""), scene(20, "Second", "")]));
+        let index = SceneIndex::build(&dto(vec![scene(10, "First", ""), scene(20, "Second", "")]));
         // Findings arrive worst-first, i.e. the later scene leads.
         let rows = vec![(20u64, "b"), (10u64, "a"), (20u64, "c")];
         let grouped = super::grouped_by_scene(&index, &rows);
         assert_eq!(grouped[0].0, 10, "the earlier scene is shown first");
         assert_eq!(grouped[1].0, 20);
-        assert_eq!(grouped[1].1, vec!["b", "c"], "its own findings keep their ranking");
+        assert_eq!(
+            grouped[1].1,
+            vec!["b", "c"],
+            "its own findings keep their ranking"
+        );
     }
 
     #[test]
     fn a_scene_with_no_findings_gets_no_group() {
-        let index =
-            SceneIndex::build(&dto(vec![scene(10, "First", ""), scene(20, "Second", "")]));
+        let index = SceneIndex::build(&dto(vec![scene(10, "First", ""), scene(20, "Second", "")]));
         let grouped = super::grouped_by_scene(&index, &[(20u64, "only")]);
         assert_eq!(grouped.len(), 1);
         assert_eq!(grouped[0].0, 20);
@@ -799,7 +862,10 @@ mod tests {
             *words = 0;
         }
         assert!(super::is_empty_text(&blank));
-        assert!(!super::is_empty_text(&scene(2, "Chapter 13", "")), "100 words is not empty");
+        assert!(
+            !super::is_empty_text(&scene(2, "Chapter 13", "")),
+            "100 words is not empty"
+        );
     }
 
     /// The Repetition pane mounts, and its tree opens **closed**.
@@ -858,7 +924,11 @@ mod tests {
 
         let model = crate::models::RepetitionTreeModel::new();
         model.set_groups(vec![
-            (10, "First".into(), vec![("glanced".into(), 3, 12), ("suddenly".into(), 2, 40)]),
+            (
+                10,
+                "First".into(),
+                vec![("glanced".into(), 3, 12), ("suddenly".into(), 2, 40)],
+            ),
             (20, "Second".into(), vec![("carnelian".into(), 2, 8)]),
         ]);
         let src = model.source();

@@ -125,7 +125,11 @@ fn big_manuscript() -> AppContext {
 }
 
 fn query(ctx: &AppContext, q: &str) -> RunSearchDto {
-    let work_id = work_commands::get_all_work(ctx).expect("get_all_work").pop().unwrap().id;
+    let work_id = work_commands::get_all_work(ctx)
+        .expect("get_all_work")
+        .pop()
+        .unwrap()
+        .id;
     RunSearchDto {
         work_id,
         query: q.to_string(),
@@ -170,7 +174,8 @@ fn how_much_does_a_keystroke_cost() {
     // of them.
     for q in ["a", "au", "aur", "aure", "aurel", "aureli", "aurelien"] {
         let t = Instant::now();
-        let out = search_management_commands::run_search(&ctx, &query(&ctx, q)).expect("run_search");
+        let out =
+            search_management_commands::run_search(&ctx, &query(&ctx, q)).expect("run_search");
         eprintln!(
             "  run_search({q:>9?}) -> {:>5} matches in {:>4} items   {:?}",
             out.match_count,

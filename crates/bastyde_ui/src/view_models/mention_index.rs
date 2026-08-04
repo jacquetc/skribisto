@@ -24,7 +24,7 @@
 //! prose). But the roster of the scene being written depends on one string the app already
 //! has in memory, and making the writer save to see a character appear would defeat the point
 //! — the feature exists so the story bible fills itself in *while* you write. So
-//! [`roster_for`] rescans the focused item's own prose on demand, against the alias table the
+//! [`MentionIndex::roster_for`] rescans the focused item's own prose on demand, against the alias table the
 //! last batch built, and layers those hits over the batch's. That costs one fold of one
 //! scene, memoised by [`skribisto_model::mentions::cached_mentions`] on the prose itself, so
 //! an idle Inspector repeats no work.
@@ -349,36 +349,35 @@ impl MentionIndex {
             }
         }
 
-        if let Some(prose) = live {
-            if !table.is_empty() {
-                let fingerprint = mentions::fingerprint_alias_table(&table);
-                let hits =
-                    mentions::cached_mentions(prose, &table, fingerprint, FoldLocale::default());
-                let mut live_counts: HashMap<u64, MentionRow> = HashMap::new();
-                for h in hits.iter() {
-                    if h.entity_id == owner_id {
-                        continue;
-                    }
-                    let Some(entity) = table.iter().find(|e| e.id == h.entity_id) else {
-                        continue;
-                    };
-                    let row = live_counts
-                        .entry(h.entity_id)
-                        .or_insert_with(|| MentionRow {
-                            owner_id,
-                            target_id: h.entity_id,
-                            title: entity.title.clone(),
-                            matched_name: h.matched_name(entity).to_string(),
-                            is_title_match: h.is_title_match,
-                            hit_count: 0,
-                            is_confirmed: false,
-                            evidence: mentions::evidence_sentence(prose, h),
-                        });
-                    row.hit_count += 1;
+        if let Some(prose) = live
+            && !table.is_empty()
+        {
+            let fingerprint = mentions::fingerprint_alias_table(&table);
+            let hits = mentions::cached_mentions(prose, &table, fingerprint, FoldLocale::default());
+            let mut live_counts: HashMap<u64, MentionRow> = HashMap::new();
+            for h in hits.iter() {
+                if h.entity_id == owner_id {
+                    continue;
                 }
-                for row in live_counts.into_values() {
-                    merge_suggestion(&mut by_target, row);
-                }
+                let Some(entity) = table.iter().find(|e| e.id == h.entity_id) else {
+                    continue;
+                };
+                let row = live_counts
+                    .entry(h.entity_id)
+                    .or_insert_with(|| MentionRow {
+                        owner_id,
+                        target_id: h.entity_id,
+                        title: entity.title.clone(),
+                        matched_name: h.matched_name(entity).to_string(),
+                        is_title_match: h.is_title_match,
+                        hit_count: 0,
+                        is_confirmed: false,
+                        evidence: mentions::evidence_sentence(prose, h),
+                    });
+                row.hit_count += 1;
+            }
+            for row in live_counts.into_values() {
+                merge_suggestion(&mut by_target, row);
             }
         }
 

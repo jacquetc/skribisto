@@ -5,7 +5,7 @@
 //! popover. The Inspector's tag section, and (from Stage 4) the chip popover's body.
 //!
 //! Shape borrowed from `LanguagePillField`, minus the checkmark slot: each chip is a
-//! [`Pill`](crate::widgets::Pill) painted in the tag's own colour with a derived text colour,
+//! [`Pill`] painted in the tag's own colour with a derived text colour,
 //! removing on the hover `×` and showing name + description in a composite tooltip.
 //!
 //! The "+" popover both **assigns** an existing palette tag and **creates** one, because the

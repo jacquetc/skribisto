@@ -192,14 +192,41 @@ pub fn is_rtl(tag: &str) -> bool {
         // The script overrides the language default in both directions.
         return matches!(
             script,
-            "arab" | "hebr" | "syrc" | "thaa" | "nkoo" | "samr" | "mand" | "rohg" | "yezi"
-                | "adlm" | "mend" | "phlp"
+            "arab"
+                | "hebr"
+                | "syrc"
+                | "thaa"
+                | "nkoo"
+                | "samr"
+                | "mand"
+                | "rohg"
+                | "yezi"
+                | "adlm"
+                | "mend"
+                | "phlp"
         );
     }
     matches!(
         language,
-        "ar" | "he" | "iw" | "fa" | "prs" | "ur" | "ps" | "sd" | "ug" | "yi" | "ji" | "dv"
-            | "ckb" | "ku" | "ks" | "syr" | "arc" | "nqo" | "sam" | "rhg"
+        "ar" | "he"
+            | "iw"
+            | "fa"
+            | "prs"
+            | "ur"
+            | "ps"
+            | "sd"
+            | "ug"
+            | "yi"
+            | "ji"
+            | "dv"
+            | "ckb"
+            | "ku"
+            | "ks"
+            | "syr"
+            | "arc"
+            | "nqo"
+            | "sam"
+            | "rhg"
     )
 }
 
@@ -244,9 +271,29 @@ pub fn uses_arabic_script(tag: &str) -> bool {
     }
     matches!(
         language,
-        "ar" | "fa" | "prs" | "ur" | "ps" | "sd" | "ug" | "ckb" | "ks" | "pnb" | "bal" | "lrc"
-            | "mzn" | "glk" | "arz" | "ary" | "acm" | "apc" | "ajp" | "aeb" | "afb" | "ars"
-            | "ayl" | "kby"
+        "ar" | "fa"
+            | "prs"
+            | "ur"
+            | "ps"
+            | "sd"
+            | "ug"
+            | "ckb"
+            | "ks"
+            | "pnb"
+            | "bal"
+            | "lrc"
+            | "mzn"
+            | "glk"
+            | "arz"
+            | "ary"
+            | "acm"
+            | "apc"
+            | "ajp"
+            | "aeb"
+            | "afb"
+            | "ars"
+            | "ayl"
+            | "kby"
     )
 }
 
@@ -297,15 +344,19 @@ mod tests {
         let got = resolve(
             "fr-FR",
             &[
-                scene(1, ""),     // the Work's language
-                book(2, "tr-TR"), // a Turkish book — Turkish for ITSELF only
-                scene(3, ""),     //   …still the Work's language, not Turkish
-                scene(4, "tr-TR"),//   …Turkish only because it says so (post "apply to children")
+                scene(1, ""),      // the Work's language
+                book(2, "tr-TR"),  // a Turkish book — Turkish for ITSELF only
+                scene(3, ""),      //   …still the Work's language, not Turkish
+                scene(4, "tr-TR"), //   …Turkish only because it says so (post "apply to children")
             ],
         );
         assert_eq!(got[&1], tags("fr-FR"));
         assert_eq!(got[&2], tags("tr-TR"), "the Book's own tag is its own");
-        assert_eq!(got[&3], tags("fr-FR"), "no implicit scope: the Work's language wins");
+        assert_eq!(
+            got[&3],
+            tags("fr-FR"),
+            "no implicit scope: the Work's language wins"
+        );
         assert_eq!(got[&4], tags("tr-TR"), "an explicit tag is honoured");
     }
 
@@ -319,7 +370,8 @@ mod tests {
         assert_eq!(got[&1], tags("tr-TR"));
         assert_eq!(got[&2], tags("de-DE"));
         assert_eq!(
-            got[&3], tags("fr-FR"),
+            got[&3],
+            tags("fr-FR"),
             "neither the Book nor the chapter folder reaches the scene"
         );
     }
@@ -410,13 +462,20 @@ mod tests {
         assert_eq!(primary(&tags("fr-FR")), "fr-FR");
         assert_eq!(primary(&tags("fr-FR en-US la")), "fr-FR");
         assert_eq!(primary(&tags("")), "");
-        assert_eq!(primary(&tags("  fr-FR  en-US ")), "fr-FR", "whitespace-tolerant");
+        assert_eq!(
+            primary(&tags("  fr-FR  en-US ")),
+            "fr-FR",
+            "whitespace-tolerant"
+        );
     }
 
     /// `all` yields every tag, and nothing for the empty string.
     #[test]
     fn all_yields_every_tag() {
-        assert_eq!(all(&tags("fr-FR en-US la")).collect::<Vec<_>>(), ["fr-FR", "en-US", "la"]);
+        assert_eq!(
+            all(&tags("fr-FR en-US la")).collect::<Vec<_>>(),
+            ["fr-FR", "en-US", "la"]
+        );
         assert_eq!(all(&tags("fr-FR")).collect::<Vec<_>>(), ["fr-FR"]);
         assert!(all(&tags("")).next().is_none());
         assert!(all(&tags("   ")).next().is_none());
@@ -434,12 +493,13 @@ mod tests {
     /// The scan collects the distinct union across a project's whole list per item.
     #[test]
     fn effective_languages_unions_the_lists() {
-        let got = effective_languages(&tags("fr-FR"),
+        let got = effective_languages(
+            &tags("fr-FR"),
             &[
-                scene(1, ""),               // the Work's fr-FR
-                book(2, "de-DE en-US"),     // a bilingual book — for itself
-                scene(3, ""),               // the Work's fr-FR (the Book lends nothing)
-                scene(4, "la"),             // its own Latin
+                scene(1, ""),           // the Work's fr-FR
+                book(2, "de-DE en-US"), // a bilingual book — for itself
+                scene(3, ""),           // the Work's fr-FR (the Book lends nothing)
+                scene(4, "la"),         // its own Latin
             ],
         );
         let want: BTreeSet<String> = ["fr-FR", "de-DE", "en-US", "la"]
@@ -459,10 +519,14 @@ mod tests {
     /// RTL languages are RTL; Latin-script European languages are not.
     #[test]
     fn is_rtl_by_primary_language() {
-        for t in ["ar", "ar-EG", "he", "he-IL", "iw", "fa", "fa-IR", "ur", "ps", "ckb", "yi", "dv"] {
+        for t in [
+            "ar", "ar-EG", "he", "he-IL", "iw", "fa", "fa-IR", "ur", "ps", "ckb", "yi", "dv",
+        ] {
             assert!(is_rtl(t), "{t} should be RTL");
         }
-        for t in ["", "en", "en-US", "fr-FR", "de", "es-419", "tr", "ru", "zh-Hans"] {
+        for t in [
+            "", "en", "en-US", "fr-FR", "de", "es-419", "tr", "ru", "zh-Hans",
+        ] {
             assert!(!is_rtl(t), "{t} should be LTR");
         }
     }
@@ -473,7 +537,10 @@ mod tests {
         assert!(is_rtl("az-Arab"), "Azerbaijani in Arabic script is RTL");
         assert!(!is_rtl("ku-Latn"), "Kurdish in Latin script is LTR");
         assert!(!is_rtl("ar-Latn"), "romanised Arabic is LTR");
-        assert!(is_rtl("sr-Arab"), "any language in the Arabic script is RTL");
+        assert!(
+            is_rtl("sr-Arab"),
+            "any language in the Arabic script is RTL"
+        );
     }
 
     /// Casing and the `_` separator are tolerated; a region subtag is not a script.
@@ -504,7 +571,9 @@ mod tests {
     /// typed `?` to `؟` off `is_rtl` would silently corrupt Hebrew, Yiddish and Divehi prose.
     #[test]
     fn other_rtl_scripts_are_not_arabic_script() {
-        for t in ["he", "he-IL", "iw", "yi", "ji", "dv", "syr", "arc", "nqo", "rhg"] {
+        for t in [
+            "he", "he-IL", "iw", "yi", "ji", "dv", "syr", "arc", "nqo", "rhg",
+        ] {
             assert!(is_rtl(t), "{t} is RTL — that is precisely the trap");
             assert!(
                 !uses_arabic_script(t),
@@ -518,8 +587,14 @@ mod tests {
     /// in Arabic script takes Arabic punctuation.
     #[test]
     fn arabic_script_subtag_wins_over_the_language() {
-        assert!(uses_arabic_script("az-Arab"), "Azerbaijani in Arabic script");
-        assert!(uses_arabic_script("ur-Aran"), "Nastaliq is the Arabic script");
+        assert!(
+            uses_arabic_script("az-Arab"),
+            "Azerbaijani in Arabic script"
+        );
+        assert!(
+            uses_arabic_script("ur-Aran"),
+            "Nastaliq is the Arabic script"
+        );
         assert!(!uses_arabic_script("ar-Latn"), "romanised Arabic is not");
         assert!(!uses_arabic_script("ku-Latn"), "Kurmanji in Latin script");
         assert!(

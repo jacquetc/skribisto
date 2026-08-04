@@ -175,7 +175,10 @@ mod tests {
         with_messages(|| {
             let err = anyhow::anyhow!("inner").context("middle").context("outer");
             let (_, body) = parts("/tmp/x.skrib", &err);
-            assert!(!body.contains('\n'), "the body must stay one line, got: {body}");
+            assert!(
+                !body.contains('\n'),
+                "the body must stay one line, got: {body}"
+            );
             assert!(body.contains("outer") && body.contains("inner"));
         });
     }

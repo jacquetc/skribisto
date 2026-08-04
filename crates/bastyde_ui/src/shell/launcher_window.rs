@@ -88,7 +88,7 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
                             HStack {
                                 spacing: 5.0
                                 alignment: bastyde::tokens::VAlignment::Center
-                                #{brand_icon}
+                                #{ brand_icon }
                                 Expand::horizontal {
                                     Center {
                                         // The window's title bar names the screen

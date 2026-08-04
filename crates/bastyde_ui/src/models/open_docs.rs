@@ -39,9 +39,9 @@ use frontend::common::entities::{BinderItem, BinderItemRole, BinderItemSubRole, 
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 use frontend::direct_access::ContentDto;
 
-use crate::singles::SingleBinderItem;
 use crate::comments::binding::CommentBinding;
 use crate::comments::session::CommentHighlightSession;
+use crate::singles::SingleBinderItem;
 use crate::spellcheck::{SpellSession, SpellcheckService};
 use crate::tabs::{
     ProseField, ProseKind, TitleField, TitlePart, prose_field, prose_kind_for, title_field,
@@ -248,7 +248,10 @@ impl OpenDoc {
         // No comment layer on the epigraph, deliberately. A comment anchors to a quote of
         // the *manuscript* — the two docks are scoped to the streams — and an epigraph is
         // quoted matter that is not the author's own text to annotate in place.
-        doc.comments_main = doc.main.as_ref().map(|f| CommentHighlightSession::new(&f.doc));
+        doc.comments_main = doc
+            .main
+            .as_ref()
+            .map(|f| CommentHighlightSession::new(&f.doc));
         doc.comments_synopsis = doc
             .synopsis
             .as_ref()
@@ -596,7 +599,7 @@ struct Inner {
     /// The open project's punctuation rules, pushed down to every session on
     /// change and to each newly-opened document. `None` until resolved.
     punctuation: RefCell<Option<SmartPunctuationFlags>>,
-    /// The memoised [`language_map`](OpenDocsStore::language_map), with the binder
+    /// The memoised [`language_map`](OpenDocsStore::with_language_map), with the binder
     /// [fingerprint](LangFingerprint) it was built from.
     ///
     /// The uncached call fetched and cloned every `BinderItem` in the project to build
@@ -1574,7 +1577,10 @@ mod tests {
 
         store.set_comments_visible(true);
         assert!(vm.is_visible());
-        assert!(main.is_active(), "showing again must wake the layer back up");
+        assert!(
+            main.is_active(),
+            "showing again must wake the layer back up"
+        );
     }
 
     /// `mark_dirty_fn` flips the doc's dirty flag and bumps the store's aggregate

@@ -179,7 +179,7 @@ pub fn from_entities(
                     inline_contents,
                     prose_refs,
                     reference_ids: item.references.clone(),
-                point_of_view_ids: item.point_of_view.clone(),
+                    point_of_view_ids: item.point_of_view.clone(),
                     tag_ids: item.tags.clone(),
                 },
                 prose,

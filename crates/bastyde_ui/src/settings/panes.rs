@@ -10,8 +10,8 @@
 //! see a parent's private items, so none of those had to be widened for this.
 //!
 //! One page is still an `empty_pane` placeholder (Menus & Toolbars) and has no module until
-//! it has a body. Keymap hosts Bastyde's [`ShortcutSettings`]; Notifications hosts the toast
-//! archive [`NotificationLog`].
+//! it has a body. Keymap hosts Bastyde's [`ShortcutSettings`](bastyde::widgets::ShortcutSettings);
+//! Notifications hosts the toast archive [`NotificationLog`](bastyde::widgets::NotificationLog).
 //!
 //! A settings page is a page in the Settings window — its chrome, navigation and lifecycle
 //! belong to this shell — so every page sits here rather than being scattered across the

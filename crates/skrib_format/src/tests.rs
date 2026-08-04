@@ -456,7 +456,11 @@ fn point_of_view_round_trips_and_stays_distinct_from_references() {
 
     let written = &bundle.binders[0].items[0].item;
     let loaded = &read.binders[0].items[0].item;
-    assert_eq!(written.point_of_view_ids, vec![301], "the fixture sets a POV to begin with");
+    assert_eq!(
+        written.point_of_view_ids,
+        vec![301],
+        "the fixture sets a POV to begin with"
+    );
     assert_eq!(
         loaded.point_of_view_ids, written.point_of_view_ids,
         "point of view must survive the round trip"
@@ -707,7 +711,13 @@ fn a_comment_lands_in_a_sidecar_beside_the_prose_it_annotates() {
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("djot"))
         .map(|e| e.path().to_path_buf())
-        .filter(|p| p.file_name().unwrap().to_str().unwrap().starts_with(&format!("{scene}-")))
+        .filter(|p| {
+            p.file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .starts_with(&format!("{scene}-"))
+        })
         .collect();
     assert_eq!(prose.len(), 1, "expected exactly one .djot for the scene");
 
@@ -720,7 +730,10 @@ fn a_comment_lands_in_a_sidecar_beside_the_prose_it_annotates() {
     );
     let text = fs::read_to_string(sidecar).unwrap();
     assert!(text.contains("Is this too on-the-nose?"));
-    assert!(text.contains("Keep it — it lands."), "replies must round-trip");
+    assert!(
+        text.contains("Keep it — it lands."),
+        "replies must round-trip"
+    );
 }
 
 #[test]
@@ -879,7 +892,10 @@ fn a_bundle_written_before_comments_existed_still_reads() {
     write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
 
     fs::remove_file(root.join("orphan_comments.ron")).unwrap();
-    for entry in walkdir::WalkDir::new(&root).into_iter().filter_map(|e| e.ok()) {
+    for entry in walkdir::WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         if entry.path().to_string_lossy().ends_with(".comments.ron") {
             fs::remove_file(entry.path()).unwrap();
         }
@@ -1915,9 +1931,11 @@ fn an_absent_floor_falls_back_to_format_version() {
         format!("{}{}", &text[..start], &text[end..].trim_start()),
     )
     .unwrap();
-    assert!(!fs::read_to_string(&manifest_path)
-        .unwrap()
-        .contains("format_min_read_version"));
+    assert!(
+        !fs::read_to_string(&manifest_path)
+            .unwrap()
+            .contains("format_min_read_version")
+    );
 
     read_bundle(path).expect("a manifest without the field must open exactly as before");
 }
@@ -1939,7 +1957,11 @@ fn format_version_zero_is_refused_pre_parse() {
     let text = fs::read_to_string(&manifest_path).unwrap();
     fs::write(
         &manifest_path,
-        text.replacen(&format!("format_version: {FORMAT_VERSION}"), "format_version: 0", 1),
+        text.replacen(
+            &format!("format_version: {FORMAT_VERSION}"),
+            "format_version: 0",
+            1,
+        ),
     )
     .unwrap();
     for entry in fs::read_dir(root.join("binders")).unwrap() {

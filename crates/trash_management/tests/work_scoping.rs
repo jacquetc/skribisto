@@ -57,7 +57,12 @@ impl Ctx {
         let root_id = root_controller::create_orphan(&db, &hub, &CreateRootDto::default())
             .expect("root")
             .id;
-        Ctx { db, hub, undo, root_id }
+        Ctx {
+            db,
+            hub,
+            undo,
+            root_id,
+        }
     }
 
     /// A fresh, independently-open Work with one activated Binder — built
@@ -87,7 +92,10 @@ impl Ctx {
             &self.hub,
             &mut self.undo,
             None,
-            &CreateWorkDto { smart_punctuation: smart_punctuation_id, ..Default::default() },
+            &CreateWorkDto {
+                smart_punctuation: smart_punctuation_id,
+                ..Default::default()
+            },
             self.root_id,
             -1,
         )
@@ -98,7 +106,10 @@ impl Ctx {
             &self.hub,
             &mut self.undo,
             None,
-            &CreateBinderDto { activated: true, ..Default::default() },
+            &CreateBinderDto {
+                activated: true,
+                ..Default::default()
+            },
             work_id,
             -1,
         )
@@ -111,7 +122,12 @@ impl Ctx {
         binder_item_management_item(self, binder_id, activated)
     }
 
-    fn new_trash_info_for_item(&mut self, work_id: EntityId, item_id: EntityId, origin_binder_id: EntityId) -> EntityId {
+    fn new_trash_info_for_item(
+        &mut self,
+        work_id: EntityId,
+        item_id: EntityId,
+        origin_binder_id: EntityId,
+    ) -> EntityId {
         trash_info_controller::create(
             &self.db,
             &self.hub,
@@ -137,7 +153,10 @@ fn binder_item_management_item(ctx: &mut Ctx, binder_id: EntityId, activated: bo
         &ctx.hub,
         &mut ctx.undo,
         None,
-        &CreateBinderItemDto { activated, ..Default::default() },
+        &CreateBinderItemDto {
+            activated,
+            ..Default::default()
+        },
         binder_id,
         -1,
     )
@@ -164,7 +183,10 @@ fn restore_items_rejects_a_trash_info_owned_by_a_different_work() {
         &ctx.hub,
         &mut ctx.undo,
         None,
-        &RestoreItemsDto { work_id: work_a, trash_info_ids: vec![trash_info_b as i64] },
+        &RestoreItemsDto {
+            work_id: work_a,
+            trash_info_ids: vec![trash_info_b as i64],
+        },
     );
 
     assert!(
@@ -176,7 +198,10 @@ fn restore_items_rejects_a_trash_info_owned_by_a_different_work() {
     let item = direct_access::binder_item::binder_item_controller::get(&ctx.db, &item_b)
         .unwrap()
         .unwrap();
-    assert!(!item.activated, "the rejected call must not have reactivated Work B's item");
+    assert!(
+        !item.activated,
+        "the rejected call must not have reactivated Work B's item"
+    );
 }
 
 // -----------------------------------------------------------------------
@@ -218,7 +243,10 @@ fn restore_items_to_rejects_a_source_item_owned_by_a_different_work() {
         &common::direct_access::binder::BinderRelationshipField::BinderItems,
     )
     .unwrap();
-    assert!(!dest_items.contains(&item_b), "the rejected call must not have moved Work B's item");
+    assert!(
+        !dest_items.contains(&item_b),
+        "the rejected call must not have moved Work B's item"
+    );
 }
 
 // -----------------------------------------------------------------------
@@ -241,7 +269,10 @@ fn delete_trash_entries_rejects_a_trash_info_owned_by_a_different_work() {
         &ctx.hub,
         &mut ctx.undo,
         None,
-        &DeleteTrashEntriesDto { work_id: work_a, trash_info_ids: vec![trash_info_b] },
+        &DeleteTrashEntriesDto {
+            work_id: work_a,
+            trash_info_ids: vec![trash_info_b],
+        },
     );
 
     assert!(
@@ -271,10 +302,16 @@ fn delete_trash_entries_still_tolerates_a_truly_stale_id() {
         &ctx.hub,
         &mut ctx.undo,
         None,
-        &DeleteTrashEntriesDto { work_id: work_a, trash_info_ids: vec![999_999] },
+        &DeleteTrashEntriesDto {
+            work_id: work_a,
+            trash_info_ids: vec![999_999],
+        },
     );
 
-    assert!(result.is_ok(), "an id that never existed anywhere must be tolerated, not an error");
+    assert!(
+        result.is_ok(),
+        "an id that never existed anywhere must be tolerated, not an error"
+    );
 }
 
 // -----------------------------------------------------------------------
@@ -310,7 +347,10 @@ fn trash_binder_items_rejects_an_origin_binder_owned_by_a_different_work() {
     let item = direct_access::binder_item::binder_item_controller::get(&ctx.db, &item_b)
         .unwrap()
         .unwrap();
-    assert!(item.activated, "the rejected call must not have trashed Work B's item");
+    assert!(
+        item.activated,
+        "the rejected call must not have trashed Work B's item"
+    );
 }
 
 // -----------------------------------------------------------------------
@@ -328,7 +368,10 @@ fn trash_binder_rejects_a_binder_owned_by_a_different_work() {
         &ctx.hub,
         &mut ctx.undo,
         None,
-        &TrashBinderDto { work_id: work_a, binder_id: binder_b as i64 },
+        &TrashBinderDto {
+            work_id: work_a,
+            binder_id: binder_b as i64,
+        },
     );
 
     assert!(
@@ -336,6 +379,11 @@ fn trash_binder_rejects_a_binder_owned_by_a_different_work() {
         "a binder belonging to Work B must not be trashable under Work A's work_id"
     );
 
-    let binder = direct_access::binder::binder_controller::get(&ctx.db, &binder_b).unwrap().unwrap();
-    assert!(binder.activated, "the rejected call must not have trashed Work B's binder");
+    let binder = direct_access::binder::binder_controller::get(&ctx.db, &binder_b)
+        .unwrap()
+        .unwrap();
+    assert!(
+        binder.activated,
+        "the rejected call must not have trashed Work B's binder"
+    );
 }

@@ -72,7 +72,11 @@ impl QueryUnitOfWork for CountWordsUnitOfWork {
 #[macros::uow_action(entity = "Binder", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipRO", thread_safe = true)]
 #[macros::uow_action(entity = "BinderItem", action = "GetMultiRO", thread_safe = true)]
-#[macros::uow_action(entity = "BinderItem", action = "GetRelationshipRO", thread_safe = true)]
+#[macros::uow_action(
+    entity = "BinderItem",
+    action = "GetRelationshipRO",
+    thread_safe = true
+)]
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO", thread_safe = true)]
 impl CountWordsUnitOfWorkTrait for CountWordsUnitOfWork {

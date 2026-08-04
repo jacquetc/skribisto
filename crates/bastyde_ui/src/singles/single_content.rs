@@ -380,7 +380,10 @@ mod imp {
                 // be demonstrable. Derived from (item, role) so it is stable across
                 // refreshes and distinct per field, the same contract
                 // `common::uid::fixture_uid` provides for items.
-                None => (Some(mock_content_id(item_id, &role)), fabricate(item_id, &role)),
+                None => (
+                    Some(mock_content_id(item_id, &role)),
+                    fabricate(item_id, &role),
+                ),
             };
             Self {
                 inner: Rc::new(Inner {

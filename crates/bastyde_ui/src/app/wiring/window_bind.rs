@@ -21,6 +21,7 @@ use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry};
 /// Load/New pass `None` and accept whatever ordinal `register_window` assigns.
 ///
 /// Returns the ordinal actually assigned (and writes it to `window_ordinal`).
+#[allow(clippy::too_many_arguments)]
 pub(in crate::app) fn bind_window_to_work(
     registry: &WorkRegistry,
     window_id: BastydeWindowId,

@@ -60,11 +60,9 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // keys for a command reached once a session.
     {
         let visible = SettingsViewModel::new(ctx.settings()).comments_visible();
-        ctx.register_action_global(
-            Action::new("comments.toggle").on_invoke(move |_i, _c| {
-                let now = !visible.get();
-                visible.set(now);
-            }),
-        );
+        ctx.register_action_global(Action::new("comments.toggle").on_invoke(move |_i, _c| {
+            let now = !visible.get();
+            visible.set(now);
+        }));
     }
 }

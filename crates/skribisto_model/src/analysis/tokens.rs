@@ -168,7 +168,10 @@ mod tests {
     use super::*;
 
     fn keys(text: &str) -> Vec<String> {
-        tokenize(text).into_iter().map(|t| t.key.into_string()).collect()
+        tokenize(text)
+            .into_iter()
+            .map(|t| t.key.into_string())
+            .collect()
     }
 
     #[test]
@@ -200,7 +203,11 @@ mod tests {
     #[test]
     fn eszett_survives_folding() {
         assert_eq!(keys("Straße STRASSE"), ["straße", "strasse"]);
-        assert_ne!(keys("Straße")[0], keys("STRASSE")[0], "these are different spellings");
+        assert_ne!(
+            keys("Straße")[0],
+            keys("STRASSE")[0],
+            "these are different spellings"
+        );
     }
 
     #[test]
@@ -252,7 +259,10 @@ mod tests {
         intern_text(&mut v, "the the the the the the the the carnelian the");
         let common = v.surprisal(v.lookup("the").unwrap());
         let rare = v.surprisal(v.lookup("carnelian").unwrap());
-        assert!(rare > common, "carnelian ({rare}) must out-score the ({common})");
+        assert!(
+            rare > common,
+            "carnelian ({rare}) must out-score the ({common})"
+        );
     }
 
     #[test]

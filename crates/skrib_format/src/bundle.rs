@@ -39,7 +39,7 @@ use std::collections::BTreeMap;
 /// `templates/*.djot` bodies). The data itself is purely additive — a missing
 /// `templates.ron` reads back as an empty list — so by the rule the fields above
 /// follow it would need no bump at all. It gets one anyway, and the reason is the
-/// *other* direction: [`crate::zip_io::write_zip`] rebuilds the archive from a fresh
+/// *other* direction: `crate::zip_io::write_zip` rebuilds the archive from a fresh
 /// staging dir on every save, so an older build — whose `WorkBundle` has no
 /// `note_templates` field — would silently drop every template the first time it saved
 /// a project that had them. Permanently, with nothing to notice it by. The bump makes
@@ -72,7 +72,7 @@ use std::collections::BTreeMap;
 /// until you give it a version. Everything else is on you. Note that none of the four
 /// bumps to date would have needed a floor arm on any other axis: v1 → v2, v2 → v3 and
 /// v4 → v5 were purely additive, and v3 → v4's type change was absorbed by a **tolerant
-/// deserializer** ([`tags_or_legacy_string`], and cf. `quote_style` above) rather than by
+/// deserializer** (`tags_or_legacy_string`, and cf. `quote_style` above) rather than by
 /// a gate. Tolerance keeps files openable; a floor only refuses them. Prefer tolerance
 /// wherever the change admits it, and reserve the floor for what genuinely cannot
 /// round-trip through an older build.
@@ -205,7 +205,7 @@ pub struct WorkFile {
     ///
     /// `#[serde(default)]` like every other additive field here: without it a
     /// manifest written before this field existed fails to *deserialize*, which
-    /// happens before [`migration`](crate::migration) ever runs, so no migration
+    /// happens before `migration` ever runs, so no migration
     /// step could rescue it. It carries no version bump for the same reason
     /// `unique_id` and `chapter_flat` carry none — a purely additive optional
     /// field costs older readers nothing.

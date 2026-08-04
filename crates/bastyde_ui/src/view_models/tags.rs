@@ -5,8 +5,8 @@
 //! the Inspector's tag section, and (later) the chip popover.
 //!
 //! It owns no state of its own beyond the Layer-A handles it composes: the reactive
-//! [`WorkTagsListModel`](crate::models::WorkTagsListModel) (the palette plus its writes)
-//! and [`AppIds`](crate::app_ids::AppIds) (the owner `Work` and undo stack every mutation
+//! [`WorkTagsListModel`] (the palette plus its writes)
+//! and [`AppIds`] (the owner `Work` and undo stack every mutation
 //! needs).
 //!
 //! Plain Rust, no `#[cfg]`: the real/mock seam lives in the model below it, so this is

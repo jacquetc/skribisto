@@ -34,7 +34,9 @@ fn item(role: BinderItemRole, sub_role: BinderItemSubRole, title: &str) -> Creat
     CreateBinderItemDto {
         // Derived from the title: this helper builds every row in the
         // fixture, so a single constant would give them all one identity.
-        uid: common::uid::fixture_uid(title.len() as u64 * 1000 + title.chars().map(|c| c as u64).sum::<u64>()),
+        uid: common::uid::fixture_uid(
+            title.len() as u64 * 1000 + title.chars().map(|c| c as u64).sum::<u64>(),
+        ),
         created_at: now,
         updated_at: now,
         title: title.to_string(),
@@ -146,7 +148,11 @@ fn ctx_with_one_of_each() -> (AppContext, Vec<(BinderItemSubRole, u64)>) {
 }
 
 fn search(ctx: &AppContext, facets: Vec<i64>) -> RunSearchDto {
-    let work_id = work_commands::get_all_work(ctx).expect("get_all_work").pop().unwrap().id;
+    let work_id = work_commands::get_all_work(ctx)
+        .expect("get_all_work")
+        .pop()
+        .unwrap()
+        .id;
     RunSearchDto {
         work_id,
         query: "aurelien".to_string(), // plain ASCII — the fold finds the accented name
@@ -204,8 +210,11 @@ fn an_empty_facet_list_filters_nothing() {
 #[test]
 fn a_single_chip_keeps_only_that_kind() {
     let (ctx, kinds) = ctx_with_one_of_each();
-    search_management_commands::run_search(&ctx, &search(&ctx, vec![SearchFacet::Scene.code() as i64]))
-        .unwrap();
+    search_management_commands::run_search(
+        &ctx,
+        &search(&ctx, vec![SearchFacet::Scene.code() as i64]),
+    )
+    .unwrap();
 
     let scene = kinds
         .iter()
@@ -221,8 +230,11 @@ fn a_single_chip_keeps_only_that_kind() {
 #[test]
 fn the_chapter_chip_finds_both_encodings_of_a_chapter() {
     let (ctx, kinds) = ctx_with_one_of_each();
-    search_management_commands::run_search(&ctx, &search(&ctx, vec![SearchFacet::Chapter.code() as i64]))
-        .unwrap();
+    search_management_commands::run_search(
+        &ctx,
+        &search(&ctx, vec![SearchFacet::Chapter.code() as i64]),
+    )
+    .unwrap();
 
     let mut expected: Vec<u64> = kinds
         .iter()
@@ -238,8 +250,11 @@ fn the_chapter_chip_finds_both_encodings_of_a_chapter() {
 #[test]
 fn the_book_chip_covers_the_container_and_the_markers() {
     let (ctx, kinds) = ctx_with_one_of_each();
-    search_management_commands::run_search(&ctx, &search(&ctx, vec![SearchFacet::Book.code() as i64]))
-        .unwrap();
+    search_management_commands::run_search(
+        &ctx,
+        &search(&ctx, vec![SearchFacet::Book.code() as i64]),
+    )
+    .unwrap();
 
     let mut expected: Vec<u64> = kinds
         .iter()
@@ -262,10 +277,13 @@ fn several_chips_union() {
     let (ctx, kinds) = ctx_with_one_of_each();
     search_management_commands::run_search(
         &ctx,
-        &search(&ctx, vec![
-            SearchFacet::Scene.code() as i64,
-            SearchFacet::Note.code() as i64,
-        ]),
+        &search(
+            &ctx,
+            vec![
+                SearchFacet::Scene.code() as i64,
+                SearchFacet::Note.code() as i64,
+            ],
+        ),
     )
     .unwrap();
 
@@ -286,7 +304,8 @@ fn several_chips_union() {
 fn every_chip_finds_something() {
     let (ctx, _) = ctx_with_one_of_each();
     for facet in SearchFacet::ALL {
-        search_management_commands::run_search(&ctx, &search(&ctx, vec![facet.code() as i64])).unwrap();
+        search_management_commands::run_search(&ctx, &search(&ctx, vec![facet.code() as i64]))
+            .unwrap();
         assert!(
             !hit_ids(&ctx).is_empty(),
             "the {facet:?} chip found nothing in a project that holds one of every kind"
@@ -323,7 +342,8 @@ fn an_unknown_facet_code_is_ignored_not_fatal() {
 fn a_filter_of_nothing_but_unknown_codes_filters_nothing() {
     let (ctx, kinds) = ctx_with_one_of_each();
 
-    search_management_commands::run_search(&ctx, &search(&ctx, vec![9999, -1, 0])).expect("run_search");
+    search_management_commands::run_search(&ctx, &search(&ctx, vec![9999, -1, 0]))
+        .expect("run_search");
     assert_eq!(
         hit_ids(&ctx).len(),
         kinds.len(),
@@ -370,7 +390,8 @@ fn an_item_of_an_unclassifiable_kind_is_never_hidden_by_a_facet() {
     .unwrap();
 
     for facet in SearchFacet::ALL {
-        search_management_commands::run_search(&ctx, &search(&ctx, vec![facet.code() as i64])).unwrap();
+        search_management_commands::run_search(&ctx, &search(&ctx, vec![facet.code() as i64]))
+            .unwrap();
         assert!(
             hit_ids(&ctx).contains(&odd.id),
             "the {facet:?} chip hid an item whose kind we cannot name — it is now unreachable"

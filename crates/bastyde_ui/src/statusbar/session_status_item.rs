@@ -48,7 +48,7 @@ impl SessionStatusItem {
         }
     }
 
-    /// The compact "N words · M:SS[ left]" readout while running.
+    /// The compact "N words · M:SS\[ left\]" readout while running.
     fn readout(&self) -> bastyde::i18n::LocalizedString {
         let words = self.vm.session_words_signal().get();
         let elapsed = self.vm.elapsed_signal().get();

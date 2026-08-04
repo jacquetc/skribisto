@@ -8,7 +8,7 @@
 //! derives a pace and shows the statistics (words written, % done, needed rate,
 //! days left, streak, ahead/behind) from the recorded `ProgressSnapshot` history,
 //! plus milestones, holidays and the progression / words-per-day charts. All
-//! state + logic live in [`PaceViewModel`](crate::view_models::PaceViewModel);
+//! state + logic live in [`PaceViewModel`];
 //! this pane is a thin reactive view over it.
 
 use bastyde::core::BindingLevel;

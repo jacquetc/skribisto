@@ -250,7 +250,7 @@ impl LiveCastOverlay {
     ///
     /// Same-item rebuilds (pin, batch scan, version bump) do **not** re-arm —
     /// that would re-export the open doc on every Inspector rebuild. Typing is
-    /// covered by [`on_edit`]; a still-pending first paint re-arms only when
+    /// covered by [`Self::on_edit_gen`]; a still-pending first paint re-arms only when
     /// nothing is scheduled and prose is still missing.
     pub fn on_focus(&self, item_id: u64, wake: &Rc<Cell<Option<Instant>>>) {
         if self.item_id.get() != Some(item_id) {

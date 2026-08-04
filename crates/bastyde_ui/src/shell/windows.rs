@@ -86,7 +86,8 @@ pub use super::window_ids::{
 /// even after "Window 1" closes. `ordinal == 1` never shows a suffix at all —
 /// the first window on a project is just the project.
 ///
-/// Work ▸ New Window is what reaches the suffix ([`attached_window_config`]).
+/// Work ▸ New Window is what reaches the suffix
+/// ([`attached_window_config`](ProjectWindowFactory::attached_window_config)).
 /// Such a window knows its ordinal before it is built (its persistence id is
 /// derived from it), so `window_ordinal` starts at the real value and the title
 /// reads "(Window 2)" from the first frame rather than flickering through the
@@ -679,11 +680,7 @@ impl ProjectWindowFactory {
                                     // (on every platform) stops a few px of pointer
                                     // jitter during a click from arming the window drag.
                                     DeadZone {
-                                        ProjectSwitcherButton::new(
-                                            app_ctx_root.clone(),
-                                            single_work.clone(),
-                                            single_work_info.clone(),
-                                        )
+                                        ProjectSwitcherButton::new(app_ctx_root.clone(), single_work.clone(), single_work_info.clone())
                                     }
                                     Expand::horizontal {
                                         Center {

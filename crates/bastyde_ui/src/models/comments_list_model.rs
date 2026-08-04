@@ -220,7 +220,7 @@ mod imp {
     struct Inner {
         model: ListModel<CommentRow>,
         version: Signal<u64>,
-        /// Bumped only when the set's *shape* changes — see [`structure_key`].
+        /// Bumped only when the set's *shape* changes — see [`structure_key`](super::structure_key).
         structure: Signal<u64>,
         last_structure: Cell<u64>,
         subscribed: Cell<bool>,
@@ -321,7 +321,7 @@ mod imp {
         }
 
         /// Bumped only when the comment set's shape changes, never on a body edit.
-        /// What the margin binds — see [`structure_key`].
+        /// What the margin binds — see [`structure_key`](super::structure_key).
         pub fn structure_signal(&self) -> Signal<u64> {
             self.inner.structure.clone()
         }
@@ -561,8 +561,7 @@ mod imp {
         /// Delete a thread. Its replies are strong children and cascade with it;
         /// the Work's list is reconciled by the generated remove.
         pub fn delete(&self, comment_id: u64, stack_id: Option<u64>) {
-            if let Err(e) =
-                comment_commands::remove_comment(&self.inner.ctx, stack_id, &comment_id)
+            if let Err(e) = comment_commands::remove_comment(&self.inner.ctx, stack_id, &comment_id)
             {
                 eprintln!("comments: delete failed: {e}");
             }
@@ -980,8 +979,11 @@ mod imp {
         }
 
         pub fn delete(&self, comment_id: u64, _stack_id: Option<u64>) {
-            let rows: Vec<CommentRow> =
-                self.rows().into_iter().filter(|r| r.id != comment_id).collect();
+            let rows: Vec<CommentRow> = self
+                .rows()
+                .into_iter()
+                .filter(|r| r.id != comment_id)
+                .collect();
             self.replace(rows);
         }
 
@@ -1159,10 +1161,7 @@ mod tests {
 
     #[test]
     fn orphans_sort_last_rather_than_pretending_to_be_at_offset_zero() {
-        let mut rows = vec![
-            row(1, None, 0, 0, true),
-            row(2, Some(10), 9, 900, false),
-        ];
+        let mut rows = vec![row(1, None, 0, 0, true), row(2, Some(10), 9, 900, false)];
         sort_rows(&mut rows);
         assert_eq!(
             rows.iter().map(|r| r.id).collect::<Vec<_>>(),

@@ -60,20 +60,39 @@ fn record_progress_snapshot_upserts_by_day() {
     .expect("new_work");
     let work_id = work_controller::get_all(&db).unwrap().pop().unwrap().id;
 
-    record_progress_snapshot(&db, &hub, &rec(work_id, day("2020-05-01T10:00:00+00:00"), 100))
-        .unwrap();
+    record_progress_snapshot(
+        &db,
+        &hub,
+        &rec(work_id, day("2020-05-01T10:00:00+00:00"), 100),
+    )
+    .unwrap();
     assert_eq!(snapshots(&db).len(), 1, "first day recorded");
 
     // Same day, later time, different total → replaced in place (idempotent by day).
-    record_progress_snapshot(&db, &hub, &rec(work_id, day("2020-05-01T22:00:00+00:00"), 250))
-        .unwrap();
+    record_progress_snapshot(
+        &db,
+        &hub,
+        &rec(work_id, day("2020-05-01T22:00:00+00:00"), 250),
+    )
+    .unwrap();
     let s = snapshots(&db);
     assert_eq!(s.len(), 1, "the same day must not pile up rows");
-    assert_eq!(s[0].total_word_count, 250, "the row was updated to the new total");
-    assert_eq!(s[0].day, day("2020-05-01T00:00:00+00:00"), "keyed at midnight UTC");
+    assert_eq!(
+        s[0].total_word_count, 250,
+        "the row was updated to the new total"
+    );
+    assert_eq!(
+        s[0].day,
+        day("2020-05-01T00:00:00+00:00"),
+        "keyed at midnight UTC"
+    );
 
     // A new day → a second row.
-    record_progress_snapshot(&db, &hub, &rec(work_id, day("2020-05-02T09:00:00+00:00"), 400))
-        .unwrap();
+    record_progress_snapshot(
+        &db,
+        &hub,
+        &rec(work_id, day("2020-05-02T09:00:00+00:00"), 400),
+    )
+    .unwrap();
     assert_eq!(snapshots(&db).len(), 2, "a new day adds a row");
 }

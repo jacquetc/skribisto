@@ -95,8 +95,7 @@ fn bridge_synopsis_choice(
     shown: Signal<bool>,
     placement: Signal<SynopsisPlacement>,
 ) -> Signal<usize> {
-    let choice_index: Signal<usize> =
-        Signal::new(synopsis_choice_of(shown.get(), placement.get()));
+    let choice_index: Signal<usize> = Signal::new(synopsis_choice_of(shown.get(), placement.get()));
     let settling = std::rc::Rc::new(std::cell::Cell::new(false));
     {
         let sync = {
@@ -286,8 +285,7 @@ mod tests {
     }
     impl Widget for BridgeHost {
         fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-            let index =
-                bridge_synopsis_choice(ctx, self.shown.clone(), self.placement.clone());
+            let index = bridge_synopsis_choice(ctx, self.shown.clone(), self.placement.clone());
             *self.out.borrow_mut() = Some(index);
             Vec::new()
         }

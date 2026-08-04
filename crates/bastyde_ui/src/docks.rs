@@ -6,7 +6,7 @@
 //! side; `App` only wires the cross-view-model effects around them.
 //!
 //! The roster: [`outline`] (binder tree), [`search`], [`trash`], [`comments`]
-//! (project-wide) on the leading rail; [`inspector`], [`format`], and a
+//! (project-wide) on the leading rail; [`inspector`], [`mod@format`], and a
 //! per-document comments dock on the trailing rail; [`search_preview`] on the
 //! bottom. See [`APP_DOCKS`] for the authoritative list and mount order.
 //!
@@ -71,7 +71,7 @@ impl AppDock {
 /// **The app's dock roster**, in first-run mount order.
 ///
 /// This is a table rather than just the call sequence in
-/// [`project_shell`](crate::app::project_shell) because it has two consumers that
+/// `project_shell` because it has two consumers that
 /// must never disagree:
 ///
 /// 1. the **first-run mount**, which walks it to arrange a fresh desk; and

@@ -89,7 +89,11 @@ pub fn echoes(
         }
         // Only the occurrences that actually participate in a close pair are reported —
         // a word used twice at opposite ends of a long scene is not an echo.
-        let Some(closest_gap) = at.windows(2).map(|w| w[1] - w[0]).filter(|&g| g <= window).min()
+        let Some(closest_gap) = at
+            .windows(2)
+            .map(|w| w[1] - w[0])
+            .filter(|&g| g <= window)
+            .min()
         else {
             continue;
         };
@@ -116,7 +120,10 @@ pub fn echoes(
 
     // Descending score, then the word itself, so a re-run never reshuffles equal-scoring rows.
     out.sort_by(|a, b| {
-        b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal).then_with(|| a.word.cmp(&b.word))
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.word.cmp(&b.word))
     });
     out
 }
@@ -213,7 +220,11 @@ pub fn compare_scenes(a: &ShingleSet, b: &ShingleSet) -> Option<SceneSimilarity>
     let union = a.len() + b.len() - shared;
     Some(SceneSimilarity {
         containment: shared as f64 / a.len().min(b.len()) as f64,
-        jaccard: if union == 0 { 0.0 } else { shared as f64 / union as f64 },
+        jaccard: if union == 0 {
+            0.0
+        } else {
+            shared as f64 / union as f64
+        },
         shared_shingles: shared,
     })
 }
@@ -254,7 +265,10 @@ mod tests {
 
         let all = echoes(&ids, &toks, &v, 15, 0.0);
         let top = &all[0];
-        assert_eq!(top.word, "carnelian", "the rare repeat must rank first, got {all:?}");
+        assert_eq!(
+            top.word, "carnelian",
+            "the rare repeat must rank first, got {all:?}"
+        );
 
         let the = v.lookup("the").unwrap();
         let filtered = echoes(&ids, &toks, &v, 15, v.surprisal(the) + 0.01);
@@ -274,7 +288,11 @@ mod tests {
             "a 7-word text cannot be judged by a 250-word window"
         );
         // …and the same text is judged normally once the window fits inside it.
-        assert!(echoes(&ids, &toks, &v, 5, 0.0).iter().any(|e| e.word == "glanced"));
+        assert!(
+            echoes(&ids, &toks, &v, 5, 0.0)
+                .iter()
+                .any(|e| e.word == "glanced")
+        );
     }
 
     #[test]
@@ -284,7 +302,9 @@ mod tests {
         text.push_str("glanced");
         let (ids, toks, v) = prep(&text);
         assert!(
-            echoes(&ids, &toks, &v, 250, 0.0).iter().all(|e| e.word != "glanced"),
+            echoes(&ids, &toks, &v, 250, 0.0)
+                .iter()
+                .all(|e| e.word != "glanced"),
             "300 words apart is not an echo at a 250-word window"
         );
     }
@@ -302,7 +322,10 @@ mod tests {
         let found = echoes(&ids, &toks, &v, 250, 0.0);
         let alpha = found.iter().find(|e| e.word == "alpha").unwrap();
         let beta = found.iter().find(|e| e.word == "beta").unwrap();
-        assert!(alpha.score > beta.score, "adjacent must beat distant: {alpha:?} vs {beta:?}");
+        assert!(
+            alpha.score > beta.score,
+            "adjacent must beat distant: {alpha:?} vs {beta:?}"
+        );
         assert_eq!(alpha.closest_gap, 1);
     }
 
@@ -310,7 +333,10 @@ mod tests {
     fn echo_occurrences_point_back_at_the_prose() {
         let text = "She glanced away. He glanced back.";
         let (ids, toks, v) = prep(text);
-        let e = echoes(&ids, &toks, &v, 5, 0.0).into_iter().find(|e| e.word == "glanced").unwrap();
+        let e = echoes(&ids, &toks, &v, 5, 0.0)
+            .into_iter()
+            .find(|e| e.word == "glanced")
+            .unwrap();
         assert_eq!(e.occurrences.len(), 2);
         for r in &e.occurrences {
             assert_eq!(&text[r.clone()], "glanced");
@@ -334,7 +360,10 @@ mod tests {
 
     /// `n` words of distinct filler, so a scene clears MIN_SHINGLES without accidental repeats.
     fn filler(tag: &str, n: usize) -> String {
-        (0..n).map(|i| format!("{tag}{i}")).collect::<Vec<_>>().join(" ")
+        (0..n)
+            .map(|i| format!("{tag}{i}"))
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 
     #[test]
@@ -382,7 +411,11 @@ mod tests {
         let mut v = Vocabulary::new();
         let a = shingles_of(&mut v, "far too short to compare");
         let b = shingles_of(&mut v, "far too short to compare");
-        assert_eq!(compare_scenes(&a, &b), None, "two tiny identical scenes must not top the list");
+        assert_eq!(
+            compare_scenes(&a, &b),
+            None,
+            "two tiny identical scenes must not top the list"
+        );
     }
 
     #[test]

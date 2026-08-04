@@ -155,7 +155,7 @@ impl Widget for PaceCharts {
         if let Some(r) = rate {
             bars = bars.reference_line(ReferenceLine::new(
                 r as f32,
-                tr!(pace_daily_target_line(count = r as i64)),
+                tr!(pace_daily_target_line(count = r)),
             ));
         }
 

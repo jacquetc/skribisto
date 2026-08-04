@@ -12,7 +12,7 @@
 //!
 //! Two `#[cfg]`-gated `mod imp` variants share one public surface: the real one
 //! reads via `Work.text_replacement_rules` (scoped to *this* window's own open
-//! Work — see [`load_rows`](imp::load_rows), never the whole-store
+//! Work — see `load_rows`, never the whole-store
 //! `get_all_text_replacement_rule`, which would merge a second, simultaneously
 //! open Work's lexicon into this one's list) and stays live on
 //! `TextReplacementRule` events + project switches, with writes going through

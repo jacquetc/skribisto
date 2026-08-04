@@ -99,7 +99,7 @@ pub enum InstanceReply {
 /// How long `serve_one` gives this instance's UI thread to answer a request
 /// before telling the caller to launch on its own.
 ///
-/// Strictly less than [`crate::shell::instance::ACK_TIMEOUT`], the remote's
+/// Strictly less than `instance::ACK_TIMEOUT`, the remote's
 /// matching patience — see that constant for what goes wrong when the inequality
 /// is reversed. `the_primary_gives_up_before_the_remote_does` pins the ordering.
 pub const UI_ACK_BUDGET: std::time::Duration = std::time::Duration::from_secs(3);

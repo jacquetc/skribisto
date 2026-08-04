@@ -6,9 +6,9 @@
 //! dictionary" context-menu action.
 //!
 //! It owns no state of its own beyond the Layer-A handles it composes: the
-//! reactive [`DictWordListModel`](crate::models::DictWordListModel) (the words
-//! list + its collection writes), a [`SingleDictWord`](crate::singles::SingleDictWord)
-//! (the inline rename), and [`AppIds`](crate::app_ids::AppIds) (the owner
+//! reactive [`DictWordListModel`] (the words
+//! list + its collection writes), a [`SingleDictWord`]
+//! (the inline rename), and [`AppIds`] (the owner
 //! `Work` plus the undo stack every mutation needs). Dedup is exact-case
 //! (`"the"` and `"The"`
 //! are distinct — spell-check matching is exact-case); every add is one undoable

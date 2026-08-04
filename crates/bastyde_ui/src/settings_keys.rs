@@ -21,7 +21,7 @@
 //! * **`--dump-config`** ([`dump`]) — print the effective configuration, self-documenting,
 //!   in exactly the syntax a pins file wants. "What can I pin, and what is it now?"
 //!   answered without reading source.
-//! * **A drift test** ([`tests::every_declared_key_is_registered`]) — the registry is
+//! * **A drift test** (`tests::every_declared_key_is_registered`) — the registry is
 //!   hand-written, so it can rot. The test walks the crate's own sources for
 //!   `*_KEY: &str` declarations and fails if one is missing here.
 //!
@@ -75,7 +75,7 @@ pub struct SettingSpec {
 /// Serialize a default into its TOML form.
 ///
 /// Panics only on a type that cannot be represented in TOML at all (e.g. a bare `None`),
-/// which would be a bug in this table and is caught by [`tests::defaults_are_valid`].
+/// which would be a bug in this table and is caught by `tests::defaults_are_valid`.
 fn val<T: Serialize>(v: T) -> toml::Value {
     toml::Value::try_from(v).expect("a settings default must be TOML-representable")
 }

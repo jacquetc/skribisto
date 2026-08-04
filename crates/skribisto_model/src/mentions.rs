@@ -34,7 +34,7 @@
 //!
 //! ## The cache key is compound, and that is not an optimisation detail
 //!
-//! [`counting`] is content-addressed on one input, so it cannot go stale. A mention result
+//! [`counting`](crate::counting) is content-addressed on one input, so it cannot go stale. A mention result
 //! depends on **two** inputs that change independently: the prose, and the alias table. Key
 //! it on the prose alone and renaming an alias — with no scene touched — serves the previous
 //! answer forever. So the key carries a fingerprint of the table as well; see

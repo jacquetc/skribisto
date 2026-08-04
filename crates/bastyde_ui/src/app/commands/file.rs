@@ -5,7 +5,8 @@
 //! Settings / Quit / Welcome.
 //!
 //! **Every door that replaces this window's project goes through the guard.** New Work and
-//! Open Work both close the open `Work` first, so both ask [`ProjectSwitchViewModel`] rather
+//! Open Work both close the open `Work` first, so both ask
+//! [`ProjectSwitchViewModel`](crate::view_models::ProjectSwitchViewModel) rather
 //! than calling the backend — which is what they used to do, destroying unsaved edits
 //! outright. The guard performs the switch itself, now or once the deferred save lands;
 //! these actions only *ask* for it.
@@ -91,7 +92,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         ctx.register_action_global(Action::new("work.open_path").on_invoke(move |i, c| {
             if let Some(AppIntent::OpenWorkPath { path }) = AppIntent::from_intent(i) {
                 if !crate::app::may_switch_project_in_place(&registry, &ids, role) {
-                    crate::shell::windows::open_or_focus_project(c, &path);
+                    crate::shell::windows::open_or_focus_project(c, path);
                     return;
                 }
                 switch.request(c, PendingSwitch::OpenWork(path.clone()), ids.work_id.get());

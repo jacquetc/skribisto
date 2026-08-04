@@ -136,8 +136,11 @@ pub fn measure(text: &str, locale: Option<&str>, markers: DialogueMarkers) -> Pr
 
     let words: usize = paragraph_words.iter().sum();
     let marks = text.chars().filter(|c| PUNCTUATION.contains(c)).count();
-    let punctuation_per_1k =
-        if words == 0 { 0.0 } else { marks as f64 * 1000.0 / words as f64 };
+    let punctuation_per_1k = if words == 0 {
+        0.0
+    } else {
+        marks as f64 * 1000.0 / words as f64
+    };
 
     ProseStats {
         words,
@@ -147,8 +150,7 @@ pub fn measure(text: &str, locale: Option<&str>, markers: DialogueMarkers) -> Pr
         // Both conditions matter. No convention means "not measurable in this language";
         // no words means "nothing to measure" — and a `Some(0.0)` for either would draw a
         // real 0% bar, which this module's own docs say must never stand in for absence.
-        dialogue: (markers.is_measurable() && words > 0)
-            .then(|| dialogue_share(text, markers)),
+        dialogue: (markers.is_measurable() && words > 0).then(|| dialogue_share(text, markers)),
     }
 }
 
@@ -185,7 +187,11 @@ fn dialogue_share(text: &str, markers: DialogueMarkers) -> f64 {
         spoken += quoted_words(para, markers);
     }
 
-    if total == 0 { 0.0 } else { spoken as f64 / total as f64 }
+    if total == 0 {
+        0.0
+    } else {
+        spoken as f64 / total as f64
+    }
 }
 
 /// Words inside quotation marks in one paragraph.
@@ -229,7 +235,10 @@ fn quoted_words(para: &str, markers: DialogueMarkers) -> usize {
         spans.push((span_start, para.len()));
     }
 
-    spans.iter().map(|&(s, e)| tokenize(&para[s..e]).len()).sum()
+    spans
+        .iter()
+        .map(|&(s, e)| tokenize(&para[s..e]).len())
+        .sum()
 }
 
 #[cfg(test)]
@@ -241,8 +250,11 @@ mod tests {
         close_quote: Some('\u{201D}'),
         dash: None,
     };
-    const FR: DialogueMarkers =
-        DialogueMarkers { open_quote: Some('«'), close_quote: Some('»'), dash: Some('—') };
+    const FR: DialogueMarkers = DialogueMarkers {
+        open_quote: Some('«'),
+        close_quote: Some('»'),
+        dash: Some('—'),
+    };
 
     #[test]
     fn paragraphs_are_blank_line_separated() {
@@ -278,7 +290,11 @@ mod tests {
     fn one_sentence_has_a_mean_but_no_deviation() {
         let s = measure("Only the one sentence.", Some("en"), EN);
         assert_eq!(s.mean_sentence_words(), Some(4.0));
-        assert_eq!(s.sentence_words_stddev(), None, "deviation of one sample is not a number");
+        assert_eq!(
+            s.sentence_words_stddev(),
+            None,
+            "deviation of one sample is not a number"
+        );
     }
 
     #[test]
@@ -297,7 +313,10 @@ mod tests {
         assert_eq!(measure("", Some("en"), EN).dialogue, None);
         // ...while a scene that genuinely contains no speech still reports zero, because
         // that IS a measurement.
-        assert_eq!(measure("The room was cold.", Some("en"), EN).dialogue, Some(0.0));
+        assert_eq!(
+            measure("The room was cold.", Some("en"), EN).dialogue,
+            Some(0.0)
+        );
     }
 
     #[test]
@@ -358,14 +377,21 @@ mod tests {
             EN,
         );
         let d = s.dialogue.unwrap();
-        assert!(d > 0.0 && d < 1.0, "one runaway quote must not mark the whole scene: {d}");
+        assert!(
+            d > 0.0 && d < 1.0,
+            "one runaway quote must not mark the whole scene: {d}"
+        );
     }
 
     /// The honest answer for a language with no curated convention. A `0.0` here would read
     /// as "this scene has no dialogue", which is a different and false claim.
     #[test]
     fn an_unsupported_language_reports_no_measurement_rather_than_zero() {
-        let s = measure("\u{201C}Whatever this is,\u{201D} said someone.", None, DialogueMarkers::none());
+        let s = measure(
+            "\u{201C}Whatever this is,\u{201D} said someone.",
+            None,
+            DialogueMarkers::none(),
+        );
         assert_eq!(s.dialogue, None);
         assert!(s.words > 0, "the rest of the measurement still works");
     }
@@ -374,9 +400,10 @@ mod tests {
 
     #[test]
     fn every_curated_language_is_measurable() {
-        for tag in
-            ["en", "fr", "de", "de-CH", "es", "ca", "it", "pt", "pt-BR", "nl", "pl", "ru", "sv", "tr", "ar"]
-        {
+        for tag in [
+            "en", "fr", "de", "de-CH", "es", "ca", "it", "pt", "pt-BR", "nl", "pl", "ru", "sv",
+            "tr", "ar",
+        ] {
             assert!(markers_for(tag).is_measurable(), "{tag} must be measurable");
         }
     }
@@ -385,7 +412,9 @@ mod tests {
     /// regional tag must resolve through its base language rather than report unmeasurable.
     #[test]
     fn a_regional_tag_resolves_through_its_language() {
-        for tag in ["en-US", "en_US", "EN-us", " en-GB ", "fr-CA", "fr_FR", "pt-PT"] {
+        for tag in [
+            "en-US", "en_US", "EN-us", " en-GB ", "fr-CA", "fr_FR", "pt-PT",
+        ] {
             assert!(
                 markers_for(tag).is_measurable(),
                 "{tag} must resolve to its language's convention"
@@ -424,7 +453,10 @@ mod tests {
     fn an_uncurated_language_is_honestly_unmeasurable() {
         for tag in ["ja", "zh", "he", "fi", "cs", ""] {
             let m = markers_for(tag);
-            assert!(!m.is_measurable(), "{tag} has no curated convention and must say so");
+            assert!(
+                !m.is_measurable(),
+                "{tag} has no curated convention and must say so"
+            );
         }
     }
 

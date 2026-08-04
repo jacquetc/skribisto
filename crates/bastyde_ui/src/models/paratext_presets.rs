@@ -52,12 +52,18 @@ use serde::{Deserialize, Serialize};
 
 /// The four traditions shipped with the app. Data, not code — each is one file.
 const BUNDLED: &[(&str, &str)] = &[
-    ("us-trade", include_str!("../../../../resources/paratext/us-trade.toml")),
+    (
+        "us-trade",
+        include_str!("../../../../resources/paratext/us-trade.toml"),
+    ),
     (
         "roman-francais",
         include_str!("../../../../resources/paratext/roman-francais.toml"),
     ),
-    ("uk-trade", include_str!("../../../../resources/paratext/uk-trade.toml")),
+    (
+        "uk-trade",
+        include_str!("../../../../resources/paratext/uk-trade.toml"),
+    ),
     (
         "deutscher-roman",
         include_str!("../../../../resources/paratext/deutscher-roman.toml"),
@@ -111,7 +117,11 @@ impl ParatextPreset {
             .nth(1)
             .unwrap_or_default()
             .to_ascii_uppercase();
-        !country.is_empty() && self.country.iter().any(|c| c.eq_ignore_ascii_case(&country))
+        !country.is_empty()
+            && self
+                .country
+                .iter()
+                .any(|c| c.eq_ignore_ascii_case(&country))
     }
 }
 
@@ -268,10 +278,7 @@ impl ParatextPresetsService {
     /// wrote their own meant it.
     pub fn preselect_for_locale(&self, locale: &str) -> Option<ParatextPreset> {
         let all = self.all();
-        all.iter()
-            .rev()
-            .find(|p| p.serves_locale(locale))
-            .cloned()
+        all.iter().rev().find(|p| p.serves_locale(locale)).cloned()
     }
 
     pub fn add_user_preset(&self, source: &str) -> Result<(), SettingsFileError> {
@@ -330,7 +337,11 @@ mod tests {
     #[test]
     fn every_bundled_preset_parses() {
         let all = ParatextPresetsService::bundled();
-        assert_eq!(all.len(), BUNDLED.len(), "one or more bundled presets failed to parse");
+        assert_eq!(
+            all.len(),
+            BUNDLED.len(),
+            "one or more bundled presets failed to parse"
+        );
         for p in &all {
             assert!(!p.name.trim().is_empty(), "{} has no name", p.id);
             assert!(

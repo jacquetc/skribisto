@@ -11,7 +11,8 @@
 //!   (`EditorsViewModel::active_item()`), so it rebuilds exactly when Inspector
 //!   does with no new plumbing for "what is focused".
 //!
-//! Both are `ListView`s over the **same** [`CommentsListModel`]: a comment card is
+//! Both are `ListView`s over the **same**
+//! [`CommentsListModel`](crate::models::CommentsListModel): a comment card is
 //! a variable-height composite (breadcrumb, quoted snippet, body, footer chips),
 //! which is the free-form row shape `ListView`'s delegate signature exists for.
 //! `TableView` would force column-shaped cells a wrapping body cannot live in, and
@@ -202,7 +203,11 @@ fn filter_bar(vm: CommentsViewModel) -> impl Widget {
         Wrap::new()
             .spacing(4.0)
             .line_spacing(4.0)
-            .child(chip(tr!(comments_filter_all()), CommentFilter::All, vm.clone()))
+            .child(chip(
+                tr!(comments_filter_all()),
+                CommentFilter::All,
+                vm.clone(),
+            ))
             .child(chip(
                 tr!(comments_filter_open()),
                 CommentFilter::Open,
@@ -347,15 +352,18 @@ fn comment_card(
     } else {
         tr!(comments_status_open())
     };
-    let mut footer = HStack::new().spacing(6.0).child(
-        TextWidget::new(status)
-            .style(TextStyleRole::Tiny)
-            .color(if orphaned {
-                TextRole::Warning
-            } else {
-                TextRole::Secondary
-            }),
-    );
+    let mut footer =
+        HStack::new()
+            .spacing(6.0)
+            .child(
+                TextWidget::new(status)
+                    .style(TextStyleRole::Tiny)
+                    .color(if orphaned {
+                        TextRole::Warning
+                    } else {
+                        TextRole::Secondary
+                    }),
+            );
     if row.reply_count() > 0 {
         footer = footer.child(
             TextWidget::new(tr!(comments_reply_count(count = row.reply_count() as i64)))
@@ -394,8 +402,13 @@ fn comment_card(
 
     let menu_vm = vm.clone();
     item.context_menu(move |_pos, _ctx| {
-        Some(Box::new(card_menu(menu_vm.clone(), id, resolved, orphaned, focus.clone()))
-            as Box<dyn Widget>)
+        Some(Box::new(card_menu(
+            menu_vm.clone(),
+            id,
+            resolved,
+            orphaned,
+            focus.clone(),
+        )) as Box<dyn Widget>)
     })
 }
 
@@ -415,7 +428,8 @@ fn card_menu(
     if resolved {
         let vm = vm.clone();
         menu = menu.item(
-            MenuItem::new(tr!(comments_menu_reopen())).on_activate_fn(move |_ctx| vm.reopen(id, None)),
+            MenuItem::new(tr!(comments_menu_reopen()))
+                .on_activate_fn(move |_ctx| vm.reopen(id, None)),
         );
     } else if !orphaned {
         let vm = vm.clone();
@@ -427,7 +441,8 @@ fn card_menu(
 
     let del_vm = vm.clone();
     menu.item(
-        MenuItem::new(tr!(comments_menu_delete())).on_activate_fn(move |_ctx| del_vm.delete(id, None)),
+        MenuItem::new(tr!(comments_menu_delete()))
+            .on_activate_fn(move |_ctx| del_vm.delete(id, None)),
     )
 }
 
@@ -512,7 +527,11 @@ mod tests {
         let mut who = String::new();
         let mut stack = vec![root];
         let short = |t: Option<&'static str>| {
-            t.unwrap_or("?").rsplit("::").next().unwrap_or("?").to_string()
+            t.unwrap_or("?")
+                .rsplit("::")
+                .next()
+                .unwrap_or("?")
+                .to_string()
         };
         while let Some(id) = stack.pop() {
             let p = tree.bounds(id);
@@ -567,6 +586,4 @@ mod tests {
             );
         }
     }
-
 }
-

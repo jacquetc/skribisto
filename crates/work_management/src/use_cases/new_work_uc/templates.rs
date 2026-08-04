@@ -237,6 +237,9 @@ fn paratext_folder(name: &str, titles: &[String], indent: i64) -> Vec<TemplateIt
     items
 }
 
+/// Test-only convenience: [`build_template_with_paratexts`] with no paratexts. Production
+/// code (`new_work_uc.rs`) always has a `ParatextPlan` in hand and calls that directly.
+#[cfg(test)]
 pub fn build_template(
     template: NewWorkTemplate,
     title: &str,
@@ -246,7 +249,7 @@ pub fn build_template(
     build_template_with_paratexts(template, title, l, chapter_scene, &ParatextPlan::default())
 }
 
-/// [`build_template`] plus a paratext structure.
+/// `build_template` plus a paratext structure.
 ///
 /// Two axes, kept orthogonal on purpose: the manuscript template says how much book, the
 /// plan says which tradition. Merged into one enum they would multiply — "Novel, twenty
@@ -270,10 +273,11 @@ pub fn build_template_with_paratexts(
     // Keyed on the presence of a book row rather than on the template enum: the question
     // is what was actually built, and a future template that grows a book should get its
     // paratexts without anyone remembering to add it to a list.
-    let Some(manuscript) = binders
-        .iter_mut()
-        .find(|b| b.items.iter().any(|i| i.sub_role == BinderItemSubRole::Book))
-    else {
+    let Some(manuscript) = binders.iter_mut().find(|b| {
+        b.items
+            .iter()
+            .any(|i| i.sub_role == BinderItemSubRole::Book)
+    }) else {
         return binders;
     };
     // Front matter before the book row, back matter after everything. Both at the book's
@@ -560,7 +564,9 @@ mod paratext_tests {
 
         let folders: Vec<&str> = items
             .iter()
-            .filter(|i| i.role == BinderItemRole::Folder && i.sub_role == BinderItemSubRole::Paratext)
+            .filter(|i| {
+                i.role == BinderItemRole::Folder && i.sub_role == BinderItemSubRole::Paratext
+            })
             .map(|i| i.title.as_str())
             .collect();
         assert_eq!(folders, vec!["Front matter", "Back matter"]);
@@ -641,6 +647,9 @@ mod paratext_tests {
             &ParatextPlan::default(),
         );
         let without = build_template(NewWorkTemplate::Novel, "T", &l, false);
-        assert_eq!(manuscript(&with).items.len(), manuscript(&without).items.len());
+        assert_eq!(
+            manuscript(&with).items.len(),
+            manuscript(&without).items.len()
+        );
     }
 }

@@ -17,8 +17,8 @@
 //!
 //! No unit-of-work access here — callers fetch the order/indent map themselves
 //! and pass it in; these functions only compute. Shared by
-//! [`binder_item_management::move_items`] and
-//! [`trash_management::restore_items_to`] so the ordering math lives once.
+//! `binder_item_management::move_items` and
+//! `trash_management::restore_items_to` so the ordering math lives once.
 
 use anyhow::{Result, anyhow};
 use common::types::EntityId;
@@ -117,7 +117,11 @@ pub fn expand_to_subtrees(
 
 /// Insert `block` into `base` immediately before `anchor` (or at the end when
 /// `anchor` is `None`). `block` ids are assumed absent from `base`.
-pub fn insert_block(base: &[EntityId], block: &[EntityId], anchor: Option<EntityId>) -> Vec<EntityId> {
+pub fn insert_block(
+    base: &[EntityId],
+    block: &[EntityId],
+    anchor: Option<EntityId>,
+) -> Vec<EntityId> {
     let mut out = Vec::with_capacity(base.len() + block.len());
     let mut inserted = false;
     for &id in base {
@@ -167,7 +171,9 @@ pub fn resolve_item_target(
     let anchor_pos = dest_order
         .iter()
         .position(|&x| x == anchor_id)
-        .ok_or_else(|| anyhow!("resolve_item_target: anchor {anchor_id} not in destination order"))?;
+        .ok_or_else(|| {
+            anyhow!("resolve_item_target: anchor {anchor_id} not in destination order")
+        })?;
     let into_folder = place == DropPlace::Into && anchor_is_folder;
     // Into a leaf item is meaningless → fall back to After it.
     let effective = match place {
@@ -233,29 +239,53 @@ mod tests {
         let indent = indent_map(&[(1, 0), (2, 1), (3, 2), (4, 1), (5, 0)]);
         // selecting both the folder (1) and a descendant (3) yields 1's whole subtree once
         let requested: HashSet<EntityId> = [1, 3].into_iter().collect();
-        assert_eq!(expand_to_subtrees(&order, &indent, &requested), vec![1, 2, 3, 4]);
+        assert_eq!(
+            expand_to_subtrees(&order, &indent, &requested),
+            vec![1, 2, 3, 4]
+        );
         // two disjoint roots keep order
         let requested: HashSet<EntityId> = [2, 5].into_iter().collect();
-        assert_eq!(expand_to_subtrees(&order, &indent, &requested), vec![2, 3, 5]);
+        assert_eq!(
+            expand_to_subtrees(&order, &indent, &requested),
+            vec![2, 3, 5]
+        );
     }
 
     #[test]
     fn insert_block_before_anchor_or_append() {
-        assert_eq!(insert_block(&[1, 2, 3], &[8, 9], Some(2)), vec![1, 8, 9, 2, 3]);
+        assert_eq!(
+            insert_block(&[1, 2, 3], &[8, 9], Some(2)),
+            vec![1, 8, 9, 2, 3]
+        );
         assert_eq!(insert_block(&[1, 2, 3], &[8, 9], None), vec![1, 2, 3, 8, 9]);
-        assert_eq!(insert_block(&[1, 2, 3], &[8, 9], Some(99)), vec![1, 2, 3, 8, 9]);
+        assert_eq!(
+            insert_block(&[1, 2, 3], &[8, 9], Some(99)),
+            vec![1, 2, 3, 8, 9]
+        );
     }
 
     #[test]
     fn anchor_for_binder_target_top_vs_bottom() {
         let order = vec![1, 2, 3];
         let exclude: HashSet<EntityId> = HashSet::new();
-        assert_eq!(anchor_for_binder_target(&order, DropPlace::After, &exclude), None);
-        assert_eq!(anchor_for_binder_target(&order, DropPlace::Into, &exclude), Some(1));
-        assert_eq!(anchor_for_binder_target(&order, DropPlace::Before, &exclude), Some(1));
+        assert_eq!(
+            anchor_for_binder_target(&order, DropPlace::After, &exclude),
+            None
+        );
+        assert_eq!(
+            anchor_for_binder_target(&order, DropPlace::Into, &exclude),
+            Some(1)
+        );
+        assert_eq!(
+            anchor_for_binder_target(&order, DropPlace::Before, &exclude),
+            Some(1)
+        );
         // top item excluded (being moved) → anchor before the next survivor
         let exclude: HashSet<EntityId> = [1].into_iter().collect();
-        assert_eq!(anchor_for_binder_target(&order, DropPlace::Into, &exclude), Some(2));
+        assert_eq!(
+            anchor_for_binder_target(&order, DropPlace::Into, &exclude),
+            Some(2)
+        );
     }
 
     #[test]
@@ -311,6 +341,8 @@ mod tests {
         let order = vec![1, 2, 3];
         let indent = indent_map(&[(1, 0), (2, 0), (3, 0)]);
         let exclude: HashSet<EntityId> = HashSet::new();
-        assert!(resolve_item_target(&order, &indent, 99, 0, false, DropPlace::After, &exclude).is_err());
+        assert!(
+            resolve_item_target(&order, &indent, 99, 0, false, DropPlace::After, &exclude).is_err()
+        );
     }
 }

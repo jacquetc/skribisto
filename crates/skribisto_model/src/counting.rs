@@ -3,11 +3,12 @@
 
 //! Counting **policy** + a content-addressed cache over Djot scene prose.
 //!
-//! `text-document` owns the pure primitive ([`count_djot`], language-agnostic — the method
+//! `text-document` owns the pure primitive ([`count_djot`](text_document::count_djot),
+//! language-agnostic — the method
 //! is a parameter). Skribisto owns the *policy*: which method the writer chose (a global
 //! setting), resolved per scene from that scene's effective language.
 //!
-//! The cache mirrors [`search_management::corpus_cache`] exactly — keyed on
+//! The cache mirrors `search_management::corpus_cache` exactly — keyed on
 //! `(Djot source, resolved method)`, **content-addressed** so there is nothing to
 //! invalidate (edited prose is a different string → a different key → a miss), bounded by
 //! total heap and cleared wholesale on overflow. The one difference: a count is a tiny
@@ -82,7 +83,11 @@ struct Store {
 
 impl Default for Store {
     fn default() -> Self {
-        Store { by_method: HashMap::new(), heap: 0, max_heap: MAX_HEAP }
+        Store {
+            by_method: HashMap::new(),
+            heap: 0,
+            max_heap: MAX_HEAP,
+        }
     }
 }
 
@@ -139,7 +144,9 @@ pub fn cached_count(djot: &str, method: CountMethod) -> WordCharCounts {
     let counts = count_prose(djot, method);
 
     if let Ok(mut guard) = CACHE.write() {
-        guard.get_or_insert_with(Store::default).insert(djot, method, counts);
+        guard
+            .get_or_insert_with(Store::default)
+            .insert(djot, method, counts);
     }
     counts
 }
@@ -185,10 +192,22 @@ mod tests {
     #[test]
     fn auto_picks_cjk_for_chinese_and_japanese_else_fallback() {
         let f = CountMethod::UnicodeWords;
-        assert_eq!(resolve_method(CountingMethodSetting::Auto, f, "zh"), CountMethod::CjkHybrid);
-        assert_eq!(resolve_method(CountingMethodSetting::Auto, f, "ja"), CountMethod::CjkHybrid);
-        assert_eq!(resolve_method(CountingMethodSetting::Auto, f, "fr"), CountMethod::UnicodeWords);
-        assert_eq!(resolve_method(CountingMethodSetting::Auto, f, "ko"), CountMethod::UnicodeWords);
+        assert_eq!(
+            resolve_method(CountingMethodSetting::Auto, f, "zh"),
+            CountMethod::CjkHybrid
+        );
+        assert_eq!(
+            resolve_method(CountingMethodSetting::Auto, f, "ja"),
+            CountMethod::CjkHybrid
+        );
+        assert_eq!(
+            resolve_method(CountingMethodSetting::Auto, f, "fr"),
+            CountMethod::UnicodeWords
+        );
+        assert_eq!(
+            resolve_method(CountingMethodSetting::Auto, f, "ko"),
+            CountMethod::UnicodeWords
+        );
     }
 
     #[test]
@@ -217,8 +236,16 @@ mod tests {
     #[test]
     fn edited_prose_is_a_different_entry() {
         let mut store = fresh();
-        let before = get(&mut store, "Elena rentra chez elle.", CountMethod::UnicodeWords);
-        let after = get(&mut store, "Elena rentra chez elle, enfin.", CountMethod::UnicodeWords);
+        let before = get(
+            &mut store,
+            "Elena rentra chez elle.",
+            CountMethod::UnicodeWords,
+        );
+        let after = get(
+            &mut store,
+            "Elena rentra chez elle, enfin.",
+            CountMethod::UnicodeWords,
+        );
         assert_eq!(before.words, 4);
         assert_eq!(after.words, 5);
         assert_eq!(entries(&store), 2);
@@ -240,7 +267,11 @@ mod tests {
     fn the_count_is_of_prose_not_markup() {
         let mut store = fresh();
         // A link URL is markup, not prose the writer typed into the sentence.
-        let c = get(&mut store, "Voir [la note](https://exemple.test/x) ici.", CountMethod::UnicodeWords);
+        let c = get(
+            &mut store,
+            "Voir [la note](https://exemple.test/x) ici.",
+            CountMethod::UnicodeWords,
+        );
         assert_eq!(c.words, 4, "Voir la note ici");
     }
 
@@ -255,8 +286,15 @@ mod tests {
         store.max_heap = store.heap + 8;
         assert_eq!(entries(&store), 1);
         get(&mut store, "court", CountMethod::UnicodeWords);
-        assert_eq!(entries(&store), 1, "overflow cleared the old entry, kept the new");
-        assert!(store.get(big, CountMethod::UnicodeWords).is_none(), "the old entry was cleared");
+        assert_eq!(
+            entries(&store),
+            1,
+            "overflow cleared the old entry, kept the new"
+        );
+        assert!(
+            store.get(big, CountMethod::UnicodeWords).is_none(),
+            "the old entry was cleared"
+        );
         assert!(
             store.get("court", CountMethod::UnicodeWords).is_some(),
             "the new entry survived the clear"

@@ -9,12 +9,12 @@
 //! bundle is parsed. That's too late: a future variant added to `ContentRole` /
 //! `BinderItemSubRole` / `BinderItemRole` makes `ron::from_str` on `items.ron` hard-fail
 //! with a raw `Unexpected variant named "…"` several frames before the friendly refusal
-//! is ever reached. So the check moved *ahead* of parsing, into [`check_version_gate`],
+//! is ever reached. So the check moved *ahead* of parsing, into `check_version_gate`,
 //! reading only the two integers it needs out of `project.skrib`.
 //!
 //! # Why two version numbers
 //!
-//! [`mapping::from_entities`](crate::mapping) stamps `format_version = FORMAT_VERSION` on
+//! `mapping::from_entities` stamps `format_version = FORMAT_VERSION` on
 //! every write, including autosave. A bare refuse-if-greater rule on that alone would make
 //! a project permanently unopenable by an older build after a single autosave tick lands
 //! in a newer one, whether or not anything new was actually used. So the gate judges a
@@ -24,7 +24,7 @@
 //! * [`format_min_read_version`](crate::ProjectManifest::format_min_read_version) — the
 //!   lowest generation a reader must implement to open this bundle without loss.
 //!   Recomputed fresh at every write from what the bundle actually contains (see
-//!   [`compute_min_read_version`]), never carried over from what was loaded — delete the
+//!   [`compute_min_read_version`](crate::version_gate::compute_min_read_version)), never carried over from what was loaded — delete the
 //!   newer content and the next save lowers the floor again.
 //!
 //! # The one thing that must not be duplicated
@@ -62,7 +62,7 @@ const MIN_READ_BASELINE: u32 = 4;
 /// readers that would have been fine.
 ///
 /// Called from the one place every write path funnels through
-/// ([`folder_io::write_folder`](crate::folder_io::write_folder)'s manifest commit), so
+/// (`folder_io::write_folder`'s manifest commit), so
 /// no producer — not `from_entities`, not the Plume importer, not
 /// `mark_existing_as_backup` — can forget to stamp it.
 pub fn compute_min_read_version(bundle: &WorkBundle) -> u32 {

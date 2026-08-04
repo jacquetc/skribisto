@@ -5,7 +5,7 @@
 //! are in as a new one.
 //!
 //! Both are gated only on there being **an editor to act on**, which
-//! [`FormatViewModel::has_target`] answers. Templates were note-only at first; that
+//! [`FormatViewModel::has_target`](crate::view_models::FormatViewModel::has_target) answers. Templates were note-only at first; that
 //! restriction is gone, so a scene, a synopsis box, a corkboard card and a stream row are
 //! all fair game. `has_target` is also *sticky*, so the gate survives the focus loss that
 //! opening the menu causes.
@@ -59,7 +59,6 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let format = deps.format.clone();
         let templates = deps.session.note_templates.clone();
-        let editors = deps.editors.clone();
         ctx.register_action_global(Action::new("templates.save_as").on_invoke(move |_i, c| {
             // Read through the **handle**, not through the tab's `OpenDoc`.
             //

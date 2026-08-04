@@ -105,7 +105,9 @@ impl Widget for AboutPanel {
                             }
                         }
                     }
-                    Expand::horizontal { Divider }
+                    Expand::horizontal {
+                        Divider
+                    }
                     Expand::vertical {
                         Padding::symmetric(18.0, 20.0) {
                             VStack {
@@ -125,11 +127,15 @@ impl Widget for AboutPanel {
                             }
                         }
                     }
-                    Expand::horizontal { Divider }
+                    Expand::horizontal {
+                        Divider
+                    }
                     Expand::horizontal {
                         FixedSize {
                             height: 56.0
-                            Padding::symmetric(12.0, 20.0) { child: footer }
+                            Padding::symmetric(12.0, 20.0) {
+                                child: footer
+                            }
                         }
                     }
                 }

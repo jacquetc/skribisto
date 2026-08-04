@@ -172,7 +172,9 @@ pub fn capture(text: &str, start: usize, end: usize, block_ordinal: usize) -> An
         start,
         length: end - start,
         block_span: 1,
-        prefix: chars[start.saturating_sub(CONTEXT_CHARS)..start].iter().collect(),
+        prefix: chars[start.saturating_sub(CONTEXT_CHARS)..start]
+            .iter()
+            .collect(),
         exact,
         exact_truncated,
         suffix: chars[end..(end + CONTEXT_CHARS).min(chars.len())]
@@ -234,7 +236,12 @@ pub fn block_of(block_starts: &[usize], offset: usize) -> usize {
 /// silently attached to the wrong sentence is worse than one that admits it is lost.
 /// Tier 3 — a paragraph comment falls back to its block ordinal, which still means
 /// something even when the wording changed completely.
-pub fn resolve(text: &str, anchor: &Anchor, is_paragraph: bool, block_starts: &[usize]) -> Resolution {
+pub fn resolve(
+    text: &str,
+    anchor: &Anchor,
+    is_paragraph: bool,
+    block_starts: &[usize],
+) -> Resolution {
     let chars: Vec<char> = text.chars().collect();
 
     if is_paragraph {
@@ -443,7 +450,10 @@ mod tests {
         // Replace [5,9) with 2 chars. The comment ended at 8, inside that range.
         let (s, e) = shift_range(3, 8, 5, 4, 2);
         assert_eq!(s, 3);
-        assert_eq!(e, 5, "end stops before the new text rather than absorbing it");
+        assert_eq!(
+            e, 5,
+            "end stops before the new text rather than absorbing it"
+        );
     }
 
     #[test]

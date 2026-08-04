@@ -47,7 +47,11 @@ pub fn median(xs: &[f64]) -> Option<f64> {
     let mut v = xs.to_vec();
     v.sort_by(f64::total_cmp);
     let n = v.len();
-    Some(if n % 2 == 1 { v[n / 2] } else { (v[n / 2 - 1] + v[n / 2]) / 2.0 })
+    Some(if n % 2 == 1 {
+        v[n / 2]
+    } else {
+        (v[n / 2 - 1] + v[n / 2]) / 2.0
+    })
 }
 
 #[cfg(test)]

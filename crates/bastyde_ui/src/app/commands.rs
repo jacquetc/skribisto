@@ -28,8 +28,8 @@
 //!
 //! By the feature each command drives, not by where it happens to appear in a menu:
 //! [`view`] (docks + find banner), [`trash`], [`editor`] (spell-check, open item,
-//! add-to-dictionary, save), [`export`], [`file`] (project/app lifecycle), [`comments`],
-//! [`format`], [`templates`], [`binder`] (outline tree verbs), `go` (prev/next
+//! add-to-dictionary, save), [`export`], [`mod@file`] (project/app lifecycle), [`comments`],
+//! [`mod@format`], [`templates`], [`binder`] (outline tree verbs), `go` (prev/next
 //! Scene/Chapter/Note, scoped to the focused item's own binder).
 
 use std::rc::Rc;
@@ -49,10 +49,10 @@ use crate::view_models::{
 use super::PendingExit;
 
 mod binder;
+mod comments;
 mod editor;
 mod export;
 mod file;
-mod comments;
 mod format;
 mod go;
 mod templates;
@@ -82,7 +82,7 @@ pub(super) struct CommandDeps {
     pub registry: crate::sessions::WorkRegistry,
     /// How this window reached its Work — see [`crate::app::WindowRole`].
     /// Paired with `registry`/`ids` by `crate::app::may_switch_project_in_place`,
-    /// which the New Work / Open Work doors in [`file`] consult before
+    /// which the New Work / Open Work doors in [`mod@file`] consult before
     /// replacing this window's project.
     pub role: crate::app::WindowRole,
     /// The app-global quit sequencer — `app.quit`'s whole implementation. Shared

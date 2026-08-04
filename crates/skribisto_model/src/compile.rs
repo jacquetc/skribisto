@@ -9,12 +9,12 @@
 //! (`StreamLevel` / `is_boundary` / `is_row` / `row_indices`, lifted here so both the
 //! stream view and the exporter share one definition), plus the two things export needs
 //! that the stream view does not: a **backward** scope-resolution walk
-//! ([`enclosing_head`]) and the "Current Book / Chapter / Scene / Note / Folder" scope
-//! resolver ([`resolve_scope`]).
+//! ([`enclosing_head`](crate::compile::enclosing_head)) and the "Current Book / Chapter / Scene / Note / Folder" scope
+//! resolver ([`resolve_scope`](crate::compile::resolve_scope)).
 //!
 //! # Scope, not content
 //!
-//! [`resolve_scope`] returns an ordered list of **item ids**. It is deliberately
+//! [`resolve_scope`](crate::compile::resolve_scope) returns an ordered list of **item ids**. It is deliberately
 //! preset-unaware: it does not know whether notes or synopses are wanted, or how a
 //! heading is worded. It answers only "which items are in this scope", filtered to
 //! `activated && is_exportable` for items *swept into* a multi-item scope (an explicitly
@@ -273,7 +273,14 @@ mod tests {
     /// A tiny stream builder. Each entry: `(id, role, sub_role, indent)`; all activated +
     /// exportable unless overridden with [`off`].
     fn meta(id: u64, role: BinderItemRole, sub_role: SR, indent: i32) -> ItemMeta {
-        ItemMeta { id, role, sub_role, indent, activated: true, is_exportable: true }
+        ItemMeta {
+            id,
+            role,
+            sub_role,
+            indent,
+            activated: true,
+            is_exportable: true,
+        }
     }
     fn off(mut m: ItemMeta) -> ItemMeta {
         m.is_exportable = false;
@@ -283,13 +290,13 @@ mod tests {
     /// A flat novel: Book markers around two flat chapters, each with two scenes.
     fn flat_book() -> Vec<ItemMeta> {
         vec![
-            meta(1, Item, SR::BookBegin, 0),      // 0: opens book
-            meta(2, Item, SR::ChapterScene, 0),   // 1: chapter 1 head
-            meta(3, Item, SR::Scene, 1),          // 2
-            meta(4, Item, SR::Scene, 1),          // 3
-            meta(5, Item, SR::ChapterScene, 0),   // 4: chapter 2 head
-            meta(6, Item, SR::Scene, 1),          // 5
-            meta(7, Item, SR::BookEnd, 0),        // 6: closes book
+            meta(1, Item, SR::BookBegin, 0),    // 0: opens book
+            meta(2, Item, SR::ChapterScene, 0), // 1: chapter 1 head
+            meta(3, Item, SR::Scene, 1),        // 2
+            meta(4, Item, SR::Scene, 1),        // 3
+            meta(5, Item, SR::ChapterScene, 0), // 4: chapter 2 head
+            meta(6, Item, SR::Scene, 1),        // 5
+            meta(7, Item, SR::BookEnd, 0),      // 6: closes book
         ]
     }
 
@@ -309,7 +316,10 @@ mod tests {
     fn current_chapter_is_head_plus_its_scenes() {
         let s = flat_book();
         // Anchored on scene id 3 (index 2): chapter 1 = head 2 + scenes 3,4.
-        assert_eq!(resolve_scope(&s, 2, ScopeKind::Chapter), Some(vec![2, 3, 4]));
+        assert_eq!(
+            resolve_scope(&s, 2, ScopeKind::Chapter),
+            Some(vec![2, 3, 4])
+        );
         // Anchored on chapter 2 head (index 4): head 5 + scene 6.
         assert_eq!(resolve_scope(&s, 4, ScopeKind::Chapter), Some(vec![5, 6]));
     }
@@ -347,10 +357,10 @@ mod tests {
     fn folder_scope_is_the_indent_subtree() {
         // A notes folder with two notes, then a sibling scene outside it.
         let s = vec![
-            meta(1, Folder, SR::Note, 0),  // 0: notes folder
-            meta(2, Item, SR::Note, 1),    // 1: note in it
-            meta(3, Item, SR::Note, 1),    // 2: note in it
-            meta(4, Item, SR::Scene, 0),   // 3: sibling, not in the folder
+            meta(1, Folder, SR::Note, 0), // 0: notes folder
+            meta(2, Item, SR::Note, 1),   // 1: note in it
+            meta(3, Item, SR::Note, 1),   // 2: note in it
+            meta(4, Item, SR::Scene, 0),  // 3: sibling, not in the folder
         ];
         // Folder facet → subtree = folder head + its two notes, not the sibling.
         assert_eq!(resolve_scope(&s, 0, ScopeKind::Folder), Some(vec![1, 2, 3]));
@@ -360,7 +370,10 @@ mod tests {
     fn primary_scope_follows_the_facet() {
         assert_eq!(primary_scope(&Item, &SR::Scene), Some(ScopeKind::Scene));
         assert_eq!(primary_scope(&Item, &SR::Note), Some(ScopeKind::Note));
-        assert_eq!(primary_scope(&Item, &SR::ChapterScene), Some(ScopeKind::Chapter));
+        assert_eq!(
+            primary_scope(&Item, &SR::ChapterScene),
+            Some(ScopeKind::Chapter)
+        );
         assert_eq!(primary_scope(&Folder, &SR::Book), Some(ScopeKind::Book));
         assert_eq!(primary_scope(&Folder, &SR::None), Some(ScopeKind::Folder));
     }

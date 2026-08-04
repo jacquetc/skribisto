@@ -25,7 +25,7 @@
 //! (`shell/windows.rs`), for the reason its module doc gives: a process-wide
 //! instance would let one window's popup drive another window's editor.
 //!
-//! Activation goes through [`EditorsViewModel::open_or_focus`] — the same door
+//! Activation goes through [`crate::view_models::EditorsViewModel::open_or_focus`] — the same door
 //! the binder tree, the Go commands and the recents list already use — so a jump
 //! from here is indistinguishable downstream from any other navigation
 //! (autosave, dirty tracking, `StatsModel::active_item` all see it).

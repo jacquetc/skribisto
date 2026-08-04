@@ -309,7 +309,7 @@ impl OutlineViewModel {
     }
 
     /// Expand a row's ancestors and select it, **without** bringing the outline
-    /// forward — the half of [`reveal_item`] that a create wants.
+    /// forward — the half of [`Self::reveal_item`] that a create wants.
     ///
     /// Creation is not always an outline gesture: the same `AppIntent::NewItem`
     /// path serves the Corkboard and Overview header buttons, and popping the
@@ -358,7 +358,7 @@ impl OutlineViewModel {
     /// `title` is passed in already resolved rather than derived from `role` here:
     /// the caller knows the logical `CreateType` (Chapter, Scene, Note…), which
     /// `role` alone cannot recover — `Folder` covers books, parts, chapters and note
-    /// folders alike. See [`create_labels::default_title`].
+    /// folders alike. See [`crate::binder::create_labels::default_title`].
     ///
     /// Revealing is not cosmetic. Creating the *first* child of a container puts the
     /// new row under a parent that, having had no children, has never been expanded —

@@ -999,7 +999,8 @@ pub fn writing_section(
 /// A flat, edge-to-edge backdrop wrapping the tab body (the `TabWidget` doesn't
 /// paint a content background).
 ///
-/// `background` is the tab's own answer ([`ContentTab::backdrop_role`]) rather
+/// `background` is the tab's own answer
+/// ([`ContentTab::backdrop_role`](crate::tabs::ContentTab::backdrop_role)) rather
 /// than a constant, and this is the **one** place any of the twelve
 /// combinations paints its background — so the distraction-free surface can ask
 /// for `Transparent` and paint its own page underneath, without a second
@@ -1168,7 +1169,8 @@ const MODE_SIDE: usize = 1;
 /// resolved width is finally known — and published to a `Signal<usize>` that a
 /// [`Switcher`] consumes as its page index.
 ///
-/// **Writing a signal from inside layout** is the [`MenuBar`]-collapse idiom, and
+/// **Writing a signal from inside layout** is the
+/// [`MenuBar`](bastyde::widgets::MenuBar)-collapse idiom, and
 /// it is safe for the same two reasons: the write is guarded by a plain `Cell`
 /// shadow so it only happens when the answer actually changes (no churn, no
 /// oscillation), and the consumer is a `bind_to`/`visible_when` binding, which the

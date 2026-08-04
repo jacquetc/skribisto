@@ -4,7 +4,8 @@
 //! The **Overview** pane — a container's whole subtree as a dense, sortable table.
 //!
 //! One segment of a Book / Part / Chapter-folder / Note-folder tab. A header (count ·
-//! search · expand/collapse · ＋ New) sits over a virtualized [`TreeTableView`] whose rows
+//! search · expand/collapse · ＋ New) sits over a virtualized
+//! [`TreeTableView`](bastyde::widgets::TreeTableView) whose rows
 //! come straight from the [`OverviewRowsModel`](crate::models::OverviewRowsModel) — a
 //! `TreeDataSlice` keyed by durable uid, no `TreeModel` mirror. The view where you see the
 //! shape of the book rather than the words of it — what is where, how long each piece is,

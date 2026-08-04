@@ -120,12 +120,16 @@ impl Drop for SubscriptionToken {
     fn drop(&mut self) {
         // Best-effort removal. If another thread poisoned the mutex, skip
         // cleanup rather than double-panic during unwind.
-        if let Ok(mut subs) = self.subscribers.lock() {
-            if let Some(list) = subs.get_mut(&self.origin) {
-                list.retain(|(id, _)| *id != self.id);
-                if list.is_empty() {
-                    subs.remove(&self.origin);
-                }
+        //
+        // Hand-patched for clippy::collapsible_if: this file is Qleany-generated
+        // (frontend_event_hub_client.tera) and will need this reapplied if it is
+        // ever regenerated before the template itself is fixed upstream.
+        if let Ok(mut subs) = self.subscribers.lock()
+            && let Some(list) = subs.get_mut(&self.origin)
+        {
+            list.retain(|(id, _)| *id != self.id);
+            if list.is_empty() {
+                subs.remove(&self.origin);
             }
         }
     }

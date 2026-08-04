@@ -41,15 +41,13 @@ use common::entities::QuoteStyle;
 // The locale facts moved to the domain crate: the analysis backend needs them too, and a
 // second copy there had already drifted on tag resolution. Re-exported so existing callers
 // (and tests) keep their `text_replacement::typography::…` paths.
-pub use skribisto_model::typography::{
-    QuoteSystem, TypographyRuleset, mirrored_for, ruleset_for,
-};
+pub use skribisto_model::typography::{QuoteSystem, TypographyRuleset, mirrored_for, ruleset_for};
 // The glyphs the typing rules match on. Imported rather than re-declared: a constant that is
 // not in scope inside a `match` pattern becomes a catch-all binding instead of failing to
 // resolve, so a second local copy is a genuinely dangerous kind of duplication here.
 use skribisto_model::typography::{
-    ELLIPSIS, EM_DASH, EN_DASH, LAQUO, LEFT_DOUBLE, LEFT_SINGLE, LOW_DOUBLE, LSAQUO, NNBSP,
-    RAQUO, RIGHT_SINGLE,
+    ELLIPSIS, EM_DASH, EN_DASH, LAQUO, LEFT_DOUBLE, LEFT_SINGLE, LOW_DOUBLE, LSAQUO, NNBSP, RAQUO,
+    RIGHT_SINGLE,
 };
 // The named quote pairs a per-project house-style override selects between.
 use skribisto_model::typography::{PAIR_CURLY, PAIR_GUILLEMET, PAIR_LOW_HIGH};

@@ -163,6 +163,7 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &SaveAndExitDeps) {
 
 /// The disk write a deferred flow was waiting on will never land — it failed, or a
 /// follow-up save could not even be started. Drop whatever was parked on it and say so.
+#[allow(clippy::too_many_arguments)]
 pub(in crate::app) fn abandon_deferred(
     c: &mut EventContext,
     pending: &Signal<PendingExit>,

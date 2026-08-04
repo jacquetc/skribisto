@@ -20,9 +20,7 @@
 //! the kind of thing that regresses silently the moment someone reaches for the convenient
 //! `resolve_scope` helper.
 
-use analysis_management::{
-    AnalyzeBookDto, BookAnalysisResultDto, SceneAnalyses, SceneAnalysis,
-};
+use analysis_management::{AnalyzeBookDto, BookAnalysisResultDto, SceneAnalyses, SceneAnalysis};
 use frontend::AppContext;
 use frontend::commands::{
     analysis_management_commands, binder_item_commands, content_commands, undo_redo_commands,
@@ -121,7 +119,11 @@ fn fixture() -> Fixture {
         .pop()
         .unwrap();
 
-    let mut unprinted = item(BinderItemSubRole::Scene, "Cut for now", BinderItemRole::Item);
+    let mut unprinted = item(
+        BinderItemSubRole::Scene,
+        "Cut for now",
+        BinderItemRole::Item,
+    );
     unprinted.is_exportable = false;
 
     let created = binder_item_commands::create_binder_item_multi(
@@ -129,8 +131,16 @@ fn fixture() -> Fixture {
         Some(setup),
         &[
             item(BinderItemSubRole::Book, "The Book", BinderItemRole::Folder),
-            item(BinderItemSubRole::Scene, "First light", BinderItemRole::Item),
-            item(BinderItemSubRole::Scene, "Second light", BinderItemRole::Item),
+            item(
+                BinderItemSubRole::Scene,
+                "First light",
+                BinderItemRole::Item,
+            ),
+            item(
+                BinderItemSubRole::Scene,
+                "Second light",
+                BinderItemRole::Item,
+            ),
             unprinted,
         ],
         binder,
@@ -140,7 +150,11 @@ fn fixture() -> Fixture {
     let (book, scene_a, scene_b, scene_unprinted) =
         (created[0].id, created[1].id, created[2].id, created[3].id);
 
-    for (id, tag) in [(scene_a, "alpha"), (scene_b, "beta"), (scene_unprinted, "gamma")] {
+    for (id, tag) in [
+        (scene_a, "alpha"),
+        (scene_b, "beta"),
+        (scene_unprinted, "gamma"),
+    ] {
         content_commands::create_content_multi(
             &ctx,
             Some(setup),
@@ -157,18 +171,34 @@ fn fixture() -> Fixture {
         .unwrap();
     }
 
-    Fixture { ctx, setup, work, book, scene_a, scene_b, scene_unprinted }
+    Fixture {
+        ctx,
+        setup,
+        work,
+        book,
+        scene_a,
+        scene_b,
+        scene_unprinted,
+    }
 }
 
 /// Run an analysis to completion and return its result.
 fn analyze(fx: &Fixture) -> BookAnalysisResultDto {
     let id = analysis_management_commands::analyze_book(
         &fx.ctx,
-        &AnalyzeBookDto { work_id: fx.work, scope_item_id: fx.book },
+        &AnalyzeBookDto {
+            work_id: fx.work,
+            scope_item_id: fx.book,
+        },
     )
     .expect("start analysis");
     // Release the manager lock before blocking, per the qleany 1.9.0 long-operation guidance.
-    let completion = fx.ctx.long_operation_manager.lock().unwrap().completion_signal();
+    let completion = fx
+        .ctx
+        .long_operation_manager
+        .lock()
+        .unwrap()
+        .completion_signal();
     let finished = completion.wait_for(&id, Some(std::time::Duration::from_secs(60)));
     assert!(finished, "the analysis did not finish within 60s");
 
@@ -186,9 +216,12 @@ fn measured(dto: &BookAnalysisResultDto) -> Vec<(EntityId, String, i64)> {
         SceneAnalyses::Measured(rows) => rows
             .iter()
             .filter_map(|r| match r {
-                SceneAnalysis::Measured { item_id, title, words, .. } => {
-                    Some((*item_id, title.clone(), *words))
-                }
+                SceneAnalysis::Measured {
+                    item_id,
+                    title,
+                    words,
+                    ..
+                } => Some((*item_id, title.clone(), *words)),
                 SceneAnalysis::Empty => None,
             })
             .collect(),
@@ -298,7 +331,11 @@ fn a_part_heading_is_not_measured_as_a_scene() {
         &[
             item(BinderItemSubRole::Book, "The Book", BinderItemRole::Folder),
             item(BinderItemSubRole::Part, "Part One", BinderItemRole::Folder),
-            item(BinderItemSubRole::Scene, "A real scene", BinderItemRole::Item),
+            item(
+                BinderItemSubRole::Scene,
+                "A real scene",
+                BinderItemRole::Item,
+            ),
         ],
         binder,
         -1,
@@ -374,7 +411,10 @@ fn the_scope_head_is_not_measured_as_a_scene() {
     let fx = fixture();
     let dto = analyze(&fx);
     let ids: Vec<EntityId> = measured(&dto).into_iter().map(|(id, _, _)| id).collect();
-    assert!(!ids.contains(&fx.book), "the Book folder is the pane header, not a scene");
+    assert!(
+        !ids.contains(&fx.book),
+        "the Book folder is the pane header, not a scene"
+    );
     assert!(ids.contains(&fx.scene_b));
 }
 
@@ -385,10 +425,18 @@ fn an_unknown_scope_is_an_error_not_an_empty_analysis() {
     let fx = fixture();
     let id = analysis_management_commands::analyze_book(
         &fx.ctx,
-        &AnalyzeBookDto { work_id: fx.work, scope_item_id: 999_999 },
+        &AnalyzeBookDto {
+            work_id: fx.work,
+            scope_item_id: 999_999,
+        },
     )
     .expect("start analysis");
-    let completion = fx.ctx.long_operation_manager.lock().unwrap().completion_signal();
+    let completion = fx
+        .ctx
+        .long_operation_manager
+        .lock()
+        .unwrap()
+        .completion_signal();
     completion.wait_for(&id, Some(std::time::Duration::from_secs(60)));
 
     let result = analysis_management_commands::get_analyze_book_result(&fx.ctx, &id);
@@ -413,16 +461,25 @@ fn an_unknown_scope_is_an_error_not_an_empty_analysis() {
 /// are a few hundred words of `alphaword1 alphaword2`.
 #[test]
 fn the_bundled_example_opens_and_analyses() {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../resources/examples/Starforgers.skrib");
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../resources/examples/Starforgers.skrib"
+    );
 
     let ctx = AppContext::new();
     frontend::commands::work_management_commands::load_work(
         &ctx,
-        &work_management::LoadWorkDto { file_name: path.to_string() },
+        &work_management::LoadWorkDto {
+            file_name: path.to_string(),
+        },
     )
     .expect("the bundled example must open");
 
-    let work = work_commands::get_all_work(&ctx).unwrap().pop().expect("a work").id;
+    let work = work_commands::get_all_work(&ctx)
+        .unwrap()
+        .pop()
+        .expect("a work")
+        .id;
 
     // The Book container is the analysis scope.
     let binder = work_commands::get_work_relationship(&ctx, &work, &WorkRelationshipField::Binders)
@@ -446,10 +503,17 @@ fn the_bundled_example_opens_and_analyses() {
 
     let id = analysis_management_commands::analyze_book(
         &ctx,
-        &AnalyzeBookDto { work_id: work, scope_item_id: book },
+        &AnalyzeBookDto {
+            work_id: work,
+            scope_item_id: book,
+        },
     )
     .expect("start analysis");
-    let completion = ctx.long_operation_manager.lock().unwrap().completion_signal();
+    let completion = ctx
+        .long_operation_manager
+        .lock()
+        .unwrap()
+        .completion_signal();
     assert!(
         completion.wait_for(&id, Some(std::time::Duration::from_secs(300))),
         "analysing the bundled example did not finish"
@@ -459,7 +523,11 @@ fn the_bundled_example_opens_and_analyses() {
         .expect("a finished analysis has a result");
 
     let rows = measured(&dto);
-    assert!(rows.len() >= 30, "the example has 33 prose chapters; measured {}", rows.len());
+    assert!(
+        rows.len() >= 30,
+        "the example has 33 prose chapters; measured {}",
+        rows.len()
+    );
     assert!(
         dto.total_words > 50_000,
         "a novel-length manuscript should measure tens of thousands of words, got {}",

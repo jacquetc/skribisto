@@ -13,12 +13,12 @@
 //!   the whole subtree flattened to one card list.
 //!
 //! Built the same "framework way" the Outline tree is (`bastyde::data`): the
-//! model owns a [`ListModel<CorkboardCard>`] synced to the Qleany backend via the
+//! model owns a [`ListModel<CorkboardCard>`](bastyde::data::ListModel) synced to the Qleany backend via the
 //! framework's keyed [`reconcile_by_key`](bastyde::data::ListModel::reconcile_by_key)
 //! (insert / remove / move / in-place update in one diff — no hand-rolled
-//! reconcile), and exposes a [`SortFilterListModel`] projection that gives the
+//! reconcile), and exposes a [`SortFilterListModel`](bastyde::data::SortFilterListModel) projection that gives the
 //! corkboard a **live search filter and column sort for free**. It implements
-//! [`ListDataSource`] itself, so a `GridView::from_source` renders it and a
+//! [`ListDataSource`](bastyde::data::ListDataSource) itself, so a `GridView::from_source` renders it and a
 //! drag-reorder commits straight to the backend `move_items` use case.
 //!
 //! Only the **cheap** fields are baked into a card (title, label, type, and a
@@ -216,7 +216,8 @@ mod imp {
         /// **`on_removed` must not capture its owner strongly.** It is stored for the
         /// model's lifetime and the model is owned by that owner — an `Rc` capture
         /// would close a cycle, the owner's `Drop` would never run, and every synopsis
-        /// document the board ever opened would leak. [`CorkboardViewModel::wire`]
+        /// document the board ever opened would leak.
+        /// [`CorkboardViewModel::wire`](crate::view_models::CorkboardViewModel::wire)
         /// passes a `Weak`-capturing closure.
         pub fn wire(&self, ctx: &mut BuildContext, on_removed: impl Fn(&[u64]) + 'static) {
             *self.inner.on_removed.borrow_mut() = Some(Box::new(on_removed));

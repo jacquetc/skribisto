@@ -23,7 +23,7 @@
 //!
 //! Sharing the object relocates that one-shot problem rather than solving it: the
 //! *same* broadcast event now reaches every window's subscription, and each calls
-//! [`Self::on_save_completed`] / [`Self::on_save_failed`] on this same shared
+//! [`SaveStateViewModel::on_save_completed`] / [`SaveStateViewModel::on_save_failed`] on this same shared
 //! handle. Both methods cache the outcome keyed by op id and replay it for repeat
 //! deliveries, so the real queue transition, `saved_seq` advance and any
 //! follow-up save each run **exactly once**, and every window — first or Nth —
@@ -88,7 +88,7 @@ struct Inner {
     /// (`take_if`), so replaying this rather than calling it again is what lets
     /// every window's subscriber see the same completion, not just the first.
     last_completed: RefCell<Option<(String, SaveLanded)>>,
-    /// The same idea for `LongOperation::Failed` — see [`Self::on_save_failed`].
+    /// The same idea for `LongOperation::Failed` — see [`SaveStateViewModel::on_save_failed`].
     last_failed: RefCell<Option<(String, String)>>,
     /// Which op id has already had its failure *reported to the user*, and
     /// whether that report was the specific kind — see

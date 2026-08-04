@@ -57,7 +57,10 @@ impl CommandUnitOfWork for CleanUpBeforeExitUnitOfWork {
         // Acquire BEFORE the write transaction itself — see
         // `common::database::write_guard`'s module doc for why this call must
         // stay UI-thread-synchronous unless given a real off-thread gate.
-        self.write_guard = Some(WriteTransactionGuard::acquire(&self.context, "clean_up_before_exit")?);
+        self.write_guard = Some(WriteTransactionGuard::acquire(
+            &self.context,
+            "clean_up_before_exit",
+        )?);
         self.transaction = Some(Transaction::begin_write_transaction(&self.context)?);
         self.event_buffer.get_mut().begin_buffering();
         Ok(())

@@ -87,7 +87,13 @@ impl ParatextPresetsViewModel {
             })
             .collect();
 
-        for (i, source) in self.inner.service.raw_user_presets().into_iter().enumerate() {
+        for (i, source) in self
+            .inner
+            .service
+            .raw_user_presets()
+            .into_iter()
+            .enumerate()
+        {
             match ParatextPreset::parse(&format!("user-{i}"), &source, true) {
                 Ok(p) => rows.push(PresetRow {
                     preset: Some(p),
@@ -176,8 +182,8 @@ mod tests {
 
     fn vm() -> (ParatextPresetsViewModel, std::path::PathBuf) {
         let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let dir = std::env::temp_dir()
-            .join(format!("skrib-paratext-vm-{}-{n}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("skrib-paratext-vm-{}-{n}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("p.toml");

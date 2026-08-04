@@ -134,7 +134,7 @@ mod tests {
 
         // The a11y walk skips dormant nodes, so it answers exactly the question
         // that matters: is the closed dropdown on screen?
-        let mut menu_is_showing = |tree: &mut WidgetTree| {
+        let menu_is_showing = |tree: &mut WidgetTree| {
             tree.layout(SizeProposal::exact(400.0, 200.0));
             tree.sync_accessibility()
                 .nodes

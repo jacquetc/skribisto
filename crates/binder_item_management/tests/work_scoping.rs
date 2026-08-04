@@ -56,7 +56,12 @@ impl Ctx {
         let root_id = root_controller::create_orphan(&db, &hub, &CreateRootDto::default())
             .expect("root")
             .id;
-        Ctx { db, hub, undo, root_id }
+        Ctx {
+            db,
+            hub,
+            undo,
+            root_id,
+        }
     }
 
     /// A fresh, independently-open Work with one Binder — built straight
@@ -86,7 +91,10 @@ impl Ctx {
             &self.hub,
             &mut self.undo,
             None,
-            &CreateWorkDto { smart_punctuation: smart_punctuation_id, ..Default::default() },
+            &CreateWorkDto {
+                smart_punctuation: smart_punctuation_id,
+                ..Default::default()
+            },
             self.root_id,
             -1,
         )
@@ -97,7 +105,10 @@ impl Ctx {
             &self.hub,
             &mut self.undo,
             None,
-            &CreateBinderDto { activated: true, ..Default::default() },
+            &CreateBinderDto {
+                activated: true,
+                ..Default::default()
+            },
             work_id,
             -1,
         )
@@ -158,8 +169,13 @@ fn merge_two_scenes_rejects_scenes_owned_by_a_different_work() {
     );
 
     // Work B's source row must still be active (not trashed by the rejected call).
-    let source = binder_item_controller::get(&ctx.db, &source_b).unwrap().unwrap();
-    assert!(source.activated, "the rejected call must not have trashed Work B's source scene");
+    let source = binder_item_controller::get(&ctx.db, &source_b)
+        .unwrap()
+        .unwrap();
+    assert!(
+        source.activated,
+        "the rejected call must not have trashed Work B's source scene"
+    );
 
     // Work B's target row must not have gained any content from the rejected merge.
     let target_contents = binder_item_controller::get_relationship(
@@ -168,5 +184,8 @@ fn merge_two_scenes_rejects_scenes_owned_by_a_different_work() {
         &BinderItemRelationshipField::Contents,
     )
     .unwrap();
-    assert!(target_contents.is_empty(), "the rejected call must not have merged content into Work B's target");
+    assert!(
+        target_contents.is_empty(),
+        "the rejected call must not have merged content into Work B's target"
+    );
 }
