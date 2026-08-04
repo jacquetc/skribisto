@@ -410,7 +410,15 @@ fn assemble(
             // scene flow a break divides. Its words are not the manuscript's either, so
             // the count is discarded exactly as the synopsis's is below — an epigraph
             // must not move a pace target.
-            let (_, emitted) = push_prose(&mut out, epi, row_rtl, preset, false, &mut pending_attrs);
+            // Mark the quote as an epigraph, not merely as quoted text. `semantic_role`
+            // rides the blockquote's first block — djot block attributes are the only
+            // channel — and text-document lifts it onto the frame, which is what lets
+            // EPUB emit `epub:type="epigraph"`, DOCX give it a named style and Typst use
+            // its own attribution slot. Without it every writer sees an ordinary
+            // blockquote and none of them can say what it is.
+            let marked = mark_epigraph(epi);
+            let (_, emitted) =
+                push_prose(&mut out, &marked, row_rtl, preset, false, &mut pending_attrs);
             if emitted {
                 contributed = true;
                 // New Hart's Rule: the first line after a heading, an epigraph or a
@@ -863,6 +871,35 @@ fn main_prose_role(sr: &BinderItemSubRole) -> Option<ContentRole> {
     } else {
         None
     }
+}
+
+/// Put `{semantic_role=epigraph}` on the first block of each blockquote in `djot`.
+///
+/// The author writes an ordinary blockquote; the marker is the compiler's business, not
+/// something to make them type. Each quotation in the row gets its own — several
+/// epigraphs on one node are several blockquotes, and each is an epigraph in its own
+/// right, so marking only the first would leave the rest as plain quotations.
+///
+/// Text that is not a blockquote is returned untouched: an epigraph field holding a bare
+/// paragraph (someone typed a quotation without the `>`) still exports as what it is
+/// rather than acquiring a claim the markup cannot carry.
+fn mark_epigraph(djot: &str) -> String {
+    let mut out = String::with_capacity(djot.len() + 32);
+    let mut in_quote = false;
+    for line in djot.lines() {
+        let is_quote_line = line.trim_start().starts_with('>');
+        if is_quote_line && !in_quote {
+            // Match the line's own `>` prefix so the attribute lands inside the quote,
+            // and at the same nesting depth as the text it describes.
+            let indent: String = line.chars().take_while(|c| c.is_whitespace()).collect();
+            out.push_str(&indent);
+            out.push_str("> {semantic_role=epigraph}\n");
+        }
+        in_quote = is_quote_line;
+        out.push_str(line);
+        out.push('\n');
+    }
+    out
 }
 
 fn content_of(contents: &[Content], role: ContentRole) -> Option<&str> {
@@ -1551,6 +1588,51 @@ mod tests {
             o.running_header.as_deref(),
             Some("Mara Vane / THE LIGHTHOUSE"),
             "author / TITLE running header"
+        );
+    }
+
+    /// The PDF arm carries an epigraph through Typst. It renders as a `#quote(block: true)`
+    /// like any blockquote, so what needs pinning is that the *whole* path survives it:
+    /// the epigraph reaches Typst, Typst compiles it, and the file is real. A malformed
+    /// block would fail the Typst compile rather than quietly drop the quotation, so a
+    /// PDF that exists and is larger than the same book without one is the honest signal
+    /// available from this side of the boundary.
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn pdf_export_carries_an_epigraph() {
+        let with = book_with_epigraph();
+        let without = {
+            let mut g = book_with_epigraph();
+            g.binders[0].items[1]
+                .contents
+                .retain(|c| c.role != ContentRole::EpigraphText);
+            g
+        };
+        let p = preset("manuscript-shunn");
+
+        let render_bytes = |g: &Gathered, tag: &str| {
+            let path = std::env::temp_dir()
+                .join(format!("skrib-epi-{tag}-{}.pdf", std::process::id()));
+            render_to_file(
+                &req(g, &[100, 101], &p, ExportFormat::Pdf),
+                &path,
+                &|_| {},
+                &AtomicBool::new(false),
+            )
+            .unwrap_or_else(|e| panic!("{tag}: {e:#}"));
+            let bytes = std::fs::read(&path).unwrap();
+            let _ = std::fs::remove_file(&path);
+            bytes
+        };
+
+        let a = render_bytes(&with, "with");
+        let b = render_bytes(&without, "without");
+        assert!(a.starts_with(b"%PDF-"), "valid PDF magic bytes");
+        assert!(
+            a.len() > b.len(),
+            "the epigraph must reach the page: {} bytes with, {} without",
+            a.len(),
+            b.len()
         );
     }
 
@@ -2284,6 +2366,88 @@ mod tests {
         }
     }
 
+    /// The end of the chain: an epigraph must reach HTML as marked-up front matter, not
+    /// as an anonymous blockquote. This is what the whole `semantic_role` path exists for,
+    /// and it is the only test that exercises compiler → djot → document → writer whole.
+    #[test]
+    fn an_epigraph_reaches_html_as_semantic_markup() {
+        let g = book_with_epigraph();
+        let p = preset("neutral");
+        let html = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Html)).unwrap();
+        assert!(
+            html.contains(r#"epub:type="epigraph""#),
+            "the epigraph must be marked: {html}"
+        );
+        assert!(
+            html.contains(r#"role="doc-epigraph""#),
+            "and reachable by assistive technology: {html}"
+        );
+        assert!(html.contains("Salt is the only"), "with its text: {html}");
+    }
+
+    /// The marker is the compiler's doing, so a scene's own blockquote — a quoted letter,
+    /// a diary page — must not acquire it.
+    #[test]
+    fn a_quotation_inside_scene_prose_is_not_marked_as_an_epigraph() {
+        let g = gathered(
+            vec![iwc(
+                300,
+                SR::Scene,
+                "en",
+                vec![c(
+                    1,
+                    ContentRole::SceneText,
+                    "She unfolded it.\n\n> Come at once.\n\nThe hand was her mother's.",
+                )],
+            )],
+            "en",
+        );
+        let p = preset("neutral");
+        let html = render_to_string(&req(&g, &[300], &p, ExportFormat::Html)).unwrap();
+        assert!(html.contains("<blockquote>"), "still a quotation: {html}");
+        assert!(!html.contains("epigraph"), "but not an epigraph: {html}");
+    }
+
+    /// Several quotations on one node arrive as one marked blockquote holding them all:
+    /// this parser folds `>` groups separated by a blank line into a single frame. What
+    /// matters is that none of the text escapes the marked quote and the marker is not
+    /// repeated — an epigraph is one piece of front matter however many quotations the
+    /// author put in it.
+    #[test]
+    fn every_quotation_in_an_epigraph_field_is_marked() {
+        let g = gathered(
+            vec![iwc(
+                400,
+                SR::ChapterScene,
+                "en",
+                vec![
+                    c(1, ContentRole::ChapterTitle, "Two Quotes"),
+                    c(
+                        2,
+                        ContentRole::EpigraphText,
+                        "> First quotation.\n\n> Second quotation.",
+                    ),
+                    c(3, ContentRole::SceneText, "Body."),
+                ],
+            )],
+            "en",
+        );
+        let p = preset("neutral");
+        let html = render_to_string(&req(&g, &[400], &p, ExportFormat::Html)).unwrap();
+        assert_eq!(
+            html.matches(r#"epub:type="epigraph""#).count(),
+            1,
+            "one marked quote, not one per quotation: {html}"
+        );
+        for quote in ["First quotation.", "Second quotation."] {
+            assert!(html.contains(quote), "{quote} missing: {html}");
+        }
+        assert!(
+            !html.contains("semantic_role"),
+            "the marker must be consumed, never rendered as text: {html}"
+        );
+    }
+
     /// A Part or a Book has no prose of its own, so its epigraph must NOT queue an
     /// indent reset: the queue would outlive the row and land on the next row's opening
     /// paragraph, which is a different paragraph and is entitled to its indent. The
@@ -2340,11 +2504,12 @@ mod tests {
         let out = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Djot)).unwrap();
         let epi = out.find("Salt is the only").expect("epigraph");
         let before = &out[..epi];
-        let attrs = before.rfind('{').expect("an attribute block before the epigraph");
+        // The nearest `{` is the semantic marker, which sits inside the quote directly
+        // above its text; the direction attribute is emitted by `push_prose` for the
+        // block as a whole, so look for it across everything preceding the quotation.
         assert!(
-            before[attrs..].contains("direction=rtl"),
-            "an RTL row's epigraph must be marked rtl, got: {:?}",
-            &before[attrs..]
+            before.contains("direction=rtl"),
+            "an RTL row's epigraph must be marked rtl, got: {before:?}"
         );
     }
 
