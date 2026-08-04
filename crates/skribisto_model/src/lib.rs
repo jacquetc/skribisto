@@ -70,7 +70,7 @@ const COMBINATIONS: &[Combination] = &[
         // Symmetric with the `Folder/Book` container: the flat book-start marker
         // carries the book's synopsis too, so a book outline has no hole whichever
         // encoding the book uses.
-        allowed: &[BookTitle, BookSubtitle, EpigraphText, SynopsisText],
+        allowed: &[BookTitle, BookSubtitle, SynopsisText],
     },
     Combination {
         role: Role::Item,
@@ -128,11 +128,34 @@ const COMBINATIONS: &[Combination] = &[
     Combination {
         role: Role::Folder,
         sub_role: SubRole::Book,
-        allowed: &[BookTitle, BookSubtitle, EpigraphText, SynopsisText],
+        allowed: &[BookTitle, BookSubtitle, SynopsisText],
     },
     Combination {
         role: Role::Folder,
         sub_role: SubRole::Note,
+        allowed: &[SynopsisText],
+    },
+    // A text that cannot be part of the book body: a preface, a dedication, an afterword,
+    // an *achevé d'imprimer*. Excluded from the word count and every other statistic —
+    // which is what `ParatextText` buys, since the count and the three other places that
+    // measure prose all key off `SceneText` independently — but exported in stream order
+    // like a scene.
+    //
+    // Deliberately carries no *kind*. Ordering conventions are national (a French book
+    // puts the table of contents at the back; an American one at the front), so a kind
+    // that drove placement would be wrong for half the writers, and a kind that drove
+    // nothing would be a field nobody maintained. Where a paratext goes is the binder's
+    // business, which is where this model already keeps structure.
+    Combination {
+        role: Role::Item,
+        sub_role: SubRole::Paratext,
+        allowed: &[ParatextText, SynopsisText],
+    },
+    // Organisational only — somewhere to keep the paratexts so they do not clutter the
+    // binder. It emits nothing into the export, so its name never reaches the book.
+    Combination {
+        role: Role::Folder,
+        sub_role: SubRole::Paratext,
         allowed: &[SynopsisText],
     },
 ];
@@ -222,7 +245,15 @@ pub fn overview_capable(role: &Role, sub_role: &SubRole) -> bool {
     *role == Role::Folder
         && matches!(
             sub_role,
-            SubRole::ChapterScene | SubRole::Part | SubRole::Book | SubRole::Note
+            SubRole::ChapterScene
+                | SubRole::Part
+                | SubRole::Book
+                | SubRole::Note
+                // A paratext folder has no manuscript extent, but it does hold a subtree
+                // worth tabulating — the same reason a notes folder qualifies. Its tab
+                // offers the Overview segment, so leaving it out here mounted a segment
+                // over an empty pane.
+                | SubRole::Paratext
         )
 }
 
@@ -374,6 +405,10 @@ pub enum CreateType {
     Note,
     NoteFolder,
     Folder,
+    /// A text that belongs to the book but not to its story.
+    Paratext,
+    /// A folder to keep paratexts in — organisational only.
+    ParatextFolder,
     EndOfBook,
 }
 
@@ -394,6 +429,8 @@ impl CreateType {
             CreateType::Note => (Role::Item, SubRole::Note),
             CreateType::NoteFolder => (Role::Folder, SubRole::Note),
             CreateType::Folder => (Role::Folder, SubRole::None),
+            CreateType::Paratext => (Role::Item, SubRole::Paratext),
+            CreateType::ParatextFolder => (Role::Folder, SubRole::Paratext),
             CreateType::EndOfBook => (Role::Item, SubRole::BookEnd),
         }
     }
@@ -424,6 +461,12 @@ const CANONICAL: &[CreateType] = &[
     CreateType::NoteFolder,
     CreateType::Note,
     CreateType::Folder,
+    // Offered from every anchor, like Note and Folder. Nothing restricts where a paratext
+    // may go — a writer may want an interleaved author's note between two parts — so the
+    // generic tail must carry them, or the only way to make one is from the three anchors
+    // that name them explicitly.
+    CreateType::ParatextFolder,
+    CreateType::Paratext,
     CreateType::EndOfBook,
 ];
 
@@ -442,7 +485,12 @@ pub fn recommendations(role: &Role, sub_role: &SubRole) -> Vec<Recommendation> {
     use SubRole as S;
 
     let picks: Vec<(CreateType, Relation)> = match (role, sub_role) {
-        (Folder, S::Book) => vec![(T::Chapter, Child), (T::Part, Child), (T::EndOfBook, Child)],
+        (Folder, S::Book) => vec![
+            (T::Chapter, Child),
+            (T::Part, Child),
+            (T::ParatextFolder, Child),
+            (T::EndOfBook, Child),
+        ],
         (Folder, S::Part) => vec![(T::Chapter, Child), (T::Part, Sibling)],
         (Folder, S::ChapterScene) => vec![(T::Scene, Child), (T::Chapter, Sibling)],
         (Folder, S::None) => vec![(T::Note, Child), (T::Folder, Sibling), (T::Folder, Child)],
@@ -454,6 +502,11 @@ pub fn recommendations(role: &Role, sub_role: &SubRole) -> Vec<Recommendation> {
         (Item, S::Scene) => vec![(T::Scene, Sibling), (T::Chapter, ParentSibling)],
         (Item, S::ChapterScene) => vec![(T::Chapter, Sibling)],
         (Item, S::Note) => vec![(T::Note, Sibling)],
+        // Inside a paratext folder the obvious next thing is another paratext; from a
+        // paratext leaf, a sibling. Nothing here restricts where one may go — the binder
+        // does not police placement — these are only what the button offers first.
+        (Folder, S::Paratext) => vec![(T::Paratext, Child), (T::ParatextFolder, Sibling)],
+        (Item, S::Paratext) => vec![(T::Paratext, Sibling)],
         (Item, S::BookEnd) => vec![(T::Book, ParentSibling)],
         // Legacy anchors — no longer offered as *types*, but existing data may
         // still hold them; recommend a sensible offerable sibling if selected.
@@ -619,16 +672,22 @@ pub enum SearchFacet {
     /// Structure with no place in the book's spine: a plain folder, and the inert `Item/Text`
     /// separator that only the Plume importer and the legacy upgrader produce.
     Folder,
+    /// A text that is part of the published book but not of its body — a preface, a
+    /// dedication, an afterword. Its own chip because it is neither structure the writer
+    /// added to organise themselves nor prose the story is told in, and a search for a
+    /// phrase in the manuscript usually does not want the acknowledgements.
+    Paratext,
 }
 
 impl SearchFacet {
     /// Every facet, in the order the chips are shown — outermost structure first.
-    pub const ALL: [SearchFacet; 6] = [
+    pub const ALL: [SearchFacet; 7] = [
         SearchFacet::Book,
         SearchFacet::Part,
         SearchFacet::Chapter,
         SearchFacet::Scene,
         SearchFacet::Note,
+        SearchFacet::Paratext,
         SearchFacet::Folder,
     ];
 
@@ -642,6 +701,9 @@ impl SearchFacet {
             SearchFacet::Scene => 4,
             SearchFacet::Note => 5,
             SearchFacet::Folder => 6,
+            // Appended, never inserted: the codes are persisted in `search.toml`, so
+            // renumbering an existing facet would silently retarget a saved filter.
+            SearchFacet::Paratext => 7,
         }
     }
 
@@ -671,6 +733,7 @@ pub fn search_facet_of(role: &Role, sub_role: &SubRole) -> Option<SearchFacet> {
         // `Folder/None` is a plain folder. `Item/Text` is the inert separator the Plume
         // importer makes — no prose, no place in the book, nothing but a title. Both are
         // structure the writer put there to organise themselves, so they share a chip.
+        SubRole::Paratext => SearchFacet::Paratext,
         SubRole::None | SubRole::Text => SearchFacet::Folder,
     })
 }
@@ -860,27 +923,80 @@ mod tests {
         );
     }
 
-    /// The matrix has exactly 12 rows, and `bastyde_ui` mirrors them 1:1 (one tab
+    /// The matrix has exactly 14 rows, and `bastyde_ui` mirrors them 1:1 (one tab
     /// module per combination — see `tabs::tab_pane`). Pinned so the docs and the tab
     /// dispatch can't silently drift from the model.
     #[test]
-    fn the_matrix_has_twelve_combinations() {
-        assert_eq!(COMBINATIONS.len(), 12);
+    fn the_matrix_has_fourteen_combinations() {
+        assert_eq!(COMBINATIONS.len(), 14);
     }
 
-    /// An epigraph heads a book, a part or a chapter — and nothing else. Six rows, and
-    /// exactly six: both encodings of each of the three headed levels, so a Part written
-    /// flat and a Part written as a folder offer the same thing. A Scene, a Note and the
-    /// two contentless markers get none, because no editorial convention puts an epigraph
-    /// there and giving them one would mean rewriting the hardcoded role lists in
-    /// `merge_two_scenes` and `split_scene` for a placement nobody uses.
+    /// A paratext is prose that is not the book's body: it carries its own content role,
+    /// and never `SceneText`. That is what keeps it out of the word count — not one
+    /// special case, but the absence of the role all four counting sites key off
+    /// independently (`counts_prose`, the Overview rows, the corkboard card, and
+    /// `count_words_uc`). Give it `SceneText` and every one of them starts counting the
+    /// acknowledgements into the manuscript, silently.
+    #[test]
+    fn a_paratext_is_prose_that_is_not_the_body() {
+        assert!(content_allowed(
+            &Role::Item,
+            &SubRole::Paratext,
+            &ParatextText
+        ));
+        assert!(!content_allowed(&Role::Item, &SubRole::Paratext, &SceneText));
+        assert!(!counts_prose(&Role::Item, &SubRole::Paratext));
+        assert!(!counts_prose(&Role::Folder, &SubRole::Paratext));
+
+        // And no other combination carries the role.
+        for c in COMBINATIONS {
+            assert_eq!(
+                c.allowed.contains(&ParatextText),
+                c.sub_role == SubRole::Paratext && c.role == Role::Item,
+                "{:?}/{:?} disagrees about carrying paratext prose",
+                c.role,
+                c.sub_role
+            );
+        }
+    }
+
+    /// The folder is organisational only — it holds nothing but a synopsis, so it can
+    /// never become a second place the writer's words hide.
+    #[test]
+    fn a_paratext_folder_holds_only_a_synopsis() {
+        assert_eq!(
+            allowed_content(&Role::Folder, &SubRole::Paratext),
+            &[SynopsisText]
+        );
+    }
+
+    /// A paratext opens no structural level, so it takes no number and cannot disturb the
+    /// numbering of the chapters around it — an interleaved preface must not renumber the
+    /// book.
+    #[test]
+    fn a_paratext_opens_no_level() {
+        assert!(!SubRole::Paratext.opens_book());
+        assert!(!SubRole::Paratext.opens_part());
+        assert!(!SubRole::Paratext.opens_chapter());
+        assert!(!SubRole::Paratext.carries_scene());
+    }
+
+    /// An epigraph heads a **part or a chapter** — and nothing else. Four rows, and
+    /// exactly four: both encodings of each of the two levels, so a Part written flat and
+    /// a Part written as a folder offer the same thing.
+    ///
+    /// Not the Book. A book's opening quotation is a paratext item, which is truer to how
+    /// a book is assembled — it is a page of its own, placed wherever the writer's
+    /// tradition puts it — and it stops the epigraph having two different shapes at two
+    /// different levels. A Scene, a Note and the two contentless markers get none either:
+    /// no editorial convention puts an epigraph there, and giving them one would mean
+    /// rewriting the hardcoded role lists in `merge_two_scenes` and `split_scene` for a
+    /// placement nobody uses.
     #[test]
     fn an_epigraph_belongs_only_to_the_headed_combinations() {
         let headed = [
-            (Role::Item, SubRole::BookBegin),
             (Role::Item, SubRole::Part),
             (Role::Item, SubRole::ChapterScene),
-            (Role::Folder, SubRole::Book),
             (Role::Folder, SubRole::Part),
             (Role::Folder, SubRole::ChapterScene),
         ];
@@ -929,7 +1045,7 @@ mod tests {
     /// a thirteenth combination cannot quietly inherit an answer nobody chose: a new row
     /// fails here until someone decides which side of the line it falls on.
     #[test]
-    fn overview_is_offered_by_the_four_folder_containers_only() {
+    fn overview_is_offered_by_the_folder_containers_only() {
         let expected = |role: &Role, sub_role: &SubRole| {
             matches!(
                 (role, sub_role),
@@ -937,6 +1053,7 @@ mod tests {
                     | (Role::Folder, SubRole::Part)
                     | (Role::Folder, SubRole::Book)
                     | (Role::Folder, SubRole::Note)
+                    | (Role::Folder, SubRole::Paratext)
             )
         };
         for c in COMBINATIONS {
@@ -961,15 +1078,16 @@ mod tests {
     }
 
     /// Overview is **not** the stream predicate. The two answer different questions and
-    /// differ on exactly one combination: a notes folder has no manuscript extent (no
-    /// stream) but does hold a subtree (an Overview). Pinned because reaching for
+    /// differ on exactly the two folders that hold a subtree without holding a manuscript
+    /// extent: a notes folder and a paratext folder. Pinned because reaching for
     /// `StreamLevel::for_container` here is the obvious wrong shortcut.
     #[test]
-    fn overview_and_stream_differ_only_on_the_notes_folder() {
+    fn overview_and_stream_differ_only_on_the_subtree_only_folders() {
         for c in COMBINATIONS {
             let overview = overview_capable(&c.role, &c.sub_role);
             let stream = compile::StreamLevel::for_container(&c.role, &c.sub_role).is_some();
-            let differs = (c.role == Role::Folder) && (c.sub_role == SubRole::Note);
+            let differs = (c.role == Role::Folder)
+                && matches!(c.sub_role, SubRole::Note | SubRole::Paratext);
             assert_eq!(
                 overview != stream,
                 differs,
@@ -1133,12 +1251,15 @@ mod tests {
     #[test]
     fn book_recommends_chapter_first_then_the_worked_example() {
         let recs = recommendations(&Role::Folder, &SubRole::Book);
-        let leading: Vec<_> = recs.iter().take(3).copied().collect();
+        let leading: Vec<_> = recs.iter().take(4).copied().collect();
         assert_eq!(
             leading,
             vec![
                 rec(CreateType::Chapter, Relation::Child),
                 rec(CreateType::Part, Relation::Child),
+                // A book's front and back matter live in a paratext folder, offered
+                // ahead of the structural end marker the UI filters out anyway.
+                rec(CreateType::ParatextFolder, Relation::Child),
                 rec(CreateType::EndOfBook, Relation::Child),
             ]
         );

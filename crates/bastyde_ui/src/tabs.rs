@@ -55,12 +55,14 @@ pub(crate) mod corkboard;
 mod folder_book;
 mod folder_chapter_scene;
 mod folder_none;
+mod folder_paratext;
 mod folder_note;
 mod folder_part;
 mod item_book_begin;
 mod item_book_end;
 mod item_chapter_scene;
 mod item_note;
+mod item_paratext;
 mod item_part;
 mod item_scene;
 mod item_text;
@@ -253,6 +255,10 @@ pub(crate) fn prose_kind_for(
         // Both encodings of a chapter carry scene prose, as does a plain Scene.
         (Item, Scene) | (Item, ChapterScene) | (Folder, ChapterScene) => Some(ProseKind::Scene),
         (Item, Note) => Some(ProseKind::Note),
+        // A paratext is set like the body it sits beside — a preface is typeset as
+        // manuscript prose, not as a note — so it takes the Scene bundle rather than
+        // earning a fourth one nobody asked for.
+        (Item, Paratext) => Some(ProseKind::Scene),
         // `None` is shadowed by `BinderItemSubRole::None` under the glob import.
         _ => Option::None,
     }
@@ -415,6 +421,8 @@ pub fn tab_pane(tab: &ContentTab) -> Box<dyn Widget> {
             (Folder, ChapterScene) => folder_chapter_scene::render(tab),
             (Folder, Part) => folder_part::render(tab),
             (Folder, Book) => folder_book::render(tab),
+            (Item, Paratext) => item_paratext::render(tab),
+            (Folder, Paratext) => folder_paratext::render(tab),
             // Any pair outside the constraint matrix is invalid by construction; fall
             // back to the contentless placeholder rather than panic.
             _ => item_text::render(tab),
@@ -1151,6 +1159,10 @@ mod tests {
             (Folder, Part, false),
             (Folder, Book, false),
             (Folder, Note, false),
+            // A paratext writes like a scene — same editor, same body — so it is
+            // "prose" here even though its content role is not `SceneText`.
+            (Item, Paratext, true),
+            (Folder, Paratext, false),
         ];
         let ctx = Rc::new(AppContext::new());
         for (role, sub_role, is_prose) in combos {
@@ -1193,18 +1205,17 @@ mod tests {
         }
     }
 
-    /// The epigraph box appears on exactly the six combinations the matrix gives an
-    /// `EpigraphText`, and on no others — the gate is the model, not the pane, which is
-    /// what keeps `prose()` (shared with Scene and Note) from sprouting one.
+    /// The epigraph box appears on exactly the four combinations the matrix gives an
+    /// `EpigraphText` — both encodings of a part and of a chapter — and on no others. The
+    /// gate is the model, not the pane, which is what keeps `prose()` (shared with Scene,
+    /// Note and Paratext) from sprouting one.
     #[test]
     fn only_the_headed_combinations_offer_an_epigraph() {
         use BinderItemRole::*;
         use BinderItemSubRole::*;
         let headed = [
-            (Item, BookBegin),
             (Item, Part),
             (Item, ChapterScene),
-            (Folder, Book),
             (Folder, Part),
             (Folder, ChapterScene),
         ];
@@ -1267,7 +1278,7 @@ mod tests {
             &ctx,
             1,
             &Folder,
-            &Book,
+            &Part,
             &[],
             Signal::new(700.0),
             Signal::new(true),
@@ -1284,7 +1295,7 @@ mod tests {
             &ctx,
             2,
             &Folder,
-            &Book,
+            &Part,
             &[ContentDto {
                 id: 77,
                 role: ContentRole::EpigraphText,

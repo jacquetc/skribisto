@@ -100,6 +100,8 @@ enum Pane {
     Dictionaries,
     Autosave,
     ExportFormats,
+    /// Compile & Export ▸ Paratext structures — the front/back matter catalogue.
+    Paratext,
     Keymap,
     /// Per-project "Work: `<name>` ▸ Structure" — chapter mode (folder vs flat).
     WorkStructure,
@@ -152,6 +154,7 @@ impl Pane {
             Pane::Dictionaries => tr!(settings_page_dictionaries()),
             Pane::Autosave => tr!(settings_page_autosave()),
             Pane::ExportFormats => tr!(settings_page_export()),
+            Pane::Paratext => tr!(settings_page_paratext()),
             Pane::Keymap => tr!(settings_page_keymap()),
             Pane::WorkStructure => tr!(settings_page_structure()),
             Pane::WorkPunctuation => tr!(settings_page_punctuation()),
@@ -696,6 +699,10 @@ impl SettingsPanel {
             Pane::ExportFormats,
             model.insert_child(ce, 0, Node::Page(Pane::ExportFormats)),
         );
+        nodes.insert(
+            Pane::Paratext,
+            model.insert_child(ce, 1, Node::Page(Pane::Paratext)),
+        );
 
         nodes.insert(Pane::Keymap, model.insert_root(5, Node::Page(Pane::Keymap)));
 
@@ -840,7 +847,7 @@ impl SettingsPanel {
             Pane::EditorBehavior | Pane::Punctuation | Pane::Goals => Some(ed),
             Pane::Spellcheck | Pane::Dictionaries => Some(sp),
             Pane::Autosave | Pane::Backup => Some(bk),
-            Pane::ExportFormats => Some(ce),
+            Pane::ExportFormats | Pane::Paratext => Some(ce),
             Pane::WorkStructure
             | Pane::WorkPunctuation
             | Pane::WorkLanguage
@@ -1114,6 +1121,27 @@ impl Widget for SettingsPanel {
             )),
         };
 
+        // Compile & Export ▸ Paratext structures — the front/back-matter catalogue New
+        // Work starts a project from. App-level like export styles, and resolved the same
+        // way, so one instance backs both this pane and the New Work picker.
+        let paratext_pane: Box<dyn Widget> = match ctx
+            .app_state::<crate::view_models::ParatextPresetsViewModel>()
+            .cloned()
+        {
+            Some(vm) => Box::new(pane_frame(
+                crumb(
+                    Some(tr!(settings_sec_compile())),
+                    tr!(settings_page_paratext()),
+                ),
+                crate::settings::panes::paratext::paratext_pane(ctx, &vm),
+            )),
+            None => Box::new(empty_pane(
+                Some(tr!(settings_sec_compile())),
+                tr!(settings_page_paratext()),
+                Sec::CompileExport.icon_svg(),
+            )),
+        };
+
         // Editor ▸ Distraction-free themes — the theme library, same shape and
         // same app_state resolution as Export Formats just above.
         let df_themes_pane: Box<dyn Widget> = match ctx
@@ -1377,6 +1405,7 @@ impl Widget for SettingsPanel {
                 Box::new(panes::autosave::autosave_pane(&vm)),
             ),
             (Pane::ExportFormats, export_styles_pane),
+            (Pane::Paratext, paratext_pane),
             (Pane::Keymap, Box::new(panes::keymap::keymap_pane(ctx))),
             (Pane::WorkStructure, structure_pane),
             (Pane::WorkPunctuation, punctuation_pane),
@@ -1598,6 +1627,7 @@ mod tests {
             Pane::Dictionaries,
             Pane::Autosave,
             Pane::ExportFormats,
+            Pane::Paratext,
             Pane::Keymap,
             Pane::WorkStructure,
             Pane::WorkPunctuation,

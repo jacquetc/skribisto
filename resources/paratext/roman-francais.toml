@@ -1,0 +1,25 @@
+# Titres verbatim, dans la langue de la tradition dont ils viennent — jamais traduits.
+# `front` et `back` ne décident que de l'endroit où ces éléments sont créés : le modèle
+# ne connaît ni pages liminaires ni annexes, et l'auteur les déplace ensuite librement.
+
+[paratext]
+name = "Roman français"
+country = ["FR", "BE", "CH", "LU"]
+language = "fr"
+
+[front]
+items = [
+    "Faux-titre",
+    "Du même auteur",
+    "Page de titre",
+    "Mentions légales",
+    "Dédicace",
+    "Exergue",
+]
+
+[back]
+items = [
+    "Table des matières",
+    "Remerciements",
+    "Achevé d'imprimer",
+]

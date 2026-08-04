@@ -128,13 +128,17 @@ pub enum ScopeKind {
     Chapter,
     Scene,
     Note,
+    /// One paratext item on its own — a preface, an afterword. Like `Scene` and `Note` it
+    /// is a single explicitly-pointed-at row, not a swept extent: a paratext has no
+    /// children and no structural reach.
+    Paratext,
     Folder,
     Custom,
 }
 
 /// The primary quick-export scope for a focused item — what the split-button's default
 /// action names ("Export Scene" / "Export Note" / "Export Chapter" / …). `None` only for
-/// `(role, sub_role)` pairs with no facet at all (there are none in the 12-row matrix).
+/// `(role, sub_role)` pairs with no facet at all (there are none in the matrix).
 pub fn primary_scope(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Option<ScopeKind> {
     Some(match search_facet_of(role, sub_role)? {
         SearchFacet::Book => ScopeKind::Book,
@@ -142,6 +146,7 @@ pub fn primary_scope(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> Opt
         SearchFacet::Chapter => ScopeKind::Chapter,
         SearchFacet::Scene => ScopeKind::Scene,
         SearchFacet::Note => ScopeKind::Note,
+        SearchFacet::Paratext => ScopeKind::Paratext,
         SearchFacet::Folder => ScopeKind::Folder,
     })
 }
@@ -208,6 +213,7 @@ pub fn resolve_scope(items: &[ItemMeta], focused: usize, scope: ScopeKind) -> Op
         ScopeKind::Chapter => scope_extent(items, focused, StreamLevel::Chapter),
         ScopeKind::Scene => single(items, focused, BinderItemSubRole::Scene),
         ScopeKind::Note => single(items, focused, BinderItemSubRole::Note),
+        ScopeKind::Paratext => single(items, focused, BinderItemSubRole::Paratext),
         ScopeKind::Folder => folder_subtree(items, focused),
     }
 }

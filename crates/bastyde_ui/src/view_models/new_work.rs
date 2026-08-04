@@ -33,6 +33,8 @@
 use std::path::Path;
 use std::rc::Rc;
 
+use crate::models::{ParatextPreset, ParatextPresetsService};
+
 use bastyde::prelude::*; // EventContext, Signal, tr!
 use bastyde::widgets::{Toast, ValidationState};
 
@@ -57,6 +59,7 @@ pub(crate) fn new_work_dto(
     template_kind: NewWorkTemplate,
     language: String,
     chapter_scene_mode: bool,
+    paratexts: ParatextPlanDto,
     author_name: String,
 ) -> NewWorkDto {
     NewWorkDto {
@@ -71,12 +74,51 @@ pub(crate) fn new_work_dto(
             tr!(new_work_chapter()).into(),
             tr!(new_work_scene()).into(),
             tr!(new_work_note()).into(),
+            // Appended, never inserted — the list is positional. These two name the
+            // folders the paratexts land in; the item titles inside them are NOT here,
+            // because they come from the preset verbatim in their own language.
+            tr!(new_work_front_matter()).into(),
+            tr!(new_work_back_matter()).into(),
         ],
         language: skribisto_model::language::parse_legacy_list(&language),
         chapter_scene_mode,
         // Optional: an empty string is the ordinary "not set" state, not an error.
         author_name,
+        paratext_front: paratexts.front,
+        paratext_back: paratexts.back,
     }
+}
+
+/// The chosen paratext structure, already resolved from its preset file by the caller.
+///
+/// A plain pair of title lists rather than a preset id: the backend has no business
+/// parsing preset files, and this keeps `new_work_dto` a pure mapping.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ParatextPlanDto {
+    pub front: Vec<String>,
+    pub back: Vec<String>,
+}
+
+/// Every paratext preset the picker can offer, bundled first, plus the one the interface
+/// locale suggests.
+///
+/// Opens the **real** presets file, so a preset written in Settings is one this dialog
+/// offers. Read once per dialog rather than held: the settings file is the source of
+/// truth, and a dialog built after an edit must see the edit.
+///
+/// Falls back to a throwaway service when the config dir is unavailable, so a New Work
+/// dialog never fails to open because of an optional settings file — the same degrade the
+/// loader applies to a malformed entry.
+fn load_paratext_presets() -> (Rc<Vec<ParatextPreset>>, Option<String>) {
+    let svc = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| ParatextPresetsService::open(&paths).ok())
+        .unwrap_or_else(ParatextPresetsService::in_memory_default);
+    // The locale match is the service's own rule, asked once — not restated here, or the
+    // two copies drift the first time the precedence changes.
+    let preselected = svc
+        .preselect_for_locale(&current_locale_tag().unwrap_or_default())
+        .map(|p| p.id);
+    (Rc::new(svc.all()), preselected)
 }
 
 /// Map the Template `SegmentedControl` index to its `NewWorkTemplate`.
@@ -217,6 +259,14 @@ pub struct NewWorkViewModel {
     /// instead of a `Chapter` folder holding an empty `Scene`. Ignored by the
     /// non-manuscript templates. Defaults to `false` (the classic layout).
     chapter_scene: Signal<bool>,
+    /// The chosen paratext preset's id, or empty for "None" — the writer wanting no
+    /// front or back matter at all, which is a first-class answer and the default when
+    /// the interface locale matches no tradition.
+    paratext_preset: Signal<Option<String>>,
+    /// Every preset the picker can offer, bundled and user-written. Read once when the
+    /// dialog is built: a preset added in Settings while the dialog is open is a case
+    /// nobody meets, and re-reading per keystroke would parse every file on every frame.
+    paratext_presets: Rc<Vec<ParatextPreset>>,
     app_ctx: Rc<AppContext>,
     /// Where "Create Work" puts the new project — see [`CreateTarget`].
     target: CreateTarget,
@@ -260,6 +310,7 @@ impl NewWorkViewModel {
     /// [`Self::create`] must resolve the outgoing Work through it rather than
     /// `ctx.app_state`.
     pub fn new(app_ctx: Rc<AppContext>, ids: crate::app_ids::AppIds) -> Self {
+        let (presets, preselected) = load_paratext_presets();
         Self {
             name: Signal::new(String::new()),
             author: Signal::new(String::new()),
@@ -268,6 +319,8 @@ impl NewWorkViewModel {
             language: Signal::new(current_locale_tag()),
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
+            paratext_preset: Signal::new(preselected),
+            paratext_presets: presets,
             app_ctx,
             target: CreateTarget::InPlace(ids),
         }
@@ -296,6 +349,7 @@ impl NewWorkViewModel {
         factory: ProjectWindowFactory,
         close_presenting_window: bool,
     ) -> Self {
+        let (presets, preselected) = load_paratext_presets();
         Self {
             name: Signal::new(String::new()),
             author: Signal::new(String::new()),
@@ -304,6 +358,8 @@ impl NewWorkViewModel {
             language: Signal::new(current_locale_tag()),
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
+            paratext_preset: Signal::new(preselected),
+            paratext_presets: presets,
             app_ctx,
             target: CreateTarget::NewWindow {
                 factory,
@@ -341,6 +397,14 @@ impl NewWorkViewModel {
     /// so it greys out for None (0) / Notebook (4).
     pub fn chapter_scene_applicable(&self) -> Signal<bool> {
         self.template_idx.map(|i| matches!(*i, 1..=3))
+    }
+
+    /// Whether a paratext structure can be applied — the same three manuscript templates,
+    /// because front and back matter are the furniture of a book and the other templates
+    /// build none. Greyed rather than hidden, so the control does not appear and vanish
+    /// as the template changes.
+    pub fn paratext_applicable(&self) -> Signal<bool> {
+        self.chapter_scene_applicable()
     }
 
     /// The reactive "Will create …" path — recomputes as name/location/format
@@ -382,6 +446,35 @@ impl NewWorkViewModel {
         name_ok.and(&location_ok)
     }
 
+    /// The paratext titles the chosen preset asks for, verbatim.
+    ///
+    /// Empty for "None", and empty for a preset that has since been deleted or broken —
+    /// creating a project with no front matter is always better than refusing to create
+    /// one.
+    fn paratext_plan(&self) -> ParatextPlanDto {
+        let Some(id) = self.paratext_preset.get() else {
+            return ParatextPlanDto::default();
+        };
+        self.paratext_presets
+            .iter()
+            .find(|p| p.id == id)
+            .map(|p| ParatextPlanDto {
+                front: p.front.clone(),
+                back: p.back.clone(),
+            })
+            .unwrap_or_default()
+    }
+
+    /// Every preset, for the picker. Each names itself, in its own language.
+    pub fn paratext_presets(&self) -> Rc<Vec<ParatextPreset>> {
+        self.paratext_presets.clone()
+    }
+
+    /// The chosen preset, or `None` for no structure at all.
+    pub fn paratext_preset(&self) -> Signal<Option<String>> {
+        self.paratext_preset.clone()
+    }
+
     /// Build the DTO from the current form state.
     fn dto(&self) -> NewWorkDto {
         new_work_dto(
@@ -394,6 +487,7 @@ impl NewWorkViewModel {
             template_from_index(self.template_idx.get()),
             self.language.get().unwrap_or_default(),
             self.chapter_scene.get(),
+            self.paratext_plan(),
             // Trimmed so a field containing only spaces reads as unset rather
             // than putting whitespace on the title page.
             self.author.get().trim().to_string(),
@@ -474,6 +568,7 @@ mod tests {
             NewWorkTemplate::Novel,
             "en-US".into(),
             false,
+            ParatextPlanDto::default(),
             "A. Writer".into(),
         );
         assert_eq!(dto.author_name, "A. Writer");
@@ -491,6 +586,7 @@ mod tests {
                 NewWorkTemplate::Novel,
                 "en-US".into(),
                 false,
+                ParatextPlanDto::default(),
                 typed.trim().to_string(),
             );
             assert_eq!(dto.author_name, "", "{typed:?} must arrive as unset");
@@ -574,7 +670,8 @@ mod tests {
         assert!(dto.is_folder);
         assert_eq!(dto.template_kind, NewWorkTemplate::EmptyNovel);
         assert_eq!(dto.language, vec!["fr-FR".to_string()]);
-        assert_eq!(dto.labels.len(), 7);
+        // Seven binder names plus the two paratext folder names, appended.
+        assert_eq!(dto.labels.len(), 9);
         assert!(dto.chapter_scene_mode);
     }
 

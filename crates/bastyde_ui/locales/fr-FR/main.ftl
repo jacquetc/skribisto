@@ -17,6 +17,7 @@ menu-export-part = Exporter la partie
 menu-export-chapter = Exporter le chapitre
 menu-export-scene = Exporter la scène
 menu-export-note = Exporter la note
+menu-export-paratext = Exporter le paratexte
 menu-export-folder = Exporter le dossier
 menu-export-choose = Choisir…
 menu-export-none = Ouvrez un document à exporter
@@ -75,6 +76,8 @@ create-scene = Scène
 create-note = Note
 create-note-folder = Dossier de notes
 create-folder = Dossier
+create-paratext = Paratexte
+create-paratext-folder = Dossier de paratextes
 create-book-end = Fin du livre
 # Item-type names for the Overview's Type column (the rest reuse the create-* nouns).
 type-book-start = Début du livre
@@ -90,6 +93,8 @@ new-item-chapter = Nouveau chapitre
 new-item-note = Nouvelle note
 new-item-note-folder = Nouveau dossier de notes
 new-item-folder = Nouveau dossier
+new-item-paratext = Nouveau paratexte
+new-item-paratext-folder = Nouveau dossier de paratextes
 
 ## Recommandations de création: indication de placement en fin de ligne
 placement-inside = à l’intérieur
@@ -113,6 +118,7 @@ content-book-subtitle = Sous-titre du livre
 content-part-title = Titre de la partie
 content-chapter-title = Titre du chapitre
 content-epigraph-text = Épigraphe
+content-paratext-text = Paratexte
 promote-blocked-title = Chapitre non vide
 promote-blocked-text = Ce chapitre contient encore { $count } élément(s). Déplacez-les ou mettez-les à la corbeille avant de le convertir en chapitre à plat.
 
@@ -209,6 +215,7 @@ settings-page-distraction-free = Sans distraction
 settings-page-dictionaries = Dictionnaires
 settings-page-autosave = Enregistrement automatique
 settings-page-export = Formats d'export
+settings-page-paratext = Structures de paratexte
 settings-page-keymap = Raccourcis clavier
 # Champ de filtre de la page Raccourcis (filtre la liste ShortcutSettings par nom / id / catégorie).
 settings-keymap-filter = Filtrer les raccourcis
@@ -451,6 +458,7 @@ corkboard-badge-part = Partie
 corkboard-badge-book = Livre
 corkboard-badge-note = Note
 corkboard-badge-folder = Dossier
+corkboard-badge-paratext = Paratexte
 corkboard-badge-text = Texte
 corkboard-badge-end = Fin
 settings-group-corkboard-layout = Disposition
@@ -754,6 +762,11 @@ new-work-notebook = Carnet
 new-work-chapter = Chapitre
 new-work-scene = Scène
 new-work-note = Note
+new-work-front-matter = Pages liminaires
+new-work-back-matter = Annexes
+new-work-paratext = Structure du livre
+new-work-paratext-none = Aucune structure
+new-work-paratext-hint = Les pages liminaires et les annexes propres à une tradition éditoriale. Vous pourrez tout déplacer, renommer ou supprimer ensuite.
 
 ## Boîte de dialogue d'import Plume Creator
 import-plume-title = Importer un projet Plume Creator
@@ -907,6 +920,7 @@ search-tip-chapter = Chapitres : les chapitres, quel que soit leur stockage.
 search-tip-scene = Scènes : les lignes qui contiennent votre prose.
 search-tip-note = Notes : les notes libres.
 search-tip-folder = Dossiers : les simples dossiers d’organisation et séparateurs.
+search-tip-paratext = Un texte qui appartient au livre mais non à son récit — une préface, une dédicace, une postface. Jamais compté dans le manuscrit.
 search-tip-replace = Remplacer : afficher le champ de remplacement et « Tout remplacer ».
 search-error = Échec de la recherche : { $message }
 search-no-matches = Aucun résultat
@@ -1451,3 +1465,14 @@ analysis-vocabulary-caveat = Comparable au sein de ce livre uniquement.
 binder-filter-count = { $shown } sur { $total } affichés
 binder-filter-clear = Effacer
 binder-filter-none = Rien ne correspond à « { $query } ».
+
+## Settings: paratext structures
+settings-paratext-intro = Les pages liminaires et les annexes d'un nouveau projet. Chaque structure appartient à une tradition éditoriale, et ses titres sont écrits dans la langue de cette tradition — renommez-les librement une fois le projet créé.
+settings-paratext-structures = Structures
+settings-paratext-broken = Lecture impossible
+settings-paratext-edit = Modifier
+settings-paratext-duplicate = Dupliquer
+settings-paratext-delete = Supprimer
+settings-paratext-new = Nouvelle structure
+settings-paratext-save = Enregistrer
+settings-paratext-editor-hint = Un nom, les pages à créer avant le manuscrit, et celles à créer après. Leur place vous appartient : ce sont des éléments ordinaires une fois le projet créé.

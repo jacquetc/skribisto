@@ -31,6 +31,7 @@ mod installed_dictionaries_model;
 mod open_docs;
 mod overview_rows_model;
 mod pace_model;
+mod paratext_presets;
 mod recent_work_list_model;
 mod repetition_tree_model;
 mod row_search;
@@ -59,6 +60,7 @@ pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, li
 pub use distraction_free_themes_file::DistractionFreeThemesService;
 pub use examples_list_model::ExamplesListModel;
 pub use export_styles_file::ExportStylesService;
+pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsService};
 pub use installed_dictionaries_model::{
     DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
 };

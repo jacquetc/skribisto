@@ -33,6 +33,8 @@ pub fn recommendation_label(create_type: CreateType) -> LocalizedString {
         CreateType::Note => tr!(create_note()),
         CreateType::NoteFolder => tr!(create_note_folder()),
         CreateType::Folder => tr!(create_folder()),
+        CreateType::Paratext => tr!(create_paratext()),
+        CreateType::ParatextFolder => tr!(create_paratext_folder()),
         CreateType::EndOfBook => tr!(create_book_end()),
     }
 }
@@ -66,6 +68,8 @@ pub fn default_title(create_type: CreateType) -> LocalizedString {
         CreateType::Note => tr!(new_item_note()),
         CreateType::NoteFolder => tr!(new_item_note_folder()),
         CreateType::Folder => tr!(new_item_folder()),
+        CreateType::Paratext => tr!(new_item_paratext()),
+        CreateType::ParatextFolder => tr!(new_item_paratext_folder()),
         CreateType::EndOfBook => tr!(create_book_end()),
     }
 }
@@ -113,7 +117,12 @@ pub fn item_type_label(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> L
         (Folder, S::Note) => tr!(create_note_folder()),
         (Item, S::Note) => tr!(create_note()),
         (_, S::Text) => tr!(type_text()),
+        (Folder, S::Paratext) => tr!(create_paratext_folder()),
+        (Item, S::Paratext) => tr!(create_paratext()),
         (Folder, S::None) => tr!(create_folder()),
+        // The catch-all is why a new sub_role reads as "Folder" until someone names it.
+        // Every combination above is listed deliberately; add yours rather than leaving
+        // it to fall through here.
         _ => tr!(create_folder()),
     }
 }
@@ -130,6 +139,7 @@ pub fn content_role_label(role: &ContentRole) -> LocalizedString {
         ContentRole::PartTitle => tr!(content_part_title()),
         ContentRole::ChapterTitle => tr!(content_chapter_title()),
         ContentRole::EpigraphText => tr!(content_epigraph_text()),
+        ContentRole::ParatextText => tr!(content_paratext_text()),
     }
 }
 
@@ -146,6 +156,8 @@ pub fn recommendation_tooltip_key(create_type: CreateType) -> &'static str {
         CreateType::Note => tt::WM_NOTE,
         CreateType::NoteFolder => tt::WM_NOTE_FOLDER,
         CreateType::Folder => tt::WM_FOLDER,
+        CreateType::Paratext => tt::WM_PARATEXT,
+        CreateType::ParatextFolder => tt::WM_PARATEXT_FOLDER,
         CreateType::EndOfBook => tt::WM_END_OF_BOOK,
     }
 }

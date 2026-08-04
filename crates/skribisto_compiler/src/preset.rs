@@ -218,6 +218,13 @@ pub struct Preset {
     /// where quoted matter is stripped from the manuscript.
     #[serde(default = "yes")]
     pub include_epigraphs: bool,
+    /// Keep the paratexts — prefaces, dedications, afterwords. Defaults to **true** for
+    /// the same reason epigraphs do, and needs `default = "yes"` for the same reason:
+    /// a bare `#[serde(default)]` is `false` for a bool, and every preset saved before
+    /// this field existed has no such key, so custom styles would silently start
+    /// dropping the author's front matter while the built-ins kept it.
+    #[serde(default = "yes")]
+    pub include_paratexts: bool,
 
     // Localization.
     #[serde(default)]
@@ -265,6 +272,7 @@ impl Preset {
             include_notes: false,
             include_scene_titles: false,
             include_epigraphs: true,
+            include_paratexts: true,
             heading_language: HeadingLanguage::Auto,
             digit_style: DigitStyle::Western,
             direction: DirectionMode::Auto,

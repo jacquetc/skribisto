@@ -73,6 +73,8 @@ fn ctx_with_one_of_each() -> (AppContext, Vec<(BinderItemSubRole, u64)>) {
             language: vec!["fr-FR".to_string()],
             author_name: String::new(),
             chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
         },
     )
     .expect("new_work");
@@ -99,6 +101,8 @@ fn ctx_with_one_of_each() -> (AppContext, Vec<(BinderItemSubRole, u64)>) {
         (Item, S::Note),
         (Folder, S::Note),
         (Folder, S::None),
+        (Item, S::Paratext),
+        (Folder, S::Paratext),
         (Item, S::Text),
         (Item, S::BookEnd),
     ];
@@ -275,7 +279,7 @@ fn several_chips_union() {
     assert_eq!(hit_ids(&ctx), expected);
 }
 
-/// Every one of the six chips finds something in a project holding one of each kind. A chip
+/// Every one of the chips finds something in a project holding one of each kind. A chip
 /// that always came back empty would be a dead control the writer could not tell from a
 /// genuine "no matches".
 #[test]

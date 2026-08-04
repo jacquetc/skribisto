@@ -201,6 +201,7 @@ fn map_scope(k: &ExportScopeKind) -> ScopeKind {
         ExportScopeKind::CurrentChapter => ScopeKind::Chapter,
         ExportScopeKind::CurrentScene => ScopeKind::Scene,
         ExportScopeKind::CurrentNote => ScopeKind::Note,
+        ExportScopeKind::CurrentParatext => ScopeKind::Paratext,
         ExportScopeKind::CurrentFolder => ScopeKind::Folder,
         ExportScopeKind::Custom => ScopeKind::Custom,
     }

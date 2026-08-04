@@ -42,6 +42,8 @@ pub const WM_SCENE: &str = "wm-scene";
 pub const WM_NOTE: &str = "wm-note";
 pub const WM_NOTE_FOLDER: &str = "wm-note-folder";
 pub const WM_FOLDER: &str = "wm-folder";
+pub const WM_PARATEXT: &str = "wm-paratext";
+pub const WM_PARATEXT_FOLDER: &str = "wm-paratext-folder";
 pub const WM_END_OF_BOOK: &str = "wm-end-of-book";
 /// A concept, not a create/convert row: cited by Scene / Note / Note folder /
 /// Folder, so it is a cascade target only.
@@ -70,6 +72,8 @@ pub const WM_KEYS: &[&str] = &[
     WM_NOTE,
     WM_NOTE_FOLDER,
     WM_FOLDER,
+    WM_PARATEXT,
+    WM_PARATEXT_FOLDER,
     WM_END_OF_BOOK,
     WM_SYNOPSIS,
     SCENE_BREAK_MINOR,
@@ -90,6 +94,9 @@ pub fn writing_model_tooltips() -> Vec<TooltipContent> {
         TooltipContent::new(WM_NOTE_FOLDER, tr!(wm_note_folder()))
             .with_more(tr!(wm_note_folder_more())),
         TooltipContent::new(WM_FOLDER, tr!(wm_folder())).with_more(tr!(wm_folder_more())),
+        TooltipContent::new(WM_PARATEXT, tr!(wm_paratext())).with_more(tr!(wm_paratext_more())),
+        TooltipContent::new(WM_PARATEXT_FOLDER, tr!(wm_paratext_folder()))
+            .with_more(tr!(wm_paratext_folder_more())),
         TooltipContent::new(WM_END_OF_BOOK, tr!(wm_end_of_book()))
             .with_more(tr!(wm_end_of_book_more())),
         TooltipContent::new(WM_SYNOPSIS, tr!(wm_synopsis())).with_more(tr!(wm_synopsis_more())),

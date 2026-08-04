@@ -75,6 +75,7 @@ mod app_ids;
 mod backup;
 mod binder;
 mod comments;
+mod crash_report;
 mod date_convert;
 mod distraction_free;
 mod docks;
@@ -571,6 +572,14 @@ impl EventSource for EventHubSource {
 }
 
 fn main() {
+    // ── Panic diagnostics — before anything at all ────────────────────────────
+    //
+    // Ahead of even the election, so a panic while parsing arguments or binding
+    // the instance socket is still recorded. The hook chains to libstd's, takes
+    // no application locks, and writes one file; see `crash_report`'s module doc
+    // for why it deliberately does not try to dump prose.
+    crash_report::install();
+
     // ── Single-instance election — FIRST, before anything is built ────────────
     //
     // A remote must not construct an `AppContext`, start the event-dispatch
@@ -814,6 +823,18 @@ fn main() {
         })
         .unwrap_or_else(models::ExportStylesService::in_memory_default);
     let export_styles = view_models::ExportStylesViewModel::new(export_styles_service);
+    // Paratext presets — the front/back matter structures New Work can start a project
+    // with, and the Settings pane edits. Opened here for the same reason export styles
+    // are: one instance, so a preset written in Settings is the one New Work offers.
+    let paratext_presets_service = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| {
+            models::ParatextPresetsService::open(&paths)
+                .map_err(|e| eprintln!("paratext presets: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(models::ParatextPresetsService::in_memory_default);
+    let paratext_presets =
+        view_models::ParatextPresetsViewModel::new(paratext_presets_service);
     // The distraction-free theme library, on the same footing and for the same
     // reasons (a theme outlives any project, and the settings pane and the
     // mode's own picker must read one instance).
@@ -1073,6 +1094,7 @@ fn main() {
         .app_state(initial_state.session.progress_recorder.clone())
         .app_state(import_plume.clone())
         .app_state(export_styles.clone())
+        .app_state(paratext_presets.clone())
         .app_state(df_themes.clone())
         .app_state(initial_state.session.user_dictionary.clone())
         .app_state(backup_settings.clone())

@@ -612,6 +612,7 @@ entities:
       - ChapterScene
       - BookBegin
       - BookEnd
+      - Paratext
   - name: label
     type: string
   - name: activated
@@ -711,6 +712,7 @@ entities:
       - PartTitle
       - ChapterTitle
       - EpigraphText
+      - ParatextText
   - name: data
     type: string
   undoable: true
@@ -1035,6 +1037,7 @@ features:
         - CurrentChapter
         - CurrentScene
         - CurrentNote
+        - CurrentParatext
         - CurrentFolder
         - Custom
       - name: preset_json

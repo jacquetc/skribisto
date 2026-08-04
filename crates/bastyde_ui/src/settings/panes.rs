@@ -29,6 +29,7 @@ pub(super) mod export_styles;
 pub(super) mod goals;
 pub(super) mod keymap;
 pub(super) mod notifications;
+pub(super) mod paratext;
 pub(super) mod punctuation;
 pub(super) mod spellcheck;
 pub(super) mod text_replacements;

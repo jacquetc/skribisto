@@ -47,17 +47,42 @@
 
 use bastyde::res;
 use bastyde::widgets::IconWidget;
-use frontend::common::entities::BinderItemSubRole;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 
 /// Leading-icon size (dp) — matches the outline rows and the tab headers.
 pub const ICON_SIZE: f32 = 16.0;
 
-/// Icon for a binder item, chosen purely by its `sub_role`.
+/// Icon for a binder item, chosen by its `sub_role`.
+///
+/// The leaf reading. Every sub_role but one looks the same whether it is carried by an
+/// item or a folder — a notes folder and a note share a glyph, and always have — so this
+/// is the right answer nearly everywhere. Paratext is the exception, and callers that
+/// know the role should use [`role_sub_role_icon`].
 pub fn sub_role_icon(sub_role: &BinderItemSubRole) -> IconWidget {
+    role_sub_role_icon(&BinderItemRole::Item, sub_role)
+}
+
+/// Icon for a binder item, chosen by its `(role, sub_role)`.
+///
+/// Only paratexts distinguish the two, and they have to: a paratext folder and the pages
+/// inside it are both new, both unfamiliar, and sat next to each other in the same
+/// subtree — with one glyph between them the tree read as a list of identical rows.
+/// They differ by ink mass (a line for the leaf, a band for the container), the same
+/// device that separates Scene from Chapter, because a raster at 16px preserves mass and
+/// destroys stroke counts.
+pub fn role_sub_role_icon(role: &BinderItemRole, sub_role: &BinderItemSubRole) -> IconWidget {
+    if matches!(
+        (role, sub_role),
+        (BinderItemRole::Folder, BinderItemSubRole::Paratext)
+    ) {
+        return IconWidget::from_svg_icon(res!("assets/icons/binder/paratext-folder.svg"))
+            .icon_size(ICON_SIZE);
+    }
     let svg = match sub_role {
         BinderItemSubRole::Text => res!("assets/icons/binder/text.svg"),
         BinderItemSubRole::None => res!("assets/icons/binder/folder.svg"),
         BinderItemSubRole::Note => res!("assets/icons/binder/note.svg"),
+        BinderItemSubRole::Paratext => res!("assets/icons/binder/paratext.svg"),
         BinderItemSubRole::Book => res!("assets/icons/binder/book.svg"),
         BinderItemSubRole::Part => res!("assets/icons/binder/part.svg"),
         BinderItemSubRole::Scene => res!("assets/icons/binder/scene.svg"),
@@ -66,6 +91,22 @@ pub fn sub_role_icon(sub_role: &BinderItemSubRole) -> IconWidget {
         BinderItemSubRole::BookEnd => res!("assets/icons/binder/book-end.svg"),
     };
     IconWidget::from_svg_icon(svg).icon_size(ICON_SIZE)
+}
+
+/// [`role_sub_role_icon`] for the tree rows, which carry their role as the string their
+/// data source speaks (`"binder" | "folder" | "item"`).
+///
+/// One translation, here, rather than a `role()` on each of the five node types that
+/// would each have to agree with the others.
+pub fn kind_sub_role_icon(kind: &str, sub_role: &BinderItemSubRole) -> IconWidget {
+    let role = if kind == "item" {
+        BinderItemRole::Item
+    } else {
+        // A binder row is not an item at all, and reads as a folder because that is what
+        // it behaves like: a container with children.
+        BinderItemRole::Folder
+    };
+    role_sub_role_icon(&role, sub_role)
 }
 
 /// Icon for a binder root row (outline `kind == "binder"`).
@@ -77,14 +118,20 @@ pub fn binder_icon() -> IconWidget {
 /// shows, so a "+ Chapter" in the menu matches the chapter rows below it.
 pub fn create_type_icon(t: skribisto_model::CreateType) -> IconWidget {
     use skribisto_model::CreateType;
-    let sub_role = match t {
-        CreateType::Book => BinderItemSubRole::Book,
-        CreateType::Part => BinderItemSubRole::Part,
-        CreateType::Chapter => BinderItemSubRole::ChapterScene,
-        CreateType::Scene => BinderItemSubRole::Scene,
-        CreateType::Note | CreateType::NoteFolder => BinderItemSubRole::Note,
-        CreateType::Folder => BinderItemSubRole::None,
-        CreateType::EndOfBook => BinderItemSubRole::BookEnd,
+    // The role matters for exactly one pair, so it is carried alongside the sub_role
+    // rather than derived: a "+ Paratext folder" row must show the container glyph, or
+    // the menu promises one thing and the tree shows another.
+    let (role, sub_role) = match t {
+        CreateType::Book => (BinderItemRole::Folder, BinderItemSubRole::Book),
+        CreateType::Part => (BinderItemRole::Folder, BinderItemSubRole::Part),
+        CreateType::Chapter => (BinderItemRole::Folder, BinderItemSubRole::ChapterScene),
+        CreateType::Scene => (BinderItemRole::Item, BinderItemSubRole::Scene),
+        CreateType::Note => (BinderItemRole::Item, BinderItemSubRole::Note),
+        CreateType::NoteFolder => (BinderItemRole::Folder, BinderItemSubRole::Note),
+        CreateType::Paratext => (BinderItemRole::Item, BinderItemSubRole::Paratext),
+        CreateType::ParatextFolder => (BinderItemRole::Folder, BinderItemSubRole::Paratext),
+        CreateType::Folder => (BinderItemRole::Folder, BinderItemSubRole::None),
+        CreateType::EndOfBook => (BinderItemRole::Item, BinderItemSubRole::BookEnd),
     };
-    sub_role_icon(&sub_role)
+    role_sub_role_icon(&role, &sub_role)
 }

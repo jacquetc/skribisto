@@ -40,3 +40,8 @@ wm-story-bible-more = Turn this on for tags that name things you write about: ch
 
 tooltip-go-to = Jump to any item in the binder (Ctrl+G)
 synopsis-collapse-tooltip = Hide the synopsis column
+
+wm-paratext = A text that is not part of the story.
+wm-paratext-more = A preface, a dedication, an afterword, a colophon — writing that belongs to the book but not to its body. Exported wherever you put it, and never counted in the manuscript's word count. Where it goes is up to you: conventions differ by country and publisher.
+wm-paratext-folder = A folder for paratexts.
+wm-paratext-folder-more = Somewhere to keep prefaces and afterwords so they do not clutter the binder. Organising only — it carries a [synopsis](:wm-synopsis) but adds nothing to the exported book, not even its own name.

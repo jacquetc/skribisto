@@ -31,7 +31,13 @@ use common::entities::{ContentRole, MatchField};
 /// directly and never come through here.
 pub fn field_of_role(role: &ContentRole) -> Option<MatchField> {
     match role {
-        ContentRole::SceneText | ContentRole::NoteText => Some(MatchField::Body),
+        // A paratext is prose the author wrote, so it answers to the body toggle. Unlike
+        // the epigraph it needs no field of its own: an `Item/Paratext` carries only
+        // `ParatextText`, so there is no second row on the same item for Replace All to
+        // resolve to by mistake.
+        ContentRole::SceneText | ContentRole::NoteText | ContentRole::ParatextText => {
+            Some(MatchField::Body)
+        }
         ContentRole::SynopsisText => Some(MatchField::Synopsis),
         ContentRole::EpigraphText => Some(MatchField::Epigraph),
         // Titles live on the `BinderItem`, so a title hit is `MatchField::Title` recorded

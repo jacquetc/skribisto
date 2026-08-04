@@ -82,9 +82,30 @@ skribisto_fonts = { package = "skribisto-fonts", version = "0.0.1", path = "crat
 
 [profile.release]
 lto = "fat"
-panic = "abort"
 strip = true
 codegen-units = 1
+# `panic` is deliberately left at Cargo's default (`unwind`).
+#
+# `panic = "abort"` used to sit here, and it silently disabled the app's only
+# production crash-isolation boundary: `common::long_operation`'s
+# `catch_unwind`, which exists so a panic inside a long operation (save_work,
+# save_as, backup_now, export_work, analyze_book, scan_mentions, count_words,
+# import_plume_creator_file) is reported as `Failed` instead of killing the
+# process. `catch_unwind` cannot intercept an abort, so under that setting a
+# panic mid-save took down every open Work's window in this single-instance,
+# multi-window process — with the writer's unsaved prose.
+#
+# The contract is tested (`work_management::save_load_test::
+# panicking_long_operation_is_reported_failed_not_stuck`), but Cargo forbids
+# `panic = "abort"` for the test profile, so the suite ran under `unwind` and
+# proved a behaviour the shipped binary did not have. Same for the store's
+# poison recovery (`hashmap_store::{read,write}_or_recover`): a poisoned lock
+# requires an unwind past a held guard, so under `abort` that machinery was
+# unreachable in release too.
+#
+# See also `common::database::write_guard::WriteTransactionGuard::acquire`,
+# which already states the house rule this restores: "a shipped build should
+# degrade to a reported failure, not abort the process."
 
 [workspace.lints.rust]
 
@@ -98,4 +119,13 @@ codegen-units = 1
 # almost never hit them.
 clone_on_copy = "allow"
 let_unit_value = "allow"
+
+# Panic hygiene. `warn`, not `deny`: the four Qleany-generated crates (common,
+# direct_access, frontend, macros) carry ~969 of these and are regenerated from
+# templates in the sibling `qleany` repo — their allow lives in the generated
+# `lib.rs` preamble so it survives regeneration, not here. Hand-written crates
+# should be promoted to `deny` individually as each one comes clean.
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
 

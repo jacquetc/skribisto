@@ -221,6 +221,11 @@ impl OpenDoc {
                 ContentRole::EpigraphText => {
                     doc.epigraph = Some(prose_field(ctx, item_id, cr.clone(), existing))
                 }
+                // A paratext's prose is the page's whole content, so it takes the main
+                // slot — the same surface a scene writes into, with the same sessions.
+                ContentRole::ParatextText => {
+                    doc.main = Some(prose_field(ctx, item_id, cr.clone(), existing))
+                }
                 // The two *names*. They are edited as the item's title/subtitle (what the
                 // outline tree and the tab show) and mirrored into these content rows on
                 // save — see `TitleField`.

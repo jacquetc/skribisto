@@ -112,6 +112,10 @@ fn content_role_min_version(role: &ContentRole) -> u32 {
         // exists to turn into a refusal. Only bundles that actually carry an epigraph
         // claim the floor; a project that has none stays open to every v4/v5 build.
         ContentRole::EpigraphText => 6,
+        // v7. Same reasoning as the epigraph one line up: a build that predates paratexts
+        // cannot deserialize the variant, so the gate refuses the bundle rather than
+        // letting `items.ron` fail with a raw "unexpected variant".
+        ContentRole::ParatextText => 7,
     }
 }
 
@@ -132,6 +136,7 @@ fn binder_item_sub_role_min_version(sub_role: &BinderItemSubRole) -> u32 {
         | BinderItemSubRole::ChapterScene
         | BinderItemSubRole::BookBegin
         | BinderItemSubRole::BookEnd => MIN_READ_BASELINE,
+        BinderItemSubRole::Paratext => 7,
     }
 }
 

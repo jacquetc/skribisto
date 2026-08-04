@@ -57,6 +57,11 @@ use std::collections::BTreeMap;
 /// by projects that actually carry one: delete every epigraph and the next save drops
 /// back to 4. `step_v5_to_v6` has nothing to do — the data is additive on read.
 ///
+/// v7 added **paratexts** — `BinderItemSubRole::Paratext` and `ContentRole::ParatextText`,
+/// a text that belongs to the book but not to its body. Two new enum variants, so the
+/// floor's exhaustive matches caught it themselves. Like v5 and v6, the floor is claimed
+/// only by projects that carry one.
+///
 /// # Before bumping this, answer one question
 ///
 /// *Does this change need an arm in
@@ -75,7 +80,7 @@ use std::collections::BTreeMap;
 /// A required field added without `#[serde(default)]` is the one shape that is *not*
 /// caught mechanically. It degrades to a raw parse error — never to data loss — but it
 /// degrades, so give every additive field its `default` and the question stays easy.
-pub const FORMAT_VERSION: u32 = 6;
+pub const FORMAT_VERSION: u32 = 7;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///

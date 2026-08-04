@@ -537,6 +537,8 @@ mod imp {
                     language: vec!["en".to_string()],
                     author_name: String::new(),
                     chapter_scene_mode: false,
+                    paratext_front: Vec::new(),
+                    paratext_back: Vec::new(),
                 },
             )
             .unwrap();

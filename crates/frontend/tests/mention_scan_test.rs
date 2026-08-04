@@ -191,6 +191,8 @@ fn work_management_new(ctx: &AppContext, dir: &std::path::Path) {
             language: vec!["en-US".to_string()],
             author_name: String::new(),
             chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
         },
     )
     .expect("new_work");

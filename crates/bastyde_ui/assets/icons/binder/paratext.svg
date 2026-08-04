@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter">
+  <!-- Item/Paratext — editorial brackets around a single line.
+       Deliberately NOT a framed page: Scene and Chapter own that silhouette, and a
+       fourth variation on it was unreadable next to them at 16px. Brackets are a
+       different outline entirely — two verticals with serifs, open on both sides —
+       so the eye separates it from the manuscript family before reading any detail,
+       which is the only comparison that survives the raster.
+       Verticals on the half-grid (x4.5/x11.5) so a 1-wide stroke covers one pixel
+       column; the serifs are 1.5 long, enough to read as a bracket and not as a pipe. -->
+  <path d="M6 3.5H4.5V12.5H6"/>
+  <path d="M10 3.5H11.5V12.5H10"/>
+  <path d="M6.5 8.5H9.5"/>
+</svg>

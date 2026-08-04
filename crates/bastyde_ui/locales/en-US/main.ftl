@@ -17,6 +17,7 @@ menu-export-part = Export Part
 menu-export-chapter = Export Chapter
 menu-export-scene = Export Scene
 menu-export-note = Export Note
+menu-export-paratext = Export Paratext
 menu-export-folder = Export Folder
 menu-export-choose = Choose…
 menu-export-none = Open a document to export
@@ -75,6 +76,8 @@ create-scene = Scene
 create-note = Note
 create-note-folder = Note folder
 create-folder = Folder
+create-paratext = Paratext
+create-paratext-folder = Paratext folder
 create-book-end = End of Book
 # Item-type names for the Overview's Type column (the rest reuse the create-* nouns).
 type-book-start = Book start
@@ -90,6 +93,8 @@ new-item-chapter = New Chapter
 new-item-note = New Note
 new-item-note-folder = New Note Folder
 new-item-folder = New Folder
+new-item-paratext = New Paratext
+new-item-paratext-folder = New Paratext Folder
 
 ## Create recommendations: trailing placement hint on each row
 placement-inside = inside
@@ -113,6 +118,7 @@ content-book-subtitle = Book subtitle
 content-part-title = Part title
 content-chapter-title = Chapter title
 content-epigraph-text = Epigraph
+content-paratext-text = Paratext
 promote-blocked-title = Chapter not empty
 promote-blocked-text = This chapter still holds { $count } item(s). Move or trash them before converting it to a flat chapter.
 
@@ -209,6 +215,7 @@ settings-page-distraction-free = Distraction-free
 settings-page-dictionaries = Dictionaries
 settings-page-autosave = Autosave
 settings-page-export = Export Formats
+settings-page-paratext = Paratext Structures
 settings-page-keymap = Keymap
 # Filter box on the Keymap page (filters the ShortcutSettings list by name / id / category).
 settings-keymap-filter = Filter shortcuts
@@ -449,6 +456,7 @@ corkboard-badge-part = Part
 corkboard-badge-book = Book
 corkboard-badge-note = Note
 corkboard-badge-folder = Folder
+corkboard-badge-paratext = Paratext
 corkboard-badge-text = Text
 corkboard-badge-end = End
 settings-group-corkboard-layout = Layout
@@ -749,6 +757,11 @@ new-work-notebook = Notebook
 new-work-chapter = Chapter
 new-work-scene = Scene
 new-work-note = Note
+new-work-front-matter = Front matter
+new-work-back-matter = Back matter
+new-work-paratext = Book structure
+new-work-paratext-none = No structure
+new-work-paratext-hint = The front and back matter a tradition opens and closes a book with. You can move, rename or delete any of it afterwards.
 
 ## Import Plume Creator dialog
 import-plume-title = Import Plume Creator project
@@ -902,6 +915,7 @@ search-tip-chapter = Chapters: chapters, in whichever way the project stores the
 search-tip-scene = Scenes: the rows that hold your prose.
 search-tip-note = Notes: free-form notes.
 search-tip-folder = Folders: plain organising folders and separators.
+search-tip-paratext = A text that belongs to the book but not to its story — a preface, a dedication, an afterword. Never counted in the manuscript.
 search-tip-replace = Replace: show the replacement field and Replace All.
 search-error = Search failed: { $message }
 search-no-matches = No matches
@@ -1473,3 +1487,14 @@ analysis-vocabulary-caveat = Comparable within this book only.
 binder-filter-count = { $shown } of { $total } shown
 binder-filter-clear = Clear
 binder-filter-none = Nothing matches “{ $query }”.
+
+## Settings: paratext structures
+settings-paratext-intro = The front and back matter a new project can start with. Each structure belongs to a publishing tradition, and its page titles are written in that tradition's own language — rename them freely once a project is created.
+settings-paratext-structures = Structures
+settings-paratext-broken = Could not be read
+settings-paratext-edit = Edit
+settings-paratext-duplicate = Duplicate
+settings-paratext-delete = Delete
+settings-paratext-new = New structure
+settings-paratext-save = Save
+settings-paratext-editor-hint = A name, the pages to create before the manuscript, and the pages to create after it. Where they end up is yours: they are ordinary items once the project exists.

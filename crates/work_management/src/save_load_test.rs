@@ -1165,6 +1165,8 @@ fn new_work(db: &DbContext, hub: &Arc<EventHub>, path: &str, is_folder: bool, t:
             language: vec!["en-US".to_string()],
             author_name: String::new(),
             chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
         },
     )
     .expect("new_work");
@@ -1196,6 +1198,8 @@ fn new_work_persists_the_author_to_the_manifest() {
             language: vec!["en-US".to_string()],
             author_name: "A. Writer".to_string(),
             chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
         },
     )
     .expect("new_work");

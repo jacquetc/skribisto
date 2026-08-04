@@ -82,7 +82,7 @@ pub struct SearchReplaceViewModel {
     /// in [`SearchFacet::ALL`]. Individual signals (not one `HashSet`) because the
     /// chips are `ToolbarAction::toggle`s, which each bind a `Signal<bool>` and
     /// write it directly on click.
-    facets: [Signal<bool>; 6],
+    facets: [Signal<bool>; FACET_COUNT],
 
     // ── outcome ──
     match_count: Signal<u64>,
@@ -780,6 +780,11 @@ impl HasWorkId for SearchReplaceViewModel {
 
 /// The position of facet `f` in [`SearchFacet::ALL`] — the index into the
 /// per-facet signal array.
+/// How many facet chips there are. Derived, never written out: this array is indexed by
+/// `SearchFacet::ALL`'s own order, and a literal here silently went out of bounds the day a
+/// facet was added.
+const FACET_COUNT: usize = SearchFacet::ALL.len();
+
 fn facet_index(f: SearchFacet) -> usize {
     SearchFacet::ALL.iter().position(|&x| x == f).unwrap_or(0)
 }
@@ -787,13 +792,13 @@ fn facet_index(f: SearchFacet) -> usize {
 /// Fresh per-facet toggle signals seeded from a list of codes. A code that names
 /// no facet (a `search.toml` written by a version whose codes differed) is
 /// ignored — never resurrected as a phantom filter.
-fn facet_signals_from_codes(codes: &[i64]) -> [Signal<bool>; 6] {
+fn facet_signals_from_codes(codes: &[i64]) -> [Signal<bool>; FACET_COUNT] {
     let on = codes_to_set(codes);
     std::array::from_fn(|i| Signal::new(on.contains(&SearchFacet::ALL[i])))
 }
 
 /// Set existing per-facet signals from a list of codes (used on project restore).
-fn set_facets_from_codes(sigs: &[Signal<bool>; 6], codes: &[i64]) {
+fn set_facets_from_codes(sigs: &[Signal<bool>; FACET_COUNT], codes: &[i64]) {
     let on = codes_to_set(codes);
     for (i, sig) in sigs.iter().enumerate() {
         sig.set(on.contains(&SearchFacet::ALL[i]));

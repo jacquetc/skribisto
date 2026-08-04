@@ -61,6 +61,8 @@ fn big_manuscript() -> AppContext {
             language: vec!["fr-FR".to_string()],
             author_name: String::new(),
             chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
         },
     )
     .expect("new_work");

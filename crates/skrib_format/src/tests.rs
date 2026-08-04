@@ -70,6 +70,9 @@ fn prose_text(role: &ContentRole) -> String {
         ContentRole::BookSubtitle => "A Novel".to_string(),
         ContentRole::PartTitle => "Part One — Arrival".to_string(),
         ContentRole::ChapterTitle => "Chapter One".to_string(),
+        ContentRole::ParatextText => {
+            "Every place in this book is real. Every person in it is not.".to_string()
+        }
         // Two quotations in one row, separated by a genuine blank line — a `>`-only
         // continuation would fold them into a single blockquote. The round-trip test
         // is what pins that they stay two.

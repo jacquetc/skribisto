@@ -450,6 +450,7 @@ pub enum BinderItemSubRole {
     ChapterScene,
     BookBegin,
     BookEnd,
+    Paratext,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -499,6 +500,7 @@ pub enum ContentRole {
     PartTitle,
     ChapterTitle,
     EpigraphText,
+    ParatextText,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

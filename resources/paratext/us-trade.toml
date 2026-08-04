@@ -1,0 +1,29 @@
+# Item titles are written verbatim, in the language of the tradition they come from.
+# They are never translated: they are content that goes into the book, and a writer who
+# wants them renamed knows better than we do what to call them.
+#
+# `front` and `back` decide *where these items are created*, and nothing more. There is no
+# front matter or back matter in the model, in the binder or in the compiler — once the
+# project exists these are ordinary rows and the writer moves them wherever they like.
+
+[paratext]
+name = "US trade novel"
+country = ["US", "CA"]
+language = "en"
+
+[front]
+items = [
+    "Half title",
+    "Title page",
+    "Copyright",
+    "Dedication",
+    "Epigraph",
+    "Contents",
+]
+
+[back]
+items = [
+    "Acknowledgements",
+    "About the author",
+    "Also by this author",
+]

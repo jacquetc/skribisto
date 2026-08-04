@@ -161,6 +161,9 @@ fn is_prose(role: &ContentRole) -> bool {
             // Dune-style "from The Sayings of Muad'Dib" attribution repeated across
             // forty chapters is a tracked entity, not decoration.
             | ContentRole::EpigraphText
+            // An author's note naming the real people behind the invented ones is
+            // exactly what the cast index is for.
+            | ContentRole::ParatextText
     )
 }
 

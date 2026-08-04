@@ -358,6 +358,7 @@ fn facet_tip(facet: SearchFacet) -> LocalizedString {
         SearchFacet::Chapter => tr!(search_tip_chapter()),
         SearchFacet::Scene => tr!(search_tip_scene()),
         SearchFacet::Note => tr!(search_tip_note()),
+        SearchFacet::Paratext => tr!(search_tip_paratext()),
         SearchFacet::Folder => tr!(search_tip_folder()),
     }
 }
@@ -371,6 +372,7 @@ fn facet_icon(facet: SearchFacet) -> IconWidget {
         SearchFacet::Chapter => BinderItemSubRole::ChapterScene,
         SearchFacet::Scene => BinderItemSubRole::Scene,
         SearchFacet::Note => BinderItemSubRole::Note,
+        SearchFacet::Paratext => BinderItemSubRole::Paratext,
         SearchFacet::Folder => BinderItemSubRole::None,
     };
     crate::binder::icons::sub_role_icon(&sub_role)

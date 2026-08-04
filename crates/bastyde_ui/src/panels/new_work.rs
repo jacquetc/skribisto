@@ -125,6 +125,24 @@ impl NewWorkPanel {
         .placeholder(tr!(new_work_language()))
     }
 
+    /// The paratext-structure picker. Each preset names itself in its own language —
+    /// "Roman français" is not translated, because it is the name of a tradition, not a
+    /// label. Empty selection means no front or back matter, which is a first-class
+    /// answer and what a locale matching no tradition starts on.
+    fn paratext_combo(&self) -> ComboBox<String> {
+        let presets = self.vm.paratext_presets();
+        let ids: Vec<String> = presets.iter().map(|p| p.id.clone()).collect();
+        let names: HashMap<String, String> = presets
+            .iter()
+            .map(|p| (p.id.clone(), p.name.clone()))
+            .collect();
+        ComboBox::from_items(ids, self.vm.paratext_preset(), move |id: &String| {
+            let display = names.get(id).cloned().unwrap_or_else(|| id.clone());
+            localized(move || display.clone())
+        })
+        .placeholder(tr!(new_work_paratext_none()))
+    }
+
     /// The reactive "Will create …" preview — the one runtime-computed string.
     fn path_preview(&self) -> impl Widget + 'static {
         HStack::new()
@@ -255,6 +273,21 @@ impl NewWorkPanel {
             )
             // ── ChapterScene mode: write directly in chapters (novel templates
             // only; greyed otherwise). The rich tooltip explains both modes. ──
+            .full_width(Divider::new())
+            // ── Paratext structure: the front and back matter a tradition opens and
+            // closes a book with. Orthogonal to the template above — how much book, and
+            // which tradition, are two questions. ──────────────────────────
+            .line(
+                Self::field_label(tr!(new_work_paratext())),
+                VStack::new()
+                    .spacing(6.0)
+                    .child(
+                        FixedSize::new()
+                            .width(240.0)
+                            .child(self.paratext_combo().enabled(vm.paratext_applicable())),
+                    )
+                    .child(Self::hint(tr!(new_work_paratext_hint()))),
+            )
             .full_width(
                 Toggle::new(vm.chapter_scene())
                     .label(tr!(new_work_chapter_scene()))

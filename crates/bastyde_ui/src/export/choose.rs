@@ -202,7 +202,15 @@ fn push_subtree(tree: &TreeModel<ChooseNode>, node: NodeId, out: &mut Vec<NodeId
 }
 
 fn is_prose(sr: &BinderItemSubRole) -> bool {
-    sr.carries_scene() || matches!(sr, BinderItemSubRole::Note)
+    sr.carries_scene()
+        || matches!(
+            sr,
+            // A paratext is part of the book the writer is exporting — a dedication is
+            // not something to go hunting for a checkbox to include. It is unchecked by
+            // the structural scopes for the same reason a scene is checked: it carries
+            // the author's words.
+            BinderItemSubRole::Note | BinderItemSubRole::Paratext
+        )
 }
 
 /// The checkbox tree widget: a `TreeView` over the [`ChooseModel`], each row a tri-state
@@ -261,7 +269,7 @@ impl Widget for ChooseTreeWidget {
                 let icon = if node.kind == "binder" {
                     crate::binder::icons::binder_icon()
                 } else {
-                    crate::binder::icons::sub_role_icon(&node.sub_role)
+                    crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
                 };
                 let title_color = if node.exportable {
                     TextRole::Primary

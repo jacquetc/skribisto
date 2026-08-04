@@ -74,6 +74,17 @@ pub struct NewWorkDto {
     pub language: Vec<String>,
     pub chapter_scene_mode: bool,
     pub author_name: String,
+    /// Paratext titles to create before the manuscript, verbatim from the chosen preset.
+    /// Empty means the writer chose no structure, which is a first-class answer.
+    ///
+    /// Resolved by the caller rather than named here: which preset exists, and what it
+    /// contains, is a UI-side file the backend has no business parsing. This mirrors
+    /// `labels`, which the UI also resolves before it calls.
+    #[serde(default)]
+    pub paratext_front: Vec<String>,
+    /// The same, created after the manuscript.
+    #[serde(default)]
+    pub paratext_back: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq, Eq)]

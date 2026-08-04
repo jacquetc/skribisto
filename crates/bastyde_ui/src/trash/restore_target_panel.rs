@@ -132,7 +132,7 @@ impl Widget for TrashRestoreTargetPanel {
                 let icon = if node.kind == "binder" {
                     crate::binder::icons::binder_icon()
                 } else {
-                    crate::binder::icons::sub_role_icon(&node.sub_role)
+                    crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
                 };
                 item = item.leading_slot(icon);
                 Box::new(item) as Box<dyn Widget>

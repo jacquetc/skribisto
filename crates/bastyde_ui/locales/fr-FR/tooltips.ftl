@@ -41,3 +41,8 @@ wm-story-bible-more = Activez cette option pour les étiquettes qui nomment ce d
 
 tooltip-go-to = Rejoindre n'importe quel élément du classeur (Ctrl+G)
 synopsis-collapse-tooltip = Masquer la colonne du synopsis
+
+wm-paratext = Un texte qui ne fait pas partie du récit.
+wm-paratext-more = Une préface, une dédicace, une postface, un achevé d'imprimer — un écrit qui appartient au livre mais non à son corps. Exporté là où vous le placez, et jamais compté dans le nombre de mots du manuscrit. Sa place vous appartient : les usages varient selon les pays et les éditeurs.
+wm-paratext-folder = Un dossier de paratextes.
+wm-paratext-folder-more = De quoi ranger préfaces et postfaces sans encombrer le classeur. Purement organisationnel — il porte un [synopsis](:wm-synopsis) mais n'ajoute rien au livre exporté, pas même son nom.

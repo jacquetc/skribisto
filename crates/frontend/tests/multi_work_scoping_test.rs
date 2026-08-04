@@ -73,6 +73,8 @@ fn ctx_with_work_a() -> (AppContext, EntityId) {
             language: vec!["en-US".to_string()],
             author_name: String::new(),
             chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
         },
     )
     .expect("new_work A");
@@ -1788,6 +1790,8 @@ fn new_work_leaves_every_other_open_work_intact() {
             language: vec!["en-US".to_string()],
             author_name: String::new(),
             chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
         },
     )
     .expect("new_work B");

@@ -354,6 +354,21 @@ fn assemble(
             continue;
         }
 
+        // A paratext is the author's, but it is not the story. The preset can leave it
+        // out — the clean-submission case, where an editor wants the manuscript and not
+        // the acknowledgements. Decided here, beside the note gate, so the row is skipped
+        // whole.
+        //
+        // Note that a paratext emits **no heading of its own**. Its title is a binder
+        // label the writer chose to find it by — "Copyright", "front matter (draft)" —
+        // not a line of the book. A writer who wants a heading on the page writes one in
+        // the prose, where they control its wording and its level. The same reasoning
+        // keeps a `Folder/Paratext` from emitting anything at all.
+        if matches!(row.item.sub_role, BinderItemSubRole::Paratext) && !preset.include_paratexts {
+            report(i);
+            continue;
+        }
+
         let heading_lang = match &preset.heading_language {
             HeadingLanguage::Fixed(l) => l.clone(),
             HeadingLanguage::Auto => row.lang.clone(),
@@ -455,7 +470,13 @@ fn assemble(
             // the marker is furniture, and the row contributed nothing.
             let (w, emitted) =
                 push_prose(&mut out, prose, row_rtl, preset, scan, &mut pending_attrs);
-            words += w;
+            // A paratext's prose rides this same step — it is the page's whole content —
+            // but its words are not the manuscript's. Counting them would drift every
+            // pace goal in the project by the length of the front matter, with nothing
+            // looking wrong.
+            if !matches!(row.item.sub_role, BinderItemSubRole::Paratext) {
+                words += w;
+            }
             contributed |= emitted;
         }
 
@@ -868,6 +889,8 @@ fn main_prose_role(sr: &BinderItemSubRole) -> Option<ContentRole> {
         Some(ContentRole::SceneText)
     } else if matches!(sr, BinderItemSubRole::Note) {
         Some(ContentRole::NoteText)
+    } else if matches!(sr, BinderItemSubRole::Paratext) {
+        Some(ContentRole::ParatextText)
     } else {
         None
     }
@@ -2094,6 +2117,124 @@ mod tests {
             gap(6.0) < gap(0.0),
             "an already-spaced preset must not get the full extra gap"
         );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Paratexts
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// A chapter, a paratext between it and the next, and a second chapter — the shape
+    /// that proves a paratext neither takes a number nor disturbs the ones around it.
+    fn book_with_paratext() -> Gathered {
+        gathered(
+            vec![
+                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(2, ContentRole::SceneText, "The wind rose.")],
+                ),
+                ItemWithContents {
+                    item: BinderItem {
+                        id: 102,
+                        role: BinderItemRole::Item,
+                        sub_role: SR::Paratext,
+                        title: "Acknowledgements".into(),
+                        dict_language: language::parse_legacy_list("en"),
+                        is_exportable: true,
+                        activated: true,
+                        ..Default::default()
+                    },
+                    contents: vec![c(3, ContentRole::ParatextText, "With thanks to the archivists.")],
+                },
+                iwc(
+                    103,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(4, ContentRole::SceneText, "She walked on.")],
+                ),
+            ],
+            "en",
+        )
+    }
+
+    /// A paratext exports its **prose and nothing else**. Its title is a binder label the
+    /// writer chose to find it by — "Copyright", "front matter (draft)" — not a line of
+    /// the book, so writing it into the export would put the writer's private filing
+    /// vocabulary on the page. A heading, if one is wanted, is written in the prose where
+    /// the writer controls its wording.
+    #[test]
+    fn a_paratext_exports_its_prose_and_not_its_title() {
+        let g = book_with_paratext();
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
+        assert!(out.contains("With thanks to the archivists."), "prose: {out}");
+        assert!(
+            !out.contains("Acknowledgements"),
+            "the binder label must not reach the book: {out}"
+        );
+    }
+
+    /// The chapters either side of an interleaved paratext keep their own numbering.
+    #[test]
+    fn a_paratext_between_chapters_does_not_renumber_them() {
+        let g = book_with_paratext();
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
+        assert!(out.contains("Chapter 1"), "{out}");
+        assert!(out.contains("Chapter 2"), "{out}");
+        assert!(!out.contains("Chapter 3"), "only two chapters exist: {out}");
+    }
+
+    /// A paratext is the author's, but it is not the manuscript. Its words must not move
+    /// the count, or every pace goal in the project drifts by the length of the front
+    /// matter with nothing looking wrong.
+    #[test]
+    fn a_paratext_adds_no_words_to_the_manuscript() {
+        let p = preset("neutral");
+        let words = |g: &Gathered, include: &[u64]| {
+            assemble(
+                &req(g, include, &p, ExportFormat::Djot),
+                &|_| {},
+                &AtomicBool::new(false),
+            )
+            .unwrap()
+            .1
+            .words
+        };
+        let g = book_with_paratext();
+        assert_eq!(
+            words(&g, &[100, 101, 102, 103]),
+            words(&g, &[100, 101, 103]),
+            "the paratext must not be counted"
+        );
+    }
+
+    /// The preset can leave it out — the clean-submission case, where an editor wants the
+    /// manuscript and not the acknowledgements.
+    #[test]
+    fn the_preset_can_drop_a_paratext() {
+        let g = book_with_paratext();
+        let mut p = preset("neutral");
+        assert!(p.include_paratexts, "shipped on by default");
+
+        p.include_paratexts = false;
+        let out = render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
+        assert!(!out.contains("Acknowledgements"), "dropped: {out}");
+        assert!(!out.contains("archivists"), "body dropped too: {out}");
+        assert!(out.contains("The wind rose."), "the manuscript stays: {out}");
+    }
+
+    /// A preset saved before the field existed must keep its paratexts, for the same
+    /// reason `include_epigraphs` must: a bare serde default reads absence as `false`.
+    #[test]
+    fn a_preset_saved_before_paratexts_still_keeps_them() {
+        let mut v = serde_json::to_value(preset("neutral")).unwrap();
+        let obj = v.as_object_mut().unwrap();
+        assert!(obj.remove("include_paratexts").is_some(), "field must serialize");
+        let old: Preset = serde_json::from_value(v).expect("an older preset must still load");
+        assert!(old.include_paratexts, "absence must read as on");
     }
 
     // ─────────────────────────────────────────────────────────────────────────

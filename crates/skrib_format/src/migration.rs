@@ -56,6 +56,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             3 => step_v3_to_v4(bundle),
             4 => step_v4_to_v5(bundle),
             5 => step_v5_to_v6(bundle),
+            6 => step_v6_to_v7(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -84,6 +85,11 @@ fn step_v4_to_v5(_bundle: &mut WorkBundle) {}
 /// [`version_gate`](crate::version_gate) refuses the bundle up front instead of letting
 /// `items.ron` fail with a raw "unexpected variant".
 fn step_v5_to_v6(_bundle: &mut WorkBundle) {}
+
+/// v6 → v7 added paratexts. Nothing to heal: a v6 bundle simply has none. The bump exists
+/// so an older build refuses the file rather than failing to deserialize the two new enum
+/// variants — the same reason v6 exists.
+fn step_v6_to_v7(_bundle: &mut WorkBundle) {}
 
 /// Mint a durable `uid` for every binder and item that lacks one.
 ///

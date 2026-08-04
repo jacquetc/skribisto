@@ -322,6 +322,11 @@ mod imp {
             ContentRole::BookSubtitle => "a novel".to_string(),
             ContentRole::ChapterTitle => format!("Chapter {item_id}"),
             ContentRole::PartTitle => format!("Part {item_id}"),
+            ContentRole::ParatextText => format!(
+                "Fabricated paratext {item_id}. Every place in this book is real; every \
+                 person in it is not.\n\nA second paragraph, so the page reads as written \
+                 matter rather than a stub."
+            ),
             // A real epigraph shape: the quotation, a blank line, then the attribution
             // right-aligned — all inside one blockquote, which is what the export relies
             // on to keep the two together.
@@ -352,6 +357,7 @@ mod imp {
             ContentRole::PartTitle => 6,
             ContentRole::ChapterTitle => 7,
             ContentRole::EpigraphText => 8,
+            ContentRole::ParatextText => 9,
         };
         900_000 + item_id * 10 + slot
     }

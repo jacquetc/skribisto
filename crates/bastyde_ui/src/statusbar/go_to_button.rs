@@ -103,7 +103,7 @@ impl Widget for GoToPalette {
                 let icon = if node.kind == "binder" {
                     crate::binder::icons::binder_icon()
                 } else {
-                    crate::binder::icons::sub_role_icon(&node.sub_role)
+                    crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
                 };
                 Box::new(item.leading_slot(icon)) as Box<dyn Widget>
             },

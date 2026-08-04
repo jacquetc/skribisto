@@ -246,6 +246,7 @@ pub(super) fn sub_role_badge_label(sub_role: &BinderItemSubRole) -> LocalizedStr
         Part => tr!(corkboard_badge_part()),
         Book | BookBegin => tr!(corkboard_badge_book()),
         Note => tr!(corkboard_badge_note()),
+        Paratext => tr!(corkboard_badge_paratext()),
         None => tr!(corkboard_badge_folder()),
         BookEnd => tr!(corkboard_badge_end()),
         Text => tr!(corkboard_badge_text()),

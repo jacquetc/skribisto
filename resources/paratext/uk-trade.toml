@@ -1,0 +1,20 @@
+[paratext]
+name = "UK trade novel"
+country = ["GB", "IE", "AU", "NZ"]
+language = "en"
+
+[front]
+items = [
+    "Half title",
+    "By the same author",
+    "Title page",
+    "Copyright",
+    "Dedication",
+    "Contents",
+]
+
+[back]
+items = [
+    "Acknowledgements",
+    "About the author",
+]

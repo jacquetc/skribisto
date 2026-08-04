@@ -115,6 +115,7 @@ fn to_scope_kind(s: &ExportScopeKind) -> ScopeKind {
         ExportScopeKind::CurrentChapter => ScopeKind::Chapter,
         ExportScopeKind::CurrentScene => ScopeKind::Scene,
         ExportScopeKind::CurrentNote => ScopeKind::Note,
+        ExportScopeKind::CurrentParatext => ScopeKind::Paratext,
         ExportScopeKind::CurrentFolder => ScopeKind::Folder,
         ExportScopeKind::Custom => ScopeKind::Custom,
     }
@@ -128,6 +129,7 @@ fn from_scope_kind(s: ScopeKind) -> ExportScopeKind {
         ScopeKind::Chapter => ExportScopeKind::CurrentChapter,
         ScopeKind::Scene => ExportScopeKind::CurrentScene,
         ScopeKind::Note => ExportScopeKind::CurrentNote,
+        ScopeKind::Paratext => ExportScopeKind::CurrentParatext,
         ScopeKind::Folder => ExportScopeKind::CurrentFolder,
         ScopeKind::Custom => ExportScopeKind::Custom,
     }
@@ -141,6 +143,7 @@ pub fn scope_label(scope: &ExportScopeKind) -> bastyde::i18n::LocalizedString {
         ExportScopeKind::CurrentChapter => tr!(menu_export_chapter()),
         ExportScopeKind::CurrentScene => tr!(menu_export_scene()),
         ExportScopeKind::CurrentNote => tr!(menu_export_note()),
+        ExportScopeKind::CurrentParatext => tr!(menu_export_paratext()),
         ExportScopeKind::CurrentFolder => tr!(menu_export_folder()),
         ExportScopeKind::Custom => tr!(menu_export_choose()),
     }

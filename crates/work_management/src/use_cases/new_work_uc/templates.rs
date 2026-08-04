@@ -18,8 +18,18 @@ use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use skribisto_model::content_allowed;
 
 /// Translated words the UI passes in `NewWorkDto.labels`, in this fixed order:
-/// `[Manuscript, Notes, Research, Notebook, Chapter, Scene, Note]`. Missing or
-/// empty entries fall back to the English word, so a short list can't panic.
+/// `[Manuscript, Notes, Research, Notebook, Chapter, Scene, Note, Front matter, Back
+/// matter]`. Missing or empty entries fall back to the English word, so a short list
+/// can't panic.
+///
+/// **Append only.** The list is positional, so inserting in the middle silently retitles
+/// everything after it. The two paratext folder names were added at the end for that
+/// reason.
+///
+/// These are binder names — organising scaffolding, in the *interface* language. The
+/// paratext item titles are not here and never will be: they come from the preset file
+/// verbatim, in the language of the tradition they belong to, because they are content
+/// bound for the book rather than chrome.
 pub struct TemplateLabels {
     pub manuscript: String,
     pub notes: String,
@@ -28,6 +38,8 @@ pub struct TemplateLabels {
     pub chapter: String,
     pub scene: String,
     pub note: String,
+    pub front_matter: String,
+    pub back_matter: String,
 }
 
 impl TemplateLabels {
@@ -48,6 +60,8 @@ impl TemplateLabels {
             chapter: at(4, "Chapter"),
             scene: at(5, "Scene"),
             note: at(6, "Note"),
+            front_matter: at(7, "Front matter"),
+            back_matter: at(8, "Back matter"),
         }
     }
 }
@@ -182,7 +196,105 @@ fn empty_binder(name: &str) -> TemplateBinder {
 /// (used as the book title); `l` supplies the translated labels. `chapter_scene`
 /// selects the per-chapter encoding for the novel family (see
 /// [`manuscript_binder`]); it is ignored by the non-manuscript templates.
+/// The paratext structure a new project opens with: the titles to create before the
+/// manuscript and the ones to create after it, already resolved from the chosen preset.
+///
+/// Verbatim titles — the caller reads them out of the preset file and does not translate
+/// them. Empty on both sides means "None", which is a first-class choice and not a
+/// degenerate case.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ParatextPlan {
+    pub front: Vec<String>,
+    pub back: Vec<String>,
+}
+
+impl ParatextPlan {
+    pub fn is_empty(&self) -> bool {
+        self.front.is_empty() && self.back.is_empty()
+    }
+}
+
+/// A `Folder/Paratext` holding `titles`, at `indent`.
+///
+/// The folder's name is translated (it is organising scaffolding, and it emits nothing
+/// into the export); the items' titles are not (they are the book's own words).
+fn paratext_folder(name: &str, titles: &[String], indent: i64) -> Vec<TemplateItem> {
+    use BinderItemRole::{Folder, Item};
+    use BinderItemSubRole::Paratext;
+    use ContentRole::{ParatextText, SynopsisText};
+
+    let mut items = vec![item(Folder, Paratext, name, indent, true, vec![])];
+    for title in titles {
+        items.push(item(
+            Item,
+            Paratext,
+            title,
+            indent + 1,
+            true,
+            vec![(ParatextText, String::new()), (SynopsisText, String::new())],
+        ));
+    }
+    items
+}
+
 pub fn build_template(
+    template: NewWorkTemplate,
+    title: &str,
+    l: &TemplateLabels,
+    chapter_scene: bool,
+) -> Vec<TemplateBinder> {
+    build_template_with_paratexts(template, title, l, chapter_scene, &ParatextPlan::default())
+}
+
+/// [`build_template`] plus a paratext structure.
+///
+/// Two axes, kept orthogonal on purpose: the manuscript template says how much book, the
+/// plan says which tradition. Merged into one enum they would multiply — "Novel, twenty
+/// chapters, roman français" — and never stop.
+pub fn build_template_with_paratexts(
+    template: NewWorkTemplate,
+    title: &str,
+    l: &TemplateLabels,
+    chapter_scene: bool,
+    paratexts: &ParatextPlan,
+) -> Vec<TemplateBinder> {
+    let mut binders = build_template_inner(template, title, l, chapter_scene);
+    if paratexts.is_empty() {
+        return binders;
+    }
+    // Around the **book**, and only if there is one. A notebook template's first binder
+    // is a Notes binder with no book in it at all, and dropping a "Half title" and a
+    // "Table of contents" into someone's notebook would be nonsense — front and back
+    // matter are the furniture of a book, so with no book there is nothing to furnish.
+    //
+    // Keyed on the presence of a book row rather than on the template enum: the question
+    // is what was actually built, and a future template that grows a book should get its
+    // paratexts without anyone remembering to add it to a list.
+    let Some(manuscript) = binders
+        .iter_mut()
+        .find(|b| b.items.iter().any(|i| i.sub_role == BinderItemSubRole::Book))
+    else {
+        return binders;
+    };
+    // Front matter before the book row, back matter after everything. Both at the book's
+    // own indent, so they are siblings of it rather than inside it — a preface is not part
+    // of the book's body, which is the whole point of the thing.
+    {
+        let mut front = paratext_folder(&l.front_matter, &paratexts.front, 0);
+        if !paratexts.front.is_empty() {
+            front.append(&mut manuscript.items);
+            manuscript.items = front;
+        }
+        if !paratexts.back.is_empty() {
+            manuscript
+                .items
+                .extend(paratext_folder(&l.back_matter, &paratexts.back, 0));
+        }
+    }
+    binders
+}
+
+fn build_template_inner(
     template: NewWorkTemplate,
     title: &str,
     l: &TemplateLabels,
@@ -382,5 +494,153 @@ mod tests {
         // Still bounded by a BookEnd, and still model-valid throughout.
         assert_eq!(m.last().unwrap().sub_role, BinderItemSubRole::BookEnd);
         assert_all_valid(&b);
+    }
+}
+
+#[cfg(test)]
+mod paratext_tests {
+    use super::*;
+
+    fn labels() -> TemplateLabels {
+        TemplateLabels::from_list(&[
+            "Manuscript".into(),
+            "Notes".into(),
+            "Research".into(),
+            "Notebook".into(),
+            "Chapter".into(),
+            "Scene".into(),
+            "Note".into(),
+            "Front matter".into(),
+            "Back matter".into(),
+        ])
+    }
+
+    fn plan() -> ParatextPlan {
+        ParatextPlan {
+            front: vec!["Faux-titre".into(), "Page de titre".into()],
+            back: vec!["Achevé d'imprimer".into()],
+        }
+    }
+
+    fn manuscript(binders: &[TemplateBinder]) -> &TemplateBinder {
+        binders.first().expect("a manuscript binder")
+    }
+
+    /// The two axes are independent: every template that builds a **book** accepts every
+    /// structure. Merged into one enum they would multiply, which is the whole reason they
+    /// are two parameters.
+    #[test]
+    fn every_book_template_accepts_a_paratext_structure() {
+        for template in [
+            NewWorkTemplate::EmptyNovel,
+            NewWorkTemplate::LightNovel,
+            NewWorkTemplate::Novel,
+        ] {
+            let binders =
+                build_template_with_paratexts(template.clone(), "T", &labels(), false, &plan());
+            let items = &manuscript(&binders).items;
+            assert!(
+                items.iter().any(|i| i.title == "Faux-titre"),
+                "{template:?} dropped the front matter"
+            );
+            assert!(
+                items.iter().any(|i| i.title == "Achevé d'imprimer"),
+                "{template:?} dropped the back matter"
+            );
+        }
+    }
+
+    /// Titles arrive verbatim — never translated, because they are the book's own words.
+    /// The two folders around them are translated, because they are ours.
+    #[test]
+    fn item_titles_are_verbatim_and_folder_names_are_not() {
+        let binders =
+            build_template_with_paratexts(NewWorkTemplate::Novel, "T", &labels(), false, &plan());
+        let items = &manuscript(&binders).items;
+
+        let folders: Vec<&str> = items
+            .iter()
+            .filter(|i| i.role == BinderItemRole::Folder && i.sub_role == BinderItemSubRole::Paratext)
+            .map(|i| i.title.as_str())
+            .collect();
+        assert_eq!(folders, vec!["Front matter", "Back matter"]);
+
+        let leaves: Vec<&str> = items
+            .iter()
+            .filter(|i| i.role == BinderItemRole::Item && i.sub_role == BinderItemSubRole::Paratext)
+            .map(|i| i.title.as_str())
+            .collect();
+        assert_eq!(
+            leaves,
+            vec!["Faux-titre", "Page de titre", "Achevé d'imprimer"]
+        );
+    }
+
+    /// Front matter is created before the book and back matter after it — placement at
+    /// creation, which the writer then owns entirely.
+    #[test]
+    fn front_comes_before_the_book_and_back_after_it() {
+        let binders =
+            build_template_with_paratexts(NewWorkTemplate::Novel, "T", &labels(), false, &plan());
+        let items = &manuscript(&binders).items;
+        let pos = |title: &str| items.iter().position(|i| i.title == title).unwrap();
+        let book = items
+            .iter()
+            .position(|i| i.sub_role == BinderItemSubRole::Book)
+            .expect("a book row");
+
+        assert!(pos("Faux-titre") < book, "front matter precedes the book");
+        assert!(pos("Achevé d'imprimer") > book, "back matter follows it");
+    }
+
+    /// A paratext leaf carries its own content role, never `SceneText` — the one thing
+    /// that keeps it out of the word count everywhere.
+    #[test]
+    fn a_created_paratext_carries_paratext_prose() {
+        let binders =
+            build_template_with_paratexts(NewWorkTemplate::Novel, "T", &labels(), false, &plan());
+        let leaf = manuscript(&binders)
+            .items
+            .iter()
+            .find(|i| i.title == "Faux-titre")
+            .unwrap();
+        let roles: Vec<&ContentRole> = leaf.contents.iter().map(|(r, _)| r).collect();
+        assert!(roles.contains(&&ContentRole::ParatextText));
+        assert!(!roles.contains(&&ContentRole::SceneText));
+    }
+
+    /// A template with no book gets no front or back matter, whatever the writer picked.
+    /// A "Half title" and a "Table of contents" in someone's notebook would be nonsense:
+    /// they are the furniture of a book, and there is no book to furnish.
+    #[test]
+    fn a_bookless_template_gets_no_paratexts() {
+        for template in [NewWorkTemplate::None, NewWorkTemplate::NoteBook] {
+            let binders =
+                build_template_with_paratexts(template.clone(), "T", &labels(), false, &plan());
+            for b in &binders {
+                assert!(
+                    !b.items
+                        .iter()
+                        .any(|i| i.sub_role == BinderItemSubRole::Paratext),
+                    "{template:?} has no book, so it must get no paratexts"
+                );
+            }
+        }
+    }
+
+    /// "No structure" is a first-class answer, not a degenerate case: nothing is created
+    /// and the manuscript is exactly what it would have been.
+    #[test]
+    fn no_structure_creates_nothing() {
+        let l = labels();
+        let with = build_template_with_paratexts(
+            NewWorkTemplate::Novel,
+            "T",
+            &l,
+            false,
+            &ParatextPlan::default(),
+        );
+        let without = build_template(NewWorkTemplate::Novel, "T", &l, false);
+        assert_eq!(manuscript(&with).items.len(), manuscript(&without).items.len());
     }
 }

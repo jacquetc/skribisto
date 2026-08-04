@@ -29,7 +29,7 @@ use common::types::EntityId;
 use std::path::Path;
 
 mod templates;
-use templates::{TemplateLabels, build_template};
+use templates::{ParatextPlan, TemplateLabels, build_template_with_paratexts};
 
 pub trait NewWorkUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn NewWorkUnitOfWorkTrait>;
@@ -162,11 +162,16 @@ impl NewWorkUseCase {
 
         // Template subtree: binders → items → content (already model-valid).
         let mut binder_ids: Vec<EntityId> = Vec::new();
-        for tb in build_template(
+        let paratexts = ParatextPlan {
+            front: dto.paratext_front.clone(),
+            back: dto.paratext_back.clone(),
+        };
+        for tb in build_template_with_paratexts(
             dto.template_kind.clone(),
             &title,
             &labels,
             dto.chapter_scene_mode,
+            &paratexts,
         ) {
             // A real uid per row, NOT the `Default` nil.
             //
