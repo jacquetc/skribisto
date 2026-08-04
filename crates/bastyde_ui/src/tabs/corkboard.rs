@@ -4,11 +4,17 @@
 //! The **Corkboard** pane — a container's contents as a grid of synopsis cards.
 //!
 //! One segment of a Book / Part / Chapter-folder tab. A header (breadcrumb ·
-//! count · search · nested/flat · ＋New · card-size) sits over a virtualized
-//! [`GridView`] of cards. The grid binds the raw backend-driven model in natural
-//! order (drag-reorder + drag-out enabled) and swaps to the model's filter
-//! projection while a search is active (reorder inert — you don't drag a filtered
-//! view). Card size is a live slider bound to `GridView`'s reactive `.sizing`.
+//! count · nested/flat · ＋New, over filter · order · card-size) sits above a
+//! virtualized [`GridView`] of cards. The grid binds the raw backend-driven model
+//! in natural order (drag-reorder + drag-out enabled) and swaps to the model's
+//! filter projection while a search **or sort** is active (reorder inert — you
+//! don't drag a projected view). Card size is a live slider bound to `GridView`'s
+//! reactive `.sizing`.
+//!
+//! A **container** card additionally wraps its tile in a [`DropTarget`], so cards
+//! dropped onto it are re-parented *into* it — `GridView`'s own drop targeting
+//! only ever yields `Before`/`After` (`Into` is trees-only), and a payload the
+//! target rejects bubbles straight back to the grid's ordinary reorder.
 //!
 //! Each card's cheap fields (title/type/label) come from the model; the synopsis
 //! excerpt and word count are resolved lazily per **visible** tile by
@@ -19,16 +25,18 @@ use std::rc::Rc;
 use bastyde::canvas::{EdgeInsets, Rect};
 use bastyde::core::BindingLevel;
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
+use bastyde::core::styles::PanelVariant;
 use bastyde::core::widget::WidgetPlacement;
-use bastyde::data::ListDataSource;
+use bastyde::data::{ListDataSource, SortDirection};
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::widgets::{
-    Badge, Breadcrumb, BreadcrumbItem, ButtonVariant, Center, DragTransferMode, Expand, FixedSize,
-    FocusScope, GridSizing, GridView, HStack, IconButton, IconWidget, MenuItem, MenuList, Padding,
-    Panel, PopoverIconButton, SearchField, Segment, SegmentedControl, Slider, Spacer, SplitButton,
-    TextInput, TextWidget, TileContext, TraversalScopePolicy, VStack,
+    Badge, Breadcrumb, BreadcrumbItem, ButtonVariant, Center, DeadZone, Divider, DragTransferMode,
+    DropTarget, Expand, FixedSize, FocusScope, GridSizing, GridView, HStack, IconButton,
+    IconWidget, MenuItem, MenuList, Padding, Panel, PopoverIconButton, RowDragData, SearchField,
+    Segment, SegmentedControl, Slider, Spacer, SplitButton, Switcher, TextInput, TextWidget,
+    TileContext, Toast, TraversalScopePolicy, VStack,
 };
 
 // `WidgetEvent`, `Key`, `PointerButton`, `EventResponse` and the `WidgetBuilder`
@@ -42,13 +50,15 @@ use crate::binder::create_labels::{
 };
 use crate::models::{CorkboardCard, OpenDoc};
 use crate::singles::SingleCorkboardCard;
-use crate::view_models::CorkboardViewModel;
+use crate::toast_scope::ToastWorkExt;
+use crate::view_models::{CorkboardViewModel, EditorTypography};
 
 mod card;
 mod chrome;
 mod grid;
 /// The fixed "＋" glyph for the create button's main region.
 mod header;
+mod move_target;
 mod synopsis;
 
 use card::*;
@@ -101,8 +111,8 @@ pub fn corkboard_pane(tab: &super::ContentTab) -> Box<dyn Widget> {
 
 /// Zero-size child that wires the view-model (subscribes model + probe + the
 /// search/sort plumbing) on build. `wire` is idempotent per build.
-pub(super) struct WireCorkboard {
-    pub(super) vm: CorkboardViewModel,
+pub(crate) struct WireCorkboard {
+    pub(crate) vm: CorkboardViewModel,
 }
 impl std::fmt::Debug for WireCorkboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

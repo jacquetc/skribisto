@@ -19,7 +19,9 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use bastyde::core::ObserverHandle;
-use bastyde::data::{SelectionMode, SelectionModel, SortDirection, SortFilterListModel};
+use bastyde::data::{
+    ListDataSource, SelectionMode, SelectionModel, SortDirection, SortFilterListModel,
+};
 use bastyde::prelude::*; // Signal, BuildContext, EventContext
 use bastyde::widgets::InputDialog;
 
@@ -27,6 +29,7 @@ use frontend::AppContext;
 use frontend::binder_item_management::{MergeTwoScenesDto, MovePlace, SplitSceneDto};
 use frontend::commands::{
     binder_item_commands, binder_item_management_commands, trash_management_commands,
+    undo_redo_commands,
 };
 use frontend::trash_management::TrashBinderItemsDto;
 
@@ -66,6 +69,9 @@ struct Inner {
     nested: Signal<bool>,
     card_size: Signal<f32>,
     show_word_count: Signal<bool>,
+    show_card_numbers: Signal<bool>,
+    /// The expanded-synopsis editor's own font-size scale.
+    modal_size: Signal<f32>,
     counting_method: Signal<CountingMethodSetting>,
 
     // Per-tab, transient (not persisted).
@@ -123,6 +129,8 @@ impl CorkboardViewModel {
         nested: Signal<bool>,
         card_size: Signal<f32>,
         show_word_count: Signal<bool>,
+        show_card_numbers: Signal<bool>,
+        modal_size: Signal<f32>,
         counting_method: Signal<CountingMethodSetting>,
         synopsis_typo: EditorTypography,
         caret_band: crate::view_models::CaretBand,
@@ -151,6 +159,8 @@ impl CorkboardViewModel {
                 nested,
                 card_size,
                 show_word_count,
+                show_card_numbers,
+                modal_size,
                 counting_method,
                 selection: SelectionModel::new(SelectionMode::Multi),
                 scroll_y: Signal::new(0.0),
@@ -174,7 +184,31 @@ impl CorkboardViewModel {
     /// Subscribe the model + probe and wire the search/sort → projection plumbing.
     /// Idempotent per build (mirrors the stream pane's `WireOnBuild`).
     pub fn wire(&self, ctx: &mut BuildContext) {
-        self.inner.cards.wire(ctx);
+        // Release the shared synopsis doc of any card that leaves the board — merged
+        // away, trashed, promoted out of scope, undone, or removed by another window.
+        // `Weak`, never `Rc`: the model is owned by this `Inner`, so a strong capture
+        // would close a cycle and leak every synopsis the board ever opened (see
+        // `CorkboardCardsModel::wire`).
+        let weak = Rc::downgrade(&self.inner);
+        self.inner.cards.wire(ctx, move |removed: &[u64]| {
+            let Some(inner) = weak.upgrade() else {
+                return;
+            };
+            let stack = inner.ids.stack_id.get();
+            // Drop the handles *before* releasing, so the map's borrow is not held
+            // across a `release` that flushes (and can re-enter the store).
+            let gone: Vec<u64> = {
+                let mut held = inner.open_synopses.borrow_mut();
+                removed
+                    .iter()
+                    .filter(|id| held.remove(id).is_some())
+                    .copied()
+                    .collect()
+            };
+            for id in gone {
+                inner.docs.release(id, stack);
+            }
+        });
         self.inner.container_probe.wire(ctx);
 
         // Search text → the projection's filter (its filters_signal is observe-only,
@@ -182,6 +216,7 @@ impl CorkboardViewModel {
         {
             let me = self.clone();
             ctx.effect(&self.inner.query, move |q| {
+                me.drop_selection();
                 me.inner.projection.set_filter("text", q);
                 me.recompute_projecting();
             });
@@ -190,6 +225,7 @@ impl CorkboardViewModel {
         {
             let me = self.clone();
             ctx.effect(&self.inner.sort, move |s| {
+                me.drop_selection();
                 match s {
                     Some((col, dir)) => me.inner.projection.set_sort(Some(col), *dir),
                     None => me.inner.projection.clear_sort(),
@@ -226,6 +262,67 @@ impl CorkboardViewModel {
         trail.push((folder_id, title));
         self.inner.trail.set(trail);
         self.enter(folder_id);
+    }
+
+    // ── Persisted board navigation ───────────────────────────────────────────
+
+    /// The drilled-into trail as store ids, root-first and root-inclusive — what
+    /// the workspace layout persists (translated to durable uids by its caller,
+    /// since an `EntityId` is re-minted on every `load_work`).
+    ///
+    /// Returns empty when the board sits at its tab's own container, so nothing is
+    /// written for the overwhelmingly common case.
+    pub fn trail_ids(&self) -> Vec<u64> {
+        let trail = self.inner.trail.get();
+        if trail.len() <= 1 {
+            return Vec::new();
+        }
+        trail.into_iter().map(|(id, _title)| id).collect()
+    }
+
+    /// Restore a persisted trail (store ids, root-first) and filter text.
+    ///
+    /// The trail is trusted only as far as it is still *true*. The caller has
+    /// already dropped uids that no longer name a live item; this additionally
+    /// re-walks the chain and truncates at the first crumb that is no longer inside
+    /// its predecessor. Existence is not containment: between two sessions the
+    /// writer can move a chapter out of the Part it sat under, and every uid would
+    /// still resolve while the chain has stopped being an ancestor path. Restoring
+    /// it unchecked would seat the board on a container that is not under this
+    /// tab's own, and offer crumbs that navigate somewhere they never came from.
+    ///
+    /// A trail that truncates to one entry leaves the board at its own container.
+    pub fn restore_trail(&self, ids: &[u64], titles: &[String], query: &str) {
+        if !query.is_empty() {
+            self.inner.query.set(query.to_string());
+        }
+        if ids.len() <= 1 {
+            return;
+        }
+        // The root crumb must still be this tab's own container — the trail is
+        // always rooted there, and a mismatch means the persisted row belongs to
+        // some other container entirely.
+        let root = self.inner.trail.get().first().map(|(id, _)| *id);
+        if root != ids.first().copied() {
+            return;
+        }
+        let mut trail: Vec<(u64, String)> = vec![(ids[0], titles[0].clone())];
+        for (id, title) in ids[1..].iter().copied().zip(titles[1..].iter().cloned()) {
+            let parent = trail.last().map(|(p, _)| *p).unwrap_or(id);
+            if !binder_ops::subtree_contains(&self.inner.app_ctx, &self.inner.ids, parent, id) {
+                break; // this crumb left its parent's subtree — stop here
+            }
+            trail.push((id, title));
+        }
+        if trail.len() <= 1 {
+            return; // nothing survived past the root
+        }
+        let deepest = trail[trail.len() - 1].0;
+        self.inner.trail.set(trail);
+        // Not `enter`: that clears the query, and the writer's filter is being
+        // restored alongside the trail here.
+        self.inner.current_container.set(deepest);
+        self.inner.container_probe.set_id(Some(deepest));
     }
 
     /// Jump to an ancestor crumb (index into the trail).
@@ -300,6 +397,14 @@ impl CorkboardViewModel {
             item_id: card.item_id,
             title: card.title.clone(),
         });
+    }
+
+    /// Select this card in the binder outline and reveal the dock — "where does this
+    /// sit in the project?", the question a drilled-into board makes easy to lose.
+    /// Goes over the intent bus rather than importing the outline, exactly as
+    /// [`OverviewViewModel::reveal_in_outline`](super::OverviewViewModel) does.
+    pub fn reveal_in_outline(&self, ctx: &mut EventContext, id: u64) {
+        ctx.send_intent(AppIntent::RevealInOutline { item_id: id });
     }
 
     // ── Inline rename ─────────────────────────────────────────────────────────
@@ -410,6 +515,20 @@ impl CorkboardViewModel {
         self.inner.synopsis_typo.clone()
     }
 
+    /// The **expanded** synopsis editor's typography: the card's, with its own
+    /// font-size scale substituted.
+    ///
+    /// Everything else — face, line height, indents, paragraph spacing — stays
+    /// shared, because the expanded editor is the same prose in a roomier box, not
+    /// a different surface. Only the size differs, and only because the card's is
+    /// chosen to be scannable in a tile while this one is chosen to be written in.
+    pub fn modal_typo(&self) -> EditorTypography {
+        EditorTypography {
+            size: self.inner.modal_size.clone(),
+            ..self.inner.synopsis_typo.clone()
+        }
+    }
+
     /// The ambient caret band for card synopsis editors.
     pub fn caret_band(&self) -> crate::view_models::CaretBand {
         self.inner.caret_band.clone()
@@ -460,16 +579,70 @@ impl CorkboardViewModel {
         ctx.request_frame();
     }
 
-    /// The first selected card's item id (selection is index-keyed against the raw
-    /// card order), or `None` when nothing is selected.
+    // ── Selection ────────────────────────────────────────────────────────────
+
+    /// The cards the grid is *currently showing*, in the order it shows them —
+    /// the projection while a search/sort is active, the raw model otherwise.
+    ///
+    /// Every selection lookup must go through this, not [`Self::ordered_cards`]:
+    /// `SelectionModel` is **positional**, and `CorkboardGrid` binds the projection
+    /// whenever [`Self::is_projecting`] is true, so an index means a position in the
+    /// *filtered* list. Resolving it against the raw list silently acts on a
+    /// different card — the further down the board, the further off.
+    fn visible_cards(&self) -> Vec<CorkboardCard> {
+        if self.inner.projecting.get() {
+            let p = &self.inner.projection;
+            (0..p.len())
+                .filter_map(|i| p.with_item(i, |c| c.clone()))
+                .collect()
+        } else {
+            self.ordered_cards()
+        }
+    }
+
+    /// The selected cards' item ids, in board order. Empty when nothing is selected.
+    pub fn selected_item_ids(&self) -> Vec<u64> {
+        let cards = self.visible_cards();
+        self.inner
+            .selection
+            .selected_indices()
+            .into_iter()
+            .filter_map(|i| cards.get(i).map(|c| c.item_id))
+            .collect()
+    }
+
+    /// The first selected card's item id, or `None` when nothing is selected.
     fn first_selected_item(&self) -> Option<u64> {
-        let cards = self.ordered_cards();
+        let cards = self.visible_cards();
         self.inner
             .selection
             .selected_indices()
             .into_iter()
             .min()
             .and_then(|i| cards.get(i).map(|c| c.item_id))
+    }
+
+    /// What a per-card action should act on: the whole selection when `id` is part
+    /// of it, otherwise just `id`.
+    ///
+    /// The convention every multi-select surface in the app shares (see
+    /// [`OverviewViewModel::batch_for`](super::OverviewViewModel)): opening a card's
+    /// menu inside a selection acts on all of it, opening one outside acts on that
+    /// card alone — and neither *changes* the selection, which would destroy the
+    /// menu's own anchor.
+    pub fn batch_for(&self, id: u64) -> Vec<u64> {
+        let selected = self.selected_item_ids();
+        if selected.contains(&id) {
+            selected
+        } else {
+            vec![id]
+        }
+    }
+
+    /// How many cards a per-card action would apply to — for menu labels that say
+    /// "Delete 4 cards" rather than a bare "Delete".
+    pub fn batch_len(&self, id: u64) -> usize {
+        self.batch_for(id).len()
     }
 
     // ── Drag-out / foreign receive ───────────────────────────────────────────
@@ -534,7 +707,13 @@ impl CorkboardViewModel {
 
     // -- dialog entry points --
 
+    /// Set the status label on `id`'s batch (see [`Self::batch_for`]).
+    ///
+    /// The field is seeded from the anchor card's current label; with a mixed
+    /// selection that is the value the writer clicked on, which is the only one
+    /// they can be said to have chosen.
     pub fn begin_set_label(&self, ctx: &mut EventContext, id: u64) {
+        let targets = self.batch_for(id);
         let current = binder_ops::item_dto(&self.inner.app_ctx, id)
             .map(|d| d.label)
             .unwrap_or_default();
@@ -543,7 +722,7 @@ impl CorkboardViewModel {
             .default_text(current)
             .on_result(move |r, ctx| {
                 if let Some(label) = r {
-                    vm.set_label(ctx, id, label.trim());
+                    vm.set_label_many(ctx, &targets, label.trim());
                 }
             })
             .present(ctx);
@@ -565,13 +744,105 @@ impl CorkboardViewModel {
 
     // -- apply methods --
 
-    pub fn set_label(&self, _ctx: &mut EventContext, id: u64, label: &str) {
-        if let Some(it) = binder_ops::item_dto(&self.inner.app_ctx, id) {
-            let mut dto = update_item_dto(&it);
-            dto.label = label.to_string();
-            let _ =
-                binder_item_commands::update_binder_item(&self.inner.app_ctx, self.stack(), &dto);
+    pub fn set_label(&self, ctx: &mut EventContext, id: u64, label: &str) {
+        self.set_label_many(ctx, &[id], label);
+    }
+
+    /// Write `label` to every id, as **one** undo entry when there is more than one
+    /// — a batch the writer performed as a single gesture must undo as one too.
+    pub fn set_label_many(&self, _ctx: &mut EventContext, ids: &[u64], label: &str) {
+        if ids.is_empty() {
+            return;
         }
+        let stack = self.stack();
+        let composite = ids.len() > 1;
+        if composite {
+            let _ = undo_redo_commands::begin_composite(&self.inner.app_ctx, stack);
+        }
+        for id in ids {
+            if let Some(it) = binder_ops::item_dto(&self.inner.app_ctx, *id) {
+                let mut dto = update_item_dto(&it);
+                dto.label = label.to_string();
+                let _ = binder_item_commands::update_binder_item(&self.inner.app_ctx, stack, &dto);
+            }
+        }
+        if composite {
+            undo_redo_commands::end_composite(&self.inner.app_ctx);
+        }
+    }
+
+    /// Duplicate `ids` (one backend call — the use case already takes a list, and
+    /// pushes a single undo entry for the whole set).
+    ///
+    /// Silently does nothing when `ids` is empty, matching
+    /// [`OutlineViewModel::duplicate_keys`](super::OutlineViewModel) — the established
+    /// convention for this operation rather than a new failure channel.
+    pub fn duplicate_many(&self, ids: &[u64]) {
+        if ids.is_empty() {
+            return;
+        }
+        use frontend::binder_item_management::DuplicateDto;
+        let _ = binder_item_management_commands::duplicate(
+            &self.inner.app_ctx,
+            self.stack(),
+            &DuplicateDto {
+                item_ids: ids.to_vec(),
+            },
+        );
+    }
+
+    /// Move `ids` **into** `target` (a container), as one backend call — the
+    /// drop-onto-a-container-card gesture. `true` when anything actually moved.
+    pub fn move_many_into(&self, ids: &[u64], target: u64) -> bool {
+        self.move_many_to(ids, target, false, MovePlace::Into) > 0
+    }
+
+    /// Move `ids` to `target`, as one backend call and one undo entry.
+    ///
+    /// Refuses a move that would put a container inside itself or inside its own
+    /// subtree: containment here is positional (a subtree is the item plus every
+    /// following item of greater indent), so such a move does **not** fail loudly —
+    /// it writes an ordering the binder can never represent. A binder target is
+    /// never self-containing, so the guard only applies to item targets.
+    /// Returns how many items actually moved — `0` when the move was refused, so a
+    /// caller's "N cards moved" can report what happened rather than what was asked
+    /// (a self-target is filtered out of `ids` before the call).
+    pub fn move_many_to(
+        &self,
+        ids: &[u64],
+        target: u64,
+        target_is_binder: bool,
+        move_place: MovePlace,
+    ) -> usize {
+        let ids: Vec<u64> = ids.iter().copied().filter(|id| *id != target).collect();
+        if ids.is_empty() || (!target_is_binder && !self.can_move_into(&ids, target)) {
+            return 0;
+        }
+        let moved = ids.len();
+        use frontend::binder_item_management::MoveDto;
+        let ok = binder_item_management_commands::move_items(
+            &self.inner.app_ctx,
+            self.stack(),
+            &MoveDto {
+                item_ids: ids,
+                target_id: Some(target),
+                target_is_binder,
+                move_place,
+            },
+        )
+        .is_ok();
+        if ok { moved } else { 0 }
+    }
+
+    /// Whether every id may legally move into `target`: `target` must not be one of
+    /// them, nor lie inside any of their subtrees.
+    pub fn can_move_into(&self, ids: &[u64], target: u64) -> bool {
+        if ids.contains(&target) {
+            return false;
+        }
+        !ids.iter().any(|id| {
+            binder_ops::subtree_contains(&self.inner.app_ctx, &self.inner.ids, *id, target)
+        })
     }
 
     /// Create the model's default recommendation for this card, placed by the
@@ -620,10 +891,18 @@ impl CorkboardViewModel {
     }
 
     /// Merge this card into the previous one. The backend concatenates both the
-    /// prose and the synopsis into the survivor. The cards are read-only viewers
-    /// (never open editors here), so there is nothing to flush first — the merge
-    /// reads current content straight from the store.
-    pub fn merge_into_previous(&self, _ctx: &mut EventContext, id: u64) {
+    /// prose and the synopsis into the survivor, reading them **from the store** —
+    /// so both cards' shared `OpenDoc`s must be flushed first, exactly as
+    /// [`StreamViewModel::merge_into_previous`](super::StreamViewModel) does.
+    ///
+    /// A card's synopsis is a *live* editor over the same `OpenDoc` an editor tab
+    /// uses (see [`Self::synopsis_doc_for`]), so a synopsis typed on the board and
+    /// not yet autosaved is real, unflushed state — merging without flushing it
+    /// silently drops the writer's words. Afterwards the survivor has absorbed the
+    /// source's prose *and* synopsis, so it is reloaded and a frame pumped to drain
+    /// the queued document events into any editor already on screen; skipping that
+    /// leaves a stale buffer whose next flush would overwrite the merged text.
+    pub fn merge_into_previous(&self, ctx: &mut EventContext, id: u64) {
         let Some((cards, pos)) = self.card_pos(id) else {
             return;
         };
@@ -634,33 +913,105 @@ impl CorkboardViewModel {
         let Some(work_id) = self.inner.ids.work_id.get() else {
             return; // no project open
         };
-        let _ = binder_item_management_commands::merge_two_scenes(
+
+        // Flush both sides before the merge reads the store. `synopsis_doc_for`
+        // returns the already-open doc when the card is realized, and opens it
+        // otherwise — either way the flush covers unsaved card edits.
+        let stack = self.stack();
+        let prev_doc = self.synopsis_doc_for(prev_id);
+        let cur_doc = self.synopsis_doc_for(id);
+        if let Some(d) = prev_doc.as_ref() {
+            let _ = d.flush(stack);
+        }
+        if let Some(d) = cur_doc.as_ref() {
+            let _ = d.flush(stack);
+        }
+
+        let merged = binder_item_management_commands::merge_two_scenes(
             &self.inner.app_ctx,
-            self.stack(),
+            stack,
             &MergeTwoScenesDto {
                 work_id,
                 target_id: prev_id,
                 source_id: id,
             },
-        );
+        )
+        .is_ok();
+        if !merged {
+            return;
+        }
+
+        // The survivor absorbed both roles — reflect that in the shared doc so the
+        // card (and any editor tab on it) shows the merged text instead of a stale
+        // buffer. `set_djot` only queues a document event, hence the frame pump.
+        // The *source*'s doc is released by the model's `on_removed` callback when
+        // the merge event lands and the card leaves the board (see `wire`).
+        if let Some(d) = prev_doc.as_ref() {
+            d.reload();
+        }
+        ctx.request_frame();
     }
 
-    pub fn trash(&self, _ctx: &mut EventContext, id: u64) {
+    pub fn trash(&self, ctx: &mut EventContext, id: u64) {
+        self.trash_many(ctx, &[id]);
+    }
+
+    /// Send every id to the trash, as **one** undo entry.
+    ///
+    /// `trash_binder_items` is scoped to a single origin binder, so the ids are
+    /// grouped by the binder that owns each — a `Work` may hold several, and one
+    /// flat call with a mixed list would file items under the wrong origin and
+    /// restore them to the wrong place. More than one call is wrapped in a
+    /// composite so Ctrl+Z takes the whole gesture back at once.
+    ///
+    /// Deliberately **no undo toast**: that pattern belongs to the irreversible
+    /// trash operations (Empty Trash / Delete Forever), and trashing is an ordinary
+    /// undoable move whose safety net is the undo stack — see
+    /// [`TrashViewModel::run_with_undo_toast`](super::TrashViewModel).
+    pub fn trash_many(&self, _ctx: &mut EventContext, ids: &[u64]) {
         let Some(work_id) = self.inner.ids.work_id.get() else {
             return; // no project open
         };
-        if let Some((binder, _order, _pos)) =
-            binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id)
-        {
+        let mut by_binder: HashMap<u64, Vec<i64>> = HashMap::new();
+        for id in ids {
+            if let Some((binder, _order, _pos)) =
+                binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, *id)
+            {
+                by_binder.entry(binder).or_default().push(*id as i64);
+            }
+        }
+        if by_binder.is_empty() {
+            return;
+        }
+        let stack = self.stack();
+        let composite = by_binder.len() > 1 || by_binder.values().map(Vec::len).sum::<usize>() > 1;
+        if composite {
+            let _ = undo_redo_commands::begin_composite(&self.inner.app_ctx, stack);
+        }
+        for (binder, binder_item_ids) in by_binder {
             let _ = trash_management_commands::trash_binder_items(
                 &self.inner.app_ctx,
-                self.stack(),
+                stack,
                 &TrashBinderItemsDto {
                     work_id,
-                    binder_item_ids: vec![id as i64],
+                    binder_item_ids,
                     origin_binder_id: binder as i64,
                 },
             );
+        }
+        if composite {
+            undo_redo_commands::end_composite(&self.inner.app_ctx);
+        }
+        // The board's own selection is positional; the cards it pointed at are gone.
+        self.inner.selection.clear();
+    }
+
+    /// Delete-key entry point: trash whatever is selected. A no-op with an empty
+    /// selection, so the key is inert rather than surprising.
+    pub fn trash_selected(&self, ctx: &mut EventContext) {
+        let ids = self.selected_item_ids();
+        if !ids.is_empty() {
+            self.trash_many(ctx, &ids);
         }
     }
 
@@ -719,10 +1070,20 @@ impl CorkboardViewModel {
     pub fn show_word_count(&self) -> Signal<bool> {
         self.inner.show_word_count.clone()
     }
+    /// Number the cards in board order (1-based).
+    pub fn show_card_numbers(&self) -> Signal<bool> {
+        self.inner.show_card_numbers.clone()
+    }
     pub fn counting_method(&self) -> Signal<CountingMethodSetting> {
         self.inner.counting_method.clone()
     }
     /// The app context — the tile delegate needs it to build a per-card single.
+    /// This board's `Work` id — for the destination picker's own tree model and for
+    /// scoping its toasts to this Work's window.
+    pub fn work_id(&self) -> Signal<Option<u64>> {
+        self.inner.ids.work_id.clone()
+    }
+
     pub fn app_ctx(&self) -> Rc<AppContext> {
         self.inner.app_ctx.clone()
     }
@@ -732,6 +1093,30 @@ impl CorkboardViewModel {
     }
 
     // ── internals ─────────────────────────────────────────────────────────────
+
+    /// Drop the selection because the list it indexes into is about to be
+    /// re-derived.
+    ///
+    /// `SelectionModel` is **positional**, and every filter keystroke, sort change
+    /// and raw↔projection swap rebuilds the bound list under it. The framework's
+    /// own `Reset` handling cannot save us here: `set_filter`/`set_sort` notify
+    /// synchronously, to whoever is subscribed *at that instant* — which is still
+    /// the grid bound to the **old** source, since `projecting` has not flipped
+    /// yet — and there is no catch-up delivery to the grid that subscribes after
+    /// the rebuild. So the indices survive into a differently-ordered list and
+    /// quietly come to mean different cards.
+    ///
+    /// That is only cosmetic for the highlight; it is not cosmetic for
+    /// [`Self::selected_item_ids`], which every bulk action resolves through —
+    /// Delete/Backspace, "Delete N cards", Duplicate, Move to…, Set label. Clearing
+    /// is the honest option: a positional selection has no meaning across a
+    /// re-derivation, and silently acting on whatever now sits at those positions
+    /// is the failure this exists to remove.
+    fn drop_selection(&self) {
+        if !self.inner.selection.selected_indices().is_empty() {
+            self.inner.selection.clear();
+        }
+    }
 
     fn recompute_projecting(&self) {
         let projecting =
@@ -771,6 +1156,8 @@ mod tests {
             Signal::new(true),
             Signal::new(200.0),
             Signal::new(true),
+            Signal::new(false),
+            Signal::new(1.0),
             Signal::new(CountingMethodSetting::default()),
             typo(),
             crate::view_models::CaretBand::off(),
@@ -819,5 +1206,172 @@ mod tests {
         vm.go_to_crumb(1); // already here
         assert_eq!(vm.current_container(), 200);
         assert_eq!(vm.trail_signal().get().len(), 2);
+    }
+
+    // ── Persisted navigation (P2.2) ──────────────────────────────────────────
+
+    /// A board at its own container persists nothing — the common case must not
+    /// write a trail to `workspace.toml`.
+    #[test]
+    fn an_undrilled_board_has_no_trail_to_persist() {
+        let vm = vm();
+        assert!(vm.trail_ids().is_empty());
+    }
+
+    #[test]
+    fn a_drilled_board_persists_the_whole_trail_root_first() {
+        let vm = vm();
+        vm.drill_into(200, "Part Two".to_string());
+        vm.drill_into(300, "Chapter Five".to_string());
+        assert_eq!(
+            vm.trail_ids(),
+            vec![100, 200, 300],
+            "root-inclusive and root-first — the breadcrumb, exactly"
+        );
+    }
+
+    /// A restored trail is re-walked for containment, and truncates at the first
+    /// crumb that is no longer inside its predecessor.
+    ///
+    /// These view-model tests run against an empty `AppContext`, where no crumb can
+    /// be *shown* to be inside another — so the conservative branch is what is
+    /// exercised here: the chain collapses to its root and the board stays put. That
+    /// is the intended behaviour for an unverifiable chain (a real restore runs after
+    /// `load_work`, with the binder live). The query still comes back either way,
+    /// which is the part a writer would otherwise have to retype.
+    #[test]
+    fn an_unverifiable_trail_collapses_to_its_root_but_keeps_the_query() {
+        let vm = vm();
+        vm.restore_trail(
+            &[100, 200, 300],
+            &["Book".into(), "Part Two".into(), "Chapter Five".into()],
+            "ferry",
+        );
+        assert_eq!(
+            vm.current_container(),
+            100,
+            "no containment could be proven, so nothing past the root is trusted"
+        );
+        assert_eq!(vm.trail_signal().get().len(), 1);
+        assert_eq!(vm.search_query_signal().get(), "ferry");
+    }
+
+    /// A persisted trail whose root is not this tab's own container is ignored
+    /// outright — it describes some other container's board.
+    #[test]
+    fn a_trail_rooted_elsewhere_is_ignored() {
+        let vm = vm();
+        vm.restore_trail(&[999, 200], &["Elsewhere".into(), "Part Two".into()], "");
+        assert_eq!(vm.current_container(), 100);
+        assert_eq!(vm.trail_signal().get().len(), 1);
+    }
+
+    /// A single-entry (or empty) trail means "never drilled" — restoring it must
+    /// leave the board at its own container rather than rewriting the breadcrumb.
+    #[test]
+    fn restoring_a_degenerate_trail_leaves_the_board_alone() {
+        let vm = vm();
+        vm.restore_trail(&[100], &["Book".into()], "");
+        assert_eq!(vm.current_container(), 100);
+        assert_eq!(vm.trail_signal().get().len(), 1);
+
+        vm.restore_trail(&[], &[], "");
+        assert_eq!(vm.current_container(), 100);
+        assert_eq!(vm.trail_signal().get().len(), 1);
+    }
+
+    /// Restoring only a query (no trail) still filters — a board can be left
+    /// filtered without ever having been drilled.
+    #[test]
+    fn restoring_only_a_query_still_filters() {
+        let vm = vm();
+        vm.restore_trail(&[], &[], "ferry");
+        assert_eq!(vm.search_query_signal().get(), "ferry");
+        assert_eq!(vm.current_container(), 100, "and does not navigate");
+    }
+
+    // ── Batch targeting (P1.1) ───────────────────────────────────────────────
+
+    /// With nothing selected, a card's menu acts on that card alone.
+    #[test]
+    fn batch_for_an_unselected_card_is_just_that_card() {
+        let vm = vm();
+        assert_eq!(vm.batch_for(42), vec![42]);
+        assert_eq!(vm.batch_len(42), 1);
+    }
+
+    /// `can_move_into` refuses the degenerate self-move without needing a store —
+    /// the guard that keeps a drop onto a container card from eating itself.
+    #[test]
+    fn a_container_can_never_move_into_itself() {
+        let vm = vm();
+        assert!(
+            !vm.can_move_into(&[7, 8], 7),
+            "the target is one of the moved"
+        );
+        assert!(
+            vm.can_move_into(&[7, 8], 9),
+            "an unrelated target is allowed (no store here, so no subtree to consult)"
+        );
+    }
+
+    /// `move_many_into` is a no-op for an empty set and for a self-move, and never
+    /// reaches the backend for either.
+    #[test]
+    fn move_many_into_rejects_empty_and_self_moves() {
+        let vm = vm();
+        assert!(!vm.move_many_into(&[], 9));
+        assert!(
+            !vm.move_many_into(&[7], 7),
+            "a card dropped on itself filters down to an empty set"
+        );
+    }
+
+    /// Changing the filter or the sort **drops the selection**.
+    ///
+    /// `SelectionModel` is positional and the bound list is re-derived underneath
+    /// it, so surviving indices would come to mean different cards — and every bulk
+    /// action (Delete/Backspace, "Delete N cards", Duplicate, Move to…, Set label)
+    /// resolves through those indices. This is the guard that stops a filter
+    /// keystroke from silently re-aiming a destructive action.
+    #[test]
+    fn changing_the_filter_or_sort_drops_the_selection() {
+        for (label, mutate) in [
+            (
+                "query",
+                Box::new(|vm: &CorkboardViewModel| vm.search_query_signal().set("ferry".into()))
+                    as Box<dyn Fn(&CorkboardViewModel)>,
+            ),
+            (
+                "sort",
+                Box::new(|vm: &CorkboardViewModel| {
+                    vm.sort_signal()
+                        .set(Some((SORT_TITLE.to_string(), SortDirection::Ascending)))
+                }),
+            ),
+        ] {
+            let vm = vm();
+            let mut tree = crate::test_support::tree_with_events(&vm.app_ctx());
+            let id = tree.add_boxed(Box::new(crate::tabs::corkboard::WireCorkboard {
+                vm: vm.clone(),
+            }));
+            tree.layout(bastyde::prelude::SizeProposal::exact(800.0, 600.0));
+            let _ = id;
+
+            vm.selection().select(1);
+            vm.selection().toggle(2);
+            assert!(
+                !vm.selection().selected_indices().is_empty(),
+                "{label}: precondition — something is selected"
+            );
+
+            mutate(&vm);
+            tree.layout(bastyde::prelude::SizeProposal::exact(800.0, 600.0));
+
+            assert!(
+                vm.selection().selected_indices().is_empty(),
+                "{label}: the selection must not survive a re-derivation of the list"
+            );
+        }
     }
 }

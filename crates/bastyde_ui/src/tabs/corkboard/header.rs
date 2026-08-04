@@ -37,6 +37,10 @@ pub(super) fn corkboard_header(vm: &CorkboardViewModel) -> impl Widget {
                     .placeholder(tr!(corkboard_search_placeholder())),
             ),
         )
+        .child(SortControl {
+            vm: vm.clone(),
+            root: None,
+        })
         .child(TextWidget::new(tr!(corkboard_card_size())).color(TextRole::Secondary))
         .child(
             FixedSize::new().width(170.0).child(
@@ -46,7 +50,11 @@ pub(super) fn corkboard_header(vm: &CorkboardViewModel) -> impl Widget {
                     crate::CORKBOARD_CARD_SIZE_MAX,
                 )
                 .step(crate::CORKBOARD_CARD_SIZE_STEP)
-                .label(tr!(corkboard_card_size())),
+                .label(tr!(corkboard_card_size()))
+                // The slider writes an app-global setting, but sits inside one
+                // tab's header — say so, or dragging it silently resizes every
+                // other open board too.
+                .tooltip(tr!(corkboard_scope_hint())),
             ),
         );
 
@@ -184,10 +192,86 @@ impl Widget for NestedFlatToggle {
                 }
             });
         }
+        // The scope hint sits on each `Segment` — `tooltip` is a per-segment
+        // affordance, not a property of the control as a whole.
         let ctrl = SegmentedControl::new(self.index.clone())
-            .segment(Segment::new(tr!(corkboard_view_nested())))
-            .segment(Segment::new(tr!(corkboard_view_flat())));
+            .segment(
+                Segment::new(tr!(corkboard_view_nested())).tooltip(tr!(corkboard_scope_hint())),
+            )
+            .segment(Segment::new(tr!(corkboard_view_flat())).tooltip(tr!(corkboard_scope_hint())));
         let id = ctx.add(ctrl);
+        self.root = Some(id);
+        vec![id]
+    }
+    fn layout_response(&self, p: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root
+            .and_then(|id| ctx.child_size(id, p))
+            .unwrap_or_else(|| p.resolve(0.0, 0.0))
+            .into()
+    }
+    fn children(&self) -> Vec<WidgetId> {
+        self.root.into_iter().collect()
+    }
+}
+
+/// The board's order: manuscript order, or a title sort.
+///
+/// Binds the view-model's own `sort` signal **directly** — `ComboBox` takes its
+/// `selected` handle as a constructor argument, so there is no widget-owned signal
+/// to bridge (the `TreeTableView` dance in `tabs/overview/table.rs` exists only
+/// because that widget allocates its own). `None` *is* manuscript order, which is
+/// what `CorkboardViewModel::wire` already reads as `clear_sort()` — so the
+/// placeholder names that state rather than a fourth sentinel item.
+pub(super) struct SortControl {
+    pub(super) vm: CorkboardViewModel,
+    pub(super) root: Option<WidgetId>,
+}
+impl std::fmt::Debug for SortControl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SortControl").finish()
+    }
+}
+impl Widget for SortControl {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let title = || crate::view_models::CORKBOARD_SORT_TITLE.to_string();
+        // Each button shows the order currently in force and, on activate, moves to
+        // the next one: manuscript → A–Z → Z–A → manuscript. `None` *is* manuscript
+        // order (what `wire`'s effect reads as `clear_sort`), so there is no fourth
+        // sentinel state.
+        type Order = Option<(String, SortDirection)>;
+        let button =
+            |icon: IconWidget, tip: LocalizedString, next: Order, vm: CorkboardViewModel| {
+                IconButton::new(icon)
+                    .toolbar()
+                    .tooltip(tip)
+                    // `Fn`, not `FnOnce` — clone the target order per invocation
+                    // rather than moving the captured one out.
+                    .on_activate_fn(move |_ctx| vm.sort_signal().set(next.clone()))
+            };
+        let switcher = Switcher::new(self.vm.sort_signal().map(|s| match s {
+            None => 0usize,
+            Some((_, SortDirection::Ascending)) => 1,
+            Some((_, SortDirection::Descending)) => 2,
+        }))
+        .child(button(
+            crate::icons::corkboard::sort_manuscript_icon(),
+            tr!(corkboard_sort_manuscript()),
+            Some((title(), SortDirection::Ascending)),
+            self.vm.clone(),
+        ))
+        .child(button(
+            crate::icons::corkboard::sort_title_asc_icon(),
+            tr!(corkboard_sort_title_asc()),
+            Some((title(), SortDirection::Descending)),
+            self.vm.clone(),
+        ))
+        .child(button(
+            crate::icons::corkboard::sort_title_desc_icon(),
+            tr!(corkboard_sort_title_desc()),
+            None,
+            self.vm.clone(),
+        ));
+        let id = ctx.add(switcher);
         self.root = Some(id);
         vec![id]
     }

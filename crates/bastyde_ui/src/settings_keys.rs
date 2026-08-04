@@ -552,6 +552,20 @@ pub static SETTINGS: &[SettingSpec] = &[
         doc: "Show a card's word count in its footer.",
     },
     SettingSpec {
+        key: crate::CORKBOARD_MODAL_SIZE_KEY,
+        ty: "float (scale, 0.7–2.0)",
+        default: || val(crate::CORKBOARD_MODAL_SIZE_DEFAULT),
+        check: check::<f32>,
+        doc: "Expanded-synopsis editor font-size scale.",
+    },
+    SettingSpec {
+        key: crate::CORKBOARD_SHOW_CARD_NUMBERS_KEY,
+        ty: "bool",
+        default: || val(crate::CORKBOARD_SHOW_CARD_NUMBERS_DEFAULT),
+        check: check::<bool>,
+        doc: "Number the corkboard's cards in board order.",
+    },
+    SettingSpec {
         key: crate::CORKBOARD_FONT_FAMILY_KEY,
         ty: "string (a font family the typesetter can resolve)",
         default: || val(crate::CORKBOARD_FONT_FAMILY_DEFAULT),

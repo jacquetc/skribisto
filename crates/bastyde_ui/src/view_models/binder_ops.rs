@@ -91,6 +91,32 @@ pub(crate) fn locate(
     None
 }
 
+/// Whether `candidate` lies inside `root`'s subtree — `root` itself included.
+///
+/// Containment is positional, not a parent link: a subtree is `root` plus every
+/// following item of strictly greater indent (see [`binder_ordering::subtree_of`]),
+/// so this is the only way to ask the question. `false` when the two are in
+/// different binders, or either is unknown.
+///
+/// The guard a move-into needs: dropping a container onto one of its own
+/// descendants is not rejected by the backend, it just writes an ordering the
+/// binder can never represent.
+pub(crate) fn subtree_contains(
+    app_ctx: &AppContext,
+    ids: &AppIds,
+    root: u64,
+    candidate: u64,
+) -> bool {
+    let Some((_binder, order, _pos)) = locate(app_ctx, ids, root) else {
+        return false;
+    };
+    let indent: std::collections::HashMap<u64, i64> = item_meta(app_ctx, &order)
+        .into_iter()
+        .map(|(id, (_role, indent, _sub))| (id, indent))
+        .collect();
+    binder_ordering::subtree_of(&order, &indent, root).contains(&candidate)
+}
+
 /// `{id -> (role, indent, sub_role)}` for a binder's items — the data
 /// [`crate::binder::placement`] walks to turn "put it after this one" into a concrete
 /// `(index, indent)`, and [`go_targets`] walks to resolve each row's

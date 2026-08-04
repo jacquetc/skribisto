@@ -718,6 +718,30 @@ impl EditorsViewModel {
             .or_else(|| self.with_tab(focused.other(), item_id, |t| t.capture_view_state()))
     }
 
+    /// The Corkboard navigation of whichever open tab shows `item_id` — focused
+    /// side first, for the same reason [`Self::view_state_of`] asks it first.
+    pub fn corkboard_state_of(&self, item_id: u64) -> Option<(Vec<u64>, String)> {
+        let focused = self.focused_side.get();
+        self.with_tab(focused, item_id, |t| t.capture_corkboard_state())
+            .or_else(|| self.with_tab(focused.other(), item_id, |t| t.capture_corkboard_state()))
+            .flatten()
+    }
+
+    /// Seed the Corkboard navigation a **not-yet-built** tab will open at, the
+    /// counterpart of [`Self::seed_view_state`] on the workspace-restore path.
+    pub fn seed_corkboard_state(
+        &self,
+        side: Side,
+        item_id: u64,
+        ids: &[u64],
+        titles: &[String],
+        query: &str,
+    ) {
+        self.with_tab(side, item_id, |t| {
+            t.seed_corkboard_state(ids, titles, query)
+        });
+    }
+
     /// Push a caret + page scroll onto whichever open tab shows `item_id`,
     /// without rebuilding it — the surface's exit path. Focused side first, for
     /// the same reason [`Self::view_state_of`] asks it first.

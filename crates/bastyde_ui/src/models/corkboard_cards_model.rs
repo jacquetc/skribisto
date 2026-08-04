@@ -107,7 +107,8 @@ mod filter_tests {
 
 #[cfg(not(feature = "mocks"))]
 mod imp {
-    use std::collections::HashMap;
+    use std::cell::RefCell;
+    use std::collections::{HashMap, HashSet};
     use std::rc::Rc;
 
     use bastyde::core::ObserverHandle;
@@ -143,6 +144,10 @@ mod imp {
         container_id: Signal<u64>,
         /// `true` = direct children (drillable); `false` = all leaf descendants.
         nested: Signal<bool>,
+        /// Invoked with the ids that left the board on each refresh, so the owner
+        /// can release their shared synopsis documents. See [`CorkboardCardsModel::wire`].
+        #[allow(clippy::type_complexity)]
+        on_removed: RefCell<Option<Box<dyn Fn(&[u64])>>>,
     }
 
     #[derive(Clone)]
@@ -166,6 +171,7 @@ mod imp {
                     stack_id,
                     container_id,
                     nested,
+                    on_removed: RefCell::new(None),
                 }),
             }
         }
@@ -201,7 +207,19 @@ mod imp {
 
         /// Subscribe once (per build) to the structural + rename events that can
         /// change the card set, plus the scope signals, then do the initial fill.
-        pub fn wire(&self, ctx: &mut BuildContext) {
+        ///
+        /// `on_removed` is invoked (from this and every later refresh) with the ids
+        /// that left the board, so the owner can release their shared synopsis
+        /// documents — a card can vanish by merge, trash, promote, undo or a sibling
+        /// window's edit, and every one of those paths must drop the reference.
+        ///
+        /// **`on_removed` must not capture its owner strongly.** It is stored for the
+        /// model's lifetime and the model is owned by that owner — an `Rc` capture
+        /// would close a cycle, the owner's `Drop` would never run, and every synopsis
+        /// document the board ever opened would leak. [`CorkboardViewModel::wire`]
+        /// passes a `Weak`-capturing closure.
+        pub fn wire(&self, ctx: &mut BuildContext, on_removed: impl Fn(&[u64]) + 'static) {
+            *self.inner.on_removed.borrow_mut() = Some(Box::new(on_removed));
             use DirectAccessEntity::BinderItem;
             use EntityEvent::{Created, Removed, Updated};
             let origins = [
@@ -214,9 +232,16 @@ mod imp {
                 Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
                 Origin::BinderItemManagement(BinderItemManagementEvent::SplitScene),
                 Origin::BinderItemManagement(BinderItemManagementEvent::Promote),
+                // Every trash transition, not a subset: `RestoreItemsTo` is the trash
+                // dock's own restore path and `TrashBinder`/`DeleteTrashEntries` also
+                // move items in or out of `activated` — missing any of them leaves an
+                // open board showing a card set the store no longer agrees with.
                 Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
+                Origin::TrashManagement(TrashManagementEvent::TrashBinder),
                 Origin::TrashManagement(TrashManagementEvent::RestoreItems),
+                Origin::TrashManagement(TrashManagementEvent::RestoreItemsTo),
                 Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
+                Origin::TrashManagement(TrashManagementEvent::DeleteTrashEntries),
             ];
             for origin in origins {
                 let me = self.clone();
@@ -256,9 +281,30 @@ mod imp {
                 self.inner.container_id.get(),
                 self.inner.nested.get(),
             );
+            let before: Vec<u64> = {
+                let m = &self.inner.model;
+                (0..m.len())
+                    .filter_map(|i| m.with_item(i, |c| c.item_id))
+                    .collect()
+            };
+            let after: HashSet<u64> = cards.iter().map(|c| c.item_id).collect();
             // Framework keyed diff: only actually-changed rows emit a change, so a
             // GridView tile is rebuilt only where a card changed.
             self.inner.model.reconcile_by_key(cards, |c| c.item_id);
+
+            let removed: Vec<u64> = before
+                .into_iter()
+                .filter(|id| !after.contains(id))
+                .collect();
+            if !removed.is_empty() {
+                // Take the callback out of the RefCell before invoking it: it calls
+                // back into the owner, which may re-enter this model.
+                let cb = self.inner.on_removed.borrow_mut().take();
+                if let Some(cb) = cb {
+                    cb(&removed);
+                    *self.inner.on_removed.borrow_mut() = Some(cb);
+                }
+            }
         }
 
         fn stack(&self) -> Option<u64> {
@@ -576,6 +622,8 @@ mod imp {
 
 #[cfg(feature = "mocks")]
 mod imp {
+    use std::cell::RefCell;
+    use std::collections::HashSet;
     use std::rc::Rc;
 
     use bastyde::core::ObserverHandle;
@@ -654,6 +702,10 @@ mod imp {
         model: ListModel<CorkboardCard>,
         container_id: Signal<u64>,
         nested: Signal<bool>,
+        /// Shared across clones, exactly as the real model's `Rc<Inner>` field is —
+        /// see the real [`CorkboardCardsModel::wire`] for the contract.
+        #[allow(clippy::type_complexity)]
+        on_removed: Rc<RefCell<Option<Box<dyn Fn(&[u64])>>>>,
     }
 
     impl CorkboardCardsModel {
@@ -669,6 +721,7 @@ mod imp {
                 model,
                 container_id,
                 nested,
+                on_removed: Rc::new(RefCell::new(None)),
             }
         }
 
@@ -694,7 +747,8 @@ mod imp {
                 .collect()
         }
 
-        pub fn wire(&self, ctx: &mut BuildContext) {
+        pub fn wire(&self, ctx: &mut BuildContext, on_removed: impl Fn(&[u64]) + 'static) {
+            *self.on_removed.borrow_mut() = Some(Box::new(on_removed));
             // Re-fill the fixture when the scope changes; no backend to subscribe.
             let me = self.clone();
             ctx.effect(&self.container_id, move |_| me.refill());
@@ -703,10 +757,27 @@ mod imp {
         }
 
         fn refill(&self) {
-            self.model.reconcile_by_key(
-                mock_cards(self.container_id.get(), self.nested.get()),
-                |c| c.item_id,
-            );
+            let next = mock_cards(self.container_id.get(), self.nested.get());
+            let before: Vec<u64> = {
+                let m = &self.model;
+                (0..m.len())
+                    .filter_map(|i| m.with_item(i, |c| c.item_id))
+                    .collect()
+            };
+            let after: HashSet<u64> = next.iter().map(|c| c.item_id).collect();
+            self.model.reconcile_by_key(next, |c| c.item_id);
+
+            let removed: Vec<u64> = before
+                .into_iter()
+                .filter(|id| !after.contains(id))
+                .collect();
+            if !removed.is_empty() {
+                let cb = self.on_removed.borrow_mut().take();
+                if let Some(cb) = cb {
+                    cb(&removed);
+                    *self.on_removed.borrow_mut() = Some(cb);
+                }
+            }
         }
     }
 

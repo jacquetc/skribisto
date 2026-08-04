@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Manuscript order — the cards as they stand in the stream, unsorted -->
+  <rect x="2.4" y="3.0" width="4.6" height="3.4" rx="0.7"/>
+  <rect x="9.0" y="3.0" width="4.6" height="3.4" rx="0.7"/>
+  <rect x="2.4" y="9.0" width="4.6" height="3.4" rx="0.7"/>
+  <rect x="9.0" y="9.0" width="4.6" height="3.4" rx="0.7"/>
+</svg>

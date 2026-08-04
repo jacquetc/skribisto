@@ -51,26 +51,107 @@ impl Widget for FooterCount {
     }
 }
 
-/// The per-card "More actions" menu — the same actions as the Full-Synopsis row
-/// menu (insert · set label · move up / down · merge · trash), minus rename. Merge
-/// is offered only where the model allows it. Bare kebab `IconButton`.
-pub(super) fn card_menu(vm: &CorkboardViewModel, card: &CorkboardCard) -> impl Widget {
+/// The kebab, wrapped so its menu **rebuilds when the selection changes**.
+///
+/// The labels below are counted ("Delete 4 cards"), and the count comes from the
+/// live selection — but `GridView` never rebuilds a tile on selection (its
+/// `is_selected` is a repaint-only binding, see [`CorkboardTile`]), so a menu
+/// built with the tile would keep whatever count was current when the card was
+/// first realized. A menu reading "Delete" that deletes four cards is exactly the
+/// kind of quiet mismatch these labels exist to prevent, so the binding lives
+/// here, on a widget of its own, rather than on the tile.
+pub(super) struct CardMenu {
+    pub(super) vm: CorkboardViewModel,
+    pub(super) card: CorkboardCard,
+    pub(super) root: Option<WidgetId>,
+}
+impl std::fmt::Debug for CardMenu {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CardMenu").finish()
+    }
+}
+impl Widget for CardMenu {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.vm.selection().selection_signal().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
+        // A dead zone for the same reason the synopsis is one: the kebab captures
+        // the pointer for its own tap, which would otherwise arm the tile's drag and
+        // let a click-with-jitter drag the card. See `CardSynopsis::build`.
+        let id = ctx.add(DeadZone::new().child(card_menu(&self.vm, &self.card)));
+        self.root = Some(id);
+        vec![id]
+    }
+    fn layout_response(&self, p: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root
+            .and_then(|id| ctx.child_size(id, p))
+            .unwrap_or_else(|| p.resolve(0.0, 0.0))
+            .into()
+    }
+    fn children(&self) -> Vec<WidgetId> {
+        self.root.into_iter().collect()
+    }
+}
+
+/// The per-card "More actions" menu — the Full-Synopsis row menu's actions
+/// (rename · insert · set label · move up / down · merge · trash) plus the
+/// board's own (duplicate · move to… · reveal in the outline). Merge is offered
+/// only where the writing model allows it. Bare kebab `IconButton`.
+///
+/// Built through [`CardMenu`], never directly, so its counted labels stay in step
+/// with the selection.
+fn card_menu(vm: &CorkboardViewModel, card: &CorkboardCard) -> impl Widget {
     let id = card.item_id;
     let mk = |f: fn(&CorkboardViewModel, &mut EventContext, u64)| {
         let vm = vm.clone();
         move |ctx: &mut EventContext| f(&vm, ctx, id)
     };
 
+    // How many cards the batch actions below will touch — the whole selection when
+    // this card is inside it, otherwise just this one (`batch_for`). Kept fresh by
+    // [`CardMenu`], which rebuilds this list whenever the selection changes.
+    let batch = vm.batch_len(id);
+
     let mut list = MenuList::new()
         // Rename opens the inline title editor on this card (same as F2 /
-        // double-clicking the title) — no modal.
+        // double-clicking the title) — no modal. Single-card by nature: there is
+        // one title field, and it is this card's.
         .item(MenuItem::new(tr!(rename())).on_activate_fn(mk(|v, _c, id| v.begin_rename(id))))
         .item(
             MenuItem::new(insert_label(card))
                 .on_activate_fn(mk(|v, c, id| v.begin_insert_after(c, id))),
         )
         .item(
-            MenuItem::new(tr!(set_label())).on_activate_fn(mk(|v, c, id| v.begin_set_label(c, id))),
+            MenuItem::new(batched(
+                tr!(set_label()),
+                tr!(set_label_n(count = batch as i64)),
+                batch,
+            ))
+            .on_activate_fn(mk(|v, c, id| v.begin_set_label(c, id))),
+        )
+        .separator()
+        .item(
+            MenuItem::new(batched(
+                tr!(duplicate()),
+                tr!(duplicate_n(count = batch as i64)),
+                batch,
+            ))
+            .on_activate_fn(mk(|v, _c, id| v.duplicate_many(&v.batch_for(id)))),
+        )
+        .item(
+            MenuItem::new(batched(
+                tr!(corkboard_move_to()),
+                tr!(corkboard_move_to_n(count = batch as i64)),
+                batch,
+            ))
+            .on_activate_fn({
+                let vm = vm.clone();
+                move |ctx: &mut EventContext| {
+                    super::move_target::present_move_target(ctx, vm.clone(), vm.batch_for(id))
+                }
+            }),
         )
         .separator()
         .item(MenuItem::new(tr!(move_up())).on_activate_fn(mk(|v, c, id| v.move_up(c, id))))
@@ -83,16 +164,38 @@ pub(super) fn card_menu(vm: &CorkboardViewModel, card: &CorkboardCard) -> impl W
         );
     }
 
-    list = list.separator().item(
-        MenuItem::new(tr!(move_to_trash()))
+    list = list
+        .separator()
+        // "Where does this sit in the project?" — the question a drilled-into board
+        // makes easy to lose. Fires the same intent the Overview row menu does.
+        .item(
+            MenuItem::new(tr!(reveal_in_outline()))
+                .on_activate_fn(mk(|v, c, id| v.reveal_in_outline(c, id))),
+        )
+        .separator()
+        .item(
+            MenuItem::new(batched(
+                tr!(move_to_trash()),
+                tr!(move_to_trash_n(count = batch as i64)),
+                batch,
+            ))
             .text_role(TextRole::Error)
-            .on_activate_fn(mk(|v, c, id| v.trash(c, id))),
-    );
+            .on_activate_fn(mk(|v, c, id| v.trash_many(c, &v.batch_for(id)))),
+        );
 
     PopoverIconButton::new(IconButton::more())
         .bare()
         // Trap Tab inside the anchored overlay, as every popover must.
         .content(FocusScope::new(TraversalScopePolicy::Cycle).child(list))
+}
+
+/// Pick the plain or the counted label for a batch action.
+///
+/// A menu that always said "Delete 1 card" would be noise; one that always said
+/// "Delete" would hide that four cards are about to go. So the count appears only
+/// when it is news — the same rule the outline's own batch entries follow.
+fn batched(one: LocalizedString, many: LocalizedString, count: usize) -> LocalizedString {
+    if count > 1 { many } else { one }
 }
 
 /// What "Insert …" on a card creates — the model's default recommendation for it
@@ -108,9 +211,14 @@ pub(super) fn insert_label(card: &CorkboardCard) -> LocalizedString {
 }
 
 /// The concise accessible name a screen reader announces for a card's `GridCell`:
-/// a superset of the visible title (Label-in-Name) — "Title, Type[, status]" —
-/// not the whole synopsis (which is scanned visually / read on demand).
-pub(super) fn card_a11y_name(card: &CorkboardCard) -> String {
+/// a superset of the visible title (Label-in-Name) — "[Card N, ]Title, Type[, status]"
+/// — not the whole synopsis (which is scanned visually / read on demand).
+///
+/// The ordinal is spoken only when the writer has card numbers on. The card face
+/// shows a bare numeral (as an index card does); "Card 3" is the *spoken* form,
+/// because "3, Copyright, Scene" would leave a screen-reader user to infer what
+/// the 3 counts.
+pub(super) fn card_a11y_name(card: &CorkboardCard, number: Option<usize>) -> String {
     let mut name = format!(
         "{}, {}",
         card.title,
@@ -119,7 +227,13 @@ pub(super) fn card_a11y_name(card: &CorkboardCard) -> String {
     if !card.label.is_empty() {
         name = format!("{name}, {}", card.label);
     }
-    name
+    match number {
+        Some(n) => format!(
+            "{}, {name}",
+            tr!(corkboard_card_number(number = n as i64)).resolve_now()
+        ),
+        None => name,
+    }
 }
 
 /// A short, sentence-case badge for a card's type. No existing sub_role→text map

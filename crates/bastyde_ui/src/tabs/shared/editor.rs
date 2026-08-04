@@ -692,7 +692,7 @@ pub fn card_synopsis_editor(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
-) -> impl Widget {
+) -> (impl Widget, EditorHandle) {
     let mut editor = RichTextEditor::editor(doc.clone())
         .style(WritingEditorStyle)
         .on_change(on_change)
@@ -719,6 +719,10 @@ pub fn card_synopsis_editor(
             )))
         });
     }
+    // Taken before the editor moves into its wrappers, so a caller can put the
+    // caret in it after mount — a descendant walk from outside cannot reach it
+    // (see `SynopsisModal::build`).
+    let handle = editor.handle();
     let bound = TypographyBoundEditor::new(
         editor,
         typo.clone(),
@@ -727,10 +731,11 @@ pub fn card_synopsis_editor(
         EditorKind::Synopsis,
         format,
     );
-    match caret {
+    let widget = match caret {
         Some(band) => bound.with_caret_band(band),
         None => bound,
-    }
+    };
+    (widget, handle)
 }
 
 /// A one-line name input bound to `field.value`, wired so an edit marks the tab dirty.
@@ -2622,7 +2627,8 @@ mod tests {
         let doc = TextDocument::new();
         let _ =
             doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(60));
-        let editor = card_synopsis_editor(doc, test_typo(), || {}, None, None, None, None, None);
+        let (editor, _handle) =
+            card_synopsis_editor(doc, test_typo(), || {}, None, None, None, None, None);
         let mut tree = WidgetTree::new();
         let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
         // Propose an *unbounded* height, the way the corkboard's GridView tile does —

@@ -379,6 +379,46 @@ corkboard-search-placeholder = Filter cards…
 corkboard-empty-title = Nothing here yet
 corkboard-empty-hint = Use “＋ New” above to add the first one.
 corkboard-new = New
+corkboard-show-card-numbers = Number the cards
+corkboard-modal-size = Expanded editor size
+corkboard-scope-hint = Applies to every open corkboard, in every project.
+corkboard-sort-manuscript = Manuscript order
+corkboard-sort-title-asc = Title A–Z
+corkboard-sort-title-desc = Title Z–A
+corkboard-card-number = Card { $number }
+
+## Corkboard batch actions (the card kebab acts on the whole selection)
+duplicate = Duplicate
+duplicate-n = { $count ->
+    [one] Duplicate { $count } card
+   *[other] Duplicate { $count } cards
+}
+set-label-n = { $count ->
+    [one] Set label on { $count } card
+   *[other] Set label on { $count } cards
+}
+move-to-trash-n = { $count ->
+    [one] Move { $count } card to trash
+   *[other] Move { $count } cards to trash
+}
+reveal-in-outline = Reveal in outline
+
+## Corkboard “Move to…” destination picker
+corkboard-move-to = Move to…
+corkboard-move-to-n = { $count ->
+    [one] Move { $count } card to…
+   *[other] Move { $count } cards to…
+}
+corkboard-move-picker-title = Move to…
+corkboard-move-picker-empty = No binders yet — create one first.
+corkboard-move-picker-cancel = Cancel
+corkboard-move-here = Move Here
+corkboard-moved-ok = { $count ->
+    [one] { $count } card moved
+   *[other] { $count } cards moved
+}
+corkboard-move-into-self = A container cannot be moved inside itself. Pick a destination outside it.
+corkboard-move-failed = Those cards could not be moved there.
 
 ## Overview (the container's contents as a sortable table)
 overview-col-title = Title

@@ -91,13 +91,52 @@ pub struct PaneLayout {
 /// `caret` is a character offset, so it survives a typography change; `scroll`
 /// is in logical pixels and is clamped to the page's real range on restore (see
 /// `view_models::ViewStatePorts::apply_scroll`).
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct TabViewState {
     pub uid: Uuid,
     #[serde(default)]
     pub caret: usize,
     #[serde(default)]
     pub scroll: f32,
+    /// Where the writer had navigated to on this tab's Corkboard segment.
+    ///
+    /// Additive, with a serde default, so every v5 document still deserializes —
+    /// the same shape the v3 → v4 `view_states` bump took. Not `Copy` any more
+    /// (the query is a `String`); nothing depended on that.
+    #[serde(default)]
+    pub corkboard: CorkboardTabState,
+}
+
+/// One tab's remembered Corkboard navigation.
+///
+/// The board is the one editor surface with navigation of its own — drilling into
+/// a folder card re-scopes it *in place* — so reopening a project put every board
+/// back at its tab's own container, however deep the writer had gone.
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+pub struct CorkboardTabState {
+    /// The drilled-into breadcrumb trail as durable uids, root-first and
+    /// root-inclusive. Empty = never drilled (the tab's own container).
+    ///
+    /// The *whole* trail rather than just the deepest container, because the
+    /// breadcrumb is exactly this list — recovering ancestors from one uid would
+    /// mean re-deriving them from indent math on restore, and getting a different
+    /// answer than the trail the writer actually walked. A uid that no longer
+    /// resolves truncates the trail there, the same graceful degradation
+    /// `resolve_uids` applies to a tab whose item has been deleted.
+    #[serde(default)]
+    pub trail: Vec<Uuid>,
+    /// The live filter text, restored into the search field so the board comes
+    /// back filtered *and visibly so* — the query is in the box and the card
+    /// count reflects it, so a short board is never unexplained.
+    #[serde(default)]
+    pub query: String,
+}
+
+impl CorkboardTabState {
+    /// Nothing worth persisting (never drilled, nothing typed).
+    pub fn is_empty(&self) -> bool {
+        self.trail.is_empty() && self.query.is_empty()
+    }
 }
 
 impl PaneLayout {
@@ -230,7 +269,13 @@ impl Versioned for WorkspaceLayoutFile {
     /// **v5** records [`PerProjectLayout::known_docks`] so a dock added after a desk
     /// was captured can be told apart from one the user closed (see [`migrator`]).
     /// Additive too — and it is what retires the drop-everything approach v3 took.
-    const CURRENT_VERSION: u32 = 5;
+    ///
+    /// **v6** records each tab's Corkboard navigation in
+    /// [`TabViewState::corkboard`]. Additive, with a serde default, exactly like
+    /// v4's `view_states`: a v5 document already deserializes correctly, and the
+    /// step exists only to stamp the version so an older build is *refused* by the
+    /// `Migrator` rather than silently rewriting the file and dropping the field.
+    const CURRENT_VERSION: u32 = 6;
     fn version(&self) -> u32 {
         self.version
     }
@@ -346,6 +391,14 @@ fn migrator() -> Migrator<WorkspaceLayoutFile> {
             }
             Ok(raw)
         })
+        // **v5 → v6 is the identity**, for the same reason v3 → v4 was:
+        // `TabViewState::corkboard` is a brand-new field with a serde default, so a
+        // v5 document already deserializes correctly under v6 and there is nothing
+        // to transform. The step stamps the version, which is what makes a
+        // *downgrade* safe — an older build meeting a v6 file is refused by the
+        // `Migrator` rather than silently rewriting it and dropping every board's
+        // remembered navigation.
+        .step(5, Ok)
 }
 
 /// Persistent workspace-layout service. `SettingsFile` is `Clone` (shares the
@@ -566,6 +619,76 @@ tabs = []
         );
     }
 
+    /// **v5 → v6 is additive and keeps every tab and caret.** Same shape as v4:
+    /// `TabViewState::corkboard` is a brand-new field with a serde default, so a v5
+    /// document loads whole and merely gains an empty board state. The step exists
+    /// so an *older* build meeting a v6 file is refused rather than silently
+    /// rewriting it and dropping every board's remembered navigation.
+    #[test]
+    fn the_v6_migration_is_additive_and_keeps_every_tab_and_caret() {
+        let d = tempdir().unwrap();
+        let path = d.path().join("workspace.toml");
+        std::fs::write(
+            &path,
+            r#"version = 5
+[[projects]]
+work_uid = "uid-A"
+last_path = "/x/a.skrib"
+known_docks = [13631489]
+[projects.primary]
+tabs = ["00000000-0000-0000-0000-000000000003"]
+selected = "00000000-0000-0000-0000-000000000003"
+[[projects.primary.view_states]]
+uid = "00000000-0000-0000-0000-000000000003"
+caret = 412
+scroll = 96.5
+[projects.secondary]
+tabs = []
+"#,
+        )
+        .unwrap();
+
+        let s = WorkspaceLayoutService::open_at(path, Duration::ZERO).unwrap();
+        let got = s.get("uid-A").expect("the row survived the migration");
+        assert_eq!(got.primary.tabs.len(), 1, "a v5 file keeps its tabs");
+        assert_eq!(got.last_path, "/x/a.skrib");
+        assert_eq!(got.known_docks, vec![13631489], "and its dock roster");
+        let vs = got.primary.view_states.first().expect("the caret survived");
+        assert_eq!(vs.caret, 412);
+        assert_eq!(vs.scroll, 96.5);
+        assert!(
+            vs.corkboard.is_empty(),
+            "no board navigation remembered yet, but the field must exist rather \
+             than fail the load"
+        );
+    }
+
+    /// A drilled board's trail and filter survive a real write and re-read — the
+    /// half of the round trip the in-memory view-model test cannot cover.
+    #[test]
+    fn corkboard_board_state_round_trips_through_disk() {
+        let d = tempdir().unwrap();
+        let mut rec = sample("uid-A");
+        rec.primary.view_states = vec![TabViewState {
+            uid: u(3),
+            caret: 0,
+            scroll: 0.0,
+            corkboard: CorkboardTabState {
+                trail: vec![u(1), u(2), u(3)],
+                query: "ferry".into(),
+            },
+        }];
+        {
+            let s = svc(d.path());
+            s.set(rec).unwrap();
+        }
+        let s = svc(d.path());
+        let got = s.get("uid-A").expect("row");
+        let board = &got.primary.view_states[0].corkboard;
+        assert_eq!(board.trail, vec![u(1), u(2), u(3)]);
+        assert_eq!(board.query, "ferry");
+    }
+
     /// **v4 → v5 stamps the roster and destroys nothing.** This is the migration that
     /// let the comments docks reach existing projects *without* repeating v2 → v3's
     /// blanket "drop every saved arrangement": the row keeps its docks, tabs, splitter
@@ -649,6 +772,10 @@ tabs = []
             uid: u(3),
             caret: 412,
             scroll: 96.5,
+            corkboard: CorkboardTabState {
+                trail: vec![u(9), u(10)],
+                query: "keep".into(),
+            },
         }];
         {
             let s = svc(d.path());
@@ -662,6 +789,10 @@ tabs = []
                 uid: u(3),
                 caret: 412,
                 scroll: 96.5,
+                corkboard: CorkboardTabState {
+                    trail: vec![u(9), u(10)],
+                    query: "keep".into(),
+                },
             }]
         );
     }

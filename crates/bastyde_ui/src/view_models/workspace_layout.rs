@@ -47,8 +47,8 @@ use uuid::Uuid;
 
 use crate::app_ids::AppIds;
 use crate::models::{
-    BinderItemRef, PaneLayout, PerProjectLayout, TabViewState, WorkspaceLayoutService,
-    ordered_binder_items, uid_is_usable,
+    BinderItemRef, CorkboardTabState, PaneLayout, PerProjectLayout, TabViewState,
+    WorkspaceLayoutService, ordered_binder_items, uid_is_usable,
 };
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::view_models::{EditorsViewModel, OutlineViewModel, Side, TreeExpansionViewModel};
@@ -183,10 +183,25 @@ impl WorkspaceLayoutViewModel {
                 .filter_map(|id| {
                     let uid = uid_of.get(&id).copied()?;
                     let s = editors.view_state_of(id)?;
+                    // The Corkboard trail is persisted as **uids**, like the tab
+                    // list itself: an `EntityId` is re-minted on every `load_work`,
+                    // so a stored id would name a different item next launch. A
+                    // crumb whose id no longer resolves truncates the trail there.
+                    let corkboard = editors
+                        .corkboard_state_of(id)
+                        .map(|(trail_ids, query)| CorkboardTabState {
+                            trail: trail_ids
+                                .iter()
+                                .map_while(|cid| uid_of.get(cid).copied())
+                                .collect(),
+                            query,
+                        })
+                        .unwrap_or_default();
                     Some(TabViewState {
                         uid,
                         caret: s.caret,
                         scroll: s.scroll,
+                        corkboard,
                     })
                 })
                 .collect(),
@@ -349,6 +364,26 @@ impl WorkspaceLayoutViewModel {
                             scroll: s.scroll,
                         },
                     );
+                    // And the Corkboard's own navigation. `map_while` stops at the
+                    // first crumb whose uid no longer names a live item: everything
+                    // deeper described a path through a container that is gone, and
+                    // a breadcrumb with a hole in it would offer to navigate to an
+                    // ancestor that is no longer one.
+                    if !s.corkboard.is_empty() {
+                        let crumbs: Vec<(u64, String)> = s
+                            .corkboard
+                            .trail
+                            .iter()
+                            .map_while(|cuid| {
+                                order
+                                    .iter()
+                                    .find(|r| r.uid == *cuid)
+                                    .map(|r| (r.id, r.title.clone()))
+                            })
+                            .collect();
+                        let (ids, titles): (Vec<u64>, Vec<String>) = crumbs.into_iter().unzip();
+                        editors.seed_corkboard_state(side, *id, &ids, &titles, &s.corkboard.query);
+                    }
                 }
             }
         };

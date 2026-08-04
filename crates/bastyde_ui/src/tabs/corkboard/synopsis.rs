@@ -34,7 +34,8 @@ pub(super) fn synopsis_editor(
     vm: &CorkboardViewModel,
     card: &CorkboardCard,
     open_doc: &Rc<OpenDoc>,
-) -> impl Widget {
+    typo: EditorTypography,
+) -> (impl Widget, bastyde::widgets::rich_text::EditorHandle) {
     // Every writing row has a `SynopsisText` field; the `None` fallback is only the
     // defensive path (a card whose type carries no synopsis) — the callers already
     // gate on `synopsis.is_some()`.
@@ -48,7 +49,7 @@ pub(super) fn synopsis_editor(
     let spell = open_doc.spell_synopsis();
     crate::tabs::shared::editor::card_synopsis_editor(
         doc,
-        vm.synopsis_typo(),
+        typo,
         on_change,
         split,
         spell,
@@ -205,7 +206,27 @@ impl Widget for CardSynopsis {
         // just force-fills that box (see `place_children`).
         let body = match &self.open_doc {
             Some(doc) if doc.synopsis.is_some() => {
-                ctx.add(synopsis_editor(&self.vm, &self.card, doc))
+                // A **gesture dead zone** around the editor.
+                //
+                // Selecting a word is press-move-release — the same gesture the
+                // `GridView` beneath uses to start a card drag. The editor does its
+                // selection through `on_pointer_event` rather than a drag
+                // recognizer and returns `Ignored` on `PointerDown` (deliberately,
+                // so its double/triple-tap recognizers keep working), which is
+                // exactly what `arm_drag_observers` walks straight past on its way
+                // to arming the tile above. The writer then dragged the card while
+                // trying to select a word.
+                //
+                // `DeadZone` stops that walk **structurally** — no ancestor above
+                // this node is ever armed — rather than by winning a gesture race,
+                // and it is layout-transparent, so `place_children` below still
+                // sizes the editor exactly as before. The card stays draggable by
+                // its header, its status line and its padding.
+                {
+                    let (editor, _handle) =
+                        synopsis_editor(&self.vm, &self.card, doc, self.vm.synopsis_typo());
+                    ctx.add(DeadZone::new().child(editor))
+                }
             }
             // No synopsis field (or unreadable): an empty filler so the card still
             // lays out.
@@ -260,11 +281,22 @@ pub(super) fn present_synopsis_modal(
         })
         .presentation(ModalPresentation::InTree)
         .title(tr!(corkboard_synopsis_modal_title()).resolve_now())
-        // Escape / the title-bar close only — NOT click-outside: a right-click in
-        // the editor (to reach the Split/Cut/Paste menu) would otherwise be read as
-        // an outside click and dismiss the modal out from under the menu.
-        .close_behavior(ModalCloseBehavior::EscapeKey)
-        .size(720, 560),
+        // Escape **or** an outside click, the ordinary modal contract — clicking
+        // away from a thing you opened should put it away, and needing to find
+        // Escape for a surface opened by mouse is a small papercut every time.
+        //
+        // (The previous note here worried that a right-click in the editor — to
+        // reach Split/Cut/Paste — would read as an outside click and dismiss the
+        // modal out from under its own menu. The context menu opens as an overlay
+        // *above* the modal, and the press that opens it lands inside the modal's
+        // surface, so it is not an outside click; the menu's own dismissal is a
+        // separate overlay pop. Worth re-checking by hand if that menu ever starts
+        // closing its host.)
+        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+        // Roomy enough to actually draft in: the old 720×560 left the editor a
+        // 500px box, which is a handful of lines once the chrome and padding are
+        // out — the writer opened "expand" and got barely more than the card.
+        .size(980, 760),
     );
 }
 
@@ -288,18 +320,55 @@ impl Widget for SynopsisModal {
         // editor fills it and scrolls internally for a long synopsis.
         let cid = match self.vm.synopsis_doc_for(id) {
             Some(doc) if doc.synopsis.is_some() => {
-                let editor = synopsis_editor(&self.vm, &self.card, &doc);
+                // The expanded editor gets its **own** size scale (Settings ▸ Corkboard):
+                // the card's is chosen to be scannable in a tile, this one to be written in.
+                let (editor, handle) =
+                    synopsis_editor(&self.vm, &self.card, &doc, self.vm.modal_typo());
                 // `FixedSize` → `Padding` forward an *exact* bounded height to the
                 // greedy editor, which is what makes it consume that height and
                 // scroll. An `Expand` in between would measure the editor with an
                 // unspecified height (its 100px fallback), so it never learns the
                 // box height — the editor then overflows, centered, scrollbar pinned.
-                ctx.add(
-                    FixedSize::new()
-                        .width(680.0)
-                        .height(500.0)
-                        .child(Padding::uniform(16.0).child(editor)),
-                )
+                // A titled, raised frame. Without it the modal is a bare white slab
+                // over the board: `ModalRequest::title` names the *native-window*
+                // presentation and this one is `InTree`, so the surface owns its own
+                // chrome, exactly as `MoveTargetPanel` does.
+                let root = ctx.add(
+                    Panel::new()
+                        .variant(PanelVariant::Raised)
+                        .corner_radius(10.0)
+                        .padding(0.0)
+                        .child(
+                            VStack::new()
+                                .spacing(0.0)
+                                .child(
+                                    Padding::symmetric(8.0, 14.0).child(
+                                        TextWidget::new(tr!(corkboard_synopsis_modal_title()))
+                                            .style(TextStyleRole::Small)
+                                            .color(TextRole::Secondary),
+                                    ),
+                                )
+                                .child(Divider::new())
+                                .child(
+                                    FixedSize::new()
+                                        .width(940.0)
+                                        .height(660.0)
+                                        .child(Padding::uniform(16.0).child(editor)),
+                                ),
+                        ),
+                );
+                // Put the caret in the editor as the modal opens. A writer who chose
+                // "expand synopsis" wants to type, and an unfocused editor draws no
+                // caret at all — the surface reads as broken rather than unfocused.
+                //
+                // `run_after_mount`, not a focus call here: at `build` time this
+                // subtree's children have not built yet, so the editor's focusable
+                // node does not exist and any descendant walk comes back empty (which
+                // is exactly what the framework's own `first_focusable_descendant`
+                // fallback hits, and why the modal opened caretless). The same idiom
+                // `distraction_free::surface` uses to hand its editor the caret.
+                ctx.run_after_mount(move |ctx| handle.focus(ctx));
+                root
             }
             _ => {
                 ctx.add(Padding::uniform(16.0).child(TextWidget::new(tr!(corkboard_empty_hint()))))

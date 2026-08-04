@@ -8,6 +8,7 @@
 
 pub(crate) mod activity;
 pub(crate) mod comments;
+pub(crate) mod corkboard;
 pub(crate) mod editor;
 pub(crate) mod find;
 pub(crate) mod format;

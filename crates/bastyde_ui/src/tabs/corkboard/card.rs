@@ -20,6 +20,7 @@ pub(super) struct CorkboardTile {
     pub(super) app_ctx: Rc<AppContext>,
     pub(super) method: Signal<skribisto_model::counting::CountingMethodSetting>,
     pub(super) show_wc: Signal<bool>,
+    pub(super) show_numbers: Signal<bool>,
     pub(super) root: Option<WidgetId>,
 }
 impl std::fmt::Debug for CorkboardTile {
@@ -38,6 +39,14 @@ impl Widget for CorkboardTile {
         // it in place.
         let header = HStack::new()
             .spacing(7.0)
+            .child(CardNumber {
+                // 1-based, and the position in the *bound* source — so a filtered
+                // or sorted board numbers what it actually shows, top-left first,
+                // rather than leaking the underlying manuscript position.
+                number: self.index + 1,
+                show: self.show_numbers.clone(),
+                root: None,
+            })
             .child(crate::binder::icons::sub_role_icon(&self.card.sub_role).icon_size(15.0))
             .child(Expand::horizontal().child(InlineTitle {
                 vm: self.vm.clone(),
@@ -49,7 +58,11 @@ impl Widget for CorkboardTile {
                 Badge::new(sub_role_badge_label(&self.card.sub_role))
                     .text_role(TextRole::Secondary),
             )
-            .child(card_menu(&self.vm, &self.card));
+            .child(CardMenu {
+                vm: self.vm.clone(),
+                card: self.card.clone(),
+                root: None,
+            });
 
         // The synopsis: a *live* editor over the item's **shared** `OpenDoc` (the
         // same document an editor tab of this item uses — one source of truth), plus
@@ -69,6 +82,18 @@ impl Widget for CorkboardTile {
             root: None,
         };
 
+        // Is this card the one the writer is working on? `hover_within` /
+        // `focus_within` report a *strict descendant* only, so the card's own bare
+        // surface (its padding, the gap around the footer) needs `on_hover` beside
+        // them — otherwise pointing at a card's margin would not count as pointing
+        // at the card.
+        let hover_self = Signal::new(false);
+        let hover_in = Signal::new(false);
+        let focus_in = Signal::new(false);
+        let engaged = hover_self
+            .zip3(&hover_in, &focus_in)
+            .map(|(a, b, c)| *a || *b || *c);
+
         // Footer: an "expand synopsis" button at the bottom-left, then the count
         // pushed to the bottom-right (pinned there by the filling synopsis above).
         let expand = {
@@ -83,7 +108,23 @@ impl Widget for CorkboardTile {
         // The card's middle slot is the synopsis, and anything added above it is taken out of
         // the writer's own words; the footer is already the card's metadata strip (expand,
         // counts), which is what the dots are.
-        let mut footer = HStack::new().spacing(8.0).child(expand);
+        // Every interactive control on a card is wrapped the same way as the
+        // synopsis, and for the same reason: a press that captures the pointer for
+        // its own gesture (a button's tap, the picker's) otherwise arms the tile's
+        // drag underneath, so a click carrying the few pixels of jitter a real click
+        // always has drags the card instead. See `CardSynopsis::build`.
+        //
+        // The expand button shows only while the card is hovered or holds focus —
+        // it is chrome, and on a board of forty cards forty of them shouting the
+        // same affordance is noise. The slot is reserved at the button's own
+        // `IconButtonSize::Default` footprint (24dp) in *both* states, so revealing
+        // it never nudges the tag dots and the count sideways.
+        let expand_slot = FixedSize::new().width(24.0).height(24.0).child(
+            Switcher::new(engaged.map(|on| usize::from(*on)))
+                .child(VStack::new())
+                .child(DeadZone::new().child(expand)),
+        );
+        let mut footer = HStack::new().spacing(8.0).child(expand_slot);
         if !self.card.tags.is_empty() {
             let value = Signal::new(self.card.tags.clone());
             let set: crate::tags::tag_pill_field::SetTags = {
@@ -95,11 +136,11 @@ impl Widget for CorkboardTile {
                     mirror.set(ids);
                 })
             };
-            footer = footer.child(crate::tags::TagDotsRow::new(
+            footer = footer.child(DeadZone::new().child(crate::tags::TagDotsRow::new(
                 value,
                 set,
                 crate::tags::tag_chip::MAX_VISIBLE_CORKBOARD,
-            ));
+            )));
         }
         let footer = footer.child(Spacer::new()).child(FooterCount {
             is_container: self.card.is_container,
@@ -139,14 +180,24 @@ impl Widget for CorkboardTile {
         // both "selected" and "focused" read as an accented border and nothing
         // else. Keyed on this tile's index — exactly how GridView derives
         // `is_selected`.
+        //
+        // Focus counts as well as selection: clicking into a card's synopsis makes
+        // that card the one being written in, and a card that takes the caret while
+        // still looking inert leaves the writer guessing which one their keystrokes
+        // are going to. `focus_within` covers exactly that — the caret is in a
+        // strict descendant.
         let index = self.index;
-        let border_role = self.selection.selection_signal().map(move |sel| {
-            if sel.contains(&index) {
-                BorderRole::Accent
-            } else {
-                BorderRole::Default
-            }
-        });
+        let border_role =
+            self.selection
+                .selection_signal()
+                .zip(&focus_in)
+                .map(move |(sel, focused)| {
+                    if *focused || sel.contains(&index) {
+                        BorderRole::Accent
+                    } else {
+                        BorderRole::Default
+                    }
+                });
 
         // Middle-click a leaf card → open it in the *other* editor pane (mirrors
         // the outline's middle-click "open to side"). Consumes only the middle
@@ -162,6 +213,9 @@ impl Widget for CorkboardTile {
             .border_color(border_role)
             .border_width(1.0)
             .child(Padding::uniform(12.0).child(inner))
+            .hover_within(hover_in.clone())
+            .focus_within(focus_in.clone())
+            .on_hover(move |entered, _ctx| hover_self.set(entered))
             .on_pointer_event(move |ev, ctx| {
                 if let WidgetEvent::PointerDown {
                     button: PointerButton::Middle,
@@ -174,10 +228,69 @@ impl Widget for CorkboardTile {
                 EventResponse::Ignored
             });
 
+        // A **container** card is also a drop target: dropping cards onto it moves
+        // them *inside* it, which is the only way to re-parent without leaving the
+        // board for the outline.
+        //
+        // `GridView` itself can never express this — its drop targeting runs through
+        // `flat_insertion_target`, which only ever yields `Before`/`After` (`Into` is
+        // documented as trees-only). So the affordance is a `DropTarget` wrapped
+        // around the card, and the framework's engage-or-bubble walk does the rest:
+        // when `accept_when` says no, this target returns `NoFeedback` and the drag
+        // bubbles to the `GridView` behind it, which reorders exactly as before. A
+        // leaf card gets no wrapper at all, so it is untouched.
+        let id = if self.card.is_container {
+            let target_id = self.card.item_id;
+            let drop_vm = self.vm.clone();
+            let target = DropTarget::new()
+                .child(card)
+                // The **full** legality check, not just identity: the hover
+                // affordance has to mean what the drop will do, or the board
+                // promises a re-parent it then refuses. `can_move_into` costs one
+                // binder read, and `on_drag_hover` only re-runs its body when the
+                // (state, region) pair actually changes — a pointer moving inside
+                // one card's zone does not re-query.
+                .accept_when({
+                    let vm = self.vm.clone();
+                    move |p| {
+                        p.get_typed::<RowDragData<CorkboardCard>>()
+                            .and_then(|rd| rd.items())
+                            .is_some_and(|items| {
+                                let ids: Vec<u64> = items.iter().map(|c| c.item_id).collect();
+                                !ids.is_empty()
+                                    && !ids.contains(&target_id)
+                                    && vm.can_move_into(&ids, target_id)
+                            })
+                    }
+                })
+                .on_drop(move |mut payload, _pos, ctx| {
+                    let Some(rd) = payload.take_typed::<RowDragData<CorkboardCard>>() else {
+                        return false;
+                    };
+                    let Some(items) = rd.into_items() else {
+                        return false;
+                    };
+                    let ids: Vec<u64> = items.iter().map(|c| c.item_id).collect();
+                    if drop_vm.move_many_into(&ids, target_id) {
+                        return true;
+                    }
+                    // `accept_when` already refused every *illegal* drop (those
+                    // never engage, and bubble to the grid's ordinary reorder), so
+                    // reaching here means the backend itself declined the move.
+                    // Say that, rather than blaming self-containment.
+                    ctx.show_toast(
+                        Toast::error(tr!(corkboard_move_failed()))
+                            .target_work(drop_vm.work_id().get()),
+                    );
+                    false
+                });
+            ctx.add(target)
+        } else {
+            ctx.add(card)
+        };
         // The concise per-cell accessible name is set on the GridCell wrapper via
         // `.tile_a11y_label` (see `card_a11y_name`); the card body stays unlabelled
         // so a screen reader reads the tidy name, then the synopsis on demand.
-        let id = ctx.add(card);
         self.root = Some(id);
         vec![id]
     }
@@ -306,6 +419,48 @@ impl Widget for InlineTitle {
                         EventResponse::Ignored
                     }),
             )
+        };
+        self.root = Some(id);
+        vec![id]
+    }
+    fn layout_response(&self, p: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root
+            .and_then(|id| ctx.child_size(id, p))
+            .unwrap_or_else(|| p.resolve(0.0, 0.0))
+            .into()
+    }
+    fn children(&self) -> Vec<WidgetId> {
+        self.root.into_iter().collect()
+    }
+}
+
+/// A card's ordinal, shown at the head of its title row when the writer has asked
+/// for card numbers. Reactive on the setting alone — the number itself is fixed for
+/// this tile's build, since `GridView` rebuilds a tile whose index changes.
+pub(super) struct CardNumber {
+    pub(super) number: usize,
+    pub(super) show: Signal<bool>,
+    pub(super) root: Option<WidgetId>,
+}
+impl std::fmt::Debug for CardNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CardNumber").finish()
+    }
+}
+impl Widget for CardNumber {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        self.show
+            .bind_to(ctx.self_id(), ctx.binding_registry(), BindingLevel::Rebuild);
+        // Nothing at all when the setting is off — not an empty label, which would
+        // still take its slot's spacing and shift every card's title.
+        let id = if self.show.get() {
+            ctx.add(
+                TextWidget::new(lit!(self.number.to_string()))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+            )
+        } else {
+            ctx.add(VStack::new())
         };
         self.root = Some(id);
         vec![id]

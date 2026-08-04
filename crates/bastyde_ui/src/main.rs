@@ -478,8 +478,14 @@ pub const GOALS_SHOW_CHARACTERS_DEFAULT: bool = false;
 pub const CORKBOARD_NESTED_KEY: &str = "corkboard.nested";
 pub const CORKBOARD_NESTED_DEFAULT: bool = true;
 /// Corkboard card size — the minimum tile width in px the size slider drives.
+///
+/// 480 rather than the compact 240 it started at: at 240 a card is barely wider
+/// than its own header row, so the synopsis — the thing an index card exists to
+/// show — got two or three wrapped lines before it started scrolling. Twice that
+/// gives the synopsis room to be read at a glance, which is the whole point of
+/// the board, and still fits several columns across on a normal window.
 pub const CORKBOARD_CARD_SIZE_KEY: &str = "corkboard.card_size";
-pub const CORKBOARD_CARD_SIZE_DEFAULT: f32 = 240.0;
+pub const CORKBOARD_CARD_SIZE_DEFAULT: f32 = 480.0;
 /// The card-size slider range (shared by the header slider and the settings pane).
 /// A wide span: compact index cards (210) up to near-full-width review cards (680).
 pub const CORKBOARD_CARD_SIZE_MIN: f32 = 210.0;
@@ -488,6 +494,19 @@ pub const CORKBOARD_CARD_SIZE_STEP: f32 = 10.0;
 /// Show a card's word count in its footer.
 pub const CORKBOARD_SHOW_WORD_COUNT_KEY: &str = "corkboard.show_word_count";
 pub const CORKBOARD_SHOW_WORD_COUNT_DEFAULT: bool = true;
+/// The **expanded** synopsis editor's own font-size scale.
+///
+/// Separate from the card's: a card's synopsis is sized to be scannable at a
+/// glance in a small tile, and the writer opens the expanded editor precisely
+/// when they want to *write* rather than scan. Defaults to 1.0 — full size,
+/// against the card's compact 0.8.
+pub const CORKBOARD_MODAL_SIZE_KEY: &str = "corkboard.modal_size";
+pub const CORKBOARD_MODAL_SIZE_DEFAULT: f32 = 1.0;
+/// Number the cards in board order — Scrivener's card numbers. Off by default:
+/// the number is a reading aid for a structure pass, not something the writer
+/// needs on every card all the time.
+pub const CORKBOARD_SHOW_CARD_NUMBERS_KEY: &str = "corkboard.show_card_numbers";
+pub const CORKBOARD_SHOW_CARD_NUMBERS_DEFAULT: bool = false;
 
 /// Corkboard card synopsis typography — its own bundle (like Scene / Synopsis /
 /// Notes), so the index-card summaries can read distinctly from the manuscript's

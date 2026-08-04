@@ -584,6 +584,8 @@ impl ContentTab {
                 cd.nested.clone(),
                 cd.card_size.clone(),
                 cd.show_word_count.clone(),
+                cd.show_card_numbers.clone(),
+                cd.modal_size.clone(),
                 cd.counting_method.clone(),
                 typography.corkboard.clone(),
                 crate::view_models::CaretBand::new(caret_highlight.clone(), caret_locale.clone()),
@@ -767,6 +769,24 @@ impl ContentTab {
     /// pane exists. Read once by `writing_column`/`writing_page_scroll`.
     pub fn seed_view_state(&self, state: crate::view_models::ViewState) {
         self.view_state.set(state);
+    }
+
+    /// This tab's Corkboard navigation, as store ids + the live filter — `None`
+    /// for a tab with no Corkboard segment, and for a board still at its own
+    /// container with nothing typed (nothing worth persisting).
+    pub fn capture_corkboard_state(&self) -> Option<(Vec<u64>, String)> {
+        let vm = self.corkboard.as_ref()?;
+        let trail = vm.trail_ids();
+        let query = vm.search_query_signal().get();
+        (!trail.is_empty() || !query.is_empty()).then_some((trail, query))
+    }
+
+    /// Seed the Corkboard segment's navigation before it first builds — the
+    /// workspace-restore path. A no-op on a tab with no Corkboard.
+    pub fn seed_corkboard_state(&self, ids: &[u64], titles: &[String], query: &str) {
+        if let Some(vm) = self.corkboard.as_ref() {
+            vm.restore_trail(ids, titles, query);
+        }
     }
 
     /// The `BinderItem` this tab edits.
@@ -1506,7 +1526,10 @@ mod tests {
             &AppIds::new(),
         );
         tab.segment.set(4);
-        assert!(tab.analysis().is_some(), "a Book carries an Analysis view-model");
+        assert!(
+            tab.analysis().is_some(),
+            "a Book carries an Analysis view-model"
+        );
 
         // The pane starts an analysis on open and subscribes to long-operation events, so
         // it needs a tree with an event source.
@@ -1518,7 +1541,10 @@ mod tests {
              child have drifted out of step",
         );
         let b = tree.bounds(pane);
-        assert!(b.width > 0.0 && b.height > 0.0, "the Analysis pane laid out to zero size ({b:?})");
+        assert!(
+            b.width > 0.0 && b.height > 0.0,
+            "the Analysis pane laid out to zero size ({b:?})"
+        );
 
         // A Part has no Analysis at all: the gate is the same Book-only one Pace uses, and
         // widening it by accident would put a book-scale report on a chapter.
@@ -1794,6 +1820,295 @@ mod tests {
             segments(Book),
             chapter + 2,
             "a Book adds Pace and Analysis, which is why its Overview index is two higher"
+        );
+    }
+
+    /// The Corkboard segment **mounts and lays out** its grid — the same positional
+    /// `SegmentedControl` ↔ `Switcher` contract the Overview test pins, one index
+    /// earlier. Without this, a segment inserted before Corkboard would silently
+    /// show Corkboard's grid under the new label (or Corkboard under the old one)
+    /// and still compile.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn the_corkboard_segment_mounts_a_grid() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        // (sub_role, the Corkboard's index in that container's bar) — always one
+        // before the Overview, which `the_overview_segment_mounts_a_table` pins.
+        // `Folder/Note` has neither (a subtree, but no manuscript extent).
+        for (sub_role, corkboard_index) in [(ChapterScene, 3), (Part, 3), (Book, 5)] {
+            let tab = tab_for(
+                &ctx,
+                101,
+                &Folder,
+                &sub_role,
+                &[],
+                Signal::new(700.0),
+                Signal::new(true),
+                test_typography(),
+                crate::view_models::EditorViewMemory::detached(false),
+                &AppIds::new(),
+            );
+            assert!(
+                tab.corkboard().is_some(),
+                "Folder/{sub_role:?} carries a Corkboard view-model"
+            );
+            tab.segment.set(corkboard_index);
+            // The board's wiring child subscribes to backend events, so a bare
+            // `WidgetTree` would panic with no event source registered.
+            let mut tree = crate::test_support::tree_with_events(&ctx);
+            let id = tree.add_boxed(tab_pane(&tab));
+            tree.layout(bastyde::prelude::SizeProposal::exact(1000.0, 700.0));
+            let grid = first_containing(&tree, id, "GridView").unwrap_or_else(|| {
+                panic!(
+                    "Folder/{sub_role:?} segment {corkboard_index} mounted no GridView — \
+                     the segment and its Switcher child have drifted out of step"
+                )
+            });
+            let b = tree.bounds(grid);
+            assert!(
+                b.width > 0.0 && b.height > 0.0,
+                "Folder/{sub_role:?}: the Corkboard grid laid out to zero size ({b:?})"
+            );
+        }
+    }
+
+    /// **A press inside a card's synopsis must not arm an ancestor's drag.**
+    ///
+    /// The synopsis on a corkboard card is a live `RichTextEditor`, and selecting a
+    /// word is a press-move-release — the same gesture the `GridView` under it uses
+    /// to start a card drag. The editor selects through `on_pointer_event` rather
+    /// than a drag recognizer and returns `Ignored` on `PointerDown` (deliberately,
+    /// so its double/triple-tap recognizers keep working), while still *capturing*
+    /// the pointer for those recognizers. That combination is exactly what
+    /// `arm_drag_observers` walks past on its way to arming the draggable ancestor —
+    /// so the writer dragged the card while trying to select a word.
+    ///
+    /// Composed here rather than driven through a real board: the mock
+    /// `OpenDocsStore` gives cards no synopsis field, so a mock corkboard renders
+    /// `Spacer`s where the editors would be and there is nothing to press. This
+    /// builds the **real** `card_synopsis_editor` under a **real** draggable
+    /// ancestor, which is the relationship in question.
+    ///
+    /// Two editors, identical but for the wrapper, so the dead zone is the only
+    /// variable — and the bare one is the sensitivity control: if *it* stopped
+    /// arming, the assertion below would pass for the wrong reason.
+    #[test]
+    fn a_press_in_a_card_synopsis_does_not_arm_an_ancestor_drag() {
+        use bastyde::canvas::Point;
+        use bastyde::core::widget_builder::WidgetBuilder;
+        use bastyde::prelude::PointerButton;
+        use bastyde::text_document::TextDocument;
+
+        fn synopsis() -> impl Widget {
+            let doc = TextDocument::new();
+            doc.set_plain_text("alpha bravo charlie delta echo")
+                .unwrap();
+            let typo = crate::view_models::EditorTypography {
+                font_family: Signal::new(String::new()),
+                size: Signal::new(16.0),
+                line_height: Signal::new(1.5),
+                first_line_indent: Signal::new(0.0),
+                para_spacing_before: Signal::new(0.0),
+                para_spacing_after: Signal::new(0.0),
+            };
+            crate::tabs::shared::editor::card_synopsis_editor(
+                doc,
+                typo,
+                || {},
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+            .0
+        }
+
+        let mut tree = WidgetTree::new();
+        let card = tree.add(
+            bastyde::widgets::VStack::new()
+                // Control: a bare editor, as the card used to build it.
+                .child(
+                    bastyde::widgets::FixedSize::new()
+                        .height(90.0)
+                        .child(synopsis()),
+                )
+                // Under test: what `CardSynopsis::build` composes now.
+                .child(
+                    bastyde::widgets::FixedSize::new()
+                        .height(90.0)
+                        .child(bastyde::widgets::DeadZone::new().child(synopsis())),
+                )
+                .on_drag(|_phase, _ctx| {}),
+        );
+        tree.layout(bastyde::prelude::SizeProposal::exact(400.0, 200.0));
+        let _ = tree.render();
+
+        let bare = tree.child_bounds(card, 0);
+        let guarded = tree.child_bounds(card, 1);
+        assert!(
+            bare.height > 0.0 && guarded.height > 0.0,
+            "the editors laid out to zero size ({bare:?} / {guarded:?}), so the presses \
+             below would be meaningless"
+        );
+
+        let press = |tree: &mut WidgetTree, r: bastyde::canvas::Rect| {
+            let p = Point::new(r.x + r.width / 2.0, r.y + r.height / 2.0);
+            tree.pointer_down_button(p, PointerButton::Primary);
+            let armed: Vec<_> = tree.armed_drag_observers().to_vec();
+            tree.pointer_up_button(p, PointerButton::Primary);
+            armed
+        };
+
+        let armed_bare = press(&mut tree, bare);
+        let armed_guarded = press(&mut tree, guarded);
+
+        assert!(
+            !armed_bare.is_empty(),
+            "control: a press in an unguarded synopsis must arm the card's drag — it \
+             did not, so the assertion below would pass vacuously"
+        );
+        assert!(
+            armed_guarded.is_empty(),
+            "a press inside the dead-zoned synopsis armed {armed_guarded:?} — the writer \
+             cannot select a word without also dragging the card"
+        );
+    }
+
+    /// A realized card still lays out after the dead-zone wrappers went in.
+    ///
+    /// `DeadZone` is documented layout-transparent — it reports its child's size and
+    /// fills the child to its own bounds — but the card wraps four of them (synopsis,
+    /// expand, tag dots, kebab) inside a `CardColumn` whose middle slot is sized by
+    /// arithmetic on the tile height. This is the guard that the arithmetic still
+    /// lands on a real card rather than a collapsed one.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn a_realized_card_lays_out_with_its_dead_zone_wrappers() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        // 301 is the mock Part — the one container whose fixture yields cards.
+        let tab = tab_for(
+            &ctx,
+            301,
+            &Folder,
+            &Part,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        tab.segment.set(3); // Corkboard
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let root = tree.add_boxed(tab_pane(&tab));
+        tree.layout(bastyde::prelude::SizeProposal::exact(1400.0, 900.0));
+        // Tiles are virtualized — nothing exists under the grid until a render pass.
+        let _ = tree.render();
+        tree.layout(bastyde::prelude::SizeProposal::exact(1400.0, 900.0));
+
+        let grid = first_containing(&tree, root, "GridView").expect("the board mounted a grid");
+        let tile = first_containing(&tree, grid, "CorkboardTile")
+            .expect("the mock Part's fixture realizes at least one card");
+        let tb = tree.bounds(tile);
+        assert!(
+            tb.width > 100.0 && tb.height > 100.0,
+            "a realized card collapsed to {tb:?} — a dead-zone wrapper is not being \
+             sized transparently"
+        );
+        // And the kebab inside it, the smallest of the wrapped controls.
+        let menu = first_containing(&tree, tile, "CardMenu").expect("the card carries its kebab");
+        let mb = tree.bounds(menu);
+        assert!(
+            mb.width > 0.0 && mb.height > 0.0,
+            "the card's kebab collapsed to {mb:?} inside its dead zone"
+        );
+    }
+
+    /// A `Folder/Note` has an Overview but **no** Corkboard: it owns a subtree, yet
+    /// no manuscript extent, so there is nothing to lay out as cards.
+    #[test]
+    fn a_note_folder_has_no_corkboard() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Folder,
+            &Note,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        assert!(
+            tab.corkboard().is_none(),
+            "a Folder/Note has a subtree but no manuscript extent — no Corkboard"
+        );
+        assert!(
+            tab.overview().is_some(),
+            "...but it does get an Overview, which is the wider gate"
+        );
+    }
+
+    /// A tab with no Corkboard captures no board state, and seeding one is inert —
+    /// the workspace-restore path must not assume every tab has a board.
+    #[test]
+    fn a_tab_without_a_corkboard_captures_and_seeds_nothing() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            1,
+            &Item,
+            &Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        assert!(tab.capture_corkboard_state().is_none());
+        tab.seed_corkboard_state(&[7, 8], &["a".into(), "b".into()], "q"); // must not panic
+        assert!(tab.capture_corkboard_state().is_none());
+    }
+
+    /// A board sitting at its own container with nothing typed persists nothing —
+    /// so the overwhelmingly common case adds no bytes to `workspace.toml`.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn an_untouched_corkboard_captures_no_state() {
+        use BinderItemRole::*;
+        use BinderItemSubRole::*;
+        let ctx = Rc::new(AppContext::new());
+        let tab = tab_for(
+            &ctx,
+            101,
+            &Folder,
+            &Book,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &AppIds::new(),
+        );
+        assert!(
+            tab.corkboard().is_some(),
+            "precondition: a Book has a Corkboard"
+        );
+        assert!(
+            tab.capture_corkboard_state().is_none(),
+            "an untouched board has nothing worth persisting"
         );
     }
 

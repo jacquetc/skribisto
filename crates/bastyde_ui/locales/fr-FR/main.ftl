@@ -381,6 +381,46 @@ corkboard-search-placeholder = Filtrer les cartes…
 corkboard-empty-title = Rien ici pour l'instant
 corkboard-empty-hint = Utilisez « ＋ Nouveau » ci-dessus pour ajouter le premier élément.
 corkboard-new = Nouveau
+corkboard-show-card-numbers = Numéroter les cartes
+corkboard-modal-size = Taille de l'éditeur agrandi
+corkboard-scope-hint = S'applique à tous les tableaux ouverts, dans tous les projets.
+corkboard-sort-manuscript = Ordre du manuscrit
+corkboard-sort-title-asc = Titre A–Z
+corkboard-sort-title-desc = Titre Z–A
+corkboard-card-number = Carte { $number }
+
+## Actions groupées du tableau (le menu d'une carte agit sur toute la sélection)
+duplicate = Dupliquer
+duplicate-n = { $count ->
+    [one] Dupliquer { $count } carte
+   *[other] Dupliquer { $count } cartes
+}
+set-label-n = { $count ->
+    [one] Définir l'étiquette sur { $count } carte
+   *[other] Définir l'étiquette sur { $count } cartes
+}
+move-to-trash-n = { $count ->
+    [one] Mettre { $count } carte à la corbeille
+   *[other] Mettre { $count } cartes à la corbeille
+}
+reveal-in-outline = Afficher dans le plan
+
+## Sélecteur de destination « Déplacer vers… » du tableau
+corkboard-move-to = Déplacer vers…
+corkboard-move-to-n = { $count ->
+    [one] Déplacer { $count } carte vers…
+   *[other] Déplacer { $count } cartes vers…
+}
+corkboard-move-picker-title = Déplacer vers…
+corkboard-move-picker-empty = Aucun classeur pour l'instant — créez-en un d'abord.
+corkboard-move-picker-cancel = Annuler
+corkboard-move-here = Déplacer ici
+corkboard-moved-ok = { $count ->
+    [one] { $count } carte déplacée
+   *[other] { $count } cartes déplacées
+}
+corkboard-move-into-self = Un conteneur ne peut pas être déplacé dans lui-même. Choisissez une destination en dehors.
+corkboard-move-failed = Ces cartes n'ont pas pu être déplacées là.
 
 ## Overview (the container's contents as a sortable table)
 overview-col-title = Titre

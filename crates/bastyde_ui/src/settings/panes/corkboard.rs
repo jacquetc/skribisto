@@ -80,6 +80,19 @@ pub(in crate::settings) fn corkboard_pane(
         .full_width(
             Toggle::new(vm.corkboard_show_word_count()).label(tr!(corkboard_show_word_count())),
         )
+        .full_width(
+            Toggle::new(vm.corkboard_show_card_numbers()).label(tr!(corkboard_show_card_numbers())),
+        )
+        // The **expanded** editor's own size, beside the card's. The writer opens
+        // "expand synopsis" to draft rather than to scan, so it is the one place on
+        // the board where a comfortable reading size beats fitting a tile — which is
+        // exactly why it cannot share the card's scale.
+        .line(
+            field_label(tr!(corkboard_modal_size())),
+            slider_field(vm.corkboard_modal_size(), 0.7, 2.0, 0.05, |v| {
+                format!("{:.0}%", v * 100.0)
+            }),
+        )
         // The card's own synopsis typography — mirrors the Scene / Synopsis / Notes
         // pages, so cards can read distinctly from the Full-Synopsis pane.
         .full_width(group(tr!(settings_group_typography())))

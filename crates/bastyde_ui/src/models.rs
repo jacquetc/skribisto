@@ -20,8 +20,8 @@ mod backup_settings_file;
 mod binder_binder_items_tree_model;
 mod binder_list_model;
 mod binder_stream;
-mod corkboard_cards_model;
 mod comments_list_model;
+mod corkboard_cards_model;
 mod dict_word_list_model;
 mod dictionary_settings_file;
 mod distraction_free_themes_file;
@@ -32,6 +32,7 @@ mod open_docs;
 mod overview_rows_model;
 mod pace_model;
 mod recent_work_list_model;
+mod repetition_tree_model;
 mod row_search;
 mod search_results_model;
 mod search_settings_file;
@@ -43,7 +44,6 @@ mod tree_expansion_file;
 mod work_note_templates_list_model;
 mod work_tags_list_model;
 mod workspace_layout_file;
-mod repetition_tree_model;
 
 pub use backup_settings_file::{BackupPolicy, BackupSettingsService, RetentionMode, uid_is_usable};
 pub use binder_binder_items_tree_model::{
@@ -51,9 +51,9 @@ pub use binder_binder_items_tree_model::{
 };
 pub use binder_list_model::{BinderListModel, BinderRow};
 pub use binder_stream::{BinderItemRef, ordered_binder_items};
-pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
 #[allow(unused_imports)]
 pub use comments_list_model::{CommentRow, CommentsListModel, ReplyRow};
+pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
 pub use dict_word_list_model::{DictWordListModel, DictWordRow};
 pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, license_hash};
 pub use distraction_free_themes_file::DistractionFreeThemesService;
@@ -65,11 +65,13 @@ pub use installed_dictionaries_model::{
 pub use open_docs::{OpenDoc, OpenDocsStore, SynopsisViewerGuard};
 pub use overview_rows_model::{
     COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_COMMENTS,
-    COL_TOTAL_WORDS, COL_TYPE, OverviewFilters,
-    OverviewRow, OverviewRowsModel,
+    COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow, OverviewRowsModel,
 };
 pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};
 pub use recent_work_list_model::RecentWorkListModel;
+pub use repetition_tree_model::{
+    RepetitionGroup, RepetitionNode, RepetitionTreeKey, RepetitionTreeModel, rows_of,
+};
 pub use search_results_model::SearchResultsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use stats_model::StatsModel;
@@ -83,9 +85,6 @@ pub use work_note_templates_list_model::{
     ImportOutcome, TemplateRow, WorkNoteTemplatesListModel, moved_index, starred_first,
 };
 pub use work_tags_list_model::{TagRow, WorkTagsListModel, name_key, sort_rows};
-pub use repetition_tree_model::{
-    RepetitionGroup, RepetitionNode, RepetitionTreeKey, RepetitionTreeModel, rows_of,
-};
 pub use workspace_layout_file::{
-    PaneLayout, PerProjectLayout, TabViewState, WorkspaceLayoutService,
+    CorkboardTabState, PaneLayout, PerProjectLayout, TabViewState, WorkspaceLayoutService,
 };

@@ -60,6 +60,7 @@ impl Widget for CorkboardGrid {
             let app_ctx = self.vm.app_ctx();
             let method = self.vm.counting_method();
             let show_wc = self.vm.show_word_count();
+            let show_numbers = self.vm.show_card_numbers();
             let selection = self.vm.selection();
             move |tc: &TileContext<'_, CorkboardCard>| -> Box<dyn Widget> {
                 Box::new(CorkboardTile {
@@ -70,6 +71,7 @@ impl Widget for CorkboardGrid {
                     app_ctx: app_ctx.clone(),
                     method: method.clone(),
                     show_wc: show_wc.clone(),
+                    show_numbers: show_numbers.clone(),
                     root: None,
                 })
             }
@@ -86,6 +88,7 @@ impl Widget for CorkboardGrid {
         let act = read_card.clone();
         let act_vm = self.vm.clone();
         let type_ahead = read_card.clone();
+        let a11y_numbers = self.vm.show_card_numbers();
         let f2_vm = self.vm.clone();
 
         let grid = grid
@@ -103,17 +106,39 @@ impl Widget for CorkboardGrid {
                 }
             })
             .type_ahead_label(move |i| type_ahead(i).map(|c| c.title).unwrap_or_default())
-            .tile_a11y_label(move |i| read_card(i).map(|c| card_a11y_name(&c)).unwrap_or_default())
+            .tile_a11y_label(move |i| {
+                let numbered = a11y_numbers.get().then_some(i + 1);
+                read_card(i)
+                    .map(|c| card_a11y_name(&c, numbered))
+                    .unwrap_or_default()
+            })
             .a11y_label(tr!(corkboard_grid_label()))
             .empty_view(move || Box::new(corkboard_empty(&empty_vm)));
 
-        // F2 renames the selected card in place (the grid holds focus while the
-        // writer is on the board; GridView doesn't use F2 itself). Attached last —
-        // it's a `WidgetBuilder` hook, so no GridView-specific call follows it.
-        let grid = grid.on_key(move |ev, _ctx| {
-            if let WidgetEvent::KeyDown { key: Key::F2, .. } = ev {
-                f2_vm.rename_selected();
-                return EventResponse::Handled;
+        // F2 renames the selected card in place; Delete/Backspace trashes the whole
+        // selection. Neither is used by `GridView` itself — its own key handler
+        // (arrows / Home / End / PageUp-Down / Enter / Space / Ctrl+A / Alt+Arrow /
+        // type-ahead) ends in an `Ignored` default arm, and the dispatcher fires the
+        // builder hook *and* the widget's own handler on every key, OR-ing their
+        // responses. So this neither shadows navigation nor is shadowed by it.
+        //
+        // Attached last — it's a `WidgetBuilder` hook, so no GridView-specific call
+        // follows it.
+        let grid = grid.on_key(move |ev, ctx| {
+            if let WidgetEvent::KeyDown { key, .. } = ev {
+                match key {
+                    Key::F2 => {
+                        f2_vm.rename_selected();
+                        return EventResponse::Handled;
+                    }
+                    // Backspace as well as Delete: the writer's muscle memory comes
+                    // from the file manager, and both mean "get rid of this" there.
+                    Key::Delete | Key::Backspace => {
+                        f2_vm.trash_selected(ctx);
+                        return EventResponse::Handled;
+                    }
+                    _ => {}
+                }
             }
             EventResponse::Ignored
         });
