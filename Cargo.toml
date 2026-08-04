@@ -131,8 +131,16 @@ let_unit_value = "allow"
 # workspace-wide switch turns ~250 test-only lines into hard CI failures while
 # saying nothing about shipping code.
 #
-# Enabling it crate-by-crate keeps the guarantee real and green: the ten crates
-# that carry it today are at zero, so any *new* panic path in them fails CI. Add
-# the preamble to another crate as it comes clean; `direct_access` went from 316
+# Enabling it crate-by-crate keeps the guarantee real and green: the crates that
+# carry it today are at zero, so any *new* panic path in them fails CI. Add the
+# preamble to another crate as it comes clean; `direct_access` went from 316
 # sites to zero, so this list is expected to grow, not stay put.
+#
+# It only goes in a `lib.rs` that survives regeneration — a hand-written crate
+# (`binder_ordering`, `skribisto_model`, `skribisto_compiler`, `skribisto-fonts`),
+# one already hand-maintained for other reasons (`search_management`), or a
+# generated one whose *template* carries it (`direct_access`, `macros`, patched in
+# the sibling qleany repo). Putting it in an otherwise pure-generated `lib.rs`
+# looks identical and works right up until the next `qleany generate` silently
+# deletes it — a ratchet that quietly unlatches is worse than no ratchet.
 
