@@ -182,27 +182,60 @@ pub fn existing_reports(dir: &Path) -> Vec<PathBuf> {
 mod tests {
     use super::*;
 
+    /// `std::panic::set_hook` is **process-global** while `cargo test` runs test
+    /// functions on parallel threads, so a hook installed to observe *this*
+    /// test's panic also fires for every other test panicking at the same
+    /// moment — including the deliberate `debug_assert!` panics elsewhere in
+    /// this binary. Two defences, both needed:
+    ///
+    /// 1. This mutex serialises the tests that swap the hook, so they cannot
+    ///    clobber each other's `take_hook`/`set_hook` pairing.
+    /// 2. `capture_panic` below filters on the panicking thread's *name*, so an
+    ///    unrelated concurrent panic on another thread is passed through to the
+    ///    previous hook instead of being mistaken for ours.
+    static HOOK_GUARD: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    /// Run `body` on a uniquely-named thread with a hook installed that records
+    /// [`render`]'s output for panics originating on *that* thread only.
+    fn capture_panic(thread_name: &str, body: fn()) -> String {
+        let _serialised = HOOK_GUARD.lock().unwrap_or_else(|e| e.into_inner());
+
+        let captured = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
+        let sink = std::sync::Arc::clone(&captured);
+        let wanted = thread_name.to_string();
+
+        let previous = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |info| {
+            let current = std::thread::current();
+            if current.name() == Some(wanted.as_str()) {
+                *sink.lock().unwrap_or_else(|e| e.into_inner()) = render(info);
+            } else {
+                previous(info);
+            }
+        }));
+
+        let outcome = std::thread::Builder::new()
+            .name(thread_name.to_string())
+            .spawn(move || {
+                let _ = std::panic::catch_unwind(body);
+            })
+            .expect("spawning the capture thread")
+            .join();
+
+        // Restore libstd's hook rather than the captured `previous` — the
+        // closure above owns that one, and it cannot be moved back out.
+        let _ = std::panic::take_hook();
+        outcome.expect("the capture thread must not fail to join");
+
+        let text = captured.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        text
+    }
+
     /// The report must name the thread, the location and the message — the three
     /// things a bug report is useless without.
     #[test]
     fn a_report_records_thread_location_and_message() {
-        let report = std::thread::Builder::new()
-            .name("audited-thread".to_string())
-            .spawn(|| {
-                let captured = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
-                let sink = std::sync::Arc::clone(&captured);
-                let previous = std::panic::take_hook();
-                std::panic::set_hook(Box::new(move |info| {
-                    *sink.lock().unwrap_or_else(|e| e.into_inner()) = render(info);
-                }));
-                let _ = std::panic::catch_unwind(|| panic!("a deliberate test panic"));
-                std::panic::set_hook(previous);
-                let text = captured.lock().unwrap_or_else(|e| e.into_inner()).clone();
-                text
-            })
-            .expect("spawning the test thread")
-            .join()
-            .expect("the test thread itself must not fail");
+        let report = capture_panic("audited-thread", || panic!("a deliberate test panic"));
 
         assert!(
             report.contains("audited-thread"),
@@ -226,17 +259,10 @@ mod tests {
     /// too — the `&str` downcast alone silently loses every formatted message.
     #[test]
     fn an_interpolated_panic_message_survives() {
-        let captured = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
-        let sink = std::sync::Arc::clone(&captured);
-        let previous = std::panic::take_hook();
-        std::panic::set_hook(Box::new(move |info| {
-            *sink.lock().unwrap_or_else(|e| e.into_inner()) = render(info);
-        }));
-        let detail = "interpolated detail";
-        let _ = std::panic::catch_unwind(|| panic!("boom: {detail}"));
-        std::panic::set_hook(previous);
-
-        let report = captured.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let report = capture_panic("interpolated-payload-thread", || {
+            let detail = "interpolated detail";
+            panic!("boom: {detail}")
+        });
         assert!(
             report.contains("boom: interpolated detail"),
             "a String payload must be recovered, not reported as non-string: {report}"

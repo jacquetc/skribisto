@@ -7,6 +7,12 @@ use std::fmt::Display;
 
 use crate::{
     database::hashmap_store::HashMapStoreSnapshot,
+    // `*_or_recover` rather than a plain `.read()/.write().unwrap()`: a panic
+    // anywhere under a table's guard poisons that lock for the rest of the
+    // process, and the release profile unwinds, so the poison is reachable in a
+    // shipped build. Recovering (and clearing) it keeps one unrelated failure
+    // from escalating into a second panic on every later access to the store.
+    database::hashmap_store::{read_or_recover, write_or_recover},
     database::transactions::Transaction,
     direct_access::repository_factory,
     entities::Content,
@@ -398,7 +404,7 @@ impl<'a> ContentRepository<'a> {
         let mut to_update: Vec<EntityId> = Vec::new(); // in both                    -> revert
         let mut to_delete: Vec<EntityId> = Vec::new(); // live only (created after)  -> delete
         {
-            let live = store.contents.read().unwrap();
+            let live = read_or_recover(&store.contents);
             for id in &ids {
                 match (snap.contents.contains_key(id), live.contains_key(id)) {
                     (true, false) => to_create.push(*id),
@@ -414,7 +420,7 @@ impl<'a> ContentRepository<'a> {
 
         // 2. Entity rows: revert/re-add from snapshot, delete the ones created after it.
         {
-            let mut live = store.contents.write().unwrap();
+            let mut live = write_or_recover(&store.contents);
             for id in to_create.iter().chain(to_update.iter()) {
                 if let Some(row) = snap.contents.get(id) {
                     live.insert(*id, row.clone());
@@ -479,7 +485,7 @@ impl<'a> ContentRepository<'a> {
             }
         }
         {
-            let live_jn = store.jn_content_from_comment_content.read().unwrap();
+            let live_jn = read_or_recover(&store.jn_content_from_comment_content);
             for (left, rights) in live_jn.iter() {
                 if rights.iter().any(|rid| scope.contains(rid)) {
                     left_keys.insert(*left);
@@ -494,7 +500,7 @@ impl<'a> ContentRepository<'a> {
                 .cloned()
                 .unwrap_or_default();
             let new_list = {
-                let live_jn = store.jn_content_from_comment_content.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_content_from_comment_content);
                 let live_list: Vec<EntityId> = live_jn.get(&left).cloned().unwrap_or_default();
                 let reconciled = crate::database::hashmap_store::reconcile_backref_list(
                     &live_list, &snap_list, &scope,
@@ -506,11 +512,7 @@ impl<'a> ContentRepository<'a> {
                 }
             };
             if let Some(reconciled) = new_list {
-                store
-                    .jn_content_from_comment_content
-                    .write()
-                    .unwrap()
-                    .insert(left, reconciled);
+                write_or_recover(&store.jn_content_from_comment_content).insert(left, reconciled);
                 event_buffer.push(Event {
                     origin: Origin::DirectAccess(DirectAccessEntity::Comment(EntityEvent::Updated)),
                     ids: vec![left],
@@ -543,7 +545,7 @@ impl<'a> ContentRepository<'a> {
             }
         }
         {
-            let live_jn = store.jn_content_from_binder_item_contents.read().unwrap();
+            let live_jn = read_or_recover(&store.jn_content_from_binder_item_contents);
             for (left, rights) in live_jn.iter() {
                 if rights.iter().any(|rid| scope.contains(rid)) {
                     left_keys.insert(*left);
@@ -558,7 +560,7 @@ impl<'a> ContentRepository<'a> {
                 .cloned()
                 .unwrap_or_default();
             let new_list = {
-                let live_jn = store.jn_content_from_binder_item_contents.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_content_from_binder_item_contents);
                 let live_list: Vec<EntityId> = live_jn.get(&left).cloned().unwrap_or_default();
                 let reconciled = crate::database::hashmap_store::reconcile_backref_list(
                     &live_list, &snap_list, &scope,
@@ -570,10 +572,7 @@ impl<'a> ContentRepository<'a> {
                 }
             };
             if let Some(reconciled) = new_list {
-                store
-                    .jn_content_from_binder_item_contents
-                    .write()
-                    .unwrap()
+                write_or_recover(&store.jn_content_from_binder_item_contents)
                     .insert(left, reconciled);
                 event_buffer.push(Event {
                     origin: Origin::DirectAccess(DirectAccessEntity::BinderItem(

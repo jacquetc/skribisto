@@ -20,7 +20,7 @@ pub fn create_orphan_smart_punctuation(
     stack_id: Option<u64>,
     dto: &CreateSmartPunctuationDto,
 ) -> Result<SmartPunctuationDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::create_orphan(
         &ctx.db_context,
         &ctx.event_hub,
@@ -38,7 +38,7 @@ pub fn create_smart_punctuation(
     owner_id: EntityId,
     index: i32,
 ) -> Result<SmartPunctuationDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::create(
         &ctx.db_context,
         &ctx.event_hub,
@@ -56,7 +56,7 @@ pub fn create_orphan_smart_punctuation_multi(
     stack_id: Option<u64>,
     dtos: &[CreateSmartPunctuationDto],
 ) -> Result<Vec<SmartPunctuationDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::create_orphan_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -74,7 +74,7 @@ pub fn create_smart_punctuation_multi(
     owner_id: EntityId,
     index: i32,
 ) -> Result<Vec<SmartPunctuationDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::create_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -104,9 +104,9 @@ pub fn get_smart_punctuation_multi(
 }
 
 /// Get all smart_punctuation entities.
-/// Note: iteration order is unspecified (`HashMap`-backed) — not insertion order
-/// or `EntityId` order. For ordered collections, use relationship-based retrieval
-/// (e.g. get_*_relationship for ordered_one_to_many fields).
+/// Note: returns entities in database key order (by EntityId), not insertion order
+/// or any user-defined sort. For ordered collections, use relationship-based
+/// retrieval (e.g. get_*_relationship for ordered_one_to_many fields).
 pub fn get_all_smart_punctuation(ctx: &AppContext) -> Result<Vec<SmartPunctuationDto>> {
     smart_punctuation_controller::get_all(&ctx.db_context)
         .context("getting all smart_punctuation entities")
@@ -118,7 +118,7 @@ pub fn update_smart_punctuation(
     stack_id: Option<u64>,
     dto: &UpdateSmartPunctuationDto,
 ) -> Result<SmartPunctuationDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::update(
         &ctx.db_context,
         &ctx.event_hub,
@@ -135,7 +135,7 @@ pub fn update_smart_punctuation_multi(
     stack_id: Option<u64>,
     dtos: &[UpdateSmartPunctuationDto],
 ) -> Result<Vec<SmartPunctuationDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::update_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -152,7 +152,7 @@ pub fn update_smart_punctuation_with_relationships(
     stack_id: Option<u64>,
     dto: &SmartPunctuationDto,
 ) -> Result<SmartPunctuationDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::update_with_relationships(
         &ctx.db_context,
         &ctx.event_hub,
@@ -169,7 +169,7 @@ pub fn update_smart_punctuation_with_relationships_multi(
     stack_id: Option<u64>,
     dtos: &[SmartPunctuationDto],
 ) -> Result<Vec<SmartPunctuationDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::update_with_relationships_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -186,7 +186,7 @@ pub fn remove_smart_punctuation(
     stack_id: Option<u64>,
     id: &EntityId,
 ) -> Result<()> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::remove(
         &ctx.db_context,
         &ctx.event_hub,
@@ -203,7 +203,7 @@ pub fn remove_smart_punctuation_multi(
     stack_id: Option<u64>,
     ids: &[EntityId],
 ) -> Result<()> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     smart_punctuation_controller::remove_multi(
         &ctx.db_context,
         &ctx.event_hub,

@@ -6,9 +6,9 @@
 // ═══════════════════════════════════════════════════════════════════════
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
-
 use crate::database::hashmap_store::{
     HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
+    read_or_recover, write_or_recover,
 };
 use crate::entities::Search;
 use crate::error::RepositoryError;
@@ -47,12 +47,22 @@ impl<'a> SearchHashMapTable<'a> {
 impl<'a> SearchTable for SearchHashMapTable<'a> {
     fn create(&mut self, entity: &Search) -> Result<Search, RepositoryError> {
         self.create_multi(std::slice::from_ref(entity))
-            .map(|v| v.into_iter().next().unwrap())
+            .and_then(|v| {
+                // `create_multi` is contracted to return one row per input, so this
+                // is unreachable — but it used to be `.unwrap()`, and a store that
+                // ever broke that contract would take the whole process down rather
+                // than fail the one call that noticed.
+                v.into_iter().next().ok_or_else(|| {
+                    RepositoryError::Other(anyhow::anyhow!(
+                        "create: the store returned no row for the entity it was given"
+                    ))
+                })
+            })
     }
 
     fn create_multi(&mut self, entities: &[Search]) -> Result<Vec<Search>, RepositoryError> {
         let mut created = Vec::with_capacity(entities.len());
-        let mut search_map = self.store.searchs.write().unwrap();
+        let mut search_map = write_or_recover(&self.store.searchs);
 
         for entity in entities {
             let new_entity = if entity.id == EntityId::default() {
@@ -85,7 +95,7 @@ impl<'a> SearchTable for SearchHashMapTable<'a> {
     }
 
     fn get(&self, id: &EntityId) -> Result<Option<Search>, RepositoryError> {
-        let search_map = self.store.searchs.read().unwrap();
+        let search_map = read_or_recover(&self.store.searchs);
         match search_map.get(id) {
             Some(entity) => {
                 let mut e = entity.clone();
@@ -106,7 +116,7 @@ impl<'a> SearchTable for SearchHashMapTable<'a> {
     }
 
     fn get_all(&self) -> Result<Vec<Search>, RepositoryError> {
-        let search_map = self.store.searchs.read().unwrap();
+        let search_map = read_or_recover(&self.store.searchs);
         let entries: Vec<Search> = search_map.values().cloned().collect();
         drop(search_map);
         let mut result = Vec::with_capacity(entries.len());
@@ -119,12 +129,22 @@ impl<'a> SearchTable for SearchHashMapTable<'a> {
 
     fn update(&mut self, entity: &Search) -> Result<Search, RepositoryError> {
         self.update_multi(std::slice::from_ref(entity))
-            .map(|v| v.into_iter().next().unwrap())
+            .and_then(|v| {
+                // `update_multi` is contracted to return one row per input, so this
+                // is unreachable — but it used to be `.unwrap()`, and a store that
+                // ever broke that contract would take the whole process down rather
+                // than fail the one call that noticed.
+                v.into_iter().next().ok_or_else(|| {
+                    RepositoryError::Other(anyhow::anyhow!(
+                        "update: the store returned no row for the entity it was given"
+                    ))
+                })
+            })
     }
 
     // Scalar-only update: writes entity data but does NOT touch junction tables.
     fn update_multi(&mut self, entities: &[Search]) -> Result<Vec<Search>, RepositoryError> {
-        let mut search_map = self.store.searchs.write().unwrap();
+        let mut search_map = write_or_recover(&self.store.searchs);
         for entity in entities {
             search_map.insert(entity.id, entity.clone());
         }
@@ -136,14 +156,24 @@ impl<'a> SearchTable for SearchHashMapTable<'a> {
 
     fn update_with_relationships(&mut self, entity: &Search) -> Result<Search, RepositoryError> {
         self.update_with_relationships_multi(std::slice::from_ref(entity))
-            .map(|v| v.into_iter().next().unwrap())
+            .and_then(|v| {
+                // `update_with_relationships_multi` is contracted to return one row per input, so this
+                // is unreachable — but it used to be `.unwrap()`, and a store that
+                // ever broke that contract would take the whole process down rather
+                // than fail the one call that noticed.
+                v.into_iter().next().ok_or_else(|| {
+                    RepositoryError::Other(anyhow::anyhow!(
+                        "update_with_relationships: the store returned no row for the entity it was given"
+                    ))
+                })
+            })
     }
 
     fn update_with_relationships_multi(
         &mut self,
         entities: &[Search],
     ) -> Result<Vec<Search>, RepositoryError> {
-        let mut search_map = self.store.searchs.write().unwrap();
+        let mut search_map = write_or_recover(&self.store.searchs);
         for entity in entities {
             search_map.insert(entity.id, entity.clone());
 
@@ -164,7 +194,7 @@ impl<'a> SearchTable for SearchHashMapTable<'a> {
     }
 
     fn remove_multi(&mut self, ids: &[EntityId]) -> Result<(), RepositoryError> {
-        let mut search_map = self.store.searchs.write().unwrap();
+        let mut search_map = write_or_recover(&self.store.searchs);
         for id in ids {
             search_map.remove(id);
 
@@ -207,7 +237,7 @@ impl<'a> SearchHashMapTableRO<'a> {
 
 impl<'a> SearchTableRO for SearchHashMapTableRO<'a> {
     fn get(&self, id: &EntityId) -> Result<Option<Search>, RepositoryError> {
-        let search_map = self.store.searchs.read().unwrap();
+        let search_map = read_or_recover(&self.store.searchs);
         match search_map.get(id) {
             Some(entity) => {
                 let mut e = entity.clone();
@@ -228,7 +258,7 @@ impl<'a> SearchTableRO for SearchHashMapTableRO<'a> {
     }
 
     fn get_all(&self) -> Result<Vec<Search>, RepositoryError> {
-        let search_map = self.store.searchs.read().unwrap();
+        let search_map = read_or_recover(&self.store.searchs);
         let entries: Vec<Search> = search_map.values().cloned().collect();
         drop(search_map);
         let mut result = Vec::with_capacity(entries.len());

@@ -7,6 +7,12 @@ use std::fmt::Display;
 
 use crate::{
     database::hashmap_store::HashMapStoreSnapshot,
+    // `*_or_recover` rather than a plain `.read()/.write().unwrap()`: a panic
+    // anywhere under a table's guard poisons that lock for the rest of the
+    // process, and the release profile unwinds, so the poison is reachable in a
+    // shipped build. Recovering (and clearing) it keeps one unrelated failure
+    // from escalating into a second panic on every later access to the store.
+    database::hashmap_store::{read_or_recover, write_or_recover},
     database::transactions::Transaction,
     direct_access::repository_factory,
     entities::SmartPunctuation,
@@ -430,7 +436,7 @@ impl<'a> SmartPunctuationRepository<'a> {
         let mut to_update: Vec<EntityId> = Vec::new(); // in both                    -> revert
         let mut to_delete: Vec<EntityId> = Vec::new(); // live only (created after)  -> delete
         {
-            let live = store.smart_punctuations.read().unwrap();
+            let live = read_or_recover(&store.smart_punctuations);
             for id in &ids {
                 match (
                     snap.smart_punctuations.contains_key(id),
@@ -449,7 +455,7 @@ impl<'a> SmartPunctuationRepository<'a> {
 
         // 2. Entity rows: revert/re-add from snapshot, delete the ones created after it.
         {
-            let mut live = store.smart_punctuations.write().unwrap();
+            let mut live = write_or_recover(&store.smart_punctuations);
             for id in to_create.iter().chain(to_update.iter()) {
                 if let Some(row) = snap.smart_punctuations.get(id) {
                     live.insert(*id, row.clone());
@@ -519,10 +525,7 @@ impl<'a> SmartPunctuationRepository<'a> {
             }
         }
         {
-            let live_jn = store
-                .jn_smart_punctuation_from_work_smart_punctuation
-                .read()
-                .unwrap();
+            let live_jn = read_or_recover(&store.jn_smart_punctuation_from_work_smart_punctuation);
             for (left, rights) in live_jn.iter() {
                 if rights.iter().any(|rid| scope.contains(rid)) {
                     left_keys.insert(*left);
@@ -537,10 +540,8 @@ impl<'a> SmartPunctuationRepository<'a> {
                 .cloned()
                 .unwrap_or_default();
             let new_list = {
-                let live_jn = store
-                    .jn_smart_punctuation_from_work_smart_punctuation
-                    .read()
-                    .unwrap();
+                let live_jn =
+                    read_or_recover(&store.jn_smart_punctuation_from_work_smart_punctuation);
                 let live_list: Vec<EntityId> = live_jn.get(&left).cloned().unwrap_or_default();
                 let reconciled = crate::database::hashmap_store::reconcile_backref_list(
                     &live_list, &snap_list, &scope,
@@ -552,10 +553,7 @@ impl<'a> SmartPunctuationRepository<'a> {
                 }
             };
             if let Some(reconciled) = new_list {
-                store
-                    .jn_smart_punctuation_from_work_smart_punctuation
-                    .write()
-                    .unwrap()
+                write_or_recover(&store.jn_smart_punctuation_from_work_smart_punctuation)
                     .insert(left, reconciled);
                 event_buffer.push(Event {
                     origin: Origin::DirectAccess(DirectAccessEntity::Work(EntityEvent::Updated)),

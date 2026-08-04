@@ -1117,7 +1117,16 @@ impl OpenDocsStore {
             .borrow()
             .get(&item_id)
             .map(|e| e.doc.clone())?;
-        let _ = old.flush(stack);
+        // A failed flush here is worse silently ignored than logged: the fresh doc
+        // built below re-reads from the persisted `Content` rows, so whatever
+        // didn't make it out of `old` is gone the moment this function returns —
+        // there is no later retry. We still proceed with the rebuild regardless:
+        // `old` is typed for the *previous* (role, sub_role), and a Promote already
+        // committed the new one at the backend, so keeping the stale-typed doc
+        // around is the worse of the two outcomes documented above.
+        if let Err(e) = old.flush(stack) {
+            eprintln!("open docs: rebuild flush failed for item {item_id}: {e}");
+        }
 
         self.inner.item_probe.set_id(Some(item_id));
         let item = self.inner.item_probe.dto()?;
@@ -1153,7 +1162,14 @@ impl OpenDocsStore {
             }
         };
         if let Some(doc) = evicted {
-            let _ = doc.flush(stack);
+            // The entry is already gone from `open` by this point (`map.remove`
+            // above), so a failed flush here is a genuine, unrecoverable loss of
+            // whatever was still unsaved — there is no live entry left to retry
+            // against. Logging at least turns a silent loss into a diagnosable
+            // one; see `flush_all`'s own note for the same trade-off at shutdown.
+            if let Err(e) = doc.flush(stack) {
+                eprintln!("open docs: release flush failed for item {item_id}: {e}");
+            }
         }
     }
 
@@ -1167,7 +1183,11 @@ impl OpenDocsStore {
             .map(|e| e.doc.clone())
             .collect();
         for doc in docs {
-            let _ = doc.flush(stack);
+            // Keep flushing the rest even if one document fails — one bad write
+            // must not stop every other open document from being saved too.
+            if let Err(e) = doc.flush(stack) {
+                eprintln!("open docs: flush_all failed for item {}: {e}", doc.item_id);
+            }
         }
     }
 
@@ -1343,6 +1363,81 @@ mod tests {
         // Releasing an unknown / already-evicted id is a no-op.
         store.release(1, None);
         assert_eq!(store.refs_for_test(1), None);
+    }
+
+    /// `flush_all` must visit **every** open doc, not stop at the first awkward
+    /// one — the property the discarded `let _ = doc.flush(stack)` made
+    /// unobservable, since a failure there produced no error, no log and no
+    /// visible difference.
+    ///
+    /// It deliberately does **not** try to force a flush failure. The only seam
+    /// a unit test can reach is `SingleContent::save`, which short-circuits on
+    /// its own `dirty` flag before it ever calls `update_content`, so seeding a
+    /// `Content` row with an id that was never created does not actually fail —
+    /// asserting against such a doc would be asserting on a stand-in that
+    /// silently succeeds. The real "a failed flush never marks a document
+    /// clean" guarantee is structural and lives in
+    /// [`ProseField::flush`](crate::tabs::ProseField): `set_modified(false)`
+    /// sits *after* `content.save(stack)?`, so an `Err` returns before it.
+    #[test]
+    fn flush_all_visits_every_open_doc() {
+        let ctx = Rc::new(AppContext::new());
+        let store = OpenDocsStore::new(ctx.clone());
+
+        // Seed the doc with an "existing" `Content` row whose id was never
+        // actually created in the store. `flush` then routes its edit through
+        // `update_content` on a missing id, which Qleany's generated
+        // `UndoableUpdateUseCase` rejects outright ("Entity with id … does not
+        // exist") — a small, deterministic stand-in for the real-world case this
+        // whole audit is about: the row this tab was editing is gone by the time
+        // the write reaches the store (trashed and purged, in the real app).
+        let stale_row = ContentDto {
+            id: 999_999,
+            role: ContentRole::SceneText,
+            ..Default::default()
+        };
+        let doomed = Rc::new(OpenDoc::build(
+            &ctx,
+            2, // distinct from the healthy doc's item id below
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[stale_row],
+            store.edited_any(),
+        ));
+        let doomed_main = doomed
+            .main
+            .as_ref()
+            .expect("a Scene owns a main text document");
+        doomed_main
+            .doc
+            .set_djot("doomed edit")
+            .and_then(|op| op.wait())
+            .expect("staging the edit itself must succeed");
+        store.insert_for_test(doomed.clone());
+
+        // A second, healthy doc for a real item — flush_all must still reach it.
+        let healthy = Rc::new(OpenDoc::build(
+            &ctx,
+            1,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            store.edited_any(),
+        ));
+        healthy.dirty.set(true); // pretend an editor touched it
+        store.insert_for_test(healthy.clone());
+
+        // Must not panic, and must not bail out at the first doc.
+        store.flush_all(None);
+
+        assert!(
+            !doomed_main.doc.is_modified(),
+            "the first doc must have been flushed, not skipped"
+        );
+        assert!(
+            !healthy.dirty.get(),
+            "flush_all must still reach the doc after the first one"
+        );
     }
 
     /// Changing the project's default language must reach an item that has no

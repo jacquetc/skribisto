@@ -141,22 +141,12 @@ impl TreeExpansionService {
     /// file, so the app still runs (the chevrons just won't survive a restart). Mirrors
     /// [`WorkspaceLayoutService::in_memory_default`](super::WorkspaceLayoutService) —
     /// which is also why every call site can register this unconditionally rather than
-    /// carrying an `Option` around.
+    /// carrying an `Option` around. Shares its retry/uniqueness logic with every sibling
+    /// via [`in_memory_settings_file`](super::backup_settings_file::in_memory_settings_file).
     pub fn in_memory_default() -> Self {
-        let path = std::env::temp_dir().join(format!(
-            "skribisto-tree-expansion-{}.toml",
-            std::process::id()
-        ));
-        SettingsFile::load(path, Migrator::new())
-            .map(|file| Self { file })
-            .unwrap_or_else(|_| {
-                let file = SettingsFile::load(
-                    std::path::PathBuf::from(".skribisto-tree-expansion.toml"),
-                    Migrator::new(),
-                )
-                .expect("in-memory tree expansion fallback");
-                Self { file }
-            })
+        let file =
+            super::backup_settings_file::in_memory_settings_file("tree-expansion", Migrator::new());
+        Self { file }
     }
 
     /// The remembered expand set for one container, or empty when there is none.

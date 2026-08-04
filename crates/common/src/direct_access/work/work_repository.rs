@@ -7,6 +7,12 @@ use std::fmt::Display;
 
 use crate::{
     database::hashmap_store::HashMapStoreSnapshot,
+    // `*_or_recover` rather than a plain `.read()/.write().unwrap()`: a panic
+    // anywhere under a table's guard poisons that lock for the rest of the
+    // process, and the release profile unwinds, so the poison is reachable in a
+    // shipped build. Recovering (and clearing) it keeps one unrelated failure
+    // from escalating into a second panic on every later access to the store.
+    database::hashmap_store::{read_or_recover, write_or_recover},
     database::transactions::Transaction,
     direct_access::repository_factory,
     entities::Work,
@@ -1038,7 +1044,7 @@ impl<'a> WorkRepository<'a> {
         let mut to_update: Vec<EntityId> = Vec::new(); // in both                    -> revert
         let mut to_delete: Vec<EntityId> = Vec::new(); // live only (created after)  -> delete
         {
-            let live = store.works.read().unwrap();
+            let live = read_or_recover(&store.works);
             for id in &ids {
                 match (snap.works.contains_key(id), live.contains_key(id)) {
                     (true, false) => to_create.push(*id),
@@ -1059,7 +1065,7 @@ impl<'a> WorkRepository<'a> {
                 }
             }
             {
-                let live_jn = store.jn_binder_from_work_binders.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_binder_from_work_binders);
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -1081,7 +1087,7 @@ impl<'a> WorkRepository<'a> {
                 }
             }
             {
-                let live_jn = store.jn_binder_tag_from_work_tags.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_binder_tag_from_work_tags);
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -1103,7 +1109,7 @@ impl<'a> WorkRepository<'a> {
                 }
             }
             {
-                let live_jn = store.jn_dict_word_from_work_dict_words.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_dict_word_from_work_dict_words);
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -1128,10 +1134,9 @@ impl<'a> WorkRepository<'a> {
                 }
             }
             {
-                let live_jn = store
-                    .jn_text_replacement_rule_from_work_text_replacement_rules
-                    .read()
-                    .unwrap();
+                let live_jn = read_or_recover(
+                    &store.jn_text_replacement_rule_from_work_text_replacement_rules,
+                );
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -1155,10 +1160,7 @@ impl<'a> WorkRepository<'a> {
                 }
             }
             {
-                let live_jn = store
-                    .jn_note_template_from_work_note_templates
-                    .read()
-                    .unwrap();
+                let live_jn = read_or_recover(&store.jn_note_template_from_work_note_templates);
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -1183,10 +1185,8 @@ impl<'a> WorkRepository<'a> {
                 }
             }
             {
-                let live_jn = store
-                    .jn_smart_punctuation_from_work_smart_punctuation
-                    .read()
-                    .unwrap();
+                let live_jn =
+                    read_or_recover(&store.jn_smart_punctuation_from_work_smart_punctuation);
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -1208,7 +1208,7 @@ impl<'a> WorkRepository<'a> {
                 }
             }
             {
-                let live_jn = store.jn_trash_info_from_work_trash_infos.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_trash_info_from_work_trash_infos);
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -1230,7 +1230,7 @@ impl<'a> WorkRepository<'a> {
                 }
             }
             {
-                let live_jn = store.jn_pace_from_work_paces.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_pace_from_work_paces);
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -1252,7 +1252,7 @@ impl<'a> WorkRepository<'a> {
                 }
             }
             {
-                let live_jn = store.jn_comment_from_work_comments.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_comment_from_work_comments);
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -1269,7 +1269,7 @@ impl<'a> WorkRepository<'a> {
 
         // 2. Entity rows: revert/re-add from snapshot, delete the ones created after it.
         {
-            let mut live = store.works.write().unwrap();
+            let mut live = write_or_recover(&store.works);
             for id in to_create.iter().chain(to_update.iter()) {
                 if let Some(row) = snap.works.get(id) {
                     live.insert(*id, row.clone());
@@ -1283,7 +1283,7 @@ impl<'a> WorkRepository<'a> {
         // 3. This entity's own forward junctions (strong + weak): restored wholesale because the
         //    junction key is in-scope (owned exclusively by this trunk).
         {
-            let mut live_jn = store.jn_binder_from_work_binders.write().unwrap();
+            let mut live_jn = write_or_recover(&store.jn_binder_from_work_binders);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_binder_from_work_binders.get(id) {
                     Some(v) => {
@@ -1299,7 +1299,7 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let mut live_jn = store.jn_comment_from_work_comments.write().unwrap();
+            let mut live_jn = write_or_recover(&store.jn_comment_from_work_comments);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_comment_from_work_comments.get(id) {
                     Some(v) => {
@@ -1315,7 +1315,7 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let mut live_jn = store.jn_dict_word_from_work_dict_words.write().unwrap();
+            let mut live_jn = write_or_recover(&store.jn_dict_word_from_work_dict_words);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_dict_word_from_work_dict_words.get(id) {
                     Some(v) => {
@@ -1331,10 +1331,7 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let mut live_jn = store
-                .jn_note_template_from_work_note_templates
-                .write()
-                .unwrap();
+            let mut live_jn = write_or_recover(&store.jn_note_template_from_work_note_templates);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_note_template_from_work_note_templates.get(id) {
                     Some(v) => {
@@ -1350,7 +1347,7 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let mut live_jn = store.jn_pace_from_work_paces.write().unwrap();
+            let mut live_jn = write_or_recover(&store.jn_pace_from_work_paces);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_pace_from_work_paces.get(id) {
                     Some(v) => {
@@ -1366,10 +1363,8 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let mut live_jn = store
-                .jn_smart_punctuation_from_work_smart_punctuation
-                .write()
-                .unwrap();
+            let mut live_jn =
+                write_or_recover(&store.jn_smart_punctuation_from_work_smart_punctuation);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap
                     .jn_smart_punctuation_from_work_smart_punctuation
@@ -1388,7 +1383,7 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let mut live_jn = store.jn_binder_tag_from_work_tags.write().unwrap();
+            let mut live_jn = write_or_recover(&store.jn_binder_tag_from_work_tags);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_binder_tag_from_work_tags.get(id) {
                     Some(v) => {
@@ -1404,10 +1399,8 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let mut live_jn = store
-                .jn_text_replacement_rule_from_work_text_replacement_rules
-                .write()
-                .unwrap();
+            let mut live_jn =
+                write_or_recover(&store.jn_text_replacement_rule_from_work_text_replacement_rules);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap
                     .jn_text_replacement_rule_from_work_text_replacement_rules
@@ -1426,7 +1419,7 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let mut live_jn = store.jn_trash_info_from_work_trash_infos.write().unwrap();
+            let mut live_jn = write_or_recover(&store.jn_trash_info_from_work_trash_infos);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_trash_info_from_work_trash_infos.get(id) {
                     Some(v) => {
@@ -1498,7 +1491,7 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let live_jn = store.jn_work_from_work_info_work.read().unwrap();
+            let live_jn = read_or_recover(&store.jn_work_from_work_info_work);
             for (left, rights) in live_jn.iter() {
                 if rights.iter().any(|rid| scope.contains(rid)) {
                     left_keys.insert(*left);
@@ -1513,7 +1506,7 @@ impl<'a> WorkRepository<'a> {
                 .cloned()
                 .unwrap_or_default();
             let new_list = {
-                let live_jn = store.jn_work_from_work_info_work.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_work_from_work_info_work);
                 let live_list: Vec<EntityId> = live_jn.get(&left).cloned().unwrap_or_default();
                 let reconciled = crate::database::hashmap_store::reconcile_backref_list(
                     &live_list, &snap_list, &scope,
@@ -1525,11 +1518,7 @@ impl<'a> WorkRepository<'a> {
                 }
             };
             if let Some(reconciled) = new_list {
-                store
-                    .jn_work_from_work_info_work
-                    .write()
-                    .unwrap()
-                    .insert(left, reconciled);
+                write_or_recover(&store.jn_work_from_work_info_work).insert(left, reconciled);
                 event_buffer.push(Event {
                     origin: Origin::DirectAccess(DirectAccessEntity::WorkInfo(
                         EntityEvent::Updated,
@@ -1564,7 +1553,7 @@ impl<'a> WorkRepository<'a> {
             }
         }
         {
-            let live_jn = store.jn_work_from_root_works.read().unwrap();
+            let live_jn = read_or_recover(&store.jn_work_from_root_works);
             for (left, rights) in live_jn.iter() {
                 if rights.iter().any(|rid| scope.contains(rid)) {
                     left_keys.insert(*left);
@@ -1579,7 +1568,7 @@ impl<'a> WorkRepository<'a> {
                 .cloned()
                 .unwrap_or_default();
             let new_list = {
-                let live_jn = store.jn_work_from_root_works.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_work_from_root_works);
                 let live_list: Vec<EntityId> = live_jn.get(&left).cloned().unwrap_or_default();
                 let reconciled = crate::database::hashmap_store::reconcile_backref_list(
                     &live_list, &snap_list, &scope,
@@ -1591,11 +1580,7 @@ impl<'a> WorkRepository<'a> {
                 }
             };
             if let Some(reconciled) = new_list {
-                store
-                    .jn_work_from_root_works
-                    .write()
-                    .unwrap()
-                    .insert(left, reconciled);
+                write_or_recover(&store.jn_work_from_root_works).insert(left, reconciled);
                 event_buffer.push(Event {
                     origin: Origin::DirectAccess(DirectAccessEntity::Root(EntityEvent::Updated)),
                     ids: vec![left],

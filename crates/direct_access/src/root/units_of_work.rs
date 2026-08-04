@@ -18,6 +18,23 @@ use common::types::EntityId;
 use std::cell::RefCell;
 use std::sync::Arc;
 
+/// The error every UoW method returns when it is called before
+/// `begin_transaction`.
+///
+/// This used to be `.expect("Transaction not started")`. Calling a UoW method
+/// out of order is a caller bug, but panicking on it is the wrong report: a
+/// unit of work runs inside a use case, and several of those run as long
+/// operations on a background thread, where `common::long_operation`'s
+/// `catch_unwind` turns a failure into a reported `Failed` — but only if the
+/// failure is an `Err` rather than a process-killing panic. Every method here
+/// already returns `Result`, so `?` costs nothing and keeps the bug diagnosable
+/// instead of fatal.
+fn no_transaction() -> anyhow::Error {
+    anyhow::anyhow!(
+        "unit of work used before `begin_transaction` — no transaction is open on this UoW"
+    )
+}
+
 // ===========================================================================
 // Write UoW
 // ===========================================================================
@@ -115,66 +132,66 @@ impl use_cases::WriteUoW for RootWriteUoW {
     type Entity = Root;
 
     fn get(&self, id: &EntityId) -> Result<Option<Root>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_root_repository(transaction)?;
         Ok(repo.get(id)?)
     }
 
     fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Root>>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_root_repository(transaction)?;
         Ok(repo.get_multi(ids)?)
     }
 
     fn get_all(&self) -> Result<Vec<Root>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_root_repository(transaction)?;
         Ok(repo.get_all()?)
     }
 
     fn create_orphan_multi(&self, entities: &[Root]) -> Result<Vec<Root>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo = repository_factory::write::create_root_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
         Ok(repo.create_orphan_multi(&mut event_buffer, entities)?)
     }
 
     fn update_multi(&self, entities: &[Root]) -> Result<Vec<Root>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo = repository_factory::write::create_root_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
         Ok(repo.update_multi(&mut event_buffer, entities)?)
     }
 
     fn update_with_relationships_multi(&self, entities: &[Root]) -> Result<Vec<Root>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo = repository_factory::write::create_root_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
         Ok(repo.update_with_relationships_multi(&mut event_buffer, entities)?)
     }
 
     fn remove(&self, id: &EntityId) -> Result<()> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo = repository_factory::write::create_root_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
         Ok(repo.remove(&mut event_buffer, id)?)
     }
 
     fn remove_multi(&self, ids: &[EntityId]) -> Result<()> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo = repository_factory::write::create_root_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
         Ok(repo.remove_multi(&mut event_buffer, ids)?)
     }
 
     fn snapshot(&self, ids: &[EntityId]) -> Result<EntityTreeSnapshot> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_root_repository(transaction)?;
         Ok(repo.snapshot(ids)?)
     }
 
     fn restore(&self, snap: &EntityTreeSnapshot) -> Result<()> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo = repository_factory::write::create_root_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
         Ok(repo.restore(&mut event_buffer, snap)?)
@@ -187,7 +204,7 @@ impl use_cases::WriteRelUoW<RootRelationshipField> for RootWriteUoW {
         id: &EntityId,
         field: &RootRelationshipField,
     ) -> Result<Vec<EntityId>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_root_repository(transaction)?;
         Ok(repo.get_relationship(id, field)?)
     }
@@ -198,7 +215,7 @@ impl use_cases::WriteRelUoW<RootRelationshipField> for RootWriteUoW {
         field: &RootRelationshipField,
         right_ids: &[EntityId],
     ) -> Result<()> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo = repository_factory::write::create_root_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
         repo.set_relationship(&mut event_buffer, id, field, right_ids)?;
@@ -212,7 +229,7 @@ impl use_cases::WriteRelUoW<RootRelationshipField> for RootWriteUoW {
         ids_to_move: &[EntityId],
         new_index: i32,
     ) -> Result<Vec<EntityId>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo = repository_factory::write::create_root_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
         Ok(repo.move_relationship_ids(&mut event_buffer, id, field, ids_to_move, new_index)?)

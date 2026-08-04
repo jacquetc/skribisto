@@ -430,20 +430,14 @@ impl WorkspaceLayoutService {
 
     /// Graceful fallback when the config dir is unavailable: a throwaway per-process
     /// temp file, so the app still runs (the layout just won't persist across
-    /// restarts) — mirrors [`SearchSettingsService::in_memory_default`](super::SearchSettingsService).
+    /// restarts). This one is opened *eagerly, before any window* (see `app.rs`), so it
+    /// is the one call site where an infallible fallback matters most — a fallback that
+    /// could itself fail would kill every launch, not just this one setting. Shares its
+    /// retry/uniqueness logic with every sibling via
+    /// [`in_memory_settings_file`](super::backup_settings_file::in_memory_settings_file).
     pub fn in_memory_default() -> Self {
-        let path =
-            std::env::temp_dir().join(format!("skribisto-workspace-{}.toml", std::process::id()));
-        SettingsFile::load(path, migrator())
-            .map(|file| Self { file })
-            .unwrap_or_else(|_| {
-                let file = SettingsFile::load(
-                    std::path::PathBuf::from(".skribisto-workspace.toml"),
-                    migrator(),
-                )
-                .expect("in-memory workspace layout fallback");
-                Self { file }
-            })
+        let file = super::backup_settings_file::in_memory_settings_file("workspace", migrator());
+        Self { file }
     }
 
     /// This project's saved layout, if any.

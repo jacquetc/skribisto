@@ -19,7 +19,7 @@ pub fn create_orphan_note_template(
     stack_id: Option<u64>,
     dto: &CreateNoteTemplateDto,
 ) -> Result<NoteTemplateDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::create_orphan(
         &ctx.db_context,
         &ctx.event_hub,
@@ -37,7 +37,7 @@ pub fn create_note_template(
     owner_id: EntityId,
     index: i32,
 ) -> Result<NoteTemplateDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::create(
         &ctx.db_context,
         &ctx.event_hub,
@@ -55,7 +55,7 @@ pub fn create_orphan_note_template_multi(
     stack_id: Option<u64>,
     dtos: &[CreateNoteTemplateDto],
 ) -> Result<Vec<NoteTemplateDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::create_orphan_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -73,7 +73,7 @@ pub fn create_note_template_multi(
     owner_id: EntityId,
     index: i32,
 ) -> Result<Vec<NoteTemplateDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::create_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -100,9 +100,9 @@ pub fn get_note_template_multi(
 }
 
 /// Get all note_template entities.
-/// Note: iteration order is unspecified (`HashMap`-backed) — not insertion order
-/// or `EntityId` order. For ordered collections, use relationship-based retrieval
-/// (e.g. get_*_relationship for ordered_one_to_many fields).
+/// Note: returns entities in database key order (by EntityId), not insertion order
+/// or any user-defined sort. For ordered collections, use relationship-based
+/// retrieval (e.g. get_*_relationship for ordered_one_to_many fields).
 pub fn get_all_note_template(ctx: &AppContext) -> Result<Vec<NoteTemplateDto>> {
     note_template_controller::get_all(&ctx.db_context).context("getting all note_template entities")
 }
@@ -113,7 +113,7 @@ pub fn update_note_template(
     stack_id: Option<u64>,
     dto: &UpdateNoteTemplateDto,
 ) -> Result<NoteTemplateDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::update(
         &ctx.db_context,
         &ctx.event_hub,
@@ -130,7 +130,7 @@ pub fn update_note_template_multi(
     stack_id: Option<u64>,
     dtos: &[UpdateNoteTemplateDto],
 ) -> Result<Vec<NoteTemplateDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::update_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -147,7 +147,7 @@ pub fn update_note_template_with_relationships(
     stack_id: Option<u64>,
     dto: &NoteTemplateDto,
 ) -> Result<NoteTemplateDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::update_with_relationships(
         &ctx.db_context,
         &ctx.event_hub,
@@ -164,7 +164,7 @@ pub fn update_note_template_with_relationships_multi(
     stack_id: Option<u64>,
     dtos: &[NoteTemplateDto],
 ) -> Result<Vec<NoteTemplateDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::update_with_relationships_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -177,7 +177,7 @@ pub fn update_note_template_with_relationships_multi(
 
 /// Remove a note_template entity by ID
 pub fn remove_note_template(ctx: &AppContext, stack_id: Option<u64>, id: &EntityId) -> Result<()> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::remove(
         &ctx.db_context,
         &ctx.event_hub,
@@ -194,7 +194,7 @@ pub fn remove_note_template_multi(
     stack_id: Option<u64>,
     ids: &[EntityId],
 ) -> Result<()> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_controller::remove_multi(
         &ctx.db_context,
         &ctx.event_hub,

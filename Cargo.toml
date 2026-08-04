@@ -120,12 +120,19 @@ codegen-units = 1
 clone_on_copy = "allow"
 let_unit_value = "allow"
 
-# Panic hygiene. `warn`, not `deny`: the four Qleany-generated crates (common,
-# direct_access, frontend, macros) carry ~969 of these and are regenerated from
-# templates in the sibling `qleany` repo — their allow lives in the generated
-# `lib.rs` preamble so it survives regeneration, not here. Hand-written crates
-# should be promoted to `deny` individually as each one comes clean.
-unwrap_used = "warn"
-expect_used = "warn"
-panic = "warn"
+# Panic hygiene (`clippy::unwrap_used` / `expect_used` / `panic`) is enabled
+# **per crate**, not here, as a ratchet — see the `#![warn(..)]` preamble in each
+# clean crate's `lib.rs`.
+#
+# It cannot go in this table: CI lints with `--all-targets -- -D warnings`, and
+# the integration tests under `crates/*/tests/` are separate targets full of
+# deliberate `unwrap()`s. `clippy.toml`'s `allow-unwrap-in-tests` exempts
+# `#[test]` functions but not the plain helper `fn`s those files build on, so a
+# workspace-wide switch turns ~250 test-only lines into hard CI failures while
+# saying nothing about shipping code.
+#
+# Enabling it crate-by-crate keeps the guarantee real and green: the ten crates
+# that carry it today are at zero, so any *new* panic path in them fails CI. Add
+# the preamble to another crate as it comes clean; `direct_access` went from 316
+# sites to zero, so this list is expected to grow, not stay put.
 

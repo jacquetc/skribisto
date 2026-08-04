@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
+// Panic hygiene: this crate is at zero `unwrap()`/`expect()`/`panic!` outside
+// tests, so the lint is switched on here to keep it that way — CI lints with
+// `-D warnings`, which makes any new panic path a build failure. See the note
+// in the workspace `Cargo.toml` for why this is per-crate and not workspace-wide.
+#![warn(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 //! Domain rules for Skribisto's writing model — the hand-written counterpart to
 //! the Qleany-generated enums in `common::entities`.
 //!

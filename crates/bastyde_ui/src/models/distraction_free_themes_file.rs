@@ -93,17 +93,11 @@ impl DistractionFreeThemesService {
 
     /// Graceful fallback when the config dir is unavailable: a throwaway
     /// per-process temp file, so the app still runs (themes just do not persist).
+    /// Shares its retry/uniqueness logic with every sibling via
+    /// [`in_memory_settings_file`](super::backup_settings_file::in_memory_settings_file).
     pub fn in_memory_default() -> Self {
-        let path =
-            std::env::temp_dir().join(format!("skribisto-df-themes-{}.toml", std::process::id()));
-        SettingsFile::load(path, migrator())
-            .map(|file| Self { file })
-            .unwrap_or_else(|_| {
-                let file =
-                    SettingsFile::load(PathBuf::from(".skribisto-df-themes.toml"), migrator())
-                        .expect("in-memory distraction-free themes fallback");
-                Self { file }
-            })
+        let file = super::backup_settings_file::in_memory_settings_file("df-themes", migrator());
+        Self { file }
     }
 
     /// The `Reloadable` hook for the shared `SettingsRegistry` (keep the handle

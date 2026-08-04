@@ -248,11 +248,13 @@ mod imp {
                 return;
             };
             it.word_count_goal = goal;
-            let _ = binder_item_commands::update_binder_item(
+            if let Err(e) = binder_item_commands::update_binder_item(
                 ctx,
                 self.stack(),
                 &UpdateBinderItemDto::from(it),
-            );
+            ) {
+                eprintln!("pace: set goal words failed: {e}");
+            }
         }
 
         pub fn add_holiday(&self, label: String, start: NaiveDate, end: Option<NaiveDate>) {
@@ -287,7 +289,11 @@ mod imp {
                 .collect();
             self.set_children(pace.id, PaceRelationshipField::Holidays, ids);
             // Detaching leaves the row orphaned (Holiday has no owner) - delete it.
-            let _ = holiday_commands::remove_holiday(&self.app_ctx, self.stack(), &holiday_id);
+            if let Err(e) =
+                holiday_commands::remove_holiday(&self.app_ctx, self.stack(), &holiday_id)
+            {
+                eprintln!("pace: remove holiday failed: {e}");
+            }
         }
 
         pub fn add_milestone(
@@ -324,8 +330,11 @@ mod imp {
                 .filter(|&id| id != milestone_id)
                 .collect();
             self.set_children(pace.id, PaceRelationshipField::Milestones, ids);
-            let _ =
-                milestone_commands::remove_milestone(&self.app_ctx, self.stack(), &milestone_id);
+            if let Err(e) =
+                milestone_commands::remove_milestone(&self.app_ctx, self.stack(), &milestone_id)
+            {
+                eprintln!("pace: remove milestone failed: {e}");
+            }
         }
 
         // ── internals ──
@@ -393,7 +402,9 @@ mod imp {
             let mut dto = UpdatePaceDto::from(pace);
             dto.updated_at = Utc::now();
             edit(&mut dto);
-            let _ = pace_commands::update_pace(ctx, self.stack(), &dto);
+            if let Err(e) = pace_commands::update_pace(ctx, self.stack(), &dto) {
+                eprintln!("pace: update scalars failed: {e}");
+            }
         }
 
         /// `set_relationship` replaces the whole ordered list (verified in
@@ -409,7 +420,10 @@ mod imp {
                 field,
                 right_ids,
             };
-            let _ = pace_commands::set_pace_relationship(&self.app_ctx, self.stack(), &dto);
+            if let Err(e) = pace_commands::set_pace_relationship(&self.app_ctx, self.stack(), &dto)
+            {
+                eprintln!("pace: set relationship failed: {e}");
+            }
         }
     }
 }

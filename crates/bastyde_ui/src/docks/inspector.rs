@@ -249,10 +249,17 @@ impl Widget for Inspector {
                     tag_probe.set_id(Some(d.id));
                     let set_tags: crate::tags::tag_pill_field::SetTags = {
                         let mirror = tag_value.clone();
-                        Rc::new(move |ids: Vec<u64>, _c| {
-                            let _ = tag_probe.set_tags(&ids, stack);
-                            mirror.set(ids);
-                        })
+                        // Only echo the write into the mirror once it actually lands —
+                        // e.g. the item was trashed by another window between the click
+                        // and the commit. Setting it unconditionally would show the new
+                        // pill row while the store never got it, reverting only on the
+                        // next unrelated refresh with no clue why.
+                        Rc::new(
+                            move |ids: Vec<u64>, _c| match tag_probe.set_tags(&ids, stack) {
+                                Ok(()) => mirror.set(ids),
+                                Err(e) => eprintln!("inspector: set tags failed: {e}"),
+                            },
+                        )
                     };
                     col = col
                         .child(
@@ -283,9 +290,13 @@ impl Widget for Inspector {
                         alias_probe.set_id(Some(d.id));
                         let set_aliases: crate::tags::alias_pill_field::SetAliases = {
                             let mirror = alias_value.clone();
+                            // Same "only echo a landed write" reasoning as `set_tags`
+                            // above.
                             Rc::new(move |names: Vec<String>, _c| {
-                                let _ = alias_probe.set_aliases(&names, stack);
-                                mirror.set(names);
+                                match alias_probe.set_aliases(&names, stack) {
+                                    Ok(()) => mirror.set(names),
+                                    Err(e) => eprintln!("inspector: set aliases failed: {e}"),
+                                }
                             })
                         };
                         col = col
@@ -395,7 +406,9 @@ impl Widget for Inspector {
                                     }
                                     let next =
                                         index_for_filter.filter_cast_targets(owner_id, &next);
-                                    let _ = pin_probe.set_references(&next, stack);
+                                    if let Err(e) = pin_probe.set_references(&next, stack) {
+                                        eprintln!("inspector: pin cast reference failed: {e}");
+                                    }
                                 })
                             };
                             let unpin: crate::tags::mention_list::UnpinReference = {
@@ -411,7 +424,9 @@ impl Widget for Inspector {
                                         .collect();
                                     let next =
                                         index_for_filter.filter_cast_targets(owner_id, &next);
-                                    let _ = pin_probe.set_references(&next, stack);
+                                    if let Err(e) = pin_probe.set_references(&next, stack) {
+                                        eprintln!("inspector: unpin cast reference failed: {e}");
+                                    }
                                 })
                             };
 
@@ -475,7 +490,9 @@ impl Widget for Inspector {
                                         if !next.contains(&target) {
                                             next.push(target);
                                         }
-                                        let _ = pov_probe.set_point_of_view(&next, stack);
+                                        if let Err(e) = pov_probe.set_point_of_view(&next, stack) {
+                                            eprintln!("inspector: set point of view failed: {e}");
+                                        }
                                     })
                                 };
                                 let clear_pov = {
@@ -488,7 +505,9 @@ impl Widget for Inspector {
                                             .into_iter()
                                             .filter(|&id| id != target)
                                             .collect();
-                                        let _ = pov_probe.set_point_of_view(&next, stack);
+                                        if let Err(e) = pov_probe.set_point_of_view(&next, stack) {
+                                            eprintln!("inspector: clear point of view failed: {e}");
+                                        }
                                     })
                                 };
 
@@ -587,9 +606,14 @@ impl Widget for Inspector {
                     let stack = self.outline.ids().stack_id.get();
                     let set: crate::spellcheck::language_pill_field::SetLanguages = {
                         let value = value.clone();
+                        // Same "only echo a landed write" reasoning as `set_tags` above.
                         Rc::new(move |new: Vec<String>, _c| {
-                            let _ = item_probe.set_dict_language(&new, stack);
-                            value.set(new);
+                            match item_probe.set_dict_language(&new, stack) {
+                                Ok(()) => value.set(new),
+                                Err(e) => {
+                                    eprintln!("inspector: set dictionary language failed: {e}")
+                                }
+                            }
                         })
                     };
                     col = col
@@ -653,7 +677,16 @@ impl Widget for Inspector {
                         // the toggle can't feed back into itself.
                         ctx.effect(&value, move |on| {
                             if probe.dto().map(|d| d.is_exportable) != Some(*on) {
-                                let _ = probe.set_exportable(*on, stack);
+                                // The `Toggle` below is bound straight to `value`, so it
+                                // already shows `*on` by the time we get here — there is
+                                // no "don't update the mirror" option like the pill
+                                // fields have. On failure the entity Updated event this
+                                // panel rebuilds on never fires, so log it: the toggle
+                                // stays wrong until something else (a focus change, a
+                                // promote) forces a fresh read.
+                                if let Err(e) = probe.set_exportable(*on, stack) {
+                                    eprintln!("inspector: set exportable failed: {e}");
+                                }
                             }
                         });
                     }

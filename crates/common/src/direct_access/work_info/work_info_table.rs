@@ -6,9 +6,9 @@
 // ═══════════════════════════════════════════════════════════════════════
 // Entity WITH forward relationships — explicit struct implementation
 // ═══════════════════════════════════════════════════════════════════════
-
 use crate::database::hashmap_store::{
     HashMapStore, delete_from_backward_junction, junction_get, junction_remove, junction_set,
+    read_or_recover, write_or_recover,
 };
 use crate::entities::WorkInfo;
 use crate::error::RepositoryError;
@@ -67,12 +67,22 @@ impl<'a> WorkInfoHashMapTable<'a> {
 impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
     fn create(&mut self, entity: &WorkInfo) -> Result<WorkInfo, RepositoryError> {
         self.create_multi(std::slice::from_ref(entity))
-            .map(|v| v.into_iter().next().unwrap())
+            .and_then(|v| {
+                // `create_multi` is contracted to return one row per input, so this
+                // is unreachable — but it used to be `.unwrap()`, and a store that
+                // ever broke that contract would take the whole process down rather
+                // than fail the one call that noticed.
+                v.into_iter().next().ok_or_else(|| {
+                    RepositoryError::Other(anyhow::anyhow!(
+                        "create: the store returned no row for the entity it was given"
+                    ))
+                })
+            })
     }
 
     fn create_multi(&mut self, entities: &[WorkInfo]) -> Result<Vec<WorkInfo>, RepositoryError> {
         let mut created = Vec::with_capacity(entities.len());
-        let mut work_info_map = self.store.work_infos.write().unwrap();
+        let mut work_info_map = write_or_recover(&self.store.work_infos);
 
         for entity in entities {
             let new_entity = if entity.id == EntityId::default() {
@@ -93,7 +103,7 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
 
             // one-to-one constraint check: ensure search is not already referenced by another work_info
             {
-                let jn = self.store.jn_search_from_work_info_search.read().unwrap();
+                let jn = read_or_recover(&self.store.jn_search_from_work_info_search);
                 for (&existing_id, right_ids) in jn.iter() {
                     if existing_id != new_entity.id && right_ids.contains(&new_entity.search) {
                         return Err(RepositoryError::ConstraintViolation(format!(
@@ -130,7 +140,7 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
     }
 
     fn get(&self, id: &EntityId) -> Result<Option<WorkInfo>, RepositoryError> {
-        let work_info_map = self.store.work_infos.read().unwrap();
+        let work_info_map = read_or_recover(&self.store.work_infos);
         match work_info_map.get(id) {
             Some(entity) => {
                 let mut e = entity.clone();
@@ -151,7 +161,7 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
     }
 
     fn get_all(&self) -> Result<Vec<WorkInfo>, RepositoryError> {
-        let work_info_map = self.store.work_infos.read().unwrap();
+        let work_info_map = read_or_recover(&self.store.work_infos);
         let entries: Vec<WorkInfo> = work_info_map.values().cloned().collect();
         drop(work_info_map);
         let mut result = Vec::with_capacity(entries.len());
@@ -164,12 +174,22 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
 
     fn update(&mut self, entity: &WorkInfo) -> Result<WorkInfo, RepositoryError> {
         self.update_multi(std::slice::from_ref(entity))
-            .map(|v| v.into_iter().next().unwrap())
+            .and_then(|v| {
+                // `update_multi` is contracted to return one row per input, so this
+                // is unreachable — but it used to be `.unwrap()`, and a store that
+                // ever broke that contract would take the whole process down rather
+                // than fail the one call that noticed.
+                v.into_iter().next().ok_or_else(|| {
+                    RepositoryError::Other(anyhow::anyhow!(
+                        "update: the store returned no row for the entity it was given"
+                    ))
+                })
+            })
     }
 
     // Scalar-only update: writes entity data but does NOT touch junction tables.
     fn update_multi(&mut self, entities: &[WorkInfo]) -> Result<Vec<WorkInfo>, RepositoryError> {
-        let mut work_info_map = self.store.work_infos.write().unwrap();
+        let mut work_info_map = write_or_recover(&self.store.work_infos);
         for entity in entities {
             work_info_map.insert(entity.id, entity.clone());
         }
@@ -184,18 +204,28 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
         entity: &WorkInfo,
     ) -> Result<WorkInfo, RepositoryError> {
         self.update_with_relationships_multi(std::slice::from_ref(entity))
-            .map(|v| v.into_iter().next().unwrap())
+            .and_then(|v| {
+                // `update_with_relationships_multi` is contracted to return one row per input, so this
+                // is unreachable — but it used to be `.unwrap()`, and a store that
+                // ever broke that contract would take the whole process down rather
+                // than fail the one call that noticed.
+                v.into_iter().next().ok_or_else(|| {
+                    RepositoryError::Other(anyhow::anyhow!(
+                        "update_with_relationships: the store returned no row for the entity it was given"
+                    ))
+                })
+            })
     }
 
     fn update_with_relationships_multi(
         &mut self,
         entities: &[WorkInfo],
     ) -> Result<Vec<WorkInfo>, RepositoryError> {
-        let mut work_info_map = self.store.work_infos.write().unwrap();
+        let mut work_info_map = write_or_recover(&self.store.work_infos);
         for entity in entities {
             // one-to-one constraint check: ensure search is not already referenced by another work_info
             {
-                let jn = self.store.jn_search_from_work_info_search.read().unwrap();
+                let jn = read_or_recover(&self.store.jn_search_from_work_info_search);
                 for (&existing_id, right_ids) in jn.iter() {
                     if existing_id != entity.id && right_ids.contains(&entity.search) {
                         return Err(RepositoryError::ConstraintViolation(format!(
@@ -236,7 +266,7 @@ impl<'a> WorkInfoTable for WorkInfoHashMapTable<'a> {
     }
 
     fn remove_multi(&mut self, ids: &[EntityId]) -> Result<(), RepositoryError> {
-        let mut work_info_map = self.store.work_infos.write().unwrap();
+        let mut work_info_map = write_or_recover(&self.store.work_infos);
         for id in ids {
             work_info_map.remove(id);
 
@@ -306,7 +336,7 @@ impl<'a> WorkInfoHashMapTableRO<'a> {
 
 impl<'a> WorkInfoTableRO for WorkInfoHashMapTableRO<'a> {
     fn get(&self, id: &EntityId) -> Result<Option<WorkInfo>, RepositoryError> {
-        let work_info_map = self.store.work_infos.read().unwrap();
+        let work_info_map = read_or_recover(&self.store.work_infos);
         match work_info_map.get(id) {
             Some(entity) => {
                 let mut e = entity.clone();
@@ -327,7 +357,7 @@ impl<'a> WorkInfoTableRO for WorkInfoHashMapTableRO<'a> {
     }
 
     fn get_all(&self) -> Result<Vec<WorkInfo>, RepositoryError> {
-        let work_info_map = self.store.work_infos.read().unwrap();
+        let work_info_map = read_or_recover(&self.store.work_infos);
         let entries: Vec<WorkInfo> = work_info_map.values().cloned().collect();
         drop(work_info_map);
         let mut result = Vec::with_capacity(entries.len());

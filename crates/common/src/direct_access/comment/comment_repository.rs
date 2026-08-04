@@ -7,6 +7,12 @@ use std::fmt::Display;
 
 use crate::{
     database::hashmap_store::HashMapStoreSnapshot,
+    // `*_or_recover` rather than a plain `.read()/.write().unwrap()`: a panic
+    // anywhere under a table's guard poisons that lock for the rest of the
+    // process, and the release profile unwinds, so the poison is reachable in a
+    // shipped build. Recovering (and clearing) it keeps one unrelated failure
+    // from escalating into a second panic on every later access to the store.
+    database::hashmap_store::{read_or_recover, write_or_recover},
     database::transactions::Transaction,
     direct_access::repository_factory,
     entities::Comment,
@@ -686,7 +692,7 @@ impl<'a> CommentRepository<'a> {
         let mut to_update: Vec<EntityId> = Vec::new(); // in both                    -> revert
         let mut to_delete: Vec<EntityId> = Vec::new(); // live only (created after)  -> delete
         {
-            let live = store.comments.read().unwrap();
+            let live = read_or_recover(&store.comments);
             for id in &ids {
                 match (snap.comments.contains_key(id), live.contains_key(id)) {
                     (true, false) => to_create.push(*id),
@@ -707,7 +713,7 @@ impl<'a> CommentRepository<'a> {
                 }
             }
             {
-                let live_jn = store.jn_comment_reply_from_comment_replies.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_comment_reply_from_comment_replies);
                 for id in &ids {
                     if let Some(list) = live_jn.get(id) {
                         child_ids.extend(list.iter().copied());
@@ -724,7 +730,7 @@ impl<'a> CommentRepository<'a> {
 
         // 2. Entity rows: revert/re-add from snapshot, delete the ones created after it.
         {
-            let mut live = store.comments.write().unwrap();
+            let mut live = write_or_recover(&store.comments);
             for id in to_create.iter().chain(to_update.iter()) {
                 if let Some(row) = snap.comments.get(id) {
                     live.insert(*id, row.clone());
@@ -738,7 +744,7 @@ impl<'a> CommentRepository<'a> {
         // 3. This entity's own forward junctions (strong + weak): restored wholesale because the
         //    junction key is in-scope (owned exclusively by this trunk).
         {
-            let mut live_jn = store.jn_content_from_comment_content.write().unwrap();
+            let mut live_jn = write_or_recover(&store.jn_content_from_comment_content);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_content_from_comment_content.get(id) {
                     Some(v) => {
@@ -754,7 +760,7 @@ impl<'a> CommentRepository<'a> {
             }
         }
         {
-            let mut live_jn = store.jn_comment_reply_from_comment_replies.write().unwrap();
+            let mut live_jn = write_or_recover(&store.jn_comment_reply_from_comment_replies);
             for id in to_create.iter().chain(to_update.iter()) {
                 match snap.jn_comment_reply_from_comment_replies.get(id) {
                     Some(v) => {
@@ -825,7 +831,7 @@ impl<'a> CommentRepository<'a> {
             }
         }
         {
-            let live_jn = store.jn_comment_from_work_comments.read().unwrap();
+            let live_jn = read_or_recover(&store.jn_comment_from_work_comments);
             for (left, rights) in live_jn.iter() {
                 if rights.iter().any(|rid| scope.contains(rid)) {
                     left_keys.insert(*left);
@@ -840,7 +846,7 @@ impl<'a> CommentRepository<'a> {
                 .cloned()
                 .unwrap_or_default();
             let new_list = {
-                let live_jn = store.jn_comment_from_work_comments.read().unwrap();
+                let live_jn = read_or_recover(&store.jn_comment_from_work_comments);
                 let live_list: Vec<EntityId> = live_jn.get(&left).cloned().unwrap_or_default();
                 let reconciled = crate::database::hashmap_store::reconcile_backref_list(
                     &live_list, &snap_list, &scope,
@@ -852,11 +858,7 @@ impl<'a> CommentRepository<'a> {
                 }
             };
             if let Some(reconciled) = new_list {
-                store
-                    .jn_comment_from_work_comments
-                    .write()
-                    .unwrap()
-                    .insert(left, reconciled);
+                write_or_recover(&store.jn_comment_from_work_comments).insert(left, reconciled);
                 event_buffer.push(Event {
                     origin: Origin::DirectAccess(DirectAccessEntity::Work(EntityEvent::Updated)),
                     ids: vec![left],

@@ -17,6 +17,23 @@ use common::types::EntityId;
 use std::cell::RefCell;
 use std::sync::Arc;
 
+/// The error every UoW method returns when it is called before
+/// `begin_transaction`.
+///
+/// This used to be `.expect("Transaction not started")`. Calling a UoW method
+/// out of order is a caller bug, but panicking on it is the wrong report: a
+/// unit of work runs inside a use case, and several of those run as long
+/// operations on a background thread, where `common::long_operation`'s
+/// `catch_unwind` turns a failure into a reported `Failed` — but only if the
+/// failure is an `Err` rather than a process-killing panic. Every method here
+/// already returns `Result`, so `?` costs nothing and keeps the bug diagnosable
+/// instead of fatal.
+fn no_transaction() -> anyhow::Error {
+    anyhow::anyhow!(
+        "unit of work used before `begin_transaction` — no transaction is open on this UoW"
+    )
+}
+
 // ===========================================================================
 // Write UoW
 // ===========================================================================
@@ -114,19 +131,19 @@ impl use_cases::WriteUoW for TextReplacementRuleWriteUoW {
     type Entity = TextReplacementRule;
 
     fn get(&self, id: &EntityId) -> Result<Option<TextReplacementRule>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         Ok(repo.get(id)?)
     }
 
     fn get_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<TextReplacementRule>>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         Ok(repo.get_multi(ids)?)
     }
 
     fn get_all(&self) -> Result<Vec<TextReplacementRule>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         Ok(repo.get_all()?)
     }
@@ -135,7 +152,7 @@ impl use_cases::WriteUoW for TextReplacementRuleWriteUoW {
         &self,
         entities: &[TextReplacementRule],
     ) -> Result<Vec<TextReplacementRule>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo =
             repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
@@ -143,7 +160,7 @@ impl use_cases::WriteUoW for TextReplacementRuleWriteUoW {
     }
 
     fn update_multi(&self, entities: &[TextReplacementRule]) -> Result<Vec<TextReplacementRule>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo =
             repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
@@ -154,7 +171,7 @@ impl use_cases::WriteUoW for TextReplacementRuleWriteUoW {
         &self,
         entities: &[TextReplacementRule],
     ) -> Result<Vec<TextReplacementRule>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo =
             repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
@@ -162,7 +179,7 @@ impl use_cases::WriteUoW for TextReplacementRuleWriteUoW {
     }
 
     fn remove(&self, id: &EntityId) -> Result<()> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo =
             repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
@@ -170,7 +187,7 @@ impl use_cases::WriteUoW for TextReplacementRuleWriteUoW {
     }
 
     fn remove_multi(&self, ids: &[EntityId]) -> Result<()> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo =
             repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
@@ -178,13 +195,13 @@ impl use_cases::WriteUoW for TextReplacementRuleWriteUoW {
     }
 
     fn snapshot(&self, ids: &[EntityId]) -> Result<EntityTreeSnapshot> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         Ok(repo.snapshot(ids)?)
     }
 
     fn restore(&self, snap: &EntityTreeSnapshot) -> Result<()> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo =
             repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
@@ -199,7 +216,7 @@ impl use_cases::OwnedWriteUoW for TextReplacementRuleWriteUoW {
         owner_id: EntityId,
         index: i32,
     ) -> Result<Vec<TextReplacementRule>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo =
             repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();
@@ -207,13 +224,13 @@ impl use_cases::OwnedWriteUoW for TextReplacementRuleWriteUoW {
     }
 
     fn get_relationships_from_owner(&self, owner_id: &EntityId) -> Result<Vec<EntityId>> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let repo = repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         Ok(repo.get_relationships_from_owner(owner_id)?)
     }
 
     fn set_relationships_in_owner(&self, owner_id: &EntityId, ids: &[EntityId]) -> Result<()> {
-        let transaction = self.transaction.as_ref().expect("Transaction not started");
+        let transaction = self.transaction.as_ref().ok_or_else(no_transaction)?;
         let mut repo =
             repository_factory::write::create_text_replacement_rule_repository(transaction)?;
         let mut event_buffer = self.event_buffer.borrow_mut();

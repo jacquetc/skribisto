@@ -13,6 +13,7 @@ use common::database::{db_context::DbContext, transactions::Transaction};
 use common::entities::{};
 use common::event::ImportManagementEvent::ImportPlumeCreatorFile;
 use common::event::{Event, EventHub, Origin};
+use common::long_operation::lock_or_recover;
 #[allow(unused_imports)]
 use common::types;
 #[allow(unused_imports)]
@@ -38,13 +39,16 @@ impl ImportPlumeCreatorFileUnitOfWork {
 
 impl QueryUnitOfWork for ImportPlumeCreatorFileUnitOfWork {
     fn begin_transaction(&self) -> Result<()> {
-        let mut transaction = self.transaction.lock().unwrap();
+        // Poison-recovering lock, not a plain `.unwrap()` — see save_work_uow's
+        // begin_transaction for why (panic="abort" no longer shields a poisoned
+        // Mutex from turning into a second panic here).
+        let mut transaction = lock_or_recover(&self.transaction);
         *transaction = Some(Transaction::begin_read_transaction(&self.context)?);
         Ok(())
     }
 
     fn end_transaction(&self) -> Result<()> {
-        let mut transaction = self.transaction.lock().unwrap();
+        let mut transaction = lock_or_recover(&self.transaction);
         transaction
             .take()
             .ok_or_else(|| anyhow::anyhow!("No active transaction"))?

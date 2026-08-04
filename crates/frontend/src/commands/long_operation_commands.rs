@@ -17,64 +17,49 @@ use common::long_operation::{OperationProgress, OperationStatus};
 /// case polls its cancel flag and stops at the next checkpoint; the manager emits
 /// a `Cancelled` event either way.
 pub fn cancel_operation(ctx: &AppContext, operation_id: &str) -> bool {
-    ctx.long_operation_manager
-        .lock()
-        .unwrap()
+    common::long_operation::lock_or_recover(&ctx.long_operation_manager)
         .cancel_operation(operation_id)
 }
 
 /// Current status of a long operation, or `None` if unknown/cleaned up.
 pub fn get_operation_status(ctx: &AppContext, operation_id: &str) -> Option<OperationStatus> {
-    ctx.long_operation_manager
-        .lock()
-        .unwrap()
+    common::long_operation::lock_or_recover(&ctx.long_operation_manager)
         .get_operation_status(operation_id)
 }
 
 /// Current progress of a long operation, or `None` if unknown/cleaned up.
 pub fn get_operation_progress(ctx: &AppContext, operation_id: &str) -> Option<OperationProgress> {
-    ctx.long_operation_manager
-        .lock()
-        .unwrap()
+    common::long_operation::lock_or_recover(&ctx.long_operation_manager)
         .get_operation_progress(operation_id)
 }
 
 /// Whether a long operation has finished (completed, cancelled, or failed).
 pub fn is_operation_finished(ctx: &AppContext, operation_id: &str) -> Option<bool> {
-    ctx.long_operation_manager
-        .lock()
-        .unwrap()
+    common::long_operation::lock_or_recover(&ctx.long_operation_manager)
         .is_operation_finished(operation_id)
 }
 
 /// The serialized (JSON) result of a completed operation, if any. Feature
 /// commands expose a typed `get_<uc>_result`; this is the untyped fallback.
 pub fn get_operation_result(ctx: &AppContext, operation_id: &str) -> Option<String> {
-    ctx.long_operation_manager
-        .lock()
-        .unwrap()
+    common::long_operation::lock_or_recover(&ctx.long_operation_manager)
         .get_operation_result(operation_id)
 }
 
 /// Ids of all currently tracked operations.
 pub fn list_operations(ctx: &AppContext) -> Vec<String> {
-    ctx.long_operation_manager.lock().unwrap().list_operations()
+    common::long_operation::lock_or_recover(&ctx.long_operation_manager).list_operations()
 }
 
 /// Summary `(id, status, progress)` of all tracked operations.
 pub fn get_operations_summary(
     ctx: &AppContext,
 ) -> Vec<(String, OperationStatus, OperationProgress)> {
-    ctx.long_operation_manager
-        .lock()
-        .unwrap()
-        .get_operations_summary()
+    common::long_operation::lock_or_recover(&ctx.long_operation_manager).get_operations_summary()
 }
 
 /// Drop finished (completed/cancelled/failed) operations to free memory.
 pub fn cleanup_finished_operations(ctx: &AppContext) {
-    ctx.long_operation_manager
-        .lock()
-        .unwrap()
+    common::long_operation::lock_or_recover(&ctx.long_operation_manager)
         .cleanup_finished_operations();
 }

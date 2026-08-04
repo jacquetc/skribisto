@@ -51,6 +51,7 @@ use std::time::Duration;
 use bastyde::settings::{
     AppPaths, Migrator, Reloadable, SettingsFile, SettingsFileError, Versioned,
 };
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 /// Debounce parameter accepted by [`open_with_delay`]/[`open_at`] for call-site
@@ -226,21 +227,11 @@ impl BackupSettingsService {
 
     /// Graceful fallback when the config dir is unavailable: a throwaway
     /// per-process temp file, so the app still runs (backups just won't persist
-    /// their settings across restarts).
+    /// their settings across restarts). See [`in_memory_settings_file`] for what
+    /// "graceful" means when even the temp dir turns out to be unwritable.
     pub fn in_memory_default() -> Self {
-        let path =
-            std::env::temp_dir().join(format!("skribisto-backup-{}.toml", std::process::id()));
-        SettingsFile::load(path, Migrator::new())
-            .map(|file| Self { file })
-            .unwrap_or_else(|_| {
-                // Even the temp path failed; use a last-ditch in-cwd name.
-                let file = SettingsFile::load(
-                    std::path::PathBuf::from(".skribisto-backup.toml"),
-                    Migrator::new(),
-                )
-                .expect("in-memory backup settings fallback");
-                Self { file }
-            })
+        let file = in_memory_settings_file("backup", Migrator::new());
+        Self { file }
     }
 
     /// The `Reloadable` hook for the app's shared `SettingsRegistry` — register
@@ -413,6 +404,125 @@ pub fn uid_is_usable(work_uid: &str) -> bool {
     !work_uid.trim().is_empty()
 }
 
+/// Every sibling `*Service::in_memory_default()`'s graceful-degradation path, shared here so
+/// the retry/uniqueness logic exists exactly once. Called by
+/// [`crate::models::search_settings_file`], [`crate::models::tree_expansion_file`],
+/// [`crate::models::workspace_layout_file`], [`crate::models::dictionary_settings_file`],
+/// [`crate::models::export_styles_file`], [`crate::models::distraction_free_themes_file`] and
+/// [`crate::models::paratext_presets`] as `super::backup_settings_file::in_memory_settings_file`
+/// (this module is where [`uid_is_usable`] already lives as the other shared free function, so
+/// it is the natural home for this one too — not `models.rs`, which stays generated-shape and
+/// isn't where any of the eight callers' own logic lives).
+///
+/// **There is no non-persisting `SettingsFile` constructor to reach for instead.** Checked
+/// directly against `bastyde-settings::file`: `SettingsFile::load` and `load_strict` both call
+/// `FileLock::acquire_exclusive` unconditionally — real disk I/O — before they ever produce a
+/// value, so a settings file that skips storage entirely is not something the framework
+/// currently offers, and this crate does not modify `bastyde` to add one (out of scope, and
+/// unnecessary for what follows). What this function *can* guarantee, working only within
+/// that constraint, is that reaching it never aborts the caller: `prefix` names the caller
+/// (`"backup"`, `"search"`, …) for both the file names it tries and the diagnostics it prints
+/// past a failed one; `migrator` is the caller's own, forwarded unchanged.
+///
+/// Delegates to [`in_memory_settings_file_under`] with the two real-world candidate roots (see
+/// there for the actual attempt/retry shape); split out so a test can hand
+/// [`in_memory_settings_file_under`] a root that is guaranteed to fail without needing to
+/// sabotage the real OS temp dir that every other test in this process also reads.
+pub(crate) fn in_memory_settings_file<T>(prefix: &str, migrator: Migrator<T>) -> SettingsFile<T>
+where
+    T: Versioned + Serialize + DeserializeOwned + Default + Clone + 'static,
+{
+    // Root 1: the OS temp dir — succeeds in every ordinary launch, including a Flatpak
+    // sandbox (which gives the app its own private, always-writable `/tmp`).
+    let mut roots = vec![std::env::temp_dir()];
+    // Root 2: a single, recognisably-named folder under the *home* dir — reached only once
+    // the whole temp filesystem has refused, so a genuinely different mount/permission domain
+    // gets a real chance instead of retrying the one that already said no. Deliberately not
+    // the caller's arbitrary current directory: writing there (the original bug) litters
+    // whatever folder the app happened to be launched from with a bare dotfile a writer would
+    // never think to look for; a single well-known home-relative folder is at least
+    // findable and deletable on purpose.
+    if let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) {
+        roots.push(std::path::PathBuf::from(home).join(".skribisto-emergency-settings"));
+    }
+    in_memory_settings_file_under(prefix, migrator, &roots)
+}
+
+/// The testable core of [`in_memory_settings_file`]: try each of `roots` in turn — a flat file
+/// first, then (only if that fails) a freshly-created subdirectory of it, since a flat-file
+/// failure and a whole-root failure are different failure domains (some sandboxes gate
+/// specific filenames but still allow directory creation) — before moving on to the next root.
+///
+/// Both attempts under a root use a name unique to *this specific attempt* (a nanosecond
+/// timestamp plus a per-process counter, see [`unique_suffix`]), never just the caller's pid
+/// the way the original, panicking version of this fallback did: a relaunch the OS happens to
+/// hand the same pid a crashed run had could otherwise collide with that run's leftover
+/// `<path>.lock` sidecar — `FileLock` deliberately never deletes it (see
+/// `bastyde-settings::lock`'s module docs) — and wedge on a lock nobody holds any more.
+///
+/// If every root is exhausted, there is no writable storage anywhere this process can see — a
+/// state in which nothing else the app needs (autosave, the backup engine, the single-instance
+/// socket) could function either. That is not "this one setting failed to load," it is "this
+/// environment cannot run Skribisto," so it is reported as a clean, logged
+/// [`std::process::exit`] rather than a panic: no unwind, so no `catch_unwind` boundary
+/// elsewhere in the app (`common::long_operation`) ever sees it, and no lock anywhere in the
+/// process is left poisoned by it — the two hazards a bare `.expect()` here would reintroduce
+/// now that the release profile's `panic = "abort"` is gone and panics unwind again. This
+/// branch cannot be exercised by a test without spawning a subprocess (it ends the process by
+/// design); the two real disk attempts above are what the tests below cover.
+fn in_memory_settings_file_under<T>(
+    prefix: &str,
+    migrator: Migrator<T>,
+    roots: &[std::path::PathBuf],
+) -> SettingsFile<T>
+where
+    T: Versioned + Serialize + DeserializeOwned + Default + Clone + 'static,
+{
+    let pid = std::process::id();
+    for root in roots {
+        let flat = root.join(format!("skribisto-{prefix}-{pid}-{}.toml", unique_suffix()));
+        match SettingsFile::load(flat, migrator.clone()) {
+            Ok(file) => return file,
+            Err(e) => eprintln!(
+                "skribisto: {prefix} in-memory settings: {} (flat attempt under {})",
+                e,
+                root.display()
+            ),
+        }
+        let sub = root.join(format!("skribisto-{prefix}-{pid}-{}", unique_suffix()));
+        if std::fs::create_dir_all(&sub).is_ok() {
+            match SettingsFile::load(sub.join("settings.toml"), migrator.clone()) {
+                Ok(file) => return file,
+                Err(e) => eprintln!(
+                    "skribisto: {prefix} in-memory settings: {} (fresh-subdirectory attempt under {})",
+                    e,
+                    root.display()
+                ),
+            }
+        }
+    }
+    eprintln!(
+        "skribisto: {prefix} settings: no writable location found across {} candidate root(s); \
+         this environment cannot run Skribisto",
+        roots.len()
+    );
+    std::process::exit(70); // EX_SOFTWARE — a deliberate, logged, non-panicking exit.
+}
+
+/// A per-attempt identifier unique enough that two [`in_memory_settings_file_under`] attempts
+/// — even two in the same nanosecond, from the same process — never collide on a path: a
+/// nanosecond timestamp plus a monotonic per-process counter as a tiebreaker.
+fn unique_suffix() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let n = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    format!("{nanos}-{n}")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -420,6 +530,56 @@ mod tests {
 
     fn svc(dir: &std::path::Path) -> BackupSettingsService {
         BackupSettingsService::open_at(dir.join("backup.toml"), Duration::ZERO).unwrap()
+    }
+
+    // ── in-memory fallback: infallible, never panics ────────────────────────
+
+    /// The primary candidate can be entirely unusable (a stale lock, a read-only mount, a
+    /// sandbox denial) without the caller ever seeing a panic: `in_memory_settings_file_under`
+    /// must fall through to the next root and hand back a genuinely usable, disk-backed file
+    /// — this is exactly the path every sibling `in_memory_default()` takes when the config
+    /// dir it actually wants is unavailable.
+    ///
+    /// The "unusable" root is a path that walks *through* a plain file
+    /// (`<blocker-file>/nested`), which makes every `create_dir_all` under it fail
+    /// deterministically — no env var mutation (`TMPDIR`/`HOME` are process-global and would
+    /// race every other test in this binary that also calls `std::env::temp_dir()`), and no
+    /// dependence on actual filesystem permissions (which a CI runner as root would ignore
+    /// anyway).
+    #[test]
+    fn the_shared_fallback_survives_an_unusable_first_root() {
+        let scratch = tempdir().unwrap();
+        let blocker = scratch.path().join("not-a-directory");
+        std::fs::write(&blocker, b"").unwrap();
+        let unusable_root = blocker.join("nested");
+        let usable_root = scratch.path().join("actually-writable");
+
+        let file: SettingsFile<BackupSettingsFile> = in_memory_settings_file_under(
+            "fallback-test",
+            Migrator::new(),
+            &[unusable_root.clone(), usable_root.clone()],
+        );
+        assert!(
+            file.path().starts_with(&usable_root),
+            "must have fallen through to the second, usable root instead of the first: {}",
+            file.path().display()
+        );
+        // And it must be genuinely writable, not a fluke default that happens to compare
+        // equal — round-trip a real mutation through it.
+        file.mutate(|f| f.general.on_open = true).unwrap();
+        assert!(file.borrow().general.on_open);
+    }
+
+    /// The real, non-injected entry point every sibling service's `in_memory_default()`
+    /// reaches for: it must never panic in the ordinary case (a writable OS temp dir), and the
+    /// handle it hands back must be immediately usable.
+    #[test]
+    fn in_memory_default_is_infallible_and_usable() {
+        let svc = BackupSettingsService::in_memory_default();
+        let mut policy = svc.general();
+        policy.on_open = true;
+        svc.set_general(policy).unwrap();
+        assert!(svc.general().on_open, "the fallback handle is really writable");
     }
 
     #[test]

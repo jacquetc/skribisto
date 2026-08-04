@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
+// Panic hygiene: this crate is at zero `unwrap()`/`expect()`/`panic!` outside
+// tests, so the lint is switched on here to keep it that way — CI lints with
+// `-D warnings`, which makes any new panic path a build failure. See the note
+// in the workspace `Cargo.toml` for why this is per-crate and not workspace-wide.
+#![warn(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 //! The app's bundled OFL writing serifs, as raw font bytes — a single source of truth shared
 //! by the desktop app (the editor's `register_editor_fonts`) and the headless exporter (the
 //! PDF backend feeds these bytes to Typst). Keeping the `.ttf` blobs in one crate is why the

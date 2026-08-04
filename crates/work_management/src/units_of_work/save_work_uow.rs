@@ -21,6 +21,7 @@ use common::entities::{
 };
 use common::event::WorkManagementEvent::SaveWork;
 use common::event::{Event, EventHub, Origin};
+use common::long_operation::lock_or_recover;
 #[allow(unused_imports)]
 use common::types;
 #[allow(unused_imports)]
@@ -46,7 +47,16 @@ impl SaveWorkUnitOfWork {
 
 impl QueryUnitOfWork for SaveWorkUnitOfWork {
     fn begin_transaction(&self) -> Result<()> {
-        let mut transaction = self.transaction.lock().unwrap();
+        // `panic = "abort"` is gone from the release profile, so a panic inside
+        // this long op's `catch_unwind` boundary (see common::long_operation)
+        // unwinds and poisons this Mutex rather than aborting the process. A
+        // plain `.lock().unwrap()` would then turn every *subsequent* use of
+        // this UoW into a second panic — defeating that boundary's whole point
+        // of reporting the operation `Failed` instead of wedging it forever.
+        // `lock_or_recover` (shared with the rest of the long-op framework)
+        // recovers the guard instead, mirroring hashmap_store's
+        // read_or_recover/write_or_recover for the store's own locks.
+        let mut transaction = lock_or_recover(&self.transaction);
         // Frozen (snapshot-isolated) read: `gather` runs on this long op's
         // background thread; freezing gives it one consistent point-in-time view
         // while the UI thread keeps writing the live store.
@@ -55,7 +65,7 @@ impl QueryUnitOfWork for SaveWorkUnitOfWork {
     }
 
     fn end_transaction(&self) -> Result<()> {
-        let mut transaction = self.transaction.lock().unwrap();
+        let mut transaction = lock_or_recover(&self.transaction);
         transaction
             .take()
             .ok_or_else(|| anyhow::anyhow!("No active transaction"))?

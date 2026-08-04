@@ -19,7 +19,7 @@ pub fn create_orphan_comment(
     stack_id: Option<u64>,
     dto: &CreateCommentDto,
 ) -> Result<CommentDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::create_orphan(
         &ctx.db_context,
         &ctx.event_hub,
@@ -37,7 +37,7 @@ pub fn create_comment(
     owner_id: EntityId,
     index: i32,
 ) -> Result<CommentDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::create(
         &ctx.db_context,
         &ctx.event_hub,
@@ -55,7 +55,7 @@ pub fn create_orphan_comment_multi(
     stack_id: Option<u64>,
     dtos: &[CreateCommentDto],
 ) -> Result<Vec<CommentDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::create_orphan_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -73,7 +73,7 @@ pub fn create_comment_multi(
     owner_id: EntityId,
     index: i32,
 ) -> Result<Vec<CommentDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::create_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -96,9 +96,9 @@ pub fn get_comment_multi(ctx: &AppContext, ids: &[EntityId]) -> Result<Vec<Optio
 }
 
 /// Get all comment entities.
-/// Note: iteration order is unspecified (`HashMap`-backed) — not insertion order
-/// or `EntityId` order. For ordered collections, use relationship-based retrieval
-/// (e.g. get_*_relationship for ordered_one_to_many fields).
+/// Note: returns entities in database key order (by EntityId), not insertion order
+/// or any user-defined sort. For ordered collections, use relationship-based
+/// retrieval (e.g. get_*_relationship for ordered_one_to_many fields).
 pub fn get_all_comment(ctx: &AppContext) -> Result<Vec<CommentDto>> {
     comment_controller::get_all(&ctx.db_context).context("getting all comment entities")
 }
@@ -109,7 +109,7 @@ pub fn update_comment(
     stack_id: Option<u64>,
     dto: &UpdateCommentDto,
 ) -> Result<CommentDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::update(
         &ctx.db_context,
         &ctx.event_hub,
@@ -126,7 +126,7 @@ pub fn update_comment_multi(
     stack_id: Option<u64>,
     dtos: &[UpdateCommentDto],
 ) -> Result<Vec<CommentDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::update_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -143,7 +143,7 @@ pub fn update_comment_with_relationships(
     stack_id: Option<u64>,
     dto: &CommentDto,
 ) -> Result<CommentDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::update_with_relationships(
         &ctx.db_context,
         &ctx.event_hub,
@@ -160,7 +160,7 @@ pub fn update_comment_with_relationships_multi(
     stack_id: Option<u64>,
     dtos: &[CommentDto],
 ) -> Result<Vec<CommentDto>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::update_with_relationships_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -173,7 +173,7 @@ pub fn update_comment_with_relationships_multi(
 
 /// Remove a comment entity by ID
 pub fn remove_comment(ctx: &AppContext, stack_id: Option<u64>, id: &EntityId) -> Result<()> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::remove(
         &ctx.db_context,
         &ctx.event_hub,
@@ -190,7 +190,7 @@ pub fn remove_comment_multi(
     stack_id: Option<u64>,
     ids: &[EntityId],
 ) -> Result<()> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::remove_multi(
         &ctx.db_context,
         &ctx.event_hub,
@@ -249,7 +249,7 @@ pub fn set_comment_relationship(
     stack_id: Option<u64>,
     dto: &CommentRelationshipDto,
 ) -> Result<()> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::set_relationship(
         &ctx.db_context,
         &ctx.event_hub,
@@ -269,7 +269,7 @@ pub fn move_comment_relationship(
     ids_to_move: &[EntityId],
     new_index: i32,
 ) -> Result<Vec<EntityId>> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     comment_controller::move_relationship(
         &ctx.db_context,
         &ctx.event_hub,

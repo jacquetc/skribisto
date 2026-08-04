@@ -252,7 +252,25 @@ mod imp {
     /// Apply `next` onto `model` with the fewest granular ops (remove / insert /
     /// move / in-place set), so the reconciling `Repeater` keeps surviving rows'
     /// editors. Returns the ids that left the stream.
+    ///
+    /// **Requires `next` to carry unique `item_id`s.** `query()` derives rows
+    /// straight from the store's unique `BinderItem` ids, so this holds today —
+    /// but nothing enforces it structurally. The alignment loop below relies on
+    /// it: each `next` position is expected to claim a distinct slot in `cur`,
+    /// and a duplicate id would claim the same slot twice, leaving `cur` one
+    /// element short of what a later `pos` needs. Neither `Vec::insert` nor
+    /// `ListModel::move_item` clamp an out-of-bounds target — they panic — so
+    /// this is asserted here and clamped defensively below.
     fn reconcile(model: &ListModel<StreamRow>, next: Vec<StreamRow>) -> Vec<u64> {
+        debug_assert!(
+            next.iter().map(|r| r.item_id).collect::<HashSet<_>>().len() == next.len(),
+            "reconcile(): `next` contains a duplicate item_id — StreamRowsModel \
+             assumes one row per BinderItem; a duplicate drives the alignment \
+             loop's target index past `cur`'s length (a release-mode panic in \
+             Vec::insert/ListModel::move_item, clamped away below only as a \
+             last resort so it degrades to a wrong-order row instead)"
+        );
+
         let mut cur: Vec<StreamRow> = (0..model.len())
             .filter_map(|i| model.with_item(i, |r| r.clone()))
             .collect();
@@ -277,23 +295,122 @@ mod imp {
         for (pos, want) in next.iter().enumerate() {
             match cur.iter().position(|r| r.item_id == want.item_id) {
                 Some(j) => {
-                    if j != pos {
-                        model.move_item(j, pos);
+                    // In the unique-id case `j != pos` always implies `pos <
+                    // cur.len()`: `cur[0..pos]` already matches `next[0..pos]`
+                    // (everything before `pos` was placed by an earlier
+                    // iteration), so anything still findable by `position()`
+                    // sits at or past `pos`, well inside `cur`. A duplicate
+                    // `item_id` breaks that — the earlier occurrence already
+                    // claimed this row at some index `< pos`, so it turns up
+                    // again here with nowhere new reserved for it. Clamp to
+                    // the last valid slot instead of handing `move_item` /
+                    // `insert` an out-of-bounds target: the duplicate's
+                    // content still lands (last write wins), just possibly at
+                    // the wrong position rather than crashing the app.
+                    let target = if j != pos {
+                        let to = pos.min(cur.len().saturating_sub(1));
+                        model.move_item(j, to);
                         let it = cur.remove(j);
-                        cur.insert(pos, it);
-                    }
-                    if cur[pos] != *want {
-                        model.set(pos, want.clone());
-                        cur[pos] = want.clone();
+                        cur.insert(to, it);
+                        to
+                    } else {
+                        pos
+                    };
+                    if cur[target] != *want {
+                        model.set(target, want.clone());
+                        cur[target] = want.clone();
                     }
                 }
                 None => {
-                    model.insert(pos, want.clone());
-                    cur.insert(pos, want.clone());
+                    // Same clamp, mirrored: a prior duplicate can already have
+                    // consumed budget this brand-new id expected, running
+                    // `pos` past `cur`'s current length.
+                    let target = pos.min(cur.len());
+                    model.insert(target, want.clone());
+                    cur.insert(target, want.clone());
                 }
             }
         }
         removed
+    }
+
+    #[cfg(test)]
+    mod reconcile_tests {
+        use super::*;
+        use frontend::common::entities::BinderItemRole;
+
+        fn row(item_id: u64) -> StreamRow {
+            StreamRow {
+                item_id,
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+            }
+        }
+
+        fn ids(model: &ListModel<StreamRow>) -> Vec<u64> {
+            (0..model.len())
+                .filter_map(|i| model.with_item(i, |r| r.item_id))
+                .collect()
+        }
+
+        /// `debug_assert!` fires before the clamp fallback ever runs, so a
+        /// plain `cargo test` (which builds with `debug_assertions = true`)
+        /// can only observe the *debug* half of this contract: a duplicate
+        /// `item_id` must panic loudly here, not silently corrupt the
+        /// stream. The companion test below — gated the other way — proves
+        /// the *release* half (the clamp itself never panics) using the
+        /// exact shape the panic audit found: a duplicate appearing twice
+        /// in `next`, starting from a fresh (empty) model.
+        #[cfg(debug_assertions)]
+        #[test]
+        #[should_panic(expected = "duplicate item_id")]
+        fn duplicate_item_id_trips_the_debug_assert() {
+            let model: ListModel<StreamRow> = ListModel::new();
+            let _ = reconcile(&model, vec![row(1), row(1)]);
+        }
+
+        /// Release builds compile the debug_assert above out entirely, so
+        /// this is the path the audited panic actually reached in
+        /// production: `model.move_item`/`cur.insert` handed an
+        /// out-of-bounds target by the second `id=1` row. Only compiled for
+        /// a build *without* debug assertions (`cargo test --release`) —
+        /// under the default dev profile the debug_assert above already
+        /// covers this input, and would fire first.
+        #[cfg(not(debug_assertions))]
+        #[test]
+        fn duplicate_item_id_does_not_panic_in_release() {
+            let model: ListModel<StreamRow> = ListModel::new();
+            let removed = reconcile(&model, vec![row(1), row(1)]);
+            assert!(removed.is_empty());
+            // Both duplicate entries collapse onto the one physical row the
+            // model has room for — a wrong count, not a crash.
+            assert_eq!(model.len(), 1);
+        }
+
+        /// Same release-only fallback, but for the `None` branch: a
+        /// duplicate earlier in `next` consumes a `cur` slot a later,
+        /// genuinely-new id was counting on, so *its* insert target
+        /// overshoots `cur`'s length too.
+        #[cfg(not(debug_assertions))]
+        #[test]
+        fn duplicate_before_a_new_id_does_not_panic_in_release() {
+            let model = ListModel::from_vec(vec![row(1)]);
+            let removed = reconcile(&model, vec![row(1), row(1), row(99)]);
+            assert!(removed.is_empty());
+            // The new id (99) still makes it into the model somewhere.
+            assert!(ids(&model).contains(&99));
+        }
+
+        /// Sanity check on the ordinary, non-duplicate path: unaffected by
+        /// the clamp, since `pos` never needs clamping when ids are unique.
+        /// Runs under every profile.
+        #[test]
+        fn unique_ids_reorder_without_clamping() {
+            let model = ListModel::from_vec(vec![row(1), row(2), row(3)]);
+            let removed = reconcile(&model, vec![row(3), row(1), row(2)]);
+            assert!(removed.is_empty());
+            assert_eq!(ids(&model), vec![3, 1, 2]);
+        }
     }
 }
 

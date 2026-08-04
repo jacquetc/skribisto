@@ -16,7 +16,7 @@ pub fn import_note_templates(
     stack_id: Option<u64>,
     dto: &ImportNoteTemplatesDto,
 ) -> Result<ImportNoteTemplatesResultDto> {
-    let mut undo_redo_manager = ctx.undo_redo_manager.lock().unwrap();
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
     note_template_management_controller::import_note_templates(
         &ctx.db_context,
         &ctx.event_hub,

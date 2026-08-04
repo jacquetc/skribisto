@@ -355,7 +355,7 @@ impl EventHub {
                     .wait();
                 match outcome {
                     Ok(Some(event)) => {
-                        let mut queue = queue.lock().unwrap();
+                        let mut queue = crate::long_operation::lock_or_recover(&queue);
                         queue.push(event);
                     }
                     Ok(None) | Err(()) => break,
@@ -407,7 +407,7 @@ mod tests {
         thread::sleep(std::time::Duration::from_millis(100));
 
         let queue = event_hub.get_queue();
-        let queue = queue.lock().unwrap();
+        let queue = crate::long_operation::lock_or_recover(&queue);
         assert_eq!(queue.len(), 1);
         assert_eq!(queue[0], event);
 

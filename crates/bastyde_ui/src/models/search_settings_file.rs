@@ -183,20 +183,12 @@ impl SearchSettingsService {
 
     /// Graceful fallback when the config dir is unavailable: a throwaway
     /// per-process temp file, so the app still runs (search preferences just
-    /// won't persist across restarts).
+    /// won't persist across restarts). Shares its retry/uniqueness logic with
+    /// every sibling via
+    /// [`in_memory_settings_file`](super::backup_settings_file::in_memory_settings_file).
     pub fn in_memory_default() -> Self {
-        let path =
-            std::env::temp_dir().join(format!("skribisto-search-{}.toml", std::process::id()));
-        SettingsFile::load(path, Migrator::new())
-            .map(|file| Self { file })
-            .unwrap_or_else(|_| {
-                let file = SettingsFile::load(
-                    std::path::PathBuf::from(".skribisto-search.toml"),
-                    Migrator::new(),
-                )
-                .expect("in-memory search settings fallback");
-                Self { file }
-            })
+        let file = super::backup_settings_file::in_memory_settings_file("search", Migrator::new());
+        Self { file }
     }
 
     /// The `Reloadable` hook for the app's shared `SettingsRegistry` — register

@@ -18,6 +18,7 @@ use common::database::{db_context::DbContext, transactions::Transaction};
 use common::entities::{Binder, BinderItem, BinderTag, Content, Work};
 use common::event::ExportManagementEvent::ExportWork;
 use common::event::{Event, EventHub, Origin};
+use common::long_operation::lock_or_recover;
 #[allow(unused_imports)]
 use common::types;
 #[allow(unused_imports)]
@@ -43,7 +44,10 @@ impl ExportWorkUnitOfWork {
 
 impl QueryUnitOfWork for ExportWorkUnitOfWork {
     fn begin_transaction(&self) -> Result<()> {
-        let mut transaction = self.transaction.lock().unwrap();
+        // Poison-recovering lock, not a plain `.unwrap()` — see save_work_uow's
+        // begin_transaction for why (panic="abort" no longer shields a poisoned
+        // Mutex from turning into a second panic here).
+        let mut transaction = lock_or_recover(&self.transaction);
         // Frozen (snapshot-isolated) read: `gather` runs on this long op's background
         // thread; freezing gives it one consistent point-in-time view while the UI thread
         // keeps writing the live store (nothing serializes long ops against saves/edits).
@@ -52,7 +56,7 @@ impl QueryUnitOfWork for ExportWorkUnitOfWork {
     }
 
     fn end_transaction(&self) -> Result<()> {
-        let mut transaction = self.transaction.lock().unwrap();
+        let mut transaction = lock_or_recover(&self.transaction);
         transaction
             .take()
             .ok_or_else(|| anyhow::anyhow!("No active transaction"))?
