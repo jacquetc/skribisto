@@ -28,8 +28,8 @@ use bastyde::widgets::{
 };
 
 use skribisto_compiler::{
-    DigitStyle, DirectionMode, ExportFormat, HeadingLanguage, HeadingScheme, LineSpacing, PageSize,
-    Preset, SceneBreak,
+    DigitStyle, DirectionMode, EpigraphPlacement, ExportFormat, HeadingLanguage, HeadingScheme,
+    LineSpacing, PageSize, Preset, SceneBreak,
 };
 use skribisto_model::scene_break::SceneBreakTier;
 
@@ -497,6 +497,10 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
             yes_no(p.include_epigraphs),
         ),
         (
+            tr!(settings_styles_field_epigraph_placement()),
+            epigraph_placement_label(p.epigraph_placement),
+        ),
+        (
             tr!(settings_styles_field_paratexts()),
             yes_no(p.include_paratexts),
         ),
@@ -594,6 +598,13 @@ fn page_size_label(p: PageSize) -> LocalizedString {
         PageSize::A4 => lit!("A4"),
         PageSize::A5 => lit!("A5"),
         PageSize::Letter => tr!(settings_styles_page_letter()),
+    }
+}
+
+fn epigraph_placement_label(p: EpigraphPlacement) -> LocalizedString {
+    match p {
+        EpigraphPlacement::AfterHeading => tr!(settings_styles_epigraph_after()),
+        EpigraphPlacement::BeforeHeading => tr!(settings_styles_epigraph_before()),
     }
 }
 
@@ -760,6 +771,22 @@ impl Widget for StyleEditor {
         bind_field(ctx, &self.vm, &id, &epigraphs, |p, v| {
             p.include_epigraphs = v
         });
+        // Where the epigraph sits, as a two-way segmented control: it is a choice between
+        // two conventions, not a switch that is on or off.
+        let placement_idx = Signal::new(match preset.epigraph_placement {
+            EpigraphPlacement::AfterHeading => 0usize,
+            EpigraphPlacement::BeforeHeading => 1,
+        });
+        bind_field(ctx, &self.vm, &id, &placement_idx, |p, v| {
+            p.epigraph_placement = match v {
+                1 => EpigraphPlacement::BeforeHeading,
+                _ => EpigraphPlacement::AfterHeading,
+            };
+        });
+        let placement = SegmentedControl::new(placement_idx)
+            .segment(Segment::new(tr!(settings_styles_epigraph_after())))
+            .segment(Segment::new(tr!(settings_styles_epigraph_before())));
+
         let paratexts = Signal::new(preset.include_paratexts);
         bind_field(ctx, &self.vm, &id, &paratexts, |p, v| {
             p.include_paratexts = v
@@ -846,6 +873,10 @@ impl Widget for StyleEditor {
             .line(
                 field_label(tr!(settings_styles_field_epigraphs())),
                 Toggle::new(epigraphs).labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_epigraph_placement())),
+                placement,
             )
             .line(
                 field_label(tr!(settings_styles_field_paratexts())),
@@ -988,6 +1019,67 @@ mod tests {
             );
         }
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The epigraph placement is a two-way choice rather than a switch, so it rides its own
+    /// signal type — and it still has to reach the saved style.
+    #[test]
+    fn the_epigraph_placement_writes_through_to_the_saved_style() {
+        let (vm, id, dir) = vm_with_a_user_style();
+        assert_eq!(
+            vm.user_preset(&id).unwrap().epigraph_placement,
+            EpigraphPlacement::AfterHeading,
+            "the convention is what a new style starts from"
+        );
+
+        let idx = Signal::new(0usize);
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(Box::new(PlacementBinder {
+            vm: vm.clone(),
+            id: id.clone(),
+            idx: idx.clone(),
+        }));
+        tree.layout(SizeProposal::exact(100.0, 100.0));
+
+        idx.set(1);
+        assert_eq!(
+            vm.user_preset(&id).unwrap().epigraph_placement,
+            EpigraphPlacement::BeforeHeading
+        );
+        idx.set(0);
+        assert_eq!(
+            vm.user_preset(&id).unwrap().epigraph_placement,
+            EpigraphPlacement::AfterHeading
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    struct PlacementBinder {
+        vm: ExportStylesViewModel,
+        id: String,
+        idx: Signal<usize>,
+    }
+
+    impl std::fmt::Debug for PlacementBinder {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("PlacementBinder").finish()
+        }
+    }
+
+    impl Widget for PlacementBinder {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            bind_field(ctx, &self.vm, &self.id, &self.idx, |p, v| {
+                p.epigraph_placement = match v {
+                    1 => EpigraphPlacement::BeforeHeading,
+                    _ => EpigraphPlacement::AfterHeading,
+                };
+            });
+            Vec::new()
+        }
+
+        fn layout_response(&self, p: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+            p.resolve(0.0, 0.0).into()
+        }
     }
 
     /// Every switch the pane added, with the write it performs. Adding a knob to the pane

@@ -128,6 +128,29 @@ pub enum HeadingScheme {
     NumberAndTitle,
 }
 
+/// Where a chapter's epigraph sits relative to the heading that opens the chapter.
+///
+/// Every editorial convention that actually writes the rule down says **after**: Chicago
+/// ("typically follows the chapter number … and any chapter title"), French practice (the
+/// epigraph "suit le titre du chapitre"), German (a chapter's Motto stands *zwischen*
+/// Kapitelüberschrift und Textbeginn), and the Russian publishing dictionary («эпиграф к
+/// главе завёрстывается после заголовка главы перед текстом»).
+///
+/// Putting it above the title is nonetheless a real and long-standing designer's choice —
+/// LaTeX's `epigraph` package ships `\epigraphhead` for exactly that, offset above the
+/// chapter heading — and enough published fiction does it that a writer who remembers it
+/// that way is not misremembering. So it is a choice, not a rule, and the default is the
+/// documented convention.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EpigraphPlacement {
+    /// After the chapter number/title, before the body. The editorial standard.
+    #[default]
+    AfterHeading,
+    /// Above the chapter heading, opening the page.
+    BeforeHeading,
+}
+
 /// Which language drives the generated structural words.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
@@ -244,6 +267,11 @@ pub struct Preset {
     pub include_notes: bool,
     #[serde(default)]
     pub include_scene_titles: bool,
+    /// Where a chapter's epigraph sits relative to its heading. Plain `#[serde(default)]`
+    /// is right here, unlike its bool neighbours: the enum's own default *is* the
+    /// convention, so a preset saved before this field existed keeps doing what it did.
+    #[serde(default)]
+    pub epigraph_placement: EpigraphPlacement,
     /// Keep the epigraphs. Unlike its three neighbours this defaults to **true**, and it
     /// needs `default = "yes"` to do it: an epigraph is finished-book content, not a
     /// working note, so "I wrote it, publish it" is the right answer — but a bare
@@ -313,6 +341,7 @@ impl Preset {
             include_notes: false,
             include_scene_titles: false,
             include_epigraphs: true,
+            epigraph_placement: EpigraphPlacement::AfterHeading,
             include_paratexts: true,
             heading_language: HeadingLanguage::Auto,
             digit_style: DigitStyle::Western,
@@ -490,6 +519,35 @@ mod tests {
         assert!(p.paratext_starts_page);
         // …but the word count is a submission convention, not a default.
         assert!(!p.title_page_word_count);
+    }
+
+    /// The convention, in every tradition that writes it down, is after the heading — so
+    /// that is what a preset with nothing to say about it gets, including every preset
+    /// saved before the field existed.
+    #[test]
+    fn every_builtin_follows_the_documented_convention() {
+        for p in builtin_presets() {
+            assert_eq!(
+                p.epigraph_placement,
+                EpigraphPlacement::AfterHeading,
+                "preset {} must follow its tradition's own rule",
+                p.id
+            );
+        }
+        let json = r#"{ "id": "x", "name": "X", "font_family": "Serif", "font_size_pt": 12.0 }"#;
+        let old: Preset = serde_json::from_str(json).unwrap();
+        assert_eq!(old.epigraph_placement, EpigraphPlacement::AfterHeading);
+    }
+
+    /// …and the other placement round-trips, so a writer who chooses it keeps it.
+    #[test]
+    fn the_other_placement_round_trips() {
+        let p = Preset {
+            epigraph_placement: EpigraphPlacement::BeforeHeading,
+            ..Preset::base("x", "X")
+        };
+        let back: Preset = serde_json::from_str(&serde_json::to_string(&p).unwrap()).unwrap();
+        assert_eq!(back.epigraph_placement, EpigraphPlacement::BeforeHeading);
     }
 
     /// An explicit `false` still means false — the default only fills a *missing* key.

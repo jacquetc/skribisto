@@ -25,8 +25,8 @@ mod preset;
 mod render;
 
 pub use preset::{
-    DigitStyle, DirectionMode, ExportFormat, HeadingLanguage, HeadingScheme, LineSpacing, Margins,
-    PageSize, Preset, SceneBreak, builtin_presets,
+    DigitStyle, DirectionMode, EpigraphPlacement, ExportFormat, HeadingLanguage, HeadingScheme,
+    LineSpacing, Margins, PageSize, Preset, SceneBreak, builtin_presets,
 };
 pub use render::{RenderRequest, RenderStats, render_to_file, render_to_string};
 

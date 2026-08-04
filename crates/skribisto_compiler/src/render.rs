@@ -27,8 +27,8 @@ use text_document::{
 
 use crate::headings::{self, Level};
 use crate::preset::{
-    DirectionMode, ExportFormat, HeadingLanguage, HeadingScheme, LineSpacing, PageSize, Preset,
-    SceneBreak,
+    DirectionMode, EpigraphPlacement, ExportFormat, HeadingLanguage, HeadingScheme, LineSpacing,
+    PageSize, Preset, SceneBreak,
 };
 
 /// Everything a render needs: the frozen tree, the ordered ids to include, the style, the
@@ -366,7 +366,10 @@ fn assemble(
             continue;
         }
         // A paratext has no heading to carry the break, so it queues one for its own first
-        // prose block below.
+        // prose block below — and, at the bottom of the loop, another for whatever follows
+        // it. What comes after the last paratext of a run is usually ordinary prose (a
+        // prologue, an opening scene) with no structural opener of its own to break on, so
+        // without that second arming the front matter's last page runs into the body.
         if is_paratext && preset.paratext_starts_page {
             pending_break = true;
         }
@@ -379,8 +382,8 @@ fn assemble(
         let heading_rtl = is_rtl_row(preset, &heading_lang);
         let mut contributed = false;
 
-        // 1. A structural heading, if this item opens a level; else a scene title, if kept.
-        if let Some(level) = level_of(&row.item.sub_role) {
+        let level = level_of(&row.item.sub_role);
+        if let Some(level) = level {
             counters.bump(level);
             // Opening a structural level restarts the flow, so whatever a
             // trailing break queued for "the next paragraph" stops here. This
@@ -388,9 +391,9 @@ fn assemble(
             // printed: a preset whose chapter scheme is `None` emits no text,
             // and gating on that would let a break bleed across the seam.
             pending_attrs.clear();
-            // Queued on the *structure*, not on whether a heading prints: a preset whose
-            // chapter scheme is `None` still opens its chapters on a new page, the break
-            // simply rides the chapter's first paragraph instead of its title.
+            // Armed on the *structure*, and armed here — above everything this row emits —
+            // because with the epigraph above the heading it is the epigraph, not the
+            // title, that opens the page.
             if match level {
                 Level::Book => preset.book_starts_page,
                 Level::Part => preset.part_starts_page,
@@ -398,6 +401,36 @@ fn assemble(
             } {
                 pending_break = true;
             }
+        }
+
+        // The epigraph, prepared once and emitted on whichever side of the heading the
+        // style asks for. Every convention that writes the rule down puts it after the
+        // title; putting it above is a designer's choice with real currency, so the style
+        // decides and the default is the convention (see `EpigraphPlacement`).
+        let epigraph = preset
+            .include_epigraphs
+            .then(|| content_of(row.contents, ContentRole::EpigraphText))
+            .flatten()
+            .filter(|e| !e.trim().is_empty());
+        let epigraph_leads =
+            epigraph.is_some() && preset.epigraph_placement == EpigraphPlacement::BeforeHeading;
+
+        // 1a. The epigraph, when it opens the chapter.
+        if epigraph_leads && let Some(epi) = epigraph {
+            let brk = take_break(&mut pending_break, &mut anything_above);
+            contributed |= push_epigraph(
+                &mut out,
+                epi,
+                &brk,
+                row_rtl,
+                preset,
+                &mut pending_attrs,
+                row,
+            );
+        }
+
+        // 1b. A structural heading, if this item opens a level; else a scene title, if kept.
+        if let Some(level) = level {
             // A book is titled, not numbered — and the title page (if on) already carries
             // it, so the opener then emits nothing. Parts/chapters use their own schemes.
             let scheme = match level {
@@ -428,53 +461,11 @@ fn assemble(
             }
         }
 
-        // 2. The epigraph, if this row heads a book/part/chapter and the preset keeps it.
-        //    Between the heading and the prose, which is where CMOS puts it: after the
-        //    chapter number/title, before the body text.
-        if preset.include_epigraphs
-            && let Some(epi) = content_of(row.contents, ContentRole::EpigraphText)
-            && !epi.trim().is_empty()
-        {
-            // Never scanned for break markers: an epigraph is quoted matter, not the
-            // scene flow a break divides. Its words are not the manuscript's either, so
-            // the count is discarded exactly as the synopsis's is below — an epigraph
-            // must not move a pace target.
-            // Mark the quote as an epigraph, not merely as quoted text. `semantic_role`
-            // rides the blockquote's first block — djot block attributes are the only
-            // channel — and text-document lifts it onto the frame, which is what lets
-            // EPUB emit `epub:type="epigraph"`, DOCX give it a named style and Typst use
-            // its own attribution slot. Without it every writer sees an ordinary
-            // blockquote and none of them can say what it is.
-            let marked = mark_epigraph(epi);
-            let (_, emitted) = push_prose(
-                &mut out,
-                &marked,
-                row_rtl,
-                preset,
-                false,
-                &mut pending_attrs,
-                &[],
-            );
-            if emitted {
-                contributed = true;
-                // New Hart's Rule: the first line after a heading, an epigraph or a
-                // section break carries no first-line indent. Queued the same way a
-                // scene break queues it, and consumed by this row's own prose below —
-                // `push_prose` only lets manuscript prose (`scan_markers`) inherit the
-                // queue, so a synopsis can never swallow it by mistake.
-                //
-                // **Only when this row has prose of its own.** A Part or a Book has none,
-                // so the queue would outlive the row and land on whatever prose came
-                // next — a following Scene's opening paragraph, which is a different
-                // paragraph entirely and is entitled to its indent. Relying on "the next
-                // structural heading clears it" is not enough: the binder is
-                // organisational, so nothing guarantees a heading row comes next.
-                if main_prose_role(&row.item.sub_role)
-                    .is_some_and(|role| content_of(row.contents, role).is_some())
-                {
-                    pending_attrs.push("text_indent=0".to_string());
-                }
-            }
+        // 2. The epigraph, when it follows the heading — where CMOS, French, German and
+        //    Russian practice all put it: after the chapter number/title, before the body.
+        if !epigraph_leads && let Some(epi) = epigraph {
+            contributed |=
+                push_epigraph(&mut out, epi, &[], row_rtl, preset, &mut pending_attrs, row);
         }
 
         // 3. The main prose (a scene's SceneText, a note's NoteText) — appended verbatim
@@ -529,6 +520,12 @@ fn assemble(
                 &[],
             );
             contributed |= emitted;
+        }
+
+        // Re-armed *after* the row: the break this row consumed was its own, and the page
+        // it opened has to end somewhere too.
+        if is_paratext && preset.paratext_starts_page {
+            pending_break = true;
         }
 
         if contributed {
@@ -907,6 +904,61 @@ fn title_drop_px(preset: &Preset) -> i64 {
     ((text_h_in / 3.0) * 96.0).round().max(0.0) as i64
 }
 
+/// Emit one row's epigraph, returning whether anything reached the output.
+///
+/// `lead` is a page break this epigraph is opening the chapter with, if any. It rides the
+/// quotation's own attribute line rather than a line in front of it — see
+/// [`mark_epigraph`] — and falls back to an ordinary block attribute when the epigraph was
+/// typed as a bare paragraph with no `>` to hang it on.
+fn push_epigraph(
+    out: &mut String,
+    epi: &str,
+    lead: &[String],
+    rtl: bool,
+    preset: &Preset,
+    pending_attrs: &mut Vec<String>,
+    row: &Row<'_>,
+) -> bool {
+    // Mark the quote as an epigraph, not merely as quoted text. `semantic_role` rides the
+    // blockquote's first block — djot block attributes are the only channel — and
+    // text-document lifts it onto the frame, which is what lets EPUB emit
+    // `epub:type="epigraph"`, DOCX give it a named style and Typst use its own attribution
+    // slot. Without it every writer sees an ordinary blockquote and none can say what it is.
+    let (marked, is_quote) = mark_epigraph(epi, lead);
+    // Never scanned for break markers: an epigraph is quoted matter, not the scene flow a
+    // break divides. Its words are not the manuscript's either, so the count is discarded
+    // exactly as the synopsis's is — an epigraph must not move a pace target.
+    let (_, emitted) = push_prose(
+        out,
+        &marked,
+        rtl,
+        preset,
+        false,
+        pending_attrs,
+        // Already inside the quotation when there was one to put it in.
+        if is_quote { &[] } else { lead },
+    );
+    if emitted {
+        // New Hart's Rule: the first line after a heading, an epigraph or a section break
+        // carries no first-line indent. Queued the same way a scene break queues it, and
+        // consumed by this row's own prose — `push_prose` only lets manuscript prose
+        // (`scan_markers`) inherit the queue, so a synopsis cannot swallow it by mistake.
+        //
+        // **Only when this row has prose of its own.** A Part or a Book has none, so the
+        // queue would outlive the row and land on whatever prose came next — a following
+        // Scene's opening paragraph, which is a different paragraph entirely and is
+        // entitled to its indent. Relying on "the next structural heading clears it" is not
+        // enough: the binder is organisational, so nothing guarantees a heading row comes
+        // next.
+        if main_prose_role(&row.item.sub_role)
+            .is_some_and(|role| content_of(row.contents, role).is_some())
+        {
+            pending_attrs.push("text_indent=0".to_string());
+        }
+    }
+    emitted
+}
+
 /// Take a queued page break for the block about to be emitted, if there is one and if
 /// there is anything above it to end a page on.
 ///
@@ -1077,23 +1129,38 @@ fn main_prose_role(sr: &BinderItemSubRole) -> Option<ContentRole> {
 /// Text that is not a blockquote is returned untouched: an epigraph field holding a bare
 /// paragraph (someone typed a quotation without the `>`) still exports as what it is
 /// rather than acquiring a claim the markup cannot carry.
-fn mark_epigraph(djot: &str) -> String {
+/// `extra` rides the **first** quotation's attribute line only — it is the page break that
+/// opens the chapter, and a chapter opens once however many quotations follow. It has to go
+/// *inside* the quote: an attribute line in front of a `>` block is attached to no block at
+/// all by the importer (block attributes are read for standalone paragraphs and headings),
+/// so a break written there would vanish without trace.
+///
+/// Returns whether any quotation was found, so a caller that wanted to hand `extra` over
+/// knows whether it was taken — an epigraph typed as a bare paragraph has no quotation to
+/// put it on, and the caller must place it the ordinary way instead.
+fn mark_epigraph(djot: &str, extra: &[String]) -> (String, bool) {
     let mut out = String::with_capacity(djot.len() + 32);
     let mut in_quote = false;
+    let mut marked = false;
     for line in djot.lines() {
         let is_quote_line = line.trim_start().starts_with('>');
         if is_quote_line && !in_quote {
             // Match the line's own `>` prefix so the attribute lands inside the quote,
             // and at the same nesting depth as the text it describes.
             let indent: String = line.chars().take_while(|c| c.is_whitespace()).collect();
+            let mut attrs = vec!["semantic_role=epigraph".to_string()];
+            if !marked {
+                attrs.extend(extra.iter().cloned());
+            }
             out.push_str(&indent);
-            out.push_str("> {semantic_role=epigraph}\n");
+            out.push_str(&format!("> {{{}}}\n", attrs.join(" ")));
+            marked = true;
         }
         in_quote = is_quote_line;
         out.push_str(line);
         out.push('\n');
     }
-    out
+    (out, marked)
 }
 
 fn content_of(contents: &[Content], role: ContentRole) -> Option<&str> {
@@ -1588,6 +1655,188 @@ mod tests {
         assert!(!txt.contains('\u{000C}'), "{txt:?}");
         let md = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Markdown)).unwrap();
         assert!(!md.contains("<div"), "{md}");
+    }
+
+    /// [`flat_book`] with an epigraph on its chapter. A local variant rather than a change
+    /// to the shared fixture, which a dozen other tests measure against.
+    fn flat_book_with_epigraph(epi: &str) -> Gathered {
+        let mut g = flat_book();
+        for it in &mut g.binders[0].items {
+            if it.item.id == 101 {
+                it.contents.push(c(9, ContentRole::EpigraphText, epi));
+            }
+        }
+        g
+    }
+
+    // ── where the epigraph sits ──
+
+    /// The default is the documented convention: chapter title, then epigraph, then body.
+    #[test]
+    fn by_default_the_epigraph_follows_the_chapter_title() {
+        let g = flat_book_with_epigraph("> A quotation.");
+        let p = Preset {
+            book_title_page: false,
+            ..preset("neutral")
+        };
+        assert_eq!(p.epigraph_placement, EpigraphPlacement::AfterHeading);
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        let title = txt.find("Storms").expect("the chapter title");
+        let epi = txt.find("A quotation").expect("the epigraph");
+        let body = txt.find("The wind rose").expect("the prose");
+        assert!(title < epi && epi < body, "{txt}");
+    }
+
+    /// …and the other placement really moves it above the title, rather than being a
+    /// setting that reads well and changes nothing.
+    #[test]
+    fn the_other_placement_puts_the_epigraph_above_the_title() {
+        let g = flat_book_with_epigraph("> A quotation.");
+        let p = Preset {
+            epigraph_placement: EpigraphPlacement::BeforeHeading,
+            book_title_page: false,
+            ..preset("neutral")
+        };
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        let title = txt.find("Storms").expect("the chapter title");
+        let epi = txt.find("A quotation").expect("the epigraph");
+        let body = txt.find("The wind rose").expect("the prose");
+        assert!(epi < title && title < body, "{txt}");
+    }
+
+    /// With the epigraph leading, *it* opens the page — and the break has to ride the
+    /// quotation's own attribute line. An attribute line in front of a `>` block attaches
+    /// to no block at all, so a break written there would vanish silently.
+    #[test]
+    fn a_leading_epigraph_carries_the_chapters_page_break() {
+        let g = flat_book_with_epigraph("> A quotation.");
+        let p = Preset {
+            epigraph_placement: EpigraphPlacement::BeforeHeading,
+            book_title_page: false,
+            ..preset("manuscript-shunn")
+        };
+        let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+        let brk = dj
+            .find("page_break_before")
+            .unwrap_or_else(|| panic!("no break in:\n{dj}"));
+        let title = dj.find("Storms").expect("the chapter title");
+        assert!(
+            brk < title,
+            "the break opens the epigraph, not the title:\n{dj}"
+        );
+        // Inside the quotation, on the same line as the role it shares a block with.
+        let line = dj
+            .lines()
+            .find(|l| l.contains("page_break_before"))
+            .expect("the attribute line");
+        assert!(
+            line.trim_start().starts_with('>'),
+            "the break must sit inside the quotation, not in front of it: {line:?}"
+        );
+        assert!(line.contains("semantic_role=epigraph"), "{line:?}");
+    }
+
+    /// An epigraph typed as a bare paragraph has no quotation to hang the break on, so it
+    /// takes it the ordinary way rather than losing it.
+    #[test]
+    fn a_bare_paragraph_epigraph_still_gets_its_break() {
+        let g = flat_book_with_epigraph("No angle bracket here.");
+        let p = Preset {
+            epigraph_placement: EpigraphPlacement::BeforeHeading,
+            book_title_page: false,
+            ..preset("manuscript-shunn")
+        };
+        let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+        let line = dj
+            .lines()
+            .find(|l| l.contains("page_break_before"))
+            .unwrap_or_else(|| panic!("no break in:\n{dj}"));
+        assert!(!line.trim_start().starts_with('>'), "{line:?}");
+        assert!(
+            dj.find("page_break_before") < dj.find("No angle bracket"),
+            "{dj}"
+        );
+    }
+
+    /// Only the first quotation opens the page: a chapter opens once, however many
+    /// epigraphs it carries.
+    #[test]
+    fn only_the_first_quotation_carries_the_break() {
+        let g = flat_book_with_epigraph("> First.\n\n> Second.");
+        let p = Preset {
+            epigraph_placement: EpigraphPlacement::BeforeHeading,
+            book_title_page: false,
+            ..preset("manuscript-shunn")
+        };
+        let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+        assert_eq!(dj.matches("page_break_before").count(), 1, "{dj}");
+    }
+
+    /// …while every quotation is still marked as an epigraph. Asserted on `mark_epigraph`
+    /// itself rather than on a rendered document: `render_to_string` round-trips through
+    /// the parser, which folds adjacent `>` groups into one frame, so the round-tripped
+    /// djot carries one role marker no matter how many the compiler wrote.
+    #[test]
+    fn every_quotation_is_marked_but_only_the_first_takes_the_extras() {
+        let (out, marked) = mark_epigraph(
+            "> First.\n\n> Second.",
+            &["page_break_before=true".to_string()],
+        );
+        assert!(marked);
+        assert_eq!(out.matches("semantic_role=epigraph").count(), 2, "{out}");
+        assert_eq!(out.matches("page_break_before").count(), 1, "{out}");
+    }
+
+    /// An epigraph with no `>` at all reports that it took nothing, so the caller knows to
+    /// place the break itself.
+    #[test]
+    fn a_bare_paragraph_reports_that_it_carried_nothing() {
+        let (out, marked) = mark_epigraph("Just a line.", &["page_break_before=true".to_string()]);
+        assert!(!marked);
+        assert!(!out.contains("page_break_before"), "{out}");
+        assert!(!out.contains("semantic_role"), "{out}");
+    }
+
+    /// The *last* paratext of a run needs a break after it, not only one before. What
+    /// follows front matter is usually ordinary prose — a prologue, an opening scene —
+    /// with no structural opener of its own to break on, so a break-before rule alone
+    /// leaves the last page of the front matter running straight into the body.
+    #[test]
+    fn the_body_starts_a_page_after_the_last_paratext() {
+        let mut g = flat_book();
+        // Front matter, then a plain Scene: exactly the shape the bug showed up in.
+        g.binders[0].items.insert(
+            1,
+            iwc(
+                103,
+                SR::Paratext,
+                "en",
+                vec![c(9, ContentRole::ParatextText, "For my mother.")],
+            ),
+        );
+        g.binders[0].items.insert(
+            2,
+            iwc(
+                104,
+                SR::Scene,
+                "en",
+                vec![c(10, ContentRole::SceneText, "The prologue opens.")],
+            ),
+        );
+        let p = Preset {
+            book_title_page: false,
+            ..preset("neutral")
+        };
+        let dj =
+            render_to_string(&req(&g, &[100, 103, 104, 101, 102], &p, ExportFormat::Djot)).unwrap();
+        let dedication = dj.find("For my mother").expect("the paratext");
+        let prologue = dj.find("The prologue opens").expect("the scene after it");
+        let after = dj[dedication..prologue]
+            .find("page_break_before")
+            .unwrap_or_else(|| panic!("nothing breaks between them:\n{dj}"));
+        let _ = after;
     }
 
     // ── the title page ──
