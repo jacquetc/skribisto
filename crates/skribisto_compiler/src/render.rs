@@ -302,7 +302,13 @@ fn assemble(
     present_depths.dedup();
 
     let mut out = String::new();
-    let mut counters = Counters::default();
+    // Numbered from where this export actually begins in the manuscript, so a scoped
+    // export ("Export Chapter") reports the chapter's real number rather than renumbering
+    // it from one.
+    let mut counters = match rows.first() {
+        Some(first) => seed_counters(req, first.item.id),
+        None => Counters::default(),
+    };
     let mut words = 0usize;
     // Block attributes a scene break has queued for the *next* prose block: the
     // suppressed first-line indent, plus the extra leading a `BlankLine` break
@@ -775,7 +781,16 @@ struct Counters {
 impl Counters {
     fn bump(&mut self, level: Level) {
         match level {
-            Level::Book => self.book += 1,
+            // A new book restarts the levels beneath it: book two opens with Part One and
+            // Chapter One, not with part four and chapter twenty-three.
+            Level::Book => {
+                self.book += 1;
+                self.part = 0;
+                self.chapter = 0;
+            }
+            // A part does **not** restart chapter numbering. Trade practice runs chapters
+            // continuously across the parts of one book ("Part Two" opening on Chapter
+            // Eleven), and restarting them would renumber every manuscript that uses parts.
             Level::Part => self.part += 1,
             Level::Chapter => self.chapter += 1,
         }
@@ -787,6 +802,37 @@ impl Counters {
             Level::Chapter => self.chapter,
         }
     }
+}
+
+/// The counters as they stand when the export's **first included row** is reached, by
+/// replaying every structural opener before it in the manuscript's own order.
+///
+/// Without this the counters only ever see what is inside the export, so exporting one
+/// chapter on its own numbered it "Chapter 1" however deep in the book it actually sat —
+/// a writer sending chapter five to a reader got a document claiming to be chapter one.
+/// The number is a fact about the manuscript, not about the selection.
+///
+/// Replays [`Counters::bump`] rather than counting by hand, so the reset rule cannot drift
+/// between the seed and the loop that continues it. A full-project export seeds nothing
+/// (its first row *is* the first row) and renders exactly as it always did.
+fn seed_counters(req: &RenderRequest, first_included: u64) -> Counters {
+    let mut counters = Counters::default();
+    for bwi in &req.gathered.binders {
+        for iwc in &bwi.items {
+            if iwc.item.id == first_included {
+                return counters;
+            }
+            // Trashed rows are not part of the book, so they do not hold a number —
+            // matching `flatten`, which never yields them either.
+            if !iwc.item.activated {
+                continue;
+            }
+            if let Some(level) = level_of(&iwc.item.sub_role) {
+                counters.bump(level);
+            }
+        }
+    }
+    counters
 }
 
 fn level_of(sr: &BinderItemSubRole) -> Option<Level> {
@@ -856,9 +902,14 @@ fn heading_text(
         HeadingScheme::TitleOnly => title_of(row)
             .map(str::to_string)
             .or_else(|| Some(numbered())),
+        // A title that already *is* the number is not a title to append. Writers who name
+        // their chapters "Chapter 5" (or import a project that did) would otherwise get
+        // "Chapter 5 — Chapter 5" — the number rendered twice, once by the scheme and once
+        // by the data. Compared against the localized number, so it holds in every locale
+        // the heading is generated in.
         HeadingScheme::NumberAndTitle => Some(match title_of(row) {
-            Some(t) => format!("{} — {t}", numbered()),
-            None => numbered(),
+            Some(t) if t.trim() != numbered() => format!("{} — {t}", numbered()),
+            _ => numbered(),
         }),
     }
 }
@@ -1960,6 +2011,126 @@ mod tests {
         assert!(
             gap(6.0) < gap(0.0),
             "an already-spaced preset must not get the full extra gap"
+        );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Heading numbers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// A five-chapter book, of which only the fifth is exported.
+    fn five_chapter_book() -> Gathered {
+        let mut items = vec![iwc(
+            100,
+            SR::BookBegin,
+            "en",
+            vec![c(1, ContentRole::BookTitle, "My Novel")],
+        )];
+        for n in 1..=5u64 {
+            items.push(iwc(
+                100 + n,
+                SR::ChapterScene,
+                "en",
+                vec![
+                    c(200 + n, ContentRole::ChapterTitle, &format!("Chapter {n}")),
+                    c(300 + n, ContentRole::SceneText, &format!("Scene {n}.")),
+                ],
+            ));
+        }
+        gathered(items, "en")
+    }
+
+    /// Exporting one chapter must report the number it carries in the manuscript, not its
+    /// position in the export. A writer sending chapter five to a reader was handed a
+    /// document that called itself chapter one.
+    #[test]
+    fn a_scoped_export_numbers_a_chapter_as_the_book_does() {
+        let g = five_chapter_book();
+        let p = preset("neutral");
+        // Exactly what `ScopeKind::Chapter` resolves for the fifth chapter.
+        let out = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+        assert!(
+            out.contains("Chapter 5"),
+            "the fifth chapter must be numbered five: {out}"
+        );
+        assert!(
+            !out.contains("Chapter 1"),
+            "and must not be renumbered from one: {out}"
+        );
+    }
+
+    /// A title that already says the number must not have it prepended again — the exact
+    /// shape the bug report showed, "Chapter 1 — Chapter 5".
+    #[test]
+    fn a_number_is_not_repeated_by_a_title_that_already_carries_it() {
+        let g = five_chapter_book();
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+        assert!(
+            !out.contains("Chapter 5 — Chapter 5"),
+            "the number must not appear twice: {out}"
+        );
+        let heading = out.lines().find(|l| l.starts_with('#')).expect("a heading");
+        assert_eq!(heading, "# Chapter 5", "got {heading:?}");
+    }
+
+    /// A real title still gets the number in front of it — the de-duplication above must
+    /// not swallow titles generally.
+    #[test]
+    fn a_real_title_still_follows_its_number() {
+        let mut g = five_chapter_book();
+        g.binders[0].items[5].contents[0].data = "The Storm".to_string();
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+        assert!(out.contains("Chapter 5 — The Storm"), "{out}");
+    }
+
+    /// A whole-project export is unchanged: its first row *is* the first row, so nothing
+    /// is seeded and the chapters read 1..5 exactly as before.
+    #[test]
+    fn a_full_export_still_numbers_from_one() {
+        let g = five_chapter_book();
+        let p = preset("neutral");
+        let out =
+            render_to_string(&req(&g, &[100, 101, 102, 103, 104, 105], &p, ExportFormat::Djot))
+                .unwrap();
+        for n in 1..=5 {
+            assert!(
+                out.contains(&format!("Chapter {n}")),
+                "chapter {n} missing: {out}"
+            );
+        }
+    }
+
+    /// A second book restarts its chapter numbering; a part inside one book does not.
+    /// Trade practice runs chapters continuously across the parts of a book.
+    #[test]
+    fn a_new_book_restarts_chapters_but_a_new_part_does_not() {
+        let g = gathered(
+            vec![
+                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "One")]),
+                iwc(101, SR::ChapterScene, "en", vec![c(2, ContentRole::SceneText, "a")]),
+                iwc(102, SR::Part, "en", vec![c(3, ContentRole::PartTitle, "Second Part")]),
+                iwc(103, SR::ChapterScene, "en", vec![c(4, ContentRole::SceneText, "b")]),
+                iwc(104, SR::BookBegin, "en", vec![c(5, ContentRole::BookTitle, "Two")]),
+                iwc(105, SR::ChapterScene, "en", vec![c(6, ContentRole::SceneText, "c")]),
+            ],
+            "en",
+        );
+        let p = preset("neutral");
+
+        // The chapter after the part is the book's second, not its first.
+        let after_part = render_to_string(&req(&g, &[103], &p, ExportFormat::Djot)).unwrap();
+        assert!(
+            after_part.contains("Chapter 2"),
+            "a part must not restart chapters: {after_part}"
+        );
+
+        // The chapter in the second book is that book's first.
+        let second_book = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+        assert!(
+            second_book.contains("Chapter 1"),
+            "a new book must restart chapters: {second_book}"
         );
     }
 
