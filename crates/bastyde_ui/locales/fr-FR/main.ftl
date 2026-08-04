@@ -325,6 +325,13 @@ settings-styles-field-notes = Inclure les notes
 settings-styles-field-synopses = Inclure les synopsis
 settings-styles-field-scene-titles = Inclure les titres de scène
 settings-styles-field-epigraphs = Inclure les épigraphes
+settings-styles-field-paratexts = Inclure les paratextes
+settings-styles-group-pages = Pages
+settings-styles-field-word-count = Nombre de mots sur la page de titre
+settings-styles-field-page-books = Nouvelle page à chaque livre
+settings-styles-field-page-parts = Nouvelle page à chaque partie
+settings-styles-field-page-chapters = Nouvelle page à chaque chapitre
+settings-styles-field-page-paratexts = Nouvelle page à chaque paratexte
 # Options de schéma de titre
 settings-styles-heading-none = Aucun titre
 settings-styles-heading-numbered = Numéro seul
@@ -871,6 +878,8 @@ export-overwrite-text = « { $name } » existe déjà. Le remplacer ?
 export-progress-title = Exportation…
 export-cancelled = Exportation annulée
 export-done = { $count } élément(s) exporté(s)
+export-open-file = Ouvrir
+export-show-in-folder = Afficher dans le dossier
 # Toast d'erreur : motif court dans le corps, chaîne technique complète derrière « Détails »
 export-error-title = Impossible d'exporter
 export-error-details = Détails

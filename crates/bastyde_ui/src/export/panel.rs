@@ -1,49 +1,66 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The Export modal — pick a scope + format + style + destination, watch a live preview, and
-//! export.
+//! The Export modal — pick a scope + format + style + destination, and export.
 //!
 //! Presented as an in-tree modal (see the `export.scope` action in `app.rs`), mirroring the
-//! Import panel's chrome (title strip + close). The body is a three-column layout:
+//! Import panel's chrome (title strip + close). The body is a two-column layout:
 //!
 //! - **Leading** — **What to export** (scope segmented control + the Choose… checkbox tree in
 //!   Custom mode). The tree owns the full column height so a real manuscript outline is usable.
-//! - **Middle** — **Format**, **Style preset**, and **Destination**.
-//! - **Trailing** — full-height live **preview**: the exact `TextDocument` the chosen style
-//!   would compile, rebuilt when the style, scope, or Choose… checks change. Same compile path
-//!   as the committed export.
+//! - **Trailing** — **Format**, **Style preset**, and **Destination**.
 //!
-//! Cancel / Export sit in a full-width footer under all three columns. All logic lives on
+//! Cancel / Export sit in a full-width footer under both columns. All logic lives on
 //! [`ExportViewModel`]; this view is thin.
+//!
+//! There used to be a third column carrying a live preview of the compiled document. It is
+//! gone. It could only ever show the *assembled text* — it compiled through one fixed format
+//! regardless of the one chosen — so the things a writer opens this modal to check (page
+//! breaks, the title page, DOCX styling, PDF pagination) were exactly the things it could not
+//! show. Whatever it did show, the real file shows better. The export toast now offers to
+//! open that file, or the folder holding it, which is what "let me look at the result"
+//! always meant.
 
 use bastyde::core::binding::BindingLevel;
 use bastyde::core::styles::PanelVariant;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::i18n::LocalizedString;
 use bastyde::prelude::*;
-use bastyde::widgets::rich_text::RichTextEditor;
 use bastyde::widgets::{
-    Badge, Button, ButtonVariant, Center, ComboBox, Divider, Expand, FilePickerField,
-    FilePickerKind, FixedSize, HStack, IconButton, Padding, Panel, RadioTile, RadioTileGroup,
-    Segment, SegmentedControl, Spacer, TextWidget, TileLayout, Toggle, VStack, Wrap,
+    Badge, Button, ButtonVariant, ComboBox, Divider, Expand, FilePickerField, FilePickerKind,
+    FixedSize, HStack, IconButton, Padding, Panel, RadioTile, RadioTileGroup, Segment,
+    SegmentedControl, Spacer, TextWidget, TileLayout, Toggle, VStack, Wrap,
 };
 
 use export_management::{ExportFormat, ExportScopeKind};
 use skribisto_compiler::Preset;
 
 use crate::export::choose::ChooseTreeWidget;
-use crate::view_models::{ExportViewModel, SettingsViewModel, format_label, scope_label};
+use crate::view_models::{ExportViewModel, format_label, scope_label};
 
-const CARD_W: f32 = 1200.0;
-const CARD_H: f32 = 760.0;
+/// Two columns now, not three — sized for what is left after the preview column went,
+/// rather than keeping a third of the card empty.
+const CARD_W: f32 = 900.0;
+/// Two heights, because the two modes genuinely hold different amounts. A quick scope is
+/// a segmented control and three fields; Custom adds a whole manuscript outline, and the
+/// tree is only usable with room to be a tree in. One height for both meant either a
+/// cramped outline or a half-empty dialog, and with the preview column gone there is
+/// nothing to fill the slack with.
+const CARD_H_QUICK: f32 = 520.0;
+const CARD_H_CUSTOM: f32 = 760.0;
+/// The taller of the two — what the headless layout tests propose.
+const CARD_H: f32 = CARD_H_CUSTOM;
 /// Leading column: scope control + Choose… tree (Custom mode).
 const TREE_W: f32 = 340.0;
-/// Middle column: format · style · destination.
+/// Trailing column: format · style · destination. Its *minimum*; it grows into whatever
+/// the tree leaves.
 const OPTIONS_W: f32 = 360.0;
 
 pub struct ExportPanel {
     vm: ExportViewModel,
+    /// Driven by the mode effect below rather than derived inline: a mapped signal is
+    /// read-only and lazy, and `FixedSize` wants a plain one it can observe.
+    card_height: Signal<f32>,
     root_child: Option<WidgetId>,
 }
 
@@ -52,8 +69,12 @@ impl ExportPanel {
     /// `App::build` wired the long-operation events to). The presenting action calls
     /// [`ExportViewModel::prepare`] first so the scope/anchor/default path are set.
     pub fn new(vm: ExportViewModel) -> Self {
+        // Seeded from the scope the presenting action already set, so the card opens at the
+        // right height rather than snapping to it on the first frame.
+        let custom = vm.scope_signal().get() == ExportScopeKind::Custom;
         Self {
             vm,
+            card_height: Signal::new(if custom { CARD_H_CUSTOM } else { CARD_H_QUICK }),
             root_child: None,
         }
     }
@@ -92,80 +113,6 @@ fn place_fill(bounds: Rect, children: &mut [WidgetPlacement]) {
     for child in children.iter_mut() {
         child.origin = bounds.origin();
         child.size = bounds.size();
-    }
-}
-
-/// Centre a child horizontally at a capped column width while **filling the
-/// proposed height** — the dual of [`crate::tabs::shared::editor::centered`]'s
-/// `CenterColumnFlowing`.
-///
-/// Flowing centres measure the child width-only so intrinsic (`min_lines`)
-/// editors grow with their document. A side-panel **preview** wants the
-/// opposite: a **greedy** editor that consumes the pane height and scrolls
-/// inside itself. That only works when the parent proposes an exact height;
-/// this wrapper fills the slot and forwards both axes to the child.
-struct CenterColumnFill {
-    column_width: Signal<f32>,
-    child_id: Option<WidgetId>,
-    pending: Option<Box<dyn Widget>>,
-}
-
-impl CenterColumnFill {
-    fn new(child: impl Widget + 'static, column_width: Signal<f32>) -> Self {
-        Self {
-            column_width,
-            child_id: None,
-            pending: Some(Box::new(child)),
-        }
-    }
-
-    fn col_w(&self, available: f32) -> f32 {
-        self.column_width.get().min(available).max(0.0)
-    }
-}
-
-impl std::fmt::Debug for CenterColumnFill {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("CenterColumnFill").finish()
-    }
-}
-
-impl Widget for CenterColumnFill {
-    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        if let Some(w) = self.pending.take() {
-            self.child_id = Some(ctx.add_boxed(w));
-        }
-        self.column_width.bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Relayout,
-        );
-        self.child_id.into_iter().collect()
-    }
-
-    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
-        // Fill the slot (or collapse to zero if the parent left an axis open —
-        // the preview body always proposes exact bounds via Expand).
-        proposal.resolve(0.0, 0.0).into()
-    }
-
-    fn place_children(
-        &self,
-        bounds: Rect,
-        _proposal: SizeProposal,
-        children: &mut [WidgetPlacement],
-        _ctx: &LayoutContext,
-    ) {
-        let w = self.col_w(bounds.width);
-        let dx = ((bounds.width - w) / 2.0).max(0.0);
-        for child in children.iter_mut() {
-            child.origin = Point::new(bounds.x + dx, bounds.y);
-            child.size = Size::new(w, bounds.height);
-        }
-    }
-
-    fn children(&self) -> Vec<WidgetId> {
-        self.child_id.into_iter().collect()
     }
 }
 
@@ -248,16 +195,19 @@ impl Widget for ExportPanel {
             let vm = self.vm.clone();
             ctx.effect(&self.vm.format_index(), move |_| vm.retarget_extension());
         }
-        // Fold the "What to export" segmented control's selection onto the active scope.
+        // Fold the "What to export" segmented control's selection onto the active scope,
+        // and resize the card to the mode's own content.
         {
             let vm = self.vm.clone();
-            ctx.effect(&self.vm.segment_index(), move |_| vm.apply_segment());
+            let height = self.card_height.clone();
+            ctx.effect(&self.vm.segment_index(), move |i| {
+                vm.apply_segment();
+                height.set(if *i == 1 { CARD_H_CUSTOM } else { CARD_H_QUICK });
+            });
         }
 
         let selection = SelectionColumn::new(self.vm.clone());
         let options = OptionsColumn::new(self.vm.clone());
-        let header = PreviewHeader::new(self.vm.clone());
-        let preview = ExportPreviewBody::new(self.vm.clone());
 
         let export_vm = self.vm.clone();
         let export_can = self.vm.can_export();
@@ -280,7 +230,7 @@ impl Widget for ExportPanel {
 
         let root = bati!(ctx => FixedSize {
                 width: CARD_W
-                height: CARD_H
+                height: self.card_height.clone()
                 Panel {
                     variant: PanelVariant::Raised
                     corner_radius: 10.0
@@ -310,26 +260,15 @@ impl Widget for ExportPanel {
                             }
                         }
                         Expand::horizontal { Divider }
-                        // Body: tree | options | preview — each full height.
+                        // Body: tree | options, both full height.
                         Expand::vertical {
                             HStack {
                                 spacing: 0.0
                                 child: selection
                                 Divider::vertical
-                                child: options
-                                Divider::vertical
-                                // Fill BOTH axes: width takes the trailing side, and the full
-                                // row height flows down so the inner `Expand::vertical` (and the
-                                // preview page) actually fill — `Expand::horizontal` alone would
-                                // propose an unbounded height and the preview would collapse.
-                                Expand {
-                                    VStack {
-                                        spacing: 0.0
-                                        child: header
-                                        Expand::horizontal { Divider }
-                                        Expand::vertical { child: preview }
-                                    }
-                                }
+                                // Takes the rest of the width; the options column measures at
+                                // its own fixed width, so the surplus is space around it.
+                                Expand { child: options }
                             }
                         }
                         Expand::horizontal { Divider }
@@ -347,206 +286,6 @@ impl Widget for ExportPanel {
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)
             .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
-    }
-}
-
-/// The live-preview header: a "Preview" label + a "compiled · <format> · <style>" subtitle +
-/// a "Live preview" status, rebuilt when the format or style changes.
-struct PreviewHeader {
-    vm: ExportViewModel,
-    child_id: Option<WidgetId>,
-}
-
-impl PreviewHeader {
-    fn new(vm: ExportViewModel) -> Self {
-        Self { vm, child_id: None }
-    }
-}
-
-impl std::fmt::Debug for PreviewHeader {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PreviewHeader").finish()
-    }
-}
-
-impl Widget for PreviewHeader {
-    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        self.vm.format_index().bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Rebuild,
-        );
-        self.vm.preset_signal().bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Rebuild,
-        );
-
-        let dot = || {
-            TextWidget::new(lit!("·"))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Disabled)
-        };
-        let subtitle = HStack::new()
-            .spacing(5.0)
-            .child(
-                TextWidget::new(tr!(export_preview_compiled()))
-                    .style(TextStyleRole::Small)
-                    .color(TextRole::Disabled),
-            )
-            .child(dot())
-            .child(
-                TextWidget::new(self.vm.current_format_label())
-                    .style(TextStyleRole::Small)
-                    .color(TextRole::Secondary),
-            )
-            .child(dot())
-            .child(
-                TextWidget::new(lit!(self.vm.current_preset_name()))
-                    .style(TextStyleRole::Small)
-                    .color(TextRole::Secondary),
-            );
-
-        let row = Padding::symmetric(10.0, 16.0).child(
-            HStack::new()
-                .spacing(10.0)
-                .child(TextWidget::new(tr!(export_preview_label())).color(TextRole::Primary))
-                .child(subtitle)
-                .child(Spacer::new())
-                .child(
-                    TextWidget::new(tr!(export_preview_live()))
-                        .style(TextStyleRole::Small)
-                        .color(TextRole::Success),
-                ),
-        );
-        let id = ctx.add(row);
-        self.child_id = Some(id);
-        vec![id]
-    }
-
-    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        self.child_id
-            .and_then(|id| ctx.child_size(id, proposal))
-            .map(LayoutResponse::from)
-            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
-    }
-
-    fn place_children(
-        &self,
-        bounds: Rect,
-        _proposal: SizeProposal,
-        children: &mut [WidgetPlacement],
-        _ctx: &LayoutContext,
-    ) {
-        place_fill(bounds, children);
-    }
-
-    fn children(&self) -> Vec<WidgetId> {
-        self.child_id.into_iter().collect()
-    }
-}
-
-/// The live-preview body: rebuilds when the chosen style, scope, or Choose… selection changes,
-/// hosting the compiled read-only document or an empty state.
-struct ExportPreviewBody {
-    vm: ExportViewModel,
-    child_id: Option<WidgetId>,
-}
-
-impl ExportPreviewBody {
-    fn new(vm: ExportViewModel) -> Self {
-        Self { vm, child_id: None }
-    }
-}
-
-impl std::fmt::Debug for ExportPreviewBody {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ExportPreviewBody").finish()
-    }
-}
-
-impl Widget for ExportPreviewBody {
-    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Rebuild when the style changes, when the scope is switched (quick ↔ Custom), or —
-        // under Choose… — when the checkbox selection changes (`custom_changed`).
-        self.vm.preset_signal().bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Rebuild,
-        );
-        self.vm.scope_signal().bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Rebuild,
-        );
-        self.vm.custom_changed().bind_to(
-            ctx.self_id(),
-            ctx.binding_registry(),
-            BindingLevel::Rebuild,
-        );
-
-        let inner: Box<dyn Widget> = match self.vm.preview_document() {
-            Some(doc) => {
-                // Cap the editor's width like a scene column (Settings ▸ preview
-                // width). Unlike the search-preview dock — which is a flowing
-                // `min_lines` editor inside an outer `ScrollArea` — this pane is
-                // a **side panel**: fill the available height and let the editor
-                // scroll itself (greedy + Auto). That avoids the first-frame
-                // chicken-and-egg where `layout_full` only runs in paint, so an
-                // intrinsic editor measures as `min_lines(1)` until a click
-                // forces another layout.
-                //
-                // `CenterColumnFill` (not `centered` / `CenterColumnFlowing`) is
-                // load-bearing: flowing centres measure the child **width-only**,
-                // so a greedy editor would fall through to the 100 px height
-                // fallback again.
-                let width = SettingsViewModel::new(ctx.settings()).preview_width();
-                let editor = RichTextEditor::read_only(doc).content_padding_symmetric(8.0, 8.0);
-                Box::new(Padding::symmetric(12.0, 8.0).child(CenterColumnFill::new(editor, width)))
-            }
-            None => Box::new(
-                Center::new().child(
-                    Padding::symmetric(24.0, 16.0).child(
-                        TextWidget::new(tr!(export_preview_empty()))
-                            .style(TextStyleRole::Small)
-                            .color(TextRole::Secondary),
-                    ),
-                ),
-            ),
-        };
-        // Mirror the editor's `tab_backdrop` (a Content-surface `Panel` over an `Expand`) so
-        // the preview fills the column's full height — a short compiled document still presents
-        // a full-height page rather than collapsing to its few lines. Built inline (not via
-        // `tab_backdrop`) because the body is a `Box<dyn Widget>` from the match above.
-        let inner_id = ctx.add_boxed(inner);
-        let backdrop = Panel::new()
-            .background(SurfaceRole::Content)
-            .corner_radius(0.0)
-            .padding(0.0)
-            .child(Expand::new().child_id(inner_id));
-        self.child_id = Some(ctx.add(backdrop));
-        self.child_id.into_iter().collect()
-    }
-
-    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        match self.child_id.and_then(|id| ctx.child_size(id, proposal)) {
-            Some(size) => size.into(),
-            None => proposal.resolve(0.0, 0.0).into(),
-        }
-    }
-
-    fn place_children(
-        &self,
-        bounds: Rect,
-        _proposal: SizeProposal,
-        children: &mut [WidgetPlacement],
-        _ctx: &LayoutContext,
-    ) {
-        place_fill(bounds, children);
-    }
-
-    fn children(&self) -> Vec<WidgetId> {
-        self.child_id.into_iter().collect()
     }
 }
 
@@ -694,7 +433,12 @@ impl Widget for OptionsColumn {
     }
 
     fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
-        fixed_col_size(self.root_child, OPTIONS_W, proposal, ctx)
+        // Takes whatever the row leaves after the tree, never less than its natural width.
+        // With the preview column gone there is no third claimant for the surplus, and the
+        // format grid and the destination field both read better wide than they did
+        // squeezed into a fixed 360.
+        let width = proposal.width.unwrap_or(OPTIONS_W).max(OPTIONS_W);
+        fixed_col_size(self.root_child, width, proposal, ctx)
     }
 
     fn place_children(
@@ -924,7 +668,7 @@ mod tests {
     use frontend::AppContext;
     use std::rc::Rc;
 
-    /// The whole panel — title strip, three body columns, preview, and the footer — must
+    /// The whole panel — title strip, both body columns, and the footer — must
     /// build and lay out headlessly at the modal's card size.
     #[test]
     fn panel_builds_and_lays_out() {
@@ -938,6 +682,35 @@ mod tests {
             (CARD_W, CARD_H),
             "panel fills the card"
         );
+    }
+
+    /// A quick scope opens shorter than Custom. The two modes hold different amounts —
+    /// Custom adds a whole outline — and with the preview column gone there is nothing to
+    /// pad the difference out with, so one height would leave one of them wrong.
+    #[test]
+    fn the_card_is_shorter_without_the_outline() {
+        let quick = ExportViewModel::new(Rc::new(AppContext::new()), AppIds::new());
+        assert_eq!(ExportPanel::new(quick).card_height.get(), CARD_H_QUICK);
+
+        let custom = ExportViewModel::new(Rc::new(AppContext::new()), AppIds::new());
+        custom.prepare(ExportScopeKind::Custom, None);
+        assert_eq!(ExportPanel::new(custom).card_height.get(), CARD_H_CUSTOM);
+        assert!(CARD_H_QUICK < CARD_H_CUSTOM);
+    }
+
+    /// The options column takes the width the tree leaves rather than staying pinned at its
+    /// old fixed 360 — otherwise removing the preview column would just have left a third
+    /// of the card blank. (Its `.max(OPTIONS_W)` floor is not asserted here: a `WidgetTree`
+    /// clips its root to the proposal, so a narrower proposal measures the harness rather
+    /// than the widget.)
+    #[test]
+    fn the_options_column_fills_the_width_it_is_given() {
+        let vm = ExportViewModel::new(Rc::new(AppContext::new()), AppIds::new());
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(OptionsColumn::new(vm)));
+        let offered = CARD_W - TREE_W;
+        tree.layout(SizeProposal::exact(offered, CARD_H));
+        assert_eq!(tree.bounds(id).width, offered);
     }
 
     /// The Custom-scope path (segmented control + bordered tree box + options + footer) must

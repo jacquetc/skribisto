@@ -5606,6 +5606,7 @@ dependencies = [
  "skribisto-tag-management",
  "skribisto-trash-management",
  "skribisto-work-management",
+ "zip 8.6.0",
 ]
 
 [[package]]

@@ -9,8 +9,12 @@ the binder (selecting a row opens its editor — the outline-selection → open 
 → assert the title-bar **Export** split-button became focus-adaptive (its primary
 region now names the scene: "Export Scene", not the disabled "Export") → click it,
 which fires the `export.scope` intent and opens the shared Export panel → assert the
-panel's structure (the format segments, the Style picker, the Preview, and the footer
-Export button) and screenshot it.
+panel's structure (the format segments, the Style picker, and the footer Export button)
+and screenshot it.
+
+The panel used to carry a live preview column; it is gone (see `export/panel.rs`), so
+there is no "Preview" anchor to assert any more — the completion toast offers to open the
+exported file instead.
 
     scripts/automation_export.py                 # default fixture project
     scripts/automation_export.py PROJECT.skrib   # a real project
@@ -225,13 +229,16 @@ if adaptive:
     lbset = labels()
 
     # The format + style pickers are ComboBoxes whose collapsed value renders inline (not as
-    # an AT label node), so they're verified visually rather than asserted here.
-    # Structural anchors that surface as AT nodes: the Preview band label and the footer
-    # Export button. (The FormLayout field labels + the Style ComboBox value render inline
-    # and aren't exposed as label nodes, so they're verified visually, not asserted.)
-    for anchor in ("Preview", "Export"):
+    # an AT label node), so they're verified visually rather than asserted here. The one
+    # structural anchor that surfaces as an AT node is the footer Export button. (The
+    # FormLayout field labels + the Style ComboBox value render inline and aren't exposed
+    # as label nodes.)
+    for anchor in ("Export",):
         if anchor not in lbset:
             failures.append(f"panel is missing the {anchor!r} anchor")
+    # …and the preview really is gone, rather than merely unasserted.
+    if "Preview" in lbset:
+        failures.append("the panel still carries the removed preview column")
     shot("export_2_panel")
 
     # ── 4. Optionally dispatch the real export (guarded; writes + deletes a file). ──

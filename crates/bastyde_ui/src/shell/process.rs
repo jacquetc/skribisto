@@ -29,10 +29,27 @@ pub(crate) fn reveal_in_file_manager(path: &str) {
         .parent()
         .map(Path::to_path_buf)
         .unwrap_or_else(|| std::path::PathBuf::from("."));
+    open_with_desktop(&target);
+}
+
+/// Hand `path` to whatever the desktop opens that kind of file with — a `.docx` to the word
+/// processor, a `.pdf` to the viewer.
+///
+/// Best-effort and deliberately fire-and-forget: there is no portable way to learn that the
+/// handler actually appeared, and a project must never be blocked waiting on one. A desktop
+/// with nothing registered for the type simply does nothing, which is the same outcome as
+/// not offering the button — so the failure mode costs the writer one click, not their work.
+pub(crate) fn open_in_default_app(path: &str) {
+    open_with_desktop(Path::new(path));
+}
+
+fn open_with_desktop(target: &Path) {
     #[cfg(target_os = "linux")]
-    let _ = std::process::Command::new("xdg-open").arg(&target).spawn();
+    let _ = std::process::Command::new("xdg-open").arg(target).spawn();
     #[cfg(target_os = "macos")]
-    let _ = std::process::Command::new("open").arg(&target).spawn();
+    let _ = std::process::Command::new("open").arg(target).spawn();
     #[cfg(target_os = "windows")]
-    let _ = std::process::Command::new("explorer").arg(&target).spawn();
+    // `explorer` is the launcher on Windows for both a folder and a document; `start` is a
+    // shell builtin and has no executable to spawn.
+    let _ = std::process::Command::new("explorer").arg(target).spawn();
 }

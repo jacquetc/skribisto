@@ -47,6 +47,9 @@ search_management = { workspace = true }
 # Used by the load_work integration test to assert the migration output
 # satisfies the writing-model constraint matrix.
 skribisto_model = { workspace = true }
+# The DOCX export test unzips its own output: a `.docx` is a zip of XML parts, and the
+# things worth asserting about one (page breaks, defined heading styles) live in that XML.
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 
 [lints]
 workspace = true

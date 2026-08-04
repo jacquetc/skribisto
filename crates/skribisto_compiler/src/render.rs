@@ -21,7 +21,8 @@ use skribisto_model::SubRoleExt;
 use skribisto_model::language;
 use skribisto_model::scene_break::{self, SceneBreakTier};
 use text_document::{
-    DocxExportOptions, EpubExportOptions, PdfExportOptions, TextDirection, TextDocument,
+    DocxExportOptions, EpubExportOptions, MarkdownExportOptions, PdfExportOptions,
+    PlainTextExportOptions, TextDirection, TextDocument,
 };
 
 use crate::headings::{self, Level};
@@ -69,21 +70,6 @@ pub fn render_to_string(req: &RenderRequest) -> Result<String> {
     }
     let (doc, _, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
     text_render(&doc, req.format)
-}
-
-/// Render an HTML preview (used by the UI live preview regardless of the chosen format).
-pub fn render_preview_html(req: &RenderRequest) -> Result<String> {
-    let (doc, _, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
-    Ok(doc.to_html()?)
-}
-
-/// Assemble the compiled document for the UI live preview: the *same* `TextDocument`
-/// [`render_to_file`] would render (generated headings + scene breaks + prose, with
-/// per-block direction), handed back so the panel can show it in a read-only editor. This
-/// is why the preview and the committed export cannot diverge — one assembly path.
-pub fn render_preview_document(req: &RenderRequest) -> Result<TextDocument> {
-    let (doc, _, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
-    Ok(doc)
 }
 
 /// Render to `path`, honouring `progress` (0..1) and `cancel`. Handles every format: text
@@ -240,6 +226,10 @@ fn docx_options(preset: &Preset, work_title: &str, work_author: &str) -> DocxExp
         justify: preset.justify,
         page_numbers: true,
         running_header: manuscript_header(work_title, work_author),
+        // Empty ⇒ `DocxExportOptions::resolved_heading_styles` falls back to
+        // `DocxHeadingStyle::default_ramp` scaled off the body size, which is
+        // exactly the output this function produced before the field existed.
+        heading_styles: Vec::new(),
     }
 }
 
@@ -258,13 +248,19 @@ fn manuscript_header(title: &str, author: &str) -> Option<String> {
 fn text_render(doc: &TextDocument, format: ExportFormat) -> Result<String> {
     Ok(match format {
         ExportFormat::Djot => doc.to_djot()?,
-        // The *indented* plain text: `.txt` has no markup to mark quoted matter, so an
-        // epigraph (or any block quotation) would otherwise dissolve into the body. The
-        // flush `to_plain_text()` is the addressable view search computes offsets against
-        // and deliberately stays unindented — this is a file being written out, so it
-        // wants the presentation form.
-        ExportFormat::PlainText => doc.to_plain_text_indented()?,
-        ExportFormat::Markdown => doc.to_markdown()?,
+        // The *presentation* plain text, not the addressable one. `.txt` has no markup to
+        // mark quoted matter, so an epigraph would otherwise dissolve into the body, and
+        // no page concept, so a chapter boundary would vanish entirely. The flush
+        // `to_plain_text()` is the view search computes offsets against and deliberately
+        // stays bare — this is a file being written out, so it wants everything.
+        ExportFormat::PlainText => doc.to_plain_text_with(PlainTextExportOptions::presentation())?,
+        // Markdown's page break is raw HTML, which is why text-document keeps it opt-in.
+        // Opting in here is safe *and* correct: the compiled document only carries a break
+        // where the chosen style asked for one, so the knob that governs it is the style's,
+        // shared with every other format, rather than a second one hidden in this arm.
+        ExportFormat::Markdown => {
+            doc.to_markdown_with(MarkdownExportOptions { page_breaks: true })?
+        }
         ExportFormat::Html => doc.to_html()?,
         ExportFormat::Latex => doc.to_latex("article", true)?,
         other => return Err(anyhow!("{other:?} is not a text format")),
@@ -318,22 +314,22 @@ fn assemble(
 
     let work_rtl = is_rtl_row(preset, req.work_lang);
 
-    // Optional title page (front matter) for a book export.
-    if preset.book_title_page && rows.iter().any(|r| r.item.sub_role.opens_book()) {
-        let w = &req.gathered.work;
-        if !w.title.is_empty() {
-            push_heading(&mut out, 1, &w.title, work_rtl);
-        }
-        // The author's name is *data*, never markup — escaped so a name that
-        // happens to start like a list marker survives intact.
-        if !w.author_name.trim().is_empty() {
-            push_para(
-                &mut out,
-                &escape_block_leading(w.author_name.trim()),
-                work_rtl,
-            );
-        }
-    }
+    // A title page is built *after* the body — it carries the manuscript's word count,
+    // which is only known once the rows have been walked — and prepended. Decided up
+    // front all the same, because the body's first block has to know a page is coming
+    // above it.
+    let title_page = preset.book_title_page && rows.iter().any(|r| r.item.sub_role.opens_book());
+
+    // A page break queued for the next block emitted, whatever that turns out to be: a
+    // structural heading, or the row's own prose when the preset suppresses the heading.
+    // It survives a row that emits nothing (a Book opener under a title page emits no
+    // heading at all), so the break lands on the next thing that *is* printed rather than
+    // being lost at that seam.
+    let mut pending_break = false;
+    // Whether anything will be printed above the block about to be emitted. A page break
+    // on the very first block would open on a blank page in the formats that take it
+    // literally, and the title page counts here even though `out` is still empty.
+    let mut anything_above = title_page;
 
     let total = rows.len().max(1);
     let report = |p: usize| progress(0.9 * (p as f32 + 1.0) / total as f32);
@@ -364,9 +360,15 @@ fn assemble(
         // not a line of the book. A writer who wants a heading on the page writes one in
         // the prose, where they control its wording and its level. The same reasoning
         // keeps a `Folder/Paratext` from emitting anything at all.
-        if matches!(row.item.sub_role, BinderItemSubRole::Paratext) && !preset.include_paratexts {
+        let is_paratext = matches!(row.item.sub_role, BinderItemSubRole::Paratext);
+        if is_paratext && !preset.include_paratexts {
             report(i);
             continue;
+        }
+        // A paratext has no heading to carry the break, so it queues one for its own first
+        // prose block below.
+        if is_paratext && preset.paratext_starts_page {
+            pending_break = true;
         }
 
         let heading_lang = match &preset.heading_language {
@@ -386,6 +388,16 @@ fn assemble(
             // printed: a preset whose chapter scheme is `None` emits no text,
             // and gating on that would let a break bleed across the seam.
             pending_attrs.clear();
+            // Queued on the *structure*, not on whether a heading prints: a preset whose
+            // chapter scheme is `None` still opens its chapters on a new page, the break
+            // simply rides the chapter's first paragraph instead of its title.
+            if match level {
+                Level::Book => preset.book_starts_page,
+                Level::Part => preset.part_starts_page,
+                Level::Chapter => preset.chapter_starts_page,
+            } {
+                pending_break = true;
+            }
             // A book is titled, not numbered — and the title page (if on) already carries
             // it, so the opener then emits nothing. Parts/chapters use their own schemes.
             let scheme = match level {
@@ -400,7 +412,8 @@ fn assemble(
                     .position(|&d| d == depth(level))
                     .map(|p| (p + 1).min(6))
                     .unwrap_or(1) as u8;
-                push_heading(&mut out, lvl, &text, heading_rtl);
+                let extra = take_break(&mut pending_break, &mut anything_above);
+                push_heading(&mut out, lvl, &text, heading_rtl, &extra);
                 contributed = true;
             }
         } else if preset.include_scene_titles && row.item.sub_role.carries_scene() {
@@ -408,7 +421,8 @@ fn assemble(
             // heading above): the title heading stands in for the scene break.
             let t = row.item.title.trim();
             if !t.is_empty() {
-                push_heading(&mut out, scene_title_level, t, row_rtl);
+                let extra = take_break(&mut pending_break, &mut anything_above);
+                push_heading(&mut out, scene_title_level, t, row_rtl, &extra);
                 pending_attrs.clear();
                 contributed = true;
             }
@@ -432,8 +446,15 @@ fn assemble(
             // its own attribution slot. Without it every writer sees an ordinary
             // blockquote and none of them can say what it is.
             let marked = mark_epigraph(epi);
-            let (_, emitted) =
-                push_prose(&mut out, &marked, row_rtl, preset, false, &mut pending_attrs);
+            let (_, emitted) = push_prose(
+                &mut out,
+                &marked,
+                row_rtl,
+                preset,
+                false,
+                &mut pending_attrs,
+                &[],
+            );
             if emitted {
                 contributed = true;
                 // New Hart's Rule: the first line after a heading, an epigraph or a
@@ -468,8 +489,20 @@ fn assemble(
             // A scene whose whole prose is a single break marker emits no
             // prose at all, so it must not be counted as an emitted item —
             // the marker is furniture, and the row contributed nothing.
-            let (w, emitted) =
-                push_prose(&mut out, prose, row_rtl, preset, scan, &mut pending_attrs);
+            //
+            // Any page break still queued lands here: this row printed no heading to
+            // carry it (a paratext never has one; a chapter under `HeadingScheme::None`
+            // has none either), so its opening paragraph is what opens the page.
+            let lead = take_break(&mut pending_break, &mut anything_above);
+            let (w, emitted) = push_prose(
+                &mut out,
+                prose,
+                row_rtl,
+                preset,
+                scan,
+                &mut pending_attrs,
+                &lead,
+            );
             // A paratext's prose rides this same step — it is the page's whole content —
             // but its words are not the manuscript's. Counting them would drift every
             // pace goal in the project by the length of the front matter, with nothing
@@ -486,8 +519,15 @@ fn assemble(
         {
             // A synopsis is commentary, not the scene's prose — never
             // scanned for markers, and its words are not the manuscript's.
-            let (_, emitted) =
-                push_prose(&mut out, syn, row_rtl, preset, false, &mut pending_attrs);
+            let (_, emitted) = push_prose(
+                &mut out,
+                syn,
+                row_rtl,
+                preset,
+                false,
+                &mut pending_attrs,
+                &[],
+            );
             contributed |= emitted;
         }
 
@@ -495,6 +535,12 @@ fn assemble(
             emitted_items += 1;
         }
         report(i);
+    }
+
+    // The title page, now that the word count is known. Built separately and prepended so
+    // it can carry it — an editor reads that number before anything else on the page.
+    if title_page {
+        out.insert_str(0, &render_title_page(req, preset, work_rtl, words));
     }
 
     let doc = TextDocument::new();
@@ -563,17 +609,24 @@ fn dir_pair(rtl: bool) -> Option<&'static str> {
     rtl.then_some("direction=rtl")
 }
 
-/// A Djot block-attribute line that sets direction, or empty. `{direction=rtl}` on the line
-/// before a block is what text-document's own Djot exporter writes and its importer reads.
-fn dir_attr(rtl: bool) -> String {
-    match dir_pair(rtl) {
-        Some(pair) => format!("{{{pair}}}\n"),
-        None => String::new(),
+/// One `{k=v k=v}` line for a block, or nothing when it carries no attributes.
+///
+/// A Djot block gets exactly **one** attribute set, so every key that applies to a block
+/// has to be merged here — a second `{…}` line is parsed as its own empty block, which is
+/// how an attribute can appear in the output and still do nothing at all.
+fn attr_line(rtl: bool, extra: &[String]) -> String {
+    let mut attrs: Vec<&str> = Vec::new();
+    attrs.extend(dir_pair(rtl));
+    attrs.extend(extra.iter().map(String::as_str));
+    if attrs.is_empty() {
+        String::new()
+    } else {
+        format!("{{{}}}\n", attrs.join(" "))
     }
 }
 
-fn push_heading(out: &mut String, level: u8, text: &str, rtl: bool) {
-    out.push_str(&dir_attr(rtl));
+fn push_heading(out: &mut String, level: u8, text: &str, rtl: bool, extra: &[String]) {
+    out.push_str(&attr_line(rtl, extra));
     for _ in 0..level.clamp(1, 6) {
         out.push('#');
     }
@@ -582,8 +635,8 @@ fn push_heading(out: &mut String, level: u8, text: &str, rtl: bool) {
     out.push_str("\n\n");
 }
 
-fn push_para(out: &mut String, text: &str, rtl: bool) {
-    out.push_str(&dir_attr(rtl));
+fn push_para(out: &mut String, text: &str, rtl: bool, extra: &[String]) {
+    out.push_str(&attr_line(rtl, extra));
     out.push_str(text.trim());
     out.push_str("\n\n");
 }
@@ -610,6 +663,7 @@ fn push_prose(
     preset: &Preset,
     scan_markers: bool,
     pending: &mut Vec<String>,
+    lead: &[String],
 ) -> (usize, bool) {
     let trimmed = djot.trim();
     // Fast path — and a correctness guard, not just an optimisation. Splitting
@@ -622,7 +676,7 @@ fn push_prose(
         return (0, false);
     }
     let could_hold_marker = scan_markers && scene_break::might_contain_marker(trimmed);
-    if !rtl && pending.is_empty() && !could_hold_marker {
+    if !rtl && pending.is_empty() && lead.is_empty() && !could_hold_marker {
         out.push_str(trimmed);
         out.push_str("\n\n");
         return (trimmed.split_whitespace().count(), true);
@@ -642,7 +696,13 @@ fn push_prose(
         cursor += b.len() + 2;
     }
     let mut run_start: Option<usize> = None;
-    let flush = |out: &mut String, range: Option<(usize, usize)>, pending: &mut Vec<String>| {
+    // `lead` (a queued page break) belongs to the first block that actually reaches the
+    // output, and to that one alone — hence the flag rather than a plain closure capture.
+    let mut lead_pending = !lead.is_empty();
+    let flush = |out: &mut String,
+                 range: Option<(usize, usize)>,
+                 pending: &mut Vec<String>,
+                 lead_pending: &mut bool| {
         let Some((a, b)) = range else { return false };
         let text = trimmed[a..b.min(trimmed.len())].trim_end();
         if text.trim().is_empty() {
@@ -650,6 +710,10 @@ fn push_prose(
         }
         let mut attrs: Vec<String> = Vec::new();
         attrs.extend(dir_pair(rtl).map(str::to_string));
+        if *lead_pending {
+            attrs.extend(lead.iter().cloned());
+            *lead_pending = false;
+        }
         // Only manuscript prose inherits what a break queued. A synopsis or a
         // note between two scenes is commentary, not the flow the break divides.
         if scan_markers {
@@ -673,7 +737,7 @@ fn push_prose(
         let Some(tier) = tier else {
             // RTL needs its attribute on every block, so it cannot batch.
             if rtl {
-                if flush(out, Some(offsets[i]), pending) {
+                if flush(out, Some(offsets[i]), pending, &mut lead_pending) {
                     emitted_prose = true;
                 }
             } else {
@@ -682,7 +746,12 @@ fn push_prose(
             words += block.split_whitespace().count();
             continue;
         };
-        if flush(out, run_start.take().map(|a| (a, offsets[i].0)), pending) {
+        if flush(
+            out,
+            run_start.take().map(|a| (a, offsets[i].0)),
+            pending,
+            &mut lead_pending,
+        ) {
             emitted_prose = true;
         }
         let style = match tier {
@@ -691,7 +760,12 @@ fn push_prose(
         };
         push_scene_break(out, style, preset, rtl, pending);
     }
-    if flush(out, run_start.take().map(|a| (a, trimmed.len())), pending) {
+    if flush(
+        out,
+        run_start.take().map(|a| (a, trimmed.len())),
+        pending,
+        &mut lead_pending,
+    ) {
         emitted_prose = true;
     }
     (words, emitted_prose)
@@ -756,6 +830,103 @@ fn push_scene_break(
             out.push_str("\n\n");
             pending.push("text_indent=0".to_string());
         }
+    }
+}
+
+/// The title page: the word count, then the title about a third of the way down, then the
+/// byline under it.
+///
+/// The vertical drop is a real `top_margin` on the title block rather than a run of empty
+/// paragraphs. Empty paragraphs are what a word processor's user would do and what every
+/// format then renders differently — and a blank Djot block is not even representable,
+/// since consecutive blank lines collapse into the ordinary block separator.
+///
+/// Nothing here carries a page break. It is the top of the document, and the *body's*
+/// first block is what breaks away from it.
+fn render_title_page(req: &RenderRequest, preset: &Preset, rtl: bool, words: usize) -> String {
+    let w = &req.gathered.work;
+    let lang = match &preset.heading_language {
+        HeadingLanguage::Fixed(l) => l.clone(),
+        HeadingLanguage::Auto => req.work_lang.to_string(),
+    };
+    let mut page = String::new();
+
+    // Upper right, the manuscript-submission convention. Suppressed for an empty
+    // manuscript: "about 0 words" is a statement no title page should make.
+    if preset.title_page_word_count && words > 0 {
+        push_para(
+            &mut page,
+            &escape_block_leading(&headings::word_count_note(&lang, words, preset.digit_style)),
+            rtl,
+            &["alignment=right".to_string()],
+        );
+    }
+
+    if !w.title.trim().is_empty() {
+        push_heading(
+            &mut page,
+            1,
+            w.title.trim(),
+            rtl,
+            &[
+                "alignment=center".to_string(),
+                format!("top_margin={}", title_drop_px(preset)),
+            ],
+        );
+    }
+
+    // The author's name is *data*, never markup — escaped so a name that happens to start
+    // like a list marker survives intact. The preposition is generated furniture and so is
+    // localized; the name itself never is.
+    if !w.author_name.trim().is_empty() {
+        let byline = format!("{} {}", headings::by(&lang), w.author_name.trim());
+        push_para(
+            &mut page,
+            &escape_block_leading(&byline),
+            rtl,
+            &["alignment=center".to_string()],
+        );
+    }
+    page
+}
+
+/// How far down the page a title page's title sits, in logical pixels.
+///
+/// About a third of the way into the *text* area — the traditional placement, and what
+/// Shunn asks for on a novel's title page. Derived from the preset's own page size and
+/// margins so it stays a third whether the manuscript is A4 or A5.
+fn title_drop_px(preset: &Preset) -> i64 {
+    let page_h_in = match preset.page_size {
+        PageSize::A4 => 297.0 / 25.4,
+        PageSize::Letter => 11.0,
+        PageSize::A5 => 210.0 / 25.4,
+    };
+    let text_h_in =
+        (page_h_in - preset.margin.top_in as f64 - preset.margin.bottom_in as f64).max(0.0);
+    // 96 logical pixels to the inch, the unit the block attributes use.
+    ((text_h_in / 3.0) * 96.0).round().max(0.0) as i64
+}
+
+/// Take a queued page break for the block about to be emitted, if there is one and if
+/// there is anything above it to end a page on.
+///
+/// Both flags are cleared either way. A break the document's very first block cannot use
+/// is *spent*, not carried forward: it was asked for "before this content", and this
+/// content is already at the top.
+///
+/// Deliberately not offered to an epigraph. An epigraph's blocks live inside a blockquote,
+/// and a page break in there is at best awkward and at worst — in Typst, where the quote
+/// is a single content argument — malformed. A row whose heading is suppressed lets the
+/// break fall through to its prose instead, which is the paragraph a reader would call
+/// the top of the page anyway.
+fn take_break(pending: &mut bool, anything_above: &mut bool) -> Vec<String> {
+    let take = *pending && *anything_above;
+    *pending = false;
+    *anything_above = true;
+    if take {
+        vec!["page_break_before=true".to_string()]
+    } else {
+        Vec::new()
     }
 }
 
@@ -1288,6 +1459,223 @@ mod tests {
         );
     }
 
+    // ── pagination ──
+
+    /// Every chapter opens a page. The rule that makes a manuscript read as chapters
+    /// rather than as one unbroken column, and the one Shunn requires outright.
+    #[test]
+    fn each_chapter_opens_a_new_page() {
+        let g = flat_book();
+        let p = preset("manuscript-shunn");
+        assert!(p.chapter_starts_page);
+        let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+        assert!(
+            dj.contains("page_break_before=true"),
+            "the chapter must open a page: {dj}"
+        );
+    }
+
+    /// …and turning it off really turns it off, rather than being a knob that reads well
+    /// and does nothing.
+    #[test]
+    fn a_preset_that_declines_page_breaks_gets_none() {
+        let g = flat_book();
+        let p = Preset {
+            book_starts_page: false,
+            part_starts_page: false,
+            chapter_starts_page: false,
+            paratext_starts_page: false,
+            book_title_page: false,
+            ..preset("neutral")
+        };
+        let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+        assert!(!dj.contains("page_break_before"), "{dj}");
+    }
+
+    /// A break on the very first block would open the document on a blank page in the
+    /// formats that take it literally. Exporting one chapter on its own is exactly that
+    /// case, and it is the common one — "Export Chapter" from the binder.
+    #[test]
+    fn the_first_block_of_an_export_never_carries_a_break() {
+        let g = flat_book();
+        let p = Preset {
+            book_title_page: false,
+            ..preset("manuscript-shunn")
+        };
+        // The chapter alone: its heading is the first thing in the document.
+        let dj = render_to_string(&req(&g, &[101], &p, ExportFormat::Djot)).unwrap();
+        assert!(
+            !dj.contains("page_break_before"),
+            "nothing above it to end a page on: {dj}"
+        );
+    }
+
+    /// The break rides the *structure*, not the heading text. A preset that prints no
+    /// chapter heading at all still opens each chapter on its own page — the break simply
+    /// lands on the chapter's first paragraph instead of on a title.
+    #[test]
+    fn a_headingless_chapter_still_opens_a_page_on_its_prose() {
+        let g = flat_book();
+        let p = Preset {
+            chapter_heading: HeadingScheme::None,
+            book_title_page: false,
+            ..preset("manuscript-shunn")
+        };
+        let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+        let brk = dj
+            .find("page_break_before")
+            .unwrap_or_else(|| panic!("no break in: {dj}"));
+        let prose = dj.find("The wind rose").expect("the chapter prose");
+        assert!(brk < prose, "the break must lead the prose: {dj}");
+    }
+
+    /// A paratext has no heading to carry a break, so its own first paragraph opens the
+    /// page. A dedication sharing a page with the end of the copyright notice is not a
+    /// dedication.
+    #[test]
+    fn a_paratext_opens_its_own_page() {
+        let mut g = flat_book();
+        g.binders[0].items.push(iwc(
+            103,
+            SR::Paratext,
+            "en",
+            vec![c(9, ContentRole::ParatextText, "For my mother.")],
+        ));
+        let p = Preset {
+            book_title_page: false,
+            ..preset("neutral")
+        };
+        let dj = render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
+        let brk = dj.rfind("page_break_before").expect("a break");
+        let dedication = dj.find("For my mother").expect("the paratext");
+        assert!(brk < dedication, "{dj}");
+    }
+
+    /// The flowing formats keep the break too — they are files being written out, and the
+    /// style already decided there is a page boundary here.
+    #[test]
+    fn the_flowing_formats_carry_the_break_they_were_given() {
+        let g = flat_book();
+        let p = Preset {
+            book_title_page: false,
+            ..preset("manuscript-shunn")
+        };
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(
+            txt.contains('\u{000C}'),
+            "a form feed is a page break in a .txt: {txt:?}"
+        );
+
+        let md = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Markdown)).unwrap();
+        assert!(md.contains("break-before: page"), "{md}");
+    }
+
+    /// …and a style that declines them leaves both formats clean.
+    #[test]
+    fn a_style_without_breaks_leaves_no_trace_in_the_flowing_formats() {
+        let g = flat_book();
+        let p = Preset {
+            book_starts_page: false,
+            part_starts_page: false,
+            chapter_starts_page: false,
+            paratext_starts_page: false,
+            book_title_page: false,
+            ..preset("neutral")
+        };
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(!txt.contains('\u{000C}'), "{txt:?}");
+        let md = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Markdown)).unwrap();
+        assert!(!md.contains("<div"), "{md}");
+    }
+
+    // ── the title page ──
+
+    /// The title is centred and dropped down the page, not flush at the top left. This is
+    /// the whole visible difference between a title page and a first line.
+    #[test]
+    fn the_title_page_is_centred_and_dropped_down_the_page() {
+        let g = flat_book();
+        let p = preset("manuscript-shunn");
+        let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+        let title_line = dj
+            .lines()
+            .position(|l| l.contains("My Novel"))
+            .expect("the title");
+        let attrs = dj.lines().nth(title_line.saturating_sub(1)).unwrap_or("");
+        assert!(
+            attrs.contains("alignment=center"),
+            "attrs were {attrs:?}\n{dj}"
+        );
+        assert!(attrs.contains("top_margin="), "attrs were {attrs:?}\n{dj}");
+    }
+
+    /// The body starts on a page of its own. Without this the first chapter runs on
+    /// underneath the byline, which is the complaint that started all of this.
+    #[test]
+    fn the_body_breaks_away_from_the_title_page() {
+        let g = flat_book();
+        let p = preset("manuscript-shunn");
+        let dj = render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::Djot)).unwrap();
+        let title = dj.find("My Novel").expect("the title");
+        let brk = dj
+            .find("page_break_before")
+            .expect("a break after the title page");
+        assert!(brk > title, "the break belongs below the title page: {dj}");
+        // …and the title page itself never carries one: there is no page above it.
+        assert!(
+            !dj[..title].contains("page_break_before"),
+            "nothing may break above the title: {dj}"
+        );
+    }
+
+    /// Shunn puts the rounded word count at the top right, and it is the first thing an
+    /// editor looks at.
+    #[test]
+    fn a_submission_title_page_carries_the_rounded_word_count() {
+        let g = flat_book();
+        let p = preset("manuscript-shunn");
+        assert!(p.title_page_word_count);
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        // The fixture is a dozen words, so Shunn's under-10k rule rounds to 100.
+        assert!(txt.contains("about 100 words"), "{txt}");
+        assert!(
+            txt.find("about 100 words") < txt.find("My Novel"),
+            "the count sits above the title: {txt}"
+        );
+    }
+
+    /// A trade title page carries the title and the byline and nothing else — no editor
+    /// is reading it, and a word count on a finished book is noise.
+    #[test]
+    fn a_trade_title_page_has_no_word_count() {
+        let g = flat_book();
+        let p = Preset {
+            book_title_page: true,
+            title_page_word_count: false,
+            ..preset("neutral")
+        };
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(!txt.contains("words"), "{txt}");
+        assert!(txt.contains("My Novel"), "{txt}");
+    }
+
+    /// The byline preposition is generated furniture, so it localizes; the name never does.
+    #[test]
+    fn the_byline_is_localized_and_the_name_is_not() {
+        let g = flat_book();
+        let p = Preset {
+            heading_language: HeadingLanguage::Fixed("fr".into()),
+            ..preset("manuscript-shunn")
+        };
+        let txt =
+            render_to_string(&req(&g, &[100, 101, 102], &p, ExportFormat::PlainText)).unwrap();
+        assert!(txt.contains("par A. Writer"), "{txt}");
+    }
+
     // ── the author on the compiled title page ──
 
     /// A book exported with a title-page preset carries the writer's name.
@@ -1634,8 +2022,8 @@ mod tests {
         let p = preset("manuscript-shunn");
 
         let render_bytes = |g: &Gathered, tag: &str| {
-            let path = std::env::temp_dir()
-                .join(format!("skrib-epi-{tag}-{}.pdf", std::process::id()));
+            let path =
+                std::env::temp_dir().join(format!("skrib-epi-{tag}-{}.pdf", std::process::id()));
             render_to_file(
                 &req(g, &[100, 101], &p, ExportFormat::Pdf),
                 &path,
@@ -2128,7 +2516,12 @@ mod tests {
     fn book_with_paratext() -> Gathered {
         gathered(
             vec![
-                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "My Novel")]),
+                iwc(
+                    100,
+                    SR::BookBegin,
+                    "en",
+                    vec![c(1, ContentRole::BookTitle, "My Novel")],
+                ),
                 iwc(
                     101,
                     SR::ChapterScene,
@@ -2146,7 +2539,11 @@ mod tests {
                         activated: true,
                         ..Default::default()
                     },
-                    contents: vec![c(3, ContentRole::ParatextText, "With thanks to the archivists.")],
+                    contents: vec![c(
+                        3,
+                        ContentRole::ParatextText,
+                        "With thanks to the archivists.",
+                    )],
                 },
                 iwc(
                     103,
@@ -2168,8 +2565,12 @@ mod tests {
     fn a_paratext_exports_its_prose_and_not_its_title() {
         let g = book_with_paratext();
         let p = preset("neutral");
-        let out = render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
-        assert!(out.contains("With thanks to the archivists."), "prose: {out}");
+        let out =
+            render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
+        assert!(
+            out.contains("With thanks to the archivists."),
+            "prose: {out}"
+        );
         assert!(
             !out.contains("Acknowledgements"),
             "the binder label must not reach the book: {out}"
@@ -2181,7 +2582,8 @@ mod tests {
     fn a_paratext_between_chapters_does_not_renumber_them() {
         let g = book_with_paratext();
         let p = preset("neutral");
-        let out = render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
+        let out =
+            render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
         assert!(out.contains("Chapter 1"), "{out}");
         assert!(out.contains("Chapter 2"), "{out}");
         assert!(!out.contains("Chapter 3"), "only two chapters exist: {out}");
@@ -2220,10 +2622,14 @@ mod tests {
         assert!(p.include_paratexts, "shipped on by default");
 
         p.include_paratexts = false;
-        let out = render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
+        let out =
+            render_to_string(&req(&g, &[100, 101, 102, 103], &p, ExportFormat::Djot)).unwrap();
         assert!(!out.contains("Acknowledgements"), "dropped: {out}");
         assert!(!out.contains("archivists"), "body dropped too: {out}");
-        assert!(out.contains("The wind rose."), "the manuscript stays: {out}");
+        assert!(
+            out.contains("The wind rose."),
+            "the manuscript stays: {out}"
+        );
     }
 
     /// A preset saved before the field existed must keep its paratexts, for the same
@@ -2232,7 +2638,10 @@ mod tests {
     fn a_preset_saved_before_paratexts_still_keeps_them() {
         let mut v = serde_json::to_value(preset("neutral")).unwrap();
         let obj = v.as_object_mut().unwrap();
-        assert!(obj.remove("include_paratexts").is_some(), "field must serialize");
+        assert!(
+            obj.remove("include_paratexts").is_some(),
+            "field must serialize"
+        );
         let old: Preset = serde_json::from_value(v).expect("an older preset must still load");
         assert!(old.include_paratexts, "absence must read as on");
     }
@@ -2314,9 +2723,13 @@ mod tests {
     fn a_full_export_still_numbers_from_one() {
         let g = five_chapter_book();
         let p = preset("neutral");
-        let out =
-            render_to_string(&req(&g, &[100, 101, 102, 103, 104, 105], &p, ExportFormat::Djot))
-                .unwrap();
+        let out = render_to_string(&req(
+            &g,
+            &[100, 101, 102, 103, 104, 105],
+            &p,
+            ExportFormat::Djot,
+        ))
+        .unwrap();
         for n in 1..=5 {
             assert!(
                 out.contains(&format!("Chapter {n}")),
@@ -2331,12 +2744,42 @@ mod tests {
     fn a_new_book_restarts_chapters_but_a_new_part_does_not() {
         let g = gathered(
             vec![
-                iwc(100, SR::BookBegin, "en", vec![c(1, ContentRole::BookTitle, "One")]),
-                iwc(101, SR::ChapterScene, "en", vec![c(2, ContentRole::SceneText, "a")]),
-                iwc(102, SR::Part, "en", vec![c(3, ContentRole::PartTitle, "Second Part")]),
-                iwc(103, SR::ChapterScene, "en", vec![c(4, ContentRole::SceneText, "b")]),
-                iwc(104, SR::BookBegin, "en", vec![c(5, ContentRole::BookTitle, "Two")]),
-                iwc(105, SR::ChapterScene, "en", vec![c(6, ContentRole::SceneText, "c")]),
+                iwc(
+                    100,
+                    SR::BookBegin,
+                    "en",
+                    vec![c(1, ContentRole::BookTitle, "One")],
+                ),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(2, ContentRole::SceneText, "a")],
+                ),
+                iwc(
+                    102,
+                    SR::Part,
+                    "en",
+                    vec![c(3, ContentRole::PartTitle, "Second Part")],
+                ),
+                iwc(
+                    103,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(4, ContentRole::SceneText, "b")],
+                ),
+                iwc(
+                    104,
+                    SR::BookBegin,
+                    "en",
+                    vec![c(5, ContentRole::BookTitle, "Two")],
+                ),
+                iwc(
+                    105,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(6, ContentRole::SceneText, "c")],
+                ),
             ],
             "en",
         );
@@ -2458,7 +2901,9 @@ mod tests {
         let out = render_to_string(&req(&g, &[100, 101], &p, ExportFormat::Djot)).unwrap();
         let prose = out.find("The wind rose").expect("prose");
         let before = &out[..prose];
-        let attrs = before.rfind('{').expect("an attribute block before the prose");
+        let attrs = before
+            .rfind('{')
+            .expect("an attribute block before the prose");
         assert!(
             before[attrs..].contains("text_indent=0"),
             "the prose after an epigraph must carry text_indent=0, got: {:?}",
@@ -2613,7 +3058,11 @@ mod tests {
                     201,
                     SR::Scene,
                     "en",
-                    vec![c(3, ContentRole::SceneText, "The wind rose over the hills.")],
+                    vec![c(
+                        3,
+                        ContentRole::SceneText,
+                        "The wind rose over the hills.",
+                    )],
                 ),
             ],
             "en",
@@ -2675,5 +3124,4 @@ mod tests {
             "the body prose must stay flush: {txt}"
         );
     }
-
 }

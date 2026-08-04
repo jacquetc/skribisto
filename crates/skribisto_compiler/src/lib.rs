@@ -28,10 +28,7 @@ pub use preset::{
     DigitStyle, DirectionMode, ExportFormat, HeadingLanguage, HeadingScheme, LineSpacing, Margins,
     PageSize, Preset, SceneBreak, builtin_presets,
 };
-pub use render::{
-    RenderRequest, RenderStats, render_preview_document, render_preview_html, render_to_file,
-    render_to_string,
-};
+pub use render::{RenderRequest, RenderStats, render_to_file, render_to_string};
 
 use skrib_format::Gathered;
 use skribisto_model::compile::ItemMeta;

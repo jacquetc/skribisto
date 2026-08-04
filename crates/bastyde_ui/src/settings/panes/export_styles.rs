@@ -497,6 +497,30 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
             yes_no(p.include_epigraphs),
         ),
         (
+            tr!(settings_styles_field_paratexts()),
+            yes_no(p.include_paratexts),
+        ),
+        (
+            tr!(settings_styles_field_word_count()),
+            yes_no(p.title_page_word_count),
+        ),
+        (
+            tr!(settings_styles_field_page_books()),
+            yes_no(p.book_starts_page),
+        ),
+        (
+            tr!(settings_styles_field_page_parts()),
+            yes_no(p.part_starts_page),
+        ),
+        (
+            tr!(settings_styles_field_page_chapters()),
+            yes_no(p.chapter_starts_page),
+        ),
+        (
+            tr!(settings_styles_field_page_paratexts()),
+            yes_no(p.paratext_starts_page),
+        ),
+        (
             tr!(settings_styles_sheet_heading_language()),
             match &p.heading_language {
                 HeadingLanguage::Auto => tr!(settings_styles_sheet_auto()),
@@ -736,6 +760,42 @@ impl Widget for StyleEditor {
         bind_field(ctx, &self.vm, &id, &epigraphs, |p, v| {
             p.include_epigraphs = v
         });
+        let paratexts = Signal::new(preset.include_paratexts);
+        bind_field(ctx, &self.vm, &id, &paratexts, |p, v| {
+            p.include_paratexts = v
+        });
+
+        // Title page + pagination.
+        let title_page = Signal::new(preset.book_title_page);
+        bind_field(ctx, &self.vm, &id, &title_page, |p, v| {
+            p.book_title_page = v
+        });
+        let word_count = Signal::new(preset.title_page_word_count);
+        bind_field(ctx, &self.vm, &id, &word_count, |p, v| {
+            p.title_page_word_count = v
+        });
+        let page_books = Signal::new(preset.book_starts_page);
+        bind_field(ctx, &self.vm, &id, &page_books, |p, v| {
+            p.book_starts_page = v
+        });
+        let page_parts = Signal::new(preset.part_starts_page);
+        bind_field(ctx, &self.vm, &id, &page_parts, |p, v| {
+            p.part_starts_page = v
+        });
+        let page_chapters = Signal::new(preset.chapter_starts_page);
+        bind_field(ctx, &self.vm, &id, &page_chapters, |p, v| {
+            p.chapter_starts_page = v
+        });
+        let page_paratexts = Signal::new(preset.paratext_starts_page);
+        bind_field(ctx, &self.vm, &id, &page_paratexts, |p, v| {
+            p.paratext_starts_page = v
+        });
+        // Two switches only mean anything with a title page: the word count is printed on
+        // it, and a Book's own break is what the title page already performs. Disabled
+        // rather than hidden, so the setting stays visible as something that exists.
+        let has_title_page = title_page.clone();
+        let word_count_on = has_title_page.clone();
+        let books_break_on = title_page.map(|on| !on);
 
         let form = FormLayout::new()
             .label(tr!(settings_styles_editor_title()))
@@ -786,6 +846,43 @@ impl Widget for StyleEditor {
             .line(
                 field_label(tr!(settings_styles_field_epigraphs())),
                 Toggle::new(epigraphs).labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_paratexts())),
+                Toggle::new(paratexts).labelled_externally(),
+            )
+            // Spanning both columns, with the file's own section-header idiom and its
+            // breathing room above.
+            .full_width(
+                Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_group_pages()))),
+            )
+            .line(
+                field_label(tr!(settings_styles_sheet_title_page())),
+                Toggle::new(title_page).labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_word_count())),
+                Toggle::new(word_count)
+                    .enabled(word_count_on)
+                    .labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_page_books())),
+                Toggle::new(page_books)
+                    .enabled(books_break_on)
+                    .labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_page_parts())),
+                Toggle::new(page_parts).labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_page_chapters())),
+                Toggle::new(page_chapters).labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_page_paratexts())),
+                Toggle::new(page_paratexts).labelled_externally(),
             );
 
         let child = ctx.add(Padding::new(16.0, 0.0, 0.0, 0.0).child(form));
@@ -815,5 +912,135 @@ impl Widget for StyleEditor {
 
     fn children(&self) -> Vec<WidgetId> {
         self.child_id.into_iter().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::ExportStylesService;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    /// A private styles file per call, so the tests do not race each other's writes.
+    static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+    fn vm_with_a_user_style() -> (ExportStylesViewModel, String, std::path::PathBuf) {
+        let n = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("skrib-styles-{}-{n}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let svc = ExportStylesService::open_at(dir.join("styles.toml")).unwrap();
+        let vm = ExportStylesViewModel::new(svc);
+        let base = vm.builtin_presets().into_iter().next().expect("a built-in");
+        let mine = vm.duplicate(&base, "copy").expect("duplicate");
+        (vm, mine.id, dir)
+    }
+
+    /// The editor builds and lays out with every row, including the pagination group. A
+    /// `FormLayout` row that fails to build takes the whole settings page with it, and the
+    /// page is only reachable two clicks deep.
+    #[test]
+    fn the_style_editor_builds_and_lays_out() {
+        let (vm, id, dir) = vm_with_a_user_style();
+        let mut tree = WidgetTree::new();
+        let w = tree.add_boxed(Box::new(StyleEditor::new(vm, Signal::new(Some(id)))));
+        tree.layout(SizeProposal::exact(600.0, 900.0));
+        assert!(tree.bounds(w).height > 0.0, "the editor must lay out");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Every new switch must actually write through to the saved style.
+    ///
+    /// This is the failure this pane is prone to: the toggle is bound to a plain `Signal`,
+    /// and forgetting its `bind_field` call still compiles, still renders a switch that
+    /// moves, and silently discards the writer's choice. The pane's own signals are locals
+    /// inside `build`, so the harness re-binds the same closures through the same
+    /// `bind_field` in a throwaway widget — which is exactly the machinery under test.
+    #[test]
+    fn the_pagination_switches_write_through_to_the_saved_style() {
+        let (vm, id, dir) = vm_with_a_user_style();
+
+        // Seeded from the built-in: pagination on, word count off.
+        let before = vm.user_preset(&id).expect("the user style");
+        assert!(before.chapter_starts_page);
+        assert!(!before.title_page_word_count);
+
+        let signals: Vec<(&str, Signal<bool>)> = FIELDS
+            .iter()
+            .map(|(name, _)| (*name, Signal::new(field_of(&before, name))))
+            .collect();
+
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(Box::new(Binder {
+            vm: vm.clone(),
+            id: id.clone(),
+            signals: signals.clone(),
+        }));
+        tree.layout(SizeProposal::exact(100.0, 100.0));
+
+        for (name, sig) in &signals {
+            sig.set(!sig.get());
+            let after = vm.user_preset(&id).expect("the user style");
+            assert_eq!(
+                field_of(&after, name),
+                !field_of(&before, name),
+                "flipping {name:?} must reach the saved style"
+            );
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Every switch the pane added, with the write it performs. Adding a knob to the pane
+    /// without adding it here leaves it untested — but it leaves it *visibly* untested,
+    /// next to its six neighbours.
+    #[allow(clippy::type_complexity)]
+    const FIELDS: &[(&str, fn(&mut Preset, bool))] = &[
+        ("book", |p, v| p.book_starts_page = v),
+        ("part", |p, v| p.part_starts_page = v),
+        ("chapter", |p, v| p.chapter_starts_page = v),
+        ("paratext", |p, v| p.paratext_starts_page = v),
+        ("title_page", |p, v| p.book_title_page = v),
+        ("word_count", |p, v| p.title_page_word_count = v),
+        ("include_paratexts", |p, v| p.include_paratexts = v),
+    ];
+
+    /// A widget whose only job is to run `bind_field` over `FIELDS` — `bind_field` needs a
+    /// `BuildContext`, and a `BuildContext` only exists inside a `build`.
+    struct Binder {
+        vm: ExportStylesViewModel,
+        id: String,
+        signals: Vec<(&'static str, Signal<bool>)>,
+    }
+
+    impl std::fmt::Debug for Binder {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("Binder").finish()
+        }
+    }
+
+    impl Widget for Binder {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            for ((_, sig), (_, apply)) in self.signals.iter().zip(FIELDS.iter()) {
+                bind_field(ctx, &self.vm, &self.id, sig, *apply);
+            }
+            Vec::new()
+        }
+
+        fn layout_response(&self, p: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+            p.resolve(0.0, 0.0).into()
+        }
+    }
+
+    fn field_of(p: &Preset, name: &str) -> bool {
+        match name {
+            "book" => p.book_starts_page,
+            "part" => p.part_starts_page,
+            "chapter" => p.chapter_starts_page,
+            "paratext" => p.paratext_starts_page,
+            "title_page" => p.book_title_page,
+            "word_count" => p.title_page_word_count,
+            "include_paratexts" => p.include_paratexts,
+            other => panic!("unknown field {other}"),
+        }
     }
 }

@@ -323,6 +323,13 @@ settings-styles-field-notes = Include notes
 settings-styles-field-synopses = Include synopses
 settings-styles-field-scene-titles = Include scene titles
 settings-styles-field-epigraphs = Include epigraphs
+settings-styles-field-paratexts = Include paratexts
+settings-styles-group-pages = Pages
+settings-styles-field-word-count = Word count on title page
+settings-styles-field-page-books = New page at each book
+settings-styles-field-page-parts = New page at each part
+settings-styles-field-page-chapters = New page at each chapter
+settings-styles-field-page-paratexts = New page at each paratext
 # Heading-scheme options
 settings-styles-heading-none = No heading
 settings-styles-heading-numbered = Number only
@@ -866,6 +873,8 @@ export-overwrite-text = “{ $name }” already exists. Replace it?
 export-progress-title = Exporting…
 export-cancelled = Export cancelled
 export-done = Exported { $count } item(s)
+export-open-file = Open
+export-show-in-folder = Show in folder
 # Error toast: a short reason in the body, the full technical chain behind Details
 export-error-title = Could not export
 export-error-details = Details

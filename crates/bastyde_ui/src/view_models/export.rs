@@ -29,7 +29,6 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use bastyde::prelude::*; // EventContext, Signal, tr!, lit!
-use bastyde::text_document::TextDocument;
 use bastyde::widgets::{MessageBox, MessageBoxButtons, StandardButton, Toast, ToastAction};
 
 use export_management::{ExportFormat, ExportScopeKind, ExportWorkDto};
@@ -45,10 +44,7 @@ use frontend::common::entities::{Binder, BinderItem, Content, Work};
 use frontend::common::event::Event;
 
 use skrib_format::{BinderWithItems, Gathered, ItemWithContents};
-use skribisto_compiler::{
-    ExportFormat as CFormat, HeadingScheme, LineSpacing, Preset, RenderRequest, SceneBreak,
-    builtin_presets, render_preview_document,
-};
+use skribisto_compiler::{HeadingScheme, LineSpacing, Preset, SceneBreak, builtin_presets};
 use skribisto_model::compile::{
     ItemMeta, ScopeKind, StreamLevel, enclosing_head, primary_scope, resolve_scope,
 };
@@ -591,46 +587,6 @@ impl ExportViewModel {
         )
     }
 
-    // ── Live preview ─────────────────────────────────────────────────────────
-
-    /// The compiled document for the live preview — the exact `TextDocument` the chosen
-    /// style + scope would render, shown read-only in the panel. `None` when nothing
-    /// resolves (no work / empty scope) so the panel shows its empty state.
-    pub fn preview_document(&self) -> Option<TextDocument> {
-        let g = self.client_gather().ok()?;
-        let metas = skribisto_compiler::item_metas(&g);
-        let include = self.resolve_include(&metas)?;
-        if include.is_empty() {
-            return None;
-        }
-        let preset = self.selected_preset();
-        let work_lang = g.work.dict_language.clone();
-        let req = RenderRequest {
-            gathered: &g,
-            include: &include,
-            preset: &preset,
-            // The preview shows the assembled document; the *format* only matters at write
-            // time, so any value works here.
-            format: CFormat::Html,
-            work_lang: skribisto_model::language::primary(&work_lang),
-            explicit_selection: self.is_explicit(),
-        };
-        render_preview_document(&req).ok()
-    }
-
-    /// The ordered include ids for the current scope + anchor, resolved against the live
-    /// tree exactly as the backend resolves them against its frozen one.
-    fn resolve_include(&self, metas: &[ItemMeta]) -> Option<Vec<u64>> {
-        // Choose… supplies its ids directly from the checkbox tree.
-        if self.scope.get() == ExportScopeKind::Custom {
-            let ids = self.checked_item_ids();
-            return (!ids.is_empty()).then_some(ids);
-        }
-        let anchor = self.anchor.get()?;
-        let pos = metas.iter().position(|m| m.id == anchor)?;
-        resolve_scope(metas, pos, to_scope_kind(&self.scope.get()))
-    }
-
     /// Read the open Work subtree into a `Gathered` from the frontend read commands,
     /// converting each DTO to its entity. The client analogue of the backend's frozen
     /// `gather` — best-effort (an empty store yields "no open work", and the preview then
@@ -877,12 +833,27 @@ impl ExportViewModel {
         match export_management_commands::get_export_work_result(&self.app_ctx, &op_id) {
             Ok(Some(res)) => {
                 let done = tr!(export_done(count = res.exported_count));
+                // The two things a writer wants the moment an export lands: to look at it,
+                // or to get at it. This is where the panel's old live preview went — a
+                // preview could only ever show the assembled text, and everything worth
+                // checking about an export (its pagination, its title page, how the chosen
+                // format actually renders) is visible only in the file itself.
+                let to_open = res.output_path.clone();
+                let to_reveal = res.output_path.clone();
                 ctx.show_toast(
                     Toast::success(done)
                         .scoped_op_id(EXPORT_TOAST_ID, work_id, &op_id)
                         .body(lit!(res.output_path.clone()))
-                        .auto_dismiss_after(Duration::from_secs(6))
-                        .target_work(work_id),
+                        // Longer than the plain six seconds: an offer nobody has time to
+                        // read is not an offer.
+                        .auto_dismiss_after(Duration::from_secs(12))
+                        .target_work(work_id)
+                        .action(ToastAction::primary(tr!(export_open_file()), move |_| {
+                            crate::shell::process::open_in_default_app(&to_open);
+                        }))
+                        .action(ToastAction::new(tr!(export_show_in_folder()), move |_| {
+                            crate::shell::process::reveal_in_file_manager(&to_reveal);
+                        })),
                 );
             }
             Ok(None) | Err(_) => {
@@ -1071,22 +1042,22 @@ mod tests {
     fn custom_scope_exports_the_checked_tree() {
         let (vm, _) = loaded_vm();
         vm.prepare(ExportScopeKind::Custom, None);
-        // The default seed checks the prose rows, so the include set is non-empty and the
-        // preview renders — without any anchor.
+        // The default seed checks the prose rows, so there is something to export with no
+        // anchor at all — which is the whole point of Choose….
         assert!(
             !vm.checked_item_ids().is_empty(),
             "prose rows are checked by default"
         );
         assert!(
-            vm.preview_document().is_some(),
-            "Custom previews the checked selection"
+            vm.can_export().get(),
+            "…so Export is live without an anchor"
         );
     }
 
     #[test]
-    fn preview_renders_a_document_for_a_resolvable_scope() {
+    fn a_resolvable_scope_is_exportable() {
         let (vm, items) = loaded_vm();
-        // Anchor on the first item that offers a scope, take that scope, and preview it.
+        // Anchor on the first item that offers a scope, then take that scope.
         let anchored = items.iter().find_map(|&id| {
             let scopes = vm.compute_applicable(Some(id));
             scopes.first().cloned().map(|s| (id, s))
@@ -1094,8 +1065,8 @@ mod tests {
         let (id, scope) = anchored.expect("a resolvable scope somewhere in the fixture");
         vm.prepare(scope, Some(id));
         assert!(
-            vm.preview_document().is_some(),
-            "a resolvable scope should preview a document"
+            vm.can_export().get(),
+            "a resolvable scope must be exportable"
         );
     }
 

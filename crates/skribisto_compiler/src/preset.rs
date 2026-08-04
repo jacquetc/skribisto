@@ -82,7 +82,12 @@ pub struct Margins {
 
 impl Default for Margins {
     fn default() -> Self {
-        Margins { top_in: 1.0, bottom_in: 1.0, left_in: 1.0, right_in: 1.0 }
+        Margins {
+            top_in: 1.0,
+            bottom_in: 1.0,
+            left_in: 1.0,
+            right_in: 1.0,
+        }
     }
 }
 
@@ -200,6 +205,37 @@ pub struct Preset {
     pub part_heading: HeadingScheme,
     #[serde(default)]
     pub book_title_page: bool,
+    /// Print the rounded word count on the title page — the manuscript-submission
+    /// convention, where an editor reads it before anything else. Off elsewhere: a trade
+    /// title page carries the title and the byline and nothing more.
+    #[serde(default)]
+    pub title_page_word_count: bool,
+
+    // Pagination. Only the formats that have pages honour these — DOCX, PDF, LaTeX, and
+    // print/EPUB through CSS; plain text and Markdown say it if asked and otherwise not
+    // at all.
+    //
+    // All four default to **on**, and they need `default = "yes"` to do it. A bool's bare
+    // `#[serde(default)]` is `false`, and every user preset saved before these fields
+    // existed has no such key — but nobody *chose* an unbroken book, because until now
+    // there was no page break to choose. Reading their absence as "off" would leave every
+    // custom style silently stuck with the behaviour that prompted this, while the
+    // built-ins moved on.
+    /// A new page at each Book opener. Only reachable when the title page is off — with
+    /// one on, the Book's own heading is suppressed and the title page does the breaking.
+    #[serde(default = "yes")]
+    pub book_starts_page: bool,
+    #[serde(default = "yes")]
+    pub part_starts_page: bool,
+    /// A new page at each chapter. The most load-bearing of the four: it is the rule that
+    /// makes a manuscript readable as chapters rather than as one unbroken column, and
+    /// Shunn requires it outright.
+    #[serde(default = "yes")]
+    pub chapter_starts_page: bool,
+    /// A new page at each paratext. A dedication that shares a page with the end of the
+    /// copyright notice is not a dedication.
+    #[serde(default = "yes")]
+    pub paratext_starts_page: bool,
 
     // Content inclusion.
     #[serde(default)]
@@ -268,6 +304,11 @@ impl Preset {
             chapter_heading: HeadingScheme::NumberAndTitle,
             part_heading: HeadingScheme::NumberAndTitle,
             book_title_page: false,
+            title_page_word_count: false,
+            book_starts_page: true,
+            part_starts_page: true,
+            chapter_starts_page: true,
+            paratext_starts_page: true,
             include_synopses: false,
             include_notes: false,
             include_scene_titles: false,
@@ -303,6 +344,10 @@ pub fn builtin_presets() -> Vec<Preset> {
             scene_break: SceneBreak::Glyph("#".to_string()),
             major_scene_break: SceneBreak::Glyph("# # #".to_string()),
             book_title_page: true,
+            // "Round off the word count ... to the nearest thousand for longer works" —
+            // upper right of the title page, the first thing an editor looks at.
+            // https://www.shunn.net/format/novel/
+            title_page_word_count: true,
             ..Preset::base("manuscript-shunn", "")
         },
         Preset {
@@ -430,5 +475,30 @@ mod tests {
         assert!(!p.builtin);
         assert_eq!(p.line_spacing, LineSpacing::Double);
         assert_eq!(p.scene_break, SceneBreak::BlankLine);
+    }
+
+    /// The pagination fields must read as ON when absent, not off. Every user preset saved
+    /// before they existed lacks the keys, and nobody chose an unbroken book — there was
+    /// nothing to choose. Getting this wrong is invisible until someone exports.
+    #[test]
+    fn pagination_defaults_to_on_for_a_preset_that_predates_it() {
+        let json = r#"{ "id": "x", "name": "X", "font_family": "Serif", "font_size_pt": 12.0 }"#;
+        let p: Preset = serde_json::from_str(json).unwrap();
+        assert!(p.chapter_starts_page);
+        assert!(p.part_starts_page);
+        assert!(p.book_starts_page);
+        assert!(p.paratext_starts_page);
+        // …but the word count is a submission convention, not a default.
+        assert!(!p.title_page_word_count);
+    }
+
+    /// An explicit `false` still means false — the default only fills a *missing* key.
+    #[test]
+    fn an_explicit_no_is_honoured() {
+        let json = r#"{ "id": "x", "name": "X", "font_family": "Serif", "font_size_pt": 12.0,
+                        "chapter_starts_page": false }"#;
+        let p: Preset = serde_json::from_str(json).unwrap();
+        assert!(!p.chapter_starts_page);
+        assert!(p.part_starts_page, "the others are untouched");
     }
 }
