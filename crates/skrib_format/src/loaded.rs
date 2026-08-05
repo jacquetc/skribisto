@@ -10,8 +10,8 @@
 //! remaps them to fresh store ids while preserving order and M2M links.
 
 use common::entities::{
-    Binder, BinderItem, BinderTag, CommentAnchorKind, CommentOrphanReason, Content, DictWord,
-    NoteTemplate, SmartPunctuation, TextReplacementRule, Work,
+    Asset, Binder, BinderItem, BinderTag, CommentAnchorKind, CommentOrphanReason, Content,
+    DictWord, NoteTemplate, SmartPunctuation, TextReplacementRule, Work,
 };
 
 pub struct LoadedWork {
@@ -25,6 +25,11 @@ pub struct LoadedWork {
     /// its Djot `body` inline here — the manifest/blob split is an on-disk concern that
     /// `bundle_to_loaded` has already reassembled by this point.
     pub note_templates: Vec<NoteTemplate>,
+    /// Image metadata rows. The bytes are *not* here: they live in the
+    /// project's media directory and in `assets/<hash>.<ext>` inside the
+    /// bundle, which is what keeps a project's photographs out of the store
+    /// and off every snapshot, undo and fingerprint path.
+    pub assets: Vec<Asset>,
     /// The punctuation house style, or `None` for a bundle written before the
     /// setting existed.
     ///

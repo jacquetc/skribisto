@@ -125,6 +125,7 @@ fn sample_bundle() -> WorkBundle {
         dict_words: vec![20],
         text_replacement_rules: vec![],
         note_templates: vec![],
+        assets: vec![],
         // Non-default too, and for the same reason as chapter_mode above: an
         // all-default row would round-trip equal even if the field were dropped.
         smart_punctuation: 30,
@@ -253,6 +254,8 @@ fn sample_bundle() -> WorkBundle {
         &dict_words,
         &[],
         &[],
+        &[],
+        Default::default(),
         Some(&common::entities::SmartPunctuation {
             id: 30,
             created_at: ts(),
@@ -416,6 +419,7 @@ fn save_load_round_trip_through_store() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )
@@ -518,6 +522,7 @@ fn comments_survive_the_store_round_trip_and_stay_anchored() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )
@@ -609,6 +614,7 @@ fn a_too_new_project_is_refused_with_a_typed_error_all_the_way_up() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: path.clone(),
         },
     )
@@ -663,6 +669,7 @@ fn store_to_bundle(db: &DbContext, hub: &Arc<EventHub>, out: &std::path::Path) -
     let uc = SaveWorkUseCase::new(
         Box::new(SaveWorkUnitOfWorkFactory::new(db, hub)),
         &SaveWorkDto {
+            media_root: String::new(),
             work_id: live_work_id(db),
             file_name: out.to_str().unwrap().to_string(),
             overwrite: true,
@@ -691,6 +698,7 @@ fn legacy_load_preserves_unique_id() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: fixture.to_string(),
         },
     )
@@ -740,6 +748,7 @@ fn legacy_load_preserves_word_and_char_count_goals() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: copy.to_str().unwrap().to_string(),
         },
     )
@@ -807,6 +816,7 @@ fn text_replacement_rules_survive_a_save_load_round_trip() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )
@@ -873,6 +883,7 @@ fn the_punctuation_house_style_survives_a_save_load_round_trip() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )
@@ -917,6 +928,7 @@ fn a_project_without_a_punctuation_style_loads_and_follows_the_app_default() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )
@@ -984,6 +996,7 @@ fn paces_survive_a_save_load_round_trip() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )
@@ -1059,6 +1072,7 @@ fn progress_snapshots_survive_a_double_round_trip() {
         &db1,
         &hub1,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: a.to_str().unwrap().to_string(),
         },
     )
@@ -1078,6 +1092,7 @@ fn progress_snapshots_survive_a_double_round_trip() {
         &db2,
         &hub2,
         &LoadWorkDto {
+            media_root: String::new(),
             // store_to_bundle wrote B as a folder next to the out path.
             file_name: b_path.to_str().unwrap().to_string(),
         },
@@ -1142,6 +1157,7 @@ fn bundle_without_unique_id_is_healed() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )
@@ -1528,6 +1544,7 @@ fn new_work_replaces_open_project() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )
@@ -1584,6 +1601,7 @@ fn load_sample() -> (tempfile::TempDir, DbContext, Arc<EventHub>) {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )
@@ -1678,6 +1696,7 @@ fn failed_save_as_does_not_roll_back_the_store() {
     let uc = SaveAsUseCase::new(
         Box::new(SaveAsUnitOfWorkFactory::new(&db, &hub)),
         &SaveAsDto {
+            media_root: String::new(),
             work_id: live_work_id(&db),
             file_name: target.to_str().unwrap().to_string(),
             as_folder: false,
@@ -1703,6 +1722,7 @@ fn plain_backup_dto(
     last_known_hashes: Vec<String>,
 ) -> BackupNowDto {
     BackupNowDto {
+        media_root: String::new(),
         work_id,
         directories,
         last_known_hashes,
@@ -2211,6 +2231,7 @@ fn fingerprint_of(
     let uc = SaveWorkUseCase::new(
         Box::new(SaveWorkUnitOfWorkFactory::new(db, hub)),
         &SaveWorkDto {
+            media_root: String::new(),
             work_id,
             file_name: scratch.to_str().unwrap().to_string(),
             overwrite: true,
@@ -2255,6 +2276,7 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: path_a.to_str().unwrap().to_string(),
         },
     )
@@ -2355,6 +2377,7 @@ fn a_second_work_never_perturbs_the_first_through_mutate_save_close() {
     let save_b = SaveWorkUseCase::new(
         Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
         &SaveWorkDto {
+            media_root: String::new(),
             work_id: work_b_id,
             file_name: dir.path().join("out_b").to_str().unwrap().to_string(),
             overwrite: true,
@@ -2495,6 +2518,7 @@ fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: path_a.to_str().unwrap().to_string(),
         },
     )
@@ -2528,6 +2552,7 @@ fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: path_b.to_str().unwrap().to_string(),
         },
     )
@@ -2574,6 +2599,7 @@ fn a_second_work_opened_through_the_real_load_work_path_never_perturbs_the_first
     let save_b = SaveWorkUseCase::new(
         Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
         &SaveWorkDto {
+            media_root: String::new(),
             work_id: work_b_id,
             file_name: dir.path().join("real-out-b").to_str().unwrap().to_string(),
             overwrite: true,
@@ -2729,6 +2755,7 @@ fn note_templates_survive_a_save_load_round_trip() {
         &db,
         &hub,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: src.to_str().unwrap().to_string(),
         },
     )

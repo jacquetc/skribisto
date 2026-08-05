@@ -76,6 +76,16 @@ pub fn compute_min_read_version(bundle: &WorkBundle) -> u32 {
         floor = floor.max(5);
     }
 
+    // Assets are why v8 exists, and for exactly the reason templates were why v5
+    // does: the zip writer rebuilds the archive from a fresh staging directory,
+    // and the exploded writer prunes what it does not expect. An older build has
+    // neither `assets.ron` nor the `assets/` tree in its `WorkBundle`, so its
+    // first save would delete every image in the project. The floor makes that a
+    // refusal to open instead — and only for projects that actually have images.
+    if !bundle.assets.is_empty() {
+        floor = floor.max(8);
+    }
+
     for bb in &bundle.binders {
         for bi in &bb.items {
             floor = floor.max(binder_item_role_min_version(&bi.item.role));

@@ -38,9 +38,9 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday, Milestone,
-    NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
-    WorkInfo,
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday,
+    Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule,
+    TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
@@ -71,6 +71,7 @@ pub trait BackupNowUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "GetMultiRO")]
 #[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
 #[macros::uow_action(entity = "Pace", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Pace", action = "GetRelationshipRO")]
@@ -128,6 +129,9 @@ impl<'a> TreeReader for dyn BackupNowUnitOfWorkTrait + 'a {
     }
     fn note_template_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<NoteTemplate>>> {
         self.get_note_template_multi(ids)
+    }
+    fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Asset>>> {
+        self.get_asset_multi(ids)
     }
     fn smart_punctuation(&self, id: &EntityId) -> Result<Option<SmartPunctuation>> {
         self.get_smart_punctuation(id)
@@ -242,12 +246,26 @@ fn run_backup(
     // Build the bundle once (pure, in-memory) and reuse it for every destination.
     // Fingerprint BEFORE marking it a backup, so `backup_created_at` doesn't make
     // every run's hash unique (which would defeat skip-if-unchanged).
+    // A backup carries the project's images too — it is a copy of the project,
+    // not of its prose. The bytes come from the same media directory a save
+    // reads, resolved from the source path so a folder project's `assets/` is
+    // used in place rather than a working copy.
+    let media_dir = skrib_format::media::media_dir(
+        std::path::Path::new(&source),
+        &unique_id,
+        std::path::Path::new(&dto.media_root),
+        &unique_id,
+    );
+    let asset_bytes = work_io::read_asset_bytes(&g.assets, &media_dir);
+
     let mut bundle = skrib::from_entities(
         &g.work,
         &g.tags,
         &g.dict_words,
         &g.text_replacement_rules,
         &g.note_templates,
+        &g.assets,
+        asset_bytes,
         g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,

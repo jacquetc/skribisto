@@ -29,8 +29,8 @@ use text_document::{
 
 use crate::headings::{self, Level};
 use crate::preset::{
-    DirectionMode, EpigraphPlacement, ExportFormat, HeadingLanguage, HeadingScheme, LineSpacing,
-    PageSize, Preset, SceneBreak,
+    DirectionMode, EpigraphPlacement, ExportFormat, HeadingLanguage, HeadingScheme, ImageHandling,
+    LineSpacing, PageSize, Preset, SceneBreak,
 };
 
 /// Everything a render needs: the frozen tree, the ordered ids to include, the style, the
@@ -45,6 +45,73 @@ pub struct RenderRequest<'a> {
     /// checkbox tree) rather than swept from a structural scope. When set, note items in the
     /// set always render, overriding `preset.include_notes` — the user pointed at them.
     pub explicit_selection: bool,
+    /// Where the project's image bytes live.
+    ///
+    /// Supplied by the caller for the same reason `text-document` takes them
+    /// rather than opening files itself: an export that resolved paths of its
+    /// own would depend on the working directory and could reach outside the
+    /// project. Empty means "no media", and every image degrades to its alt
+    /// text — which is also what a scope with no images costs.
+    pub media_dir: &'a std::path::Path,
+}
+
+/// Bytes for every image the included rows reference, keyed by the `src` the
+/// prose carries.
+///
+/// Read per export rather than cached: an export is already a long operation
+/// dominated by compiling, and a stale cache would silently ship the previous
+/// version of a picture the writer just replaced.
+/// `only` restricts the result to the paths a *scope* actually names — used by
+/// the loose text formats, where a chapter export must not drop the whole book's
+/// photographs into the writer's folder. `None` collects the Work's whole asset
+/// set, which is what the container formats want: they package what they
+/// reference and ignore the rest.
+fn collect_images(
+    gathered: &Gathered,
+    media_dir: &std::path::Path,
+    only: Option<&[String]>,
+) -> text_document::ExportImages {
+    let mut out = text_document::ExportImages::new();
+    if media_dir.as_os_str().is_empty() {
+        return out;
+    }
+    for asset in &gathered.assets {
+        let ext = skrib_format::media::extension_for(&asset.mime_type);
+        let relpath = skrib_format::media::asset_relpath(&asset.content_hash, &ext);
+        if only.is_some_and(|want| !want.contains(&relpath)) {
+            continue;
+        }
+        let Ok(bytes) = std::fs::read(media_dir.join(format!("{}.{ext}", asset.content_hash)))
+        else {
+            // A missing file is not an export failure: the image degrades to
+            // its description, which is a smaller loss than refusing to produce
+            // the manuscript at all.
+            continue;
+        };
+        out.insert(
+            relpath,
+            text_document::ExportImage::new(bytes, asset.mime_type.clone()),
+        );
+    }
+    out
+}
+
+/// What [`assemble`] built: the parsed book, plus the two things the format
+/// arms need that cannot be recovered from the document afterwards.
+struct Assembled {
+    doc: TextDocument,
+    stats: RenderStats,
+    /// Effective languages of the included rows — the PDF arm uses these to
+    /// decide which RTL faces to embed.
+    langs: std::collections::BTreeSet<String>,
+    /// The asset paths this *scope* actually names, scanned off the compiled
+    /// Djot before it was parsed.
+    ///
+    /// Not the same set as the Work's assets: exporting one chapter must not
+    /// write the whole book's photographs beside it. Recovering this from the
+    /// rendered output instead would mean re-finding each `src` through the
+    /// escaping rules of six different formats.
+    image_refs: Vec<String>,
 }
 
 /// What a render produced, for the result DTO / a toast.
@@ -70,8 +137,16 @@ pub fn render_to_string(req: &RenderRequest) -> Result<String> {
     if !req.format.is_text() {
         return Err(anyhow!("{:?} is not a text format", req.format));
     }
-    let (doc, _, _) = assemble(req, &|_| {}, &AtomicBool::new(false))?;
-    text_render(&doc, req.format)
+    let built = assemble(req, &|_| {}, &AtomicBool::new(false))?;
+    // No path to write beside, so no images can be placed: a string render
+    // references them as the prose does and leaves resolving that to whoever
+    // receives the string.
+    text_render(
+        &built.doc,
+        req.format,
+        ImageHandling::CopyBeside,
+        &images_for_html(req, &built),
+    )
 }
 
 /// Render to `path`, honouring `progress` (0..1) and `cancel`. Handles every format: text
@@ -82,14 +157,17 @@ pub fn render_to_file(
     progress: &dyn Fn(f32),
     cancel: &AtomicBool,
 ) -> Result<RenderStats> {
-    let (doc, stats, langs) = assemble(req, progress, cancel)?;
+    let built = assemble(req, progress, cancel)?;
+    let (doc, stats, langs) = (&built.doc, built.stats, &built.langs);
     if cancel.load(Ordering::Relaxed) {
         return Err(anyhow!("operation cancelled"));
     }
     match req.format {
         f if f.is_text() => {
-            let text = text_render(&doc, f)?;
+            let handling = req.preset.image_handling;
+            let text = text_render(doc, f, handling, &images_for_html(req, &built))?;
             fs::write(path, text).map_err(|e| anyhow!("writing '{}': {e}", path.display()))?;
+            write_sidecar_images(req, &built, path, f, handling)?;
         }
         ExportFormat::Docx => {
             let out = path.to_string_lossy().into_owned();
@@ -97,6 +175,7 @@ pub fn render_to_file(
                 req.preset,
                 &req.gathered.work.title,
                 &req.gathered.work.author_name,
+                collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
             );
             doc.to_docx_with_options(&out, opts)?
                 .wait()
@@ -115,19 +194,12 @@ pub fn render_to_file(
                 primary.to_string()
             };
             let opts = EpubExportOptions {
-                // Empty, and correctly so: a Skribisto manuscript is prose. Nothing in the
-                // app inserts an image into a document — there is no image affordance in any
-                // editor and no `ContentRole` that carries one — so there are no blobs to
-                // register. If images ever land, this is where their bytes join the export.
-                images: Default::default(),
-                // No cover, for the same reason there are no inline images: nothing in
-                // the app lets a writer attach one to a Work. When a cover affordance
-                // lands, this is the field its bytes go through.
-                cover: None,
                 title: w.title.clone(),
                 author: w.author_name.clone(),
                 rtl: is_rtl_row(req.preset, &lang),
                 language: lang,
+                images: collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
+                cover: cover_image(req),
             };
             doc.to_epub_with_options(&out, opts)?
                 .wait()
@@ -149,11 +221,6 @@ pub fn render_to_file(
             let m = &req.preset.margin;
             let in_to_mm = |i: f32| i * 25.4;
             let opts = PdfExportOptions {
-                // Empty, and correctly so: a Skribisto manuscript is prose. Nothing in the
-                // app inserts an image into a document — there is no image affordance in any
-                // editor and no `ContentRole` that carries one — so there are no blobs to
-                // register. If images ever land, this is where their bytes join the export.
-                images: Default::default(),
                 page_width_mm: page_w,
                 page_height_mm: page_h,
                 margin_top_mm: in_to_mm(m.top_in),
@@ -162,7 +229,8 @@ pub fn render_to_file(
                 margin_right_mm: in_to_mm(m.right_in),
                 // The family name must match the bytes actually fed (substitute-aware).
                 font_family: crate::fonts::pdf_body_family(req.preset),
-                font_bytes: crate::fonts::pdf_font_bytes(req.preset, &langs),
+                font_bytes: crate::fonts::pdf_font_bytes(req.preset, langs),
+                images: collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
                 font_size_pt: req.preset.font_size_pt,
                 // Typst `leading` (the gap *between* lines, not a line-height multiple — Typst
                 // has no direct multiple), in em. Approximated as `multiple - 0.35`, anchoring
@@ -212,7 +280,12 @@ const TWIPS_PER_IN: f32 = 1440.0;
 /// *effective* — page size, margins, font, double-spacing, first-line indent, ragged/justified
 /// alignment, and page-numbered header all flow from here; per-block RTL is emitted by the
 /// exporter itself from each block's direction, so it needs no option.
-fn docx_options(preset: &Preset, work_title: &str, work_author: &str) -> DocxExportOptions {
+fn docx_options(
+    preset: &Preset,
+    work_title: &str,
+    work_author: &str,
+    images: text_document::ExportImages,
+) -> DocxExportOptions {
     let (page_w, page_h) = match preset.page_size {
         // Twips = inch × 1440. A4 = 210×297 mm, A5 = 148×210 mm, US Letter = 8.5×11 in.
         PageSize::A4 => (11906u32, 16838u32),
@@ -222,9 +295,7 @@ fn docx_options(preset: &Preset, work_title: &str, work_author: &str) -> DocxExp
     let m = &preset.margin;
     let in_to_twips = |i: f32| (i * TWIPS_PER_IN).round() as i32;
     DocxExportOptions {
-        // Empty for the same reason as the EPUB and PDF registries: a Skribisto manuscript
-        // is prose, and nothing in the app puts an image into a document.
-        images: Default::default(),
+        images,
         page_width_twips: Some(page_w),
         page_height_twips: Some(page_h),
         margin_top_twips: Some(in_to_twips(m.top_in)),
@@ -264,9 +335,135 @@ fn manuscript_header(title: &str, author: &str) -> Option<String> {
     }
 }
 
-fn text_render(doc: &TextDocument, format: ExportFormat) -> Result<String> {
+/// The `assets/…` path of the book's cover, if it has one.
+///
+/// Only the path — the *inline* cover (every format but EPUB) rides the ordinary
+/// image pipeline from here on, so its bytes are collected exactly like any
+/// other picture the compiled book names.
+fn cover_relpath(req: &RenderRequest) -> Option<String> {
+    let asset = req.gathered.assets.iter().find(|a| a.is_cover)?;
+    Some(skrib_format::media::asset_relpath(
+        &asset.content_hash,
+        &skrib_format::media::extension_for(&asset.mime_type),
+    ))
+}
+
+use skrib_format::media::escape_djot_alt;
+
+/// The book's cover, if it has one and its file is still there.
+///
+/// Read outside [`collect_images`] because a cover is not inline content: no
+/// prose references it, so a scope-restricted image set would never contain it —
+/// and a cover belongs to the *book*, not to whichever chapters this export
+/// happens to include.
+fn cover_image(req: &RenderRequest) -> Option<text_document::ExportImage> {
+    if req.media_dir.as_os_str().is_empty() {
+        return None;
+    }
+    let asset = req.gathered.assets.iter().find(|a| a.is_cover)?;
+    let ext = skrib_format::media::extension_for(&asset.mime_type);
+    let bytes = std::fs::read(req.media_dir.join(format!("{}.{ext}", asset.content_hash))).ok()?;
+    Some(text_document::ExportImage::new(
+        bytes,
+        asset.mime_type.clone(),
+    ))
+}
+
+/// The bytes an HTML export would need to inline, and nothing more.
+///
+/// Only [`ImageHandling::Embed`] on HTML reads image files at render time; every
+/// other combination either references the files (which the sidecar writes) or
+/// drops them. Collecting unconditionally would make a plain Markdown export of
+/// an illustrated book read every photograph off disk for nothing.
+fn images_for_html(req: &RenderRequest, built: &Assembled) -> text_document::ExportImages {
+    if req.format != ExportFormat::Html || req.preset.image_handling != ImageHandling::Embed {
+        return text_document::ExportImages::new();
+    }
+    collect_images(req.gathered, req.media_dir, Some(&built.image_refs))
+}
+
+/// Write the referenced image files beside the exported document.
+///
+/// The layout on disk is built from the document's own references rather than
+/// from a name this function invents: the prose says `assets/<hash>.png`, so the
+/// file is written to `assets/<hash>.png` relative to the output. That is what
+/// makes rewriting unnecessary — and rewriting is the part that would have to be
+/// separately correct for Djot's link syntax, HTML's URL escaping and LaTeX's
+/// backslashes.
+///
+/// Only the formats that reference an image by path get a sidecar. DOCX, EPUB
+/// and PDF carry the bytes inside the file; writing the pictures beside them too
+/// would litter the writer's folder with copies nothing reads.
+fn write_sidecar_images(
+    req: &RenderRequest,
+    built: &Assembled,
+    output: &Path,
+    format: ExportFormat,
+    handling: ImageHandling,
+) -> Result<()> {
+    if built.image_refs.is_empty() || !format.references_images() {
+        return Ok(());
+    }
+    match handling {
+        ImageHandling::Omit => return Ok(()),
+        // A single-file HTML carries its own bytes; the whole point is that
+        // there is nothing beside it to lose.
+        ImageHandling::Embed if format == ExportFormat::Html => return Ok(()),
+        _ => {}
+    }
+    let Some(parent) = output.parent() else {
+        return Ok(());
+    };
+    let images = collect_images(req.gathered, req.media_dir, Some(&built.image_refs));
+    for (relpath, image) in images.iter() {
+        let Some(target) = resolve_sidecar_path(parent, relpath) else {
+            // A reference that climbs out of the output folder is not written.
+            // Prose is user data and a project file can be edited by hand, so
+            // this has to be impossible rather than unlikely.
+            continue;
+        };
+        if let Some(dir) = target.parent() {
+            fs::create_dir_all(dir).map_err(|e| anyhow!("creating '{}': {e}", dir.display()))?;
+        }
+        fs::write(&target, &image.bytes)
+            .map_err(|e| anyhow!("writing '{}': {e}", target.display()))?;
+    }
+    Ok(())
+}
+
+/// Resolve a document-relative asset path under `parent`, or `None` if it would
+/// escape.
+///
+/// Rejects rather than sanitizes: a reference containing `..` or an absolute
+/// root is not a path this exporter should be guessing the intent of.
+fn resolve_sidecar_path(parent: &Path, relpath: &str) -> Option<std::path::PathBuf> {
+    let candidate = Path::new(relpath);
+    if candidate.is_absolute() {
+        return None;
+    }
+    for part in candidate.components() {
+        match part {
+            std::path::Component::Normal(_) => {}
+            // `.` is harmless but arrives only from a malformed reference;
+            // everything else (`..`, a root, a Windows prefix) escapes.
+            _ => return None,
+        }
+    }
+    Some(parent.join(candidate))
+}
+
+fn text_render(
+    doc: &TextDocument,
+    format: ExportFormat,
+    handling: ImageHandling,
+    html_images: &text_document::ExportImages,
+) -> Result<String> {
+    let omit = handling == ImageHandling::Omit;
     Ok(match format {
-        ExportFormat::Djot => doc.to_djot()?,
+        ExportFormat::Djot => doc.to_djot_with_options(text_document::DjotExportOptions {
+            omit_images: omit,
+            ..Default::default()
+        })?,
         // The *presentation* plain text, not the addressable one. `.txt` has no markup to
         // mark quoted matter, so an epigraph would otherwise dissolve into the body, and
         // no page concept, so a chapter boundary would vanish entirely. The flush
@@ -277,17 +474,21 @@ fn text_render(doc: &TextDocument, format: ExportFormat) -> Result<String> {
         // Opting in here is safe *and* correct: the compiled document only carries a break
         // where the chosen style asked for one, so the knob that governs it is the style's,
         // shared with every other format, rather than a second one hidden in this arm.
-        ExportFormat::Markdown => {
-            doc.to_markdown_with(MarkdownExportOptions {
-                page_breaks: true,
-                // A Skribisto document carries no images (see the EPUB arm), so there is
-                // nothing to omit — and emitting the reference is the right default for a
-                // caller that would write the files beside the output.
-                omit_images: false,
-            })?
-        }
-        ExportFormat::Html => doc.to_html()?,
-        ExportFormat::Latex => doc.to_latex("article", true)?,
+        ExportFormat::Markdown => doc.to_markdown_with(MarkdownExportOptions {
+            page_breaks: true,
+            omit_images: omit,
+        })?,
+        // HTML is the one referencing format that can also carry its images, so
+        // it is the only one where `Embed` means anything.
+        ExportFormat::Html => doc.to_html_with_options(text_document::HtmlExportOptions {
+            image_mode: match handling {
+                ImageHandling::CopyBeside => text_document::HtmlImageMode::Reference,
+                ImageHandling::Embed => text_document::HtmlImageMode::DataUri,
+                ImageHandling::Omit => text_document::HtmlImageMode::Omit,
+            },
+            images: html_images.clone(),
+        })?,
+        ExportFormat::Latex => doc.to_latex_with_options("article", true, omit)?,
         other => return Err(anyhow!("{other:?} is not a text format")),
     })
 }
@@ -296,15 +497,7 @@ fn text_render(doc: &TextDocument, format: ExportFormat) -> Result<String> {
 // Assembly
 // ─────────────────────────────────────────────────────────────────────────────
 
-fn assemble(
-    req: &RenderRequest,
-    progress: &dyn Fn(f32),
-    cancel: &AtomicBool,
-) -> Result<(
-    TextDocument,
-    RenderStats,
-    std::collections::BTreeSet<String>,
-)> {
+fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) -> Result<Assembled> {
     let rows = flatten(req);
     let preset = req.preset;
 
@@ -342,6 +535,18 @@ fn assemble(
     // above it.
     let title_page = preset.book_title_page && rows.iter().any(|r| r.item.sub_role.opens_book());
 
+    // The cover, on the same terms: it opens the *book*, so an export that does
+    // not include the book's opening has no business carrying it. EPUB is the
+    // exception — it has a real cover slot in the package, filled by the format
+    // arm, and putting the picture inline as well would show it twice.
+    let cover = preset
+        .book_cover
+        .then(|| cover_relpath(req))
+        .flatten()
+        .filter(|_| {
+            req.format != ExportFormat::Epub && rows.iter().any(|r| r.item.sub_role.opens_book())
+        });
+
     // A page break queued for the next block emitted, whatever that turns out to be: a
     // structural heading, or the row's own prose when the preset suppresses the heading.
     // It survives a row that emits nothing (a Book opener under a title page emits no
@@ -351,7 +556,12 @@ fn assemble(
     // Whether anything will be printed above the block about to be emitted. A page break
     // on the very first block would open on a blank page in the formats that take it
     // literally, and the title page counts here even though `out` is still empty.
-    let mut anything_above = title_page;
+    let mut anything_above = title_page || cover.is_some();
+    // With a cover but no title page, the body's own first block is what has to
+    // break away from it — nothing else will.
+    if cover.is_some() && !title_page {
+        pending_break = true;
+    }
 
     let total = rows.len().max(1);
     let report = |p: usize| progress(0.9 * (p as f32 + 1.0) / total as f32);
@@ -559,7 +769,30 @@ fn assemble(
     // The title page, now that the word count is known. Built separately and prepended so
     // it can carry it — an editor reads that number before anything else on the page.
     if title_page {
-        out.insert_str(0, &render_title_page(req, preset, work_rtl, words));
+        out.insert_str(
+            0,
+            &render_title_page(req, preset, work_rtl, words, cover.is_some()),
+        );
+    }
+
+    // And the cover above even that: the first thing in the book, centred. The
+    // page break that keeps it on a sheet of its own is carried by whatever
+    // follows — the title page above, or the body's first block (armed before
+    // the row loop).
+    //
+    // The alt text is the book's title. A cover is not decorative, and "Cover"
+    // tells someone reading with a screen reader nothing they do not already
+    // know from the file they opened.
+    if let Some(relpath) = &cover {
+        let alt = escape_djot_alt(req.gathered.work.title.trim());
+        let mut block = String::new();
+        push_para(
+            &mut block,
+            &format!("![{alt}]({relpath})"),
+            work_rtl,
+            &["alignment=center".to_string()],
+        );
+        out.insert_str(0, &block);
     }
 
     let doc = TextDocument::new();
@@ -574,14 +807,15 @@ fn assemble(
         doc.set_text_direction(dir)?;
     }
 
-    Ok((
+    Ok(Assembled {
         doc,
-        RenderStats {
+        stats: RenderStats {
             items: emitted_items,
             words,
         },
         langs,
-    ))
+        image_refs: skrib_format::media::referenced_paths(&out),
+    })
 }
 
 /// Flatten the frozen tree into the included rows, in document order, each with its
@@ -860,51 +1094,59 @@ fn push_scene_break(
 /// format then renders differently — and a blank Djot block is not even representable,
 /// since consecutive blank lines collapse into the ordinary block separator.
 ///
-/// Nothing here carries a page break. It is the top of the document, and the *body's*
-/// first block is what breaks away from it.
-fn render_title_page(req: &RenderRequest, preset: &Preset, rtl: bool, words: usize) -> String {
+/// It normally carries no page break — it is the top of the document, and the *body's*
+/// first block is what breaks away from it. `break_above` is the one exception: a cover
+/// page sits above it, and the two must not share a sheet.
+fn render_title_page(
+    req: &RenderRequest,
+    preset: &Preset,
+    rtl: bool,
+    words: usize,
+    break_above: bool,
+) -> String {
     let w = &req.gathered.work;
     let lang = match &preset.heading_language {
         HeadingLanguage::Fixed(l) => l.clone(),
         HeadingLanguage::Auto => req.work_lang.to_string(),
     };
     let mut page = String::new();
+    // Consumed by whichever block turns out to be first — which one that is
+    // depends on the preset and on whether the Work has a title at all, so it
+    // cannot be decided here.
+    let mut first: Vec<String> = if break_above {
+        vec!["page_break_before=true".to_string()]
+    } else {
+        Vec::new()
+    };
 
     // Upper right, the manuscript-submission convention. Suppressed for an empty
     // manuscript: "about 0 words" is a statement no title page should make.
     if preset.title_page_word_count && words > 0 {
+        let mut attrs = std::mem::take(&mut first);
+        attrs.push("alignment=right".to_string());
         push_para(
             &mut page,
             &escape_block_leading(&headings::word_count_note(&lang, words, preset.digit_style)),
             rtl,
-            &["alignment=right".to_string()],
+            &attrs,
         );
     }
 
     if !w.title.trim().is_empty() {
-        push_heading(
-            &mut page,
-            1,
-            w.title.trim(),
-            rtl,
-            &[
-                "alignment=center".to_string(),
-                format!("top_margin={}", title_drop_px(preset)),
-            ],
-        );
+        let mut attrs = std::mem::take(&mut first);
+        attrs.push("alignment=center".to_string());
+        attrs.push(format!("top_margin={}", title_drop_px(preset)));
+        push_heading(&mut page, 1, w.title.trim(), rtl, &attrs);
     }
 
     // The author's name is *data*, never markup — escaped so a name that happens to start
     // like a list marker survives intact. The preposition is generated furniture and so is
     // localized; the name itself never is.
     if !w.author_name.trim().is_empty() {
+        let mut attrs = std::mem::take(&mut first);
+        attrs.push("alignment=center".to_string());
         let byline = format!("{} {}", headings::by(&lang), w.author_name.trim());
-        push_para(
-            &mut page,
-            &escape_block_leading(&byline),
-            rtl,
-            &["alignment=center".to_string()],
-        );
+        push_para(&mut page, &escape_block_leading(&byline), rtl, &attrs);
     }
     page
 }
@@ -1269,6 +1511,7 @@ mod tests {
 
     fn gathered(items: Vec<ItemWithContents>, work_lang: &str) -> Gathered {
         Gathered {
+            assets: Vec::new(),
             work: Work {
                 id: 1,
                 title: "My Novel".into(),
@@ -1303,6 +1546,307 @@ mod tests {
 
     fn preset(id: &str) -> Preset {
         builtin_presets().into_iter().find(|p| p.id == id).unwrap()
+    }
+
+    // ── Images: the sidecar, the scope, and the cover ────────────────────
+
+    /// A real 2×2 PNG, so a decoder anywhere downstream sees an image.
+    fn png() -> Vec<u8> {
+        let mut buf = Vec::new();
+        {
+            let mut enc = png::Encoder::new(&mut buf, 2, 2);
+            enc.set_color(png::ColorType::Rgba);
+            enc.set_depth(png::BitDepth::Eight);
+            let mut w = enc.write_header().unwrap();
+            w.write_image_data(&[9u8, 9, 9, 255].repeat(4)).unwrap();
+        }
+        buf
+    }
+
+    fn asset(id: u64, hash: &str, is_cover: bool) -> common::entities::Asset {
+        common::entities::Asset {
+            id,
+            content_hash: hash.into(),
+            file_name: format!("{hash}.png"),
+            mime_type: "image/png".into(),
+            width: 2,
+            height: 2,
+            byte_size: png().len() as u64,
+            alt: String::new(),
+            is_cover,
+            ..Default::default()
+        }
+    }
+
+    /// A media directory holding `hashes`, plus a Gathered whose assets name them.
+    fn book_with_images(hashes: &[&str], cover: Option<&str>) -> (tempfile::TempDir, Gathered) {
+        let dir = tempfile::tempdir().unwrap();
+        let mut g = gathered(
+            vec![
+                iwc(
+                    100,
+                    SR::BookBegin,
+                    "en",
+                    vec![c(1, ContentRole::BookTitle, "My Novel")],
+                ),
+                iwc(
+                    101,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(
+                        3,
+                        ContentRole::SceneText,
+                        &format!("A picture: ![a gull](assets/{}.png)", hashes[0]),
+                    )],
+                ),
+            ],
+            "en",
+        );
+        for (i, h) in hashes.iter().enumerate() {
+            std::fs::write(dir.path().join(format!("{h}.png")), png()).unwrap();
+            g.assets.push(asset(200 + i as u64, h, Some(*h) == cover));
+        }
+        (dir, g)
+    }
+
+    fn req_with_media<'a>(
+        g: &'a Gathered,
+        include: &'a [u64],
+        p: &'a Preset,
+        f: ExportFormat,
+        media: &'a std::path::Path,
+    ) -> RenderRequest<'a> {
+        RenderRequest {
+            media_dir: media,
+            gathered: g,
+            include,
+            preset: p,
+            format: f,
+            work_lang: "en",
+            explicit_selection: false,
+        }
+    }
+
+    #[test]
+    fn a_markdown_export_writes_its_images_beside_it() {
+        // Before this the reference was emitted and no file was written, so
+        // every exported Markdown/HTML/LaTeX image resolved to nothing.
+        let (media, g) = book_with_images(&["aaa"], None);
+        let out = tempfile::tempdir().unwrap();
+        let path = out.path().join("book.md");
+        let p = preset("neutral");
+        render_to_file(
+            &req_with_media(&g, &[100, 101], &p, ExportFormat::Markdown, media.path()),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(text.contains("assets/aaa.png"), "reference lost: {text}");
+        let beside = out.path().join("assets/aaa.png");
+        assert!(beside.exists(), "no file was written beside the document");
+        assert_eq!(std::fs::read(&beside).unwrap(), png(), "wrong bytes");
+    }
+
+    #[test]
+    fn the_sidecar_mirrors_the_path_the_prose_names() {
+        // The layout is built from the document's own reference rather than a
+        // name this exporter invents, which is what makes rewriting the
+        // reference — and getting that right per format — unnecessary.
+        let (media, g) = book_with_images(&["aaa"], None);
+        let out = tempfile::tempdir().unwrap();
+        let p = preset("neutral");
+        for (fmt, name) in [
+            (ExportFormat::Djot, "book.dj"),
+            (ExportFormat::Html, "book.html"),
+            (ExportFormat::Latex, "book.tex"),
+        ] {
+            let path = out.path().join(name);
+            render_to_file(
+                &req_with_media(&g, &[100, 101], &p, fmt, media.path()),
+                &path,
+                &|_| {},
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+            assert!(
+                out.path().join("assets/aaa.png").exists(),
+                "{fmt:?} wrote no sidecar"
+            );
+        }
+    }
+
+    #[test]
+    fn a_container_format_writes_nothing_beside_itself() {
+        // DOCX carries its images inside the file; copies beside it would be
+        // clutter nothing reads.
+        let (media, g) = book_with_images(&["aaa"], None);
+        let out = tempfile::tempdir().unwrap();
+        let p = preset("neutral");
+        render_to_file(
+            &req_with_media(&g, &[100, 101], &p, ExportFormat::Docx, media.path()),
+            &out.path().join("book.docx"),
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert!(!out.path().join("assets").exists());
+    }
+
+    #[test]
+    fn only_the_images_this_scope_names_are_written() {
+        // Exporting one chapter must not drop the whole book's photographs into
+        // the writer's folder.
+        let (media, g) = book_with_images(&["aaa", "bbb"], None);
+        let out = tempfile::tempdir().unwrap();
+        let path = out.path().join("book.md");
+        let p = preset("neutral");
+        render_to_file(
+            &req_with_media(&g, &[100, 101], &p, ExportFormat::Markdown, media.path()),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert!(
+            out.path().join("assets/aaa.png").exists(),
+            "named image missing"
+        );
+        assert!(
+            !out.path().join("assets/bbb.png").exists(),
+            "an image the export never mentions was copied out"
+        );
+    }
+
+    #[test]
+    fn omitting_images_drops_the_reference_and_writes_no_files() {
+        // A dangling reference is worse than no image: in LaTeX it is a build
+        // failure, and everywhere else a broken picture.
+        let (media, g) = book_with_images(&["aaa"], None);
+        let out = tempfile::tempdir().unwrap();
+        let path = out.path().join("book.md");
+        let mut p = preset("neutral");
+        p.image_handling = ImageHandling::Omit;
+        render_to_file(
+            &req_with_media(&g, &[100, 101], &p, ExportFormat::Markdown, media.path()),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(!text.contains("assets/aaa.png"), "{text}");
+        assert!(!out.path().join("assets").exists());
+    }
+
+    #[test]
+    fn an_embedded_html_export_carries_its_images_and_leaves_nothing_beside() {
+        let (media, g) = book_with_images(&["aaa"], None);
+        let out = tempfile::tempdir().unwrap();
+        let path = out.path().join("book.html");
+        let mut p = preset("neutral");
+        p.image_handling = ImageHandling::Embed;
+        render_to_file(
+            &req_with_media(&g, &[100, 101], &p, ExportFormat::Html, media.path()),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(
+            text.contains("data:image/png;base64,"),
+            "not inlined: {text}"
+        );
+        assert!(
+            !out.path().join("assets").exists(),
+            "a single-file export must leave nothing beside it"
+        );
+    }
+
+    #[test]
+    fn a_reference_that_climbs_out_of_the_folder_is_not_written() {
+        // Prose is user data and a project file can be hand-edited, so an
+        // export must not be steerable into writing outside its own directory.
+        let out = tempfile::tempdir().unwrap();
+        let inside = out.path().join("sub");
+        std::fs::create_dir(&inside).unwrap();
+        assert_eq!(
+            resolve_sidecar_path(&inside, "assets/a.png"),
+            Some(inside.join("assets/a.png"))
+        );
+        assert_eq!(resolve_sidecar_path(&inside, "../escape.png"), None);
+        assert_eq!(
+            resolve_sidecar_path(&inside, "assets/../../escape.png"),
+            None
+        );
+        assert_eq!(resolve_sidecar_path(&inside, "/etc/passwd"), None);
+    }
+
+    #[test]
+    fn a_cover_opens_the_book_and_is_not_confused_with_the_prose_image() {
+        let (media, g) = book_with_images(&["aaa", "ccc"], Some("ccc"));
+        let out = tempfile::tempdir().unwrap();
+        let path = out.path().join("book.md");
+        let p = preset("neutral");
+        render_to_file(
+            &req_with_media(&g, &[100, 101], &p, ExportFormat::Markdown, media.path()),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        let cover = text.find("assets/ccc.png").expect("no cover in the output");
+        let inline = text.find("assets/aaa.png").expect("no prose image");
+        assert!(cover < inline, "the cover is not the first thing: {text}");
+        // Its alt text is the book's title, not the word "cover".
+        assert!(text.contains("![My Novel](assets/ccc.png)"), "{text}");
+        // And it is written beside the document like any other reference.
+        assert!(out.path().join("assets/ccc.png").exists());
+    }
+
+    #[test]
+    fn a_scoped_export_does_not_carry_the_books_cover() {
+        // A cover opens a book. Exporting one chapter out of the middle is not
+        // opening a book.
+        let (media, g) = book_with_images(&["aaa", "ccc"], Some("ccc"));
+        let out = tempfile::tempdir().unwrap();
+        let path = out.path().join("chapter.md");
+        let p = preset("neutral");
+        render_to_file(
+            &req_with_media(&g, &[101], &p, ExportFormat::Markdown, media.path()),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(!text.contains("assets/ccc.png"), "{text}");
+    }
+
+    #[test]
+    fn turning_the_cover_off_leaves_the_prose_untouched() {
+        let (media, g) = book_with_images(&["aaa", "ccc"], Some("ccc"));
+        let out = tempfile::tempdir().unwrap();
+        let path = out.path().join("book.md");
+        let mut p = preset("neutral");
+        p.book_cover = false;
+        render_to_file(
+            &req_with_media(&g, &[100, 101], &p, ExportFormat::Markdown, media.path()),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        assert!(!text.contains("assets/ccc.png"), "{text}");
+        assert!(
+            text.contains("assets/aaa.png"),
+            "the prose image went too: {text}"
+        );
     }
 
     /// A flat one-book fixture: book title, one chapter with two scenes.
@@ -1373,6 +1917,7 @@ mod tests {
         f: ExportFormat,
     ) -> RenderRequest<'a> {
         RenderRequest {
+            media_dir: std::path::Path::new(""),
             gathered: g,
             include,
             preset: p,
@@ -2175,7 +2720,7 @@ mod tests {
                 &AtomicBool::new(false),
             )
             .unwrap()
-            .1
+            .stats
             .words
         };
         let (a, b) = (words_of(&plain), words_of(&marked));
@@ -2245,7 +2790,7 @@ mod tests {
     fn docx_options_map_the_manuscript_preset() {
         // Shunn: Times New Roman 12pt, double-spaced, 0.5" first-line indent, A4, ragged.
         let p = preset("manuscript-shunn");
-        let o = docx_options(&p, "The Lighthouse", "Mara Vane");
+        let o = docx_options(&p, "The Lighthouse", "Mara Vane", Default::default());
         assert_eq!(o.font_family.as_deref(), Some("Times New Roman"));
         assert_eq!(o.font_half_points, Some(24), "12pt → 24 half-points");
         assert_eq!(o.line_spacing_twips, Some(480), "double spacing");
@@ -2444,6 +2989,7 @@ mod tests {
         p.include_notes = false;
         let ids = [102u64];
         let explicit = RenderRequest {
+            media_dir: std::path::Path::new(""),
             explicit_selection: true,
             ..req(&g, &ids, &p, ExportFormat::PlainText)
         };
@@ -2587,7 +3133,7 @@ mod tests {
             &AtomicBool::new(false),
         )
         .unwrap()
-        .1;
+        .stats;
         assert_eq!(stats.items, 0, "a marker is furniture, not an emitted item");
     }
 
@@ -2861,7 +3407,7 @@ mod tests {
                 &AtomicBool::new(false),
             )
             .unwrap()
-            .1
+            .stats
             .words
         };
         let g = book_with_paratext();
@@ -3383,7 +3929,7 @@ mod tests {
                 &AtomicBool::new(false),
             )
             .unwrap()
-            .1
+            .stats
             .words
         };
         assert_eq!(

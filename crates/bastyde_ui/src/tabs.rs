@@ -354,6 +354,7 @@ pub fn tab_for(
         sub_role,
         contents,
         Signal::new(0),
+        std::path::Path::new(""),
     ));
     ContentTab::new(
         ctx.clone(),
@@ -1933,6 +1934,7 @@ mod tests {
                 None,
                 None,
                 None,
+                None,
             )
             .0
         }
@@ -2268,6 +2270,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             Signal::new(0),
+            std::path::Path::new(""),
         ));
         let tab = ContentTab::new(
             ctx.clone(),
@@ -3303,7 +3306,15 @@ mod tests {
                   typo: &EditorTypographySet,
                   df: &Signal<bool>,
                   df_width: &Signal<f32>| {
-            let open_doc = Rc::new(OpenDoc::build(&ctx, 1, &Item, &sr, &[], Signal::new(0)));
+            let open_doc = Rc::new(OpenDoc::build(
+                &ctx,
+                1,
+                &Item,
+                &sr,
+                &[],
+                Signal::new(0),
+                std::path::Path::new(""),
+            ));
             ContentTab::new(
                 ctx.clone(),
                 AppIds::new(),
@@ -3392,6 +3403,7 @@ mod tests {
             &ChapterScene,
             &[],
             Signal::new(0),
+            std::path::Path::new(""),
         ));
         let tab = ContentTab::new(
             ctx.clone(),

@@ -39,6 +39,7 @@ fn loaded_ctx() -> AppContext {
     work_management_commands::load_work(
         &ctx,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: fixture_path(),
         },
     )

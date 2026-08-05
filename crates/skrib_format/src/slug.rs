@@ -77,6 +77,9 @@ pub fn prose_relpath(binder_dir: &str, file_name: &str) -> String {
 /// The directory holding the note-template bodies, relative to the bundle root.
 pub const TEMPLATES_DIR: &str = "templates";
 
+/// Directory holding a bundle's binary assets, relative to its root.
+pub const ASSETS_DIR: &str = "assets";
+
 /// Bundle-root-relative path of one note template's Djot body.
 ///
 /// `slugify` is what makes this safe for a name the writer typed: a template called

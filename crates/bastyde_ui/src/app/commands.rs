@@ -55,6 +55,7 @@ mod export;
 mod file;
 mod format;
 mod go;
+mod images;
 mod templates;
 mod trash;
 mod view;
@@ -152,4 +153,5 @@ pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
     templates::register(ctx, deps);
     binder::register(ctx, deps);
     go::register(ctx, deps);
+    images::register(ctx, deps);
 }

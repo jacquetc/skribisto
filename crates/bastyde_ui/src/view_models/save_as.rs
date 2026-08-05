@@ -208,6 +208,7 @@ impl SaveAsViewModel {
         let op_id = work_management_commands::save_as(
             &self.app_ctx,
             &SaveAsDto {
+                media_root: crate::media_paths::media_root_string(),
                 work_id: self.ids.work_id.get().unwrap_or_default(),
                 file_name: target,
                 as_folder,

@@ -33,6 +33,7 @@ bastyde-text = { path = "../../../bastyde/crates/bastyde-text", version = "0.6.2
 
 [dev-dependencies]
 tempfile = "3"
+png = "0.18"
 
 [features]
 # Opt-in: enables text-document's Typst-backed PDF exporter. Off by default so the standard

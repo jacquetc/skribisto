@@ -472,6 +472,7 @@ impl BackupSchedulerViewModel {
         });
 
         let dto = BackupNowDto {
+            media_root: crate::media_paths::media_root_string(),
             work_id: self.backup_now_dto_work_id(),
             directories: dirs.clone(),
             last_known_hashes: hashes,

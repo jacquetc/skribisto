@@ -58,6 +58,15 @@ pub fn read_zip(path: &Path) -> Result<WorkBundle> {
 pub fn zip_dir(src_dir: &Path, target: &mut File) -> Result<()> {
     let mut zw = zip::ZipWriter::new(target);
     let opts = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    // Already-compressed payloads are stored, not deflated again.
+    //
+    // A JPEG, PNG or WebP is entropy-coded already: running deflate over one
+    // spends real CPU to gain a fraction of a percent, occasionally growing the
+    // entry. That cost lands on the autosave path, which rebuilds the whole
+    // archive every few seconds, so for a project with photographs in it this is
+    // the difference between an autosave that is proportional to the prose and
+    // one that is proportional to the pictures.
+    let stored = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
 
     for entry in WalkDir::new(src_dir).sort_by_file_name() {
         let entry = entry.context("walking staging dir")?;
@@ -75,7 +84,11 @@ pub fn zip_dir(src_dir: &Path, target: &mut File) -> Result<()> {
         if entry.file_type().is_dir() {
             zw.add_directory(format!("{name}/"), opts)?;
         } else {
-            zw.start_file(name, opts)?;
+            let already_compressed = matches!(
+                path.extension().and_then(|e| e.to_str()),
+                Some("png" | "jpg" | "jpeg" | "webp" | "gif")
+            );
+            zw.start_file(name, if already_compressed { stored } else { opts })?;
             let bytes =
                 std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
             zw.write_all(&bytes)?;

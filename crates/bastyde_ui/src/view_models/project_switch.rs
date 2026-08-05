@@ -340,6 +340,7 @@ impl ProjectSwitchViewModel {
                 if let Err(e) = work_management_commands::load_work(
                     &self.app_ctx,
                     &LoadWorkDto {
+                        media_root: crate::media_paths::media_root_string(),
                         file_name: path.clone(),
                     },
                 ) {

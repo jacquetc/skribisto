@@ -304,6 +304,15 @@ entities:
     strong: true
     list_model: true
     list_model_displayed_field: name
+  # Unordered, like tags: an asset's position carries no product meaning — prose
+  # references an asset by content hash, never by index.
+  - name: assets
+    type: entity
+    entity: Asset
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: file_name
   - name: smart_punctuation
     type: entity
     entity: SmartPunctuation
@@ -788,6 +797,50 @@ entities:
   - name: starred
     type: boolean
   undoable: true
+# An image (or other binary asset) a writer put in their project.
+#
+# Metadata only, deliberately: Qleany has no blob field type, and stuffing base64 into a
+# `string` would put the whole payload in the store — resident forever, cloned by every
+# `snapshot_work`, and serialized into the backup fingerprint. Every desktop writing tool
+# surveyed keeps image bytes as files in the container and a handle in the model
+# (DOCX `word/media/`, ODT `Pictures/`, Scrivener's package, Joplin's `resources/`), and
+# LibreOffice goes further, writing the bytes to a temp file at load so the in-memory
+# `Graphic` can release them. So the bytes live in the project's media directory and in
+# `assets/<hash>.<ext>` inside the `.skrib`, and this row records what they are.
+#
+# `content_hash` is a blake3 of the original bytes and is the asset's real identity: it is
+# what the prose references (`![alt](assets/<hash>.<ext>)`), which makes re-inserting the
+# same picture free and makes an unchanged asset skippable when the archive is rewritten.
+# `file_name` is kept for provenance and for naming the file an export writes beside its
+# output; it is not an identity.
+#
+# `undoable: true` for the same reason NoteTemplate is: `qleany check` refuses a
+# non-undoable strong child under an undoable parent.
+- name: Asset
+  inherits_from: EntityBase
+  fields:
+  - name: content_hash
+    type: string
+  - name: file_name
+    type: string
+  - name: mime_type
+    type: string
+  - name: width
+    type: uinteger
+  - name: height
+    type: uinteger
+  - name: byte_size
+    type: uinteger
+  - name: alt
+    type: string
+  # This picture is the book's cover. A role a picture plays, not a second place
+  # it is stored — which is why it lives here rather than as an id or a hash on
+  # Work. Deleting the asset removes the cover with it, and there is no way to
+  # end up pointing at something that is gone. At most one asset per Work carries
+  # it; the command that sets it clears the others.
+  - name: is_cover
+    type: boolean
+  undoable: true
 features:
 - name: work_management
   use_cases:
@@ -807,11 +860,17 @@ features:
     - DictWord
     - TextReplacementRule
     - NoteTemplate
+    - Asset
     undoable: false
     dto_in:
       name: LoadWorkDto
       fields:
       - name: file_name
+        type: string
+      # The app's media root — see SaveWorkDto.media_root. At load time the
+      # project's own `unique_id` is still inside the file being opened, so the
+      # per-project directory can only be resolved here, not by the caller.
+      - name: media_root
         type: string
   - name: save_work
     entities:
@@ -823,6 +882,7 @@ features:
     - DictWord
     - TextReplacementRule
     - NoteTemplate
+    - Asset
     - TrashInfo
     - WorkInfo
     undoable: false
@@ -839,6 +899,15 @@ features:
         type: string
       - name: overwrite
         type: boolean
+      # The app's media *root*, not this project's directory inside it.
+      #
+      # Assets are metadata-only rows (see the `Asset` entity); their bytes are
+      # files. Which directory holds them depends on the project's shape and on
+      # its `unique_id` — and at load time that id is still inside the file the
+      # caller is asking to open, so only the use case can resolve it. The
+      # caller supplies the root; `skrib_format::media::media_dir` does the rest.
+      - name: media_root
+        type: string
     dto_out:
       name: SaveResultDto
       fields:
@@ -854,6 +923,7 @@ features:
     - DictWord
     - TextReplacementRule
     - NoteTemplate
+    - Asset
     - TrashInfo
     - WorkInfo
     undoable: false
@@ -869,6 +939,15 @@ features:
         type: string
       - name: as_folder
         type: boolean
+      # The app's media *root*, not this project's directory inside it.
+      #
+      # Assets are metadata-only rows (see the `Asset` entity); their bytes are
+      # files. Which directory holds them depends on the project's shape and on
+      # its `unique_id` — and at load time that id is still inside the file the
+      # caller is asking to open, so only the use case can resolve it. The
+      # caller supplies the root; `skrib_format::media::media_dir` does the rest.
+      - name: media_root
+        type: string
     dto_out:
       name: SaveAsResultDto
       fields:
@@ -884,6 +963,7 @@ features:
     - DictWord
     - TextReplacementRule
     - NoteTemplate
+    - Asset
     - TrashInfo
     - WorkInfo
     undoable: false
@@ -935,6 +1015,10 @@ features:
       # Absolute floor: the newest `min_keep` backups per destination are never pruned.
       - name: min_keep
         type: uinteger
+      # A backup is a copy of the project, images included — see
+      # SaveWorkDto.media_root.
+      - name: media_root
+        type: string
     dto_out:
       name: BackupResultDto
       fields:
@@ -1035,6 +1119,7 @@ features:
     - BinderItem
     - BinderTag
     - Content
+    - Asset
     undoable: false
     read_only: true
     long_operation: true
@@ -1044,6 +1129,14 @@ features:
       - name: work_id
         type: integer
       - name: output_path
+        type: string
+      # This project's *resolved* media directory, not the app root.
+      #
+      # Unlike load/save, the caller here already has the open project in hand —
+      # its path and its `unique_id` — so it can resolve the directory itself,
+      # and the export reader has no reason to read `WorkInfo` just to do it
+      # again. Empty means "no media": every image degrades to its alt text.
+      - name: media_dir
         type: string
       - name: format
         type: enum

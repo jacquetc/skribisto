@@ -12,7 +12,7 @@
 
 use std::path::Path;
 
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use common::entities::{WorkInfo, WorkShape};
 use common::types::EntityId;
 use skrib_format::{self as skrib, ShapeTag, SkribShape};
@@ -109,11 +109,69 @@ pub fn resolve_target(
 }
 
 /// Serialise `g` and write it to `target` in `shape`. Returns `target`.
+/// Read the bytes of every gathered asset out of the project's media directory.
+///
+/// An asset whose file is missing is *skipped*, not an error. That is the whole
+/// posture of this path: an image the writer can no longer see is a smaller
+/// failure than a save that refuses to run, and `from_entities` drops the row to
+/// match so the bundle never carries a dangling reference. The lost row is
+/// recoverable — the prose still names the hash, so restoring the file restores
+/// the picture.
+pub fn read_asset_bytes(
+    assets: &[common::entities::Asset],
+    media_dir: &std::path::Path,
+) -> std::collections::BTreeMap<String, Vec<u8>> {
+    let mut out = std::collections::BTreeMap::new();
+    for a in assets {
+        let ext = skrib::media::extension_for(&a.mime_type);
+        let path = media_dir.join(format!("{}.{ext}", a.content_hash));
+        if let Ok(bytes) = std::fs::read(&path) {
+            out.insert(a.content_hash.clone(), bytes);
+        }
+    }
+    out
+}
+
+/// Write a loaded bundle's asset bytes into the project's media directory.
+///
+/// A no-op for an exploded-folder project, where the media directory *is* the
+/// bundle's own `assets/` — `write_if_changed` would compare each file against
+/// itself. Only a zip needs its images extracted to somewhere the editor can
+/// read them back.
+///
+/// Failing here fails the load: an image the writer can see but the next save
+/// cannot find would be written out of the project silently, which is the one
+/// outcome worth refusing to open over.
+pub fn write_asset_bytes(bundle: &skrib::WorkBundle, media_dir: &std::path::Path) -> Result<()> {
+    if bundle.assets.is_empty() {
+        return Ok(());
+    }
+    std::fs::create_dir_all(media_dir)
+        .with_context(|| format!("creating media dir {}", media_dir.display()))?;
+    for a in &bundle.assets {
+        let ext = skrib::media::extension_for(&a.mime_type);
+        let path = media_dir.join(format!("{}.{ext}", a.content_hash));
+        // Content-addressed: a file already there under this name has these
+        // bytes, so re-writing it would be pure cost.
+        if path.exists() {
+            continue;
+        }
+        let bytes = bundle
+            .asset_bytes
+            .get(&a.content_hash)
+            .ok_or_else(|| anyhow!("bundle lists asset {} with no bytes", a.file_name))?;
+        std::fs::write(&path, bytes)
+            .with_context(|| format!("writing media file {}", path.display()))?;
+    }
+    Ok(())
+}
+
 pub fn serialize_and_write(
     g: &Gathered,
     target: String,
     shape: SkribShape,
     shape_tag: ShapeTag,
+    media_dir: &std::path::Path,
 ) -> Result<String> {
     let bundle = skrib::from_entities(
         &g.work,
@@ -121,6 +179,8 @@ pub fn serialize_and_write(
         &g.dict_words,
         &g.text_replacement_rules,
         &g.note_templates,
+        &g.assets,
+        read_asset_bytes(&g.assets, media_dir),
         g.smart_punctuation.as_ref(),
         &g.trash_infos,
         &g.paces,

@@ -20,6 +20,8 @@
 //! `convert` module bridges legacy Qt rich-text HTML into Djot (used by the
 //! legacy `.skrib` upgrader and the Plume importer).
 
+#[cfg(test)]
+mod asset_tests;
 mod bundle;
 pub mod convert;
 mod errors;
@@ -27,6 +29,7 @@ mod fingerprint;
 mod folder_io;
 mod loaded;
 mod mapping;
+pub mod media;
 mod migration;
 mod reader;
 pub mod retention;

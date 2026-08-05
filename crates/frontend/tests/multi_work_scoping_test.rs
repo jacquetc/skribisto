@@ -134,6 +134,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
             binders: vec![],
             tags: vec![],
             note_templates: vec![],
+            assets: vec![],
             dict_words: vec![],
             text_replacement_rules: vec![],
             smart_punctuation: smart_punctuation.id,
@@ -1734,8 +1735,14 @@ fn load_work_leaves_every_other_open_work_intact() {
         std::path::Path::new(&fixture).exists(),
         "fixture missing: {fixture}"
     );
-    work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture })
-        .expect("load_work must succeed opening the second project");
+    work_management_commands::load_work(
+        &ctx,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: fixture,
+        },
+    )
+    .expect("load_work must succeed opening the second project");
 
     let works_after = work_commands::get_all_work(&ctx).unwrap();
     assert_eq!(
@@ -1858,12 +1865,19 @@ fn three_works_loaded_in_sequence_all_coexist() {
     work_management_commands::load_work(
         &ctx,
         &LoadWorkDto {
+            media_root: String::new(),
             file_name: fixture.clone(),
         },
     )
     .expect("load_work B");
-    work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture })
-        .expect("load_work C");
+    work_management_commands::load_work(
+        &ctx,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: fixture,
+        },
+    )
+    .expect("load_work C");
 
     let works_after = work_commands::get_all_work(&ctx).unwrap();
     assert_eq!(

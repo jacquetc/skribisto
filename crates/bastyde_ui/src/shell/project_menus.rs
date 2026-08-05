@@ -149,6 +149,44 @@ pub(crate) fn sync_insert_template_submenu(
     });
 }
 
+/// Where the Image menu slots in among the top-level menus, counting from zero:
+/// Work, View, Document, Format, **Image**, Go, Tools, Help.
+const IMAGE_MENU_INDEX: usize = 4;
+
+/// Show or hide the whole **Image** menu, following the selection.
+///
+/// A top-level menu that comes and goes, which `MenuNode` has no declarative
+/// visibility for — `MenuEntry::visible` hides an item, not a menu, and
+/// bastyde's native backend says so in as many words: a hidden item is omitted
+/// from the snapshot, and "for fully-dynamic native menus use `MenuModel::remove`
+/// / `push_item`". So it is inserted and removed, which is the same mechanism
+/// the Insert template submenu already uses to stay in step with its data.
+///
+/// Idempotent: called on every change of the selection, and does nothing when
+/// the menu is already in the state asked for. That matters — each real mutation
+/// bumps the model's version, which re-installs the native menu bar, and doing
+/// that on every click would make the bar flicker.
+pub(crate) fn sync_image_menu(model: &MenuModel, id: MenuItemId, image_selected: bool) {
+    let present = model.contains(id);
+    if image_selected == present {
+        return;
+    }
+    if !image_selected {
+        model.remove(id);
+        return;
+    }
+    // No "Insert image" here: this menu exists only while a picture is
+    // selected, which is exactly when the writer is not inserting one. It lives
+    // in the Document menu, beside the other things that go in at the caret.
+    // Between Format and Go: the writer reached for a picture, and the menus
+    // either side are the ones that act on what is selected.
+    model.insert_menu_at(IMAGE_MENU_INDEX, id, tr!(menu_image()), |m| {
+        m.item(MenuEntry::new(tr!(image_menu_describe())).intent("image.describe"))
+            .item(MenuEntry::new(tr!(image_menu_resize())).intent("image.resize"))
+            .item(MenuEntry::new(tr!(image_menu_reset_size())).intent("image.reset_size"))
+    });
+}
+
 /// The children vector of the submenu with `id`, searched recursively.
 ///
 /// `MenuModel::modify` hands out the top-level nodes, and the target sits one level down
@@ -277,6 +315,22 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
             .submenu(tr!(menu_import_from()), |s| {
                 s.item(MenuEntry::new(tr!(menu_import_plume())).intent("work.import_plume"))
             })
+            .separator()
+            // The book's cover. It sits in the Work menu rather than with
+            // Insert image…, because it belongs to the book and not to
+            // whichever scene happens to have the caret — nothing in the prose
+            // ever refers to it. Hidden with no project open, like the group
+            // above: there is no book to give a cover to.
+            .item(
+                MenuEntry::new(tr!(cover_choose()))
+                    .visible(show_open.clone())
+                    .intent("work.set_cover"),
+            )
+            .item(
+                MenuEntry::new(tr!(cover_clear()))
+                    .visible(show_open.clone())
+                    .intent("work.clear_cover"),
+            )
             .separator()
             // ── 2. Persist / ship out ────────────────────────
             // Flush editors to the store + write to disk (also Ctrl+S).
@@ -528,6 +582,11 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
             // `has_target` already answers, and answers *stickily*, surviving the focus
             // loss that opening this very menu causes.
             let on_editor = menu_format_vm.has_target();
+            // Inserting happens *at the caret*, so this row needs more than
+            // "a document tab is open" (which is all `on_editor` above means —
+            // see `has_target`'s doc). Its siblings act on a whole document and
+            // are right to use the broader gate.
+            let on_caret = menu_format_vm.has_caret_target();
             move |m| {
                 let m = m
                     .item(
@@ -579,6 +638,21 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                 // `sync_insert_template_submenu` below is the repopulation; `App::build`
                 // drives it from the catalogue's own change signal.
                 let m = m.submenu_with_id(templates_submenu_id, tr!(menu_insert_template()), |t| t);
+
+                // Inserting a picture is not a template action. It shares the
+                // "put something at the caret" idea with the submenu above, but
+                // a template is prose the writer wrote and an image is a file
+                // from outside the project — its own row, on its own side of a
+                // separator, and it stays here rather than moving to the Image
+                // menu because that menu only exists once an image is selected,
+                // which is exactly when you are not inserting one.
+                let m = m.separator().item(
+                    MenuEntry::new(tr!(image_insert()))
+                        .enabled(on_caret.clone())
+                        .intent("editor.insert_image"),
+                );
+
+                let m = m.separator();
 
                 m.item(
                     MenuEntry::new(tr!(menu_save_as_template()))

@@ -110,6 +110,9 @@ pub struct OpenDoc {
     /// it and nowhere else.
     comments_main: Option<Rc<CommentHighlightSession>>,
     comments_synopsis: Option<Rc<CommentHighlightSession>>,
+    /// Where this doc's editors fetch an image they meet but do not have —
+    /// see [`crate::view_models::images::ImageSource`].
+    images: Option<crate::view_models::images::ImageSource>,
     /// The comment feature's view-model, installed by `App` once a project is
     /// open (mirroring `attach_spell`). `None` in the widget tests and in any
     /// build with no comment store behind it, which is what makes the whole
@@ -177,6 +180,7 @@ impl OpenDoc {
         sub_role: &BinderItemSubRole,
         contents: &[ContentDto],
         edited: Signal<u64>,
+        media_dir: &std::path::Path,
     ) -> Self {
         let mut doc = OpenDoc {
             item_id,
@@ -203,6 +207,7 @@ impl OpenDoc {
             spell_epigraph: None,
             comments_main: None,
             comments_synopsis: None,
+            images: None,
             comments_vm: RefCell::new(None),
             replacement_main: RefCell::new(None),
             replacement_synopsis: RefCell::new(None),
@@ -256,6 +261,27 @@ impl OpenDoc {
             .synopsis
             .as_ref()
             .map(|f| CommentHighlightSession::new(&f.doc));
+        // Resolve every image the prose names, before the first paint. After a
+        // reload the anchors exist but the document's resource table is empty,
+        // so without this a reopened project shows correctly-sized blanks.
+        for field in [
+            doc.main.as_ref(),
+            doc.synopsis.as_ref(),
+            doc.epigraph.as_ref(),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            let djot = field.doc.to_djot().unwrap_or_default();
+            crate::view_models::images::register_referenced(&field.doc, &djot, media_dir);
+        }
+        // …and stand by for the ones that arrive later. An image pasted in from
+        // another editor brings its reference and not its pixels, so the editor
+        // asks for them the first time it tries to paint one it does not know.
+        doc.images = Some(crate::view_models::images::ImageSource::new(
+            media_dir.to_path_buf(),
+        ));
+
         doc
     }
 
@@ -388,6 +414,11 @@ impl OpenDoc {
     }
 
     /// The comment highlight layer on the synopsis document, if any.
+    /// Where this doc's editors fetch an image they meet but do not have.
+    pub fn images(&self) -> Option<crate::view_models::images::ImageSource> {
+        self.images.clone()
+    }
+
     pub fn comments_synopsis(&self) -> Option<Rc<CommentHighlightSession>> {
         self.comments_synopsis.clone()
     }
@@ -596,6 +627,10 @@ struct Inner {
     /// the Work's). Set by `App` on `LoadWork`/`NewWork`.
     work_id: Cell<Option<u64>>,
     work_lang: RefCell<Vec<String>>,
+    /// Where this project's image bytes live. Tier 2, beside `work_id`: two
+    /// Works open at once have different media directories, and a document
+    /// loaded against the wrong one shows blanks.
+    media_dir: RefCell<std::path::PathBuf>,
     /// The open project's punctuation rules, pushed down to every session on
     /// change and to each newly-opened document. `None` until resolved.
     punctuation: RefCell<Option<SmartPunctuationFlags>>,
@@ -650,6 +685,23 @@ pub struct OpenDocsStore {
 }
 
 impl OpenDocsStore {
+    /// Point this store at the open project's media directory.
+    ///
+    /// Set when a Work opens, before any document is built: an image's bytes are
+    /// resolved as its document loads, so a document created before this is
+    /// known shows every picture as a correctly-sized blank.
+    ///
+    /// Tier 2, beside `work_id` — two Works open at once have different media
+    /// directories, and resolving against the wrong one finds nothing.
+    pub fn set_media_dir(&self, dir: std::path::PathBuf) {
+        *self.inner.media_dir.borrow_mut() = dir;
+    }
+
+    /// The open project's media directory.
+    pub fn media_dir(&self) -> std::path::PathBuf {
+        self.inner.media_dir.borrow().clone()
+    }
+
     pub fn new(app_ctx: Rc<AppContext>) -> Self {
         Self {
             inner: Rc::new(Inner {
@@ -664,6 +716,7 @@ impl OpenDocsStore {
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
                 work_id: Cell::new(None),
                 work_lang: RefCell::new(Vec::new()),
+                media_dir: RefCell::new(std::path::PathBuf::new()),
                 punctuation: RefCell::new(None),
                 lang_cache: RefCell::new(None),
             }),
@@ -1088,6 +1141,7 @@ impl OpenDocsStore {
             &item.sub_role,
             &contents,
             self.inner.edited.clone(),
+            &self.inner.media_dir.borrow(),
         ));
         // Seed the trash state (a trashed item can be opened from the trash dock).
         doc.trashed.set(!item.activated);
@@ -1141,6 +1195,7 @@ impl OpenDocsStore {
             &item.sub_role,
             &contents,
             self.inner.edited.clone(),
+            &self.inner.media_dir.borrow(),
         ));
         if let Some(entry) = self.inner.open.borrow_mut().get_mut(&item_id) {
             entry.doc = fresh.clone();
@@ -1346,6 +1401,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             store.edited_any(),
+            std::path::Path::new(""),
         ));
         store.insert_for_test(doc);
         assert_eq!(store.refs_for_test(1), Some(1));
@@ -1406,6 +1462,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[stale_row],
             store.edited_any(),
+            std::path::Path::new(""),
         ));
         let doomed_main = doomed
             .main
@@ -1426,6 +1483,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             store.edited_any(),
+            std::path::Path::new(""),
         ));
         healthy.dirty.set(true); // pretend an editor touched it
         store.insert_for_test(healthy.clone());
@@ -1495,6 +1553,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             Signal::new(0),
+            std::path::Path::new(""),
         ));
 
         let work = SingleWork::new(ctx.clone());
@@ -1529,6 +1588,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             Signal::new(0),
+            std::path::Path::new(""),
         );
         let main = doc
             .main
@@ -1596,6 +1656,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             edited.clone(),
+            std::path::Path::new(""),
         );
         assert!(!doc.dirty.get());
         let before = edited.get();

@@ -82,6 +82,7 @@ mod docks;
 mod export;
 mod icons;
 mod intents;
+mod media_paths;
 mod models;
 mod note_templates;
 mod panels;
@@ -204,6 +205,15 @@ fn sanitize_folder_name(raw: &str) -> String {
 
 /// Persisted-setting keys (also read at startup in `main`).
 pub const DARK_KEY: &str = "ui.dark";
+
+/// What to do with a large image on insert: `"ask"` (default), `"keep"` or
+/// `"downscale"`.
+///
+/// A string rather than a bool because there are three answers, and the writer
+/// reaches the third — "stop asking, and do this from now on" — by ticking a box
+/// in the prompt. Storing "ask" separately from the two decisions is what lets
+/// the prompt come back if they ever want it to.
+pub const IMAGE_SIZE_POLICY_KEY: &str = "editor.image_size_policy";
 pub const LOCALE_KEY: &str = "ui.locale";
 /// Max width (px) of the centered main-text writing column.
 pub const EDITOR_WIDTH_KEY: &str = "editor.column_width";
@@ -1043,6 +1053,12 @@ fn main() {
         .install_inspector_in_debug()
         .install_automation_bridge_in_debug()
         .install_file_dialog()
+        // Without this the OS never offers the window a drag at all: the
+        // preview stops dead at the window border, and every drop handler
+        // inside — the editor's, the binder's — is unreachable rather than
+        // broken. It is per-application, not per-widget, which is why adding
+        // handlers alone changed nothing.
+        .install_external_dnd()
         .install_toast_default()
         // Main-thread async executor: `spawn_blocking` gets pure-filesystem work
         // (backup sniffing, destination-reachability probes) off the UI thread.

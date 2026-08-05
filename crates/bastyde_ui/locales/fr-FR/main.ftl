@@ -344,7 +344,13 @@ settings-styles-field-paratexts = Inclure les paratextes
 settings-styles-field-epigraph-placement = Position de l'épigraphe
 settings-styles-epigraph-after = Après le titre
 settings-styles-epigraph-before = Avant le titre
+settings-styles-field-images = Images
+menu-image = &Image
+settings-styles-images-beside = À côté du document
+settings-styles-images-embed = Dans le document
+settings-styles-images-omit = Ne pas inclure
 settings-styles-group-pages = Pages
+settings-styles-field-cover = Ouvrir sur la couverture
 settings-styles-field-word-count = Nombre de mots sur la page de titre
 settings-styles-field-page-books = Nouvelle page à chaque livre
 settings-styles-field-page-parts = Nouvelle page à chaque partie
@@ -1509,3 +1515,36 @@ settings-paratext-delete = Supprimer
 settings-paratext-new = Nouvelle structure
 settings-paratext-save = Enregistrer
 settings-paratext-editor-hint = Un nom, les pages à créer avant le manuscrit, et celles à créer après. Leur place vous appartient : ce sont des éléments ordinaires une fois le projet créé.
+
+## Images
+
+image-insert = &Insérer une image…
+image-no-project = Ouvrez un projet avant d'insérer une image.
+image-choose-title = Choisir une image
+image-filter-label = Images
+image-large-title = Cette image est volumineuse
+image-large-text =
+    { $name } fait { $megapixels } mégapixels ({ $width }×{ $height }).
+    La conserver telle quelle enregistre votre fichier d'origine dans le projet :
+    il accompagne chaque sauvegarde et chaque export. L'optimiser enregistre à la
+    place une copie réduite, jusqu'à 2560 pixels sur son plus grand côté.
+image-large-keep = Conserver l'original
+image-large-downscale = Optimiser
+image-large-remember = Faire ainsi désormais, ne plus demander
+image-not-recorded = L'image a été enregistrée mais n'a pas pu être inscrite au projet.
+image-describe-title = Décrire l'image
+image-describe-explain = Ce que montre l'image, pour qui ne peut pas la voir. Cette description ne fait pas partie du manuscrit : elle n'est jamais comptée, recherchée ni exportée comme du texte.
+image-describe-placeholder = un phare sur un ciel gris
+image-resize-title = Redimensionner l'image
+image-resize-explain = Un pourcentage de la taille actuellement affichée. 100 la laisse inchangée.
+image-resize-invalid = Saisissez un nombre entre 1 et 1000.
+image-menu-describe = &Décrire l'image…
+image-menu-resize = &Redimensionner l'image…
+image-menu-reset-size = Taille d'&origine
+
+# La couverture du livre — choisie depuis le livre, non insérée dans une scène.
+cover-choose = &Couverture du livre…
+cover-clear = &Retirer la couverture
+cover-choose-title = Choisir une couverture
+cover-set = La couverture est définie.
+cover-cleared = La couverture a été retirée. L'image est toujours dans le projet.

@@ -80,6 +80,9 @@ export_management = { workspace = true }
 # bump would silently orphan every one of them. Already in the tree via
 # `skrib_format` (the `.skrib` content fingerprint), so this costs nothing.
 blake3 = "1"
+# Re-encoding an optimised image: PNG is lossless, so optimising twice cannot
+# degrade a picture the way repeated JPEG re-encoding would.
+png = "0.18"
 # Parse the compiled-in dictionary registry (`assets/dictionaries/registry.ron`)
 # and the accepted-licences settings file. `skrib_format` pins its own `ron` and
 # re-exports nothing, so this is a real (one-line) edge, not a free ride.

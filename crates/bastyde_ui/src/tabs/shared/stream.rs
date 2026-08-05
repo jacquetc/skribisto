@@ -147,6 +147,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // surface here has its own — so the container's own prose is
                     // commentable in the stream exactly as it is on its own tab.
                     own_comments.clone().map(|b| b.with_gutter(gutter.clone())),
+                    tab.open_doc.images(),
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
@@ -168,6 +169,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // The synopsis is its own `Content` row with its own threads —
                     // see the prose column above.
                     own_comments.clone().map(|b| b.with_gutter(gutter.clone())),
+                    tab.open_doc.images(),
                 )),
             };
             col = col.child(vspace(6.0));
@@ -398,6 +400,7 @@ fn stream_row(
                         // cards it puts in the margin — are the same either way.
                         vm.row_comments(id, flavour)
                             .map(|b| b.with_gutter(gutter.clone())),
+                        doc.images(),
                     ));
                 }
             }
@@ -420,6 +423,7 @@ fn stream_row(
                         // This row's synopsis threads — see above.
                         vm.row_comments(id, flavour)
                             .map(|b| b.with_gutter(gutter.clone())),
+                        doc.images(),
                     ));
                 }
             }

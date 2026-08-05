@@ -381,6 +381,7 @@ mod tests {
 
     fn gathered(items: Vec<ItemWithContents>) -> Gathered {
         Gathered {
+            assets: Vec::new(),
             work: Work {
                 id: 1,
                 ..Default::default()

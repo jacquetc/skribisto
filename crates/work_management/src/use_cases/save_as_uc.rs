@@ -24,9 +24,9 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday, Milestone,
-    NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
-    WorkInfo,
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday,
+    Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule,
+    TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
@@ -53,6 +53,7 @@ pub trait SaveAsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "GetMultiRO")]
 #[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
 #[macros::uow_action(entity = "Pace", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Pace", action = "GetRelationshipRO")]
@@ -110,6 +111,9 @@ impl<'a> TreeReader for dyn SaveAsUnitOfWorkTrait + 'a {
     }
     fn note_template_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<NoteTemplate>>> {
         self.get_note_template_multi(ids)
+    }
+    fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Asset>>> {
+        self.get_asset_multi(ids)
     }
     fn smart_punctuation(&self, id: &EntityId) -> Result<Option<SmartPunctuation>> {
         self.get_smart_punctuation(id)
@@ -214,7 +218,31 @@ fn run_save_as(
     let (target, shape, tag) =
         work_io::resolve_target(&dto.file_name, g.work_info.as_ref(), Some(forced))?;
     let work_id = g.work.id;
-    let output = work_io::serialize_and_write(&g, target, shape, tag)?;
+    // The per-project media directory, resolved from where the project's bytes
+    // are *now* — its current path — not from where this Save As is about to put
+    // them. The destination does not exist yet, so it can never be recognised as
+    // an exploded folder, and a folder project (whose images live in its own
+    // `assets/` and are never copied to the uid-keyed directory) would resolve to
+    // a directory that has never held a single one of its pictures: every image
+    // and the cover would be dropped from the copy, silently, because a missing
+    // file is a skip rather than an error. `backup_now` resolves from the source
+    // for exactly this reason.
+    //
+    // A project that has never been saved has no source path; the destination is
+    // then the honest answer, and the uid-keyed directory it resolves to is where
+    // its images were put when they were inserted.
+    let source = g
+        .work_info
+        .as_ref()
+        .and_then(|wi| wi.file_name.clone())
+        .unwrap_or_else(|| target.clone());
+    let media_dir = skrib_format::media::media_dir(
+        std::path::Path::new(&source),
+        &g.work.unique_id,
+        std::path::Path::new(&dto.media_root),
+        &g.work.unique_id,
+    );
+    let output = work_io::serialize_and_write(&g, target, shape, tag, &media_dir)?;
     Ok((
         work_id,
         SaveAsResultDto {

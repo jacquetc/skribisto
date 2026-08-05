@@ -29,7 +29,7 @@ use bastyde::widgets::{
 
 use skribisto_compiler::{
     DigitStyle, DirectionMode, EpigraphPlacement, ExportFormat, HeadingLanguage, HeadingScheme,
-    LineSpacing, PageSize, Preset, SceneBreak,
+    ImageHandling, LineSpacing, PageSize, Preset, SceneBreak,
 };
 use skribisto_model::scene_break::SceneBreakTier;
 
@@ -505,6 +505,11 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
             yes_no(p.include_paratexts),
         ),
         (
+            tr!(settings_styles_field_images()),
+            image_handling_label(p.image_handling),
+        ),
+        (tr!(settings_styles_field_cover()), yes_no(p.book_cover)),
+        (
             tr!(settings_styles_field_word_count()),
             yes_no(p.title_page_word_count),
         ),
@@ -605,6 +610,14 @@ fn epigraph_placement_label(p: EpigraphPlacement) -> LocalizedString {
     match p {
         EpigraphPlacement::AfterHeading => tr!(settings_styles_epigraph_after()),
         EpigraphPlacement::BeforeHeading => tr!(settings_styles_epigraph_before()),
+    }
+}
+
+fn image_handling_label(h: ImageHandling) -> LocalizedString {
+    match h {
+        ImageHandling::CopyBeside => tr!(settings_styles_images_beside()),
+        ImageHandling::Embed => tr!(settings_styles_images_embed()),
+        ImageHandling::Omit => tr!(settings_styles_images_omit()),
     }
 }
 
@@ -792,6 +805,30 @@ impl Widget for StyleEditor {
             p.include_paratexts = v
         });
 
+        // What the referencing formats do with the manuscript's pictures. Three
+        // choices rather than a switch, because "beside the document" and "inside
+        // it" are both ways of keeping them — the difference is what the reader
+        // ends up with, not whether the images survive.
+        let images_idx = Signal::new(match preset.image_handling {
+            ImageHandling::CopyBeside => 0usize,
+            ImageHandling::Embed => 1,
+            ImageHandling::Omit => 2,
+        });
+        bind_field(ctx, &self.vm, &id, &images_idx, |p, v| {
+            p.image_handling = match v {
+                1 => ImageHandling::Embed,
+                2 => ImageHandling::Omit,
+                _ => ImageHandling::CopyBeside,
+            };
+        });
+        let images = SegmentedControl::new(images_idx)
+            .segment(Segment::new(tr!(settings_styles_images_beside())))
+            .segment(Segment::new(tr!(settings_styles_images_embed())))
+            .segment(Segment::new(tr!(settings_styles_images_omit())));
+
+        let cover = Signal::new(preset.book_cover);
+        bind_field(ctx, &self.vm, &id, &cover, |p, v| p.book_cover = v);
+
         // Title page + pagination.
         let title_page = Signal::new(preset.book_title_page);
         bind_field(ctx, &self.vm, &id, &title_page, |p, v| {
@@ -882,10 +919,15 @@ impl Widget for StyleEditor {
                 field_label(tr!(settings_styles_field_paratexts())),
                 Toggle::new(paratexts).labelled_externally(),
             )
+            .line(field_label(tr!(settings_styles_field_images())), images)
             // Spanning both columns, with the file's own section-header idiom and its
             // breathing room above.
             .full_width(
                 Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_group_pages()))),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_cover())),
+                Toggle::new(cover).labelled_externally(),
             )
             .line(
                 field_label(tr!(settings_styles_sheet_title_page())),

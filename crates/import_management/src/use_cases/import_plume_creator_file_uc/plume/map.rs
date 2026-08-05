@@ -185,6 +185,9 @@ pub fn build_bundle(
         // Plume has no template concept, so an imported project starts with none —
         // the writer applies a preset from Settings ▸ Templates if they want any.
         note_templates: Vec::new(),
+        // A Plume project has no binary assets to carry over.
+        assets: Vec::new(),
+        asset_bytes: Default::default(),
         note_template_bodies: Default::default(),
         trash_infos: Vec::new(),
         // Plume has no comment/annotation concept either, so there is nothing to

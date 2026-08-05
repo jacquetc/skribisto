@@ -57,6 +57,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             4 => step_v4_to_v5(bundle),
             5 => step_v5_to_v6(bundle),
             6 => step_v6_to_v7(bundle),
+            7 => step_v7_to_v8(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -90,6 +91,18 @@ fn step_v5_to_v6(_bundle: &mut WorkBundle) {}
 /// so an older build refuses the file rather than failing to deserialize the two new enum
 /// variants — the same reason v6 exists.
 fn step_v6_to_v7(_bundle: &mut WorkBundle) {}
+
+/// v7 → v8 added binary assets. Nothing to heal: a v7 bundle has no `assets.ron`
+/// and no `assets/` tree, and `#[serde(default)]` already reads that as an empty
+/// list.
+///
+/// The bump exists for the *other* direction. An older build's `WorkBundle` has
+/// no assets field, and both writers rebuild from what the bundle holds — the zip
+/// from a fresh staging directory, the exploded shape by pruning what it does not
+/// expect. So an older build's first save would delete every image in the
+/// project. The version floor (see `version_gate::compute_min_read_version`)
+/// turns that into a refusal to open, and only for projects that have images.
+fn step_v7_to_v8(_bundle: &mut WorkBundle) {}
 
 /// Mint a durable `uid` for every binder and item that lacks one.
 ///

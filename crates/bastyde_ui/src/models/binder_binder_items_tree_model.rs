@@ -1172,6 +1172,7 @@ mod filter_feedback_tests {
         frontend::commands::work_management_commands::load_work(
             &ctx,
             &frontend::work_management::LoadWorkDto {
+                media_root: crate::media_paths::media_root_string(),
                 file_name: path.to_string(),
             },
         )

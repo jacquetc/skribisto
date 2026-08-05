@@ -144,6 +144,22 @@ pub fn shift_range(
     (new_start, new_end.max(new_start))
 }
 
+/// A quote as it should be *shown* to the writer.
+///
+/// An inline image is one `U+FFFC` in the document text, so a comment on a
+/// passage containing one captures it — and must, or the quote would no longer
+/// match the prose it came from and the comment would orphan itself the first
+/// time it was re-resolved. But the character has no glyph, so a list or a card
+/// that printed it verbatim would show an empty box in the middle of the
+/// sentence. Substituted only at the point of display, never in what is stored.
+pub fn for_display(quote: &str) -> String {
+    if quote.contains('\u{FFFC}') {
+        quote.replace('\u{FFFC}', "🖼")
+    } else {
+        quote.to_string()
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Capture
 // ---------------------------------------------------------------------------
@@ -484,6 +500,63 @@ mod tests {
                 }
             }
         }
+    }
+
+    // ── images ──────────────────────────────────────────────────────────────
+
+    /// The document text of a scene holding one inline image. The image is a
+    /// single `U+FFFC`, which is what makes every offset after it depend on the
+    /// picture still being counted.
+    const WITH_IMAGE: &str = "The lighthouse stood alone. \u{FFFC} The keeper had gone.";
+
+    #[test]
+    fn a_comment_after_an_image_lands_on_the_words_it_names() {
+        // The regression this guards: the addressable plain text briefly dropped
+        // the sentinel while the document kept it, so every anchor past a picture
+        // pointed one character early — enough to slice a word in half and, once
+        // re-resolved, to orphan a comment that never moved.
+        let chars: Vec<char> = WITH_IMAGE.chars().collect();
+        let start = WITH_IMAGE.chars().count() - "keeper had gone.".chars().count();
+        let end = start + "keeper".chars().count();
+        assert_eq!(chars[start..end].iter().collect::<String>(), "keeper");
+
+        let a = capture(WITH_IMAGE, start, end, 0);
+        assert_eq!(a.exact, "keeper");
+        match resolve(WITH_IMAGE, &a, false, &[0]) {
+            Resolution::Anchored { start: at, length } => {
+                assert_eq!(chars[at..at + length].iter().collect::<String>(), "keeper");
+            }
+            other => panic!("a comment after an image must still anchor: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_quote_spanning_an_image_keeps_it_and_still_matches() {
+        // The sentinel stays in the stored quote. Normalising it out would make
+        // the quote something the prose does not contain, so the next resolve
+        // would fail to find it and orphan a comment that never moved.
+        let start = "The ".chars().count();
+        let end = "The lighthouse stood alone. \u{FFFC} The".chars().count();
+        let a = capture(WITH_IMAGE, start, end, 0);
+        assert!(
+            a.exact.contains('\u{FFFC}'),
+            "the image left the quote: {:?}",
+            a.exact
+        );
+        assert_eq!(
+            resolve(WITH_IMAGE, &a, false, &[0]),
+            Resolution::Anchored {
+                start,
+                length: end - start
+            }
+        );
+    }
+
+    #[test]
+    fn a_quote_with_an_image_is_shown_as_a_picture_not_an_empty_box() {
+        // Stored verbatim, displayed legibly.
+        assert_eq!(for_display("a \u{FFFC} b"), "a 🖼 b");
+        assert_eq!(for_display("no image here"), "no image here");
     }
 
     // ── capture ─────────────────────────────────────────────────────────────

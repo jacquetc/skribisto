@@ -17,7 +17,7 @@ use tempfile::NamedTempFile;
 
 use super::bundle::*;
 use super::shape::MANIFEST_NAME;
-use super::slug::{TEMPLATES_DIR, binder_dir_name};
+use super::slug::{ASSETS_DIR, TEMPLATES_DIR, binder_dir_name};
 use super::version_gate::compute_min_read_version;
 use super::writer::persist_durably;
 
@@ -118,6 +118,41 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
     }
     prune_dir(&templates_dir, &expected_templates, "djot")?;
 
+    // Assets: an index plus one blob each, the same split templates use — but
+    // written as bytes, not text. `write_if_changed` already takes `&[u8]` and
+    // diffs against what is on disk, so an unchanged image is not rewritten and
+    // the exploded shape stays diff-minimal even with photographs in it.
+    //
+    // The prune matters more here than anywhere else: assets are content-
+    // addressed, so *replacing* an image writes a new name and leaves the old
+    // blob behind. Without this a project would accumulate every version of
+    // every picture a writer ever swapped out, forever.
+    write_if_changed(&root.join("assets.ron"), to_ron(&bundle.assets)?.as_bytes())?;
+    let assets_dir = root.join(ASSETS_DIR);
+    let mut expected_assets: BTreeSet<String> = BTreeSet::new();
+    if !bundle.assets.is_empty() {
+        fs::create_dir_all(&assets_dir)
+            .with_context(|| format!("creating {}", assets_dir.display()))?;
+    }
+    for a in &bundle.assets {
+        let rel = Path::new(&a.path);
+        let fname = rel
+            .file_name()
+            .and_then(|n| n.to_str())
+            .ok_or_else(|| anyhow::anyhow!("bad asset path '{}'", a.path))?
+            .to_string();
+        let bytes = bundle.asset_bytes.get(&a.content_hash).ok_or_else(|| {
+            anyhow::anyhow!(
+                "missing bytes for asset {} ({})",
+                a.file_name,
+                a.content_hash
+            )
+        })?;
+        write_if_changed(&root.join(rel), bytes)?;
+        expected_assets.insert(fname);
+    }
+    prune_assets_dir(&assets_dir, &expected_assets)?;
+
     let mut expected_binder_dirs: BTreeSet<String> = BTreeSet::new();
 
     for (index, bb) in bundle.binders.iter().enumerate() {
@@ -217,6 +252,30 @@ fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str) -> Result<()> {
     Ok(())
 }
 
+/// Delete any file in the assets directory that the bundle no longer lists.
+///
+/// Unlike [`prune_dir`] this does not filter by extension: assets are `.png`,
+/// `.jpg`, `.webp` — whatever the writer inserted — so the keep-set is the only
+/// thing that can decide. It matters more than the other prunes, too: assets are
+/// content-addressed, so *replacing* an image writes a new filename and orphans
+/// the old blob. Without this a project would keep every version of every
+/// picture ever swapped out.
+fn prune_assets_dir(dir: &Path, keep: &BTreeSet<String>) -> Result<()> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Ok(());
+    };
+    for entry in entries.flatten() {
+        let p = entry.path();
+        if p.is_file()
+            && let Some(name) = p.file_name().and_then(|n| n.to_str())
+            && !keep.contains(name)
+        {
+            fs::remove_file(&p).ok();
+        }
+    }
+    Ok(())
+}
+
 fn prune_binder_dirs(binders_dir: &Path, keep: &BTreeSet<String>) -> Result<()> {
     let Ok(entries) = fs::read_dir(binders_dir) else {
         return Ok(());
@@ -264,6 +323,16 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         let text = fs::read_to_string(root.join(&t.path))
             .with_context(|| format!("reading note-template body {}", t.path))?;
         note_template_bodies.insert(t.file_id, text);
+    }
+
+    // Assets. `fs::read`, not `read_to_string` — this is the one part of a
+    // bundle that is not UTF-8, and every other reader here would reject it.
+    let assets: Vec<AssetFile> = read_ron_vec(&root.join("assets.ron"), "assets.ron")?;
+    let mut asset_bytes = std::collections::BTreeMap::new();
+    for a in &assets {
+        let bytes = fs::read(root.join(&a.path))
+            .with_context(|| format!("reading asset {} ({})", a.file_name, a.path))?;
+        asset_bytes.insert(a.content_hash.clone(), bytes);
     }
 
     // Index every binder by its file id (dir names are cosmetic).
@@ -333,6 +402,8 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         text_replacement_rules,
         note_templates,
         note_template_bodies,
+        assets,
+        asset_bytes,
         trash_infos,
         paces,
         progress_snapshots,

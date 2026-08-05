@@ -58,6 +58,8 @@ touch if you hit a glaring gap.
   project-wide and a per-document comments dock
 - Note templates: built-in presets (character sheet, location, object, beat sheet, faction,
   research note) or save your own
+- Images in the prose — a map, a character reference, a photograph of a street — carried
+  inside the project and through every export, with a book cover
 - Colour tags per project, with curated genre presets, and point-of-view marking on scenes
 - Replace-while-typing: a custom lexicon plus locale-aware smart punctuation (curly quotes,
   dashes, ellipsis, French spacing…)
@@ -135,6 +137,12 @@ absent from that table is invalid by construction.
 A project is a `.skrib` **bundle**: RON manifests plus [Djot](https://djot.net) prose, stored
 either as a single zip (the default) or as an exploded folder that is comfortable to keep in
 git. Legacy SQLite `.skrib` files from the C++ era are detected and upgraded when opened.
+
+Images live in `assets/` inside the bundle, named by the blake3 hash of their bytes, and the
+prose references them as ordinary Djot — `![alt](assets/<hash>.png){width=… height=…}`. So the
+same picture inserted twice costs one copy, an exploded-folder project resolves its own images
+on disk, and a plain Markdown viewer pointed at the folder shows them. A project that carries
+images requires format version 8; one that does not still opens in an older build.
 
 ### Workspace layout
 

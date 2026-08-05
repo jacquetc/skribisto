@@ -1454,6 +1454,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             Signal::new(0),
+            std::path::Path::new(""),
         )));
     }
 
@@ -1614,6 +1615,7 @@ mod tests {
                 &BinderItemSubRole::Scene,
                 &[],
                 docs.edited_any(),
+                std::path::Path::new(""),
             )));
         }
 

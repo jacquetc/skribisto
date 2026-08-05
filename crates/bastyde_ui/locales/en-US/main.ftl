@@ -342,7 +342,13 @@ settings-styles-field-paratexts = Include paratexts
 settings-styles-field-epigraph-placement = Epigraph position
 settings-styles-epigraph-after = After the title
 settings-styles-epigraph-before = Before the title
+settings-styles-field-images = Images
+menu-image = &Image
+settings-styles-images-beside = Beside the document
+settings-styles-images-embed = Inside the document
+settings-styles-images-omit = Leave out
 settings-styles-group-pages = Pages
+settings-styles-field-cover = Open with the cover
 settings-styles-field-word-count = Word count on title page
 settings-styles-field-page-books = New page at each book
 settings-styles-field-page-parts = New page at each part
@@ -1531,3 +1537,36 @@ settings-paratext-delete = Delete
 settings-paratext-new = New structure
 settings-paratext-save = Save
 settings-paratext-editor-hint = A name, the pages to create before the manuscript, and the pages to create after it. Where they end up is yours: they are ordinary items once the project exists.
+
+## Images
+
+image-insert = &Insert image…
+image-no-project = Open a project before inserting an image.
+image-choose-title = Choose an image
+image-filter-label = Images
+image-large-title = This is a large image
+image-large-text =
+    { $name } is { $megapixels } megapixels ({ $width }×{ $height }).
+    Keeping it as it is stores your original file in the project — it travels
+    with every backup and every export. Optimising stores a smaller copy
+    instead, up to 2560 pixels on its longest side.
+image-large-keep = Keep original
+image-large-downscale = Optimise
+image-large-remember = Do this from now on, don't ask again
+image-not-recorded = The image was saved but could not be recorded in the project.
+image-describe-title = Describe the image
+image-describe-explain = What the picture shows, for a reader who cannot see it. It is not part of the manuscript: it is never counted, searched or exported as prose.
+image-describe-placeholder = a lighthouse against a grey sky
+image-resize-title = Resize the image
+image-resize-explain = A percentage of the size it is shown at now. 100 leaves it as it is.
+image-resize-invalid = Enter a number between 1 and 1000.
+image-menu-describe = &Describe the image…
+image-menu-resize = &Resize the image…
+image-menu-reset-size = Original si&ze
+
+# The book's cover — chosen from the book, not typed into a scene.
+cover-choose = Book &cover…
+cover-clear = &Remove the cover
+cover-choose-title = Choose a cover
+cover-set = The cover is set.
+cover-cleared = The cover has been removed. The picture is still in the project.

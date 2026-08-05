@@ -69,6 +69,12 @@ pub trait AnalyzeBookUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
 impl<'a> TreeReader for dyn AnalyzeBookUnitOfWorkTrait + 'a {
     /// An analysis reads no templates: they are project furniture, not manuscript content,
     /// and nothing this use case measures comes from one. Explicit rather than defaulted —
+    /// Analysis measures prose. An image contributes no words, no sentences and no repetition, so its metadata is not read.
+    ///
+    /// Explicit rather than defaulted — see [`TreeReader::asset_multi`].
+    fn asset_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
+        Ok(Vec::new())
+    }
     /// see [`TreeReader::note_template_multi`], and `scan_mentions_uc` for the same call.
     fn note_template_multi(
         &self,

@@ -134,8 +134,21 @@ pub fn writing_column(
     // with no comment store, which collapses the comment affordances rather than
     // panicking.
     comments: Option<crate::comments::binding::CommentBinding>,
+    // Where this editor fetches an image it meets but its document does not
+    // have — a picture pasted in from another editor, or brought back by an
+    // undo. `None` on the surfaces built without a project around them.
+    images: Option<crate::view_models::images::ImageSource>,
 ) -> HStack {
-    let mut editor = RichTextEditor::editor(doc.clone())
+    // Stand by to supply an image this document does not have. A picture
+    // pasted in from another editor arrives as a reference — pixels live on the
+    // document that owns them, and a clipboard fragment is not a document — so
+    // without this it lays out at full size and paints nothing.
+    let mut editor = RichTextEditor::editor(doc.clone());
+    if let Some(source) = &images {
+        let resolve = source.resolver();
+        editor = editor.on_image_missing(resolve);
+    }
+    let mut editor = editor
         .style(WritingEditorStyle)
         .on_change(on_change)
         .content_padding_symmetric(8.0, 12.0)
@@ -215,6 +228,54 @@ pub fn writing_column(
             )))
         });
     }
+    // A click on an image records which one, so the Document menu's describe /
+    // resize commands have something to act on. The editor deliberately does not
+    // move the caret onto an image (the same rule links follow), so this is the
+    // only thing that can say *which* picture the writer means — and a document
+    // may hold the same one three times.
+    if let Some(fvm) = &format {
+        let fvm = fvm.clone();
+        let handle = editor.handle();
+        editor = editor.on_image_activated(move |activation, _ctx| {
+            fvm.set_active_image(Some((activation.offset, activation.name.clone())));
+            // …and select it. An image is one character, so this selects
+            // exactly it — which is why the activation carries the offset. The
+            // editor deliberately does not move the caret itself (the rule
+            // links follow), so a host that wants the picture selected has to
+            // say so; before this the only way to select one was to drag from
+            // the end of the block above to the start of the one below.
+            handle.select_range(activation.offset, activation.offset + 1);
+        });
+    }
+    // Files dropped on the prose. The editor has already put the caret where
+    // they landed; turning a path into a picture needs the media directory, an
+    // `Asset` row and an undo stack, so the paths are parked on the view-model
+    // and the command that owns that pipeline picks them up.
+    if let Some(fvm) = &format {
+        let fvm = fvm.clone();
+        editor = editor.on_files_dropped(move |paths, ctx| {
+            fvm.dropped_files().set(paths.to_vec());
+            ctx.send_intent(Intent::new("editor.insert_dropped_images"));
+        });
+    }
+    // Dragging a corner grip reports a size; writing it into the prose is this
+    // side's job, because only the app knows the display size lives in the
+    // reference's Djot attributes. Same rewrite as the Resize command, so a
+    // dragged resize and a typed one land identically on the undo stack.
+    {
+        let handle = editor.handle();
+        editor = editor.on_image_resized(move |resize, _ctx| {
+            let Some(image) = crate::view_models::images::image_at(
+                &handle.to_plain_text(),
+                resize.offset,
+                &handle.to_djot(),
+            ) else {
+                return;
+            };
+            handle.select_range(resize.offset, resize.offset + 1);
+            handle.insert_djot(&image.djot(&image.alt, Some((resize.width, resize.height))));
+        });
+    }
     let mut bound = TypographyBoundEditor::new(
         editor,
         typo.clone(),
@@ -273,6 +334,55 @@ pub fn writing_column(
     }
 }
 
+/// The image the selection covers, when it covers exactly one and nothing else.
+///
+/// An inline image is a single character, so a selection of length 1 that
+/// resolves to an image *is* an image selection. A wider selection that happens
+/// to contain a picture is not: the writer selected prose, and prose actions are
+/// what they want.
+fn selected_image(handle: &EditorHandle) -> Option<crate::view_models::images::ImageRef> {
+    let (a, b) = handle.selection();
+    let (start, end) = (a.min(b), a.max(b));
+    if end != start + 1 {
+        return None;
+    }
+    crate::view_models::images::image_at(&handle.to_plain_text(), start, &handle.to_djot())
+}
+
+/// The right-click menu over a selected image: move it, then act on it.
+///
+/// Cut/Copy/Paste lead because they are what a picture is most often
+/// right-clicked for, and because they are the actions whose meaning does not
+/// change over an image — cutting one takes the picture, exactly as cutting a
+/// word takes the word.
+///
+/// The three below are the same commands the Image menu offers, reached by
+/// intent so a keyboard user and a right-clicking user run identical code. No
+/// Insert image here: this menu only exists because an image is already
+/// selected.
+fn image_context_menu(handle: EditorHandle) -> MenuList {
+    let cut = handle.clone();
+    let copy = handle.clone();
+    let paste = handle;
+    MenuList::new()
+        .item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)))
+        .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
+        .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
+        .separator()
+        .item(
+            MenuItem::new(tr!(image_menu_describe()))
+                .on_activate_fn(move |ctx| ctx.send_intent(Intent::new("image.describe"))),
+        )
+        .item(
+            MenuItem::new(tr!(image_menu_resize()))
+                .on_activate_fn(move |ctx| ctx.send_intent(Intent::new("image.resize"))),
+        )
+        .item(
+            MenuItem::new(tr!(image_menu_reset_size()))
+                .on_activate_fn(move |ctx| ctx.send_intent(Intent::new("image.reset_size"))),
+        )
+}
+
 /// A writing editor's right-click menu: the **formatting row** (Bold / Italic /
 /// Underline / Strikethrough) as a chrome strip above the list, the **spelling
 /// group** (corrections for the right-clicked word, then *Add to dictionary*)
@@ -298,6 +408,18 @@ fn editor_context_menu(
     // One resolution for the whole spelling group — only misspelled words are
     // offered, filtered through this editor's live spell-checker so the group
     // matches the squiggles exactly.
+    // Right-clicking a selected picture opens a different menu entirely. The
+    // formatting strip, the spelling group and Split scene are all about prose;
+    // over an image every one of them is either inert or nonsense, and a menu
+    // whose top half does nothing is worse than a shorter one.
+    //
+    // Decided from the *selection*, not from the click point: clicking an image
+    // selects exactly it, so "the selection is one image" is precisely the state
+    // this menu is for — and it is the same test wherever the pointer landed.
+    if selected_image(&handle).is_some() {
+        return image_context_menu(handle);
+    }
+
     let spelling = super::dictionary_menu::resolve_spelling(&doc, &handle, spell.as_deref());
 
     let mut list = MenuList::new().item(format_row(&handle)).separator();
@@ -558,8 +680,21 @@ pub fn synopsis_editor(
     // its own binding — anchoring both to "the item" would merge two distinct
     // annotations into one.
     comments: Option<crate::comments::binding::CommentBinding>,
+    // Where this editor fetches an image it meets but its document does not
+    // have — a picture pasted in from another editor, or brought back by an
+    // undo. `None` on the surfaces built without a project around them.
+    images: Option<crate::view_models::images::ImageSource>,
 ) -> impl Widget {
-    let mut editor = RichTextEditor::editor(doc.clone())
+    // Stand by to supply an image this document does not have. A picture
+    // pasted in from another editor arrives as a reference — pixels live on the
+    // document that owns them, and a clipboard fragment is not a document — so
+    // without this it lays out at full size and paints nothing.
+    let mut editor = RichTextEditor::editor(doc.clone());
+    if let Some(source) = &images {
+        let resolve = source.resolver();
+        editor = editor.on_image_missing(resolve);
+    }
+    let mut editor = editor
         .style(WritingEditorStyle)
         .on_change(on_change)
         .content_padding_symmetric(6.0, 30.0)
@@ -692,8 +827,21 @@ pub fn card_synopsis_editor(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    // Where this editor fetches an image it meets but its document does not
+    // have — a picture pasted in from another editor, or brought back by an
+    // undo. `None` on the surfaces built without a project around them.
+    images: Option<crate::view_models::images::ImageSource>,
 ) -> (impl Widget, EditorHandle) {
-    let mut editor = RichTextEditor::editor(doc.clone())
+    // Stand by to supply an image this document does not have. A picture
+    // pasted in from another editor arrives as a reference — pixels live on the
+    // document that owns them, and a clipboard fragment is not a document — so
+    // without this it lays out at full size and paints nothing.
+    let mut editor = RichTextEditor::editor(doc.clone());
+    if let Some(source) = &images {
+        let resolve = source.resolver();
+        editor = editor.on_image_missing(resolve);
+    }
+    let mut editor = editor
         .style(WritingEditorStyle)
         .on_change(on_change)
         .content_padding_symmetric(4.0, 8.0)
@@ -858,6 +1006,10 @@ pub fn synopsis_section(
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
     comments: Option<crate::comments::binding::CommentBinding>,
+    // Where this editor fetches an image it meets but its document does not
+    // have — a picture pasted in from another editor, or brought back by an
+    // undo. `None` on the surfaces built without a project around them.
+    images: Option<crate::view_models::images::ImageSource>,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
@@ -885,6 +1037,7 @@ pub fn synopsis_section(
                             Option::None,
                             caret,
                             comments,
+                            images.clone(),
                         )
                     }
                 }
@@ -922,6 +1075,10 @@ pub fn synopsis_column(
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
     comments: Option<crate::comments::binding::CommentBinding>,
+    // Where this editor fetches an image it meets but its document does not
+    // have — a picture pasted in from another editor, or brought back by an
+    // undo. `None` on the surfaces built without a project around them.
+    images: Option<crate::view_models::images::ImageSource>,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(
@@ -941,6 +1098,7 @@ pub fn synopsis_column(
                     typewriter,
                     caret,
                     comments,
+                    images.clone(),
                 )
             }
         }
@@ -970,6 +1128,10 @@ pub fn writing_section(
     caret: Option<crate::view_models::CaretBand>,
     view_state: Option<crate::view_models::ViewStateBinding>,
     comments: Option<crate::comments::binding::CommentBinding>,
+    // Where this editor fetches an image it meets but its document does not
+    // have — a picture pasted in from another editor, or brought back by an
+    // undo. `None` on the surfaces built without a project around them.
+    images: Option<crate::view_models::images::ImageSource>,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -993,6 +1155,7 @@ pub fn writing_section(
             caret,
             view_state,
             comments,
+            images,
         ))
 }
 
@@ -1327,6 +1490,10 @@ pub fn side_synopsis_editor(
     // commented on — and it is a *placement* of the same `Content` row, not a
     // different thing, so the annotations must follow it across the fold.
     comments: Option<crate::comments::binding::CommentBinding>,
+    // Where this editor fetches an image it meets but its document does not
+    // have — a picture pasted in from another editor, or brought back by an
+    // undo. `None` on the surfaces built without a project around them.
+    images: Option<crate::view_models::images::ImageSource>,
 ) -> impl Widget {
     synopsis_editor(
         doc,
@@ -1341,6 +1508,7 @@ pub fn side_synopsis_editor(
         None,
         caret,
         comments,
+        images,
     )
 }
 
@@ -2630,7 +2798,7 @@ mod tests {
         let _ =
             doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(60));
         let (editor, _handle) =
-            card_synopsis_editor(doc, test_typo(), || {}, None, None, None, None, None);
+            card_synopsis_editor(doc, test_typo(), || {}, None, None, None, None, None, None);
         let mut tree = WidgetTree::new();
         let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
         // Propose an *unbounded* height, the way the corkboard's GridView tile does —
@@ -2666,6 +2834,7 @@ mod tests {
             None,
             None,
             // No project around this tree, so no comment binding.
+            None,
             None,
         );
         let mut tree = WidgetTree::new();

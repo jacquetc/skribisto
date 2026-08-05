@@ -4,6 +4,15 @@
 //! `SaveStateViewModel` — the save-tracking state for the open **Work**, shared by
 //! every window onto it.
 //!
+//! ⚠ **Dirty-tracking does not key off entity events.** `frontend::flat_event`'s
+//! `is_mutation` answers "is this a per-entity Created/Updated/Removed?", which is
+//! *not* the same question as "did the store change?": every `…Management…`
+//! use-case event is excluded, and several of those (bulk imports, trash ops,
+//! binder-item ops) mutate entities through a `CreateOrphan`-style UoW action that
+//! publishes only the one feature-level event and no per-row ones. Driving `dirty`
+//! from it would silently miss those batches. The monotonic `dirty_seq` below is
+//! the mechanism instead, which is why it exists at all.
+//!
 //! ## Why this exists
 //!
 //! A Work can have several windows (Work ▸ New Window), but the save operation is
@@ -205,6 +214,7 @@ impl SaveStateViewModel {
         match work_management_commands::save_work(
             &self.inner.app_ctx,
             &SaveWorkDto {
+                media_root: crate::media_paths::media_root_string(),
                 work_id,
                 file_name: String::new(),
                 overwrite: true,

@@ -457,6 +457,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             Signal::new(0),
+            std::path::Path::new(""),
         ));
         // Real prose, not an empty document: a caret is clamped to the
         // character count, so an empty scene would make every caret assertion
@@ -946,6 +947,7 @@ mod tests {
             &BinderItemSubRole::ChapterScene,
             &[],
             Signal::new(0),
+            std::path::Path::new(""),
         ));
         assert!(
             doc.kind.is_some(),

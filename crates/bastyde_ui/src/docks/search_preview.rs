@@ -449,6 +449,7 @@ mod tests {
             &BinderItemSubRole::Scene,
             &[],
             Signal::new(0),
+            std::path::Path::new(""),
         ));
         let _ = doc
             .main

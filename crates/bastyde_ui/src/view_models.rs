@@ -109,6 +109,7 @@ mod format;
 mod fullscreen;
 mod go;
 mod go_to;
+pub mod images;
 mod import_plume;
 mod long_op;
 mod mention_index;

@@ -699,6 +699,11 @@ pub struct App {
         bastyde::widgets::MenuModel,
         bastyde::core::menu_item_id::MenuItemId,
     )>,
+    /// Pre-allocated id for the **Image** menu, which is inserted and removed as
+    /// the selection changes (see `project_menus::sync_image_menu`). Minted here
+    /// rather than by the insertion, because a menu that will be removed again
+    /// has to be nameable before it exists.
+    image_menu_id: bastyde::core::menu_item_id::MenuItemId,
     /// Live "is there a target" mirrors for the title-bar's Go menu (Increment 4 —
     /// six Next/Previous × Scene/Chapter/Note rows), the same shape as
     /// `scene_focused` just above: minted in `shell/windows.rs` (which builds the
@@ -846,6 +851,7 @@ impl App {
             scene_focused,
             binder_has_selection,
             templates_menu,
+            image_menu_id: bastyde::core::menu_item_id::MenuItemId::next(),
             go,
             go_to,
             unsaved,
@@ -1864,6 +1870,18 @@ impl Widget for App {
         // The framework's answer (bastyde/docs/native-menu.md, "Dynamic structure") is a
         // pre-allocated submenu id plus runtime mutation, which is what this drives — each
         // refill bumps `MenuModel::version`, and the bar re-derives its dropdowns from it.
+        // The Image menu appears while a picture is selected and goes away
+        // when it is not. Driven off the same signal the Document menu's image
+        // rows used to gate on, so the menu and the commands cannot disagree
+        // about whether there is an image in hand.
+        if let Some((menu, _)) = self.templates_menu.clone() {
+            let image_menu_id = self.image_menu_id;
+            let active = self.format.active_image();
+            ctx.effect(&active, move |image| {
+                crate::shell::project_menus::sync_image_menu(&menu, image_menu_id, image.is_some());
+            });
+        }
+
         if let Some((menu, submenu_id)) = self.templates_menu.clone() {
             let templates = session.note_templates.clone();
             let has_editor = self.format.has_target();
@@ -2233,6 +2251,7 @@ impl Widget for App {
                     if let Err(e) = work_management_commands::load_work(
                         &self.app_ctx,
                         &LoadWorkDto {
+                            media_root: crate::media_paths::media_root_string(),
                             file_name: path.clone(),
                         },
                     ) {

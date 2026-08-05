@@ -95,6 +95,15 @@ fn check<T: DeserializeOwned>(v: &toml::Value) -> Result<(), String> {
 pub static SETTINGS: &[SettingSpec] = &[
     // ── Appearance & behaviour ────────────────────────────────────────────────
     SettingSpec {
+        key: crate::IMAGE_SIZE_POLICY_KEY,
+        ty: "string (\"ask\" | \"keep\" | \"downscale\")",
+        default: || val("ask"),
+        check: check::<String>,
+        doc: "What to do with a large image on insert. \"ask\" prompts once per \
+              image; the prompt's \"don't ask again\" box writes \"keep\" or \
+              \"downscale\" here.",
+    },
+    SettingSpec {
         key: crate::DARK_KEY,
         ty: "bool",
         default: || val(false),

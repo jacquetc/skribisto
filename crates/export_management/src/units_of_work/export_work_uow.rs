@@ -17,7 +17,7 @@ use anyhow::{Ok, Result};
 use common::database::QueryUnitOfWork;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, BinderTag, Content, Work};
+use common::entities::{Asset, Binder, BinderItem, BinderTag, Content, Work};
 use common::event::ExportManagementEvent::ExportWork;
 use common::event::{Event, EventHub, Origin};
 use common::long_operation::lock_or_recover;
@@ -80,6 +80,7 @@ impl QueryUnitOfWork for ExportWorkUnitOfWork {
 )]
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO", thread_safe = true)]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "Asset", action = "GetMultiRO", thread_safe = true)]
 impl ExportWorkUnitOfWorkTrait for ExportWorkUnitOfWork {
     fn publish_export_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

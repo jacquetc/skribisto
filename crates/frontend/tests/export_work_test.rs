@@ -40,8 +40,14 @@ fn export_work_writes_the_whole_project_to_html() {
         "fixture missing: {fixture}"
     );
 
-    work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture })
-        .expect("load_work should succeed");
+    work_management_commands::load_work(
+        &ctx,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: fixture,
+        },
+    )
+    .expect("load_work should succeed");
 
     let work_id = work_commands::get_all_work(&ctx).expect("get_all_work")[0].id as i64;
     // Export everything: a Custom scope of every item id (robust to the fixture's structure).
@@ -55,6 +61,7 @@ fn export_work_writes_the_whole_project_to_html() {
     let out_path =
         std::env::temp_dir().join(format!("skrib-export-e2e-{}.html", std::process::id()));
     let dto = ExportWorkDto {
+        media_dir: String::new(),
         work_id,
         output_path: out_path.to_string_lossy().into_owned(),
         format: ExportFormat::Html,
@@ -118,8 +125,14 @@ const SHUNN_JSON: &str = r#"{
 fn a_docx_export_paginates_and_defines_the_styles_it_uses() {
     let ctx = AppContext::new();
     let fixture = fixture_path();
-    work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture })
-        .expect("load_work should succeed");
+    work_management_commands::load_work(
+        &ctx,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: fixture,
+        },
+    )
+    .expect("load_work should succeed");
 
     let work_id = work_commands::get_all_work(&ctx).expect("get_all_work")[0].id as i64;
     let ids: Vec<i64> = binder_item_commands::get_all_binder_item(&ctx)
@@ -131,6 +144,7 @@ fn a_docx_export_paginates_and_defines_the_styles_it_uses() {
     let out_path =
         std::env::temp_dir().join(format!("skrib-export-docx-{}.docx", std::process::id()));
     let dto = ExportWorkDto {
+        media_dir: String::new(),
         work_id,
         output_path: out_path.to_string_lossy().into_owned(),
         format: ExportFormat::Docx,

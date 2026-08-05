@@ -324,6 +324,26 @@ pub struct FormatViewModel {
     /// Which groups apply. Read by the dock to decide what to show and by the
     /// menu to decide what to enable.
     surface: Signal<FormatSurface>,
+    /// The inline image the writer last clicked, as `(character offset, src)`.
+    ///
+    /// A click on an image does not move the caret — that is the editor's
+    /// documented behaviour, shared with links — so the caret cannot say which
+    /// picture the writer meant. This can, and it is per-window for the same
+    /// reason the rest of this view-model is: two windows on one project have
+    /// two carets and two selections.
+    ///
+    /// Cleared on every other click, so "Describe the image…" is offered only
+    /// while there is actually an image in hand.
+    active_image: Signal<Option<(usize, String)>>,
+    /// Paths just dropped on an editor, for the command that turns them into
+    /// pictures.
+    ///
+    /// The editor widget reports a drop; inserting needs the project's media
+    /// directory, an `Asset` row and an undo stack, none of which an editor
+    /// builder has. So the paths are parked here — per-window, like everything
+    /// else on this view-model — and a global command picks them up, reusing the
+    /// same pipeline `Insert image…` runs.
+    dropped_files: Signal<Vec<std::path::PathBuf>>,
 
     bold: Signal<bool>,
     italic: Signal<bool>,
@@ -364,6 +384,26 @@ pub struct FormatViewModel {
     /// blurs the editor, so an enablement keyed on live focus would grey out
     /// every item at the instant the user reached for one.
     has_target: Signal<bool>,
+    /// Whether a *caret* is in an editor, as opposed to merely a document tab
+    /// being open.
+    ///
+    /// [`Self::has_target`] answers the broader question and is right for the
+    /// commands that act on a whole document (Save as template…, the Format
+    /// menu): it includes the resolver's tab-scoped answer, which reports the
+    /// active tab's prose handle whether or not anyone has ever clicked into it.
+    ///
+    /// Inserting *at the caret* needs more than that. This one is true only
+    /// when a registered editor is live-focused, or was — the sticky latch,
+    /// never the bare resolver fallback. So it survives the focus loss that
+    /// opening the menu causes (the whole reason `has_target` is sticky, and the
+    /// regression commit 2d4890b0 fixed), while a tab the writer has opened and
+    /// never typed in still reads false.
+    ///
+    /// It cannot distinguish "the menu took focus" from "the binder took focus"
+    /// — both look like *nothing* focused from here — so it stays true once the
+    /// writer has been in the editor. That is the same limit `has_target` and
+    /// the note gate live with, and for the same reason.
+    has_caret_target: Signal<bool>,
 
     /// Per-group visibility, pushed by [`Self::set_surface`].
     ///
@@ -397,6 +437,21 @@ impl FormatViewModel {
         vm
     }
 
+    /// The inline image the writer last clicked — see [`Self::active_image`].
+    pub fn active_image(&self) -> Signal<Option<(usize, String)>> {
+        self.active_image.clone()
+    }
+
+    /// Paths just dropped on an editor — see [`Self::dropped_files`].
+    pub fn dropped_files(&self) -> Signal<Vec<std::path::PathBuf>> {
+        self.dropped_files.clone()
+    }
+
+    /// Record a click on an inline image, or clear the record.
+    pub fn set_active_image(&self, image: Option<(usize, String)>) {
+        self.active_image.set(image);
+    }
+
     /// A view-model with nothing to format yet. `App` calls [`Self::attach`]
     /// once the editors exist.
     pub fn detached() -> Self {
@@ -406,6 +461,8 @@ impl FormatViewModel {
             sticky: Rc::new(RefCell::new(None)),
             dock_overlay_open: Signal::new(false),
             surface: Signal::new(FormatSurface::None),
+            active_image: Signal::new(None),
+            dropped_files: Signal::new(Vec::new()),
             bold: Signal::new(false),
             italic: Signal::new(false),
             underline: Signal::new(false),
@@ -423,6 +480,7 @@ impl FormatViewModel {
             can_undo: Signal::new(false),
             can_redo: Signal::new(false),
             has_target: Signal::new(false),
+            has_caret_target: Signal::new(false),
             group_visible: GroupVisibility::new(FormatSurface::None),
             last_seen: Rc::new(Cell::new(NEVER_SEEN)),
         }
@@ -631,6 +689,11 @@ impl FormatViewModel {
         self.has_target.clone()
     }
 
+    /// Whether a caret is in an editor — see [`Self::has_caret_target`].
+    pub fn has_caret_target(&self) -> Signal<bool> {
+        self.has_caret_target.clone()
+    }
+
     /// The current surface. `App` is the only writer — it knows which pane and
     /// which tab the focus landed in; this view-model deliberately does not.
     pub fn set_surface(&self, surface: FormatSurface) {
@@ -684,6 +747,10 @@ impl FormatViewModel {
         };
         self.set_surface(surface);
         set_if_changed(&self.has_target, handle.is_some());
+        // Narrower than `has_target` by exactly the resolver fallback: the latch
+        // is only ever written by a genuinely focused registered editor, so its
+        // presence means the writer has put a caret in one.
+        set_if_changed(&self.has_caret_target, self.sticky.borrow().is_some());
 
         let Some(handle) = handle else {
             self.clear_mirrors();
@@ -1151,6 +1218,53 @@ mod tests {
     /// sticky on its own; a card has no per-tab slot to be sticky in, so the
     /// latch has to carry it — otherwise every Format command would land on the
     /// tab's prose instead of the card the writer was editing.
+    #[test]
+    fn a_tab_never_typed_in_offers_no_caret_to_insert_at() {
+        // `has_target` is true here and rightly so — there IS a document to act
+        // on, which is what Save as template… and the Format menu need. But
+        // nothing has a caret, so a command that inserts *at the caret* has
+        // nowhere to put anything.
+        let (_editor, handle) = loose_editor("tab prose");
+        let resolved = handle.clone();
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(resolved.clone()), FormatSurface::Scene)
+        }));
+        vm.refresh();
+        assert!(
+            vm.has_target().get(),
+            "the resolver found the tab's editor, so there is something to act on"
+        );
+        assert!(
+            !vm.has_caret_target().get(),
+            "but nobody has typed in it, so there is no caret to insert at"
+        );
+    }
+
+    #[test]
+    fn a_caret_target_survives_the_menu_taking_focus() {
+        // The regression a live-focus gate reintroduces (commit 2d4890b0): the
+        // row would grey out at the instant the writer reached for it.
+        let (_editor, handle) = loose_editor("tab prose");
+        let resolved = handle.clone();
+        let vm = FormatViewModel::new(Rc::new(move || {
+            (Some(resolved.clone()), FormatSurface::None)
+        }));
+        let (id, _) = two_ids();
+        vm.register(id, handle.clone(), EditorKind::Prose);
+
+        handle.focused_signal().set(true);
+        vm.refresh();
+        assert!(vm.has_caret_target().get(), "the writer is in the editor");
+
+        // The menu bar takes focus away.
+        handle.focused_signal().set(false);
+        vm.refresh();
+        assert!(
+            vm.has_caret_target().get(),
+            "opening the menu must not grey the row the writer is reaching for"
+        );
+    }
+
     #[test]
     fn a_card_stays_the_target_after_the_menu_takes_focus() {
         let (_tab_editor, tab_handle) = loose_editor("tab prose");

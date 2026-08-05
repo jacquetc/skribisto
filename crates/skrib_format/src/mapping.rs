@@ -7,14 +7,15 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use common::entities::{
-    Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, NoteTemplate, ProgressSnapshot,
-    QuoteStyle, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
+    Asset, Binder, BinderItem, BinderTag, ChapterMode, Content, DictWord, NoteTemplate,
+    ProgressSnapshot, QuoteStyle, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
 };
 use skribisto_model::content_allowed;
 use std::collections::BTreeMap;
 
 use super::bundle::*;
 use super::loaded::*;
+use super::media::{asset_relpath, extension_for};
 use super::slug::{
     binder_dir_name, note_template_relpath, prose_file_name, prose_kind, prose_relpath,
 };
@@ -78,6 +79,10 @@ pub fn from_entities(
     dict_words: &[DictWord],
     text_replacement_rules: &[TextReplacementRule],
     note_templates: &[NoteTemplate],
+    assets: &[Asset],
+    // Asset bytes keyed by content hash, read from the project's media
+    // directory by the caller — this crate resolves no paths of its own.
+    asset_bytes: BTreeMap<String, Vec<u8>>,
     // Deliberately **not** a slice, though every neighbour here is one: this is
     // a one-to-one child, and taking `&Option<_>` means a caller cannot pass it
     // in the wrong positional slot — the two `&[...]` parameters on either side
@@ -304,6 +309,30 @@ pub fn from_entities(
             .iter()
             .map(|t| (t.id, t.body.clone()))
             .collect(),
+        // Asset rows come from the store; their bytes come from the caller,
+        // which read them out of the project's media directory. An asset with
+        // no bytes supplied is dropped from the bundle rather than written as a
+        // dangling row: `folder_io` would fail the whole save on a missing blob,
+        // and losing one unreadable image is better than losing the save.
+        assets: assets
+            .iter()
+            .filter(|a| asset_bytes.contains_key(&a.content_hash))
+            .map(|a| AssetFile {
+                file_id: a.id,
+                created_at: fmt_dt(&a.created_at),
+                updated_at: fmt_dt(&a.updated_at),
+                content_hash: a.content_hash.clone(),
+                file_name: a.file_name.clone(),
+                mime_type: a.mime_type.clone(),
+                width: a.width as u32,
+                height: a.height as u32,
+                byte_size: a.byte_size,
+                alt: a.alt.clone(),
+                is_cover: a.is_cover,
+                path: asset_relpath(&a.content_hash, &extension_for(&a.mime_type)),
+            })
+            .collect(),
+        asset_bytes,
         trash_infos: trash_infos
             .iter()
             .map(|ti| TrashInfoFile {
@@ -459,6 +488,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
         note_templates: Vec::new(),
+        assets: Vec::new(),
         // Zero for the same reason the vectors are empty — `materialize` mints
         // the row and writes its store id back. Unlike them, zero is not a
         // valid resting state: a `Work` whose one-to-one child is still 0 has a
@@ -539,6 +569,26 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                         anyhow::anyhow!("missing body blob for note template {}", t.file_id)
                     })?,
                 starred: t.starred,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+
+    let assets = bundle
+        .assets
+        .iter()
+        .map(|a| {
+            Ok(Asset {
+                id: a.file_id,
+                created_at: parse_dt(&a.created_at)?,
+                updated_at: parse_dt(&a.updated_at)?,
+                content_hash: a.content_hash.clone(),
+                file_name: a.file_name.clone(),
+                mime_type: a.mime_type.clone(),
+                width: u64::from(a.width),
+                height: u64::from(a.height),
+                byte_size: a.byte_size,
+                alt: a.alt.clone(),
+                is_cover: a.is_cover,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -758,6 +808,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
     }
 
     Ok(LoadedWork {
+        assets,
         work,
         tags,
         dict_words,

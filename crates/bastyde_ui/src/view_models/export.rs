@@ -323,6 +323,43 @@ impl ExportViewModel {
         }
     }
 
+    /// This project's media directory, resolved from its path and `unique_id`.
+    ///
+    /// Resolved here rather than passed down because the export reader has no
+    /// reason to read `WorkInfo`, and adding one just to recompute what the
+    /// caller already knows would widen it for nothing. Empty when either half
+    /// is unavailable, which the backend reads as "no media" — every image then
+    /// degrades to its alt text rather than the export failing.
+    fn media_dir(&self) -> String {
+        let Some(path) = self.ids.work_info_id.get().and_then(|id| {
+            frontend::commands::work_info_commands::get_work_info(&self.app_ctx, &id)
+                .ok()
+                .flatten()
+                .and_then(|wi| wi.file_name)
+        }) else {
+            return String::new();
+        };
+        let uid = self
+            .ids
+            .work_id
+            .get()
+            .and_then(|id| {
+                frontend::commands::work_commands::get_work(&self.app_ctx, &id)
+                    .ok()
+                    .flatten()
+            })
+            .map(|w| w.unique_id)
+            .unwrap_or_default();
+        skrib_format::media::media_dir(
+            std::path::Path::new(&path),
+            &uid,
+            std::path::Path::new(&crate::media_paths::media_root_string()),
+            &uid,
+        )
+        .to_string_lossy()
+        .into_owned()
+    }
+
     /// The quick (non-`Custom`) scope this session may switch to, if any — the label for the
     /// first segment of the "What to export" control.
     pub fn quick_scope(&self) -> Option<ExportScopeKind> {
@@ -636,6 +673,7 @@ impl ExportViewModel {
             binders.push(BinderWithItems { binder, items });
         }
         Ok(Gathered {
+            assets: Vec::new(),
             work,
             tags: Vec::new(),
             dict_words: Vec::new(),
@@ -674,6 +712,7 @@ impl ExportViewModel {
             vec![self.anchor.get()? as i64]
         };
         Some(ExportWorkDto {
+            media_dir: self.media_dir(),
             work_id,
             output_path: self.output_path.get(),
             format: self.selected_format(),
@@ -976,6 +1015,7 @@ mod tests {
         work_management_commands::load_work(
             &app_ctx,
             &LoadWorkDto {
+                media_root: crate::media_paths::media_root_string(),
                 file_name: fixture(),
             },
         )

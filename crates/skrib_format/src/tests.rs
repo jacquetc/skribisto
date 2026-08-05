@@ -7,8 +7,9 @@ use super::bundle::{BinderWithItems, CommentWithReplies, ItemWithContents};
 use super::*;
 use chrono::{DateTime, Utc};
 use common::entities::{
-    Binder, BinderItem, BinderItemRole, BinderItemSubRole, BinderTag, Comment, CommentAnchorKind,
-    CommentOrphanReason, CommentReply, Content, ContentRole, DictWord, TrashInfo, Work,
+    Asset, Binder, BinderItem, BinderItemRole, BinderItemSubRole, BinderTag, Comment,
+    CommentAnchorKind, CommentOrphanReason, CommentReply, Content, ContentRole, DictWord,
+    TrashInfo, Work,
 };
 use skribisto_model::{allowed_content, validate_item};
 use std::collections::BTreeMap;
@@ -90,6 +91,7 @@ struct SampleInputs {
     tags: Vec<BinderTag>,
     dict_words: Vec<DictWord>,
     note_templates: Vec<common::entities::NoteTemplate>,
+    assets: Vec<Asset>,
     smart_punctuation: common::entities::SmartPunctuation,
     trash: Vec<TrashInfo>,
     binders: Vec<BinderWithItems>,
@@ -113,6 +115,7 @@ fn sample_inputs() -> SampleInputs {
         dict_words: vec![20, 21],
         text_replacement_rules: vec![],
         note_templates: vec![40, 41],
+        assets: vec![50, 51],
         smart_punctuation: 30,
         binders: vec![100],
         trash_infos: vec![],
@@ -288,7 +291,41 @@ fn sample_inputs() -> SampleInputs {
         },
     ];
 
+    // Two image rows, matching the ids the `Work` literal above claims. Their
+    // bytes are supplied separately by whichever test needs them — a metadata
+    // row with no blob is exactly the "asset the media directory lost" case the
+    // bundle writer is expected to drop rather than fail on.
+    let assets = vec![
+        Asset {
+            id: 50,
+            created_at: now,
+            updated_at: now,
+            content_hash: "hash-of-cover".into(),
+            file_name: "cover.png".into(),
+            mime_type: "image/png".into(),
+            width: 640,
+            height: 480,
+            byte_size: 12,
+            alt: "the cover".into(),
+            is_cover: false,
+        },
+        Asset {
+            id: 51,
+            created_at: now,
+            updated_at: now,
+            content_hash: "hash-of-map".into(),
+            file_name: "map.jpg".into(),
+            mime_type: "image/jpeg".into(),
+            width: 800,
+            height: 600,
+            byte_size: 9,
+            alt: String::new(),
+            is_cover: false,
+        },
+    ];
+
     SampleInputs {
+        assets,
         work,
         tags,
         dict_words,
@@ -412,7 +449,7 @@ fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
     ]
 }
 
-fn build_bundle(shape: ShapeTag) -> WorkBundle {
+pub(crate) fn build_bundle(shape: ShapeTag) -> WorkBundle {
     let s = sample_inputs();
     let comments = sample_comments(&s.binders);
     from_entities(
@@ -421,6 +458,8 @@ fn build_bundle(shape: ShapeTag) -> WorkBundle {
         &s.dict_words,
         &[],
         &s.note_templates,
+        &s.assets,
+        Default::default(),
         Some(&s.smart_punctuation),
         &s.trash,
         &[],
@@ -606,6 +645,8 @@ fn disallowed_content_is_dropped() {
         &[],
         &[],
         &[],
+        &[],
+        Default::default(),
         None,
         &[],
         &[],
@@ -749,6 +790,8 @@ fn an_uncommented_project_writes_no_comment_files_at_all() {
         &s.dict_words,
         &[],
         &s.note_templates,
+        &s.assets,
+        Default::default(),
         Some(&s.smart_punctuation),
         &s.trash,
         &[],
@@ -2221,6 +2264,8 @@ fn the_floor_ignores_content_dropped_by_content_allowed() {
         &s.dict_words,
         &[],
         &s.note_templates,
+        &s.assets,
+        Default::default(),
         Some(&s.smart_punctuation),
         &s.trash,
         &[],

@@ -80,7 +80,7 @@ use std::collections::BTreeMap;
 /// A required field added without `#[serde(default)]` is the one shape that is *not*
 /// caught mechanically. It degrades to a raw parse error — never to data loss — but it
 /// degrades, so give every additive field its `default` and the question stays easy.
-pub const FORMAT_VERSION: u32 = 7;
+pub const FORMAT_VERSION: u32 = 8;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -368,6 +368,41 @@ pub struct TextReplacementRuleFile {
     pub enabled: bool,
 }
 
+/// One image (or other binary asset) a writer put in their project.
+///
+/// Metadata only. The bytes live at `path` inside the bundle and, while the
+/// project is open, in its media directory — never in the store, and never in
+/// this struct, so a project's photographs stay off the snapshot, undo and
+/// fingerprint paths (see the `Asset` entity for the full reasoning).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AssetFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    /// blake3 of the original bytes. This is the asset's identity — the prose
+    /// references `assets/<content_hash>.<ext>` — so re-inserting the same
+    /// picture costs nothing and an unchanged asset is recognisable without
+    /// reading it back.
+    pub content_hash: String,
+    /// The name the writer's file had. Provenance, and what an export uses when
+    /// it has to write the image beside its output. Never an identity.
+    pub file_name: String,
+    pub mime_type: String,
+    pub width: u32,
+    pub height: u32,
+    pub byte_size: u64,
+    /// Default description, seeding the alt text of a fresh insertion.
+    #[serde(default)]
+    pub alt: String,
+    /// This picture is the book's cover. `#[serde(default)]` so a bundle written
+    /// before covers existed still loads — as a book with none, which is what it
+    /// was.
+    #[serde(default)]
+    pub is_cover: bool,
+    /// Path to this asset's bytes, relative to the bundle root.
+    pub path: String,
+}
+
 /// One row of `templates.ron`.
 ///
 /// The body is **not** inline: it lives in a sibling `templates/<file_id>-<slug>.djot`
@@ -615,9 +650,22 @@ pub struct WorkBundle {
     pub dict_words: Vec<DictWordFile>,
     pub text_replacement_rules: Vec<TextReplacementRuleFile>,
     pub note_templates: Vec<NoteTemplateFile>,
+    /// Image metadata rows — `assets.ron` at the bundle root.
+    #[serde(default)]
+    pub assets: Vec<AssetFile>,
     /// Template body text keyed by template `file_id` (the `templates/*.djot` blobs) —
     /// the same split `BundledItem::prose` uses for scene text.
     pub note_template_bodies: BTreeMap<u64, String>,
+    /// Asset bytes keyed by `content_hash`, the `assets/*` blobs.
+    ///
+    /// `#[serde(skip)]` because this map is never part of the bundle's
+    /// *serialised* form: the bytes are written as real files, and the only
+    /// place the whole bundle is serialised is the content fingerprint, where
+    /// including them would RON-encode every image as a bracketed decimal list
+    /// several times its own size — on a code path that runs on every save.
+    /// The hashes in `AssetFile::content_hash` already cover the bytes.
+    #[serde(skip)]
+    pub asset_bytes: BTreeMap<String, Vec<u8>>,
     pub trash_infos: Vec<TrashInfoFile>,
     pub paces: Vec<PaceFile>,
     pub progress_snapshots: Vec<ProgressSnapshotFile>,

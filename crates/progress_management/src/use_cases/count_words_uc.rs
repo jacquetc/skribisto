@@ -48,6 +48,12 @@ pub trait CountWordsUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
 // Map the generated read methods onto the shared `TreeReader`. The defaulted methods
 // (work_info / trash / dict / pace / snapshot) are omitted — counting reads none of them.
 impl<'a> TreeReader for dyn CountWordsUnitOfWorkTrait + 'a {
+    /// Word counting reads prose only — an image is not a word.
+    ///
+    /// Explicit rather than defaulted — see [`TreeReader::asset_multi`].
+    fn asset_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
+        Ok(Vec::new())
+    }
     /// Word counting reads no templates — see [`TreeReader::note_template_multi`].
     fn note_template_multi(
         &self,

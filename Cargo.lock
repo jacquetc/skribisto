@@ -832,6 +832,7 @@ dependencies = [
  "jiff",
  "libc",
  "open",
+ "png",
  "ron",
  "serde",
  "serde_json",
@@ -5542,6 +5543,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "bastyde-text",
+ "png",
  "serde",
  "serde_json",
  "skribisto-common",

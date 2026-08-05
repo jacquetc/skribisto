@@ -12,7 +12,7 @@ use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{Binder, BinderItem, BinderTag, Content, Work};
+use common::entities::{Asset, Binder, BinderItem, BinderTag, Content, Work};
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
 use skrib_format::{TreeReader, gather};
@@ -35,6 +35,7 @@ pub trait ExportWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
 pub trait ExportWorkUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
     fn publish_export_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -42,6 +43,14 @@ pub trait ExportWorkUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
 // Map the generated read methods onto the shared `TreeReader` surface. The three defaulted
 // methods (work_info / trash / dict) are omitted — export does not read those entities.
 impl<'a> TreeReader for dyn ExportWorkUnitOfWorkTrait + 'a {
+    /// Image metadata rows. Export needs these: the compiler resolves an image's
+    /// *bytes* from the media directory, but it finds them by walking these rows
+    /// for the content hash, extension and cover flag. Reading none is what
+    /// silently ships a book whose prose still names every picture and whose
+    /// package contains none.
+    fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
+        self.get_asset_multi(ids)
+    }
     /// Export / analysis reads no templates: they are project furniture, not manuscript
     /// content, and nothing downstream of here consumes them. Explicit rather than
     /// defaulted — see [`TreeReader::note_template_multi`].
@@ -150,6 +159,7 @@ fn run_export(
         ExportScopeKind::CurrentScene | ExportScopeKind::CurrentNote | ExportScopeKind::Custom
     );
     let req = skribisto_compiler::RenderRequest {
+        media_dir: std::path::Path::new(&dto.media_dir),
         gathered: &g,
         include: &include,
         preset: &preset,

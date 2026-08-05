@@ -30,9 +30,9 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday, Milestone,
-    NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
-    WorkInfo,
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday,
+    Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule,
+    TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::OperationProgress;
 use common::types::EntityId;
@@ -79,6 +79,11 @@ pub trait TreeReader {
     /// save. Making it required turns that into a compile error, and costs the three
     /// analysis readers (export / mentions / word count) one explicit empty stub each.
     fn note_template_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<NoteTemplate>>>;
+    /// Image metadata rows. **Required and undefaulted for the same reason as
+    /// `note_template_multi`**, and the stakes are the same: a save path that
+    /// forgot to override it would write every project with zero assets, and the
+    /// exploded writer's prune would then delete every image file on disk.
+    fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Asset>>>;
     /// The punctuation house style. Singular, not a `_multi`, because the
     /// relationship is one-to-one — there is exactly one row or none.
     ///
@@ -148,6 +153,7 @@ pub struct Gathered {
     pub dict_words: Vec<DictWord>,
     pub text_replacement_rules: Vec<TextReplacementRule>,
     pub note_templates: Vec<NoteTemplate>,
+    pub assets: Vec<Asset>,
     /// `None` when the reader does not read settings (export), or when the row
     /// genuinely does not resolve — never fabricated here, so the writer can
     /// record its absence faithfully.
@@ -199,6 +205,7 @@ pub fn gather<R: TreeReader + ?Sized>(
     work.text_replacement_rules =
         reader.work_rel(&work_id, &WorkRelationshipField::TextReplacementRules)?;
     work.note_templates = reader.work_rel(&work_id, &WorkRelationshipField::NoteTemplates)?;
+    work.assets = reader.work_rel(&work_id, &WorkRelationshipField::Assets)?;
     // A one-to-one relationship still comes back as a vector — take the first,
     // and treat an empty one as "no row", which is what a Work loaded from a
     // pre-feature bundle looks like before the materialiser heals it.
@@ -222,6 +229,7 @@ pub fn gather<R: TreeReader + ?Sized>(
         reader.text_replacement_rule_multi(ids)
     })?;
     let note_templates = fetch_multi(&work.note_templates, |ids| reader.note_template_multi(ids))?;
+    let assets = fetch_multi(&work.assets, |ids| reader.asset_multi(ids))?;
     // Skip the read entirely for an unwired Work rather than asking for id 0,
     // which no store row can have.
     let smart_punctuation = if work.smart_punctuation == 0 {
@@ -307,6 +315,7 @@ pub fn gather<R: TreeReader + ?Sized>(
         dict_words,
         text_replacement_rules,
         note_templates,
+        assets,
         smart_punctuation,
         trash_infos,
         paces,
@@ -375,6 +384,15 @@ fn fetch_multi<T>(
     get: impl FnOnce(&[EntityId]) -> Result<Vec<Option<T>>>,
 ) -> Result<Vec<T>> {
     let fetched = get(ids)?;
+    // NOTE: `zip` truncates to the shorter side, so a reader answering with
+    // fewer rows than it was asked for yields a silently partial tree rather
+    // than an error — which is how `export_work` shipped books with every image
+    // missing for as long as its `asset_multi` was stubbed to `Ok(vec![])`.
+    // Rejecting a length mismatch here does not work: the analysis readers
+    // (export / mentions / word count) return exactly that empty vec on purpose
+    // to opt out of `note_template_multi`, so the check would fail every export
+    // of a project that owns a template. Telling a deliberate opt-out apart from
+    // a failed read needs the trait to say which it is, not a length comparison.
     let mut out = Vec::with_capacity(fetched.len());
     for (id, opt) in ids.iter().zip(fetched) {
         out.push(opt.ok_or_else(|| anyhow!("entity {id} vanished mid-read"))?);

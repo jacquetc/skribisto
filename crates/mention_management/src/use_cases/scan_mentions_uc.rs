@@ -63,6 +63,12 @@ pub trait ScanMentionsUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
 impl<'a> TreeReader for dyn ScanMentionsUnitOfWorkTrait + 'a {
     /// Export / analysis reads no templates: they are project furniture, not manuscript
     /// content, and nothing downstream of here consumes them. Explicit rather than
+    /// The mention scanner matches names against prose; an image carries none.
+    ///
+    /// Explicit rather than defaulted — see [`TreeReader::asset_multi`].
+    fn asset_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
+        Ok(Vec::new())
+    }
     /// defaulted — see [`TreeReader::note_template_multi`].
     fn note_template_multi(
         &self,

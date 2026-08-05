@@ -18,9 +18,9 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday, Milestone,
-    NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule, TrashInfo, Work,
-    WorkInfo,
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday,
+    Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule,
+    TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
@@ -46,6 +46,7 @@ pub trait SaveWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "DictWord", action = "GetMultiRO")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "GetMultiRO")]
 #[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
 #[macros::uow_action(entity = "Pace", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Pace", action = "GetRelationshipRO")]
@@ -104,6 +105,9 @@ impl<'a> TreeReader for dyn SaveWorkUnitOfWorkTrait + 'a {
     }
     fn note_template_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<NoteTemplate>>> {
         self.get_note_template_multi(ids)
+    }
+    fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Asset>>> {
+        self.get_asset_multi(ids)
     }
     fn smart_punctuation(&self, id: &EntityId) -> Result<Option<SmartPunctuation>> {
         self.get_smart_punctuation(id)
@@ -199,6 +203,15 @@ fn run_save(
     let g = work_io::gather(uow, dto.work_id as EntityId, progress, cancel)?;
     let (target, shape, tag) = work_io::resolve_target(&dto.file_name, g.work_info.as_ref(), None)?;
     let work_id = g.work.id;
-    let output_path = work_io::serialize_and_write(&g, target, shape, tag)?;
+    // The per-project media directory, resolved from the caller's root: at this
+    // point the Work is in hand, so its `unique_id` is known and the fallback
+    // key is never needed.
+    let media_dir = skrib_format::media::media_dir(
+        std::path::Path::new(&target),
+        &g.work.unique_id,
+        std::path::Path::new(&dto.media_root),
+        &g.work.unique_id,
+    );
+    let output_path = work_io::serialize_and_write(&g, target, shape, tag, &media_dir)?;
     Ok((work_id, SaveResultDto { output_path }))
 }

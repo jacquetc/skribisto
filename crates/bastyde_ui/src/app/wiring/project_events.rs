@@ -109,6 +109,29 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
                         .flatten()
                         .and_then(|wi| wi.file_name)
                 });
+                // Point this Work's document store at its media directory, before
+                // any tab opens: an image's bytes are resolved as its document
+                // loads, so a document built before this is known would show
+                // every picture as a correctly-sized blank.
+                if let Some(p) = path.as_deref() {
+                    let uid = frontend::commands::work_commands::get_work(
+                        &app_ctx,
+                        &ids.work_id.get().unwrap_or_default(),
+                    )
+                    .ok()
+                    .flatten()
+                    .map(|w| w.unique_id)
+                    .unwrap_or_default();
+                    session_for_nudge
+                        .open_docs
+                        .set_media_dir(skrib_format::media::media_dir(
+                            std::path::Path::new(p),
+                            &uid,
+                            std::path::Path::new(&crate::media_paths::media_root_string()),
+                            &uid,
+                        ));
+                }
+
                 // Sniff the manifest once: drives both the backup-mode branch
                 // below and the workspace-layout restore.
                 let backup = path.as_deref().and_then(crate::backup::backup_context_for);
@@ -388,6 +411,30 @@ pub(in crate::app) fn install_lifecycle(
                 if let Some(&work_id) = event.ids.first() {
                     lifecycle_new.on_new(work_id);
                     registry_for_new.register(work_id, my_session.clone());
+                    // Point the new project's document store at its media
+                    // directory, exactly as the `LoadWork` seed does. A new Work
+                    // has no file on disk yet, but `new_work` mints its
+                    // `unique_id`, and that alone resolves the uid-keyed
+                    // directory its images will be written to. Without this the
+                    // media directory stays empty and every image command
+                    // reports "open a project first" at a writer who has one
+                    // open — until they save, close and reopen it.
+                    let uid = frontend::commands::work_commands::get_work(
+                        &app_ctx_for_teardown,
+                        &work_id,
+                    )
+                    .ok()
+                    .flatten()
+                    .map(|w| w.unique_id)
+                    .unwrap_or_default();
+                    my_session
+                        .open_docs
+                        .set_media_dir(skrib_format::media::media_dir(
+                            std::path::Path::new(""),
+                            &uid,
+                            std::path::Path::new(&crate::media_paths::media_root_string()),
+                            &uid,
+                        ));
                     if let Some(window_id) = window_id {
                         let stack_teardown = crate::app::build_stack_teardown(
                             app_ctx_for_teardown.clone(),

@@ -27,6 +27,7 @@ pub use event_hub_client::EventHubClient;
 pub use flat_event::{FlatEvent, FlatEventKind};
 
 // Entity modules (DTOs via frontend::{entity}::dtos::{Entity}Dto)
+pub use direct_access::asset;
 pub use direct_access::binder;
 pub use direct_access::binder_item;
 pub use direct_access::binder_tag;

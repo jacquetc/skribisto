@@ -327,14 +327,19 @@ fn comment_card(
     // The quoted snippet: what the comment is *about*. A paragraph comment gets a
     // pilcrow instead of quotation marks, so "about this phrase" and "about this
     // whole paragraph" are distinguishable without a second column.
+    // Shown, not stored: the quote keeps the sentinel so it still matches the
+    // prose it was captured from, but a `U+FFFC` in this list would draw as an
+    // unrenderable box. `🖼` reads as "there is a picture here", which is what a
+    // comment spanning one is about.
+    let quoted = crate::comments::anchor::for_display(&row.quote_exact);
     let snippet = if orphaned {
         tr!(comments_orphan_snippet())
     } else if row.kind == frontend::common::entities::CommentAnchorKind::Paragraph {
         // A pilcrow instead of quotation marks, so "about this paragraph" and
         // "about this phrase" are distinguishable without a second column.
-        lit!(format!("¶ {}", row.quote_exact))
+        lit!(format!("¶ {quoted}"))
     } else {
-        lit!(format!("“{}”", row.quote_exact))
+        lit!(format!("“{quoted}”"))
     };
 
     // The latest turn carries **its own** author, not the thread's: a summary that

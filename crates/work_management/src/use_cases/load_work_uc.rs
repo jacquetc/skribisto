@@ -26,9 +26,9 @@ use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday, Milestone,
-    NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search, SmartPunctuation, System,
-    TextReplacementRule, TrashInfo, Work, WorkInfo, WorkShape,
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday,
+    Milestone, NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search, SmartPunctuation,
+    System, TextReplacementRule, TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use skrib_format::{self as skrib, LoadedWork, SkribShape};
@@ -50,6 +50,7 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "DictWord", action = "CreateOrphan")]
 #[macros::uow_action(entity = "TextReplacementRule", action = "CreateOrphan")]
 #[macros::uow_action(entity = "NoteTemplate", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Asset", action = "CreateOrphan")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "CreateOrphan")]
 #[macros::uow_action(entity = "RecentWork", action = "CreateOrphan")]
 #[macros::uow_action(entity = "WorkInfo", action = "CreateOrphan")]
@@ -110,6 +111,21 @@ impl LoadWorkUseCase {
             SkribShape::ZipFile | SkribShape::ExplodedFolder => {
                 let bundle = skrib::read_bundle(&dto.file_name)
                     .with_context(|| format!("reading project '{}'", dto.file_name))?;
+                // Put the images where the editor and the exporters will look
+                // for them, before the entities that reference them exist.
+                //
+                // For an exploded folder this is a no-op by construction: the
+                // media directory *is* the project's own `assets/`, so the
+                // bytes are already there and nothing is copied. Only a zip
+                // needs a working copy extracted.
+                let media_dir = skrib_format::media::media_dir(
+                    std::path::Path::new(&dto.file_name),
+                    &bundle.manifest.work.unique_id,
+                    std::path::Path::new(&dto.media_root),
+                    &bundle.manifest.work.unique_id,
+                );
+                crate::work_io::write_asset_bytes(&bundle, &media_dir)
+                    .with_context(|| format!("writing media for '{}'", dto.file_name))?;
                 skrib::bundle_to_loaded(bundle, &dto.file_name)?
             }
         };
@@ -244,6 +260,7 @@ pub(crate) fn materialize(
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
         note_templates: Vec::new(),
+        assets: Vec::new(),
         // The real id, not a placeholder — which is why the row above is created
         // BEFORE the Work rather than after it, unlike every collection here.
         // A one-to-one field seeds its junction at create time, so two Works
@@ -311,6 +328,27 @@ pub(crate) fn materialize(
             id: 0,
         })?;
         note_template_ids.push(created.id);
+    }
+
+    // Image metadata rows. The bytes are not stored — they were written to the
+    // project's media directory as the bundle was read, and the prose refers to
+    // them by content hash.
+    let mut asset_ids: Vec<EntityId> = Vec::new();
+    for a in &loaded.assets {
+        let created = uow.create_orphan_asset(&Asset {
+            created_at: a.created_at,
+            updated_at: a.updated_at,
+            content_hash: a.content_hash.clone(),
+            file_name: a.file_name.clone(),
+            mime_type: a.mime_type.clone(),
+            width: a.width,
+            height: a.height,
+            byte_size: a.byte_size,
+            alt: a.alt.clone(),
+            is_cover: a.is_cover,
+            id: 0,
+        })?;
+        asset_ids.push(created.id);
     }
 
     // Binders -> items -> contents.
@@ -643,6 +681,9 @@ pub(crate) fn materialize(
             &note_template_ids,
         )?;
     }
+    if !asset_ids.is_empty() {
+        uow.set_work_relationship(&work.id, &WorkRelationshipField::Assets, &asset_ids)?;
+    }
     // Unconditional, unlike every collection above: there is always exactly one
     // punctuation row, so there is no "empty" case to skip.
     uow.set_work_relationship(
@@ -889,6 +930,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         dict_words: Vec::new(),
         text_replacement_rules: Vec::new(),
         note_templates: Vec::new(),
+        assets: Vec::new(),
         // `materialize` mints the default row — see the note at its own literal.
         smart_punctuation: 0,
         trash_infos: Vec::new(),
@@ -1056,6 +1098,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         text_replacement_rules: Vec::new(),
         // Legacy projects have no templates either.
         note_templates: Vec::new(),
+        assets: Vec::new(),
         // Likewise — and `None` rather than an all-false row, so `materialize`
         // treats it as "never configured" and leaves the project following the
         // app default instead of recording a house style nobody chose.

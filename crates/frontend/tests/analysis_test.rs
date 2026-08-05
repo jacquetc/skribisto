@@ -471,6 +471,7 @@ fn the_bundled_example_opens_and_analyses() {
     frontend::commands::work_management_commands::load_work(
         &ctx,
         &work_management::LoadWorkDto {
+            media_root: String::new(),
             file_name: path.to_string(),
         },
     )

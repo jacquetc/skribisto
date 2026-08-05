@@ -32,8 +32,14 @@ fn load_legacy_fixture_populates_store() {
         "fixture missing: {fixture}"
     );
 
-    work_management_commands::load_work(&ctx, &LoadWorkDto { file_name: fixture })
-        .expect("load_work should succeed on the legacy fixture");
+    work_management_commands::load_work(
+        &ctx,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: fixture,
+        },
+    )
+    .expect("load_work should succeed on the legacy fixture");
 
     // Exactly one Work imported.
     let works = work_commands::get_all_work(&ctx).expect("get_all_work");

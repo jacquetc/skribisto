@@ -33,6 +33,12 @@ pub fn content_fingerprint(bundle: &WorkBundle) -> String {
 
 /// Zero every timestamp and backup marker so only content participates in the hash.
 fn strip_volatile(b: &mut WorkBundle) {
+    // Asset *bytes* are absent from the serialised form by construction
+    // (`WorkBundle::asset_bytes` is `#[serde(skip)]`), so nothing has to be
+    // stripped here for them — and nothing may be added that would include
+    // them. Each asset's `content_hash` is in its metadata row, so the bytes
+    // are still covered: two projects differing only in an image's content
+    // fingerprint differently, without this function ever seeing a pixel.
     // Backup marker: a fingerprint must be identical whether or not the bundle was
     // already stamped (Layer 2 computes it before `mark_as_backup`, but be robust).
     b.manifest.kind = BundleKind::Regular;
@@ -148,6 +154,8 @@ mod tests {
 
     fn minimal_bundle(title: &str, updated: &str) -> WorkBundle {
         WorkBundle {
+            assets: Vec::new(),
+            asset_bytes: Default::default(),
             manifest: ProjectManifest {
                 format_version: FORMAT_VERSION,
                 format_min_read_version: None,

@@ -52,6 +52,20 @@ impl ExportFormat {
                 | ExportFormat::Latex
         )
     }
+
+    /// Whether an image in this format is a *path* to a file that has to exist
+    /// beside the output, rather than bytes carried inside it.
+    ///
+    /// The distinction is what decides whether an export writes a sidecar
+    /// folder, and it does not line up with [`Self::is_text`]: plain text is a
+    /// text format that has no images at all, and DOCX/EPUB/PDF are containers
+    /// that need no help.
+    pub fn references_images(self) -> bool {
+        matches!(
+            self,
+            ExportFormat::Djot | ExportFormat::Markdown | ExportFormat::Html | ExportFormat::Latex
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -192,6 +206,40 @@ pub enum DirectionMode {
     ForceRtl,
 }
 
+/// What an export does with the manuscript's images.
+///
+/// The choice only arises for the formats that *reference* a picture by path —
+/// Djot, Markdown, HTML, LaTeX. DOCX, EPUB and PDF are containers: the bytes
+/// travel inside the file, so there is nothing for the writer to decide and
+/// nothing this setting can change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum ImageHandling {
+    /// Write the image files beside the exported document, in the folder the
+    /// prose already names.
+    ///
+    /// The default, and the only one of the three that loses nothing. The
+    /// document's references are left exactly as written and the layout on disk
+    /// is built to match them, so correctness does not depend on rewriting a
+    /// path — which is what would have to be got right for every format's own
+    /// escaping rules.
+    #[default]
+    CopyBeside,
+    /// Inline the bytes into the document itself, as `data:` URIs.
+    ///
+    /// HTML only — it is the one referencing format with a syntax for carrying
+    /// bytes. Produces a single file that can be mailed or dropped anywhere,
+    /// at about a third more than the images' own size. Every other format
+    /// treats this as [`Self::CopyBeside`].
+    Embed,
+    /// Emit no images at all.
+    ///
+    /// For sending a manuscript as prose alone. Nothing dangles: the reference
+    /// is dropped along with the file, rather than left pointing at something
+    /// that was never written.
+    Omit,
+}
+
 /// A named export style. Every field is part of the JSON contract; the free text formats
 /// use the structure + localization fields, DOCX/PDF additionally honour the typography.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -257,6 +305,15 @@ pub struct Preset {
     pub heading_separator: String,
     #[serde(default)]
     pub book_title_page: bool,
+    /// Open the book with its cover picture, when the export includes the book's
+    /// opening and the Work has one.
+    ///
+    /// `default = "yes"`, for the reason its pagination neighbours give below: a
+    /// preset saved before the field existed has no such key, and nobody *chose*
+    /// a coverless book — there was no cover to choose. EPUB ignores this; it has
+    /// a real cover slot in the package and fills it either way.
+    #[serde(default = "yes")]
+    pub book_cover: bool,
     /// Print the rounded word count on the title page — the manuscript-submission
     /// convention, where an editor reads it before anything else. Off elsewhere: a trade
     /// title page carries the title and the byline and nothing more.
@@ -327,6 +384,12 @@ pub struct Preset {
     #[serde(default)]
     pub direction: DirectionMode,
 
+    /// What the referencing formats do with the manuscript's images. Plain
+    /// `#[serde(default)]`, because the enum's own default is what every export
+    /// did before the field existed.
+    #[serde(default)]
+    pub image_handling: ImageHandling,
+
     /// Which formats this style is offered for (a UI hint). Empty ⇒ all.
     #[serde(default)]
     pub formats: Vec<ExportFormat>,
@@ -362,7 +425,9 @@ impl Preset {
             part_heading: HeadingScheme::NumberAndTitle,
             heading_separator: default_heading_separator(),
             book_title_page: false,
+            book_cover: true,
             title_page_word_count: false,
+            image_handling: ImageHandling::CopyBeside,
             book_starts_page: true,
             part_starts_page: true,
             chapter_starts_page: true,
