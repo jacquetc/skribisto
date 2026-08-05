@@ -15,6 +15,7 @@ use std::rc::Rc;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
+use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{
     ActivateOn, Button, ButtonVariant, DockOpenLocation, DockSide, DockWidget, DragTransferMode,
     Expand, FocusScope, HStack, MenuItem, MenuList, MessageBox, MessageBoxButtons, Padding,
@@ -107,7 +108,15 @@ fn binder_tree(
         outline.selection(),
         move |node: &TreeNode, row: &TreeRow, selected: bool| {
             let key = key_of(node);
-            let mut item = StandardTreeItem::new(lit!(node.title.clone()))
+            // A row whose title has been cleared is named by its ordinal instead, exactly
+            // as the export names it — and then the badge is dropped, because "3. Chapter 3"
+            // is the duplication this whole feature exists to remove.
+            let (label, badge) = crate::models::label_and_badge(
+                &node.title,
+                node.fallback_label.as_deref(),
+                node.number,
+            );
+            let mut item = StandardTreeItem::new(lit!(label))
                 .depth(row.depth)
                 .has_children(row.has_children)
                 .is_expanded(row.is_expanded)
@@ -139,6 +148,14 @@ fn binder_tree(
                 icon = icon.color(title_color);
             }
             item = item.leading_slot(icon);
+            // The chapter's ordinal, between the icon and the title — which is exactly what
+            // `center_slot` is for ("leading is the row's icon identity, center is
+            // label-adjacent decoration"). A separate slot, never spliced into the title
+            // string: the text filter below matches `node.title`, and every inline rename
+            // seeds its buffer from it.
+            if badge.is_some() {
+                item = item.center_slot(crate::widgets::StructureNumber::new(badge));
+            }
             let cm = menu_outline.clone();
             // Middle-click opens the item to the side (only for item rows).
             let mid = node.item_id.map(|id| (id, node.title.clone()));
@@ -327,6 +344,29 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
             .item(MenuItem::submenu(tr!(ctx_promote()), move || {
                 Box::new(promote_menu(promote_vm.clone(), key)) as Box<dyn Widget>
             }));
+    }
+
+    // The prologue lever, on the row itself. It is in the Inspector too, but a writer with
+    // a prologue has no reason to go looking under Numbering — and renaming a chapter
+    // "Prologue" pointedly does *not* un-number it, a trap other tools document.
+    //
+    // Labelled by what activating it does, rather than shown checked: `MenuItem` has no
+    // check affordance, and "Number this chapter" / "Do not number this chapter" says the
+    // outcome without needing one.
+    if let Some(is_numbered) = outline.numbering_state(key) {
+        let vm = outline.clone();
+        menu = menu.separator().item(
+            MenuItem::new(if is_numbered {
+                tr!(ctx_unnumber())
+            } else {
+                tr!(ctx_number())
+            })
+            .rich_tooltip_content(
+                TooltipContent::new("inspector.numbered", tr!(inspector_numbered_tip()))
+                    .with_more(tr!(inspector_numbered_tip_more())),
+            )
+            .on_activate_fn(move |_| vm.set_numbered(key, !is_numbered)),
+        );
     }
 
     menu.separator()

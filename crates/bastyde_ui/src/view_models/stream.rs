@@ -751,6 +751,8 @@ mod tests {
             item_id,
             role,
             sub_role,
+            number: None,
+            fallback_label: None,
         }
     }
 

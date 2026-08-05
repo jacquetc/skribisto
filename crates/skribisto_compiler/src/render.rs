@@ -10,6 +10,7 @@
 //! `to_<format>` call then renders it, so every format reads the same parsed graph and none
 //! can diverge. Text direction is set on the document from the export's language.
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -19,6 +20,7 @@ use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole};
 use skrib_format::Gathered;
 use skribisto_model::SubRoleExt;
 use skribisto_model::language;
+use skribisto_model::numbering::{self, Numbered, NumberingRules};
 use skribisto_model::scene_break::{self, SceneBreakTier};
 use text_document::{
     DocxExportOptions, EpubExportOptions, MarkdownExportOptions, PdfExportOptions,
@@ -113,6 +115,11 @@ pub fn render_to_file(
                 primary.to_string()
             };
             let opts = EpubExportOptions {
+                // Empty, and correctly so: a Skribisto manuscript is prose. Nothing in the
+                // app inserts an image into a document — there is no image affordance in any
+                // editor and no `ContentRole` that carries one — so there are no blobs to
+                // register. If images ever land, this is where their bytes join the export.
+                images: Default::default(),
                 title: w.title.clone(),
                 author: w.author_name.clone(),
                 rtl: is_rtl_row(req.preset, &lang),
@@ -138,6 +145,11 @@ pub fn render_to_file(
             let m = &req.preset.margin;
             let in_to_mm = |i: f32| i * 25.4;
             let opts = PdfExportOptions {
+                // Empty, and correctly so: a Skribisto manuscript is prose. Nothing in the
+                // app inserts an image into a document — there is no image affordance in any
+                // editor and no `ContentRole` that carries one — so there are no blobs to
+                // register. If images ever land, this is where their bytes join the export.
+                images: Default::default(),
                 page_width_mm: page_w,
                 page_height_mm: page_h,
                 margin_top_mm: in_to_mm(m.top_in),
@@ -206,6 +218,9 @@ fn docx_options(preset: &Preset, work_title: &str, work_author: &str) -> DocxExp
     let m = &preset.margin;
     let in_to_twips = |i: f32| (i * TWIPS_PER_IN).round() as i32;
     DocxExportOptions {
+        // Empty for the same reason as the EPUB and PDF registries: a Skribisto manuscript
+        // is prose, and nothing in the app puts an image into a document.
+        images: Default::default(),
         page_width_twips: Some(page_w),
         page_height_twips: Some(page_h),
         margin_top_twips: Some(in_to_twips(m.top_in)),
@@ -291,20 +306,17 @@ fn assemble(
     // chapter-only export starts at h1 and a book+chapter export (no parts) uses h1/h2.
     let mut present_depths: Vec<u8> = rows
         .iter()
-        .filter_map(|r| level_of(&r.item.sub_role))
+        .filter_map(|r| numbering::level_of(&r.item.sub_role))
         .map(depth)
         .collect();
     present_depths.sort_unstable();
     present_depths.dedup();
 
     let mut out = String::new();
-    // Numbered from where this export actually begins in the manuscript, so a scoped
-    // export ("Export Chapter") reports the chapter's real number rather than renumbering
-    // it from one.
-    let mut counters = match rows.first() {
-        Some(first) => seed_counters(req, first.item.id),
-        None => Counters::default(),
-    };
+    // Every structural row's number, from the whole manuscript — so a scoped export
+    // ("Export Chapter") reports the chapter's real number rather than renumbering from
+    // one, and so no two export scopes can ever disagree about it.
+    let numbers = manuscript_numbers(req);
     let mut words = 0usize;
     // Block attributes a scene break has queued for the *next* prose block: the
     // suppressed first-line indent, plus the extra leading a `BlankLine` break
@@ -382,9 +394,8 @@ fn assemble(
         let heading_rtl = is_rtl_row(preset, &heading_lang);
         let mut contributed = false;
 
-        let level = level_of(&row.item.sub_role);
+        let level = numbering::level_of(&row.item.sub_role);
         if let Some(level) = level {
-            counters.bump(level);
             // Opening a structural level restarts the flow, so whatever a
             // trailing break queued for "the next paragraph" stops here. This
             // keys off the *structure*, not off whether a heading actually
@@ -439,7 +450,8 @@ fn assemble(
                 Level::Part => preset.part_heading,
                 Level::Chapter => preset.chapter_heading,
             };
-            if let Some(text) = heading_text(row, level, &counters, &heading_lang, preset, scheme) {
+            let number = numbers.get(&row.item.id).map(Numbered::number);
+            if let Some(text) = heading_text(row, level, number, &heading_lang, preset, scheme) {
                 let lvl = present_depths
                     .iter()
                     .position(|&d| d == depth(level))
@@ -1024,79 +1036,37 @@ fn is_rtl_row(preset: &Preset, lang: &str) -> bool {
 // Small helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-#[derive(Default)]
-struct Counters {
-    book: usize,
-    part: usize,
-    chapter: usize,
-}
-impl Counters {
-    fn bump(&mut self, level: Level) {
-        match level {
-            // A new book restarts the levels beneath it: book two opens with Part One and
-            // Chapter One, not with part four and chapter twenty-three.
-            Level::Book => {
-                self.book += 1;
-                self.part = 0;
-                self.chapter = 0;
-            }
-            // A part does **not** restart chapter numbering. Trade practice runs chapters
-            // continuously across the parts of one book ("Part Two" opening on Chapter
-            // Eleven), and restarting them would renumber every manuscript that uses parts.
-            Level::Part => self.part += 1,
-            Level::Chapter => self.chapter += 1,
-        }
-    }
-    fn number(&self, level: Level) -> usize {
-        match level {
-            Level::Book => self.book,
-            Level::Part => self.part,
-            Level::Chapter => self.chapter,
-        }
-    }
-}
-
-/// The counters as they stand when the export's **first included row** is reached, by
-/// replaying every structural opener before it in the manuscript's own order.
+/// The manuscript's numbering, computed once over the **whole** gathered tree.
 ///
-/// Without this the counters only ever see what is inside the export, so exporting one
-/// chapter on its own numbered it "Chapter 1" however deep in the book it actually sat —
-/// a writer sending chapter five to a reader got a document claiming to be chapter one.
-/// The number is a fact about the manuscript, not about the selection.
+/// This replaces a two-pass design that got the same question wrong two different ways: a
+/// running counter bumped inside the row loop (which only ever saw rows a given export had
+/// already been filtered down to), plus a `seed_counters` replay for scoped exports (which
+/// walked the tree unfiltered). Mark a chapter non-exportable and the two disagreed —
+/// "Export Book" renumbered every later chapter, "Export Chapter 7" did not. There is now
+/// one pass, in [`skribisto_model::numbering`], and the renderer only looks its answer up.
 ///
-/// Replays [`Counters::bump`] rather than counting by hand, so the reset rule cannot drift
-/// between the seed and the loop that continues it. A full-project export seeds nothing
-/// (its first row *is* the first row) and renders exactly as it always did.
-fn seed_counters(req: &RenderRequest, first_included: u64) -> Counters {
-    let mut counters = Counters::default();
-    for bwi in &req.gathered.binders {
-        for iwc in &bwi.items {
-            if iwc.item.id == first_included {
-                return counters;
-            }
-            // Trashed rows are not part of the book, so they do not hold a number —
-            // matching `flatten`, which never yields them either.
-            if !iwc.item.activated {
-                continue;
-            }
-            if let Some(level) = level_of(&iwc.item.sub_role) {
-                counters.bump(level);
-            }
-        }
+/// Deliberately built from `req.gathered`, never from `req.include`: the export's own
+/// selection must not change what number a chapter carries.
+/// Empty when the manuscript does not number (`Work.number_chapters`) — the gate lives
+/// *here*, at the single source of the numbers, rather than downstream at the schemes.
+///
+/// Gating the schemes alone was not enough and shipped a hole: `TitleOnly` falls back to
+/// the numeral when a title is blank (`title.or(numbered)`), and a Book's scheme is
+/// hardcoded rather than read from the preset, so it never passed through a clamp at all.
+/// An untitled book or chapter therefore still printed "Book 1" / "Chapter 3" into the
+/// exported file of a manuscript whose writer had switched numbering off. With no numbers
+/// in the map there is nothing for any scheme to fall back to, and the guarantee holds for
+/// every level and every scheme by construction.
+fn manuscript_numbers(req: &RenderRequest) -> HashMap<u64, Numbered> {
+    if !req.gathered.work.number_chapters {
+        return HashMap::new();
     }
-    counters
-}
-
-fn level_of(sr: &BinderItemSubRole) -> Option<Level> {
-    if sr.opens_book() {
-        Some(Level::Book)
-    } else if sr.opens_part() {
-        Some(Level::Part)
-    } else if sr.opens_chapter() {
-        Some(Level::Chapter)
-    } else {
-        None
-    }
+    numbering::number_map(
+        &crate::item_metas(req.gathered),
+        NumberingRules {
+            part_resets_chapter: req.gathered.work.part_resets_chapter,
+        },
+    )
 }
 
 fn depth(level: Level) -> u8 {
@@ -1172,43 +1142,68 @@ fn content_of(contents: &[Content], role: ContentRole) -> Option<&str> {
 
 /// The item's own title content (ChapterTitle / PartTitle / BookTitle), falling back to the
 /// binder-tree title.
+///
+/// A title that is *blank* — empty, or nothing but whitespace — is `None`, not `Some("  ")`.
+/// The old `.is_empty()` test measured byte length, so a title of three spaces reached the
+/// composer as a real title and produced the heading `"Chapter 3 —    "`: a dangling em
+/// dash and trailing spaces. Blank is blank.
 fn title_of<'a>(row: &'a Row) -> Option<&'a str> {
     for role in [
         ContentRole::ChapterTitle,
         ContentRole::PartTitle,
         ContentRole::BookTitle,
     ] {
-        if let Some(t) = content_of(row.contents, role) {
-            return Some(t);
+        if let Some(t) = content_of(row.contents, role).filter(|t| !t.trim().is_empty()) {
+            return Some(t.trim());
         }
     }
-    (!row.item.title.is_empty()).then_some(row.item.title.as_str())
+    let own = row.item.title.trim();
+    (!own.is_empty()).then_some(own)
 }
 
+/// Compose one structural heading.
+///
+/// `number` is `None` when the row holds no ordinal — because the writer excluded it from
+/// numbering (a prologue), or because the manuscript is unnumbered. Every scheme then
+/// falls back to the title, and a scheme that cannot produce anything at all returns
+/// `None` rather than inventing a numeral.
 fn heading_text(
     row: &Row,
     level: Level,
-    counters: &Counters,
+    number: Option<usize>,
     lang: &str,
     preset: &Preset,
     scheme: HeadingScheme,
 ) -> Option<String> {
-    let numbered = || headings::numbered(lang, level, counters.number(level), preset.digit_style);
+    let title = title_of(row);
+    let numbered = number.map(|n| headings::numbered(lang, level, n, preset.digit_style));
     match scheme {
         HeadingScheme::None => None,
-        HeadingScheme::Numbered => Some(numbered()),
-        HeadingScheme::TitleOnly => title_of(row)
-            .map(str::to_string)
-            .or_else(|| Some(numbered())),
-        // A title that already *is* the number is not a title to append. Writers who name
-        // their chapters "Chapter 5" (or import a project that did) would otherwise get
-        // "Chapter 5 — Chapter 5" — the number rendered twice, once by the scheme and once
-        // by the data. Compared against the localized number, so it holds in every locale
-        // the heading is generated in.
-        HeadingScheme::NumberAndTitle => Some(match title_of(row) {
-            Some(t) if t.trim() != numbered() => format!("{} — {t}", numbered()),
-            _ => numbered(),
-        }),
+        // An unnumbered row under a numbers-only scheme still needs naming — a prologue
+        // typeset as a blank chapter opener would be a hole in the book.
+        HeadingScheme::Numbered => numbered.or_else(|| title.map(str::to_string)),
+        // `TitleOnly` degrading to a bare number when the title is empty is deliberate and
+        // long-standing — an untitled chapter is better opened by "Chapter 3" than by
+        // nothing at all — but it *is* a degrade, and worth naming as one here rather than
+        // leaving a reader of this match to infer it from an `or_else`.
+        HeadingScheme::TitleOnly => title.map(str::to_string).or(numbered),
+        HeadingScheme::NumberAndTitle => match (numbered, title) {
+            // A title that already *is* the number is not a title to append: writers name
+            // their chapters "Chapter 5" (and every project this app creates starts out
+            // that way) purely because nothing else ever showed them the number. See
+            // `headings::is_redundant_number_title` for exactly what counts as saying the
+            // same thing, and for why a *different* number is left visibly doubled.
+            (Some(n), Some(t))
+                if !headings::is_redundant_number_title(t, lang, level, number.unwrap_or(0)) =>
+            {
+                // Folded to spaces: a heading is one line (see `Preset::heading_separator`).
+                let sep = preset.heading_separator.replace(['\n', '\r'], " ");
+                Some(format!("{n}{sep}{t}"))
+            }
+            (Some(n), _) => Some(n),
+            (None, Some(t)) => Some(t.to_string()),
+            (None, None) => None,
+        },
     }
 }
 
@@ -1269,6 +1264,11 @@ mod tests {
                 title: "My Novel".into(),
                 author_name: "A. Writer".into(),
                 dict_language: language::parse_legacy_list(work_lang),
+                // Explicit, because `Work` derives `Default` and `bool::default()` is
+                // `false` — a fixture leaning on `..Default::default()` here would test an
+                // *unnumbered* manuscript while claiming to test an ordinary one. Same
+                // trap `new_work_uc` guards against for real projects.
+                number_chapters: true,
                 ..Default::default()
             },
             tags: vec![],
@@ -2985,6 +2985,288 @@ mod tests {
                 "chapter {n} missing: {out}"
             );
         }
+    }
+
+    /// Blank every chapter title in `five_chapter_book`.
+    ///
+    /// That fixture titles its chapters the literal "Chapter 1".."Chapter 5" — deliberately,
+    /// because that is what this app's own new-project template writes and what the
+    /// redundancy guard exists to collapse. It is the wrong fixture for asserting *about
+    /// numerals*, though: "Chapter 4 — Chapter 5" contains the substring "Chapter 5" as a
+    /// title, so a test checking "the numeral 5 is gone" would read a title as a number.
+    fn untitle_chapters(g: &mut Gathered) {
+        for item in g.binders[0].items.iter_mut() {
+            for c in item.contents.iter_mut() {
+                if c.role == ContentRole::ChapterTitle {
+                    c.data.clear();
+                }
+            }
+        }
+    }
+
+    /// **The seed-vs-selection bug.** The old design counted twice: incrementally over the
+    /// rows an export had already been filtered to, and again — unfiltered — to seed a
+    /// scoped export. Mark chapter three non-exportable and the two answered differently
+    /// for the *same* chapter: a full book export called chapter five "Chapter 4", while
+    /// exporting that chapter alone called it "Chapter 5".
+    ///
+    /// Now there is one pass over the whole manuscript, so both agree. Which answer they
+    /// agree *on* is the second half of the fix: a chapter the writer took out of the book
+    /// holds no number and leaves no gap, so five chapters minus one read 1..4.
+    #[test]
+    fn a_non_exportable_chapter_cannot_make_two_exports_disagree() {
+        let mut g = five_chapter_book();
+        untitle_chapters(&mut g);
+        g.binders[0].items[3].item.is_exportable = false; // the third chapter (id 103)
+        let p = preset("neutral");
+
+        let heading_of = |out: &str| {
+            out.lines()
+                .find(|l| l.starts_with('#'))
+                .unwrap_or_default()
+                .to_string()
+        };
+
+        // Scoped: chapter five on its own.
+        let scoped = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+        // Full: every exportable chapter. 103 is absent, exactly as `push_swept` builds it.
+        let full =
+            render_to_string(&req(&g, &[100, 101, 102, 104, 105], &p, ExportFormat::Djot)).unwrap();
+
+        assert_eq!(
+            heading_of(&scoped),
+            "# Chapter 4",
+            "the scoped export must not count a chapter that is not in the book: {scoped}"
+        );
+        assert!(
+            full.contains("Chapter 4") && !full.contains("Chapter 5"),
+            "the full export numbers the survivors 1..4 with no gap: {full}"
+        );
+    }
+
+    /// A prologue must not take "Chapter 1" from the real first chapter — and must not
+    /// print a number of its own either. It keeps its title, its prose and its heading.
+    #[test]
+    fn an_unnumbered_chapter_neither_prints_nor_consumes_a_number() {
+        let mut g = five_chapter_book();
+        untitle_chapters(&mut g);
+        // The first chapter becomes the prologue, titled as one.
+        g.binders[0].items[1].item.exclude_from_numbering = true;
+        g.binders[0].items[1].contents[0].data = "Prologue".to_string();
+        let p = preset("neutral");
+        let out = render_to_string(&req(
+            &g,
+            &[100, 101, 102, 103, 104, 105],
+            &p,
+            ExportFormat::Djot,
+        ))
+        .unwrap();
+
+        assert!(
+            out.contains("# Prologue"),
+            "the prologue keeps its own heading: {out}"
+        );
+        assert!(
+            !out.contains("Chapter 1 — Prologue"),
+            "and carries no numeral of its own: {out}"
+        );
+        // The chapter after it is chapter one, and the last is chapter four.
+        assert!(
+            out.contains("Chapter 1"),
+            "the chapter after a prologue is chapter one: {out}"
+        );
+        assert!(
+            out.contains("Chapter 4") && !out.contains("Chapter 5"),
+            "…and the rest shift down with it: {out}"
+        );
+    }
+
+    /// `Work.number_chapters = false` has to reach the exported file, not merely the UI.
+    /// The style still asks for `NumberAndTitle`; the manuscript overrides it.
+    #[test]
+    fn a_work_with_numbering_off_exports_titles_without_numerals() {
+        let mut g = five_chapter_book();
+        g.work.number_chapters = false;
+        // Give the chapters real titles, so there is something left once numbers go.
+        for n in 1..=5usize {
+            g.binders[0].items[n].contents[0].data = format!("Title {n}");
+        }
+        let p = preset("neutral");
+        assert_eq!(p.chapter_heading, HeadingScheme::NumberAndTitle);
+        let out = render_to_string(&req(
+            &g,
+            &[100, 101, 102, 103, 104, 105],
+            &p,
+            ExportFormat::Djot,
+        ))
+        .unwrap();
+        assert!(out.contains("# Title 1"), "titles survive: {out}");
+        assert!(
+            !out.contains("Chapter 1") && !out.contains(" — "),
+            "no numeral and no separator anywhere: {out}"
+        );
+    }
+
+    /// **The hole the first attempt at "numbering off" left open.**
+    ///
+    /// Gating only the *schemes* was not enough. `TitleOnly` falls back to the numeral when
+    /// a title is blank, and a Book's scheme is hardcoded rather than read from the preset,
+    /// so it never passed through the clamp at all — an untitled book or chapter still
+    /// printed "Book 1" / "Chapter 3" into a manuscript whose writer had switched numbering
+    /// off. The gate now lives at the number map, so no scheme has anything to fall back to.
+    #[test]
+    fn numbering_off_prints_no_numeral_even_for_untitled_rows() {
+        let mut g = five_chapter_book();
+        untitle_chapters(&mut g);
+        // …and an untitled book, which is the case that reached the exporter unclamped.
+        for c in g.binders[0].items[0].contents.iter_mut() {
+            c.data.clear();
+        }
+        g.work.number_chapters = false;
+        let ids = [100, 101, 102, 103, 104, 105];
+
+        for scheme in [
+            HeadingScheme::Numbered,
+            HeadingScheme::TitleOnly,
+            HeadingScheme::NumberAndTitle,
+        ] {
+            let mut p = preset("neutral");
+            p.chapter_heading = scheme;
+            p.part_heading = scheme;
+            // Force the Book opener down the heading path rather than the title page.
+            p.book_title_page = false;
+            let out = render_to_string(&req(&g, &ids, &p, ExportFormat::Djot)).unwrap();
+            for word in ["Chapter", "Part", "Book"] {
+                assert!(
+                    !out.contains(word),
+                    "{scheme:?} leaked a generated {word} into an unnumbered manuscript: {out}"
+                );
+            }
+        }
+    }
+
+    /// The converse, so the gate cannot be "fixed" by simply never numbering: with the
+    /// switch on, an untitled chapter is still opened by its number.
+    #[test]
+    fn numbering_on_still_names_an_untitled_chapter_by_its_number() {
+        let mut g = five_chapter_book();
+        untitle_chapters(&mut g);
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+        let heading = out.lines().find(|l| l.starts_with('#')).expect("a heading");
+        assert_eq!(heading, "# Chapter 5", "got {heading:?}");
+    }
+
+    /// `part_resets_chapter` is a `Work` setting, and it works.
+    #[test]
+    fn a_part_restarts_chapters_when_the_work_asks_it_to() {
+        let mut g = gathered(
+            vec![
+                iwc(100, SR::BookBegin, "en", vec![]),
+                iwc(101, SR::Part, "en", vec![]),
+                iwc(
+                    102,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(1, ContentRole::SceneText, "A.")],
+                ),
+                iwc(
+                    103,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(2, ContentRole::SceneText, "B.")],
+                ),
+                iwc(104, SR::Part, "en", vec![]),
+                iwc(
+                    105,
+                    SR::ChapterScene,
+                    "en",
+                    vec![c(3, ContentRole::SceneText, "C.")],
+                ),
+            ],
+            "en",
+        );
+        let p = preset("neutral");
+        let ids = [100, 101, 102, 103, 104, 105];
+
+        // Default: chapters run on across the part boundary.
+        let out = render_to_string(&req(&g, &ids, &p, ExportFormat::Djot)).unwrap();
+        assert!(out.contains("Chapter 3"), "continuous by default: {out}");
+
+        // Opted in: the second part opens on chapter one again.
+        g.work.part_resets_chapter = true;
+        let out = render_to_string(&req(&g, &ids, &p, ExportFormat::Djot)).unwrap();
+        assert!(!out.contains("Chapter 3"), "chapters restart: {out}");
+        assert!(out.contains("Part 2"), "…but parts do not: {out}");
+    }
+
+    /// A title of nothing but spaces is no title, not a title made of spaces. It used to
+    /// reach the composer and render "Chapter 5 —    ", dangling dash and all.
+    #[test]
+    fn a_blank_title_does_not_leave_a_dangling_separator() {
+        let mut g = five_chapter_book();
+        g.binders[0].items[5].contents[0].data = "   ".to_string();
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+        let heading = out.lines().find(|l| l.starts_with('#')).expect("a heading");
+        assert_eq!(heading, "# Chapter 5", "got {heading:?}");
+    }
+
+    /// The normalized guard, end to end: the shapes the old byte-comparison let through.
+    #[test]
+    fn a_title_restating_its_number_is_collapsed_however_it_is_spelled() {
+        for title in ["chapter 5", "Chapter 5.", "Chapter\u{00A0}5", "5"] {
+            let mut g = five_chapter_book();
+            g.binders[0].items[5].contents[0].data = title.to_string();
+            let p = preset("neutral");
+            let out = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+            let heading = out.lines().find(|l| l.starts_with('#')).expect("a heading");
+            assert_eq!(heading, "# Chapter 5", "title {title:?} gave {heading:?}");
+        }
+    }
+
+    /// …and a title naming a *different* number is left visibly doubled on purpose. It is
+    /// not a duplicate, it is the writer's own count disagreeing with where the row now
+    /// sits, and hiding half of it would hide the disagreement.
+    #[test]
+    fn a_title_naming_a_different_number_is_left_visible() {
+        let mut g = five_chapter_book();
+        g.binders[0].items[5].contents[0].data = "Chapter 3".to_string();
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+        assert!(out.contains("Chapter 5 — Chapter 3"), "{out}");
+    }
+
+    /// LaTeX must not print its own counter in front of a heading this compiler already
+    /// numbered. `article`'s default `secnumdepth` of 3 numbers `\section`, so a scoped
+    /// chapter export rendered "1  Chapter 5" — the export's local counter and the
+    /// manuscript's real number, disagreeing, side by side. The Typst backend has always
+    /// suppressed its own numbering for exactly this reason; LaTeX now does too.
+    #[test]
+    fn latex_does_not_number_a_heading_this_compiler_already_numbered() {
+        let mut g = five_chapter_book();
+        untitle_chapters(&mut g);
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[105], &p, ExportFormat::Latex)).unwrap();
+        assert!(
+            out.contains("\\setcounter{secnumdepth}{-1}"),
+            "the preamble must suppress LaTeX's own numbering: {out}"
+        );
+        assert!(
+            out.contains("Chapter 5"),
+            "…while the manuscript's own number survives: {out}"
+        );
+    }
+
+    /// The separator is the style's to choose.
+    #[test]
+    fn the_heading_separator_comes_from_the_preset() {
+        let mut g = five_chapter_book();
+        g.binders[0].items[5].contents[0].data = "The Storm".to_string();
+        let mut p = preset("neutral");
+        p.heading_separator = ": ".to_string();
+        let out = render_to_string(&req(&g, &[105], &p, ExportFormat::Djot)).unwrap();
+        assert!(out.contains("Chapter 5: The Storm"), "{out}");
     }
 
     /// A second book restarts its chapter numbering; a part inside one book does not.

@@ -25,6 +25,16 @@ pub enum AppIntent {
     #[name = "outline.toggle"]
     ToggleOutline,
 
+    /// Clear the chapter and part titles that say nothing but their own number.
+    ///
+    /// Every project this app creates starts with its chapters titled "Chapter 1".."Chapter
+    /// N", because until the ordinal became visible in the binder that was the only place a
+    /// writer could see it. Now that the badge shows it, those titles read "3. Chapter 3".
+    /// Fired from the Document menu; consumed by the global `numbering.tidy_titles` action
+    /// in `App::build`, which previews the change and asks before touching anything.
+    #[name = "numbering.tidy_titles"]
+    TidyNumberTitles,
+
     /// Toggle THIS window between fullscreen and whatever placement it had
     /// before (Maximized/Floating) — Increment 1 of distraction-free (plain
     /// fullscreen; not distraction-free mode itself). Fired by F11 and the

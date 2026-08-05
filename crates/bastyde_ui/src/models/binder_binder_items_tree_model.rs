@@ -81,6 +81,27 @@ pub struct TreeNode {
     /// The row's **durable** uid — the same value its [`BinderTreeKey`] carries. Held on
     /// the node too so a delegate handed only a node can rebuild the key without a lookup.
     pub uid: Uuid,
+    /// This row's structural ordinal — "the third chapter" — or `None` for the rows that
+    /// hold none: scenes, notes, binders, a prologue the writer excluded, and every row of
+    /// a manuscript with numbering switched off.
+    ///
+    /// A **separate field, never spliced into `title`**. The text filter below matches
+    /// `title`, `SingleBinderItem::write_name` writes it to two homes, the mention index
+    /// matches it against prose, and every inline rename seeds its buffer from it — a
+    /// numeral folded into that string would reach all four.
+    pub number: Option<usize>,
+    /// What to call this row when it has no title of its own — "Chapter 3", localized.
+    ///
+    /// A chapter whose title has been cleared is named by its ordinal, exactly as the
+    /// exporter names it: `NumberAndTitle` with no title renders the number alone. Without
+    /// this the row showed a bare "3." and nothing else, which reads as a broken row rather
+    /// than an untitled chapter.
+    ///
+    /// Kept apart from `title`, which stays the writer's own string and nothing else — it
+    /// is what the text filter matches, what the mention index reads, and what every rename
+    /// seeds from. A generated name folded into it would be indistinguishable from one the
+    /// writer typed, which is the whole failure this feature exists to undo.
+    pub fallback_label: Option<String>,
 }
 
 impl TreeNode {
@@ -93,6 +114,10 @@ impl TreeNode {
             item_id: None,
             binder_id: Some(binder_id),
             uid,
+            // A binder is not part of the book's structure — it is where the writer keeps
+            // things. Manuscript, Notes and Research hold no ordinal between them.
+            number: None,
+            fallback_label: None,
         }
     }
 }
@@ -302,7 +327,7 @@ impl BinderBinderItemsTreeModel {
         if self.subscribed.replace(true) {
             return;
         }
-        use DirectAccessEntity::{Binder, BinderItem};
+        use DirectAccessEntity::{Binder, BinderItem, Work};
         use EntityEvent::{Created, Removed, Updated};
         let origins = [
             Origin::DirectAccess(BinderItem(Created)),
@@ -311,6 +336,11 @@ impl BinderBinderItemsTreeModel {
             Origin::DirectAccess(Binder(Created)),
             Origin::DirectAccess(Binder(Updated)),
             Origin::DirectAccess(Binder(Removed)),
+            // A `Work` update carries the numbering settings — flipping "Number
+            // chapters and parts" or "Restart chapter numbers at each part" in
+            // Settings changes every badge in this view, and nothing else here
+            // would notice.
+            Origin::DirectAccess(Work(Updated)),
             Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
             Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
             Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
@@ -572,7 +602,51 @@ mod rows {
         let binder_ids =
             work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
                 .unwrap_or_default();
-        for binder_id in binder_ids {
+
+        // Every item of every binder, in stored order, fetched **once** and used twice:
+        // to number the manuscript, and then to emit the rows.
+        //
+        // Numbering has to see the whole Work, not this call's view of it. The loop below
+        // drops trashed rows and — when the binder switcher is scoped — every other
+        // binder, and the text filter drops more still further down. Counting inside that
+        // loop would make a chapter's number depend on which binder is showing and what is
+        // typed in the search box. It is a fact about the manuscript; the exporter learned
+        // that the hard way (see `skribisto_model::numbering`), and the same rule holds
+        // here or the badge and the exported file would disagree.
+        let fetched: Vec<(u64, Vec<_>)> = binder_ids
+            .iter()
+            .map(|&binder_id| {
+                let item_ids = binder_commands::get_binder_relationship(
+                    ctx,
+                    &binder_id,
+                    &BinderRelationshipField::BinderItems,
+                )
+                .unwrap_or_default();
+                let by_id: std::collections::HashMap<u64, _> =
+                    binder_item_commands::get_binder_item_multi(ctx, &item_ids)
+                        .unwrap_or_default()
+                        .into_iter()
+                        .flatten()
+                        .map(|it| (it.id, it))
+                        .collect();
+                let ordered = item_ids
+                    .into_iter()
+                    .filter_map(|id| by_id.get(&id).cloned())
+                    .collect::<Vec<_>>();
+                (binder_id, ordered)
+            })
+            .collect();
+
+        let metas: Vec<skribisto_model::compile::ItemMeta> = fetched
+            .iter()
+            .flat_map(|(_, items)| items.iter())
+            .map(crate::models::item_meta_of)
+            .collect();
+        let numbers = crate::models::numbers_for_work(ctx, work_id, &metas);
+        // For the untitled-row fallback below: a row's own language tag wins, else this.
+        let work_langs = crate::models::work_language_tags(ctx, work_id);
+
+        for (binder_id, binder_items) in fetched {
             // Display scope: `Some(id)` shows only that binder (the switcher's
             // current binder); `None` shows every binder.
             if scope.is_some_and(|only| only != binder_id) {
@@ -590,18 +664,9 @@ mod rows {
                 0,
             ));
 
-            let item_ids = binder_commands::get_binder_relationship(
-                ctx,
-                &binder_id,
-                &BinderRelationshipField::BinderItems,
-            )
-            .unwrap_or_default();
-            let items =
-                binder_item_commands::get_binder_item_multi(ctx, &item_ids).unwrap_or_default();
-
             // The slice derives each item's parent from its indent depth (nearest
             // preceding row of strictly smaller depth); binders are depth 0.
-            for it in items.into_iter().flatten() {
+            for it in binder_items {
                 if !it.activated {
                     continue; // trashed items (and trashed subtrees) are hidden
                 }
@@ -610,6 +675,13 @@ mod rows {
                     BinderItemRole::Item => "item",
                 }
                 .to_string();
+                // Looked up, not counted here — see the fetch above.
+                let numbered = numbers.get(&it.id);
+                let number = numbered.map(skribisto_model::numbering::Numbered::number);
+                // Named by its ordinal when it has no title of its own, in the row's own
+                // language — the same string, from the same function, the export would
+                // print for it. Only worth building for the rows that will actually use it.
+                let fallback_label = crate::models::fallback_label_for(&it, numbered, &work_langs);
                 rows.push(TreeRow::new(
                     BinderTreeKey::Item(it.uid),
                     TreeNode {
@@ -620,6 +692,8 @@ mod rows {
                         item_id: Some(it.id),
                         binder_id: Some(binder_id),
                         uid: it.uid,
+                        number,
+                        fallback_label,
                     },
                     (it.indent.max(0) as usize) + 1,
                 ));
@@ -649,6 +723,18 @@ mod rows {
         sub_role: BinderItemSubRole,
         depth: usize,
     ) -> TreeRow<BinderTreeKey, TreeNode> {
+        // The fixture book's own ordinals, computed from the same rows the real source
+        // would number: Book One is book 1, Part One is part 1, and the three chapters
+        // (104, 302, 105) are chapters 1..3. Kept in step with
+        // the mock corkboard and Overview rows, which number the identical ids.
+        let number = match id {
+            101 => Some(1), // Book One
+            301 => Some(1), // Part One
+            104 => Some(1), // Chapter Two (the first chapter of the book)
+            302 => Some(2), // Into the Dark
+            105 => Some(3), // Confrontation
+            _ => None,      // scenes, notes, the book-begin marker, loose text
+        };
         TreeRow::new(
             BinderTreeKey::Item(common::uid::fixture_uid(id)),
             TreeNode {
@@ -659,6 +745,9 @@ mod rows {
                 item_id: Some(id),
                 binder_id: Some(binder),
                 uid: common::uid::fixture_uid(id),
+                number,
+                // Every fixture row is titled, so none needs the untitled fallback.
+                fallback_label: None,
             },
             depth,
         )
@@ -760,6 +849,57 @@ mod tests {
         let m = model();
         // 2 binders + 13 items, all auto-expanded.
         assert_eq!(m.visible_count(), 15);
+    }
+
+    /// The ordinal rides on the node as its own field, and only structural rows carry one.
+    #[test]
+    fn only_structural_rows_carry_an_ordinal() {
+        let m = model();
+        let number_of = |uid: u64| {
+            m.slice
+                .with_key(&BinderTreeKey::Item(common::uid::fixture_uid(uid)), |n| {
+                    n.number
+                })
+        };
+        // The three chapters of the fixture book, in stream order.
+        assert_eq!(number_of(104), Some(Some(1)));
+        assert_eq!(number_of(302), Some(Some(2)));
+        assert_eq!(number_of(105), Some(Some(3)));
+        // Its Book and its Part each number at their own level.
+        assert_eq!(number_of(101), Some(Some(1)));
+        assert_eq!(number_of(301), Some(Some(1)));
+        // Scenes, notes and the loose text row hold none — they open no structural level.
+        assert_eq!(number_of(103), Some(None));
+        assert_eq!(number_of(201), Some(None));
+        assert_eq!(number_of(106), Some(None));
+        assert_eq!(number_of(107), Some(None));
+    }
+
+    /// **The number is a fact about the manuscript, not about the view.**
+    ///
+    /// Scoping to a binder and typing in the search box both narrow the rows this model
+    /// emits. Neither may renumber what survives: a writer filtering their outline to find
+    /// chapter twelve must still see "12" on it. The row source counts before it filters,
+    /// which is the same rule the exporter had to learn (see `skribisto_model::numbering`).
+    #[test]
+    fn filtering_the_tree_does_not_renumber_it() {
+        let (m, f) = model_with_filters();
+        let third_chapter = BinderTreeKey::Item(common::uid::fixture_uid(105));
+        let number =
+            |m: &BinderBinderItemsTreeModel| m.slice.with_key(&third_chapter, |n| n.number);
+
+        assert_eq!(number(&m), Some(Some(3)));
+        // Scoped to the Manuscript binder: still the third chapter.
+        f.binder.set(Some(1));
+        assert_eq!(number(&m), Some(Some(3)));
+        // And under a text filter that hides the two chapters before it.
+        f.binder.set(None);
+        f.query.set("Confrontation".to_string());
+        assert_eq!(
+            number(&m),
+            Some(Some(3)),
+            "a filtered outline must not renumber the rows it keeps"
+        );
     }
 
     #[test]

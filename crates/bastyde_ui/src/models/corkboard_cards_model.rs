@@ -49,6 +49,19 @@ pub struct CorkboardCard {
     /// already refetches on `BinderItem(Updated)` (unlike the stream's), so the ids stay
     /// live for free and a card needs no `SingleBinderItem` of its own.
     pub tags: Vec<u64>,
+    /// The chapter/part ordinal this card carries in the book, or `None` for the cards
+    /// that hold none (scenes, notes, an excluded prologue).
+    ///
+    /// **Distinct from the board position `CardNumber` already shows**, and deliberately
+    /// not merged with it: that one answers "which card is this on the board" — 1-based
+    /// within whatever the board currently displays, every sub_role counted — and this one
+    /// answers "which chapter is this in the book". Card #7 is routinely Chapter 3. They
+    /// have separate toggles for the same reason.
+    pub number: Option<usize>,
+    /// What to call this row when it has no title of its own — "Chapter 3", localized.
+    /// See `crate::models::label_and_badge` for the rule; `title` stays the writer's own
+    /// string, because that is what renames seed from and what search matches.
+    pub fallback_label: Option<String>,
 }
 
 /// Whether a card matches the corkboard's text filter — a case-insensitive
@@ -228,6 +241,10 @@ mod imp {
                 Origin::DirectAccess(BinderItem(Created)),
                 Origin::DirectAccess(BinderItem(Updated)),
                 Origin::DirectAccess(BinderItem(Removed)),
+                // A `Work` update carries the numbering settings — flipping them in
+                // Settings changes every ordinal badge here, and nothing else here
+                // would notice.
+                Origin::DirectAccess(DirectAccessEntity::Work(Updated)),
                 Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
                 Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
                 Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
@@ -415,7 +432,11 @@ mod imp {
             return Vec::new();
         };
         let flat = flat_items(ctx, work_id);
-        cards_for(&flat, container_id, nested)
+        // Numbered from the whole manuscript before the subtree is sliced out: a chapter's
+        // ordinal is a fact about the book, not about which corkboard is open.
+        let numbers = crate::models::numbers_for_items(ctx, work_id, &flat);
+        let work_langs = crate::models::work_language_tags(ctx, work_id);
+        cards_for(&flat, container_id, nested, &numbers, &work_langs)
     }
 
     /// Every activated binder item of `work_id`, binder-major, in each binder's
@@ -453,7 +474,13 @@ mod imp {
     }
 
     /// Cards for `container_id`'s scope, out of the flat item stream.
-    fn cards_for(flat: &[BinderItemDto], container_id: u64, nested: bool) -> Vec<CorkboardCard> {
+    fn cards_for(
+        flat: &[BinderItemDto],
+        container_id: u64,
+        nested: bool,
+        numbers: &HashMap<u64, skribisto_model::numbering::Numbered>,
+        work_langs: &[String],
+    ) -> Vec<CorkboardCard> {
         let Some(pos) = flat.iter().position(|it| it.id == container_id) else {
             return Vec::new();
         };
@@ -479,7 +506,7 @@ mod imp {
                 } else {
                     0
                 };
-                out.push(card(it, is_container, child_count));
+                out.push(card(it, is_container, child_count, numbers, work_langs));
             }
         } else {
             // Flat: every descendant in the whole subtree, in reading order — leaves
@@ -493,7 +520,7 @@ mod imp {
                 } else {
                     0
                 };
-                out.push(card(it, is_container, child_count));
+                out.push(card(it, is_container, child_count, numbers, work_langs));
             }
         }
         out
@@ -514,7 +541,13 @@ mod imp {
         n
     }
 
-    fn card(it: &BinderItemDto, is_container: bool, child_count: usize) -> CorkboardCard {
+    fn card(
+        it: &BinderItemDto,
+        is_container: bool,
+        child_count: usize,
+        numbers: &HashMap<u64, skribisto_model::numbering::Numbered>,
+        work_langs: &[String],
+    ) -> CorkboardCard {
         CorkboardCard {
             item_id: it.id,
             role: it.role.clone(),
@@ -524,6 +557,10 @@ mod imp {
             is_container,
             child_count,
             tags: it.tags.clone(),
+            number: numbers
+                .get(&it.id)
+                .map(skribisto_model::numbering::Numbered::number),
+            fallback_label: crate::models::fallback_label_for(it, numbers.get(&it.id), work_langs),
         }
     }
 
@@ -569,12 +606,12 @@ mod imp {
         fn nested_shows_direct_children_with_child_counts() {
             let flat = fixture();
             // The Book's direct children: Part(1) and Part(6).
-            let cards = cards_for(&flat, 100, true);
+            let cards = cards_for(&flat, 100, true, &HashMap::new(), &[]);
             let ids: Vec<u64> = cards.iter().map(|c| c.item_id).collect();
             assert_eq!(ids, vec![1, 6]);
 
             // Part(1)'s direct children: the chapter-folder(2) and the flat chapter(5).
-            let cards = cards_for(&flat, 1, true);
+            let cards = cards_for(&flat, 1, true, &HashMap::new(), &[]);
             let ids: Vec<u64> = cards.iter().map(|c| c.item_id).collect();
             assert_eq!(ids, vec![2, 5]);
             let folder = &cards[0];
@@ -592,7 +629,7 @@ mod imp {
             // Part(1) flattened: every descendant in reading order — the chapter-folder(2)
             // (a container, kept because it has its own synopsis), its scenes 3 and 4,
             // and the flat chapter 5.
-            let cards = cards_for(&flat, 1, false);
+            let cards = cards_for(&flat, 1, false, &HashMap::new(), &[]);
             let ids: Vec<u64> = cards.iter().map(|c| c.item_id).collect();
             assert_eq!(ids, vec![2, 3, 4, 5]);
             let folder = &cards[0];
@@ -609,14 +646,14 @@ mod imp {
 
         #[test]
         fn unknown_container_yields_no_cards() {
-            assert!(cards_for(&fixture(), 999, true).is_empty());
+            assert!(cards_for(&fixture(), 999, true, &HashMap::new(), &[]).is_empty());
         }
 
         #[test]
         fn empty_container_yields_no_cards() {
             // Part(6) has no children (it's last, indent 1, nothing deeper follows).
-            assert!(cards_for(&fixture(), 6, true).is_empty());
-            assert!(cards_for(&fixture(), 6, false).is_empty());
+            assert!(cards_for(&fixture(), 6, true, &HashMap::new(), &[]).is_empty());
+            assert!(cards_for(&fixture(), 6, false, &HashMap::new(), &[]).is_empty());
         }
     }
 }
@@ -655,6 +692,17 @@ mod imp {
                     is_container,
                     child_count,
                     tags: tags.to_vec(),
+                    // The fixture book's own chapter ordinals, matching the mock binder
+                    // tree and the mock Overview rows.
+                    // Every fixture card is titled, so none needs the fallback.
+                    fallback_label: None,
+                    number: match item_id {
+                        301u64 => Some(1), // Part One
+                        104 => Some(1),    // the first chapter
+                        302 => Some(2),
+                        105 => Some(3),
+                        _ => None,
+                    },
                 }
             };
         match (container_id, nested) {

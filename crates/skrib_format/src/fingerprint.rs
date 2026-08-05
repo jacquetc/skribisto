@@ -166,6 +166,8 @@ mod tests {
                     text_replacement_rule_ids: vec![],
                     custom_replacement_rules_enabled: false,
                     smart_punctuation: None,
+                    number_chapters: true,
+                    part_resets_chapter: false,
                 },
                 binder_order: vec![],
                 kind: BundleKind::Regular,

@@ -293,6 +293,21 @@ settings-field-author-name = Nom de l'auteur
 settings-field-author-placeholder = Facultatif
 settings-field-author-hint = Apparaît sur la page de titre compilée et dans les métadonnées des fichiers exportés. Laissez vide pour l'omettre.
 settings-group-chapters = Chapitres
+tidy-titles-title = Nettoyer les titres de chapitre
+tidy-titles-none = Aucun titre de chapitre ou de partie ne se contente de répéter son propre numéro.
+tidy-titles-lead = { $count ->
+        [one] Un chapitre ou une partie n'a pour titre que son propre numéro.
+       *[other] { $count } chapitres et parties n'ont pour titre que leur propre numéro.
+    }
+tidy-titles-explain = Effacer ces titres laisse chacun désigné par le numéro que le livre connaît déjà — celui-là même qu'imprime l'export. Rien d'autre ne change, et une seule annulation les rétablit tous.
+menu-document-tidy-titles = Nettoyer les titres de chapitre…
+settings-group-numbering = Numérotation
+settings-number-chapters = Numéroter les chapitres et les parties
+settings-number-chapters-tip = Les chapitres et les parties portent un numéro déduit de leur place dans le livre — affiché ici à côté de leur titre, et imprimé par l'export.
+settings-number-chapters-tip-more = Le numéro n'est jamais enregistré dans le titre : il reste juste quand vous réorganisez, insérez ou supprimez. Désactivez ceci et l'export n'imprime que les titres, quel que soit le style d'export. Pour n'exclure qu'un seul chapitre — un prologue, un interlude — utilisez plutôt l'interrupteur Numérotation de l'inspecteur : il le garde dans le livre mais l'empêche de prendre un numéro.
+settings-part-resets-chapter = Recommencer la numérotation à chaque partie
+settings-part-resets-chapter-tip = Désactivé par défaut : les chapitres se suivent d'une partie à l'autre, si bien que la « Deuxième partie » s'ouvre sur le chapitre onze.
+settings-part-resets-chapter-tip-more = C'est l'usage de l'édition, et ce qu'attend un lecteur. Activez-le pour un livre dont les parties se lisent comme des volumes distincts, chacune s'ouvrant sur le chapitre un.
 settings-chapter-flat = Chapitres à plat
 settings-chapter-flat-hint = Activé : un chapitre est une seule ligne. Vous y écrivez, et il ne contient aucune scène. Désactivé : un chapitre est un dossier. Vous y écrivez également, mais il peut en outre contenir des scènes. Les nouveaux chapitres suivent ce réglage ; les existants se convertissent via Promouvoir.
 
@@ -1073,6 +1088,12 @@ dict-add-failed = Impossible d'ajouter le dictionnaire : { $error }
 # Les contrôles d'export par élément dans l'Inspecteur (M3)
 inspector-export = Export
 inspector-exportable = Inclure dans les exports
+ctx-number = Numéroter ce chapitre
+ctx-unnumber = Ne pas numéroter ce chapitre
+inspector-numbering = Numérotation
+inspector-numbered = Numéroté
+inspector-numbered-tip = Ce chapitre prend sa place dans la numérotation du livre. Désactivez-le pour un prologue, un épilogue ou un interlude.
+inspector-numbered-tip-more = Un chapitre non numéroté reste dans le livre tel quel : son titre, son texte et son compte de mots sont intacts. Il n'imprime simplement aucun numéro, et n'en consomme pas : le chapitre qui suit un prologue est le chapitre un, pas le chapitre deux. L'exclure de l'export est un autre interrupteur, au-dessus, et celui-là retire le chapitre du livre.
 inspector-apply-to-children = Appliquer aux enfants
 # La date de jalon par Partie/Chapitre de l'inspecteur (M5), montrée sur le Rythme du Livre.
 inspector-milestone = Date de jalon

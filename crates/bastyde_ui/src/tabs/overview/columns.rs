@@ -98,13 +98,22 @@ fn title_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
             }
             // The row's icon comes from its sub-role, exactly as in the outline tree — the
             // same item must not wear two different glyphs in two views.
+            let (label, badge) = crate::models::label_and_badge(
+                &row.title,
+                row.fallback_label.as_deref(),
+                row.number,
+            );
             with_row_menu(
                 &vm,
                 row,
                 HStack::new()
                     .spacing(6.0)
                     .child(crate::binder::icons::sub_role_icon(&row.sub_role))
-                    .child(TextWidget::new(lit!(row.title.clone())).single_line()),
+                    // The ordinal, in the read cell only. The edit branch above returns
+                    // early to `cell_editor`, which seeds from `row.title` — so neither the
+                    // number nor the generated fallback name can end up inside a rename.
+                    .child(crate::widgets::StructureNumber::new(badge))
+                    .child(TextWidget::new(lit!(label)).single_line()),
             )
         },
     )

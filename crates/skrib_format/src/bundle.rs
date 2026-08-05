@@ -250,6 +250,30 @@ pub struct WorkFile {
     /// writer who switched everything off.
     #[serde(default)]
     pub smart_punctuation: Option<SmartPunctuationFile>,
+    /// Does this book number its chapters and parts at all?
+    ///
+    /// **The one additive field here whose safe legacy state is `true`, not `false`.**
+    /// Every bundle written before this field existed came from a build that always
+    /// numbered, so a bare `#[serde(default)]` — `bool::default()` is `false` — would
+    /// silently switch numbering off for every project in existence on its first load
+    /// under a build that has this field. Hence the explicit `default_true`. Its
+    /// `BinderItem` counterpart, `exclude_from_numbering`, is spelled as the *exception*
+    /// precisely so it can use the bare shorthand and never grow this hazard.
+    #[serde(default = "default_true")]
+    pub number_chapters: bool,
+    /// Whether a new Part restarts chapter numbering. Additive, and `false` — chapters
+    /// running continuously across parts — is both the trade convention and what every
+    /// bundle written before this field meant, so the bare shorthand is correct here.
+    #[serde(default)]
+    pub part_resets_chapter: bool,
+}
+
+/// The `#[serde(default = "…")]` companion for [`WorkFile::number_chapters`] — see the
+/// hazard described there. Deliberately not a generic helper: exactly one field in this
+/// format has a non-`false` legacy default, and keeping it single-purpose makes any
+/// second use somebody adds an obvious thing to think twice about.
+fn default_true() -> bool {
+    true
 }
 
 /// The punctuation house style, nested inside [`WorkFile`].
@@ -537,6 +561,15 @@ pub struct BinderItemFile {
     pub activated: bool,
     pub is_favorite: bool,
     pub is_exportable: bool,
+    /// The prologue lever: in the book, headed and word-counted, but neither printing a
+    /// structural number nor consuming one.
+    ///
+    /// Purely additive, and spelled as the *exception* so `false` — every row of every
+    /// existing bundle, all of them numbered — is exactly what the bare shorthand gives.
+    /// Same precedent as `aliases` / `point_of_view_ids`: no FORMAT_VERSION bump, no heal
+    /// step, because the missing state was never an invalid one.
+    #[serde(default)]
+    pub exclude_from_numbering: bool,
     pub indent: i64,
     pub word_count_goal: i64,
     pub char_count_goal: i64,

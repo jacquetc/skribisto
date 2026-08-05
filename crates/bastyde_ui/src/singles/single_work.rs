@@ -32,6 +32,8 @@ mod imp {
         author_name: Signal<String>,
         dict_language: Signal<Vec<String>>,
         chapter_mode: Signal<ChapterMode>,
+        number_chapters: Signal<bool>,
+        part_resets_chapter: Signal<bool>,
         /// The per-project master switch for the custom text-replacement lexicon.
         custom_replacement_rules_enabled: Signal<bool>,
         /// The stable per-project UUID (`Work.unique_id`). Read-only here — it is
@@ -66,6 +68,10 @@ mod imp {
                     author_name: Signal::new(String::new()),
                     dict_language: Signal::new(Vec::new()),
                     chapter_mode: Signal::new(ChapterMode::default()),
+                    // `true`, matching the entity default and every project that predates
+                    // the field — a Work is numbered unless it says otherwise.
+                    number_chapters: Signal::new(true),
+                    part_resets_chapter: Signal::new(false),
                     custom_replacement_rules_enabled: Signal::new(false),
                     unique_id: Signal::new(String::new()),
                     smart_punctuation: Signal::new(0),
@@ -125,6 +131,16 @@ mod imp {
         pub fn chapter_mode(&self) -> Signal<ChapterMode> {
             self.inner.chapter_mode.clone()
         }
+        /// Whether this book numbers its chapters and parts at all — the
+        /// manuscript-level master switch, which also clamps what an export prints.
+        pub fn number_chapters(&self) -> Signal<bool> {
+            self.inner.number_chapters.clone()
+        }
+        /// Whether a new Part restarts chapter numbering (off = the trade default,
+        /// chapters running continuously across the parts of one book).
+        pub fn part_resets_chapter(&self) -> Signal<bool> {
+            self.inner.part_resets_chapter.clone()
+        }
         /// Whether the per-project custom text-replacement lexicon is active.
         pub fn custom_replacement_rules_enabled(&self) -> Signal<bool> {
             self.inner.custom_replacement_rules_enabled.clone()
@@ -160,6 +176,14 @@ mod imp {
         pub fn set_dict_language(&self, v: Vec<String>) {
             self.mark_dirty();
             self.inner.dict_language.set(v);
+        }
+        pub fn set_number_chapters(&self, v: bool) {
+            self.mark_dirty();
+            self.inner.number_chapters.set(v);
+        }
+        pub fn set_part_resets_chapter(&self, v: bool) {
+            self.mark_dirty();
+            self.inner.part_resets_chapter.set(v);
         }
         pub fn set_chapter_mode(&self, v: ChapterMode) {
             self.mark_dirty();
@@ -203,6 +227,8 @@ mod imp {
                 dict_language: self.inner.dict_language.get(),
                 unique_id: existing.unique_id,
                 chapter_mode: self.inner.chapter_mode.get(),
+                number_chapters: self.inner.number_chapters.get(),
+                part_resets_chapter: self.inner.part_resets_chapter.get(),
                 custom_replacement_rules_enabled: self.inner.custom_replacement_rules_enabled.get(),
             };
             match work_commands::update_work(ctx, stack_id, &dto) {
@@ -232,6 +258,8 @@ mod imp {
                     // that must not run once per keystroke-triggered autosave.
                     self.inner.dict_language.set_if_changed(w.dict_language);
                     self.inner.chapter_mode.set(w.chapter_mode);
+                    self.inner.number_chapters.set(w.number_chapters);
+                    self.inner.part_resets_chapter.set(w.part_resets_chapter);
                     self.inner
                         .custom_replacement_rules_enabled
                         .set(w.custom_replacement_rules_enabled);
@@ -255,6 +283,8 @@ mod imp {
             self.inner.author_name.set(String::new());
             self.inner.dict_language.set(Vec::new());
             self.inner.chapter_mode.set(ChapterMode::default());
+            self.inner.number_chapters.set(true);
+            self.inner.part_resets_chapter.set(false);
             self.inner.custom_replacement_rules_enabled.set(false);
             self.inner.unique_id.set(String::new());
             self.inner.smart_punctuation.set(0);
@@ -289,6 +319,8 @@ mod imp {
         author_name: Signal<String>,
         dict_language: Signal<Vec<String>>,
         chapter_mode: Signal<ChapterMode>,
+        number_chapters: Signal<bool>,
+        part_resets_chapter: Signal<bool>,
         custom_replacement_rules_enabled: Signal<bool>,
         unique_id: Signal<String>,
         /// The id of this Work's `SmartPunctuation` row. Read-only: the row is
@@ -316,6 +348,10 @@ mod imp {
                     author_name: Signal::new("Mock Author".to_string()),
                     dict_language: Signal::new(vec!["en".to_string()]),
                     chapter_mode: Signal::new(ChapterMode::default()),
+                    // `true`, matching the entity default and every project that predates
+                    // the field — a Work is numbered unless it says otherwise.
+                    number_chapters: Signal::new(true),
+                    part_resets_chapter: Signal::new(false),
                     custom_replacement_rules_enabled: Signal::new(false),
                     unique_id: Signal::new("mock-work-uid-1".to_string()),
                     smart_punctuation: Signal::new(1),
@@ -346,6 +382,16 @@ mod imp {
         pub fn chapter_mode(&self) -> Signal<ChapterMode> {
             self.inner.chapter_mode.clone()
         }
+        /// Whether this book numbers its chapters and parts at all — the
+        /// manuscript-level master switch, which also clamps what an export prints.
+        pub fn number_chapters(&self) -> Signal<bool> {
+            self.inner.number_chapters.clone()
+        }
+        /// Whether a new Part restarts chapter numbering (off = the trade default,
+        /// chapters running continuously across the parts of one book).
+        pub fn part_resets_chapter(&self) -> Signal<bool> {
+            self.inner.part_resets_chapter.clone()
+        }
         pub fn custom_replacement_rules_enabled(&self) -> Signal<bool> {
             self.inner.custom_replacement_rules_enabled.clone()
         }
@@ -373,6 +419,12 @@ mod imp {
         }
         pub fn set_dict_language(&self, v: Vec<String>) {
             self.inner.dict_language.set(v);
+        }
+        pub fn set_number_chapters(&self, v: bool) {
+            self.inner.number_chapters.set(v);
+        }
+        pub fn set_part_resets_chapter(&self, v: bool) {
+            self.inner.part_resets_chapter.set(v);
         }
         pub fn set_chapter_mode(&self, v: ChapterMode) {
             self.inner.chapter_mode.set(v);

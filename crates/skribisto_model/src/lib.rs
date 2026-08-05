@@ -50,6 +50,10 @@ pub mod compile;
 /// Word/char counting **policy** (which method) + a content-addressed cache over scene
 /// prose. The mechanical primitive lives in `text-document`; this owns the method choice.
 pub mod counting;
+
+/// Which ordinal each structural row carries — one pass over the whole manuscript, so
+/// the exporter and the binder's live badge cannot disagree about what chapter this is.
+pub mod numbering;
 pub mod scene_break;
 
 /// The per-project chapter storage mode — generated on the `Work` entity, re-exported

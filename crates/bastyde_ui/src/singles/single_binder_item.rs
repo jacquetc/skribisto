@@ -62,6 +62,7 @@ mod imp {
             activated: it.activated,
             is_favorite: it.is_favorite,
             is_exportable: it.is_exportable,
+            exclude_from_numbering: it.exclude_from_numbering,
             indent: it.indent,
             word_count_goal: it.word_count_goal,
             char_count_goal: it.char_count_goal,
@@ -211,6 +212,29 @@ mod imp {
             };
             let mut dto = update_dto(&it);
             dto.is_exportable = on;
+            dto.updated_at = chrono::Utc::now();
+            binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
+            self.refresh();
+            Ok(())
+        }
+
+        /// Set the item's numbering opt-out — the prologue lever.
+        ///
+        /// Distinct from [`set_exportable`](Self::set_exportable) on purpose: that one takes
+        /// the row *out of the book*, losing its prose, its heading and its word count. This
+        /// keeps every one of those and removes only the numeral — and, crucially, the slot
+        /// it would otherwise consume, so the chapter after a prologue is chapter one.
+        ///
+        /// Same scalar read-modify-write, undoable on `stack`.
+        pub fn set_excluded_from_numbering(&self, on: bool, stack: Option<u64>) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            let Some(it) = self.dto() else {
+                anyhow::bail!("SingleBinderItem: item {id} not loaded");
+            };
+            let mut dto = update_dto(&it);
+            dto.exclude_from_numbering = on;
             dto.updated_at = chrono::Utc::now();
             binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
             self.refresh();
@@ -593,6 +617,18 @@ mod imp {
         pub fn set_exportable(&self, on: bool, _stack: Option<u64>) -> anyhow::Result<()> {
             if let Some(mut d) = self.inner.dto.get() {
                 d.is_exportable = on;
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
+        }
+
+        pub fn set_excluded_from_numbering(
+            &self,
+            on: bool,
+            _stack: Option<u64>,
+        ) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.exclude_from_numbering = on;
                 self.inner.dto.set(Some(d));
             }
             Ok(())

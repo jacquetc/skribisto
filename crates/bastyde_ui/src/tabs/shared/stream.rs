@@ -441,14 +441,27 @@ fn row_header(vm: &StreamViewModel, row: &StreamRow) -> impl Widget {
         (TextStyleRole::SmallBold, TextRole::Secondary)
     };
 
+    // An untitled chapter is named by its ordinal rather than showing a bare "3.".
+    let (_, badge) = crate::models::label_and_badge("", row.fallback_label.as_deref(), row.number);
+    let fallback = row.fallback_label.clone();
     HStack::new()
         .spacing(8.0)
         .child(crate::binder::icons::sub_role_icon(&row.sub_role).icon_size(14.0))
+        // The ordinal, on the structure headings only — which is exactly where the
+        // exporter puts it. A scene has none, and `StructureNumber` renders nothing for
+        // `None`, so the titles below stay aligned with the ones above.
+        .child(crate::widgets::StructureNumber::new(badge))
         .child(
-            TextWidget::new(lit!(""))
-                .text(vm.row_title(id))
-                .style(style)
-                .color(color),
+            // The generated name when the row has no title of its own, else the live one —
+            // a rename must still show here without a reload, and a generated name has
+            // nothing live to follow.
+            match &fallback {
+                Some(f) => TextWidget::new(lit!(f.clone())).style(style).color(color),
+                None => TextWidget::new(lit!(""))
+                    .text(vm.row_title(id))
+                    .style(style)
+                    .color(color),
+            },
         )
         // The row's free-text label (blank when unset).
         .child(

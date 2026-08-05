@@ -15,6 +15,7 @@ use std::rc::Rc;
 
 use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
+use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{
     Button, ButtonVariant, DateEdit, DockOpenLocation, DockSide, DockWidget, DockWidgetId,
     FocusScope, HStack, Padding, PopoverButton, TextWidget, Toggle, TraversalScopePolicy, VStack,
@@ -78,6 +79,7 @@ fn live_item_metas(ctx: &AppContext, ids: &AppIds) -> Vec<ItemMeta> {
                 indent: it.indent as i32,
                 activated: it.activated,
                 is_exportable: it.is_exportable,
+                exclude_from_numbering: it.exclude_from_numbering,
             });
         }
     }
@@ -213,9 +215,37 @@ impl Widget for Inspector {
                     .child(TextWidget::new(tr!(inspector_empty())).color(TextRole::Secondary)),
             ),
             Some(d) => {
-                let mut col = VStack::new()
-                    .spacing(12.0)
+                // The identity header: the item's name, and — for a structural row — the
+                // ordinal it carries in the book. Read-only here (renaming happens in the
+                // tree or the tab), so the two can sit side by side without any risk of the
+                // number reaching an edit buffer.
+                // Only a row that opens a structural level can carry one, so the
+                // whole-Work walk is skipped entirely for a Scene or a Note — which is most
+                // of what the Inspector is ever focused on. `metas` is fetched at most once
+                // per build and reused by the milestone lookup further down, which used to
+                // walk every binder a second time for the same Work.
+                let metas = skribisto_model::numbering::level_of(&d.sub_role)
+                    .is_some()
+                    .then(|| live_item_metas(&self.app_ctx, &self.outline.ids()));
+                let ordinal = metas.as_ref().and_then(|m| {
+                    self.outline
+                        .ids()
+                        .work_id
+                        .get()
+                        .and_then(|id| {
+                            crate::models::numbers_for_work(&self.app_ctx, id, m)
+                                .get(&d.id)
+                                .copied()
+                        })
+                        .map(|n| n.number())
+                });
+                let mut header = HStack::new().spacing(6.0);
+                if ordinal.is_some() {
+                    header = header.child(crate::widgets::StructureNumber::new(ordinal));
+                }
+                header = header
                     .child(TextWidget::new(lit!(d.title.clone())).style(TextStyleRole::BodyBold));
+                let mut col = VStack::new().spacing(12.0).child(header);
                 // The headline affordance: convert this item to another type. A folder
                 // can become any other kind of folder, so it is a menu, not a button.
                 let key = BinderTreeKey::Item(d.uid);
@@ -709,6 +739,55 @@ impl Widget for Inspector {
                         );
                     }
                 }
+                // Per-item **numbering** toggle: the prologue lever. Mounted only on rows
+                // that actually open a structural level — a Scene or a Note has no ordinal
+                // to suppress, and an affordance that does nothing is worse than none.
+                //
+                // Deliberately *not* folded into the export toggle above: that one takes
+                // the row out of the book entirely (no prose, no heading, no word count),
+                // while this keeps all of it and removes only the numeral — and the slot it
+                // would have consumed, which is the half that matters. A prologue is in the
+                // book; it is simply not chapter one.
+                if skribisto_model::numbering::level_of(&d.sub_role).is_some() {
+                    let value = Signal::new(!d.exclude_from_numbering);
+                    let item_probe = SingleBinderItem::new(self.app_ctx.clone());
+                    item_probe.set_id(Some(d.id));
+                    let stack = self.outline.ids().stack_id.get();
+                    {
+                        let probe = item_probe.clone();
+                        // Same guarded-write shape as the export toggle: write only on a
+                        // genuine change, never on the seed or the post-write echo.
+                        ctx.effect(&value, move |on| {
+                            let want_excluded = !*on;
+                            if probe.dto().map(|d| d.exclude_from_numbering) != Some(want_excluded)
+                                && let Err(e) =
+                                    probe.set_excluded_from_numbering(want_excluded, stack)
+                            {
+                                eprintln!("inspector: set numbered failed: {e}");
+                            }
+                        });
+                    }
+                    col = col.child(
+                        TextWidget::new(tr!(inspector_numbering()))
+                            .style(TextStyleRole::Tiny)
+                            .color(TextRole::Secondary),
+                    );
+                    // The label is one word, so the *rule* — that switching this off also
+                    // stops the row consuming a number, which is the whole point for a
+                    // prologue — lives in the tooltip rather than in a label nobody can
+                    // read at a glance.
+                    col = col.child(
+                        Toggle::new(value)
+                            .label(tr!(inspector_numbered()))
+                            .rich_tooltip_content(
+                                TooltipContent::new(
+                                    "inspector.numbered",
+                                    tr!(inspector_numbered_tip()),
+                                )
+                                .with_more(tr!(inspector_numbered_tip_more())),
+                            ),
+                    );
+                }
                 // Per-Part/Chapter **milestone** (M5): a target date pinned on the Book's
                 // Pace timeline, set right where the writer plans the section. A milestone
                 // only makes sense for a compile-stream Part or Chapter, and only inside a
@@ -717,7 +796,9 @@ impl Widget for Inspector {
                     d.sub_role,
                     BinderItemSubRole::Part | BinderItemSubRole::ChapterScene
                 ) {
-                    let metas = live_item_metas(&self.app_ctx, &self.outline.ids());
+                    let metas = metas
+                        .clone()
+                        .unwrap_or_else(|| live_item_metas(&self.app_ctx, &self.outline.ids()));
                     if let Some(book_id) = metas
                         .iter()
                         .position(|m| m.id == d.id)

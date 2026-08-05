@@ -12,12 +12,13 @@
 use crate::preset::DigitStyle;
 
 /// Which structural level a generated heading names.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Level {
-    Book,
-    Part,
-    Chapter,
-}
+///
+/// Re-exported from the model rather than declared here: this used to be a private
+/// `Level` enum with exactly the same three variants as
+/// [`skribisto_model::compile::StreamLevel`], which meant the compile spine, the UI's
+/// stream view and the heading generator each named the same three-valued fact
+/// separately. One name, one definition.
+pub use skribisto_model::compile::StreamLevel as Level;
 
 /// The structural word for a level in a language (primary BCP-47 subtag). Unknown
 /// languages fall back to English.
@@ -148,6 +149,53 @@ pub fn numbered(lang: &str, level: Level, n: usize, style: DigitStyle) -> String
     format!("{} {}", word(lang, level), digits(n, style))
 }
 
+/// Fold a title for redundancy comparison: lowercased, interior runs of any whitespace
+/// (including the no-break spaces an autocorrect leaves behind) collapsed to one space,
+/// and one trailing `.`/`:`/`-`/`—` dropped.
+///
+/// The trailing-punctuation strip runs *after* the trim, so `"Chapter 3 ."` folds the same
+/// way `"Chapter 3."` does.
+fn fold_for_comparison(s: &str) -> String {
+    let collapsed: String = s.split_whitespace().collect::<Vec<_>>().join(" ");
+    let trimmed = collapsed
+        .trim_end_matches(['.', ':', '-', '—', '–'])
+        .trim_end();
+    trimmed.to_lowercase()
+}
+
+/// Whether `title` is already saying nothing but this row's own number.
+///
+/// The writer typed "Chapter 3" as the title because until now the app never showed them
+/// that it already knew. Appending a generated "Chapter 3" to that gives the doubled
+/// heading this whole feature exists to remove — but only when the two really are the same
+/// fact, which is a judgement the old byte-for-byte comparison could not make.
+///
+/// Recognised as redundant, against `n` and the **row's own** resolved language:
+/// the full localized phrase in any case (`"chapter 3"`, `"CHAPTER 3"`), with an interior
+/// NBSP or a doubled space, with one trailing `.`/`:`/dash, and the bare numeral
+/// (`"3"`, `"3."`) — which is what a writer numbering by hand most often types.
+///
+/// Deliberately **not** recognised: roman numerals, spelled-out numbers, abbreviations
+/// like `"Ch. 3"`, and — most importantly — a title naming a *different* number than the
+/// counter computed. Those are not redundancy. A title reading "Chapter 3" on the row the
+/// manuscript makes chapter four is a real contradiction between what the writer believes
+/// and where the row actually sits, and hiding half of it would hide the disagreement.
+/// Showing "Chapter 4 — Chapter 3" is ugly, and it is *supposed* to be: it is the writer's
+/// signal that something moved. Silently wrong is worse than visibly wrong.
+pub fn is_redundant_number_title(title: &str, lang: &str, level: Level, n: usize) -> bool {
+    let folded = fold_for_comparison(title);
+    if folded.is_empty() {
+        // Blank, or whitespace-only — nothing to append either way. Callers treat this as
+        // "no title", so answering `true` keeps the dangling-dash heading from forming.
+        return true;
+    }
+    // Compared in western digits regardless of the preset's digit style: the writer typed
+    // their title on a keyboard, and `numbered()` may have rendered "٣".
+    let plain = n.to_string();
+    folded == fold_for_comparison(&format!("{} {}", word(lang, level), plain))
+        || folded == plain
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -217,6 +265,88 @@ mod tests {
             word_count_note("ar", 89_417, DigitStyle::EasternArabic),
             "نحو ٨٩\u{066C}٠٠٠ كلمة"
         );
+    }
+
+    /// Every shape of "the title is just the number again" the old byte-comparison let
+    /// through. The NBSP case is the one that mattered most: it looked de-duplicated to
+    /// anyone reading the export, because the character is invisible.
+    #[test]
+    fn a_title_that_only_restates_the_number_is_redundant() {
+        for title in [
+            "Chapter 3",
+            "chapter 3",
+            "CHAPTER 3",
+            "Chapter 3.",
+            "Chapter 3:",
+            "Chapter 3 —",
+            "  Chapter 3  ",
+            "Chapter\u{00A0}3", // no-break space
+            "Chapter  3",       // doubled space
+            "3",
+            "3.",
+        ] {
+            assert!(
+                is_redundant_number_title(title, "en", Level::Chapter, 3),
+                "{title:?} should read as redundant"
+            );
+        }
+        // …and in the row's own language, which is what the writer typed in.
+        assert!(is_redundant_number_title(
+            "Chapitre 3",
+            "fr",
+            Level::Chapter,
+            3
+        ));
+        assert!(is_redundant_number_title("Partie 2", "fr", Level::Part, 2));
+    }
+
+    /// A real title is never swallowed — including the ones that merely *contain* a
+    /// number, and the ones naming a different number than the counter reached.
+    #[test]
+    fn a_real_title_is_never_treated_as_redundant() {
+        for title in [
+            "Welcome",
+            "Chapter 3 — The Storm",
+            "The Storm",
+            "Three",     // spelled out: deliberately not recognised
+            "III",       // roman: deliberately not recognised
+            "Ch. 3",     // abbreviation: deliberately not recognised
+            "Chapter 4", // a DIFFERENT number — a contradiction, not a duplicate
+            "33",
+            "Chapter 33",
+        ] {
+            assert!(
+                !is_redundant_number_title(title, "en", Level::Chapter, 3),
+                "{title:?} must survive as a title"
+            );
+        }
+    }
+
+    /// A blank or whitespace-only title behaves as no title at all, so a heading can never
+    /// come out as "Chapter 3 —    " with a dangling dash.
+    #[test]
+    fn a_blank_title_counts_as_no_title() {
+        assert!(is_redundant_number_title("", "en", Level::Chapter, 3));
+        assert!(is_redundant_number_title("   ", "en", Level::Chapter, 3));
+        assert!(is_redundant_number_title(
+            "\u{00A0}\t ",
+            "en",
+            Level::Chapter,
+            3
+        ));
+    }
+
+    /// The writer types western digits whatever the preset renders, so an Eastern-Arabic
+    /// export must still recognise its own number written the ordinary way.
+    #[test]
+    fn digit_style_does_not_defeat_the_guard() {
+        assert_eq!(numbered("ar", Level::Chapter, 3, DigitStyle::EasternArabic), "الفصل ٣");
+        assert!(is_redundant_number_title(
+            "الفصل 3",
+            "ar",
+            Level::Chapter,
+            3
+        ));
     }
 
     #[test]

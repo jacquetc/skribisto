@@ -71,6 +71,7 @@ fn mk_item(
         sub_role: BinderItemSubRole::Text,
         activated: true,
         is_exportable: true,
+        exclude_from_numbering: false,
         indent,
         ..Default::default()
     };
@@ -816,6 +817,7 @@ fn mk_scene(fx: &Fixture, title: &str) -> EntityId {
         sub_role: BinderItemSubRole::Scene,
         activated: true,
         is_exportable: true,
+        exclude_from_numbering: false,
         indent: 0,
         ..Default::default()
     };
@@ -1210,6 +1212,7 @@ fn set_sub_role(fx: &Fixture, item_id: EntityId, sub_role: BinderItemSubRole) {
             activated: dto.activated,
             is_favorite: dto.is_favorite,
             is_exportable: dto.is_exportable,
+            exclude_from_numbering: false,
             indent: dto.indent,
             word_count_goal: dto.word_count_goal,
             char_count_goal: dto.char_count_goal,
@@ -1418,6 +1421,7 @@ fn set_aliases(fx: &Fixture, item_id: EntityId, aliases: &[&str]) {
             activated: dto.activated,
             is_favorite: dto.is_favorite,
             is_exportable: dto.is_exportable,
+            exclude_from_numbering: false,
             indent: dto.indent,
             word_count_goal: dto.word_count_goal,
             char_count_goal: dto.char_count_goal,

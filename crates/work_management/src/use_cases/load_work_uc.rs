@@ -237,6 +237,8 @@ pub(crate) fn materialize(
         },
         chapter_mode: lw.chapter_mode.clone(),
         custom_replacement_rules_enabled: lw.custom_replacement_rules_enabled,
+        number_chapters: lw.number_chapters,
+        part_resets_chapter: lw.part_resets_chapter,
         binders: Vec::new(),
         tags: Vec::new(),
         dict_words: Vec::new(),
@@ -367,6 +369,7 @@ pub(crate) fn materialize(
                 activated: i.activated,
                 is_favorite: i.is_favorite,
                 is_exportable: i.is_exportable,
+                exclude_from_numbering: i.exclude_from_numbering,
                 indent: i.indent,
                 word_count_goal: i.word_count_goal,
                 char_count_goal: i.char_count_goal,
@@ -876,6 +879,10 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         // no punctuation house style.
         chapter_mode: common::entities::ChapterMode::Folder,
         custom_replacement_rules_enabled: false,
+        // The legacy format has no numbering settings. Numbering on, parts not
+        // resetting, is what the old app did and what a new project does.
+        number_chapters: true,
+        part_resets_chapter: false,
         // `LoadedWork` carries the children in its own ordered vectors.
         binders: Vec::new(),
         tags: Vec::new(),
@@ -994,6 +1001,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                     label: it.label.clone(),
                     activated: it.activated,
                     is_exportable: true,
+                    exclude_from_numbering: false,
                     indent: it.indent,
                     word_count_goal: it.word_count_goal,
                     char_count_goal: it.char_count_goal,

@@ -171,6 +171,7 @@ pub fn from_entities(
                     activated: item.activated,
                     is_favorite: item.is_favorite,
                     is_exportable: item.is_exportable,
+                    exclude_from_numbering: item.exclude_from_numbering,
                     indent: item.indent,
                     word_count_goal: item.word_count_goal,
                     char_count_goal: item.char_count_goal,
@@ -232,6 +233,8 @@ pub fn from_entities(
                 chapter_flat: matches!(work.chapter_mode, ChapterMode::Flat),
                 text_replacement_rule_ids: work.text_replacement_rules.clone(),
                 custom_replacement_rules_enabled: work.custom_replacement_rules_enabled,
+                number_chapters: work.number_chapters,
+                part_resets_chapter: work.part_resets_chapter,
                 smart_punctuation: smart_punctuation.map(|sp| SmartPunctuationFile {
                     created_at: fmt_dt(&sp.created_at),
                     updated_at: fmt_dt(&sp.updated_at),
@@ -445,6 +448,10 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
             ChapterMode::Folder
         },
         custom_replacement_rules_enabled: m.work.custom_replacement_rules_enabled,
+        // `true` for a bundle written before the field existed — see `WorkFile`'s
+        // `default_true`, the one non-`false` legacy default in this format.
+        number_chapters: m.work.number_chapters,
+        part_resets_chapter: m.work.part_resets_chapter,
         // Empty by design: `LoadedWork` carries the children in its own ordered
         // vectors, and `materialize` wires the real store ids on afterwards.
         binders: Vec::new(),
@@ -607,6 +614,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                     activated: f.activated,
                     is_favorite: f.is_favorite,
                     is_exportable: f.is_exportable,
+                    exclude_from_numbering: f.exclude_from_numbering,
                     indent: f.indent,
                     word_count_goal: f.word_count_goal,
                     char_count_goal: f.char_count_goal,

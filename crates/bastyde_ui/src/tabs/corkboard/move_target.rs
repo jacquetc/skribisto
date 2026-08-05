@@ -99,7 +99,12 @@ impl Widget for MoveTargetPanel {
             self.picker_model.clone(),
             self.picker_selection.clone(),
             move |node: &TreeNode, row: &TreeRow, selected: bool| {
-                let mut item = StandardTreeItem::new(lit!(node.title.clone()))
+                let (label, badge) = crate::models::label_and_badge(
+                &node.title,
+                node.fallback_label.as_deref(),
+                node.number,
+            );
+            let mut item = StandardTreeItem::new(lit!(label))
                     .depth(row.depth)
                     .has_children(row.has_children)
                     .is_expanded(row.is_expanded)
@@ -114,6 +119,11 @@ impl Widget for MoveTargetPanel {
                     crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
                 };
                 item = item.leading_slot(icon);
+            // The chapter's ordinal — the same landmarks the outline gives, so a
+            // destination is as recognisable here as it is there.
+            if badge.is_some() {
+                item = item.center_slot(crate::widgets::StructureNumber::new(badge));
+            }
                 Box::new(item) as Box<dyn Widget>
             },
         )

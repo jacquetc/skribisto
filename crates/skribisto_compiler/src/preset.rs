@@ -128,6 +128,14 @@ pub enum HeadingScheme {
     NumberAndTitle,
 }
 
+/// The spaced em dash between a generated number and a title — this compiler's
+/// long-standing separator, and the `#[serde(default)]` companion for
+/// [`Preset::heading_separator`] so a preset written before the field existed keeps
+/// rendering exactly as it did.
+fn default_heading_separator() -> String {
+    " — ".to_string()
+}
+
 /// Where a chapter's epigraph sits relative to the heading that opens the chapter.
 ///
 /// Every editorial convention that actually writes the rule down says **after**: Chicago
@@ -226,6 +234,27 @@ pub struct Preset {
     pub chapter_heading: HeadingScheme,
     #[serde(default)]
     pub part_heading: HeadingScheme,
+    /// What sits between the generated number and the title under
+    /// [`HeadingScheme::NumberAndTitle`] — "Chapter 3<sep>The Storm".
+    ///
+    /// A style choice, not a constant: published fiction uses a spaced em dash, a colon, a
+    /// period, and a plain line break, and which one a book takes is exactly the sort of
+    /// decision an export style exists to hold. Defaults to the spaced em dash this
+    /// compiler has always emitted, so an existing preset renders byte-identically.
+    ///
+    /// Carries its own spacing rather than being spliced with hardcoded spaces around it,
+    /// because a style wanting `" : "` — with the no-break space French requires before a
+    /// colon — cannot express that if the surrounding spaces are not the style's to choose.
+    ///
+    /// **Single-line only.** A heading is emitted as one `#`-prefixed line, so a newline in
+    /// here would end the heading early and leave the title behind as a stray paragraph in
+    /// every backend. Any newline is folded to a space rather than rejected: a preset is
+    /// hand-editable JSON, and quietly rendering "3 The Storm" beats corrupting the
+    /// document structure. Putting the number on its own line above the title is a real
+    /// layout, but it needs the number and the title to reach the renderer as separate
+    /// things — a different feature, not a separator string.
+    #[serde(default = "default_heading_separator")]
+    pub heading_separator: String,
     #[serde(default)]
     pub book_title_page: bool,
     /// Print the rounded word count on the title page — the manuscript-submission
@@ -331,6 +360,7 @@ impl Preset {
             major_scene_break: SceneBreak::Glyph("* * *".to_string()),
             chapter_heading: HeadingScheme::NumberAndTitle,
             part_heading: HeadingScheme::NumberAndTitle,
+            heading_separator: default_heading_separator(),
             book_title_page: false,
             title_page_word_count: false,
             book_starts_page: true,

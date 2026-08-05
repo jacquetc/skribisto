@@ -35,6 +35,20 @@ pub(in crate::settings) fn work_structure_pane(
         ctx.effect(&flat, move |f| vm.set_flat_chapters(*f));
     }
 
+    // The two numbering settings, bridged the same guarded way as `flat` above: the
+    // view-model's setters no-op when the value is unchanged, so the effect firing on every
+    // rebuild costs neither an undo entry nor a disk save.
+    let numbered = vm.number_chapters();
+    {
+        let vm = vm.clone();
+        ctx.effect(&numbered, move |on| vm.set_number_chapters(*on));
+    }
+    let part_resets = vm.part_resets_chapter();
+    {
+        let vm = vm.clone();
+        ctx.effect(&part_resets, move |on| vm.set_part_resets_chapter(*on));
+    }
+
     let form = FormLayout::new()
         .label(tr!(settings_page_structure()))
         .label_gap(16.0)
@@ -46,6 +60,29 @@ pub(in crate::settings) fn work_structure_pane(
                 .rich_tooltip_content(
                     TooltipContent::new("settings.chapter_flat", tr!(new_work_chapter_scene_tip()))
                         .with_more(tr!(new_work_chapter_scene_tip_more())),
+                ),
+        )
+        .full_width(group(tr!(settings_group_numbering())))
+        .full_width(
+            Toggle::new(numbered)
+                .label(tr!(settings_number_chapters()))
+                .rich_tooltip_content(
+                    TooltipContent::new(
+                        "settings.number_chapters",
+                        tr!(settings_number_chapters_tip()),
+                    )
+                    .with_more(tr!(settings_number_chapters_tip_more())),
+                ),
+        )
+        .full_width(
+            Toggle::new(part_resets)
+                .label(tr!(settings_part_resets_chapter()))
+                .rich_tooltip_content(
+                    TooltipContent::new(
+                        "settings.part_resets_chapter",
+                        tr!(settings_part_resets_chapter_tip()),
+                    )
+                    .with_more(tr!(settings_part_resets_chapter_tip_more())),
                 ),
         );
 

@@ -77,6 +77,7 @@ fn item(
             activated: true,
             is_favorite: false,
             is_exportable: true,
+            exclude_from_numbering: false,
             indent: 0,
             word_count_goal: 500,
             char_count_goal: 2000,
@@ -118,6 +119,8 @@ fn sample_bundle() -> WorkBundle {
         // Non-default so the round-trip actually exercises chapter_mode persistence.
         chapter_mode: common::entities::ChapterMode::Flat,
         custom_replacement_rules_enabled: false,
+        number_chapters: true,
+        part_resets_chapter: false,
         tags: vec![10, 11],
         dict_words: vec![20],
         text_replacement_rules: vec![],
@@ -1208,6 +1211,50 @@ fn new_work_persists_the_author_to_the_manifest() {
 
     let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
     assert_eq!(b.manifest.work.author_name, "A. Writer");
+}
+
+/// **The same `..Default::default()` trap as the author name above, one field over.**
+///
+/// `Work` derives `Default`, so `bool::default()` leaves `number_chapters` **false** —
+/// and `new_work_uc` builds its `Work` with `..Default::default()`. Without the explicit
+/// `number_chapters: true` there, every project this app creates would export with no
+/// chapter numbers at all, while the template it ships still writes the literal titles
+/// "Chapter 1".."Chapter N" into those same chapters. Nothing in the UI would say so; the
+/// writer would find out from the exported file.
+///
+/// This is exactly the hazard that made `BinderItem.exclude_from_numbering` the *negative*
+/// spelling — there, the safe legacy state and `Default` agree, so no such line is needed
+/// and no such test could fail.
+#[test]
+fn new_work_numbers_its_chapters() {
+    let dir = tempfile::tempdir().unwrap();
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    new_work(
+        &db,
+        &hub,
+        dir.path().join("Numbered.skrib").to_str().unwrap(),
+        false,
+        NewWorkTemplate::Novel,
+    );
+
+    let b = store_to_bundle(&db, &hub, &dir.path().join("out"));
+    assert!(
+        b.manifest.work.number_chapters,
+        "a new project must number its chapters"
+    );
+    assert!(
+        !b.manifest.work.part_resets_chapter,
+        "and run them continuously across parts"
+    );
+    // The per-item opt-out starts clear on every row the template creates.
+    assert!(
+        b.binders
+            .iter()
+            .flat_map(|bin| bin.items.iter())
+            .all(|i| !i.item.exclude_from_numbering),
+        "no template row starts life excluded from numbering"
+    );
 }
 
 /// **`new_work` must mint the punctuation house-style row, not only `load_work`.**

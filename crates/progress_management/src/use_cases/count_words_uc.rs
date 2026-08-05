@@ -227,6 +227,7 @@ mod tests {
             indent: 0,
             activated: true,
             is_exportable: true,
+            exclude_from_numbering: false,
         }
     }
 

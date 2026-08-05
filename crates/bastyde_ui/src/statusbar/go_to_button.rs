@@ -91,7 +91,12 @@ impl Widget for GoToPalette {
             model.clone(),
             vm.selection(),
             move |node: &TreeNode, row: &TreeRow, selected: bool| {
-                let mut item = StandardTreeItem::new(lit!(node.title.clone()))
+                let (label, badge) = crate::models::label_and_badge(
+                &node.title,
+                node.fallback_label.as_deref(),
+                node.number,
+            );
+            let mut item = StandardTreeItem::new(lit!(label))
                     .depth(row.depth)
                     .has_children(row.has_children)
                     .is_expanded(row.is_expanded)
@@ -105,7 +110,14 @@ impl Widget for GoToPalette {
                 } else {
                     crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
                 };
-                Box::new(item.leading_slot(icon)) as Box<dyn Widget>
+                item = item.leading_slot(icon);
+            // The chapter's ordinal, between the icon and the title — jumping by
+            // number is a real workflow ("take me to chapter 19"). A separate slot,
+            // never spliced into the title: this view filters on `node.title`.
+            if badge.is_some() {
+                item = item.center_slot(crate::widgets::StructureNumber::new(badge));
+            }
+            Box::new(item) as Box<dyn Widget>
             },
         )
         .auto_item_height(28.0)

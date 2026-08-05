@@ -28,6 +28,7 @@ use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, UpdateBinder
 use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 
+use skribisto_compiler::headings;
 use skribisto_model::{PromoteTarget, Recommendation, Relation, SubRoleExt};
 
 use crate::app_ids::AppIds;
@@ -467,6 +468,35 @@ impl OutlineViewModel {
         binder_ops::promote_targets_of(&self.app_ctx, item_id)
     }
 
+    /// Whether `key` takes part in the book's numbering — `None` when the row has no
+    /// numbering to speak of (a scene, a note, a binder), which is also the gate for
+    /// showing the affordance at all.
+    pub fn numbering_state(&self, key: BinderTreeKey) -> Option<bool> {
+        let item_id = self.model.item_id_of(&key)?;
+        let it = binder_ops::item_dto(&self.app_ctx, item_id)?;
+        skribisto_model::numbering::level_of(&it.sub_role)?;
+        Some(!it.exclude_from_numbering)
+    }
+
+    /// Take `key` in or out of the book's numbering — the prologue lever, reachable from
+    /// the row itself rather than only from the Inspector.
+    ///
+    /// An unnumbered row keeps everything else: its heading, its prose, its word count. It
+    /// stops printing a number *and* stops consuming one, so the chapter after a prologue
+    /// is chapter one. That is the half writers do not expect and the half that matters —
+    /// hence the tooltip on both surfaces.
+    pub fn set_numbered(&self, key: BinderTreeKey, on: bool) {
+        let Some(item_id) = self.model.item_id_of(&key) else {
+            return;
+        };
+        let probe = SingleBinderItem::new(self.app_ctx.clone());
+        probe.set_id(Some(item_id));
+        if let Err(e) = probe.set_excluded_from_numbering(!on, self.stack()) {
+            eprintln!("outline: set numbered failed for item {item_id}: {e}");
+        }
+        self.reload();
+    }
+
     /// The content roles whose text `key` would **lose** by becoming `target` (empty
     /// rows never count). Non-empty means the conversion is refused: a chapter holding
     /// prose cannot become a Part, which has nowhere to put it.
@@ -516,16 +546,27 @@ impl OutlineViewModel {
     }
 
     /// Begin a rename: present a modal `InputDialog`, applying `rename` on OK.
+    ///
+    /// **An emptied title is accepted for an item, and rejected for a binder.** They are
+    /// not the same kind of name. A chapter clearing its title is naming itself by its
+    /// ordinal instead — the state Tidy chapter titles… produces wholesale, and the state
+    /// the exporter has always rendered as "Chapter 3" — so refusing it would leave the
+    /// writer able to reach it in bulk but not one row at a time. A binder has no ordinal
+    /// and no generated name to fall back on; an empty one is simply a blank row in the
+    /// switcher, so the old guard still applies there.
     pub fn begin_rename(&self, key: BinderTreeKey, ctx: &mut EventContext) {
         let current = self.model.node_of(&key).map(|(_, t)| t).unwrap_or_default();
         let vm = self.clone();
+        let is_binder = matches!(key, BinderTreeKey::Binder(_));
         InputDialog::new(tr!(dialog_rename()))
             .default_text(current)
             .on_result(move |result, _ctx| {
-                if let Some(name) = result
-                    && !name.trim().is_empty()
-                {
-                    vm.rename(key, &name);
+                if let Some(name) = result {
+                    let name = name.trim();
+                    if is_binder && name.is_empty() {
+                        return;
+                    }
+                    vm.rename(key, name);
                 }
             })
             .present(ctx);
@@ -671,6 +712,90 @@ impl OutlineViewModel {
             let probe = SingleBinderItem::new(self.app_ctx.clone());
             probe.set_id(Some(id));
             let _ = probe.set_exportable(value, stack);
+        }
+        undo_redo_commands::end_composite(ctx);
+        self.reload();
+    }
+
+    /// The chapters and parts whose *title* says nothing but their own number.
+    ///
+    /// Every project this app has ever created starts out this way: the new-project
+    /// template writes "Chapter 1".."Chapter N" into each chapter's title, because until
+    /// the ordinal became visible that was the only place a writer could see it. Now that
+    /// the binder shows the number itself, those titles read as "3. Chapter 3" — the
+    /// duplication has simply moved from the exported file into the outline.
+    ///
+    /// Detection is [`headings::is_redundant_number_title`], the *same* predicate the
+    /// exporter uses to decide whether to append a title to a number, against the row's own
+    /// resolved language. So a title this offers to clear is exactly a title the export was
+    /// already discarding — clearing it changes what the writer sees, never what the book
+    /// says. Roman numerals, spelled-out numbers and a title naming a *different* number
+    /// are all deliberately excluded there, and so are excluded here.
+    ///
+    /// Returns `(item_id, title)` in stream order, for a preview the writer confirms.
+    pub fn redundant_number_titles(&self) -> Vec<(u64, String)> {
+        let ctx = &*self.app_ctx;
+        let Some(work_id) = self.ids.work_id.get() else {
+            return Vec::new();
+        };
+        let Ok(Some(work)) = work_commands::get_work(ctx, &work_id) else {
+            return Vec::new();
+        };
+        // The whole Work, in stream order — the same walk the badge is numbered from.
+        let mut items = Vec::new();
+        for binder_id in
+            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
+                .unwrap_or_default()
+        {
+            let ids = binder_commands::get_binder_relationship(
+                ctx,
+                &binder_id,
+                &BinderRelationshipField::BinderItems,
+            )
+            .unwrap_or_default();
+            let by_id: HashMap<u64, _> = binder_item_commands::get_binder_item_multi(ctx, &ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .map(|it| (it.id, it))
+                .collect();
+            items.extend(ids.into_iter().filter_map(|id| by_id.get(&id).cloned()));
+        }
+        let numbers = crate::models::numbers_for_items(ctx, work_id, &items);
+        let work_langs =
+            skribisto_model::language::parse_legacy_list(&work.dict_language.join(" "));
+        redundant_of(&items, &numbers, &work_langs)
+    }
+
+    /// Clear the titles named by [`Self::redundant_number_titles`], in **one** undo step.
+    ///
+    /// Clearing rather than rewriting: the number is not the title's to hold any more, and
+    /// an empty title is a first-class state everywhere — the binder falls back to the
+    /// badge plus the item's type, and the exporter's `NumberAndTitle` already renders an
+    /// untitled chapter as its number alone. A writer who wanted "Chapter 3" printed gets
+    /// exactly that, from the generator, wherever the export style asks for it.
+    ///
+    /// Takes explicit ids rather than re-deriving them, so the rows the writer saw in the
+    /// preview are the rows that change even if something moved in between.
+    pub fn clear_number_titles(&self, ids: &[u64]) {
+        if ids.is_empty() {
+            return;
+        }
+        let ctx = &*self.app_ctx;
+        let stack = self.stack();
+        let _ = undo_redo_commands::begin_composite(ctx, stack);
+        for &id in ids {
+            // `set_title` writes both homes — `BinderItem.title` and the title `Content`
+            // row — so neither is left holding a number the other has dropped.
+            let probe = SingleBinderItem::new(self.app_ctx.clone());
+            probe.set_id(Some(id));
+            if let Err(e) = probe.set_title("", stack) {
+                // Keep going and close the composite: a partial clear is still one undo
+                // step, and abandoning it half-way would leave the writer with a mixture
+                // they cannot revert in one go. Reported rather than swallowed — the row
+                // simply keeps its old title, and the next tidy will offer it again.
+                eprintln!("outline: clearing the title of item {id} failed: {e}");
+            }
         }
         undo_redo_commands::end_composite(ctx);
         self.reload();
@@ -1054,6 +1179,39 @@ pub(crate) fn apply_move(
     )
 }
 
+/// The redundancy filter itself, split out from the backend reads so it can be tested.
+///
+/// A row qualifies only if it carries an ordinal at all (so scenes, notes and anything the
+/// writer excluded are never candidates) and its title merely restates that ordinal, judged
+/// in the language the row is actually written in — its own tag if it has one, else the
+/// Work's, which is the resolution the exporter's `HeadingLanguage::Auto` performs per row.
+/// Getting that wrong in either direction is what makes this worth isolating: an English
+/// manuscript must not have "Chapitre 3" cleared, and a French one must.
+fn redundant_of(
+    items: &[frontend::direct_access::BinderItemDto],
+    numbers: &HashMap<u64, skribisto_model::numbering::Numbered>,
+    work_langs: &[String],
+) -> Vec<(u64, String)> {
+    let mut out = Vec::new();
+    for it in items {
+        let Some(n) = numbers.get(&it.id) else {
+            continue;
+        };
+        let tags: &[String] = if it.dict_language.iter().any(|t| !t.is_empty()) {
+            &it.dict_language
+        } else {
+            work_langs
+        };
+        let lang = skribisto_model::language::primary(tags);
+        if !it.title.trim().is_empty()
+            && headings::is_redundant_number_title(&it.title, lang, n.level, n.number())
+        {
+            out.push((it.id, it.title.clone()));
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1069,6 +1227,94 @@ mod tests {
             outline.stack_id_signal().get().is_some(),
             "init_stack opens the per-Work undo stack"
         );
+    }
+
+    /// Build a DTO with just the fields [`redundant_of`] reads.
+    fn dto(id: u64, title: &str, langs: &[&str]) -> frontend::direct_access::BinderItemDto {
+        frontend::direct_access::BinderItemDto {
+            id,
+            title: title.to_string(),
+            dict_language: langs.iter().map(|s| s.to_string()).collect(),
+            ..Default::default()
+        }
+    }
+
+    fn numbered(
+        id: u64,
+        level: skribisto_model::compile::StreamLevel,
+        n: usize,
+    ) -> (u64, skribisto_model::numbering::Numbered) {
+        (
+            id,
+            skribisto_model::numbering::Numbered {
+                level,
+                book: n,
+                part: n,
+                chapter: n,
+            },
+        )
+    }
+
+    /// A title that only restates its own number is offered for tidying — and one that
+    /// says anything else, or names a *different* number, is left alone.
+    #[test]
+    fn only_titles_restating_their_own_number_are_offered() {
+        use skribisto_model::compile::StreamLevel::Chapter;
+        let items = vec![
+            dto(1, "Chapter 3", &[]),
+            dto(2, "The Storm", &[]),
+            dto(3, "chapter 5.", &[]), // case + a trailing mark
+            dto(4, "Chapter 9", &[]),  // names a number that is not its own
+            dto(5, "", &[]),           // already blank: nothing to clear
+        ];
+        let numbers: HashMap<_, _> = [
+            numbered(1, Chapter, 3),
+            numbered(2, Chapter, 4),
+            numbered(3, Chapter, 5),
+            numbered(4, Chapter, 6),
+            numbered(5, Chapter, 7),
+        ]
+        .into_iter()
+        .collect();
+        let got: Vec<u64> = redundant_of(&items, &numbers, &["en-US".to_string()])
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(got, vec![1, 3]);
+    }
+
+    /// Judged in the language the row is actually written in: a French chapter inside an
+    /// English project is recognised, and an English one is not mistaken for it.
+    #[test]
+    fn redundancy_is_judged_in_the_rows_own_language() {
+        use skribisto_model::compile::StreamLevel::Chapter;
+        let items = vec![
+            dto(1, "Chapitre 3", &["fr-FR"]),
+            dto(2, "Chapitre 4", &[]), // untagged: falls back to the Work's language
+        ];
+        let numbers: HashMap<_, _> = [numbered(1, Chapter, 3), numbered(2, Chapter, 4)]
+            .into_iter()
+            .collect();
+        let got: Vec<u64> = redundant_of(&items, &numbers, &["en-US".to_string()])
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(got, vec![1], "only the row written in French matches");
+
+        // …and with the Work itself in French, the untagged row matches too.
+        let got: Vec<u64> = redundant_of(&items, &numbers, &["fr-FR".to_string()])
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(got, vec![1, 2]);
+    }
+
+    /// A row carrying no ordinal — a scene, a note, a prologue the writer excluded — is
+    /// never a candidate, however its title reads.
+    #[test]
+    fn a_row_without_an_ordinal_is_never_offered() {
+        let items = vec![dto(1, "Chapter 3", &[])];
+        assert!(redundant_of(&items, &HashMap::new(), &["en-US".to_string()]).is_empty());
     }
 
     #[test]

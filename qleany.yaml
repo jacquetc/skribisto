@@ -253,6 +253,24 @@ entities:
       - Flat
   - name: custom_replacement_rules_enabled
     type: boolean
+  # Does this book number its chapters and parts at all? The manuscript-level master
+  # switch, and manuscript data rather than a machine preference — a co-author opening the
+  # `.skrib` gets the same answer, exactly as `chapter_mode` does.
+  #
+  # When off, the compiler clamps the export style's heading schemes to at most
+  # `TitleOnly` before rendering: "off" has to mean off in the exported file, not merely in
+  # a UI the writer might not have opened before hitting Export.
+  #
+  # NOTE for `skrib_format`: this is the one new field whose safe legacy state is `true`,
+  # so its `WorkFile` mirror needs `#[serde(default = "…")]`, never the bare shorthand.
+  - name: number_chapters
+    type: boolean
+  # Whether a new Part restarts chapter numbering at one. Off by default: trade practice
+  # runs chapters continuously across the parts of one book, so "Part Two" opens on
+  # "Chapter Eleven". A setting rather than a constant because the in-world "Book Two,
+  # Chapter One" framing is real and other tools expose the same choice.
+  - name: part_resets_chapter
+    type: boolean
   - name: binders
     type: entity
     entity: Binder
@@ -620,6 +638,17 @@ entities:
   - name: is_favorite
     type: boolean
   - name: is_exportable
+    type: boolean
+  # The prologue lever: this row stays in the book, keeps its heading, its prose and its
+  # word count, but neither prints a structural number nor consumes one — so the chapter
+  # after a prologue is chapter one. Read only by `skribisto_model::numbering`.
+  #
+  # Named as the *exception* rather than `numbered`, on purpose. `false` is the state every
+  # existing project must load with, and `false` is what `bool::default()` — and so a bare
+  # `#[serde(default)]` in `skrib_format` — already gives. The positive spelling would need
+  # a custom `default_true` on every deserializer it reaches, and forgetting one silently
+  # un-numbers a manuscript.
+  - name: exclude_from_numbering
     type: boolean
   - name: indent
     type: integer

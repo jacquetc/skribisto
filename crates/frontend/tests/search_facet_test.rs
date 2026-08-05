@@ -47,6 +47,7 @@ fn item(role: BinderItemRole, sub_role: BinderItemSubRole, title: &str) -> Creat
         activated: true,
         is_favorite: false,
         is_exportable: true,
+        exclude_from_numbering: false,
         indent: 0,
         word_count_goal: 0,
         char_count_goal: 0,

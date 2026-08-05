@@ -20,7 +20,11 @@
 //! [`Gathered`]: skrib_format::Gathered
 
 mod fonts;
-mod headings;
+/// The generated structural words and their number formatting — "Chapter 3",
+/// "Chapitre 3". Public because the UI shows the same numbers the export prints and
+/// must recognise a redundant title with the *same* predicate the exporter uses; two
+/// implementations of "does this title merely restate its number" would drift.
+pub mod headings;
 mod preset;
 mod render;
 
@@ -49,6 +53,7 @@ pub fn item_metas(g: &Gathered) -> Vec<ItemMeta> {
                 indent: it.indent as i32,
                 activated: it.activated,
                 is_exportable: it.is_exportable,
+                exclude_from_numbering: it.exclude_from_numbering,
             });
         }
     }

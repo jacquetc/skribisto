@@ -42,6 +42,13 @@ pub struct ChooseNode {
     pub sub_role: BinderItemSubRole,
     pub kind: String, // "binder" | "folder" | "item"
     pub exportable: bool,
+    /// The chapter/part/book ordinal this row will carry in the exported file.
+    ///
+    /// Computed from the very same `Gathered` snapshot the exporter renders, through the
+    /// very same `numbering::number_map` — so what this dialog shows and what lands in the
+    /// file cannot disagree. That matters more here than anywhere else in the app: this is
+    /// the screen where the writer picks *which* chapter to export.
+    pub number: Option<usize>,
 }
 
 impl ChooseNode {
@@ -52,6 +59,7 @@ impl ChooseNode {
             sub_role: BinderItemSubRole::default(),
             kind: "binder".to_string(),
             exportable: true,
+            number: None,
         }
     }
 }
@@ -72,6 +80,24 @@ impl ChooseModel {
     /// so the preview binding survives a "show non-exportable" toggle).
     pub fn build(g: &Gathered, show_non_exportable: bool, changed: Signal<u64>) -> Self {
         let tree: TreeModel<ChooseNode> = TreeModel::new();
+        // Numbered from the whole manuscript, before any of the filtering below — the
+        // `show_non_exportable` toggle and the checkboxes choose what this *export*
+        // contains, and neither may change what number a chapter carries.
+        // Straight from the frozen `Gathered` rather than through
+        // `crate::models::numbers_for_work`: this dialog is built from the same snapshot the
+        // exporter will render, and re-reading the live store could disagree with it.
+        // `skribisto_compiler::item_metas` is the exporter's own mapping, so the two cannot
+        // drift. The `number_chapters` gate is the same policy, spelled out once here.
+        let numbers = if g.work.number_chapters {
+            skribisto_model::numbering::number_map(
+                &skribisto_compiler::item_metas(g),
+                skribisto_model::numbering::NumberingRules {
+                    part_resets_chapter: g.work.part_resets_chapter,
+                },
+            )
+        } else {
+            std::collections::HashMap::new()
+        };
         for bwi in &g.binders {
             let broot = tree.insert_root(
                 tree.root_count(),
@@ -111,6 +137,9 @@ impl ChooseModel {
                         sub_role: it.sub_role.clone(),
                         kind,
                         exportable: it.is_exportable,
+                        number: numbers
+                            .get(&it.id)
+                            .map(skribisto_model::numbering::Numbered::number),
                     },
                 );
                 stack.push((depth, node));
@@ -279,17 +308,20 @@ impl Widget for ChooseTreeWidget {
                 // `StandardTreeItem` gives the depth indentation, the expand/collapse chevron
                 // (via has_children/is_expanded/on_toggle), the tri-state checkbox and the
                 // leading sub-role icon — the same chrome the outline tree uses.
-                Box::new(
-                    StandardTreeItem::new(lit!(node.title.clone()))
-                        .depth(entry.depth)
-                        .has_children(entry.has_children)
-                        .is_expanded(entry.is_expanded)
-                        .selected(selected)
-                        .on_toggle_rc(rowctx.toggle_callback())
-                        .tristate_checkbox(sig)
-                        .leading_slot(icon)
-                        .label_color(title_color),
-                ) as Box<dyn Widget>
+                let mut item = StandardTreeItem::new(lit!(node.title.clone()))
+                    .depth(entry.depth)
+                    .has_children(entry.has_children)
+                    .is_expanded(entry.is_expanded)
+                    .selected(selected)
+                    .on_toggle_rc(rowctx.toggle_callback())
+                    .tristate_checkbox(sig)
+                    .leading_slot(icon)
+                    .label_color(title_color);
+                // The number this row will actually print in the file being assembled.
+                if node.number.is_some() {
+                    item = item.center_slot(crate::widgets::StructureNumber::new(node.number));
+                }
+                Box::new(item) as Box<dyn Widget>
             },
         )
         .item_height(28.0);

@@ -46,6 +46,16 @@ pub struct StreamRow {
     pub item_id: u64,
     pub role: BinderItemRole,
     pub sub_role: BinderItemSubRole,
+    /// The chapter/part ordinal this row carries in the book, or `None` for a scene.
+    ///
+    /// The stream is the manuscript as it reads, so this is the closest thing in the app
+    /// to the exported heading — and it is computed by the same function the exporter
+    /// calls, over the same whole-manuscript stream, so the two agree by construction.
+    pub number: Option<usize>,
+    /// What to call this row when it has no title of its own — "Chapter 3", localized.
+    /// See `crate::models::label_and_badge` for the rule; `title` stays the writer's own
+    /// string, because that is what renames seed from and what search matches.
+    pub fallback_label: Option<String>,
 }
 
 #[cfg(not(feature = "mocks"))]
@@ -151,10 +161,14 @@ mod imp {
             // already gone.
             {
                 use DirectAccessEntity::BinderItem;
-                use EntityEvent::{Created, Removed};
+                use EntityEvent::{Created, Removed, Updated};
                 let origins = [
                     Origin::DirectAccess(BinderItem(Created)),
                     Origin::DirectAccess(BinderItem(Removed)),
+                    // A `Work` update carries the numbering settings — flipping them in
+                    // Settings changes every ordinal badge here, and nothing else here
+                    // would notice.
+                    Origin::DirectAccess(DirectAccessEntity::Work(Updated)),
                     Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
                     Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
                     Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
@@ -217,10 +231,10 @@ mod imp {
         let Some(work_id) = work_id else {
             return Vec::new();
         };
-        let binder_ids =
+        let binder_ids_all =
             work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
                 .unwrap_or_default();
-        for binder_id in binder_ids {
+        for binder_id in binder_ids_all.iter().copied() {
             let item_ids = binder_commands::get_binder_relationship(
                 ctx,
                 &binder_id,
@@ -236,12 +250,46 @@ mod imp {
             if let Some(pos) = flat.iter().position(|it| it.id == head_id) {
                 let sub_roles: Vec<BinderItemSubRole> =
                     flat.iter().map(|it| it.sub_role.clone()).collect();
+                // Numbered over the **whole Work**, not this binder — `flat` above is one
+                // binder's rows, and a manuscript whose chapters span two binders would
+                // otherwise restart at one here while the outline and the exported file
+                // (both numbered over the concatenated stream) kept counting. Same rule,
+                // one source: `crate::models::numbers_for_items`.
+                let numbers = {
+                    let mut all = Vec::new();
+                    for bid in &binder_ids_all {
+                        let ids = binder_commands::get_binder_relationship(
+                            ctx,
+                            bid,
+                            &BinderRelationshipField::BinderItems,
+                        )
+                        .unwrap_or_default();
+                        let by_id: std::collections::HashMap<u64, _> =
+                            binder_item_commands::get_binder_item_multi(ctx, &ids)
+                                .unwrap_or_default()
+                                .into_iter()
+                                .flatten()
+                                .map(|it| (it.id, it))
+                                .collect();
+                        all.extend(ids.into_iter().filter_map(|id| by_id.get(&id).cloned()));
+                    }
+                    crate::models::numbers_for_items(ctx, work_id, &all)
+                };
+                let work_langs = crate::models::work_language_tags(ctx, work_id);
                 return row_indices(&sub_roles, pos, level)
                     .into_iter()
                     .map(|i| StreamRow {
                         item_id: flat[i].id,
                         role: flat[i].role.clone(),
                         sub_role: flat[i].sub_role.clone(),
+                        number: numbers
+                            .get(&flat[i].id)
+                            .map(skribisto_model::numbering::Numbered::number),
+                        fallback_label: crate::models::fallback_label_for(
+                            &flat[i],
+                            numbers.get(&flat[i].id),
+                            &work_langs,
+                        ),
                     })
                     .collect();
             }
@@ -344,6 +392,8 @@ mod imp {
                 item_id,
                 role: BinderItemRole::Item,
                 sub_role: BinderItemSubRole::Scene,
+                number: None,
+                fallback_label: None,
             }
         }
 
@@ -438,10 +488,20 @@ mod imp {
     fn mock_rows(level: StreamLevel) -> Vec<StreamRow> {
         use BinderItemRole::{Folder, Item};
         use BinderItemSubRole::{ChapterScene, Part, Scene};
-        let row = |item_id, role, sub_role| StreamRow {
+        let row = |item_id: u64, role, sub_role| StreamRow {
             item_id,
             role,
             sub_role,
+            // Every fixture row is titled, so none needs the fallback.
+            fallback_label: None,
+            // The fixture book's chapter ordinals, in step with the mock binder tree.
+            number: match item_id {
+                301 => Some(1), // Part One
+                104 => Some(1), // the first chapter
+                302 => Some(2),
+                105 => Some(3),
+                _ => None,
+            },
         };
         match level {
             // A chapter streams only its own scenes.

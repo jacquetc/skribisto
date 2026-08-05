@@ -552,6 +552,13 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                             .enabled(on_selection.clone())
                             .intent("binder.outdent"),
                     )
+                    .separator()
+                    // Work-scoped, so no selection gate: it asks before it touches
+                    // anything, and says so when there is nothing to tidy.
+                    .item(
+                        MenuEntry::new(tr!(menu_document_tidy_titles()))
+                            .intent("numbering.tidy_titles"),
+                    )
                     .separator();
 
                 // Insert template ▸ — the one menu in this app whose item list is DATA,

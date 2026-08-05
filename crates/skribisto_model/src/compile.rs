@@ -116,6 +116,17 @@ pub struct ItemMeta {
     /// The user's per-item export toggle (defaults on). Filters items *swept into* a
     /// multi-item scope; an explicitly anchored single item overrides it.
     pub is_exportable: bool,
+    /// The user's per-item numbering opt-out (defaults **off**, i.e. numbered) — the
+    /// prologue lever. Read only by [`crate::numbering`]; scope resolution ignores it,
+    /// because "does this row print a numeral" has nothing to do with "is this row in
+    /// the export".
+    ///
+    /// Stated as the *exception* rather than as `numbered: bool` on purpose: `false` is
+    /// the legacy state every existing project must load with, and `false` is what
+    /// `bool::default()` — and therefore a bare `#[serde(default)]` — already gives.
+    /// The positive spelling would need a custom `default_true` on every deserializer it
+    /// touches, and forgetting one silently un-numbers a manuscript.
+    pub exclude_from_numbering: bool,
 }
 
 /// What an export "Current …" action targets. Chosen from the focused item's facet by
@@ -280,6 +291,7 @@ mod tests {
             indent,
             activated: true,
             is_exportable: true,
+            exclude_from_numbering: false,
         }
     }
     fn off(mut m: ItemMeta) -> ItemMeta {

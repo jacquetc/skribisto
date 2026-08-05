@@ -6,6 +6,8 @@
 //! implementation per verb and the command surface is a thin naming layer over it.
 
 use bastyde::prelude::*;
+use bastyde::widgets::message_box::EventContextMessageBoxExt;
+use bastyde::widgets::{MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton};
 
 use crate::intents::AppIntent;
 
@@ -96,4 +98,52 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .primary(KeyStroke::ctrl(Key::D))
             .build(),
     );
+    {
+        // Clear the titles that merely restate their own number.
+        //
+        // Previewed and confirmed, never silent: this rewrites stored prose-adjacent data
+        // across the whole manuscript, and a wrong string match here would destroy a title
+        // rather than merely mis-display it. The ids are captured with the preview, so what
+        // the writer agreed to is what changes. One undo step covers the lot.
+        let outline = deps.outline.clone();
+        ctx.register_action_global(
+            Action::new("numbering.tidy_titles").on_invoke(move |_i, c| {
+                let found = outline.redundant_number_titles();
+                if found.is_empty() {
+                    c.present_message_box(
+                        MessageBox::information(tr!(tidy_titles_title()))
+                            .text(tr!(tidy_titles_none())),
+                    );
+                    return;
+                }
+                // The question stays short — the count and what clearing means — because a
+                // manuscript can offer forty of these and an inlined list grew the box past
+                // the bottom of the screen. **Every** affected title goes in
+                // `detailed_text`, the collapsible the framework already scrolls, so the
+                // writer can check the whole list before agreeing rather than a truncated
+                // sample of it.
+                let details: Vec<String> =
+                    found.iter().map(|(_, t)| format!("\u{2022} {t}")).collect();
+                let ids: Vec<u64> = found.iter().map(|(id, _)| *id).collect();
+                let outline = outline.clone();
+                c.present_message_box(
+                    MessageBox::question(tr!(tidy_titles_title()))
+                        .text(tr!(tidy_titles_lead(count = found.len() as i64)))
+                        .informative_text(tr!(tidy_titles_explain()))
+                        .detailed_text(lit!(details.join("\n")))
+                        .buttons(MessageBoxButtons::Custom(vec![
+                            MessageBoxButton::standard(StandardButton::Ok),
+                            MessageBoxButton::standard(StandardButton::Cancel),
+                        ]))
+                        .default_button(StandardButton::Cancel)
+                        .escape_button(StandardButton::Cancel)
+                        .on_result(move |r, _ctx| {
+                            if r.button == StandardButton::Ok {
+                                outline.clear_number_titles(&ids);
+                            }
+                        }),
+                );
+            }),
+        );
+    }
 }

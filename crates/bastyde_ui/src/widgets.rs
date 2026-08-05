@@ -5,8 +5,13 @@
 //!
 //! The bar for living here is genuine reuse across features, not "it is a widget" — a
 //! control used by exactly one feature belongs with that feature. [`pill::Pill`] qualifies:
-//! spellcheck languages, item tags and item aliases all render one.
+//! spellcheck languages, item tags and item aliases all render one. So does
+//! [`structure_number::StructureNumber`]: the outline tree, the Overview table, the stream
+//! headings, the corkboard, the Inspector and the export scope tree all show a chapter's
+//! ordinal beside its title.
 
 pub mod pill;
+pub mod structure_number;
 
 pub use pill::{Pill, PillTooltip, attach_labelled_composite_tooltip};
+pub use structure_number::StructureNumber;

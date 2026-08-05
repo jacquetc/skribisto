@@ -91,6 +91,14 @@ pub struct OverviewRow {
     /// `BinderItemDto` the loader already reads, and a per-cell lookup would issue one
     /// backend read per visible row per rebuild.
     pub tags: Vec<u64>,
+    /// The chapter/part ordinal this row carries in the book, or `None` for a row that
+    /// holds none. Its own field, never folded into `title` — the Title column is
+    /// edit-in-place, and its editor seeds from `title`.
+    pub number: Option<usize>,
+    /// What to call this row when it has no title of its own — "Chapter 3", localized.
+    /// See `crate::models::label_and_badge` for the rule; `title` stays the writer's own
+    /// string, because that is what renames seed from and what search matches.
+    pub fallback_label: Option<String>,
     /// Open (unresolved, non-orphaned) comment threads anchored to *this row's own*
     /// Content rows.
     ///
@@ -313,6 +321,10 @@ impl OverviewRowsModel {
         let origins = [
             Origin::DirectAccess(BinderItem(Updated)),
             Origin::DirectAccess(BinderItem(Removed)),
+            // A `Work` update carries the numbering settings — flipping them in
+            // Settings changes every ordinal badge here, and nothing else here
+            // would notice.
+            Origin::DirectAccess(DirectAccessEntity::Work(Updated)),
             Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
             Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
             Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
@@ -831,6 +843,14 @@ mod rows {
             return gone(true);
         };
         let flat = flat_items(ctx, work_id);
+        // Numbered from the whole Work before the subtree below narrows it: an Overview
+        // opened on Part Two must still call its chapters eleven and twelve.
+        let numbers = {
+            let metas: Vec<skribisto_model::compile::ItemMeta> =
+                flat.iter().map(|(_, it)| crate::models::item_meta_of(it)).collect();
+            crate::models::numbers_for_work(ctx, work_id, &metas)
+        };
+        let work_langs = crate::models::work_language_tags(ctx, work_id);
         let Subtree::Found {
             rows: subtree,
             base,
@@ -917,6 +937,14 @@ mod rows {
                         own_words,
                         total_words: 0, // filled by the fold below
                         tags: it.tags.clone(),
+                        number: numbers
+                            .get(&it.id)
+                            .map(skribisto_model::numbering::Numbered::number),
+                        fallback_label: crate::models::fallback_label_for(
+                            it,
+                            numbers.get(&it.id),
+                            &work_langs,
+                        ),
                         own_comments: open_comments.get(&it.id).copied().unwrap_or(0),
                         total_comments: 0, // filled by the same fold
                     },
@@ -1015,6 +1043,16 @@ mod rows {
                 own_words,
                 total_words: 0, // filled by the fold below
                 tags: tags.to_vec(),
+                // Every fixture row is titled, so none needs the fallback.
+                fallback_label: None,
+                // The fixture book's chapter ordinals, in step with the mock binder tree.
+                number: match item_id {
+                    301u64 => Some(1), // Part One
+                    104 => Some(1),    // the first chapter
+                    302 => Some(2),
+                    105 => Some(3),
+                    _ => None,
+                },
                 // A couple of fabricated threads on the prose-bearing rows, so the
                 // mock build exercises the column and its fold rather than a
                 // uniformly-zero one that would hide an arithmetic bug.

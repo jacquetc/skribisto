@@ -155,6 +155,15 @@ impl NewWorkUseCase {
             // Off by default for every new project — a writer opts a specific
             // project into custom replacements explicitly, never inherits it.
             custom_replacement_rules_enabled: false,
+            // **Set explicitly, and it must stay that way.** `Work` derives `Default`, so
+            // `bool::default()` would leave this `false` and every project this app
+            // creates would silently export with no chapter numbers at all — while the
+            // template below still writes "Chapter 1…N" into the titles. The
+            // `..Default::default()` on the next line is exactly how that would happen.
+            // `a_new_project_numbers_its_chapters` pins it.
+            number_chapters: true,
+            // Chapters run continuously across parts — the trade convention.
+            part_resets_chapter: false,
             smart_punctuation: smart_punctuation.id,
             ..Default::default()
         })?;

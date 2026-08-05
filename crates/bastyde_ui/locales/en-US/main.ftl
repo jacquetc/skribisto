@@ -291,6 +291,21 @@ settings-field-author-name = Author name
 settings-field-author-placeholder = Optional
 settings-field-author-hint = Appears on the compiled title page and in exported file metadata. Leave it blank to omit it.
 settings-group-chapters = Chapters
+tidy-titles-title = Tidy chapter titles
+tidy-titles-none = No chapter or part title is merely repeating its own number.
+tidy-titles-lead = { $count ->
+        [one] One chapter or part is titled with nothing but its own number.
+       *[other] { $count } chapters and parts are titled with nothing but their own number.
+    }
+tidy-titles-explain = Clearing those titles leaves each one named by the number the book already knows — the same number the export prints. Nothing else changes, and one undo puts them all back.
+menu-document-tidy-titles = Tidy chapter titles…
+settings-group-numbering = Numbering
+settings-number-chapters = Number chapters and parts
+settings-number-chapters-tip = Chapters and parts carry a number worked out from where they sit in the book — shown beside their title here, and printed by the export.
+settings-number-chapters-tip-more = The number is never stored in the title, so it stays right when you reorder, insert or delete. Turn this off and the export prints titles alone, whatever the export style asks for. To leave one chapter out — a prologue, an interlude — use the Inspector's Numbering switch instead: that keeps it in the book but stops it taking a number.
+settings-part-resets-chapter = Restart chapter numbers at each part
+settings-part-resets-chapter-tip = Off by default: chapters run straight on across the parts of a book, so "Part Two" opens on Chapter Eleven.
+settings-part-resets-chapter-tip-more = That is the usual trade practice, and what a reader expects. Turn it on for a book whose parts are meant to read as separate volumes, where each one opens on Chapter One.
 settings-chapter-flat = Flat chapters
 settings-chapter-flat-hint = On: a chapter is a single row. You write into it, and it holds no scenes. Off: a chapter is a folder. You still write into it, but it can hold scenes as well. New chapters follow this setting; existing ones convert via Promote.
 
@@ -1068,6 +1083,12 @@ dict-add-failed = Couldn't add the dictionary: { $error }
 # The Inspector's per-item export controls (M3)
 inspector-export = Export
 inspector-exportable = Include in exports
+ctx-number = Number this chapter
+ctx-unnumber = Do not number this chapter
+inspector-numbering = Numbering
+inspector-numbered = Numbered
+inspector-numbered-tip = This chapter takes its place in the book's numbering. Switch it off for a prologue, an epilogue or an interlude.
+inspector-numbered-tip-more = An unnumbered chapter stays in the book exactly as it was — its heading, its prose and its word count are untouched. It simply prints no number, and does not use one up: the chapter after a prologue is chapter one, not chapter two. Leaving it out of the export instead is a different switch, above, and that one removes the chapter from the book altogether.
 inspector-apply-to-children = Apply to children
 # The Inspector's per-Part/Chapter milestone date (M5), shown on the Book's Pace.
 inspector-milestone = Milestone date

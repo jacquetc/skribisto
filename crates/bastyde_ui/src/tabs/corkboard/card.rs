@@ -37,6 +37,12 @@ impl Widget for CorkboardTile {
         // Header: type icon, the (inline-editable) title, type badge, and the
         // "More actions" menu. Double-click the title — or F2 / ⋮ Rename — to edit
         // it in place.
+        // An untitled chapter is named by its ordinal instead of showing a bare "3.".
+        let (title_text, badge) = crate::models::label_and_badge(
+            &self.card.title,
+            self.card.fallback_label.as_deref(),
+            self.card.number,
+        );
         let header = HStack::new()
             .spacing(7.0)
             .child(CardNumber {
@@ -48,10 +54,15 @@ impl Widget for CorkboardTile {
                 root: None,
             })
             .child(crate::binder::icons::sub_role_icon(&self.card.sub_role).icon_size(15.0))
+            // The chapter's ordinal in the *book* — a second, distinct badge from
+            // `CardNumber` above, which is its position on the *board*. Card #7 is
+            // routinely Chapter 3, so fusing them would state a falsehood; they sit on
+            // either side of the icon so it is plain they count different things.
+            .child(crate::widgets::StructureNumber::new(badge))
             .child(Expand::horizontal().child(InlineTitle {
                 vm: self.vm.clone(),
                 item_id: self.card.item_id,
-                title: self.card.title.clone(),
+                title: title_text,
                 root: None,
             }))
             .child(

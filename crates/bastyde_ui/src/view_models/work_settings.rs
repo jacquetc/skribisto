@@ -84,6 +84,48 @@ impl WorkSettingsViewModel {
         self.work.save(self.stack.get());
     }
 
+    // ── Numbering ────────────────────────────────────────────────────────────
+
+    /// Does this book number its chapters and parts at all?
+    ///
+    /// Manuscript data, not a machine preference — it rides in the `.skrib`, so a co-author
+    /// opening the project gets the same answer, exactly as `chapter_mode` does. It also
+    /// reaches the *exported file*: the compiler clamps an export style's heading scheme
+    /// when this is off, so "off" cannot mean "off in the app but numbered on disk".
+    pub fn number_chapters(&self) -> Signal<bool> {
+        self.work.number_chapters()
+    }
+
+    /// Whether a new Part restarts chapter numbering.
+    ///
+    /// Off by default, which is the trade convention: chapters run continuously across the
+    /// parts of one book, so "Part Two" opens on "Chapter Eleven". Exposed rather than
+    /// hardcoded because the in-world "Book Two, Chapter One" framing is real.
+    pub fn part_resets_chapter(&self) -> Signal<bool> {
+        self.work.part_resets_chapter()
+    }
+
+    /// Persist the numbering master switch. No-op guarded like [`Self::set_flat_chapters`],
+    /// and for the same reason: the pane drives this from an effect that fires on every
+    /// rebuild, and an unconditional write would queue an undo entry and a disk save each
+    /// time Settings is opened.
+    pub fn set_number_chapters(&self, on: bool) {
+        if self.work.number_chapters().get() == on {
+            return;
+        }
+        self.work.set_number_chapters(on);
+        self.work.save(self.stack.get());
+    }
+
+    /// Persist the part-reset rule. Same no-op guard as above.
+    pub fn set_part_resets_chapter(&self, on: bool) {
+        if self.work.part_resets_chapter().get() == on {
+            return;
+        }
+        self.work.set_part_resets_chapter(on);
+        self.work.save(self.stack.get());
+    }
+
     // ── Author ───────────────────────────────────────────────────────────────
 
     /// The writer's name, as it appears on the compiled title page and in the

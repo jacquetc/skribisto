@@ -136,6 +136,13 @@ pub fn build_bundle(
         // imported project has simply never been asked, so it should follow the
         // app default exactly as a newly created one does.
         smart_punctuation: None,
+        // Plume numbered nothing itself — its chapter names are literal text, and this
+        // importer carries them over verbatim (see `node.name` below). Numbering on is
+        // still the right import default: it matches every freshly created project, and
+        // an imported chapter genuinely titled "Chapitre 3" is exactly the case the
+        // heading's redundancy guard exists to collapse.
+        number_chapters: true,
+        part_resets_chapter: false,
     };
 
     // Binders, in on-disk order: Manuscript, then Story Bible (only if non-empty).
@@ -812,6 +819,9 @@ impl<'a> Builder<'a> {
                     activated: true,
                     is_favorite: false,
                     is_exportable,
+                    // Plume has no unnumbered-chapter concept, so nothing here can be
+                    // imported as one. The writer marks their prologue afterwards.
+                    exclude_from_numbering: false,
                     indent,
                     word_count_goal: 0,
                     char_count_goal: 0,

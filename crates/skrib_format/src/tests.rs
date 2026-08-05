@@ -107,6 +107,8 @@ fn sample_inputs() -> SampleInputs {
         unique_id: "test-unique-id-abc".into(),
         chapter_mode: common::entities::ChapterMode::Flat,
         custom_replacement_rules_enabled: false,
+        number_chapters: true,
+        part_resets_chapter: false,
         tags: vec![10, 11],
         dict_words: vec![20, 21],
         text_replacement_rules: vec![],
@@ -225,6 +227,7 @@ fn sample_inputs() -> SampleInputs {
             activated: true,
             is_favorite: i % 2 == 0,
             is_exportable: true,
+            exclude_from_numbering: false,
             indent: (i % 3) as i64,
             word_count_goal: 1000,
             char_count_goal: 5000,
@@ -557,6 +560,7 @@ fn disallowed_content_is_dropped() {
         role: BinderItemRole::Item,
         sub_role: BinderItemSubRole::Scene,
         is_exportable: true,
+        exclude_from_numbering: false,
         ..Default::default()
     };
     let contents = vec![
@@ -1367,6 +1371,45 @@ fn parses_a_bundle_written_before_these_fields_existed() {
     // addition therefore needed both a version bump and a heal step.
     assert!(items[0].aliases.is_empty());
     assert!(items[0].point_of_view_ids.is_empty());
+    // Same reasoning for the numbering opt-out, and the polarity is the whole point:
+    // every row of every project that predates the field was numbered, and `false` — the
+    // exception not being taken — is exactly what a bare `#[serde(default)]` yields. Had
+    // the field been spelled `numbered: bool`, this line would be asserting that an
+    // existing manuscript silently stopped numbering.
+    assert!(!items[0].exclude_from_numbering);
+}
+
+/// **The one field in this format whose safe legacy default is `true`.**
+///
+/// `WorkFile::number_chapters` carries `#[serde(default = "default_true")]` rather than the
+/// bare shorthand every other additive field here uses, because `bool::default()` is
+/// `false`: with the shorthand, the first load under a build that has this field would
+/// switch numbering off for every manuscript in existence — silently, and visibly only in
+/// the exported file. The round-trip tests cannot catch that (they always write with the
+/// current code, so the field is always present), so it is pinned here against RON
+/// hand-written as an older build emitted it.
+#[test]
+fn a_bundle_written_before_the_numbering_fields_still_numbers_its_chapters() {
+    let old = r#"WorkFile(
+        file_id: 1,
+        created_at: "2023-11-14T22:13:20Z",
+        updated_at: "2023-11-14T22:13:20Z",
+        title: "My Novel",
+        author_name: "A. Writer",
+        dict_language: ["en-US"],
+        tag_ids: [],
+        dict_word_ids: [],
+        unique_id: "uid-1",
+        chapter_flat: false,
+    )"#;
+    let work: WorkFile = ron::from_str(old).expect("a pre-numbering work.ron must parse");
+    assert!(
+        work.number_chapters,
+        "a manuscript written before the switch existed was numbered, and must stay numbered"
+    );
+    // Its companion takes the ordinary shorthand: continuous chapters across parts is both
+    // the trade convention and what every older bundle meant.
+    assert!(!work.part_resets_chapter);
 }
 
 // ── dict_language: the pre-v4 string form (format v4) ───────────────────────

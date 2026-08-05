@@ -89,6 +89,7 @@ fn big_manuscript() -> AppContext {
             activated: true,
             is_favorite: false,
             is_exportable: true,
+            exclude_from_numbering: false,
             indent: 0,
             word_count_goal: 0,
             char_count_goal: 0,
