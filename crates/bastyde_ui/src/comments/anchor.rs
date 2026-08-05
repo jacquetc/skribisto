@@ -269,8 +269,26 @@ pub fn resolve(
             Found::One(at) => block_of(block_starts, at),
             _ => anchor.block_ordinal,
         };
-        if block_starts.is_empty() && chars.is_empty() {
-            return Resolution::Orphan(CommentOrphanReason::TextNotFound);
+        if block_starts.is_empty() {
+            // No blocks to derive an extent from.
+            //
+            // With text present this used to fall through to `block_extent`,
+            // whose empty-input fast path answers `(0, total_chars)` — so one
+            // paragraph comment silently claimed the entire manuscript. Nor can
+            // it be called an orphan: this verdict is written back to the store,
+            // and reporting a comment lost because the block index happened to
+            // be unavailable would be a worse lie than the one it replaces.
+            //
+            // Keep what was stored instead. It is the only answer that neither
+            // invents an extent nor destroys one.
+            if chars.is_empty() {
+                return Resolution::Orphan(CommentOrphanReason::TextNotFound);
+            }
+            let start = anchor.start.min(chars.len());
+            return Resolution::Anchored {
+                start,
+                length: anchor.length.min(chars.len() - start),
+            };
         }
         let last = first + anchor.block_span.saturating_sub(1);
         let (s, e) = block_extent(block_starts, chars.len(), first, last);
@@ -313,11 +331,25 @@ fn matches_at(chars: &[char], anchor: &Anchor, at: usize) -> bool {
     }
     if anchor.exact_truncated {
         // Compare the two captured ends rather than the whole span.
-        let Some((head, tail)) = anchor.exact.split_once('…') else {
+        //
+        // Split by the *known* head length, not by searching for the `…`
+        // separator `capture` joined them with. The head and tail are real
+        // prose, and prose contains ellipses — "the sentence trailed off…" —
+        // so `split_once('…')` finds whichever one comes first and hands back a
+        // head and tail that were never captured. The comparison then fails
+        // against text nobody edited, and the comment is reported lost.
+        //
+        // `capture` always writes exactly `TRUNCATED_SIDE` characters either
+        // side of one separator character, so the split point is arithmetic and
+        // needs no searching.
+        let exact_chars: Vec<char> = anchor.exact.chars().collect();
+        if exact_chars.len() != TRUNCATED_SIDE * 2 + 1 {
             return false;
-        };
-        let head_n = head.chars().count();
-        let tail_n = tail.chars().count();
+        }
+        let head: String = exact_chars[..TRUNCATED_SIDE].iter().collect();
+        let tail: String = exact_chars[TRUNCATED_SIDE + 1..].iter().collect();
+        let head_n = TRUNCATED_SIDE;
+        let tail_n = TRUNCATED_SIDE;
         if head_n + tail_n > anchor.length {
             return false;
         }
@@ -593,6 +625,67 @@ mod tests {
         assert!(a.exact_truncated);
         assert!(a.exact.contains('…'));
         assert!(a.exact.chars().count() < MAX_EXACT_CHARS + 2);
+    }
+
+    /// **The regression.** Prose contains ellipses. A truncated quote is stored
+    /// as `head…tail`, and the comparison used to recover the two halves by
+    /// searching for the first `…` — which, when the captured head itself ended
+    /// a sentence with one, is not the separator. The halves came back wrong,
+    /// the comparison failed against text nobody had touched, and the comment
+    /// was reported lost on the next open.
+    #[test]
+    fn a_quote_whose_own_prose_contains_an_ellipsis_still_matches_itself() {
+        // An ellipsis inside the captured head, well before the separator.
+        let text: String = "he trailed off… "
+            .chars()
+            .chain(std::iter::repeat_n('x', 500))
+            .collect();
+        let total = text.chars().count();
+        let a = capture(&text, 0, total, 0);
+
+        assert!(a.exact_truncated, "the fixture must exercise truncation");
+        assert!(
+            a.exact.chars().take(TRUNCATED_SIDE).any(|c| c == '…'),
+            "the fixture must put a real ellipsis inside the captured head"
+        );
+
+        let chars: Vec<char> = text.chars().collect();
+        assert!(
+            matches_at(&chars, &a, 0),
+            "an unedited quote must match itself, ellipsis in the prose or not"
+        );
+        assert!(
+            resolve(&text, &a, false, &[0]).is_anchored(),
+            "and must not be reported orphaned"
+        );
+    }
+
+    /// A paragraph comment with no block index must not swallow the manuscript.
+    ///
+    /// `block_extent`'s empty-input fast path answers "the whole document",
+    /// which is right for measuring and catastrophic as a comment's extent.
+    /// Nor may it orphan: the verdict is written back, so a missing block index
+    /// would mark real comments lost. It keeps the stored range instead.
+    #[test]
+    fn a_paragraph_comment_without_blocks_keeps_its_stored_range() {
+        let text = "one two three four five";
+        let a = Anchor {
+            start: 4,
+            length: 3,
+            exact: "two".into(),
+            block_span: 1,
+            ..Default::default()
+        };
+        match resolve(text, &a, true, &[]) {
+            Resolution::Anchored { start, length } => {
+                assert_eq!(
+                    (start, length),
+                    (4, 3),
+                    "the stored range must survive, not expand to the document"
+                );
+            }
+            other => panic!("expected the stored range, got {other:?}"),
+        }
     }
 
     #[test]

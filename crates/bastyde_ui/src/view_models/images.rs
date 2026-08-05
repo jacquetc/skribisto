@@ -215,9 +215,29 @@ pub fn set_cover(
     work_id: Option<u64>,
     image: Option<&PendingImage>,
 ) -> Result<(), ()> {
-    use frontend::commands::asset_commands;
+    use frontend::commands::{asset_commands, work_commands};
+    use frontend::common::direct_access::work::WorkRelationshipField;
 
-    let existing = asset_commands::get_all_asset(app_ctx).map_err(|_| ())?;
+    // This Work's assets, never `get_all_asset`. One process holds every open
+    // project in a single store, and an `Asset` carries no back-link to say
+    // which project it belongs to — so the unscoped read returns *other books'*
+    // pictures, and the demotion loop below would clear their covers while
+    // setting this one's. Same rule the comment and note-template models
+    // already state at their own reads.
+    let existing = match work_id {
+        Some(work_id) => {
+            let ids =
+                work_commands::get_work_relationship(app_ctx, &work_id, &WorkRelationshipField::Assets)
+                    .map_err(|_| ())?;
+            asset_commands::get_asset_multi(app_ctx, &ids)
+                .map_err(|_| ())?
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>()
+        }
+        // No project: there is nothing to demote and nothing to promote against.
+        None => Vec::new(),
+    };
 
     // Demote first. If the chosen picture is already in the project (the same
     // photograph inserted earlier, or the same cover chosen twice), promoting it
