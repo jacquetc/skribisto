@@ -451,3 +451,170 @@ fn a_rename_spares_the_markup_and_keeps_the_styling() {
         "the prose occurrence must actually have been renamed: {out:?}"
     );
 }
+
+/// A manuscript of `n` one-paragraph scenes, every one of them naming Aurélien — the shape
+/// of the operation this feature exists for: renaming a character who is *in the book*.
+///
+/// Built rather than loaded from the bundled fixture, which is a handful of scenes: the
+/// thing under test is what happens when the result set is bigger than a list a person
+/// would scroll, and no small fixture can produce that.
+fn manuscript_of(scenes: usize) -> AppContext {
+    use frontend::commands::{binder_item_commands, work_commands};
+    use frontend::common::direct_access::work::WorkRelationshipField;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+    use frontend::direct_access::{CreateBinderItemDto, CreateContentDto};
+    use work_management::{NewWorkDto, NewWorkTemplate};
+
+    let ctx = AppContext::new();
+    let dir = std::env::temp_dir().join(format!("skrib-bigrename-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+
+    work_management_commands::new_work(
+        &ctx,
+        &NewWorkDto {
+            file_name: dir.to_string_lossy().to_string(),
+            is_folder: true,
+            template_kind: NewWorkTemplate::EmptyNovel,
+            labels: vec![],
+            language: vec!["fr-FR".to_string()],
+            author_name: String::new(),
+            chapter_scene_mode: false,
+            paratext_front: Vec::new(),
+            paratext_back: Vec::new(),
+        },
+    )
+    .expect("new_work");
+
+    let work = work_commands::get_all_work(&ctx).unwrap().pop().unwrap();
+    let binder =
+        work_commands::get_work_relationship(&ctx, &work.id, &WorkRelationshipField::Binders)
+            .unwrap()
+            .pop()
+            .expect("the new Work must have a binder");
+
+    let now = chrono::Utc::now();
+    let items: Vec<CreateBinderItemDto> = (0..scenes)
+        .map(|i| CreateBinderItemDto {
+            uid: common::uid::fixture_uid(i as u64),
+            created_at: now,
+            updated_at: now,
+            title: format!("Scène {i}"),
+            sub_title: String::new(),
+            role: BinderItemRole::Item,
+            sub_role: BinderItemSubRole::Scene,
+            label: String::new(),
+            activated: true,
+            is_favorite: false,
+            is_exportable: true,
+            exclude_from_numbering: false,
+            indent: 0,
+            word_count_goal: 0,
+            char_count_goal: 0,
+            dict_language: Vec::new(),
+            aliases: Vec::new(),
+            contents: vec![],
+            references: vec![],
+            point_of_view: vec![],
+            tags: vec![],
+        })
+        .collect();
+    let created = binder_item_commands::create_binder_item_multi(&ctx, None, &items, binder, -1)
+        .expect("create_binder_item_multi");
+
+    for (i, item) in created.iter().enumerate() {
+        content_commands::create_content_multi(
+            &ctx,
+            None,
+            &[CreateContentDto {
+                created_at: now,
+                updated_at: now,
+                activated: true,
+                role: ContentRole::SceneText,
+                data: format!(
+                    "Aurélien traversa la forêt, et le vent portait l'odeur du sel ({i})."
+                ),
+            }],
+            item.id,
+            -1,
+        )
+        .expect("create_content_multi");
+    }
+
+    let _ = std::fs::remove_dir_all(&dir);
+    ctx
+}
+
+/// **A manuscript-wide rename must not be refused for being manuscript-wide.**
+///
+/// A result row is one matching *field*, and `run_search` stops at `RESULT_CAP` and reports
+/// `truncated` — which the UI reads as "this scan cannot honestly claim completeness" and
+/// switches Replace All **off** (`SearchReplaceViewModel::can_replace_all`). That cap used
+/// to be 300, which is the size of a list a person can scroll rather than the size of a
+/// novel: renaming a character who appears in 400 of a book's scenes tripped it, and the one
+/// operation the search panel exists for went dark exactly when it was worth doing, leaving
+/// the writer to retype the name scene by scene.
+///
+/// 400 scenes here, every one a hit — comfortably past the old cap — and the whole rename
+/// must still go through, in one reversible step.
+#[test]
+fn a_rename_across_more_scenes_than_the_old_cap_still_goes_through() {
+    const SCENES: usize = 400;
+
+    let ctx = manuscript_of(SCENES);
+    let stack = Some(undo_redo_commands::create_new_stack(&ctx));
+
+    let mut q = search(&ctx, "Aurélien");
+    q.search_titles = false;
+    q.search_synopsis = false;
+    let scan = search_management_commands::run_search(&ctx, &q).expect("run_search");
+
+    assert!(
+        !scan.truncated,
+        "{SCENES} matching scenes must produce a COMPLETE scan — a truncated one disables \
+         Replace All, which is the whole feature"
+    );
+    assert_eq!(
+        scan.item_count as usize, SCENES,
+        "every scene names Aurélien, so every scene must be listed"
+    );
+
+    let before = all_prose(&ctx);
+    let out = search_management_commands::replace_in_project(
+        &ctx,
+        stack,
+        &ReplaceInProjectDto {
+            work_id: work_id(&ctx),
+            replacement: "Aurélian".to_string(),
+            preserve_case: true,
+            excluded_result_ids: vec![],
+        },
+    )
+    .expect("replace_in_project");
+
+    assert_eq!(
+        out.items_changed as usize, SCENES,
+        "the rename must reach every scene, not the first few hundred"
+    );
+    assert_eq!(out.occurrences_replaced as usize, SCENES);
+    assert!(
+        out.skipped_stale.is_empty(),
+        "nothing moved under us: {:?}",
+        out.skipped_stale
+    );
+
+    let after = all_prose(&ctx);
+    assert!(
+        !after.contains("Aurélien"),
+        "not one occurrence may be left behind — a rename that misses some is worse than one \
+         that is refused, because nothing says which"
+    );
+
+    // …and it is still ONE undo, however many scenes it crossed. The snapshot is a
+    // structural clone of the Work's entity tree, so 400 scenes cost what 4 do.
+    undo_redo_commands::undo(&ctx, stack).expect("undo");
+    assert_eq!(
+        all_prose(&ctx),
+        before,
+        "one undo must put all {SCENES} scenes back, byte for byte"
+    );
+}

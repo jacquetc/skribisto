@@ -245,3 +245,48 @@ fn a_cold_search_still_comes_in_under_the_debounce() {
     );
     eprintln!("  cold search over {SCENES} scenes: {cold:?}");
 }
+
+/// …and the worst case a writer can actually produce: **a query that matches every scene.**
+///
+/// `RESULT_CAP` is a runaway backstop, not a review budget, so the row set is no longer
+/// clipped at 300 — the whole manuscript's worth of matching fields is built, snippeted,
+/// bulk-written to the store and read back by the panel. That is the cost this change
+/// bought, and this is the guard on it: one letter, every scene, still comfortably inside
+/// the 300 ms debounce.
+///
+/// 150 ms against a measured ~30 ms, for the same reason the warm guard is loose — an
+/// order-of-magnitude regression (a per-row store write creeping back in, the snippet walk
+/// going quadratic) rather than milliseconds on a loaded CI box.
+#[test]
+#[cfg_attr(
+    debug_assertions,
+    ignore = "a perf guard is meaningless in a debug build — run with --release"
+)]
+fn a_query_matching_every_scene_is_still_written_in_full_under_the_debounce() {
+    let ctx = big_manuscript();
+    search_management_commands::run_search(&ctx, &query(&ctx, "a")).unwrap();
+
+    let t = Instant::now();
+    let out = search_management_commands::run_search(&ctx, &query(&ctx, "a")).unwrap();
+    let elapsed = t.elapsed();
+
+    assert!(
+        !out.truncated,
+        "a manuscript of {SCENES} scenes must fit under RESULT_CAP — if this trips, the cap \
+         is back to being a review budget and Replace All is dark on every common word"
+    );
+    assert!(
+        out.item_count as usize >= SCENES,
+        "every scene matches 'a'; got {} items",
+        out.item_count
+    );
+    assert!(
+        elapsed < std::time::Duration::from_millis(150),
+        "the full, uncapped result set over {SCENES} scenes took {elapsed:?} — past that it \
+         is a visible stall every time the writer pauses typing"
+    );
+    eprintln!(
+        "  every-scene search: {} rows in {elapsed:?}",
+        out.item_count
+    );
+}

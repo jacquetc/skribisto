@@ -64,9 +64,10 @@
 //!     occurrence. Per-occurrence review happens in the preview, recomputed live.
 //!   * **No stored offsets.** A snippet is a display hint; positions are re-derived
 //!     against the live document at activation time. See the manifest for why.
-//!   * **`RESULT_CAP`.** A common word in a novel matches thousands of times; the row
-//!     set is bounded and `truncated` is reported so the UI can disable Replace All
-//!     (a truncated scan cannot honestly claim completeness).
+//!   * **`RESULT_CAP`.** A runaway backstop, *not* a review budget — see the constant for
+//!     why the difference matters. Past it the row set stops growing and `truncated` is
+//!     reported so the UI can disable Replace All (a truncated scan cannot honestly claim
+//!     completeness).
 
 use crate::RunSearchDto;
 use crate::RunSearchResultDto;
@@ -88,9 +89,24 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use text_document::matching::{FoldLocale, MatchOptions};
 
-/// Most rows we will keep for one search. A common word ("said", "elle") matches
-/// thousands of times in a novel; past this we stop scanning and set `truncated`.
-const RESULT_CAP: usize = 300;
+/// Most rows we will keep for one search. Past this the scan stops and sets `truncated`.
+///
+/// **This is a runaway backstop, not a review budget**, and the two want wildly different
+/// numbers. It used to be 300, which is the size of a *list a person can scroll* — and that
+/// was the wrong measure, because a truncated scan also switches **Replace All off**
+/// (see `can_replace_all`: a capped scan cannot honestly claim completeness). A row is one
+/// matching FIELD, so renaming a character who appears in 400 scenes of a 4000-scene novel
+/// tripped it — and the panel went dark on precisely the operation it exists for. The writer
+/// was left retyping the name scene by scene because the results list was long.
+///
+/// So the cap is now sized against the corpus instead: a 300k-word novel is ~4000 scenes and
+/// at most a few searchable fields each (body, synopsis, title, label, plus its comment
+/// threads), and this sits comfortably past that. What it still refuses is the pathological
+/// case it was always meant to refuse — a one-letter query over a manuscript far larger than
+/// any this app has seen — where the row set would be neither reviewable nor affordable to
+/// hold. Bounded work per keystroke, without deciding for the writer that their rename is
+/// too big.
+const RESULT_CAP: usize = 10_000;
 
 /// How much context a result row carries either side of the match.
 const SNIPPET_CONTEXT: usize = 60;
@@ -231,7 +247,8 @@ impl RunSearchUseCase {
 
         // Create the new rows in ONE call, then attach them to the Search in one
         // relationship write. Two store writes for the whole result set, whether it
-        // holds three rows or three hundred.
+        // holds three rows or every field in the manuscript — which is what makes
+        // `RESULT_CAP` affordable at its current size.
         // `create_multi` attaches the rows to their owner as it creates them
         // (`index = -1` appends), so the whole result set lands in ONE store write —
         // no per-row create, no separate relationship write.

@@ -88,10 +88,35 @@ mod imp {
         }
 
         /// `Vec` snapshot of every current row, in order.
+        ///
+        /// Prefer [`for_each`](Self::for_each) / [`find`](Self::find) for anything that
+        /// only reads: this clones every row, and a result set now runs to `RESULT_CAP`
+        /// rows rather than the 300 it was once bounded to.
         pub fn items(&self) -> Vec<SearchResultDto> {
             (0..self.inner.model.len())
                 .filter_map(|i| self.inner.model.with_item(i, |d| d.clone()))
                 .collect()
+        }
+
+        /// Visit every row in order, **without cloning it**.
+        ///
+        /// The counting/filtering the view-model does after each search (which rows are
+        /// comments, how many are still ticked, which items they touch) reads four fields
+        /// and keeps none of them — and it runs on every settled keystroke. Cloning a whole
+        /// manuscript's worth of rows to do that is per-keystroke garbage nobody reads.
+        pub fn for_each(&self, mut f: impl FnMut(&SearchResultDto)) {
+            for i in 0..self.inner.model.len() {
+                self.inner.model.with_item(i, &mut f);
+            }
+        }
+
+        /// The first row matching `pred`, cloned — the only one the caller keeps.
+        pub fn find(&self, pred: impl Fn(&SearchResultDto) -> bool) -> Option<SearchResultDto> {
+            (0..self.inner.model.len()).find_map(|i| {
+                self.inner
+                    .model
+                    .with_item(i, |d| pred(d).then(|| d.clone()))?
+            })
         }
     }
 
@@ -158,6 +183,17 @@ mod imp {
             (0..self.model.len())
                 .filter_map(|i| self.model.with_item(i, |d| d.clone()))
                 .collect()
+        }
+
+        pub fn for_each(&self, mut f: impl FnMut(&SearchResultDto)) {
+            for i in 0..self.model.len() {
+                self.model.with_item(i, &mut f);
+            }
+        }
+
+        pub fn find(&self, pred: impl Fn(&SearchResultDto) -> bool) -> Option<SearchResultDto> {
+            (0..self.model.len())
+                .find_map(|i| self.model.with_item(i, |d| pred(d).then(|| d.clone()))?)
         }
     }
 

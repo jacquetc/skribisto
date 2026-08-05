@@ -525,38 +525,39 @@ impl SearchReplaceViewModel {
     /// tick box a lie.
     fn exclude_comment_rows(&self) {
         let mut set = self.excluded.get();
-        for row in self.results.items().iter() {
+        self.results.for_each(|row| {
             if matches!(
                 row.match_field,
                 MatchField::Comment | MatchField::CommentReply
             ) {
                 set.insert(row.id);
             }
-        }
+        });
         self.excluded.set(set);
     }
 
     /// How many result rows are ticked (not excluded).
     pub fn included_count(&self) -> usize {
         let excluded = self.excluded.get();
-        self.results
-            .items()
-            .iter()
-            .filter(|r| !excluded.contains(&r.id))
-            .count()
+        let mut n = 0usize;
+        self.results.for_each(|r| {
+            if !excluded.contains(&r.id) {
+                n += 1;
+            }
+        });
+        n
     }
 
     /// The binder-item ids Replace All will touch (ticked results only), deduped —
     /// the set to reload afterwards if any are open in a tab (see [`Self::reload_touched`]).
     pub fn touched_item_ids(&self) -> Vec<u64> {
         let excluded = self.excluded.get();
-        let mut ids: Vec<u64> = self
-            .results
-            .items()
-            .iter()
-            .filter(|r| !excluded.contains(&r.id))
-            .map(|r| r.binder_item_id)
-            .collect();
+        let mut ids: Vec<u64> = Vec::new();
+        self.results.for_each(|r| {
+            if !excluded.contains(&r.id) {
+                ids.push(r.binder_item_id);
+            }
+        });
         ids.sort_unstable();
         ids.dedup();
         ids
@@ -764,7 +765,7 @@ impl SearchReplaceViewModel {
     }
 
     fn row_by_id(&self, result_id: u64) -> Option<SearchResultDto> {
-        self.results.items().into_iter().find(|r| r.id == result_id)
+        self.results.find(|r| r.id == result_id)
     }
 }
 
