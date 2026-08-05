@@ -245,7 +245,19 @@ impl BinderBinderItemsTreeModel {
                         // Match items only; binder rows survive as ancestors.
                         n.kind != "binder"
                             && (n.title.to_lowercase().contains(&needle)
-                                || n.label.to_lowercase().contains(&needle))
+                                || n.label.to_lowercase().contains(&needle)
+                                // **The generated name counts too.** An untitled chapter is
+                                // named by `fallback_label` — the row *reads* "Chapter 7",
+                                // and since numbering stopped writing that string into
+                                // titles, that is the only place it exists. Matching `title`
+                                // alone meant typing what the row plainly says found
+                                // nothing, in this dock and in Go To (which reuses this very
+                                // filter). The two stay separate fields everywhere else —
+                                // a rename must never seed from a name the writer did not
+                                // type — but searching is about what is on screen.
+                                || n.fallback_label
+                                    .as_deref()
+                                    .is_some_and(|l| l.to_lowercase().contains(&needle)))
                     })
                     .apply(rows);
                 // Ancestors are kept for reachability but are not matches, so they must not
@@ -1210,7 +1222,12 @@ mod filter_feedback_tests {
         let (_m, _ctx) = loaded(&f);
         f.query.set("Chapter 7".to_string());
         let (shown, total) = f.match_counts.get();
-        assert!(shown >= 1, "Chapter 7 exists in the example");
+        assert!(
+            shown >= 1,
+            "the example has a row that reads 'Chapter 7' — see \
+             `a_row_named_only_by_its_generated_label_is_findable_by_that_name` for where \
+             that name lives"
+        );
         assert!(
             shown < total,
             "a specific query must not match everything ({shown} of {total})"
@@ -1218,6 +1235,41 @@ mod filter_feedback_tests {
         assert!(
             shown <= 3,
             "only the chapter itself should match, not its ancestors: {shown}"
+        );
+    }
+
+    /// **A row is findable by the name it shows.**
+    ///
+    /// Numbering stopped writing "Chapter 7" into titles — an untitled chapter is named by
+    /// its generated [`TreeNode::fallback_label`] instead, and the title it once had is now
+    /// an empty string. For a while that made the row unfindable: it plainly read
+    /// "Chapter 7", and typing "Chapter 7" into the filter returned nothing, here *and* in
+    /// the Go To palette, which reuses this very filter.
+    ///
+    /// The two fields stay separate everywhere else — a rename must never seed from a name
+    /// the writer did not type — but the filter reads both.
+    #[test]
+    fn a_row_named_only_by_its_generated_label_is_findable_by_that_name() {
+        let f = filters();
+        let (_m, ctx) = loaded(&f);
+
+        // If the example ever regains chapters TITLED "Chapter 7", this test silently stops
+        // proving anything about the generated name — so say so rather than pass hollowly.
+        let titled = frontend::commands::binder_item_commands::get_all_binder_item(&ctx)
+            .expect("the example's items")
+            .into_iter()
+            .filter(|i| i.title.to_lowercase().contains("chapter 7"))
+            .count();
+        assert_eq!(
+            titled, 0,
+            "the example must hold no item whose own TITLE is 'Chapter 7' — otherwise a hit \
+             below proves nothing about `fallback_label`, and this test needs re-pointing"
+        );
+
+        f.query.set("Chapter 7".to_string());
+        assert!(
+            f.match_counts.get().0 >= 1,
+            "the row reads 'Chapter 7' in the tree; typing that must find it"
         );
     }
 
