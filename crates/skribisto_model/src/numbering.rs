@@ -16,7 +16,7 @@
 //! up by item id. There is no second pass to drift.
 //!
 //! Store-free and IO-free, like its siblings `analysis` / `mentions` / `counting`: it
-//! takes the same flat [`ItemMeta`] slice [`crate::compile::resolve_scope`] does, which
+//! takes the same flat `ItemMeta` slice [`crate::compile::resolve_scope`] does, which
 //! both callers already build ( `skribisto_compiler::item_metas` from the frozen
 //! `Gathered` tree, `bastyde_ui`'s `live_item_metas` from the live binder query).
 //!

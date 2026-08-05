@@ -20,7 +20,6 @@ mod backup_settings_file;
 mod binder_binder_items_tree_model;
 mod binder_list_model;
 mod binder_stream;
-mod numbering;
 mod comments_list_model;
 mod corkboard_cards_model;
 mod dict_word_list_model;
@@ -29,6 +28,7 @@ mod distraction_free_themes_file;
 mod examples_list_model;
 mod export_styles_file;
 mod installed_dictionaries_model;
+mod numbering;
 mod open_docs;
 mod overview_rows_model;
 mod pace_model;
@@ -53,10 +53,6 @@ pub use binder_binder_items_tree_model::{
 };
 pub use binder_list_model::{BinderListModel, BinderRow};
 pub use binder_stream::{BinderItemRef, ordered_binder_items};
-pub use numbering::{
-    fallback_label_for, item_meta_of, label_and_badge, numbers_for_items, numbers_for_work,
-    work_language_tags,
-};
 #[allow(unused_imports)]
 pub use comments_list_model::{CommentRow, CommentsListModel, ReplyRow};
 pub use corkboard_cards_model::{CorkboardCard, CorkboardCardsModel};
@@ -67,6 +63,10 @@ pub use examples_list_model::ExamplesListModel;
 pub use export_styles_file::ExportStylesService;
 pub use installed_dictionaries_model::{
     DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
+};
+pub use numbering::{
+    fallback_label_for, item_meta_of, label_and_badge, numbers_for_items, numbers_for_work,
+    work_language_tags,
 };
 pub use open_docs::{OpenDoc, OpenDocsStore, SynopsisViewerGuard};
 pub use overview_rows_model::{

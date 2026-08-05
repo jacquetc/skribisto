@@ -121,11 +121,11 @@ impl Widget for TrashRestoreTargetPanel {
             self.picker_selection.clone(),
             move |node: &TreeNode, row: &TreeRow, selected: bool| {
                 let (label, badge) = crate::models::label_and_badge(
-                &node.title,
-                node.fallback_label.as_deref(),
-                node.number,
-            );
-            let mut item = StandardTreeItem::new(lit!(label))
+                    &node.title,
+                    node.fallback_label.as_deref(),
+                    node.number,
+                );
+                let mut item = StandardTreeItem::new(lit!(label))
                     .depth(row.depth)
                     .has_children(row.has_children)
                     .is_expanded(row.is_expanded)
@@ -140,11 +140,11 @@ impl Widget for TrashRestoreTargetPanel {
                     crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
                 };
                 item = item.leading_slot(icon);
-            // These are the *live* rows a restore lands in, so their numbers are
-            // current and meaningful (unlike the trashed rows in the dock itself).
-            if badge.is_some() {
-                item = item.center_slot(crate::widgets::StructureNumber::new(badge));
-            }
+                // These are the *live* rows a restore lands in, so their numbers are
+                // current and meaningful (unlike the trashed rows in the dock itself).
+                if badge.is_some() {
+                    item = item.center_slot(crate::widgets::StructureNumber::new(badge));
+                }
                 Box::new(item) as Box<dyn Widget>
             },
         )

@@ -234,10 +234,10 @@ mod imp {
         let binder_ids_all =
             work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
                 .unwrap_or_default();
-        for binder_id in binder_ids_all.iter().copied() {
+        for binder_id in binder_ids_all.iter() {
             let item_ids = binder_commands::get_binder_relationship(
                 ctx,
-                &binder_id,
+                binder_id,
                 &BinderRelationshipField::BinderItems,
             )
             .unwrap_or_default();

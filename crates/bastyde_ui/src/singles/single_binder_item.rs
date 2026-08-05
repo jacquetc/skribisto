@@ -229,7 +229,11 @@ mod imp {
         /// it would otherwise consume, so the chapter after a prologue is chapter one.
         ///
         /// Same scalar read-modify-write, undoable on `stack`.
-        pub fn set_excluded_from_numbering(&self, on: bool, stack: Option<u64>) -> anyhow::Result<()> {
+        pub fn set_excluded_from_numbering(
+            &self,
+            on: bool,
+            stack: Option<u64>,
+        ) -> anyhow::Result<()> {
             let Some(id) = self.inner.id.get() else {
                 anyhow::bail!("SingleBinderItem: no id");
             };

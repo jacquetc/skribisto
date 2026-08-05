@@ -192,8 +192,7 @@ pub fn is_redundant_number_title(title: &str, lang: &str, level: Level, n: usize
     // Compared in western digits regardless of the preset's digit style: the writer typed
     // their title on a keyboard, and `numbered()` may have rendered "٣".
     let plain = n.to_string();
-    folded == fold_for_comparison(&format!("{} {}", word(lang, level), plain))
-        || folded == plain
+    folded == fold_for_comparison(&format!("{} {}", word(lang, level), plain)) || folded == plain
 }
 
 #[cfg(test)]
@@ -340,7 +339,10 @@ mod tests {
     /// export must still recognise its own number written the ordinary way.
     #[test]
     fn digit_style_does_not_defeat_the_guard() {
-        assert_eq!(numbered("ar", Level::Chapter, 3, DigitStyle::EasternArabic), "الفصل ٣");
+        assert_eq!(
+            numbered("ar", Level::Chapter, 3, DigitStyle::EasternArabic),
+            "الفصل ٣"
+        );
         assert!(is_redundant_number_title(
             "الفصل 3",
             "ar",

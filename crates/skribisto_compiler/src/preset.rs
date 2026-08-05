@@ -283,7 +283,7 @@ pub struct Preset {
     #[serde(default)]
     pub part_heading: HeadingScheme,
     /// What sits between the generated number and the title under
-    /// [`HeadingScheme::NumberAndTitle`] — "Chapter 3<sep>The Storm".
+    /// [`HeadingScheme::NumberAndTitle`] — "Chapter 3`<sep>`The Storm".
     ///
     /// A style choice, not a constant: published fiction uses a spaced em dash, a colon, a
     /// period, and a plain line break, and which one a book takes is exactly the sort of

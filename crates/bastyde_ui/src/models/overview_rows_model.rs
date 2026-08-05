@@ -846,8 +846,10 @@ mod rows {
         // Numbered from the whole Work before the subtree below narrows it: an Overview
         // opened on Part Two must still call its chapters eleven and twelve.
         let numbers = {
-            let metas: Vec<skribisto_model::compile::ItemMeta> =
-                flat.iter().map(|(_, it)| crate::models::item_meta_of(it)).collect();
+            let metas: Vec<skribisto_model::compile::ItemMeta> = flat
+                .iter()
+                .map(|(_, it)| crate::models::item_meta_of(it))
+                .collect();
             crate::models::numbers_for_work(ctx, work_id, &metas)
         };
         let work_langs = crate::models::work_language_tags(ctx, work_id);
