@@ -11,7 +11,9 @@ module docs), opens Settings (Ctrl+, with a menu fallback), then asserts:
 
   1. the category TreeView holds every section + page (Appearance & Behaviour,
      Editor ▸ Scene/Synopsis/Notes/Editor Behavior/Goals/Corkboard, Spelling,
-     Backup & Sync, Compile & Export, Keymap);
+     Backup & Sync, Compile & Export, Keymap), and each row is AT-drivable:
+     role + name + level + actions all on ONE node, and an action nothing
+     handles comes back as an error rather than a silent success;
   2. the default pane (Editor ▸ Scene, a typography form) shows its controls
      (the font-family ComboBox + the typography sliders);
   3. selecting the Appearance page switches the pane (Interface language, the
@@ -20,12 +22,21 @@ module docs), opens Settings (Ctrl+, with a menu fallback), then asserts:
      Welcome screen"; it now also governs whether a bare launch reopens the
      last project instead);
   4. expanding Backup & Sync and selecting Autosave reveals the autosave setting;
-  5. selecting the empty Keymap page shows the "no settings yet" placeholder;
-  6. the SearchField accepts a query;
-  7. OK dismisses the window.
+  5. a per-project page below the scrolled rail's fold still scrolls into view
+     and activates;
+  6. selecting the empty Keymap page shows the "no settings yet" placeholder;
+  7. the SearchField accepts a query;
+  8. Done dismisses the window.
 
 Reuses the launch + scrape-socket/token + connect scaffolding from the sibling
 automation_*.py scripts.
+
+The rail is driven entirely through AT actions on rows found by role + label
+(`scroll_into_view` / `click` / `expand`), never by synthetic clicks at row
+bounds. That is not tidiness: a TreeView row is virtualized, so a row outside
+the viewport reports *content* coordinates — the ones under "Work:" land below
+the window's own bottom edge — and the disclosure chevron is a nameless 16 px
+target whose x depends on an indent level. See `settings_tree_rows`.
 """
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
@@ -203,7 +214,9 @@ class Session:
 # ── Launch (example loaded → Welcome suppressed) ──────────────────────────────
 print("== launch with example loaded ==")
 s = Session([EXAMPLE])
-if not s.wait_label("starforgers", timeout=15):
+# `load_work` is slow in a debug build — the bundled example takes ~20 s to
+# reach its first window, so a 15 s budget was a coin flip on a cold cache.
+if not s.wait_label("starforgers", timeout=45):
     fail("the example work did not load", s.app, s.mcp, s.log)
 print("example loaded.")
 
@@ -237,6 +250,12 @@ APPEARANCE_PAGE = ["appearance", "apparence"]
 BACKUP_SECTION = ["backup & sync", "sauvegarde et synchronisation"]
 AUTOSAVE_PAGE = ["autosave", "enregistrement automatique"]
 KEYMAP_PAGE = ["keymap", "raccourcis clavier"]
+# Settings-only, so it identifies the category tree among the app's TreeViews.
+COMPILE_SECTION = ["compile & export", "compilation et export"]
+# A per-project page, near the bottom of the rail and below the fold at any
+# ordinary window height — the case that used to be unreachable entirely.
+# ("Punctuation" would not do: the rail has two of those.)
+BELOW_FOLD_PAGE = ["text replacements", "remplacements de texte"]
 APPEARANCE_BITS = {
     # Reworded for the launcher-window model: the checkbox now describes
     # "show the launcher at startup (otherwise, reopen the last project)",
@@ -264,29 +283,22 @@ def require_all(concepts, where):
             fail(f"expected '{name}' in {where}", s.app, s.mcp, s.log)
 
 
-def node_match(variants, exact=False, rail_only=False):
-    """First node whose label matches any variant. `rail_only` restricts to the
-    left category rail (x < 280) so a page name never matches app chrome."""
+def node_match(variants, exact=False):
+    """First node anywhere in the AT tree whose label matches any variant.
+    For *category-rail rows* use `rail_row` instead — this one is for ordinary
+    chrome (buttons, combo items)."""
     for n in s.nodes():
         lab = (n.get("label") or "").strip().lower()
         if not lab:
             continue
-        hit = lab in variants if exact else any(v in lab for v in variants)
-        if not hit:
-            continue
-        if rail_only:
-            b = n.get("bounds") or {}
-            x = b.get("x", 9999) if isinstance(b, dict) else 9999
-            if x >= 280:
-                continue
-        return n
+        if lab in variants if exact else any(v in lab for v in variants):
+            return n
     return None
 
 
 def pointer_click(b, dx=None):
     """Synthetic primary click (atomic down+up → a real tap gesture) at the
-    centre of a bounds dict, or at `bounds.x + dx` when `dx` is given (used to
-    hit a row's leading-edge chevron rather than its centre)."""
+    centre of a bounds dict, or at `bounds.x + dx` when `dx` is given."""
     if not (isinstance(b, dict) and "x" in b):
         return False
     cx = b["x"] + (dx if dx is not None else b.get("width", 0) / 2)
@@ -297,17 +309,137 @@ def pointer_click(b, dx=None):
 
 def click_node(n):
     """Click a node — via its AccessKit `click` action when it has one, else a
-    synthetic pointer at its centre (TreeView rows expose no action)."""
+    synthetic pointer at its centre."""
     if "click" in (n.get("actions") or []):
         res, _ = s.call("invoke_action", {"node": n["id"], "action": "click"})
         return not (isinstance(res, dict) and res.get("isError"))
     return pointer_click(n.get("bounds") or {})
 
 
-def expand_section(n):
-    """Expand a collapsed section by tapping its chevron at the row's leading
-    edge (a section row is at depth 0, so the chevron sits ~10 px in)."""
-    return pointer_click(n.get("bounds") or {}, dx=10)
+def must(tool, args, what):
+    """Call an MCP tool that is expected to work, and fail loudly when it
+    doesn't. Every AT action below goes through this on purpose: the bridge
+    now answers UNHANDLED_ACTION for an action nothing acted on, so a silent
+    no-op can no longer masquerade as a passing step."""
+    res, payload = s.call(tool, args)
+    if isinstance(res, dict) and res.get("isError"):
+        txt = "".join(c.get("text", "") for c in res.get("content", [])
+                      if c.get("type") == "text")
+        fail(f"{what}: {tool} was rejected — {txt[:300]}", s.app, s.mcp, s.log)
+    return payload
+
+
+# ── Driving the category tree ────────────────────────────────────────────────
+# Rows are addressed *structurally* — the `Role::TreeItem` descendants of the
+# Tree whose subtree carries a Settings-only section — and driven through their
+# advertised AT actions. Not by pixel geometry, and that is not a style
+# preference:
+#   * the binder's TreeView is live behind the modal, so page names like
+#     "Scene" / "Notes" / "Tags" exist in two trees at once;
+#   * the rail scrolls, and a virtualized row parked outside the viewport
+#     reports CONTENT coordinates — the rows under "Work:" sit below the
+#     window's own bottom edge, so a pointer click at their bounds lands
+#     nowhere at all. `scroll_into_view` is the only way in.
+def settings_tree():
+    """`(tree node, its TreeItem rows)` for the Settings category tree."""
+    nodes = s.nodes()
+    by_id = {n["id"]: n for n in nodes}
+
+    def descendants(nid):
+        out, stack = [], list((by_id.get(nid) or {}).get("children") or [])
+        while stack:
+            n = by_id.get(stack.pop())
+            if not n:
+                continue
+            out.append(n)
+            stack.extend(n.get("children") or [])
+        return out
+
+    for tree in (n for n in nodes if n.get("role") == "Tree"):
+        rows = [n for n in descendants(tree["id"]) if n.get("role") == "TreeItem"]
+        labels = {(r.get("label") or "").strip().lower() for r in rows}
+        if any(v in labels for v in COMPILE_SECTION):
+            return tree, rows
+    return None, []
+
+
+def settings_tree_rows():
+    return settings_tree()[1]
+
+
+def _row_in(rows, variants):
+    for r in rows:
+        if (r.get("label") or "").strip().lower() in variants:
+            return r
+    return None
+
+
+def rail_row(variants):
+    """The category-tree row whose own label is exactly one of `variants`.
+
+    The label lives on the row node itself — the framework's accessibility walk
+    copies the delegate's name up onto the `TreeItem` (name-from-content, as
+    ARIA specifies for `treeitem`). If this stops finding rows, that hoist is
+    what regressed.
+
+    A row that isn't found is not necessarily absent: a `TreeView` only realizes
+    the rows in (and a little past) its viewport, so one far below the fold has
+    no widget — and therefore no AT node for `scroll_into_view` to aim at. Wheel
+    the rail along until it materializes. Direction is discovered rather than
+    assumed: the first scroll that changes nothing flips it."""
+    tree, rows = settings_tree()
+    hit = _row_in(rows, variants)
+    if hit or not tree:
+        return hit
+    sig = lambda rs: tuple(sorted((r.get("label") or "") for r in rs))
+    dy = -240
+    flipped = False
+    for _ in range(24):
+        before = sig(rows)
+        s.call("scroll", {"node": tree["id"], "dx": 0, "dy": dy})
+        time.sleep(0.35)
+        tree, rows = settings_tree()
+        hit = _row_in(rows, variants)
+        if hit:
+            return hit
+        if sig(rows) == before:
+            if flipped:
+                return None          # both ends reached, the row really isn't there
+            dy, flipped = -dy, True
+    return None
+
+
+def require_row(variants, what):
+    row = rail_row(variants)
+    if not row:
+        print("  rail rows:", [r.get("label") for r in settings_tree_rows()])
+        fail(f"no '{what}' row in the Settings category tree", s.app, s.mcp, s.log)
+    return row
+
+
+def select_page(variants, what):
+    """Reveal, then activate, a category row. Re-finds the row between the two
+    calls: scrolling past the virtualizer's buffer rebuilds the row widget, and
+    a rebuilt widget gets a fresh id."""
+    row = require_row(variants, what)
+    must("invoke_action", {"node": row["id"], "action": "scroll_into_view"}, what)
+    time.sleep(0.4)
+    row = rail_row(variants) or row
+    must("invoke_action", {"node": row["id"], "action": "click"}, what)
+    time.sleep(0.6)
+    return row
+
+
+def expand_section(variants, what):
+    """Open a collapsed section through its `expand` action — no chevron
+    pixel-hunting, and no need to know the row's indent."""
+    row = require_row(variants, what)
+    must("invoke_action", {"node": row["id"], "action": "scroll_into_view"}, what)
+    time.sleep(0.4)
+    row = rail_row(variants) or row
+    must("expand", {"node": row["id"]}, what)
+    time.sleep(0.5)
+    return row
 
 
 def settings_open():
@@ -342,6 +474,47 @@ s.shot("/tmp/sk-settings-scene.png")
 require_all(SECTIONS, "the category tree")
 print("PASS: category tree lists all sections + pages")
 
+# ── 1b. The rail is AT-drivable at all ───────────────────────────────────────
+# Everything after this depends on it, and each of these was broken until the
+# row-a11y fix: rows carried a role but no name (the label sat on a separate
+# `Unknown` child, so role+label never met on one node) and advertised no
+# actions whatsoever, which made `invoke_action` a no-op that still replied
+# "ok". If any of this regresses, the rest of the script's failures would be a
+# mystery — so it is asserted directly.
+rows = settings_tree_rows()
+if len(rows) < 10:
+    fail(f"expected the category tree to expose its rows as TreeItem nodes, got {len(rows)}",
+         s.app, s.mcp, s.log)
+nameless = [r["id"] for r in rows if not (r.get("label") or "").strip()]
+if nameless:
+    fail(f"{len(nameless)} category rows carry no accessible name "
+         f"(the name-from-content hoist onto Role::TreeItem regressed)", s.app, s.mcp, s.log)
+for r in rows:
+    acts = set(r.get("actions") or [])
+    if not {"click", "scroll_into_view"} <= acts:
+        fail(f"row {r.get('label')!r} advertises {sorted(acts)} — expected at least "
+             f"click + scroll_into_view", s.app, s.mcp, s.log)
+    # A branch offers exactly the direction that would change something; a leaf
+    # offers neither. `expanded` is None for a leaf.
+    want = {True: "collapse", False: "expand"}.get(r.get("expanded"))
+    if want and want not in acts:
+        fail(f"{'expanded' if r.get('expanded') else 'collapsed'} section "
+             f"{r.get('label')!r} does not advertise {want!r}", s.app, s.mcp, s.log)
+    if r.get("expanded") is None and ({"expand", "collapse"} & acts):
+        fail(f"leaf row {r.get('label')!r} advertises expand/collapse", s.app, s.mcp, s.log)
+if not all(isinstance(r.get("level"), int) and r["level"] >= 1 for r in rows):
+    fail("category rows do not report their 1-based tree level", s.app, s.mcp, s.log)
+print(f"PASS: {len(rows)} category rows expose role + name + level + actions on ONE node")
+
+# An action nothing acts on must be reported, not silently swallowed — that
+# false "ok" is what made every earlier failure here unreadable.
+leaf = next(r for r in rows if r.get("expanded") is None)
+res, _ = s.call("invoke_action", {"node": leaf["id"], "action": "increment"})
+if not (isinstance(res, dict) and res.get("isError")):
+    fail("invoking an unsupported action on a category row reported success",
+         s.app, s.mcp, s.log)
+print("PASS: an unsupported AT action on a row is reported, not silently ignored")
+
 # ── 2. Default pane (Editor ▸ Scene) shows its typography controls ───────────
 font_combo = next(
     (n for n in s.by_role("ComboBox") if "font" in (n.get("label") or "").lower()), None
@@ -359,13 +532,7 @@ print("PASS: Scene pane (the new default) shows its typography controls "
       "(font ComboBox + typography sliders)")
 
 # ── 3. Selecting the Appearance page switches the pane ────────────────────────
-appearance = node_match(APPEARANCE_PAGE, exact=True, rail_only=True)
-if not appearance:
-    s.dump("looking for Appearance page")
-    fail("no 'Appearance' page row in the category rail", s.app, s.mcp, s.log)
-if not click_node(appearance):
-    fail("could not click the Appearance page row", s.app, s.mcp, s.log)
-time.sleep(0.6)
+select_page(APPEARANCE_PAGE, "Appearance")
 require_all(APPEARANCE_BITS, "the Appearance pane")
 print("PASS: Appearance page switched the pane (language switcher + 'show the launcher "
       "at startup' checkbox)")
@@ -420,13 +587,11 @@ else:
     print("NOTE: theme ComboBox not surfaced; skipping combo regression")
 
 # ── 4. The empty Keymap page shows the placeholder ───────────────────────────
-# Done before any section expansion, so tree-row positions are stable (an async
-# expand elsewhere would shift rows and race a click's resolved coordinates).
-keymap = node_match(KEYMAP_PAGE, exact=True, rail_only=True)
-if not keymap:
-    fail("no 'Keymap' row in the rail", s.app, s.mcp, s.log)
-click_node(keymap)
-time.sleep(0.6)
+# Row order no longer matters: the row is addressed by identity and revealed by
+# its own `scroll_into_view`, so an expand elsewhere can't shift it out from
+# under the step. (It used to have to run before any expansion, and its centre
+# still landed within a pixel of the viewport's bottom edge.)
+select_page(KEYMAP_PAGE, "Keymap")
 s.shot("/tmp/sk-settings-keymap.png")
 # The empty pane carries no form controls, so the previously-shown Appearance
 # checkbox must be gone — a robust "switched to a settings-less pane" signal.
@@ -438,29 +603,41 @@ else:
     print("PASS: empty category switched to a control-less pane "
           "(placeholder text is not AT-surfaced; see /tmp/sk-settings-keymap.png)")
 
-# ── 5. Expand Backup & Sync (last tree interaction — expanding shifts the rows
-#      below it), then select Autosave. Tap the chevron once, then POLL: the
-#      re-render settles asynchronously (a fixed sleep races it).
-backup = node_match(BACKUP_SECTION, exact=True, rail_only=True)
-if not backup:
-    fail("no 'Backup & Sync' section row in the rail", s.app, s.mcp, s.log)
-expand_section(backup)                     # single chevron tap (a second toggles back)
-autosave = None
-for _ in range(10):
-    time.sleep(0.4)
-    autosave = node_match(AUTOSAVE_PAGE, exact=True, rail_only=True)
-    if autosave:
-        break
-if not autosave:
-    print("NOTE: could not expand Backup & Sync via synthetic input; the Autosave "
-          "page + migration are covered by the panel's unit tests instead")
+# ── 5. Expand Backup & Sync, then select Autosave ────────────────────────────
+# Driven through the section's own `expand` action. This step used to be a soft
+# "NOTE:" that gave up, because the only expand target was a nameless 16 px
+# chevron whose x depends on the row's indent — which the AT tree did not
+# report. It is a hard assertion now.
+backup = expand_section(BACKUP_SECTION, "Backup & Sync")
+after = rail_row(BACKUP_SECTION)
+if not (after and after.get("expanded")):
+    fail("Backup & Sync did not report itself expanded after the expand action",
+         s.app, s.mcp, s.log)
+select_page(AUTOSAVE_PAGE, "Autosave")
+if not has_any(AUTOSAVE_BIT):
+    print("  labels:", joined()[:600])
+    fail("Autosave pane did not show the migrated autosave setting", s.app, s.mcp, s.log)
+print("PASS: Backup & Sync expands and Autosave reveals the migrated autosave setting")
+
+# ── 5b. A row below the fold is reachable ────────────────────────────────────
+# The per-project pages sit past the bottom of the scrolled rail; their reported
+# bounds are content coordinates below the window's own edge, so a synthetic
+# pointer click at them hits nothing. `scroll_into_view` + `click` is the route,
+# and this is the step that proves it.
+text_repl = rail_row(BELOW_FOLD_PAGE)
+if not text_repl:
+    fail("the per-project 'Text replacements' page is not reachable in the rail",
+         s.app, s.mcp, s.log)
 else:
-    click_node(autosave)                   # fresh bounds (rows shifted on expand)
-    time.sleep(0.6)
-    if not has_any(AUTOSAVE_BIT):
-        print("  labels:", joined()[:600])
-        fail("Autosave pane did not show the migrated autosave setting", s.app, s.mcp, s.log)
-    print("PASS: Backup & Sync expands and Autosave reveals the migrated autosave setting")
+    before_y = (text_repl.get("bounds") or {}).get("y")
+    select_page(BELOW_FOLD_PAGE, "Work ▸ Text replacements")
+    moved = rail_row(BELOW_FOLD_PAGE)
+    after_y = (moved or {}).get("bounds", {}).get("y")
+    if not (moved and moved.get("selected")):
+        fail("the below-the-fold 'Text replacements' row did not become selected",
+             s.app, s.mcp, s.log)
+    print(f"PASS: a row below the fold scrolls into view (y {before_y} → {after_y}) "
+          f"and activates")
 
 # ── 6. The SearchField accepts a query ───────────────────────────────────────
 search = next(iter(s.by_role("SearchInput")), None) or s.find_contains("search")
