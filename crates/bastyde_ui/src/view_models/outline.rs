@@ -23,7 +23,7 @@ use frontend::commands::{
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
-use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, UpdateBinderDto};
+use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto};
 
 use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
@@ -581,15 +581,8 @@ impl OutlineViewModel {
                     return;
                 };
                 if let Some(binder) = self.binder_dto(b) {
-                    let dto = UpdateBinderDto {
-                        id: b,
-                        created_at: binder.created_at,
-                        updated_at: binder.updated_at,
-                        // Durable identity: carried, never re-minted.
-                        uid: binder.uid.clone(),
-                        name: title.to_string(),
-                        activated: binder.activated,
-                    };
+                    let mut dto = binder_ops::update_binder_dto(&binder);
+                    dto.name = title.to_string();
                     let _ = binder_commands::update_binder(ctx, self.stack(), &dto);
                 }
             }

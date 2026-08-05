@@ -46,11 +46,16 @@ mod imp {
     }
 
     /// A scalar-only update DTO from a fetched item (relationships untouched).
+    ///
+    /// Stamps `updated_at`, matching `view_models::binder_ops::update_item_dto`.
+    /// Every setter below used to stamp it by hand one line later; two vehicles
+    /// with two different rules is exactly how the *other* callers came to
+    /// forget, so the rule lives in both vehicles and nowhere else.
     fn update_dto(it: &BinderItemDto) -> UpdateBinderItemDto {
         UpdateBinderItemDto {
             id: it.id,
             created_at: it.created_at,
-            updated_at: it.updated_at,
+            updated_at: chrono::Utc::now(),
             // Carried through unchanged: `uid` is the item's durable identity,
             // never re-minted by an edit.
             uid: it.uid.clone(),
@@ -193,7 +198,6 @@ mod imp {
             };
             let mut dto = update_dto(&it);
             dto.dict_language = tags.to_vec();
-            dto.updated_at = chrono::Utc::now();
             binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
             self.refresh();
             Ok(())
@@ -212,7 +216,6 @@ mod imp {
             };
             let mut dto = update_dto(&it);
             dto.is_exportable = on;
-            dto.updated_at = chrono::Utc::now();
             binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
             self.refresh();
             Ok(())
@@ -235,7 +238,6 @@ mod imp {
             };
             let mut dto = update_dto(&it);
             dto.exclude_from_numbering = on;
-            dto.updated_at = chrono::Utc::now();
             binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
             self.refresh();
             Ok(())
@@ -255,7 +257,6 @@ mod imp {
             };
             let mut dto = update_dto(&it);
             dto.aliases = aliases.to_vec();
-            dto.updated_at = chrono::Utc::now();
             binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
             self.refresh();
             Ok(())
@@ -388,7 +389,6 @@ mod imp {
                 TitlePart::Title => dto.title = text.to_string(),
                 TitlePart::SubTitle => dto.sub_title = text.to_string(),
             }
-            dto.updated_at = chrono::Utc::now();
             binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
 
             // 2. The matching Content row — what the manuscript compiles.

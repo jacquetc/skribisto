@@ -38,7 +38,9 @@ use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
-use frontend::direct_access::{BinderItemDto, CreateBinderItemDto, UpdateBinderItemDto};
+use frontend::direct_access::{
+    BinderDto, BinderItemDto, CreateBinderItemDto, UpdateBinderDto, UpdateBinderItemDto,
+};
 
 use skribisto_model::SubRoleExt;
 
@@ -340,7 +342,15 @@ pub(crate) fn update_item_dto(it: &BinderItemDto) -> UpdateBinderItemDto {
     UpdateBinderItemDto {
         id: it.id,
         created_at: it.created_at,
-        updated_at: it.updated_at,
+        // Stamped here, not by the callers. `updated_at` is caller-maintained
+        // all the way down — `BinderItemWriteUoW::update_multi` persists
+        // whatever the DTO carries — so every writer that forgot silently left
+        // the row claiming it was last touched by some earlier edit. Four of
+        // them did: the label writers in Overview / Corkboard / Stream and the
+        // outline's indent write. Putting the stamp in the read-modify-write
+        // vehicle itself makes forgetting impossible, which matters now that
+        // "last modified" is about to become visible to writers.
+        updated_at: chrono::Utc::now(),
         // Carried through unchanged: `uid` is the item's durable identity,
         // never re-minted by an edit.
         uid: it.uid.clone(),
@@ -358,6 +368,25 @@ pub(crate) fn update_item_dto(it: &BinderItemDto) -> UpdateBinderItemDto {
         char_count_goal: it.char_count_goal,
         dict_language: it.dict_language.clone(),
         aliases: it.aliases.clone(),
+    }
+}
+
+/// The `Binder` counterpart of [`update_item_dto`] — same contract, same reason.
+///
+/// A `Binder` carries far less (`uid`, `name`, `activated`), so the one caller
+/// that needed it hand-rolled the struct and, having nothing to copy the rule
+/// from, carried `updated_at` through unchanged: renaming a binder left it
+/// claiming it had not been touched. Give the binder a vehicle too and the
+/// asymmetry that caused it is gone.
+pub(crate) fn update_binder_dto(b: &BinderDto) -> UpdateBinderDto {
+    UpdateBinderDto {
+        id: b.id,
+        created_at: b.created_at,
+        updated_at: chrono::Utc::now(),
+        // Durable identity: carried, never re-minted.
+        uid: b.uid.clone(),
+        name: b.name.clone(),
+        activated: b.activated,
     }
 }
 
@@ -494,8 +523,15 @@ mod tests {
             common::uid::fixture_uid(7),
             "the durable identity must survive an edit unchanged -- re-minting              it here would orphan every reference to the row"
         );
-        assert_eq!(out.created_at, created);
-        assert_eq!(out.updated_at, updated);
+        assert_eq!(
+            out.created_at, created,
+            "creation time is history — an edit must never rewrite it"
+        );
+        assert!(
+            out.updated_at > updated,
+            "the vehicle stamps `updated_at`; carrying the old value through is \
+             what left `last modified` lying after a label edit or an indent"
+        );
         assert_eq!(out.title, "Chapter One");
         assert_eq!(out.sub_title, "a beginning");
         assert_eq!(out.role, Item);
@@ -509,6 +545,41 @@ mod tests {
         assert_eq!(out.char_count_goal, 6000);
         assert_eq!(out.dict_language, vec!["fr-FR".to_string()]);
         assert_eq!(out.aliases, vec!["Lizzy", "Miss Bennet"]);
+    }
+
+    /// The binder vehicle keeps creation history and refreshes the edit stamp.
+    ///
+    /// Renaming a binder used to carry `updated_at` straight through, because
+    /// the call site hand-rolled the struct with no vehicle to copy the rule
+    /// from. Pinned here so the binder half cannot drift from the item half.
+    #[test]
+    fn update_binder_dto_stamps_the_edit_and_keeps_the_creation_time() {
+        let created = chrono::DateTime::from_timestamp(1_700_000_000, 0).expect("ts");
+        let updated = chrono::DateTime::from_timestamp(1_700_009_999, 0).expect("ts");
+        let src = frontend::direct_access::BinderDto {
+            id: 3,
+            uid: common::uid::fixture_uid(3),
+            created_at: created,
+            updated_at: updated,
+            name: "Manuscript".into(),
+            activated: true,
+            binder_items: vec![11, 12],
+        };
+
+        let out = update_binder_dto(&src);
+
+        assert_eq!(out.id, 3);
+        assert_eq!(out.uid, common::uid::fixture_uid(3));
+        assert_eq!(out.name, "Manuscript");
+        assert!(out.activated);
+        assert_eq!(
+            out.created_at, created,
+            "creation time is history — a rename must never rewrite it"
+        );
+        assert!(
+            out.updated_at > updated,
+            "a rename is a modification and must say so"
+        );
     }
 
     /// Splitting cuts exactly at the caret and loses nothing.

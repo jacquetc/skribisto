@@ -248,6 +248,12 @@ mod imp {
                 return;
             };
             it.word_count_goal = goal;
+            // `UpdateBinderItemDto::from` is a plain field copy, so it inherits
+            // whatever `updated_at` the fetched row carried. This is the one
+            // BinderItem writer that does not go through a read-modify-write
+            // vehicle, so it stamps for itself — otherwise setting a book's word
+            // goal would leave the row claiming it was never touched.
+            it.updated_at = chrono::Utc::now();
             if let Err(e) = binder_item_commands::update_binder_item(
                 ctx,
                 self.stack(),
