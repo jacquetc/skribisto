@@ -120,6 +120,10 @@ pub fn render_to_file(
                 // editor and no `ContentRole` that carries one — so there are no blobs to
                 // register. If images ever land, this is where their bytes join the export.
                 images: Default::default(),
+                // No cover, for the same reason there are no inline images: nothing in
+                // the app lets a writer attach one to a Work. When a cover affordance
+                // lands, this is the field its bytes go through.
+                cover: None,
                 title: w.title.clone(),
                 author: w.author_name.clone(),
                 rtl: is_rtl_row(req.preset, &lang),
@@ -274,7 +278,13 @@ fn text_render(doc: &TextDocument, format: ExportFormat) -> Result<String> {
         // where the chosen style asked for one, so the knob that governs it is the style's,
         // shared with every other format, rather than a second one hidden in this arm.
         ExportFormat::Markdown => {
-            doc.to_markdown_with(MarkdownExportOptions { page_breaks: true })?
+            doc.to_markdown_with(MarkdownExportOptions {
+                page_breaks: true,
+                // A Skribisto document carries no images (see the EPUB arm), so there is
+                // nothing to omit — and emitting the reference is the right default for a
+                // caller that would write the files beside the output.
+                omit_images: false,
+            })?
         }
         ExportFormat::Html => doc.to_html()?,
         ExportFormat::Latex => doc.to_latex("article", true)?,
