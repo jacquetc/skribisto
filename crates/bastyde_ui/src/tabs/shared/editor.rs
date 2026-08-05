@@ -2692,6 +2692,8 @@ mod frame_loop_tests {
             // No project around this tree, so no comment binding: the margin
             // collapses to nothing and the column lays out on its own.
             None,
+            // …and no image source either, for the same reason.
+            None,
         );
         let mut tree = WidgetTree::new();
         tree.add(col);
@@ -3027,6 +3029,8 @@ mod typewriter_tests {
             typewriter,
             caret,
             None,
+            None,
+            // No project around this tree, so no image source.
             None,
         );
         let mut tree = WidgetTree::new();
