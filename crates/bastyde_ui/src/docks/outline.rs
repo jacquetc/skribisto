@@ -53,6 +53,10 @@ pub fn outline_dock(
     app_ctx: Rc<AppContext>,
     on_open: OpenItemFn,
     active_item: Signal<Option<u64>>,
+    // The writer's counting method, for the row card's deferred word count —
+    // threaded, not looked up, so the card can never disagree with the status
+    // bar about what a word is.
+    counting_method: Signal<skribisto_model::counting::CountingMethodSetting>,
 ) -> DockWidget {
     let dock_id = outline.dock_id();
     // A clone for the framework header's Create button (the content closure below
@@ -71,6 +75,7 @@ pub fn outline_dock(
                 app_ctx.clone(),
                 on_open.clone(),
                 active_item.clone(),
+                counting_method.clone(),
             )),
         )
     })
@@ -97,12 +102,16 @@ fn binder_tree(
     app_ctx: Rc<AppContext>,
     on_open: OpenItemFn,
     active_item: Signal<Option<u64>>,
+    counting_method: Signal<skribisto_model::counting::CountingMethodSetting>,
 ) -> impl Widget {
     let menu_outline = outline.clone();
     // Open on row *activation* (click or Enter), resolved from the flat index via
     // the source — NOT on selection, so arrow-key navigation only moves the
     // highlight and never spawns a tab.
     let activate_model = outline.model();
+    let card_model = outline.model();
+    // Cloned before `app_ctx` is moved into the binder switcher below.
+    let card_ctx = app_ctx.clone();
     let tree = TreeView::from_source_keyed(
         outline.model(),
         outline.selection(),
@@ -193,6 +202,45 @@ fn binder_tree(
     // uniform two-line cost. (A flat `item_height(40.0)` also clipped the 44px
     // subtitled rows.) The estimate seeds unrealized rows for scroll extent.
     .auto_item_height(28.0)
+    // The row's hover card: what a row *is*, without opening it. The view owns
+    // the row widget the delegate produced, so the view attaches this itself;
+    // the app never sees that widget.
+    //
+    // Read-only, so it opts out of dwell promotion: nothing in the card can be
+    // reached into, so there is nothing to pin. With it on, the card would
+    // count down towards a promotion that offers the writer nothing, then sit
+    // on screen after the pointer had moved on.
+    .row_tooltip_sticky(false)
+    .row_composite_tooltip(move |idx, node: &TreeNode| {
+        if !crate::docks::outline_card::worth_a_card(node) {
+            return None;
+        }
+        // The ancestor walk, the sibling position and the app context all live
+        // out here: the card widget can reach none of them, and `paint()` — the
+        // hook its deferred read hangs off — has no `app_state` at all.
+        let key = key_of(node);
+        let breadcrumb = card_model
+            .key_at(idx)
+            .map(|k| card_model.ancestor_titles(&k))
+            .unwrap_or_default()
+            .join(" › ");
+        let position = card_model.parent(&key).and_then(|parent| {
+            let siblings = card_model.child_keys(&parent);
+            siblings
+                .iter()
+                .position(|k| *k == key)
+                .map(|i| (i + 1, siblings.len()))
+        });
+        let child_count = card_model.child_keys(&key).len();
+        Some(Box::new(crate::docks::outline_card::OutlineCard::new(
+            node.clone(),
+            breadcrumb,
+            position,
+            child_count,
+            card_ctx.clone(),
+            counting_method.clone(),
+        )) as Box<dyn Widget>)
+    })
     // The dock is narrow, so the default `Permanent` bar (a 12px gutter column
     // stolen from every row) is too costly here: `Overlay` floats a thin resting
     // indicator over the content and expands it to the full track on hover.
@@ -658,5 +706,74 @@ impl Widget for BinderFilterBar {
 
     fn children(&self) -> Vec<WidgetId> {
         self.root.into_iter().collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The row card actually opens when the pointer rests on an outline row.
+    ///
+    /// The framework-side tests prove the `row_composite_tooltip` mechanism on a
+    /// bare `TreeView`. This is the one that matters: the real tree, built the
+    /// way the dock builds it — `from_source_keyed`, a `StandardTreeItem`
+    /// wrapped in a context menu and a pointer handler, adaptive row heights —
+    /// against the real row source. Everything in that list is a chance for the
+    /// hover never to reach the anchor.
+    ///
+    /// Needs `--features mocks`: the real backend has no project loaded in a
+    /// unit test, so the tree has no rows to hover and there is nothing for a
+    /// card to describe.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn hovering_a_row_opens_its_card() {
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let outline = OutlineViewModel::new_default(ctx.clone(), crate::app_ids::AppIds::new());
+        let on_open: OpenItemFn = std::rc::Rc::new(|_id, _title| {});
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let id = tree.add_boxed(Box::new(binder_tree(
+            outline,
+            ctx.clone(),
+            on_open,
+            Signal::new(None),
+            Signal::new(Default::default()),
+        )));
+        tree.layout(SizeProposal::exact(320.0, 600.0));
+
+        let b = tree.bounds(id);
+        assert!(b.height > 0.0, "the tree laid out to nothing");
+
+        // Rest the pointer on the first row, with the small nudge a real hand
+        // makes (and the stationary filter tolerates).
+        let mut opened_at = None;
+        for step in 0..40 {
+            let y = b.y + 6.0 + step as f32 * 14.0;
+            if y > b.y + b.height {
+                break;
+            }
+            let at = bastyde::canvas::Point::new(b.x + 60.0, y);
+            tree.pointer_move(at);
+            tree.pointer_move(bastyde::canvas::Point::new(at.x + 1.0, at.y));
+            tree.advance_time(std::time::Duration::from_millis(900));
+            if !tree.active_overlays().is_empty() {
+                opened_at = Some(y - b.y);
+                break;
+            }
+        }
+        assert!(
+            opened_at.is_some(),
+            "resting on an outline row must open its card (swept the whole \
+             {}dp height and never saw one)",
+            b.height
+        );
+        // A card that opens but describes nothing would pass the count check.
+        // The fixture's first rows are the "Manuscript" binder and "Book One",
+        // whose label is "the setup" — a field only the card renders, so
+        // finding it proves the *card* opened, not some other overlay.
+        assert!(
+            tree.find_by_label("the setup").is_some() || tree.find_by_label("Manuscript").is_some(),
+            "the overlay that opened is not this row's card"
+        );
     }
 }

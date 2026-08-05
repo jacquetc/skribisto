@@ -1570,3 +1570,20 @@ cover-clear = &Remove the cover
 cover-choose-title = Choose a cover
 cover-set = The cover is set.
 cover-cleared = The cover has been removed. The picture is still in the project.
+# ── Outline row card ────────────────────────────────────────────────────────
+# The hover card on an outline row: what a row is, without opening it.
+card-label = Label
+card-exportable = Exported
+card-numbered = Numbered
+card-created = Created
+card-modified = Modified
+card-yes = yes
+card-no = no
+card-type = Type
+card-position = Position
+card-children = Children
+card-goal = Goal
+card-words = Words
+card-synopsis = Synopsis
+card-point-of-view = Point of view
+card-aliases = Also known as

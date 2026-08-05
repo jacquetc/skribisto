@@ -37,7 +37,7 @@ use frontend::common::event::{
 };
 
 use frontend::AppContext;
-use frontend::common::entities::BinderItemSubRole;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use uuid::Uuid;
 
 /// **Durable** per-row identity, by `uid` — not by store id.
@@ -64,7 +64,7 @@ pub enum BinderTreeKey {
 /// the slice's divergence check (a content edit whose structure is unchanged is
 /// still detected, so a consumer caching row heights re-measures only the
 /// changed rows).
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TreeNode {
     pub title: String,
     /// The user-written note shown under the title (`BinderItem.label`).
@@ -102,6 +102,72 @@ pub struct TreeNode {
     /// seeds from. A generated name folded into it would be indistinguishable from one the
     /// writer typed, which is the whole failure this feature exists to undo.
     pub fallback_label: Option<String>,
+    /// The row's tag ids. Resolved to names and colours against the cached
+    /// palette, never fetched per row.
+    pub tags: Vec<u64>,
+    /// `BinderItem.is_exportable` — the writer's "leave this out of the
+    /// exported book" flag. `true` for binder rows, which are never excluded.
+    pub is_exportable: bool,
+    /// The **stored** field, spelled as the exception so `false` is the safe,
+    /// numbered-by-default state. Any UI showing "Numbered" must invert it, and
+    /// only for rows that open a structural level — see
+    /// `skribisto_model::numbering::level_of`.
+    pub exclude_from_numbering: bool,
+    /// The item's role — needed with `sub_role` to name its type
+    /// (`binder::create_labels::item_type_label` takes both).
+    pub role: BinderItemRole,
+    /// `BinderItem.sub_title` — real content on a Book row, invisible in the
+    /// outline.
+    pub sub_title: String,
+    /// The writer's target for this item. `0` is the "no goal" sentinel: the
+    /// field is a bare `i64`, so an unconditional render would print
+    /// "Goal: 0" on every row that has never had one set.
+    pub word_count_goal: i64,
+    /// Names the mention scan also matches this item by.
+    pub aliases: Vec<String>,
+    /// Per-item spellcheck language override.
+    pub dict_language: Vec<String>,
+    /// The narrating cast member(s) — ids, resolved against the mention
+    /// index's discoverable table.
+    pub point_of_view: Vec<u64>,
+    /// Entity timestamps, carried so a row can say when it was made and last
+    /// touched.
+    ///
+    /// These four fields cost nothing to carry: the row source already fetches
+    /// the whole `BinderItemDto` and was throwing them away.
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+/// Hand-written rather than derived: `bool::default()` is `false`, and for
+/// `is_exportable` that is the wrong way round — it would mean a default row
+/// claims the writer excluded it from the book. A new `BinderItem` is
+/// exportable, so a default `TreeNode` must be too.
+impl Default for TreeNode {
+    fn default() -> Self {
+        Self {
+            title: String::new(),
+            label: String::new(),
+            kind: String::new(),
+            sub_role: BinderItemSubRole::default(),
+            item_id: None,
+            binder_id: None,
+            uid: Uuid::nil(),
+            number: None,
+            fallback_label: None,
+            tags: Vec::new(),
+            role: BinderItemRole::default(),
+            sub_title: String::new(),
+            word_count_goal: 0,
+            aliases: Vec::new(),
+            dict_language: Vec::new(),
+            point_of_view: Vec::new(),
+            is_exportable: true,
+            exclude_from_numbering: false,
+            created_at: None,
+            updated_at: None,
+        }
+    }
 }
 
 impl TreeNode {
@@ -118,6 +184,34 @@ impl TreeNode {
             // things. Manuscript, Notes and Research hold no ordinal between them.
             number: None,
             fallback_label: None,
+            tags: Vec::new(),
+            role: BinderItemRole::default(),
+            sub_title: String::new(),
+            word_count_goal: 0,
+            aliases: Vec::new(),
+            dict_language: Vec::new(),
+            point_of_view: Vec::new(),
+            // A binder is not a manuscript row: it is never excluded from the
+            // export and never numbered.
+            is_exportable: true,
+            exclude_from_numbering: false,
+            created_at: None,
+            updated_at: None,
+        }
+    }
+
+    /// A binder row carrying its entity timestamps.
+    pub fn binder_stamped(
+        name: String,
+        binder_id: u64,
+        uid: Uuid,
+        created_at: chrono::DateTime<chrono::Utc>,
+        updated_at: chrono::DateTime<chrono::Utc>,
+    ) -> Self {
+        Self {
+            created_at: Some(created_at),
+            updated_at: Some(updated_at),
+            ..Self::binder(name, binder_id, uid)
         }
     }
 }
@@ -390,6 +484,39 @@ impl BinderBinderItemsTreeModel {
     /// Resolve a key to `(item_id, title)` (binder rows have `item_id == None`).
     pub fn node_of(&self, key: &BinderTreeKey) -> Option<(Option<u64>, String)> {
         self.slice.with_key(key, |n| (n.item_id, n.title.clone()))
+    }
+
+    /// The row's ancestor titles, root first — the outline card's breadcrumb.
+    ///
+    /// Free: `TreeDataSlice` derives parent links from the indent stack when it
+    /// builds, and the whole current scope is resident, so this is an O(depth)
+    /// walk over memory the tree is already holding. There is no parent link in
+    /// the *backend* model at all — a binder is a flat ordered list and
+    /// parenthood is positional — so this is the only place the question can be
+    /// answered cheaply.
+    ///
+    /// Untitled ancestors are skipped rather than rendered blank: a crumb of
+    /// empty strings reads as a broken path.
+    pub fn ancestor_titles(&self, key: &BinderTreeKey) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut cursor = self.slice.parent_of(key);
+        // Depth is bounded by the tree, but a malformed indent run must not be
+        // able to spin here.
+        let mut guard = 0;
+        while let Some(k) = cursor {
+            if guard > 64 {
+                break;
+            }
+            guard += 1;
+            if let Some((_, title)) = self.node_of(&k)
+                && !title.is_empty()
+            {
+                out.push(title);
+            }
+            cursor = self.slice.parent_of(&k);
+        }
+        out.reverse();
+        out
     }
 
     /// The live store id behind an **item** key — what every command takes.
@@ -706,6 +833,17 @@ mod rows {
                         uid: it.uid,
                         number,
                         fallback_label,
+                        tags: it.tags,
+                        role: it.role,
+                        sub_title: it.sub_title,
+                        word_count_goal: it.word_count_goal,
+                        aliases: it.aliases,
+                        dict_language: it.dict_language,
+                        point_of_view: it.point_of_view,
+                        is_exportable: it.is_exportable,
+                        exclude_from_numbering: it.exclude_from_numbering,
+                        created_at: Some(it.created_at),
+                        updated_at: Some(it.updated_at),
                     },
                     (it.indent.max(0) as usize) + 1,
                 ));
@@ -722,7 +860,7 @@ mod rows {
     use bastyde::prelude::Signal;
 
     use frontend::AppContext;
-    use frontend::common::entities::BinderItemSubRole;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 
     use super::{BinderTreeKey, TreeNode};
 
@@ -760,6 +898,35 @@ mod rows {
                 number,
                 // Every fixture row is titled, so none needs the untitled fallback.
                 fallback_label: None,
+                // Enough variety that a consumer rendering these fields shows
+                // something other than one uniform row: the notes carry tags,
+                // the book-begin marker is excluded from the export, and the
+                // prologue-shaped row opts out of numbering.
+                tags: match id {
+                    201 => vec![1, 2],
+                    202 => vec![3],
+                    _ => Vec::new(),
+                },
+                role: if kind == "folder" {
+                    BinderItemRole::Folder
+                } else {
+                    BinderItemRole::Item
+                },
+                sub_title: String::new(),
+                // One row carries a goal and one a point of view, so a
+                // consumer rendering them shows something other than blanks.
+                word_count_goal: if id == 104 { 2_000 } else { 0 },
+                aliases: if id == 201 {
+                    vec!["Lizzy".to_string()]
+                } else {
+                    Vec::new()
+                },
+                dict_language: Vec::new(),
+                point_of_view: if id == 104 { vec![201] } else { Vec::new() },
+                is_exportable: id != 102,
+                exclude_from_numbering: id == 103,
+                created_at: chrono::DateTime::from_timestamp(1_700_000_000 + id as i64 * 3_600, 0),
+                updated_at: chrono::DateTime::from_timestamp(1_700_500_000 + id as i64 * 3_600, 0),
             },
             depth,
         )

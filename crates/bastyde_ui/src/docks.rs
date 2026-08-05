@@ -144,6 +144,7 @@ pub mod create_split_button;
 pub mod format;
 pub mod inspector;
 pub mod outline;
+pub mod outline_card;
 pub mod search;
 pub mod search_preview;
 pub mod search_replace_flow;

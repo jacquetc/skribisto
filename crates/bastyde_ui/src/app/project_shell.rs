@@ -247,6 +247,7 @@ impl App {
                 self.app_ctx.clone(),
                 on_open.clone(),
                 active_item.clone(),
+                settings.counting_method(),
             ))
             .dock(crate::docks::inspector::inspector_dock(
                 self.app_ctx.clone(),
