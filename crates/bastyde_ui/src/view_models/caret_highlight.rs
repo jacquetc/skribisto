@@ -125,12 +125,14 @@ impl CaretHighlightSettings {
     pub fn from_context(ctx: &mut bastyde::prelude::BuildContext) -> Self {
         use bastyde::prelude::SettingsExt;
         let scope = crate::view_models::SettingsViewModel::new(ctx.settings()).highlight_scope();
-        let color = Signal::new(band_color(ctx.theme().colors.editor_current_line_bg));
+        let color = Signal::new(Self::document_color(
+            ctx.theme().colors.editor_current_line_bg,
+        ));
         {
             let sig = color.clone();
             let theme_sig = ctx.theme_signal().clone();
             ctx.effect(&theme_sig, move |t| {
-                let next = band_color(t.colors.editor_current_line_bg);
+                let next = Self::document_color(t.colors.editor_current_line_bg);
                 if sig.get() != next {
                     sig.set(next);
                 }
@@ -152,17 +154,22 @@ impl CaretHighlightSettings {
     pub fn caret_highlight(&self, locale: Option<String>) -> Option<CaretHighlight> {
         self.scope.get().caret_highlight(self.color.get(), locale)
     }
-}
 
-/// The band's colour, from a theme role, **keeping the alpha**.
-///
-/// The spell-check squiggle's converter drops alpha — a line drawn over the text wants to be
-/// solid. A band sits *behind* whole words and may well be specified translucent so the paper
-/// shows through, so this one must not.
-fn band_color(c: bastyde::tokens::Color) -> Color {
-    let [r, g, b, a] = c.to_array();
-    let to_u8 = |x: f32| (x.clamp(0.0, 1.0) * 255.0).round() as u8;
-    Color::rgba(to_u8(r), to_u8(g), to_u8(b), to_u8(a))
+    /// Carry a theme colour across into the document, **keeping the alpha**.
+    ///
+    /// The spell-check squiggle's converter drops alpha — a line drawn over the text wants to be
+    /// solid. A band sits *behind* whole words and may well be specified translucent so the paper
+    /// shows through, so this one must not.
+    ///
+    /// Public because the distraction-free surface resolves its band from its *theme* rather
+    /// than from the app palette (see `distraction_free::theme`) and has to make the same
+    /// crossing — a second converter there that dropped alpha would quietly paint a translucent
+    /// theme band opaque.
+    pub fn document_color(c: bastyde::tokens::Color) -> Color {
+        let [r, g, b, a] = c.to_array();
+        let to_u8 = |x: f32| (x.clamp(0.0, 1.0) * 255.0).round() as u8;
+        Color::rgba(to_u8(r), to_u8(g), to_u8(b), to_u8(a))
+    }
 }
 
 /// One writing surface's band: the app-wide preference, plus the language of the document that

@@ -1395,11 +1395,19 @@ settings-themes-exported = Thème exporté
 settings-themes-export-failed = Impossible d'exporter ce thème
 # Affiché pour un thème dont le texte et la page sont sous le seuil WCAG AA.
 settings-themes-low-contrast = contraste faible
+# Affiché lorsque la page et le texte vont bien, mais que c'est la mise en
+# évidence qui masque la prose — un autre défaut, invisible sur les pastilles
+# de la ligne.
+settings-themes-low-contrast-band = la mise en évidence masque le texte
 settings-themes-field-name = Nom
 settings-themes-field-paper = Page
 settings-themes-field-ink = Texte
 settings-themes-field-general = Arrière-plan
 settings-themes-field-widget-text = Texte de la bande de contrôle
+# La teinte dessinée autour du curseur — la phrase ou le paragraphe en cours
+# d'écriture, selon Éditeur ▸ « Mise en évidence autour du curseur ». Ce champ
+# en donne la couleur en mode sans distraction.
+settings-themes-field-caret-band = Mise en évidence autour du curseur
 
 # L'engrenage de réglages rapides de la bande sans distraction, et l'accès à la
 # bibliothèque complète de thèmes depuis le mode.

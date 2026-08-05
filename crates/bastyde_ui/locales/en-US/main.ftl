@@ -1388,11 +1388,18 @@ settings-themes-exported = Theme exported
 settings-themes-export-failed = Could not export that theme
 # Shown on a theme whose text and page are below the WCAG AA contrast floor.
 settings-themes-low-contrast = low contrast
+# Shown when the page and the text are fine but the caret band is what hides
+# the prose — a different fault, and one the row's own swatches do not show.
+settings-themes-low-contrast-band = highlight hides the text
 settings-themes-field-name = Name
 settings-themes-field-paper = Page
 settings-themes-field-ink = Text
 settings-themes-field-general = Background
 settings-themes-field-widget-text = Control strip text
+# The shading drawn around the caret — the sentence or paragraph being written,
+# per Editor ▸ "Highlight around the caret". This field is the colour it uses in
+# distraction-free mode.
+settings-themes-field-caret-band = Highlight around the caret
 
 # The distraction-free strip's quick-settings gear, and the way through to the
 # full theme library from inside it.

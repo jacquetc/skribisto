@@ -259,6 +259,7 @@ mod tests {
             editor_background: "#ffffff".into(),
             editor_text: "#111111".into(),
             widget_text: "#444444".into(),
+            caret_band: "#eaeaea".into(),
         }
     }
 

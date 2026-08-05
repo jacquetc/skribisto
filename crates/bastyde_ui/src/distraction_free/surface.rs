@@ -968,16 +968,16 @@ mod tests {
         );
     }
 
-    /// The theme reaches the surface **as tokens**, and the four axes stay
+    /// The theme reaches the surface **as tokens**, and the five axes stay
     /// separate — the whole reason a coloured theme is legal under a
     /// semantic-roles-only rule.
     ///
     /// Applied at the window root (`shell::windows`) rather than here, so this
     /// asserts the half that lives in this module's reach: that the view-model
-    /// resolves a paintable theme and that the four colours are genuinely
-    /// distinct roles rather than one colour wearing four names.
+    /// resolves a paintable theme and that the five colours are genuinely
+    /// distinct roles rather than one colour wearing five names.
     #[test]
-    fn the_surface_resolves_four_distinct_theme_axes() {
+    fn the_surface_resolves_five_distinct_theme_axes() {
         let fx = fixture();
         let t = fx.vm.theme().expect("a theme once attached");
         let axes = [
@@ -985,6 +985,7 @@ mod tests {
             &t.editor_background,
             &t.editor_text,
             &t.widget_text,
+            &t.caret_band,
         ];
         for (i, a) in axes.iter().enumerate() {
             assert!(!a.is_empty(), "axis {i} has no colour");
@@ -997,10 +998,192 @@ mod tests {
             t.editor_background, t.general_background,
             "the page and what is behind it must differ, or the theme has three axes"
         );
+        assert_ne!(
+            t.editor_background, t.caret_band,
+            "a band the colour of the page shades nothing"
+        );
         assert!(
             t.meets_contrast(),
-            "the default theme must be legible: prose {:.2}:1",
-            t.prose_contrast()
+            "the default theme must be legible: prose {:.2}:1, band {:.2}:1",
+            t.prose_contrast(),
+            t.caret_band_contrast()
+        );
+    }
+
+    /// **The band is the one colour a token override cannot deliver.** It
+    /// crosses into the text document as a `HighlightFormat` field, so the
+    /// surface has to resolve it in Rust — and if it did not, the mode would
+    /// shade a sepia or midnight page with the *app* palette's band.
+    ///
+    /// Mounted, not just constructed: the resolution happens in the surface's
+    /// `wire`, which is the one place with a `BuildContext`.
+    #[test]
+    fn the_surface_band_is_the_themes_colour_not_the_app_palettes() {
+        let fx = fixture();
+        let _tree = mount(&fx);
+        let t = fx.vm.theme().expect("attached");
+        let band = fx.vm.caret_band().expect("attached");
+        assert_eq!(
+            band.color.get(),
+            crate::view_models::CaretHighlightSettings::document_color(t.caret_band_color()),
+            "the mode's band did not come from the theme it is painting with"
+        );
+    }
+
+    /// Editing the colour of the theme in force reaches an **already open**
+    /// editor.
+    ///
+    /// The surface binds the theme signals at `SubtreeRepaint`, which by design
+    /// never re-runs `build` — so the band has to follow through an effect. Left
+    /// to the binding, a writer changing this colour would watch the page
+    /// repaint around a band that stayed as it was until they navigated away.
+    #[test]
+    fn changing_the_theme_moves_the_band_without_reopening_the_document() {
+        let fx = fixture();
+        let _tree = mount(&fx);
+        let band = fx.vm.caret_band().expect("attached");
+        let before = band.color.get();
+
+        let (theme_id, _) = fx.vm.theme_signals().expect("attached");
+        theme_id.set("midnight".to_string());
+        let after = band.color.get();
+
+        assert_ne!(
+            after, before,
+            "the band stayed on the old theme's colour after a live switch"
+        );
+        assert_eq!(
+            after,
+            crate::view_models::CaretHighlightSettings::document_color(
+                fx.vm.theme().unwrap().caret_band_color()
+            ),
+            // Same handle, deliberately: the tab built over it is not rebuilt on
+            // a theme change, so a *replacement* signal would leave the mounted
+            // editor watching one nothing writes to any more.
+        );
+    }
+
+    /// Colour comes from the theme; **scope comes from the shared setting**.
+    ///
+    /// How much text is shaded — nothing, the sentence, the paragraph — is how a
+    /// writer works, and does not change because they went full-screen. Only
+    /// what colour it is shaded belongs to the page they chose.
+    #[test]
+    fn the_band_scope_is_the_one_shared_setting_not_a_mode_of_its_own() {
+        let fx = fixture();
+        let _tree = mount(&fx);
+        let band = fx.vm.caret_band().expect("attached");
+        assert_eq!(band.scope.get(), crate::view_models::HighlightScope::None);
+
+        // Written through the settings handle the app itself reads, so this
+        // proves the surface is on the same signal rather than a private copy.
+        band.scope
+            .set(crate::view_models::HighlightScope::Paragraph);
+        let again = fx.vm.caret_band().expect("attached");
+        assert_eq!(
+            again.scope.get(),
+            crate::view_models::HighlightScope::Paragraph
+        );
+        assert!(
+            again.caret_highlight(None).is_some(),
+            "a paragraph scope must actually ask for a band"
+        );
+    }
+
+    /// **The whole chain, ending in paint spans on the real document.**
+    ///
+    /// Everything above this stops at a signal or a `CaretHighlight` value. This
+    /// one mounts the mode over a real writing column, focuses it, puts the caret
+    /// in the prose, and reads back what the document is actually shaded with —
+    /// which must be the *theme's* band. The fixture hands `EditorsViewModel` a
+    /// `CaretHighlightSettings::off()`, so a surface that fell back to it would
+    /// paint nothing at all and this would fail rather than pass quietly.
+    ///
+    /// Focus is not optional: the band is drawn only in the view being written
+    /// in (that is what keeps a split banding once, not twice), so a test that
+    /// never clicks in sees an unshaded page however well the wiring works.
+    #[test]
+    fn the_mode_paints_its_theme_band_onto_the_document() {
+        use bastyde::text_document::{FlowElementSnapshot, HighlightMask};
+
+        let fx = fixture();
+        fx.vm
+            .caret_band()
+            .expect("attached")
+            .scope
+            .set(crate::view_models::HighlightScope::Sentence);
+        fx.editors.active_item().set(Some(1));
+        fx.focus.active_signal().set(true);
+
+        let mut tree = mount(&fx);
+        let settle = |tree: &mut WidgetTree| {
+            for _ in 0..4 {
+                tree.layout(SizeProposal::exact(1200.0, 800.0));
+            }
+            tree.tick_animations(std::time::Duration::from_millis(400));
+            tree.layout(SizeProposal::exact(1200.0, 800.0));
+        };
+        settle(&mut tree);
+
+        // Click into the manuscript column, then park the caret in the prose.
+        let column = all_editor_rects(&tree)
+            .into_iter()
+            .next()
+            .expect("the mode mounts one writing column");
+        let _ = tree.render();
+        tree.dispatch_event(bastyde::core::WidgetEvent::PointerDown {
+            position: bastyde::canvas::Point::new(column.x + column.width / 2.0, column.y + 10.0),
+            button: bastyde::core::PointerButton::Primary,
+            modifiers: bastyde::core::Modifiers::NONE,
+        });
+        settle(&mut tree);
+        assert!(tree.focused().is_some(), "the click must focus the editor");
+
+        // The click also lands the caret, which is what the band is resolved
+        // from — no separate cursor move, and none possible: the band reads the
+        // *editor's* caret, not the document's.
+        let doc = fx.docs.peek(1).expect("seeded");
+        let prose = &doc.main.as_ref().expect("a Scene has prose").doc;
+
+        let want = crate::view_models::CaretHighlightSettings::document_color(
+            fx.vm.theme().expect("attached").caret_band_color(),
+        );
+        let painted: Vec<_> = match &prose.snapshot_flow_masked(&HighlightMask::all()).elements[0] {
+            FlowElementSnapshot::Block(b) => b
+                .paint_highlights
+                .iter()
+                .filter_map(|s| s.background_color)
+                .collect(),
+            _ => panic!("expected a block"),
+        };
+        assert!(
+            painted.contains(&want),
+            "the mode shaded the prose with {painted:?}, not the theme's band {want:?}"
+        );
+    }
+
+    /// The tab the surface mounts is built over the mode's band, not the
+    /// editors' — the wiring the two tests above are only meaningful through.
+    #[test]
+    fn the_surface_tab_carries_the_modes_band_rather_than_the_editors() {
+        let fx = fixture();
+        let _tree = mount(&fx);
+        fx.vm
+            .caret_band()
+            .expect("attached")
+            .scope
+            .set(crate::view_models::HighlightScope::Sentence);
+
+        let (tab, _) = fx.vm.open_tab(1).expect("item 1 is seeded");
+        let band = tab.caret_band().resolve().expect("a band");
+        assert_eq!(
+            band.format.background_color,
+            Some(crate::view_models::CaretHighlightSettings::document_color(
+                fx.vm.theme().unwrap().caret_band_color()
+            )),
+            "the surface's tab was built with the app palette's band — the \
+             fixture hands `EditorsViewModel` a `CaretHighlightSettings::off()`, \
+             so falling back to it would have shaded the prose black"
         );
     }
 

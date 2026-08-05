@@ -593,6 +593,7 @@ impl EditorsViewModel {
             self.distraction_free.clone(),
             self.show_synopsis.clone(),
             self.synopsis_placement.clone(),
+            self.caret_highlight.clone(),
         );
         let tab_title = if title.is_empty() {
             tr!(untitled())
@@ -624,14 +625,15 @@ impl EditorsViewModel {
     /// Build a `ContentTab` over `doc` with this window's shared settings
     /// handles. The one place `ContentTab::new`'s arguments are assembled, so a
     /// tab opened in a pane, one rebuilt by a Promote, and one opened by the
-    /// distraction-free surface cannot drift apart on anything but the two axes
-    /// they are meant to differ on.
+    /// distraction-free surface cannot drift apart on anything but the axes they
+    /// are meant to differ on — which the caller passes in.
     fn make_tab(
         &self,
         doc: Rc<OpenDoc>,
         distraction_free: Signal<bool>,
         show_synopsis: Signal<bool>,
         synopsis_placement: Signal<crate::view_models::SynopsisPlacement>,
+        caret_highlight: crate::view_models::CaretHighlightSettings,
     ) -> ContentTab {
         ContentTab::new(
             self.app_ctx.clone(),
@@ -644,7 +646,7 @@ impl EditorsViewModel {
             self.synopsis_side_width.clone(),
             self.typography.clone(),
             self.typewriter.clone(),
-            self.caret_highlight.clone(),
+            caret_highlight,
             self.view_memory.clone(),
             self.corkboard_defaults.clone(),
             self.tree_expansion.clone(),
@@ -674,10 +676,19 @@ impl EditorsViewModel {
     /// setting: revealing the synopsis while writing full-screen is a thing you do
     /// for the next few minutes, not a preference change that should follow you
     /// back out and into every other window.
+    ///
+    /// `caret` is likewise the surface's own bundle rather than
+    /// `self.caret_highlight`: the band's colour is a *resolved* colour that
+    /// crosses into the document as data, so it cannot ride the mode's token
+    /// override and has to be resolved against the distraction-free theme
+    /// instead of the app palette — see `DistractionFreeSurfaceViewModel::caret_band`.
+    /// It still shares the one scope setting, so how much text is shaded is the
+    /// same inside the mode and out.
     pub fn open_surface_tab(
         &self,
         item_id: u64,
         show_synopsis: Signal<bool>,
+        caret: crate::view_models::CaretHighlightSettings,
     ) -> Option<ContentTab> {
         let doc = self.docs.open(item_id)?;
         // Placement is pinned to Side in this mode rather than following the
@@ -690,6 +701,7 @@ impl EditorsViewModel {
             Signal::new(true),
             show_synopsis,
             Signal::new(crate::view_models::SynopsisPlacement::Side),
+            caret,
         ))
     }
 
@@ -1251,6 +1263,7 @@ impl EditorsViewModel {
                     self.distraction_free.clone(),
                     self.show_synopsis.clone(),
                     self.synopsis_placement.clone(),
+                    self.caret_highlight.clone(),
                 );
                 let caption = if it.title.is_empty() {
                     tr!(untitled())
@@ -1479,7 +1492,11 @@ mod tests {
         seed_doc(&vm, 1);
 
         let surface = vm
-            .open_surface_tab(1, vm.show_synopsis())
+            .open_surface_tab(
+                1,
+                vm.show_synopsis(),
+                crate::view_models::CaretHighlightSettings::off(),
+            )
             .expect("the store holds item 1");
         assert_eq!(
             surface.main_typography().font_family.get(),
@@ -1492,6 +1509,7 @@ mod tests {
             vm.distraction_free.clone(),
             vm.show_synopsis.clone(),
             vm.synopsis_placement.clone(),
+            vm.caret_highlight.clone(),
         );
         assert_eq!(pane.main_typography().font_family.get(), "Literata");
         assert_eq!(pane.main_column_width().get(), 700.0);
@@ -1512,7 +1530,11 @@ mod tests {
         let before = vm.docs.refs_for_test(1).expect("seeded");
 
         let tab = vm
-            .open_surface_tab(1, vm.show_synopsis())
+            .open_surface_tab(
+                1,
+                vm.show_synopsis(),
+                crate::view_models::CaretHighlightSettings::off(),
+            )
             .expect("the store holds item 1");
         assert_eq!(
             vm.docs.refs_for_test(1),
