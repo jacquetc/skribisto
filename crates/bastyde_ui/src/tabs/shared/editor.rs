@@ -2345,6 +2345,9 @@ struct TypographyBoundEditor {
     /// The ambient caret band for this editor. `None` on the surfaces built with no app
     /// around them (the widget tests), which draw none.
     caret: Option<crate::view_models::CaretBand>,
+    /// The handle this editor was mounted with, kept **only** so `Drop` can retire the
+    /// band — see there for why nothing else may.
+    banded: Option<EditorHandle>,
     /// This editor's footnote door plus the document it shows, for the *outward*
     /// half of the two-way link: the caret's position is reported so the dock can
     /// highlight the note the writer is standing on. `None` on every surface with
@@ -2373,6 +2376,7 @@ impl TypographyBoundEditor {
             format_vm,
             typewriter: None,
             caret: None,
+            banded: None,
             footnotes: None,
         }
     }
@@ -2418,6 +2422,22 @@ impl Drop for TypographyBoundEditor {
         // menu cannot format a stream row that has scrolled out of existence.
         if let Some((format, id)) = &self.format {
             format.unregister(*id);
+        }
+        // And retire the caret band, for the same reason as the spell session
+        // above: the band is a range session on the **shared** document, so one
+        // left behind is still painted by every other view of that document.
+        //
+        // Not theoretical, and not covered by the session's own `Drop`: an
+        // editor state can outlive the widget that mounted it (the handle is an
+        // `Rc`, and this widget is replaced — not rebuilt — on every tab
+        // rebuild), and a stale state's band effects are gone, so nothing else
+        // can ever reach it. Leaving distraction-free mode was where it showed:
+        // the writer came back to a docked editor shaded in the
+        // distraction-free theme's colour. It was invisible before that theme
+        // had a band of its own, because the leftover was the same shade as the
+        // band the pane draws for itself.
+        if let Some(handle) = self.banded.take() {
+            handle.set_caret_highlight(None);
         }
     }
 }
@@ -2493,6 +2513,7 @@ impl Widget for TypographyBoundEditor {
         // already on bands from its first frame, not only after the next settings change.
         if let Some(band) = self.caret.clone() {
             push_caret_band(&handle, &band);
+            self.banded = Some(handle.clone());
             {
                 let (h, b) = (handle.clone(), band.clone());
                 ctx.effect(&band.settings.scope, move |_| push_caret_band(&h, &b));
@@ -3306,6 +3327,34 @@ mod caret_band_tests {
         pump(&mut tree);
         assert!(banded(&doc, BAND).is_empty(), "the old shade is gone");
         assert_eq!(banded(&doc, DARK), [(0, 23)], "repainted in the new one");
+    }
+
+    /// **A destroyed editor leaves no band on the document.**
+    ///
+    /// The band is a range session on the *shared* document, so one left behind is still
+    /// painted by every other view of it — a split pane, a stream row, the docked editor
+    /// under the distraction-free surface. `CaretHighlightSession`'s own `Drop` retires it,
+    /// but only once the editor **state** is dropped, and that state is an `Rc` that can
+    /// outlive the widget: this test holds a handle across the teardown, which is exactly
+    /// what a stale tab-rebuilt editor amounts to. Without the explicit retire in
+    /// `TypographyBoundEditor::drop`, the band survives here — and nothing can ever reach
+    /// it afterwards, because the effects that push it die with the widget.
+    #[test]
+    fn destroying_an_editor_takes_its_band_off_the_shared_document() {
+        let (band, _scope, _color) = band(HighlightScope::Sentence);
+        let (doc, handle, mut tree) = column_with_document(Some(band));
+        click_into(&mut tree);
+        handle.select_range(2, 2);
+        pump(&mut tree);
+        assert_eq!(banded(&doc, BAND), [(0, 23)], "banded to begin with");
+
+        // `handle` is deliberately still alive — that is the whole point.
+        drop(tree);
+        assert!(
+            banded(&doc, BAND).is_empty(),
+            "the torn-down editor's band is still painted on a document its \
+             siblings are showing"
+        );
     }
 
     /// A surface built with no settings behind it draws nothing — the contract every widget

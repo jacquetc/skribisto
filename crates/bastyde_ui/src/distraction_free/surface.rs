@@ -88,6 +88,12 @@ impl DistractionFreeSurface {
     /// in place with no rebuild — which is what makes leaving the mode land the
     /// writer exactly where they were writing rather than at the top of the
     /// scene.
+    ///
+    /// The band the mode painted comes off with the editors that drew it —
+    /// `TypographyBoundEditor`'s `Drop`, not anything here. It has to be there
+    /// rather than here: the state carrying the band can be a *stale* one this
+    /// surface never had a handle on, and by the time the mode is off its band
+    /// effects are gone, so nothing reachable from this side can retire it.
     fn let_go(&mut self) {
         if let Some(old) = self.mounted.take() {
             self.vm.hand_back(old.item_id, old.tab.capture_view_state());
@@ -416,6 +422,10 @@ mod tests {
         focus: FocusViewModel,
         editors: EditorsViewModel,
         docs: OpenDocsStore,
+        /// The same handle the surface's deps carry, so a test can set the
+        /// **shared** caret-band scope the way Settings does — the mode reads
+        /// that one preference rather than owning a scope of its own.
+        settings: crate::view_models::SettingsViewModel,
     }
 
     /// A surface view-model with its dependencies attached and one Scene
@@ -479,6 +489,7 @@ mod tests {
             ids,
         );
         let store = temp_store();
+        let settings = crate::view_models::SettingsViewModel::new(&store);
         let stats = StatsModel::new(
             docs.clone(),
             editors.active_item(),
@@ -495,13 +506,14 @@ mod tests {
                 crate::models::DistractionFreeThemesService::in_memory_default(),
             ),
             theme_id: Signal::new("paper".to_string()),
-            settings: crate::view_models::SettingsViewModel::new(&store),
+            settings: settings.clone(),
         });
         Fixture {
             vm,
             focus,
             editors,
             docs,
+            settings,
         }
     }
 
@@ -1075,9 +1087,10 @@ mod tests {
         let band = fx.vm.caret_band().expect("attached");
         assert_eq!(band.scope.get(), crate::view_models::HighlightScope::None);
 
-        // Written through the settings handle the app itself reads, so this
+        // Written through the settings handle Settings itself writes, so this
         // proves the surface is on the same signal rather than a private copy.
-        band.scope
+        fx.settings
+            .highlight_scope()
             .set(crate::view_models::HighlightScope::Paragraph);
         let again = fx.vm.caret_band().expect("attached");
         assert_eq!(
@@ -1107,10 +1120,8 @@ mod tests {
         use bastyde::text_document::{FlowElementSnapshot, HighlightMask};
 
         let fx = fixture();
-        fx.vm
-            .caret_band()
-            .expect("attached")
-            .scope
+        fx.settings
+            .highlight_scope()
             .set(crate::view_models::HighlightScope::Sentence);
         fx.editors.active_item().set(Some(1));
         fx.focus.active_signal().set(true);
@@ -1162,16 +1173,89 @@ mod tests {
         );
     }
 
+    /// **Leaving the mode takes its band with it.**
+    ///
+    /// The document is shared with the pane underneath, and the band is a range
+    /// session on that document rather than anything the surface owns — so a
+    /// session the surface fails to retire is still painted by whatever view of
+    /// the document is left. That leaves the writer looking at their docked
+    /// editor with the *distraction-free theme's* shading on it.
+    ///
+    /// Invisible until the two bands had different colours: before that, a
+    /// leftover DF session was the same shade as the pane's own band.
+    #[test]
+    fn leaving_the_mode_takes_its_band_off_the_shared_document() {
+        use bastyde::text_document::{FlowElementSnapshot, HighlightMask};
+
+        let fx = fixture();
+        fx.settings
+            .highlight_scope()
+            .set(crate::view_models::HighlightScope::Sentence);
+        fx.editors.active_item().set(Some(1));
+        fx.focus.active_signal().set(true);
+
+        let mut tree = mount(&fx);
+        let settle = |tree: &mut WidgetTree| {
+            for _ in 0..4 {
+                tree.layout(SizeProposal::exact(1200.0, 800.0));
+            }
+            tree.tick_animations(std::time::Duration::from_millis(400));
+            tree.layout(SizeProposal::exact(1200.0, 800.0));
+        };
+        settle(&mut tree);
+
+        let column = all_editor_rects(&tree)
+            .into_iter()
+            .next()
+            .expect("the mode mounts one writing column");
+        let _ = tree.render();
+        tree.dispatch_event(bastyde::core::WidgetEvent::PointerDown {
+            position: bastyde::canvas::Point::new(column.x + column.width / 2.0, column.y + 10.0),
+            button: bastyde::core::PointerButton::Primary,
+            modifiers: bastyde::core::Modifiers::NONE,
+        });
+        tree.dispatch_event(bastyde::core::WidgetEvent::PointerUp {
+            position: bastyde::canvas::Point::new(column.x + column.width / 2.0, column.y + 10.0),
+            button: bastyde::core::PointerButton::Primary,
+            modifiers: bastyde::core::Modifiers::NONE,
+        });
+        settle(&mut tree);
+
+        let doc = fx.docs.peek(1).expect("seeded");
+        let prose = &doc.main.as_ref().expect("a Scene has prose").doc;
+        let bands = |prose: &bastyde::text_document::TextDocument| -> Vec<_> {
+            match &prose.snapshot_flow_masked(&HighlightMask::all()).elements[0] {
+                FlowElementSnapshot::Block(b) => b
+                    .paint_highlights
+                    .iter()
+                    .filter_map(|s| s.background_color)
+                    .collect(),
+                _ => panic!("expected a block"),
+            }
+        };
+        assert!(
+            !bands(prose).is_empty(),
+            "nothing was banded to begin with — this test would pass vacuously"
+        );
+
+        fx.focus.active_signal().set(false);
+        settle(&mut tree);
+        assert_eq!(
+            bands(prose),
+            Vec::new(),
+            "the mode's band outlived the mode, on the document the docked \
+             editor is still showing"
+        );
+    }
+
     /// The tab the surface mounts is built over the mode's band, not the
     /// editors' — the wiring the two tests above are only meaningful through.
     #[test]
     fn the_surface_tab_carries_the_modes_band_rather_than_the_editors() {
         let fx = fixture();
         let _tree = mount(&fx);
-        fx.vm
-            .caret_band()
-            .expect("attached")
-            .scope
+        fx.settings
+            .highlight_scope()
             .set(crate::view_models::HighlightScope::Sentence);
 
         let (tab, _) = fx.vm.open_tab(1).expect("item 1 is seeded");
