@@ -116,9 +116,12 @@ pub enum FormatSurface {
     /// compiler never scans notes for markers, so a break placed here would be
     /// a mark the exporter silently ignores.
     Note,
-    /// A synopsis box or a corkboard card. Real prose, so the character marks
-    /// and lists apply; but a synopsis is not chapter-structured, so headings,
-    /// alignment, blockquote, tables and scene breaks do not.
+    /// A synopsis box or a corkboard card. Real prose, and treated as such:
+    /// everything a note gets. A synopsis is where a writer sketches — an
+    /// outline wants headings, a beat sheet wants a table, a quoted line of
+    /// research wants a blockquote — and it compiles through the same
+    /// `push_prose` as any other prose, so nothing downstream cares. Only
+    /// scene breaks go, for the reason in [`Self::shows_scene_breaks`].
     ///
     /// Reached two ways: through `EditorsViewModel::format_target`, which
     /// prefers the tab's prose editor and falls back to its synopsis; and
@@ -146,8 +149,14 @@ impl FormatSurface {
     }
 
     /// Heading level, alignment, blockquote.
+    ///
+    /// Available in a synopsis too. These were once scene-and-note only, on the
+    /// reasoning that a synopsis "is not chapter-structured" — but that argues
+    /// about what a heading *means* in the finished book, not about what the
+    /// writer is doing with it. A synopsis is planning text, and planning text
+    /// is exactly where an outline's levels earn their keep.
     pub fn shows_block(self) -> bool {
-        matches!(self, Self::Scene | Self::Note)
+        self != Self::None
     }
 
     /// Bullet and numbered lists, indent, outdent.
@@ -159,14 +168,22 @@ impl FormatSurface {
     /// gate further on [`FormatViewModel::in_table`] — the group is present
     /// wherever a table *could* live, its row/column commands only where one
     /// actually does.
+    ///
+    /// A table could live in a synopsis: a beat sheet or a cast grid is
+    /// planning material, and the synopsis is where planning material goes.
     pub fn shows_tables(self) -> bool {
-        matches!(self, Self::Scene | Self::Note)
+        self != Self::None
     }
 
     /// Minor and major scene breaks. Scene prose only, matching the predicate
     /// `skribisto_compiler` uses to decide what it scans, so the command
     /// surface and the exporter cannot disagree about where a break means
     /// something.
+    ///
+    /// The one group with a *mechanical* reason to narrow, and therefore the
+    /// only one that does: `render.rs` passes `scan: false` for a note's and a
+    /// synopsis's prose, so a break placed in either is a mark the exporter
+    /// silently drops. Every other group is offered wherever there is prose.
     pub fn shows_scene_breaks(self) -> bool {
         self == Self::Scene
     }
@@ -240,10 +257,15 @@ struct RegisteredEditor {
 
 /// One gate per control group, for the dock to hang `visible_when` on.
 ///
-/// The dock **hides** groups that do not apply rather than greying them out: a
-/// synopsis has no headings and no tables, and eleven dead buttons teach a
-/// writer nothing. Contrast the Format menu, which keeps its rows and disables
-/// them — a menu is a map of what exists, a dock is a set of what applies.
+/// The dock **hides** groups that do not apply rather than greying them out:
+/// a note has nowhere to put a scene break, and dead buttons teach a writer
+/// nothing. Contrast the Format menu, which keeps its rows and disables them —
+/// a menu is a map of what exists, a dock is a set of what applies.
+///
+/// Hiding is only ever a *last* resort, and the bar for it is "the command
+/// would do nothing here", not "I cannot picture wanting it here". Only
+/// [`FormatSurface::shows_scene_breaks`] clears that bar; the rest of these
+/// gates separate "there is prose" from "there is not".
 #[derive(Clone, Debug)]
 pub struct GroupVisibility {
     pub history: Signal<bool>,
@@ -1810,7 +1832,7 @@ mod tests {
 
     /// A synopsis is a real formatting target, not a second-class one: the
     /// commands must reach it, and the surface must say what it is so the dock
-    /// drops the groups a synopsis has no use for.
+    /// drops the one group a synopsis has no use for.
     ///
     /// This is the gap that shipped first time round — `App` could only ever
     /// resolve a tab's *main prose* handle, so the caret sitting in a synopsis
@@ -1839,8 +1861,14 @@ mod tests {
             "a synopsis is prose: marks, lists and history all apply"
         );
         assert!(
-            !g.block.get() && !g.tables.get() && !g.scene_breaks.get(),
-            "but it is not chapter-structured, so those go"
+            g.block.get() && g.tables.get(),
+            "and so do headings, alignment and tables — an outline and a beat \
+             sheet are exactly what a synopsis is for"
+        );
+        assert!(
+            !g.scene_breaks.get(),
+            "only the scene breaks go, and only because the exporter never \
+             scans a synopsis for their markers"
         );
         assert!(!g.empty.get(), "and it is emphatically not the empty state");
 
@@ -1876,11 +1904,24 @@ mod tests {
         assert!(!Note.shows_scene_breaks());
         assert!(!Synopsis.shows_scene_breaks());
 
-        // A synopsis is real prose but is not chapter-structured.
+        // A synopsis is real prose, and gets every group a note does. Headings,
+        // alignment and tables were once withheld here on the grounds that a
+        // synopsis "is not chapter-structured"; an outline with levels and a
+        // beat sheet in a table are both ordinary planning, and the compiler
+        // pushes a synopsis through the same `push_prose` as a scene, so there
+        // was nothing behind the restriction but the guess.
         assert!(Synopsis.shows_marks());
         assert!(Synopsis.shows_lists());
-        assert!(!Synopsis.shows_block());
-        assert!(!Synopsis.shows_tables());
+        assert!(Synopsis.shows_block());
+        assert!(Synopsis.shows_tables());
+
+        // Scene breaks are the whole of the difference between a synopsis and a
+        // scene. If a second predicate ever narrows again, it needs a reason as
+        // concrete as this one's.
+        for surface in [Scene, Note, Synopsis] {
+            assert!(surface.shows_block());
+            assert!(surface.shows_tables());
+        }
 
         // History and marks are the high-frequency groups: they never vanish
         // while there is anywhere to type, so moving between a scene and its

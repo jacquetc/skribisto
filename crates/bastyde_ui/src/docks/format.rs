@@ -4,12 +4,18 @@
 //! The trailing **Format** dock: the manuscript's formatting controls, as a
 //! flowing grid that reflows with the dock's width.
 //!
-//! Groups that do not apply to what the caret is in are **hidden**, not greyed.
-//! A synopsis has no headings and no tables, and a dozen dead buttons teach a
-//! writer nothing. The two highest-frequency groups — history and character
-//! marks — stay wherever there is anywhere to type, so moving between a scene
-//! and its synopsis never makes the dock flicker; only a real change of surface
-//! reflows it.
+//! Groups that do not apply to what the caret is in are **hidden**, not greyed,
+//! because a dead button teaches a writer nothing. "Do not apply" means the
+//! command would be a no-op, not that it is hard to imagine wanting — which in
+//! practice leaves only the scene breaks, dropped everywhere but scene prose
+//! because the exporter does not scan anything else for their markers. A
+//! synopsis gets the rest, headings and tables included: it is where outlines
+//! and beat sheets are written.
+//!
+//! So the dock reflows exactly once between a scene and its synopsis, by one
+//! group. Everything else — history, marks, lists, block, tables — stays put
+//! wherever there is anywhere to type, and moving between the two never makes
+//! it flicker.
 //!
 //! Layout is one `Wrap` per group inside a `ScrollArea`. `Wrap` needs a bounded
 //! width proposal to break lines at all, and a `ScrollArea`'s content slot
@@ -580,8 +586,9 @@ mod tests {
 
         assert!(
             synopsis < scene,
-            "a synopsis hides block, tables and scene breaks, so it must be \
-             shorter than a scene: {synopsis} vs {scene}"
+            "a synopsis hides the scene-break group and nothing else, so it \
+             must be shorter than a scene by exactly that much: \
+             {synopsis} vs {scene}"
         );
         assert!(
             empty < synopsis,
@@ -684,12 +691,14 @@ mod tests {
 
         vm.set_surface(FormatSurface::Synopsis);
         assert!(
-            g.history.get() && g.marks.get(),
-            "the most-used groups must not blink out when focus moves to the synopsis"
+            g.history.get() && g.marks.get() && g.block.get() && g.tables.get(),
+            "a synopsis is prose like any other: only the scene breaks go, so \
+             nothing else may blink out when focus moves into it"
         );
         assert!(
-            !g.block.get() && !g.tables.get() && !g.scene_breaks.get(),
-            "a synopsis is not chapter-structured, so those groups go"
+            !g.scene_breaks.get(),
+            "the exporter never scans a synopsis for break markers, so offering \
+             one would be offering a mark it silently drops"
         );
         assert!(!g.empty.get());
 
