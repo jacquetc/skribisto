@@ -14,10 +14,12 @@
 //! owns A/C/X/V/B/I/U/Z/Y as built-ins, and a Global shortcut resolves *before*
 //! the focused widget sees the key, so binding one would silently shadow it.
 //!
-//! Prose only — see
-//! [`EditorsViewModel::footnote_target`](crate::view_models::EditorsViewModel::footnote_target)
-//! for why, and for how it tells "the menu took focus" apart from "the writer is
-//! in the synopsis".
+//! Prose only, and resolved through
+//! [`FormatViewModel::footnote_target`](crate::view_models::FormatViewModel::footnote_target)
+//! — the registry that knows **which** editor holds the caret. Resolving through
+//! the focused *tab* instead is what put every marker at the top of the document:
+//! a tab's handle is whatever `writing_column` last attached to the find banner,
+//! which reports a caret of 0 for an editor nobody is typing in.
 
 use bastyde::prelude::*;
 use bastyde::widgets::Toast;
@@ -32,7 +34,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .build(),
     );
 
-    let editors = deps.editors.clone();
+    let format = deps.format.clone();
     let session = deps.session.clone();
     ctx.register_action_global(Action::new("editor.insert_footnote").on_invoke(
         move |_i, c: &mut EventContext| {
@@ -43,11 +45,11 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 c.show_toast(Toast::warning(tr!(footnotes_no_project())));
                 return;
             };
-            let Some((handle, content_id)) = editors.footnote_target() else {
+            let Some((handle, binding)) = format.footnote_target() else {
                 c.show_toast(Toast::warning(tr!(footnotes_no_caret())));
                 return;
             };
-            if footnotes.insert_at(&handle, content_id).is_none() {
+            if footnotes.insert_at(&handle, &binding).is_none() {
                 c.show_toast(Toast::error(tr!(footnotes_not_created())));
                 return;
             }

@@ -39,7 +39,7 @@ use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
     ActivateOn, Button, ButtonVariant, Divider, DockOpenLocation, DockSide, DockWidget,
     DockWidgetId, Expand, FocusScope, HStack, IconButton, IconWidget, ListView, MenuItem, MenuList,
-    Padding, Panel, PopoverIconButton, ScrollBarMode, Spacer, Switcher, TextWidget,
+    Padding, Panel, PopoverIconButton, ScrollBarMode, Spacer, Switcher, TextWidget, ToolbarItem,
     TraversalScopePolicy, VStack, Wrap,
 };
 
@@ -70,6 +70,23 @@ pub fn footnotes_dock(
     })
     .icon(crate::icons::activity::footnotes_icon)
     .show_header(true)
+    // The way in, pinned where a writer looks for it.
+    //
+    // A footnote is created *in the prose*, so the command lives in the Document
+    // menu with the other insert-at-the-caret verbs — and that is exactly where
+    // nobody found it. The dock is where someone goes when they are thinking
+    // about footnotes, so the dock is where the button belongs. It fires the same
+    // action the menu and `Ctrl+Alt+F` do, so the three cannot drift; it is not
+    // gated on there being a caret, because the command already says so out loud
+    // and a permanently-greyed button teaches nothing.
+    .header_actions(|_id| {
+        vec![ToolbarItem::custom(
+            IconButton::add()
+                .toolbar()
+                .tooltip(tr!(footnotes_insert_tooltip()))
+                .on_activate_fn(|ctx| ctx.send_intent(Intent::new("editor.insert_footnote"))),
+        )]
+    })
     .default_location(DockOpenLocation::side(DockSide::Trailing))
 }
 
@@ -249,8 +266,12 @@ impl Widget for FootnotesList {
         };
         rederive();
         {
+            // **Structure**, not version. A row's body editor commits on every
+            // keystroke, which refreshes the model; rebuilding the list on that
+            // re-mints the editor being typed into and the writer loses the
+            // caret after one character. See `structure_key`.
             let f = rederive.clone();
-            ctx.effect(&self.vm.model().version_signal(), move |_| f());
+            ctx.effect(&self.vm.model().structure_signal(), move |_| f());
         }
         {
             let f = rederive.clone();

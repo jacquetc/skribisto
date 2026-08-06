@@ -1056,6 +1056,19 @@ impl ProseField {
         self.content.id()
     }
 
+    /// The row *handle*, for a caller that must work before the row exists.
+    ///
+    /// [`content_id`](Self::content_id) is `None` until the field's first save:
+    /// a `Content` is created on write, so a chapter folder nobody has typed
+    /// into yet has none. A comment can live with that — it needs a selection,
+    /// so there is prose, so there is a row — but a footnote cannot: adding one
+    /// is a perfectly ordinary *first* thing to do in an empty chapter, and a
+    /// command that silently refuses until an invisible autosave has happened
+    /// reads as the feature being broken for chapters.
+    pub fn content(&self) -> SingleContent {
+        self.content.clone()
+    }
+
     pub(crate) fn flush(&self, stack: Option<u64>) -> anyhow::Result<()> {
         if !self.doc.is_modified() {
             return Ok(());

@@ -527,6 +527,10 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                 // Reveal the trash dock — like Search, a plain action
                 // (a switchable leading tab, not a shown/hidden side).
                 .item(MenuEntry::new(tr!(menu_trash())).intent("trash.show"))
+                // Reveal the footnotes dock. Not a convenience either: a dock
+                // reachable only from its rail has no way back once a saved
+                // desk stops mounting it, and this is the door that recovers it.
+                .item(MenuEntry::new(tr!(menu_footnotes())).intent("footnotes.show"))
                 .item(
                     MenuEntry::new(tr!(menu_search_preview()))
                         .checked(preview_visible)

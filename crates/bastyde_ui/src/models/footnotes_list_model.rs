@@ -66,6 +66,35 @@ impl FootnoteRow {
     }
 }
 
+/// A fingerprint of everything about the note set **except body text**.
+///
+/// The dock's list rebuilds on this rather than on every change, and the
+/// distinction is load bearing: a row's body editor writes back on each
+/// keystroke, which refreshes the model, which would re-render the row, which
+/// would re-mint the very editor being typed into — taking the keyboard focus
+/// with it after a single character. The comment margin next door carries the
+/// same fingerprint for the same reason.
+///
+/// Ids, order, the printed number and orphan state all belong here, because each
+/// changes what the dock must draw. The body does not: it only changes what is
+/// *inside* a row that already exists, and the editor showing it already holds
+/// the newer text.
+fn structure_key(rows: &[FootnoteRow]) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    for r in rows {
+        r.id.hash(&mut h);
+        r.label.hash(&mut h);
+        r.item_id.hash(&mut h);
+        r.content_id.hash(&mut h);
+        r.number.hash(&mut h);
+        r.ordinal.hash(&mut h);
+        r.orphaned.hash(&mut h);
+        r.item_title.hash(&mut h);
+    }
+    h.finish()
+}
+
 /// Manuscript order, orphans last, then label so equal-ordinal rows are stable.
 fn sort_rows(rows: &mut [FootnoteRow]) {
     rows.sort_by(|a, b| {
@@ -133,6 +162,10 @@ mod imp {
     struct Inner {
         model: ListModel<FootnoteRow>,
         version: Signal<u64>,
+        /// Bumped only when [`structure_key`](super::structure_key) moves — what
+        /// the dock rebuilds on, so typing in a body cannot re-mint its editor.
+        structure: Signal<u64>,
+        last_structure: Cell<u64>,
         /// Bumped only when the *set of labels a document references* changes —
         /// what [`FootnotesListModel::note_live_edit`] gates on.
         subscribed: Cell<bool>,
@@ -158,6 +191,8 @@ mod imp {
                 inner: Rc::new(Inner {
                     model: ListModel::from_vec(Vec::new()),
                     version: Signal::new(0),
+                    structure: Signal::new(0),
+                    last_structure: Cell::new(0),
                     subscribed: Cell::new(false),
                     ctx,
                     ids,
@@ -260,6 +295,12 @@ mod imp {
 
         pub fn version_signal(&self) -> Signal<u64> {
             self.inner.version.clone()
+        }
+
+        /// Bumped only when the *shape* of the list changes — see
+        /// [`structure_key`](super::structure_key).
+        pub fn structure_signal(&self) -> Signal<u64> {
+            self.inner.structure.clone()
         }
 
         pub fn rows(&self) -> Vec<FootnoteRow> {
@@ -510,16 +551,21 @@ mod imp {
             self.inner.model.reconcile_by_key(rows, |r| r.id);
             let v = &self.inner.version;
             v.set(v.get().wrapping_add(1));
+            // Deliberately no structure bump: this path only ever rewrites
+            // bodies, which is exactly what must not disturb the dock.
         }
 
         fn refresh(&self) {
             *self.inner.live_labels.borrow_mut() = self.live_labels();
-            self.inner.model.reconcile_by_key(
-                load_rows(&self.inner.ctx, &self.inner.ids, &self.inner.docs),
-                |r| r.id,
-            );
+            let rows = load_rows(&self.inner.ctx, &self.inner.ids, &self.inner.docs);
+            let key = super::structure_key(&rows);
+            self.inner.model.reconcile_by_key(rows, |r| r.id);
             let v = &self.inner.version;
             v.set(v.get().wrapping_add(1));
+            if self.inner.last_structure.replace(key) != key {
+                let st = &self.inner.structure;
+                st.set(st.get().wrapping_add(1));
+            }
         }
     }
 
@@ -674,6 +720,9 @@ mod imp {
     struct Inner {
         model: ListModel<FootnoteRow>,
         version: Signal<u64>,
+        /// Mirrors the real model's: bumped on a shape change, not on a body
+        /// edit, so the dock's list is not re-minted under a writer's caret.
+        structure: Signal<u64>,
         next_id: Cell<u64>,
     }
 
@@ -688,6 +737,7 @@ mod imp {
                 inner: Rc::new(Inner {
                     model: ListModel::from_vec(fabricated()),
                     version: Signal::new(0),
+                    structure: Signal::new(0),
                     next_id: Cell::new(4),
                 }),
             }
@@ -705,6 +755,10 @@ mod imp {
 
         pub fn version_signal(&self) -> Signal<u64> {
             self.inner.version.clone()
+        }
+
+        pub fn structure_signal(&self) -> Signal<u64> {
+            self.inner.structure.clone()
         }
 
         pub fn rows(&self) -> Vec<FootnoteRow> {
@@ -779,6 +833,7 @@ mod imp {
             sort_rows(&mut rows);
             self.inner.model.replace_all(rows);
             self.bump();
+            self.bump_structure();
             Some(id)
         }
 
@@ -797,11 +852,18 @@ mod imp {
             let keep: Vec<FootnoteRow> = self.rows().into_iter().filter(|r| r.id != id).collect();
             self.inner.model.replace_all(keep);
             self.bump();
+            self.bump_structure();
         }
 
         fn bump(&self) {
             let v = &self.inner.version;
             v.set(v.get().wrapping_add(1));
+        }
+
+        /// Only for create/delete — a body edit must leave this alone.
+        fn bump_structure(&self) {
+            let st = &self.inner.structure;
+            st.set(st.get().wrapping_add(1));
         }
     }
 }
@@ -884,5 +946,45 @@ mod tests {
             ..row(1, "fn1", 1, false)
         };
         assert_eq!(numbered.marker(), "12");
+    }
+
+    /// **The regression that made the dock unusable.** A row's body editor commits
+    /// on every keystroke, so the model refreshes on every character. If the dock
+    /// rebuilt its list on that, it would re-mint the editor being typed into and
+    /// the writer would lose the caret after one letter — which is exactly what
+    /// shipped. Body text is therefore outside the fingerprint the list rebuilds
+    /// on; everything that changes what a row *is* stays inside it.
+    #[test]
+    fn typing_in_a_note_does_not_change_the_lists_shape() {
+        let base = vec![row(1, "fn1", 1, false), row(2, "fn2", 2, false)];
+
+        let mut edited = base.clone();
+        edited[0].body = "the writer typed a word".into();
+        assert_eq!(
+            structure_key(&base),
+            structure_key(&edited),
+            "a body edit must not rebuild the list under the caret"
+        );
+
+        type Mutation = (&'static str, fn(&mut FootnoteRow));
+        let mutations: [Mutation; 4] = [
+            ("a renumbering", |r| r.number = Some(9)),
+            ("losing its reference", |r| r.orphaned = true),
+            ("moving in the manuscript", |r| r.ordinal = 7),
+            ("changing home", |r| r.item_id = Some(42)),
+        ];
+        for (what, mutate) in mutations {
+            let mut changed = base.clone();
+            mutate(&mut changed[0]);
+            assert_ne!(
+                structure_key(&base),
+                structure_key(&changed),
+                "{what} changes what the dock must draw"
+            );
+        }
+
+        let mut fewer = base.clone();
+        fewer.pop();
+        assert_ne!(structure_key(&base), structure_key(&fewer));
     }
 }

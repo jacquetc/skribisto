@@ -472,12 +472,17 @@ impl OpenDoc {
     /// Minted here, beside `comment_binding_main`, for the same reason: only the
     /// `OpenDoc` knows which `Content` row each of its documents came from, and an
     /// editor handed the bare view-model could act on the wrong one.
+    /// Deliberately **not** gated on the row existing yet, unlike
+    /// `comment_binding_main`: a `Content` is created on first write, so a
+    /// chapter folder or a fresh Note nobody has typed into has none — and
+    /// adding a footnote is an ordinary first thing to do there. See
+    /// [`ProseField::content`](crate::tabs::ProseField::content).
     pub fn footnote_binding_main(&self) -> Option<crate::view_models::FootnoteBinding> {
         Some(
             self.footnotes
                 .borrow()
                 .clone()?
-                .binding(self.main_content_id()?),
+                .binding(self.main.as_ref()?.content()),
         )
     }
 
@@ -487,7 +492,7 @@ impl OpenDoc {
             self.footnotes
                 .borrow()
                 .clone()?
-                .binding(self.synopsis_content_id()?),
+                .binding(self.synopsis.as_ref()?.content()),
         )
     }
 

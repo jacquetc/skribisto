@@ -2540,6 +2540,12 @@ impl Widget for TypographyBoundEditor {
         if let Some(format) = self.format_vm.clone() {
             let self_id = ctx.self_id();
             format.register(self_id, handle.clone(), self.kind);
+            // This editor's footnote door, for the command that anchors a note
+            // to the row being typed into — the `OpenDoc` minted it per field,
+            // so a stream row's own row wins over its container's.
+            if let Some((binding, _)) = &self.footnotes {
+                format.set_registered_footnotes(self_id, binding.clone());
+            }
             self.format = Some((format, self_id));
         }
         vec![id]

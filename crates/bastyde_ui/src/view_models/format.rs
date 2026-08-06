@@ -227,6 +227,15 @@ struct RegisteredEditor {
     id: WidgetId,
     handle: EditorHandle,
     kind: EditorKind,
+    /// This editor's door to the footnote feature, when its surface has one.
+    ///
+    /// Carried here rather than resolved per command because this registry is
+    /// the only place that can answer **which** editor the caret is in — a
+    /// stream shows one per row — and a footnote has to annotate the row being
+    /// typed into, not the one the tab happens to be named after. The binding
+    /// rather than a bare id, because the row may not exist yet and the binding
+    /// knows how to mint it.
+    footnotes: Option<crate::view_models::FootnoteBinding>,
 }
 
 /// One gate per control group, for the dock to hang `visible_when` on.
@@ -512,6 +521,7 @@ impl FormatViewModel {
                 id,
                 handle: handle.clone(),
                 kind,
+                footnotes: None,
             }),
         }
         // A rebuild of the editor the menu is sticky on must re-point the latch
@@ -609,6 +619,65 @@ impl FormatViewModel {
 
     fn handle(&self) -> Option<EditorHandle> {
         self.target().0
+    }
+
+    /// Give an already-registered editor its footnote door. Separate from
+    /// [`register`](Self::register) because only some surfaces have one, and
+    /// they learn it from a different source than their handle.
+    pub fn set_registered_footnotes(
+        &self,
+        id: WidgetId,
+        binding: crate::view_models::FootnoteBinding,
+    ) {
+        if let Some(entry) = self.registry.borrow_mut().iter_mut().find(|e| e.id == id) {
+            entry.footnotes = Some(binding);
+        }
+    }
+
+    /// The editor a footnote reference goes into, and the `Content` row behind it.
+    ///
+    /// Resolved through the **registry**, not through the focused tab, and that
+    /// distinction is the whole of it: a tab's own handle is whatever
+    /// `writing_column` last attached to the find banner, which in a stream is
+    /// the container's prose rather than the row the writer is in — and which
+    /// reports `focused = false` and a caret of 0 for an editor nobody is
+    /// typing in. Inserting through it put every marker at the top of the
+    /// document regardless of where the caret was.
+    ///
+    /// `target()`'s sticky latch is what makes this survive the menu: reaching
+    /// Document ▸ Insert footnote moves focus to the overlay, so "the focused
+    /// editor" is momentarily nothing at all.
+    ///
+    /// `None` for a **synopsis**: it is planning text, and a note attached there
+    /// prints into a synopsis export and nowhere in the book.
+    pub fn footnote_target(&self) -> Option<(EditorHandle, crate::view_models::FootnoteBinding)> {
+        let (id, handle, kind) = self.resolved_registration()?;
+        if kind == EditorKind::Synopsis {
+            return None;
+        }
+        let binding = self
+            .registry
+            .borrow()
+            .iter()
+            .find(|e| e.id == id)
+            .and_then(|e| e.footnotes.clone())?;
+        Some((handle, binding))
+    }
+
+    /// The registered editor a command should act through: the focused one, else
+    /// the sticky latch. The `WidgetId` is kept, unlike in [`target`](Self::target),
+    /// so a caller can look the rest of its registration up.
+    fn resolved_registration(&self) -> Option<(WidgetId, EditorHandle, EditorKind)> {
+        if let Some(live) = self.focused_registered() {
+            // Latch it, exactly as `target` does. Without this the menu path
+            // would work only when some *other* format query happened to run
+            // while the editor still had focus — true today, because the dock
+            // polls, and a silent dependency on that is how a command comes to
+            // work in one window arrangement and not another.
+            *self.sticky.borrow_mut() = Some(live.clone());
+            return Some(live);
+        }
+        self.sticky.borrow().clone()
     }
 
     /// The editor a template should be inserted into — the same resolution every format
@@ -1951,5 +2020,84 @@ mod tests {
             "clear formatting must unset the direction, not leave the \
              paragraph pinned right-to-left"
         );
+    }
+
+    /// A footnote binding over a `Content` row with a known id.
+    fn binding_over(content_id: u64) -> crate::view_models::FootnoteBinding {
+        let ctx = Rc::new(frontend::AppContext::new());
+        let docs = crate::models::OpenDocsStore::new(ctx.clone());
+        let model = crate::models::FootnotesListModel::new(
+            ctx.clone(),
+            crate::app_ids::AppIds::new(),
+            docs.clone(),
+        );
+        let vm = crate::view_models::FootnotesViewModel::new(model, docs, Signal::new(None));
+        vm.binding(crate::singles::SingleContent::from_id(ctx, content_id))
+    }
+
+    /// A footnote goes into the editor the **caret** is in, and annotates *that*
+    /// editor's `Content` row.
+    ///
+    /// The regression this pins is the one that shipped: the command resolved its
+    /// handle from the focused *tab* instead, which in a stream is the container's
+    /// prose rather than the row being typed in — and which reports a caret of 0
+    /// for an editor nobody is in. Every marker landed at the top of the document,
+    /// wherever the writer had actually put the caret.
+    #[test]
+    fn a_footnote_targets_the_focused_editors_own_content_row() {
+        let vm = vm_detached();
+        let (synopsis_id, prose_id) = two_ids();
+        let synopsis = RichTextEditor::editor(TextDocument::new());
+        let prose = RichTextEditor::editor(TextDocument::new());
+        let (sh, ph) = (synopsis.handle(), prose.handle());
+        vm.register(synopsis_id, sh.clone(), EditorKind::Synopsis);
+        vm.set_registered_footnotes(synopsis_id, binding_over(11));
+        vm.register(prose_id, ph.clone(), EditorKind::Prose);
+        vm.set_registered_footnotes(prose_id, binding_over(22));
+
+        assert!(
+            vm.footnote_target().is_none(),
+            "nothing focused and nothing latched: refusing is the honest answer, \
+             and inserting into an arbitrary editor at its stale caret is not"
+        );
+
+        // The prose editor wins, and hands back *its own* door — the identity
+        // that matters is which registration answered, since the row behind it
+        // may not even exist yet (see `FootnoteBinding::ensure_content_id`).
+        ph.focused_signal().set(true);
+        let (handle, _) = vm.footnote_target().expect("the focused prose editor");
+        assert!(
+            handle.focused_signal().get(),
+            "resolved an editor that is not the one holding the caret"
+        );
+
+        // Reaching the menu takes focus away; the latch carries the command through.
+        ph.focused_signal().set(false);
+        assert!(
+            vm.footnote_target().is_some(),
+            "the latch must survive the menu overlay taking focus"
+        );
+
+        // A synopsis is planning text: a note attached there prints into a
+        // synopsis export and nowhere in the book.
+        sh.focused_signal().set(true);
+        assert!(
+            vm.footnote_target().is_none(),
+            "a synopsis is not where a footnote goes"
+        );
+    }
+
+    /// An editor with no footnote door at all is not a target: the surfaces that
+    /// have one are the prose surfaces, and guessing a row for the others is how
+    /// a note would end up on a different scene than its marker.
+    #[test]
+    fn an_editor_with_no_footnote_binding_is_not_a_target() {
+        let vm = vm_detached();
+        let (id, _) = two_ids();
+        let editor = RichTextEditor::editor(TextDocument::new());
+        let handle = editor.handle();
+        vm.register(id, handle.clone(), EditorKind::Prose);
+        handle.focused_signal().set(true);
+        assert!(vm.footnote_target().is_none());
     }
 }

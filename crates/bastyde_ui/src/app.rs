@@ -1837,6 +1837,7 @@ impl Widget for App {
             export: self.export.clone(),
             search_dock: self.search_dock,
             trash_dock: self.trash_dock,
+            footnotes_dock: self.footnotes_dock,
             unsaved: self.unsaved.clone(),
             backup_mode: self.backup_mode.clone(),
             pending_exit: self.pending_exit.clone(),

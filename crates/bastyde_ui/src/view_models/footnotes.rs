@@ -141,7 +141,8 @@ impl FootnotesViewModel {
     /// `[^label]` with nothing behind it; then the reference goes in; then the
     /// model is told to re-read, which is what gives the marker its number before
     /// anything paints. Returns the new note's id.
-    pub fn insert_at(&self, handle: &EditorHandle, content_id: u64) -> Option<u64> {
+    pub fn insert_at(&self, handle: &EditorHandle, binding: &FootnoteBinding) -> Option<u64> {
+        let content_id = binding.ensure_content_id(self.stack())?;
         let label = self.inner.model.mint_label();
         let id = self
             .inner
@@ -281,10 +282,10 @@ impl FootnotesViewModel {
     }
 
     /// A per-document handle for the editors — see [`FootnoteBinding`].
-    pub fn binding(&self, content_id: u64) -> FootnoteBinding {
+    pub fn binding(&self, content: crate::singles::SingleContent) -> FootnoteBinding {
         FootnoteBinding {
             vm: self.clone(),
-            content_id,
+            content,
         }
     }
 }
@@ -299,17 +300,41 @@ impl FootnotesViewModel {
 #[derive(Clone)]
 pub struct FootnoteBinding {
     vm: FootnotesViewModel,
-    content_id: u64,
+    content: crate::singles::SingleContent,
 }
 
 impl FootnoteBinding {
-    pub fn content_id(&self) -> u64 {
-        self.content_id
+    /// The row this editor writes into, **if it exists yet**.
+    pub fn content_id(&self) -> Option<u64> {
+        self.content.id()
+    }
+
+    /// The row this editor writes into, creating it if the writer has not typed
+    /// anything here yet.
+    ///
+    /// A `Content` is created on first write, so a chapter folder or a fresh
+    /// Note that nobody has typed into has no row to anchor to. Adding a
+    /// footnote is a perfectly ordinary first thing to do there, so the row is
+    /// minted rather than the command refusing — the alternative is a feature
+    /// that works everywhere except the empty page, which is where a writer
+    /// starts.
+    ///
+    /// Saving an empty field is exactly what the field's own first flush would
+    /// do a moment later; doing it now only moves that forward.
+    pub fn ensure_content_id(&self, stack: Option<u64>) -> Option<u64> {
+        if let Some(id) = self.content.id() {
+            return Some(id);
+        }
+        if let Err(e) = self.content.save(stack) {
+            eprintln!("footnotes: could not create the annotated content row: {e}");
+            return None;
+        }
+        self.content.id()
     }
 
     /// The label this editor was asked to reveal, if any.
     pub fn take_seek(&self) -> Option<String> {
-        self.vm.take_seek(self.content_id)
+        self.vm.take_seek(self.content.id()?)
     }
 
     /// Report this editor's caret to the dock.

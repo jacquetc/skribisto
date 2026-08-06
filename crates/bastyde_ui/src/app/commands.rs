@@ -129,6 +129,9 @@ pub(super) struct CommandDeps {
     /// Fixed dock ids (see [`crate::docks`]) — the reveal targets.
     pub search_dock: DockWidgetId,
     pub trash_dock: DockWidgetId,
+    /// The footnotes dock, for `footnotes.show` — the way back when a saved desk
+    /// has lost it. See that command for why a dock needs one at all.
+    pub footnotes_dock: DockWidgetId,
     /// Derived: the work has edits not on disk.
     pub unsaved: Signal<bool>,
     /// A backup file is open here — Save is off.

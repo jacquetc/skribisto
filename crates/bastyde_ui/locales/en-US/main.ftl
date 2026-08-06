@@ -1605,15 +1605,17 @@ export-orphan-footnotes =
 
 ## Footnotes
 
+menu-footnotes = Foo&tnotes
 footnotes-title = Footnotes
 footnotes-insert = Insert &footnote
-footnotes-empty = No footnotes yet. Insert one from the Document menu, or with Ctrl+Alt+F.
+footnotes-empty = No footnotes yet. Put the cursor in a scene, then use + above — or Ctrl+Alt+F.
 footnotes-filter-all = All
 footnotes-filter-document = This document
 footnotes-filter-orphaned = Orphaned
 footnotes-orphaned = Nothing points at this note any more
 footnotes-untitled-home = Untitled
 footnotes-body-placeholder = the note itself
+footnotes-insert-tooltip = Insert a footnote at the cursor (Ctrl+Alt+F)
 footnotes-actions = Footnote actions
 footnotes-delete = &Delete note and its reference
 footnotes-no-project = Open a project before inserting a footnote.

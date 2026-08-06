@@ -205,6 +205,27 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             });
         }));
     }
+    // `footnotes.show` — the way back to a dock a saved desk has lost.
+    //
+    // A dock reachable *only* from the rail has no way back once it stops being
+    // mounted, and a desk saved with an inconsistent roster does exactly that:
+    // `known_docks` records the whole roster while the exported layout may not
+    // contain every dock in it, and the reconcile then reads the absence as
+    // "the writer closed this" and never mounts it again. That state is
+    // self-perpetuating — it survives every restart — and the writer's only
+    // remedy was to delete `workspace.toml`.
+    //
+    // `reveal_dock` (not `toggle_dock`) because this is a recovery door: someone
+    // reaching for it wants the dock in front of them, and a toggle that hides a
+    // dock they cannot see would be the opposite of the point.
+    {
+        let docking = deps.outline.docking();
+        let footnotes_dock = deps.footnotes_dock;
+        let focus = deps.focus.clone();
+        ctx.register_action_global(Action::new("footnotes.show").on_invoke(move |_i, _c| {
+            unless_distraction_free(&focus, || docking.reveal_dock(footnotes_dock));
+        }));
+    }
 }
 
 #[cfg(test)]

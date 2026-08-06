@@ -1583,15 +1583,17 @@ export-orphan-footnotes =
 
 ## Notes de bas de page
 
+menu-footnotes = Notes de bas de &page
 footnotes-title = Notes de bas de page
 footnotes-insert = Insérer une note de bas de p&age
-footnotes-empty = Aucune note pour l'instant. Insérez-en une depuis le menu Document, ou avec Ctrl+Alt+F.
+footnotes-empty = Aucune note pour l'instant. Placez le curseur dans une scène, puis utilisez + ci-dessus — ou Ctrl+Alt+F.
 footnotes-filter-all = Toutes
 footnotes-filter-document = Ce document
 footnotes-filter-orphaned = Orphelines
 footnotes-orphaned = Plus rien ne renvoie à cette note
 footnotes-untitled-home = Sans titre
 footnotes-body-placeholder = la note elle-même
+footnotes-insert-tooltip = Insérer une note de bas de page au curseur (Ctrl+Alt+F)
 footnotes-actions = Actions sur la note
 footnotes-delete = &Supprimer la note et son appel
 footnotes-no-project = Ouvrez un projet avant d'insérer une note de bas de page.
