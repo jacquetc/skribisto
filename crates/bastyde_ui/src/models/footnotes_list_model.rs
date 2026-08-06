@@ -436,7 +436,7 @@ mod imp {
 
             let touched = self.contents_referencing(&dto.label);
             let _ = undo_redo_commands::begin_composite(&self.inner.ctx, stack_id);
-            for (content_id, stripped) in &touched {
+            for (_, content_id, stripped) in &touched {
                 if let Ok(Some(c)) = content_commands::get_content(&self.inner.ctx, content_id)
                     && let Err(e) = content_commands::update_content(
                         &self.inner.ctx,
@@ -459,43 +459,49 @@ mod imp {
             }
             undo_redo_commands::end_composite(&self.inner.ctx);
 
-            // Re-read the documents whose prose just changed under them. The caller
-            // pumps a frame; `set_djot` only queues a document event.
-            let items = self.items_of_contents(touched.iter().map(|(id, _)| *id));
+            // Re-read the documents whose prose just changed under them, from the
+            // ids captured *before* the write. The caller pumps a frame;
+            // `set_djot` only queues a document event.
+            let items: Vec<u64> = {
+                let mut ids: Vec<u64> = touched.iter().map(|(item, _, _)| *item).collect();
+                ids.sort_unstable();
+                ids.dedup();
+                ids
+            };
             self.inner.docs.reload_open(&items);
             self.refresh();
         }
 
         /// Every `Content` row naming `label`, paired with its prose minus that
         /// note's references.
-        fn contents_referencing(&self, label: &str) -> Vec<(u64, String)> {
+        /// Every `Content` naming `label`: the item that owns it, the row, and
+        /// its prose with that note's references removed.
+        ///
+        /// The **item id comes back with it**, and that is not tidiness. The
+        /// owning items used to be looked up in a second pass *after* the strip
+        /// had been written — and `read_work` deliberately drops prose with no
+        /// `[^` left in it, so that second pass found nothing, reloaded no
+        /// document, and left the open editor showing a reference to a note that
+        /// no longer existed. Its label was gone from the marker map by then, so
+        /// it drew the raw `fn3`. One pass, before the write, cannot go stale.
+        fn contents_referencing(&self, label: &str) -> Vec<(u64, u64, String)> {
             let Some(work_id) = self.inner.ids.work_id.get() else {
                 return Vec::new();
             };
+            let needle = format!("[^{label}]");
             // Read from the store, not the live overlay: the flush above has just
             // put every open document's text there, and the rows are what gets
             // written back.
             footnote_numbering::read_work(&self.inner.ctx, work_id, None)
                 .into_iter()
-                .flat_map(|row| row.contents)
-                .filter(|(_, data)| data.contains(&format!("[^{label}]")))
-                .map(|(id, data)| (id, strip_references(&data, label)))
-                .collect()
-        }
-
-        /// The binder items owning `contents` — the docs to re-read after a write.
-        fn items_of_contents(&self, contents: impl Iterator<Item = u64>) -> Vec<u64> {
-            let wanted: std::collections::HashSet<u64> = contents.collect();
-            if wanted.is_empty() {
-                return Vec::new();
-            }
-            let Some(work_id) = self.inner.ids.work_id.get() else {
-                return Vec::new();
-            };
-            footnote_numbering::read_work(&self.inner.ctx, work_id, None)
-                .into_iter()
-                .filter(|row| row.contents.iter().any(|(id, _)| wanted.contains(id)))
-                .map(|row| row.meta.id)
+                .flat_map(|row| {
+                    let item = row.meta.id;
+                    row.contents
+                        .into_iter()
+                        .map(move |(id, data)| (item, id, data))
+                })
+                .filter(|(_, _, data)| data.contains(&needle))
+                .map(|(item, id, data)| (item, id, strip_references(&data, label)))
                 .collect()
         }
 

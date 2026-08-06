@@ -148,6 +148,22 @@ impl FootnotesViewModel {
             .inner
             .model
             .create(content_id, &label, "", self.stack())?;
+        // Collapse a live selection to its **end** before inserting.
+        //
+        // `insert_djot` replaces the selection — right for typing, and exactly
+        // wrong here: selecting the word you want to annotate and asking for a
+        // footnote deleted the word and left the marker in its place. A footnote
+        // annotates text, so its marker goes *after* it, which is where every
+        // word processor puts it and where a reader looks for it.
+        //
+        // `max`, not `position`: a selection dragged right-to-left has its
+        // position *before* its anchor, so collapsing to `position` would put the
+        // marker at the head of the phrase and annotate the wrong word.
+        let (anchor, position) = handle.selection();
+        if anchor != position {
+            let end = anchor.max(position);
+            handle.select_range(end, end);
+        }
         handle.insert_djot(&format!("[^{label}]"));
         // Explicit, rather than waiting for the frame's edit signal: the dock is
         // about to open this note for typing, and a row that has not been placed

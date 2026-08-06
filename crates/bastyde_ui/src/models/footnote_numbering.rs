@@ -122,7 +122,10 @@ pub fn marker_for(number: Option<usize>) -> String {
 /// Empty on any backend hiccup — a numbering pass that cannot read the tree must
 /// not invent an order.
 pub fn read_work(ctx: &AppContext, work_id: u64, docs: Option<&OpenDocsStore>) -> Vec<ItemProse> {
-    let mut out = Vec::new();
+    // Two passes, because a row's *display name* depends on the whole stream:
+    // an untitled chapter is called "Chapter 3", and 3 is only knowable once
+    // every row before it has been counted.
+    let mut ordered: Vec<frontend::direct_access::BinderItemDto> = Vec::new();
     let binder_ids =
         work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
             .unwrap_or_default();
@@ -141,15 +144,32 @@ pub fn read_work(ctx: &AppContext, work_id: u64, docs: Option<&OpenDocsStore>) -
                 .map(|it| (it.id, it))
                 .collect();
         for id in item_ids {
-            let Some(it) = by_id.get(&id) else {
-                continue;
-            };
-            out.push(ItemProse {
-                meta: crate::models::item_meta_of(it),
-                title: it.title.clone(),
-                contents: prose_of_item(ctx, id, docs),
-            });
+            if let Some(it) = by_id.get(&id) {
+                ordered.push(it.clone());
+            }
         }
+    }
+
+    // The name a writer actually reads. **Not** `BinderItemDto.title`, which is
+    // deliberately empty for every row the app names by generation: chapter
+    // numbering synthesises "Chapter 3" per surface rather than writing it back,
+    // precisely so the binder and the exported book cannot disagree. Reading the
+    // raw field here made every row in the footnotes dock read "Untitled" — the
+    // same bug `6aa4b563` fixed for tab captions, arriving by the same route.
+    let numbers = crate::models::numbers_for_items(ctx, work_id, &ordered);
+    let work_langs = crate::models::work_language_tags(ctx, work_id);
+
+    let mut out = Vec::with_capacity(ordered.len());
+    for it in &ordered {
+        let fallback = crate::models::fallback_label_for(it, numbers.get(&it.id), &work_langs);
+        // The badge is dropped: this is a breadcrumb, not a tree row, and
+        // "3. Chapter 3" is the duplication `label_and_badge` exists to prevent.
+        let (title, _) = crate::models::label_and_badge(&it.title, fallback.as_deref(), None);
+        out.push(ItemProse {
+            meta: crate::models::item_meta_of(it),
+            title,
+            contents: prose_of_item(ctx, it.id, docs),
+        });
     }
     out
 }
