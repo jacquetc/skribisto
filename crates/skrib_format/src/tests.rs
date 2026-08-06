@@ -348,6 +348,26 @@ fn scene_text_content_id(binders: &[BinderWithItems]) -> u64 {
         .id
 }
 
+/// The bundle-relative path the written bundle records for one Content's prose
+/// blob.
+///
+/// Tests resolve a prose file this way — through the manifest's own `ProseRef`,
+/// exactly as the reader does (`folder_io::read_folder` joins `pr.path` verbatim)
+/// — rather than by guessing at the file name. Guessing is what coupled three
+/// tests to the old `<content_id>-…` scheme and let the reopen-renames-everything
+/// bug live undetected: a name is presentation, the manifest is the contract.
+fn prose_path_for_content(bundle: &WorkBundle, content_id: u64) -> String {
+    bundle
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .flat_map(|i| i.item.prose_refs.iter())
+        .find(|pr| pr.file_id == content_id)
+        .unwrap_or_else(|| panic!("no prose ref for content {content_id}"))
+        .path
+        .clone()
+}
+
 /// Comment fixtures with **no field left at its default**, deliberately: an
 /// all-default row round-trips equal even when a field has been dropped somewhere
 /// in the mapping, which is exactly how a persistence bug hides. Same reasoning the
@@ -506,6 +526,47 @@ pub(crate) fn build_bundle_with_footnotes(shape: ShapeTag) -> WorkBundle {
         &s.binders,
         shape,
     )
+}
+
+/// Build a bundle from a caller-mutated copy of the fixture inputs.
+///
+/// Exists so the naming tests below can do the two things a real session does —
+/// remap every entity id (what `load_work` does on open) and edit titles or
+/// order — without duplicating `build_bundle`'s fifteen-argument call.
+fn build_bundle_with(shape: ShapeTag, tweak: impl FnOnce(&mut SampleInputs)) -> WorkBundle {
+    let mut s = sample_inputs();
+    tweak(&mut s);
+    let comments = sample_comments(&s.binders);
+    from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &comments,
+        &[],
+        &s.binders,
+        shape,
+    )
+}
+
+/// Every prose path the bundle records, sorted — the set a git diff would see.
+fn prose_paths(bundle: &WorkBundle) -> Vec<String> {
+    let mut paths: Vec<String> = bundle
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .flat_map(|i| i.item.prose_refs.iter())
+        .map(|pr| pr.path.clone())
+        .collect();
+    paths.sort();
+    paths
 }
 
 pub(crate) fn build_bundle(shape: ShapeTag) -> WorkBundle {
@@ -789,11 +850,137 @@ fn writes_are_diff_minimal() {
         1,
         "exactly one file should change, got {changed:?}"
     );
-    assert!(
-        changed[0].contains(&target_id.to_string()),
-        "the changed file {} should be the edited scene's .djot",
-        changed[0]
+    assert_eq!(
+        *changed[0],
+        prose_path_for_content(&bundle, target_id),
+        "the changed file should be the edited scene's .djot"
     );
+}
+
+// ---------------------------------------------------------------------------
+// Prose file naming: stable across a reopen, stable across a reorder
+// ---------------------------------------------------------------------------
+
+/// The bug this naming scheme exists to prevent.
+///
+/// `load_work` remaps every `file_id` to a fresh store id, and `next_id` is a
+/// process-lifetime counter that is never reset — so closing a project and
+/// reopening it in the same session hands every row a different number. When the
+/// prose file name embedded that number, the next save renamed *every* file, and
+/// a git commit showed the whole manuscript deleted and re-added instead of one
+/// edited scene. Simulated here by shifting every entity id while keeping every
+/// `uid`, which is exactly what a reload does.
+#[test]
+fn reopening_a_project_renames_no_prose_file() {
+    const RELOAD_SHIFT: u64 = 10_000;
+
+    let before = prose_paths(&build_bundle(ShapeTag::Folder));
+    let after = prose_paths(&build_bundle_with(ShapeTag::Folder, |s| {
+        for b in &mut s.binders {
+            b.binder.id += RELOAD_SHIFT;
+            for i in &mut b.items {
+                i.item.id += RELOAD_SHIFT;
+                for c in &mut i.contents {
+                    c.id += RELOAD_SHIFT;
+                }
+            }
+        }
+    }));
+
+    assert_eq!(
+        before, after,
+        "a reload must not rename a single prose file"
+    );
+    assert!(
+        !before.is_empty(),
+        "the fixture must contain prose to compare"
+    );
+}
+
+/// Reordering is the other half: moving a scene must not rename its neighbours,
+/// which is why the slug falls back to an *ancestor's* title and never to a
+/// sibling or a position.
+///
+/// Titles are cleared first so the fallback path is the one under test — with the
+/// fixture's distinct per-row titles a name depends on nothing but its own row,
+/// and the assertion would hold trivially without proving anything. Rows 3 and 6
+/// both sit at indent 0, so swapping them is a genuine same-parent move; row 2 is
+/// left alone because `scene_text_content_id` pins the Item/Scene fixture there.
+#[test]
+fn reordering_items_renames_no_prose_file() {
+    let clear_titles = |s: &mut SampleInputs| {
+        for i in &mut s.binders[0].items {
+            i.item.title.clear();
+        }
+    };
+
+    let before = prose_paths(&build_bundle_with(ShapeTag::Folder, clear_titles));
+    let after = prose_paths(&build_bundle_with(ShapeTag::Folder, |s| {
+        clear_titles(s);
+        s.binders[0].items.swap(3, 6);
+    }));
+
+    assert_eq!(before, after, "reordering must not rename any prose file");
+}
+
+/// Renaming an item *should* rename its own blob — the file name is the title,
+/// and git records that as a rename — but only its own.
+#[test]
+fn renaming_an_item_renames_only_its_own_prose() {
+    let before = prose_paths(&build_bundle(ShapeTag::Folder));
+    let after = prose_paths(&build_bundle_with(ShapeTag::Folder, |s| {
+        s.binders[0].items[2].item.title = "A Completely Different Title".to_string();
+    }));
+
+    let vanished: Vec<_> = before.iter().filter(|p| !after.contains(p)).collect();
+    let appeared: Vec<_> = after.iter().filter(|p| !before.contains(p)).collect();
+    assert_eq!(
+        vanished.len(),
+        appeared.len(),
+        "a rename must not change how many prose files exist"
+    );
+    assert!(
+        appeared
+            .iter()
+            .all(|p| p.contains("a-completely-different-title")),
+        "only the renamed item's blobs may move, got {appeared:?}"
+    );
+}
+
+/// The second bug: 93 of the 120 prose files in the shipped `Starforgers.skrib`
+/// were named `item`, because most scenes in a continuous manuscript have no
+/// title and `slugify("")` fell back to that one word. An untitled row now
+/// borrows the name of the chapter it sits under.
+#[test]
+fn an_untitled_row_is_never_named_item() {
+    let bundle = build_bundle_with(ShapeTag::Folder, |s| {
+        for i in &mut s.binders[0].items {
+            i.item.title.clear();
+        }
+    });
+
+    for path in prose_paths(&bundle) {
+        let name = path.rsplit('/').next().unwrap();
+        assert!(
+            !name.contains("-item."),
+            "an untitled row fell back to the anonymous slug: {path}"
+        );
+    }
+}
+
+/// `short_id` must hash the uid rather than slice it. `common::uid::fixture_uid`
+/// is `Uuid::from_u128(n)`, whose entropy sits in the *low* bytes — a raw hex
+/// prefix would be `"00000000"` for every fixture row in this crate, silently
+/// collapsing every test project onto one file name and hiding real collisions.
+#[test]
+fn short_id_distinguishes_sequential_fixture_uids() {
+    let ids: Vec<String> = (1u64..=64)
+        .map(|n| crate::slug::short_id(common::uid::fixture_uid(n)))
+        .collect();
+
+    let unique: std::collections::BTreeSet<&String> = ids.iter().collect();
+    assert_eq!(unique.len(), ids.len(), "fixture uids collided: {ids:?}");
+    assert!(ids.iter().all(|s| s.len() == 8));
 }
 
 // ---------------------------------------------------------------------------
@@ -812,22 +999,10 @@ fn a_comment_lands_in_a_sidecar_beside_the_prose_it_annotates() {
     // is why `Content` needs no `uid`.
     let binders = sample_inputs().binders;
     let scene = scene_text_content_id(&binders);
-    let prose: Vec<_> = walkdir::WalkDir::new(&root)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("djot"))
-        .map(|e| e.path().to_path_buf())
-        .filter(|p| {
-            p.file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .starts_with(&format!("{scene}-"))
-        })
-        .collect();
-    assert_eq!(prose.len(), 1, "expected exactly one .djot for the scene");
+    let prose = root.join(prose_path_for_content(&bundle, scene));
+    assert!(prose.is_file(), "expected the scene's .djot at {prose:?}");
 
-    let sidecar = prose[0].with_extension("").to_string_lossy().to_string() + ".comments.ron";
+    let sidecar = prose.with_extension("").to_string_lossy().to_string() + ".comments.ron";
     let sidecar = std::path::Path::new(&sidecar);
     assert!(
         sidecar.is_file(),
@@ -2383,22 +2558,10 @@ fn a_footnote_lands_in_a_sidecar_beside_the_prose_it_annotates() {
     write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
 
     let scene = scene_text_content_id(&sample_inputs().binders);
-    let prose: Vec<_> = walkdir::WalkDir::new(&root)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("djot"))
-        .map(|e| e.path().to_path_buf())
-        .filter(|p| {
-            p.file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .starts_with(&format!("{scene}-"))
-        })
-        .collect();
-    assert_eq!(prose.len(), 1);
+    let prose = root.join(prose_path_for_content(&bundle, scene));
+    assert!(prose.is_file(), "expected the scene's .djot at {prose:?}");
 
-    let sidecar = prose[0].with_extension("").to_string_lossy().to_string() + ".footnotes.ron";
+    let sidecar = prose.with_extension("").to_string_lossy().to_string() + ".footnotes.ron";
     assert!(
         std::path::Path::new(&sidecar).is_file(),
         "expected a footnotes sidecar at {sidecar}"

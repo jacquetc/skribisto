@@ -5,10 +5,29 @@
 //! names. Slugs are cosmetic and diff-friendly, and keep the title's actual
 //! (non-ASCII) characters — titles are visible, git-tracked file names, so
 //! folding them away would make non-Latin-script books unreadable on disk.
-//! Uniqueness is guaranteed by the numeric `file_id` prefix, not the slug.
+//! Uniqueness is guaranteed by the [`short_id`] prefix, not the slug.
+//!
+//! ## Why the prefix is derived from the item's `uid`
+//!
+//! A prose file name must survive a save → load → save cycle unchanged, or the
+//! exploded shape's whole reason for existing — a git history where editing one
+//! scene touches one file — collapses into a wholesale rename on every reopen.
+//! `EntityId`s cannot carry that weight: the loader remaps every `file_id` to a
+//! fresh store id, and `next_id` is a process-lifetime counter that is never
+//! reset, so closing a project and reopening it in the same session hands every
+//! row a different number. `BinderItem.uid` is the project's durable identity
+//! (minted once on create, never on update) and is what everything else
+//! persisted about an item already keys on; the file name now follows that rule
+//! too.
+//!
+//! The slug is chosen so that *reordering* renames nothing either: it comes from
+//! the item's own title, or — for the untitled scenes that make up most of a
+//! continuous manuscript — from its nearest titled **ancestor**, found by
+//! crossing indent levels rather than by list position.
 
 use common::entities::ContentRole;
 use unicode_normalization::UnicodeNormalization;
+use uuid::Uuid;
 
 /// lowercase alphanumeric runs (any script) joined by `-`, trimmed; `"item"` when empty.
 ///
@@ -62,11 +81,62 @@ pub fn prose_kind(role: &ContentRole) -> Option<&'static str> {
     }
 }
 
-/// Prose file name `<content_id>-<item-slug>.<kind>.djot`, or `None` if `role`
-/// is not a prose role.
-pub fn prose_file_name(content_id: u64, item_title: &str, role: &ContentRole) -> Option<String> {
+/// A short, stable, collision-resistant tag derived from a durable `uid`.
+///
+/// **Hashed, never a substring of the uid.** `common::uid::fixture_uid(n)` is
+/// `Uuid::from_u128(n)`, the house test-fixture generator: for every realistic
+/// `n` its entropy lives in the *low* bytes, so the leading hex digits are all
+/// zero and a raw prefix would make every fixture row collide. Hashing spreads
+/// any id source's bits uniformly, and stays correct if the uid scheme is ever
+/// changed for one that orders by time (which would concentrate the entropy at
+/// the other end again).
+pub fn short_id(uid: Uuid) -> String {
+    blake3::hash(uid.as_bytes()).to_hex()[..8].to_string()
+}
+
+/// The nearest titled ancestor of `items[idx]`, given `(indent, title)` pairs in
+/// binder order — or `None` when nothing above it is titled.
+///
+/// Walks backwards, and each time it crosses to a strictly shallower indent it
+/// either takes that row's title or, if that ancestor is itself untitled, keeps
+/// climbing from the new, shallower ceiling. Deliberately **not** the preceding
+/// sibling: siblings share an indent, so consulting one would make the file name
+/// depend on list position, and reordering a scene would rename its neighbours.
+pub fn nearest_titled_ancestor<'a>(items: &[(i64, &'a str)], idx: usize) -> Option<&'a str> {
+    let mut ceiling = items.get(idx)?.0;
+    let mut j = idx;
+    while j > 0 {
+        j -= 1;
+        let (indent, title) = items[j];
+        if indent < ceiling {
+            if !title.trim().is_empty() {
+                return Some(title);
+            }
+            ceiling = indent;
+        }
+    }
+    None
+}
+
+/// Prose file name `<short_id>-<slug>.<kind>.djot`, or `None` if `role` is not a
+/// prose role.
+///
+/// `slug_source` is the already-resolved name to slug: the item's own title, or
+/// its [`nearest_titled_ancestor`]'s when it has none. When it is blank the
+/// content kind is used, so an untitled scene lands on `…-scene.scene.djot`
+/// rather than the anonymous `item` every untitled row used to share.
+pub fn prose_file_name(item_uid: Uuid, slug_source: &str, role: &ContentRole) -> Option<String> {
     let kind = prose_kind(role)?;
-    Some(format!("{content_id}-{}.{kind}.djot", slugify(item_title)))
+    let source = if slug_source.trim().is_empty() {
+        kind
+    } else {
+        slug_source
+    };
+    Some(format!(
+        "{}-{}.{kind}.djot",
+        short_id(item_uid),
+        slugify(source)
+    ))
 }
 
 /// Bundle-root-relative path of a prose file within a binder directory.

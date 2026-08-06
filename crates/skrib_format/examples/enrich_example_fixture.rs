@@ -234,7 +234,7 @@ fn main() -> anyhow::Result<()> {
             path: skrib_format::prose_relpath(
                 &skrib_format::binder_dir_name(binder_dir_index, "Story bible"),
                 &skrib_format::prose_file_name(
-                    content_id,
+                    item.uid,
                     &item.title,
                     &common::entities::ContentRole::NoteText,
                 )
@@ -280,7 +280,7 @@ fn main() -> anyhow::Result<()> {
             path: skrib_format::prose_relpath(
                 &manuscript_dir,
                 &skrib_format::prose_file_name(
-                    content_id,
+                    bundled.item.uid,
                     &bundled.item.title,
                     &common::entities::ContentRole::SynopsisText,
                 )

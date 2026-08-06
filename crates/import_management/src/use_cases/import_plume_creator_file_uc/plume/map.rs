@@ -770,6 +770,10 @@ impl<'a> Builder<'a> {
         label: &str,
     ) -> (u64, BundledItem) {
         let item_id = self.ids.take();
+        // Minted here rather than at construction below because the prose file
+        // names are derived from it: `skrib_format::prose_file_name` keys on the
+        // item's durable uid so a name survives a reopen unchanged.
+        let item_uid = common::uid::new_uid();
         let dir = binder_dir_name(binder_index, binder_name);
 
         let mut inline_contents = Vec::new();
@@ -791,7 +795,7 @@ impl<'a> Builder<'a> {
                     text: data,
                 }),
                 Some(_) => {
-                    let name = prose_file_name(content_id, title, &content_role)
+                    let name = prose_file_name(item_uid, title, &content_role)
                         .expect("prose_kind matched");
                     prose_refs.push(ProseRef {
                         file_id: content_id,
@@ -812,7 +816,7 @@ impl<'a> Builder<'a> {
             BundledItem {
                 item: BinderItemFile {
                     file_id: item_id,
-                    uid: common::uid::new_uid(),
+                    uid: item_uid,
                     created_at: self.now.clone(),
                     updated_at: self.now.clone(),
                     title: title.to_string(),

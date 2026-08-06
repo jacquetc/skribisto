@@ -17,7 +17,8 @@ use super::bundle::*;
 use super::loaded::*;
 use super::media::{asset_relpath, extension_for};
 use super::slug::{
-    binder_dir_name, note_template_relpath, prose_file_name, prose_kind, prose_relpath,
+    binder_dir_name, nearest_titled_ancestor, note_template_relpath, prose_file_name, prose_kind,
+    prose_relpath,
 };
 
 fn fmt_dt(dt: &DateTime<Utc>) -> String {
@@ -135,9 +136,23 @@ pub fn from_entities(
         let dir = binder_dir_name(index, &bwi.binder.name);
         let item_order: Vec<u64> = bwi.items.iter().map(|i| i.item.id).collect();
 
+        // `(indent, title)` in binder order, so an untitled row's prose file can
+        // borrow its nearest titled ancestor's name instead of falling back to an
+        // anonymous slug every other untitled row shares.
+        let outline: Vec<(i64, &str)> = bwi
+            .items
+            .iter()
+            .map(|i| (i.item.indent, i.item.title.as_str()))
+            .collect();
+
         let mut items = Vec::with_capacity(bwi.items.len());
-        for iwc in &bwi.items {
+        for (item_index, iwc) in bwi.items.iter().enumerate() {
             let item = &iwc.item;
+            let slug_source: &str = if item.title.trim().is_empty() {
+                nearest_titled_ancestor(&outline, item_index).unwrap_or("")
+            } else {
+                &item.title
+            };
             let mut inline_contents = Vec::new();
             let mut prose_refs = Vec::new();
             let mut prose = BTreeMap::new();
@@ -158,7 +173,7 @@ pub fn from_entities(
                         text: c.data.clone(),
                     }),
                     Some(_) => {
-                        let name = prose_file_name(c.id, &item.title, &c.role)
+                        let name = prose_file_name(item.uid, slug_source, &c.role)
                             .expect("prose_kind matched");
                         prose_refs.push(ProseRef {
                             file_id: c.id,
