@@ -192,6 +192,7 @@ pub fn build_bundle(
         trash_infos: Vec::new(),
         // Plume has no comment/annotation concept either, so there is nothing to
         // import and nothing that could already be orphaned.
+        orphan_footnotes: Vec::new(),
         orphan_comments: Vec::new(),
         // Plume has no writing-plan or progress-history concept to import.
         paces: Vec::new(),
@@ -843,6 +844,7 @@ impl<'a> Builder<'a> {
                 prose,
                 // Plume carries no annotations, so an imported item starts unannotated.
                 comments: std::collections::BTreeMap::new(),
+                footnotes: Default::default(),
             },
         )
     }

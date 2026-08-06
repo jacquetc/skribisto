@@ -59,9 +59,10 @@ mod zip_io;
 pub use bundle::{
     BinderFile, BinderItemFile, BinderTagFile, BinderWithItems, BundleKind, BundledBinder,
     BundledItem, CommentFile, CommentReplyFile, CommentWithReplies, DictWordFile, FORMAT_VERSION,
-    HolidayFile, InlineContent, ItemWithContents, ItemsFile, MilestoneFile, NoteTemplateFile,
-    PaceFile, PaceWithChildren, ProgressSnapshotFile, ProjectManifest, ProseRef, ShapeTag,
-    SmartPunctuationFile, TextReplacementRuleFile, TrashInfoFile, WorkBundle, WorkFile,
+    FootnoteFile, FootnoteWithContent, HolidayFile, InlineContent, ItemWithContents, ItemsFile,
+    MilestoneFile, NoteTemplateFile, PaceFile, PaceWithChildren, ProgressSnapshotFile,
+    ProjectManifest, ProseRef, ShapeTag, SmartPunctuationFile, TextReplacementRuleFile,
+    TrashInfoFile, WorkBundle, WorkFile,
 };
 pub use convert::{html_to_djot, markdown_to_html};
 pub use errors::SkribFormatError;

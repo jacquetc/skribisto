@@ -35,6 +35,7 @@ pub use direct_access::comment;
 pub use direct_access::comment_reply;
 pub use direct_access::content;
 pub use direct_access::dict_word;
+pub use direct_access::footnote;
 pub use direct_access::holiday;
 pub use direct_access::milestone;
 pub use direct_access::note_template;

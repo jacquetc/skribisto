@@ -35,15 +35,16 @@ use export_management::{ExportFormat, ExportScopeKind, ExportWorkDto};
 use frontend::AppContext;
 use frontend::commands::{
     binder_commands, binder_item_commands, content_commands, export_management_commands,
-    long_operation_commands, work_commands,
+    footnote_commands, long_operation_commands, work_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+use frontend::common::direct_access::footnote::FootnoteRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
-use frontend::common::entities::{Binder, BinderItem, Content, Work};
+use frontend::common::entities::{Binder, BinderItem, Content, Footnote, Work};
 use frontend::common::event::Event;
 
-use skrib_format::{BinderWithItems, Gathered, ItemWithContents};
+use skrib_format::{BinderWithItems, FootnoteWithContent, Gathered, ItemWithContents};
 use skribisto_compiler::{HeadingScheme, LineSpacing, Preset, SceneBreak, builtin_presets};
 use skribisto_model::compile::{
     ScopeKind, StreamLevel, enclosing_head, primary_scope, resolve_scope,
@@ -672,6 +673,29 @@ impl ExportViewModel {
             }
             binders.push(BinderWithItems { binder, items });
         }
+        // Footnotes DO reach the compiled manuscript (unlike comments), and the
+        // orphan-footnote export preflight below reads exactly this list — an empty
+        // one here means that warning can never fire, whatever the project holds.
+        //
+        // The DTO's own `content` scalar is not the relationship's source of truth
+        // (see `footnote_numbering::read_work`'s sibling note and
+        // `hydrate_footnotes` in `skrib_format::tree_read`), so it is re-read from
+        // the relationship the same way both of those do.
+        let footnote_ids =
+            work_commands::get_work_relationship(ctx, &work.id, &WorkRelationshipField::Footnotes)?;
+        let footnote_dtos = footnote_commands::get_footnote_multi(ctx, &footnote_ids)?;
+        let mut footnotes = Vec::new();
+        for footnote_dto in footnote_dtos.into_iter().flatten() {
+            let mut footnote: Footnote = footnote_dto.into();
+            footnote.content = footnote_commands::get_footnote_relationship(
+                ctx,
+                &footnote.id,
+                &FootnoteRelationshipField::Content,
+            )?
+            .into_iter()
+            .next();
+            footnotes.push(FootnoteWithContent { footnote });
+        }
         Ok(Gathered {
             assets: Vec::new(),
             work,
@@ -691,6 +715,7 @@ impl ExportViewModel {
             // Comments are working notes and never reach a compiled manuscript, so
             // the export path has no reason to read them (see `TreeReader::reads_comments`).
             comments: Vec::new(),
+            footnotes,
             binders,
             work_info: None,
         })
@@ -726,25 +751,91 @@ impl ExportViewModel {
     /// export straight away.
     pub fn export(&self, ctx: &mut EventContext) {
         let target = self.output_path.get();
-        if !target.trim().is_empty() && Path::new(&target).exists() {
-            let vm = self.clone();
+        let overwriting = !target.trim().is_empty() && Path::new(&target).exists();
+        let orphans = self.orphaned_footnote_count();
+
+        // Orphaned notes are worth stopping for, and overwriting is worth stopping
+        // for, but two dialogs in a row is not — so they share one, and the note
+        // count rides along when both apply.
+        //
+        // Non-blocking by design: the writer may well know, and refusing to export
+        // a manuscript because a note lost its reference would be the tool deciding
+        // it knows better. It says so once, and exports if asked.
+        if !overwriting && orphans == 0 {
+            self.run_export(ctx);
+            return;
+        }
+
+        let vm = self.clone();
+        let mut text = if overwriting {
             let fname = Path::new(&target)
                 .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or_default()
                 .to_string();
-            MessageBox::warning(tr!(export_overwrite_title()))
-                .text(tr!(export_overwrite_text(name = fname)))
-                .buttons(MessageBoxButtons::OkCancel)
-                .on_result(move |r, c| {
-                    if r.button == StandardButton::Ok {
-                        vm.run_export(c);
-                    }
-                })
-                .present(ctx);
+            tr!(export_overwrite_text(name = fname)).resolve_now()
         } else {
-            self.run_export(ctx);
+            String::new()
+        };
+        if orphans > 0 {
+            if !text.is_empty() {
+                text.push_str("\n\n");
+            }
+            text.push_str(&tr!(export_orphan_footnotes(count = orphans as i64)).resolve_now());
         }
+        let title = if overwriting {
+            tr!(export_overwrite_title())
+        } else {
+            tr!(export_orphan_footnotes_title())
+        };
+        MessageBox::warning(title)
+            .text(lit!(text))
+            .buttons(MessageBoxButtons::OkCancel)
+            .on_result(move |r, c| {
+                if r.button == StandardButton::Ok {
+                    vm.run_export(c);
+                }
+            })
+            .present(ctx);
+    }
+
+    /// How many notes nothing in the manuscript references any more.
+    ///
+    /// Zero on any error: a preflight that cannot read the tree must not invent a
+    /// warning, and the export itself will report a real failure properly.
+    fn orphaned_footnote_count(&self) -> usize {
+        let Ok(g) = self.client_gather() else {
+            return 0;
+        };
+        if g.footnotes.is_empty() {
+            return 0;
+        }
+        let labels: Vec<String> = g
+            .footnotes
+            .iter()
+            .map(|f| f.footnote.label.clone())
+            .collect();
+        let mut prose_by_item: std::collections::HashMap<u64, Vec<&str>> =
+            std::collections::HashMap::new();
+        for bwi in &g.binders {
+            for iwc in &bwi.items {
+                let datas: Vec<&str> = iwc
+                    .contents
+                    .iter()
+                    .filter(|c| c.activated)
+                    .map(|c| c.data.as_str())
+                    .collect();
+                if !datas.is_empty() {
+                    prose_by_item.insert(iwc.item.id, datas);
+                }
+            }
+        }
+        skribisto_model::footnote_numbering::orphaned_labels(
+            &skribisto_compiler::item_metas(&g),
+            &labels,
+            |id| prose_by_item.get(&id).cloned().unwrap_or_default(),
+        )
+        .len()
     }
 
     /// Start the export (a long operation). Returns immediately; the panel closes and a
@@ -1042,6 +1133,71 @@ mod tests {
         assert!(!g.binders.is_empty(), "the fixture has at least one binder");
         let total: usize = g.binders.iter().map(|b| b.items.len()).sum();
         assert!(total > 0, "the fixture has binder items");
+    }
+
+    /// **Regression.** `client_gather` used to hardcode `footnotes: Vec::new()`, so
+    /// `orphaned_footnote_count` — which reads exactly this list — could never see a
+    /// note at all and the export preflight's orphan warning could never fire,
+    /// however many orphaned notes a project held.
+    #[test]
+    fn client_gather_reads_the_projects_footnotes() {
+        use frontend::commands::footnote_commands;
+        use frontend::common::direct_access::footnote::FootnoteRelationshipField;
+        use frontend::direct_access::{CreateFootnoteDto, FootnoteRelationshipDto};
+
+        let (vm, item_ids) = loaded_vm();
+        let work_id = vm.ids.work_id.get().expect("work open");
+        let content_id = item_ids
+            .iter()
+            .find_map(|&item_id| {
+                binder_item_commands::get_binder_item_relationship(
+                    &vm.app_ctx,
+                    &item_id,
+                    &BinderItemRelationshipField::Contents,
+                )
+                .ok()
+                .and_then(|ids| ids.into_iter().next())
+            })
+            .expect("some fixture item has a Content row");
+
+        let now = chrono::Utc::now();
+        let created = footnote_commands::create_footnote(
+            &vm.app_ctx,
+            None,
+            &CreateFootnoteDto {
+                created_at: now,
+                updated_at: now,
+                content: Some(content_id),
+                label: "fn1".into(),
+                body: "A note.".into(),
+            },
+            work_id,
+            -1,
+        )
+        .expect("create footnote");
+        footnote_commands::set_footnote_relationship(
+            &vm.app_ctx,
+            None,
+            &FootnoteRelationshipDto {
+                id: created.id,
+                field: FootnoteRelationshipField::Content,
+                right_ids: vec![content_id],
+            },
+        )
+        .expect("wire content");
+
+        let g = vm.client_gather().expect("gather");
+        assert_eq!(
+            g.footnotes.len(),
+            1,
+            "the note must reach the export preflight"
+        );
+        assert_eq!(g.footnotes[0].footnote.label, "fn1");
+        assert_eq!(
+            g.footnotes[0].footnote.content,
+            Some(content_id),
+            "the relationship must be read, not just the DTO's own (unreliable) scalar"
+        );
     }
 
     #[test]

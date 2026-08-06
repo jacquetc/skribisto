@@ -163,6 +163,46 @@ fn default_heading_separator() -> String {
 /// chapter heading — and enough published fiction does it that a writer who remembers it
 /// that way is not misremembering. So it is a choice, not a rule, and the default is the
 /// documented convention.
+/// Where a footnote's text is set.
+///
+/// Footnotes and endnotes are the same feature with the marker in the same place —
+/// only the text moves — so this is one option rather than two features. What a
+/// given format can honour differs, and the writer's choice is honoured as far as
+/// the format allows rather than refused:
+///
+/// * PDF, DOCX and LaTeX set a real page-bottom footnote.
+/// * EPUB and HTML have no page bottom — a reflowable book has no pages — so the
+///   `noteref`/`aside` pair becomes a pop-up. That is the format's own idiom, not a
+///   compromise.
+/// * Markdown and plain text can only list them at the end.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum FootnotePlacement {
+    /// At the foot of the page the reference falls on. What "footnote" means.
+    #[default]
+    PageBottom,
+    /// Gathered at the end of each chapter.
+    ChapterEnd,
+    /// Gathered at the end of the book.
+    BookEnd,
+}
+
+/// Where a footnote's numbering restarts. Mirrors
+/// [`skribisto_model::footnote_numbering::FootnoteRestart`], which does the counting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum FootnoteNumbering {
+    /// One run through the whole book — the non-fiction convention, where a reader
+    /// may cite "note 214" and expect to find it.
+    #[default]
+    Continuous,
+    /// Restart at each chapter — the fiction convention, and what keeps a long
+    /// novel's markers out of four digits.
+    PerChapter,
+    /// Restart at each book.
+    PerBook,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum EpigraphPlacement {
@@ -368,6 +408,23 @@ pub struct Preset {
     /// where quoted matter is stripped from the manuscript.
     #[serde(default = "yes")]
     pub include_epigraphs: bool,
+    /// Keep the footnotes. Defaults to **true**, and needs `default = "yes"` for
+    /// exactly the reason epigraphs do — a bare `#[serde(default)]` reads `false`
+    /// for every preset saved before this field existed, and those presets would
+    /// silently start dropping notes while the built-ins kept them.
+    ///
+    /// More sharply here than for an epigraph, in fact: an epigraph dropped from a
+    /// clean submission is a deliberate omission the writer would notice on the
+    /// first page. A footnote dropped from the middle of chapter nine is text
+    /// missing from the book, and nothing in the output says so.
+    #[serde(default = "yes")]
+    pub include_footnotes: bool,
+    /// Where the note's text is set. The enum's own default is the convention.
+    #[serde(default)]
+    pub footnote_placement: FootnotePlacement,
+    /// Where the numbering restarts.
+    #[serde(default)]
+    pub footnote_numbering: FootnoteNumbering,
     /// Keep the paratexts — prefaces, dedications, afterwords. Defaults to **true** for
     /// the same reason epigraphs do, and needs `default = "yes"` for the same reason:
     /// a bare `#[serde(default)]` is `false` for a bool, and every preset saved before
@@ -428,6 +485,9 @@ impl Preset {
             book_cover: true,
             title_page_word_count: false,
             image_handling: ImageHandling::CopyBeside,
+            include_footnotes: true,
+            footnote_placement: FootnotePlacement::default(),
+            footnote_numbering: FootnoteNumbering::default(),
             book_starts_page: true,
             part_starts_page: true,
             chapter_starts_page: true,

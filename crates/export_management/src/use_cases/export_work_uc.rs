@@ -12,7 +12,7 @@ use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{Asset, Binder, BinderItem, BinderTag, Content, Work};
+use common::entities::{Asset, Binder, BinderItem, BinderTag, Content, Footnote, Work};
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
 use skrib_format::{TreeReader, gather};
@@ -36,6 +36,8 @@ pub trait ExportWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Footnote", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Footnote", action = "GetRelationshipRO")]
 pub trait ExportWorkUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
     fn publish_export_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -48,6 +50,16 @@ impl<'a> TreeReader for dyn ExportWorkUnitOfWorkTrait + 'a {
     /// for the content hash, extension and cover flag. Reading none is what
     /// silently ships a book whose prose still names every picture and whose
     /// package contains none.
+    fn footnote_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<common::entities::Footnote>>> {
+        self.get_footnote_multi(ids)
+    }
+    fn footnote_rel(
+        &self,
+        id: &EntityId,
+        field: &common::direct_access::footnote::FootnoteRelationshipField,
+    ) -> Result<Vec<EntityId>> {
+        self.get_footnote_relationship(id, field)
+    }
     fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
         self.get_asset_multi(ids)
     }

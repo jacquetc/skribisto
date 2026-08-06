@@ -26,9 +26,9 @@ use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday,
-    Milestone, NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search, SmartPunctuation,
-    System, TextReplacementRule, TrashInfo, Work, WorkInfo, WorkShape,
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Footnote,
+    Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search,
+    SmartPunctuation, System, TextReplacementRule, TrashInfo, Work, WorkInfo, WorkShape,
 };
 use common::types::EntityId;
 use skrib_format::{self as skrib, LoadedWork, SkribShape};
@@ -58,6 +58,8 @@ pub trait LoadWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Pace", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Holiday", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Milestone", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Footnote", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
 #[macros::uow_action(entity = "Comment", action = "CreateOrphan")]
 #[macros::uow_action(entity = "CommentReply", action = "CreateOrphan")]
 #[macros::uow_action(entity = "ProgressSnapshot", action = "CreateOrphan")]
@@ -271,6 +273,7 @@ pub(crate) fn materialize(
         trash_infos: Vec::new(),
         paces: Vec::new(),
         comments: Vec::new(),
+        footnotes: Vec::new(),
     })?;
 
     // Tags (file id -> new id).
@@ -659,8 +662,37 @@ pub(crate) fn materialize(
         comment_ids.push(created.id);
     }
 
+    // Footnotes (Work trunk). Far less to do than a comment: no replies, no quote,
+    // no stored orphan state. The `content` back-link is weak and remapped the same
+    // way, and a note whose Content no longer resolves simply arrives unanchored —
+    // it keeps its text and the dock reports it, because those words are the book's.
+    let mut footnote_ids: Vec<EntityId> = Vec::new();
+    for lf in &loaded.footnotes {
+        let resolved_content = lf.content.and_then(|i| content_map.get(&i).copied());
+        let created = uow.create_orphan_footnote(&common::entities::Footnote {
+            created_at: lf.created_at,
+            updated_at: lf.updated_at,
+            label: lf.label.clone(),
+            body: lf.body.clone(),
+            id: 0,
+            // Wired after creation.
+            content: None,
+        })?;
+        if let Some(cid) = resolved_content {
+            uow.set_footnote_relationship(
+                &created.id,
+                &common::direct_access::footnote::FootnoteRelationshipField::Content,
+                &[cid],
+            )?;
+        }
+        footnote_ids.push(created.id);
+    }
+
     // Work's owned collections.
     uow.set_work_relationship(&work.id, &WorkRelationshipField::Binders, &binder_ids)?;
+    if !footnote_ids.is_empty() {
+        uow.set_work_relationship(&work.id, &WorkRelationshipField::Footnotes, &footnote_ids)?;
+    }
     if !tag_ids.is_empty() {
         uow.set_work_relationship(&work.id, &WorkRelationshipField::Tags, &tag_ids)?;
     }
@@ -939,6 +971,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         // annotation feature at all (no comment table in any legacy schema), so
         // this is genuinely empty rather than not-yet-read.
         comments: Vec::new(),
+        footnotes: Vec::new(),
     };
 
     let mut tag_map: HashMap<i64, u64> = HashMap::new();
@@ -1111,6 +1144,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         // Nor comments: the C++ Skribisto had no annotation feature, and no legacy
         // schema version carries a comment table.
         comments: Vec::new(),
+        footnotes: Vec::new(),
         references,
         // Legacy projects had no point-of-view concept.
         point_of_view: Vec::new(),

@@ -976,6 +976,7 @@ search-field-label = Label
 search-field-epigraph = Epigraph
 search-field-comment = Comment
 search-field-comment-reply = Reply
+search-field-footnote = Footnote
 search-include-in-replace = Include in Replace All
 search-replace-nothing = (nothing)
 search-replace-confirm-title = Replace all matches?
@@ -1594,3 +1595,27 @@ card-words = Words
 card-synopsis = Synopsis
 card-point-of-view = Point of view
 card-aliases = Also known as
+
+export-orphan-footnotes-title = Footnotes with no reference
+export-orphan-footnotes =
+    { $count ->
+        [one] One footnote is no longer referenced anywhere in the manuscript. Its text will not appear in the exported book.
+       *[other] { $count } footnotes are no longer referenced anywhere in the manuscript. Their text will not appear in the exported book.
+    }
+
+## Footnotes
+
+footnotes-title = Footnotes
+footnotes-insert = Insert &footnote
+footnotes-empty = No footnotes yet. Insert one from the Document menu, or with Ctrl+Alt+F.
+footnotes-filter-all = All
+footnotes-filter-document = This document
+footnotes-filter-orphaned = Orphaned
+footnotes-orphaned = Nothing points at this note any more
+footnotes-untitled-home = Untitled
+footnotes-body-placeholder = the note itself
+footnotes-actions = Footnote actions
+footnotes-delete = &Delete note and its reference
+footnotes-no-project = Open a project before inserting a footnote.
+footnotes-no-caret = Put the cursor in a scene's text to insert a footnote there.
+footnotes-not-created = The footnote could not be added to the project.

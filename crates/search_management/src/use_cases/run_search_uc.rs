@@ -80,8 +80,8 @@ use common::direct_access::comment::CommentRelationshipField;
 use common::direct_access::search::SearchRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    Binder, BinderItem, Comment, CommentReply, Content, MatchField, Search, SearchResult, Work,
-    WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, Footnote, MatchField, Search, SearchResult,
+    Work, WorkInfo,
 };
 use common::types::EntityId;
 use skribisto_model::{SearchFacet, search_facet_of};
@@ -137,6 +137,7 @@ pub trait RunSearchUnitOfWorkFactoryTrait: Send + Sync {
 // Comments hang off `Work`, not off `Content`, so reaching them is its own walk:
 // the relationship gives this Work's threads, and each thread's own relationship
 // gives its replies.
+#[macros::uow_action(entity = "Footnote", action = "GetMulti")]
 #[macros::uow_action(entity = "Comment", action = "GetMulti")]
 #[macros::uow_action(entity = "Comment", action = "GetRelationship")]
 #[macros::uow_action(entity = "CommentReply", action = "GetMulti")]
@@ -160,6 +161,8 @@ struct Field {
     /// manifest for why a thread hit and a reply hit need two ids rather than one.
     comment_id: EntityId,
     reply_id: EntityId,
+    /// The `Footnote` row a footnote hit is in — 0 for every other field.
+    footnote_id: EntityId,
     /// The language *this field* is written in, resolved per item (own tag, else the Work) (see
     /// [`crate::language`]). Carried per field, not per search: one pass folds a French
     /// scene and a Turkish scene under different rules, because in Turkish the dotted and
@@ -357,7 +360,77 @@ impl RunSearchUseCase {
         if dto.search_comments {
             self.comment_fields(uow, dto, &work, &owners, &mut fields)?;
         }
+        // Governed by "body text", not by the comments toggle: a footnote is part
+        // of the manuscript a reader receives, the way an epigraph is, so a writer
+        // searching the book expects to find one. It reports its own match field
+        // regardless, because a replace rewrites a different table.
+        if dto.search_body {
+            self.footnote_fields(uow, dto, &work, &owners, &mut fields)?;
+        }
         Ok(fields)
+    }
+
+    /// Footnote bodies, scanned in their own walk.
+    ///
+    /// Footnotes hang off `Work`, not off `Content`, so `field_of_role` never
+    /// answers for them — the same reason comments get their own pass. Unlike a
+    /// comment, though, the text is **Djot**: a note carries italics and a
+    /// citation like any other prose, so it goes through the same parse-and-fold
+    /// cache scene text does. `FieldText::Plain` is for markup-free strings, and
+    /// using it here would let a search for a word match the middle of a
+    /// formatting marker.
+    fn footnote_fields(
+        &self,
+        uow: &mut Box<dyn RunSearchUnitOfWorkTrait>,
+        dto: &RunSearchDto,
+        work: &Work,
+        owners: &HashMap<EntityId, ContentOwner>,
+        out: &mut Vec<Field>,
+    ) -> Result<()> {
+        let ids = uow.get_work_relationship(&work.id, &WorkRelationshipField::Footnotes)?;
+        for footnote in uow.get_footnote_multi(&ids)?.into_iter().flatten() {
+            let owner = match footnote.content {
+                Some(content_id) => match owners.get(&content_id) {
+                    Some(o) => Some(o),
+                    // Anchored to a row this search did not walk — out of scope.
+                    None => continue,
+                },
+                None => None,
+            };
+            let (item_id, item_title, trashed, locale) = match owner {
+                Some(o) => (o.item_id, o.item_title.clone(), o.trashed, o.locale),
+                None => (0, String::new(), false, FoldLocale::Root),
+            };
+            if trashed && !dto.include_trashed {
+                continue;
+            }
+            if footnote.body.is_empty() {
+                continue;
+            }
+            let fold_spec = MatchOptions {
+                case_sensitive: dto.case_sensitive,
+                diacritic_sensitive: dto.diacritic_sensitive,
+                whole_word: dto.whole_word,
+                locale,
+            }
+            .fold_spec();
+            let corpus = corpus_cache::corpus_for(&footnote.body, &fold_spec);
+            if corpus.source().is_empty() {
+                continue;
+            }
+            out.push(Field {
+                item_id,
+                item_title,
+                match_field: MatchField::Footnote,
+                text: FieldText::Prose(corpus),
+                trashed,
+                locale,
+                comment_id: 0,
+                reply_id: 0,
+                footnote_id: footnote.id,
+            });
+        }
+        Ok(())
     }
 
     /// Comment threads and their replies, as searchable fields.
@@ -419,6 +492,7 @@ impl RunSearchUseCase {
                     locale,
                     comment_id: comment.id,
                     reply_id: 0,
+                    footnote_id: 0,
                 });
             }
             let reply_ids =
@@ -442,6 +516,7 @@ impl RunSearchUseCase {
                     // reveal — plus this reply's own row, which is what a replace edits.
                     comment_id: comment.id,
                     reply_id: reply.id,
+                    footnote_id: 0,
                 });
             }
         }
@@ -532,6 +607,7 @@ impl RunSearchUseCase {
                 locale,
                 comment_id: 0,
                 reply_id: 0,
+                footnote_id: 0,
             });
         }
         if dto.search_labels && !item.label.is_empty() {
@@ -544,6 +620,7 @@ impl RunSearchUseCase {
                 locale,
                 comment_id: 0,
                 reply_id: 0,
+                footnote_id: 0,
             });
         }
 
@@ -594,7 +671,8 @@ impl RunSearchUseCase {
                 MatchField::Title
                 | MatchField::Label
                 | MatchField::Comment
-                | MatchField::CommentReply => false,
+                | MatchField::CommentReply
+                | MatchField::Footnote => false,
             };
             if !wanted {
                 continue;
@@ -630,6 +708,7 @@ impl RunSearchUseCase {
                 locale,
                 comment_id: 0,
                 reply_id: 0,
+                footnote_id: 0,
             });
         }
         Ok(())
@@ -684,6 +763,12 @@ impl RunSearchUseCase {
                 trashed: field.trashed,
                 comment_id: field.comment_id,
                 reply_id: field.reply_id,
+                // Without this the row reaches Replace All naming note 0, and the
+                // rewrite silently finds nothing to write to. `..Default::default()`
+                // is why it compiled: an omitted id is a plausible zero, not an
+                // error, so only the dead-code warning on `Field::footnote_id` ever
+                // said the value was being computed and thrown away.
+                footnote_id: field.footnote_id,
                 ..Default::default()
             });
         }

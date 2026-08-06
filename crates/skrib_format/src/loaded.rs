@@ -47,6 +47,7 @@ pub struct LoadedWork {
     /// `None` for one that arrived from the bundle-root orphanage, whose anchored
     /// Content is already gone.
     pub comments: Vec<LoadedComment>,
+    pub footnotes: Vec<LoadedFootnote>,
     /// (source file id, destination file id) cross-link pairs.
     pub references: Vec<(u64, u64)>,
     /// (scene file id, story-bible item file id) point-of-view pairs.
@@ -131,6 +132,17 @@ pub struct LoadedComment {
     pub quote_suffix: String,
     pub block_ordinal_hint: u64,
     pub replies: Vec<LoadedCommentReply>,
+}
+
+/// One footnote as read from a bundle, before its ids are minted.
+pub struct LoadedFootnote {
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    /// Annotated Content **file id** (remapped at materialise time). `None` means
+    /// the note came from the orphanage and its reference is gone from the prose.
+    pub content: Option<u64>,
+    pub label: String,
+    pub body: String,
 }
 
 pub struct LoadedCommentReply {

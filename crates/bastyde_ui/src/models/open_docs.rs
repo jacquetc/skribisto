@@ -118,6 +118,10 @@ pub struct OpenDoc {
     /// build with no comment store behind it, which is what makes the whole
     /// feature degrade to "no comment affordances" rather than to a panic.
     comments_vm: RefCell<Option<crate::view_models::CommentsViewModel>>,
+    /// The footnote feature's view-model, on exactly the same footing as
+    /// `comments_vm` and installed the same way. `None` degrades the feature to
+    /// "no footnote affordances in this document" rather than to a panic.
+    footnotes: RefCell<Option<crate::view_models::FootnotesViewModel>>,
     /// The replace-while-typing state machine for each prose document, if the
     /// lexicon view-model was installed on the store. Set by
     /// [`attach_replacements`](Self::attach_replacements) on open, and living as
@@ -209,6 +213,7 @@ impl OpenDoc {
             comments_synopsis: None,
             images: None,
             comments_vm: RefCell::new(None),
+            footnotes: RefCell::new(None),
             replacement_main: RefCell::new(None),
             replacement_synopsis: RefCell::new(None),
             replacement_epigraph: RefCell::new(None),
@@ -462,6 +467,50 @@ impl OpenDoc {
         ))
     }
 
+    /// This doc's main-prose footnote door, if the store has a view-model wired.
+    ///
+    /// Minted here, beside `comment_binding_main`, for the same reason: only the
+    /// `OpenDoc` knows which `Content` row each of its documents came from, and an
+    /// editor handed the bare view-model could act on the wrong one.
+    pub fn footnote_binding_main(&self) -> Option<crate::view_models::FootnoteBinding> {
+        Some(
+            self.footnotes
+                .borrow()
+                .clone()?
+                .binding(self.main_content_id()?),
+        )
+    }
+
+    /// The same for the synopsis document.
+    pub fn footnote_binding_synopsis(&self) -> Option<crate::view_models::FootnoteBinding> {
+        Some(
+            self.footnotes
+                .borrow()
+                .clone()?
+                .binding(self.synopsis_content_id()?),
+        )
+    }
+
+    /// Install the footnotes view-model on this doc (on open, and on the
+    /// back-fill when `App` wires one after documents are already open).
+    pub fn attach_footnotes(&self, vm: crate::view_models::FootnotesViewModel) {
+        *self.footnotes.borrow_mut() = Some(vm);
+    }
+
+    /// Tell each of this doc's prose documents what a footnote marker prints.
+    ///
+    /// Every field, not just the main prose: a reference can sit in a synopsis or
+    /// an epigraph as readily as in a scene, and a document left without the map
+    /// falls back to drawing the raw label.
+    pub fn set_footnote_markers(&self, markers: &std::collections::HashMap<String, String>) {
+        for field in [&self.main, &self.synopsis, &self.epigraph]
+            .into_iter()
+            .flatten()
+        {
+            field.doc.set_footnote_markers(markers.clone());
+        }
+    }
+
     /// The `Content` row id behind the main prose document, if any — what a
     /// comment created in that editor anchors to.
     pub fn main_content_id(&self) -> Option<u64> {
@@ -621,6 +670,19 @@ struct Inner {
     /// The comments view-model, installed once per window and handed to every
     /// document as it opens (mirroring `text_replacements`).
     comments: RefCell<Option<crate::view_models::CommentsViewModel>>,
+    /// The footnotes view-model, installed once per window and handed to every
+    /// document as it opens (mirroring `comments`).
+    footnotes: RefCell<Option<crate::view_models::FootnotesViewModel>>,
+    /// What each footnote label's marker prints, project-wide.
+    ///
+    /// Held here rather than resolved per document because the number is a fact
+    /// about the **manuscript**: a scene citing a note first introduced two
+    /// chapters earlier must draw that note's number, which nothing inside the
+    /// scene's own document knows. Remembered so a document opened later is seeded
+    /// on the way in — without that a tab opened mid-session would print raw
+    /// labels (`fn7`) into the writer's prose while the tabs opened at load time
+    /// showed proper numbers.
+    footnote_markers: RefCell<std::collections::HashMap<String, String>>,
     /// The squiggle colour, resolved from a theme role by `App` (updated on theme change).
     squiggle: Cell<Color>,
     /// The open project, for resolving each item's effective language (its own tag, else
@@ -712,6 +774,8 @@ impl OpenDocsStore {
                 spell: RefCell::new(None),
                 text_replacements: RefCell::new(None),
                 comments: RefCell::new(None),
+                footnotes: RefCell::new(None),
+                footnote_markers: RefCell::new(std::collections::HashMap::new()),
                 // A sensible default until `App` resolves the theme's error role.
                 squiggle: Cell::new(Color::rgb(202, 66, 60)),
                 work_id: Cell::new(None),
@@ -746,6 +810,64 @@ impl OpenDocsStore {
         for doc in docs {
             doc.attach_comments(vm.clone());
         }
+    }
+
+    /// Install the footnotes view-model and seed every already-open document.
+    ///
+    /// The back-fill matters for the same reason `set_comments`' does: a project
+    /// restoring its remembered tabs has documents open before `App` finishes
+    /// wiring, and one built before this would carry no footnote door at all —
+    /// no insertion, no navigation — until it was closed and reopened.
+    pub fn set_footnotes(&self, vm: crate::view_models::FootnotesViewModel) {
+        *self.inner.footnotes.borrow_mut() = Some(vm.clone());
+        let docs: Vec<Rc<OpenDoc>> = self
+            .inner
+            .open
+            .borrow()
+            .values()
+            .map(|e| e.doc.clone())
+            .collect();
+        for doc in docs {
+            doc.attach_footnotes(vm.clone());
+        }
+    }
+
+    /// The installed footnotes view-model, if `App` has wired one.
+    ///
+    /// The project-wide handle, reachable **without an open document** — which is
+    /// what the insert command needs: it has to tell "no project" apart from "no
+    /// caret", and resolving through some document's binding collapses the two.
+    pub fn footnotes(&self) -> Option<crate::view_models::FootnotesViewModel> {
+        self.inner.footnotes.borrow().clone()
+    }
+
+    /// Tell every open document what each footnote label's marker prints, and
+    /// remember it for the documents opened next.
+    ///
+    /// Presentation only and never serialised: the number lives nowhere on disk
+    /// because it is derived from where the reference sits, and a stored number
+    /// would be wrong the first time a chapter moved.
+    pub fn set_footnote_markers(&self, markers: std::collections::HashMap<String, String>) {
+        *self.inner.footnote_markers.borrow_mut() = markers.clone();
+        let docs: Vec<Rc<OpenDoc>> = self
+            .inner
+            .open
+            .borrow()
+            .values()
+            .map(|e| e.doc.clone())
+            .collect();
+        for doc in docs {
+            doc.set_footnote_markers(&markers);
+        }
+    }
+
+    /// Every item id with a document currently open.
+    ///
+    /// For the footnotes model's live-edit gate, which asks each open document
+    /// which notes it references before deciding whether the whole manuscript
+    /// needs renumbering.
+    pub fn open_item_ids(&self) -> Vec<u64> {
+        self.inner.open.borrow().keys().copied().collect()
     }
 
     /// The installed comments view-model, if `App` has wired one.
@@ -948,6 +1070,16 @@ impl OpenDocsStore {
         if let Some(vm) = self.inner.comments.borrow().clone() {
             doc.attach_comments(vm);
         }
+        // Footnotes on the same footing, and before the markers below: the door
+        // is what an editor built from this doc reaches for when the writer asks
+        // to insert one.
+        if let Some(vm) = self.inner.footnotes.borrow().clone() {
+            doc.attach_footnotes(vm);
+        }
+        // Before anything can paint: a marker map that does not yet know this
+        // document's labels renders each one as its raw label, and the writer sees
+        // `fn7` in their prose until something else forces a relayout.
+        doc.set_footnote_markers(&self.inner.footnote_markers.borrow());
         // The replacement lexicon first, and outside the spell early-return: the
         // two features are independent, and a project with no dictionary
         // installed must still expand its own shorthand.

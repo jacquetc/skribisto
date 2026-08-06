@@ -646,7 +646,19 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                 // separator, and it stays here rather than moving to the Image
                 // menu because that menu only exists once an image is selected,
                 // which is exactly when you are not inserting one.
+                // A footnote goes at the caret like the two rows above it, and
+                // belongs beside them for that reason — but it is neither a
+                // template nor a file: it is a piece of the book being written
+                // here, whose words live in the project and whose number the
+                // manuscript decides.
                 let m = m.separator().item(
+                    MenuEntry::new(tr!(footnotes_insert()))
+                        .enabled(on_caret.clone())
+                        .shortcut("editor.insert_footnote")
+                        .intent("editor.insert_footnote"),
+                );
+
+                let m = m.item(
                     MenuEntry::new(tr!(image_insert()))
                         .enabled(on_caret.clone())
                         .intent("editor.insert_image"),

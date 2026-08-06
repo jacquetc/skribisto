@@ -250,6 +250,7 @@ fn main() -> anyhow::Result<()> {
             item,
             prose,
             comments: Default::default(),
+            footnotes: Default::default(),
         });
     }
 

@@ -82,6 +82,22 @@ pub fn compute_min_read_version(bundle: &WorkBundle) -> u32 {
     // neither `assets.ron` nor the `assets/` tree in its `WorkBundle`, so its
     // first save would delete every image in the project. The floor makes that a
     // refusal to open instead — and only for projects that actually have images.
+    // Footnotes are why v9 exists, and for the same mechanical reason — but with
+    // more at stake than either. A comment an older build cannot see is a comment
+    // the writer loses a note from; a footnote is prose that belongs to the book,
+    // and the first save by a build that has never heard of `.footnotes.ron` would
+    // prune every one of them off disk. Refuse to open instead.
+    if bundle.orphan_footnotes.is_empty()
+        && !bundle
+            .binders
+            .iter()
+            .any(|bb| bb.items.iter().any(|bi| !bi.footnotes.is_empty()))
+    {
+        // No footnotes anywhere: this project stays open to every v4..v8 build.
+    } else {
+        floor = floor.max(9);
+    }
+
     if !bundle.assets.is_empty() {
         floor = floor.max(8);
     }

@@ -147,6 +147,13 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // surface here has its own — so the container's own prose is
                     // commentable in the stream exactly as it is on its own tab.
                     own_comments.clone().map(|b| b.with_gutter(gutter.clone())),
+                    // Same story for footnotes, with one asymmetry: the dock's
+                    // "reveal this note" seek is consumed beside the view-state
+                    // ports above, which a stream row deliberately has none of.
+                    // So this carries only the outward half — the caret report,
+                    // which is what lights up a dock row when a writer clicks a
+                    // marker in a Full Book.
+                    tab.open_doc.footnote_binding_main(),
                     tab.open_doc.images(),
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
@@ -400,6 +407,9 @@ fn stream_row(
                         // cards it puts in the margin — are the same either way.
                         vm.row_comments(id, flavour)
                             .map(|b| b.with_gutter(gutter.clone())),
+                        // The caret report only — see the container's own column
+                        // above for why a stream row takes no seek.
+                        doc.footnote_binding_main(),
                         doc.images(),
                     ));
                 }

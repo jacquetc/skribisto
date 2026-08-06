@@ -53,6 +53,7 @@ mod comments;
 mod editor;
 mod export;
 mod file;
+mod footnotes;
 mod format;
 mod go;
 mod images;
@@ -149,6 +150,7 @@ pub(super) fn register_all(ctx: &mut BuildContext, deps: &CommandDeps) {
     export::register(ctx, deps);
     file::register(ctx, deps);
     comments::register(ctx, deps);
+    footnotes::register(ctx, deps);
     format::register(ctx, deps);
     templates::register(ctx, deps);
     binder::register(ctx, deps);

@@ -66,6 +66,17 @@ impl<'a> TreeReader for dyn ScanMentionsUnitOfWorkTrait + 'a {
     /// The mention scanner matches names against prose; an image carries none.
     ///
     /// Explicit rather than defaulted — see [`TreeReader::asset_multi`].
+    /// Mentions are scanned in the prose a reader reads straight through; a note is reached only by following its marker.
+    fn footnote_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Footnote>>> {
+        Ok(Vec::new())
+    }
+    fn footnote_rel(
+        &self,
+        _id: &EntityId,
+        _field: &common::direct_access::footnote::FootnoteRelationshipField,
+    ) -> Result<Vec<EntityId>> {
+        Ok(Vec::new())
+    }
     fn asset_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
         Ok(Vec::new())
     }

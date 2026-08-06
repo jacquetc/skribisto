@@ -772,9 +772,11 @@ pub struct App {
     trash_dock: DockWidgetId,
     comments_dock: DockWidgetId,
     doc_comments_dock: DockWidgetId,
+    footnotes_dock: DockWidgetId,
     /// The trash feature's shared view-model, created once on first build.
     trash: Option<crate::view_models::TrashViewModel>,
     comments: Option<crate::view_models::CommentsViewModel>,
+    footnotes: Option<crate::view_models::FootnotesViewModel>,
     /// Keeps this window's `SearchSettingsService` `Reloadable` registration alive
     /// in the shared `SettingsRegistry`, so a peer process's `search.toml` writes
     /// are picked up live — the same story as [`backup_settings_reloadable`](Self::backup_settings_reloadable).
@@ -873,9 +875,11 @@ impl App {
             search_dock: DockWidgetId::from_raw(crate::docks::SEARCH_DOCK_ID),
             search: None,
             comments: None,
+            footnotes: None,
             trash_dock: DockWidgetId::from_raw(crate::docks::TRASH_DOCK_ID),
             comments_dock: DockWidgetId::from_raw(crate::docks::COMMENTS_DOCK_ID),
             doc_comments_dock: DockWidgetId::from_raw(crate::docks::DOC_COMMENTS_DOCK_ID),
+            footnotes_dock: DockWidgetId::from_raw(crate::docks::FOOTNOTES_DOCK_ID),
             trash: None,
             search_settings_reloadable: None,
             root_child: None,
@@ -1458,6 +1462,40 @@ impl Widget for App {
                 })
                 .clone()
         };
+        // ── The footnotes feature's view-model ───────────────────────────────
+        // One per window, on the same footing as `comments` above: the dock binds
+        // it, and every open document is handed a per-`Content` binding through
+        // the store, so an editor can insert a reference and report its caret
+        // without ever holding the view-model itself.
+        let footnotes = {
+            let app_ctx = self.app_ctx.clone();
+            let ids = self.outline.ids();
+            let docs = session.open_docs.clone();
+            self.footnotes
+                .get_or_insert_with(|| {
+                    let model = crate::models::FootnotesListModel::new(
+                        app_ctx.clone(),
+                        ids.clone(),
+                        docs.clone(),
+                    );
+                    crate::view_models::FootnotesViewModel::new(model, docs, ids.stack_id.clone())
+                })
+                .clone()
+        };
+        footnotes.wire(ctx);
+        // Hand it to the open-document store, which back-fills every document
+        // already open (a workspace restore opens tabs before this point) and
+        // seeds each one opened later — including the marker map, without which a
+        // reference paints its raw label.
+        session.open_docs.set_footnotes(footnotes.clone());
+        // Renumber when a document's references move. The model's own gate makes
+        // this cheap: it asks the open documents which notes they name, and only
+        // walks the manuscript when that answer has changed.
+        {
+            let f = footnotes.clone();
+            ctx.effect(&session.open_docs.edited_any(), move |_| f.note_live_edit());
+        }
+
         // The default author for new threads is the book's byline — the only name
         // the app knows. There is no identity system and this does not invent one.
         comments.set_default_author(&session.single_work.author_name().get());
@@ -2220,6 +2258,7 @@ impl Widget for App {
             project_shell::ShellParts {
                 editors: editors.clone(),
                 comments: comments.clone(),
+                footnotes: footnotes.clone(),
                 outline: outline.clone(),
                 search: search.clone(),
                 trash: trash.clone(),

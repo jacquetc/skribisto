@@ -18,7 +18,8 @@ use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
-    Binder, BinderItem, Comment, CommentReply, Content, Search, SearchResult, Work, WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, Footnote, Search, SearchResult, Work,
+    WorkInfo,
 };
 use common::event::SearchManagementEvent::RunSearch;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
@@ -147,6 +148,7 @@ impl CommandUnitOfWork for RunSearchUnitOfWork {
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 // Kept in lockstep with the trait's own list in `run_search_uc.rs`.
+#[macros::uow_action(entity = "Footnote", action = "GetMulti")]
 #[macros::uow_action(entity = "Comment", action = "GetMulti")]
 #[macros::uow_action(entity = "Comment", action = "GetRelationship")]
 #[macros::uow_action(entity = "CommentReply", action = "GetMulti")]

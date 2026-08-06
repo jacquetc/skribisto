@@ -121,6 +121,7 @@ fn sample_inputs() -> SampleInputs {
         trash_infos: vec![],
         paces: vec![],
         comments: vec![],
+        footnotes: vec![],
     };
     // Every field deliberately OFF-default, for the reason spelled out on the
     // tags below: the round-trip tests compare whole bundles, and a row left at
@@ -356,6 +357,35 @@ fn scene_text_content_id(binders: &[BinderWithItems]) -> u64 {
 /// with a reply thread, an anchored `Paragraph` comment, and an **orphan**
 /// (`content: None`) which has no sidecar to live in and must survive via the
 /// bundle-root orphanage.
+/// One anchored note and one orphan, so both halves of the persistence path are
+/// exercised: the per-Content sidecar and the bundle-root orphanage.
+fn sample_footnotes(binders: &[BinderWithItems]) -> Vec<FootnoteWithContent> {
+    let now = ts();
+    let scene = scene_text_content_id(binders);
+    vec![
+        FootnoteWithContent {
+            footnote: common::entities::Footnote {
+                id: 7000,
+                created_at: now,
+                updated_at: now,
+                content: Some(scene),
+                label: "fn-a1b2".into(),
+                body: "A note with *emphasis* in it.".into(),
+            },
+        },
+        FootnoteWithContent {
+            footnote: common::entities::Footnote {
+                id: 7001,
+                created_at: now,
+                updated_at: now,
+                content: None,
+                label: "fn-lost".into(),
+                body: "Its reference is gone, its words are not.".into(),
+            },
+        },
+    ]
+}
+
 fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
     let now = ts();
     let scene = scene_text_content_id(binders);
@@ -449,6 +479,35 @@ fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
     ]
 }
 
+/// `build_bundle` plus footnotes.
+///
+/// Kept separate rather than folded into the shared fixture: the floor tests all
+/// assert on a bundle that carries only what they put in it, and a fixture that
+/// always had a note would move every one of them to v9 for a reason that has
+/// nothing to do with what they are testing.
+pub(crate) fn build_bundle_with_footnotes(shape: ShapeTag) -> WorkBundle {
+    let s = sample_inputs();
+    let comments = sample_comments(&s.binders);
+    let footnotes = sample_footnotes(&s.binders);
+    from_entities(
+        &s.work,
+        &s.tags,
+        &s.dict_words,
+        &[],
+        &s.note_templates,
+        &s.assets,
+        Default::default(),
+        Some(&s.smart_punctuation),
+        &s.trash,
+        &[],
+        &[],
+        &comments,
+        &footnotes,
+        &s.binders,
+        shape,
+    )
+}
+
 pub(crate) fn build_bundle(shape: ShapeTag) -> WorkBundle {
     let s = sample_inputs();
     let comments = sample_comments(&s.binders);
@@ -465,6 +524,7 @@ pub(crate) fn build_bundle(shape: ShapeTag) -> WorkBundle {
         &[],
         &[],
         &comments,
+        &[],
         &s.binders,
         shape,
     )
@@ -652,6 +712,7 @@ fn disallowed_content_is_dropped() {
         &[],
         &[],
         &[],
+        &[],
         &binders,
         ShapeTag::Folder,
     );
@@ -797,6 +858,7 @@ fn an_uncommented_project_writes_no_comment_files_at_all() {
         &[],
         &[],
         &[], // no comments
+        &[], // no footnotes
         &s.binders,
         ShapeTag::Folder,
     );
@@ -2271,6 +2333,7 @@ fn the_floor_ignores_content_dropped_by_content_allowed() {
         &[],
         &[],
         &[], // no comments
+        &[], // no footnotes
         &s.binders,
         ShapeTag::Folder,
     );
@@ -2306,4 +2369,106 @@ fn a_v4_bundle_migrates_to_v5() {
     bundle.note_template_bodies.clear();
     crate::migration::migrate_bundle(&mut bundle).expect("v4 must migrate");
     assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+}
+
+/// A footnote lands in a sidecar beside the prose that references it.
+///
+/// The adjacency is what identifies the owning `Content` — the same reason a
+/// comment sidecar sits there and the same reason `Content` needs no `uid`.
+#[test]
+fn a_footnote_lands_in_a_sidecar_beside_the_prose_it_annotates() {
+    let bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let scene = scene_text_content_id(&sample_inputs().binders);
+    let prose: Vec<_> = walkdir::WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("djot"))
+        .map(|e| e.path().to_path_buf())
+        .filter(|p| {
+            p.file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .starts_with(&format!("{scene}-"))
+        })
+        .collect();
+    assert_eq!(prose.len(), 1);
+
+    let sidecar = prose[0].with_extension("").to_string_lossy().to_string() + ".footnotes.ron";
+    assert!(
+        std::path::Path::new(&sidecar).is_file(),
+        "expected a footnotes sidecar at {sidecar}"
+    );
+    let text = std::fs::read_to_string(&sidecar).unwrap();
+    assert!(text.contains("fn-a1b2"), "the label is missing: {text}");
+    assert!(text.contains("emphasis"), "the body is missing: {text}");
+}
+
+/// **The prune hazard.** `prune_dir` matches by bare extension, so writing the two
+/// sidecar kinds with separate expected-sets would have each delete the other's
+/// files. A project with both must keep both.
+#[test]
+fn saving_a_project_with_both_sidecar_kinds_prunes_neither() {
+    let bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    // Write twice: the prune only runs against an already-populated directory.
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+
+    let names: Vec<String> = walkdir::WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .collect();
+    assert!(
+        names.iter().any(|n| n.ends_with(".comments.ron")),
+        "the comment sidecars were pruned away: {names:?}"
+    );
+    assert!(
+        names.iter().any(|n| n.ends_with(".footnotes.ron")),
+        "the footnote sidecars were pruned away: {names:?}"
+    );
+}
+
+/// A note whose annotated Content is gone keeps its words in the orphanage.
+#[test]
+fn an_orphaned_footnote_survives_a_round_trip_via_the_orphanage() {
+    let bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    assert_eq!(read.orphan_footnotes.len(), 1);
+    assert_eq!(read.orphan_footnotes[0].label, "fn-lost");
+    assert!(read.orphan_footnotes[0].body.contains("words are not"));
+}
+
+/// The floor rises only for a project that actually has a footnote, and falls
+/// again when the last one goes — so a project without notes stays openable by
+/// every older build.
+#[test]
+fn the_version_floor_tracks_whether_footnotes_are_present() {
+    let mut bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    assert_eq!(
+        crate::version_gate::compute_min_read_version(&bundle),
+        9,
+        "a bundle carrying footnotes must claim the v9 floor"
+    );
+
+    bundle.orphan_footnotes.clear();
+    for bb in &mut bundle.binders {
+        for bi in &mut bb.items {
+            bi.footnotes.clear();
+        }
+    }
+    assert!(
+        crate::version_gate::compute_min_read_version(&bundle) < 9,
+        "removing every footnote must drop the floor again"
+    );
 }

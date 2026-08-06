@@ -54,6 +54,9 @@ pub mod holiday;
 // Milestone
 pub mod milestone;
 
+// Footnote
+pub mod footnote;
+
 // Comment
 pub mod comment;
 
@@ -127,6 +130,9 @@ pub use milestone::milestone_controller;
 
 pub use comment::comment_controller;
 pub use comment::dtos::*;
+
+pub use footnote::dtos::*;
+pub use footnote::footnote_controller;
 
 pub use comment_reply::comment_reply_controller;
 pub use comment_reply::dtos::*;

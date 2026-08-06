@@ -126,6 +126,7 @@ fn sample_bundle() -> WorkBundle {
         text_replacement_rules: vec![],
         note_templates: vec![],
         assets: vec![],
+        footnotes: vec![],
         // Non-default too, and for the same reason as chapter_mode above: an
         // all-default row would round-trip equal even if the field were dropped.
         smart_punctuation: 30,
@@ -271,6 +272,10 @@ fn sample_bundle() -> WorkBundle {
         &trash,
         &[],
         &[],
+        &[],
+        // No footnotes in this fixture — the sidecar round-trip has its own
+        // coverage in `skrib_format`, and a default-valued row here would pass
+        // whether or not the field survived.
         &[],
         &[manuscript, characters],
         ShapeTag::Folder,

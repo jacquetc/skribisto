@@ -134,6 +134,12 @@ pub fn writing_column(
     // with no comment store, which collapses the comment affordances rather than
     // panicking.
     comments: Option<crate::comments::binding::CommentBinding>,
+    // This editor's door to the footnote feature, minted by the same `OpenDoc`
+    // and for the same reason as `comments` above. It carries both directions:
+    // the dock's parked "reveal this note" request on the way in, and this
+    // editor's caret on the way out, so a marker the writer clicks lights up its
+    // row in the dock. `None` on every surface built without a project around it.
+    footnotes: Option<crate::view_models::FootnoteBinding>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
@@ -186,9 +192,33 @@ pub fn writing_column(
                 let last = doc.character_count();
                 handle.select_range(start.min(last), end.min(last));
             }
+            // Only reached (and so only consumed — see below) when no comment seek
+            // is pending: a comment seek always wins, and a footnote seek left
+            // untouched here survives to be resolved on this editor's next build,
+            // rather than being silently thrown away by a match arm that never
+            // looked at it.
             None => {
-                let caret = vs.initial.caret.min(doc.character_count());
-                handle.select_range(caret, caret);
+                // A footnotes dock row parks a **label**, not a range: where its
+                // marker sits is whatever this document says right now, which is
+                // the only offset that cannot have gone stale between the click
+                // and this build. Resolved to a one-character selection, so the
+                // writer sees exactly which reference the row meant.
+                let note_seek = footnotes
+                    .as_ref()
+                    .and_then(|f| f.take_seek())
+                    .and_then(|label| {
+                        crate::view_models::FootnoteBinding::position_of(doc, &label)
+                    });
+                match note_seek {
+                    Some(pos) => {
+                        let last = doc.character_count();
+                        handle.select_range(pos.min(last), (pos + 1).min(last));
+                    }
+                    None => {
+                        let caret = vs.initial.caret.min(doc.character_count());
+                        handle.select_range(caret, caret);
+                    }
+                }
             }
         }
     }
@@ -289,6 +319,9 @@ pub fn writing_column(
     }
     if let Some(band) = caret {
         bound = bound.with_caret_band(band);
+    }
+    if let Some(f) = footnotes.clone() {
+        bound = bound.with_footnotes(f, doc.clone());
     }
     let capped = bati!(
         MaxSize::width(column_width.get()) {
@@ -1128,6 +1161,8 @@ pub fn writing_section(
     caret: Option<crate::view_models::CaretBand>,
     view_state: Option<crate::view_models::ViewStateBinding>,
     comments: Option<crate::comments::binding::CommentBinding>,
+    // Forwarded straight to [`writing_column`] — see its own note.
+    footnotes: Option<crate::view_models::FootnoteBinding>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
@@ -1155,6 +1190,7 @@ pub fn writing_section(
             caret,
             view_state,
             comments,
+            footnotes,
             images,
         ))
 }
@@ -2309,6 +2345,11 @@ struct TypographyBoundEditor {
     /// The ambient caret band for this editor. `None` on the surfaces built with no app
     /// around them (the widget tests), which draw none.
     caret: Option<crate::view_models::CaretBand>,
+    /// This editor's footnote door plus the document it shows, for the *outward*
+    /// half of the two-way link: the caret's position is reported so the dock can
+    /// highlight the note the writer is standing on. `None` on every surface with
+    /// no project behind it, and on every editor that is not a tab's main prose.
+    footnotes: Option<(crate::view_models::FootnoteBinding, TextDocument)>,
 }
 
 impl TypographyBoundEditor {
@@ -2332,6 +2373,7 @@ impl TypographyBoundEditor {
             format_vm,
             typewriter: None,
             caret: None,
+            footnotes: None,
         }
     }
 
@@ -2346,6 +2388,18 @@ impl TypographyBoundEditor {
     /// only because a surface built with no app behind it has no setting to read.
     fn with_caret_band(mut self, caret: crate::view_models::CaretBand) -> Self {
         self.caret = Some(caret);
+        self
+    }
+
+    /// Report this editor's caret to the footnotes dock. Opt-in, because only a
+    /// tab's main prose has a single caret worth reporting — a stream shows one
+    /// editor per row, and a corkboard one per card.
+    fn with_footnotes(
+        mut self,
+        binding: crate::view_models::FootnoteBinding,
+        doc: TextDocument,
+    ) -> Self {
+        self.footnotes = Some((binding, doc));
         self
     }
 }
@@ -2458,6 +2512,22 @@ impl Widget for TypographyBoundEditor {
         // work needs the handle, so it cannot run from `on_change`.
         if let Some((doc, replacement)) = self.replacement.clone() {
             wire_replacements(ctx, &handle, &doc, &replacement);
+        }
+        // The outward half of the footnote link: tell the dock which note the
+        // caret is standing on. An effect on the caret signal rather than a click
+        // callback, so arrowing onto a marker lights up its row exactly as
+        // clicking it does — and so this needs nothing from the framework that
+        // moving the caret does not already publish.
+        if let Some((binding, doc)) = self.footnotes.clone() {
+            let h = handle.clone();
+            ctx.effect(&handle.cursor_position_signal(), move |&pos| {
+                // Only the editor the writer is actually in may speak: a split
+                // pane's other half publishes its own idle caret otherwise, and
+                // the dock's highlight would flicker between the two.
+                if h.focused_signal().get() {
+                    binding.caret_moved(&doc, pos);
+                }
+            });
         }
         // Announce this editor to the formatting surfaces. Done here rather than
         // at the ~six call sites because *every* writing editor in the app is
@@ -2692,7 +2762,8 @@ mod frame_loop_tests {
             // No project around this tree, so no comment binding: the margin
             // collapses to nothing and the column lays out on its own.
             None,
-            // …and no image source either, for the same reason.
+            // …nor a footnote binding, nor an image source, for the same reason.
+            None,
             None,
         );
         let mut tree = WidgetTree::new();
@@ -3030,7 +3101,9 @@ mod typewriter_tests {
             caret,
             None,
             None,
-            // No project around this tree, so no image source.
+            // No project around this tree, so no footnote binding and no image
+            // source.
+            None,
             None,
         );
         let mut tree = WidgetTree::new();

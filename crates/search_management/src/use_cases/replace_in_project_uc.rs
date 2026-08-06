@@ -51,8 +51,8 @@ use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::search::SearchRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{
-    Binder, BinderItem, Comment, CommentReply, Content, MatchField, Search, SearchResult, Work,
-    WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, Footnote, MatchField, Search, SearchResult,
+    Work, WorkInfo,
 };
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
@@ -92,6 +92,8 @@ pub trait ReplaceInProjectUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "Update")]
 // A comment hit rewrites the thread's own body or one reply's — plain strings on
 // their own rows, reached by the ids the `SearchResult` carries.
+#[macros::uow_action(entity = "Footnote", action = "Get")]
+#[macros::uow_action(entity = "Footnote", action = "Update")]
 #[macros::uow_action(entity = "Comment", action = "Get")]
 #[macros::uow_action(entity = "Comment", action = "Update")]
 #[macros::uow_action(entity = "CommentReply", action = "Get")]
@@ -312,6 +314,42 @@ impl ReplaceInProjectUseCase {
                     // per-item "this scene changed" reporting, and a comment is not
                     // the scene. An orphaned thread has no item to name at all.
                     occurrences_replaced += hits.len() as u64;
+                }
+                // A footnote's body. Djot, like a scene's — so it takes the same
+                // splice inside a parsed document, NOT the plain-string rewrite a
+                // comment gets. A note carries italics and a citation, and a raw
+                // string replace would happily rewrite the middle of a formatting
+                // marker.
+                MatchField::Footnote => {
+                    let Some(mut footnote) = uow.get_footnote(&row.footnote_id)? else {
+                        skipped_stale.push(row.id);
+                        continue;
+                    };
+                    let batch = BatchDocument::new()?;
+                    batch.set_djot(&footnote.body, &DjotImportOptions::default())?;
+
+                    let hits = batch.find_all(&search.query, &find_opts)?;
+                    if hits.len() as u64 != row.occurrence_count {
+                        skipped_stale.push(row.id);
+                        continue;
+                    }
+                    if hits.is_empty() {
+                        continue;
+                    }
+
+                    let replaced = batch.find_and_replace(
+                        &search.query,
+                        &ReplaceOptions::new(find_opts.clone())
+                            .with_format_policy(ReplaceFormatPolicy::PreserveIfFullyCovered),
+                        |matched, _| Some(case_of(matched)),
+                    )?;
+
+                    footnote.body = batch.to_djot(&DjotExportOptions::default())?;
+                    uow.update_footnote(&footnote)?;
+                    // Not added to `touched_items`, for the reason comments are not:
+                    // that set drives the per-item "this scene changed" reporting, and
+                    // a note is not the scene. An orphaned note has no item at all.
+                    occurrences_replaced += replaced as u64;
                 }
                 // Prose. Spliced INSIDE the document — never surgery on the markup.
                 MatchField::Body | MatchField::Synopsis | MatchField::Epigraph => {

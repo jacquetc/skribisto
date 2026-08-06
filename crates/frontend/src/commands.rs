@@ -14,6 +14,7 @@ pub mod comment_commands;
 pub mod comment_reply_commands;
 pub mod content_commands;
 pub mod dict_word_commands;
+pub mod footnote_commands;
 pub mod holiday_commands;
 pub mod milestone_commands;
 pub mod note_template_commands;

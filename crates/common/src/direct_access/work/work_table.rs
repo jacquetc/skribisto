@@ -39,6 +39,7 @@ impl<'a> WorkHashMapTable<'a> {
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,
             WorkRelationshipField::Comments => &self.store.jn_comment_from_work_comments,
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
+            WorkRelationshipField::Footnotes => &self.store.jn_footnote_from_work_footnotes,
             WorkRelationshipField::NoteTemplates => {
                 &self.store.jn_note_template_from_work_note_templates
             }
@@ -84,6 +85,7 @@ impl<'a> WorkHashMapTable<'a> {
             junction_get(&self.store.jn_trash_info_from_work_trash_infos, &entity.id);
         entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);
         entity.comments = junction_get(&self.store.jn_comment_from_work_comments, &entity.id);
+        entity.footnotes = junction_get(&self.store.jn_footnote_from_work_footnotes, &entity.id);
     }
 }
 
@@ -161,6 +163,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 &self.store.jn_dict_word_from_work_dict_words,
                 new_entity.id,
                 new_entity.dict_words.clone(),
+            );
+            junction_set(
+                &self.store.jn_footnote_from_work_footnotes,
+                new_entity.id,
+                new_entity.footnotes.clone(),
             );
             junction_set(
                 &self.store.jn_note_template_from_work_note_templates,
@@ -348,6 +355,11 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
                 entity.id,
                 entity.comments.clone(),
             );
+            junction_set(
+                &self.store.jn_footnote_from_work_footnotes,
+                entity.id,
+                entity.footnotes.clone(),
+            );
         }
         drop(work_map);
         let ids: Vec<EntityId> = entities.iter().map(|e| e.id).collect();
@@ -384,6 +396,7 @@ impl<'a> WorkTable for WorkHashMapTable<'a> {
             junction_remove(&self.store.jn_trash_info_from_work_trash_infos, id);
             junction_remove(&self.store.jn_pace_from_work_paces, id);
             junction_remove(&self.store.jn_comment_from_work_comments, id);
+            junction_remove(&self.store.jn_footnote_from_work_footnotes, id);
 
             // Clean up backward references (uses the owning entity's forward junction)
 
@@ -414,6 +427,7 @@ impl<'a> WorkHashMapTableRO<'a> {
             WorkRelationshipField::Binders => &self.store.jn_binder_from_work_binders,
             WorkRelationshipField::Comments => &self.store.jn_comment_from_work_comments,
             WorkRelationshipField::DictWords => &self.store.jn_dict_word_from_work_dict_words,
+            WorkRelationshipField::Footnotes => &self.store.jn_footnote_from_work_footnotes,
             WorkRelationshipField::NoteTemplates => {
                 &self.store.jn_note_template_from_work_note_templates
             }
@@ -459,6 +473,7 @@ impl<'a> WorkHashMapTableRO<'a> {
             junction_get(&self.store.jn_trash_info_from_work_trash_infos, &entity.id);
         entity.paces = junction_get(&self.store.jn_pace_from_work_paces, &entity.id);
         entity.comments = junction_get(&self.store.jn_comment_from_work_comments, &entity.id);
+        entity.footnotes = junction_get(&self.store.jn_footnote_from_work_footnotes, &entity.id);
     }
 }
 

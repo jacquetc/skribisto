@@ -72,6 +72,17 @@ impl<'a> TreeReader for dyn AnalyzeBookUnitOfWorkTrait + 'a {
     /// Analysis measures prose. An image contributes no words, no sentences and no repetition, so its metadata is not read.
     ///
     /// Explicit rather than defaulted — see [`TreeReader::asset_multi`].
+    /// Analysis measures the manuscript's own prose. A note is the author's aside on it, not part of the shape being measured.
+    fn footnote_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Footnote>>> {
+        Ok(Vec::new())
+    }
+    fn footnote_rel(
+        &self,
+        _id: &EntityId,
+        _field: &common::direct_access::footnote::FootnoteRelationshipField,
+    ) -> Result<Vec<EntityId>> {
+        Ok(Vec::new())
+    }
     fn asset_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
         Ok(Vec::new())
     }

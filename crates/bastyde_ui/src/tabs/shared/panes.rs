@@ -201,6 +201,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             Some(tab.caret_band()),
             Some(tab.view_state_binding()),
             tab.open_doc.comment_binding_main(),
+            tab.open_doc.footnote_binding_main(),
             tab.open_doc.images(),
         ));
     }
@@ -360,6 +361,7 @@ fn manuscript_page(tab: &ContentTab, compact_synopsis: Option<Signal<bool>>) -> 
             Some(tab.caret_band()),
             Some(tab.view_state_binding()),
             tab.open_doc.comment_binding_main(),
+            tab.open_doc.footnote_binding_main(),
             tab.open_doc.images(),
         ));
     }

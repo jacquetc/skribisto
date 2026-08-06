@@ -141,6 +141,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
             trash_infos: vec![],
             paces: vec![],
             comments: vec![],
+            footnotes: vec![],
         },
     )
     .unwrap_or_else(|e| panic!("create work {title}: {e}"));

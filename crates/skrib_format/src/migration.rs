@@ -58,6 +58,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             5 => step_v5_to_v6(bundle),
             6 => step_v6_to_v7(bundle),
             7 => step_v7_to_v8(bundle),
+            8 => step_v8_to_v9(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -103,6 +104,18 @@ fn step_v6_to_v7(_bundle: &mut WorkBundle) {}
 /// project. The version floor (see `version_gate::compute_min_read_version`)
 /// turns that into a refusal to open, and only for projects that have images.
 fn step_v7_to_v8(_bundle: &mut WorkBundle) {}
+
+/// v8 → v9 added footnotes, and has nothing to do on the way **forward**: a v8
+/// bundle carries no `.footnotes.ron` sidecars and no orphanage, and
+/// `#[serde(default)]` already reads that as no notes.
+///
+/// The bump exists for the other direction, exactly as the asset one does — and
+/// with more at stake. Both writers rebuild from what the bundle holds, so an
+/// older build's first save would prune every footnote sidecar off disk. Unlike
+/// an image, which the writer can re-insert from the file they still have, those
+/// words exist nowhere else: they were typed into the book. The floor turns that
+/// into a refusal to open, and only for projects that actually have notes.
+fn step_v8_to_v9(_bundle: &mut WorkBundle) {}
 
 /// Mint a durable `uid` for every binder and item that lacks one.
 ///

@@ -62,6 +62,15 @@ use std::collections::BTreeMap;
 /// floor's exhaustive matches caught it themselves. Like v5 and v6, the floor is claimed
 /// only by projects that carry one.
 ///
+/// v9 added **footnotes** — a `.footnotes.ron` sidecar beside the prose that
+/// references them, plus an `orphan_footnotes.ron` orphanage. No new enum variant, so
+/// the exhaustive matches said nothing and the floor arm is a deliberate choice: the
+/// zip writer rebuilds the archive from a fresh staging directory and the exploded
+/// writer prunes what it does not expect, so an older build's first save would delete
+/// every note in the project. Unlike a comment — which an older build simply does not
+/// show — a footnote is text the writer wrote *into the book*, so losing it silently is
+/// exactly what the floor exists to prevent. Claimed only by projects that have one.
+///
 /// # Before bumping this, answer one question
 ///
 /// *Does this change need an arm in
@@ -80,7 +89,7 @@ use std::collections::BTreeMap;
 /// A required field added without `#[serde(default)]` is the one shape that is *not*
 /// caught mechanically. It degrades to a raw parse error — never to data loss — but it
 /// degrades, so give every additive field its `default` and the question stays easy.
-pub const FORMAT_VERSION: u32 = 8;
+pub const FORMAT_VERSION: u32 = 9;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -564,6 +573,28 @@ pub struct CommentFile {
     pub replies: Vec<CommentReplyFile>,
 }
 
+/// One footnote, in the sidecar beside the prose that references it.
+///
+/// Far smaller than [`CommentFile`], and the absence is the point: a comment
+/// stores a quote and a position because it points at text it does not own, and
+/// text moves. A footnote's reference is an object *in* the prose, carried along
+/// by every edit, so the only thing to persist is which note the label names and
+/// what the note says. There is nothing here to re-anchor and no orphan flag to
+/// keep in step.
+///
+/// Like `CommentFile`, the owning `Content` is identified by the file's own
+/// location, which is why no `content` field appears.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FootnoteFile {
+    pub file_id: u64,
+    pub created_at: String,
+    pub updated_at: String,
+    /// What `[^label]` in the prose names.
+    pub label: String,
+    /// Djot.
+    pub body: String,
+}
+
 /// A prose-role content row: the text lives in a sibling `.djot` file at `path`
 /// (relative to the bundle root).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -682,6 +713,13 @@ pub struct WorkBundle {
     /// Keeping them out of the per-Content sidecars also preserves diff-minimality:
     /// this file only churns when the orphan set itself changes.
     pub orphan_comments: Vec<CommentFile>,
+    /// Footnotes whose annotated `Content` no longer exists —
+    /// `orphan_footnotes.ron` at the bundle root, the same orphanage comments
+    /// get. Kept rather than dropped because a footnote is *book content*: the
+    /// writer wrote those words, and losing them silently on a save is the one
+    /// outcome this format exists to prevent.
+    #[serde(default)]
+    pub orphan_footnotes: Vec<FootnoteFile>,
     pub binders: Vec<BundledBinder>,
 }
 
@@ -700,6 +738,10 @@ pub struct BundledItem {
     /// `.comments.ron` sidecars). A content row with no comments has no entry
     /// here and no file on disk.
     pub comments: BTreeMap<u64, Vec<CommentFile>>,
+    /// Footnotes keyed by the annotated content `file_id` (the
+    /// `.footnotes.ron` sidecars). A content row with no footnotes has no entry
+    /// here and no file on disk.
+    pub footnotes: BTreeMap<u64, Vec<FootnoteFile>>,
 }
 
 /// Pre-fetched, ordered store data handed to [`super::from_entities`] at save
@@ -719,6 +761,14 @@ pub struct ItemWithContents {
 pub struct CommentWithReplies {
     pub comment: common::entities::Comment,
     pub replies: Vec<common::entities::CommentReply>,
+}
+
+/// A footnote as gathered from the store.
+///
+/// No `_with_children` shape, because there are none: a footnote has no replies,
+/// no thread and no anchor rows — only its label and its prose.
+pub struct FootnoteWithContent {
+    pub footnote: common::entities::Footnote,
 }
 
 /// Pre-fetched Pace + its child Holiday/Milestone entities, handed to

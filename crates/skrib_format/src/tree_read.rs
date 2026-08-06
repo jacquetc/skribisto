@@ -26,18 +26,21 @@ use anyhow::{Result, anyhow};
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::comment::CommentRelationshipField;
+use common::direct_access::footnote::FootnoteRelationshipField;
 use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday,
-    Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule,
-    TrashInfo, Work, WorkInfo,
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Footnote,
+    Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
+    TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::OperationProgress;
 use common::types::EntityId;
 
-use crate::{BinderWithItems, CommentWithReplies, ItemWithContents, PaceWithChildren};
+use crate::{
+    BinderWithItems, CommentWithReplies, FootnoteWithContent, ItemWithContents, PaceWithChildren,
+};
 
 /// The read surface needed to snapshot the Work subtree. Implemented for each use case's
 /// `dyn …UnitOfWorkTrait` (the generated method names are identical).
@@ -112,6 +115,23 @@ pub trait TreeReader {
         Ok(Vec::new())
     }
 
+    // ── Footnotes. **Required and undefaulted**, unlike the comment triad below.
+    //
+    // Comments may default to nothing because export must *not* carry them — a
+    // working note has no place in the compiled manuscript, and leaving the flag
+    // false makes that structural. A footnote is the opposite: it is prose that
+    // belongs in the book, so every path must answer, and the export path most of
+    // all. Defaulting it would let a reader silently write a project with zero
+    // notes — and the exploded writer's prune would then delete every sidecar off
+    // disk. Undefaulted, forgetting one is a compile error, which is the same
+    // reason `asset_multi` above is undefaulted. ──
+    fn footnote_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Footnote>>>;
+    fn footnote_rel(
+        &self,
+        id: &EntityId,
+        field: &FootnoteRelationshipField,
+    ) -> Result<Vec<EntityId>>;
+
     // ── Comments (save-only). Export deliberately never serialises them: comments are
     // working notes that must not reach the compiled manuscript, which is Scrivener's
     // rule too. So export leaves `reads_comments` false and these defaulted, and the
@@ -163,6 +183,7 @@ pub struct Gathered {
     pub progress_snapshots: Vec<ProgressSnapshot>,
     /// Empty on the export path, which never reads comments (see `reads_comments`).
     pub comments: Vec<CommentWithReplies>,
+    pub footnotes: Vec<FootnoteWithContent>,
     pub binders: Vec<BinderWithItems>,
     pub work_info: Option<WorkInfo>,
 }
@@ -269,6 +290,8 @@ pub fn gather<R: TreeReader + ?Sized>(
     } else {
         Vec::new()
     };
+    // Unconditional: every reader carries footnotes, including export.
+    let footnotes = hydrate_footnotes(reader, &work_id)?;
     // The deliberate reach through WorkInfo: it is otherwise dropped before serialisation,
     // but its ProgressSnapshots must round-trip. Only save has a WorkInfo (export's is None).
     let progress_snapshots = match &work_info {
@@ -321,6 +344,7 @@ pub fn gather<R: TreeReader + ?Sized>(
         paces,
         progress_snapshots,
         comments,
+        footnotes,
         binders,
         work_info,
     })
@@ -333,6 +357,28 @@ pub fn gather<R: TreeReader + ?Sized>(
 /// result means the anchored Content is gone — which is exactly what
 /// `from_entities` turns into an entry in the bundle-root orphanage rather than a
 /// dropped note.
+/// Read `Work.footnotes` and each note's annotated Content.
+///
+/// No children to walk and no anchor to resolve — a footnote is its label and its
+/// prose, and where it sits in the book is decided by the reference in the
+/// document, not by anything stored here.
+fn hydrate_footnotes<R: TreeReader + ?Sized>(
+    reader: &R,
+    work_id: &EntityId,
+) -> Result<Vec<FootnoteWithContent>> {
+    let ids = reader.work_rel(work_id, &WorkRelationshipField::Footnotes)?;
+    let entities = fetch_multi(&ids, |ids| reader.footnote_multi(ids))?;
+    let mut out = Vec::with_capacity(entities.len());
+    for mut footnote in entities {
+        footnote.content = reader
+            .footnote_rel(&footnote.id, &FootnoteRelationshipField::Content)?
+            .into_iter()
+            .next();
+        out.push(FootnoteWithContent { footnote });
+    }
+    Ok(out)
+}
+
 fn hydrate_comments<R: TreeReader + ?Sized>(
     reader: &R,
     work_id: &EntityId,

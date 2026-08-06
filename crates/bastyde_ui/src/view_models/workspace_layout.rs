@@ -544,7 +544,9 @@ fn split_and_focus(secondary_count: usize, want_focus_secondary: bool) -> (bool,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::docks::{COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID, OUTLINE_DOCK_ID, TRASH_DOCK_ID};
+    use crate::docks::{
+        COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID, FOOTNOTES_DOCK_ID, OUTLINE_DOCK_ID, TRASH_DOCK_ID,
+    };
     use bastyde::prelude::*;
     use bastyde::widgets::{DockWidget, DockWidgetId, DockingLayout, RectWidget};
 
@@ -715,15 +717,16 @@ mod tests {
     }
 
     /// The subtraction itself, including the case that actually shipped: today's
-    /// roster minus a v4 stamp is exactly the two comments docks. A dock added to
-    /// `project_shell` but not to `APP_DOCKS` would leave this list short — which is
-    /// the failure mode the roster's own doc warns about.
+    /// roster minus a v4 stamp is the two comments docks and the footnotes dock. A
+    /// dock added to `project_shell` but not to `APP_DOCKS` would leave this list
+    /// short — which is the failure mode the roster's own doc warns about, and is
+    /// why every new dock has to appear here as well as there.
     #[test]
-    fn a_v4_stamp_leaves_exactly_the_two_comments_docks_unknown() {
+    fn a_v4_stamp_leaves_exactly_the_docks_that_postdate_it_unknown() {
         assert_eq!(
             unknown_dock_ids(&crate::docks::app_dock_ids(), &V4_ROSTER),
-            vec![COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID],
-            "these two, and only these two, postdate a v4 desk"
+            vec![COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID, FOOTNOTES_DOCK_ID],
+            "these three, and only these three, postdate a v4 desk"
         );
         // Order follows the roster, not the known set.
         assert_eq!(unknown_dock_ids(&[3, 1, 2], &[2]), vec![3, 1]);

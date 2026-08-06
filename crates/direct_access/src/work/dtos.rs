@@ -32,6 +32,7 @@ pub struct WorkDto {
     pub trash_infos: Vec<EntityId>,
     pub paces: Vec<EntityId>,
     pub comments: Vec<EntityId>,
+    pub footnotes: Vec<EntityId>,
 }
 
 impl From<WorkDto> for Work {
@@ -58,6 +59,7 @@ impl From<WorkDto> for Work {
             trash_infos: dto.trash_infos,
             paces: dto.paces,
             comments: dto.comments,
+            footnotes: dto.footnotes,
         }
     }
 }
@@ -86,6 +88,7 @@ impl From<&WorkDto> for Work {
             trash_infos: dto.trash_infos.clone(),
             paces: dto.paces.clone(),
             comments: dto.comments.clone(),
+            footnotes: dto.footnotes.clone(),
         }
     }
 }
@@ -114,6 +117,7 @@ impl From<Work> for WorkDto {
             trash_infos: entity.trash_infos,
             paces: entity.paces,
             comments: entity.comments,
+            footnotes: entity.footnotes,
         }
     }
 }
@@ -140,6 +144,7 @@ pub struct CreateWorkDto {
     pub trash_infos: Vec<EntityId>,
     pub paces: Vec<EntityId>,
     pub comments: Vec<EntityId>,
+    pub footnotes: Vec<EntityId>,
 }
 
 impl From<CreateWorkDto> for Work {
@@ -166,6 +171,7 @@ impl From<CreateWorkDto> for Work {
             trash_infos: dto.trash_infos,
             paces: dto.paces,
             comments: dto.comments,
+            footnotes: dto.footnotes,
         }
     }
 }
@@ -194,6 +200,7 @@ impl From<&CreateWorkDto> for Work {
             trash_infos: dto.trash_infos.clone(),
             paces: dto.paces.clone(),
             comments: dto.comments.clone(),
+            footnotes: dto.footnotes.clone(),
         }
     }
 }
@@ -221,6 +228,7 @@ impl From<Work> for CreateWorkDto {
             trash_infos: entity.trash_infos,
             paces: entity.paces,
             comments: entity.comments,
+            footnotes: entity.footnotes,
         }
     }
 }
@@ -263,6 +271,7 @@ impl From<UpdateWorkDto> for Work {
             trash_infos: Default::default(),
             paces: Default::default(),
             comments: Default::default(),
+            footnotes: Default::default(),
         }
     }
 }
@@ -291,6 +300,7 @@ impl From<&UpdateWorkDto> for Work {
             trash_infos: Default::default(),
             paces: Default::default(),
             comments: Default::default(),
+            footnotes: Default::default(),
         }
     }
 }

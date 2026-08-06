@@ -20,7 +20,8 @@ use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
-    Binder, BinderItem, Comment, CommentReply, Content, Search, SearchResult, Work, WorkInfo,
+    Binder, BinderItem, Comment, CommentReply, Content, Footnote, Search, SearchResult, Work,
+    WorkInfo,
 };
 use common::event::SearchManagementEvent::ReplaceInProject;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
@@ -155,6 +156,8 @@ impl CommandUnitOfWork for ReplaceInProjectUnitOfWork {
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 // Kept in lockstep with the trait's own list in `replace_in_project_uc.rs`.
+#[macros::uow_action(entity = "Footnote", action = "Get")]
+#[macros::uow_action(entity = "Footnote", action = "Update")]
 #[macros::uow_action(entity = "Comment", action = "Get")]
 #[macros::uow_action(entity = "Comment", action = "Update")]
 #[macros::uow_action(entity = "CommentReply", action = "Get")]

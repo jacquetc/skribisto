@@ -15,7 +15,7 @@ use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{Binder, BinderItem, BinderTag, Content, ContentRole, Work};
+use common::entities::{Binder, BinderItem, BinderTag, Content, ContentRole, Footnote, Work};
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
 use skrib_format::{TreeReader, gather};
@@ -41,6 +41,8 @@ pub trait CountWordsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "BinderTag", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Content", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Footnote", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Footnote", action = "GetRelationshipRO")]
 pub trait CountWordsUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
     fn publish_count_words_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -51,6 +53,16 @@ impl<'a> TreeReader for dyn CountWordsUnitOfWorkTrait + 'a {
     /// Word counting reads prose only — an image is not a word.
     ///
     /// Explicit rather than defaulted — see [`TreeReader::asset_multi`].
+    fn footnote_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<common::entities::Footnote>>> {
+        self.get_footnote_multi(ids)
+    }
+    fn footnote_rel(
+        &self,
+        id: &EntityId,
+        field: &common::direct_access::footnote::FootnoteRelationshipField,
+    ) -> Result<Vec<EntityId>> {
+        self.get_footnote_relationship(id, field)
+    }
     fn asset_multi(&self, _ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
         Ok(Vec::new())
     }
@@ -166,8 +178,40 @@ fn run_count(
         }
     }
 
+    // Footnote prose, bucketed by the item whose Content each note annotates, so it
+    // can be attributed to the same Book the manuscript walk attributes prose to.
+    let mut content_owner: HashMap<EntityId, EntityId> = HashMap::new();
+    for bwi in &g.binders {
+        for iwc in &bwi.items {
+            for c in &iwc.contents {
+                content_owner.insert(c.id, iwc.item.id);
+            }
+        }
+    }
+    let mut notes_by_item: HashMap<EntityId, Vec<String>> = HashMap::new();
+    for fwc in &g.footnotes {
+        // An orphaned note belongs to no item and so to no Book. It is still the
+        // writer's prose, but there is nothing to attribute it to — and inventing an
+        // attribution would put words in a Book that does not contain them.
+        let Some(content_id) = fwc.footnote.content else {
+            continue;
+        };
+        let Some(item_id) = content_owner.get(&content_id).copied() else {
+            continue;
+        };
+        if !fwc.footnote.body.is_empty() {
+            notes_by_item
+                .entry(item_id)
+                .or_default()
+                .push(fwc.footnote.body.clone());
+        }
+    }
+
     let items = skribisto_compiler::item_metas(&g);
-    Ok((work_id, fold_counts(&items, &prose_by_item, method)))
+    Ok((
+        work_id,
+        fold_counts(&items, &prose_by_item, &notes_by_item, method),
+    ))
 }
 
 /// One linear pass over the ordered compile stream: sum the SceneText prose of every
@@ -176,12 +220,15 @@ fn run_count(
 fn fold_counts(
     items: &[ItemMeta],
     prose_by_item: &HashMap<EntityId, Vec<String>>,
+    notes_by_item: &HashMap<EntityId, Vec<String>>,
     method: CountMethod,
 ) -> WordCountResultDto {
     let mut total_words: i64 = 0;
     let mut total_chars: i64 = 0;
     let mut current_book: Option<EntityId> = None;
     let mut per_book: Vec<(EntityId, i64)> = Vec::new();
+    let mut total_note_words: i64 = 0;
+    let mut per_book_notes: Vec<(EntityId, i64)> = Vec::new();
 
     for m in items {
         if m.sub_role.opens_book() {
@@ -189,9 +236,32 @@ fn fold_counts(
         } else if m.sub_role.closes_book() {
             current_book = None;
         }
-        // "Exportable" = activated && is_exportable, and only prose-bearing rows carry a
-        // SceneText body — exactly the compile selection the exporter would emit.
-        if !(m.activated && m.is_exportable && counts_prose(&m.role, &m.sub_role)) {
+        // "Exportable" = activated && is_exportable — the same admission
+        // `footnote_numbering::counts` uses for numbering and for the export
+        // preflight. A note is counted whenever its own row is in the book: a
+        // note on a chapter the writer excluded from export is not in the book
+        // either, but a note anchored to (say) a Book folder's synopsis is still
+        // in the book even though a folder carries no `SceneText` of its own.
+        if !(m.activated && m.is_exportable) {
+            continue;
+        }
+        if let Some(notes) = notes_by_item.get(&m.id) {
+            for body in notes {
+                let c = counting::cached_count(body, method);
+                total_note_words += c.words as i64;
+                if let Some(book) = current_book {
+                    match per_book_notes.iter_mut().find(|(id, _)| *id == book) {
+                        Some(entry) => entry.1 += c.words as i64,
+                        None => per_book_notes.push((book, c.words as i64)),
+                    }
+                }
+            }
+        }
+
+        // The manuscript total is narrower than the note total: only a
+        // prose-bearing row carries a `SceneText` body — exactly the compile
+        // selection the exporter would emit.
+        if !counts_prose(&m.role, &m.sub_role) {
             continue;
         }
         let Some(datas) = prose_by_item.get(&m.id) else {
@@ -210,12 +280,52 @@ fn fold_counts(
         }
     }
 
-    let (book_item_ids, book_word_counts): (Vec<u64>, Vec<i64>) = per_book.into_iter().unzip();
+    // The book roster is the union of "has counted prose" and "has a counted note" —
+    // not just the first. A Book folder carries no `SceneText` of its own, so a note
+    // on its synopsis can leave it in `per_book_notes` with nothing in `per_book` at
+    // all; dropping such a book here would silently lose its notes from the per-book
+    // breakdown even though the global total (above) still counts them. Prose books
+    // keep their existing order (several tests key off it); a notes-only book is
+    // appended in the order its notes were found.
+    let book_item_ids: Vec<u64> = per_book
+        .iter()
+        .map(|(id, _)| *id)
+        .chain(
+            per_book_notes
+                .iter()
+                .map(|(id, _)| *id)
+                .filter(|id| !per_book.iter().any(|(b, _)| b == id)),
+        )
+        .collect();
+    let book_word_counts: Vec<i64> = book_item_ids
+        .iter()
+        .map(|id| {
+            per_book
+                .iter()
+                .find(|(b, _)| b == id)
+                .map(|(_, n)| *n)
+                .unwrap_or(0)
+        })
+        .collect();
+    // Aligned with `book_item_ids` position for position, so a caller can read the two
+    // side by side.
+    let book_footnote_word_counts: Vec<i64> = book_item_ids
+        .iter()
+        .map(|id| {
+            per_book_notes
+                .iter()
+                .find(|(b, _)| b == id)
+                .map(|(_, n)| *n)
+                .unwrap_or(0)
+        })
+        .collect();
     WordCountResultDto {
         total_word_count: total_words,
         total_char_count: total_chars,
         book_item_ids,
         book_word_counts,
+        total_footnote_word_count: total_note_words,
+        book_footnote_word_counts,
     }
 }
 
@@ -268,7 +378,12 @@ mod tests {
         prose.insert(14, vec!["skip me too".into()]); // excluded (non-exportable)
         prose.insert(15, vec!["a note here".into()]); // excluded (Note not prose-bearing)
 
-        let out = fold_counts(&stream, &prose, CountMethod::WhitespaceSplit);
+        let out = fold_counts(
+            &stream,
+            &prose,
+            &HashMap::new(),
+            CountMethod::WhitespaceSplit,
+        );
         assert_eq!(
             out.total_word_count, 7,
             "only the head (3) + the live scene (4)"
@@ -285,8 +400,105 @@ mod tests {
         let stream = vec![meta(20, Item, SR::Scene)];
         let mut prose: HashMap<EntityId, Vec<String>> = HashMap::new();
         prose.insert(20, vec!["one two three".into()]);
-        let out = fold_counts(&stream, &prose, CountMethod::WhitespaceSplit);
+        let out = fold_counts(
+            &stream,
+            &prose,
+            &HashMap::new(),
+            CountMethod::WhitespaceSplit,
+        );
         assert_eq!(out.total_word_count, 3);
         assert!(out.book_item_ids.is_empty(), "no Book → no per-book bucket");
+    }
+    /// **The fork this feature turns on.** A footnote IS authored words — unlike an
+    /// epigraph's quoted matter — so the number must not be discarded. But folding it
+    /// into the manuscript total would make a heavily annotated chapter report
+    /// progress the story did not make, and a writer's daily goal and pace projection
+    /// are both built on that total. Two numbers, one meaning each.
+    #[test]
+    fn footnote_words_are_counted_apart_from_the_manuscript() {
+        let stream = vec![meta(1, BinderItemRole::Item, BinderItemSubRole::Scene)];
+        let mut prose = HashMap::new();
+        prose.insert(1u64, vec!["one two three".to_string()]);
+        let mut notes = HashMap::new();
+        notes.insert(1u64, vec!["a four word note".to_string()]);
+
+        let out = fold_counts(&stream, &prose, &notes, CountMethod::WhitespaceSplit);
+
+        assert_eq!(
+            out.total_word_count, 3,
+            "the manuscript total must not move when a note is added"
+        );
+        assert_eq!(
+            out.total_footnote_word_count, 4,
+            "the notes have their own total"
+        );
+    }
+
+    /// Adding a note changes the footnote total and nothing else.
+    #[test]
+    fn adding_a_note_leaves_every_manuscript_number_alone() {
+        let stream = vec![meta(1, BinderItemRole::Item, BinderItemSubRole::Scene)];
+        let mut prose = HashMap::new();
+        prose.insert(1u64, vec!["one two three".to_string()]);
+
+        let without = fold_counts(
+            &stream,
+            &prose,
+            &HashMap::new(),
+            CountMethod::WhitespaceSplit,
+        );
+        let mut notes = HashMap::new();
+        notes.insert(1u64, vec!["several extra words here".to_string()]);
+        let with = fold_counts(&stream, &prose, &notes, CountMethod::WhitespaceSplit);
+
+        assert_eq!(without.total_word_count, with.total_word_count);
+        assert_eq!(without.total_char_count, with.total_char_count);
+        assert_eq!(without.book_word_counts, with.book_word_counts);
+        assert_eq!(without.total_footnote_word_count, 0);
+        assert_eq!(with.total_footnote_word_count, 4);
+    }
+
+    /// **Regression.** A note anchored to a row that carries no `SceneText` of its
+    /// own — a Book folder's synopsis, say — is still `activated && is_exportable`,
+    /// so `footnote_numbering::counts` places and numbers it, and the export
+    /// preflight counts it as referenced. The word count must agree: it used to sit
+    /// behind the same `counts_prose` gate as the manuscript prose, so a note here
+    /// was silently dropped from every total even though it is very much in the
+    /// book.
+    #[test]
+    fn a_note_on_a_row_with_no_scene_text_still_counts() {
+        use BinderItemRole::Folder;
+        use BinderItemSubRole as SR;
+        // A Book folder: `counts_prose(Folder, Book)` is false (only Folder/ChapterScene
+        // and the Item encodings carry SceneText), but the folder is still activated
+        // and exportable — its own synopsis can carry a reference.
+        let stream = vec![meta(10, Folder, SR::Book)];
+        let mut notes = HashMap::new();
+        notes.insert(10u64, vec!["a book synopsis note".to_string()]);
+
+        let out = fold_counts(
+            &stream,
+            &HashMap::new(),
+            &notes,
+            CountMethod::WhitespaceSplit,
+        );
+
+        assert_eq!(
+            out.total_word_count, 0,
+            "the folder itself carries no prose"
+        );
+        assert_eq!(
+            out.total_footnote_word_count, 4,
+            "the note must still be counted, even off a non-prose-bearing row"
+        );
+        // The book has to show up in the per-book breakdown too, or the writer's
+        // "words in this book" figure disagrees with the manuscript-wide total.
+        assert_eq!(
+            out.book_item_ids,
+            vec![10],
+            "a notes-only book must not be dropped"
+        );
+        assert_eq!(out.book_word_counts, vec![0]);
+        assert_eq!(out.book_footnote_word_counts, vec![4]);
     }
 }

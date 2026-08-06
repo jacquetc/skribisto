@@ -168,6 +168,16 @@ pub fn heap_size() -> usize {
         .unwrap_or(0)
 }
 
+/// Serialises the tests that reach the **process-wide** count cache.
+///
+/// `cargo test` runs a crate's tests in parallel threads of one process, so the
+/// global cache is shared state between them — and one test asserts on its total
+/// heap, which only holds if nothing else is counting at that moment. Poisoning
+/// is recovered rather than propagated: a panic in one test should fail that
+/// test, not turn every later one into an unrelated lock error.
+#[cfg(test)]
+pub(crate) static GLOBAL_CACHE_TESTS: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -304,6 +314,15 @@ mod tests {
 
     #[test]
     fn the_global_cache_works_and_can_be_cleared() {
+        // Exclusive, because the assertion is about the *whole* cache and the
+        // cache is process-wide. Without the guard any sibling test that counts
+        // something between `clear()` and the check puts an entry back, and this
+        // fails with a heap size nobody in this function asked for. Every test
+        // that reaches the global cache takes the same lock — see
+        // [`crate::counting::GLOBAL_CACHE_TESTS`].
+        let _exclusive = super::GLOBAL_CACHE_TESTS
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let djot = "une phrase que seule cette épreuve met en cache";
         let a = cached_count(djot, CountMethod::UnicodeWords);
         let b = cached_count(djot, CountMethod::UnicodeWords);

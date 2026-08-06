@@ -395,6 +395,7 @@ mod tests {
             paces: vec![],
             progress_snapshots: vec![],
             comments: vec![],
+            footnotes: vec![],
             binders: vec![BinderWithItems {
                 binder: Binder {
                     id: 10,

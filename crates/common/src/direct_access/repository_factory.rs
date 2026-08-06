@@ -26,6 +26,9 @@ pub mod write {
             dict_word::{
                 dict_word_repository::DictWordRepository, dict_word_table::DictWordHashMapTable,
             },
+            footnote::{
+                footnote_repository::FootnoteRepository, footnote_table::FootnoteHashMapTable,
+            },
             holiday::{holiday_repository::HolidayRepository, holiday_table::HolidayHashMapTable},
             milestone::{
                 milestone_repository::MilestoneRepository, milestone_table::MilestoneHashMapTable,
@@ -178,6 +181,16 @@ pub mod write {
         Ok(CommentRepository::new(Box::new(comment_table), transaction))
     }
 
+    pub fn create_footnote_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<FootnoteRepository<'_>> {
+        let footnote_table = FootnoteHashMapTable::new(transaction.get_store());
+        Ok(FootnoteRepository::new(
+            Box::new(footnote_table),
+            transaction,
+        ))
+    }
+
     pub fn create_comment_reply_repository(
         transaction: &'_ Transaction,
     ) -> Result<CommentReplyRepository<'_>> {
@@ -283,6 +296,9 @@ pub mod read {
             },
             dict_word::{
                 dict_word_repository::DictWordRepositoryRO, dict_word_table::DictWordHashMapTableRO,
+            },
+            footnote::{
+                footnote_repository::FootnoteRepositoryRO, footnote_table::FootnoteHashMapTableRO,
             },
             holiday::{
                 holiday_repository::HolidayRepositoryRO, holiday_table::HolidayHashMapTableRO,
@@ -425,6 +441,13 @@ pub mod read {
     ) -> Result<CommentRepositoryRO<'_>> {
         let comment_table = CommentHashMapTableRO::new(transaction.get_store());
         Ok(CommentRepositoryRO::new(Box::new(comment_table)))
+    }
+
+    pub fn create_footnote_repository(
+        transaction: &'_ Transaction,
+    ) -> Result<FootnoteRepositoryRO<'_>> {
+        let footnote_table = FootnoteHashMapTableRO::new(transaction.get_store());
+        Ok(FootnoteRepositoryRO::new(Box::new(footnote_table)))
     }
 
     pub fn create_comment_reply_repository(

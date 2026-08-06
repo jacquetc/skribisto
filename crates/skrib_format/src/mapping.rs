@@ -92,6 +92,7 @@ pub fn from_entities(
     paces: &[PaceWithChildren],
     progress_snapshots: &[ProgressSnapshot],
     comments: &[CommentWithReplies],
+    footnotes: &[FootnoteWithContent],
     binders: &[BinderWithItems],
     shape: ShapeTag,
 ) -> WorkBundle {
@@ -112,6 +113,22 @@ pub fn from_entities(
         }
     }
 
+    // The same bucketing for footnotes. A note whose Content was purged keeps its
+    // text in the root orphanage rather than being dropped — it is book prose the
+    // writer wrote, and the reference can still be put back.
+    let mut footnotes_by_content: BTreeMap<u64, Vec<FootnoteFile>> = BTreeMap::new();
+    let mut orphan_footnotes: Vec<FootnoteFile> = Vec::new();
+    for fwc in footnotes {
+        let file = footnote_to_file(fwc);
+        match fwc.footnote.content {
+            Some(content_id) => footnotes_by_content
+                .entry(content_id)
+                .or_default()
+                .push(file),
+            None => orphan_footnotes.push(file),
+        }
+    }
+
     let mut bundled_binders = Vec::with_capacity(binders.len());
 
     for (index, bwi) in binders.iter().enumerate() {
@@ -125,6 +142,7 @@ pub fn from_entities(
             let mut prose_refs = Vec::new();
             let mut prose = BTreeMap::new();
             let mut item_comments: BTreeMap<u64, Vec<CommentFile>> = BTreeMap::new();
+            let mut item_footnotes: BTreeMap<u64, Vec<FootnoteFile>> = BTreeMap::new();
 
             for c in &iwc.contents {
                 if !content_allowed(&item.role, &item.sub_role, &c.role) {
@@ -158,6 +176,9 @@ pub fn from_entities(
                         if let Some(list) = comments_by_content.remove(&c.id) {
                             item_comments.insert(c.id, list);
                         }
+                        if let Some(list) = footnotes_by_content.remove(&c.id) {
+                            item_footnotes.insert(c.id, list);
+                        }
                     }
                 }
             }
@@ -190,6 +211,7 @@ pub fn from_entities(
                 },
                 prose,
                 comments: item_comments,
+                footnotes: item_footnotes,
             });
         }
 
@@ -211,6 +233,9 @@ pub fn from_entities(
     // filtered out by `content_allowed`, it is a title row, or it simply is not in
     // this tree any more. Its comments have no sidecar, so they join the orphanage
     // rather than disappear at save time.
+    for (_content_id, list) in std::mem::take(&mut footnotes_by_content) {
+        orphan_footnotes.extend(list);
+    }
     for (_content_id, list) in std::mem::take(&mut comments_by_content) {
         orphan_comments.extend(list);
     }
@@ -397,6 +422,7 @@ pub fn from_entities(
             })
             .collect(),
         orphan_comments,
+        orphan_footnotes,
         binders: bundled_binders,
     }
 }
@@ -499,6 +525,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         trash_infos: Vec::new(),
         paces: Vec::new(),
         comments: Vec::new(),
+        footnotes: Vec::new(),
     };
 
     let tags = bundle
@@ -807,6 +834,20 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         comments.push(comment_from_file(cf, None)?);
     }
 
+    let mut footnotes: Vec<LoadedFootnote> = Vec::new();
+    for bb in &bundle.binders {
+        for bi in &bb.items {
+            for (content_file_id, list) in &bi.footnotes {
+                for ff in list {
+                    footnotes.push(footnote_from_file(ff, Some(*content_file_id))?);
+                }
+            }
+        }
+    }
+    for ff in &bundle.orphan_footnotes {
+        footnotes.push(footnote_from_file(ff, None)?);
+    }
+
     Ok(LoadedWork {
         assets,
         work,
@@ -820,6 +861,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         paces,
         progress_snapshots,
         comments,
+        footnotes,
         references,
         point_of_view,
         absolute_path: absolute_path.to_string(),
@@ -829,6 +871,27 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
 /// One on-disk [`CommentFile`] as a [`LoadedComment`], carrying the content **file
 /// id** it annotates (or `None` for an orphan). Ids stay as file ids here; the
 /// materialiser remaps them, exactly as it does for pace/trash back-links.
+fn footnote_to_file(fwc: &FootnoteWithContent) -> FootnoteFile {
+    let f = &fwc.footnote;
+    FootnoteFile {
+        file_id: f.id,
+        created_at: fmt_dt(&f.created_at),
+        updated_at: fmt_dt(&f.updated_at),
+        label: f.label.clone(),
+        body: f.body.clone(),
+    }
+}
+
+fn footnote_from_file(ff: &FootnoteFile, content: Option<u64>) -> Result<LoadedFootnote> {
+    Ok(LoadedFootnote {
+        created_at: parse_dt(&ff.created_at)?,
+        updated_at: parse_dt(&ff.updated_at)?,
+        content,
+        label: ff.label.clone(),
+        body: ff.body.clone(),
+    })
+}
+
 fn comment_from_file(cf: &CommentFile, content: Option<u64>) -> Result<LoadedComment> {
     Ok(LoadedComment {
         created_at: parse_dt(&cf.created_at)?,

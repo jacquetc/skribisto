@@ -226,9 +226,12 @@ pub fn set_cover(
     // already state at their own reads.
     let existing = match work_id {
         Some(work_id) => {
-            let ids =
-                work_commands::get_work_relationship(app_ctx, &work_id, &WorkRelationshipField::Assets)
-                    .map_err(|_| ())?;
+            let ids = work_commands::get_work_relationship(
+                app_ctx,
+                &work_id,
+                &WorkRelationshipField::Assets,
+            )
+            .map_err(|_| ())?;
             asset_commands::get_asset_multi(app_ctx, &ids)
                 .map_err(|_| ())?
                 .into_iter()

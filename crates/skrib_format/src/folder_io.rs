@@ -86,6 +86,18 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         write_if_changed(&orphans_path, to_ron(&bundle.orphan_comments)?.as_bytes())?;
     }
 
+    // The same for footnotes whose annotated content is gone. Kept, not dropped:
+    // a comment's loss costs a remark, a footnote's costs words from the book.
+    let orphan_notes_path = root.join("orphan_footnotes.ron");
+    if bundle.orphan_footnotes.is_empty() {
+        fs::remove_file(&orphan_notes_path).ok();
+    } else {
+        write_if_changed(
+            &orphan_notes_path,
+            to_ron(&bundle.orphan_footnotes)?.as_bytes(),
+        )?;
+    }
+
     // Note templates: an index plus one Djot blob each, mirroring the prose split.
     //
     // The prune is not optional bookkeeping. A rename changes the slug and therefore the
@@ -166,7 +178,12 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         // its `.comments.ron` sidecar (written only when that content actually has
         // comments, so an uncommented project grows no files at all).
         let mut expected_prose: BTreeSet<String> = BTreeSet::new();
-        let mut expected_comments: BTreeSet<String> = BTreeSet::new();
+        // ONE expected-set for every `.ron` sidecar in this directory, not one per
+        // kind. `prune_dir` matches by bare extension, so a second call carrying only
+        // the footnote names would delete every `.comments.ron` beside them, and a
+        // reciprocal call would delete every `.footnotes.ron`. The union is the only
+        // shape that is right for both.
+        let mut expected_sidecars: BTreeSet<String> = BTreeSet::new();
         for item in &bb.items {
             for pr in &item.item.prose_refs {
                 let rel = Path::new(&pr.path);
@@ -186,15 +203,24 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
                 {
                     let cname = comments_file_name(&fname);
                     write_if_changed(&tdir.join(&cname), to_ron(comments)?.as_bytes())?;
-                    expected_comments.insert(cname);
+                    expected_sidecars.insert(cname);
+                }
+
+                if let Some(footnotes) = item.footnotes.get(&pr.file_id)
+                    && !footnotes.is_empty()
+                {
+                    let fnname = footnotes_file_name(&fname);
+                    write_if_changed(&tdir.join(&fnname), to_ron(footnotes)?.as_bytes())?;
+                    expected_sidecars.insert(fnname);
                 }
             }
         }
         prune_dir(&tdir, &expected_prose, "djot")?;
-        // Prunes a sidecar whose last comment was deleted, too — `expected_comments`
-        // only holds the ones that still have content. `items.ron` lives in the binder
-        // dir, not `text/`, so pruning "ron" here cannot reach it.
-        prune_dir(&tdir, &expected_comments, "ron")?;
+        // Prunes a sidecar whose last comment or footnote was deleted, too —
+        // `expected_sidecars` only holds the ones that still have content.
+        // `items.ron` lives in the binder dir, not `text/`, so pruning "ron" here
+        // cannot reach it.
+        prune_dir(&tdir, &expected_sidecars, "ron")?;
 
         // items.ron (after its prose blobs exist).
         let items_file = ItemsFile {
@@ -233,6 +259,14 @@ pub(crate) fn comments_file_name(prose_file_name: &str) -> String {
         .strip_suffix(".djot")
         .unwrap_or(prose_file_name);
     format!("{stem}.comments.ron")
+}
+
+/// The footnote sidecar beside a prose blob: `<stem>.footnotes.ron`.
+pub(crate) fn footnotes_file_name(prose_file_name: &str) -> String {
+    let stem = prose_file_name
+        .strip_suffix(".djot")
+        .unwrap_or(prose_file_name);
+    format!("{stem}.footnotes.ron")
 }
 
 /// Remove files in `dir` with extension `ext` whose name is not in `keep`.
@@ -310,6 +344,8 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
     // Additive: a bundle written before comments existed has no orphanage, which
     // `read_ron_vec` reads back as an empty vec — no `format_version` bump needed.
     let orphan_comments = read_ron_vec(&root.join("orphan_comments.ron"), "orphan_comments.ron")?;
+    let orphan_footnotes =
+        read_ron_vec(&root.join("orphan_footnotes.ron"), "orphan_footnotes.ron")?;
     // Additive like its neighbours: a pre-v5 bundle has no `templates.ron` and reads back
     // as zero templates. A *malformed* one is a hard error, matching every sibling here —
     // and for a sharper reason than consistency. Degrading to "no templates" would let
@@ -360,6 +396,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         for item in itf.items {
             let mut prose = std::collections::BTreeMap::new();
             let mut comments = std::collections::BTreeMap::new();
+            let mut footnotes = std::collections::BTreeMap::new();
             for pr in &item.prose_refs {
                 let prose_path = root.join(&pr.path);
                 let text = fs::read_to_string(&prose_path)
@@ -381,10 +418,18 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
                             comments.insert(pr.file_id, list);
                         }
                     }
+                    let fpath = dir.join(footnotes_file_name(fname));
+                    if let Ok(ftext) = fs::read_to_string(&fpath) {
+                        let list: Vec<FootnoteFile> = from_ron(&ftext, "footnotes.ron")?;
+                        if !list.is_empty() {
+                            footnotes.insert(pr.file_id, list);
+                        }
+                    }
                 }
             }
             items.push(BundledItem {
                 item,
+                footnotes,
                 prose,
                 comments,
             });
@@ -408,6 +453,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         paces,
         progress_snapshots,
         orphan_comments,
+        orphan_footnotes,
         binders,
     })
 }

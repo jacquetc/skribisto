@@ -446,6 +446,33 @@ impl EditorsViewModel {
         })
     }
 
+    /// The editor a footnote reference goes into, and the `Content` row behind it.
+    ///
+    /// Resolved through the focused pane's active tab, like the comment binding
+    /// next door — and gated the same way, but from the other side. Rather than
+    /// requiring the prose editor to hold focus (which it never does when the
+    /// command comes from the menu bar, since opening a menu moves focus to the
+    /// overlay), this refuses only when the *synopsis* editor demonstrably has the
+    /// caret. That is the one case where acting on the prose would drop a marker
+    /// at a stale caret in a document the writer is not looking at — the bug
+    /// `insert_scene_break` documents, arriving by the same route.
+    ///
+    /// Prose only, deliberately: a synopsis is planning text, and a note attached
+    /// there prints into a synopsis export and nowhere in the book, which is not
+    /// what "insert footnote" means to anyone typing it.
+    pub fn footnote_target(&self) -> Option<(bastyde::widgets::rich_text::EditorHandle, u64)> {
+        self.with_focused_tab(|tab| {
+            if tab
+                .synopsis_handle()
+                .is_some_and(|h| h.focused_signal().get())
+            {
+                return None;
+            }
+            let handle = tab.find().and_then(|f| f.editor_handle())?;
+            Some((handle, tab.open_doc.main_content_id()?))
+        })
+    }
+
     /// Comment on the focused prose editor's selection.
     ///
     /// Prose-only and selection-only, deliberately: the synopsis has its own

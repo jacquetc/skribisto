@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Footnotes — prose interrupted by a raised reference mark, then the short
+       separator rule and the note itself at the foot of the page. The raised
+       ring rather than a numeral: a digit at rail size blobs into the line
+       above it, and the mark's job here is to read as "an anchor", not as "1". -->
+  <path d="M2.6 3.5 H13.4"/>
+  <path d="M2.6 6.4 H9.6"/>
+  <circle cx="11.9" cy="5.1" r="1"/>
+  <path d="M2.6 10.2 H6.6"/>
+  <path d="M2.6 13.1 H11.4"/>
+</svg>

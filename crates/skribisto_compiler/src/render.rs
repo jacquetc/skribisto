@@ -19,6 +19,7 @@ use anyhow::{Result, anyhow};
 use common::entities::{BinderItem, BinderItemSubRole, Content, ContentRole};
 use skrib_format::Gathered;
 use skribisto_model::SubRoleExt;
+use skribisto_model::footnote_numbering::{self, FootnoteRestart};
 use skribisto_model::language;
 use skribisto_model::numbering::{self, Numbered, NumberingRules};
 use skribisto_model::scene_break::{self, SceneBreakTier};
@@ -29,8 +30,8 @@ use text_document::{
 
 use crate::headings::{self, Level};
 use crate::preset::{
-    DirectionMode, EpigraphPlacement, ExportFormat, HeadingLanguage, HeadingScheme, ImageHandling,
-    LineSpacing, PageSize, Preset, SceneBreak,
+    DirectionMode, EpigraphPlacement, ExportFormat, FootnoteNumbering, HeadingLanguage,
+    HeadingScheme, ImageHandling, LineSpacing, PageSize, Preset, SceneBreak,
 };
 
 /// Everything a render needs: the frozen tree, the ordered ids to include, the style, the
@@ -795,11 +796,32 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
         out.insert_str(0, &block);
     }
 
+    // Footnote definitions, and the numbers the *manuscript* gives them.
+    //
+    // The bodies have to be appended to the compiled Djot or nothing downstream has
+    // them: a reference alone parses fine, but every writer would then render a
+    // marker pointing at a note that is not in the document.
+    //
+    // The markers are pushed separately, because they are a fact about the book
+    // rather than about this document. Compile one chapter and its own reading
+    // order would number the notes from one — disagreeing with the badge the writer
+    // is looking at in the editor, for the same note.
+    let notes = footnote_bodies(req, &rows);
+    if !notes.definitions.is_empty() {
+        if !out.trim_end().is_empty() {
+            out.push_str("\n\n");
+        }
+        out.push_str(&notes.definitions.join("\n\n"));
+    }
+
     let doc = TextDocument::new();
     if !out.trim().is_empty() {
         doc.set_djot(&out)?
             .wait()
             .map_err(|e| anyhow!("parsing the compiled document: {e:#}"))?;
+    }
+    if !notes.markers.is_empty() {
+        doc.set_footnote_markers(notes.markers);
     }
     // Document text direction from the export's language (v1 is whole-document; a mixed
     // LTR/RTL book uses its dominant language here — per-scene direction is a refinement).
@@ -1321,6 +1343,120 @@ fn manuscript_numbers(req: &RenderRequest) -> HashMap<u64, Numbered> {
     )
 }
 
+/// The footnote definitions this export must carry, and what each marker prints.
+struct CompiledNotes {
+    /// `[^label]: body` blocks, in the order they are read.
+    definitions: Vec<String>,
+    /// Label → marker, from the manuscript's own numbering.
+    markers: std::collections::HashMap<String, String>,
+}
+
+/// Resolve the footnotes of the rows this export includes.
+///
+/// Numbering comes from [`skribisto_model::footnote_numbering`], run over the
+/// **whole** gathered tree rather than over `rows` — the same rule chapter numbers
+/// follow, and for the same reason: exporting chapter five must number its notes as
+/// the book numbers them.
+///
+/// Only notes actually referenced by an included row are emitted. A note whose
+/// reference sits in a chapter this export leaves out has nothing pointing at it
+/// here, and printing it would put an unreferenced note at the foot of the page.
+fn footnote_bodies(req: &RenderRequest, rows: &[Row]) -> CompiledNotes {
+    let preset = req.preset;
+    if !preset.include_footnotes || req.gathered.footnotes.is_empty() {
+        return CompiledNotes {
+            definitions: Vec::new(),
+            markers: std::collections::HashMap::new(),
+        };
+    }
+
+    let by_label: std::collections::HashMap<&str, &str> = req
+        .gathered
+        .footnotes
+        .iter()
+        .map(|f| (f.footnote.label.as_str(), f.footnote.body.as_str()))
+        .collect();
+    let labels: Vec<String> = by_label.keys().map(|l| l.to_string()).collect();
+
+    // Prose per item, from the whole tree — numbering must not see the selection.
+    let mut prose_by_item: std::collections::HashMap<u64, Vec<&str>> =
+        std::collections::HashMap::new();
+    for bwi in &req.gathered.binders {
+        for iwc in &bwi.items {
+            let mut datas: Vec<&str> = Vec::new();
+            for c in &iwc.contents {
+                if c.activated {
+                    datas.push(c.data.as_str());
+                }
+            }
+            if !datas.is_empty() {
+                prose_by_item.insert(iwc.item.id, datas);
+            }
+        }
+    }
+
+    let numbered = footnote_numbering::number_map(
+        &crate::item_metas(req.gathered),
+        &labels,
+        |id| prose_by_item.get(&id).cloned().unwrap_or_default(),
+        match preset.footnote_numbering {
+            FootnoteNumbering::Continuous => FootnoteRestart::Continuous,
+            FootnoteNumbering::PerChapter => FootnoteRestart::PerChapter,
+            FootnoteNumbering::PerBook => FootnoteRestart::PerBook,
+        },
+    );
+
+    // Which of them this export actually references.
+    let mut wanted: Vec<(usize, String)> = Vec::new();
+    let mut markers = std::collections::HashMap::new();
+    for row in rows {
+        for content in row.contents {
+            if !content.activated {
+                continue;
+            }
+            for (_, label) in footnote_numbering::references_in(&content.data, &labels) {
+                let Some(n) = numbered.get(&(row.item.id, label.clone())) else {
+                    continue;
+                };
+                if markers.contains_key(&label) {
+                    continue;
+                }
+                markers.insert(label.clone(), n.number.to_string());
+                wanted.push((n.ordinal, label));
+            }
+        }
+    }
+    wanted.sort_unstable();
+
+    let definitions = wanted
+        .into_iter()
+        .filter_map(|(_, label)| {
+            let body = by_label.get(label.as_str())?;
+            let body = body.trim();
+            if body.is_empty() {
+                return None;
+            }
+            // Continuation lines indented, which is what keeps a multi-paragraph
+            // note attached to its definition instead of ending it.
+            let mut lines = body.lines();
+            let mut out = format!("[^{label}]: {}", lines.next().unwrap_or_default());
+            for line in lines {
+                out.push('\n');
+                if !line.is_empty() {
+                    out.push_str("    ");
+                    out.push_str(line);
+                }
+            }
+            Some(out)
+        })
+        .collect();
+
+    CompiledNotes {
+        definitions,
+        markers,
+    }
+}
+
 fn depth(level: Level) -> u8 {
     match level {
         Level::Book => 0,
@@ -1512,6 +1648,7 @@ mod tests {
     fn gathered(items: Vec<ItemWithContents>, work_lang: &str) -> Gathered {
         Gathered {
             assets: Vec::new(),
+            footnotes: Vec::new(),
             work: Work {
                 id: 1,
                 title: "My Novel".into(),
@@ -4209,6 +4346,129 @@ mod tests {
             txt.lines()
                 .any(|l| l.contains("The wind rose") && !l.starts_with(' ')),
             "the body prose must stay flush: {txt}"
+        );
+    }
+    // ── Footnotes ──────────────────────────────────────────────────
+
+    fn note(id: u64, content: u64, label: &str, body: &str) -> skrib_format::FootnoteWithContent {
+        skrib_format::FootnoteWithContent {
+            footnote: common::entities::Footnote {
+                id,
+                content: Some(content),
+                label: label.into(),
+                body: body.into(),
+                ..Default::default()
+            },
+        }
+    }
+
+    /// A note's body must reach the compiled document, or every writer renders a
+    /// marker pointing at text that is not there.
+    #[test]
+    fn a_notes_body_is_compiled_into_the_document() {
+        let mut g = gathered(
+            vec![iwc(
+                100,
+                SR::Scene,
+                "",
+                vec![c(1, ContentRole::SceneText, "Prose[^n1] here.")],
+            )],
+            "en",
+        );
+        g.footnotes = vec![note(7000, 1, "n1", "The note body.")];
+
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[100], &p, ExportFormat::Djot)).unwrap();
+        assert!(out.contains("[^n1]"), "reference lost: {out}");
+        assert!(out.contains("[^n1]:"), "definition never emitted: {out}");
+        assert!(out.contains("The note body"), "body lost: {out}");
+    }
+
+    /// `include_footnotes` off drops the bodies.
+    #[test]
+    fn a_preset_can_leave_the_notes_out() {
+        let mut g = gathered(
+            vec![iwc(
+                100,
+                SR::Scene,
+                "",
+                vec![c(1, ContentRole::SceneText, "Prose[^n1] here.")],
+            )],
+            "en",
+        );
+        g.footnotes = vec![note(7000, 1, "n1", "UNIQUEBODY.")];
+
+        let mut p = preset("neutral");
+        p.include_footnotes = false;
+        let out = render_to_string(&req(&g, &[100], &p, ExportFormat::Djot)).unwrap();
+        assert!(!out.contains("UNIQUEBODY"), "the body survived: {out}");
+    }
+
+    /// **The regression class `ef2a98a0` fixed for chapters, for notes.** Exporting
+    /// one chapter must number its notes as the whole book numbers them — the
+    /// number a reader would find, and the number the editor's badge shows.
+    #[test]
+    fn a_scoped_export_numbers_its_notes_as_the_book_does() {
+        let mut g = gathered(
+            vec![
+                iwc(
+                    100,
+                    SR::Scene,
+                    "",
+                    vec![c(1, ContentRole::SceneText, "First[^a].")],
+                ),
+                iwc(
+                    101,
+                    SR::Scene,
+                    "",
+                    vec![c(2, ContentRole::SceneText, "Second[^b].")],
+                ),
+            ],
+            "en",
+        );
+        g.footnotes = vec![note(7000, 1, "a", "One."), note(7001, 2, "b", "Two.")];
+
+        let p = preset("neutral");
+        // The second scene alone. Its note is the book's second note.
+        let out = render_to_string(&req(&g, &[101], &p, ExportFormat::Html)).unwrap();
+        assert!(
+            out.contains("<sup>2</sup>"),
+            "a scoped export renumbered from one: {out}"
+        );
+        assert!(
+            !out.contains("<sup>1</sup>"),
+            "the first note leaked into a scope that excludes it: {out}"
+        );
+    }
+
+    /// A note whose reference sits outside the exported scope is not printed: there
+    /// would be nothing pointing at it.
+    #[test]
+    fn an_unreferenced_note_is_not_printed_in_a_scoped_export() {
+        let mut g = gathered(
+            vec![
+                iwc(
+                    100,
+                    SR::Scene,
+                    "",
+                    vec![c(1, ContentRole::SceneText, "First[^a].")],
+                ),
+                iwc(
+                    101,
+                    SR::Scene,
+                    "",
+                    vec![c(2, ContentRole::SceneText, "Second.")],
+                ),
+            ],
+            "en",
+        );
+        g.footnotes = vec![note(7000, 1, "a", "ONLYINSCENEONE.")];
+
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[101], &p, ExportFormat::Djot)).unwrap();
+        assert!(
+            !out.contains("ONLYINSCENEONE"),
+            "a note nothing in this export references was printed: {out}"
         );
     }
 }

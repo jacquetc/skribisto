@@ -56,6 +56,7 @@ pub mod counting;
 
 /// Which ordinal each structural row carries — one pass over the whole manuscript, so
 /// the exporter and the binder's live badge cannot disagree about what chapter this is.
+pub mod footnote_numbering;
 pub mod numbering;
 pub mod scene_break;
 

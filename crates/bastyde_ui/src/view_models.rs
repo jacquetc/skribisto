@@ -105,6 +105,7 @@ mod export;
 mod export_styles;
 mod find;
 mod focus;
+mod footnotes;
 mod format;
 mod fullscreen;
 mod go;
@@ -165,6 +166,7 @@ pub use export::{ExportViewModel, format_label, scope_label};
 pub use export_styles::ExportStylesViewModel;
 pub use find::FindViewModel;
 pub use focus::FocusViewModel;
+pub use footnotes::{FootnoteBinding, FootnoteFilter, FootnotesViewModel};
 pub use format::{
     ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,
     FormatViewModel,

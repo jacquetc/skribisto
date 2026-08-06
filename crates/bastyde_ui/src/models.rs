@@ -27,6 +27,8 @@ mod dictionary_settings_file;
 mod distraction_free_themes_file;
 mod examples_list_model;
 mod export_styles_file;
+mod footnote_numbering;
+mod footnotes_list_model;
 mod installed_dictionaries_model;
 mod numbering;
 mod open_docs;
@@ -61,9 +63,18 @@ pub use dictionary_settings_file::{DictionarySettingsService, UserDictionary, li
 pub use distraction_free_themes_file::DistractionFreeThemesService;
 pub use examples_list_model::ExamplesListModel;
 pub use export_styles_file::ExportStylesService;
+// `UNNUMBERED_MARKER` is used by the tests and by the dock's own reasoning about
+// what an unnumbered reference draws; re-exported beside `marker_for` so the two
+// are found together.
+#[allow(unused_imports)]
+pub use footnote_numbering::{NotePlacement, UNNUMBERED_MARKER, marker_for};
+pub use footnotes_list_model::{FootnoteRow, FootnotesListModel};
 pub use installed_dictionaries_model::{
     DictOrigin, InstalledDictionariesModel, InstalledDictionaryRow,
 };
+// The `--features mocks` build fabricates its rows rather than numbering a real
+// manuscript, so several of these have no consumer there.
+#[allow(unused_imports)]
 pub use numbering::{
     fallback_label_for, item_meta_of, label_and_badge, numbers_for_items, numbers_for_work,
     work_language_tags,

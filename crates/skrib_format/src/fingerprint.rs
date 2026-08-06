@@ -191,6 +191,7 @@ mod tests {
             paces: vec![],
             progress_snapshots: vec![],
             orphan_comments: vec![],
+            orphan_footnotes: Vec::new(),
             binders: vec![],
         }
     }

@@ -343,7 +343,13 @@ fn editable_field(
         // highlighted nowhere: the worst of both, since it looks like the preview
         // works and simply found nothing. The thread itself lives in the margin and
         // in the two comment docks.
-        Some(MatchField::Comment) | Some(MatchField::CommentReply) => return None,
+        // A footnote's body is prose, but it is not any of this document's
+        // editors: falling through would highlight the scene, which does not
+        // contain the match. Same trap, same answer — the note is shown in the
+        // footnotes dock instead.
+        Some(MatchField::Comment) | Some(MatchField::CommentReply) | Some(MatchField::Footnote) => {
+            return None;
+        }
         Some(MatchField::Synopsis) => match open_doc.synopsis.as_ref() {
             Some(p) => (p, open_doc.spell_synopsis(), EditorKind::Synopsis),
             None => (

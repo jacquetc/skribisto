@@ -40,6 +40,7 @@ pub(super) struct ShellParts {
     pub search: SearchReplaceViewModel,
     pub trash: crate::view_models::TrashViewModel,
     pub comments: crate::view_models::CommentsViewModel,
+    pub footnotes: crate::view_models::FootnotesViewModel,
     pub format: crate::view_models::FormatViewModel,
     pub settings: SettingsViewModel,
     pub session: crate::sessions::WorkSession,
@@ -60,6 +61,7 @@ impl App {
             search,
             trash,
             comments,
+            footnotes,
             format,
             settings,
             session,
@@ -284,6 +286,12 @@ impl App {
             .dock(crate::docks::comments::comments_document_dock(
                 comments.clone(),
                 self.doc_comments_dock,
+                editors.active_item(),
+                on_open.clone(),
+            ))
+            .dock(crate::docks::footnotes::footnotes_dock(
+                footnotes.clone(),
+                self.footnotes_dock,
                 editors.active_item(),
                 on_open,
             ));

@@ -711,6 +711,10 @@ impl Widget for BinderFilterBar {
 
 #[cfg(test)]
 mod tests {
+    // Needed by the `--features mocks` build, which reaches `OutlineViewModel` and
+    // `OpenItemFn` through it; the default build names them by other imports below,
+    // so one configuration sees it as unused and the other cannot compile without it.
+    #[allow(unused_imports)]
     use super::*;
 
     /// The row card actually opens when the pointer rests on an outline row.

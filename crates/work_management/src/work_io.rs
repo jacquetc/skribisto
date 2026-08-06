@@ -186,6 +186,7 @@ pub fn serialize_and_write(
         &g.paces,
         &g.progress_snapshots,
         &g.comments,
+        &g.footnotes,
         &g.binders,
         shape_tag,
     );

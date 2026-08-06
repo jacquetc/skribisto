@@ -69,6 +69,9 @@ pub enum FlatEventKind {
     CommentCreated,
     CommentUpdated,
     CommentRemoved,
+    FootnoteCreated,
+    FootnoteUpdated,
+    FootnoteRemoved,
     CommentReplyCreated,
     CommentReplyUpdated,
     CommentReplyRemoved,
@@ -255,6 +258,15 @@ impl From<Event> for FlatEvent {
                 DirectAccessEntity::Comment(EntityEvent::Created) => FlatEventKind::CommentCreated,
                 DirectAccessEntity::Comment(EntityEvent::Updated) => FlatEventKind::CommentUpdated,
                 DirectAccessEntity::Comment(EntityEvent::Removed) => FlatEventKind::CommentRemoved,
+                DirectAccessEntity::Footnote(EntityEvent::Created) => {
+                    FlatEventKind::FootnoteCreated
+                }
+                DirectAccessEntity::Footnote(EntityEvent::Updated) => {
+                    FlatEventKind::FootnoteUpdated
+                }
+                DirectAccessEntity::Footnote(EntityEvent::Removed) => {
+                    FlatEventKind::FootnoteRemoved
+                }
                 DirectAccessEntity::CommentReply(EntityEvent::Created) => {
                     FlatEventKind::CommentReplyCreated
                 }
@@ -473,6 +485,9 @@ pub fn is_mutation(kind: &FlatEventKind) -> bool {
             | CommentCreated
             | CommentUpdated
             | CommentRemoved
+            | FootnoteCreated
+            | FootnoteUpdated
+            | FootnoteRemoved
             | CommentReplyCreated
             | CommentReplyUpdated
             | CommentReplyRemoved
@@ -586,6 +601,10 @@ mod tests {
         assert!(is_mutation(&FlatEventKind::CommentCreated));
         assert!(is_mutation(&FlatEventKind::CommentUpdated));
         assert!(is_mutation(&FlatEventKind::CommentRemoved));
+
+        assert!(is_mutation(&FlatEventKind::FootnoteCreated));
+        assert!(is_mutation(&FlatEventKind::FootnoteUpdated));
+        assert!(is_mutation(&FlatEventKind::FootnoteRemoved));
 
         assert!(is_mutation(&FlatEventKind::CommentReplyCreated));
         assert!(is_mutation(&FlatEventKind::CommentReplyUpdated));

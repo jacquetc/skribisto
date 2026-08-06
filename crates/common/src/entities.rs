@@ -127,6 +127,7 @@ pub struct SearchResult {
     pub match_field: MatchField,
     pub comment_id: u64,
     pub reply_id: u64,
+    pub footnote_id: u64,
     pub occurrence_count: u64,
     pub snippet_before: String,
     pub snippet_match: String,
@@ -149,6 +150,7 @@ pub enum MatchField {
     Epigraph,
     Comment,
     CommentReply,
+    Footnote,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -195,6 +197,7 @@ pub struct Work {
     pub trash_infos: Vec<EntityId>,
     pub paces: Vec<EntityId>,
     pub comments: Vec<EntityId>,
+    pub footnotes: Vec<EntityId>,
 }
 
 impl HasId for Work {
@@ -366,6 +369,24 @@ pub enum CommentOrphanReason {
     TextNotFound,
     Ambiguous,
     TargetDeleted,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct Footnote {
+    pub id: EntityId,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(with = "chrono::serde::ts_milliseconds")]
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub content: Option<EntityId>,
+    pub label: String,
+    pub body: String,
+}
+
+impl HasId for Footnote {
+    fn id(&self) -> EntityId {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

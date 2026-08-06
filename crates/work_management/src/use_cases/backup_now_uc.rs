@@ -38,9 +38,9 @@ use common::direct_access::pace::PaceRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::direct_access::work_info::WorkInfoRelationshipField;
 use common::entities::{
-    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday,
-    Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation, TextReplacementRule,
-    TrashInfo, Work, WorkInfo,
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Footnote,
+    Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, SmartPunctuation,
+    TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
@@ -72,6 +72,8 @@ pub trait BackupNowUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "TextReplacementRule", action = "GetMultiRO")]
 #[macros::uow_action(entity = "NoteTemplate", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Footnote", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Footnote", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "SmartPunctuation", action = "GetRO")]
 #[macros::uow_action(entity = "Pace", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Pace", action = "GetRelationshipRO")]
@@ -129,6 +131,16 @@ impl<'a> TreeReader for dyn BackupNowUnitOfWorkTrait + 'a {
     }
     fn note_template_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<NoteTemplate>>> {
         self.get_note_template_multi(ids)
+    }
+    fn footnote_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<common::entities::Footnote>>> {
+        self.get_footnote_multi(ids)
+    }
+    fn footnote_rel(
+        &self,
+        id: &EntityId,
+        field: &common::direct_access::footnote::FootnoteRelationshipField,
+    ) -> Result<Vec<EntityId>> {
+        self.get_footnote_relationship(id, field)
     }
     fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<Asset>>> {
         self.get_asset_multi(ids)
@@ -271,6 +283,7 @@ fn run_backup(
         &g.paces,
         &g.progress_snapshots,
         &g.comments,
+        &g.footnotes,
         &g.binders,
         ShapeTag::Zip,
     );

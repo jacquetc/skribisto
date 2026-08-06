@@ -981,6 +981,7 @@ search-field-label = Étiquette
 search-field-epigraph = Épigraphe
 search-field-comment = Commentaire
 search-field-comment-reply = Réponse
+search-field-footnote = Note de bas de page
 search-include-in-replace = Inclure dans « Tout remplacer »
 search-replace-nothing = (rien)
 search-replace-confirm-title = Remplacer tous les résultats ?
@@ -1572,3 +1573,27 @@ card-words = Mots
 card-synopsis = Synopsis
 card-point-of-view = Point de vue
 card-aliases = Aussi appelé
+
+export-orphan-footnotes-title = Notes sans appel
+export-orphan-footnotes =
+    { $count ->
+        [one] Une note de bas de page n'est plus appelée nulle part dans le manuscrit. Son texte n'apparaîtra pas dans le livre exporté.
+       *[other] { $count } notes de bas de page ne sont plus appelées dans le manuscrit. Leur texte n'apparaîtra pas dans le livre exporté.
+    }
+
+## Notes de bas de page
+
+footnotes-title = Notes de bas de page
+footnotes-insert = Insérer une note de bas de p&age
+footnotes-empty = Aucune note pour l'instant. Insérez-en une depuis le menu Document, ou avec Ctrl+Alt+F.
+footnotes-filter-all = Toutes
+footnotes-filter-document = Ce document
+footnotes-filter-orphaned = Orphelines
+footnotes-orphaned = Plus rien ne renvoie à cette note
+footnotes-untitled-home = Sans titre
+footnotes-body-placeholder = la note elle-même
+footnotes-actions = Actions sur la note
+footnotes-delete = &Supprimer la note et son appel
+footnotes-no-project = Ouvrez un projet avant d'insérer une note de bas de page.
+footnotes-no-caret = Placez le curseur dans le texte d'une scène pour y insérer une note.
+footnotes-not-created = La note n'a pas pu être ajoutée au projet.

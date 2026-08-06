@@ -18,9 +18,9 @@ use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
 use common::entities::{
-    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Holiday,
-    Milestone, NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search, SmartPunctuation,
-    System, TextReplacementRule, TrashInfo, Work, WorkInfo,
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, DictWord, Footnote,
+    Holiday, Milestone, NoteTemplate, Pace, ProgressSnapshot, RecentWork, Root, Search,
+    SmartPunctuation, System, TextReplacementRule, TrashInfo, Work, WorkInfo,
 };
 use common::event::WorkManagementEvent::LoadWork;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
@@ -162,6 +162,8 @@ impl CommandUnitOfWork for LoadWorkUnitOfWork {
 #[macros::uow_action(entity = "Pace", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Holiday", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Milestone", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Footnote", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
 #[macros::uow_action(entity = "Comment", action = "CreateOrphan")]
 #[macros::uow_action(entity = "CommentReply", action = "CreateOrphan")]
 #[macros::uow_action(entity = "ProgressSnapshot", action = "CreateOrphan")]

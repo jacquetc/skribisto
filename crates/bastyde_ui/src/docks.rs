@@ -6,9 +6,10 @@
 //! side; `App` only wires the cross-view-model effects around them.
 //!
 //! The roster: [`outline`] (binder tree), [`search`], [`trash`], [`comments`]
-//! (project-wide) on the leading rail; [`inspector`], [`mod@format`], and a
-//! per-document comments dock on the trailing rail; [`search_preview`] on the
-//! bottom. See [`APP_DOCKS`] for the authoritative list and mount order.
+//! (project-wide) on the leading rail; [`inspector`], [`mod@format`], a
+//! per-document comments dock and [`mod@footnotes`] on the trailing rail;
+//! [`search_preview`] on the bottom. See [`APP_DOCKS`] for the authoritative list
+//! and mount order.
 //!
 //! ## Stable dock ids
 //!
@@ -44,6 +45,8 @@ pub const FORMAT_DOCK_ID: u64 = DOCK_ID_BASE + 6;
 pub const COMMENTS_DOCK_ID: u64 = DOCK_ID_BASE + 7;
 /// This document's comments (trailing rail, third tab).
 pub const DOC_COMMENTS_DOCK_ID: u64 = DOCK_ID_BASE + 8;
+/// The manuscript's footnotes (trailing rail, fourth tab).
+pub const FOOTNOTES_DOCK_ID: u64 = DOCK_ID_BASE + 9;
 
 /// One app dock's declared home: its stable id plus where it mounts on a desk
 /// nobody has arranged yet.
@@ -125,6 +128,11 @@ pub const APP_DOCKS: &[AppDock] = &[
         side: DockSide::Trailing,
         own_tab: true,
     },
+    AppDock {
+        id: FOOTNOTES_DOCK_ID,
+        side: DockSide::Trailing,
+        own_tab: true,
+    },
     // The transient search-preview band. Mounted, then hidden — see
     // `project_shell` and `WorkspaceLayoutViewModel`'s module docs.
     AppDock {
@@ -141,6 +149,7 @@ pub fn app_dock_ids() -> Vec<u64> {
 
 pub mod comments;
 pub mod create_split_button;
+pub mod footnotes;
 pub mod format;
 pub mod inspector;
 pub mod outline;

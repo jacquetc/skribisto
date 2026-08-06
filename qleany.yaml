@@ -196,6 +196,10 @@ entities:
       # different rows to rewrite and read differently in the list ("a comment on
       # Scene 1" vs "a reply to it"), not because the text is any different.
       - CommentReply
+      # A footnote's own prose. Its own field rather than `Body` because a
+      # footnote is not a `Content` row — it is reached by its own walk, and a
+      # replace rewrites a different table.
+      - Footnote
   # The comment THREAD a `Comment` / `CommentReply` hit belongs to — the opening
   # `Comment`'s id in both cases, because that is what the margin and the docks
   # reveal: a thread is one card, replies included. 0 for every other match field.
@@ -210,6 +214,12 @@ entities:
   # separate from `comment_id` rather than overloading it, because a reply hit needs
   # BOTH: its thread to navigate to, and its own row to edit.
   - name: reply_id
+    type: uinteger
+  # The `Footnote` row a `Footnote` hit is in — what a replace rewrites. 0 for
+  # every other match field. A plain id for the same reason `binder_item_id` and
+  # `comment_id` above are: a SearchResult is a projection, re-derived on every
+  # search and re-validated on activation.
+  - name: footnote_id
     type: uinteger
   - name: occurrence_count
     type: uinteger
@@ -339,6 +349,16 @@ entities:
   - name: comments
     type: entity
     entity: Comment
+    relationship: one_to_many
+    strong: true
+    list_model: true
+    list_model_displayed_field: body
+  # Unordered for the same reason comments are: a footnote's place in the book is
+  # decided by where its reference sits in the prose, which is read from the
+  # document, never from this collection's order.
+  - name: footnotes
+    type: entity
+    entity: Footnote
     relationship: one_to_many
     strong: true
     list_model: true
@@ -580,6 +600,43 @@ entities:
 # One reply inside a Comment's thread. `author_name` is free text seeded from
 # Work.author_name at creation — this app has no identity system and this does not
 # invent one (Work.author_name is the BOOK's byline, not a user account).
+# One footnote: the note's own prose, and the label the reference in the manuscript
+# names it by.
+#
+# THERE IS NO ANCHOR HERE, and that is the whole design. A comment has to carry a
+# quote (prefix/exact/suffix) because it points at text it does not own, and text
+# moves. A footnote's reference is *in* the prose — one object character the editor
+# treats as a single unit — so the rope carries it along with every edit, deleting
+# the sentence deletes it, and there is nothing to re-anchor and no orphan state to
+# store. What a comment needs a dozen fields and a three-tier resolver for, a
+# footnote gets from the document holding the reference itself.
+#
+# `content` is a weak, optional many_to_one, exactly like Comment.content: trashing
+# or purging the annotated item must ORPHAN this note, never cascade-delete it. An
+# orphan here is a note whose reference is gone from the prose — visible in the dock
+# and reported before an export, because unlike a stray comment it is *missing text
+# from the book*.
+#
+# `undoable: true` is forced, not chosen: `qleany check` refuses a non-undoable
+# strong child under an undoable parent.
+- name: Footnote
+  inherits_from: EntityBase
+  fields:
+  - name: content
+    type: entity
+    entity: Content
+    relationship: many_to_one
+    optional: true
+  # What `[^label]` in the prose names. Minted once, never shown to the writer, and
+  # never the number: the number is a fact about document order, so storing it would
+  # mean rewriting the author's prose every time a note was inserted above this one.
+  - name: label
+    type: string
+  # Djot, not plain text. A historical novel's footnote carries italics and a
+  # citation, so the body is prose with the same expressive range as the manuscript.
+  - name: body
+    type: string
+  undoable: true
 - name: CommentReply
   inherits_from: EntityBase
   fields:
@@ -1375,6 +1432,22 @@ features:
         type: uinteger
         is_list: true
       - name: book_word_counts
+        type: integer
+        is_list: true
+      # Footnote prose, counted apart and never folded into the totals above.
+      #
+      # A footnote IS authored words, unlike an epigraph's quoted matter — so
+      # discarding the number would be wrong. But folding it into the manuscript
+      # total would be worse: a writer's daily goal and their pace projection are
+      # both built on "words of the book", and a heavily annotated chapter would
+      # start reporting progress the story did not make. Two numbers, one meaning
+      # each.
+      #
+      # Deliberately absent from `RecordProgressSnapshotDto` below: the history
+      # that drives pace goals stays the manuscript's alone.
+      - name: total_footnote_word_count
+        type: integer
+      - name: book_footnote_word_counts
         type: integer
         is_list: true
   # Short synchronous command: upsert today's ProgressSnapshot on the open

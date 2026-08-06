@@ -37,6 +37,7 @@ pub struct HashMapStore {
     pub holidays: RwLock<HashMap<EntityId, Holiday>>,
     pub milestones: RwLock<HashMap<EntityId, Milestone>>,
     pub comments: RwLock<HashMap<EntityId, Comment>>,
+    pub footnotes: RwLock<HashMap<EntityId, Footnote>>,
     pub comment_replys: RwLock<HashMap<EntityId, CommentReply>>,
     pub binders: RwLock<HashMap<EntityId, Binder>>,
     pub binder_items: RwLock<HashMap<EntityId, BinderItem>>,
@@ -61,6 +62,7 @@ pub struct HashMapStore {
     pub jn_binder_from_work_binders: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_comment_from_work_comments: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_dict_word_from_work_dict_words: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_footnote_from_work_footnotes: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_note_template_from_work_note_templates: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_pace_from_work_paces: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_smart_punctuation_from_work_smart_punctuation: RwLock<HashMap<EntityId, Vec<EntityId>>>,
@@ -77,6 +79,7 @@ pub struct HashMapStore {
     pub jn_binder_item_from_milestone_target_item: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_content_from_comment_content: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_comment_reply_from_comment_replies: RwLock<HashMap<EntityId, Vec<EntityId>>>,
+    pub jn_content_from_footnote_content: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_binder_binder_items: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_content_from_binder_item_contents: RwLock<HashMap<EntityId, Vec<EntityId>>>,
     pub jn_binder_item_from_binder_item_point_of_view: RwLock<HashMap<EntityId, Vec<EntityId>>>,
@@ -116,6 +119,7 @@ impl HashMapStore {
             holidays: read_or_recover(&self.holidays).clone(),
             milestones: read_or_recover(&self.milestones).clone(),
             comments: read_or_recover(&self.comments).clone(),
+            footnotes: read_or_recover(&self.footnotes).clone(),
             comment_replys: read_or_recover(&self.comment_replys).clone(),
             binders: read_or_recover(&self.binders).clone(),
             binder_items: read_or_recover(&self.binder_items).clone(),
@@ -154,6 +158,8 @@ impl HashMapStore {
                 &self.jn_dict_word_from_work_dict_words,
             )
             .clone(),
+            jn_footnote_from_work_footnotes: read_or_recover(&self.jn_footnote_from_work_footnotes)
+                .clone(),
             jn_note_template_from_work_note_templates: read_or_recover(
                 &self.jn_note_template_from_work_note_templates,
             )
@@ -199,6 +205,10 @@ impl HashMapStore {
                 .clone(),
             jn_comment_reply_from_comment_replies: read_or_recover(
                 &self.jn_comment_reply_from_comment_replies,
+            )
+            .clone(),
+            jn_content_from_footnote_content: read_or_recover(
+                &self.jn_content_from_footnote_content,
             )
             .clone(),
             jn_binder_item_from_binder_binder_items: read_or_recover(
@@ -268,6 +278,7 @@ impl HashMapStore {
         let g_holidays = read_or_recover(&self.holidays);
         let g_milestones = read_or_recover(&self.milestones);
         let g_comments = read_or_recover(&self.comments);
+        let g_footnotes = read_or_recover(&self.footnotes);
         let g_comment_replys = read_or_recover(&self.comment_replys);
         let g_binders = read_or_recover(&self.binders);
         let g_binder_items = read_or_recover(&self.binder_items);
@@ -295,6 +306,8 @@ impl HashMapStore {
         let g_jn_comment_from_work_comments = read_or_recover(&self.jn_comment_from_work_comments);
         let g_jn_dict_word_from_work_dict_words =
             read_or_recover(&self.jn_dict_word_from_work_dict_words);
+        let g_jn_footnote_from_work_footnotes =
+            read_or_recover(&self.jn_footnote_from_work_footnotes);
         let g_jn_note_template_from_work_note_templates =
             read_or_recover(&self.jn_note_template_from_work_note_templates);
         let g_jn_pace_from_work_paces = read_or_recover(&self.jn_pace_from_work_paces);
@@ -320,6 +333,8 @@ impl HashMapStore {
             read_or_recover(&self.jn_content_from_comment_content);
         let g_jn_comment_reply_from_comment_replies =
             read_or_recover(&self.jn_comment_reply_from_comment_replies);
+        let g_jn_content_from_footnote_content =
+            read_or_recover(&self.jn_content_from_footnote_content);
         let g_jn_binder_item_from_binder_binder_items =
             read_or_recover(&self.jn_binder_item_from_binder_binder_items);
         let g_jn_content_from_binder_item_contents =
@@ -347,6 +362,7 @@ impl HashMapStore {
             holidays: RwLock::new(g_holidays.clone()),
             milestones: RwLock::new(g_milestones.clone()),
             comments: RwLock::new(g_comments.clone()),
+            footnotes: RwLock::new(g_footnotes.clone()),
             comment_replys: RwLock::new(g_comment_replys.clone()),
             binders: RwLock::new(g_binders.clone()),
             binder_items: RwLock::new(g_binder_items.clone()),
@@ -378,6 +394,7 @@ impl HashMapStore {
             jn_dict_word_from_work_dict_words: RwLock::new(
                 g_jn_dict_word_from_work_dict_words.clone(),
             ),
+            jn_footnote_from_work_footnotes: RwLock::new(g_jn_footnote_from_work_footnotes.clone()),
             jn_note_template_from_work_note_templates: RwLock::new(
                 g_jn_note_template_from_work_note_templates.clone(),
             ),
@@ -411,6 +428,9 @@ impl HashMapStore {
             jn_content_from_comment_content: RwLock::new(g_jn_content_from_comment_content.clone()),
             jn_comment_reply_from_comment_replies: RwLock::new(
                 g_jn_comment_reply_from_comment_replies.clone(),
+            ),
+            jn_content_from_footnote_content: RwLock::new(
+                g_jn_content_from_footnote_content.clone(),
             ),
             jn_binder_item_from_binder_binder_items: RwLock::new(
                 g_jn_binder_item_from_binder_binder_items.clone(),
@@ -449,6 +469,7 @@ impl HashMapStore {
         *write_or_recover(&self.holidays) = snap.holidays.clone();
         *write_or_recover(&self.milestones) = snap.milestones.clone();
         *write_or_recover(&self.comments) = snap.comments.clone();
+        *write_or_recover(&self.footnotes) = snap.footnotes.clone();
         *write_or_recover(&self.comment_replys) = snap.comment_replys.clone();
         *write_or_recover(&self.binders) = snap.binders.clone();
         *write_or_recover(&self.binder_items) = snap.binder_items.clone();
@@ -481,6 +502,8 @@ impl HashMapStore {
             snap.jn_comment_from_work_comments.clone();
         *write_or_recover(&self.jn_dict_word_from_work_dict_words) =
             snap.jn_dict_word_from_work_dict_words.clone();
+        *write_or_recover(&self.jn_footnote_from_work_footnotes) =
+            snap.jn_footnote_from_work_footnotes.clone();
         *write_or_recover(&self.jn_note_template_from_work_note_templates) =
             snap.jn_note_template_from_work_note_templates.clone();
         *write_or_recover(&self.jn_pace_from_work_paces) = snap.jn_pace_from_work_paces.clone();
@@ -511,6 +534,8 @@ impl HashMapStore {
             snap.jn_content_from_comment_content.clone();
         *write_or_recover(&self.jn_comment_reply_from_comment_replies) =
             snap.jn_comment_reply_from_comment_replies.clone();
+        *write_or_recover(&self.jn_content_from_footnote_content) =
+            snap.jn_content_from_footnote_content.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_binder_items) =
             snap.jn_binder_item_from_binder_binder_items.clone();
         *write_or_recover(&self.jn_content_from_binder_item_contents) =
@@ -592,6 +617,7 @@ impl HashMapStore {
         *write_or_recover(&self.holidays) = snap.holidays.clone();
         *write_or_recover(&self.milestones) = snap.milestones.clone();
         *write_or_recover(&self.comments) = snap.comments.clone();
+        *write_or_recover(&self.footnotes) = snap.footnotes.clone();
         *write_or_recover(&self.comment_replys) = snap.comment_replys.clone();
         *write_or_recover(&self.binders) = snap.binders.clone();
         *write_or_recover(&self.binder_items) = snap.binder_items.clone();
@@ -624,6 +650,8 @@ impl HashMapStore {
             snap.jn_comment_from_work_comments.clone();
         *write_or_recover(&self.jn_dict_word_from_work_dict_words) =
             snap.jn_dict_word_from_work_dict_words.clone();
+        *write_or_recover(&self.jn_footnote_from_work_footnotes) =
+            snap.jn_footnote_from_work_footnotes.clone();
         *write_or_recover(&self.jn_note_template_from_work_note_templates) =
             snap.jn_note_template_from_work_note_templates.clone();
         *write_or_recover(&self.jn_pace_from_work_paces) = snap.jn_pace_from_work_paces.clone();
@@ -654,6 +682,8 @@ impl HashMapStore {
             snap.jn_content_from_comment_content.clone();
         *write_or_recover(&self.jn_comment_reply_from_comment_replies) =
             snap.jn_comment_reply_from_comment_replies.clone();
+        *write_or_recover(&self.jn_content_from_footnote_content) =
+            snap.jn_content_from_footnote_content.clone();
         *write_or_recover(&self.jn_binder_item_from_binder_binder_items) =
             snap.jn_binder_item_from_binder_binder_items.clone();
         *write_or_recover(&self.jn_content_from_binder_item_contents) =
@@ -702,6 +732,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) holidays: HashMap<EntityId, Holiday>,
     pub(crate) milestones: HashMap<EntityId, Milestone>,
     pub(crate) comments: HashMap<EntityId, Comment>,
+    pub(crate) footnotes: HashMap<EntityId, Footnote>,
     pub(crate) comment_replys: HashMap<EntityId, CommentReply>,
     pub(crate) binders: HashMap<EntityId, Binder>,
     pub(crate) binder_items: HashMap<EntityId, BinderItem>,
@@ -724,6 +755,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) jn_binder_from_work_binders: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_comment_from_work_comments: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_dict_word_from_work_dict_words: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_footnote_from_work_footnotes: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_note_template_from_work_note_templates: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_pace_from_work_paces: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_smart_punctuation_from_work_smart_punctuation: HashMap<EntityId, Vec<EntityId>>,
@@ -739,6 +771,7 @@ pub struct HashMapStoreSnapshot {
     pub(crate) jn_binder_item_from_milestone_target_item: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_content_from_comment_content: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_comment_reply_from_comment_replies: HashMap<EntityId, Vec<EntityId>>,
+    pub(crate) jn_content_from_footnote_content: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_binder_items: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_content_from_binder_item_contents: HashMap<EntityId, Vec<EntityId>>,
     pub(crate) jn_binder_item_from_binder_item_point_of_view: HashMap<EntityId, Vec<EntityId>>,

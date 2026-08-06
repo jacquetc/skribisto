@@ -56,6 +56,16 @@ pub fn format_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/format.svg"))
 }
 
+/// The Footnotes activity icon: prose interrupted by a raised reference mark,
+/// then the short separator rule and the note at the foot of the page.
+///
+/// Not a speech bubble: it shares the trailing rail with this document's
+/// comments, and a note that renders into the book is exactly what a comment is
+/// not. The page-and-rule silhouette says "this ends up printed".
+pub fn footnotes_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/footnotes.svg"))
+}
+
 /// The Inspector activity icon: a right side-panel glyph.
 pub fn inspector_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/inspector.svg"))
