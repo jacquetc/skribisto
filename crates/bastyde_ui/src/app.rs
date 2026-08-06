@@ -1846,21 +1846,10 @@ impl Widget for App {
         commands::register_all(ctx, &command_deps);
 
         // On project load/new/close/attach: lifecycle seed, backup sniff, dict offer.
-        // Binder-item tab sync is not lifecycle — stays here (every edit, not boundaries).
-        {
-            let editors = editors.clone();
-            ctx.subscribe_event(
-                Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Updated)),
-                move |event: &Event| editors.items_updated(&event.ids),
-            );
-        }
-        {
-            let editors = editors.clone();
-            ctx.subscribe_event(
-                Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Removed)),
-                move |event: &Event| editors.items_removed(&event.ids),
-            );
-        }
+        // Binder-item tab sync is not lifecycle — it rides every edit, not the boundaries —
+        // so it is the editors' own `wire` (rebuild on retype, close on remove, re-caption
+        // on anything that renumbers), subscribed here for this window's whole build.
+        editors.wire(ctx);
 
         let attach_seed = wiring::project_events::install_lifecycle(
             ctx,

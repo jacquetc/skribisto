@@ -76,8 +76,8 @@ pub use installed_dictionaries_model::{
 // manuscript, so several of these have no consumer there.
 #[allow(unused_imports)]
 pub use numbering::{
-    fallback_label_for, item_meta_of, label_and_badge, numbers_for_items, numbers_for_work,
-    work_language_tags,
+    NameContext, fallback_label_for, item_meta_of, label_and_badge, numbers_for_items,
+    numbers_for_work, ordered_item_dtos, work_language_tags,
 };
 pub use open_docs::{OpenDoc, OpenDocsStore, SynopsisViewerGuard};
 pub use overview_rows_model::{

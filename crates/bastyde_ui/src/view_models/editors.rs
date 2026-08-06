@@ -21,7 +21,7 @@ use skribisto_model::scene_break::{self, SceneBreakTier};
 use frontend::AppContext;
 use frontend::direct_access::BinderItemDto;
 
-use frontend::common::event::Event;
+use frontend::common::event::{Event, Origin};
 
 use crate::app_ids::AppIds;
 use crate::models::{OpenDoc, OpenDocsStore};
@@ -446,33 +446,6 @@ impl EditorsViewModel {
         })
     }
 
-    /// The editor a footnote reference goes into, and the `Content` row behind it.
-    ///
-    /// Resolved through the focused pane's active tab, like the comment binding
-    /// next door — and gated the same way, but from the other side. Rather than
-    /// requiring the prose editor to hold focus (which it never does when the
-    /// command comes from the menu bar, since opening a menu moves focus to the
-    /// overlay), this refuses only when the *synopsis* editor demonstrably has the
-    /// caret. That is the one case where acting on the prose would drop a marker
-    /// at a stale caret in a document the writer is not looking at — the bug
-    /// `insert_scene_break` documents, arriving by the same route.
-    ///
-    /// Prose only, deliberately: a synopsis is planning text, and a note attached
-    /// there prints into a synopsis export and nowhere in the book, which is not
-    /// what "insert footnote" means to anyone typing it.
-    pub fn footnote_target(&self) -> Option<(bastyde::widgets::rich_text::EditorHandle, u64)> {
-        self.with_focused_tab(|tab| {
-            if tab
-                .synopsis_handle()
-                .is_some_and(|h| h.focused_signal().get())
-            {
-                return None;
-            }
-            let handle = tab.find().and_then(|f| f.editor_handle())?;
-            Some((handle, tab.open_doc.main_content_id()?))
-        })
-    }
-
     /// Comment on the focused prose editor's selection.
     ///
     /// Prose-only and selection-only, deliberately: the synopsis has its own
@@ -622,11 +595,7 @@ impl EditorsViewModel {
             self.synopsis_placement.clone(),
             self.caret_highlight.clone(),
         );
-        let tab_title = if title.is_empty() {
-            tr!(untitled())
-        } else {
-            lit!(title.to_string())
-        };
+        let tab_title = self.caption(item_id, title);
         let id = TabId::fresh();
         self.pane(side).tabs.push(TabHandle::dynamic(
             id,
@@ -1188,8 +1157,63 @@ impl EditorsViewModel {
         }
     }
 
-    /// React to `BinderItem::Updated` for `item_ids`: re-title any open tab whose item was
-    /// renamed, and **rebuild** any whose *type* changed.
+    /// Subscribe to the backend changes the open tabs have to follow. Call once from the
+    /// window's long-lived `build` (the subscriptions live as long as that build does).
+    ///
+    /// Two are per-item: an edited item may need its tab rebuilt or re-captioned, a removed
+    /// one needs its tab closed. The rest are **structural** — they change no open item, but
+    /// they renumber the manuscript, and an untitled chapter's caption *is* its number. They
+    /// are the same set [`crate::models::BinderBinderItemsTreeModel::wire`] re-sources the
+    /// binder on, for exactly the same reason; a name shown in two docks must change in both
+    /// at once.
+    pub fn wire(&self, ctx: &mut BuildContext) {
+        use frontend::common::event::{
+            BinderItemManagementEvent, DirectAccessEntity as E, EntityEvent, TrashManagementEvent,
+        };
+
+        {
+            let me = self.clone();
+            ctx.subscribe_event(
+                Origin::DirectAccess(E::BinderItem(EntityEvent::Updated)),
+                move |event: &Event| me.items_updated(&event.ids),
+            );
+        }
+        {
+            let me = self.clone();
+            ctx.subscribe_event(
+                Origin::DirectAccess(E::BinderItem(EntityEvent::Removed)),
+                move |event: &Event| me.items_removed(&event.ids),
+            );
+        }
+        let structural = [
+            // A new chapter above an untitled one renumbers it, and nothing about the
+            // untitled one itself changes.
+            Origin::DirectAccess(E::BinderItem(EntityEvent::Created)),
+            Origin::DirectAccess(E::Binder(EntityEvent::Created)),
+            // A binder's item *order* lives on the binder, so a reorder is a `Binder`
+            // update — not an item one.
+            Origin::DirectAccess(E::Binder(EntityEvent::Updated)),
+            Origin::DirectAccess(E::Binder(EntityEvent::Removed)),
+            // "Number chapters and parts" and "Restart chapter numbers at each part" are
+            // `Work` fields: turning either off renames every untitled chapter on screen.
+            Origin::DirectAccess(E::Work(EntityEvent::Updated)),
+            Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
+            Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
+            Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
+            Origin::BinderItemManagement(BinderItemManagementEvent::SplitScene),
+            Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
+            Origin::TrashManagement(TrashManagementEvent::TrashBinder),
+            Origin::TrashManagement(TrashManagementEvent::RestoreItems),
+            Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
+        ];
+        for origin in structural {
+            let me = self.clone();
+            ctx.subscribe_event(origin, move |_e: &Event| me.refresh_captions());
+        }
+    }
+
+    /// React to `BinderItem::Updated` for `item_ids`: **rebuild** any open tab whose item's
+    /// *type* changed, re-seed the live trash/tag state, then re-caption every open tab.
     ///
     /// The view never reads entities itself, so the lookup lives here.
     pub fn items_updated(&self, item_ids: &[u64]) {
@@ -1215,10 +1239,12 @@ impl EditorsViewModel {
                     doc.trashed.set(trashed);
                     doc.tags.set(it.tags.clone());
                 }
-                continue; // the rebuilt tab already carries the new caption
             }
-            self.retitle(*id, &it.title);
         }
+        // One sweep for the whole batch, not a per-item push: a rename changes one tab's
+        // caption, but the same event fires for a trash or a move, which renumbers — and so
+        // renames — every *untitled* structural tab after it. See [`Self::refresh_captions`].
+        self.refresh_captions();
     }
 
     /// React to `BinderItem::Removed` for `item_ids`: close any open tab for a
@@ -1292,11 +1318,7 @@ impl EditorsViewModel {
                     self.synopsis_placement.clone(),
                     self.caret_highlight.clone(),
                 );
-                let caption = if it.title.is_empty() {
-                    tr!(untitled())
-                } else {
-                    lit!(it.title.clone())
-                };
+                let caption = self.caption(item_id, &it.title);
                 let sub_role = it.sub_role.clone();
                 // A **fresh** `TabId`, and remove+insert rather than `set`. The
                 // `TabWidget` keys its mounted content widget by tab id, so swapping the
@@ -1327,32 +1349,92 @@ impl EditorsViewModel {
         true
     }
 
-    /// Re-title every open tab whose item was renamed.
+    // ── Tab captions ────────────────────────────────────────────────────────
+
+    /// The manuscript's naming context, or `None` with no project open — the welcome
+    /// window, a headless test, the mock build. Every caption then falls back to the
+    /// title the caller already holds.
+    fn names(&self) -> Option<crate::models::NameContext> {
+        let work_id = self.ids.work_id.get()?;
+        Some(crate::models::NameContext::read(&self.app_ctx, work_id))
+    }
+
+    /// What `item_id`'s tab is called, reading the manuscript only when it has to.
     ///
-    /// The tab's caption is a plain `LocalizedString` baked in at open time — it does not
-    /// follow a signal — so a rename has to push it. `TabHandle::info` is a public field
-    /// and `payload` is an `Rc`, so the handle is rebuilt with a new caption while the
-    /// *same* `ContentTab` (and therefore the same live documents, caret and scroll
-    /// position) is carried straight through.
-    fn retitle(&self, item_id: u64, title: &str) {
-        let caption = if title.is_empty() {
-            tr!(untitled())
-        } else {
+    /// **An untitled chapter is not nameless.** Since numbering stopped writing "Chapter 7"
+    /// into titles, every other surface — the binder, the stream, the corkboard, the
+    /// Overview, the exported book — derives that name instead; tabs were the one place
+    /// still saying "Untitled", so a writer who names no chapters got a strip of identical
+    /// "Untitled"s with nothing to tell them apart.
+    ///
+    /// `title` is what the caller already holds (an outline row, a restored session), so
+    /// the common titled case never touches the backend. Only a row with no title of its
+    /// own pays for the whole-Work read, and it has to: its name is its ordinal, and that
+    /// depends on every item before it.
+    fn caption(&self, item_id: u64, title: &str) -> LocalizedString {
+        if !title.trim().is_empty() {
+            return lit!(title.to_string());
+        }
+        let generated = self.names().and_then(|names| {
+            let it = names.item(item_id)?;
+            names.generated_name(it)
+        });
+        Self::caption_of(title, generated)
+    }
+
+    /// The caption for a row whose title and generated name are both already known.
+    fn caption_of(title: &str, generated: Option<String>) -> LocalizedString {
+        if !title.trim().is_empty() {
             lit!(title.to_string())
-        };
+        } else if let Some(name) = generated {
+            lit!(name)
+        } else {
+            // A scene or a note has no name to generate — labelling one "Scene" would be
+            // noise, so an unnamed one stays "Untitled" here (a tab, unlike a tree row,
+            // cannot be blank: there would be nothing left to click).
+            tr!(untitled())
+        }
+    }
+
+    /// Re-caption every open tab from the manuscript's current state.
+    ///
+    /// A caption is a plain `LocalizedString` baked in when the tab is built — it does not
+    /// follow a signal — so everything that can change a name has to push it. A rename is
+    /// the obvious one; **renumbering is the other**, and it has no rename event to ride:
+    /// inserting a chapter above an untitled one renames it from "Chapter 3" to "Chapter 4"
+    /// without touching it at all, as does trashing one, moving one, or turning numbering
+    /// off in Settings. Hence the whole sweep on every structural change rather than a
+    /// per-item push.
+    ///
+    /// `TabHandle::info` is a public field and `payload` is an `Rc`, so each handle is
+    /// rebuilt with a new caption around the *same* `ContentTab` — the same live documents,
+    /// caret and scroll position are carried straight through, and the `TabWidget` keys its
+    /// mounted content by tab id, which does not change.
+    pub fn refresh_captions(&self) {
+        if self.primary.tabs.is_empty() && self.secondary.tabs.is_empty() {
+            return;
+        }
+        let Some(names) = self.names() else { return };
         for side in [Side::Primary, Side::Secondary] {
             let pane = self.pane(side);
             for i in 0..pane.tabs.len() {
                 let hit = pane.tabs.with_item(i, |h| {
                     h.payload
                         .downcast_ref::<ContentTab>()
-                        .is_some_and(|t| t.item_id() == item_id)
-                        .then(|| h.clone())
+                        .map(|t| (t.item_id(), h.clone()))
                 });
-                if let Some(Some(mut h)) = hit {
-                    h.info = h.info.clone().title(caption.clone());
-                    pane.tabs.set(i, h);
-                }
+                let Some(Some((item_id, mut h))) = hit else {
+                    continue;
+                };
+                // An item the store cannot answer for — a tab whose item is mid-teardown,
+                // a mock build with no manuscript behind it — keeps what it is showing.
+                // This only ever *corrects* a caption; it never blanks one.
+                let Some(it) = names.item(item_id) else {
+                    continue;
+                };
+                let caption = Self::caption_of(&it.title, names.generated_name(it));
+                h.info = h.info.clone().title(caption);
+                pane.tabs.set(i, h);
             }
         }
     }
@@ -1576,6 +1658,254 @@ mod tests {
             Some(before),
             "releasing must give exactly one reference back, not more or fewer"
         );
+    }
+
+    /// The caption rule itself, at the seam every tab caption goes through.
+    #[test]
+    fn a_row_with_no_title_of_its_own_is_captioned_by_its_generated_name() {
+        let chapter_3 = || Some("Chapter 3".to_string());
+        // A title the writer typed wins over anything derived.
+        assert_eq!(
+            EditorsViewModel::caption_of("The Storm", chapter_3()).resolve_now(),
+            "The Storm"
+        );
+        // **The bug this fixes.** An untitled chapter is named by its ordinal here, as it
+        // already was in the binder, the stream, the corkboard and the exported book.
+        assert_eq!(
+            EditorsViewModel::caption_of("", chapter_3()).resolve_now(),
+            "Chapter 3"
+        );
+        // Whitespace is not a title — `fallback_label_for` trims too, so treating it as
+        // one here would caption the tab " " while every other surface says "Chapter 3".
+        assert_eq!(
+            EditorsViewModel::caption_of("   ", chapter_3()).resolve_now(),
+            "Chapter 3"
+        );
+        // A scene or a note has no name to generate. The tree leaves that row blank; a
+        // tab cannot, or there would be nothing left to click.
+        assert_eq!(
+            EditorsViewModel::caption_of("", None).resolve_now(),
+            tr!(untitled()).resolve_now()
+        );
+    }
+
+    /// Tab captions over a **real** manuscript: what an untitled chapter's tab is called,
+    /// and what renames it. Gated off `mocks`, whose every fixture row is titled (and whose
+    /// item probe answers for ids no test seeded).
+    #[cfg(not(feature = "mocks"))]
+    mod captions {
+        use super::*;
+        use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+        use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+        /// A numbering manuscript with one binder, and `vm` pointed at it.
+        fn seed_work(vm: &EditorsViewModel) -> u64 {
+            let work = work_commands::create_orphan_work(
+                &vm.app_ctx,
+                None,
+                &CreateWorkDto {
+                    // The two fields naming derives from. Numbering *off* is a real state
+                    // too — covered by `an_unnumbered_untitled_chapter_says_what_it_is`.
+                    number_chapters: true,
+                    dict_language: vec!["en".into()],
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            vm.ids.work_id.set(Some(work.id));
+            binder_commands::create_binder(
+                &vm.app_ctx,
+                None,
+                &CreateBinderDto {
+                    name: "Manuscript".into(),
+                    activated: true,
+                    ..Default::default()
+                },
+                work.id,
+                0,
+            )
+            .unwrap()
+            .id
+        }
+
+        /// Append (or, with an explicit `index`, insert) an item into `binder`.
+        fn seed_item(
+            vm: &EditorsViewModel,
+            binder: u64,
+            title: &str,
+            sub_role: BinderItemSubRole,
+            index: i32,
+        ) -> u64 {
+            binder_item_commands::create_binder_item(
+                &vm.app_ctx,
+                None,
+                &CreateBinderItemDto {
+                    title: title.into(),
+                    role: BinderItemRole::Item,
+                    sub_role,
+                    activated: true,
+                    is_exportable: true,
+                    ..Default::default()
+                },
+                binder,
+                index,
+            )
+            .unwrap()
+            .id
+        }
+
+        /// The caption an open tab is showing, resolved.
+        ///
+        /// `TabInfo` keeps its title field crate-private and exposes no getter, but its
+        /// `Debug` renders the *resolved* string — so this reads it back from there rather
+        /// than asserting on the helper that produced it, which would pass even if
+        /// `open_in` stopped calling that helper at all. Swap this for
+        /// `TabInfo::title_text()` if bastyde ever grows one.
+        fn caption_of_tab(vm: &EditorsViewModel, side: Side, item_id: u64) -> Option<String> {
+            let pane = vm.pane(side);
+            let rendered = (0..pane.tabs.len()).find_map(|i| {
+                pane.tabs
+                    .with_item(i, |h| {
+                        h.payload
+                            .downcast_ref::<ContentTab>()
+                            .filter(|t| t.item_id() == item_id)
+                            .map(|_| format!("{:?}", h.info))
+                    })
+                    .flatten()
+            })?;
+            let open = rendered.find("resolved: \"")? + "resolved: \"".len();
+            let rest = &rendered[open..];
+            Some(rest[..rest.find('"')?].to_string())
+        }
+
+        /// **The bug.** Opening a chapter the writer never named used to caption its tab
+        /// "Untitled" — so a manuscript of unnamed chapters (which is what a new project
+        /// is, since numbering stopped writing "Chapter N" into titles) gave a strip of
+        /// identical tabs with nothing to tell them apart.
+        #[test]
+        fn an_untitled_chapter_opens_in_a_tab_named_by_its_number() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let first = seed_item(&vm, binder, "", BinderItemSubRole::ChapterScene, -1);
+            let second = seed_item(&vm, binder, "", BinderItemSubRole::ChapterScene, -1);
+
+            vm.open_in(Side::Primary, first, "");
+            vm.open_in(Side::Primary, second, "");
+            assert_eq!(
+                caption_of_tab(&vm, Side::Primary, first).as_deref(),
+                Some("Chapter 1")
+            );
+            assert_eq!(
+                caption_of_tab(&vm, Side::Primary, second).as_deref(),
+                Some("Chapter 2")
+            );
+        }
+
+        /// A title the writer typed is still the tab's name — the fallback must not
+        /// overwrite one.
+        #[test]
+        fn a_named_chapter_keeps_the_name_its_writer_gave_it() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let id = seed_item(
+                &vm,
+                binder,
+                "The Storm",
+                BinderItemSubRole::ChapterScene,
+                -1,
+            );
+            vm.open_in(Side::Primary, id, "The Storm");
+            assert_eq!(
+                caption_of_tab(&vm, Side::Primary, id).as_deref(),
+                Some("The Storm")
+            );
+        }
+
+        /// A scene has no generated name, so an unnamed one keeps the "Untitled" fallback.
+        #[test]
+        fn an_untitled_scene_still_falls_back_to_untitled() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let id = seed_item(&vm, binder, "", BinderItemSubRole::Scene, -1);
+            vm.open_in(Side::Primary, id, "");
+            assert_eq!(
+                caption_of_tab(&vm, Side::Primary, id),
+                Some(tr!(untitled()).resolve_now())
+            );
+        }
+
+        /// With numbering off the row has no ordinal, so its tab says what it *is* —
+        /// the same bare structural word the binder shows, not "Untitled".
+        #[test]
+        fn an_unnumbered_untitled_chapter_says_what_it_is() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let work_id = vm.ids.work_id.get().unwrap();
+            let mut work = work_commands::get_work(&vm.app_ctx, &work_id)
+                .unwrap()
+                .unwrap();
+            work.number_chapters = false;
+            work_commands::update_work(&vm.app_ctx, None, &work.into()).unwrap();
+
+            let id = seed_item(&vm, binder, "", BinderItemSubRole::ChapterScene, -1);
+            vm.open_in(Side::Primary, id, "");
+            assert_eq!(
+                caption_of_tab(&vm, Side::Primary, id).as_deref(),
+                Some("Chapter")
+            );
+        }
+
+        /// **Renumbering renames.** Inserting a chapter above an open untitled one changes
+        /// its name without touching the item at all — no rename, no `Updated` for it — so
+        /// a caption pushed only on rename would go on saying "Chapter 1" while the binder,
+        /// the stream and the book all said 2.
+        #[test]
+        fn inserting_a_chapter_above_renames_the_open_tab() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let open = seed_item(&vm, binder, "", BinderItemSubRole::ChapterScene, -1);
+            vm.open_in(Side::Primary, open, "");
+            assert_eq!(
+                caption_of_tab(&vm, Side::Primary, open).as_deref(),
+                Some("Chapter 1")
+            );
+
+            seed_item(&vm, binder, "", BinderItemSubRole::ChapterScene, 0);
+            vm.refresh_captions();
+            assert_eq!(
+                caption_of_tab(&vm, Side::Primary, open).as_deref(),
+                Some("Chapter 2"),
+                "the open tab kept a number the manuscript no longer gives it"
+            );
+        }
+
+        /// Clearing a chapter's title hands it back to the generated name; the sweep must
+        /// therefore *replace* a caption, not merely fill an empty one.
+        #[test]
+        fn clearing_a_title_hands_the_tab_back_to_its_number() {
+            let vm = editors();
+            let binder = seed_work(&vm);
+            let id = seed_item(
+                &vm,
+                binder,
+                "The Storm",
+                BinderItemSubRole::ChapterScene,
+                -1,
+            );
+            vm.open_in(Side::Primary, id, "The Storm");
+
+            let mut it = binder_item_commands::get_binder_item(&vm.app_ctx, &id)
+                .unwrap()
+                .unwrap();
+            it.title = String::new();
+            binder_item_commands::update_binder_item(&vm.app_ctx, None, &it.into()).unwrap();
+            vm.items_updated(&[id]);
+
+            assert_eq!(
+                caption_of_tab(&vm, Side::Primary, id).as_deref(),
+                Some("Chapter 1")
+            );
+        }
     }
 
     /// [`EditorsViewModel::release_own_open_docs`] is the on_removed-driven

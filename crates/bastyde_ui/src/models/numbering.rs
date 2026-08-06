@@ -17,7 +17,9 @@
 use std::collections::HashMap;
 
 use frontend::AppContext;
-use frontend::commands::work_commands;
+use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+use frontend::common::direct_access::binder::BinderRelationshipField;
+use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::direct_access::BinderItemDto;
 use skribisto_model::compile::ItemMeta;
 use skribisto_model::numbering::{self, Numbered, NumberingRules};
@@ -167,6 +169,89 @@ pub fn numbers_for_items(
     numbers_for_work(ctx, work_id, &metas)
 }
 
+/// Every binder item of `work_id`, binder-major, in each binder's stored relationship
+/// order — the **whole** stream [`numbers_for_items`] must be handed (see its docs for why a
+/// scoped slice is the one way to misuse it).
+///
+/// Trashed rows included: they stay in place, and the numbering pass filters them itself.
+/// Empty on any backend hiccup, which numbering already treats as "do not number".
+pub fn ordered_item_dtos(ctx: &AppContext, work_id: u64) -> Vec<BinderItemDto> {
+    let mut out = Vec::new();
+    let binder_ids =
+        work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
+            .unwrap_or_default();
+    for binder_id in binder_ids {
+        let item_ids = binder_commands::get_binder_relationship(
+            ctx,
+            &binder_id,
+            &BinderRelationshipField::BinderItems,
+        )
+        .unwrap_or_default();
+        // `get_binder_item_multi` answers in db-key order, not request order — index by
+        // id and walk `item_ids`, which is the authoritative one.
+        let by_id: HashMap<u64, BinderItemDto> =
+            binder_item_commands::get_binder_item_multi(ctx, &item_ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .map(|it| (it.id, it))
+                .collect();
+        out.extend(
+            item_ids
+                .into_iter()
+                .filter_map(|id| by_id.get(&id).cloned()),
+        );
+    }
+    out
+}
+
+/// What the manuscript's rows are **called on screen**, read once for a whole batch.
+///
+/// The row sources under `models/` each derive this while building their rows, because they
+/// are re-sourcing the whole view anyway. A caller that names a *handful* of items — the
+/// editor's open tabs — cannot: it has ids, not rows, and the generated name of one untitled
+/// chapter depends on every item before it. This reads that context once so naming N tabs
+/// costs one pass, not N.
+///
+/// Snapshot, not a live handle: read it, use it, drop it. Anything that can change a name
+/// (a rename, a move, a new chapter, the Work's numbering settings) fires a backend event,
+/// and the caller re-reads.
+pub struct NameContext {
+    items: HashMap<u64, BinderItemDto>,
+    numbers: HashMap<u64, Numbered>,
+    langs: Vec<String>,
+}
+
+impl NameContext {
+    /// Read `work_id`'s ordered stream, its numbering and its languages.
+    pub fn read(ctx: &AppContext, work_id: u64) -> Self {
+        let ordered = ordered_item_dtos(ctx, work_id);
+        let numbers = numbers_for_items(ctx, work_id, &ordered);
+        Self {
+            items: ordered.into_iter().map(|it| (it.id, it)).collect(),
+            numbers,
+            langs: work_language_tags(ctx, work_id),
+        }
+    }
+
+    /// `item_id`'s row, or `None` when this Work has no such item.
+    ///
+    /// Kept separate from [`Self::generated_name`] so a caller can tell "the store does not
+    /// know this item" (leave whatever is on screen alone) from "this item has no generated
+    /// name" (an untitled scene) — two answers that a single `Option<String>` would blur
+    /// into one, and the second is the one that must overwrite a stale caption.
+    pub fn item(&self, item_id: u64) -> Option<&BinderItemDto> {
+        self.items.get(&item_id)
+    }
+
+    /// The name an **untitled** structural row is shown under — "Chapter 3", or "Chapter"
+    /// when the manuscript does not number. `None` for a titled row (it has its own name)
+    /// and for a scene or a note (which have none to generate).
+    pub fn generated_name(&self, it: &BinderItemDto) -> Option<String> {
+        fallback_label_for(it, self.numbers.get(&it.id), &self.langs)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -243,6 +328,72 @@ mod tests {
             let it = dto("", sr);
             assert_eq!(fallback_label_for(&it, None, &["en".into()]), None);
         }
+    }
+
+    /// [`ordered_item_dtos`] must answer in the **binder's stored relationship order**, not
+    /// in whatever order the store hands rows back.
+    ///
+    /// `get_binder_item_multi` answers in db-key order, which for a freshly created
+    /// manuscript happens to match creation order — so a version that forgot to re-order by
+    /// `item_ids` looks correct until the writer moves a chapter, and then every chapter
+    /// after it is numbered by where it *was*.
+    #[test]
+    fn the_ordered_stream_follows_the_binders_own_order_not_the_stores() {
+        use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+        use frontend::common::entities::BinderItemRole;
+        use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto, CreateWorkDto};
+
+        let ctx = AppContext::new();
+        let work =
+            work_commands::create_orphan_work(&ctx, None, &CreateWorkDto::default()).unwrap();
+        let binder = binder_commands::create_binder(
+            &ctx,
+            None,
+            &CreateBinderDto {
+                name: "Manuscript".into(),
+                activated: true,
+                ..Default::default()
+            },
+            work.id,
+            0,
+        )
+        .unwrap();
+        let make = |title: &str, index: i32| {
+            binder_item_commands::create_binder_item(
+                &ctx,
+                None,
+                &CreateBinderItemDto {
+                    title: title.into(),
+                    role: BinderItemRole::Item,
+                    sub_role: BinderItemSubRole::ChapterScene,
+                    activated: true,
+                    is_exportable: true,
+                    ..Default::default()
+                },
+                binder.id,
+                index,
+            )
+            .unwrap()
+            .id
+        };
+        let first = make("first", -1);
+        let second = make("second", -1);
+        // Created last, inserted at the top: creation order and stream order now disagree.
+        let inserted = make("inserted", 0);
+
+        let stream: Vec<u64> = ordered_item_dtos(&ctx, work.id)
+            .iter()
+            .map(|it| it.id)
+            .collect();
+        assert_eq!(stream, vec![inserted, first, second]);
+
+        // And the numbering that reads it agrees: the newest row is chapter 1.
+        let names = NameContext::read(&ctx, work.id);
+        let it = names
+            .item(inserted)
+            .expect("the inserted row is in the stream");
+        assert_eq!(it.title, "inserted");
+        assert_eq!(names.item(u64::MAX).map(|it| it.id), None);
     }
 
     /// The display rule: a badge accompanies a real title, and never a generated name —
