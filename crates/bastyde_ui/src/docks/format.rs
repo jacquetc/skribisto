@@ -24,9 +24,10 @@
 
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
+use bastyde::tokens::HAlignment;
 use bastyde::widgets::{
-    Center, DockOpenLocation, DockSide, DockWidget, DockWidgetId, FocusScope, GroupHeader,
-    IconButton, IconWidget, MenuItem, MenuList, Padding, PopoverIconButton, ScrollArea, TextWidget,
+    DockOpenLocation, DockSide, DockWidget, DockWidgetId, FocusScope, GroupHeader, IconButton,
+    IconWidget, MenuItem, MenuList, Padding, PopoverIconButton, ScrollArea, TextWidget,
     TraversalScopePolicy, VStack, Wrap,
 };
 
@@ -449,9 +450,21 @@ fn controls(vm: &FormatViewModel) -> Padding {
 
     // The placeholder replaces the controls rather than joining them: with
     // nothing formattable focused, every group above is hidden anyway.
+    //
+    // Centred by a `VStack`'s cross-axis alignment, **not** by `Center`. The
+    // hint is a whole sentence in a ~236px column, so it has to wrap — and
+    // `TextWidget` only wraps when something proposes it a bounded width.
+    // `Center` proposes `unspecified` on both axes (that is what lets it
+    // shrink-wrap an open one), so the label measured as a single 592px line
+    // and was then placed at half its overhang — x = -170 — running off the
+    // dock on the left and the right at once. A `VStack` hands its children the
+    // width it was given, which is exactly the wrap basis that was missing, and
+    // still centres the wrapped block.
     let empty = VisibleWhen::new(
         g.empty.clone(),
-        Center::new().child(TextWidget::new(tr!(format_panel_empty())).color(TextRole::Secondary)),
+        VStack::new()
+            .alignment(HAlignment::Center)
+            .child(TextWidget::new(tr!(format_panel_empty())).color(TextRole::Secondary)),
     );
 
     Padding::uniform(DOCK_PADDING).child(
@@ -683,5 +696,178 @@ mod tests {
         vm.set_surface(FormatSurface::None);
         assert!(g.empty.get());
         assert!(!g.history.get() && !g.marks.get() && !g.lists.get());
+    }
+
+    /// Widths the dock body has to survive.
+    ///
+    /// The trailing side is **user-resizable** — a `DockingLayout` splitter, not
+    /// a fixed 300px. `App` only sets the opening size; from there the writer
+    /// drags it anywhere between the docking model's `min_size` floor for a
+    /// horizontal-axis side and whatever the window allows. Both numbers are
+    /// *content* thicknesses — `SideLayout` adds the 48px activity rail on top
+    /// rather than carving it out — so these are the widths the body itself
+    /// gets. The narrow end is where a layout that measures itself unbounded
+    /// gives itself away.
+    const WIDTHS: [f32; 4] = [
+        120.0, // the docking model's floor for a leading/trailing side
+        300.0, // what `App` opens the trailing side at
+        420.0, // dragged out wide
+        600.0,
+    ];
+
+    /// A tree that measures text the way the app does.
+    ///
+    /// With no backend `TextWidget` falls back to 8px/char on a **single line**
+    /// and merely clamps that to the proposal — it never breaks a line, so a
+    /// bare `WidgetTree` cannot tell wrapped text from truncated text.
+    /// `MockTextBackend` runs the real paragraph path (8px/char, 16px lines,
+    /// word-broken), which is what makes the line count below meaningful.
+    fn measuring_tree() -> WidgetTree {
+        WidgetTree::new().with_text_backend(std::rc::Rc::new(std::cell::RefCell::new(
+            bastyde::canvas::MockTextBackend::new(),
+        )))
+    }
+
+    /// The worst horizontal overflow anywhere under `id`, measured against the
+    /// dock's own `box`, plus the widget that owns it — "something overflows" is
+    /// useless without "what". Positive means it escapes. Dormant zero-size
+    /// nodes are skipped; they sit at the origin and would read as an overflow
+    /// on the leading edge.
+    fn worst_overflow(tree: &WidgetTree, id: WidgetId, r#box: Rect) -> (f32, String) {
+        let b = tree.bounds(id);
+        let mut worst = if b.width > 0.0 {
+            (
+                (r#box.x - b.x).max(b.right() - r#box.right()),
+                tree.widget_type_name(id).unwrap_or("?").to_string(),
+            )
+        } else {
+            (f32::NEG_INFINITY, String::new())
+        };
+        for child in tree.children(id) {
+            let got = worst_overflow(tree, child, r#box);
+            if got.0 > worst.0 {
+                worst = got;
+            }
+        }
+        worst
+    }
+
+    /// Every laid-out `TextWidget` under `id`, skipping the dormant ones (a
+    /// hidden group's header is still in the arena, sized to nothing).
+    fn visible_labels(tree: &WidgetTree, id: WidgetId) -> Vec<WidgetId> {
+        let mut found = Vec::new();
+        let mut stack = vec![id];
+        while let Some(node) = stack.pop() {
+            if tree
+                .widget_type_name(node)
+                .is_some_and(|n| n.ends_with("::TextWidget"))
+                && tree.bounds(node).width > 0.0
+            {
+                found.push(node);
+            }
+            stack.extend(tree.children(node));
+        }
+        found
+    }
+
+    /// **The empty state's hint must wrap to the dock, not run off both edges.**
+    ///
+    /// It is a whole sentence, and no width the splitter can reach fits it on
+    /// one line. `TextWidget` wraps by default — but only when something
+    /// proposes it a bounded width, and `Center` proposes `unspecified` on both
+    /// axes (that is what lets it shrink-wrap an open one). Under it the label
+    /// measured as a single 592px line, and `Center` placed that at half its
+    /// overhang — x = -170 in the 252px default — so the sentence bled past the
+    /// dock on the left and the right at once, at every width.
+    #[test]
+    fn the_placeholder_wraps_to_the_docks_width() {
+        for width in WIDTHS {
+            let vm = vm();
+            vm.set_surface(FormatSurface::None);
+            let mut tree = measuring_tree();
+            let id = tree.add(controls(&vm));
+            tree.layout(SizeProposal {
+                width: Some(width),
+                height: None,
+            });
+
+            let labels = visible_labels(&tree, id);
+            assert_eq!(
+                labels.len(),
+                1,
+                "with nothing focused the placeholder is the only live label"
+            );
+            let text = tree.bounds(labels[0]);
+            let dock = tree.bounds(id);
+            assert!(
+                text.x >= dock.x + DOCK_PADDING - 0.5
+                    && text.right() <= dock.right() - DOCK_PADDING + 0.5,
+                "at {width}px the hint must stay inside the {DOCK_PADDING}px \
+                 inset: {text:?} in {dock:?}"
+            );
+            // Wrapped, not clipped. Compared against the sentence's own natural
+            // extent rather than a pixel constant, which would make this a
+            // translation test — fr-FR's string is longer, and both are free to
+            // change. Where there is less room than the sentence needs, the
+            // label has to be taller than the single line it would be otherwise.
+            let (natural, line) = natural_extent();
+            if width - 2.0 * DOCK_PADDING < natural - 1.0 {
+                assert!(
+                    text.height > line + 1.0,
+                    "at {width}px there is less room than the hint's {natural}px \
+                     natural width, so it must wrap onto more than one {line}px \
+                     line; got {}px tall",
+                    text.height
+                );
+            }
+        }
+    }
+
+    /// The empty-state sentence laid out with nothing constraining it: its
+    /// single-line width, and the height of that one line.
+    fn natural_extent() -> (f32, f32) {
+        let mut tree = measuring_tree();
+        let id = tree.add(TextWidget::new(tr!(format_panel_empty())));
+        tree.layout(SizeProposal {
+            width: None,
+            height: None,
+        });
+        let b = tree.bounds(id);
+        (b.width, b.height)
+    }
+
+    /// **Nothing in the dock overflows the side, at any width it can be dragged
+    /// to.** The controls already flow — `Wrap` breaks the button rows and
+    /// `GroupHeader` ellipsizes — so this guards the whole surface, including
+    /// the empty state, against the next widget added without a wrap basis.
+    #[test]
+    fn no_surface_overflows_the_side_at_any_width() {
+        for surface in [
+            FormatSurface::Scene,
+            FormatSurface::Synopsis,
+            FormatSurface::Note,
+            FormatSurface::None,
+        ] {
+            for width in WIDTHS {
+                let vm = vm();
+                vm.set_surface(surface);
+                let mut tree = measuring_tree();
+                let id = tree.add(controls(&vm));
+                tree.layout(SizeProposal {
+                    width: Some(width),
+                    height: None,
+                });
+
+                // Against the dock's own box, not the padded inset: the outer
+                // `Padding` widget spans the full width by design, and it is
+                // its *child* that has to respect the inset.
+                let (over, who) = worst_overflow(&tree, id, tree.bounds(id));
+                assert!(
+                    over <= 0.5,
+                    "{surface:?} at {width}px overflows the dock by {over}px, \
+                     worst offender {who}"
+                );
+            }
+        }
     }
 }
