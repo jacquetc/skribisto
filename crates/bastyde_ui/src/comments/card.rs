@@ -310,6 +310,7 @@ impl Turn {
             IconButton::new(IconWidget::chevron_down(CHEVRON)).tooltip(label.clone()),
         )
         .bare()
+        .show_disclosure_caret(false)
         .content(menu)
         .placement(OverlayPlacement::BelowPreferred)
         .access_label(label);

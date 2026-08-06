@@ -325,6 +325,7 @@ fn note_row(
         IconButton::new(IconWidget::chevron_down(12.0)).tooltip(actions.clone()),
     )
     .bare()
+    .show_disclosure_caret(false)
     // The menu is reached by Tab as well as by pointer: a popover whose
     // content is not a cycling focus scope opens and then strands a
     // keyboard-only writer outside it (WCAG 2.1.1), which is exactly what
