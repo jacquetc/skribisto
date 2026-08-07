@@ -126,9 +126,3 @@ Contributions, and it supersedes any prior Developer Certificate of Origin or ot
 understanding regarding the same subject matter. It is governed by the laws of France,
 without regard to its conflict-of-law provisions. If any provision of this Agreement is held
 unenforceable, the remaining provisions remain in full force and effect.
-
-<!--
-Maintainer note: the governing-law clause above defaults to France (the maintainer's
-jurisdiction). Confirm or adjust it to your actual jurisdiction before relying on this
-document, and have a lawyer review it if a significant commercial edition is planned.
--->

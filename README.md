@@ -23,6 +23,7 @@
   * [Translation](#translation)
   * [To contact me](#to-contact-me)
   * [License](#license)
+    + [The manuscript is always free](#the-manuscript-is-always-free)
   * [Contributing](#contributing)
   * [Commercial support](#commercial-support)
   * [Trademark](#trademark)
@@ -286,6 +287,24 @@ Skribisto is free software under the **GNU General Public License v3.0**. See
 [LICENSE](LICENSE). It is developed as **open core**: the community edition is, and will
 remain, GPLv3, while a separate commercial edition with additional features
 may be offered under proprietary terms.
+
+### The manuscript is always free
+
+Open core draws a line through a project. This is where Skribisto's line runs, and it does not
+move: everything you need to write a book stays under the GPL, permanently.
+
+- **Writing is community-edition work.** Creating, editing, opening, saving and exporting a
+  manuscript, in every format Skribisto supports, belongs to the free edition.
+- **Your project stays readable.** The `.skrib` bundle format stays open and documented, and a
+  project touched by a commercial edition remains readable, editable and exportable by the
+  community edition.
+- **Nothing is taken back.** No feature that has shipped in the community edition will ever be
+  moved out of it.
+- **No key, no server, no permission.** Skribisto will never require a licence key, an
+  activation step or a network connection to open or edit your own work.
+
+A commercial edition adds capability *around* the manuscript, and services that genuinely need
+a server to exist at all. It will never stand between you and your book.
 
 ## Contributing
 
