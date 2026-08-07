@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-"""Drive a live Skribisto via the bastyde automation MCP bridge and assert that
+"""Drive a live Skribisto via the teksilo automation MCP bridge and assert that
 the project given on the command line actually loaded.
 
 Launches `skribisto <project>` (debug, with the automation bridge), reads the
-bridge socket + token from its stderr, connects `bastyde-automation-mcp
+bridge socket + token from its stderr, connects `teksilo-automation-mcp
 --connect`, performs the MCP handshake, then *polls* the AccessKit tree until the
 loaded work's content appears (the launch-load is driven by a backend event that
 takes a few UI-thread ticks to reflect — a single early snapshot is stale).
@@ -15,7 +15,7 @@ Saves a screenshot of the settled state to /tmp/sk-auto-shot.png.
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 # Resolve to an absolute path — the launched app resolves a relative path against
 # its own working directory, which is not this script's.
 PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else
@@ -49,7 +49,7 @@ deadline = time.time() + 20
 while time.time() < deadline:
     txt = open(log).read()
     s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s and t:
         sock, tok = s.group(1), t.group(1)
         break

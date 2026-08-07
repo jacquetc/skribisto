@@ -1,0 +1,736 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+//! Reactive, ordered list of the rows belonging to one **container** — the data
+//! behind the Full Chapter / Full Part / Full Book streams and their Full Synopsis
+//! twins.
+//!
+//! Per the writing model, a container's extent is a run of the flat, ordered,
+//! *activated* item stream: everything after the container head, up to the first
+//! item that closes it. What closes it depends on the container's **level** — a
+//! chapter ends at the next chapter/part/book boundary, a part ends only at the
+//! next part/book (chapters live *inside* it), a book ends only at the next book or
+//! at a `BookEnd`. Inside that extent, a **row** is any item that carries scene
+//! prose or opens a chapter or a part; notes, plain folders, `Item/Text` and
+//! `Item/BookEnd` are not rows. All the predicates come from
+//! [`skribisto_model::SubRoleExt`] (single source of truth); folder nesting /
+//! `indent` is deliberately ignored — containment is UI-only.
+//!
+//! The container **head is never a row**: it is the pane header, and its own
+//! content (a chapter folder's prose, any container's synopsis) is rendered as the
+//! pane's own section. Only folder containers host a stream ([`StreamLevel::for_container`]),
+//! so the head is always a `Folder` — which matters, because a chapter folder now
+//! `carries_scene()` just like the flat `Item/ChapterScene` it promotes to.
+//!
+//! Owns a [`teksilo::data::ListModel<StreamRow>`] for the `Repeater`, updated by a
+//! **keyed diff** (remove / insert / move / in-place update) so the reconciling
+//! `Repeater` reuses each row's mounted editor across structural edits. Two
+//! `#[cfg]`-gated `mod imp` variants share one public surface (see
+//! [`crate::models`]).
+
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+// The stream-folding primitives now live in `skribisto_model::compile` (one definition,
+// shared with the backend exporter). Re-exported so this module's public surface and its
+// callers (`view_models::stream`, `tabs::shared::stream`) are unchanged. Under `mocks` the
+// real `imp` (the only `row_indices` caller) is cfg'd out, so allow the unused re-export
+// there — exactly as the lifted functions carried `allow(dead_code)` before.
+#[cfg_attr(feature = "mocks", allow(unused_imports))]
+pub use skribisto_model::compile::{StreamLevel, row_indices};
+
+/// One row in a stream. Carries the full `(role, sub_role)` — the view needs it to
+/// pick the row's chrome (part heading / chapter heading / scene header) and to ask
+/// the constraint matrix which editors the row gets; the view-model needs it to gate
+/// merge and split.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct StreamRow {
+    pub item_id: u64,
+    pub role: BinderItemRole,
+    pub sub_role: BinderItemSubRole,
+    /// The chapter/part ordinal this row carries in the book, or `None` for a scene.
+    ///
+    /// The stream is the manuscript as it reads, so this is the closest thing in the app
+    /// to the exported heading — and it is computed by the same function the exporter
+    /// calls, over the same whole-manuscript stream, so the two agree by construction.
+    pub number: Option<usize>,
+    /// What to call this row when it has no title of its own — "Chapter 3", localized.
+    /// See `crate::models::label_and_badge` for the rule; `title` stays the writer's own
+    /// string, because that is what renames seed from and what search matches.
+    pub fallback_label: Option<String>,
+}
+
+#[cfg(not(feature = "mocks"))]
+mod imp {
+    use std::cell::RefCell;
+    use std::collections::HashSet;
+    use std::rc::Rc;
+
+    use teksilo::data::ListModel;
+    use teksilo::prelude::*;
+
+    use frontend::AppContext;
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::common::direct_access::binder::BinderRelationshipField;
+    use frontend::common::direct_access::work::WorkRelationshipField;
+    use frontend::common::entities::BinderItemSubRole;
+    use frontend::common::event::{
+        BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event, Origin,
+        TrashManagementEvent, WorkManagementEvent,
+    };
+
+    use super::{StreamLevel, StreamRow, row_indices};
+
+    /// Called with the ids of rows that left the stream, so the owner can release
+    /// their shared documents. Stored (not one-shot) — it fires from every refresh.
+    type OnRemoved = Box<dyn Fn(&[u64])>;
+
+    struct Inner {
+        model: ListModel<StreamRow>,
+        ctx: Rc<AppContext>,
+        work_id: Signal<Option<u64>>,
+        head_id: u64,
+        level: StreamLevel,
+        on_removed: RefCell<Option<OnRemoved>>,
+    }
+
+    #[derive(Clone)]
+    pub struct StreamRowsModel {
+        inner: Rc<Inner>,
+    }
+
+    impl StreamRowsModel {
+        /// `level` is resolved once by the caller (via [`StreamLevel::for_container`]),
+        /// so this model stays a total function over a container its caller already
+        /// validated.
+        pub fn new(
+            ctx: Rc<AppContext>,
+            work_id: Signal<Option<u64>>,
+            head_id: u64,
+            level: StreamLevel,
+        ) -> Self {
+            Self {
+                inner: Rc::new(Inner {
+                    model: ListModel::new(),
+                    ctx,
+                    work_id,
+                    head_id,
+                    level,
+                    on_removed: RefCell::new(None),
+                }),
+            }
+        }
+
+        /// The `Repeater`'s data source.
+        pub fn list(&self) -> ListModel<StreamRow> {
+            self.inner.model.clone()
+        }
+
+        /// Current ordered rows — for the view-model's synchronous prev/next gating
+        /// (merge/split), which needs `(role, sub_role)` and not just ids.
+        pub fn rows(&self) -> Vec<StreamRow> {
+            let m = &self.inner.model;
+            (0..m.len())
+                .filter_map(|i| m.with_item(i, |r| r.clone()))
+                .collect()
+        }
+
+        /// Current ordered row ids.
+        pub fn ids(&self) -> Vec<u64> {
+            self.rows().into_iter().map(|r| r.item_id).collect()
+        }
+
+        /// Subscribe once to structural events and do an initial fill. `on_removed`
+        /// is invoked (from this and every later refresh) with the ids that left the
+        /// stream, so the owner can release their shared documents.
+        ///
+        /// **`on_removed` must not capture its owner strongly.** It is stored for the
+        /// model's lifetime, and the model is itself owned by that owner — an `Rc`
+        /// capture would close a cycle, the owner's `Drop` would never run, and every
+        /// document the stream ever opened would leak. `StreamViewModel::wire` passes
+        /// a `Weak`-capturing closure.
+        ///
+        /// Rename (`BinderItem::Updated`) is intentionally NOT watched — titles are
+        /// reactive on the per-row single, so a rename must not disturb the list.
+        /// `Promote` *is* watched: it rewrites a row's `(role, sub_role)` in place,
+        /// which `reconcile` turns into an in-place `set`.
+        pub fn wire(&self, ctx: &mut BuildContext, on_removed: impl Fn(&[u64]) + 'static) {
+            *self.inner.on_removed.borrow_mut() = Some(Box::new(on_removed));
+            // Subscribe on **every** build. `BuildContext::subscribe_event` scopes a
+            // subscription to the widget's current build and drops it on the next one, so
+            // a "subscribe once" guard would make this model go deaf the first time its
+            // host widget rebuilt. Re-subscribing cannot duplicate: the old callbacks are
+            // already gone.
+            {
+                use DirectAccessEntity::BinderItem;
+                use EntityEvent::{Created, Removed, Updated};
+                let origins = [
+                    Origin::DirectAccess(BinderItem(Created)),
+                    Origin::DirectAccess(BinderItem(Removed)),
+                    // A `Work` update carries the numbering settings — flipping them in
+                    // Settings changes every ordinal badge here, and nothing else here
+                    // would notice.
+                    Origin::DirectAccess(DirectAccessEntity::Work(Updated)),
+                    Origin::BinderItemManagement(BinderItemManagementEvent::Duplicate),
+                    Origin::BinderItemManagement(BinderItemManagementEvent::MoveItems),
+                    Origin::BinderItemManagement(BinderItemManagementEvent::MergeTwoScenes),
+                    Origin::BinderItemManagement(BinderItemManagementEvent::SplitScene),
+                    Origin::BinderItemManagement(BinderItemManagementEvent::Promote),
+                    Origin::TrashManagement(TrashManagementEvent::TrashBinderItems),
+                    Origin::TrashManagement(TrashManagementEvent::RestoreItems),
+                    Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
+                ];
+                for origin in origins {
+                    let me = self.clone();
+                    ctx.subscribe_event(origin, move |_event: &Event| me.refresh());
+                }
+                // Project (re)load — guarded (loose form): `refresh` always
+                // re-derives from this model's own `work_id`, so a sibling Work's
+                // Load/New would only cost a harmless, still-correct re-derive;
+                // guarded anyway so opening a second Work doesn't force a wasted
+                // rebuild of every other open window's stream.
+                for wev in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
+                    let me = self.clone();
+                    let work_id = self.inner.work_id.clone();
+                    ctx.subscribe_event(Origin::WorkManagement(wev), move |event: &Event| {
+                        let mine = work_id.get();
+                        if mine.is_none() || event.ids.first() == mine.as_ref() {
+                            me.refresh();
+                        }
+                    });
+                }
+            }
+            self.refresh();
+        }
+
+        fn refresh(&self) {
+            let next = query(
+                &self.inner.ctx,
+                self.inner.work_id.get(),
+                self.inner.head_id,
+                self.inner.level,
+            );
+            let removed = reconcile(&self.inner.model, next);
+            if !removed.is_empty() {
+                // Take the callback out of the RefCell before invoking it: it calls
+                // back into the owner, which may re-enter this model.
+                let cb = self.inner.on_removed.borrow_mut().take();
+                if let Some(cb) = cb {
+                    cb(&removed);
+                    *self.inner.on_removed.borrow_mut() = Some(cb);
+                }
+            }
+        }
+    }
+
+    /// The container's ordered rows, per the extent + row rules.
+    fn query(
+        ctx: &AppContext,
+        work_id: Option<u64>,
+        head_id: u64,
+        level: StreamLevel,
+    ) -> Vec<StreamRow> {
+        let Some(work_id) = work_id else {
+            return Vec::new();
+        };
+        let binder_ids_all =
+            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
+                .unwrap_or_default();
+        for binder_id in binder_ids_all.iter() {
+            let item_ids = binder_commands::get_binder_relationship(
+                ctx,
+                binder_id,
+                &BinderRelationshipField::BinderItems,
+            )
+            .unwrap_or_default();
+            let flat: Vec<_> = binder_item_commands::get_binder_item_multi(ctx, &item_ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .filter(|it| it.activated)
+                .collect();
+            if let Some(pos) = flat.iter().position(|it| it.id == head_id) {
+                let sub_roles: Vec<BinderItemSubRole> =
+                    flat.iter().map(|it| it.sub_role.clone()).collect();
+                // Numbered over the **whole Work**, not this binder — `flat` above is one
+                // binder's rows, and a manuscript whose chapters span two binders would
+                // otherwise restart at one here while the outline and the exported file
+                // (both numbered over the concatenated stream) kept counting. Same rule,
+                // one source: `crate::models::numbers_for_items`.
+                let numbers = {
+                    let mut all = Vec::new();
+                    for bid in &binder_ids_all {
+                        let ids = binder_commands::get_binder_relationship(
+                            ctx,
+                            bid,
+                            &BinderRelationshipField::BinderItems,
+                        )
+                        .unwrap_or_default();
+                        let by_id: std::collections::HashMap<u64, _> =
+                            binder_item_commands::get_binder_item_multi(ctx, &ids)
+                                .unwrap_or_default()
+                                .into_iter()
+                                .flatten()
+                                .map(|it| (it.id, it))
+                                .collect();
+                        all.extend(ids.into_iter().filter_map(|id| by_id.get(&id).cloned()));
+                    }
+                    crate::models::numbers_for_items(ctx, work_id, &all)
+                };
+                let work_langs = crate::models::work_language_tags(ctx, work_id);
+                return row_indices(&sub_roles, pos, level)
+                    .into_iter()
+                    .map(|i| StreamRow {
+                        item_id: flat[i].id,
+                        role: flat[i].role.clone(),
+                        sub_role: flat[i].sub_role.clone(),
+                        number: numbers
+                            .get(&flat[i].id)
+                            .map(skribisto_model::numbering::Numbered::number),
+                        fallback_label: crate::models::fallback_label_for(
+                            &flat[i],
+                            numbers.get(&flat[i].id),
+                            &work_langs,
+                        ),
+                    })
+                    .collect();
+            }
+        }
+        Vec::new()
+    }
+
+    /// Apply `next` onto `model` with the fewest granular ops (remove / insert /
+    /// move / in-place set), so the reconciling `Repeater` keeps surviving rows'
+    /// editors. Returns the ids that left the stream.
+    ///
+    /// **Requires `next` to carry unique `item_id`s.** `query()` derives rows
+    /// straight from the store's unique `BinderItem` ids, so this holds today —
+    /// but nothing enforces it structurally. The alignment loop below relies on
+    /// it: each `next` position is expected to claim a distinct slot in `cur`,
+    /// and a duplicate id would claim the same slot twice, leaving `cur` one
+    /// element short of what a later `pos` needs. Neither `Vec::insert` nor
+    /// `ListModel::move_item` clamp an out-of-bounds target — they panic — so
+    /// this is asserted here and clamped defensively below.
+    fn reconcile(model: &ListModel<StreamRow>, next: Vec<StreamRow>) -> Vec<u64> {
+        debug_assert!(
+            next.iter().map(|r| r.item_id).collect::<HashSet<_>>().len() == next.len(),
+            "reconcile(): `next` contains a duplicate item_id — StreamRowsModel \
+             assumes one row per BinderItem; a duplicate drives the alignment \
+             loop's target index past `cur`'s length (a release-mode panic in \
+             Vec::insert/ListModel::move_item, clamped away below only as a \
+             last resort so it degrades to a wrong-order row instead)"
+        );
+
+        let mut cur: Vec<StreamRow> = (0..model.len())
+            .filter_map(|i| model.with_item(i, |r| r.clone()))
+            .collect();
+
+        // 1. Drop rows no longer present (back-to-front to keep indices stable).
+        let keep: HashSet<u64> = next.iter().map(|r| r.item_id).collect();
+        let mut removed = Vec::new();
+        let mut i = cur.len();
+        while i > 0 {
+            i -= 1;
+            if !keep.contains(&cur[i].item_id) {
+                removed.push(cur[i].item_id);
+                model.remove(i);
+                cur.remove(i);
+            }
+        }
+
+        // 2. Align the survivors to `next`'s order, insert new ids, and update in
+        //    place any row whose *type* changed under it — a Promote rewrites
+        //    `(role, sub_role)` without moving the item, and the row's chrome and
+        //    its allowed editors both depend on it.
+        for (pos, want) in next.iter().enumerate() {
+            match cur.iter().position(|r| r.item_id == want.item_id) {
+                Some(j) => {
+                    // In the unique-id case `j != pos` always implies `pos <
+                    // cur.len()`: `cur[0..pos]` already matches `next[0..pos]`
+                    // (everything before `pos` was placed by an earlier
+                    // iteration), so anything still findable by `position()`
+                    // sits at or past `pos`, well inside `cur`. A duplicate
+                    // `item_id` breaks that — the earlier occurrence already
+                    // claimed this row at some index `< pos`, so it turns up
+                    // again here with nowhere new reserved for it. Clamp to
+                    // the last valid slot instead of handing `move_item` /
+                    // `insert` an out-of-bounds target: the duplicate's
+                    // content still lands (last write wins), just possibly at
+                    // the wrong position rather than crashing the app.
+                    let target = if j != pos {
+                        let to = pos.min(cur.len().saturating_sub(1));
+                        model.move_item(j, to);
+                        let it = cur.remove(j);
+                        cur.insert(to, it);
+                        to
+                    } else {
+                        pos
+                    };
+                    if cur[target] != *want {
+                        model.set(target, want.clone());
+                        cur[target] = want.clone();
+                    }
+                }
+                None => {
+                    // Same clamp, mirrored: a prior duplicate can already have
+                    // consumed budget this brand-new id expected, running
+                    // `pos` past `cur`'s current length.
+                    let target = pos.min(cur.len());
+                    model.insert(target, want.clone());
+                    cur.insert(target, want.clone());
+                }
+            }
+        }
+        removed
+    }
+
+    #[cfg(test)]
+    mod reconcile_tests {
+        use super::*;
+        use frontend::common::entities::BinderItemRole;
+
+        fn row(item_id: u64) -> StreamRow {
+            StreamRow {
+                item_id,
+                role: BinderItemRole::Item,
+                sub_role: BinderItemSubRole::Scene,
+                number: None,
+                fallback_label: None,
+            }
+        }
+
+        fn ids(model: &ListModel<StreamRow>) -> Vec<u64> {
+            (0..model.len())
+                .filter_map(|i| model.with_item(i, |r| r.item_id))
+                .collect()
+        }
+
+        /// `debug_assert!` fires before the clamp fallback ever runs, so a
+        /// plain `cargo test` (which builds with `debug_assertions = true`)
+        /// can only observe the *debug* half of this contract: a duplicate
+        /// `item_id` must panic loudly here, not silently corrupt the
+        /// stream. The companion test below — gated the other way — proves
+        /// the *release* half (the clamp itself never panics) using the
+        /// exact shape the panic audit found: a duplicate appearing twice
+        /// in `next`, starting from a fresh (empty) model.
+        #[cfg(debug_assertions)]
+        #[test]
+        #[should_panic(expected = "duplicate item_id")]
+        fn duplicate_item_id_trips_the_debug_assert() {
+            let model: ListModel<StreamRow> = ListModel::new();
+            let _ = reconcile(&model, vec![row(1), row(1)]);
+        }
+
+        /// Release builds compile the debug_assert above out entirely, so
+        /// this is the path the audited panic actually reached in
+        /// production: `model.move_item`/`cur.insert` handed an
+        /// out-of-bounds target by the second `id=1` row. Only compiled for
+        /// a build *without* debug assertions (`cargo test --release`) —
+        /// under the default dev profile the debug_assert above already
+        /// covers this input, and would fire first.
+        #[cfg(not(debug_assertions))]
+        #[test]
+        fn duplicate_item_id_does_not_panic_in_release() {
+            let model: ListModel<StreamRow> = ListModel::new();
+            let removed = reconcile(&model, vec![row(1), row(1)]);
+            assert!(removed.is_empty());
+            // Both duplicate entries collapse onto the one physical row the
+            // model has room for — a wrong count, not a crash.
+            assert_eq!(model.len(), 1);
+        }
+
+        /// Same release-only fallback, but for the `None` branch: a
+        /// duplicate earlier in `next` consumes a `cur` slot a later,
+        /// genuinely-new id was counting on, so *its* insert target
+        /// overshoots `cur`'s length too.
+        #[cfg(not(debug_assertions))]
+        #[test]
+        fn duplicate_before_a_new_id_does_not_panic_in_release() {
+            let model = ListModel::from_vec(vec![row(1)]);
+            let removed = reconcile(&model, vec![row(1), row(1), row(99)]);
+            assert!(removed.is_empty());
+            // The new id (99) still makes it into the model somewhere.
+            assert!(ids(&model).contains(&99));
+        }
+
+        /// Sanity check on the ordinary, non-duplicate path: unaffected by
+        /// the clamp, since `pos` never needs clamping when ids are unique.
+        /// Runs under every profile.
+        #[test]
+        fn unique_ids_reorder_without_clamping() {
+            let model = ListModel::from_vec(vec![row(1), row(2), row(3)]);
+            let removed = reconcile(&model, vec![row(3), row(1), row(2)]);
+            assert!(removed.is_empty());
+            assert_eq!(ids(&model), vec![3, 1, 2]);
+        }
+    }
+}
+
+#[cfg(feature = "mocks")]
+mod imp {
+    use std::rc::Rc;
+
+    use teksilo::data::ListModel;
+    use teksilo::prelude::*;
+
+    use frontend::AppContext;
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+
+    use super::{StreamLevel, StreamRow};
+
+    #[derive(Clone)]
+    pub struct StreamRowsModel {
+        model: ListModel<StreamRow>,
+    }
+
+    /// Fabricated rows matching the mock binder fixture in
+    /// `singles::SingleBinderItem`: the mock Book (101) holds a Part (301) with two
+    /// chapters — a chapter folder (104) holding scenes 201-203, and a flat
+    /// `Item/ChapterScene` (302) followed by scene 303.
+    fn mock_rows(level: StreamLevel) -> Vec<StreamRow> {
+        use BinderItemRole::{Folder, Item};
+        use BinderItemSubRole::{ChapterScene, Part, Scene};
+        let row = |item_id: u64, role, sub_role| StreamRow {
+            item_id,
+            role,
+            sub_role,
+            // Every fixture row is titled, so none needs the fallback.
+            fallback_label: None,
+            // The fixture book's chapter ordinals, in step with the mock binder tree.
+            number: match item_id {
+                301 => Some(1), // Part One
+                104 => Some(1), // the first chapter
+                302 => Some(2),
+                105 => Some(3),
+                _ => None,
+            },
+        };
+        match level {
+            // A chapter streams only its own scenes.
+            StreamLevel::Chapter => vec![
+                row(201, Item, Scene),
+                row(202, Item, Scene),
+                row(203, Item, Scene),
+            ],
+            // A part streams its chapters' heads *and* their scenes.
+            StreamLevel::Part => vec![
+                row(104, Folder, ChapterScene),
+                row(201, Item, Scene),
+                row(202, Item, Scene),
+                row(203, Item, Scene),
+                row(302, Item, ChapterScene),
+                row(303, Item, Scene),
+            ],
+            // A book adds the part heads on top.
+            StreamLevel::Book => vec![
+                row(301, Folder, Part),
+                row(104, Folder, ChapterScene),
+                row(201, Item, Scene),
+                row(202, Item, Scene),
+                row(203, Item, Scene),
+                row(302, Item, ChapterScene),
+                row(303, Item, Scene),
+            ],
+        }
+    }
+
+    impl StreamRowsModel {
+        pub fn new(
+            _ctx: Rc<AppContext>,
+            _work_id: Signal<Option<u64>>,
+            _head_id: u64,
+            level: StreamLevel,
+        ) -> Self {
+            Self {
+                model: ListModel::from_vec(mock_rows(level)),
+            }
+        }
+
+        pub fn list(&self) -> ListModel<StreamRow> {
+            self.model.clone()
+        }
+
+        pub fn rows(&self) -> Vec<StreamRow> {
+            let m = &self.model;
+            (0..m.len())
+                .filter_map(|i| m.with_item(i, |r| r.clone()))
+                .collect()
+        }
+
+        pub fn ids(&self) -> Vec<u64> {
+            self.rows().into_iter().map(|r| r.item_id).collect()
+        }
+
+        pub fn wire(&self, _ctx: &mut BuildContext, _on_removed: impl Fn(&[u64]) + 'static) {}
+    }
+}
+
+pub use imp::StreamRowsModel;
+
+#[cfg(test)]
+mod tests {
+    use super::{StreamLevel, row_indices};
+    use frontend::common::entities::BinderItemRole;
+    use frontend::common::entities::BinderItemSubRole::*;
+
+    /// The original Full Chapter rule. The head is the pane header, never a row —
+    /// which is now load-bearing: a chapter folder `carries_scene()` like any scene,
+    /// so without the head-skip a `Folder/ChapterScene` head would list itself.
+    #[test]
+    fn boundary_rule() {
+        let chapter = |s: &[_], h| row_indices(s, h, StreamLevel::Chapter);
+        // A Note between scenes is skipped (not scene-bearing, not a boundary); the
+        // run stops at the next chapter.
+        assert_eq!(
+            chapter(&[ChapterScene, Scene, Note, Scene, ChapterScene, Scene], 0),
+            vec![1, 3]
+        );
+        // Text carries no content — neither scene nor boundary.
+        assert_eq!(chapter(&[ChapterScene, Text, Scene], 0), vec![2]);
+        // BookBegin / BookEnd are boundaries.
+        assert_eq!(chapter(&[ChapterScene, Scene, BookEnd, Scene], 0), vec![1]);
+        // Runs to the end of the stream when no boundary follows.
+        assert_eq!(chapter(&[ChapterScene, Scene, Scene], 0), vec![1, 2]);
+        // The head is never a row, even though it carries scene prose.
+        assert_eq!(
+            chapter(&[ChapterScene, Part, Scene], 0),
+            Vec::<usize>::new()
+        );
+    }
+
+    /// A part does not end at a chapter — it contains them, heads and scenes alike.
+    #[test]
+    fn part_stream_contains_its_chapters_heads_and_their_scenes() {
+        assert_eq!(
+            row_indices(
+                &[
+                    Part,
+                    ChapterScene,
+                    Scene,
+                    Scene,
+                    ChapterScene,
+                    Scene,
+                    Part,
+                    Scene
+                ],
+                0,
+                StreamLevel::Part
+            ),
+            vec![1, 2, 3, 4, 5],
+            "stops at the next Part, keeps both chapter heads"
+        );
+    }
+
+    /// A book contains parts, chapters and scenes.
+    #[test]
+    fn book_stream_contains_parts_chapters_and_scenes() {
+        assert_eq!(
+            row_indices(
+                &[
+                    Book,
+                    Part,
+                    ChapterScene,
+                    Scene,
+                    Scene,
+                    Part,
+                    ChapterScene,
+                    Scene
+                ],
+                0,
+                StreamLevel::Book
+            ),
+            vec![1, 2, 3, 4, 5, 6, 7],
+            "a part no longer ends a book stream"
+        );
+    }
+
+    #[test]
+    fn book_end_terminates_a_book_stream() {
+        assert_eq!(
+            row_indices(
+                &[Book, ChapterScene, Scene, BookEnd, Scene],
+                0,
+                StreamLevel::Book
+            ),
+            vec![1, 2]
+        );
+    }
+
+    /// Both encodings of "a new book starts here" close the previous one.
+    #[test]
+    fn a_second_book_terminates_the_first() {
+        assert_eq!(
+            row_indices(
+                &[Book, ChapterScene, Scene, Book, Scene],
+                0,
+                StreamLevel::Book
+            ),
+            vec![1, 2]
+        );
+        assert_eq!(
+            row_indices(
+                &[Book, ChapterScene, Scene, BookBegin, Scene],
+                0,
+                StreamLevel::Book
+            ),
+            vec![1, 2]
+        );
+    }
+
+    /// Notes and plain folders are organisational, not manuscript — skipped, but they
+    /// do not close the run.
+    #[test]
+    fn notes_and_folders_are_skipped_not_boundaries() {
+        assert_eq!(
+            row_indices(
+                &[Part, Scene, Note, None, Scene, Part],
+                0,
+                StreamLevel::Part
+            ),
+            vec![1, 4]
+        );
+    }
+
+    #[test]
+    fn degenerate_extents() {
+        assert_eq!(
+            row_indices(&[Part, Scene, Scene], 0, StreamLevel::Part),
+            vec![1, 2]
+        );
+        assert_eq!(
+            row_indices(&[Part, Part, Scene], 0, StreamLevel::Part),
+            Vec::<usize>::new(),
+            "an empty part yields no rows"
+        );
+        assert_eq!(
+            row_indices(&[ChapterScene], 0, StreamLevel::Chapter),
+            Vec::<usize>::new()
+        );
+    }
+
+    /// Only the folder containers host a stream — the flat chapter/book markers keep
+    /// their own tabs.
+    #[test]
+    fn only_folder_containers_have_a_level() {
+        use BinderItemRole::{Folder, Item};
+        assert_eq!(
+            StreamLevel::for_container(&Folder, &ChapterScene),
+            Some(StreamLevel::Chapter)
+        );
+        assert_eq!(
+            StreamLevel::for_container(&Folder, &Part),
+            Some(StreamLevel::Part)
+        );
+        assert_eq!(
+            StreamLevel::for_container(&Folder, &Book),
+            Some(StreamLevel::Book)
+        );
+        // The flat chapter is *not* a container: it keeps its dual-pane editor.
+        assert_eq!(
+            StreamLevel::for_container(&Item, &ChapterScene),
+            Option::None
+        );
+        assert_eq!(StreamLevel::for_container(&Item, &BookBegin), Option::None);
+        assert_eq!(StreamLevel::for_container(&Item, &Scene), Option::None);
+        assert_eq!(StreamLevel::for_container(&Folder, &Note), Option::None);
+        assert_eq!(StreamLevel::for_container(&Folder, &None), Option::None);
+    }
+}

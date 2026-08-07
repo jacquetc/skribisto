@@ -1,4 +1,4 @@
-; Inno Setup script for the Rust + Bastyde Skribisto.
+; Inno Setup script for the Rust + Teksilo Skribisto.
 ;
 ; The Rust app is a single self-contained skribisto.exe — no Qt DLLs, no
 ; sqldrivers, no OpenSSL (rustls), no windeployqt. CI builds the exe with

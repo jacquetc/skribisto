@@ -1,5 +1,5 @@
 {
-  "name": "Skribisto (Rust + Bastyde)",
+  "name": "Skribisto (Rust + Teksilo)",
   "build": {
     "dockerfile": "Dockerfile"
   },

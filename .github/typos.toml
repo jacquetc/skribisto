@@ -24,13 +24,13 @@ extend-exclude = [
     # Vector artwork / icon path data — not prose.
     "*.svg",
     # Non-English UI translations (the en-US/ locale stays spell-checked).
-    "crates/bastyde_ui/locales/fr-FR/*.ftl",
+    "crates/teksilo_ui/locales/fr-FR/*.ftl",
     # Third-party licence texts, shipped verbatim with the bundled
     # dictionaries. Their wording is not ours to correct.
-    "crates/bastyde_ui/assets/dictionaries/licenses/*",
+    "crates/teksilo_ui/assets/dictionaries/licenses/*",
     # The dictionary registry names each language and its variants **in that
     # language** ("variantes", "Deutsch"), which is the whole point of it.
-    "crates/bastyde_ui/assets/dictionaries/registry.ron",
+    "crates/teksilo_ui/assets/dictionaries/registry.ron",
     # Paratext presets ship in the language they set text in — a German novel's
     # preset says "Autor", and translating it would break the preset.
     "resources/paratext/*.toml",

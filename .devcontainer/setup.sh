@@ -18,27 +18,27 @@ print_info "Toolchain:"
 echo "  $(rustc --version)"
 echo "  $(cargo --version)"
 
-# bastyde is a sibling path dependency; without it nothing in the workspace
+# teksilo is a sibling path dependency; without it nothing in the workspace
 # resolves, so fail loudly rather than let `cargo build` produce a confusing
 # "failed to load manifest" much later.
-if [ -d /workspaces/bastyde ]; then
-    print_status "bastyde found at /workspaces/bastyde"
+if [ -d /workspaces/teksilo ]; then
+    print_status "teksilo found at /workspaces/teksilo"
 else
-    print_warning "bastyde NOT found at /workspaces/bastyde"
+    print_warning "teksilo NOT found at /workspaces/teksilo"
     echo "    Skribisto depends on it through a path dependency. Clone it next to"
     echo "    skribisto on the host and rebuild the container:"
-    echo "        git clone https://github.com/ferntech-eu/bastyde"
+    echo "        git clone https://github.com/ferntech-eu/teksilo"
 fi
 
 print_info "Warming the dependency cache (cargo fetch)..."
 if cargo fetch --locked; then
     print_status "Dependencies fetched"
 else
-    print_warning "cargo fetch failed — check the bastyde checkout above"
+    print_warning "cargo fetch failed — check the teksilo checkout above"
 fi
 
 echo
 print_info "Build and run with:"
-echo "    cargo build -p bastyde_ui"
-echo "    cargo run   -p bastyde_ui"
+echo "    cargo build -p teksilo_ui"
+echo "    cargo run   -p teksilo_ui"
 echo "    cargo test"

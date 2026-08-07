@@ -2,12 +2,12 @@
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 name: "Strip external path dependencies"
-description: "Remove ../ (external sibling) path attributes from every crate manifest so bastyde* / text-document resolve from crates.io, leaving internal workspace paths intact"
+description: "Remove ../ (external sibling) path attributes from every crate manifest so teksilo* / text-document resolve from crates.io, leaving internal workspace paths intact"
 
-# Unlike bastyde's own action (which only edits the root Cargo.toml, because
-# bastyde declares its external siblings in [workspace.dependencies]), Skribisto
-# declares its external sibling deps — `bastyde`, `bastyde-charts`,
-# `bastyde-text`, `text-document` — in the LEAF crate manifests. So this sweeps
+# Unlike teksilo's own action (which only edits the root Cargo.toml, because
+# teksilo declares its external siblings in [workspace.dependencies]), Skribisto
+# declares its external sibling deps — `teksilo`, `teksilo-charts`,
+# `teksilo-text`, `text-document` — in the LEAF crate manifests. So this sweeps
 # every crate manifest.
 #
 # Only path attrs whose value starts with `..` (external siblings, one directory
@@ -31,4 +31,4 @@ runs:
           rm -f "$f.bak"
         done
         echo "External sibling deps after strip (must show a version=, no path=):"
-        grep -rnE '^(bastyde|bastyde-charts|bastyde-text|text-document) =' crates/*/Cargo.toml || true
+        grep -rnE '^(teksilo|teksilo-charts|teksilo-text|text-document) =' crates/*/Cargo.toml || true

@@ -21,7 +21,7 @@ import base64, json, os, re, select, subprocess, sys, tempfile, time
 import pathlib
 _ROOT = pathlib.Path(__file__).resolve().parent.parent  # this repo/worktree root
 SKRIBISTO = str(_ROOT / "target/debug/skribisto")
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 EXAMPLE = str(_ROOT / "resources/examples/Starforgers.skrib")
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 
@@ -47,7 +47,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if s and t:
                 sock, tok = s.group(1), t.group(1)
                 break

@@ -168,7 +168,7 @@ def config_pins_file(pins, label="pins"):
 
     The validating half of the pair with `isolated_config`. Passing the returned
     path as `skribisto --config <path>` makes the app check every key against its
-    schema (`crates/bastyde_ui/src/settings_keys.rs`) before it starts, and exit
+    schema (`crates/teksilo_ui/src/settings_keys.rs`) before it starts, and exit
     non-zero naming the offender — with its nearest legal neighbour — on an
     unknown key or a value of the wrong type, rather than silently ignoring a
     typo'd pin.

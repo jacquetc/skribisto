@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-"""Drive a live Skribisto via the bastyde automation MCP bridge and verify that
+"""Drive a live Skribisto via the teksilo automation MCP bridge and verify that
 tag presets apply, translate, dedupe, and (attempt to) undo in one step.
 
-`crates/bastyde_ui/src/tags/presets.rs` builds every preset row IN CODE,
+`crates/teksilo_ui/src/tags/presets.rs` builds every preset row IN CODE,
 through `tr!()`, so a French project gets French tag names ("personnage",
 "lieu", "statut/brouillon", ...) rather than an English wordlist imported
 once at authoring time. presets.rs and models/work_tags_list_model.rs already
@@ -37,7 +37,7 @@ Asserts (every expected string/count is read from `presets.rs` and both
 
 Item 5, "ONE Ctrl+Z reverts the entire preset apply": the backend guarantee is
 real (`import_tags_uc.rs` pushes one `UndoRedoCommand` per call), but nothing
-in `bastyde_ui` binds `Ctrl+Z` at the app level (zero `KeyStroke::ctrl(Key::Z)`
+in `teksilo_ui` binds `Ctrl+Z` at the app level (zero `KeyStroke::ctrl(Key::Z)`
 registrations), and the preset-apply toasts in `work_tags.rs` carry no
 `.action(...)` the way `trash.rs`'s does — so there is no UI path to that
 undo yet. This probe sends Ctrl+Z anyway (focus moved off every text field
@@ -61,7 +61,7 @@ import time
 
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import (  # noqa: E402
     SCRATCH,
@@ -99,7 +99,7 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name
 # The app follows the SYSTEM locale, which on this machine is FRENCH. Every
 # user-visible string this probe matches on is a tuple of (english, french)
 # spellings, with a comment naming the ftl key it came from
-# (crates/bastyde_ui/locales/{en-US,fr-FR}/{main,tags}.ftl) — all read in
+# (crates/teksilo_ui/locales/{en-US,fr-FR}/{main,tags}.ftl) — all read in
 # full, not guessed.
 WELCOME_NAV = "welcome sections"  # panels/welcome.rs: access_label_literal("Welcome sections") — not tr!, same in both locales
 NEW_WORK_BTN = ("new work", "nouvelle œuvre", "nouvelle oeuvre")  # welcome-new-work
@@ -176,7 +176,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if a and b:
                 sock, tok = a.group(1), b.group(1)
                 break
@@ -504,7 +504,7 @@ def search_page(s, target):
 def select_page(s, target, anchor_node, steps=14):
     """Select a rail page by walking to it (keyboard) from a visible anchor
     row — a row far enough down the rail lies below the scroll viewport, so a
-    pointer click at its reported bounds lands on empty chrome. `bastyde`
+    pointer click at its reported bounds lands on empty chrome. `teksilo`
     scrolls the focused row into view on arrow-key navigation, so: click a
     row that IS visible to seed focus, then step. Tries both directions since
     `anchor_node`'s position relative to the target is not known ahead of time.
@@ -897,7 +897,7 @@ s.shot("/tmp/tag-presets-scifi.png")
 # ── 5. Ctrl+Z — KNOWN GAP, see the module docstring ──────────────────────────
 print("\n== 5. ONE Ctrl+Z reverting the preset apply — KNOWN GAP ==")
 print(
-    "  Not asserted pass/fail: bastyde_ui registers zero KeyStroke::ctrl(Key::Z)\n"
+    "  Not asserted pass/fail: teksilo_ui registers zero KeyStroke::ctrl(Key::Z)\n"
     "  anywhere, and docks/search_replace_flow.rs's own module doc says outright\n"
     "  that app-level undo is not wired to any keystroke. work_tags.rs's two\n"
     "  preset-apply toasts carry no .action(...), unlike trash.rs and\n"

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-"""Exercise the *drive* side of the bastyde automation MCP against a live
+"""Exercise the *drive* side of the teksilo automation MCP against a live
 Skribisto: load a work, then open a binder item by invoking its AT action (and,
 as a fallback, a synthetic pointer click), and verify an editor tab appears.
 
@@ -12,7 +12,7 @@ like an MCP bug or gap.
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else
     "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib")
 TARGET = "Prologue"   # binder item to open
@@ -44,7 +44,7 @@ sock = tok = None
 end = time.time() + 20
 while time.time() < end:
     txt = open(log).read()
-    s = re.search(r"bridge socket = (\S+)", txt); t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    s = re.search(r"bridge socket = (\S+)", txt); t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s and t:
         sock, tok = s.group(1), t.group(1); break
     if app.poll() is not None:

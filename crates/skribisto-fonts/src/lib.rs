@@ -14,7 +14,7 @@
 //!
 //! Each accessor returns the bytes of a bundled font (`include_bytes!`, so they're
 //! embedded in the binary — no runtime file I/O). Every family here is OFL-1.1; the licence
-//! texts live beside the app's other font licences in `bastyde_ui/assets/fonts/`.
+//! texts live beside the app's other font licences in `teksilo_ui/assets/fonts/`.
 //!
 //! The three Latin families are variable fonts; Amiri — the Arabic book face — ships as
 //! static upright and italic, which is all upstream publishes.

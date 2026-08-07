@@ -198,7 +198,7 @@ fn sample_inputs() -> SampleInputs {
             id: 21,
             created_at: now,
             updated_at: now,
-            word: "Bastyde".into(),
+            word: "Teksilo".into(),
         },
     ];
 

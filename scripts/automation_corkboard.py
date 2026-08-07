@@ -34,7 +34,7 @@ SKRIBISTO = os.environ.get(
     "SKRIBISTO_BIN",
     os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                  "target", "debug", "skribisto"))
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 OUT = os.environ.get("SHOT_DIR", "/tmp")
 PANE_X = 300
 
@@ -62,7 +62,7 @@ end = time.time() + 25
 while time.time() < end:
     txt = open(log).read()
     s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s and t:
         sock, tok = s.group(1), t.group(1)
         break
@@ -352,7 +352,7 @@ searches = [n for n in all_widgets()
 if not searches:
     failures.append("Corkboard chrome: no filter box")
 else:
-    # Same bastyde gap `automation_overview_segment.py` documents: a SearchField
+    # Same teksilo gap `automation_overview_segment.py` documents: a SearchField
     # publishes no AT name and no actions, so the *typing* cannot be driven from
     # here. The filter's behaviour is pinned headlessly instead
     # (`models::corkboard_cards_model::filter_tests`).

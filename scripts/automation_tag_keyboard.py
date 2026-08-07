@@ -38,7 +38,7 @@ roving-tabindex containers, and three controls in this probe live inside one:
   * `TreeView` (the binder, and the Settings rail) is ONE Tab stop
     (`tree_view/widget_impl.rs:185`); arrow keys move an internal cursor.
     AccessKit selection for a row lives on a SEPARATE ANCESTOR node —
-    `TreeItemWrapper` (`bastyde-widgets/src/list_item_a11y.rs`) — not on the
+    `TreeItemWrapper` (`teksilo-widgets/src/list_item_a11y.rs`) — not on the
     label-bearing content node a text search finds first. Reading `selected`
     straight off the node matched by label is a silent no-op: it is always
     `None`. (`automation_tags.py`'s own `page_reached()` carries exactly this
@@ -49,7 +49,7 @@ roving-tabindex containers, and three controls in this probe live inside one:
   * `MenuList` (the hamburger's File menu) is worse: it tracks which row is
     keyboard-highlighted with a plain `Signal<Option<usize>>` and paints a
     background wash from it (`KeyboardHighlightWrapper`,
-    `bastyde-widgets/src/menu_list.rs:127-165`) — that wrapper has NO
+    `teksilo-widgets/src/menu_list.rs:127-165`) — that wrapper has NO
     `accessibility()` override at all, and `MenuItem::accessibility()`
     (`menu_item.rs:1360-1435`) never calls `set_selected` either. There is
     **no AccessKit signal, anywhere, for "which File-menu row is currently
@@ -84,7 +84,7 @@ import time
 
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import wait_for_load, working_copy
 
@@ -96,8 +96,8 @@ FIXTURE = working_copy(f"{ROOT}/resources/test/skribisto_test_project.skrib", "k
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name
 
 # ── Every user-visible string, both locales, keyed to its ftl entry ─────────
-# (verified directly against crates/bastyde_ui/locales/{en-US,fr-FR}/*.ftl and
-# bastyde/crates/bastyde-widgets/locales/*.ftl — see file:line citations below)
+# (verified directly against crates/teksilo_ui/locales/{en-US,fr-FR}/*.ftl and
+# teksilo/crates/teksilo-widgets/locales/*.ftl — see file:line citations below)
 ITEM = "1.1 Zeus"                      # fixture data, not localized
 CHAPTER1 = "Chapter 1"                 # fixture data, not localized
 LEGACY_TAGS = {"A", "B", "very looooooooooong tag"}   # fixture data
@@ -142,7 +142,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if a and b:
                 sock, tok = a.group(1), b.group(1)
                 break

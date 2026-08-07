@@ -1,4 +1,4 @@
-# Flatpak manifest for the Rust + Bastyde Skribisto.
+# Flatpak manifest for the Rust + Teksilo Skribisto.
 #
 # This is the canonical manifest used by CI (.github/workflows/release.yml) and
 # by local `flatpak-builder` runs. It builds the `skribisto` binary from the
@@ -7,7 +7,7 @@
 # IMPORTANT — offline cargo vendoring: flatpak-builder's module build has NO
 # network. Before building, `cargo-sources.json` must exist next to this file
 # (the vendored crate registry) AND the checkout's Cargo.toml must have its
-# external `../` path deps stripped so bastyde*/text-document resolve from
+# external `../` path deps stripped so teksilo*/text-document resolve from
 # crates.io. Both are produced by `package/flatpak/gen-cargo-sources.sh`, which
 # CI runs before flatpak-builder. See that script's header for the exact recipe.
 app-id: eu.skribisto.skribisto
@@ -49,7 +49,7 @@ modules:
     build-commands:
       # The checkout is already path-stripped by gen-cargo-sources.sh; build
       # fully offline from the vendored registry.
-      - cargo --offline build --release -p bastyde_ui --features pdf
+      - cargo --offline build --release -p teksilo_ui --features pdf
       - install -Dm755 target/release/skribisto /app/bin/skribisto
       - install -Dm644 eu.skribisto.skribisto.metainfo.xml /app/share/metainfo/eu.skribisto.skribisto.metainfo.xml
       - install -Dm644 resources/unix/applications/eu.skribisto.skribisto.desktop /app/share/applications/eu.skribisto.skribisto.desktop

@@ -3,11 +3,11 @@
 #
 # WHY: flatpak-builder builds with no network, so every crate must be vendored.
 # flatpak-cargo-generator.py turns a Cargo.lock into a Flatpak `sources` list.
-# But our committed Cargo.lock resolves the external siblings (bastyde*,
+# But our committed Cargo.lock resolves the external siblings (teksilo*,
 # text-document) from LOCAL PATHS, which cannot be vendored from crates.io. So we
 # first strip the `../` path attrs (leaving each dep's `version =`) and
 # regenerate the lockfile so those deps re-resolve from crates.io, THEN vendor.
-# This is why bastyde*/bastyde-charts/text-document must be published (see the
+# This is why teksilo*/teksilo-charts/text-document must be published (see the
 # migration plan's prerequisites P1/P2) before this script can succeed.
 #
 # This MODIFIES Cargo.toml (strip) and Cargo.lock (regenerate) IN PLACE. In CI
@@ -27,7 +27,7 @@ GEN_URL="https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/${FBT_R
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-echo "==> Stripping external ../ path deps (bastyde*/text-document -> crates.io)"
+echo "==> Stripping external ../ path deps (teksilo*/text-document -> crates.io)"
 shopt -s nullglob
 for f in Cargo.toml crates/*/Cargo.toml; do
   sed -i.bak -E \

@@ -11,7 +11,7 @@ runs in the *next* layout pass, destroys the row the popover had just focused,
 and `revalidate_interaction_state` then dropped focus to `None`. The menu came
 up with nothing focused: no arrow keys, no Enter.
 
-Fixed in bastyde (`widget_tree`): a rebuild that destroys the focused widget now
+Fixed in teksilo (`widget_tree`): a rebuild that destroys the focused widget now
 re-enters the subtree that owned focus, after layout, instead of dumping focus.
 
 This drives the real app to prove it: open the switcher, and assert an element
@@ -21,7 +21,7 @@ confirm focus is still in the popover (i.e. the menu is really keyboard-live).
 import base64, json, os, re, shutil, subprocess, sys, tempfile, time
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
 
 sandbox = tempfile.mkdtemp(prefix="skribisto_switcher_focus_")
@@ -46,7 +46,7 @@ end = time.time() + 25
 while time.time() < end:
     t = open(log).read()
     s = re.search(r"bridge socket = (\S+)", t)
-    k = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", t)
+    k = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
     if s and k:
         sock, tok = s.group(1), k.group(1)
         break

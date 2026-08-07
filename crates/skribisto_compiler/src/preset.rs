@@ -7,7 +7,7 @@
 //! the typography fields; DOCX/PDF honour them).
 //!
 //! Presets are the user's stable data: built-ins live in [`builtin_presets`] (read-only),
-//! user presets are persisted by `bastyde_ui`, and both round-trip as JSON for
+//! user presets are persisted by `teksilo_ui`, and both round-trip as JSON for
 //! import/export.
 
 use serde::{Deserialize, Serialize};

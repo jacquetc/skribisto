@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-"""Drive a live Skribisto via the bastyde automation MCP bridge and verify the
+"""Drive a live Skribisto via the teksilo automation MCP bridge and verify the
 tags feature end-to-end, against a *legacy* project.
 
 The fixture is chosen deliberately. `resources/test/skribisto_test_project.skrib`
@@ -58,7 +58,7 @@ import time
 
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 # A throwaway copy, never the checked-in fixture — this probe saves.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import working_copy
@@ -102,7 +102,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if s and t:
                 sock, tok = s.group(1), t.group(1)
                 break
@@ -235,7 +235,7 @@ if not s.wait_label("chapter", timeout=20):
 # without the feature and run again.
 if s.wait_label("mock", timeout=1):
     fail("this is a `--features mocks` build serving fixture data, not the legacy "
-         "project — rebuild with `cargo build -p bastyde_ui` and re-run",
+         "project — rebuild with `cargo build -p teksilo_ui` and re-run",
          s.app, s.mcp, s.log)
 print("legacy project loaded.")
 
@@ -407,7 +407,7 @@ def select_page(target, anchor="keymap", steps=14, anchor_node=None):
     there, so the click lands on empty chrome and the pane never changes — the
     failure looks exactly like a wrong selector.
 
-    Keyboard navigation sidesteps it entirely, because bastyde scrolls the
+    Keyboard navigation sidesteps it entirely, because teksilo scrolls the
     focused row into view (`scroll_focused_into_view`). So: click a row that
     *is* visible to put focus in the tree, then step until we arrive, letting
     the tree do the scrolling.
@@ -780,7 +780,7 @@ print("\n== tag pill tooltip ==")
 # node carries its text in `value`, and which of the two a pill uses is an
 # implementation detail this probe should not be pinned to.
 LONG_TAG = "very looooooooooong tag"
-# Either role is correct for a removable pill and bastyde reports ListBoxOption
+# Either role is correct for a removable pill and teksilo reports ListBoxOption
 # in a pill row; pinning one spelling of it tests the framework, not the feature.
 PILL_ROLES = ("ListItem", "ListBoxOption")
 pill = next((n for n in s.nodes()

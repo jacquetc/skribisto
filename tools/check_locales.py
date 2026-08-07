@@ -69,10 +69,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-DEFAULT_LOCALES_DIR = "crates/bastyde_ui/locales"
+DEFAULT_LOCALES_DIR = "crates/teksilo_ui/locales"
 DEFAULT_BASE_LOCALE = "en-US"
-DEFAULT_RUST_SRC = "crates/bastyde_ui/src"
-DEFAULT_LOADER = "crates/bastyde_ui/src/main.rs"
+DEFAULT_RUST_SRC = "crates/teksilo_ui/src"
+DEFAULT_LOADER = "crates/teksilo_ui/src/main.rs"
 
 # --- Fluent syntax -----------------------------------------------------------
 
@@ -100,7 +100,7 @@ TOOLTIP_LINK_RE = re.compile(r"\]\([ \t]*:([a-z][A-Za-z0-9_-]*)[ \t]*\)")
 # literal ampersand and is never a mnemonic.
 MNEMONIC_RE = re.compile(r"(?<!&)&(?!&)(?=\S)")
 # An unescaped literal ampersand (`&` followed by a space or end of string).
-# Harmless in prose, but bastyde's parse_mnemonic marks whatever character
+# Harmless in prose, but teksilo's parse_mnemonic marks whatever character
 # follows the `&` — including a space — so in a menu label this silently eats
 # the ampersand and binds a useless space mnemonic. Only flagged when the same
 # label also carries a real mnemonic, which makes it unambiguously a mistake.

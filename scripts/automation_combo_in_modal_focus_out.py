@@ -28,7 +28,7 @@ from automation_fixture import isolated_config, working_copy
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKRIBISTO = os.path.join(HERE, "target", "debug", "skribisto")
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 
 
@@ -57,7 +57,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if a and b:
                 sock, tok = a.group(1), b.group(1)
                 break

@@ -62,7 +62,7 @@ import time
 
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import wait_for_load, working_copy
 
@@ -76,7 +76,7 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name
 # Locale-tuple strings. The app follows the SYSTEM locale (French on this
 # machine); an English-only selector finds nothing and reports it exactly like
 # a real regression. Every string carries both spellings, commented with the
-# ftl key it came from (crates/bastyde_ui/locales/{en-US,fr-FR}/{main,tags}.ftl).
+# ftl key it came from (crates/teksilo_ui/locales/{en-US,fr-FR}/{main,tags}.ftl).
 # ─────────────────────────────────────────────────────────────────────────────
 SEC_WORK = ("work", "œuvre", "oeuvre")                       # settings-sec-work
 PAGE_TAGS = ("tags", "étiquettes")                            # settings-page-tags
@@ -159,7 +159,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if a and b:
                 sock, tok = a.group(1), b.group(1)
                 break
@@ -427,7 +427,7 @@ def page_reached(s, target):
 def select_page(s, target, anchor_node, steps=14):
     """Walk to a rail page by keyboard from an already-visible anchor row —
     pointer-clicking a row's reported bounds does not work for one laid out
-    below the scroll viewport (real bounds, nothing painted there); bastyde
+    below the scroll viewport (real bounds, nothing painted there); teksilo
     scrolls the *focused* row into view instead, so click the anchor to focus
     the tree, then step."""
     got = page_reached(s, target)

@@ -188,7 +188,7 @@ impl ImportDiagnostic {
 
     /// A stable identifier for the UI to key a translation on. Deliberately not
     /// the message itself: the sentence the writer reads is assembled in
-    /// `bastyde_ui` from this key plus the variant's own data, in their locale.
+    /// `teksilo_ui` from this key plus the variant's own data, in their locale.
     pub fn key(&self) -> &'static str {
         use ImportDiagnostic::*;
         match self {

@@ -31,7 +31,7 @@ from automation_fixture import isolated_config, working_copy
 
 SKRIBISTO = os.environ.get(
     "SKRIBISTO_BIN", "/home/cyril/Devel/skribisto/target/debug/skribisto")
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 OUT = "/tmp/format-empty-state"
 os.makedirs(OUT, exist_ok=True)
 
@@ -64,7 +64,7 @@ end = time.time() + 30
 while time.time() < end:
     txt = open(log).read()
     s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s_ and t_:
         sock, tok = s_.group(1), t_.group(1)
         break

@@ -92,18 +92,18 @@ jobs:
 
       # The app ships in two blessed configurations. `mocks` is a real alternate
       # `mod imp` (fabricated backend) with its own logic — it must be built AND
-      # tested, not merely `cargo check`ed. Scoped to `-p bastyde_ui` (the only
+      # tested, not merely `cargo check`ed. Scoped to `-p teksilo_ui` (the only
       # crate that declares the feature); never combine with `--workspace`.
       - name: Build (mocks)
-        run: cargo build -p bastyde_ui --features mocks --all-targets
+        run: cargo build -p teksilo_ui --features mocks --all-targets
 
       - name: Test (mocks)
-        run: cargo test -p bastyde_ui --features mocks
+        run: cargo test -p teksilo_ui --features mocks
 
       # clippy only lints the `#[cfg]` arm actually compiled, so the mock arm
       # needs its own lint pass or it silently rots.
       - name: Clippy (mocks)
-        run: cargo clippy -p bastyde_ui --features mocks --all-targets -- -D warnings -A deprecated
+        run: cargo clippy -p teksilo_ui --features mocks --all-targets -- -D warnings -A deprecated
 
   test-cross:
     name: Test (${{ matrix.name }})
@@ -151,13 +151,13 @@ jobs:
             cmd: cargo check --workspace --all-targets
           - name: release
             cmd: cargo check --workspace --all-targets --release
-          # mocks + pdf are bastyde_ui-only features → `-p`, not `--workspace`.
+          # mocks + pdf are teksilo_ui-only features → `-p`, not `--workspace`.
           - name: mocks
-            cmd: cargo check -p bastyde_ui --features mocks --all-targets
+            cmd: cargo check -p teksilo_ui --features mocks --all-targets
           # Catch a PDF-breaking change before a release build needs it. `pdf`
           # forwards to text-document's Typst exporter (heavier compile).
           - name: pdf
-            cmd: cargo check -p bastyde_ui --features pdf --all-targets
+            cmd: cargo check -p teksilo_ui --features pdf --all-targets
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

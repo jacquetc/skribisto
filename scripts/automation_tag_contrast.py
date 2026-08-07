@@ -59,7 +59,7 @@ import zlib
 
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import wait_for_load, working_copy
 
@@ -83,7 +83,7 @@ SETTINGS_DONE = ("done", "terminé")                                 # main.ftl 
 SEC_APPEARANCE_BEHAVIOUR = ("appearance & behaviour",
                              "apparence et comportement")           # `settings-sec-appearance-behaviour`
 PAGE_APPEARANCE = ("appearance", "apparence")                       # main.ftl `settings-page-appearance`
-# The accessible NAME on the Theme ComboBox itself comes from bastyde-widgets'
+# The accessible NAME on the Theme ComboBox itself comes from teksilo-widgets'
 # own bundle (`theme_switcher_label`, set in `ThemeSwitcher::build`), not the
 # app's `settings-field-app-theme` FormLayout label -- FormLayout field labels
 # are decorative, not AccessKit labels (automation_settings.py's own comment).
@@ -140,7 +140,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if a and b:
                 sock, tok = a.group(1), b.group(1)
                 break
@@ -689,7 +689,7 @@ def pil_cross_check(path, width, height, pixels):
         print(f"  Pillow cross-check errored ({e!r}) — non-fatal, manual decode is unaffected")
 
 
-# ── WCAG contrast math, re-implemented from bastyde-tokens/src/color.rs ────
+# ── WCAG contrast math, re-implemented from teksilo-tokens/src/color.rs ────
 
 def _linearize(c):
     c = c / 255.0

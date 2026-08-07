@@ -634,7 +634,7 @@ fn undoing_an_import_into_a_large_binder_stays_interactive() {
 /// This is not fixable here — the per-item events come out of the generated
 /// `direct_access` controllers, and an event that names one entity is what makes
 /// it useful to everything else that listens. **It is fixed on the reading side**
-/// instead: `bastyde_ui::models::coalesced_reload` collapses a burst into one
+/// instead: `teksilo_ui::models::coalesced_reload` collapses a burst into one
 /// reload per frame, for the binder tree, the trash tree and the Overview alike,
 /// so trash, restore, duplicate and move all stopped paying it too.
 ///

@@ -4,10 +4,10 @@
 
 """Phase 0.2 de-risking probe — **can an editable RichTextEditor live in a dock?**
 
-No editable widget exists inside any `DockWidget` in Skribisto or in bastyde's
+No editable widget exists inside any `DockWidget` in Skribisto or in teksilo's
 own examples: every dock so far is a tree, a list, or read-only text. A dock
 side's content is `visible_when`-parked while the side is collapsed
-(bastyde-widgets `docking.rs`), a path only ever exercised by non-focusable
+(teksilo-widgets `docking.rs`), a path only ever exercised by non-focusable
 content. The search feature's bottom preview depends on this working, so find
 out *now*, not after the preview is built on the assumption.
 
@@ -25,7 +25,7 @@ editor in the tree is the docked one):
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "/tmp/p02/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
@@ -49,7 +49,7 @@ deadline = time.time() + 25
 while time.time() < deadline:
     txt = open(log).read()
     s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s_ and t_:
         sock, tok = s_.group(1), t_.group(1)
         break

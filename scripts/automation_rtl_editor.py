@@ -17,7 +17,7 @@ that right depends entirely on the bidi algorithm auto-detecting it.
 import json, os, re, subprocess, sys, tempfile, time, base64
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 PROJECT = os.path.expanduser("~/test_ar.skrib")
 
 # "كتب الرجل رسالة طويلة" — "the man wrote a long letter".
@@ -54,7 +54,7 @@ end = time.time() + 30
 while time.time() < end:
     t = open(log).read()
     s = re.search(r"bridge socket = (\S+)", t)
-    k = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", t)
+    k = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
     if s and k:
         sock, tok = s.group(1), k.group(1)
         break

@@ -63,4 +63,4 @@ Other bundled content
 Spell-check dictionaries, thesauri and hyphenation data bundled with the application
 carry their own licences, reproduced in full at:
 
-    crates/bastyde_ui/assets/dictionaries/licenses/
+    crates/teksilo_ui/assets/dictionaries/licenses/

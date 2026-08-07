@@ -30,7 +30,7 @@ SKRIBISTO = os.environ.get(
     "SKRIBISTO_BIN",
     os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                  "target", "debug", "skribisto"))
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 OUT = os.environ.get("SHOT_DIR", "/tmp")
 PANE_X = 300
 
@@ -58,7 +58,7 @@ end = time.time() + 25
 while time.time() < end:
     txt = open(log).read()
     s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s and t:
         sock, tok = s.group(1), t.group(1)
         break
@@ -305,13 +305,13 @@ else:
 # `a_search_matching_nothing_empties_the_table` and `expanded_uids_ignore_the_search_reveal`.
 #
 # What CANNOT be driven from here is the typing itself, and that is a finding
-# rather than a limitation of this script: bastyde's `SearchField` publishes an
+# rather than a limitation of this script: teksilo's `SearchField` publishes an
 # a11y node with **no name and no actions** — `{role: SearchInput, label: null,
 # actions: null}`. So `type_text` (which focuses + sets through the AT surface)
 # no-ops, and `inject_key` is no help either because it maps a bare ASCII letter
 # to a *named* key (`Key::D`), not a character. A screen-reader user therefore
 # cannot identify or fill this box — nor can any other SearchField in the app
-# (Corkboard, binder). Worth fixing in bastyde; until then this check verifies
+# (Corkboard, binder). Worth fixing in teksilo; until then this check verifies
 # only that the box exists and takes focus, and says so instead of quietly
 # passing.
 print("\n=== search ===")
@@ -339,7 +339,7 @@ else:
         print("  search box present and focusable \u2713")
         if not at.get("label"):
             print("  SKIPPED typing: SearchField exposes no AT name/actions "
-                  "(bastyde gap, see the comment above) \u2014 search behaviour is "
+                  "(teksilo gap, see the comment above) \u2014 search behaviour is "
                   "covered by the headless model tests instead")
         shot("overview-search-focused")
 

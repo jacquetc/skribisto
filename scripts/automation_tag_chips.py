@@ -29,7 +29,7 @@ Plus the two interaction rules the design rests on:
   * clicking a dot opens the picker rather than doing nothing (whole-row click).
 
 The second is the load-bearing one. The dots deliberately carry no `on_tap`,
-because in bastyde a descendant tap handler captures the pointer on PointerDown
+because in teksilo a descendant tap handler captures the pointer on PointerDown
 and would swallow the row's own tap — so the press is left to bubble to the
 `Popover` trigger. If anyone ever gives a dot a handler, this run fails.
 
@@ -48,7 +48,7 @@ import time
 
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import working_copy
 
@@ -92,7 +92,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if s and t:
                 sock, tok = s.group(1), t.group(1)
                 break
@@ -206,7 +206,7 @@ while time.time() < deadline:
 else:
     fail("the fixture did not load", s.app, s.mcp, s.log)
 if any("mock" in (n.get("label") or "").lower() for n in s.nodes()):
-    fail("this is a `--features mocks` build — rebuild with `cargo build -p bastyde_ui`",
+    fail("this is a `--features mocks` build — rebuild with `cargo build -p teksilo_ui`",
          s.app, s.mcp, s.log)
 print("example loaded.")
 

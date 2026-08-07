@@ -396,7 +396,7 @@ mod tests {
     // remove reconciles the owner (Work.dict_words) — no dangling id — and
     // undo/redo round-trip the relationship. This settles that the personal
     // dictionary can use a plain `remove_dict_word`, no detach-then-remove
-    // composite (the `bastyde_ui` UserDictionaryViewModel relies on this).
+    // composite (the `teksilo_ui` UserDictionaryViewModel relies on this).
     // -----------------------------------------------------------------------
 
     #[test]

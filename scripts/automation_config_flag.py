@@ -33,7 +33,7 @@ from automation_fixture import (  # noqa: E402
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKRIBISTO = os.path.join(REPO, "target", "debug", "skribisto")
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 
 failures = []
 
@@ -185,7 +185,7 @@ deadline = time.time() + 60
 while time.time() < deadline:
     text = open(log).read()
     s = re.search(r"bridge socket = (\S+)", text)
-    t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", text)
+    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", text)
     if s and t:
         sock, tok = s.group(1), t.group(1)
         break

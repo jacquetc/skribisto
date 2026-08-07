@@ -11,7 +11,7 @@ Both buttons build a `FileDialogRequest` and hand it to
 (`org.freedesktop.portal.FileChooser` on this Linux/KDE session) belonging to
 a different process. Skribisto wires no test-only file-dialog backend, the
 automation bridge exposes no file-dialog tool, and `inject_key` only reaches
-the focused bastyde widget, not whatever window the compositor gives
+the focused teksilo widget, not whatever window the compositor gives
 keyboard focus to -- so this bridge cannot see, type into, or even dismiss
 that dialog. Clicking Import.../Export... here would pop a real,
 un-dismissable file-chooser window with no way to close it. So:
@@ -33,7 +33,7 @@ None of the plan's five CSV-round-trip assertions (write + parse the export,
 edit externally, re-import with a case-insensitive skip, 3 -> 5 -> one-undo
 -> 3) are exercised here; they cannot be, by any GUI-automation probe against
 this binary. That coverage instead lives in
-`crates/bastyde_ui/src/view_models/tags.rs::tests::csv_round_trips` and
+`crates/teksilo_ui/src/view_models/tags.rs::tests::csv_round_trips` and
 `::an_exported_file_is_readable_back_from_disk`, which drive the real
 `TagsViewModel` directly, bypassing only the dialog.
 
@@ -56,7 +56,7 @@ import time
 
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import wait_for_load, working_copy
 
@@ -116,7 +116,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if a and b:
                 sock, tok = a.group(1), b.group(1)
                 break
@@ -332,7 +332,7 @@ def select_page(s, target, anchor="keymap", steps=14, anchor_node=None):
 
     Pointer-clicking the target's reported bounds does not work for a row
     below the rail's scroll viewport -- its AT bounds are real but nothing is
-    painted there. Keyboard navigation sidesteps it: bastyde scrolls the
+    painted there. Keyboard navigation sidesteps it: teksilo scrolls the
     focused row into view, so click a visible row for focus, then step.
     """
     got = page_reached(s, target)
@@ -532,7 +532,7 @@ print("  plan assertion 5 (one Ctrl+Z reverts the whole import, back to 3):")
 print("    BLOCKED -- nothing was ever imported through the live app to undo.")
 print("  These are covered at the only reachable boundary -- TagsViewModel::")
 print("  export_to/import_from called directly, bypassing only the dialog --")
-print("  by crates/bastyde_ui/src/view_models/tags.rs::tests (csv_round_trips,")
+print("  by crates/teksilo_ui/src/view_models/tags.rs::tests (csv_round_trips,")
 print("  an_exported_file_is_readable_back_from_disk), and would need a new")
 print("  Rust-level test, not a Python probe, to cover the 3->5->undo->3 shape.")
 

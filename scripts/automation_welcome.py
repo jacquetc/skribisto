@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-"""Drive a live Skribisto via the bastyde automation MCP bridge and verify the
+"""Drive a live Skribisto via the teksilo automation MCP bridge and verify the
 **launcher-window** model end-to-end (the Welcome UI is a real window now, not
-a modal — see `bastyde_ui::main`'s module docs).
+a modal — see `teksilo_ui::main`'s module docs).
 
 Phase 1 (no CLI arg): a bare launch must open the **Launcher window**. Assert
 its nav tabs (Works / Examples / Learn / About) and the RECENT WORKS section
@@ -25,7 +25,7 @@ scaffolding from automation_test.py / automation_explore.py.
 import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
@@ -75,7 +75,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if s and t:
                 sock, tok = s.group(1), t.group(1)
                 break

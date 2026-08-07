@@ -7,7 +7,7 @@ Welcome list did: with no cursor yet, the first ArrowDown stepped to the SECOND
 row, silently skipping the first (`focused_index` was `None`, `unwrap_or(0)`
 made it read as row 0, and the key then stepped *past* it).
 
-Fixed in bastyde (`tree_view/widget_impl.rs`): "no cursor" is now distinct from
+Fixed in teksilo (`tree_view/widget_impl.rs`): "no cursor" is now distinct from
 "cursor on row 0", so the first Down lands ON the first row and the first Up on
 the last. This drives the real binder to prove it in the running app, not just
 in the framework's headless tests.
@@ -18,7 +18,7 @@ asserts the FIRST binder row is the selected one.
 import json, os, re, select, shutil, subprocess, sys, tempfile, time, base64
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
 
 sandbox = tempfile.mkdtemp(prefix="skribisto_binder_kbd_")
@@ -43,7 +43,7 @@ end = time.time() + 25
 while time.time() < end:
     t = open(log).read()
     s = re.search(r"bridge socket = (\S+)", t)
-    k = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", t)
+    k = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
     if s and k:
         sock, tok = s.group(1), k.group(1)
         break

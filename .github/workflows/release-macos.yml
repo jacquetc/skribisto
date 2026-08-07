@@ -30,7 +30,7 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   APP_NAME: skribisto
-  CARGO_PACKAGE: bastyde_ui
+  CARGO_PACKAGE: teksilo_ui
 
 jobs:
   macos-universal:

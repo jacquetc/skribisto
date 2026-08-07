@@ -8,7 +8,7 @@ Launches TWO live `skribisto` instances, each opening a DISTINCT project
 file, both sharing one sandboxed config/data directory (`XDG_CONFIG_HOME` /
 `XDG_DATA_HOME`, so this never touches the real user's `~/.config/skribisto` /
 `~/.local/share/skribisto`), and asserts against the cross-process-correct
-`bastyde-settings` layer:
+`teksilo-settings` layer:
 
 KNOWN GAP: since the single-instance election (spawn_new_process was
 removed), the second launch below hands off to the first instead of starting
@@ -46,7 +46,7 @@ Saves screenshots of both settled windows to /tmp/sk-two-proc-a.png and
 import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time, tomllib
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
 
 RESULTS = []  # (name, passed: bool, detail: str) — collected, not raised, so
@@ -74,7 +74,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if s and t:
                 sock, tok = s.group(1), t.group(1)
                 break
@@ -352,7 +352,7 @@ SHARED_ENV = {
     "XDG_DATA_HOME": data_dir,
     "HOME": sandbox,  # defensive: anything falling back to $HOME stays sandboxed too
 }
-# `bastyde_settings::AppPaths::new("eu", "skribisto", "Skribisto")` (via
+# `teksilo_settings::AppPaths::new("eu", "skribisto", "Skribisto")` (via
 # etcetera's XDG strategy) nests everything one level further, under an
 # app-named subdirectory of each XDG root (confirmed empirically: files land
 # at `$XDG_CONFIG_HOME/skribisto/*.toml` / `$XDG_DATA_HOME/skribisto/*.toml`,

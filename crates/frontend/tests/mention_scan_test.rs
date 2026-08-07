@@ -9,7 +9,7 @@
 //! ever wrote — even something as innocent as touching `updated_at` — the consequence is not
 //! a wrong roster, it is that **merely opening a project and typing marks it permanently
 //! unsaved**, autosave fires forever, and every scan lands an entry on the undo stack that
-//! the writer did not ask for and cannot explain. `bastyde_ui::app::mutation_origins()` turns
+//! the writer did not ask for and cannot explain. `teksilo_ui::app::mutation_origins()` turns
 //! any `DirectAccess` entity event into exactly that.
 //!
 //! `read_only: true`, `undoable: false` and `QueryUnitOfWork` express the intent, but none of

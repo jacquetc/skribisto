@@ -125,7 +125,7 @@ SKIP_PATH_PREFIXES: tuple[str, ...] = (
 # `.claude/` holds agent tooling (skill definitions, project instructions),
 # not licensable source. Its SKILL.md files open with YAML frontmatter that
 # must be the very first line, so a header inserted above it breaks parsing.
-# `assets/` covers per-crate bundled assets (e.g. crates/bastyde_ui/assets/).
+# `assets/` covers per-crate bundled assets (e.g. crates/teksilo_ui/assets/).
 SKIP_PATH_SUBSTRINGS: tuple[str, ...] = (
     "target/",
     "dist/",

@@ -8,11 +8,11 @@
 
 Skribisto used to wrap all 22 of its popover bodies in
 `FocusScope(TraversalScopePolicy::Cycle)`, enforced by a source-scanning lint,
-because bastyde let Tab walk straight out of an open popover and leave the panel
+because teksilo let Tab walk straight out of an open popover and leave the panel
 hanging over the focus ring behind it — WCAG 2.2 SC 2.4.11, Focus Not Obscured.
 
 Trapping was the wrong answer: a popover implements the Disclosure pattern,
-which mandates *no* focus containment. bastyde now dismisses any non-modal
+which mandates *no* focus containment. teksilo now dismisses any non-modal
 overlay the keyboard walks out of, so the wraps are gone. This drives the real
 app to prove the framework half actually reaches the app half — headless tests
 pin the framework, but only the live binary proves the popovers in *this* UI now
@@ -35,7 +35,7 @@ from automation_fixture import isolated_config, working_copy
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKRIBISTO = os.path.join(HERE, "target", "debug", "skribisto")
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 
 VERBOSE = os.environ.get("VERBOSE") == "1"
 
@@ -69,7 +69,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if a and b:
                 sock, tok = a.group(1), b.group(1)
                 break

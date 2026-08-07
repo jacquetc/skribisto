@@ -6,7 +6,7 @@
 //! text-document's PDF backend renders with ONLY the font bytes it is handed (no system-font
 //! search), so the compiler gathers the right set here: the preset's body serif, plus the
 //! bundled Noto RTL faces when the export contains right-to-left scenes. Bytes come from the
-//! shared [`skribisto_fonts`] crate (serifs) and [`bastyde_text`] (Noto) — the same blobs the
+//! shared [`skribisto_fonts`] crate (serifs) and [`teksilo_text`] (Noto) — the same blobs the
 //! editor shapes with, so an exported PDF matches what the writer saw on screen.
 
 use std::collections::BTreeSet;
@@ -34,8 +34,8 @@ pub fn pdf_font_bytes(preset: &Preset, langs: &BTreeSet<String>) -> Vec<Vec<u8>>
     if has_rtl {
         // Feed both RTL faces when any scene is RTL; Typst's fallback selects Arabic vs Hebrew
         // per glyph, which avoids guessing the script from a language tag.
-        fonts.push(bastyde_text::noto_sans_arabic_bytes().to_vec());
-        fonts.push(bastyde_text::noto_sans_hebrew_bytes().to_vec());
+        fonts.push(teksilo_text::noto_sans_arabic_bytes().to_vec());
+        fonts.push(teksilo_text::noto_sans_hebrew_bytes().to_vec());
     }
     fonts
 }

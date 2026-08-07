@@ -15,7 +15,7 @@ class in this codebase:
      took the app down on launch when the template rows landed.
   2. **The wizard mounts as a modal.** `ModalPresentation::InTree` from a title-bar
      overlay has its own history in this repo (a modal opened from a menu needed a
-     window-level presentation fix in bastyde).
+     window-level presentation fix in teksilo).
   3. **Both locales carry the new keys.** A missing `fr-FR` key falls back to `en-US`
      silently — the app looks fine and is simply in the wrong language. The French pass
      below asserts the wizard's own French chrome, not merely that it opened.
@@ -24,13 +24,13 @@ class in this codebase:
 
 The full drop -> review -> retype -> Import -> Undo loop. The automation bridge has no
 file-drop injection (its tool set is snapshot/inject_key/inject_pointer/invoke_action/
-set_value/... — see `bastyde-automation/src/mcp_schema.rs`), and both ways into the file
+set_value/... — see `teksilo-automation/src/mcp_schema.rs`), and both ways into the file
 list are a real drag-and-drop or a *native* file dialog, neither of which the bridge can
 synthesize. Driving "Browse..." would open a GTK/portal dialog this script cannot see.
 
 That loop is not untested, it is tested where it can be:
 
-  * `bastyde_ui::view_models::import_document::tests::a_real_analysis_lands_a_plan_on_the_review_step`
+  * `teksilo_ui::view_models::import_document::tests::a_real_analysis_lands_a_plan_on_the_review_step`
     runs two Markdown files on disk through the real `analyze_document_import` backend
     and asserts the plan, the indents, the level rules and the break count.
   * `skribisto-import-management`'s ANALYSE -> APPLY integration test asserts the store
@@ -47,7 +47,7 @@ sys.path.insert(0, str(_ROOT / "scripts"))
 import automation_fixture as fixture  # noqa: E402
 
 SKRIBISTO = str(_ROOT / "target/debug/skribisto")
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 EXAMPLE = str(_ROOT / "resources/examples/Starforgers.skrib")
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 
@@ -74,7 +74,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if s and t:
                 sock, tok = s.group(1), t.group(1)
                 break

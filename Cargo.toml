@@ -28,7 +28,7 @@ members = [
     "crates/skrib_format",
     "crates/skribisto_compiler",
     "crates/skribisto-fonts",
-    "crates/bastyde_ui",
+    "crates/teksilo_ui",
     ]
 
 resolver = "3"

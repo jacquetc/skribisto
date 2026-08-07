@@ -54,7 +54,7 @@ jobs:
 
       # Strips external path deps, regenerates Cargo.lock against crates.io, and
       # vendors every crate into package/flatpak/cargo-sources.json — everything
-      # the offline flatpak-builder step needs. Requires bastyde*/text-document
+      # the offline flatpak-builder step needs. Requires teksilo*/text-document
       # to be published (plan prerequisites P1/P2).
       - name: Vendor cargo dependencies for offline build
         run: ./package/flatpak/gen-cargo-sources.sh
@@ -117,7 +117,7 @@ jobs:
           "@ | Set-Content -Path .cargo/config.toml -Encoding utf8
 
       - name: Build release exe (pdf)
-        run: cargo build --release --target x86_64-pc-windows-msvc -p bastyde_ui --features pdf
+        run: cargo build --release --target x86_64-pc-windows-msvc -p teksilo_ui --features pdf
 
       - name: Compute version
         id: ver

@@ -5,7 +5,7 @@
 """Drive a live Skribisto and verify the leading rail's **Settings** action.
 
 The rail's icons are normally *activities* — a tab with a dock behind it. The
-Settings cog is the other thing that column can hold: a bastyde `DockAction`,
+Settings cog is the other thing that column can hold: a teksilo `DockAction`,
 a dockless command that opens no panel. It is pinned past the rail's spacer
 (the VS Code Manage-gear position) and fires the existing `app.settings` global
 action, so the rail button, Work ▸ Settings and Ctrl+, can never drift apart.
@@ -30,7 +30,7 @@ SKRIBISTO = os.environ.get(
     "SKRIBISTO_BIN",
     os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                  "target", "debug", "skribisto"))
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 RAIL_MAX_X = 56  # the leading rail strip is ~48 dp wide
 
 project = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else None
@@ -57,7 +57,7 @@ end = time.time() + 25
 while time.time() < end:
     txt = open(log).read()
     s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s and t:
         sock, tok = s.group(1), t.group(1)
         break

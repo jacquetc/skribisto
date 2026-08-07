@@ -50,7 +50,7 @@ pub mod analysis;
 /// and the three-tier re-anchor. Pure functions over plain text, on the same terms
 /// as `scene_break` and `mentions`.
 ///
-/// It lived in `bastyde_ui::comments` until the document importer needed to capture
+/// It lived in `teksilo_ui::comments` until the document importer needed to capture
 /// an anchor for an editor's comment coming out of a `.docx` or `.odt`. Capturing
 /// with a *copy* of these rules is how a stored quote and the matcher that resolves
 /// it silently drift apart — and this is the one module whose own doc says being
@@ -983,7 +983,7 @@ mod tests {
         );
     }
 
-    /// The matrix has exactly 14 rows, and `bastyde_ui` mirrors them 1:1 (one tab
+    /// The matrix has exactly 14 rows, and `teksilo_ui` mirrors them 1:1 (one tab
     /// module per combination — see `tabs::tab_pane`). Pinned so the docs and the tab
     /// dispatch can't silently drift from the model.
     #[test]

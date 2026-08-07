@@ -57,7 +57,7 @@
 //!
 //! [`number_map`](crate::footnote_numbering::number_map) is keyed by `(item_id, label)`, which is right for the count
 //! but wrong for a *marker*: a document draws one glyph per `[^label]`, and
-//! `bastyde::text_document::TextDocument::set_footnote_markers` (the call both
+//! `teksilo::text_document::TextDocument::set_footnote_markers` (the call both
 //! the editor and every exporter push their answer through) takes exactly one
 //! marker **per label**, with no way to say "citation from item 150 reads
 //! differently than citation from item 100." Something has to collapse the
@@ -382,7 +382,7 @@ pub type LabelHomes = HashMap<String, (u64, NumberedNote)>;
 /// rows, or not referenced by any eligible row at all) has no home here — there
 /// is no eligible entry to pick from, and a caller needing to place it anyway
 /// (the editor's dock still shows an unnumbered note) has to fall back to its own
-/// wider walk; see `bastyde_ui`'s `places()`.
+/// wider walk; see `teksilo_ui`'s `places()`.
 pub fn label_homes(numbered: &HashMap<(u64, String), NumberedNote>) -> LabelHomes {
     let mut homes: LabelHomes = HashMap::new();
     for ((item_id, label), note) in numbered {

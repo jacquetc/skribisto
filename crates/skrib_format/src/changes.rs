@@ -34,7 +34,7 @@
 //!
 //! **How much** a change moved is deliberately not answered here. A magnitude worth
 //! showing needs a real word diff, which needs the Djot parser and a diff library;
-//! it lives beside the diff itself, in `bastyde_ui::view_models::version_diff`, so
+//! it lives beside the diff itself, in `teksilo_ui::view_models::version_diff`, so
 //! there is exactly one definition of "how much changed" rather than a cheap one
 //! here and an accurate one there that quietly disagree.
 //!

@@ -20,7 +20,7 @@ the banner with Ctrl+F, and reports the shift.
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "/tmp/p02/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
@@ -44,7 +44,7 @@ deadline = time.time() + 25
 while time.time() < deadline:
     txt = open(log).read()
     s_ = re.search(r"bridge socket = (\S+)", txt)
-    t_ = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    t_ = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s_ and t_:
         sock, tok = s_.group(1), t_.group(1)
         break

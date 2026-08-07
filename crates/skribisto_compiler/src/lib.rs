@@ -14,7 +14,7 @@
 //! `skribisto_model::compile::resolve_scope` or the Choose… tree), and a [`Preset`] style,
 //! it assembles one document — localized headings + scene breaks around each scene's Djot —
 //! and renders it to the chosen [`ExportFormat`]. Shared by the backend `export_work` use
-//! case (commit) and `bastyde_ui` (client-side live preview), so neither reimplements the
+//! case (commit) and `teksilo_ui` (client-side live preview), so neither reimplements the
 //! compile.
 //!
 //! [`Gathered`]: skrib_format::Gathered

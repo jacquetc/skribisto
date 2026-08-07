@@ -51,7 +51,7 @@ SKRIBISTO = os.environ.get(
     "SKRIBISTO_BIN",
     os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                  "target", "debug", "skribisto"))
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 
 project = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else None
 log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
@@ -96,7 +96,7 @@ end = time.time() + 25
 while time.time() < end:
     txt = open(log).read()
     s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s and t:
         sock, tok = s.group(1), t.group(1)
         break

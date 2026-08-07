@@ -4,7 +4,7 @@
 
 """Editor tabs must stay wide enough to still name their document.
 
-bastyde's stock `min_tab_width` is 96 dp, which fits a chapter icon, five
+teksilo's stock `min_tab_width` is 96 dp, which fits a chapter icon, five
 characters and an ellipsis. In a writing project that is a strip of identical
 "Chap…" pills the moment half a dozen documents are open — the tab bar stops
 naming anything, which is its one job. `app.rs`'s `MIN_EDITOR_TAB_WIDTH` raises
@@ -22,10 +22,10 @@ laid out.
 import json, os, re, shutil, subprocess, sys, tempfile, time
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
 
-#: Keep in step with `MIN_EDITOR_TAB_WIDTH` in `crates/bastyde_ui/src/app.rs`.
+#: Keep in step with `MIN_EDITOR_TAB_WIDTH` in `crates/teksilo_ui/src/app.rs`.
 MIN_TAB_WIDTH = 160.0
 #: Documents opened in each pane. Distinct sets, so a tab's label says which
 #: pane it belongs to — the strips overflow and scroll, so x positions do not.
@@ -55,7 +55,7 @@ end = time.time() + 40
 while time.time() < end:
     t = open(log).read()
     s = re.search(r"bridge socket = (\S+)", t)
-    k = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", t)
+    k = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", t)
     if s and k:
         sock, tok = s.group(1), k.group(1)
         break
@@ -157,7 +157,7 @@ time.sleep(1.5)
 
 # `Role::Tab` is not enough on its own: the docking activity rails are tab
 # strips too ("Binder", "Search", "Inspector", …), and those are deliberately
-# 40 dp icon-only pills owned by bastyde's dock panel. Only the documents this
+# 40 dp icon-only pills owned by teksilo's dock panel. Only the documents this
 # probe opened are editor tabs.
 opened = set(MAIN_DOCS + SIDE_DOCS)
 tabs = {}

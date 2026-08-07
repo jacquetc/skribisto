@@ -5,7 +5,7 @@
 """Drive a live Skribisto and verify **which chrome distraction-free mode keeps**.
 
 The headless tests pin the pieces (`tab_bar_policy`, the strip's `VisibleWhen`
-gates, and — in bastyde — that a bound `TabBarVisibility` flips the strip in
+gates, and — in teksilo — that a bound `TabBarVisibility` flips the strip in
 place). What they cannot see is the assembled window: that entering the mode
 really does reach `TabWidget::bar_visibility`, and that the editor tab strip
 disappears while the Exit button stays.
@@ -24,7 +24,7 @@ import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
 # checkout — this feature was built in a worktree, which has its own `target/`.
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKRIBISTO = os.path.join(REPO, "target/debug/skribisto")
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 EXAMPLE = os.path.join(REPO, "resources/examples/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
@@ -51,7 +51,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if s and t:
                 sock, tok = s.group(1), t.group(1)
                 break
@@ -144,7 +144,7 @@ def click(s, n):
                                   "y": b["y"] + b.get("height", 0) / 2, "kind": "click"})
 
 
-# The window-control cluster's own a11y names, from bastyde-widgets'
+# The window-control cluster's own a11y names, from teksilo-widgets'
 # `a11y-window-*-name` keys. Matched exactly, not by substring: the strip's
 # "Exit distraction-free mode" and the split-pane "Close split" would both trip
 # a naive `"close" in label` test.

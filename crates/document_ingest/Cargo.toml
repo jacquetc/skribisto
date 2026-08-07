@@ -54,7 +54,7 @@ anyhow = { workspace = true }
 # imported.
 chrono = { workspace = true }
 # Byte-order-mark sniffing and never-panicking lossy decode. Already the
-# workspace's answer to "these bytes claim an encoding" (bastyde_ui's spellcheck
+# workspace's answer to "these bytes claim an encoding" (teksilo_ui's spellcheck
 # reads a Hunspell .aff's declared SET line with it).
 encoding_rs = "0.8"
 # The CommonMark parser. Its `into_offset_iter` is why the scanner owns its own

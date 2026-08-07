@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-"""Drive a live Skribisto via the bastyde automation MCP bridge and verify the
+"""Drive a live Skribisto via the teksilo automation MCP bridge and verify the
 Settings preferences window end-to-end.
 
 Launches with the bundled example loaded (a project path on argv skips the
-Launcher entirely under the launcher-window model — see `bastyde_ui::main`'s
+Launcher entirely under the launcher-window model — see `teksilo_ui::main`'s
 module docs), opens Settings (Ctrl+, with a menu fallback), then asserts:
 
   1. the category TreeView holds every section + page (Appearance & Behaviour,
@@ -41,7 +41,7 @@ target whose x depends on an indent level. See `settings_tree_rows`.
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
@@ -77,7 +77,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             s = re.search(r"bridge socket = (\S+)", txt)
-            t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if s and t:
                 sock, tok = s.group(1), t.group(1)
                 break
@@ -540,7 +540,7 @@ s.shot("/tmp/sk-settings-appearance.png")
 
 # ── 3b. Regression: selecting a ComboBox item must NOT close the window ──────
 # (The dropdown floats in a child overlay of the modal; a host-surface fix in
-# bastyde keeps the modal alive when the dropdown dismisses on select.) The
+# teksilo keeps the modal alive when the dropdown dismisses on select.) The
 # Theme control lives on this (Appearance) pane now — it moved off the old
 # Manuscript & Fonts page in the panel restructuring.
 theme_combo = None

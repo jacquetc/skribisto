@@ -69,7 +69,7 @@ import time
 
 ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
 SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import wait_for_load, working_copy
 
@@ -157,7 +157,7 @@ class Session:
         while time.time() < deadline:
             txt = open(self.log).read()
             a = re.search(r"bridge socket = (\S+)", txt)
-            b = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+            b = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
             if a and b:
                 sock, tok = a.group(1), b.group(1)
                 break
@@ -575,7 +575,7 @@ def create_tag(name):
              f"(typed into field id={field['id']})", s)
     # A synthesised pointer click, NOT `invoke_action(click)`: the Create row
     # is an `HStack` with `access_role(Role::Button)` but no AccessKit Click
-    # handler (bastyde only wires one for stock widgets), so `invoke_action`
+    # handler (teksilo only wires one for stock widgets), so `invoke_action`
     # would report success while doing nothing. The near-miss risk that
     # normally argues for `invoke_action` doesn't apply: the row is the full
     # width of the popover, with no neighbouring tag rows to miss into.
@@ -723,7 +723,7 @@ if not wait_for_load(s.nodes, ITEM):
     fail(f"the fixture did not load ({ITEM!r} not in the binder)", s)
 if any("mock" in (n.get("label") or "").lower() for n in s.nodes()):
     fail("this is a `--features mocks` build serving fixture data, not the real "
-         "project — rebuild with `cargo build -p bastyde_ui` and re-run", s)
+         "project — rebuild with `cargo build -p teksilo_ui` and re-run", s)
 print("project loaded.")
 
 if not open_item(ITEM):

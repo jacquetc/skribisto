@@ -25,7 +25,7 @@ language is persisted. Set SKRIBISTO_BIN to point at a worktree binary.
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
 SKRIBISTO = os.environ.get("SKRIBISTO_BIN", "/home/cyril/Devel/skribisto/target/debug/skribisto")
-MCP = "/home/cyril/Devel/bastyde/target/debug/bastyde-automation-mcp"
+MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 OUT = os.environ.get("SHOT_DIR", "/tmp")
 
 _here = os.path.dirname(os.path.abspath(__file__))
@@ -53,7 +53,7 @@ end = time.time() + 25
 while time.time() < end:
     txt = open(log).read()
     s = re.search(r"bridge socket = (\S+)", txt)
-    t = re.search(r"BASTYDE_AUTOMATION_TOKEN=(\S+)", txt)
+    t = re.search(r"TEKSILO_AUTOMATION_TOKEN=(\S+)", txt)
     if s and t:
         sock, tok = s.group(1), t.group(1)
         break

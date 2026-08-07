@@ -7,7 +7,7 @@
 //! manuscript never modifies it.**
 //!
 //! The reasoning is `mention_scan_test`'s, and applies here for the same reason: the Analysis
-//! view runs over a whole Book on demand, and `bastyde_ui::app::mutation_origins()` turns any
+//! view runs over a whole Book on demand, and `teksilo_ui::app::mutation_origins()` turns any
 //! `DirectAccess` entity event into "this project is unsaved". If a measurement ever wrote —
 //! even touching `updated_at` — then merely *looking at* the analysis would dirty the
 //! project, autosave forever, and leave undo entries the writer cannot explain.

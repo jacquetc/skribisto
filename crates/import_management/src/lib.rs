@@ -13,6 +13,6 @@ mod units_of_work;
 pub mod use_cases;
 
 pub use dtos::*;
-/// The canonical diagnostic → DTO mapping, exposed so `bastyde_ui`'s
+/// The canonical diagnostic → DTO mapping, exposed so `teksilo_ui`'s
 /// "every diagnostic reaches a translated sentence" test can drive the real one.
 pub use use_cases::analyze_document_import_uc::diagnostic_to_dto;
