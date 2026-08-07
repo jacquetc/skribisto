@@ -59,6 +59,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             6 => step_v6_to_v7(bundle),
             7 => step_v7_to_v8(bundle),
             8 => step_v8_to_v9(bundle),
+            9 => step_v9_to_v10(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -116,6 +117,22 @@ fn step_v7_to_v8(_bundle: &mut WorkBundle) {}
 /// words exist nowhere else: they were typed into the book. The floor turns that
 /// into a refusal to open, and only for projects that actually have notes.
 fn step_v8_to_v9(_bundle: &mut WorkBundle) {}
+
+/// v9 → v10 mints a durable `uid` for every note template that lacks one.
+///
+/// The same step [`step_v2_to_v3`] runs for binders and items, and for the same reason:
+/// until v10 a template's Djot blob was named after its `file_id`, an `EntityId` that
+/// `load_work` re-mints, so every reopen renamed every template file and `prune_dir`
+/// deleted the old names. Healing here rather than only at load keeps the rule where the
+/// format can see it — a bundle that has been through this chain is guaranteed to name
+/// its blobs by something that survives.
+///
+/// Idempotent, like its v3 counterpart: a template that already carries a uid keeps it.
+fn step_v9_to_v10(bundle: &mut WorkBundle) {
+    for t in &mut bundle.note_templates {
+        t.uid = common::uid::heal_uid(t.uid);
+    }
+}
 
 /// Mint a durable `uid` for every binder and item that lacks one.
 ///

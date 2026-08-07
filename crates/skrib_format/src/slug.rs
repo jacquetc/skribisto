@@ -190,10 +190,16 @@ pub const ASSETS_DIR: &str = "assets";
 ///
 /// `slugify` is what makes this safe for a name the writer typed: a template called
 /// `Fiche/perso` or `CON` or `..` still lands on a legal, non-escaping single path
-/// segment. The `file_id` prefix keeps two same-slug templates from colliding, exactly
+/// segment. The [`short_id`] prefix keeps two same-slug templates from colliding, exactly
 /// as it does for prose blobs.
-pub fn note_template_relpath(file_id: u64, name: &str) -> String {
-    format!("{TEMPLATES_DIR}/{file_id}-{}.djot", slugify(name))
+///
+/// **Keyed by `uid`, not by the row's `EntityId`.** It used to take a `file_id`, and that
+/// was the same bug the prose blobs had: `load_work` re-mints every `EntityId`, so the
+/// name changed on every reopen, `prune_dir` deleted the previous one, and a folder-shape
+/// project rewrote its entire `templates/` directory each session. A renamed template
+/// still renames its own blob — that is correct, and it is one file.
+pub fn note_template_relpath(uid: Uuid, name: &str) -> String {
+    format!("{TEMPLATES_DIR}/{}-{}.djot", short_id(uid), slugify(name))
 }
 
 #[cfg(test)]

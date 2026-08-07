@@ -343,11 +343,13 @@ pub fn from_entities(
             .iter()
             .map(|t| NoteTemplateFile {
                 file_id: t.id,
+                uid: t.uid,
                 created_at: fmt_dt(&t.created_at),
                 updated_at: fmt_dt(&t.updated_at),
                 name: t.name.clone(),
                 starred: t.starred,
-                path: note_template_relpath(t.id, &t.name),
+                // Named by the uid, never by `t.id` — see `note_template_relpath`.
+                path: note_template_relpath(t.uid, &t.name),
             })
             .collect(),
         note_template_bodies: note_templates
@@ -605,6 +607,12 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         .map(|t| {
             Ok(NoteTemplate {
                 id: t.file_id,
+                // Carried straight through. A nil uid here would name every template's
+                // blob the same thing on the next save; `migration::step_v9_to_v10` has
+                // already healed a pre-v10 bundle by the time this runs, and
+                // `load_work_uc::materialize` heals again for the legacy path that never
+                // builds a `WorkBundle` at all.
+                uid: t.uid,
                 created_at: parse_dt(&t.created_at)?,
                 updated_at: parse_dt(&t.updated_at)?,
                 name: t.name.clone(),

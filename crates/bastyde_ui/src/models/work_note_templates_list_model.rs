@@ -268,6 +268,11 @@ mod imp {
             let owner = owner_id?;
             let now = chrono::Utc::now();
             let dto = CreateNoteTemplateDto {
+                // Left nil on purpose: `note_template_controller::with_identity` mints one
+                // at the creation boundary, which is the single place that decides what a
+                // durable identity is. Minting here too would be a second answer to the
+                // same question.
+                uid: uuid::Uuid::nil(),
                 created_at: now,
                 updated_at: now,
                 name: name.trim().to_string(),
@@ -315,6 +320,11 @@ mod imp {
             };
             let dto = UpdateNoteTemplateDto {
                 id,
+                // Carried from the live entity, for the same reason `created_at` is: an
+                // update writes every scalar, so a nil here would blank the identity that
+                // names this template's file on disk. `with_identity` deliberately does
+                // not run on updates, so nothing downstream would put it back.
+                uid: existing.uid,
                 created_at: existing.created_at,
                 updated_at: chrono::Utc::now(),
                 name: name.trim().to_string(),

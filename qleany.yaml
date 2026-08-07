@@ -847,6 +847,13 @@ entities:
 - name: NoteTemplate
   inherits_from: EntityBase
   fields:
+  # A durable identity, for the same reason Binder and BinderItem carry one: the `.skrib`
+  # writes each template's body to `templates/<id>-<slug>.djot`, and an `EntityId` is
+  # re-minted on every `load_work`. Keyed by `id`, every template file was renamed on every
+  # reopen — the folder-shape project's whole `templates/` directory replaced in git, with
+  # `prune_dir` deleting the previous names. Keyed by `blake3(uid)[..8]` it is stable.
+  - name: uid
+    type: uuid
   - name: name
     type: string
   - name: body

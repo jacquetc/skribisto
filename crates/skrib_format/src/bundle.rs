@@ -71,6 +71,16 @@ use std::collections::BTreeMap;
 /// show — a footnote is text the writer wrote *into the book*, so losing it silently is
 /// exactly what the floor exists to prevent. Claimed only by projects that have one.
 ///
+/// v10 added `NoteTemplateFile.uid` — the v3 idea applied to the one remaining row whose
+/// on-disk blob was still named after an `EntityId`. Purely additive on read
+/// (`#[serde(default)]` + `step_v9_to_v10` mints the empties), and it gets **no floor
+/// arm**, deliberately: an older build that resaves a v10 bundle drops the uids, and the
+/// next save by a current build renames those blobs once. That is cosmetic churn in a
+/// diff, not a word of anyone's book — the opposite of the v8/v9 cases, where an older
+/// build's first save *deleted* images and footnotes outright. Refusing to open a project
+/// over a one-time rename would cost more than it saves. This mirrors v2 → v3, which
+/// added the binder uids on exactly the same reasoning and likewise claimed no floor.
+///
 /// # Before bumping this, answer one question
 ///
 /// *Does this change need an arm in
@@ -89,7 +99,7 @@ use std::collections::BTreeMap;
 /// A required field added without `#[serde(default)]` is the one shape that is *not*
 /// caught mechanically. It degrades to a raw parse error — never to data loss — but it
 /// degrades, so give every additive field its `default` and the question stays easy.
-pub const FORMAT_VERSION: u32 = 9;
+pub const FORMAT_VERSION: u32 = 10;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -414,7 +424,7 @@ pub struct AssetFile {
 
 /// One row of `templates.ron`.
 ///
-/// The body is **not** inline: it lives in a sibling `templates/<file_id>-<slug>.djot`
+/// The body is **not** inline: it lives in a sibling `templates/<short_id>-<slug>.djot`
 /// blob at `path`, exactly as a scene's prose does. Two reasons, both about the
 /// exploded-folder shape: a multi-paragraph Djot document inside a RON string is
 /// unreadable in a diff, and a writer who wants to hand-author a template should be
@@ -422,6 +432,16 @@ pub struct AssetFile {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NoteTemplateFile {
     pub file_id: u64,
+    /// Durable per-template identity (UUID v4), and what names the blob at `path`.
+    ///
+    /// `#[serde(default)]` so a pre-v10 bundle still deserializes (nil), with
+    /// `migration::step_v9_to_v10` filling it in — the same shape `BinderItemFile.uid`
+    /// uses. It exists because `file_id` is an `EntityId`, re-minted by every
+    /// `load_work`: keyed by that, the blob's name changed on every reopen and
+    /// `prune_dir` deleted the previous one, so an exploded-folder project rewrote its
+    /// whole `templates/` directory each time it was opened and saved.
+    #[serde(default)]
+    pub uid: uuid::Uuid,
     pub created_at: String,
     pub updated_at: String,
     pub name: String,

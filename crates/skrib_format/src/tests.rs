@@ -135,6 +135,7 @@ fn sample_inputs() -> SampleInputs {
     let note_templates = vec![
         common::entities::NoteTemplate {
             id: 40,
+            uid: common::uid::fixture_uid(40),
             created_at: now,
             updated_at: now,
             name: "Character sheet".into(),
@@ -143,6 +144,7 @@ fn sample_inputs() -> SampleInputs {
         },
         common::entities::NoteTemplate {
             id: 41,
+            uid: common::uid::fixture_uid(41),
             created_at: now,
             updated_at: now,
             name: "Location".into(),
@@ -1899,18 +1901,99 @@ fn a_malformed_language_names_what_was_expected() {
 // Note templates
 // ---------------------------------------------------------------------------
 
+/// Every template blob's path, sorted — the template counterpart of [`prose_paths`].
+fn template_paths(bundle: &WorkBundle) -> Vec<String> {
+    let mut paths: Vec<String> = bundle
+        .note_templates
+        .iter()
+        .map(|t| t.path.clone())
+        .collect();
+    paths.sort();
+    paths
+}
+
+/// The same bug [`reopening_a_project_renames_no_prose_file`] guards, one row type
+/// further down.
+///
+/// A template's blob used to be named after its `file_id`, and `load_work` re-mints
+/// every one of those. So closing a folder-shape project and reopening it renamed every
+/// template file on the next save, `prune_dir` deleted the old names, and git showed the
+/// whole `templates/` directory replaced. Simulated the same way: shift every entity id
+/// while keeping every `uid`, which is exactly what a reload does.
+#[test]
+fn reopening_a_project_renames_no_template_file() {
+    const RELOAD_SHIFT: u64 = 10_000;
+
+    let before = template_paths(&build_bundle(ShapeTag::Folder));
+    let after = template_paths(&build_bundle_with(ShapeTag::Folder, |s| {
+        for t in &mut s.note_templates {
+            t.id += RELOAD_SHIFT;
+        }
+        s.work.note_templates = s.note_templates.iter().map(|t| t.id).collect();
+    }));
+
+    assert_eq!(
+        before, after,
+        "a reload must not rename a single template file"
+    );
+    assert!(
+        !before.is_empty(),
+        "the fixture must contain templates to compare"
+    );
+}
+
+/// Two templates the writer happened to name the same thing still land on two files.
+///
+/// The slug alone cannot separate them — only the `short_id` prefix can — so this is the
+/// guard for the collision path the hash exists to make reliable.
+#[test]
+fn two_templates_with_the_same_name_do_not_collide() {
+    let bundle = build_bundle_with(ShapeTag::Folder, |s| {
+        let name = s.note_templates[0].name.clone();
+        s.note_templates[1].name = name;
+    });
+
+    let paths = template_paths(&bundle);
+    assert_eq!(paths.len(), 2, "the fixture must carry two templates");
+    assert_ne!(
+        paths[0], paths[1],
+        "two same-named templates must still be two files, got {paths:?}"
+    );
+}
+
+/// A bundle written before v10 carries no template uids. The migration mints them once,
+/// and re-running it never re-mints — a second mint would rename the blob again and undo
+/// the whole point of the field.
+#[test]
+fn a_template_with_no_uid_is_healed_once_and_never_again() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 9;
+    for t in &mut bundle.note_templates {
+        t.uid = uuid::Uuid::nil();
+    }
+
+    crate::migration::migrate_bundle(&mut bundle).unwrap();
+    let healed: Vec<uuid::Uuid> = bundle.note_templates.iter().map(|t| t.uid).collect();
+    assert!(
+        healed.iter().all(|u| !u.is_nil()),
+        "every template must come out of the migration with an identity"
+    );
+
+    bundle.manifest.format_version = 9;
+    crate::migration::migrate_bundle(&mut bundle).unwrap();
+    let again: Vec<uuid::Uuid> = bundle.note_templates.iter().map(|t| t.uid).collect();
+    assert_eq!(healed, again, "healing must be idempotent, never a re-mint");
+}
+
 /// The bodies live in `templates/`, not inline in `templates.ron` — the split that makes
 /// a template edit diff as a prose change in an exploded project.
 #[test]
 fn template_bodies_are_written_as_sibling_djot_blobs() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().join("p");
-    write_bundle(
-        root.to_str().unwrap(),
-        SkribShape::ExplodedFolder,
-        &build_bundle(ShapeTag::Folder),
-    )
-    .unwrap();
+    let bundle = build_bundle(ShapeTag::Folder);
+    let short = crate::slug::short_id(bundle.note_templates[0].uid);
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
 
     let index = std::fs::read_to_string(root.join("templates.ron")).unwrap();
     assert!(
@@ -1922,7 +2005,7 @@ fn template_bodies_are_written_as_sibling_djot_blobs() {
         "but never the body — that belongs in the blob, got:\n{index}"
     );
 
-    let blob = root.join("templates/40-character-sheet.djot");
+    let blob = root.join(format!("templates/{short}-character-sheet.djot"));
     assert!(blob.is_file(), "expected a blob at {}", blob.display());
     assert!(
         std::fs::read_to_string(&blob)
@@ -1942,18 +2025,28 @@ fn renaming_a_template_prunes_its_old_blob() {
     let path = root.to_str().unwrap();
 
     let mut bundle = build_bundle(ShapeTag::Folder);
+    let uid = bundle.note_templates[0].uid;
+    let short = crate::slug::short_id(uid);
     write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
-    assert!(root.join("templates/40-character-sheet.djot").is_file());
+    assert!(
+        root.join(format!("templates/{short}-character-sheet.djot"))
+            .is_file()
+    );
 
     bundle.note_templates[0].name = "Dramatis persona".into();
-    bundle.note_templates[0].path = crate::slug::note_template_relpath(40, "Dramatis persona");
+    bundle.note_templates[0].path = crate::slug::note_template_relpath(uid, "Dramatis persona");
     write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
 
     assert!(
-        !root.join("templates/40-character-sheet.djot").exists(),
+        !root
+            .join(format!("templates/{short}-character-sheet.djot"))
+            .exists(),
         "the pre-rename blob must be pruned, not orphaned"
     );
-    assert!(root.join("templates/40-dramatis-persona.djot").is_file());
+    assert!(
+        root.join(format!("templates/{short}-dramatis-persona.djot"))
+            .is_file()
+    );
 }
 
 /// Deleting the last template leaves no orphan blobs behind.
@@ -1988,7 +2081,7 @@ fn deleting_templates_prunes_every_blob() {
 #[test]
 fn a_hostile_template_name_still_yields_one_safe_path_segment() {
     for hostile in ["../../etc/passwd", "CON", "a/b\\c", "  ..  ", "Fiche/perso"] {
-        let rel = crate::slug::note_template_relpath(7, hostile);
+        let rel = crate::slug::note_template_relpath(common::uid::fixture_uid(7), hostile);
         assert_eq!(
             std::path::Path::new(&rel).components().count(),
             2,
@@ -2028,19 +2121,19 @@ fn a_missing_template_blob_fails_the_load_rather_than_emptying_it() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().join("p");
     let path = root.to_str().unwrap();
-    write_bundle(
-        path,
-        SkribShape::ExplodedFolder,
-        &build_bundle(ShapeTag::Folder),
-    )
-    .unwrap();
+    let bundle = build_bundle(ShapeTag::Folder);
+    let blob = format!(
+        "{}-character-sheet.djot",
+        crate::slug::short_id(bundle.note_templates[0].uid)
+    );
+    write_bundle(path, SkribShape::ExplodedFolder, &bundle).unwrap();
 
-    std::fs::remove_file(root.join("templates/40-character-sheet.djot")).unwrap();
+    std::fs::remove_file(root.join("templates").join(&blob)).unwrap();
 
     let err = read_bundle(path).expect_err("a missing body blob must not load as empty");
     let msg = format!("{err:#}");
     assert!(
-        msg.contains("40-character-sheet.djot"),
+        msg.contains(&blob),
         "the error should name the missing blob, got: {msg}"
     );
 }

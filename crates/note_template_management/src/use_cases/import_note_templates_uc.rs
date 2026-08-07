@@ -150,6 +150,12 @@ impl ImportNoteTemplatesUseCase {
             taken.insert(name_key(&name));
 
             let created = uow.create_orphan_note_template(&NoteTemplate {
+                // Minted here, not left to `..Default::default()`: this path writes through
+                // the unit of work and so never reaches `note_template_controller`'s
+                // `with_identity`. A nil uid would name this template's `.djot` blob
+                // `00000000-…` alongside every other nil-identified one, and the collision
+                // would only show up on disk, after a save.
+                uid: common::uid::new_uid(),
                 created_at: now,
                 updated_at: now,
                 name,

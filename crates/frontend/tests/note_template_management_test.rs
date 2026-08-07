@@ -98,6 +98,9 @@ fn seed(fx: &Fixture, name: &str) -> EntityId {
         &fx.ctx,
         Some(fx.setup),
         &CreateNoteTemplateDto {
+            // Nil on purpose — `with_identity` in the controller is what mints it, and
+            // this test goes through the controller, so it exercises that path.
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             name: name.into(),
@@ -390,4 +393,53 @@ fn created_ids_counts_rows_actually_made_not_rows_requested() {
         "the blank-named row is dropped, so two were created from three requested"
     );
     assert_eq!(rows(&fx).len(), 2, "and the store agrees");
+}
+
+/// Every template a writer can make comes out with a durable identity.
+///
+/// This is the guard for a failure that **still compiles**. A template's Djot blob is
+/// named `templates/<blake3(uid)[..8]>-<slug>.djot`, so a nil uid puts every
+/// nil-identified template on one filename — but nothing in the type system says so, and
+/// the two places that mint one are easy to lose:
+///
+/// * `note_template_controller::with_identity` is a hand-added helper on a **generated**
+///   file. Regenerating that controller deletes it (the project guide warns about exactly
+///   this for the binder controllers), and every row would go back to being created nil.
+/// * `import_note_templates` builds its entity with `..Default::default()` and mints the
+///   uid by hand, because it writes through the unit of work and never passes the
+///   controller at all.
+///
+/// Both doors are checked here, since the bug only ever becomes visible on disk, after a
+/// save, in a project the writer has already been using.
+#[test]
+fn every_template_is_created_with_a_durable_identity() {
+    let fx = make_fixture();
+    let stack = undo_redo_commands::create_new_stack(&fx.ctx);
+
+    // Door one: the direct-access controller, which the UI's "new template" uses.
+    let via_controller = seed(&fx, "Typed by hand");
+
+    // Door two: the bulk import, which every built-in preset and every imported file uses.
+    let out = note_template_management_commands::import_note_templates(
+        &fx.ctx,
+        Some(stack),
+        &dto(fx.work, &[("Imported", "body", false)]),
+    )
+    .expect("import");
+
+    let mut ids = vec![via_controller];
+    ids.extend(out.created_ids.iter().copied());
+    assert_eq!(ids.len(), 2, "both doors must have produced a row");
+
+    for id in ids {
+        let t = note_template_commands::get_note_template(&fx.ctx, &id)
+            .expect("read template")
+            .expect("the template exists");
+        assert!(
+            !t.uid.is_nil(),
+            "template {:?} was created without an identity, so its .djot blob would \
+             collide with every other nil-identified template",
+            t.name
+        );
+    }
 }

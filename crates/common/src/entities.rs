@@ -570,6 +570,7 @@ pub struct NoteTemplate {
     pub created_at: chrono::DateTime<chrono::Utc>,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub uid: uuid::Uuid,
     pub name: String,
     pub body: String,
     pub starred: bool,

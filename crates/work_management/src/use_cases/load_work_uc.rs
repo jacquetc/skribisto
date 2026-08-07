@@ -323,6 +323,12 @@ pub(crate) fn materialize(
     let mut note_template_ids: Vec<EntityId> = Vec::new();
     for t in &loaded.note_templates {
         let created = uow.create_orphan_note_template(&NoteTemplate {
+            // `heal_uid` rather than a plain copy: a bundle written before the uid
+            // existed carries a nil one, and `migrate_bundle`'s step already filled it
+            // — but the legacy SQLite path builds its graph without ever constructing a
+            // `WorkBundle`, so this is the backstop that path relies on. Healing a
+            // non-nil uid is a no-op, so it is safe on every path.
+            uid: common::uid::heal_uid(t.uid),
             created_at: t.created_at,
             updated_at: t.updated_at,
             name: t.name.clone(),

@@ -2728,6 +2728,7 @@ fn note_templates_survive_a_save_load_round_trip() {
     bundle.note_templates = vec![
         skrib::NoteTemplateFile {
             file_id: 700,
+            uid: common::uid::fixture_uid(700),
             created_at: T.into(),
             updated_at: T.into(),
             name: "Character sheet".into(),
@@ -2736,6 +2737,7 @@ fn note_templates_survive_a_save_load_round_trip() {
         },
         skrib::NoteTemplateFile {
             file_id: 701,
+            uid: common::uid::fixture_uid(701),
             created_at: T.into(),
             updated_at: T.into(),
             name: "Location".into(),
