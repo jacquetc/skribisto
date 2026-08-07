@@ -280,6 +280,17 @@ impl SearchReplaceViewModel {
     pub fn reveal_search(&self) {
         self.docking.reveal_dock(self.search_dock_id);
     }
+    /// Reveal the Footnotes dock — the destination for a search result whose match
+    /// is a footnote's body (see `select_result`): that text is not any open
+    /// document's own field, so the preview band cannot show it, and the dock is
+    /// where it is both shown and edited. `footnotes.show` (`app/commands/view.rs`)
+    /// is the same door reached from the View menu and from a saved desk that lost
+    /// the dock — reused here (via the well-known `FOOTNOTES_DOCK_ID`, not a second
+    /// wiring path) rather than inventing another way in.
+    pub fn reveal_footnotes(&self) {
+        self.docking
+            .reveal_dock(DockWidgetId::from_raw(crate::docks::FOOTNOTES_DOCK_ID));
+    }
     /// The `search.toml` service's `Reloadable` hook, for registering with the
     /// app's shared `SettingsRegistry` (live cross-process reload).
     pub fn settings_reloadable(&self) -> std::rc::Rc<dyn bastyde::settings::Reloadable> {
@@ -445,6 +456,44 @@ impl SearchReplaceViewModel {
         let Some(row) = self.row_by_id(result_id) else {
             return;
         };
+        self.apply_selected_row(result_id, &row);
+    }
+
+    /// The decision behind [`select_result`](Self::select_result), split out so it
+    /// can be exercised with a hand-built row — standing up a real `SearchResult`
+    /// entity (a whole open Work, a run search) just to reach this dispatch would
+    /// dwarf what it is actually testing.
+    fn apply_selected_row(&self, result_id: u64, row: &SearchResultDto) {
+        // A footnote's body is not any open document's own field (see
+        // `docks::search_preview::editable_field`) — it lives on the `Footnote`
+        // entity itself, shown and edited only in the Footnotes dock. Opening
+        // `row.binder_item_id`'s document would be actively wrong here, in two
+        // different ways depending on the note:
+        //   * **Anchored** (`binder_item_id` names the scene the citation sits in):
+        //     the match is inside the note's *body*, which that scene's document
+        //     never contains — the preview would open, find nothing to show, and
+        //     dead-end on "no editable text" with no path to the actual note.
+        //   * **Orphaned** (`binder_item_id == 0` — a real, documented state; see
+        //     `work_management::load_work_uc`'s own note on why an unanchored note
+        //     keeps its text and reports itself this way): `self.docs.open(0)` names
+        //     no `BinderItem` at all and returns `None`, and the preview would fall
+        //     back to its pristine "type to search" empty state — as if nothing had
+        //     been found, when a match plainly had been.
+        // Both dead ends are replaced with the one door that actually leads to the
+        // match: `preview` stays `None` (so `PreviewBody` renders the footnote-aware
+        // empty state instead of trying to resolve an editable field), and the
+        // Footnotes dock is revealed directly.
+        if row.match_field == MatchField::Footnote {
+            if let Some(old) = self.preview_open_id.borrow_mut().take() {
+                self.docs.release(old, self.ids.stack_id.get());
+            }
+            self.preview.set(None);
+            self.preview_field.set(Some(MatchField::Footnote));
+            self.selected_result.set(Some(result_id));
+            self.reveal_footnotes();
+            self.docking.reveal_dock(self.preview_dock_id);
+            return;
+        }
         let item_id = row.binder_item_id;
         let prev = self.preview_open_id.borrow().clone();
         if prev != Some(item_id) {
@@ -955,5 +1004,72 @@ mod tests {
         vm.toggle_excluded(rows[2].id);
         assert_eq!(vm.included_count(), 0);
         assert!(!vm.can_replace_all(), "nothing ticked, nothing to replace");
+    }
+
+    fn footnote_row(id: u64, binder_item_id: u64) -> SearchResultDto {
+        SearchResultDto {
+            id,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+            binder_item_id,
+            item_title: String::new(),
+            match_field: MatchField::Footnote,
+            comment_id: 0,
+            reply_id: 0,
+            footnote_id: 7,
+            occurrence_count: 1,
+            snippet_before: String::new(),
+            snippet_match: "note text".into(),
+            snippet_after: String::new(),
+            trashed: false,
+        }
+    }
+
+    /// **Regression for the search_preview.rs dead-end (finding 4)**: selecting a
+    /// footnote hit anchored to a real scene must not try to open that scene's
+    /// document — the match is in the note's body, which the scene's own document
+    /// never contains — so `preview` stays empty and `preview_field` names the
+    /// footnote, which is what tells `PreviewBody` to render the footnote-aware
+    /// empty state instead of silently failing to resolve an editable field.
+    #[test]
+    fn selecting_an_anchored_footnote_result_never_opens_the_scenes_document() {
+        let vm = vm();
+        vm.results
+            .list_model()
+            .replace_all(vec![footnote_row(1, 42)]);
+        vm.select_result(1);
+        assert!(
+            vm.preview_signal().get().is_none(),
+            "a footnote's body is not the scene's own document"
+        );
+        assert_eq!(vm.preview_field_signal().get(), Some(MatchField::Footnote));
+        assert_eq!(vm.selected_result_signal().get(), Some(1));
+        assert!(
+            vm.preview_open_id.borrow().is_none(),
+            "nothing was opened, so nothing is pinned in the doc store"
+        );
+    }
+
+    /// **Regression for the orphan dead-end (finding 5)**: an unanchored footnote's
+    /// result carries `binder_item_id == 0` (a real, documented state — see
+    /// `work_management::load_work_uc`) — `select_result` must take the exact same
+    /// footnote path as the anchored case, not fall through to `self.docs.open(0)`,
+    /// which resolves to nothing and used to leave the preview looking exactly like
+    /// nothing had been selected at all.
+    #[test]
+    fn selecting_an_orphaned_footnotes_result_takes_the_same_path_as_an_anchored_one() {
+        let vm = vm();
+        vm.results
+            .list_model()
+            .replace_all(vec![footnote_row(2, 0)]);
+        vm.select_result(2);
+        assert!(vm.preview_signal().get().is_none());
+        assert_eq!(
+            vm.preview_field_signal().get(),
+            Some(MatchField::Footnote),
+            "an orphan's match still names itself as a footnote hit, \
+             not nothing-selected"
+        );
+        assert_eq!(vm.selected_result_signal().get(), Some(2));
     }
 }

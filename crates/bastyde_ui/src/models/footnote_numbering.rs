@@ -258,6 +258,13 @@ pub fn places(rows: &[ItemProse], labels: &[String]) -> FootnotePlaces {
         // See the module docs: the editor shows the manuscript's own count.
         FootnoteRestart::Continuous,
     );
+    // The one collapse `skribisto_compiler`'s exporter also goes through — see
+    // its doc for why a label's marker has to come from here rather than from
+    // whichever item this walk happens to be visiting. `rows` is always the
+    // *whole* manuscript (guaranteed by [`read_work`]'s own contract, never a
+    // scope), so this is the same input the exporter is required to build its
+    // own `homes` from, and the two therefore always agree.
+    let homes = footnote_numbering::label_homes(&numbered);
 
     // A second walk in the same order, for the two things `number_map` does not
     // answer: which `Content` row a note's reference sits in (the dock navigates
@@ -279,7 +286,19 @@ pub fn places(rows: &[ItemProse], labels: &[String]) -> FootnotePlaces {
                         item_id: row.meta.id,
                         item_title: row.title.clone(),
                         content_id: *content_id,
-                        number: numbered.get(&(row.meta.id, label)).map(|n| n.number),
+                        // Deliberately `homes.get(&label)`, not
+                        // `numbered.get(&(row.meta.id, label))`: a label
+                        // duplicated across two items (a scene copied without
+                        // reminting its footnote labels) has two independent
+                        // `number_map` entries, and only `label_homes` picks
+                        // the one both this badge and every exporter must
+                        // agree on. A row that is not the label's home (an
+                        // excluded row nothing else references it from, or a
+                        // second citation elsewhere) still gets a *placement*
+                        // here — the dock shows the note is openable — with no
+                        // number, exactly as it does when the label's only
+                        // home is outside the book.
+                        number: homes.get(&label).map(|(_, n)| n.number),
                         ordinal,
                     },
                 );
@@ -387,6 +406,34 @@ mod tests {
         assert_eq!(p.placed["a"].item_id, 1);
         assert_eq!(p.placed["a"].content_id, 11);
         assert_eq!(p.placed["a"].number, Some(1));
+    }
+
+    /// **The failure `label_homes` closes, pinned on the editor side too.** A
+    /// duplicated scene (a raw text copy that never remints its footnote
+    /// labels) can leave the same label cited from two *different* items —
+    /// unlike the test above, where both citations sit in one row. The badge
+    /// must draw the number belonging to the item earliest in manuscript
+    /// order, and `skribisto_compiler`'s exporter (`render.rs`'s own test of
+    /// the same name) must draw the identical number for the identical
+    /// citation, however the export is scoped.
+    #[test]
+    fn a_label_duplicated_across_two_items_keeps_its_earliest_number() {
+        let rows = vec![
+            row(100, "First", &[(1, "First[^a].")]),
+            row(150, "Also", &[(2, "Also[^a] here.")]),
+            row(200, "Second", &[(3, "Second[^b].")]),
+        ];
+        let p = places(&rows, &labels(&["a", "b"]));
+        assert_eq!(
+            p.placed["a"].item_id, 100,
+            "the earlier item is the note's home"
+        );
+        assert_eq!(
+            p.placed["a"].number,
+            Some(1),
+            "the badge must show the earlier item's number, not the later item's"
+        );
+        assert_eq!(p.placed["b"].number, Some(3));
     }
 
     /// A note nothing points at is reported, and has no placement to navigate to.

@@ -31,12 +31,23 @@
 
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::time::Duration;
 
 use bastyde::prelude::*;
 use bastyde::text_document::TextDocument;
 use bastyde::widgets::rich_text::EditorHandle;
+use bastyde::widgets::{Toast, ToastAction};
 
 use crate::models::{FootnoteRow, FootnotesListModel, OpenDocsStore};
+use crate::toast_scope::ToastWorkExt;
+
+/// How long the delete-note "Undo" toast stays live before the deletion is the
+/// only outcome anyone still sees — matches the comment feature's own
+/// "deleted — Undo" snackbar (`CommentsViewModel`'s `UNDO_GRACE`), the closer
+/// sibling of this op: both delete one entity, offer a few seconds to take it
+/// back, and (unlike Empty Trash / Delete Forever) never clear the project's
+/// undo history when the window lapses — see [`FootnotesViewModel::delete`].
+const FOOTNOTE_DELETE_UNDO_GRACE: Duration = Duration::from_secs(6);
 
 /// Which notes the dock is showing.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -59,7 +70,18 @@ struct Inner {
     /// dock's reverse highlight: click a marker in the prose and its row lights
     /// up, without the dock having to watch every editor itself.
     caret_label: Signal<Option<String>>,
-    /// The row whose body the dock has open for editing.
+    /// The row whose body is live under a caret right now.
+    ///
+    /// Set once, up front, by [`insert_at`](FootnotesViewModel::insert_at) —
+    /// a brand-new note's body is about to be typed into before its editor
+    /// even exists to report focus itself — and kept correct after that by
+    /// the body editor's own real focus signal
+    /// (`docks::footnotes::NoteBodyStyle::make_body`, via
+    /// [`set_editing`](FootnotesViewModel::set_editing)). Consulted by
+    /// [`body_doc`](FootnotesViewModel::body_doc) to decide whether an
+    /// external body change is safe to fold into an already-cached document —
+    /// see that function's own doc comment for why "is someone typing into
+    /// this exact row right now" is the one thing that must gate a re-sync.
     editing: Signal<Option<u64>>,
     filter: Signal<FootnoteFilter>,
     /// One live document per note's body editor — see [`body_doc`](FootnotesViewModel::body_doc).
@@ -223,18 +245,46 @@ impl FootnotesViewModel {
     ///
     /// Cached, and not rebuilt from `initial` on every pass, for the reason the
     /// comment card records: the dock re-renders whenever the row changes, and
-    /// re-minting the document under a writer's caret drops it mid-word. The
-    /// stored text is only ever used to *seed* a document that does not exist
-    /// yet.
+    /// re-minting the document under a writer's caret drops it mid-word.
+    ///
+    /// **But "cached" must not mean "frozen forever".** A body can change out
+    /// from under this cache without ever going through it — Search & Replace,
+    /// an Undo, or a second window on the same `Work` all write `Footnote.body`
+    /// directly, and nothing downstream of that pushes it into a document that
+    /// already exists: `FootnotesListModel::refresh_bodies` only patches the
+    /// *row* a fresh document would be seeded from (its own doc comment says
+    /// so), never a live `TextDocument`. Left alone, the stale text sits
+    /// invisibly in the dock until the writer's next keystroke here commits
+    /// `doc.to_djot()` right back over whatever had just landed — silently
+    /// discarding it.
+    ///
+    /// So this re-syncs whenever `initial` disagrees with what the cached
+    /// document currently holds — but **only** when `id` is not the row
+    /// [`editing`](Self::editing) says is live under a caret right now (kept
+    /// current by the body editor's own real focus signal — see
+    /// `docks::footnotes::NoteBodyStyle`). That gate is what keeps a self-typed
+    /// edit from tripping this at all: `on_change` commits synchronously to the
+    /// backend on every keystroke, and event dispatch here is synchronous too,
+    /// so by the time this function runs again for a row the writer is
+    /// actively in, `initial` already equals what they just typed — no
+    /// disagreement, no re-sync attempted. It is only a genuinely external
+    /// rewrite that disagrees, and gating on focus is what stops handling
+    /// *that* from re-introducing the exact clobbered-caret bug this cache
+    /// exists to prevent — the fix must not trade one bug for the other.
     pub fn body_doc(&self, id: u64, initial: &str) -> TextDocument {
         let mut docs = self.inner.body_docs.borrow_mut();
-        docs.entry(id)
-            .or_insert_with(|| {
-                let doc = TextDocument::new();
+        if let Some(doc) = docs.get(&id) {
+            let stale = doc.to_djot().unwrap_or_default() != initial;
+            let live_under_a_caret = self.inner.editing.get() == Some(id);
+            if stale && !live_under_a_caret {
                 let _ = doc.set_djot_sync(initial);
-                doc
-            })
-            .clone()
+            }
+            return doc.clone();
+        }
+        let doc = TextDocument::new();
+        let _ = doc.set_djot_sync(initial);
+        docs.insert(id, doc.clone());
+        doc
     }
 
     fn forget_body_doc(&self, id: u64) {
@@ -245,21 +295,71 @@ impl FootnotesViewModel {
         self.inner.model.set_body(id, body, self.stack());
     }
 
-    /// Delete a note and every reference to it — see the model's own notes on why
-    /// the two go together.
-    pub fn delete(&self, id: u64) {
-        self.inner.model.delete(id, self.stack());
+    /// Delete a note and every reference to it, offering a few seconds to take
+    /// it back.
+    ///
+    /// **Stopgap, not the final design.** Skribisto has no general Edit ▸ Undo
+    /// surface yet — the only doors onto the backend's undo/redo stack today
+    /// are a handful of per-feature "deleted — Undo" toasts (comments, search
+    /// & replace, trash). This is the footnotes feature's door, and it should
+    /// be replaced by a real one the day this app grows a general Undo command
+    /// that can reach the same stack directly.
+    ///
+    /// Deliberately no confirmation dialog first: the whole point of this
+    /// shape (see `TrashViewModel`'s "destructive ops keep their undo, then
+    /// commit on a grace timer") is that the writer does not have to stop and
+    /// answer a question before the click even lands — the toast is the
+    /// safety net instead. Unlike Empty Trash / Delete Forever, letting the
+    /// grace window lapse here does **not** clear the project's undo history:
+    /// deleting one footnote is a single-entity edit, the same shape as
+    /// deleting a comment, not a bulk purge — see
+    /// `CommentsViewModel::delete_with_undo`'s own reasoning for exactly this
+    /// distinction. It stays on the normal undo stack for good; the toast is
+    /// only a convenience for the moment right after the click.
+    ///
+    /// `FootnotesListModel::delete` already ran the whole thing as one
+    /// `begin_composite`/`end_composite` step, so its returned closure reverses
+    /// **both** halves — the removed `Footnote` row and every `[^label]`
+    /// reference the delete stripped — in one call; nothing here needs to
+    /// remember what was removed in order to bring it back. `None` means the
+    /// id was already gone (a stale row), so there is nothing to offer a toast
+    /// for at all.
+    pub fn delete(&self, ctx: &mut EventContext, id: u64) {
+        let undo = self.inner.model.delete(id, self.stack());
         self.forget_body_doc(id);
         if self.inner.editing.get() == Some(id) {
             self.inner.editing.set(None);
         }
         self.push_markers();
+        let Some(undo) = undo else { return };
+        ctx.show_toast(
+            Toast::warning(tr!(footnotes_deleted_toast()))
+                // One toast for the whole feature, like the comment margin's —
+                // a burst of deletes replaces its own snackbar instead of
+                // stacking a tower of them.
+                .scoped_id("footnotes.deleted", 0)
+                .auto_dismiss_after(FOOTNOTE_DELETE_UNDO_GRACE)
+                .action(ToastAction::primary(
+                    tr!(footnotes_undo_delete()),
+                    move |_c| {
+                        undo();
+                    },
+                )),
+        );
     }
 
+    /// The row [`Inner::editing`]'s doc explains — read this before treating
+    /// it as dead state; it drives `body_doc`'s clobber guard.
     pub fn editing(&self) -> Signal<Option<u64>> {
         self.inner.editing.clone()
     }
 
+    /// Record which row's body is live under a caret, or that none is.
+    ///
+    /// Called by `docks::footnotes::NoteBodyStyle::make_body` on every real
+    /// focus change of that row's editor — so this is not merely a label for
+    /// the dock to show, it is the fact `body_doc` trusts before ever
+    /// overwriting an already-cached document out from under the writer.
     pub fn set_editing(&self, id: Option<u64>) {
         self.inner.editing.set(id);
     }
@@ -375,11 +475,10 @@ impl FootnoteBinding {
 mod tests {
     use super::*;
 
-    fn vm() -> FootnotesViewModel {
-        let app_ctx = Rc::new(frontend::AppContext::new());
+    fn vm(app_ctx: &Rc<frontend::AppContext>) -> FootnotesViewModel {
         let ids = crate::app_ids::AppIds::new();
         let docs = OpenDocsStore::new(app_ctx.clone());
-        let model = FootnotesListModel::new(app_ctx, ids, docs.clone());
+        let model = FootnotesListModel::new(app_ctx.clone(), ids, docs.clone());
         FootnotesViewModel::new(model, docs, Signal::new(None))
     }
 
@@ -388,7 +487,7 @@ mod tests {
     /// the request, so the right editor would never see it.
     #[test]
     fn a_seek_is_only_taken_by_the_document_it_names() {
-        let vm = vm();
+        let vm = vm(&Rc::new(frontend::AppContext::new()));
         vm.request_seek(11, "fn1");
         assert_eq!(vm.take_seek(22), None, "another document took it");
         assert_eq!(vm.take_seek(11).as_deref(), Some("fn1"));
@@ -399,18 +498,174 @@ mod tests {
     /// open is a question with no answer — not a claim that there are no notes.
     #[test]
     fn this_document_with_nothing_open_shows_nothing() {
-        let vm = vm();
+        let vm = vm(&Rc::new(frontend::AppContext::new()));
         vm.set_filter(FootnoteFilter::ThisDocument);
         assert!(vm.visible_rows(None).is_empty());
     }
 
+    /// A body's cache is not rebuilt from `initial` while the row is live under
+    /// a caret — re-syncing there would be the exact clobbered-caret bug the
+    /// cache exists to prevent, traded for the disappearing-edit bug this fixes.
+    #[test]
+    fn body_doc_does_not_resync_a_row_that_is_being_typed_into() {
+        let vm = vm(&Rc::new(frontend::AppContext::new()));
+        let first = vm.body_doc(1, "first draft");
+        assert_eq!(first.to_djot().unwrap(), "first draft");
+
+        vm.set_editing(Some(1));
+        let still_cached = vm.body_doc(1, "an external rewrite landed here");
+        assert_eq!(
+            still_cached.to_djot().unwrap(),
+            "first draft",
+            "a row live under a caret must not be overwritten out from under the writer"
+        );
+    }
+
+    /// A body's cache **is** refreshed once the row is no longer the one being
+    /// typed into — an external rewrite (Search & Replace, an Undo, a second
+    /// window) must not stay invisible in the dock forever, only while a caret
+    /// actually sits in that exact row.
+    #[test]
+    fn body_doc_resyncs_a_row_that_is_not_being_typed_into() {
+        let vm = vm(&Rc::new(frontend::AppContext::new()));
+        let first = vm.body_doc(1, "first draft");
+        assert_eq!(first.to_djot().unwrap(), "first draft");
+
+        // Not editing this row (nor any row) — the default state whenever the
+        // writer's caret is elsewhere.
+        let resynced = vm.body_doc(1, "an external rewrite landed here");
+        assert_eq!(
+            resynced.to_djot().unwrap(),
+            "an external rewrite landed here",
+            "a body changed elsewhere must reach an already-cached document"
+        );
+        // The SAME cached `TextDocument` was updated in place, not replaced —
+        // the row's live handle (already held by a mounted editor, if any)
+        // must see the new text too.
+        assert_eq!(first.to_djot().unwrap(), "an external rewrite landed here");
+    }
+
     /// Editing state clears when the row it names goes away, or the dock keeps a
     /// body box open over a note that no longer exists.
+    ///
+    /// Note `7` does not exist in this test's empty store, so the model's
+    /// `delete` returns `None` and no toast fires — this test is purely about
+    /// the `editing` cleanup, which must happen regardless. `delete` now needs
+    /// a real `EventContext` to be able to raise that toast at all, so this
+    /// drives it through a wired `Button` + a dispatched click, like every
+    /// other `on_activate_fn`-consuming view-model method in this crate's
+    /// tests (see `test_support::click`).
     #[test]
     fn deleting_the_row_being_edited_closes_the_editor() {
-        let vm = vm();
+        use bastyde::i18n::lit;
+        use bastyde::widgets::Button;
+
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let vm = vm(&app_ctx);
         vm.set_editing(Some(7));
-        vm.delete(7);
+
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+        let target = vm.clone();
+        let btn = tree.add(Button::new(lit!("delete")).on_activate_fn(move |ctx| {
+            target.delete(ctx, 7);
+        }));
+        tree.layout(SizeProposal::exact(200.0, 80.0));
+        crate::test_support::click(&mut tree, btn);
+
         assert_eq!(vm.editing().get(), None);
+    }
+
+    /// **Regression.** Deleting a note used to have no path back at all: no
+    /// confirmation, and — per the grep in the finding this fixes — no
+    /// reachable call to `undo_redo_commands::undo` anywhere in the footnotes
+    /// feature. This drives the real `FootnotesViewModel::delete` for a note
+    /// that genuinely exists in the backend, through a real `EventContext`
+    /// (wire a `Button`, then click it — not a direct fn call bypassing
+    /// dispatch, the same discipline `TrashViewModel`'s own toast test
+    /// follows), and checks a real `ToastRegistry` actually gained a live
+    /// "Undo" toast — the door back that `delete`'s own doc comment promises.
+    ///
+    /// Real-backend only: under `--features mocks`, `FootnotesListModel`
+    /// resolves to the fabricated `imp` whose `delete` always returns `None`
+    /// (there is no undo/redo stack behind a fabricated list to reverse into —
+    /// see that `delete`'s own doc comment), so no toast would ever appear
+    /// regardless of anything this test seeds through the real backend
+    /// commands above it.
+    #[cfg(not(feature = "mocks"))]
+    #[test]
+    fn deleting_a_real_note_offers_an_undo_toast() {
+        use bastyde::i18n::lit;
+        use bastyde::widgets::{Button, ToastInstallOptions, ToastRegistry};
+        use frontend::commands::{footnote_commands, work_commands, work_management_commands};
+        use frontend::direct_access::CreateFootnoteDto;
+        use frontend::work_management::LoadWorkDto;
+
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let ids = crate::app_ids::AppIds::new();
+        work_management_commands::load_work(
+            &app_ctx,
+            &LoadWorkDto {
+                media_root: crate::media_paths::media_root_string(),
+                file_name: format!(
+                    "{}/../../resources/test/skribisto_test_project.skrib",
+                    env!("CARGO_MANIFEST_DIR")
+                ),
+            },
+        )
+        .expect("load fixture");
+        let work_id = work_commands::get_all_work(&app_ctx)
+            .expect("work")
+            .first()
+            .expect("one work")
+            .id;
+        ids.seed(&app_ctx, work_id);
+        ids.open_stack(&app_ctx);
+
+        // An orphan (no `Content`) is enough here — the toast only needs a
+        // real, deletable `Footnote` row; `contents_referencing`'s own
+        // behaviour is covered in `models::footnotes_list_model`'s tests.
+        let now = chrono::Utc::now();
+        let created = footnote_commands::create_footnote(
+            &app_ctx,
+            ids.stack_id.get(),
+            &CreateFootnoteDto {
+                created_at: now,
+                updated_at: now,
+                content: None,
+                label: "fn9".into(),
+                body: "About to be deleted.".into(),
+            },
+            work_id,
+            -1,
+        )
+        .expect("create footnote");
+
+        let docs = OpenDocsStore::new(app_ctx.clone());
+        let model = FootnotesListModel::new(app_ctx.clone(), ids.clone(), docs.clone());
+        let vm = FootnotesViewModel::new(model, docs, ids.stack_id.clone());
+
+        let registry = ToastRegistry::new(ToastInstallOptions {
+            archive: None,
+            ..ToastInstallOptions::default()
+        });
+        let mut tree = crate::test_support::tree_with_toast_registry(&app_ctx, &registry);
+        let note_id = created.id;
+        let btn = tree.add(Button::new(lit!("delete")).on_activate_fn(move |ctx| {
+            vm.delete(ctx, note_id);
+        }));
+        tree.layout(SizeProposal::exact(200.0, 80.0));
+        crate::test_support::click(&mut tree, btn);
+
+        assert_eq!(
+            registry.live_count(),
+            1,
+            "a real delete must raise an Undo toast the writer can act on"
+        );
+        assert!(
+            footnote_commands::get_footnote(&app_ctx, &note_id)
+                .expect("get_footnote")
+                .is_none(),
+            "the delete itself must have actually run"
+        );
     }
 }

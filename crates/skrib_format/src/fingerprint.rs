@@ -62,6 +62,15 @@ fn strip_volatile(b: &mut WorkBundle) {
         sp.updated_at.clear();
     }
 
+    // Metadata only (bytes are `#[serde(skip)]`, see `WorkBundle::asset_bytes`'s own
+    // note above) — but the bookkeeping stamps are exactly as volatile as every other
+    // entity's, and this loop was missing entirely: an asset's `updated_at` alone
+    // ticking (e.g. a re-import that reuses the same `content_hash`) used to change
+    // the fingerprint with nothing about the *content* having changed.
+    for a in &mut b.assets {
+        a.created_at.clear();
+        a.updated_at.clear();
+    }
     for t in &mut b.tags {
         t.created_at.clear();
         t.updated_at.clear();
@@ -116,6 +125,17 @@ fn strip_volatile(b: &mut WorkBundle) {
     for c in &mut b.orphan_comments {
         strip_comment(c);
     }
+    // The exact sibling of `orphan_comments` above, for the same reason: a footnote
+    // whose annotated `Content` was purged moves to this bundle-root orphanage rather
+    // than being dropped (see `WorkBundle::orphan_footnotes`'s own doc), and its
+    // `created_at`/`updated_at` are bookkeeping, not content, like every other
+    // timestamped row this function strips. This loop was the one omission in an
+    // otherwise-exhaustive function: a footnote's `updated_at` alone advancing (an
+    // edit that leaves label/body byte-identical, e.g. type-then-backspace) used to
+    // fingerprint as a changed project and trigger a fully redundant backup.
+    for f in &mut b.orphan_footnotes {
+        strip_footnote(f);
+    }
     for bb in &mut b.binders {
         bb.binder.created_at.clear();
         bb.binder.updated_at.clear();
@@ -135,6 +155,14 @@ fn strip_volatile(b: &mut WorkBundle) {
                     strip_comment(c);
                 }
             }
+            // `it.comments`'s exact sibling (line above) — same map shape, same
+            // reason: anchored, not orphaned, so it lives per-item rather than at
+            // the bundle root, but its timestamps are just as volatile.
+            for list in it.footnotes.values_mut() {
+                for f in list {
+                    strip_footnote(f);
+                }
+            }
         }
     }
 }
@@ -148,9 +176,15 @@ fn strip_comment(c: &mut crate::bundle::CommentFile) {
     }
 }
 
+fn strip_footnote(f: &mut crate::bundle::FootnoteFile) {
+    f.created_at.clear();
+    f.updated_at.clear();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::BTreeMap;
 
     fn minimal_bundle(title: &str, updated: &str) -> WorkBundle {
         WorkBundle {
@@ -211,6 +245,122 @@ mod tests {
     fn different_content_fingerprints_differently() {
         let a = minimal_bundle("Novel", "2026-01-01T10:00:00Z");
         let b = minimal_bundle("Different Title", "2026-01-01T10:00:00Z");
+        assert_ne!(content_fingerprint(&a), content_fingerprint(&b));
+    }
+
+    fn footnote(updated: &str, label: &str, body: &str) -> FootnoteFile {
+        FootnoteFile {
+            file_id: 1,
+            created_at: "2020-01-01T00:00:00Z".into(),
+            updated_at: updated.into(),
+            label: label.into(),
+            body: body.into(),
+        }
+    }
+
+    fn asset(updated: &str, hash: &str) -> AssetFile {
+        AssetFile {
+            file_id: 1,
+            created_at: "2020-01-01T00:00:00Z".into(),
+            updated_at: updated.into(),
+            content_hash: hash.into(),
+            file_name: "cover.png".into(),
+            mime_type: "image/png".into(),
+            width: 100,
+            height: 100,
+            byte_size: 1234,
+            alt: String::new(),
+            is_cover: false,
+            path: "assets/abc123.png".into(),
+        }
+    }
+
+    /// One item carrying a single anchored footnote, keyed under content `file_id`
+    /// 42 — the shape `strip_volatile`'s `it.footnotes` loop walks.
+    fn item_with_footnote(footnote: FootnoteFile) -> BundledItem {
+        BundledItem {
+            item: BinderItemFile {
+                file_id: 10,
+                uid: uuid::Uuid::nil(),
+                created_at: "2020-01-01T00:00:00Z".into(),
+                updated_at: "2020-01-01T00:00:00Z".into(),
+                title: "Scene".into(),
+                sub_title: String::new(),
+                role: common::entities::BinderItemRole::Item,
+                sub_role: common::entities::BinderItemSubRole::Scene,
+                label: String::new(),
+                activated: true,
+                is_favorite: false,
+                is_exportable: true,
+                exclude_from_numbering: false,
+                indent: 0,
+                word_count_goal: 0,
+                char_count_goal: 0,
+                dict_language: vec![],
+                aliases: vec![],
+                inline_contents: vec![],
+                prose_refs: vec![],
+                reference_ids: vec![],
+                point_of_view_ids: vec![],
+                tag_ids: vec![],
+            },
+            prose: BTreeMap::new(),
+            comments: BTreeMap::new(),
+            footnotes: BTreeMap::from([(42u64, vec![footnote])]),
+        }
+    }
+
+    /// **Regression for the gap this module's own doc names**: a footnote's
+    /// `updated_at` moving alone — orphaned, anchored, and an asset's, all three
+    /// shapes `strip_volatile` touches — must not change the fingerprint.
+    #[test]
+    fn a_footnotes_or_assets_timestamp_alone_does_not_change_the_fingerprint() {
+        let mut a = minimal_bundle("Novel", "2026-01-01T10:00:00Z");
+        a.orphan_footnotes = vec![footnote("2026-01-01T10:00:00Z", "fn1", "An orphaned note.")];
+        a.assets = vec![asset("2026-01-01T10:00:00Z", "abc123")];
+        a.binders = vec![BundledBinder {
+            binder: BinderFile {
+                file_id: 1,
+                uid: uuid::Uuid::nil(),
+                created_at: "2020-01-01T00:00:00Z".into(),
+                updated_at: "2020-01-01T00:00:00Z".into(),
+                name: "Manuscript".into(),
+                activated: true,
+                item_order: vec![10],
+            },
+            items: vec![item_with_footnote(footnote(
+                "2026-01-01T10:00:00Z",
+                "fn2",
+                "An anchored note.",
+            ))],
+        }];
+
+        let mut b = a.clone();
+        // Every timestamp this test cares about moves — none of the content does.
+        b.orphan_footnotes[0].updated_at = "2026-06-15T00:00:00Z".into();
+        b.assets[0].updated_at = "2026-06-15T00:00:00Z".into();
+        b.binders[0].items[0].footnotes.get_mut(&42).unwrap()[0].updated_at =
+            "2026-06-15T00:00:00Z".into();
+
+        assert_eq!(
+            content_fingerprint(&a),
+            content_fingerprint(&b),
+            "a bookkeeping timestamp alone must not change the fingerprint \
+             (backup_now's skip-if-unchanged gate would otherwise misfire)"
+        );
+    }
+
+    /// The positive control for the test above: an orphaned note's actual words
+    /// changing DOES have to move the fingerprint, or a real edit would be silently
+    /// skipped by the same gate.
+    #[test]
+    fn a_footnotes_body_changing_does_change_the_fingerprint() {
+        let mut a = minimal_bundle("Novel", "2026-01-01T10:00:00Z");
+        a.orphan_footnotes = vec![footnote("2026-01-01T10:00:00Z", "fn1", "Original words.")];
+
+        let mut b = a.clone();
+        b.orphan_footnotes[0].body = "Rewritten words.".into();
+
         assert_ne!(content_fingerprint(&a), content_fingerprint(&b));
     }
 }

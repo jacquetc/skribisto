@@ -180,6 +180,18 @@ fn run_count(
 
     // Footnote prose, bucketed by the item whose Content each note annotates, so it
     // can be attributed to the same Book the manuscript walk attributes prose to.
+    //
+    // `fwc.footnote.content` is trusted at face value here, same as in
+    // `search_management::run_search_uc::footnote_fields` — safe only because
+    // `binder_item_management`'s `split_scene`/`merge_two_scenes` now keep it
+    // reparented whenever a note's citation is relocated to a different `Content` row
+    // (see `binder_item_management::footnote_reanchor`). Before that, a split or merge
+    // could leave this pointing at a row the citation no longer lived in (misattributed
+    // to the wrong item/Book) or at a row whose owning item was trashed by the merge
+    // (silently dropped from every total). `skribisto_model::footnote_numbering` — the
+    // editor badge and the Footnotes dock — never reads this field at all; it re-derives
+    // a note's place by scanning live prose, so it never showed the drift. Only a reader
+    // that trusts the stored anchor, like this one, could.
     let mut content_owner: HashMap<EntityId, EntityId> = HashMap::new();
     for bwi in &g.binders {
         for iwc in &bwi.items {

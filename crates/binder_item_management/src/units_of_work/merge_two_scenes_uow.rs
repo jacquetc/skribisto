@@ -12,7 +12,7 @@ use common::database::CommandUnitOfWork;
 use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Content, TrashInfo, Work};
+use common::entities::{Binder, BinderItem, Content, Footnote, TrashInfo, Work};
 use common::event::BinderItemManagementEvent::MergeTwoScenes;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -124,6 +124,8 @@ impl CommandUnitOfWork for MergeTwoScenesUnitOfWork {
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Footnote", action = "GetMulti")]
+#[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
 impl MergeTwoScenesUnitOfWorkTrait for MergeTwoScenesUnitOfWork {
     fn publish_merge_two_scenes_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

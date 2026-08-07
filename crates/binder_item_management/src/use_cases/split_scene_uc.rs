@@ -16,13 +16,20 @@
 // split from the synopsis would leave the new scene carrying a copy of the
 // source's prose.
 //
-// Undoable via a scoped snapshot/restore of the source's binder subtree.
+// Undoable via a scoped snapshot/restore of the source's binder subtree, plus — only
+// when a footnote's citation was cut into the new scene — a second, independent scoped
+// snapshot/restore of that footnote alone (`Footnote` hangs off `Work`, not `Binder`,
+// so it falls outside the binder-subtree scope; see `reanchor_split_footnotes`).
 use crate::SplitSceneDto;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
-use common::entities::{BinderItem, BinderItemRole, BinderItemSubRole, Content, ContentRole};
+use common::direct_access::footnote::FootnoteRelationshipField;
+use common::direct_access::work::WorkRelationshipField;
+use common::entities::{
+    BinderItem, BinderItemRole, BinderItemSubRole, Content, ContentRole, Footnote,
+};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use skribisto_model::RoleExt;
@@ -45,6 +52,20 @@ pub trait SplitSceneUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
+// Only for reanchoring a footnote whose reference moved into the new scene (see
+// `crate::footnote_reanchor`) — `Footnote` hangs off `Work`, not `Binder`, so finding
+// "which footnotes does this split's source Work own" needs its own small lookup
+// chain (`Work::GetRelationshipsFromRightIds` on `Binders` to resolve the owning Work
+// from `binder`, then `Work::GetRelationship` on `Footnotes`), and reparenting one
+// needs its own scoped `Snapshot`/`Restore` pair — `Footnote` is not reached by
+// `snap_before`/`snap_after`'s binder-subtree scope, so without this an undo would
+// revert the split's structural change but leave a repointed anchor dangling.
+#[macros::uow_action(entity = "Work", action = "GetRelationshipsFromRightIds")]
+#[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Footnote", action = "GetMulti")]
+#[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
+#[macros::uow_action(entity = "Footnote", action = "Snapshot")]
+#[macros::uow_action(entity = "Footnote", action = "Restore")]
 pub trait SplitSceneUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_split_scene_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -53,6 +74,12 @@ pub struct SplitSceneUseCase {
     uow_factory: Box<dyn SplitSceneUnitOfWorkFactoryTrait>,
     snap_before: Option<EntityTreeSnapshot>,
     snap_after: Option<EntityTreeSnapshot>,
+    // Set only when the split moved a footnote's citation into the new scene (the
+    // common case has none). Kept apart from `snap_before`/`snap_after` above because
+    // `Footnote` is not part of the binder subtree those snapshot — see the trait's
+    // doc comment on the `Footnote` actions.
+    footnote_snap_before: Option<EntityTreeSnapshot>,
+    footnote_snap_after: Option<EntityTreeSnapshot>,
 }
 
 impl SplitSceneUseCase {
@@ -61,6 +88,8 @@ impl SplitSceneUseCase {
             uow_factory,
             snap_before: None,
             snap_after: None,
+            footnote_snap_before: None,
+            footnote_snap_after: None,
         }
     }
 
@@ -194,6 +223,11 @@ impl SplitSceneUseCase {
             ..Default::default()
         })?;
         let mut new_content_ids = Vec::new();
+        // Per-role id of the row the after-caret half landed in, if any — needed below
+        // to reanchor a footnote whose citation moved there (`None` when that role's
+        // after-text was empty, so nothing was created for it).
+        let mut new_scene_content_id: Option<EntityId> = None;
+        let mut new_synopsis_content_id: Option<EntityId> = None;
         for (role, text) in [
             (ContentRole::SceneText, &dto.after_text),
             (ContentRole::SynopsisText, &dto.after_synopsis),
@@ -205,11 +239,16 @@ impl SplitSceneUseCase {
                 created_at: now,
                 updated_at: now,
                 activated: true,
-                role,
+                role: role.clone(),
                 data: text.clone(),
                 ..Default::default()
             })?;
             new_content_ids.push(created.id);
+            match role {
+                ContentRole::SceneText => new_scene_content_id = Some(created.id),
+                ContentRole::SynopsisText => new_synopsis_content_id = Some(created.id),
+                _ => {}
+            }
         }
         uow.set_binder_item_relationship(
             &new_item.id,
@@ -230,12 +269,119 @@ impl SplitSceneUseCase {
         uow.set_binder_relationship(&binder, &BinderRelationshipField::BinderItems, &new_order)?;
 
         let snap_after = uow.snapshot_binder(&[binder])?;
+
+        // 4. Reanchor any footnote whose `[^label]` citation was cut into the new
+        // scene — see `crate::footnote_reanchor` for why this cannot be left to
+        // `run_search`/`count_words` to work around: `Footnote.content` is a static
+        // pointer nobody else updates, so without this a split silently misattributes
+        // (search) or misattributes-and-sometimes-drops (word count) the note.
+        let (footnote_snap_before, footnote_snap_after) = self.reanchor_split_footnotes(
+            uow.as_mut(),
+            binder,
+            &src_rows,
+            &dto.before_text,
+            &dto.after_text,
+            new_scene_content_id,
+            &dto.before_synopsis,
+            &dto.after_synopsis,
+            new_synopsis_content_id,
+        )?;
+
         uow.commit()?;
         uow.publish_split_scene_event(vec![source, new_item.id], None);
 
         self.snap_before = Some(snap_before);
         self.snap_after = Some(snap_after);
+        self.footnote_snap_before = footnote_snap_before;
+        self.footnote_snap_after = footnote_snap_after;
         Ok(())
+    }
+
+    /// Reparent every footnote whose citation was cut into the new scene, for both
+    /// writing roles. Returns a scoped before/after snapshot pair of exactly the
+    /// footnotes touched — `None` when nothing moved, which is the common case and
+    /// keeps a plain split (no footnote near the caret) from paying for a Work lookup
+    /// it does not need beyond resolving the owning Work once.
+    #[allow(clippy::too_many_arguments)]
+    fn reanchor_split_footnotes(
+        &self,
+        uow: &mut dyn SplitSceneUnitOfWorkTrait,
+        binder: EntityId,
+        src_rows: &[Content],
+        before_text: &str,
+        after_text: &str,
+        new_scene_content_id: Option<EntityId>,
+        before_synopsis: &str,
+        after_synopsis: &str,
+        new_synopsis_content_id: Option<EntityId>,
+    ) -> Result<(Option<EntityTreeSnapshot>, Option<EntityTreeSnapshot>)> {
+        let old_scene_id = src_rows
+            .iter()
+            .find(|c| c.role == ContentRole::SceneText)
+            .map(|c| c.id);
+        let old_synopsis_id = src_rows
+            .iter()
+            .find(|c| c.role == ContentRole::SynopsisText)
+            .map(|c| c.id);
+        // Nothing existed to anchor onto before this split for either role — no
+        // footnote can be involved, so skip the Work/Footnote lookups entirely.
+        if old_scene_id.is_none() && old_synopsis_id.is_none() {
+            return Ok((None, None));
+        }
+
+        let owners =
+            uow.get_work_relationships_from_right_ids(&WorkRelationshipField::Binders, &[binder])?;
+        let Some((work_id, _)) = owners.into_iter().next() else {
+            // The binder's Work vanished between the earlier lookup and here — not
+            // this use case's problem to diagnose further; simply nothing to reanchor.
+            return Ok((None, None));
+        };
+        let footnote_ids =
+            uow.get_work_relationship(&work_id, &WorkRelationshipField::Footnotes)?;
+        if footnote_ids.is_empty() {
+            return Ok((None, None));
+        }
+        let anchors: Vec<crate::footnote_reanchor::FootnoteAnchor> = uow
+            .get_footnote_multi(&footnote_ids)?
+            .into_iter()
+            .flatten()
+            .map(|f: Footnote| (f.id, f.content, f.label))
+            .collect();
+
+        let mut reparents = Vec::new();
+        if let Some(old_id) = old_scene_id {
+            reparents.extend(crate::footnote_reanchor::reanchor_on_split(
+                &anchors,
+                old_id,
+                before_text,
+                after_text,
+                new_scene_content_id,
+            ));
+        }
+        if let Some(old_id) = old_synopsis_id {
+            reparents.extend(crate::footnote_reanchor::reanchor_on_split(
+                &anchors,
+                old_id,
+                before_synopsis,
+                after_synopsis,
+                new_synopsis_content_id,
+            ));
+        }
+        if reparents.is_empty() {
+            return Ok((None, None));
+        }
+
+        let touched: Vec<EntityId> = reparents.iter().map(|(id, _)| *id).collect();
+        let before = uow.snapshot_footnote(&touched)?;
+        for (footnote_id, new_content_id) in &reparents {
+            uow.set_footnote_relationship(
+                footnote_id,
+                &FootnoteRelationshipField::Content,
+                &[*new_content_id],
+            )?;
+        }
+        let after = uow.snapshot_footnote(&touched)?;
+        Ok((Some(before), Some(after)))
     }
 }
 
@@ -250,6 +396,14 @@ impl UndoRedoCommand for SplitSceneUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
         uow.restore_binder(snap)?;
+        // Only set when this split reanchored a footnote (see
+        // `reanchor_split_footnotes`) — restores its `content` pointer alongside the
+        // structural undo above, in the same transaction, so the two can never drift
+        // apart (a footnote left pointing at a row the binder-subtree undo just made
+        // vanish).
+        if let Some(fsnap) = self.footnote_snap_before.as_ref() {
+            uow.restore_footnote(fsnap)?;
+        }
         uow.commit()?;
         Ok(())
     }
@@ -262,6 +416,9 @@ impl UndoRedoCommand for SplitSceneUseCase {
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
         uow.restore_binder(snap)?;
+        if let Some(fsnap) = self.footnote_snap_after.as_ref() {
+            uow.restore_footnote(fsnap)?;
+        }
         uow.commit()?;
         Ok(())
     }

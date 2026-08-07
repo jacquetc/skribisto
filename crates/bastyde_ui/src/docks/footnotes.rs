@@ -427,20 +427,42 @@ fn body_editor(row: &FootnoteRow, vm: FootnotesViewModel) -> impl Widget {
     RichTextEditor::editor(doc)
         .min_lines(BODY_MIN_LINES)
         .v_scroll_policy(ScrollPolicy::AlwaysOff)
-        .style(NoteBodyStyle)
+        .style(NoteBodyStyle { id, vm })
         .on_change(commit)
 }
 
-/// A body that reads as prose, not as a form field.
+/// A body that reads as prose, not as a form field — and the one place that
+/// reports this row's *real* keyboard focus back to the view-model.
 ///
 /// The default editor recipe frames every body in a filled, bordered box; three of
 /// those stacked in a 300 dp dock read as a settings pane rather than as three
 /// notes. So the fill goes, and the affordance is the focus ring alone.
-#[derive(Debug, Clone, Copy)]
-struct NoteBodyStyle;
+///
+/// `cfg.is_focused` is also the only place in the dock that knows, moment to
+/// moment, whether a caret is genuinely sitting in *this* row's body — so this
+/// forwards it to [`FootnotesViewModel::set_editing`], which
+/// [`body_doc`](crate::view_models::FootnotesViewModel::body_doc) then
+/// consults before ever re-syncing an already-cached document from a body
+/// change that landed elsewhere. Without this, that gate would have nothing
+/// truthful to read and could only guess.
+struct NoteBodyStyle {
+    id: u64,
+    vm: FootnotesViewModel,
+}
 
 impl RichTextEditorStyle for NoteBodyStyle {
     fn make_body(&self, cfg: &RichTextEditorStyleConfig, ctx: &mut BuildContext) -> WidgetId {
+        {
+            let vm = self.vm.clone();
+            let id = self.id;
+            ctx.effect(&cfg.is_focused, move |focused| {
+                if *focused {
+                    vm.set_editing(Some(id));
+                } else if vm.editing().get() == Some(id) {
+                    vm.set_editing(None);
+                }
+            });
+        }
         if cfg.is_read_only {
             return match cfg.content_padding {
                 Some((t, r, b, l)) => ctx.add(Padding::new(t, r, b, l).child_id(cfg.viewport)),
@@ -473,9 +495,13 @@ impl RichTextEditorStyle for NoteBodyStyle {
 /// box above. Deleting takes the reference with it, because a `[^label]` with
 /// nothing behind it still renders and still reaches the exporter with nothing to
 /// print (see the model's own note).
+///
+/// No confirmation dialog first — see `FootnotesViewModel::delete`'s own doc
+/// comment for why the click fires immediately and a grace-window "Undo" toast
+/// is the safety net instead.
 fn row_menu(id: u64, vm: FootnotesViewModel) -> MenuList {
     MenuList::new()
-        .item(MenuItem::new(tr!(footnotes_delete())).on_activate_fn(move |_c| vm.delete(id)))
+        .item(MenuItem::new(tr!(footnotes_delete())).on_activate_fn(move |c| vm.delete(c, id)))
 }
 
 #[cfg(test)]

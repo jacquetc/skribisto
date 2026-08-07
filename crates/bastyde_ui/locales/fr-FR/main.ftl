@@ -1026,6 +1026,8 @@ search-preview-empty = Sélectionnez un résultat pour l'afficher ici
 search-preview-no-prose = Ce résultat n'a pas de texte modifiable
 search-preview-prompt = Pour afficher un aperçu ici, lancez une recherche.
 search-preview-open-search = Rechercher dans le projet
+search-preview-footnote-prompt = Ce résultat se trouve dans le texte d'une note de bas de page — ouvrez-la dans le panneau Notes de bas de page pour la consulter et la modifier.
+search-preview-open-footnotes = Ouvrir les notes de bas de page
 
 # Barre de recherche par éditeur (Ctrl+F)
 find-placeholder = Rechercher dans ce document…
@@ -1608,3 +1610,5 @@ footnotes-delete = &Supprimer la note et son appel
 footnotes-no-project = Ouvrez un projet avant d'insérer une note de bas de page.
 footnotes-no-caret = Placez le curseur dans le texte d'une scène pour y insérer une note.
 footnotes-not-created = La note n'a pas pu être ajoutée au projet.
+footnotes-deleted-toast = Note supprimée
+footnotes-undo-delete = Annuler

@@ -12,7 +12,7 @@ use common::database::CommandUnitOfWork;
 use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Content};
+use common::entities::{Binder, BinderItem, Content, Footnote};
 use common::event::BinderItemManagementEvent::SplitScene;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -120,6 +120,12 @@ impl CommandUnitOfWork for SplitSceneUnitOfWork {
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Work", action = "GetRelationshipsFromRightIds")]
+#[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Footnote", action = "GetMulti")]
+#[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
+#[macros::uow_action(entity = "Footnote", action = "Snapshot")]
+#[macros::uow_action(entity = "Footnote", action = "Restore")]
 impl SplitSceneUnitOfWorkTrait for SplitSceneUnitOfWork {
     fn publish_split_scene_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

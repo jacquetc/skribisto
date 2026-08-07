@@ -3,7 +3,11 @@
 
 // Custom implementation: merge row B (source) into row A (target). A survives and
 // receives B's SceneText (after a blank line) and its SynopsisText (concatenated);
-// B is then sent to Trash (`activated = false` + one TrashInfo under Work).
+// B is then sent to Trash (`activated = false` + one TrashInfo under Work). Any
+// footnote anchored to a row of B's that got folded in reparents onto A's resulting
+// row (see `crate::footnote_reanchor`) — otherwise its citation would render live and
+// numbered in A while `run_search`/`count_words` kept attributing it to B, which the
+// trashing below then drops out of every default view.
 //
 // Who may take part is decided by the constraint matrix, not a hardcoded sub_role
 // list. The *target* need only be prose-bearing — which includes a chapter *folder*
@@ -24,9 +28,10 @@ use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
+use common::direct_access::footnote::FootnoteRelationshipField;
 use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{BinderItem, Content, ContentRole, TrashInfo, Work};
+use common::entities::{BinderItem, Content, ContentRole, Footnote, TrashInfo, Work};
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use skribisto_model::SubRoleExt;
@@ -54,6 +59,14 @@ pub trait MergeTwoScenesUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
+// A footnote anchored to the source's now-merged-away content must move with its
+// text — see `crate::footnote_reanchor`. No `Snapshot`/`Restore` pair of its own is
+// needed here (unlike `split_scene`): `Footnote` hangs directly off `Work`, which this
+// use case already snapshots/restores wholesale via `Work::Snapshot`/`Work::Restore`
+// above, so a `content` change made between `snap_before` and `snap_after` is already
+// covered.
+#[macros::uow_action(entity = "Footnote", action = "GetMulti")]
+#[macros::uow_action(entity = "Footnote", action = "SetRelationship")]
 pub trait MergeTwoScenesUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_merge_two_scenes_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -203,20 +216,24 @@ impl MergeTwoScenesUseCase {
         let snap_before = uow.snapshot_work(&[work_id])?;
 
         let now = chrono::Utc::now();
+        // (source row id, target row id) for every role whose text actually moved —
+        // fed to the footnote reanchor pass below, once every role has been folded in.
+        let mut moved_role_content: Vec<(EntityId, EntityId)> = Vec::new();
         for role in [ContentRole::SceneText, ContentRole::SynopsisText] {
-            let b_text = b_rows
-                .iter()
-                .find(|c| c.role == role)
-                .map(|c| c.data.clone())
-                .unwrap_or_default();
+            let b_row = b_rows.iter().find(|c| c.role == role);
+            let b_text = b_row.map(|c| c.data.clone()).unwrap_or_default();
             if b_text.trim().is_empty() {
                 continue; // nothing to append for this role
             }
+            // `b_row` is `Some` here: a non-empty `b_text` can only have come from a
+            // row that exists.
+            let b_content_id = b_row.expect("non-empty b_text implies a source row").id;
             match a_rows.iter().find(|c| c.role == role).cloned() {
                 Some(mut row) => {
                     row.data = join_text(&row.data, &b_text);
                     row.updated_at = now;
                     uow.update_content(&row)?;
+                    moved_role_content.push((b_content_id, row.id));
                 }
                 None => {
                     let c = uow.create_orphan_content(&Content {
@@ -233,6 +250,40 @@ impl MergeTwoScenesUseCase {
                         &BinderItemRelationshipField::Contents,
                         &a_content_ids,
                     )?;
+                    moved_role_content.push((b_content_id, c.id));
+                }
+            }
+        }
+
+        // Reanchor every footnote whose citation was folded into the target's row —
+        // `Footnote.content` is a static pointer nobody else updates (see
+        // `crate::footnote_reanchor`), so without this the note would still resolve
+        // (search/word-count) to the source's row, which the trashing below removes
+        // from every default (non-`include_trashed`) view — silently losing the note
+        // from search and from every word count, even though its text and citation are
+        // now live in the surviving scene.
+        if !moved_role_content.is_empty() {
+            let footnote_ids =
+                uow.get_work_relationship(&work_id, &WorkRelationshipField::Footnotes)?;
+            if !footnote_ids.is_empty() {
+                let anchors: Vec<crate::footnote_reanchor::FootnoteAnchor> = uow
+                    .get_footnote_multi(&footnote_ids)?
+                    .into_iter()
+                    .flatten()
+                    .map(|f: Footnote| (f.id, f.content, f.label))
+                    .collect();
+                for (old_content_id, new_content_id) in &moved_role_content {
+                    for (footnote_id, new_id) in crate::footnote_reanchor::reanchor_on_merge(
+                        &anchors,
+                        *old_content_id,
+                        *new_content_id,
+                    ) {
+                        uow.set_footnote_relationship(
+                            &footnote_id,
+                            &FootnoteRelationshipField::Content,
+                            &[new_id],
+                        )?;
+                    }
                 }
             }
         }

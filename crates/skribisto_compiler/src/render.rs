@@ -1361,6 +1361,17 @@ struct CompiledNotes {
 /// Only notes actually referenced by an included row are emitted. A note whose
 /// reference sits in a chapter this export leaves out has nothing pointing at it
 /// here, and printing it would put an unreferenced note at the foot of the page.
+///
+/// **Which marker a wanted label draws does not come from the row that noticed
+/// it.** `number_map` is keyed by `(item_id, label)`, so a label duplicated
+/// across two items (a scene copied verbatim without reminting its footnote
+/// labels — see `binder_item_management::duplicate_uc.rs`) has two independent
+/// entries. Looking one up by *this row's own* item id used to mean a scoped
+/// export could pick a different entry — and print a different number — than
+/// the whole-manuscript collapse the editor's live badge uses, for the exact
+/// same citation, with no edit in between. `label_homes` is the one collapse
+/// both share (see its doc for the rule); a row here only ever decides whether a
+/// label is *wanted*, never which number it prints.
 fn footnote_bodies(req: &RenderRequest, rows: &[Row]) -> CompiledNotes {
     let preset = req.preset;
     if !preset.include_footnotes || req.gathered.footnotes.is_empty() {
@@ -1406,6 +1417,12 @@ fn footnote_bodies(req: &RenderRequest, rows: &[Row]) -> CompiledNotes {
         },
     );
 
+    // The one collapse from `number_map`'s per-item entries to the marker each
+    // label actually prints — computed once, over the whole tree, so it agrees
+    // with the editor's own badge (see the doc comment above and
+    // `label_homes`'s own doc for why this cannot be re-derived per row).
+    let homes = footnote_numbering::label_homes(&numbered);
+
     // Which of them this export actually references.
     let mut wanted: Vec<(usize, String)> = Vec::new();
     let mut markers = std::collections::HashMap::new();
@@ -1415,7 +1432,7 @@ fn footnote_bodies(req: &RenderRequest, rows: &[Row]) -> CompiledNotes {
                 continue;
             }
             for (_, label) in footnote_numbering::references_in(&content.data, &labels) {
-                let Some(n) = numbered.get(&(row.item.id, label.clone())) else {
+                let Some((_, n)) = homes.get(&label) else {
                     continue;
                 };
                 if markers.contains_key(&label) {
@@ -4438,6 +4455,58 @@ mod tests {
         assert!(
             !out.contains("<sup>1</sup>"),
             "the first note leaked into a scope that excludes it: {out}"
+        );
+    }
+
+    /// **The scope-drift regression `label_homes` closes.** A duplicated scene
+    /// (a raw text copy that never remints its footnote labels) can leave the
+    /// same label referenced from two different items. Exporting only the
+    /// *later* one — item 100, the label's true first home in the whole
+    /// manuscript, is deliberately left out of scope — must still print the
+    /// number the whole-manuscript collapse gives it, not a scope-local
+    /// recount starting from whichever occurrence the export happens to see
+    /// first.
+    #[test]
+    fn a_label_duplicated_across_two_items_keeps_its_whole_manuscript_number_when_scoped() {
+        let mut g = gathered(
+            vec![
+                iwc(
+                    100,
+                    SR::Scene,
+                    "",
+                    vec![c(1, ContentRole::SceneText, "First[^a].")],
+                ),
+                iwc(
+                    150,
+                    SR::Scene,
+                    "",
+                    vec![c(2, ContentRole::SceneText, "Also[^a] here.")],
+                ),
+                iwc(
+                    200,
+                    SR::Scene,
+                    "",
+                    vec![c(3, ContentRole::SceneText, "Second[^b].")],
+                ),
+            ],
+            "en",
+        );
+        g.footnotes = vec![note(7000, 1, "a", "One."), note(7001, 3, "b", "Two.")];
+
+        let p = preset("neutral");
+        let out = render_to_string(&req(&g, &[150, 200], &p, ExportFormat::Html)).unwrap();
+        assert!(
+            out.contains("<sup>1</sup>"),
+            "the scoped export must print the same number 1 the editor's whole-manuscript \
+             badge shows for [^a], not a scope-local recount: {out}"
+        );
+        assert!(
+            !out.contains("<sup>2</sup>"),
+            "no citation in this scope may be forced to number 2 by a scope-local collapse: {out}"
+        );
+        assert!(
+            out.contains("<sup>3</sup>"),
+            "the unambiguous note lost its number: {out}"
         );
     }
 

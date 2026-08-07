@@ -1021,6 +1021,8 @@ search-preview-empty = Select a result to preview it here
 search-preview-no-prose = This match has no editable text
 search-preview-prompt = To see a preview here, run a search.
 search-preview-open-search = Search in Project
+search-preview-footnote-prompt = This match is in a footnote's own text — open it in the Footnotes dock to see and edit it.
+search-preview-open-footnotes = Open Footnotes
 
 # Per-editor find banner (Ctrl+F)
 find-placeholder = Find in this document…
@@ -1635,3 +1637,5 @@ footnotes-delete = &Delete note and its reference
 footnotes-no-project = Open a project before inserting a footnote.
 footnotes-no-caret = Put the cursor in a scene's text to insert a footnote there.
 footnotes-not-created = The footnote could not be added to the project.
+footnotes-deleted-toast = Note deleted
+footnotes-undo-delete = Undo

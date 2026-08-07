@@ -379,6 +379,20 @@ impl RunSearchUseCase {
     /// cache scene text does. `FieldText::Plain` is for markup-free strings, and
     /// using it here would let a search for a word match the middle of a
     /// formatting marker.
+    ///
+    /// `footnote.content` below is trusted at face value — this walk does not
+    /// re-derive which item a note "really" belongs to. That is safe only because
+    /// `binder_item_management`'s `split_scene`/`merge_two_scenes` keep it correctly
+    /// reparented whenever they relocate the `Content` row a note's citation lives in
+    /// (see `binder_item_management::footnote_reanchor`); before that existed, this
+    /// field could point at a scene the citation had already moved out of, and a
+    /// search hit would silently name the wrong item. Notice this **cannot** be caught
+    /// by testing the editor or the Footnotes dock: `skribisto_model::footnote_numbering`
+    /// (which drives both) never reads `Footnote.content` at all — it re-derives a
+    /// note's placement by scanning live prose on every pass, precisely so a stale
+    /// stored pointer like this one could never affect what the writer sees while
+    /// editing. Only a reader that trusts the stored anchor — this one, and
+    /// `progress_management::count_words` — was ever exposed to the drift.
     fn footnote_fields(
         &self,
         uow: &mut Box<dyn RunSearchUnitOfWorkTrait>,

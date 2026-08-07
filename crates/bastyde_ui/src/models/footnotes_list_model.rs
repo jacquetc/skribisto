@@ -132,6 +132,30 @@ pub fn strip_references(prose: &str, label: &str) -> String {
     prose.replace(&format!("[^{label}]"), "")
 }
 
+/// The comparable signature of a set of `(item_id, field_kind, label)`
+/// references — sorted, deduplicated, and encoded so the same label sitting in
+/// two different homes cannot collapse into the signature it would have sitting
+/// in just one.
+///
+/// This is the fix for the bug a bare `Vec<String>` of labels had: keying by
+/// label alone, `note_live_edit`'s gate no-ops whenever the *set of distinct
+/// labels* repeats — which it does at every step of an ordinary "move this
+/// citation" edit (copy into the new home, then delete the original), because
+/// the label is present *somewhere* the whole time. Keying by where each
+/// reference sits, not just what it names, makes every step of that edit change
+/// the signature. Separated out and pure so the property is unit-testable
+/// without a live document behind it — `live_labels` (in `imp`) is the
+/// backend-facing half that builds the input this consumes.
+fn signature_of(refs: Vec<(u64, &'static str, String)>) -> Vec<String> {
+    let mut out: Vec<String> = refs
+        .into_iter()
+        .map(|(item_id, kind, label)| format!("{item_id}:{kind}:{label}"))
+        .collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
 #[cfg(not(feature = "mocks"))]
 mod imp {
     use std::cell::Cell;
@@ -281,6 +305,10 @@ mod imp {
         /// documents' own anchor tables, not a re-parse and not a store read. The
         /// full pass behind it walks the whole manuscript once per label, which is
         /// fine at reference-changed cadence and ruinous at keystroke cadence.
+        ///
+        /// The comparison is keyed, not a bare label set — see
+        /// [`live_labels`](Self::live_labels)'s own doc for why a label set alone
+        /// misses a reference moving between two already-open documents.
         pub fn note_live_edit(&self) {
             let now = self.live_labels();
             if *self.inner.live_labels.borrow() == now {
@@ -428,9 +456,22 @@ mod imp {
         /// `Content` row, so a live editor holding unwritten text would otherwise
         /// have that text overwritten, and a live editor holding *stale* text would
         /// write the reference straight back on its next flush.
-        pub fn delete(&self, id: u64, stack_id: Option<u64>) {
+        ///
+        /// Returns a closure that reverses the whole thing, or `None` when there
+        /// was nothing to delete (a stale row — the id was already gone). The
+        /// closure needs no captured entity data of its own: the delete above ran
+        /// as one `begin_composite`/`end_composite` step, so a single
+        /// `undo_redo_commands::undo` on `stack_id` pops **both** halves back —
+        /// the removed `Footnote` row and every `[^label]` reference the strip
+        /// took out — in one shot. `stack_id` is the only thing worth capturing,
+        /// and it cannot go stale between the write and a later call: unlike the
+        /// footnote and its references, it does not get deleted by this function.
+        /// The caller (`FootnotesViewModel::delete`) hands the closure to a
+        /// grace-window "Undo" toast — see its own doc comment for why a toast
+        /// and not a confirmation dialog.
+        pub fn delete(&self, id: u64, stack_id: Option<u64>) -> Option<Box<dyn Fn()>> {
             let Ok(Some(dto)) = footnote_commands::get_footnote(&self.inner.ctx, &id) else {
-                return;
+                return None;
             };
             self.inner.docs.flush_all(stack_id);
 
@@ -470,6 +511,13 @@ mod imp {
             };
             self.inner.docs.reload_open(&items);
             self.refresh();
+
+            let ctx = self.inner.ctx.clone();
+            Some(Box::new(move || {
+                if let Err(e) = undo_redo_commands::undo(&ctx, stack_id) {
+                    eprintln!("footnotes: undo failed: {e}");
+                }
+            }))
         }
 
         /// Every `Content` row naming `label`, paired with its prose minus that
@@ -505,24 +553,42 @@ mod imp {
                 .collect()
         }
 
-        /// Every label any open document currently references, sorted — the
+        /// Every reference any open document currently carries, sorted — the
         /// signature `note_live_edit` compares.
+        ///
+        /// Keyed by **item and field**, not label alone (see
+        /// [`signature_of`](super::signature_of)'s own doc for why): a bare set
+        /// of distinct labels cannot see a reference *move* between two
+        /// already-open documents. Copy `[^fn1]` from Scene A into Scene B —
+        /// an ordinary "move this citation to where I actually discuss it"
+        /// edit — and for one instant both hold it; the label set is
+        /// `{fn1, …}` before, during, and after the writer then deletes the
+        /// original from A, because `fn1` is present *somewhere* the whole
+        /// time. A label-only comparison never fires, and the dock's cached
+        /// home for that note (content/item id, set at the last full refresh)
+        /// goes stale until an unrelated event happens to force a refresh.
         fn live_labels(&self) -> Vec<String> {
-            let mut out: Vec<String> = Vec::new();
+            let mut refs: Vec<(u64, &'static str, String)> = Vec::new();
             for item_id in self.inner.docs.open_item_ids() {
                 let Some(doc) = self.inner.docs.peek(item_id) else {
                     continue;
                 };
-                for field in [&doc.main, &doc.synopsis, &doc.epigraph]
-                    .into_iter()
-                    .flatten()
-                {
-                    out.extend(field.doc.footnote_references().into_iter().map(|(_, l)| l));
+                for (kind, field) in [
+                    ("main", &doc.main),
+                    ("synopsis", &doc.synopsis),
+                    ("epigraph", &doc.epigraph),
+                ] {
+                    let Some(field) = field else { continue };
+                    refs.extend(
+                        field
+                            .doc
+                            .footnote_references()
+                            .into_iter()
+                            .map(|(_, label)| (item_id, kind, label)),
+                    );
                 }
             }
-            out.sort();
-            out.dedup();
-            out
+            super::signature_of(refs)
         }
 
         /// Re-read the notes' prose only, leaving every number and placement as
@@ -854,11 +920,16 @@ mod imp {
             self.bump();
         }
 
-        pub fn delete(&self, id: u64, _stack_id: Option<u64>) {
+        /// Fabricated delete. Mirrors the real `delete`'s signature so the two
+        /// `imp` variants stay swappable, but a mocks build has no backend
+        /// undo/redo stack behind the fabricated list — there is nothing a
+        /// toast's Undo button could call, so this always returns `None`.
+        pub fn delete(&self, id: u64, _stack_id: Option<u64>) -> Option<Box<dyn Fn()>> {
             let keep: Vec<FootnoteRow> = self.rows().into_iter().filter(|r| r.id != id).collect();
             self.inner.model.replace_all(keep);
             self.bump();
             self.bump_structure();
+            None
         }
 
         fn bump(&self) {
@@ -941,6 +1012,73 @@ mod tests {
         );
     }
 
+    /// **The regression `signature_of` closes.** A reference moving between two
+    /// already-open documents — copy it into its new home, *then* delete the
+    /// original — leaves the deduplicated label set unchanged at every step
+    /// (the label is present somewhere the whole time), so a label-only
+    /// comparison never fires. Keying by `(item, field, label)` catches both
+    /// steps: the label briefly gaining a second home, and then losing its
+    /// first one.
+    #[test]
+    fn a_reference_moving_between_open_documents_changes_the_signature() {
+        let scene_a = 100u64;
+        let scene_b = 200u64;
+        let before = signature_of(vec![(scene_a, "main", "fn1".to_string())]);
+
+        // Copied into B; not yet deleted from A, so it briefly sits in both.
+        let both = signature_of(vec![
+            (scene_a, "main", "fn1".to_string()),
+            (scene_b, "main", "fn1".to_string()),
+        ]);
+        assert_ne!(
+            before, both,
+            "a second home must change the signature even though the label set alone does not"
+        );
+
+        // The writer deletes the original in A, leaving only B's copy.
+        let after = signature_of(vec![(scene_b, "main", "fn1".to_string())]);
+        assert_ne!(
+            both, after,
+            "losing the first home must also change the signature"
+        );
+        assert_ne!(
+            before, after,
+            "the end state must not be mistaken for the state it started in"
+        );
+    }
+
+    /// The same label in two different **fields** of one item (main prose vs.
+    /// synopsis) is two distinct homes too — a label-only signature would
+    /// collapse them into one, missing a citation added to the synopsis of an
+    /// item whose prose already names the same note.
+    #[test]
+    fn the_same_label_in_two_fields_of_one_item_is_two_distinct_homes() {
+        let item = 7u64;
+        let one_field = signature_of(vec![(item, "main", "fn1".to_string())]);
+        let two_fields = signature_of(vec![
+            (item, "main", "fn1".to_string()),
+            (item, "synopsis", "fn1".to_string()),
+        ]);
+        assert_ne!(one_field, two_fields);
+    }
+
+    /// The signature is a true set: re-adding an already-present reference (an
+    /// unrelated keystroke re-triggering the scan) must not change it, or the
+    /// gate would never settle.
+    #[test]
+    fn the_signature_is_stable_under_reordering_and_repetition() {
+        let a = signature_of(vec![
+            (1, "main", "fn1".to_string()),
+            (2, "main", "fn2".to_string()),
+        ]);
+        let b = signature_of(vec![
+            (2, "main", "fn2".to_string()),
+            (1, "main", "fn1".to_string()),
+            (1, "main", "fn1".to_string()),
+        ]);
+        assert_eq!(a, b);
+    }
+
     /// A note outside the book prints a bullet, not its label — the label is
     /// machinery the writer never typed.
     #[test]
@@ -992,5 +1130,179 @@ mod tests {
         let mut fewer = base.clone();
         fewer.pop();
         assert_ne!(structure_key(&base), structure_key(&fewer));
+    }
+}
+
+/// `delete`'s returned closure, driven against the **real** backend rather than
+/// the fabricated mocks list — the whole point is that
+/// `undo_redo_commands::undo` genuinely reverses the store, which only the real
+/// `imp` talks to at all (the mocks `delete` returns `None`, tested inline
+/// above).
+#[cfg(all(test, not(feature = "mocks")))]
+mod real_backend_tests {
+    use std::rc::Rc;
+
+    use frontend::AppContext;
+    use frontend::commands::{
+        binder_item_commands, content_commands, footnote_commands, work_commands,
+        work_management_commands,
+    };
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::direct_access::footnote::FootnoteRelationshipField;
+    use frontend::direct_access::{CreateFootnoteDto, FootnoteRelationshipDto, UpdateContentDto};
+    use frontend::work_management::LoadWorkDto;
+
+    use crate::app_ids::AppIds;
+    use crate::models::OpenDocsStore;
+
+    use super::FootnotesListModel;
+
+    /// Load the crate's shared test fixture into a fresh store and open a
+    /// per-Work undo stack — a real `begin_composite`/`end_composite`/`undo`
+    /// round trip needs one, unlike the read-only tests elsewhere in this
+    /// crate that only ever `seed` the ids.
+    fn loaded(app_ctx: &Rc<AppContext>) -> AppIds {
+        let ids = AppIds::new();
+        work_management_commands::load_work(
+            app_ctx,
+            &LoadWorkDto {
+                media_root: crate::media_paths::media_root_string(),
+                file_name: format!(
+                    "{}/../../resources/test/skribisto_test_project.skrib",
+                    env!("CARGO_MANIFEST_DIR")
+                ),
+            },
+        )
+        .expect("load fixture");
+        let work_id = work_commands::get_all_work(app_ctx)
+            .expect("work")
+            .first()
+            .expect("one work")
+            .id;
+        ids.seed(app_ctx, work_id);
+        ids.open_stack(app_ctx);
+        ids
+    }
+
+    /// **Regression.** Deleting a note used to be a one-way door: nothing in
+    /// the UI ever reached `undo_redo_commands::undo`, so the note's body and
+    /// every `[^label]` reference it carried were gone for good on one menu
+    /// click. `delete` now hands back a closure that does exactly that, and
+    /// this drives it against the real backend to prove it restores **both**
+    /// halves — not just the `Footnote` row, which would leave a dangling
+    /// `[^fn1]` with nothing behind it in the prose.
+    #[test]
+    fn deleting_a_note_can_be_reversed_by_the_returned_closure() {
+        let app_ctx = Rc::new(AppContext::new());
+        let ids = loaded(&app_ctx);
+        let work_id = ids.work_id.get().expect("work open");
+        let stack = ids.stack_id.get();
+
+        let content_id = binder_item_commands::get_all_binder_item(&app_ctx)
+            .expect("items")
+            .into_iter()
+            .find_map(|it| {
+                binder_item_commands::get_binder_item_relationship(
+                    &app_ctx,
+                    &it.id,
+                    &BinderItemRelationshipField::Contents,
+                )
+                .ok()
+                .and_then(|ids| ids.into_iter().next())
+            })
+            .expect("some fixture item has a Content row");
+
+        let original = content_commands::get_content(&app_ctx, &content_id)
+            .expect("get content")
+            .expect("content exists");
+        let prose = format!("{}\n\nCited here[^fn1].\n", original.data);
+        content_commands::update_content(
+            &app_ctx,
+            stack,
+            &UpdateContentDto {
+                id: content_id,
+                created_at: original.created_at,
+                updated_at: chrono::Utc::now(),
+                role: original.role,
+                data: prose,
+                activated: original.activated,
+            },
+        )
+        .expect("seed a reference to delete");
+
+        let now = chrono::Utc::now();
+        let created = footnote_commands::create_footnote(
+            &app_ctx,
+            stack,
+            &CreateFootnoteDto {
+                created_at: now,
+                updated_at: now,
+                content: Some(content_id),
+                label: "fn1".into(),
+                body: "A note about to be deleted.".into(),
+            },
+            work_id,
+            -1,
+        )
+        .expect("create footnote");
+        footnote_commands::set_footnote_relationship(
+            &app_ctx,
+            stack,
+            &FootnoteRelationshipDto {
+                id: created.id,
+                field: FootnoteRelationshipField::Content,
+                right_ids: vec![content_id],
+            },
+        )
+        .expect("wire content");
+
+        let docs = OpenDocsStore::new(app_ctx.clone());
+        let model = FootnotesListModel::new(app_ctx.clone(), ids.clone(), docs);
+
+        let undo = model
+            .delete(created.id, stack)
+            .expect("a real delete must hand back a way to reverse it");
+
+        assert!(
+            footnote_commands::get_footnote(&app_ctx, &created.id)
+                .expect("get_footnote")
+                .is_none(),
+            "the Footnote row must be gone right after delete"
+        );
+        let after_delete = content_commands::get_content(&app_ctx, &content_id)
+            .expect("get content")
+            .expect("content still exists");
+        assert!(
+            !after_delete.data.contains("[^fn1]"),
+            "the reference must be stripped from the prose right after delete"
+        );
+
+        undo();
+
+        assert!(
+            footnote_commands::get_footnote(&app_ctx, &created.id)
+                .expect("get_footnote")
+                .is_some(),
+            "undo must restore the Footnote row"
+        );
+        let after_undo = content_commands::get_content(&app_ctx, &content_id)
+            .expect("get content")
+            .expect("content still exists");
+        assert!(
+            after_undo.data.contains("[^fn1]"),
+            "undo must restore the stripped reference too, not just the note itself"
+        );
+    }
+
+    /// A stale id (already gone, or never existed) has nothing to reverse:
+    /// `None`, not a closure that would silently `undo` some unrelated *later*
+    /// edit if a caller ever called it anyway.
+    #[test]
+    fn deleting_a_missing_note_returns_no_undo() {
+        let app_ctx = Rc::new(AppContext::new());
+        let ids = loaded(&app_ctx);
+        let docs = OpenDocsStore::new(app_ctx.clone());
+        let model = FootnotesListModel::new(app_ctx.clone(), ids.clone(), docs);
+        assert!(model.delete(999_999, ids.stack_id.get()).is_none());
     }
 }
