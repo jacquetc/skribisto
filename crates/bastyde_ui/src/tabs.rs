@@ -1282,6 +1282,12 @@ mod tests {
     /// An empty epigraph starts folded and an authored one starts open, so a project that
     /// never uses epigraphs carries no open box on every chapter page — and one that does
     /// never has to go looking for its own text.
+    ///
+    /// The empty case passes an explicit blank `EpigraphText` row rather than no rows at
+    /// all: a *missing* row is the one input the two builds disagree on, since the mocks
+    /// variant of `SingleContent::for_field` fabricates prose for it (see its `fabricate`).
+    /// An empty row is honoured verbatim by both, so this pins the gate itself — "is there
+    /// text" — in either feature set.
     #[test]
     fn the_epigraph_box_opens_only_when_there_is_something_in_it() {
         use BinderItemRole::*;
@@ -1293,7 +1299,13 @@ mod tests {
             1,
             &Folder,
             &Part,
-            &[],
+            &[ContentDto {
+                id: 76,
+                role: ContentRole::EpigraphText,
+                data: String::new(),
+                activated: true,
+                ..Default::default()
+            }],
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
