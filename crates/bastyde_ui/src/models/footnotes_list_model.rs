@@ -1184,6 +1184,45 @@ mod real_backend_tests {
         ids
     }
 
+    /// A `Content` row that footnote machinery will actually look at: activated,
+    /// on an activated item, and the lowest such id so the answer never moves.
+    ///
+    /// **Not** `get_all_binder_item().find_map(..)`. That reads a `HashMap` store in
+    /// whatever order it hands rows back, so the pick changed from run to run — and
+    /// the shipped test fixture contains trashed rows, whose `Content` is
+    /// `activated: false`. Land on one of those and the seeded `[^fn1]` sits in prose
+    /// that `footnote_numbering::prose_of_item` deliberately skips, so nothing strips
+    /// it and the assertion fails. The production code was right every time; the test
+    /// was asking it to rewrite a trashed row roughly one run in four.
+    fn live_prose_content(app_ctx: &Rc<AppContext>) -> u64 {
+        let mut candidates: Vec<u64> = binder_item_commands::get_all_binder_item(app_ctx)
+            .expect("items")
+            .into_iter()
+            .filter(|it| it.activated)
+            .flat_map(|it| {
+                binder_item_commands::get_binder_item_relationship(
+                    app_ctx,
+                    &it.id,
+                    &BinderItemRelationshipField::Contents,
+                )
+                .unwrap_or_default()
+            })
+            .filter(|cid| {
+                content_commands::get_content(app_ctx, cid)
+                    .ok()
+                    .flatten()
+                    .is_some_and(|c| {
+                        c.activated && c.role == frontend::common::entities::ContentRole::SceneText
+                    })
+            })
+            .collect();
+        candidates.sort_unstable();
+        candidates
+            .into_iter()
+            .next()
+            .expect("the fixture must carry at least one live scene")
+    }
+
     /// **Regression.** Deleting a note used to be a one-way door: nothing in
     /// the UI ever reached `undo_redo_commands::undo`, so the note's body and
     /// every `[^label]` reference it carried were gone for good on one menu
@@ -1198,19 +1237,7 @@ mod real_backend_tests {
         let work_id = ids.work_id.get().expect("work open");
         let stack = ids.stack_id.get();
 
-        let content_id = binder_item_commands::get_all_binder_item(&app_ctx)
-            .expect("items")
-            .into_iter()
-            .find_map(|it| {
-                binder_item_commands::get_binder_item_relationship(
-                    &app_ctx,
-                    &it.id,
-                    &BinderItemRelationshipField::Contents,
-                )
-                .ok()
-                .and_then(|ids| ids.into_iter().next())
-            })
-            .expect("some fixture item has a Content row");
+        let content_id = live_prose_content(&app_ctx);
 
         let original = content_commands::get_content(&app_ctx, &content_id)
             .expect("get content")
