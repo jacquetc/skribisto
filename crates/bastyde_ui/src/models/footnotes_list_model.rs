@@ -279,9 +279,18 @@ mod imp {
             for wev in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
                 let me = self.clone();
                 ctx.subscribe_event(Origin::WorkManagement(wev), move |event: &Event| {
-                    if me.inner.ids.is_bootstrap_or_own(&event.ids) {
-                        me.refresh()
+                    if !me.inner.ids.is_bootstrap_or_own(&event.ids) {
+                        return;
                     }
+                    // Prefer the seeded id; fall back to the one the event carries.
+                    // See `refresh_for` — the signal is still `None` at this point.
+                    let work_id = me
+                        .inner
+                        .ids
+                        .work_id
+                        .get()
+                        .or_else(|| event.ids.first().copied());
+                    me.refresh_for(work_id);
                 });
             }
             {
@@ -290,11 +299,14 @@ mod imp {
                     Origin::WorkManagement(WorkManagementEvent::CloseWork),
                     move |event: &Event| {
                         if me.inner.ids.is_event_for_my_work(&event.ids) {
-                            me.refresh()
+                            me.refresh_for(None)
                         }
                     },
                 );
             }
+            // Catch up when this window is already seeded — a rebuild, or a wire
+            // that ran after the project was open.
+            self.refresh();
         }
 
         /// An edit landed in some open document — renumber **only if a reference
@@ -628,8 +640,20 @@ mod imp {
         }
 
         fn refresh(&self) {
+            self.refresh_for(self.inner.ids.work_id.get());
+        }
+
+        /// Reload against an explicit Work rather than the `ids.work_id` signal.
+        ///
+        /// Same reason `CommentsListModel::refresh_for` exists: this model is wired
+        /// in `App::build` *before* the lifecycle seed writes `ids.work_id`, so a
+        /// `LoadWork` handler reading the signal reads `None` and the dock stays
+        /// empty until the next `Footnote` entity event.
+        fn refresh_for(&self, work_id: Option<u64>) {
             *self.inner.live_labels.borrow_mut() = self.live_labels();
-            let rows = load_rows(&self.inner.ctx, &self.inner.ids, &self.inner.docs);
+            let rows = work_id
+                .map(|id| load_rows(&self.inner.ctx, id, &self.inner.docs))
+                .unwrap_or_default();
             let key = super::structure_key(&rows);
             self.inner.model.reconcile_by_key(rows, |r| r.id);
             let v = &self.inner.version;
@@ -650,10 +674,7 @@ mod imp {
             .unwrap_or_default()
     }
 
-    fn load_rows(ctx: &AppContext, ids: &AppIds, docs: &OpenDocsStore) -> Vec<FootnoteRow> {
-        let Some(work_id) = ids.work_id.get() else {
-            return Vec::new();
-        };
+    fn load_rows(ctx: &AppContext, work_id: u64, docs: &OpenDocsStore) -> Vec<FootnoteRow> {
         let note_ids = note_ids(ctx, work_id);
         let notes: Vec<frontend::direct_access::FootnoteDto> =
             footnote_commands::get_footnote_multi(ctx, &note_ids)

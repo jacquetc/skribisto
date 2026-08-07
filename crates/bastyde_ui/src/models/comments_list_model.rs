@@ -235,7 +235,11 @@ mod imp {
 
     impl CommentsListModel {
         pub fn new(ctx: Rc<AppContext>, ids: AppIds) -> Self {
-            let rows = load_rows(&ctx, &ids);
+            let rows = ids
+                .work_id
+                .get()
+                .map(|id| load_rows(&ctx, id))
+                .unwrap_or_default();
             let key = super::structure_key(&rows);
             let model = ListModel::from_vec(rows);
             Self {
@@ -290,9 +294,19 @@ mod imp {
             for wev in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
                 let me = self.clone();
                 ctx.subscribe_event(Origin::WorkManagement(wev), move |event: &Event| {
-                    if me.inner.ids.is_bootstrap_or_own(&event.ids) {
-                        me.refresh()
+                    if !me.inner.ids.is_bootstrap_or_own(&event.ids) {
+                        return;
                     }
+                    // Prefer the seeded id; fall back to the one the event carries.
+                    // See `refresh_for`: this model subscribes before the lifecycle
+                    // seed runs, so the signal is still `None` here.
+                    let work_id = me
+                        .inner
+                        .ids
+                        .work_id
+                        .get()
+                        .or_else(|| event.ids.first().copied());
+                    me.refresh_for(work_id);
                 });
             }
             {
@@ -301,11 +315,14 @@ mod imp {
                     Origin::WorkManagement(WorkManagementEvent::CloseWork),
                     move |event: &Event| {
                         if me.inner.ids.is_event_for_my_work(&event.ids) {
-                            me.refresh()
+                            me.refresh_for(None)
                         }
                     },
                 );
             }
+            // Catch up when this window is already seeded — a rebuild, or a wire
+            // that ran after the project was open.
+            self.refresh();
         }
 
         /// The reactive handle both docks bind (the per-document dock through a
@@ -604,7 +621,22 @@ mod imp {
         }
 
         fn refresh(&self) {
-            let rows = load_rows(&self.inner.ctx, &self.inner.ids);
+            self.refresh_for(self.inner.ids.work_id.get());
+        }
+
+        /// Reload against an explicit Work, rather than whatever `ids.work_id` says
+        /// right now.
+        ///
+        /// The distinction is load-bearing on `LoadWork`: this model is wired in
+        /// `App::build` *before* the lifecycle seed that writes `ids.work_id`, so a
+        /// handler that read the signal would read `None`, load nothing, and leave
+        /// both docks empty until the next `Comment` entity event — which for a
+        /// project the writer merely *opened* never comes. Exactly the bug
+        /// `WorkTagsListModel::wire` records having had, fixed the same way.
+        pub(crate) fn refresh_for(&self, work_id: Option<u64>) {
+            let rows = work_id
+                .map(|id| load_rows(&self.inner.ctx, id))
+                .unwrap_or_default();
             let key = super::structure_key(&rows);
             self.inner.model.reconcile_by_key(rows, |r| r.id);
             let v = &self.inner.version;
@@ -660,10 +692,7 @@ mod imp {
     /// Read this window's own Work's comments — via `Work.comments`, never
     /// `get_all_comment`, which would merge a second simultaneously-open Work's
     /// threads into this one's docks.
-    fn load_rows(ctx: &AppContext, ids: &AppIds) -> Vec<CommentRow> {
-        let Some(work_id) = ids.work_id.get() else {
-            return Vec::new(); // no project open
-        };
+    fn load_rows(ctx: &AppContext, work_id: u64) -> Vec<CommentRow> {
         let comment_ids =
             work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Comments)
                 .unwrap_or_default();
@@ -1183,5 +1212,137 @@ mod tests {
         assert!(r.is_open());
         r.resolved = true;
         assert!(!r.is_open());
+    }
+}
+
+/// Against the real backend, because the bug this pins is entirely about *when*
+/// `AppIds::work_id` is written relative to when this model reads it.
+#[cfg(all(test, not(feature = "mocks")))]
+mod real_backend_tests {
+    use std::rc::Rc;
+
+    use frontend::AppContext;
+    use frontend::commands::{
+        binder_item_commands, content_commands, work_commands, work_management_commands,
+    };
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::entities::CommentAnchorKind;
+    use frontend::work_management::LoadWorkDto;
+
+    use crate::app_ids::AppIds;
+
+    use super::CommentsListModel;
+
+    /// Load the shared fixture and return `(unseeded ids, work id)`.
+    fn loaded(app_ctx: &Rc<AppContext>) -> (AppIds, u64) {
+        work_management_commands::load_work(
+            app_ctx,
+            &LoadWorkDto {
+                media_root: crate::media_paths::media_root_string(),
+                file_name: format!(
+                    "{}/../../resources/test/skribisto_test_project.skrib",
+                    env!("CARGO_MANIFEST_DIR")
+                ),
+            },
+        )
+        .expect("load fixture");
+        let work_id = work_commands::get_all_work(app_ctx)
+            .expect("work")
+            .first()
+            .expect("one work")
+            .id;
+        (AppIds::new(), work_id)
+    }
+
+    /// The lowest activated `Content` in the fixture — a stable pick over a
+    /// `HashMap` store, and never a trashed row.
+    fn a_content(app_ctx: &Rc<AppContext>) -> u64 {
+        let mut ids: Vec<u64> = binder_item_commands::get_all_binder_item(app_ctx)
+            .expect("items")
+            .into_iter()
+            .filter(|it| it.activated)
+            .flat_map(|it| {
+                binder_item_commands::get_binder_item_relationship(
+                    app_ctx,
+                    &it.id,
+                    &BinderItemRelationshipField::Contents,
+                )
+                .unwrap_or_default()
+            })
+            .filter(|cid| {
+                content_commands::get_content(app_ctx, cid)
+                    .ok()
+                    .flatten()
+                    .is_some_and(|c| c.activated)
+            })
+            .collect();
+        ids.sort_unstable();
+        ids.into_iter().next().expect("a live content row")
+    }
+
+    /// **Regression.** A project opened with comments already in it showed two
+    /// empty docks.
+    ///
+    /// `App::build` wires this model well before the lifecycle subscriber that
+    /// seeds `AppIds::work_id`, so both subscribe to the same `LoadWork` and this
+    /// one runs first — reading `work_id` as `None`, loading nothing, and never
+    /// being asked again, because a project the writer merely *opened* produces no
+    /// further `Comment` event. The comments were in the store the whole time.
+    ///
+    /// The fix is the one `WorkTagsListModel::wire` already records making for the
+    /// identical bug: take the id from the event when the signal has not caught up.
+    /// This pins the capability that makes that possible — loading a Work this
+    /// model's own ids do not yet know about.
+    ///
+    /// The event itself cannot be driven here: `test_support`'s event source is
+    /// real but never fires (nothing mutates the store off-thread in a headless
+    /// test), which is also why no unit test caught this in the first place.
+    #[test]
+    fn a_dock_whose_ids_are_not_seeded_yet_can_still_load_the_work_the_event_names() {
+        let app_ctx = Rc::new(AppContext::new());
+        let (ids, work_id) = loaded(&app_ctx);
+
+        // A comment in the store, exactly as a saved project's would arrive.
+        let seeded = AppIds::new();
+        seeded.seed(&app_ctx, work_id);
+        let writer = CommentsListModel::new(app_ctx.clone(), seeded);
+        writer
+            .create(
+                a_content(&app_ctx),
+                CommentAnchorKind::Range,
+                "Editor",
+                "Is this the right word?",
+                &crate::comments::anchor::Anchor {
+                    start: 0,
+                    length: 3,
+                    exact: "The".into(),
+                    block_span: 1,
+                    ..Default::default()
+                },
+                None,
+            )
+            .expect("the comment is created");
+
+        // The startup shape: this model's ids have not been seeded.
+        let model = CommentsListModel::new(app_ctx.clone(), ids.clone());
+        assert!(ids.work_id.get().is_none());
+        assert!(
+            model.is_empty(),
+            "nothing is knowable before the ids are seeded — this is the state the \
+             dock used to be stuck in forever"
+        );
+
+        // What the `LoadWork` handler now does: use the id the event carried.
+        model.refresh_for(Some(work_id));
+        assert_eq!(
+            model.rows().len(),
+            1,
+            "the dock must fill from the event's own work id"
+        );
+        assert_eq!(model.rows()[0].body, "Is this the right word?");
+
+        // And closing empties it again rather than leaving a stale project's notes.
+        model.refresh_for(None);
+        assert!(model.is_empty());
     }
 }
