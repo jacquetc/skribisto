@@ -33,6 +33,14 @@ encoding_rs = "0.8"
 # The CommonMark parser. Its `into_offset_iter` is why the scanner owns its own
 # parse rather than leaning on text-document, which exposes no source offsets.
 pulldown-cmark = "0.13"
+# Spelled-out ordinals in headings — "Chapter Three", "Chapitre premier". A
+# per-language number-word table is the whole job, and this one already carries
+# seven of them (en/fr/de/es/it/pt/nl), compound forms included
+# (`quatre-vingt-dix-neuf`, `einundzwanzig`) and ordinals as well as cardinals.
+# Hand-writing that table for even the six Latin-script languages `title.rs`
+# already names keywords for would be several hundred lines of vocabulary this
+# project has no way to review in every one of them.
+text2num = "2.7"
 
 [lints]
 workspace = true

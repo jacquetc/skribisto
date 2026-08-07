@@ -14,11 +14,35 @@
 //! silently would be the same mistake Scrivener makes when splitting on the word
 //! "Chapter" and deleting it from every title it produced.
 //!
-//! **Arabic digits and roman numerals only.** Spelled-out numbers ("Chapter
-//! Three") are real but a minority, and recognising them well means a
-//! per-language word table for every language the app supports — the review tree
-//! makes that a one-click fix instead, which is the better trade until there is
-//! evidence otherwise.
+//! ## Three ways a number can be written, and one rule that guards them
+//!
+//! Arabic digits (`Chapter 3`), roman numerals (`III. The Open Road`), and — since
+//! the word table arrived with `text2num` — **spelled-out** numbers, cardinal or
+//! ordinal, in the seven languages that crate covers: `Chapter Three`,
+//! `Chapitre premier`, `Kapitel einundzwanzig`.
+//!
+//! Spelled-out numbers need a guard the other two do not, because number-words are
+//! also ordinary words. `# 7` can only be an ordinal, but `# One Last Thing` is a
+//! title and `# Nine Princes in Amber` is a novel. So a spelled-out number is read
+//! only when one of two things vouches for it:
+//!
+//! * **a structural keyword precedes it** — and then the keyword itself says which
+//!   language to read the number in (`chapitre` ⇒ French), which is why no caller
+//!   has to pass a locale; or
+//! * **it is the entire heading** — `# Three`, on the same reasoning that already
+//!   makes `# 7` an ordinal rather than a chapter named "7". Every supported
+//!   language is tried and they must agree on the value.
+//!
+//! A leading number-word followed by more title is never stripped. That is the same
+//! conservatism `take_number` already applies to `3rd Watch`.
+//!
+//! **Coverage stops at the word table.** `ru`, `ar` and `he` have keywords here but
+//! no `text2num` support, so they read digits and romans only. That is a deliberate
+//! stopping point rather than an oversight: Russian chapter ordinals decline
+//! (`глава третья`), and Hebrew numbers its chapters with gematria letters (`פרק ג`),
+//! which is a numeral system closer to the roman path than to a word list. Guessing
+//! at either in a language nobody here can proof-read would be worse than the review
+//! tree's one-click fix.
 
 /// What a heading's leading ordinal turned out to be.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -35,34 +59,90 @@ pub struct ExtractedOrdinal {
     pub keyword: Option<String>,
 }
 
+/// A language whose number words [`text2num`] can read.
+///
+/// Only the seven it supports are here. A keyword in a language it does not cover
+/// carries an empty list and still works for digits and roman numerals — see the
+/// coverage note in the module doc.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum WordLang {
+    En,
+    Fr,
+    De,
+    Es,
+    It,
+    Pt,
+}
+
+impl WordLang {
+    fn interpreter(self) -> text2num::Language {
+        match self {
+            WordLang::En => text2num::Language::english(),
+            WordLang::Fr => text2num::Language::french(),
+            WordLang::De => text2num::Language::german(),
+            WordLang::Es => text2num::Language::spanish(),
+            WordLang::It => text2num::Language::italian(),
+            WordLang::Pt => text2num::Language::portuguese(),
+        }
+    }
+}
+
+/// Every language with a word table, for the no-keyword case.
+///
+/// Dutch is deliberately absent even though `text2num` supports it: nothing here
+/// carries a Dutch structural keyword, so including it would only widen what a bare
+/// heading can be mistaken for, with nothing asking for it.
+const ALL_WORD_LANGS: &[WordLang] = &[
+    WordLang::En,
+    WordLang::Fr,
+    WordLang::De,
+    WordLang::Es,
+    WordLang::It,
+    WordLang::Pt,
+];
+
 /// Structural words worth recognising at the head of a title, across the
 /// languages the app already ships headings for. Matched case-insensitively.
-const KEYWORDS: &[&str] = &[
+///
+/// Each carries the languages whose number words may follow it, which is how a
+/// spelled-out ordinal is read without anyone passing a locale: `chapitre` can only
+/// be followed by a French number. Some words are genuinely shared — `parte` is both
+/// Spanish and Portuguese, `capítulo` likewise — and those list both; the reader then
+/// requires every language that parses to agree on the value, so an ambiguous keyword
+/// costs precision only where the languages genuinely disagree.
+///
+/// An empty list means "recognised as a keyword, but no word table" — the row still
+/// strips `Глава 3`, it just cannot read `Глава третья`.
+const KEYWORDS: &[(&str, &[WordLang])] = &[
     // en
-    "chapter",
-    "part",
-    "book",
-    "volume",
-    "prologue",
-    "epilogue", // fr
-    "chapitre",
-    "partie",
-    "livre",
-    "tome", // de
-    "kapitel",
-    "teil",
-    "buch", // es
-    "capítulo",
-    "capitulo",
-    "parte",
-    "libro",    // it
-    "capitolo", // pt
-    "capítulo",
-    "parte", // ru
-    "глава",
-    "часть", // ar / he keep the app's existing coverage
-    "فصل",
-    "פרק",
+    ("chapter", &[WordLang::En]),
+    ("part", &[WordLang::En]),
+    ("book", &[WordLang::En]),
+    ("volume", &[WordLang::En]),
+    ("prologue", &[WordLang::En]),
+    ("epilogue", &[WordLang::En]),
+    // fr
+    ("chapitre", &[WordLang::Fr]),
+    ("partie", &[WordLang::Fr]),
+    ("livre", &[WordLang::Fr]),
+    ("tome", &[WordLang::Fr]),
+    // de
+    ("kapitel", &[WordLang::De]),
+    ("teil", &[WordLang::De]),
+    ("buch", &[WordLang::De]),
+    // es / pt — `capítulo` and `parte` are both, so both are offered
+    ("capítulo", &[WordLang::Es, WordLang::Pt]),
+    ("capitulo", &[WordLang::Es, WordLang::Pt]),
+    ("parte", &[WordLang::Es, WordLang::Pt]),
+    ("libro", &[WordLang::Es]),
+    // it
+    ("capitolo", &[WordLang::It]),
+    // ru — keyword only; see the module doc on declension
+    ("глава", &[]),
+    ("часть", &[]),
+    // ar / he keep the app's existing coverage, digits and romans only
+    ("فصل", &[]),
+    ("פרק", &[]),
 ];
 
 /// Pull a leading ordinal off `heading`, if it has one.
@@ -78,30 +158,33 @@ pub fn extract_leading_ordinal(heading: &str) -> Option<ExtractedOrdinal> {
 
     let mut rest = trimmed;
     let mut keyword = None;
+    let mut keyword_langs: Option<&[WordLang]> = None;
 
     // An optional structural word first.
-    for kw in KEYWORDS {
+    for (kw, langs) in KEYWORDS {
         if let Some(after) = strip_prefix_case_insensitive(trimmed, kw) {
             // Must be a whole word: "Chapterhouse" is a title, not a chapter.
             if after.is_empty() || !after.starts_with(|c: char| c.is_alphanumeric()) {
                 keyword = Some((*kw).to_string());
+                keyword_langs = Some(langs);
                 rest = after.trim_start();
                 break;
             }
         }
     }
 
-    let (numeral, after_number) = take_number(rest);
+    let (numeral, after_number) = match take_number(rest) {
+        (Some(n), after) => (Some(n), after),
+        // No digits and no roman numeral. A spelled-out number may still be here,
+        // but only where something vouches for it — see the module doc.
+        (None, _) => take_number_words(rest, keyword_langs),
+    };
 
     // A keyword with no number ("Prologue") is a title in its own right, and a
     // heading with neither is an ordinary title.
     numeral?;
 
-    let remaining = after_number
-        .trim_start_matches(|c: char| {
-            matches!(c, ':' | '.' | ')' | '-' | '—' | '–' | '·' | '|') || c.is_whitespace()
-        })
-        .trim();
+    let remaining = after_number.trim_start_matches(is_ordinal_separator).trim();
 
     Some(ExtractedOrdinal {
         remaining_title: remaining.to_string(),
@@ -171,6 +254,138 @@ fn take_number(s: &str) -> (Option<u32>, &str) {
         Some(n) => (Some(n), rest),
         None => (None, s),
     }
+}
+
+/// The most word-tokens a spelled-out number may occupy.
+///
+/// Four covers everything a chapter heading realistically reaches:
+/// `quatre-vingt-dix-neuf` is one hyphenated token, `eighty five` is two, and the
+/// longest ordinary form in the covered languages — Spanish `ciento veinticinco mil`
+/// — is three. The cap is what stops the reader walking an entire title looking for
+/// a number that is not there.
+const MAX_NUMBER_WORDS: usize = 4;
+
+/// A leading *spelled-out* number, and what follows it — or `(None, s)`.
+///
+/// `langs` is the candidate set: `Some(langs)` when a structural keyword named them
+/// (and `Some(&[])` when the keyword's language has no word table, which reads as "no"),
+/// `None` when there was no keyword at all.
+///
+/// The rule this enforces is the module doc's: with a keyword, the number may be
+/// followed by the rest of the title; without one, the number must **be** the whole
+/// heading. `One Last Thing` and `Nine Princes in Amber` are titles, and no amount of
+/// language support should make them chapters.
+fn take_number_words<'a>(s: &'a str, langs: Option<&[WordLang]>) -> (Option<u32>, &'a str) {
+    let (candidates, must_be_whole) = match langs {
+        Some([]) => return (None, s),
+        Some(langs) => (langs, false),
+        None => (ALL_WORD_LANGS, true),
+    };
+
+    let ends = leading_word_token_ends(s);
+    // Longest first: "twenty one" is 21, not 20 followed by a title called "one".
+    for end in ends.into_iter().rev() {
+        let candidate = &s[..end];
+        // A single letter is never a number word. Without this, English "a" reads as
+        // one in the crate's vocabulary, and "A Study in Scarlet" would lose its "A".
+        if candidate.chars().count() < 2 {
+            continue;
+        }
+        let Some(value) = read_in_every_language(candidate, candidates) else {
+            continue;
+        };
+        let after = &s[end..];
+        if must_be_whole && !after.trim_matches(is_ordinal_separator).trim().is_empty() {
+            // A number-word opening a longer title. Not an ordinal.
+            return (None, s);
+        }
+        return (Some(value), after);
+    }
+    (None, s)
+}
+
+/// `candidate`'s value when every candidate language that can read it agrees — or
+/// `None` when none can, or when two disagree.
+///
+/// The agreement rule matters for the genuinely shared keywords (`parte`, `capítulo`):
+/// where Spanish and Portuguese read a word the same way the answer is safe, and where
+/// they would differ, saying nothing is better than picking one at random.
+fn read_in_every_language(candidate: &str, langs: &[WordLang]) -> Option<u32> {
+    let mut agreed: Option<u32> = None;
+    for lang in langs {
+        let Ok(digits) = text2num::text2digits(candidate, &lang.interpreter()) else {
+            continue;
+        };
+        let Some(value) = leading_value(&digits) else {
+            continue;
+        };
+        match agreed {
+            None => agreed = Some(value),
+            Some(seen) if seen == value => {}
+            Some(_) => return None,
+        }
+    }
+    agreed
+}
+
+/// The number in one of `text2num`'s rendered forms.
+///
+/// It returns the *formatted* value, not a bare integer, and the format carries the
+/// language's own ordinal morphology: `premier` comes back as `"1er"`, `first` as
+/// `"1st"`, German `erste` as `"1."`, and Spanish/Italian/Portuguese `primero`/`primo`/
+/// `primeiro` as `"1º"`. Only the leading digit run is the number; parsing the whole
+/// string would silently reject every ordinal and quietly leave the feature reading
+/// cardinals alone.
+fn leading_value(rendered: &str) -> Option<u32> {
+    let digits: String = rendered.chars().take_while(char::is_ascii_digit).collect();
+    digits.parse().ok()
+}
+
+/// Byte offsets at which each of the leading word tokens ends, up to
+/// [`MAX_NUMBER_WORDS`].
+///
+/// A token is a run of alphabetic characters, hyphens or apostrophes — hyphens
+/// included so `quatre-vingt-dix-neuf` and `einundzwanzig`'s hyphenated cousins stay
+/// one token. Scanning stops at the first character that is neither a token character
+/// nor a single separating space, so a heading's punctuation (`Three: The Storm`)
+/// bounds the run without being read as part of it.
+fn leading_word_token_ends(s: &str) -> Vec<usize> {
+    let is_token_char = |c: char| c.is_alphabetic() || c == '-' || c == '\'' || c == '\u{2019}';
+
+    let mut ends = Vec::new();
+    let mut offset = 0usize;
+    let mut chars = s.char_indices().peekable();
+
+    while ends.len() < MAX_NUMBER_WORDS {
+        let start = offset;
+        while let Some(&(i, c)) = chars.peek() {
+            if is_token_char(c) {
+                offset = i + c.len_utf8();
+                chars.next();
+            } else {
+                break;
+            }
+        }
+        if offset == start {
+            break; // not a token character — nothing more to take
+        }
+        ends.push(offset);
+
+        // Exactly one space may separate two tokens of the same number.
+        match chars.peek() {
+            Some(&(i, ' ')) => {
+                offset = i + 1;
+                chars.next();
+            }
+            _ => break,
+        }
+    }
+    ends
+}
+
+/// The punctuation that may sit between an ordinal and the title it introduces.
+fn is_ordinal_separator(c: char) -> bool {
+    matches!(c, ':' | '.' | ')' | '-' | '—' | '–' | '·' | '|') || c.is_whitespace()
 }
 
 /// Strict roman-numeral value, or `None` if `s` is not one.
@@ -264,6 +479,132 @@ mod tests {
         let e = extract_leading_ordinal("Chapter 3: The Storm").unwrap();
         assert_eq!(e.keyword.as_deref(), Some("chapter"));
         assert_eq!(e.numeral, Some(3));
+    }
+
+    #[test]
+    fn a_keyword_and_a_spelled_out_number_come_off_together() {
+        assert_eq!(
+            extract("Chapter Three: The Storm"),
+            Some(("The Storm".into(), Some(3)))
+        );
+        assert_eq!(
+            extract("Chapitre premier"),
+            Some((String::new(), Some(1))),
+            "the standard French form for chapter one is a word, not a digit"
+        );
+        assert_eq!(
+            extract("Kapitel einundzwanzig"),
+            Some((String::new(), Some(21)))
+        );
+        assert_eq!(
+            extract("Capitolo dodici — La tempesta"),
+            Some(("La tempesta".into(), Some(12)))
+        );
+    }
+
+    /// Multi-token numbers must be read whole. Taking the longest match is what stops
+    /// "twenty one" becoming chapter 20 with a title called "one".
+    #[test]
+    fn a_spelled_out_number_spanning_several_words_is_read_whole() {
+        assert_eq!(
+            extract("Chapter twenty one"),
+            Some((String::new(), Some(21)))
+        );
+        assert_eq!(
+            extract("Chapitre quatre-vingt-dix-neuf"),
+            Some((String::new(), Some(99)))
+        );
+    }
+
+    /// The same reasoning that already makes a bare `7` an ordinal.
+    #[test]
+    fn a_heading_that_is_only_a_spelled_out_number_is_an_ordinal() {
+        assert_eq!(extract("Three"), Some((String::new(), Some(3))));
+        assert_eq!(extract("Trois"), Some((String::new(), Some(3))));
+    }
+
+    /// The guard the whole spelled-out path hangs on. Number words are ordinary words,
+    /// and without a keyword vouching for them a leading one is part of the title.
+    #[test]
+    fn a_spelled_out_number_starting_a_real_title_is_left_alone() {
+        for title in [
+            "One Last Thing",
+            "Three Musketeers",
+            "Nine Princes in Amber",
+            "Two Towers",
+            "Un homme et son péché",
+            "Cent ans de solitude",
+        ] {
+            assert_eq!(
+                extract(title),
+                None,
+                "{title:?} is a title, not an ordinal and a title"
+            );
+        }
+    }
+
+    /// No caller passes a locale, because the keyword already is one.
+    #[test]
+    fn the_keyword_decides_which_language_reads_the_number() {
+        // "drei" is German for three, and means nothing in English.
+        assert_eq!(extract("Kapitel drei"), Some((String::new(), Some(3))));
+        assert_eq!(
+            extract("Chapter drei"),
+            None,
+            "an English keyword must not reach for the German word table"
+        );
+    }
+
+    /// `leading_value` exists because `text2num` renders a number the way its language
+    /// writes it, ordinal morphology and all. Pin the real forms, per language, against
+    /// the real crate: if an upgrade ever returned a bare integer — or a differently
+    /// decorated one — every ordinal would silently stop being recognised, and nothing
+    /// else in the suite would notice.
+    #[test]
+    fn an_ordinal_is_read_through_whatever_suffix_its_language_renders() {
+        use text2num::{Language, text2digits};
+
+        let cases: &[(Language, &str, u32)] = &[
+            (Language::french(), "premier", 1),
+            (Language::french(), "première", 1),
+            (Language::english(), "first", 1),
+            (Language::german(), "erste", 1),
+            (Language::spanish(), "primero", 1),
+            (Language::italian(), "primo", 1),
+            (Language::portuguese(), "primeiro", 1),
+        ];
+
+        for (lang, word, expected) in cases {
+            let rendered = text2digits(word, lang).unwrap_or_else(|e| {
+                panic!("{word:?} must still read as a number, got {e:?}");
+            });
+            assert!(
+                rendered.starts_with(char::is_numeric),
+                "{word:?} rendered as {rendered:?}, which starts with no digit at all"
+            );
+            assert_eq!(
+                leading_value(&rendered),
+                Some(*expected),
+                "{word:?} rendered as {rendered:?}"
+            );
+        }
+
+        // And a plain cardinal, which carries no suffix to strip.
+        assert_eq!(leading_value("99"), Some(99));
+    }
+
+    /// Russian, Arabic and Hebrew keywords keep working for the two numeral systems
+    /// that need no word table — the coverage line the module doc draws.
+    #[test]
+    fn a_language_with_no_word_table_still_reads_digits_and_romans() {
+        assert_eq!(extract("Глава 3"), Some((String::new(), Some(3))));
+        assert_eq!(extract("פרק 12"), Some((String::new(), Some(12))));
+        assert_eq!(extract("فصل 7"), Some((String::new(), Some(7))));
+        assert_eq!(
+            extract("Глава третья"),
+            None,
+            "a declined Russian ordinal is out of scope, and must not be half-read"
+        );
     }
 
     /// A heading beginning with a Unicode compatibility character whose

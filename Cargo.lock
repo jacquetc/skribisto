@@ -1478,6 +1478,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f27ae1dd37df86211c42e150270f82743308803d90a6f6e6651cd730d5e1732f"
 
 [[package]]
+name = "daachorse"
+version = "3.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5614204febbc33cc07a2806aa6440b904ac012b68eecc37f4493ea4a76455a3d"
+
+[[package]]
 name = "data-url"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5578,6 +5584,7 @@ dependencies = [
  "skribisto-common",
  "skribisto-model",
  "skribisto-skrib-format",
+ "text2num",
 ]
 
 [[package]]
@@ -6310,6 +6317,17 @@ dependencies = [
  "thiserror 2.0.19",
  "ttf-parser",
  "unicode-bidi",
+]
+
+[[package]]
+name = "text2num"
+version = "2.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bec0876234c49d7d4a475bc91c7c6bf9d28711b352e974ca2a9243bfc02f5bd5"
+dependencies = [
+ "bitflags 1.3.2",
+ "daachorse",
+ "phf",
 ]
 
 [[package]]

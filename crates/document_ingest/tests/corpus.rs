@@ -163,6 +163,66 @@ fn one_long_manuscript_splits_along_its_heading_levels() {
     assert_eq!(plan.rows[2].scene_breaks, 1);
 }
 
+/// A manuscript that spells its chapter numbers out, which is the other half of what
+/// arrives in the wild — and the end-to-end proof that the word table reaches the plan,
+/// not just `extract_leading_ordinal`'s own tests.
+///
+/// The last chapter deliberately opens with a number word that is *part of its title*.
+/// If the reader ever loosened to "a leading number word is an ordinal", that row would
+/// silently become a chapter called "Last Thing", and this is where it would show.
+#[test]
+fn a_manuscript_that_spells_its_numbers_out_still_lands_the_right_titles() {
+    let source = "\
+# The Long Novel
+
+## Chapter One: The Storm
+
+Prose.
+
+## Chapter Twenty One: The Reckoning
+
+More prose.
+
+## Chapitre premier
+
+Nothing but an ordinal.
+
+## One Last Thing
+
+Closing prose.
+";
+    let plan = plan_for(&[("novel.md", source)], CreateType::Book);
+
+    assert_eq!(plan.rows.len(), 5, "one book and four chapters");
+
+    assert_eq!(plan.rows[1].title, "The Storm");
+    assert_eq!(
+        plan.rows[1].stripped_ordinal.as_deref(),
+        Some("chapter 1"),
+        "the label is the canonical form of what came off, not the words themselves"
+    );
+
+    assert_eq!(plan.rows[2].title, "The Reckoning");
+    assert_eq!(
+        plan.rows[2].stripped_ordinal.as_deref(),
+        Some("chapter 21"),
+        "the whole multi-word ordinal comes off, not just its first word"
+    );
+
+    // A heading that is *only* an ordinal keeps its own text — `build_plan` prefers a
+    // row titled "Chapitre premier" to an untitled one, and the writer can clear it in
+    // review. Pinned here because it is the one case where reading the number changes
+    // nothing on screen.
+    assert_eq!(plan.rows[3].title, "Chapitre premier");
+    assert_eq!(plan.rows[3].stripped_ordinal, None);
+
+    assert_eq!(
+        plan.rows[4].title, "One Last Thing",
+        "a number word that opens a real title must survive untouched"
+    );
+    assert_eq!(plan.rows[4].stripped_ordinal, None);
+}
+
 /// Every trap at once, in one file. None of them may be fatal, and each must be
 /// reported rather than silently swallowed.
 #[test]
