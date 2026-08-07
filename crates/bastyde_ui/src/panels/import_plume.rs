@@ -74,7 +74,11 @@ impl ImportPlumePanel {
             )
     }
 
-    fn form(&self) -> impl Widget + 'static {
+    /// `ctx` only to read the remembered folder its file pickers should open in
+    /// (`models::picker_starts_in`): a `FilePickerField` builds its own dialog when
+    /// Browse is pressed, so it has to be told the directory here rather than at the
+    /// moment of the click.
+    fn form(&self, ctx: &BuildContext) -> impl Widget + 'static {
         let vm = &self.vm;
         // The source picker defaults the destination on pick.
         let picker_vm = self.vm.clone();
@@ -88,7 +92,9 @@ impl ImportPlumePanel {
                 Self::field_label(tr!(import_plume_source())),
                 VStack::new()
                     .spacing(6.0)
-                    .child(
+                    .child(crate::models::picker_starts_in(
+                        ctx,
+                        crate::models::FolderPurpose::ImportPlume,
                         FilePickerField::new(vm.source())
                             .kind(FilePickerKind::OpenFile)
                             // A file-dialog filter label — a plain string like the
@@ -96,7 +102,7 @@ impl ImportPlumePanel {
                             .add_filter("Plume Creator project", &["plume", "plume_backup"])
                             .validation(vm.source_validation())
                             .on_pick(move |res, _ctx| picker_vm.apply_source_defaults(res)),
-                    )
+                    ))
                     .child(Self::hint(tr!(import_plume_source_hint()))),
             )
             .full_width(Divider::new())
@@ -138,7 +144,8 @@ impl Widget for ImportPlumePanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         // Build the form first so its first focusable descendant can be captured
         // for `initial_focus_hint` (see the note there).
-        let form_id = ctx.add(self.form());
+        let form = self.form(ctx);
+        let form_id = ctx.add(form);
         self.first_field
             .set(ctx.first_focusable_descendant(form_id));
 

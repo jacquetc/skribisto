@@ -427,6 +427,15 @@ fn binder_context_menu(outline: OutlineViewModel, key: BinderTreeKey) -> MenuLis
                 .on_activate_fn(move |_| duplicate.duplicate_keys(&dup_batch)),
         )
         .separator()
+        // Sends the intent rather than calling a view-model, unlike its neighbours:
+        // the wizard's view-model is Tier 3 and this menu holds only the outline's, so
+        // `App` mediates and the graph stays a DAG.
+        .item(
+            MenuItem::new(tr!(ctx_import_here())).on_activate_fn(move |c| {
+                c.send_intent(crate::intents::AppIntent::ImportHere { destination: key });
+            }),
+        )
+        .separator()
         .item(
             MenuItem::new(tr!(ctx_trash())).on_activate_fn(move |_| trash.trash_keys(&trash_batch)),
         )

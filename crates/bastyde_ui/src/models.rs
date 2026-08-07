@@ -28,9 +28,11 @@ mod dictionary_settings_file;
 mod distraction_free_themes_file;
 mod examples_list_model;
 mod export_styles_file;
+mod folder_memory_file;
 mod footnote_numbering;
 mod footnotes_list_model;
 pub(crate) mod import_plan_source;
+mod import_prefs_file;
 mod installed_dictionaries_model;
 mod numbering;
 mod open_docs;
@@ -76,6 +78,11 @@ pub use installed_dictionaries_model::{
 };
 // The `--features mocks` build fabricates its rows rather than numbering a real
 // manuscript, so several of these have no consumer there.
+pub use folder_memory_file::{
+    FolderMemoryService, FolderPurpose, dialog_start_in, picker_starts_in, remember_dialog_dir,
+    remember_dialog_file,
+};
+pub use import_prefs_file::ImportPrefsService;
 #[allow(unused_imports)]
 pub use numbering::{
     NameContext, fallback_label_for, item_meta_of, label_and_badge, numbers_for_items,

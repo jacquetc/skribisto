@@ -49,13 +49,37 @@ const CARD_H: f32 = 620.0;
 /// "New from documents…" on the Launcher already picked their files before the
 /// project existed, and asking again would be the wizard forgetting what it was
 /// opened for. Every other door passes an empty slice.
+/// What a caller already knows when it opens the wizard.
+///
+/// A struct rather than more positional parameters: there are three call sites now
+/// (the File menu, the Launcher's cold start, the binder's "Import here…") and each
+/// knows a different subset, which reads badly as a second bare `Vec` argument.
+#[derive(Default)]
+pub struct ImportDocumentOptions {
+    /// Files already chosen — the Launcher's cold-start path picks them first.
+    pub sources: Vec<PathBuf>,
+    /// Where the import should land, when the caller already knows. `None` leaves the
+    /// writer to choose, which is what the File menu does.
+    pub destination: Option<crate::models::BinderTreeKey>,
+}
+
 pub fn present_import_document(
     ctx: &mut EventContext,
     vm: ImportDocumentViewModel,
-    sources: Vec<PathBuf>,
+    options: ImportDocumentOptions,
 ) {
     vm.reset();
-    vm.add_files(sources);
+    vm.add_files(options.sources);
+    // An explicit destination wins — "Import here…" is the writer answering the question
+    // right now, which outranks what they answered last time.
+    let destination = options.destination.or_else(|| {
+        let uid = vm.work_uid()?;
+        ctx.app_state::<crate::models::ImportPrefsService>()?
+            .last_destination(&uid)
+    });
+    if let Some(key) = destination {
+        vm.preselect_destination(key);
+    }
     ctx.present_modal(
         ModalRequest::deferred(move |t| t.add(ImportDocumentPanel::new(vm.clone())))
             .presentation(ModalPresentation::InTree)
@@ -91,7 +115,7 @@ impl Widget for ImportDocumentPanel {
         // the `bati!` macro cannot express, as with DockingLayout and TabWidget.
         // Children are positional — their order is the `STEP_*` constants.
         let body = Switcher::new(self.vm.step())
-            .child(files_step(&self.vm))
+            .child(files_step(ctx, &self.vm))
             .child(review_step(&self.vm))
             .child(analysing_step(&self.vm));
 
@@ -181,14 +205,33 @@ fn header(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
 }
 
 /// Step one: collect the files.
-fn files_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
+///
+/// `ctx` only to open Browse where the writer last imported from. The zone builds its
+/// own file dialog internally, so — like `FilePickerField` — it has to be told the
+/// directory here rather than at the click.
+fn files_step(ctx: &BuildContext, vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     let drop_vm = vm.clone();
-    let zone = DropZone::new(tr!(import_document_drop_title()))
+    let mut zone = DropZone::new(tr!(import_document_drop_title()))
         .subtitle(tr!(import_document_drop_hint()))
         .accept_extensions(ImportDocumentViewModel::accepted_extensions())
         .allow_multiple(true)
         .browse_label(tr!(import_document_browse()))
-        .on_files_dropped(move |paths, _ctx| drop_vm.add_files(paths));
+        .on_files_dropped(move |paths, c| {
+            if let Some(first) = paths.first() {
+                crate::models::remember_dialog_file(
+                    c,
+                    crate::models::FolderPurpose::ImportDocuments,
+                    first,
+                );
+            }
+            drop_vm.add_files(paths);
+        });
+    if let Some(dir) = ctx
+        .app_state::<crate::models::FolderMemoryService>()
+        .and_then(|svc| svc.last(crate::models::FolderPurpose::ImportDocuments))
+    {
+        zone = zone.starting_dir(dir);
+    }
 
     let files: ListModel<PathBuf> = vm.files();
     let row_vm = vm.clone();
@@ -737,17 +780,30 @@ fn footer(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
                     Button::new(tr!(import_document_import()))
                         .variant(ButtonVariant::Filled)
                         .enabled(step.map(|s| *s == STEP_REVIEW))
-                        .on_activate_fn(move |ctx| match import_vm.apply() {
-                            Ok(created) => {
-                                // Dismiss first, then toast: the toast would
-                                // otherwise become the topmost overlay and the
-                                // dismissal would take it instead of the modal.
-                                ctx.dismiss_modal();
-                                import_vm.offer_undo(ctx, created.len());
+                        .on_activate_fn(move |ctx| {
+                            // Read before applying: `apply` is what the wizard closes on,
+                            // and the picker's selection goes with it.
+                            let landed =
+                                import_vm.work_uid().zip(import_vm.chosen_destination_key());
+                            match import_vm.apply() {
+                                Ok(created) => {
+                                    if let Some((uid, key)) = landed
+                                        && let Some(prefs) =
+                                            ctx.app_state::<crate::models::ImportPrefsService>()
+                                    {
+                                        prefs.remember_destination(&uid, key);
+                                    }
+                                    // Dismiss first, then toast: the toast would
+                                    // otherwise become the topmost overlay and the
+                                    // dismissal would take it instead of the modal.
+                                    ctx.dismiss_modal();
+                                    import_vm.offer_undo(ctx, created.len());
+                                }
+                                // A refused import leaves the wizard up, with the
+                                // plan the writer can still fix — and nothing is
+                                // remembered, because nothing landed.
+                                Err(e) => import_vm.report_failure(ctx, &e),
                             }
-                            // A refused import leaves the wizard up, with the
-                            // plan the writer can still fix.
-                            Err(e) => import_vm.report_failure(ctx, &e),
                         }),
                 ),
         ),

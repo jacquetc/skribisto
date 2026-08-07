@@ -182,12 +182,16 @@ fn import_button(vm: &NoteTemplatesViewModel) -> impl Widget {
         .icon(import_glyph(), IconLocation::Leading)
         .on_activate_fn(move |ctx| {
             let vm = vm.clone();
-            let req = FileDialogRequest::pick_files()
-                .title(tr!(settings_templates_import()))
-                .add_filter(
-                    tr!(templates_import_filter()).resolve_now(),
-                    &["md", "markdown", "djot"],
-                );
+            let req = crate::models::dialog_start_in(
+                ctx,
+                crate::models::FolderPurpose::DataInterchange,
+                FileDialogRequest::pick_files()
+                    .title(tr!(settings_templates_import()))
+                    .add_filter(
+                        tr!(templates_import_filter()).resolve_now(),
+                        &["md", "markdown", "djot"],
+                    ),
+            );
             let _ = ctx.pick_files(req, move |res, c| {
                 let FileDialogResult::Files(paths) = res else {
                     return;
@@ -244,11 +248,20 @@ fn export_button(vm: &NoteTemplatesViewModel) -> impl Widget {
         .icon(export_glyph(), IconLocation::Leading)
         .on_activate_fn(move |ctx| {
             let vm = vm.clone();
-            let req = FileDialogRequest::pick_folder().title(tr!(settings_templates_export()));
+            let req = crate::models::dialog_start_in(
+                ctx,
+                crate::models::FolderPurpose::DataInterchange,
+                FileDialogRequest::pick_folder().title(tr!(settings_templates_export())),
+            );
             let _ = ctx.pick_folder(req, move |res, c| {
                 let FileDialogResult::Folder(Some(dir)) = res else {
                     return;
                 };
+                crate::models::remember_dialog_dir(
+                    c,
+                    crate::models::FolderPurpose::DataInterchange,
+                    &dir,
+                );
                 let _ = match vm.export_to_dir(&dir) {
                     Ok(n) => c.show_toast(
                         Toast::info(tr!(templates_exported(n = n as i64)))

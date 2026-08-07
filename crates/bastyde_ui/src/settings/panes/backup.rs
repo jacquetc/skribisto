@@ -567,10 +567,18 @@ impl Widget for DestinationsEditor {
                     let get = get.clone();
                     let set = set.clone();
                     let epoch = epoch.clone();
-                    let req =
-                        FileDialogRequest::pick_folder().title(tr!(settings_backup_dest_add()));
+                    let req = crate::models::dialog_start_in(
+                        c,
+                        crate::models::FolderPurpose::BackupDestination,
+                        FileDialogRequest::pick_folder().title(tr!(settings_backup_dest_add())),
+                    );
                     let _ = c.pick_folder(req, move |res, _c| {
                         if let FileDialogResult::Folder(Some(path)) = res {
+                            crate::models::remember_dialog_dir(
+                                _c,
+                                crate::models::FolderPurpose::BackupDestination,
+                                &path,
+                            );
                             let p_str = path.to_string_lossy().into_owned();
                             let mut p = get();
                             if !p.destinations.contains(&p_str) {

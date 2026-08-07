@@ -298,6 +298,30 @@ impl ImportDocumentViewModel {
     pub fn level_rules(&self) -> Signal<Vec<(u8, CreateType)>> {
         self.level_rules.clone()
     }
+    /// `Work.unique_id`, or `None` when there is no project or it has never been saved
+    /// — the key this project's remembered import destination is filed under.
+    pub fn work_uid(&self) -> Option<String> {
+        let work_id = self.ids.work_id.get()?;
+        let work = frontend::commands::work_commands::get_work(&self.app_ctx, &work_id)
+            .ok()
+            .flatten()?;
+        crate::models::uid_is_usable(&work.unique_id).then_some(work.unique_id)
+    }
+
+    /// The destination the writer settled on, as the durable key worth remembering.
+    pub fn chosen_destination_key(&self) -> Option<crate::models::BinderTreeKey> {
+        self.destination.selected_key()
+    }
+
+    /// Open the wizard already pointing at `key`.
+    ///
+    /// Forwards to the picker, which holds the request until its tree can satisfy it —
+    /// see `DestinationPicker::preselect`. Used by the binder's "Import here…", where
+    /// the writer has already said where by right-clicking a row.
+    pub fn preselect_destination(&self, key: crate::models::BinderTreeKey) {
+        self.destination.preselect(key);
+    }
+
     pub fn destination(&self) -> DestinationPicker {
         self.destination.clone()
     }

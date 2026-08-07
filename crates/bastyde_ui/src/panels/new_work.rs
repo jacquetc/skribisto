@@ -178,7 +178,11 @@ impl NewWorkPanel {
     }
 
     /// The two-column form body.
-    fn form(&self) -> impl Widget + 'static {
+    /// `ctx` only to read the remembered folder its file pickers should open in
+    /// (`models::picker_starts_in`): a `FilePickerField` builds its own dialog when
+    /// Browse is pressed, so it has to be told the directory here rather than at the
+    /// moment of the click.
+    fn form(&self, ctx: &BuildContext) -> impl Widget + 'static {
         let vm = &self.vm;
         FormLayout::new()
             .label(tr!(new_work_title()))
@@ -228,11 +232,13 @@ impl NewWorkPanel {
                 Self::field_label(tr!(new_work_location())),
                 VStack::new()
                     .spacing(6.0)
-                    .child(
+                    .child(crate::models::picker_starts_in(
+                        ctx,
+                        crate::models::FolderPurpose::NewProjectLocation,
                         FilePickerField::new(vm.location())
                             .kind(FilePickerKind::PickFolder)
                             .validation(vm.location_validation()),
-                    )
+                    ))
                     .child(self.path_preview()),
             )
             .full_width(Divider::new())
@@ -338,7 +344,8 @@ impl Widget for NewWorkPanel {
         // pipeline falls back to `first_focusable_descendant` of the whole panel,
         // which is the header's close button: the dialog opened with the X focused
         // and typing did nothing until the user clicked the field.
-        let form_id = ctx.add(self.form());
+        let form = self.form(ctx);
+        let form_id = ctx.add(form);
         self.name_field.set(ctx.first_focusable_descendant(form_id));
 
         // Scrollable form column (design body scrolls; `overflow:auto`).

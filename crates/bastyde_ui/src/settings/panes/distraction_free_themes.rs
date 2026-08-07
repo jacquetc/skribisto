@@ -224,11 +224,20 @@ fn present_import(
     vm: DistractionFreeThemesViewModel,
     selected: Signal<Option<String>>,
 ) {
-    let req = FileDialogRequest::pick_file()
-        .title(tr!(settings_themes_import()))
-        .add_filter(tr!(settings_themes_json_filter()).resolve_now(), &["json"]);
+    let req = crate::models::dialog_start_in(
+        ctx,
+        crate::models::FolderPurpose::DataInterchange,
+        FileDialogRequest::pick_file()
+            .title(tr!(settings_themes_import()))
+            .add_filter(tr!(settings_themes_json_filter()).resolve_now(), &["json"]),
+    );
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {
+            crate::models::remember_dialog_file(
+                ectx,
+                crate::models::FolderPurpose::DataInterchange,
+                &path,
+            );
             match vm.import_from(&path) {
                 Ok(t) => {
                     selected.set(Some(t.id.clone()));
@@ -261,12 +270,21 @@ fn present_export(
     name: &str,
 ) {
     let id = id.to_string();
-    let req = FileDialogRequest::save_file()
-        .title(tr!(settings_themes_export()))
-        .default_file_name(format!("{}.json", slugify(name)))
-        .add_filter(tr!(settings_themes_json_filter()).resolve_now(), &["json"]);
+    let req = crate::models::dialog_start_in(
+        ctx,
+        crate::models::FolderPurpose::DataInterchange,
+        FileDialogRequest::save_file()
+            .title(tr!(settings_themes_export()))
+            .default_file_name(format!("{}.json", slugify(name)))
+            .add_filter(tr!(settings_themes_json_filter()).resolve_now(), &["json"]),
+    );
     let _ = ctx.save_file(req, move |res, ectx| {
         if let FileDialogResult::Saved(Some(path)) = res {
+            crate::models::remember_dialog_file(
+                ectx,
+                crate::models::FolderPurpose::DataInterchange,
+                &path,
+            );
             let mut target = path.clone();
             if target.extension().and_then(|e| e.to_str()) != Some("json") {
                 target.set_extension("json");

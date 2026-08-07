@@ -358,15 +358,24 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                     .on_activate(move |ectx| {
                         let ctx = file_ctx.clone();
                         let vm = save_as_file_vm.clone();
-                        let req = FileDialogRequest::save_file()
-                            .title("Save as single .skrib file")
-                            .default_file_name(format!(
-                                "{}.skrib",
-                                crate::project_stem(&ctx, &file_ids)
-                            ))
-                            .add_filter("Skribisto work", &["skrib"]);
+                        let req = crate::models::dialog_start_in(
+                            ectx,
+                            crate::models::FolderPurpose::SaveAs,
+                            FileDialogRequest::save_file()
+                                .title("Save as single .skrib file")
+                                .default_file_name(format!(
+                                    "{}.skrib",
+                                    crate::project_stem(&ctx, &file_ids)
+                                ))
+                                .add_filter("Skribisto work", &["skrib"]),
+                        );
                         let _ = ectx.save_file(req, move |res, ectx2| {
                             if let FileDialogResult::Saved(Some(path)) = res {
+                                crate::models::remember_dialog_file(
+                                    ectx2,
+                                    crate::models::FolderPurpose::SaveAs,
+                                    &path,
+                                );
                                 // `begin` flushes the live editor buffers into the
                                 // store first — the background op is read-only, so
                                 // without it we would write the pre-edit prose.
@@ -393,11 +402,20 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                             title
                         };
                         let name = crate::sanitize_folder_name(&raw);
-                        let req = FileDialogRequest::pick_folder()
-                            .title("Choose a parent folder for the work");
+                        let req = crate::models::dialog_start_in(
+                            ectx,
+                            crate::models::FolderPurpose::SaveAs,
+                            FileDialogRequest::pick_folder()
+                                .title("Choose a parent folder for the work"),
+                        );
                         let vm = save_as_folder_vm.clone();
                         let _ = ectx.pick_folder(req, move |res, ectx2| {
                             if let FileDialogResult::Folder(Some(path)) = res {
+                                crate::models::remember_dialog_dir(
+                                    ectx2,
+                                    crate::models::FolderPurpose::SaveAs,
+                                    &path,
+                                );
                                 let target = path.join(&name).to_string_lossy().into_owned();
                                 // Flushes the editors first — see the sibling item.
                                 vm.begin(ectx2, target, true);

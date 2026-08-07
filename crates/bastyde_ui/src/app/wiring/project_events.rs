@@ -516,7 +516,10 @@ pub(in crate::app) fn install_lifecycle(
                     crate::panels::import_document::present_import_document(
                         c,
                         import.clone(),
-                        sources,
+                        crate::panels::import_document::ImportDocumentOptions {
+                            sources,
+                            ..Default::default()
+                        },
                     );
                 }
             },

@@ -823,6 +823,25 @@ fn main() {
     let import_plume = ImportPlumeViewModel::new(app_ctx.clone());
     // Export styles ("Compile & Export" formats) — the user's editable style presets, opened
     // eagerly here so the Settings pane and the Export panel's picker both read one instance.
+    // Where each kind of file dialog last opened. App-global by nature — the folder a
+    // writer exports to is theirs, not any one manuscript's — so it is opened once here
+    // and read through `app_state`, the one tier that slot is actually right for.
+    let folder_memory = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| {
+            models::FolderMemoryService::open(&paths)
+                .map_err(|e| eprintln!("folder memory: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(models::FolderMemoryService::in_memory_default);
+    // Where each project's last document import landed. Per-project rows in one
+    // app-global file, like tree expansion.
+    let import_prefs = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+        .and_then(|paths| {
+            models::ImportPrefsService::open(&paths)
+                .map_err(|e| eprintln!("import prefs: open failed: {e}"))
+                .ok()
+        })
+        .unwrap_or_else(models::ImportPrefsService::in_memory_default);
     // App-local config (a style outlives any project); degrades to a throwaway temp file if the
     // config dir is unavailable, exactly as backup settings do.
     let export_styles_service = bastyde::settings::AppPaths::new("eu", "skribisto", "Skribisto")
@@ -1075,6 +1094,10 @@ fn main() {
         .install_async_async_std()
         .event_source(EventHubSource { client })
         .app_state(registry.clone())
+        // Tier 1, like the registry above: one folder memory per process, correct for
+        // every window because it is about the writer's habits and not about any Work.
+        .app_state(folder_memory.clone())
+        .app_state(import_prefs.clone())
         // The remaining `app_state` registrations below all come from
         // `initial_state` — the fresh, per-window Tier-2 bundle the *first*
         // window's own `window_config` call minted (see its doc, and

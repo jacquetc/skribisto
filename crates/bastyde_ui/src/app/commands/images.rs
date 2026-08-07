@@ -67,16 +67,25 @@ fn register_cover(ctx: &mut BuildContext, deps: &CommandDeps) {
                 return;
             }
             let (d, i, a) = (d.clone(), i.clone(), a.clone());
-            let req = FileDialogRequest::pick_file()
-                .title(tr!(cover_choose_title()))
-                .add_filter(
-                    tr!(image_filter_label()).resolve_now(),
-                    &["png", "jpg", "jpeg", "webp"],
-                );
+            let req = crate::models::dialog_start_in(
+                c,
+                crate::models::FolderPurpose::InsertImage,
+                FileDialogRequest::pick_file()
+                    .title(tr!(cover_choose_title()))
+                    .add_filter(
+                        tr!(image_filter_label()).resolve_now(),
+                        &["png", "jpg", "jpeg", "webp"],
+                    ),
+            );
             let _ = c.pick_file(req, move |res, c| {
                 let FileDialogResult::File(Some(path)) = res else {
                     return;
                 };
+                crate::models::remember_dialog_file(
+                    c,
+                    crate::models::FolderPurpose::InsertImage,
+                    &path,
+                );
                 // A cover is stored as the writer's file, never downscaled: it is
                 // the one picture in the project whose resolution is the whole
                 // point, and an ereader renders it full-screen.
@@ -225,19 +234,28 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 
             let (format, docs, ids, app_ctx) =
                 (format.clone(), docs.clone(), ids.clone(), app_ctx.clone());
-            let req = FileDialogRequest::pick_file()
-                .title(tr!(image_choose_title()))
-                // The filter names what actually decodes, not what the format
-                // family suggests: a `.tif` offered here and refused afterwards
-                // is a worse experience than never offering it.
-                .add_filter(
-                    tr!(image_filter_label()).resolve_now(),
-                    &["png", "jpg", "jpeg", "webp"],
-                );
+            let req = crate::models::dialog_start_in(
+                c,
+                crate::models::FolderPurpose::InsertImage,
+                FileDialogRequest::pick_file()
+                    .title(tr!(image_choose_title()))
+                    // The filter names what actually decodes, not what the format
+                    // family suggests: a `.tif` offered here and refused afterwards
+                    // is a worse experience than never offering it.
+                    .add_filter(
+                        tr!(image_filter_label()).resolve_now(),
+                        &["png", "jpg", "jpeg", "webp"],
+                    ),
+            );
             let _ = c.pick_file(req, move |res, c| {
                 let FileDialogResult::File(Some(path)) = res else {
                     return; // cancelled
                 };
+                crate::models::remember_dialog_file(
+                    c,
+                    crate::models::FolderPurpose::InsertImage,
+                    &path,
+                );
                 let pending = match images::examine(&path) {
                     Ok(p) => p,
                     Err(e) => {

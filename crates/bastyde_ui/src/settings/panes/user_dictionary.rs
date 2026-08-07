@@ -250,11 +250,20 @@ fn empty_state() -> impl Widget {
 /// Import a `.txt` word list (merge). Toasts the count on success, the error on
 /// failure. The added-toast (with Undo) is folded into the success toast here.
 fn present_import(ctx: &mut EventContext, vm: UserDictionaryViewModel) {
-    let req = FileDialogRequest::pick_file()
-        .title(tr!(settings_user_dict_import()))
-        .add_filter(tr!(settings_user_dict_txt_filter()).resolve_now(), &["txt"]);
+    let req = crate::models::dialog_start_in(
+        ctx,
+        crate::models::FolderPurpose::DataInterchange,
+        FileDialogRequest::pick_file()
+            .title(tr!(settings_user_dict_import()))
+            .add_filter(tr!(settings_user_dict_txt_filter()).resolve_now(), &["txt"]),
+    );
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {
+            crate::models::remember_dialog_file(
+                ectx,
+                crate::models::FolderPurpose::DataInterchange,
+                &path,
+            );
             match vm.import_from(&path) {
                 Ok(summary) => {
                     ectx.show_toast(
@@ -284,12 +293,21 @@ fn present_import(ctx: &mut EventContext, vm: UserDictionaryViewModel) {
 /// Export the word list to a `.txt` file (one word per line), forcing the `.txt`
 /// extension.
 fn present_export(ctx: &mut EventContext, vm: UserDictionaryViewModel) {
-    let req = FileDialogRequest::save_file()
-        .title(tr!(settings_user_dict_export()))
-        .default_file_name("dictionary.txt".to_string())
-        .add_filter(tr!(settings_user_dict_txt_filter()).resolve_now(), &["txt"]);
+    let req = crate::models::dialog_start_in(
+        ctx,
+        crate::models::FolderPurpose::DataInterchange,
+        FileDialogRequest::save_file()
+            .title(tr!(settings_user_dict_export()))
+            .default_file_name("dictionary.txt".to_string())
+            .add_filter(tr!(settings_user_dict_txt_filter()).resolve_now(), &["txt"]),
+    );
     let _ = ctx.save_file(req, move |res, ectx| {
         if let FileDialogResult::Saved(Some(path)) = res {
+            crate::models::remember_dialog_file(
+                ectx,
+                crate::models::FolderPurpose::DataInterchange,
+                &path,
+            );
             let mut target = path.clone();
             if target.extension().and_then(|e| e.to_str()) != Some("txt") {
                 target.set_extension("txt");

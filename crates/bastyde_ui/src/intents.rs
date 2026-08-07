@@ -134,6 +134,19 @@ pub enum AppIntent {
         anchor_item_id: Option<u64>,
     },
 
+    /// Import documents straight into a place the writer has already pointed at, from
+    /// the binder's own context menu — the wizard opens with its destination step
+    /// already answered.
+    ///
+    /// Carries a [`BinderTreeKey`](crate::models::BinderTreeKey), the durable uid, and
+    /// not a store id: an intent is dispatched a frame or more after the click, and an
+    /// `EntityId` is only meaningful until the next `load_work`. Consumed by the
+    /// `binder.import_here` global action.
+    #[name = "binder.import_here"]
+    ImportHere {
+        destination: crate::models::BinderTreeKey,
+    },
+
     /// Reveal a binder item in the outline dock: show the dock and select the row.
     /// Fired from the Overview table's context menu ("where does this sit in the
     /// project?"), carrying the item id rather than relying on any shared selection.

@@ -150,16 +150,24 @@ fn format_grid(vm: &ExportViewModel) -> RadioTileGroup {
 }
 
 /// The Destination save-file field, seeded with the current output path + format filter.
-fn destination_field(vm: &ExportViewModel) -> FilePickerField {
+///
+/// `ctx` only to open the dialog where the writer last exported
+/// (`models::picker_starts_in`) — a `FilePickerField` builds its own dialog on Browse,
+/// so the directory has to be supplied here rather than at the click.
+fn destination_field(ctx: &BuildContext, vm: &ExportViewModel) -> FilePickerField {
     let default_name = std::path::Path::new(&vm.output_path().get())
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("export")
         .to_string();
-    FilePickerField::new(vm.output_path())
-        .kind(FilePickerKind::SaveFile)
-        .default_file_name(default_name)
-        .add_filter("Export", &[current_extension(vm)])
+    crate::models::picker_starts_in(
+        ctx,
+        crate::models::FolderPurpose::Export,
+        FilePickerField::new(vm.output_path())
+            .kind(FilePickerKind::SaveFile)
+            .default_file_name(default_name)
+            .add_filter("Export", &[current_extension(vm)]),
+    )
 }
 
 /// The extension of the currently-selected format (for the save dialog filter).
@@ -432,7 +440,7 @@ impl Widget for OptionsColumn {
             .child(self.style_section(catalogue))
             .child(section(
                 tr!(export_section_destination()),
-                destination_field(&self.vm),
+                destination_field(ctx, &self.vm),
             ))
             .child(Spacer::new());
 

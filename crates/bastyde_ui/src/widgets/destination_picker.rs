@@ -21,6 +21,9 @@
 //! owning widget could not allow. It mirrors the view-model/view split the rest of
 //! the app uses, at widget scale.
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use bastyde::data::{KeyedSelectionModel, SelectionMode, TreeDataSource};
 use bastyde::prelude::TextStyleRole;
 use bastyde::prelude::*;
@@ -55,6 +58,15 @@ pub struct BinderDestination {
 pub struct DestinationPicker {
     model: BinderBinderItemsTreeModel,
     selection: KeyedSelectionModel<BinderTreeKey>,
+    /// A destination asked for before the tree was able to hold it.
+    ///
+    /// [`preselect`](DestinationPicker::preselect) is called at construction — from a
+    /// right-clicked binder row, or from the project's remembered destination — but the
+    /// tree fills from backend events, so at that moment it is usually still empty and
+    /// the key resolves to nothing. Holding the request here and retrying as the model
+    /// reloads is what makes "open the wizard already pointing at this chapter" work
+    /// without a sleep or a poll.
+    pending: Rc<RefCell<Option<BinderTreeKey>>>,
 }
 
 impl DestinationPicker {
@@ -73,12 +85,53 @@ impl DestinationPicker {
         Self {
             model: BinderBinderItemsTreeModel::new(app_ctx, work_id, filters),
             selection: KeyedSelectionModel::new(SelectionMode::Single),
+            pending: Rc::new(RefCell::new(None)),
+        }
+    }
+
+    /// Open pointing at `key`, as if the writer had clicked that row.
+    ///
+    /// The ancestors are expanded so the row is actually on screen — a selection the
+    /// writer cannot see reads as no selection at all, and they would have no way to
+    /// tell what the confirm button is about to do.
+    ///
+    /// Safe to call before the tree has loaded: the request is held and applied on the
+    /// first reload that can satisfy it. If the tree loads without that row — it was
+    /// trashed, or the project changed under a remembered destination — the request is
+    /// dropped and the picker simply opens with nothing chosen, which is the same state
+    /// it has always had.
+    pub fn preselect(&self, key: BinderTreeKey) {
+        *self.pending.borrow_mut() = Some(key);
+        self.apply_pending();
+    }
+
+    /// Try to satisfy a held [`preselect`](Self::preselect). Cheap and idempotent —
+    /// called once at request time and again on every reload until it resolves.
+    fn apply_pending(&self) {
+        let Some(key) = *self.pending.borrow() else {
+            return;
+        };
+        if self.model.contains(&key) {
+            self.model.expand_ancestors(&key);
+            self.selection.select(key);
+            *self.pending.borrow_mut() = None;
+        } else if self.model.visible_count() != 0 {
+            // The tree has rows and this is not one of them, so waiting longer cannot
+            // help. Dropping it now stops a stale request from firing much later, if
+            // that row is ever restored from the trash.
+            *self.pending.borrow_mut() = None;
         }
     }
 
     /// True while a destination is chosen — bind a confirm button's `enabled` to it.
     pub fn has_selection(&self) -> impl Into<Prop<bool>> + use<> {
         self.selection.selection_signal().map(|s| !s.is_empty())
+    }
+
+    /// The chosen row as its durable key — what a caller persists, since a
+    /// `BinderDestination`'s ids are re-minted by every `load_work`.
+    pub fn selected_key(&self) -> Option<BinderTreeKey> {
+        self.selection.selected_keys().first().copied()
     }
 
     /// Where the writer pointed, or `None` if nowhere yet.
@@ -137,6 +190,14 @@ impl Widget for DestinationPickerView {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         // Keep the tree live for as long as it is on screen.
         self.picker.model.wire(ctx);
+
+        // A destination asked for before the tree could hold it. `wire` above is what
+        // starts the rows arriving, so this is the earliest point a held request can
+        // be satisfied — and the model's version signal is what says "the rows just
+        // changed", which is exactly when it is worth trying again.
+        let picker = self.picker.clone();
+        let version = self.picker.model.version_signal();
+        ctx.effect(&version, move |_| picker.apply_pending());
 
         // Read-only and single-select: no reorder, no context menu, no
         // open-on-activate. Picking a place must not edit the thing being pointed at.
@@ -253,5 +314,147 @@ mod tests {
         let b = picker();
         assert_eq!(a.selected(), None);
         assert_eq!(b.selected(), None);
+    }
+}
+
+/// The picker's behaviour over a **real** loaded project.
+///
+/// Separated and gated the way `footnotes_list_model`'s backend tests are: under
+/// `--features mocks` the tree model's row seam fabricates a binder, so "the tree is
+/// empty until a project arrives" is false and a uid read from the store names no row
+/// the mock tree has. Both premises here are about the real backend, so this is where
+/// they belong rather than being weakened until they pass in both.
+#[cfg(all(test, not(feature = "mocks")))]
+mod real_backend_tests {
+    use super::*;
+    use bastyde::prelude::SizeProposal;
+    use std::rc::Rc;
+
+    /// A picker over the shipped fixture, mounted so its tree is live.
+    ///
+    /// The mount matters: the model only starts filling once `wire` has run, which
+    /// happens in `build`. A picker that is never put on screen has an empty tree, and
+    /// every assertion about resolving a row against it would pass or fail for the
+    /// wrong reason.
+    fn load_fixture(app_ctx: &Rc<AppContext>) -> u64 {
+        frontend::commands::work_management_commands::load_work(
+            app_ctx,
+            &frontend::work_management::LoadWorkDto {
+                media_root: crate::media_paths::media_root_string(),
+                file_name: format!(
+                    "{}/../../resources/test/skribisto_test_project.skrib",
+                    env!("CARGO_MANIFEST_DIR")
+                ),
+            },
+        )
+        .expect("load fixture");
+        frontend::commands::work_commands::get_all_work(app_ctx)
+            .expect("work")
+            .first()
+            .expect("one work")
+            .id
+    }
+
+    /// The lowest-numbered live item's uid — deterministic, so the assertions below
+    /// never depend on a `HashMap`'s iteration order.
+    fn live_item_uid(app_ctx: &Rc<AppContext>) -> uuid::Uuid {
+        frontend::commands::binder_item_commands::get_all_binder_item(app_ctx)
+            .expect("items")
+            .into_iter()
+            .filter(|it| it.activated)
+            .map(|it| it.uid)
+            .min()
+            .expect("the fixture has a live item")
+    }
+
+    fn loaded_picker() -> (
+        DestinationPicker,
+        Rc<AppContext>,
+        bastyde::core::widget_tree::WidgetTree,
+    ) {
+        let app_ctx = Rc::new(AppContext::new());
+        let work_id = load_fixture(&app_ctx);
+
+        let picker = DestinationPicker::new(app_ctx.clone(), Signal::new(Some(work_id)));
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+        tree.add_boxed(Box::new(picker.view(lit!("Nothing here yet"))));
+        tree.layout(SizeProposal::exact(560.0, 420.0));
+        (picker, app_ctx, tree)
+    }
+
+    /// "Import here…" and the remembered destination both open the wizard already
+    /// pointing at a row, named the durable way.
+    #[test]
+    fn a_preselected_row_is_the_one_that_ends_up_chosen() {
+        let (picker, app_ctx, _tree) = loaded_picker();
+        let wanted = live_item_uid(&app_ctx);
+
+        picker.preselect(BinderTreeKey::Item(wanted));
+
+        let chosen = picker.selected().expect("the preselect must have resolved");
+        assert_eq!(
+            chosen.anchor_item_id,
+            picker.model.item_id_of(&BinderTreeKey::Item(wanted)),
+            "the row that was asked for is the row that ended up chosen"
+        );
+    }
+
+    /// The case the held request exists for: both real callers construct the picker and
+    /// ask for a destination in the same breath, and a window opening on a project that
+    /// is still loading has no rows to resolve against yet. The request must survive
+    /// that and land on the reload that can satisfy it — without a poll or a sleep.
+    #[test]
+    fn a_preselect_asked_for_before_the_tree_exists_still_lands() {
+        let app_ctx = Rc::new(AppContext::new());
+        let work = Signal::new(None);
+        let picker = DestinationPicker::new(app_ctx.clone(), work.clone());
+
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+        tree.add_boxed(Box::new(picker.view(lit!("Nothing here yet"))));
+        tree.layout(SizeProposal::exact(560.0, 420.0));
+
+        // Nothing is open, so nothing can resolve — and the request must be *kept*.
+        // Discarding it here is the bug this whole mechanism exists to avoid: the
+        // wizard would open pointing nowhere and the writer would never know it had
+        // been told where to point.
+        picker.preselect(BinderTreeKey::Item(uuid::Uuid::from_u128(0x1234)));
+        assert_eq!(picker.selected(), None);
+        assert!(
+            picker.pending.borrow().is_some(),
+            "an unresolvable request over an empty tree must be held, not discarded"
+        );
+
+        // The project arrives, and the request names a row it really has.
+        let real = load_fixture(&app_ctx);
+        *picker.pending.borrow_mut() = Some(BinderTreeKey::Item(live_item_uid(&app_ctx)));
+        work.set(Some(real));
+        picker.model.reload();
+        tree.layout(SizeProposal::exact(560.0, 420.0));
+
+        assert!(
+            picker.selected().is_some(),
+            "the held request must resolve on the reload that can satisfy it"
+        );
+        assert!(
+            picker.pending.borrow().is_none(),
+            "and must be cleared, so a later reload cannot re-apply it over a newer choice"
+        );
+    }
+
+    /// A remembered destination outlives the row it names — the writer trashes that
+    /// chapter, or opens a different project. The picker must open empty, not wrong.
+    #[test]
+    fn a_preselect_for_a_row_that_is_not_there_is_dropped() {
+        let (picker, _app_ctx, _tree) = loaded_picker();
+        picker.preselect(BinderTreeKey::Item(uuid::Uuid::from_u128(0xdead_beef)));
+        assert_eq!(
+            picker.selected(),
+            None,
+            "a destination that is no longer in the tree must select nothing"
+        );
+        assert!(
+            picker.pending.borrow().is_none(),
+            "and the request must be dropped rather than left to fire on a later reload"
+        );
     }
 }

@@ -60,6 +60,7 @@ ctx-new-item = &New Item
 ctx-new-folder = New &Folder
 ctx-rename = &Rename
 ctx-duplicate = &Duplicate
+ctx-import-here = &Import here…
 ctx-indent = &Indent
 ctx-outdent = &Outdent
 ctx-trash = Move to &Trash

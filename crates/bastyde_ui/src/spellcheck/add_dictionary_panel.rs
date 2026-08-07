@@ -64,7 +64,11 @@ impl AddDictionaryPanel {
             .color(TextRole::Secondary)
     }
 
-    fn form(&self) -> impl Widget + 'static {
+    /// `ctx` only to read the remembered folder its file pickers should open in
+    /// (`models::picker_starts_in`): a `FilePickerField` builds its own dialog when
+    /// Browse is pressed, so it has to be told the directory here rather than at the
+    /// moment of the click.
+    fn form(&self, ctx: &BuildContext) -> impl Widget + 'static {
         let vm = &self.vm;
         let picker_vm = self.vm.clone();
 
@@ -95,19 +99,27 @@ impl AddDictionaryPanel {
             // ── .aff (open-file picker; defaults the other fields on pick) ─
             .line(
                 Self::field_label(tr!(dict_add_aff())),
-                FilePickerField::new(vm.aff())
-                    .kind(FilePickerKind::OpenFile)
-                    .add_filter("Hunspell affix (.aff)", &["aff"])
-                    .validation(vm.aff_validation())
-                    .on_pick(move |res, _ctx| picker_vm.apply_aff_pick(res)),
+                crate::models::picker_starts_in(
+                    ctx,
+                    crate::models::FolderPurpose::AddDictionary,
+                    FilePickerField::new(vm.aff())
+                        .kind(FilePickerKind::OpenFile)
+                        .add_filter("Hunspell affix (.aff)", &["aff"])
+                        .validation(vm.aff_validation())
+                        .on_pick(move |res, _ctx| picker_vm.apply_aff_pick(res)),
+                ),
             )
             // ── .dic (open-file picker) ───────────────────────────────────
             .line(
                 Self::field_label(tr!(dict_add_dic())),
-                FilePickerField::new(vm.dic())
-                    .kind(FilePickerKind::OpenFile)
-                    .add_filter("Hunspell dictionary (.dic)", &["dic"])
-                    .validation(vm.dic_validation()),
+                crate::models::picker_starts_in(
+                    ctx,
+                    crate::models::FolderPurpose::AddDictionary,
+                    FilePickerField::new(vm.dic())
+                        .kind(FilePickerKind::OpenFile)
+                        .add_filter("Hunspell dictionary (.dic)", &["dic"])
+                        .validation(vm.dic_validation()),
+                ),
             )
     }
 }
@@ -122,7 +134,8 @@ impl Widget for AddDictionaryPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         // Build the form first so its first focusable descendant can be captured
         // for `initial_focus_hint` (see the note there).
-        let form_id = ctx.add(self.form());
+        let form = self.form(ctx);
+        let form_id = ctx.add(form);
         self.first_field
             .set(ctx.first_focusable_descendant(form_id));
 

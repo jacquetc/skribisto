@@ -110,13 +110,18 @@ fn save_as_from_banner(
             title
         }
     };
-    let req = FileDialogRequest::save_file()
-        .title(tr!(backup_banner_save_as()))
-        .default_file_name(format!("{base}.skrib"))
-        .add_filter("Skribisto work", &["skrib"]);
+    let req = crate::models::dialog_start_in(
+        ctx,
+        crate::models::FolderPurpose::SaveAs,
+        FileDialogRequest::save_file()
+            .title(tr!(backup_banner_save_as()))
+            .default_file_name(format!("{base}.skrib"))
+            .add_filter("Skribisto work", &["skrib"]),
+    );
     let save_as = save_as.clone();
     let _ = ctx.save_file(req, move |res, ectx| {
         if let FileDialogResult::Saved(Some(path)) = res {
+            crate::models::remember_dialog_file(ectx, crate::models::FolderPurpose::SaveAs, &path);
             let mut target = path.to_string_lossy().into_owned();
             if !target.ends_with(".skrib") {
                 target.push_str(".skrib");

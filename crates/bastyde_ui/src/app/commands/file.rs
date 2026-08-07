@@ -15,7 +15,7 @@ use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
 
 use crate::intents::AppIntent;
-use crate::panels::import_document::present_import_document;
+use crate::panels::import_document::{ImportDocumentOptions, present_import_document};
 use crate::panels::import_plume::ImportPlumePanel;
 use crate::panels::new_work::NewWorkPanel;
 use crate::settings::SettingsPanel;
@@ -184,7 +184,28 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     {
         let import = deps.import_document.clone();
         ctx.register_action_global(Action::new("work.import_document").on_invoke(move |_i, c| {
-            present_import_document(c, import.clone(), Vec::new());
+            present_import_document(c, import.clone(), ImportDocumentOptions::default());
+        }));
+    }
+
+    // The binder's "Import here…" — the same wizard, opened already pointing at the row
+    // the writer right-clicked. Data-bearing, because the outline row is the only place
+    // that knows which row that was; `BinderTreeKey` travels rather than a store id, for
+    // the reason every persisted or forwarded row reference in this app does.
+    {
+        let import = deps.import_document.clone();
+        ctx.register_action_global(Action::new("binder.import_here").on_invoke(move |i, c| {
+            let Some(AppIntent::ImportHere { destination }) = AppIntent::from_intent(i) else {
+                return;
+            };
+            present_import_document(
+                c,
+                import.clone(),
+                ImportDocumentOptions {
+                    destination: Some(*destination),
+                    ..Default::default()
+                },
+            );
         }));
     }
 

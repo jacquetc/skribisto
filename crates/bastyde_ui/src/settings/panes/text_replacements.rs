@@ -279,11 +279,20 @@ fn import_button(vm: &TextReplacementRulesViewModel) -> impl Widget {
         .icon(import_glyph(), IconLocation::Leading)
         .on_activate_fn(move |ctx| {
             let vm = vm.clone();
-            let req = FileDialogRequest::pick_file()
-                .title(tr!(settings_text_repl_import()))
-                .add_filter(tr!(settings_text_repl_csv_filter()).resolve_now(), &["csv"]);
+            let req = crate::models::dialog_start_in(
+                ctx,
+                crate::models::FolderPurpose::DataInterchange,
+                FileDialogRequest::pick_file()
+                    .title(tr!(settings_text_repl_import()))
+                    .add_filter(tr!(settings_text_repl_csv_filter()).resolve_now(), &["csv"]),
+            );
             let _ = ctx.pick_file(req, move |res, c| {
                 if let FileDialogResult::File(Some(path)) = res {
+                    crate::models::remember_dialog_file(
+                        c,
+                        crate::models::FolderPurpose::DataInterchange,
+                        &path,
+                    );
                     match vm.import_from(&path) {
                         Ok(s) => {
                             c.show_toast(
@@ -315,12 +324,21 @@ fn export_button(vm: &TextReplacementRulesViewModel) -> impl Widget {
         .icon(export_glyph(), IconLocation::Leading)
         .on_activate_fn(move |ctx| {
             let vm = vm.clone();
-            let req = FileDialogRequest::save_file()
-                .title(tr!(settings_text_repl_export()))
-                .default_file_name("text-replacements.csv".to_string())
-                .add_filter(tr!(settings_text_repl_csv_filter()).resolve_now(), &["csv"]);
+            let req = crate::models::dialog_start_in(
+                ctx,
+                crate::models::FolderPurpose::DataInterchange,
+                FileDialogRequest::save_file()
+                    .title(tr!(settings_text_repl_export()))
+                    .default_file_name("text-replacements.csv".to_string())
+                    .add_filter(tr!(settings_text_repl_csv_filter()).resolve_now(), &["csv"]),
+            );
             let _ = ctx.save_file(req, move |res, c| {
                 if let FileDialogResult::Saved(Some(mut path)) = res {
+                    crate::models::remember_dialog_file(
+                        c,
+                        crate::models::FolderPurpose::DataInterchange,
+                        &path,
+                    );
                     if path.extension().and_then(|e| e.to_str()) != Some("csv") {
                         path.set_extension("csv");
                     }

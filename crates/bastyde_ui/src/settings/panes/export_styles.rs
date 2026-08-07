@@ -206,11 +206,20 @@ fn present_import(
     vm: ExportStylesViewModel,
     selected: Signal<Option<String>>,
 ) {
-    let req = FileDialogRequest::pick_file()
-        .title(tr!(settings_styles_import()))
-        .add_filter(tr!(settings_styles_json_filter()).resolve_now(), &["json"]);
+    let req = crate::models::dialog_start_in(
+        ctx,
+        crate::models::FolderPurpose::DataInterchange,
+        FileDialogRequest::pick_file()
+            .title(tr!(settings_styles_import()))
+            .add_filter(tr!(settings_styles_json_filter()).resolve_now(), &["json"]),
+    );
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {
+            crate::models::remember_dialog_file(
+                ectx,
+                crate::models::FolderPurpose::DataInterchange,
+                &path,
+            );
             match vm.import_from(&path) {
                 Ok(p) => {
                     selected.set(Some(p.id.clone()));
@@ -241,12 +250,21 @@ fn present_import(
 fn present_export(ctx: &mut EventContext, vm: ExportStylesViewModel, id: &str, name: &str) {
     let id = id.to_string();
     let default_name = format!("{}.json", slugify(name));
-    let req = FileDialogRequest::save_file()
-        .title(tr!(settings_styles_export()))
-        .default_file_name(default_name)
-        .add_filter(tr!(settings_styles_json_filter()).resolve_now(), &["json"]);
+    let req = crate::models::dialog_start_in(
+        ctx,
+        crate::models::FolderPurpose::DataInterchange,
+        FileDialogRequest::save_file()
+            .title(tr!(settings_styles_export()))
+            .default_file_name(default_name)
+            .add_filter(tr!(settings_styles_json_filter()).resolve_now(), &["json"]),
+    );
     let _ = ctx.save_file(req, move |res, ectx| {
         if let FileDialogResult::Saved(Some(path)) = res {
+            crate::models::remember_dialog_file(
+                ectx,
+                crate::models::FolderPurpose::DataInterchange,
+                &path,
+            );
             let mut target = path.clone();
             if target.extension().and_then(|e| e.to_str()) != Some("json") {
                 target.set_extension("json");

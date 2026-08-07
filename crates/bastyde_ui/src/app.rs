@@ -2427,11 +2427,20 @@ fn open_work_flow(
     role: WindowRole,
     ctx: &mut EventContext,
 ) {
-    let req = FileDialogRequest::pick_file()
-        .title("Open Skribisto work")
-        .add_filter("Skribisto work", &["skrib"]);
+    let req = crate::models::dialog_start_in(
+        ctx,
+        crate::models::FolderPurpose::OpenProject,
+        FileDialogRequest::pick_file()
+            .title("Open Skribisto work")
+            .add_filter("Skribisto work", &["skrib"]),
+    );
     let _ = ctx.pick_file(req, move |res, ectx| {
         if let FileDialogResult::File(Some(path)) = res {
+            crate::models::remember_dialog_file(
+                ectx,
+                crate::models::FolderPurpose::OpenProject,
+                &path,
+            );
             let file = path.to_string_lossy().into_owned();
             let switch = switch.clone();
             let ids = ids.clone();

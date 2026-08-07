@@ -60,6 +60,7 @@ ctx-new-item = &Nouvel élément
 ctx-new-folder = Nouveau d&ossier
 ctx-rename = &Renommer
 ctx-duplicate = &Dupliquer
+ctx-import-here = &Importer ici…
 ctx-indent = &Indenter
 ctx-outdent = Désinden&ter
 ctx-trash = Mettre à la &corbeille
