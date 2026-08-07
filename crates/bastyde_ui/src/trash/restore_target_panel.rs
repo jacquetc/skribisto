@@ -5,33 +5,27 @@
 //!
 //! Used whenever a trashed item must land somewhere other than where it sat — a
 //! descendant peeled out of a still-trashed subtree, a child of a wholly-trashed
-//! binder, or a plain restore that came back `orphaned`. It shows the live binder
-//! tree (a fresh [`BinderBinderItemsTreeModel`], single-select) — which already
-//! excludes trashed rows, so the item can never pick its own trashed context —
-//! and, on confirm, calls [`TrashViewModel::restore_to`].
+//! binder, or a plain restore that came back `orphaned`.
 //!
-//! Chrome mirrors [`crate::backup::list_panel`]; the tree wiring mirrors
-//! [`crate::docks::outline`], minus everything interactive (no reorder, no
-//! context menu, no editor-open on activation).
+//! The tree itself is [`crate::widgets::DestinationPicker`], shared with document
+//! import since both features ask the same question. What stays here is what is
+//! actually about restoring: the modal chrome, the confirmation, and the
+//! orphan-queue continuation that must run on every close path.
 
 use std::rc::Rc;
 
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::core::styles::PanelVariant;
-use bastyde::data::{KeyedSelectionModel, SelectionMode, TreeDataSource};
 use bastyde::prelude::TextStyleRole;
 use bastyde::prelude::*;
 use bastyde::widgets::{
     Button, ButtonVariant, Divider, Expand, FixedSize, HStack, IconButton, MessageBox,
-    MessageBoxButtons, Padding, Panel, ScrollBarMode, Spacer, StandardButton, StandardTreeItem,
-    Switcher, TextWidget, Toast, TreeRow, TreeView, VStack,
+    MessageBoxButtons, Padding, Panel, Spacer, StandardButton, TextWidget, Toast, VStack,
 };
 
-use frontend::trash_management::DropPosition;
-
-use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, TreeFilters, TreeNode};
 use crate::toast_scope::ToastWorkExt;
 use crate::view_models::TrashViewModel;
+use crate::widgets::DestinationPicker;
 
 const CARD_W: f32 = 560.0;
 const CARD_H: f32 = 520.0;
@@ -68,8 +62,7 @@ pub struct TrashRestoreTargetPanel {
     trash: TrashViewModel,
     item_id: u64,
     entry_title: String,
-    picker_model: BinderBinderItemsTreeModel,
-    picker_selection: KeyedSelectionModel<BinderTreeKey>,
+    picker: DestinationPicker,
     on_done: Rc<dyn Fn(&mut EventContext)>,
     root_child: Option<WidgetId>,
 }
@@ -81,20 +74,12 @@ impl TrashRestoreTargetPanel {
         entry_title: String,
         on_done: Rc<dyn Fn(&mut EventContext)>,
     ) -> Self {
-        let filters = TreeFilters {
-            binder: Signal::new(None),
-            query: Signal::new(String::new()),
-            match_counts: Signal::new((0, 0)),
-            all_binders: Signal::new(false),
-        };
-        let picker_model =
-            BinderBinderItemsTreeModel::new(trash.app_ctx(), trash.work_id(), filters);
+        let picker = DestinationPicker::new(trash.app_ctx(), trash.work_id());
         Self {
             trash,
             item_id,
             entry_title,
-            picker_model,
-            picker_selection: KeyedSelectionModel::new(SelectionMode::Single),
+            picker,
             on_done,
             root_child: None,
         }
@@ -111,99 +96,39 @@ impl std::fmt::Debug for TrashRestoreTargetPanel {
 
 impl Widget for TrashRestoreTargetPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Keep the tree live while the modal is open.
-        self.picker_model.wire(ctx);
-
-        // The destination tree — read-only, single-select (no reorder / context
-        // menu / editor-open).
-        let tree = TreeView::from_source_keyed(
-            self.picker_model.clone(),
-            self.picker_selection.clone(),
-            move |node: &TreeNode, row: &TreeRow, selected: bool| {
-                let (label, badge) = crate::models::label_and_badge(
-                    &node.title,
-                    node.fallback_label.as_deref(),
-                    node.number,
-                );
-                let mut item = StandardTreeItem::new(lit!(label))
-                    .depth(row.depth)
-                    .has_children(row.has_children)
-                    .is_expanded(row.is_expanded)
-                    .selected(selected)
-                    .on_toggle_rc(row.toggle_callback());
-                if !node.label.is_empty() {
-                    item = item.subtitle(lit!(node.label.clone()));
-                }
-                let icon = if node.kind == "binder" {
-                    crate::binder::icons::binder_icon()
-                } else {
-                    crate::binder::icons::kind_sub_role_icon(&node.kind, &node.sub_role)
-                };
-                item = item.leading_slot(icon);
-                // These are the *live* rows a restore lands in, so their numbers are
-                // current and meaningful (unlike the trashed rows in the dock itself).
-                if badge.is_some() {
-                    item = item.center_slot(crate::widgets::StructureNumber::new(badge));
-                }
-                Box::new(item) as Box<dyn Widget>
-            },
-        )
-        .auto_item_height(28.0)
-        .scroll_bar_style(ScrollBarMode::Overlay)
-        .row_click_expands(false);
-
-        // Empty-state ↔ tree.
-        let empty_model = self.picker_model.clone();
-        let switch = self
-            .picker_model
-            .version_signal()
-            .map(move |_| usize::from(empty_model.visible_count() != 0));
-        let body = Switcher::new(switch)
-            .child(
-                Padding::symmetric(24.0, 40.0).child(
-                    TextWidget::new(tr!(trash_restore_picker_empty()))
-                        .style(TextStyleRole::Small)
-                        .color(TextRole::Secondary),
-                ),
-            )
-            .child(tree);
-
-        let restore_enabled = self
-            .picker_selection
-            .selection_signal()
-            .map(|s| !s.is_empty());
+        let body = self.picker.view(tr!(trash_restore_picker_empty()));
+        let restore_enabled = self.picker.has_selection();
 
         // Confirm handler for "Restore Here".
         let confirm = {
             let panel_trash = self.trash.clone();
-            let model = self.picker_model.clone();
-            let selection = self.picker_selection.clone();
+            let picker = self.picker.clone();
             let item_id = self.item_id;
             let entry_title = self.entry_title.clone();
             let on_done = self.on_done.clone();
-            let resolve_self = TrashRestoreTargetResolver {
-                model: model.clone(),
-            };
             move |ctx: &mut EventContext| {
-                let Some(key) = selection.selected_keys().first().copied() else {
+                let Some(destination) = picker.selected() else {
                     return;
                 };
-                let (dest, anchor, pos) = resolve_self.resolve(key);
-                let dest_title = model.node_of(&key).map(|(_, t)| t).unwrap_or_default();
                 let trash = panel_trash.clone();
                 let entry_title = entry_title.clone();
                 let on_done = on_done.clone();
                 MessageBox::question(tr!(trash_restore_to_confirm_title()))
                     .text(tr!(trash_restore_to_confirm_text(
                         item = entry_title,
-                        destination = dest_title
+                        destination = destination.title.clone()
                     )))
                     .buttons(MessageBoxButtons::OkCancel)
                     .on_result(move |r, ctx2| {
                         if r.button != StandardButton::Ok {
                             return;
                         }
-                        match trash.restore_to(item_id, dest, anchor, pos.clone()) {
+                        match trash.restore_to(
+                            item_id,
+                            destination.binder_id,
+                            destination.anchor_item_id,
+                            destination.position.clone(),
+                        ) {
                             Ok(_) => {
                                 // Dismiss the picker FIRST, then toast: `on_result`'s
                                 // ctx is root-anchored, so `dismiss_top_overlay`
@@ -309,27 +234,66 @@ impl Widget for TrashRestoreTargetPanel {
     }
 }
 
-/// Tiny helper so the confirm closure can resolve a key without borrowing the
-/// panel (which `build` has mutably).
-struct TrashRestoreTargetResolver {
-    model: BinderBinderItemsTreeModel,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_ids::AppIds;
+    use crate::docks::TRASH_DOCK_ID;
+    use crate::models::TrashTreeModel;
+    use bastyde::prelude::SizeProposal;
+    use bastyde::widgets::{DockWidgetId, DockingModel};
+    use frontend::AppContext;
 
-impl TrashRestoreTargetResolver {
-    fn resolve(&self, key: BinderTreeKey) -> (u64, Option<u64>, DropPosition) {
-        // Both arms resolve through the tree now: the key names a row by durable uid, so
-        // the live store ids live on the node rather than in the key itself.
-        let binder = self.model.binder_of(&key).unwrap_or(0);
-        match self.model.item_id_of(&key) {
-            None => (binder, None, DropPosition::Into), // a binder row (or a vanished one)
-            Some(i) => {
-                let pos = if self.model.node_is_folder(&key) {
-                    DropPosition::Into
-                } else {
-                    DropPosition::After
-                };
-                (binder, Some(i), pos)
+    fn trash_vm(app_ctx: &std::rc::Rc<AppContext>) -> TrashViewModel {
+        let ids = AppIds::default();
+        let model = TrashTreeModel::new(app_ctx.clone(), ids.work_id.clone());
+        TrashViewModel::new(
+            app_ctx.clone(),
+            ids,
+            model,
+            DockingModel::new(),
+            DockWidgetId::from_raw(TRASH_DOCK_ID),
+        )
+    }
+
+    /// The panel still composes after the tree moved out into
+    /// `widgets::DestinationPicker`. Chrome plus a real tree, laid out — an
+    /// extraction that left the modal empty would compile perfectly well.
+    #[test]
+    fn the_restore_modal_still_mounts_its_destination_tree() {
+        let app_ctx = std::rc::Rc::new(AppContext::new());
+        let panel = TrashRestoreTargetPanel::new(
+            trash_vm(&app_ctx),
+            42,
+            "A trashed scene".to_string(),
+            std::rc::Rc::new(|_: &mut EventContext| {}),
+        );
+
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+        let id = tree.add_boxed(Box::new(panel));
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+
+        fn first_containing(
+            tree: &bastyde::core::widget_tree::WidgetTree,
+            root: WidgetId,
+            needle: &str,
+        ) -> Option<WidgetId> {
+            if tree
+                .widget_type_name(root)
+                .is_some_and(|n| n.contains(needle))
+            {
+                return Some(root);
             }
+            tree.children(root)
+                .into_iter()
+                .find_map(|c| first_containing(tree, c, needle))
         }
+
+        assert!(
+            first_containing(&tree, id, "DestinationPickerView").is_some(),
+            "the modal lost its destination picker"
+        );
+        let bounds = tree.bounds(id);
+        assert!(bounds.width > 0.0 && bounds.height > 0.0, "{bounds:?}");
     }
 }
