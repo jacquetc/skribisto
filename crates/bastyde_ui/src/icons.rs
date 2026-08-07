@@ -14,3 +14,4 @@ pub(crate) mod find;
 pub(crate) mod format;
 pub(crate) mod go;
 pub(crate) mod session;
+pub(crate) mod versions;

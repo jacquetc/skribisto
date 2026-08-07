@@ -46,6 +46,14 @@ pub struct BackupNowDto {
     pub gfs_weekly: u64,
     pub gfs_monthly: u64,
     pub min_keep: u64,
+    // Hand-added in the position the generator emits it (it is declared in
+    // `qleany.yaml`), because regenerating this file would drop the SPDX header
+    // above and the two hand-added `NewWorkDto` fields below — see their note.
+    /// Backup files the writer pinned, as absolute paths. Joined with what this
+    /// run wrote and handed to retention's `protected`, which guarantees them by
+    /// identity rather than by timestamp.
+    #[serde(default)]
+    pub pinned_paths: Vec<String>,
     pub media_root: String,
 }
 

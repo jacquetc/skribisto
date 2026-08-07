@@ -67,6 +67,10 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             Some(tab.caret_band()),
             Option::None,
             tab.open_doc.images(),
+            // A trashed item's text is read-only. The banner above it is a
+            // statement, not a guard: before this the content beneath it was built
+            // by the same editable render path as any other tab.
+            tab.open_doc.trashed.get(),
         )),
     )
 }
@@ -183,6 +187,10 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 Some(tab.caret_band()),
                 tab.open_doc.comment_binding_synopsis(),
                 tab.open_doc.images(),
+                // A trashed item's text is read-only. The banner above it is a
+                // statement, not a guard: before this the content beneath it was built
+                // by the same editable render path as any other tab.
+                tab.open_doc.trashed.get(),
             ));
     }
     // A chapter folder's own prose. Absent for a Part or a Book — the matrix gives
@@ -203,6 +211,10 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             tab.open_doc.comment_binding_main(),
             tab.open_doc.footnote_binding_main(),
             tab.open_doc.images(),
+            // A trashed item's text is read-only. The banner above it is a
+            // statement, not a guard: before this the content beneath it was built
+            // by the same editable render path as any other tab.
+            tab.open_doc.trashed.get(),
         ));
     }
     // Flowing page: the editors are intrinsic-height, so this `ScrollArea` scrolls the
@@ -339,6 +351,9 @@ fn manuscript_page(tab: &ContentTab, compact_synopsis: Option<Signal<bool>>) -> 
                 Some(tab.caret_band()),
                 tab.open_doc.comment_binding_synopsis(),
                 tab.open_doc.images(),
+                // A trashed item's synopsis is read-only for the same reason its prose
+                // is — see `writing_column`.
+                tab.open_doc.trashed.get(),
             ),
         ));
     }
@@ -363,6 +378,10 @@ fn manuscript_page(tab: &ContentTab, compact_synopsis: Option<Signal<bool>>) -> 
             tab.open_doc.comment_binding_main(),
             tab.open_doc.footnote_binding_main(),
             tab.open_doc.images(),
+            // A trashed item's text is read-only. The banner above it is a
+            // statement, not a guard: before this the content beneath it was built
+            // by the same editable render path as any other tab.
+            tab.open_doc.trashed.get(),
         ));
     }
 
@@ -423,6 +442,9 @@ fn side_synopsis_pane(tab: &ContentTab, sync: SideSync) -> impl Widget {
                     Some(tab.caret_band()),
                     tab.open_doc.comment_binding_synopsis(),
                     tab.open_doc.images(),
+                    // A trashed item's synopsis is read-only for the same reason its prose
+                    // is — see `writing_column`.
+                    tab.open_doc.trashed.get(),
                 ))),
         ),
         None => Box::new(vspace(0.0)),
@@ -494,6 +516,10 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 Some(tab.caret_band()),
                 tab.open_doc.comment_binding_synopsis(),
                 tab.open_doc.images(),
+                // A trashed item's text is read-only. The banner above it is a
+                // statement, not a guard: before this the content beneath it was built
+                // by the same editable render path as any other tab.
+                tab.open_doc.trashed.get(),
             ));
     }
     tab_backdrop(
@@ -557,6 +583,10 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
                 Some(tab.caret_band()),
                 tab.open_doc.comment_binding_synopsis(),
                 tab.open_doc.images(),
+                // A trashed item's text is read-only. The banner above it is a
+                // statement, not a guard: before this the content beneath it was built
+                // by the same editable render path as any other tab.
+                tab.open_doc.trashed.get(),
             ));
     }
     writing_page_scroll(tab).child(col.child(vspace(28.0)))

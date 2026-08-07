@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Not pinned — the same drawing pin, outline only. The identical shape is
+       the point: the control says what it would become, and a different glyph
+       would read as a different action. -->
+  <path d="M6.6 2.9 V6.3 L4.5 9.4 H11.5 L9.4 6.3 V2.9 Z"/>
+  <path d="M5.3 2.9 H10.7"/>
+  <path d="M8 9.4 V13.7"/>
+</svg>

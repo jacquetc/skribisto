@@ -226,6 +226,45 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             unless_distraction_free(&focus, || docking.reveal_dock(footnotes_dock));
         }));
     }
+    /// The least height the Timeline band can say what it is in.
+    ///
+    /// The chart wants about 120 dp to be a chart rather than a row of axis labels;
+    /// the coverage line, slider, caption and filter row take the rest. Measured
+    /// against the real band, not guessed: at 160 dp the chart got 31 dp and drew
+    /// nothing.
+    const TIMELINE_MIN_HEIGHT: f32 = 300.0;
+
+    // `timeline.show` — the **only** way into the project-wide timeline.
+    //
+    // Not a recovery door like the two above. The band shares the bottom side
+    // with the search preview, and the bottom side starts hidden — and hiding a
+    // top/bottom side collapses its rail with it, unlike leading and trailing,
+    // whose rail survives as the way back. So there is no glyph to click, and
+    // without this the band would be built, mounted, and unreachable.
+    {
+        let docking = deps.outline.docking();
+        let timeline_dock = deps.timeline_dock;
+        let focus = deps.focus.clone();
+        ctx.register_action_global(Action::new("timeline.show").on_invoke(move |_i, _c| {
+            unless_distraction_free(&focus, || {
+                // The band carries a chart, and a chart needs height. The bottom
+                // side's stored size is whatever the search preview was last
+                // dragged to — often around 160 dp, which leaves the chart about
+                // 30 dp once the coverage line, the slider, the caption and the
+                // filter row have taken theirs. That is enough for tilted axis
+                // labels and no bars at all.
+                //
+                // Raised only when it is *below* the floor, and only on the way
+                // in: a writer who has already made the side taller keeps their
+                // height, and one who drags it back down afterwards keeps that
+                // too — the workspace layout persists it either way.
+                if docking.side_size(DockSide::Bottom) < TIMELINE_MIN_HEIGHT {
+                    docking.set_side_size(DockSide::Bottom, TIMELINE_MIN_HEIGHT);
+                }
+                docking.reveal_dock(timeline_dock);
+            });
+        }));
+    }
 }
 
 #[cfg(test)]

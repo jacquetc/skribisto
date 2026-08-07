@@ -78,7 +78,12 @@ pub struct BackupPolicy {
     pub on_open: bool,
     pub interval_enabled: bool,
     pub interval_hours: u32,
-    /// Destination directories. Empty ⇒ back up next to the project.
+    /// Destination directories.
+    ///
+    /// **Empty is the symbolic default**, resolved at use time by
+    /// [`crate::backup_paths`] to the app's own backup root — deliberately not
+    /// persisted as an absolute path, which would not survive a Flatpak/native
+    /// switch. An explicit `""` entry still means "next to the project".
     pub destinations: Vec<String>,
     // Retention (flat for TOML friendliness; see `retention()`).
     pub retention_mode: RetentionMode,
@@ -95,11 +100,27 @@ pub struct BackupPolicy {
 
 impl Default for BackupPolicy {
     fn default() -> Self {
-        // The user-confirmed defaults: back up on close, tiered retention.
+        // The user-confirmed defaults: back up on close *and* every two hours,
+        // tiered retention, into the app's own backup root.
+        //
+        // `interval_enabled` is on because closing is not a writing rhythm. This
+        // process hosts every window and every open project, so "on close" fires
+        // when the *app* exits — which for a writer who leaves it running is days
+        // apart, not sittings. On its own that yields a history too sparse to
+        // answer "what did this scene say this morning".
+        //
+        // Two hours, and not less, because `write_zip` rebuilds the whole archive
+        // on every write: the cost is proportional to the project's assets, not to
+        // the prose that changed. `skip_if_unchanged` already suppresses the write
+        // entirely when nothing moved, so an idle app still costs nothing.
+        //
+        // `destinations` stays **empty on purpose** — that is the symbolic default
+        // resolved at use time by `crate::backup_paths`, never a persisted absolute
+        // path (which would break across a Flatpak/native switch).
         BackupPolicy {
             on_close: true,
             on_open: false,
-            interval_enabled: false,
+            interval_enabled: true,
             interval_hours: 2,
             destinations: Vec::new(),
             retention_mode: RetentionMode::Tiered,
@@ -147,6 +168,23 @@ pub struct ProjectBackupState {
     /// The one-time "no backups configured" toast has already been shown.
     pub nudged: bool,
     pub destination_states: Vec<DestinationState>,
+    /// Backup files this project has asked never to have swept away.
+    ///
+    /// Retention is a policy about *how much past to keep in general*, and it has
+    /// no way to know that one of those files is the draft that went to an
+    /// editor. Without this, a feature whose whole purpose is not losing things
+    /// eventually deletes the one copy that mattered most.
+    ///
+    /// Absolute paths, by identity — the same thing
+    /// [`skrib_format::retention::plan_deletions`]'s `protected` argument
+    /// guarantees, and deliberately not timestamps, which a backwards clock
+    /// correction can reorder.
+    ///
+    /// `#[serde(default)]`, so every `backup.toml` written before this field
+    /// existed still loads — the same additive rule every other field here
+    /// follows.
+    #[serde(default)]
+    pub pinned: Vec<String>,
 }
 
 /// A per-project override of the general policy (all-or-nothing).
@@ -359,6 +397,71 @@ impl BackupSettingsService {
         })
     }
 
+    // ── pinned backups ──
+
+    /// Every backup this project has pinned.
+    pub fn pinned(&self, work_uid: &str) -> Vec<String> {
+        self.file
+            .borrow()
+            .project_states
+            .iter()
+            .find(|p| p.work_uid == work_uid)
+            .map(|p| p.pinned.clone())
+            .unwrap_or_default()
+    }
+
+    pub fn is_pinned(&self, work_uid: &str, path: &str) -> bool {
+        self.file
+            .borrow()
+            .project_states
+            .iter()
+            .find(|p| p.work_uid == work_uid)
+            .is_some_and(|p| p.pinned.iter().any(|x| x == path))
+    }
+
+    /// Pin or unpin one backup file. Idempotent either way.
+    pub fn set_pinned(
+        &self,
+        work_uid: &str,
+        last_path: &str,
+        path: &str,
+        pinned: bool,
+    ) -> Result<(), SettingsFileError> {
+        self.file.mutate(|f| {
+            let ps = project_state_mut(f, work_uid);
+            ps.last_path = last_path.to_string();
+            if pinned {
+                if !ps.pinned.iter().any(|x| x == path) {
+                    ps.pinned.push(path.to_string());
+                }
+            } else {
+                ps.pinned.retain(|x| x != path);
+            }
+        })
+    }
+
+    /// Drop pins whose file is gone.
+    ///
+    /// A pin is a promise about a file, and a file a writer deleted by hand is
+    /// not one this can keep. Without this the list grows forever with names of
+    /// things that no longer exist, and `protected` starts carrying paths that
+    /// protect nothing.
+    pub fn forget_missing_pins(&self, work_uid: &str) -> Result<(), SettingsFileError> {
+        // One read of the list, not two: this runs on every backup dispatch, and
+        // the common case is that nothing has gone missing.
+        let pinned = self.pinned(work_uid);
+        let live: Vec<String> = pinned
+            .iter()
+            .filter(|p| std::path::Path::new(p).exists())
+            .cloned()
+            .collect();
+        if live.len() == pinned.len() {
+            return Ok(());
+        }
+        self.file
+            .mutate(|f| project_state_mut(f, work_uid).pinned = live)
+    }
+
     // ── one-time no-backups nudge ──
     pub fn was_nudged(&self, work_uid: &str) -> bool {
         self.file
@@ -532,6 +635,112 @@ mod tests {
         BackupSettingsService::open_at(dir.join("backup.toml"), Duration::ZERO).unwrap()
     }
 
+    // ── pinned backups ──────────────────────────────────────────────────────
+
+    /// A pin is a promise that has to outlive the session that made it — the
+    /// whole point is surviving a retention sweep weeks later.
+    #[test]
+    fn a_pin_round_trips_through_the_settings_file() {
+        let dir = tempdir().unwrap();
+        let kept = dir.path().join("Novel-20260701-090000.skrib");
+        std::fs::write(&kept, b"x").unwrap();
+
+        {
+            let s = svc(dir.path());
+            s.set_pinned("uid", "/tmp/Novel.skrib", kept.to_str().unwrap(), true)
+                .unwrap();
+            s.flush_now().unwrap();
+        }
+        // A fresh service over the same file — i.e. the next launch.
+        let s = svc(dir.path());
+        assert!(s.is_pinned("uid", kept.to_str().unwrap()));
+        assert_eq!(s.pinned("uid"), vec![kept.to_string_lossy().to_string()]);
+    }
+
+    #[test]
+    fn pinning_twice_records_one_pin_and_unpinning_removes_it() {
+        let dir = tempdir().unwrap();
+        let s = svc(dir.path());
+        s.set_pinned("uid", "", "/backups/a.skrib", true).unwrap();
+        s.set_pinned("uid", "", "/backups/a.skrib", true).unwrap();
+        assert_eq!(s.pinned("uid").len(), 1, "a pin is a state, not a counter");
+
+        s.set_pinned("uid", "", "/backups/a.skrib", false).unwrap();
+        assert!(s.pinned("uid").is_empty());
+        assert!(!s.is_pinned("uid", "/backups/a.skrib"));
+    }
+
+    #[test]
+    fn two_projects_pins_never_mix() {
+        let dir = tempdir().unwrap();
+        let s = svc(dir.path());
+        s.set_pinned("one", "", "/backups/one.skrib", true).unwrap();
+        s.set_pinned("two", "", "/backups/two.skrib", true).unwrap();
+        assert_eq!(s.pinned("one"), vec!["/backups/one.skrib".to_string()]);
+        assert!(!s.is_pinned("two", "/backups/one.skrib"));
+    }
+
+    /// A pin names a file. A file the writer deleted by hand is a promise this
+    /// cannot keep, and carrying its name forever would grow `protected` into a
+    /// list of things that protect nothing.
+    #[test]
+    fn a_pin_whose_file_is_gone_is_forgotten() {
+        let dir = tempdir().unwrap();
+        let here = dir.path().join("still-here.skrib");
+        std::fs::write(&here, b"x").unwrap();
+        let gone = dir.path().join("deleted-by-hand.skrib");
+
+        let s = svc(dir.path());
+        s.set_pinned("uid", "", here.to_str().unwrap(), true)
+            .unwrap();
+        s.set_pinned("uid", "", gone.to_str().unwrap(), true)
+            .unwrap();
+        assert_eq!(s.pinned("uid").len(), 2);
+
+        s.forget_missing_pins("uid").unwrap();
+        assert_eq!(
+            s.pinned("uid"),
+            vec![here.to_string_lossy().to_string()],
+            "only the pin whose file still exists survives",
+        );
+    }
+
+    // ── the shipped capture policy ──────────────────────────────────────────
+
+    /// Pinned so changing what a writer gets out of the box is always a deliberate
+    /// act with a failing test to justify, never a drive-by edit.
+    ///
+    /// The two that carry the most weight: `interval_enabled` (without it the only
+    /// automatic trigger is app *exit*, which for a long-running session is days
+    /// apart — far too sparse to be a version history), and `destinations` staying
+    /// empty (the symbolic default `crate::backup_paths` resolves at use time; a
+    /// persisted absolute path would not survive a Flatpak/native switch).
+    #[test]
+    fn the_default_policy_captures_on_close_and_every_two_hours() {
+        let p = BackupPolicy::default();
+        assert!(p.on_close, "closing the project must still take a backup");
+        assert!(
+            p.interval_enabled,
+            "periodic capture is what makes the history dense enough to be useful",
+        );
+        assert_eq!(
+            p.interval_hours, 2,
+            "shorter re-deflates the whole archive too often"
+        );
+        assert!(
+            p.destinations.is_empty(),
+            "the default destination is symbolic and resolved at use time, never persisted",
+        );
+        assert!(
+            p.skip_if_unchanged,
+            "an idle app must not write identical backups"
+        );
+        assert!(
+            !p.is_effectively_off(),
+            "the shipped default must actually produce backups"
+        );
+    }
+
     // ── in-memory fallback: infallible, never panics ────────────────────────
 
     /// The primary candidate can be entirely unusable (a stale lock, a read-only mount, a
@@ -585,12 +794,16 @@ mod tests {
         );
     }
 
+    /// A freshly-created settings file hands back the shipped policy — the same one
+    /// `the_default_policy_captures_on_close_and_every_two_hours` pins, checked here
+    /// through the service so a bad `Default` *and* a bad round-trip both fail.
     #[test]
-    fn defaults_are_on_close_tiered() {
+    fn defaults_are_on_close_interval_tiered() {
         let d = tempdir().unwrap();
         let s = svc(d.path());
         let g = s.general();
-        assert!(g.on_close && !g.on_open && !g.interval_enabled);
+        assert!(g.on_close && !g.on_open && g.interval_enabled);
+        assert_eq!(g.interval_hours, 2);
         assert_eq!(g.retention_mode, RetentionMode::Tiered);
         assert_eq!(g.min_keep, 3);
         assert_eq!(g.gfs_monthly, 12);

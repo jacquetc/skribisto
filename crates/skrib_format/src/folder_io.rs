@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 use tempfile::NamedTempFile;
 
 use super::bundle::*;
+use super::history::{HISTORY_DIR, HISTORY_INDEX, blob_relpath};
 use super::shape::MANIFEST_NAME;
 use super::slug::{ASSETS_DIR, TEMPLATES_DIR, binder_dir_name};
 use super::version_gate::compute_min_read_version;
@@ -164,6 +165,37 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         expected_assets.insert(fname);
     }
     prune_assets_dir(&assets_dir, &expected_assets)?;
+
+    // The history log: an index plus one content-addressed blob per recorded
+    // state, the same split assets use. Written only when the log is non-empty, so
+    // a project that predates the feature (or one whose log was thinned to nothing)
+    // grows no directory at all.
+    //
+    // The prune is the blob GC: `history::thin` drops index entries, and the blobs
+    // they referenced have to follow, or the directory only ever grows.
+    let history_dir = root.join(HISTORY_DIR);
+    if bundle.history.is_empty() {
+        // Nothing to keep — remove any index left from a previous save so the
+        // on-disk state matches the bundle rather than resurrecting a stale log.
+        let _ = fs::remove_file(root.join(HISTORY_INDEX));
+        prune_dir(&history_dir, &BTreeSet::new(), "djot")?;
+    } else {
+        fs::create_dir_all(&history_dir)
+            .with_context(|| format!("creating {}", history_dir.display()))?;
+        write_if_changed(
+            &root.join(HISTORY_INDEX),
+            to_ron(&bundle.history.entries)?.as_bytes(),
+        )?;
+        let mut expected_blobs: BTreeSet<String> = BTreeSet::new();
+        for hash in bundle.history.referenced_hashes() {
+            let text = bundle.history.blobs.get(&hash).ok_or_else(|| {
+                anyhow::anyhow!("history index references blob {hash} with no bytes in the bundle")
+            })?;
+            write_if_changed(&root.join(blob_relpath(&hash)), text.as_bytes())?;
+            expected_blobs.insert(format!("{hash}.djot"));
+        }
+        prune_dir(&history_dir, &expected_blobs, "djot")?;
+    }
 
     let mut expected_binder_dirs: BTreeSet<String> = BTreeSet::new();
 
@@ -361,6 +393,50 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         note_template_bodies.insert(t.file_id, text);
     }
 
+    // The history log.
+    //
+    // **Deliberately not `read_ron_vec`**, whose contract is a hard error on
+    // malformed input. Every sibling above holds manuscript content, where
+    // refusing to open is the recoverable outcome. This file holds a convenience,
+    // and a truncated index is not a reason to lock a writer out of their book —
+    // so it degrades to an empty log.
+    //
+    // Blobs are loaded **eagerly**, not on demand, and that is load-bearing for
+    // the zip shape: `read_zip` extracts into a tempdir that is gone by the time
+    // `write_zip` packs a *fresh* staging directory, so a blob left on disk rather
+    // than carried in memory would simply not be in the next archive. Thinning is
+    // what bounds the cost; a blob whose file has vanished is skipped rather than
+    // failing the open, and the next write prunes its index entry's claim on it.
+    let history = {
+        let index_path = root.join(HISTORY_INDEX);
+        let entries: Vec<super::history::HistoryEntry> = match fs::read_to_string(&index_path) {
+            Err(_) => Vec::new(),
+            Ok(text) => ron::from_str(&text).unwrap_or_else(|e| {
+                eprintln!(
+                    "skrib: ignoring unreadable history index {}: {e}",
+                    index_path.display()
+                );
+                Vec::new()
+            }),
+        };
+        let mut blobs = std::collections::BTreeMap::new();
+        for hash in entries.iter().map(|e| e.hash.clone()) {
+            if blobs.contains_key(&hash) {
+                continue;
+            }
+            if let Ok(text) = fs::read_to_string(root.join(blob_relpath(&hash))) {
+                blobs.insert(hash, text);
+            }
+        }
+        // Drop entries whose blob is gone, so the in-memory log never claims prose
+        // it cannot produce — which is exactly what `write_folder` asserts.
+        let entries = entries
+            .into_iter()
+            .filter(|e| blobs.contains_key(&e.hash))
+            .collect();
+        super::history::HistoryLog { entries, blobs }
+    };
+
     // Assets. `fs::read`, not `read_to_string` — this is the one part of a
     // bundle that is not UTF-8, and every other reader here would reject it.
     let assets: Vec<AssetFile> = read_ron_vec(&root.join("assets.ron"), "assets.ron")?;
@@ -454,6 +530,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         progress_snapshots,
         orphan_comments,
         orphan_footnotes,
+        history,
         binders,
     })
 }

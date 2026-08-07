@@ -564,6 +564,12 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                         .intent("preview.toggle")
                         .shortcut("preview.toggle"),
                 )
+                // Reveal the project-wide Timeline band. Not a convenience: it
+                // shares the bottom side with the search preview, and a hidden
+                // bottom side takes its rail with it — so unlike a leading or
+                // trailing dock, there is no glyph left to click. Without this
+                // entry the band would be shipped and unreachable.
+                .item(MenuEntry::new(tr!(menu_timeline())).intent("timeline.show"))
                 .separator()
                 // Increment 1 of distraction-free: plain fullscreen,
                 // not the collapsed-chrome mode itself (that is a

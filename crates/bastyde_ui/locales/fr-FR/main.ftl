@@ -35,6 +35,7 @@ menu-quit = &Quitter
 menu-view = &Affichage
 menu-outline = &Plan
 menu-search = &Rechercher dans le projet
+menu-timeline = &Chronologie
 menu-search-preview = &Aperçu de recherche
 menu-fullscreen = P&lein écran
 menu-focus-mode = &Mode sans distraction
@@ -732,6 +733,18 @@ settings-backup-on-close = À la fermeture du projet
 settings-backup-on-open = À l'ouverture du projet
 settings-backup-interval = Régulièrement, toutes les
 settings-backup-destinations = Destinations des copies de secours
+settings-backup-default-location = Emplacement par défaut
+settings-backup-usage-since = { $count ->
+    [one] { $count } copie de secours · { $size } · la plus ancienne { $oldest }
+   *[other] { $count } copies de secours · { $size } · la plus ancienne { $oldest }
+}
+settings-backup-usage = { $count ->
+    [one] { $count } copie · { $size }
+   *[other] { $count } copies · { $size }
+}
+settings-backup-usage-empty = Aucune copie conservée ici pour l'instant
+settings-backup-usage-measuring = Calcul en cours…
+settings-backup-reveal-root = Afficher le dossier
 settings-backup-dest-none = Aucune destination. Les copies sont enregistrées à côté du projet.
 settings-backup-dest-remove = Retirer
 settings-backup-dest-add = Ajouter un dossier…
@@ -1703,3 +1716,103 @@ import-document-diagnostics = { $errors ->
 }
 import-document-diagnostics-none = Rien à signaler.
 
+
+# ── Dock Versions ──
+versions-title = Versions
+versions-scope-synopsis = Synopsis
+versions-scope-prose = Texte
+versions-loading = Recherche dans vos copies de secours…
+versions-empty = Aucune version antérieure pour l'instant
+versions-error = Impossible de lire vos copies de secours — rien n'est perdu, mais cette liste peut être incomplète
+versions-did-not-exist = N'existait pas encore le { $date }
+versions-deleted-after = Supprimé après le { $date }
+versions-unreadable = { $count ->
+    [one] { $count } copie de secours illisible
+   *[other] { $count } copies de secours illisibles
+}
+versions-source-backup = Depuis une copie de secours
+versions-source-project = Depuis l'historique du projet
+versions-list-caption = Une entrée par changement, pas par copie de secours
+versions-pick-a-version = Choisissez une version pour voir ce qui a changé
+versions-earliest = La plus ancienne version enregistrée. Il n'y a rien de plus ancien à quoi la comparer.
+versions-no-change = Rien n'a changé dans cette partie
+versions-formatting-only = Seule la mise en forme a changé — les mots sont les mêmes
+versions-show-unchanged = Afficher l'inchangé
+versions-hide-unchanged = Masquer l'inchangé
+versions-next-change = Changement suivant
+versions-near = près de « { $text } »
+versions-words-added = { $count ->
+    [one] { $count } mot ajouté
+   *[other] { $count } mots ajoutés
+}
+versions-words-removed = { $count ->
+    [one] { $count } mot supprimé
+   *[other] { $count } mots supprimés
+}
+versions-blocks-moved = { $count ->
+    [one] { $count } paragraphe déplacé
+   *[other] { $count } paragraphes déplacés
+}
+versions-pin = Épingler cette version — le nettoyage automatique ne la supprimera jamais
+versions-unpin = Désépingler cette version — le nettoyage automatique pourra de nouveau la supprimer
+versions-pinned-only = N'afficher que les versions épinglées
+versions-range-filter = N'afficher que les versions comprises entre deux dates
+versions-filtered-empty = Aucune version ne correspond aux filtres définis
+versions-clear-filters = Effacer les filtres
+versions-last-30-days = 30 derniers jours
+versions-restore-button = Restaurer cette version
+versions-restore-confirm-title = Remplacer ce texte par la version du { $date } ?
+versions-restore-confirm-text = Ce que vous avez maintenant sera remplacé par le texte de cette ligne au { $date }.
+versions-restore-confirm-with-comments = Ce que vous avez maintenant sera remplacé par le texte de cette ligne au { $date }. { $count ->
+    [one] { $count } commentaire est ancré dans le texte actuel et risque de devenir orphelin.
+   *[other] { $count } commentaires sont ancrés dans le texte actuel et risquent de devenir orphelins.
+}
+versions-restore-confirm-undo-note = Une copie de secours est faite d'abord, et Ctrl+Z annule tout en une fois.
+versions-restored-toast = Version du { $date } restaurée
+versions-undo = Annuler
+versions-restore-row-gone = Cette ligne n'est plus dans ce projet
+versions-restore-no-home = Cette ligne a changé de type depuis, et l'ancien texte n'y a plus sa place
+versions-restore-no-safety-copy = Votre copie de secours n'a pas été faite, rien n'a été modifié
+versions-restore-failed = La restauration a échoué : { $error }
+versions-restore-backup-busy = Une copie de secours est déjà en cours — réessayez dans un instant
+versions-restore-in-backup-file = Vous consultez une copie de secours ; ouvrez le projet lui-même pour y restaurer
+versions-restore-no-project = Aucun projet ouvert
+versions-changed-percent = { $percent } % de ce texte a changé
+versions-hidden-paragraphs = { $count ->
+    [one] … { $count } paragraphe inchangé …
+   *[other] … { $count } paragraphes inchangés …
+}
+
+# ── Bandeau Chronologie ──
+timeline-title = Chronologie
+timeline-coverage = { $count ->
+    [one] { $count } version enregistrée, remontant au { $oldest }
+   *[other] { $count } versions enregistrées, remontant au { $oldest }
+}
+timeline-loading = Recherche dans le passé du projet…
+timeline-empty = Aucune version de ce projet n'a encore été enregistrée
+timeline-no-changes = Rien n'a changé depuis
+timeline-slider-label = Version enregistrée
+timeline-bars-caption = Chaque barre est une version enregistrée, aussi haute que l'était le projet alors. Celle qui est mise en évidence est celle que vous consultez.
+timeline-bars-caption-periods = Trop de versions pour les afficher une à une : chaque barre représente { $period }, aussi haute que l'était le projet à la fin de cette période.
+timeline-unit-hour = une heure
+timeline-unit-day = une journée
+timeline-unit-week = une semaine
+timeline-unit-month = un mois
+timeline-range-filter = N'afficher que les versions comprises entre deux dates
+timeline-range-empty = Aucune version n'a été enregistrée à ces dates
+timeline-open-period = Ouvrir cette période
+timeline-show-all = Afficher tout l'historique
+timeline-changed-since = { $count ->
+    [one] { $count } élément diffère entre le { $date } et votre projet actuel
+   *[other] { $count } éléments diffèrent entre le { $date } et votre projet actuel
+}
+timeline-kind-added = Écrit depuis
+timeline-kind-removed = N'est plus dans le projet
+timeline-kind-changed = Modifié depuis
+timeline-kind-moved = Déplacé depuis
+timeline-not-yet-written = Cela n'existait pas encore à ce moment-là
+timeline-no-text-of-its-own = Ceci n'a pas de texte propre — c'est un intitulé pour ce qu'il contient
+timeline-reader-close = Fermer
+timeline-reader-stamp = Tel quel le { $date }
+timeline-reader-deleted = Cela n'est plus dans votre projet. Vous pouvez le lire et le copier ici.

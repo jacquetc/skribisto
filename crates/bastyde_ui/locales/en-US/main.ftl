@@ -35,6 +35,7 @@ menu-quit = &Quit
 menu-view = &View
 menu-outline = &Outline
 menu-search = &Search in Project
+menu-timeline = &Timeline
 menu-search-preview = Search &Preview
 menu-fullscreen = &Fullscreen
 menu-focus-mode = &Distraction-free Mode
@@ -727,6 +728,18 @@ settings-backup-on-close = Back up when closing the project
 settings-backup-on-open = Back up when opening the project
 settings-backup-interval = Back up periodically, every
 settings-backup-destinations = Backup destinations
+settings-backup-default-location = Default location
+settings-backup-usage-since = { $count ->
+    [one] { $count } backup · { $size } · oldest { $oldest }
+   *[other] { $count } backups · { $size } · oldest { $oldest }
+}
+settings-backup-usage = { $count ->
+    [one] { $count } backup · { $size }
+   *[other] { $count } backups · { $size }
+}
+settings-backup-usage-empty = Nothing kept here yet
+settings-backup-usage-measuring = Measuring…
+settings-backup-reveal-root = Show folder
 settings-backup-dest-none = No destinations. Backups are saved next to the project.
 settings-backup-dest-remove = Remove
 settings-backup-dest-add = Add folder…
@@ -1734,3 +1747,104 @@ import-document-diagnostics = { $errors ->
 }
 import-document-diagnostics-none = Nothing to report.
 
+
+# ── Versions dock ──
+versions-title = Versions
+versions-scope-synopsis = Synopsis
+versions-scope-prose = Text
+versions-loading = Looking through your backups…
+versions-empty = No earlier version of this yet
+versions-error = Couldn't read your backups — nothing has been lost, but this list may be incomplete
+versions-did-not-exist = Didn't exist yet on { $date }
+versions-deleted-after = Deleted some time after { $date }
+versions-unreadable = { $count ->
+    [one] { $count } backup couldn't be read
+   *[other] { $count } backups couldn't be read
+}
+versions-source-backup = From a backup
+versions-source-project = From the project's own history
+versions-list-caption = One entry per change, not per backup
+versions-pick-a-version = Pick a version to see what changed
+versions-earliest = The earliest version on record. There's nothing older to compare it with.
+versions-no-change = Nothing changed in this part of the row
+versions-formatting-only = Only the formatting changed here — the words are the same
+versions-show-unchanged = Show unchanged
+versions-hide-unchanged = Hide unchanged
+versions-next-change = Next change
+versions-near = near "{ $text }"
+versions-words-added = { $count ->
+    [one] { $count } word added
+   *[other] { $count } words added
+}
+versions-words-removed = { $count ->
+    [one] { $count } word removed
+   *[other] { $count } words removed
+}
+versions-blocks-moved = { $count ->
+    [one] { $count } paragraph moved
+   *[other] { $count } paragraphs moved
+}
+versions-pin = Pin this version — automatic cleanup will never delete it
+versions-unpin = Unpin this version — automatic cleanup may delete it again
+versions-pinned-only = Show only pinned versions
+versions-range-filter = Show only versions between two dates
+versions-filtered-empty = No version matches the filters you've set
+versions-clear-filters = Clear the filters
+# Also used by the Timeline band's filter row, like versions-error above it.
+versions-last-30-days = Last 30 days
+versions-restore-button = Restore this version
+versions-restore-confirm-title = Replace this text with the version from { $date }?
+versions-restore-confirm-text = What you have now will be replaced by the text this row had on { $date }.
+versions-restore-confirm-with-comments = What you have now will be replaced by the text this row had on { $date }. { $count ->
+    [one] { $count } comment is anchored in the current text and may be left orphaned.
+   *[other] { $count } comments are anchored in the current text and may be left orphaned.
+}
+versions-restore-confirm-undo-note = A backup is made first, and Ctrl+Z undoes this in one step.
+versions-restored-toast = Restored the version from { $date }
+versions-undo = Undo
+versions-restore-row-gone = That row is no longer in this project
+versions-restore-no-home = This row has changed type since then, and the old text has nowhere to go in it
+versions-restore-no-safety-copy = Your safety backup didn't run, so nothing was changed
+versions-restore-failed = The restore failed: { $error }
+versions-restore-backup-busy = A backup is already running — try again in a moment
+versions-restore-in-backup-file = You're looking at a backup file; open the project itself to restore into it
+versions-restore-no-project = No project is open
+versions-changed-percent = { $percent }% of this changed
+versions-hidden-paragraphs = { $count ->
+    [one] … { $count } unchanged paragraph …
+   *[other] … { $count } unchanged paragraphs …
+}
+
+# ── Timeline band ──
+timeline-title = Timeline
+timeline-coverage = { $count ->
+    [one] { $count } version recorded, going back to { $oldest }
+   *[other] { $count } versions recorded, going back to { $oldest }
+}
+timeline-loading = Looking through your project's past…
+timeline-empty = No version of this project has been recorded yet
+timeline-no-changes = Nothing has changed since then
+timeline-slider-label = Recorded version
+timeline-bars-caption = Each bar is a recorded version, as tall as the project was then. The highlighted one is what you're looking at.
+timeline-bars-caption-periods = Too many versions to show one by one, so each bar is a { $period }, as tall as the project was by the end of it.
+timeline-unit-hour = hour
+timeline-unit-day = day
+timeline-unit-week = week
+timeline-unit-month = month
+timeline-range-filter = Show only versions between two dates
+timeline-range-empty = No version was recorded in those dates
+timeline-open-period = Open this period
+timeline-show-all = Show the whole history
+timeline-changed-since = { $count ->
+    [one] { $count } item differs between { $date } and your project now
+   *[other] { $count } items differ between { $date } and your project now
+}
+timeline-kind-added = Written since
+timeline-kind-removed = No longer in the project
+timeline-kind-changed = Edited since
+timeline-kind-moved = Moved since
+timeline-not-yet-written = This didn't exist yet at that point
+timeline-no-text-of-its-own = This has no text of its own — it's a heading for what's inside it
+timeline-reader-close = Close
+timeline-reader-stamp = As it was on { $date }
+timeline-reader-deleted = This is no longer in your project. You can read it and copy it out here.

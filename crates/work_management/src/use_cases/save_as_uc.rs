@@ -254,7 +254,13 @@ fn run_save_as(
         std::path::Path::new(&dto.media_root),
         &g.work.unique_id,
     );
-    let output = work_io::serialize_and_write(&g, target, shape, tag, &media_dir)?;
+    // Save As is a copy of the state already on disk, not a new edit: it carries
+    // the source's history so the copy remembers as much as the original, and
+    // records nothing so the act of copying never looks like a revision.
+    let history = work_io::HistoryAction::Carry {
+        source: source.clone(),
+    };
+    let output = work_io::serialize_and_write(&g, target, shape, tag, &media_dir, history)?;
     Ok((
         work_id,
         SaveAsResultDto {

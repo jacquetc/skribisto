@@ -15,8 +15,11 @@
 
 mod commands;
 mod project_shell;
+mod restore_version;
 mod window_role;
 mod wiring;
+
+pub(crate) use restore_version::restore_version;
 
 pub(crate) use window_role::WindowRole;
 
@@ -793,6 +796,16 @@ pub struct App {
     comments_dock: DockWidgetId,
     doc_comments_dock: DockWidgetId,
     footnotes_dock: DockWidgetId,
+    versions_dock: DockWidgetId,
+    timeline_dock: DockWidgetId,
+    /// This row's recorded past. Tier 3 — the timeline is a view of what one
+    /// window is focused on, and two windows on the same Work legitimately look
+    /// at different rows.
+    versions: crate::view_models::VersionsViewModel,
+    /// The whole project's past. Tier 3 for the same reason `versions` is: the
+    /// selected moment and the change list are one window's place in the
+    /// history, not the project's.
+    timeline: crate::view_models::TimelineViewModel,
     /// The trash feature's shared view-model, created once on first build.
     trash: Option<crate::view_models::TrashViewModel>,
     comments: Option<crate::view_models::CommentsViewModel>,
@@ -902,6 +915,10 @@ impl App {
             comments_dock: DockWidgetId::from_raw(crate::docks::COMMENTS_DOCK_ID),
             doc_comments_dock: DockWidgetId::from_raw(crate::docks::DOC_COMMENTS_DOCK_ID),
             footnotes_dock: DockWidgetId::from_raw(crate::docks::FOOTNOTES_DOCK_ID),
+            versions_dock: DockWidgetId::from_raw(crate::docks::VERSIONS_DOCK_ID),
+            timeline_dock: DockWidgetId::from_raw(crate::docks::TIMELINE_DOCK_ID),
+            versions: crate::view_models::VersionsViewModel::new(),
+            timeline: crate::view_models::TimelineViewModel::new(),
             trash: None,
             search_settings_reloadable: None,
             root_child: None,
@@ -1861,6 +1878,7 @@ impl Widget for App {
             search_dock: self.search_dock,
             trash_dock: self.trash_dock,
             footnotes_dock: self.footnotes_dock,
+            timeline_dock: self.timeline_dock,
             unsaved: self.unsaved.clone(),
             backup_mode: self.backup_mode.clone(),
             pending_exit: self.pending_exit.clone(),
@@ -2276,6 +2294,8 @@ impl Widget for App {
         let root = self.build_shell(
             ctx,
             project_shell::ShellParts {
+                versions: self.versions.clone(),
+                timeline: self.timeline.clone(),
                 editors: editors.clone(),
                 comments: comments.clone(),
                 footnotes: footnotes.clone(),

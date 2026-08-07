@@ -144,12 +144,39 @@ pub fn writing_column(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::view_models::images::ImageSource>,
+    // Whether this surface may be typed into.
+    //
+    // A **construction-time** choice, not a runtime flag: `RichTextEditor` fixes
+    // its read-only policy when it is built, and nothing can flip it afterwards.
+    // That is why a tab is rebuilt when a trashed item is *restored* rather
+    // than merely re-bound (see `EditorsViewModel::items_updated`). Trashing
+    // goes the other way: the tab is closed, and this surface is then reached
+    // only by opening a still-trashed item from the Trash dock.
+    //
+    // Read-only rather than disabled, deliberately. A trashed item's text is
+    // still the writer's text: they must be able to select it, read it and copy
+    // it out — the one thing a disabled surface takes away and the one thing
+    // someone looking at a scene they just deleted actually wants.
+    //
+    // **What it covers.** The policy applies to the *input* paths: the IME
+    // descriptor is left unset and drops are refused, so nothing a writer types
+    // or drags reaches the text. It is **not** a policy on `EditorHandle`, whose
+    // `insert_text`/`insert_djot` write straight to the cursor — that is the API
+    // paste, Insert footnote and a version restore all go through, and gating it
+    // here would make restoring into a trashed item impossible. A command that
+    // must respect the trash has to check it itself; see the
+    // `the_gate_stops_typing_and_not_the_programmatic_api` test.
+    read_only: bool,
 ) -> HStack {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
     // document that owns them, and a clipboard fragment is not a document — so
     // without this it lays out at full size and paints nothing.
-    let mut editor = RichTextEditor::editor(doc.clone());
+    let mut editor = if read_only {
+        RichTextEditor::read_only(doc.clone())
+    } else {
+        RichTextEditor::editor(doc.clone())
+    };
     if let Some(source) = &images {
         let resolve = source.resolver();
         editor = editor.on_image_missing(resolve);
@@ -717,12 +744,18 @@ pub fn synopsis_editor(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::view_models::images::ImageSource>,
+    // Whether this surface may be typed into — see `writing_column`.
+    read_only: bool,
 ) -> impl Widget {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
     // document that owns them, and a clipboard fragment is not a document — so
     // without this it lays out at full size and paints nothing.
-    let mut editor = RichTextEditor::editor(doc.clone());
+    let mut editor = if read_only {
+        RichTextEditor::read_only(doc.clone())
+    } else {
+        RichTextEditor::editor(doc.clone())
+    };
     if let Some(source) = &images {
         let resolve = source.resolver();
         editor = editor.on_image_missing(resolve);
@@ -1043,6 +1076,8 @@ pub fn synopsis_section(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::view_models::images::ImageSource>,
+    // Whether this surface may be typed into — see `writing_column`.
+    read_only: bool,
 ) -> impl Widget {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     bati!(
@@ -1071,6 +1106,7 @@ pub fn synopsis_section(
                             caret,
                             comments,
                             images.clone(),
+                            read_only,
                         )
                     }
                 }
@@ -1112,6 +1148,29 @@ pub fn synopsis_column(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::view_models::images::ImageSource>,
+    // Whether this surface may be typed into.
+    //
+    // A **construction-time** choice, not a runtime flag: `RichTextEditor` fixes
+    // its read-only policy when it is built, and nothing can flip it afterwards.
+    // That is why a tab is rebuilt when a trashed item is *restored* rather
+    // than merely re-bound (see `EditorsViewModel::items_updated`). Trashing
+    // goes the other way: the tab is closed, and this surface is then reached
+    // only by opening a still-trashed item from the Trash dock.
+    //
+    // Read-only rather than disabled, deliberately. A trashed item's text is
+    // still the writer's text: they must be able to select it, read it and copy
+    // it out — the one thing a disabled surface takes away and the one thing
+    // someone looking at a scene they just deleted actually wants.
+    //
+    // **What it covers.** The policy applies to the *input* paths: the IME
+    // descriptor is left unset and drops are refused, so nothing a writer types
+    // or drags reaches the text. It is **not** a policy on `EditorHandle`, whose
+    // `insert_text`/`insert_djot` write straight to the cursor — that is the API
+    // paste, Insert footnote and a version restore all go through, and gating it
+    // here would make restoring into a trashed item impossible. A command that
+    // must respect the trash has to check it itself; see the
+    // `the_gate_stops_typing_and_not_the_programmatic_api` test.
+    read_only: bool,
 ) -> CenterColumnFlowing {
     let synopsis_width = column_width.map(|w| (w - SYNOPSIS_WIDTH_INSET).max(0.0));
     CenterColumnFlowing::new(bati!(
@@ -1132,6 +1191,7 @@ pub fn synopsis_column(
                     caret,
                     comments,
                     images.clone(),
+                    read_only,
                 )
             }
         }
@@ -1167,6 +1227,8 @@ pub fn writing_section(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::view_models::images::ImageSource>,
+    // Whether this surface may be typed into — see `writing_column`.
+    read_only: bool,
 ) -> impl Widget {
     VStack::new()
         .spacing(5.0)
@@ -1192,6 +1254,7 @@ pub fn writing_section(
             comments,
             footnotes,
             images,
+            read_only,
         ))
 }
 
@@ -1530,6 +1593,8 @@ pub fn side_synopsis_editor(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::view_models::images::ImageSource>,
+    // Whether this surface may be typed into — see `writing_column`.
+    read_only: bool,
 ) -> impl Widget {
     synopsis_editor(
         doc,
@@ -1545,6 +1610,7 @@ pub fn side_synopsis_editor(
         caret,
         comments,
         images,
+        read_only,
     )
 }
 
@@ -2751,6 +2817,18 @@ mod frame_loop_tests {
         Rc<TextReplacementSession>,
         WidgetTree,
     ) {
+        column_with(false)
+    }
+
+    /// [`column`], with the read-only gate a trashed item's tab sets.
+    fn column_with(
+        read_only: bool,
+    ) -> (
+        TextDocument,
+        EditorHandle,
+        Rc<TextReplacementSession>,
+        WidgetTree,
+    ) {
         let doc = TextDocument::new();
         let ctx = Rc::new(AppContext::new());
         let work = SingleWork::new(ctx.clone());
@@ -2792,6 +2870,7 @@ mod frame_loop_tests {
             // …nor a footnote binding, nor an image source, for the same reason.
             None,
             None,
+            read_only,
         );
         let mut tree = WidgetTree::new();
         tree.add(col);
@@ -2810,6 +2889,78 @@ mod frame_loop_tests {
 
     fn plain(doc: &TextDocument) -> String {
         doc.to_plain_text().unwrap_or_default()
+    }
+
+    // ── a trashed item's text is read-only ──────────────────────────────────
+    //
+    // The banner over a trashed tab is a *statement*. It was stacked above the
+    // content as a sibling and gated nothing: the prose beneath it was built by
+    // the same editable render path as any other tab, so a writer could keep
+    // typing into a scene the app was simultaneously telling them was deleted —
+    // and those edits were saved.
+
+    /// The gated column stands up and lays out — the regression guard for the
+    /// branch itself, which builds a different widget subtree (no background
+    /// rect, no `ZStack`; see `WritingEditorStyle::make_body`).
+    #[test]
+    fn a_trashed_items_column_builds_and_lays_out() {
+        let (doc, _handle, _session, mut tree) = column_with(true);
+        frame(&mut tree);
+        assert_eq!(
+            plain(&doc),
+            "",
+            "a fresh document, laid out without panicking"
+        );
+    }
+
+    /// **What the gate does and does not stop.**
+    ///
+    /// `read_only` is a policy on the *input* paths — it leaves the IME
+    /// descriptor unset and refuses drops — so a writer cannot type into a
+    /// trashed item, which is the bug this fixes. It is deliberately **not** a
+    /// policy on `EditorHandle`, whose `insert_text` writes straight to the
+    /// cursor; that is the API paste, Insert footnote and a version restore all
+    /// go through, and gating it here would break restoring *into* the trash.
+    ///
+    /// Pinned so the distinction is a decision on record rather than a surprise
+    /// the next person meets while debugging.
+    #[test]
+    fn the_gate_stops_typing_and_not_the_programmatic_api() {
+        let (doc, handle, _session, mut tree) = column_with(true);
+        handle.insert_text("a");
+        frame(&mut tree);
+        assert_eq!(
+            plain(&doc),
+            "a",
+            "the handle API is intentionally outside the read-only policy — a \
+             command that must respect the trash has to check it itself",
+        );
+    }
+
+    /// The ungated surface is the same in that respect, so the test above is
+    /// describing the policy and not a broken harness.
+    #[test]
+    fn the_same_column_without_the_gate_still_accepts_typing() {
+        let (doc, handle, _session, mut tree) = column_with(false);
+        handle.insert_text("a");
+        frame(&mut tree);
+        assert_eq!(plain(&doc), "a");
+    }
+
+    /// Read-only, not disabled: a deleted scene's words are still the writer's,
+    /// and selecting them is how they get copied back out.
+    #[test]
+    fn a_trashed_item_can_still_be_read_and_selected() {
+        let (doc, handle, _session, mut tree) = column_with(true);
+        doc.set_djot_sync("The scene that was thrown away.")
+            .unwrap();
+        frame(&mut tree);
+        handle.select_range(4, 9);
+        assert_eq!(
+            handle.selection(),
+            (4, 9),
+            "text that cannot be selected cannot be recovered by hand",
+        );
     }
 
     /// **The regression test for the crash.** Typing one character and running a
@@ -2936,6 +3087,7 @@ mod tests {
             // No project around this tree, so no comment binding.
             None,
             None,
+            false,
         );
         let mut tree = WidgetTree::new();
         let id = match pane_height {
@@ -3132,6 +3284,8 @@ mod typewriter_tests {
             // source.
             None,
             None,
+            // Editable: this fixture is a normal, untrashed surface.
+            false,
         );
         let mut tree = WidgetTree::new();
         tree.add(col);

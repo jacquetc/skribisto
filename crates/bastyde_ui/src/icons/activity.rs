@@ -66,6 +66,26 @@ pub fn footnotes_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/footnotes.svg"))
 }
 
+/// The Versions activity icon: a clock hand swept back, over the page it belongs
+/// to.
+///
+/// The page matters. A bare counter-clockwise arrow reads as "undo", and undo is
+/// a different promise — this session's last edit, not every session before it.
+pub fn versions_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/versions.svg"))
+}
+
+/// The Timeline activity icon: a time axis with unevenly spaced marks, one of
+/// them filled.
+///
+/// Uneven deliberately — recorded moments are not a metronome, and a row of
+/// equal ticks would promise a regularity the data has not got. The axis is also
+/// what tells it apart from [`versions_icon`]'s clock: that one is one row's
+/// past, this one is the whole project's.
+pub fn timeline_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/timeline.svg"))
+}
+
 /// The Inspector activity icon: a right side-panel glyph.
 pub fn inspector_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/inspector.svg"))

@@ -222,6 +222,17 @@ impl CommentBinding {
     /// honest: an anchor that collapsed while typing becomes a *visible* orphan on
     /// the spot, instead of quietly reappearing as one at the next load.
     pub fn tick(&self) {
+        // A wholesale replacement first: `OpenDoc::reload` (a merge absorbing a
+        // neighbour, a split cutting the source in two) and a restore both land
+        // as a `DocumentReset`, which carries no delta to shift by. The margin
+        // rebuilds on the structure version and on Tools ▸ Comments, and a
+        // text-only reset moves neither — so before this, the highlights simply
+        // stayed where the old text had put them, painting at stale offsets with
+        // nothing to make it look wrong.
+        if self.session.take_reset() {
+            self.refresh_wash();
+            return;
+        }
         let orphaned = self.session.tick();
         if !orphaned.is_empty() {
             self.vm.mark_orphaned(&orphaned, None);

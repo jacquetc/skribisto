@@ -166,14 +166,36 @@ pub fn write_asset_bytes(bundle: &skrib::WorkBundle, media_dir: &std::path::Path
     Ok(())
 }
 
+/// What a write does with the project's history log.
+///
+/// The log is the one part of a bundle that does not come from the store, so
+/// `from_entities` cannot produce it and every write path has to say what it
+/// wants — see [`skrib_format::history`].
+pub enum HistoryAction {
+    /// Carry the log at `source` through unchanged. For `save_as` (a copy of the
+    /// same state, under a new name) and `backup_now` (a snapshot of it): neither
+    /// is a new edit, so neither may stamp a new entry — but both must preserve
+    /// what is there, or a restore would come back with the history erased.
+    Carry { source: String },
+    /// Carry the log at `source` forward **and record this save into it**, then
+    /// thin. Only `save_work` does this: it is the only path that represents the
+    /// writer having actually changed something.
+    Record {
+        source: String,
+        policy: skrib::retention::RetentionPolicy,
+        min_keep: u32,
+    },
+}
+
 pub fn serialize_and_write(
     g: &Gathered,
     target: String,
     shape: SkribShape,
     shape_tag: ShapeTag,
     media_dir: &std::path::Path,
+    history: HistoryAction,
 ) -> Result<String> {
-    let bundle = skrib::from_entities(
+    let mut bundle = skrib::from_entities(
         &g.work,
         &g.tags,
         &g.dict_words,
@@ -190,6 +212,21 @@ pub fn serialize_and_write(
         &g.binders,
         shape_tag,
     );
+    match history {
+        HistoryAction::Carry { source } => {
+            bundle.history = skrib::history::load(&source);
+        }
+        HistoryAction::Record {
+            source,
+            policy,
+            min_keep,
+        } => {
+            let now = chrono::Utc::now();
+            bundle.history = skrib::history::load(&source);
+            skrib::history::record(&mut bundle, now);
+            skrib::history::thin(&mut bundle.history, &policy, min_keep, now);
+        }
+    }
     skrib::write_bundle(&target, shape, &bundle).map_err(|e| anyhow!("writing '{target}': {e}"))?;
     Ok(target)
 }

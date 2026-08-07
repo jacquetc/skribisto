@@ -102,6 +102,33 @@ struct Pending {
     dirs: Vec<String>,
     /// Set when this backup must be followed by a window/work close.
     close: Option<PendingExit>,
+    /// Set when this backup is a **safety copy taken before a destructive
+    /// write**, and the write must happen only if a copy actually exists.
+    ///
+    /// Called exactly once on every terminal path — completed, failed, or failed
+    /// to start — with `true` only when at least one destination holds a copy.
+    /// A caller that fired the destructive edit itself and merely *called*
+    /// `backup_now` first would have no safety net at all: that function returns
+    /// early, with nothing but a toast, on three separate conditions.
+    then: Option<SafetyOutcome>,
+}
+
+/// Told whether a safety backup produced a copy. See [`Pending::then`].
+pub type SafetyOutcome = Rc<dyn Fn(&mut EventContext, bool)>;
+
+/// Why a safety copy cannot be taken right now.
+///
+/// Named rather than collapsed into one failure, because the three read very
+/// differently to a writer: one is temporary and worth retrying in a moment, one
+/// is a state they chose, and one means there is nothing to copy at all.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SafetyBlocker {
+    /// A backup file is open here. This window never backs itself up.
+    BackupFileOpen,
+    /// No project is open, so there is nothing to copy.
+    NoProject,
+    /// A backup is already in flight.
+    AlreadyRunning,
 }
 
 #[derive(Clone)]
@@ -236,6 +263,18 @@ impl BackupSchedulerViewModel {
         self.completed_epoch.get()
     }
 
+    /// The same counter, as something a peer can *react* to.
+    ///
+    /// [`Self::completed_epoch`] returns a snapshot, which is all the interval
+    /// timer needs. The version surfaces need the other half: a backup that
+    /// lands mid-session is a new version of every row in the project, and a
+    /// pane that cached its answer before it must be told to look again. Handed
+    /// out as a signal so `project_shell` can bump the project's revision from an
+    /// effect rather than polling.
+    pub fn completed_epoch_signal(&self) -> Signal<u64> {
+        self.completed_epoch.clone()
+    }
+
     /// The open project's `(unique_id, path)`, or `None` when nothing is open /
     /// the project has no id or path yet.
     fn current(&self) -> Option<(String, String)> {
@@ -307,6 +346,49 @@ impl BackupSchedulerViewModel {
         }
         let policy = self.settings.effective_for(&uid);
         self.start(Some(ctx), &uid, &path, &policy, true, None);
+    }
+
+    /// Take a safety copy, then hand the verdict to `then`.
+    ///
+    /// The contract that matters is that `then` is **always** called, exactly
+    /// once, and with `false` whenever no copy was made — including the three
+    /// early returns [`Self::backup_now`] takes silently (a backup file is open,
+    /// no project, a backup already running) and a long operation that fails to
+    /// start at all. A destructive edit fired from anywhere but the `true` branch
+    /// is an edit with no safety net, which is exactly the shape this exists to
+    /// make impossible.
+    ///
+    /// Forces a write like the manual trigger does: a deliberate safety copy is
+    /// worth one write even when the content matches the last backup.
+    pub fn backup_before(&self, ctx: &mut EventContext, then: SafetyOutcome) {
+        self.flush();
+        if self.safety_backup_blocker().is_some() {
+            return then(ctx, false);
+        }
+        let Some((uid, path)) = self.current() else {
+            return then(ctx, false);
+        };
+        let policy = self.settings.effective_for(&uid);
+        self.start_with(Some(ctx), &uid, &path, &policy, true, None, Some(then));
+    }
+
+    /// Why [`Self::backup_before`] would refuse right now, or `None` if it would
+    /// go ahead.
+    ///
+    /// Split out from the call so a caller can say *which* obstacle it hit
+    /// before doing anything destructive — and so the three early returns
+    /// `backup_now` takes in silence are testable without an event loop.
+    pub fn safety_backup_blocker(&self) -> Option<SafetyBlocker> {
+        if self.suppressed() {
+            return Some(SafetyBlocker::BackupFileOpen);
+        }
+        if self.current().is_none() {
+            return Some(SafetyBlocker::NoProject);
+        }
+        if self.busy() {
+            return Some(SafetyBlocker::AlreadyRunning);
+        }
+        None
     }
 
     /// On project open: a quiet, fire-and-forget backup when the policy asks for it.
@@ -459,6 +541,21 @@ impl BackupSchedulerViewModel {
         force: bool,
         close: Option<PendingExit>,
     ) {
+        self.start_with(ctx, uid, path, policy, force, close, None);
+    }
+
+    /// [`Self::start`] plus the safety-copy completion hook.
+    #[allow(clippy::too_many_arguments)]
+    fn start_with(
+        &self,
+        ctx: Option<&mut EventContext>,
+        uid: &str,
+        path: &str,
+        policy: &BackupPolicy,
+        force: bool,
+        close: Option<PendingExit>,
+        then: Option<SafetyOutcome>,
+    ) {
         let dirs = Self::dirs(policy);
         let uid_owned = uid.to_string();
         let settings = self.settings.clone();
@@ -487,6 +584,13 @@ impl BackupSchedulerViewModel {
             gfs_weekly: policy.gfs_weekly as u64,
             gfs_monthly: policy.gfs_monthly as u64,
             min_keep: policy.min_keep as u64,
+            // Read fresh at dispatch, and pruned of files that no longer exist:
+            // a pin is a promise about a file, and a file the writer deleted by
+            // hand is not one this can keep.
+            pinned_paths: {
+                let _ = settings.service().forget_missing_pins(&uid_owned);
+                settings.service().pinned(&uid_owned)
+            },
         };
         match frontend::commands::work_management_commands::backup_now(&self.app_ctx, &dto) {
             Ok(op_id) => {
@@ -498,6 +602,7 @@ impl BackupSchedulerViewModel {
                     path: path.to_string(),
                     dirs,
                     close,
+                    then,
                 }));
             }
             Err(e) => {
@@ -507,22 +612,27 @@ impl BackupSchedulerViewModel {
                             .scoped_id(BACKUP_TOAST_ID, self.ids.work_id.get())
                             .target_work(self.ids.work_id.get()),
                     );
-                    // A failed *start* must never trap a pending close.
-                    if let Some(then) = close {
-                        self.do_close(ctx, then);
+                    // A failed *start* must never trap a pending close…
+                    if let Some(exit) = close {
+                        self.do_close(ctx, exit);
+                    }
+                    // …nor leave a caller waiting for a verdict that will never
+                    // come. No operation was dispatched, so no copy exists.
+                    if let Some(hook) = then {
+                        hook(ctx, false);
                     }
                 }
             }
         }
     }
 
-    /// Effective destination list (a single empty string ⇒ "next to the project").
+    /// Effective destination list.
+    ///
+    /// An unconfigured policy resolves to the app's own backup root rather than to
+    /// the project's folder — see [`crate::backup_paths`] for why, and for the rule
+    /// that an explicit `""` entry still means "next to the project".
     fn dirs(policy: &BackupPolicy) -> Vec<String> {
-        if policy.destinations.is_empty() {
-            vec![String::new()]
-        } else {
-            policy.destinations.clone()
-        }
+        crate::backup_paths::effective_destinations(&policy.destinations)
     }
 
     /// Pure: the per-destination `(hash, path)` pair the engine's skip-if-
@@ -632,6 +742,10 @@ impl BackupSchedulerViewModel {
         // Set when the backup produced *nothing*: every destination failed to
         // write. On close this is the last chance to keep a copy, so it blocks.
         let mut produced_nothing = false;
+        // Set when at least one destination now holds a copy — either freshly
+        // written, or already current and therefore still a copy. This is the
+        // verdict a safety backup's caller acts on.
+        let mut copy_exists = false;
 
         if let Some(res) = result {
             let now = chrono::Utc::now().to_rfc3339();
@@ -654,6 +768,7 @@ impl BackupSchedulerViewModel {
             }
 
             produced_nothing = c.produced_nothing;
+            copy_exists = c.ok > 0 || c.skipped > 0;
             let (ok, skipped, failed) = (c.ok, c.skipped, c.failed);
             let has_delete_errors = !res.delete_errors.is_empty();
 
@@ -662,6 +777,12 @@ impl BackupSchedulerViewModel {
             if ok > 0 || skipped > 0 {
                 let e = &self.completed_epoch;
                 e.set(e.get().wrapping_add(1));
+                // …and what the app's backup root holds has just moved: a run
+                // writes a bundle and prunes old ones. Settings ▸ Backup measures
+                // that root once and caches it, so without this the "N backups,
+                // M MB, oldest …" line would keep quoting a number from before
+                // this run for the rest of the session.
+                self.settings.invalidate_root_usage();
             }
 
             // Thread the engine's failure reasons + retention delete errors into
@@ -719,6 +840,13 @@ impl BackupSchedulerViewModel {
             }
         }
 
+        // Before the close branch below, which can return early: a safety
+        // backup's caller is waiting on this and must hear the verdict on every
+        // path out of this function.
+        if let Some(hook) = pending.then {
+            hook(ctx, copy_exists);
+        }
+
         if let Some(then) = pending.close {
             // Every destination failed at write time (drive yanked mid-write, disk
             // full, permissions). The availability pre-check couldn't catch this, so
@@ -747,6 +875,10 @@ impl BackupSchedulerViewModel {
             .and_then(|e| e.as_str())
             .unwrap_or_default()
             .to_string();
+        // The operation failed outright, so nothing was written anywhere.
+        if let Some(hook) = pending.then {
+            hook(ctx, false);
+        }
         // On close, a failed backup means no copy was made — same backstop as
         // "every destination failed": prompt rather than quit silently.
         if let Some(then) = pending.close {
@@ -1042,6 +1174,103 @@ mod tests {
         );
     }
 
+    // ── the safety copy taken before a destructive write ──────────────────────
+    //
+    // `backup_now` returns early — with nothing but a toast — on three separate
+    // conditions. A caller that fires a destructive edit after merely *calling*
+    // it has no safety net on any of those three paths, and would never know.
+    // `backup_before` exists to make that impossible; these pin the three.
+
+    /// A scheduler whose `(unique_id, path)` resolve — i.e. one with a project.
+    fn opened(uid: &str) -> BackupSchedulerViewModel {
+        let s = test_scheduler();
+        s.ids.work_id.set(Some(1));
+        s.single_work.unique_id().set(uid.to_string());
+        s.single_work_info
+            .file_name()
+            .set(Some("/tmp/novel.skrib".to_string()));
+        s
+    }
+
+    #[test]
+    fn a_backup_already_running_blocks_the_safety_copy_rather_than_queueing_behind_it() {
+        let s = opened("ne6qxlag");
+        assert_eq!(
+            s.safety_backup_blocker(),
+            None,
+            "a plain open project must be able to take a safety copy",
+        );
+
+        s.pending.set(Some(Pending {
+            tracked: TrackedOp::start(&s.ids, "in-flight".to_string()),
+            uid: "uid".to_string(),
+            path: "/tmp/novel.skrib".to_string(),
+            dirs: vec![String::new()],
+            close: None,
+            then: None,
+        }));
+        assert_eq!(
+            s.safety_backup_blocker(),
+            Some(SafetyBlocker::AlreadyRunning),
+            "the destructive edit must not proceed while the copy is still being made",
+        );
+    }
+
+    #[test]
+    fn a_window_showing_a_backup_file_cannot_take_a_safety_copy() {
+        let s = opened("ne6qxlag");
+        s.backup_mode.set(true);
+        assert_eq!(
+            s.safety_backup_blocker(),
+            Some(SafetyBlocker::BackupFileOpen),
+            "this window never backs itself up, so there is no net here to rely on",
+        );
+    }
+
+    /// Every blocker has to be *nameable*, not merely truthy: "a backup is
+    /// already running, try again in a moment" and "this is a backup file" are
+    /// different things to tell a writer who just asked to overwrite their text.
+    #[test]
+    fn each_reason_a_safety_copy_cannot_run_is_distinguishable() {
+        let mut seen = std::collections::BTreeSet::new();
+        let running = opened("ne6qxlag");
+        running.pending.set(Some(Pending {
+            tracked: TrackedOp::start(&running.ids, "op".to_string()),
+            uid: "uid".to_string(),
+            path: "/tmp/novel.skrib".to_string(),
+            dirs: vec![String::new()],
+            close: None,
+            then: None,
+        }));
+        seen.insert(format!("{:?}", running.safety_backup_blocker().unwrap()));
+
+        let backup_file = opened("ne6qxlag");
+        backup_file.backup_mode.set(true);
+        seen.insert(format!(
+            "{:?}",
+            backup_file.safety_backup_blocker().unwrap()
+        ));
+
+        // …and the third. Emptied explicitly rather than left at the default:
+        // under `--features mocks` both singles fabricate a project by
+        // construction, so "a fresh scheduler" is not "nothing open" there.
+        let nothing_open = test_scheduler();
+        nothing_open.single_work.unique_id().set(String::new());
+        nothing_open.single_work_info.file_name().set(None);
+        seen.insert(format!(
+            "{:?}",
+            nothing_open
+                .safety_backup_blocker()
+                .expect("with no project there is nothing to copy"),
+        ));
+
+        assert_eq!(
+            seen.len(),
+            3,
+            "obstacles collapsed into one reason: {seen:?}"
+        );
+    }
+
     // ── F4: the Work a backup started for must survive a later in-place switch ─
     //
     // `BackupSchedulerViewModel` is per-Work, but its `ids`/`single_work` are the
@@ -1067,6 +1296,7 @@ mod tests {
             path: "/tmp/novel.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
+            then: None,
         }));
         let captured = scheduler.pending.get().unwrap().tracked.work_id();
         assert_eq!(captured, Some(1));
@@ -1140,6 +1370,7 @@ mod tests {
             path: "/tmp/a.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
+            then: None,
         }));
         let b = test_scheduler();
         b.single_work.set_id(Some(2));
@@ -1150,6 +1381,7 @@ mod tests {
             path: "/tmp/b.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
+            then: None,
         }));
 
         let registry = ToastRegistry::new(ToastInstallOptions {
@@ -1207,6 +1439,7 @@ mod tests {
             path: "/tmp/a.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
+            then: None,
         }));
         let b = test_scheduler();
         b.ids.work_id.set(Some(2));
@@ -1216,6 +1449,7 @@ mod tests {
             path: "/tmp/b.skrib".to_string(),
             dirs: vec![String::new()],
             close: None,
+            then: None,
         }));
 
         let registry = ToastRegistry::new(ToastInstallOptions {
@@ -1392,13 +1626,30 @@ mod tests {
 
     // ── pure helpers ─────────────────────────────────────────────────────────
 
+    /// An unconfigured policy resolves to the app's own backup root, **not** to the
+    /// project's folder. The mapping itself is unit-tested purely (with an injected
+    /// root) in `crate::backup_paths`; this asserts the scheduler actually goes
+    /// through it rather than keeping a second copy of the rule.
     #[test]
-    fn dirs_defaults_to_next_to_project_when_empty() {
+    fn dirs_defaults_to_the_app_backup_root_when_empty() {
         let empty = BackupPolicy {
             destinations: vec![],
             ..BackupPolicy::default()
         };
-        assert_eq!(BackupSchedulerViewModel::dirs(&empty), vec![String::new()]);
+        let resolved = BackupSchedulerViewModel::dirs(&empty);
+        assert_eq!(
+            resolved,
+            crate::backup_paths::effective_destinations(&[]),
+            "the scheduler must delegate to backup_paths, not re-implement the default",
+        );
+        // On any platform with a data directory this is a real path; where there is
+        // none, `backup_paths` deliberately falls back to beside-the-project rather
+        // than producing no destination at all.
+        assert_eq!(resolved.len(), 1);
+    }
+
+    #[test]
+    fn dirs_uses_a_configured_list_verbatim() {
         let two = BackupPolicy {
             destinations: vec!["/a".to_string(), "/b".to_string()],
             ..BackupPolicy::default()

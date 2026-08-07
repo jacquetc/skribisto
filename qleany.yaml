@@ -1079,6 +1079,15 @@ features:
       # Absolute floor: the newest `min_keep` backups per destination are never pruned.
       - name: min_keep
         type: uinteger
+      # Backup files the writer asked never to have swept away, as absolute paths.
+      # Joined with the paths this run just wrote and handed to retention's
+      # `protected` argument, which guarantees them by identity rather than by
+      # timestamp — so a pin survives a backwards clock correction too. Retention
+      # is a policy about how much past to keep in general; it has no way to know
+      # that one of those files is the draft that went to an editor.
+      - name: pinned_paths
+        type: string
+        is_list: true
       # A backup is a copy of the project, images included — see
       # SaveWorkDto.media_root.
       - name: media_root

@@ -34,6 +34,7 @@ mod footnotes_list_model;
 pub(crate) mod import_plan_source;
 mod import_prefs_file;
 mod installed_dictionaries_model;
+mod manuscript_digest;
 mod numbering;
 mod open_docs;
 mod overview_rows_model;
@@ -83,6 +84,7 @@ pub use folder_memory_file::{
     remember_dialog_file,
 };
 pub use import_prefs_file::ImportPrefsService;
+pub use manuscript_digest::{LiveRow, digest_of, live_manuscript};
 #[allow(unused_imports)]
 pub use numbering::{
     NameContext, fallback_label_for, item_meta_of, label_and_badge, numbers_for_items,

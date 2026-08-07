@@ -288,6 +288,12 @@ fn run_backup(
         ShapeTag::Zip,
     );
     let content_hash = skrib::content_fingerprint(&bundle);
+    // Carry the project's history into the backup, and record nothing: a backup is
+    // a snapshot of a state the writer already reached, not a new revision of it.
+    // Without this a restore would hand back the manuscript with its past erased —
+    // and since the fingerprint above is computed *before* this line (and the log is
+    // `#[serde(skip)]` besides), carrying it cannot perturb skip-if-unchanged.
+    bundle.history = skrib::history::load(&source);
     skrib::mark_as_backup(&mut bundle, source.clone(), chrono::Utc::now());
 
     // Empty destination list ⇒ one backup next to the project (back-compat).
@@ -363,7 +369,15 @@ fn run_backup(
         ));
         let policy = retention_policy_from(dto);
         let min_keep = clamp_u32(dto.min_keep);
-        let protected: Vec<PathBuf> = succeeded_paths.iter().map(PathBuf::from).collect();
+        // What this run wrote, plus what the writer pinned. Both are protected
+        // by identity rather than by timestamp: a pin has to survive a backwards
+        // clock correction exactly as a fresh write does, and a pinned file that
+        // sorts as "oldest" is precisely the case a timestamp rule would delete.
+        let protected: Vec<PathBuf> = succeeded_paths
+            .iter()
+            .map(PathBuf::from)
+            .chain(dto.pinned_paths.iter().map(PathBuf::from))
+            .collect();
 
         let mut seen: HashSet<PathBuf> = HashSet::new();
         for dir in swept_dirs {

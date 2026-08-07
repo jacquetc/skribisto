@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Pinned — a drawing pin seen head-on, filled.
+       The barrel **flares** toward the bottom, and that is the load-bearing
+       detail rather than a flourish. A pin drawn the other way round — wide cap,
+       narrowing body, thin stem — is the silhouette of a funnel, which is the
+       filter glyph this control sits next to; it was tried and it read as one.
+       Narrow at the top, wide at the shoulders, needle below: that shape is only
+       ever a thumbtack.
+       The shape before that was an eight-point polygon plotted freehand to
+       suggest an *isometric* pin, and at the 16 dp it actually renders at an
+       irregular octagon has no silhouette at all — it read as a blob.
+       Filled rather than stroked so "pinned" reads at a glance against its
+       unfilled twin: the pair has to be tellable apart in a 16 dp slot, and a
+       colour difference alone would not survive a monochrome theme. -->
+  <path d="M6.6 2.9 V6.3 L4.5 9.4 H11.5 L9.4 6.3 V2.9 Z"/>
+  <path d="M5.3 2.9 H10.7" fill="none"/>
+  <path d="M8 9.4 V13.7" fill="none"/>
+</svg>

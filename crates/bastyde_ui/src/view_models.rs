@@ -137,11 +137,20 @@ mod stream;
 mod synopsis_placement;
 mod tags;
 mod text_replacement_rules;
+/// The project-wide past, and the way back to a row that no longer exists.
+pub mod timeline;
+pub mod timeline_axis;
 mod timers;
 mod trash;
 mod tree_expansion;
 mod typewriter;
 mod user_dictionary;
+/// Comparing two versions of one row's prose.
+pub mod version_diff;
+/// Putting a past version back.
+pub mod version_restore;
+/// One row's recorded past, for the Versions dock.
+pub mod versions;
 mod view_state;
 mod welcome;
 mod word_count_status;
@@ -152,7 +161,7 @@ mod writing_session;
 pub use add_dictionary::AddDictionaryViewModel;
 pub use analysis::{AnalysisCategory, AnalysisState, AnalysisViewModel};
 pub use backup_restore::BackupRestoreViewModel;
-pub use backup_scheduler::BackupSchedulerViewModel;
+pub use backup_scheduler::{BackupSchedulerViewModel, SafetyBlocker};
 pub use backup_settings::BackupSettingsViewModel;
 pub use backups_list::{BackupRow, BackupsListViewModel};
 pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};
@@ -204,11 +213,16 @@ pub use stream::{SplitFlavour, StreamViewModel};
 pub use synopsis_placement::SynopsisPlacement;
 pub use tags::TagsViewModel;
 pub use text_replacement_rules::TextReplacementRulesViewModel;
+pub use timeline::{ChangeKind, RowChange, TimelineViewModel};
+pub use timeline_axis::{Axis, axis_for};
 pub(crate) use timers::{AutosaveCountdown, IntervalCountdown, IntervalTick};
 pub use trash::TrashViewModel;
 pub use tree_expansion::TreeExpansionViewModel;
 pub use typewriter::{TypewriterAnchor, TypewriterSettings};
 pub use user_dictionary::UserDictionaryViewModel;
+pub use version_diff::VersionDiff;
+pub use version_restore::RestoreRequest;
+pub use versions::VersionsViewModel;
 pub use view_state::{ViewState, ViewStateBinding, ViewStatePorts};
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 pub use word_count_status::{CountDisplay, count_display};

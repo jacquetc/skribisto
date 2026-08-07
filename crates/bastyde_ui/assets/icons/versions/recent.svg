@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Last 30 days — a clock, not a calendar.
+       A calendar is what the date-range field beside this button already wears
+       on its own trigger; a second one would read as a second way to open the
+       same picker rather than as a shortcut past it. A clock says "a span of
+       time" without claiming to be a date picker, and the tooltip carries which
+       span. -->
+  <circle cx="8" cy="8" r="5.4"/>
+  <path d="M8 4.6 V8.2 L10.5 9.7"/>
+</svg>

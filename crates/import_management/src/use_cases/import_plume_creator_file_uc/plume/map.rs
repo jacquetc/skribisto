@@ -197,6 +197,9 @@ pub fn build_bundle(
         // Plume has no writing-plan or progress-history concept to import.
         paces: Vec::new(),
         progress_snapshots: Vec::new(),
+        // A freshly imported project has no past to show: its history starts at
+        // the moment of import, and the first save records that state.
+        history: Default::default(),
         binders,
     };
 

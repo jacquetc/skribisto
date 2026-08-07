@@ -7,9 +7,9 @@
 //!
 //! The roster: [`outline`] (binder tree), [`search`], [`trash`], [`comments`]
 //! (project-wide) on the leading rail; [`inspector`], [`mod@format`], a
-//! per-document comments dock and [`mod@footnotes`] on the trailing rail;
-//! [`search_preview`] on the bottom. See [`APP_DOCKS`] for the authoritative list
-//! and mount order.
+//! per-document comments dock, [`mod@footnotes`] and [`versions`] on the trailing
+//! rail; [`search_preview`] and [`mod@timeline`] on the bottom. See [`APP_DOCKS`]
+//! for the authoritative list and mount order.
 //!
 //! ## Stable dock ids
 //!
@@ -47,6 +47,10 @@ pub const COMMENTS_DOCK_ID: u64 = DOCK_ID_BASE + 7;
 pub const DOC_COMMENTS_DOCK_ID: u64 = DOCK_ID_BASE + 8;
 /// The manuscript's footnotes (trailing rail, fourth tab).
 pub const FOOTNOTES_DOCK_ID: u64 = DOCK_ID_BASE + 9;
+/// This row's recorded past (trailing rail).
+pub const VERSIONS_DOCK_ID: u64 = DOCK_ID_BASE + 10;
+/// The whole project's past (bottom band, its own activity).
+pub const TIMELINE_DOCK_ID: u64 = DOCK_ID_BASE + 11;
 
 /// One app dock's declared home: its stable id plus where it mounts on a desk
 /// nobody has arranged yet.
@@ -133,12 +137,27 @@ pub const APP_DOCKS: &[AppDock] = &[
         side: DockSide::Trailing,
         own_tab: true,
     },
+    AppDock {
+        id: VERSIONS_DOCK_ID,
+        side: DockSide::Trailing,
+        own_tab: true,
+    },
     // The transient search-preview band. Mounted, then hidden — see
     // `project_shell` and `WorkspaceLayoutViewModel`'s module docs.
     AppDock {
         id: PREVIEW_DOCK_ID,
         side: DockSide::Bottom,
         own_tab: false,
+    },
+    // The project-wide timeline, in **its own** bottom activity rather than
+    // stacked with the preview. A sole-pane dock *is* its activity, so it gets
+    // the whole band; the two share only the side's height, which the writer can
+    // drag and `WorkspaceLayoutService` persists. Sharing the band would leave a
+    // slider, a sparkline and a change list in half of 180 dp.
+    AppDock {
+        id: TIMELINE_DOCK_ID,
+        side: DockSide::Bottom,
+        own_tab: true,
     },
 ];
 
@@ -157,4 +176,6 @@ pub mod outline_card;
 pub mod search;
 pub mod search_preview;
 pub mod search_replace_flow;
+pub mod timeline;
 pub mod trash;
+pub mod versions;

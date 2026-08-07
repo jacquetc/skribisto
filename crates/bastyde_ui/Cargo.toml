@@ -143,6 +143,7 @@ interprocess = "2"
 # `bastyde-widgets` (rich tooltips open their `http(s)` links the same way), so
 # this edge adds no new dependency, only a name for it.
 open = "5.3"
+similar = { version = "3", features = ["unicode"] }
 
 # PID-liveness check for reaping stale open-registry locks.
 [target.'cfg(unix)'.dependencies]

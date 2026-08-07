@@ -27,11 +27,12 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::tooltip::TooltipContent;
 use bastyde::widgets::{
     Button, ButtonVariant, Divider, Expand, FixedSize, FormLayout, HStack, IconButton, Segment,
-    SegmentedControl, SpinBox, Switcher, TextWidget, Toggle, VStack,
+    SegmentedControl, Spacer, SpinBox, Switcher, TextWidget, Toggle, VStack,
 };
 
 use crate::backup::is_destination_available;
@@ -54,16 +55,112 @@ pub fn general_pane(ctx: &mut BuildContext, vm: &BackupSettingsViewModel) -> imp
         Rc::new(move |p| vm.set_general(p))
     };
     let always_on = Signal::new(true);
+    // Measure the app's backup root now: this pane is the one place a writer can
+    // find out where their history lives and how much of it there is, now that it
+    // no longer piles up visibly beside the project.
+    vm.refresh_root_usage(ctx.app_state::<AsyncRuntimeHandle>().cloned());
     add_policy_rows(
         FormLayout::new()
             .label(tr!(settings_page_backup()))
             .label_gap(16.0)
-            .row_spacing(14.0),
+            .row_spacing(14.0)
+            .full_width(group(tr!(settings_backup_default_location())))
+            .full_width(DefaultLocationRow::new(vm)),
         ctx,
         get,
         set,
         always_on,
     )
+}
+
+/// "Default location" row: the resolved path, what it currently holds, and a way
+/// to open it in the file manager.
+///
+/// The Reveal button is the deliberate replacement for the one real advantage the
+/// old beside-the-project default had — a writer looking for their work *outside*
+/// the app could always find it. Keep it prominent.
+///
+/// A widget rather than a plain builder because the usage summary is a **translated
+/// string with runtime arguments**: `tr!(key(count = …))` resolves eagerly, so the
+/// only way to keep it correct as the measurement lands is to rebuild the label.
+/// Same shape, and same reason, as `statusbar::WordCountIndicator`.
+struct DefaultLocationRow {
+    root: String,
+    usage: Signal<Option<crate::backup_paths::RootUsage>>,
+    root_child: Option<WidgetId>,
+}
+
+impl DefaultLocationRow {
+    fn new(vm: &BackupSettingsViewModel) -> Self {
+        Self {
+            root: crate::backup_paths::backup_root_string(),
+            usage: vm.root_usage(),
+            root_child: None,
+        }
+    }
+}
+
+impl std::fmt::Debug for DefaultLocationRow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DefaultLocationRow").finish()
+    }
+}
+
+impl Widget for DefaultLocationRow {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let sid = ctx.self_id();
+        let reg = ctx.binding_registry();
+        self.usage.bind_to(sid, reg, BindingLevel::Rebuild);
+
+        let summary = match self.usage.get() {
+            None => tr!(settings_backup_usage_measuring()),
+            Some(u) if u.count == 0 => tr!(settings_backup_usage_empty()),
+            // Says how far back the cover reaches, not just how much disk it
+            // costs. Most writers open these surfaces two or three times a year;
+            // between those times, a sentence that answers "am I covered, and
+            // since when" is most of what the feature is worth to them.
+            Some(u) if u.oldest.is_empty() => tr!(settings_backup_usage(
+                count = u.count as i64,
+                size = crate::backup_paths::human_bytes(u.bytes)
+            )),
+            Some(u) => tr!(settings_backup_usage_since(
+                count = u.count as i64,
+                size = crate::backup_paths::human_bytes(u.bytes),
+                oldest = u.oldest.clone()
+            )),
+        };
+        let reveal_target = self.root.clone();
+        let id = bati!(ctx => VStack {
+                spacing: 6.0
+                TextWidget(lit!(self.root.clone())) {
+                    color: TextRole::Secondary
+                    single_line
+                }
+                HStack {
+                    spacing: 12.0
+                    TextWidget(summary) {
+                        color: TextRole::Secondary
+                    }
+                    Spacer
+                    Button(tr!(settings_backup_reveal_root())) {
+                        variant: ButtonVariant::Ghost
+                        on_activate_fn: move |_c| {
+                            crate::view_models::BackupsListViewModel::reveal(&reveal_target)
+                        }
+                    }
+                }
+            }
+        );
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
 }
 
 /// The per-project override pane. A "use general settings" toggle sits above the
@@ -617,5 +714,54 @@ impl Widget for DestinationsEditor {
             .and_then(|id| ctx.child_size(id, proposal))
             .map(LayoutResponse::from)
             .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::backup_paths::RootUsage;
+    use bastyde::core::widget_tree::WidgetTree;
+
+    fn row_with(usage: Option<RootUsage>) -> DefaultLocationRow {
+        DefaultLocationRow {
+            root: "/data/backups".to_string(),
+            usage: Signal::new(usage),
+            root_child: None,
+        }
+    }
+
+    /// The row lays out in all three states — measuring, empty, and populated.
+    ///
+    /// The populated case is the one worth pinning: its label goes through
+    /// `tr!(key(count = …, size = …))`, and a Fluent key whose arguments do not
+    /// match its selector resolves to an error placeholder rather than failing to
+    /// compile, so only building it proves the plural form is actually wired.
+    #[test]
+    fn the_default_location_row_lays_out_in_every_usage_state() {
+        for usage in [
+            None,
+            Some(RootUsage::default()),
+            // One backup, and no date resolvable from it — the row must still
+            // say something rather than "oldest ".
+            Some(RootUsage {
+                count: 1,
+                bytes: 900,
+                oldest: String::new(),
+            }),
+            Some(RootUsage {
+                count: 47,
+                bytes: 327_000_000,
+                oldest: "2026-03-14".to_string(),
+            }),
+        ] {
+            let mut tree = WidgetTree::new();
+            let id = tree.add_boxed(Box::new(row_with(usage.clone())));
+            tree.layout(SizeProposal::exact(520.0, 200.0));
+            assert!(
+                tree.bounds(id).width > 0.0,
+                "the default-location row laid out to zero width for {usage:?}",
+            );
+        }
     }
 }

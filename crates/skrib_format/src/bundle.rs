@@ -740,6 +740,17 @@ pub struct WorkBundle {
     /// outcome this format exists to prevent.
     #[serde(default)]
     pub orphan_footnotes: Vec<FootnoteFile>,
+    /// What each writing row said at each past save — `history/` at the bundle
+    /// root. See [`crate::history`].
+    ///
+    /// `#[serde(skip)]` for the same reason as [`Self::asset_bytes`], and it is
+    /// the more load-bearing of the two: the only place a whole bundle is
+    /// serialised is the content fingerprint, and a log that grows on every save
+    /// would change that fingerprint on every save — so `skip_if_unchanged` would
+    /// never skip again and every close would write a full backup of a project
+    /// nobody edited. The blobs are real files; the index is its own `.ron`.
+    #[serde(skip)]
+    pub history: crate::history::HistoryLog,
     pub binders: Vec<BundledBinder>,
 }
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Time travel — a horizontal axis with unevenly spaced marks, one of them
+       filled to read as "you are here".
+       Uneven on purpose: recorded moments are not a metronome, and a row of
+       equal ticks would promise a regularity the data does not have. The axis is
+       what tells it apart from the Versions clock: that one is about a single
+       row's past, this one is about the whole project's. -->
+  <path d="M1.6 10.5 H14.4"/>
+  <path d="M3.4 10.5 V7.4"/>
+  <path d="M6.6 10.5 V5.2"/>
+  <path d="M11.4 10.5 V6.4"/>
+  <path d="M13.6 10.5 V8.2"/>
+  <circle cx="6.6" cy="4.2" r="1.5" fill="currentColor" stroke="none"/>
+</svg>

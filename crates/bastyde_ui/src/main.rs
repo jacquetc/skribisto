@@ -72,6 +72,7 @@
 mod app;
 mod app_ids;
 mod backup;
+mod backup_paths;
 mod binder;
 mod comments;
 mod crash_report;

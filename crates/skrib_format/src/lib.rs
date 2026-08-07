@@ -23,10 +23,17 @@
 #[cfg(test)]
 mod asset_tests;
 mod bundle;
+/// Which versions of a row are worth showing, and where its timeline begins and ends.
+pub mod changes;
 pub mod convert;
 mod errors;
 mod fingerprint;
 mod folder_io;
+/// The in-project history log: what each writing row said at each past save.
+/// `pub` because the save use cases carry it across a write and the UI reads it.
+pub mod history;
+#[cfg(test)]
+mod history_tests;
 mod loaded;
 mod mapping;
 pub mod media;
@@ -50,6 +57,10 @@ pub mod tree_read;
 /// function a future format change has to reckon with, and hiding it would make that
 /// contract invisible from outside the crate.
 pub mod version_gate;
+#[cfg(test)]
+mod version_tests;
+/// Reading a project's past — backups and the history log behind one trait.
+pub mod versions;
 mod writer;
 mod zip_io;
 

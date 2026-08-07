@@ -28,7 +28,8 @@ const SETTINGS_ACTION: DockActionId = DockActionId::named("skribisto.settings");
 use crate::models::TreeNode;
 use crate::tabs::shared::editor::VisibleWhen;
 use crate::view_models::{
-    EditorsViewModel, OutlineViewModel, SearchReplaceViewModel, SettingsViewModel, Side,
+    EditorsViewModel, OutlineViewModel, RestoreRequest, SearchReplaceViewModel, SettingsViewModel,
+    Side,
 };
 
 use super::{App, build_pane_tabs, drain_dropped};
@@ -41,6 +42,8 @@ pub(super) struct ShellParts {
     pub trash: crate::view_models::TrashViewModel,
     pub comments: crate::view_models::CommentsViewModel,
     pub footnotes: crate::view_models::FootnotesViewModel,
+    pub versions: crate::view_models::VersionsViewModel,
+    pub timeline: crate::view_models::TimelineViewModel,
     pub format: crate::view_models::FormatViewModel,
     pub settings: SettingsViewModel,
     pub session: crate::sessions::WorkSession,
@@ -62,6 +65,8 @@ impl App {
             trash,
             comments,
             footnotes,
+            versions,
+            timeline,
             format,
             settings,
             session,
@@ -75,6 +80,190 @@ impl App {
 
         let active_item = editors.active_item();
         let split_active = editors.split_active();
+
+        // Tell the Versions dock where this project's past is kept, and how to turn
+        // the focused tab's store id into the durable uid a timeline keys on.
+        //
+        // Both are resolved here rather than inside the dock so it imports neither
+        // `EditorsViewModel` nor the store — the discipline the outline and trash
+        // docks already follow with `OpenItemFn`.
+        //
+        // Pushed from an **effect**, not once from this build. `WorkInfo.file_name`
+        // is filled in by a `WorkInfo::Updated` event that lands after the shell is
+        // built, so a value read here is empty — and this shell does not rebuild
+        // when it arrives. Read once, the dock would spend the whole session
+        // believing the project had never been saved and so could have no past.
+        {
+            let backup_settings = ctx
+                .app_state::<crate::view_models::BackupSettingsViewModel>()
+                .cloned();
+            let file_name = single_work_info.file_name();
+            let unique_id = single_work.unique_id();
+            // Bumped whenever something records a new version — see
+            // `ProjectHandle::revision`. Owned here rather than derived from the
+            // two source counters because *what* changed does not matter, only
+            // that something did; one monotone number cannot collide the way
+            // adding two independent epochs together can.
+            let revision = std::rc::Rc::new(std::cell::Cell::new(0u64));
+            let push = {
+                let versions = versions.clone();
+                let timeline = timeline.clone();
+                let file_name = file_name.clone();
+                let unique_id = unique_id.clone();
+                let revision = revision.clone();
+                std::rc::Rc::new(move || {
+                    let uid = unique_id.get();
+                    // The project's *effective* policy, so a per-project override of
+                    // the destinations is honoured — the timeline must look where
+                    // the backups actually go, not where the general policy says.
+                    let configured = backup_settings
+                        .as_ref()
+                        .map(|vm| vm.effective_for(&uid).destinations)
+                        .unwrap_or_default();
+                    let handle = crate::view_models::versions::ProjectHandle {
+                        path: file_name.get().unwrap_or_default(),
+                        unique_id: uid,
+                        // `search_destinations`, not `effective_destinations`:
+                        // reading history is a wider question than writing it.
+                        // Backups made before the default moved sit beside the
+                        // project, and a reader that only looked where the *next*
+                        // one will go showed every existing user an empty pane.
+                        destinations: crate::backup_paths::search_destinations(&configured),
+                        revision: revision.get(),
+                    };
+                    versions.set_project(handle.clone());
+                    timeline.set_project(handle);
+                })
+            };
+            push();
+            let on_name = push.clone();
+            ctx.effect(&file_name, move |_| on_name());
+            let on_uid = push.clone();
+            ctx.effect(&unique_id, move |_| on_uid());
+
+            // A backup and a save each write a version. Neither changes where
+            // the project lives, so without this the panes' caches — which are
+            // keyed on the handle — never came back for the new one.
+            //
+            // Bumping *then* pushing is what makes the handle differ by value,
+            // which is the only thing `set_project`'s idempotence looks at. The
+            // effects also fire once at registration; that costs a single extra
+            // scan at startup and keeps the wiring free of a "have I run yet"
+            // flag that would have to be right in every window.
+            let bump = {
+                let revision = revision.clone();
+                let push = push.clone();
+                std::rc::Rc::new(move || {
+                    revision.set(revision.get().wrapping_add(1));
+                    push();
+                })
+            };
+            let backup_epoch = session.backup_scheduler.completed_epoch_signal();
+            let on_backup = bump.clone();
+            ctx.effect(&backup_epoch, move |_| on_backup());
+            let saved_seq = session.save_state.saved_seq();
+            let on_save = bump.clone();
+            ctx.effect(&saved_seq, move |_| on_save());
+
+            // Editing the backup policy moves the *destinations* — where these
+            // panes look for the project's past. Not a new version, so `push` and
+            // not `bump`: nothing was recorded, the map changed. Without this a
+            // writer who added a destination in Settings saw the two surfaces keep
+            // reading the old list until a save or a backup happened to fire.
+            if let Some(policy_revision) = ctx
+                .app_state::<crate::view_models::BackupSettingsViewModel>()
+                .map(|vm| vm.policy_revision())
+            {
+                let on_policy = push.clone();
+                ctx.effect(&policy_revision, move |_| on_policy());
+            }
+        }
+        // Which backups this project keeps whatever retention decides. Read and
+        // written here for the same reason the handle above is pushed from here:
+        // pins live in the app's backup settings, and a view-model does not
+        // import a peer.
+        {
+            let settings = ctx
+                .app_state::<crate::view_models::BackupSettingsViewModel>()
+                .cloned();
+            let unique_id = single_work.unique_id();
+            let file_name = single_work_info.file_name();
+            let read = {
+                let (settings, unique_id) = (settings.clone(), unique_id.clone());
+                std::rc::Rc::new(move |path: &std::path::Path| {
+                    settings.as_ref().is_some_and(|s| {
+                        s.service()
+                            .is_pinned(&unique_id.get(), &path.to_string_lossy())
+                    })
+                })
+            };
+            let write = std::rc::Rc::new(move |path: &std::path::Path, pinned: bool| {
+                let Some(settings) = settings.as_ref() else {
+                    return;
+                };
+                if let Err(e) = settings.service().set_pinned(
+                    &unique_id.get(),
+                    &file_name.get().unwrap_or_default(),
+                    &path.to_string_lossy(),
+                    pinned,
+                ) {
+                    eprintln!("versions: could not record the pin: {e}");
+                }
+            });
+            versions.set_pins(crate::view_models::versions::Pins {
+                is_pinned: read,
+                set: write,
+            });
+        }
+
+        // The manuscript as it stands now — the "now" side of the Timeline band's
+        // comparison. Read on the UI thread (an `AppContext` cannot cross one) and
+        // handed over as plain data, so the band's blocking half can carry it.
+        {
+            let app_ctx = self.app_ctx.clone();
+            let work_id = ids.work_id.clone();
+            timeline.set_live_source(std::rc::Rc::new(move || match work_id.get() {
+                Some(wid) => crate::models::live_manuscript(&app_ctx, wid),
+                None => Vec::new(),
+            }));
+        }
+
+        let uid_of: crate::docks::versions::UidLookup = {
+            let app_ctx = self.app_ctx.clone();
+            let work_id = ids.work_id.clone();
+            std::rc::Rc::new(move |id: u64| {
+                let wid = work_id.get()?;
+                crate::models::ordered_binder_items(&app_ctx, wid)
+                    .into_iter()
+                    .find(|r| r.id == id)
+                    .map(|r| r.uid)
+            })
+        };
+
+        // Putting a past version back — assembled here for the same reason the
+        // two above are: it needs the open-documents store, the backup scheduler,
+        // the save state and this Work's undo stack, none of which the dock may
+        // reach for itself. Every one of them is the *session's*, never
+        // `ctx.app_state::<T>()`, which is one process-wide slot that answers
+        // with whichever window registered last (see `app.rs`'s own note).
+        let restore: crate::docks::versions::RestoreFn = {
+            let app_ctx = self.app_ctx.clone();
+            let docs = session.open_docs.clone();
+            let scheduler = session.backup_scheduler.clone();
+            let editors_for_save = editors.clone();
+            let stack_id = ids.stack_id.clone();
+            std::rc::Rc::new(move |ctx: &mut EventContext, req: RestoreRequest| {
+                crate::app::restore_version(
+                    &app_ctx,
+                    &docs,
+                    &scheduler,
+                    &editors_for_save,
+                    &stack_id,
+                    ctx,
+                    req,
+                )
+            })
+        };
 
         // ── Center: split editor — two panes in a Splitter ───────────────────
         // Each pane is a zoned `DropTarget` wrapping a `TabWidget`, so a binder
@@ -294,6 +483,17 @@ impl App {
                 self.footnotes_dock,
                 editors.active_item(),
                 on_open,
+            ))
+            .dock(crate::docks::versions::versions_dock(
+                versions.clone(),
+                self.versions_dock,
+                editors.active_item(),
+                uid_of,
+                restore,
+            ))
+            .dock(crate::docks::timeline::timeline_dock(
+                timeline.clone(),
+                self.timeline_dock,
             ));
         // The docks used to be *disabled* while the mode was active, so "the
         // editor takes the whole surface". They are not any more: the mode

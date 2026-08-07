@@ -1213,7 +1213,8 @@ impl EditorsViewModel {
     }
 
     /// React to `BinderItem::Updated` for `item_ids`: **rebuild** any open tab whose item's
-    /// *type* changed, re-seed the live trash/tag state, then re-caption every open tab.
+    /// *type* changed, **close** any open tab for an item that has just been trashed,
+    /// re-seed the live trash/tag state, then re-caption every open tab.
     ///
     /// The view never reads entities itself, so the lookup lives here.
     pub fn items_updated(&self, item_ids: &[u64]) {
@@ -1224,7 +1225,9 @@ impl EditorsViewModel {
             // Trash / restore fire `BinderItem::Updated` too — flip the shared
             // doc's trash state so the tab accent + banner react live.
             let trashed = !it.activated;
+            let mut trash_flipped = false;
             if let Some(doc) = self.docs.peek(*id) {
+                trash_flipped = doc.trashed.get() != trashed;
                 doc.trashed.set(trashed);
                 // Same event, same fetched DTO: keep the subtitle's dot row live.
                 doc.tags.set(it.tags.clone());
@@ -1239,12 +1242,48 @@ impl EditorsViewModel {
                     doc.trashed.set(trashed);
                     doc.tags.set(it.tags.clone());
                 }
+            } else if trash_flipped && self.has_open_tab(*id) {
+                if trashed {
+                    self.close_trashed_tabs(*id);
+                } else if let Some(doc) = self.docs.peek(*id) {
+                    // Restoring. Usually a no-op now, because the trash branch
+                    // above already closed the tab — this is the other way in: a
+                    // trashed item opened *from the Trash dock*, which is
+                    // read-only, and restoring it has to make it typable again.
+                    // `RichTextEditor` fixes that policy when it is **built**, so
+                    // re-binding cannot do it; only a rebuild can.
+                    self.rebuild_tabs_for(*id, &it, doc);
+                }
             }
         }
         // One sweep for the whole batch, not a per-item push: a rename changes one tab's
         // caption, but the same event fires for a trash or a move, which renumbers — and so
         // renames — every *untitled* structural tab after it. See [`Self::refresh_captions`].
         self.refresh_captions();
+    }
+
+    /// Close every open tab for an item that has just been trashed.
+    ///
+    /// Trashing something takes it out of the manuscript, and a tab is the app
+    /// saying "you are working on this". Leaving one open — even a read-only one
+    /// behind a banner — leaves the writer looking at a document they just put
+    /// away.
+    ///
+    /// **`flush: true`**, unlike the hard-removal path in [`Self::items_removed`],
+    /// and the difference is the whole safety of this. Trashing is soft and
+    /// undoable: the content row is still there, and whatever was typed in the
+    /// seconds before the trash has to reach it. Closing without the flush would
+    /// drop those words into nothing, silently, at the one moment a writer is
+    /// least likely to go back and check.
+    ///
+    /// Its own method so the policy can be tested: [`Self::items_updated`] cannot
+    /// run at all without a store behind it.
+    fn close_trashed_tabs(&self, item_id: u64) {
+        for side in [Side::Primary, Side::Secondary] {
+            if let Some(tid) = self.find_open(side, item_id) {
+                self.close_tab(side, tid, true, true);
+            }
+        }
     }
 
     /// React to `BinderItem::Removed` for `item_ids`: close any open tab for a
@@ -1267,6 +1306,78 @@ impl EditorsViewModel {
     /// The document is rebuilt *in place* in the store (same reference count), so every
     /// other holder — a split pane, a stream row — picks up the fresh one too rather than
     /// being handed the stale cached `Rc`.
+    /// Rebuild every open tab for `item_id` from the document the store now holds.
+    ///
+    /// Split out of [`Self::retype`] because a **restore** needs exactly the same
+    /// thing for a different reason: `RichTextEditor` fixes its read-only policy
+    /// when it is *built*, so a tab opened read-only from the Trash dock stays
+    /// read-only however the trash flag moves afterwards. Re-binding cannot help;
+    /// only rebuilding can. See `tabs::shared::editor::writing_column`.
+    ///
+    /// The trashing direction does not come here — it closes the tab instead, in
+    /// [`Self::items_updated`].
+    ///
+    /// A fresh `TabId` and remove+insert, not `set`: the `TabWidget` keys its
+    /// mounted content by tab id, so reusing the id updates the strip and leaves
+    /// the old editor on screen.
+    fn rebuild_tabs_for(&self, item_id: u64, it: &BinderItemDto, doc: Rc<OpenDoc>) {
+        for side in [Side::Primary, Side::Secondary] {
+            let pane = self.pane(side);
+            for i in 0..pane.tabs.len() {
+                let hit = pane.tabs.with_item(i, |h| {
+                    h.payload
+                        .downcast_ref::<ContentTab>()
+                        .is_some_and(|t| t.item_id() == item_id)
+                        .then(|| h.clone())
+                });
+                let Some(Some(h)) = hit else { continue };
+                let tab = self.make_tab(
+                    doc.clone(),
+                    self.distraction_free.clone(),
+                    self.show_synopsis.clone(),
+                    self.synopsis_placement.clone(),
+                    self.caret_highlight.clone(),
+                );
+                let caption = self.caption(item_id, &it.title);
+                let sub_role = it.sub_role.clone();
+                let was_selected = pane.selected.get() == Some(h.id);
+                let new_id = TabId::fresh();
+                pane.tabs.remove(i);
+                pane.tabs.insert(
+                    i,
+                    TabHandle::dynamic(
+                        new_id,
+                        "editor",
+                        TabInfo::new()
+                            .title(caption)
+                            .closable(true)
+                            .icon(move || crate::binder::icons::sub_role_icon(&sub_role)),
+                        tab,
+                    ),
+                );
+                if was_selected {
+                    pane.selected.set(Some(new_id));
+                }
+            }
+        }
+    }
+
+    /// Whether `item_id` has an open tab at all.
+    fn has_open_tab(&self, item_id: u64) -> bool {
+        [Side::Primary, Side::Secondary].iter().any(|&side| {
+            let pane = self.pane(side);
+            (0..pane.tabs.len()).any(|i| {
+                pane.tabs
+                    .with_item(i, |h| {
+                        h.payload
+                            .downcast_ref::<ContentTab>()
+                            .is_some_and(|t| t.item_id() == item_id)
+                    })
+                    .unwrap_or(false)
+            })
+        })
+    }
+
     fn retype(&self, item_id: u64, it: &BinderItemDto) -> bool {
         // Only *this item's own* tab going stale should force a rebuild. Without the
         // `item_id` guard, `needs_rebuild` fired whenever **any** open tab had a different
@@ -1294,58 +1405,13 @@ impl EditorsViewModel {
         let Some(doc) = self.docs.rebuild(item_id, stack) else {
             return false;
         };
-
-        for side in [Side::Primary, Side::Secondary] {
-            let pane = self.pane(side);
-            for i in 0..pane.tabs.len() {
-                let hit = pane.tabs.with_item(i, |h| {
-                    h.payload
-                        .downcast_ref::<ContentTab>()
-                        .is_some_and(|t| t.item_id() == item_id)
-                        .then(|| h.clone())
-                });
-                let Some(Some(h)) = hit else { continue };
-                // Through `make_tab`, not a second inline `ContentTab::new` — a
-                // duplicated argument list would let per-tab state drift between
-                // the two, so a Promote could silently produce a tab configured
-                // differently from a freshly opened one. Like `segment`, per-tab
-                // state (the folded-away Side synopsis, its divider position)
-                // resets here: this is a new tab of a new type.
-                let tab = self.make_tab(
-                    doc.clone(),
-                    self.distraction_free.clone(),
-                    self.show_synopsis.clone(),
-                    self.synopsis_placement.clone(),
-                    self.caret_highlight.clone(),
-                );
-                let caption = self.caption(item_id, &it.title);
-                let sub_role = it.sub_role.clone();
-                // A **fresh** `TabId`, and remove+insert rather than `set`. The
-                // `TabWidget` keys its mounted content widget by tab id, so swapping the
-                // payload under the same id updates the strip but leaves the old editor on
-                // screen — a chapter's segments for what is now a Part. A new id makes it a
-                // new tab as far as the widget is concerned, so the content is rebuilt.
-                // Same slot, and reselected if it was selected, so nothing moves.
-                let was_selected = pane.selected.get() == Some(h.id);
-                let new_id = TabId::fresh();
-                pane.tabs.remove(i);
-                pane.tabs.insert(
-                    i,
-                    TabHandle::dynamic(
-                        new_id,
-                        "editor",
-                        TabInfo::new()
-                            .title(caption)
-                            .closable(true)
-                            .icon(move || crate::binder::icons::sub_role_icon(&sub_role)),
-                        tab,
-                    ),
-                );
-                if was_selected {
-                    pane.selected.set(Some(new_id));
-                }
-            }
-        }
+        // Through `rebuild_tabs_for` / `make_tab`, not a second inline
+        // `ContentTab::new` — a duplicated argument list would let per-tab state
+        // drift between the two, so a Promote could silently produce a tab
+        // configured differently from a freshly opened one. Per-tab state (the
+        // folded-away Side synopsis, its divider position) resets here: this is a
+        // new tab of a new type. The caret does not — `tab_pane` seeds it.
+        self.rebuild_tabs_for(item_id, it, doc);
         true
     }
 
@@ -2103,6 +2169,44 @@ mod tests {
         assert_eq!(vm.active_item().get(), Some(7));
         vm.set_focused(Side::Primary);
         assert_eq!(vm.active_item().get(), Some(42));
+    }
+
+    /// Trashing a row puts it away, and the tab has to go with it. The app used
+    /// to leave the tab open and merely turn it read-only behind a banner, which
+    /// left the writer looking at a document they had just deleted.
+    #[test]
+    fn trashing_an_item_closes_every_tab_showing_it() {
+        let vm = editors();
+        vm.set_split(true);
+        push_tab(&vm, Side::Primary, 42);
+        push_tab(&vm, Side::Secondary, 42);
+        // A tab for something else, to prove this is aimed and not a sweep.
+        push_tab(&vm, Side::Primary, 43);
+
+        vm.close_trashed_tabs(42);
+
+        assert!(
+            vm.find_open(Side::Primary, 42).is_none(),
+            "the trashed row is still open in the primary pane",
+        );
+        assert!(
+            vm.find_open(Side::Secondary, 42).is_none(),
+            "both panes have to let go, not just the focused one",
+        );
+        assert!(
+            vm.find_open(Side::Primary, 43).is_some(),
+            "trashing one row must not close its neighbour's tab",
+        );
+    }
+
+    /// An item with no tab open is the ordinary case — trashing from the binder
+    /// without having opened it — and must not disturb anything.
+    #[test]
+    fn trashing_something_that_was_never_open_changes_nothing() {
+        let vm = editors();
+        push_tab(&vm, Side::Primary, 7);
+        vm.close_trashed_tabs(99);
+        assert_eq!(vm.tabs(Side::Primary).len(), 1);
     }
 
     #[test]

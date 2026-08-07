@@ -1740,6 +1740,7 @@ fn plain_backup_dto(
         gfs_weekly: 0,
         gfs_monthly: 0,
         min_keep: 0,
+        pinned_paths: vec![],
     }
 }
 
@@ -1924,6 +1925,76 @@ fn skip_if_unchanged_does_not_skip_when_the_backup_file_is_gone() {
         "the destination must be rewritten"
     );
     assert!(std::path::Path::new(&res2.succeeded_paths[0]).exists());
+}
+
+/// A pinned backup survives a sweep that would otherwise delete it.
+///
+/// This is the data-loss-shaped hole in a feature about not losing things: GFS
+/// is a policy about *how much past to keep in general*, and it has no way to
+/// know that one of those files is the draft that went to an editor. The pin
+/// rides the same `protected` guarantee the just-written backup does — by
+/// identity, so a backwards clock cannot defeat it either.
+#[test]
+fn a_pinned_backup_survives_a_sweep_that_would_otherwise_delete_it() {
+    let (dir, db, hub) = load_sample();
+    let dest = dir.path().join("dest");
+    std::fs::create_dir_all(&dest).unwrap();
+
+    let now = Utc::now();
+    let kept = write_fake_backup(
+        &dest,
+        "the-one-i-sent.skrib",
+        now - chrono::Duration::days(40),
+    );
+    let ordinary = write_fake_backup(&dest, "ordinary.skrib", now - chrono::Duration::days(10));
+
+    let sweep = |pinned: Vec<String>| {
+        let mut dto = plain_backup_dto(
+            live_work_id(&db),
+            vec![dest.to_str().unwrap().to_string()],
+            vec![],
+        );
+        dto.prune = true;
+        dto.retention_mode = RetentionMode::KeepLastN;
+        dto.keep_last_n = 1;
+        dto.min_keep = 0;
+        dto.pinned_paths = pinned;
+        BackupNowUseCase::new(Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)), &dto)
+            .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+            .expect("backup_now")
+    };
+
+    // Precondition: with no pin, the oldest is exactly what this policy deletes.
+    let unpinned = sweep(vec![]);
+    assert!(
+        unpinned.deleted_paths.contains(&kept),
+        "precondition: without a pin this backup is the first to go; deleted={:?}",
+        unpinned.deleted_paths,
+    );
+    assert!(!std::path::Path::new(&kept).exists());
+
+    // Put it back and sweep again, this time pinned.
+    let kept = write_fake_backup(
+        &dest,
+        "the-one-i-sent.skrib",
+        now - chrono::Duration::days(40),
+    );
+    let pinned = sweep(vec![kept.clone()]);
+    assert!(
+        !pinned.deleted_paths.contains(&kept),
+        "a pinned backup must never be swept; deleted={:?}",
+        pinned.deleted_paths,
+    );
+    assert!(
+        std::path::Path::new(&kept).exists(),
+        "the pinned backup must still be on disk",
+    );
+    // …and pinning one file must not turn retention off for everything else.
+    let _ = ordinary;
+    assert!(
+        !pinned.deleted_paths.is_empty(),
+        "retention must still sweep the versions that were not pinned",
+    );
 }
 
 /// T1-7: retention now runs INSIDE the operation and joins the write — and the

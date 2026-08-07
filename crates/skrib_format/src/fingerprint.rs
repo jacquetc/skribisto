@@ -226,8 +226,46 @@ mod tests {
             progress_snapshots: vec![],
             orphan_comments: vec![],
             orphan_footnotes: Vec::new(),
+            history: Default::default(),
             binders: vec![],
         }
+    }
+
+    /// The history log must be invisible to the fingerprint.
+    ///
+    /// This is the load-bearing guard on the whole feature's cost. The log grows on
+    /// every save; if it reached the hash, every save would change the fingerprint,
+    /// `skip_if_unchanged` would never skip again, and every close would write a
+    /// full backup of a project nobody had edited. `strip_volatile`'s own comment
+    /// states the rule for `asset_bytes` — *"nothing may be added that would include
+    /// them"* — and this asserts the newer field obeys it.
+    #[test]
+    fn the_history_log_never_reaches_the_fingerprint() {
+        use crate::history::{HistoryEntry, HistoryLog};
+
+        let plain = minimal_bundle("Novel", "2026-08-07T10:00:00Z");
+        let baseline = content_fingerprint(&plain);
+
+        let mut with_history = minimal_bundle("Novel", "2026-08-07T10:00:00Z");
+        with_history.history = HistoryLog {
+            entries: vec![HistoryEntry {
+                at: "2026-08-07T09:00:00Z".into(),
+                item_uid: uuid::Uuid::from_u128(7),
+                role: common::entities::ContentRole::SceneText,
+                hash: "deadbeef".into(),
+                bytes: 8,
+            }],
+            blobs: [("deadbeef".to_string(), "some past prose".to_string())]
+                .into_iter()
+                .collect(),
+        };
+
+        assert_eq!(
+            content_fingerprint(&with_history),
+            baseline,
+            "a bundle that only differs by its history log must fingerprint identically, \
+             or skip-if-unchanged stops skipping and every close writes a full backup",
+        );
     }
 
     #[test]

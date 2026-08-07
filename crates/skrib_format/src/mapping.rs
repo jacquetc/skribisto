@@ -445,6 +445,13 @@ pub fn from_entities(
             .collect(),
         orphan_comments,
         orphan_footnotes,
+        // Empty here on purpose. The history log is the one part of a bundle that
+        // does **not** come from the store — no entity carries it — so it cannot be
+        // derived from `Gathered`. Each write path decides what to put here after
+        // this returns: `save_work` carries the target's existing log forward and
+        // records into it, `save_as`/`backup_now` carry the source's log unchanged.
+        // See `crate::history::load`.
+        history: crate::history::HistoryLog::default(),
         binders: bundled_binders,
     }
 }

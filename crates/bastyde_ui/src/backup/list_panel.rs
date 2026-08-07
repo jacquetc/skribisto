@@ -42,18 +42,23 @@ pub struct BackupsListPanel {
 }
 
 impl BackupsListPanel {
-    /// `dirs` are the configured destinations; the project's own folder is always
-    /// scanned too (the default "next to the project" destination). The scan
-    /// itself is deferred to the first `build()` (T2-3) — construction does no
-    /// filesystem I/O. `work_id` is the caller's own window's open Work (for
-    /// toast routing — see `BackupsListViewModel::new`'s doc).
-    pub fn new(
-        uid: String,
-        project_path: String,
-        mut dirs: Vec<String>,
-        work_id: Option<u64>,
-    ) -> Self {
-        dirs.push(String::new()); // the project's own folder
+    /// `dirs` are the configured destinations; the app's own backup root and the
+    /// project's folder are always scanned too. The scan itself is deferred to the
+    /// first `build()` (T2-3) — construction does no filesystem I/O. `work_id` is
+    /// the caller's own window's open Work (for toast routing — see
+    /// `BackupsListViewModel::new`'s doc).
+    ///
+    /// Both extras are unconditional on purpose, and neither is redundant: the app
+    /// root is where an *unconfigured* project's backups now land
+    /// ([`crate::backup_paths`]), and the project's own folder is where they landed
+    /// before that default changed — a browser that stopped looking there would
+    /// hide a writer's entire existing history. `scan` de-duplicates by resolved
+    /// path, so a destination named twice costs nothing.
+    pub fn new(uid: String, project_path: String, dirs: Vec<String>, work_id: Option<u64>) -> Self {
+        // One rule, in `backup_paths::search_destinations`, shared with the
+        // Versions dock and the Timeline band — all three have to agree about
+        // where a project's history lives.
+        let dirs = crate::backup_paths::search_destinations(&dirs);
         Self {
             vm: BackupsListViewModel::new(uid, project_path, dirs, work_id),
             root_child: None,

@@ -224,6 +224,14 @@ fn run_save(
         std::path::Path::new(&dto.media_root),
         &g.work.unique_id,
     );
-    let output_path = work_io::serialize_and_write(&g, target, shape, tag, &media_dir)?;
+    // A save overwrites the project in place, so the file we are about to replace
+    // is also the file whose history we carry forward: read it, append this state,
+    // thin, write. This is the *only* write path that records — see `HistoryAction`.
+    let history = work_io::HistoryAction::Record {
+        source: target.clone(),
+        policy: skrib_format::history::DEFAULT_POLICY,
+        min_keep: skrib_format::history::DEFAULT_MIN_KEEP,
+    };
+    let output_path = work_io::serialize_and_write(&g, target, shape, tag, &media_dir, history)?;
     Ok((work_id, SaveResultDto { output_path }))
 }

@@ -138,6 +138,16 @@ pub struct CommentHighlightSession {
     /// Pending edits to fold into the live anchors, queued by the change callback
     /// and drained on `tick` so a burst of keystrokes costs one recompute a frame.
     pending: Arc<std::sync::Mutex<Vec<(usize, usize, usize)>>>,
+    /// Set when the document was replaced wholesale rather than edited.
+    ///
+    /// The two are not the same thing and cannot share a path. An *edit* arrives
+    /// as a delta the anchors can be shifted by; a *reset* arrives as no delta at
+    /// all, because the text it would describe no longer exists. Draining the
+    /// dirty flag and repainting on a reset paints yesterday's offsets onto
+    /// today's text — silently, since every offset is still in range. The owner
+    /// has to re-derive instead, which only it can do (it holds the comment
+    /// store); [`take_reset`](Self::take_reset) is how it finds out.
+    reset: Arc<AtomicBool>,
     anchors: RefCell<Vec<LiveAnchor>>,
     last: RefCell<Vec<RangeHighlight>>,
     /// Comments whose text was deleted outright while typing. Reported so the UI
@@ -153,11 +163,13 @@ impl CommentHighlightSession {
     pub fn new(doc: &TextDocument) -> Rc<Self> {
         let session = doc.add_range_session_with_priority(COMMENT_HIGHLIGHT_PRIORITY);
         let dirty = Arc::new(AtomicBool::new(false));
+        let reset = Arc::new(AtomicBool::new(false));
         let pending: Arc<std::sync::Mutex<Vec<(usize, usize, usize)>>> =
             Arc::new(std::sync::Mutex::new(Vec::new()));
 
         let sub = {
             let dirty = dirty.clone();
+            let reset = reset.clone();
             let pending = pending.clone();
             doc.on_change(move |event| match event {
                 // The exact delta the shift rule needs. text-document emits this on
@@ -175,8 +187,14 @@ impl CommentHighlightSession {
                     dirty.store(true, Ordering::Relaxed);
                 }
                 // A wholesale replacement invalidates every live offset; the owner
-                // re-seeds from a fresh re-anchor pass.
-                DocumentEvent::DocumentReset => dirty.store(true, Ordering::Relaxed),
+                // re-seeds from a fresh re-anchor pass. Flagged *separately* from
+                // `dirty`, because the shift path this shares with editing cannot
+                // help here — there is no delta, so it would repaint the old
+                // anchors onto new text and look correct while being wrong.
+                DocumentEvent::DocumentReset => {
+                    reset.store(true, Ordering::Relaxed);
+                    dirty.store(true, Ordering::Relaxed);
+                }
                 // Never react to `HighlightPaintChanged`: our own `set_session_ranges`
                 // emits it, and reacting would self-loop. Same filter SpellSession uses.
                 _ => {}
@@ -187,6 +205,7 @@ impl CommentHighlightSession {
             doc: doc.clone(),
             session,
             dirty,
+            reset,
             pending,
             anchors: RefCell::new(Vec::new()),
             last: RefCell::new(Vec::new()),
@@ -252,6 +271,30 @@ impl CommentHighlightSession {
 
     /// Drain queued edits and repaint. Called once per frame by the owner.
     ///
+    /// Whether the document has been **replaced** since this was last asked, and
+    /// the anchors therefore have to be re-derived rather than shifted.
+    ///
+    /// Draining, so one reset costs one re-anchor. Returns `false` while the
+    /// layer is inactive and leaves the flag set — a hidden pane still owes its
+    /// catch-up, exactly as [`tick`](Self::tick) leaves `dirty` set.
+    ///
+    /// Taking the reset also discards the queued deltas: they describe edits to a
+    /// document that no longer exists, and folding them into freshly-derived
+    /// anchors would move them for a second time.
+    pub fn take_reset(&self) -> bool {
+        if !self.active.get() {
+            return false;
+        }
+        if !self.reset.swap(false, Ordering::Relaxed) {
+            return false;
+        }
+        self.dirty.store(false, Ordering::Relaxed);
+        if let Ok(mut q) = self.pending.lock() {
+            q.clear();
+        }
+        true
+    }
+
     /// Returns the ids of comments whose text was deleted outright by those edits,
     /// so the caller can flag them orphaned on the spot — the live half of the
     /// orphan contract, which otherwise would not surface until the next load.
@@ -470,6 +513,75 @@ mod tests {
             format_for(2, base, stacked).background_color,
             "overlap must be visible as *something*, even though which threads \
              overlap is the margin's job to say"
+        );
+    }
+
+    // ── a wholesale replacement is not an edit ──────────────────────────────
+    //
+    // `OpenDoc::reload` (a merge absorbing a neighbour, a split cutting the source
+    // in two) and restoring a past version both replace the document outright.
+    // That arrives as a `DocumentReset`, which carries **no delta** — so the shift
+    // path this shares with typing has nothing to apply, and repainting on it
+    // would put yesterday's offsets onto today's text. Nothing looks wrong when it
+    // happens: every offset is still in range, so the wash simply lands on the
+    // wrong words. These pin the separation.
+
+    #[test]
+    fn replacing_the_document_is_reported_as_a_reset_and_not_as_an_edit() {
+        let doc = bastyde::text_document::TextDocument::new();
+        doc.set_djot_sync("The lamp went out in the hall.").unwrap();
+        let session = CommentHighlightSession::new(&doc);
+        assert!(!session.take_reset(), "nothing has happened yet");
+
+        doc.set_djot_sync("A different scene entirely.").unwrap();
+        assert!(
+            session.take_reset(),
+            "a wholesale replacement must be distinguishable from a keystroke",
+        );
+        assert!(
+            !session.take_reset(),
+            "one replacement owes one re-anchor, not one per frame forever",
+        );
+    }
+
+    /// The specific hazard: a reset that also left the edit path armed would fold
+    /// deltas describing the *old* text into anchors freshly derived from the new.
+    #[test]
+    fn taking_the_reset_discards_the_deltas_that_describe_the_old_text() {
+        let doc = bastyde::text_document::TextDocument::new();
+        doc.set_djot_sync("The lamp went out in the hall.").unwrap();
+        let session = CommentHighlightSession::new(&doc);
+        session.set_anchors(vec![a(1, 4, 8)]);
+
+        // Type, then replace the whole document before the frame ticks.
+        let cursor = doc.cursor();
+        cursor.set_position(0, bastyde::text_document::MoveMode::MoveAnchor);
+        cursor.insert_text("XX").unwrap();
+        doc.set_djot_sync("A different scene entirely.").unwrap();
+
+        assert!(session.take_reset());
+        assert_eq!(
+            session.tick(),
+            Vec::<u64>::new(),
+            "the queued keystroke must not also be applied on top of a re-anchor",
+        );
+    }
+
+    /// A hidden pane still owes its catch-up: the reset must survive until
+    /// something is actually showing the document again.
+    #[test]
+    fn a_hidden_layer_keeps_owing_its_re_anchor() {
+        let doc = bastyde::text_document::TextDocument::new();
+        doc.set_djot_sync("Before.").unwrap();
+        let session = CommentHighlightSession::new(&doc);
+        session.set_active(false);
+        doc.set_djot_sync("After.").unwrap();
+
+        assert!(!session.take_reset(), "an inactive layer reports nothing…");
+        session.set_active(true);
+        assert!(
+            session.take_reset(),
+            "…and still owes the re-anchor when shown"
         );
     }
 

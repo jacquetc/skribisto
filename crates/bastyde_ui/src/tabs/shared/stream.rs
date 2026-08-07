@@ -155,6 +155,8 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // marker in a Full Book.
                     tab.open_doc.footnote_binding_main(),
                     tab.open_doc.images(),
+                    // The container's own prose, read-only while it is in the trash.
+                    tab.open_doc.trashed.get(),
                 )),
                 SplitFlavour::Synopsis => col.child(synopsis_column(
                     &field.doc,
@@ -177,6 +179,8 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // see the prose column above.
                     own_comments.clone().map(|b| b.with_gutter(gutter.clone())),
                     tab.open_doc.images(),
+                    // The container's own prose, read-only while it is in the trash.
+                    tab.open_doc.trashed.get(),
                 )),
             };
             col = col.child(vspace(6.0));
@@ -411,6 +415,9 @@ fn stream_row(
                         // above for why a stream row takes no seek.
                         doc.footnote_binding_main(),
                         doc.images(),
+                        // Each row answers for itself: a stream shows many items, and only the
+                        // ones actually in the trash are locked.
+                        doc.trashed.get(),
                     ));
                 }
             }
@@ -434,6 +441,9 @@ fn stream_row(
                         vm.row_comments(id, flavour)
                             .map(|b| b.with_gutter(gutter.clone())),
                         doc.images(),
+                        // Each row answers for itself: a stream shows many items, and only the
+                        // ones actually in the trash are locked.
+                        doc.trashed.get(),
                     ));
                 }
             }

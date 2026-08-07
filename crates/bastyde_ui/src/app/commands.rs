@@ -137,6 +137,9 @@ pub(super) struct CommandDeps {
     /// The footnotes dock, for `footnotes.show` — the way back when a saved desk
     /// has lost it. See that command for why a dock needs one at all.
     pub footnotes_dock: DockWidgetId,
+    /// The timeline band, for `timeline.show` — the only door into it, since a
+    /// hidden bottom side leaves no rail glyph behind.
+    pub timeline_dock: DockWidgetId,
     /// Derived: the work has edits not on disk.
     pub unsaved: Signal<bool>,
     /// A backup file is open here — Save is off.

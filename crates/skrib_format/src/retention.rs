@@ -35,6 +35,56 @@ pub enum RetentionPolicy {
     },
 }
 
+/// The calendar unit two moments can share.
+///
+/// Extracted from the GFS sweep below, which is the only place this app has ever
+/// had to answer "is that the same week", so that the surfaces which *show* a
+/// project's past group it exactly the way retention *thins* it. Two definitions
+/// of "same week" would put a bar in one place and delete a backup from another.
+///
+/// Weeks are a rolling 604,800 seconds from the Unix epoch, not ISO weeks
+/// starting on a Monday. That is what retention has always done; a calendar week
+/// would be a nicer label and a different — and silently disagreeing — grouping.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum BucketUnit {
+    Hour,
+    Day,
+    Week,
+    Month,
+}
+
+impl BucketUnit {
+    /// The bucket `at` belongs to. Two instants share a bucket exactly when this
+    /// returns the same number for both.
+    pub fn key(self, at: &DateTime<Utc>) -> i64 {
+        match self {
+            BucketUnit::Hour => at.timestamp().div_euclid(3600),
+            BucketUnit::Day => at.timestamp().div_euclid(86_400),
+            BucketUnit::Week => at.timestamp().div_euclid(604_800),
+            BucketUnit::Month => at.year() as i64 * 12 + at.month0() as i64,
+        }
+    }
+
+    /// Roughly how long one bucket lasts. For choosing a unit against a span, not
+    /// for arithmetic on real dates — months are not all the same length.
+    pub fn approx_seconds(self) -> i64 {
+        match self {
+            BucketUnit::Hour => 3600,
+            BucketUnit::Day => 86_400,
+            BucketUnit::Week => 604_800,
+            BucketUnit::Month => 2_629_746, // the mean Gregorian month
+        }
+    }
+
+    /// Coarsest last, so a caller can walk up until the buckets fit.
+    pub const ASCENDING: [BucketUnit; 4] = [
+        BucketUnit::Hour,
+        BucketUnit::Day,
+        BucketUnit::Week,
+        BucketUnit::Month,
+    ];
+}
+
 /// A backup file belonging to the project being pruned.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BackupCandidate {
@@ -119,7 +169,12 @@ fn candidate_timestamp(m: &ProjectManifest, path: &Path) -> DateTime<Utc> {
 }
 
 /// Parse a UTC timestamp out of a `…-YYYYMMDD-HHMMSS[-N].skrib` file name.
-fn parse_stamp_from_filename(path: &Path) -> Option<DateTime<Utc>> {
+///
+/// `pub` because the settings pane's "oldest backup" summary needs exactly this
+/// rule and nothing looser. A second, more permissive reading of the same names —
+/// one that accepted any eight digits without checking a six-digit time followed —
+/// dated a file `foo-12345678-1.skrib` from a segment that was never a timestamp.
+pub fn parse_stamp_from_filename(path: &Path) -> Option<DateTime<Utc>> {
     let file = path.file_name()?.to_str()?;
     let stem = file.strip_suffix(".skrib").unwrap_or(file);
     let parts: Vec<&str> = stem.split('-').collect();
@@ -188,52 +243,12 @@ pub fn plan_deletions(
     }
     // Guarantee 2: whatever this run just wrote survives, regardless of its stamp.
     keep.extend(protected.iter().cloned());
-    // Absolute floor: the `min_keep` newest are never deleted.
-    for c in sorted.iter().take(min_keep as usize) {
-        keep.insert(c.path.clone());
-    }
 
-    match policy {
-        RetentionPolicy::KeepLastN { n } => {
-            for c in sorted.iter().take(*n as usize) {
-                keep.insert(c.path.clone());
-            }
-        }
-        RetentionPolicy::Gfs {
-            hourly,
-            daily,
-            weekly,
-            monthly,
-        } => {
-            keep_one_per_bucket(
-                &sorted,
-                |ts| ts.timestamp().div_euclid(3600),
-                |ts| now.signed_duration_since(*ts) < Duration::hours(24),
-                *hourly,
-                &mut keep,
-            );
-            keep_one_per_bucket(
-                &sorted,
-                |ts| ts.timestamp().div_euclid(86_400),
-                |ts| now.signed_duration_since(*ts) < Duration::days(7),
-                *daily,
-                &mut keep,
-            );
-            keep_one_per_bucket(
-                &sorted,
-                |ts| ts.timestamp().div_euclid(604_800),
-                |ts| now.signed_duration_since(*ts) < Duration::weeks(4),
-                *weekly,
-                &mut keep,
-            );
-            keep_one_per_bucket(
-                &sorted,
-                |ts| ts.year() as i64 * 12 + ts.month0() as i64,
-                |_| true,
-                *monthly,
-                &mut keep,
-            );
-        }
+    // The policy math itself (and the `min_keep` floor) is shared with the
+    // in-project history log — see `policy_keep_indices`.
+    let stamps: Vec<DateTime<Utc>> = sorted.iter().map(|c| c.timestamp).collect();
+    for i in policy_keep_indices(&stamps, policy, min_keep, now) {
+        keep.insert(sorted[i].path.clone());
     }
 
     sorted
@@ -243,14 +258,79 @@ pub fn plan_deletions(
         .collect()
 }
 
-/// Keep the newest candidate in each of the most recent `count` distinct buckets
+/// Which of `sorted` (a **newest-first** timestamp list) a policy keeps, as
+/// indices into it, including the `min_keep` newest whatever the policy says.
+///
+/// The GFS calendar math lives here, once, because two things thin on it: this
+/// module's backup sweep, and [`crate::history`]'s in-project log. A second copy
+/// of "hourly for a day, daily for a week, weekly for a month, monthly beyond"
+/// would be two policies a writer has no way to tell apart.
+///
+/// Indices rather than a payload type so neither caller has to be modelled here —
+/// backups are keyed by path, history entries by `(uid, role)` position.
+/// Caller-specific guarantees (never leave zero backups; never delete what this
+/// run just wrote; never delete a pinned entry) stay with their callers.
+pub(crate) fn policy_keep_indices(
+    sorted: &[DateTime<Utc>],
+    policy: &RetentionPolicy,
+    min_keep: u32,
+    now: DateTime<Utc>,
+) -> HashSet<usize> {
+    let mut keep: HashSet<usize> = (0..sorted.len().min(min_keep as usize)).collect();
+    match policy {
+        RetentionPolicy::KeepLastN { n } => {
+            keep.extend(0..sorted.len().min(*n as usize));
+        }
+        RetentionPolicy::Gfs {
+            hourly,
+            daily,
+            weekly,
+            monthly,
+        } => {
+            // The bucket keys are [`BucketUnit`]'s, not a second copy: the
+            // Timeline band groups a project's past into the same buckets this
+            // thins it into, and the two must not be able to disagree.
+            keep_one_per_bucket(
+                sorted,
+                |ts| BucketUnit::Hour.key(ts),
+                |ts| now.signed_duration_since(*ts) < Duration::hours(24),
+                *hourly,
+                &mut keep,
+            );
+            keep_one_per_bucket(
+                sorted,
+                |ts| BucketUnit::Day.key(ts),
+                |ts| now.signed_duration_since(*ts) < Duration::days(7),
+                *daily,
+                &mut keep,
+            );
+            keep_one_per_bucket(
+                sorted,
+                |ts| BucketUnit::Week.key(ts),
+                |ts| now.signed_duration_since(*ts) < Duration::weeks(4),
+                *weekly,
+                &mut keep,
+            );
+            keep_one_per_bucket(
+                sorted,
+                |ts| BucketUnit::Month.key(ts),
+                |_| true,
+                *monthly,
+                &mut keep,
+            );
+        }
+    }
+    keep
+}
+
+/// Keep the newest entry in each of the most recent `count` distinct buckets
 /// (among those matching `eligible`). `sorted` must be newest-first.
 fn keep_one_per_bucket<B, E>(
-    sorted: &[BackupCandidate],
+    sorted: &[DateTime<Utc>],
     bucket: B,
     eligible: E,
     count: u32,
-    keep: &mut HashSet<PathBuf>,
+    keep: &mut HashSet<usize>,
 ) where
     B: Fn(&DateTime<Utc>) -> i64,
     E: Fn(&DateTime<Utc>) -> bool,
@@ -259,11 +339,11 @@ fn keep_one_per_bucket<B, E>(
         return;
     }
     let mut seen: HashSet<i64> = HashSet::new();
-    for c in sorted {
-        if !eligible(&c.timestamp) {
+    for (i, ts) in sorted.iter().enumerate() {
+        if !eligible(ts) {
             continue;
         }
-        let key = bucket(&c.timestamp);
+        let key = bucket(ts);
         if seen.contains(&key) {
             continue; // an already-kept bucket keeps only its newest
         }
@@ -271,7 +351,7 @@ fn keep_one_per_bucket<B, E>(
             break; // have the `count` most-recent buckets already (newest-first)
         }
         seen.insert(key);
-        keep.insert(c.path.clone());
+        keep.insert(i);
     }
 }
 
