@@ -23,16 +23,31 @@
 //! `dirty_seq` when a run completes, and the view is stale whenever the live value has moved
 //! past it. Inventing a second "has the manuscript changed" signal would give the status bar
 //! and this panel two answers that can disagree.
+//!
+//! ## The footnote-word figure is a second, independent long operation
+//!
+//! Shape shows how many words live in this book's footnotes, kept apart from the manuscript
+//! total for the same reason `progress_management::count_words_uc` keeps the two apart in the
+//! first place: a footnote is authored prose, but folding it into the manuscript total would
+//! make a heavily annotated chapter look like it made progress the story did not. That figure
+//! cannot come from `analyze_book` — `analyze_book_uc` deliberately reads no `Footnote` rows
+//! at all, on the grounds that a note is the author's aside on the manuscript, not part of the
+//! shape being measured. The only real source is the same `count_words` pass
+//! `ProgressRecorder` already fires on every save, which buckets its footnote total **per
+//! Book** — exactly this panel's own scope — so `run()` fires it as a second, independently
+//! tracked operation alongside `analyze_book`, and [`AnalysisViewModel::footnote_words`] picks this
+//! scope's own entry out of the whole-Work result once it lands.
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use bastyde::prelude::*;
 use frontend::AppContext;
-use frontend::commands::analysis_management_commands;
+use frontend::commands::{analysis_management_commands, progress_management_commands};
 use frontend::common::event::{Event, Origin};
 
 use frontend::analysis_management::{AnalyzeBookDto, BookAnalysisResultDto};
+use frontend::progress_management::{CountWordsDto, WordCountResultDto};
 
 use crate::app_ids::AppIds;
 use crate::models::{RepetitionTreeKey, RepetitionTreeModel};
@@ -98,6 +113,17 @@ pub struct AnalysisViewModel {
     /// The live edit counter, shared with the save indicator.
     dirty_seq: Signal<u64>,
     pending: Rc<RefCell<Option<TrackedOp>>>,
+    /// This book's own footnote-word count, picked out of the whole-Work `count_words`
+    /// result. `None` covers every state that is not "a real figure is in hand" — never
+    /// run yet, still counting, or the companion operation failed — so the pane can show
+    /// "still counting" rather than a `0` that would read as a finding about the book
+    /// rather than as the panel not knowing yet.
+    footnote_words: Signal<Option<i64>>,
+    /// The in-flight `count_words` operation backing [`Self::footnote_words`] — tracked
+    /// separately from `pending` because it is a genuinely separate long operation (see
+    /// the module doc), with its own completion/failure/cancellation and its own
+    /// `Origin::LongOperation` events to filter by id.
+    footnote_pending: Rc<RefCell<Option<TrackedOp>>>,
     /// Guards the one automatic first run, so re-selecting the segment does not re-run.
     auto_ran: Rc<std::cell::Cell<bool>>,
     /// Whether Shape leaves texts with no prose out of its charts. On by default: a Part
@@ -141,6 +167,8 @@ impl AnalysisViewModel {
             analysed_at_seq: Signal::new(None),
             dirty_seq,
             pending: Rc::new(RefCell::new(None)),
+            footnote_words: Signal::new(None),
+            footnote_pending: Rc::new(RefCell::new(None)),
             auto_ran: Rc::new(std::cell::Cell::new(false)),
             ignore_empty: Signal::new(true),
             repetition_tree: RepetitionTreeModel::new(),
@@ -167,6 +195,14 @@ impl AnalysisViewModel {
         self.state.clone()
     }
 
+    /// This book's own footnote-word count — `None` until the companion `count_words`
+    /// operation this scope's [`Self::run`] fires has actually landed. See the module
+    /// doc for why this is a second operation rather than a field on `analyze_book`'s
+    /// own result.
+    pub fn footnote_words(&self) -> Signal<Option<i64>> {
+        self.footnote_words.clone()
+    }
+
     pub fn category(&self) -> Signal<usize> {
         self.category.clone()
     }
@@ -186,8 +222,12 @@ impl AnalysisViewModel {
         }
     }
 
+    /// True while `analyze_book` **or** the companion `count_words` is in flight — a Run
+    /// pressed while only the footnote figure is still catching up must not fire a second
+    /// full `analyze_book` pass for an answer that is already on the way.
     pub fn is_running(&self) -> bool {
         matches!(self.state.get(), AnalysisState::Running)
+            || self.footnote_pending.borrow().is_some()
     }
 
     /// Start an analysis of this scope, unless one is already in flight.
@@ -216,8 +256,27 @@ impl AnalysisViewModel {
                 // shows then — not the one this analysis actually ran for.
                 *self.pending.borrow_mut() = Some(TrackedOp::start(&self.ids, op_id));
                 self.state.set(AnalysisState::Running);
+                self.start_footnote_count(work_id);
             }
             Err(e) => self.state.set(AnalysisState::Failed(e.to_string())),
+        }
+    }
+
+    /// Fire the companion `count_words` long operation that supplies
+    /// [`Self::footnote_words`] — see the module doc for why this is a second operation
+    /// rather than a field `analyze_book` fills in.
+    fn start_footnote_count(&self, work_id: u64) {
+        // Stale until *this* run's own answer lands — a re-run must not go on showing
+        // the previous scope's (or the previous edit's) figure while the new pass reads
+        // the manuscript.
+        self.footnote_words.set(None);
+        // A figure this panel could not even ask for is shown the same way as one
+        // still in flight — "still counting" rather than a `0` that would claim to
+        // be a finding about the book — so a request failure is silently dropped here.
+        if let Ok(op_id) =
+            progress_management_commands::count_words(&self.ctx, &CountWordsDto { work_id })
+        {
+            *self.footnote_pending.borrow_mut() = Some(TrackedOp::start(&self.ids, op_id));
         }
     }
 
@@ -231,57 +290,108 @@ impl AnalysisViewModel {
         }
     }
 
-    /// Feed a `Origin::LongOperation(...)` event in. Ignores anything that is not this
-    /// view-model's own in-flight operation.
+    /// Feed a `Origin::LongOperation(...)` event in. Ignores anything that is not one of
+    /// this view-model's own two in-flight operations (`analyze_book` or the companion
+    /// `count_words` — see the module doc).
     pub fn on_long_op_event(&self, event: &Event) {
         let Origin::LongOperation(kind) = &event.origin else {
             return;
         };
         let id = event_id(event);
-        let matches_ours = {
+
+        let matches_main = {
             let pending = self.pending.borrow();
             match (pending.as_ref(), id.as_deref()) {
                 (Some(op), Some(id)) => op.matches(id),
                 _ => false,
             }
         };
-        if !matches_ours {
+        if matches_main {
+            use frontend::common::event::LongOperationEvent as L;
+            match kind {
+                L::Completed => {
+                    let op_id = id.unwrap_or_default();
+                    match analysis_management_commands::get_analyze_book_result(&self.ctx, &op_id) {
+                        Ok(Some(dto)) => {
+                            // Recorded at completion rather than at start: edits made
+                            // *during* the pass are not covered by it, and claiming
+                            // otherwise would show a fresh badge over a result that
+                            // predates them.
+                            self.analysed_at_seq.set(Some(self.dirty_seq.get()));
+                            self.state.set(AnalysisState::Ready(Rc::new(dto)));
+                        }
+                        Ok(None) => self.state.set(AnalysisState::Failed(String::new())),
+                        Err(e) => self.state.set(AnalysisState::Failed(e.to_string())),
+                    }
+                    *self.pending.borrow_mut() = None;
+                }
+                L::Failed => {
+                    let message = parse_payload(event)
+                        .and_then(|p| p.get("error").and_then(|e| e.as_str().map(str::to_string)))
+                        .unwrap_or_default();
+                    self.state.set(AnalysisState::Failed(message));
+                    *self.pending.borrow_mut() = None;
+                }
+                L::Cancelled => {
+                    // Back to whatever was on screen before, not to an error: a cancel is
+                    // the writer's own decision and is not a failure to report back to them.
+                    self.state.set(AnalysisState::Idle);
+                    *self.pending.borrow_mut() = None;
+                }
+                _ => {}
+            }
             return;
         }
 
+        let matches_footnote = {
+            let pending = self.footnote_pending.borrow();
+            match (pending.as_ref(), id.as_deref()) {
+                (Some(op), Some(id)) => op.matches(id),
+                _ => false,
+            }
+        };
+        if !matches_footnote {
+            return;
+        }
         use frontend::common::event::LongOperationEvent as L;
         match kind {
             L::Completed => {
                 let op_id = id.unwrap_or_default();
-                match analysis_management_commands::get_analyze_book_result(&self.ctx, &op_id) {
-                    Ok(Some(dto)) => {
-                        // Recorded at completion rather than at start: edits made *during*
-                        // the pass are not covered by it, and claiming otherwise would show
-                        // a fresh badge over a result that predates them.
-                        self.analysed_at_seq.set(Some(self.dirty_seq.get()));
-                        self.state.set(AnalysisState::Ready(Rc::new(dto)));
-                    }
-                    Ok(None) => self.state.set(AnalysisState::Failed(String::new())),
-                    Err(e) => self.state.set(AnalysisState::Failed(e.to_string())),
-                }
-                *self.pending.borrow_mut() = None;
+                // Any failure to fetch a real result (an unknown op id, a store error) is
+                // folded into `None` alongside "still running" — the pane cannot tell
+                // those apart from a figure it simply does not have yet, and should not
+                // pretend it can.
+                let count = progress_management_commands::get_count_words_result(&self.ctx, &op_id)
+                    .ok()
+                    .flatten()
+                    .map(|result| footnote_words_in_book(&result, self.scope_item_id));
+                self.footnote_words.set(count);
+                *self.footnote_pending.borrow_mut() = None;
             }
-            L::Failed => {
-                let message = parse_payload(event)
-                    .and_then(|p| p.get("error").and_then(|e| e.as_str().map(str::to_string)))
-                    .unwrap_or_default();
-                self.state.set(AnalysisState::Failed(message));
-                *self.pending.borrow_mut() = None;
-            }
-            L::Cancelled => {
-                // Back to whatever was on screen before, not to an error: a cancel is the
-                // writer's own decision and is not a failure to report back to them.
-                self.state.set(AnalysisState::Idle);
-                *self.pending.borrow_mut() = None;
+            L::Failed | L::Cancelled => {
+                self.footnote_words.set(None);
+                *self.footnote_pending.borrow_mut() = None;
             }
             _ => {}
         }
     }
+}
+
+/// Pick this book's own footnote-word figure out of a whole-Work `count_words` result.
+///
+/// `book_item_ids` and `book_footnote_word_counts` are kept aligned position-for-position
+/// by `progress_management::count_words_uc::fold_counts` — this is the read half of that
+/// contract. A `scope_item_id` absent from the roster is not an unknown figure: per
+/// `fold_counts`'s own doc, a book is only left out of the roster when it has neither
+/// counted prose nor a counted note, which for the footnote figure specifically just
+/// means "no footnotes in this book" — `0`, not "not computed".
+fn footnote_words_in_book(result: &WordCountResultDto, scope_item_id: u64) -> i64 {
+    result
+        .book_item_ids
+        .iter()
+        .position(|&id| id == scope_item_id)
+        .map(|idx| result.book_footnote_word_counts[idx])
+        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -429,5 +539,159 @@ mod tests {
             AnalysisState::Failed(msg) => assert_eq!(msg, "the scope vanished"),
             other => panic!("expected a stated failure, got {other:?}"),
         }
+    }
+
+    // ── the footnote-word companion operation ──────────────────────────────────
+
+    /// The read half of `count_words_uc::fold_counts`'s alignment contract: the two
+    /// vectors line up position for position, so the scope's figure sits at whichever
+    /// index its id occupies in `book_item_ids`. Asserted across several entries so a
+    /// bug that read the wrong index (an off-by-one, or the *value* vector instead of
+    /// the *footnote* one) could not hide behind a single-book fixture.
+    #[test]
+    fn footnote_words_in_book_picks_the_position_aligned_entry() {
+        let result = WordCountResultDto {
+            book_item_ids: vec![10, 20, 30],
+            book_word_counts: vec![900, 900, 900], // deliberately equal, so a bug that
+            // read this vector instead would not be caught by distinct footnote values
+            book_footnote_word_counts: vec![0, 44, 7],
+            ..Default::default()
+        };
+        assert_eq!(footnote_words_in_book(&result, 20), 44);
+        assert_eq!(footnote_words_in_book(&result, 30), 7);
+        assert_eq!(footnote_words_in_book(&result, 10), 0);
+    }
+
+    /// A book absent from the roster genuinely has no footnotes to report — per
+    /// `fold_counts`'s own doc a book is only left out when it has neither counted
+    /// prose nor a counted note — so this must read as `0`, not as an unknown figure.
+    #[test]
+    fn a_book_missing_from_the_roster_reports_zero_footnote_words() {
+        let result = WordCountResultDto {
+            book_item_ids: vec![1],
+            book_footnote_word_counts: vec![5],
+            ..Default::default()
+        };
+        assert_eq!(footnote_words_in_book(&result, 999), 0);
+    }
+
+    #[test]
+    fn an_empty_result_reports_zero_for_any_scope() {
+        assert_eq!(footnote_words_in_book(&WordCountResultDto::default(), 1), 0);
+    }
+
+    /// `is_running` must cover the companion operation too, or a Run pressed while only
+    /// the footnote figure is still catching up would fire a whole second `analyze_book`
+    /// pass for an answer already on its way.
+    #[test]
+    fn is_running_reflects_the_footnote_operation_too() {
+        let vm = vm(Signal::new(0));
+        assert!(!vm.is_running());
+        *vm.footnote_pending.borrow_mut() = Some(TrackedOp::given(
+            "footnote-op".into(),
+            crate::view_models::long_op::CapturedWork::for_test(Some(1)),
+        ));
+        assert!(
+            vm.is_running(),
+            "the main state is Idle, but the companion op is still in flight"
+        );
+    }
+
+    #[test]
+    fn an_event_for_another_operation_does_not_touch_the_footnote_slot() {
+        let vm = vm(Signal::new(0));
+        vm.footnote_words.set(Some(12));
+        *vm.footnote_pending.borrow_mut() = Some(TrackedOp::given(
+            "footnote-op".into(),
+            crate::view_models::long_op::CapturedWork::for_test(Some(1)),
+        ));
+
+        let foreign = Event {
+            origin: Origin::LongOperation(frontend::common::event::LongOperationEvent::Cancelled),
+            ids: vec![],
+            data: Some(r#"{"id":"someone-elses"}"#.to_string()),
+        };
+        vm.on_long_op_event(&foreign);
+        assert_eq!(
+            vm.footnote_words().get(),
+            Some(12),
+            "another feature's long operation must not touch this panel's footnote figure"
+        );
+        assert!(vm.footnote_pending.borrow().is_some());
+    }
+
+    #[test]
+    fn cancelling_the_footnote_operation_clears_it_without_a_stale_figure() {
+        let vm = vm(Signal::new(0));
+        vm.footnote_words.set(Some(9)); // a stale figure from a previous run
+        *vm.footnote_pending.borrow_mut() = Some(TrackedOp::given(
+            "footnote-op".into(),
+            crate::view_models::long_op::CapturedWork::for_test(Some(1)),
+        ));
+
+        let cancelled = Event {
+            origin: Origin::LongOperation(frontend::common::event::LongOperationEvent::Cancelled),
+            ids: vec![],
+            data: Some(r#"{"id":"footnote-op"}"#.to_string()),
+        };
+        vm.on_long_op_event(&cancelled);
+        assert_eq!(
+            vm.footnote_words().get(),
+            None,
+            "a cancelled companion op must not leave a stale figure on screen"
+        );
+        assert!(vm.footnote_pending.borrow().is_none());
+    }
+
+    /// A completion whose op id names no operation the manager actually knows about
+    /// (this test never really ran one) must resolve to "not known" rather than
+    /// panicking on the missing result or silently keeping a stale figure.
+    #[test]
+    fn completing_with_no_real_result_resolves_to_unknown_not_a_guess() {
+        let vm = vm(Signal::new(0));
+        vm.footnote_words.set(Some(3));
+        *vm.footnote_pending.borrow_mut() = Some(TrackedOp::given(
+            "footnote-op".into(),
+            crate::view_models::long_op::CapturedWork::for_test(Some(1)),
+        ));
+
+        let completed = Event {
+            origin: Origin::LongOperation(frontend::common::event::LongOperationEvent::Completed),
+            ids: vec![],
+            data: Some(r#"{"id":"footnote-op"}"#.to_string()),
+        };
+        vm.on_long_op_event(&completed);
+        assert_eq!(vm.footnote_words().get(), None);
+        assert!(vm.footnote_pending.borrow().is_none());
+    }
+
+    /// The main operation's own events must still resolve against `pending` even with a
+    /// footnote operation also in flight — the two tracked slots must not shadow each
+    /// other just because both can be `Some` at once.
+    #[test]
+    fn the_main_and_footnote_operations_are_tracked_independently() {
+        let vm = vm(Signal::new(0));
+        vm.state.set(AnalysisState::Running);
+        *vm.pending.borrow_mut() = Some(TrackedOp::given(
+            "main-op".into(),
+            crate::view_models::long_op::CapturedWork::for_test(Some(1)),
+        ));
+        *vm.footnote_pending.borrow_mut() = Some(TrackedOp::given(
+            "footnote-op".into(),
+            crate::view_models::long_op::CapturedWork::for_test(Some(1)),
+        ));
+
+        let cancelled_main = Event {
+            origin: Origin::LongOperation(frontend::common::event::LongOperationEvent::Cancelled),
+            ids: vec![],
+            data: Some(r#"{"id":"main-op"}"#.to_string()),
+        };
+        vm.on_long_op_event(&cancelled_main);
+        assert_eq!(vm.state().get(), AnalysisState::Idle);
+        assert!(vm.pending.borrow().is_none(), "the main slot is released");
+        assert!(
+            vm.footnote_pending.borrow().is_some(),
+            "the footnote op is a separate operation and must still be tracked"
+        );
     }
 }

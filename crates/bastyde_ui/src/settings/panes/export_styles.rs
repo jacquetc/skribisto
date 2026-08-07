@@ -28,8 +28,8 @@ use bastyde::widgets::{
 };
 
 use skribisto_compiler::{
-    DigitStyle, DirectionMode, EpigraphPlacement, ExportFormat, HeadingLanguage, HeadingScheme,
-    ImageHandling, LineSpacing, PageSize, Preset, SceneBreak,
+    DigitStyle, DirectionMode, EpigraphPlacement, ExportFormat, FootnoteNumbering, HeadingLanguage,
+    HeadingScheme, ImageHandling, LineSpacing, PageSize, Preset, SceneBreak,
 };
 use skribisto_model::scene_break::SceneBreakTier;
 
@@ -501,6 +501,14 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
             epigraph_placement_label(p.epigraph_placement),
         ),
         (
+            tr!(settings_styles_field_footnotes()),
+            yes_no(p.include_footnotes),
+        ),
+        (
+            tr!(settings_styles_field_footnote_numbering()),
+            footnote_numbering_label(&p.footnote_numbering),
+        ),
+        (
             tr!(settings_styles_field_paratexts()),
             yes_no(p.include_paratexts),
         ),
@@ -618,6 +626,14 @@ fn image_handling_label(h: ImageHandling) -> LocalizedString {
         ImageHandling::CopyBeside => tr!(settings_styles_images_beside()),
         ImageHandling::Embed => tr!(settings_styles_images_embed()),
         ImageHandling::Omit => tr!(settings_styles_images_omit()),
+    }
+}
+
+fn footnote_numbering_label(n: &FootnoteNumbering) -> LocalizedString {
+    match n {
+        FootnoteNumbering::Continuous => tr!(settings_styles_footnote_numbering_continuous()),
+        FootnoteNumbering::PerChapter => tr!(settings_styles_footnote_numbering_per_chapter()),
+        FootnoteNumbering::PerBook => tr!(settings_styles_footnote_numbering_per_book()),
     }
 }
 
@@ -800,6 +816,41 @@ impl Widget for StyleEditor {
             .segment(Segment::new(tr!(settings_styles_epigraph_after())))
             .segment(Segment::new(tr!(settings_styles_epigraph_before())));
 
+        // Footnotes. `footnote_placement` (page-bottom / chapter-end / book-end) gets no
+        // control here on purpose: nothing in the compiler reads it yet — `rg
+        // footnote_placement crates/` turns up only its own declaration in
+        // `skribisto_compiler::preset` — so every value renders an identical footnote
+        // today. A selector a writer can turn without anything in the export changing is
+        // worse than no selector at all, so this stays absent until some backend actually
+        // branches on it (a real page-bottom note for DOCX/PDF/LaTeX, a `noteref`/`aside`
+        // pop-up for EPUB/HTML, an end-of-book list for Markdown/plain text — see the
+        // field's own doc comment in `preset.rs` for the intended split). Add the control
+        // the same way as `epigraph_placement` above, the day that lands.
+        let footnotes = Signal::new(preset.include_footnotes);
+        bind_field(ctx, &self.vm, &id, &footnotes, |p, v| {
+            p.include_footnotes = v
+        });
+        let footnote_numberings = vec![
+            FootnoteNumbering::Continuous,
+            FootnoteNumbering::PerChapter,
+            FootnoteNumbering::PerBook,
+        ];
+        let footnote_numbering = Signal::new(Some(preset.footnote_numbering));
+        bind_field(ctx, &self.vm, &id, &footnote_numbering, |p, v| {
+            if let Some(v) = v {
+                p.footnote_numbering = v;
+            }
+        });
+        // Only meaningful with footnotes included, same reasoning as `word_count`/
+        // `page_books` below being gated on the title page: disabled, not hidden, so the
+        // setting stays visible as something that exists.
+        let footnote_numbering_box = ComboBox::from_items(
+            footnote_numberings,
+            footnote_numbering,
+            footnote_numbering_label,
+        )
+        .enabled(footnotes.clone());
+
         let paratexts = Signal::new(preset.include_paratexts);
         bind_field(ctx, &self.vm, &id, &paratexts, |p, v| {
             p.include_paratexts = v
@@ -914,6 +965,14 @@ impl Widget for StyleEditor {
             .line(
                 field_label(tr!(settings_styles_field_epigraph_placement())),
                 placement,
+            )
+            .line(
+                field_label(tr!(settings_styles_field_footnotes())),
+                Toggle::new(footnotes).labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_footnote_numbering())),
+                footnote_numbering_box,
             )
             .line(
                 field_label(tr!(settings_styles_field_paratexts())),
@@ -1124,6 +1183,67 @@ mod tests {
         }
     }
 
+    /// The footnote-numbering restart is a three-way choice (unlike the two-way epigraph
+    /// placement above), so it rides an `Option<FootnoteNumbering>` like the pane's own
+    /// `ComboBox` — and it still has to reach the saved style.
+    #[test]
+    fn the_footnote_numbering_writes_through_to_the_saved_style() {
+        let (vm, id, dir) = vm_with_a_user_style();
+        assert_eq!(
+            vm.user_preset(&id).unwrap().footnote_numbering,
+            FootnoteNumbering::Continuous,
+            "the built-in's own convention is what a new style starts from"
+        );
+
+        let sig = Signal::new(Some(FootnoteNumbering::Continuous));
+        let mut tree = WidgetTree::new();
+        tree.add_boxed(Box::new(FootnoteNumberingBinder {
+            vm: vm.clone(),
+            id: id.clone(),
+            sig: sig.clone(),
+        }));
+        tree.layout(SizeProposal::exact(100.0, 100.0));
+
+        sig.set(Some(FootnoteNumbering::PerChapter));
+        assert_eq!(
+            vm.user_preset(&id).unwrap().footnote_numbering,
+            FootnoteNumbering::PerChapter
+        );
+        sig.set(Some(FootnoteNumbering::PerBook));
+        assert_eq!(
+            vm.user_preset(&id).unwrap().footnote_numbering,
+            FootnoteNumbering::PerBook
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    struct FootnoteNumberingBinder {
+        vm: ExportStylesViewModel,
+        id: String,
+        sig: Signal<Option<FootnoteNumbering>>,
+    }
+
+    impl std::fmt::Debug for FootnoteNumberingBinder {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("FootnoteNumberingBinder").finish()
+        }
+    }
+
+    impl Widget for FootnoteNumberingBinder {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            bind_field(ctx, &self.vm, &self.id, &self.sig, |p, v| {
+                if let Some(v) = v {
+                    p.footnote_numbering = v;
+                }
+            });
+            Vec::new()
+        }
+
+        fn layout_response(&self, p: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+            p.resolve(0.0, 0.0).into()
+        }
+    }
+
     /// Every switch the pane added, with the write it performs. Adding a knob to the pane
     /// without adding it here leaves it untested — but it leaves it *visibly* untested,
     /// next to its six neighbours.
@@ -1136,6 +1256,7 @@ mod tests {
         ("title_page", |p, v| p.book_title_page = v),
         ("word_count", |p, v| p.title_page_word_count = v),
         ("include_paratexts", |p, v| p.include_paratexts = v),
+        ("include_footnotes", |p, v| p.include_footnotes = v),
     ];
 
     /// A widget whose only job is to run `bind_field` over `FIELDS` — `bind_field` needs a
@@ -1174,6 +1295,7 @@ mod tests {
             "title_page" => p.book_title_page,
             "word_count" => p.title_page_word_count,
             "include_paratexts" => p.include_paratexts,
+            "include_footnotes" => p.include_footnotes,
             other => panic!("unknown field {other}"),
         }
     }

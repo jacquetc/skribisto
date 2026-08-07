@@ -344,6 +344,11 @@ settings-styles-field-paratexts = Inclure les paratextes
 settings-styles-field-epigraph-placement = Position de l'épigraphe
 settings-styles-epigraph-after = Après le titre
 settings-styles-epigraph-before = Avant le titre
+settings-styles-field-footnotes = Inclure les notes de bas de page
+settings-styles-field-footnote-numbering = Numérotation des notes
+settings-styles-footnote-numbering-continuous = Continue
+settings-styles-footnote-numbering-per-chapter = Redémarre à chaque chapitre
+settings-styles-footnote-numbering-per-book = Redémarre à chaque livre
 settings-styles-field-images = Images
 menu-image = &Image
 settings-styles-images-beside = À côté du document
@@ -1471,6 +1476,10 @@ analysis-median-words = La scène médiane de ce livre compte { $count } mots.
 analysis-median-line = Médiane : { $count } mots
 analysis-dialogue = Dialogue
 analysis-dialogue-unsupported = Le dialogue n'est pas encore mesuré pour cette langue.
+
+analysis-footnote-words = Mots en notes de bas de page
+analysis-footnote-words-count = { $count } mots se trouvent dans les notes de bas de page de ce livre, comptés à part du total du manuscrit.
+analysis-footnote-words-pending = Comptage des notes de bas de page…
 
 analysis-echoes = Mots répétés
 analysis-echoes-explainer = Les mots distinctifs employés deux fois à moins d'une page d'intervalle, la paire la plus rapprochée d'abord. Les mots courants sont écartés. Une répétition n'est pas une faute : c'est seulement là qu'un lecteur risque de l'entendre. Choisissez une scène pour l'ouvrir.

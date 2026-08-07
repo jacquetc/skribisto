@@ -342,6 +342,11 @@ settings-styles-field-paratexts = Include paratexts
 settings-styles-field-epigraph-placement = Epigraph position
 settings-styles-epigraph-after = After the title
 settings-styles-epigraph-before = Before the title
+settings-styles-field-footnotes = Include footnotes
+settings-styles-field-footnote-numbering = Footnote numbering
+settings-styles-footnote-numbering-continuous = Continuous
+settings-styles-footnote-numbering-per-chapter = Restart each chapter
+settings-styles-footnote-numbering-per-book = Restart each book
 settings-styles-field-images = Images
 menu-image = &Image
 settings-styles-images-beside = Beside the document
@@ -1468,6 +1473,15 @@ analysis-median-line = Median: { $count } words
 analysis-dialogue = Dialogue
 # Said instead of showing 0%, which would read as "there is no dialogue here".
 analysis-dialogue-unsupported = Dialogue is not measured for this language yet.
+
+analysis-footnote-words = Footnote words
+# Kept apart from the manuscript total on purpose — see the module doc on
+# AnalysisViewModel::run for why a footnote is authored prose but must not be folded
+# into how far along the story reads as being.
+analysis-footnote-words-count = { $count } words are in this book's footnotes, kept apart from the manuscript total.
+# The figure comes from its own operation and can still be catching up even once the
+# rest of this report is ready — said plainly rather than shown as a misleading 0.
+analysis-footnote-words-pending = Counting the footnotes…
 
 analysis-echoes = Repeated words
 # What the list is, before the list. Says the filtering out loud: a writer who notices

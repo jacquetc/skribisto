@@ -95,6 +95,16 @@ impl Widget for AnalysisPane {
             ctx.binding_registry(),
             BindingLevel::Rebuild,
         );
+        // The footnote-word figure lands from its own, separately-timed long operation
+        // (see `AnalysisViewModel`'s module doc), so it can settle *after* the main
+        // result has already put the pane in `Ready` — this binding is what makes that
+        // late arrival repaint the Shape line rather than sitting stale until some
+        // unrelated rebuild happens to pick it up.
+        self.vm.footnote_words().bind_to(
+            ctx.self_id(),
+            ctx.binding_registry(),
+            BindingLevel::Rebuild,
+        );
 
         // The one automatic run: the writer navigated here to see a report, and Pace's own
         // empty state is the precedent for not making them click first.
@@ -221,7 +231,11 @@ impl AnalysisPane {
     /// `AnalysisCategory::ALL` is the shared contract, asserted by its own test.
     fn categories(&self, dto: &BookAnalysisResultDto) -> impl Widget {
         Switcher::new(self.vm.category())
-            .child_boxed(scrolled(shape_view(dto, self.vm.ignore_empty())))
+            .child_boxed(scrolled(shape_view(
+                dto,
+                self.vm.ignore_empty(),
+                self.vm.footnote_words(),
+            )))
             .child_boxed(scrolled(repetition_view(&self.vm, dto)))
             .child_boxed(scrolled(synopsis_view(dto)))
             .child_boxed(scrolled(voice_view(dto)))
@@ -316,10 +330,21 @@ fn empty_toggle(ignore_empty: Signal<bool>) -> impl Widget {
 /// correct scene length, only a scene that is unlike its neighbours. Using the median rather
 /// than the mean keeps one 6,000-word chapter from moving the line everything else is judged
 /// against.
-fn shape_view(dto: &BookAnalysisResultDto, ignore_empty: Signal<bool>) -> impl Widget {
+fn shape_view(
+    dto: &BookAnalysisResultDto,
+    ignore_empty: Signal<bool>,
+    footnote_words: Signal<Option<i64>>,
+) -> impl Widget {
+    // Read once, up front, so every return path below — including the two early "no
+    // scenes"/"all texts empty" ones — carries the same footnote line. It does not
+    // depend on `scenes_of` at all: a Book folder with a note on its own synopsis and
+    // not one scene written yet still has a real footnote figure to show.
+    let footnote_section = footnote_words_section(footnote_words.get());
     let all = scenes_of(dto);
     if all.is_empty() {
-        return VStack::new().child(note(tr!(analysis_no_scenes())));
+        return VStack::new()
+            .child(note(tr!(analysis_no_scenes())))
+            .child(footnote_section);
     }
     let hidden = all.iter().filter(|s| is_empty_text(s)).count();
     let hiding = ignore_empty.get();
@@ -334,7 +359,8 @@ fn shape_view(dto: &BookAnalysisResultDto, ignore_empty: Signal<bool>) -> impl W
         return VStack::new()
             .spacing(10.0)
             .child(empty_toggle(ignore_empty))
-            .child(note(tr!(analysis_all_texts_empty())));
+            .child(note(tr!(analysis_all_texts_empty())))
+            .child(footnote_section);
     }
 
     let words: Vec<i64> = scenes
@@ -425,7 +451,27 @@ fn shape_view(dto: &BookAnalysisResultDto, ignore_empty: Signal<bool>) -> impl W
                 .legend(false),
             ));
     }
-    col
+    col.child(footnote_section)
+}
+
+/// The book's footnote-word figure, kept visually apart from the words-per-scene chart
+/// above it for the same reason `progress_management::count_words_uc` keeps the two
+/// totals apart in the data: a footnote is authored prose, but showing it as one more
+/// bar in "words per scene" would credit a heavily annotated scene with story progress
+/// it did not make.
+///
+/// `None` is shown as "still counting" rather than as `0` — the figure comes from its
+/// own long operation (see `AnalysisViewModel`'s module doc) that can still be in
+/// flight even once the rest of Shape is ready to show.
+fn footnote_words_section(value: Option<i64>) -> impl Widget {
+    let line = match value {
+        Some(n) => note(tr!(analysis_footnote_words_count(count = n))),
+        None => note(tr!(analysis_footnote_words_pending())),
+    };
+    VStack::new()
+        .spacing(6.0)
+        .child(heading(tr!(analysis_footnote_words())))
+        .child(line)
 }
 
 // ── Repetition ────────────────────────────────────────────────────────────────
@@ -947,5 +993,63 @@ mod tests {
         use skribisto_model::analysis::stats;
         assert_eq!(stats::median(&[1.0, 2.0, 3.0, 4.0, 100.0]), Some(3.0));
         assert_eq!(stats::mean(&[1.0, 2.0, 3.0, 4.0, 100.0]), Some(22.0));
+    }
+
+    // ── the footnote-word line ───────────────────────────────────────────────
+
+    /// Shape must still lay out once a real footnote figure is known — the line joins
+    /// the words-per-scene chart rather than replacing it.
+    #[test]
+    fn shape_lays_out_with_a_known_footnote_figure() {
+        use bastyde::core::widget_tree::WidgetTree;
+        use bastyde::prelude::{Signal, SizeProposal};
+
+        let d = dto(vec![scene(1, "Chapter 1", "")]);
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(super::shape_view(
+            &d,
+            Signal::new(true),
+            Signal::new(Some(420)),
+        )));
+        tree.layout(SizeProposal::exact(700.0, 900.0));
+        assert!(tree.bounds(id).height > 0.0, "the pane laid out to nothing");
+    }
+
+    /// Before the companion `count_words` operation has landed, the figure is `None` —
+    /// Shape must still lay out (as "still counting"), never panic on the missing value.
+    #[test]
+    fn shape_lays_out_while_the_footnote_figure_is_still_pending() {
+        use bastyde::core::widget_tree::WidgetTree;
+        use bastyde::prelude::{Signal, SizeProposal};
+
+        let d = dto(vec![scene(1, "Chapter 1", "")]);
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(super::shape_view(
+            &d,
+            Signal::new(true),
+            Signal::new(None),
+        )));
+        tree.layout(SizeProposal::exact(700.0, 900.0));
+        assert!(tree.bounds(id).height > 0.0, "the pane laid out to nothing");
+    }
+
+    /// The footnote line does not depend on `scenes_of` at all — a Book folder with a
+    /// note on its own synopsis and not one scene written yet still has a real figure
+    /// to show, so the "no scenes yet" early return must still carry it (and still lay
+    /// out rather than panicking on a `VStack` built from two different branches).
+    #[test]
+    fn the_footnote_line_survives_the_no_scenes_early_return() {
+        use bastyde::core::widget_tree::WidgetTree;
+        use bastyde::prelude::{Signal, SizeProposal};
+
+        let d = dto(vec![]);
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(super::shape_view(
+            &d,
+            Signal::new(true),
+            Signal::new(Some(12)),
+        )));
+        tree.layout(SizeProposal::exact(700.0, 900.0));
+        assert!(tree.bounds(id).height > 0.0, "the pane laid out to nothing");
     }
 }
