@@ -661,6 +661,40 @@ mod tests {
         }
     }
 
+    /// Every glyph a preset can *write* must be a glyph the app can *read back*.
+    ///
+    /// The two vocabularies are deliberately separate — `skribisto_model::scene_break`
+    /// is fixed and preset-independent, so changing a preset never un-recognises a
+    /// mark the author already typed — but separate is not the same as unrelated.
+    /// A preset that emits a mark the recogniser has never heard of tells the writer
+    /// their own house convention is ordinary prose: the mark is counted as words,
+    /// never stripped on export, and invisible to every consumer that asks "is this
+    /// a break?". That gap was real for `…`, `＊` and `◇` until this test existed.
+    ///
+    /// This is the pin, not the derivation: the vocabulary stays a hand-written
+    /// constant, and adding a preset glyph that is not in it fails here rather than
+    /// making the recogniser depend on the export layer.
+    #[test]
+    fn every_preset_glyph_is_a_recognised_scene_break() {
+        for p in builtin_presets() {
+            for (tier_name, brk) in [
+                ("scene_break", &p.scene_break),
+                ("major_scene_break", &p.major_scene_break),
+            ] {
+                let SceneBreak::Glyph(glyph) = brk else {
+                    continue; // BlankLine writes no text, so there is nothing to read back
+                };
+                assert!(
+                    skribisto_model::scene_break::tier_of_plain_line(glyph).is_some(),
+                    "preset '{}' emits {tier_name} '{glyph}', which \
+                     skribisto_model::scene_break does not recognise — add it to \
+                     MINOR_MARKERS or MAJOR_MARKERS",
+                    p.id
+                );
+            }
+        }
+    }
+
     #[test]
     fn builtin_ids_are_unique() {
         let mut ids: Vec<String> = builtin_presets().into_iter().map(|p| p.id).collect();

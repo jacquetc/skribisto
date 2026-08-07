@@ -1853,6 +1853,150 @@ features:
       - name: warnings
         type: string
         is_list: true
+
+  # Document import, part one of two: read the chosen files and work out what
+  # tree they would make. Writes nothing.
+  #
+  # Format-neutral on purpose. The plan rows carry nothing that says "this came
+  # from CommonMark" -- an ODT or DOCX scanner produces the identical shape --
+  # so adding a format later is a new `document_ingest::SourceScanner` and a
+  # match arm, not a second use-case pair with its own regen, its own
+  # hand-trimmed uow_action list, and a near-duplicate Apply DTO beside this one.
+  #
+  # `long_operation` for the IO, not the arithmetic: converting 78,000 words
+  # measures at ~5 ms, but a dropped folder is hundreds of individual reads on
+  # whatever the UI's own thread is, and a synchronous use case in this codebase
+  # runs there. Same reason `import_plume_creator_file` is one despite touching
+  # no entity at all.
+  #
+  # This is Qleany's own Scenario 4 (see `qleany docs flow`): a read-only long
+  # operation crunches and returns a preview, the writer reviews it, and a
+  # separate regular undoable use case applies what they accepted. Splitting it
+  # is what makes the review step possible, and what keeps the undo entry --
+  # `undoable` is dropped under `long_operation`, so the writing half must be
+  # synchronous.
+  - name: analyze_document_import
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    undoable: false
+    read_only: true
+    long_operation: true
+    dto_in:
+      name: AnalyzeDocumentImportDto
+      fields:
+      # Which open Work to import into -- its `chapter_mode` decides how a
+      # detected Chapter is encoded, and there is no per-item override.
+      - name: work_id
+        type: uinteger
+      # The destination binder, read to warn about titles that already exist
+      # there. Re-importing an edited file is an ordinary workflow now that this
+      # is the only import path, and nothing else would notice it doubling a
+      # manuscript.
+      - name: binder_id
+        type: uinteger
+      - name: source_paths
+        type: string
+        is_list: true
+      # What the shallowest heading level becomes. Chosen from the destination,
+      # since importing under a Book means the first level is a Part while
+      # importing at the root means it is a Book.
+      - name: start_kind
+        type: enum
+        enum_name: ImportRowKind
+        enum_values:
+        - Book
+        - Part
+        - Chapter
+        - Scene
+        - Note
+        - NoteFolder
+        - Folder
+        - Paratext
+        - ParatextFolder
+        - EndOfBook
+      - name: base_indent
+        type: integer
+    dto_out:
+      name: DocumentImportPlanDto
+      fields:
+      # One flat, depth-encoded row list rather than a tree -- the same `row` +
+      # `rows` escape hatch analysis_management's flat lists use, and the shape
+      # the binder actually has (an ordered stream plus an indent).
+      - name: row
+        type: enum
+        enum_name: DocumentImportRow
+        enum_values:
+        - Empty
+        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, scene_breaks: i64, word_count: i64, origin: String, included: bool }"
+      - name: rows
+        type: enum
+        enum_name: DocumentImportRows
+        enum_values:
+        - Empty
+        - "Found(Vec<DocumentImportRow>)"
+      # Diagnostics travel as a key plus its data rather than a rendered
+      # sentence, so the UI can say them in the writer's own locale -- the house
+      # rule is that user-visible strings go through Fluent and data stays
+      # literal. `row_index` is -1 for one that belongs to the import as a whole.
+      - name: diagnostic
+        type: enum
+        enum_name: ImportDiagnosticRow
+        enum_values:
+        - Empty
+        - "Reported { key: String, severity: String, path: String, detail: String, count: i64, row_index: i64 }"
+      - name: diagnostics
+        type: enum
+        enum_name: ImportDiagnosticRows
+        enum_values:
+        - Empty
+        - "Reported(Vec<ImportDiagnosticRow>)"
+
+  # Part two: create what the writer accepted, as one undo entry.
+  #
+  # Synchronous, and that is not a workaround -- Qleany drops `undoable` under
+  # `long_operation`, and a Rust use case is synchronous anyway. The rows arrive
+  # already converted to Djot by the analyse half, so this opens a transaction,
+  # creates, and commits without parsing anything.
+  - name: apply_document_import
+    entities:
+    - Work
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: ApplyDocumentImportDto
+      fields:
+      - name: work_id
+        type: uinteger
+      - name: binder_id
+        type: uinteger
+      # The row to insert after, or 0 to append at the end of the binder.
+      - name: anchor_item_id
+        type: uinteger
+      # Deliberately a narrower row than the plan's: word counts, break counts
+      # and diagnostics are review-time information and have no business in a
+      # write. What is left is what actually gets created.
+      - name: row
+        type: enum
+        enum_name: ApplyImportRow
+        enum_values:
+        - Empty
+        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String }"
+      - name: rows
+        type: enum
+        enum_name: ApplyImportRows
+        enum_values:
+        - Empty
+        - "Create(Vec<ApplyImportRow>)"
+    dto_out:
+      name: ApplyDocumentImportResultDto
+      fields:
+      - name: created_ids
+        type: uinteger
+        is_list: true
 - name: search_management
   use_cases:
   # Synchronous Command UoW. NOT `read_only` — a QueryUnitOfWork has no commit(), so

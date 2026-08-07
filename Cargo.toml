@@ -19,6 +19,7 @@ members = [
     "crates/note_template_management",
     "crates/binder_item_management",
     "crates/binder_ordering",
+    "crates/document_ingest",
     "crates/handling_app_lifecycle",
     "crates/import_management",
     "crates/search_management",
@@ -77,6 +78,7 @@ import_management = { package = "skribisto-import-management", version = "0.0.1"
 search_management = { package = "skribisto-search-management", version = "0.0.1", path = "crates/search_management" }
 skribisto_model = { package = "skribisto-model", version = "0.0.1", path = "crates/skribisto_model" }
 skrib_format = { package = "skribisto-skrib-format", version = "0.0.1", path = "crates/skrib_format" }
+document_ingest = { package = "skribisto-document-ingest", version = "0.0.1", path = "crates/document_ingest" }
 skribisto_compiler = { package = "skribisto-compiler", version = "0.0.1", path = "crates/skribisto_compiler" }
 skribisto_fonts = { package = "skribisto-fonts", version = "0.0.1", path = "crates/skribisto-fonts" }
 

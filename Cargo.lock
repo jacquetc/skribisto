@@ -5568,6 +5568,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "skribisto-document-ingest"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "encoding_rs",
+ "pulldown-cmark",
+ "skribisto-common",
+ "skribisto-model",
+ "skribisto-skrib-format",
+]
+
+[[package]]
 name = "skribisto-export-management"
 version = "0.0.1"
 dependencies = [
@@ -5636,6 +5648,8 @@ dependencies = [
  "serde",
  "serde_json",
  "skribisto-common",
+ "skribisto-direct-access",
+ "skribisto-document-ingest",
  "skribisto-macros",
  "skribisto-model",
  "skribisto-skrib-format",

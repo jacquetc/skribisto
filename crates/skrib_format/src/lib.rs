@@ -64,7 +64,7 @@ pub use bundle::{
     ProjectManifest, ProseRef, ShapeTag, SmartPunctuationFile, TextReplacementRuleFile,
     TrashInfoFile, WorkBundle, WorkFile,
 };
-pub use convert::{html_to_djot, markdown_to_html};
+pub use convert::{html_to_djot, markdown_to_djot, markdown_to_html};
 pub use errors::SkribFormatError;
 pub use fingerprint::content_fingerprint;
 pub use loaded::{

@@ -26,6 +26,8 @@ common = { workspace = true }
 macros = { workspace = true }
 skribisto_model = { workspace = true }
 skrib_format = { workspace = true }
+# The format-agnostic ingest pipeline: block model, scanner seam, planning.
+document_ingest = { workspace = true }
 serde = "1.0"
 serde_json = "1.0"
 chrono = { workspace = true }
@@ -35,6 +37,9 @@ zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 roxmltree = "0.21.1"
 
 [dev-dependencies]
+# The ANALYSE->APPLY integration test builds a real store through direct_access.
+direct_access = { workspace = true }
+skribisto_model = { workspace = true }
 # The integration test builds `.plume` fixtures (zip + loose dir) in a scratch
 # dir; `skrib_format` (a normal dep) reads the produced `.skrib` back.
 tempfile = "3"

@@ -65,3 +65,30 @@ pub fn markdown_to_html(markdown: &str) -> Result<String> {
     doc.set_markdown(markdown)?.wait()?;
     Ok(doc.to_html()?)
 }
+
+/// Convert Markdown to Djot — the format `Content.data` actually holds. Blank
+/// input → empty string.
+///
+/// The conversion goes through `text-document`'s own document model rather than
+/// rewriting the source text, which is what makes it safe: CommonMark and Djot
+/// **swap their emphasis delimiters** (`*x*` is emphasis in Markdown and *strong*
+/// in Djot), so copying the bytes across would silently bold every italicised
+/// word in an imported manuscript — the single most common construct in fiction.
+/// Parsing to a model that records "this run is italic" and re-emitting sidesteps
+/// the whole class. Measured at roughly 250 µs for a 1,500-word scene.
+///
+/// **Two things the caller must handle before calling.** `text-document`'s
+/// Markdown reader has no arm for `Event::Rule`, so a thematic break (`***`,
+/// `---`, `* * *`) is *silently dropped* — a scene-break marker must be
+/// recognised and re-emitted in its escaped Djot form by the caller, never handed
+/// through as source. And YAML front matter is not recognised either: a leading
+/// `---\ntitle: …\n---` parses as a setext heading and corrupts into
+/// `## title: …`, so it must be stripped first.
+pub fn markdown_to_djot(markdown: &str) -> Result<String> {
+    if markdown.trim().is_empty() {
+        return Ok(String::new());
+    }
+    let doc = TextDocument::new();
+    doc.set_markdown(markdown)?.wait()?;
+    Ok(doc.to_djot()?)
+}

@@ -66,12 +66,22 @@ pub const CANONICAL_MAJOR: &str = "# # #";
 /// Deliberately liberal: a writer coming from Markdown, Scrivener or a plain
 /// manuscript may reach for any of these, and silently treating a near-miss as
 /// ordinary prose would put a stray `***` in the finished book.
-pub const MINOR_MARKERS: &[&str] = &["* * *", "***", "*", "#"];
+///
+/// `＊` (U+FF0A FULLWIDTH ASTERISK) is what Japanese web-novel practice uses, and
+/// is what the `manuscript-ja-web` export preset emits for an ordinary break — so
+/// an author writing to that convention must be able to type it and be understood.
+pub const MINOR_MARKERS: &[&str] = &["* * *", "***", "*", "#", "＊"];
 
 /// Accepted spellings of a major break. `⁂` (U+2042 ASTERISM) is recognised but
 /// never emitted as a default — it is absent from Times New Roman, Calibri,
 /// Georgia and Kindle's Bookerly, so it risks rendering as tofu.
-pub const MAJOR_MARKERS: &[&str] = &["# # #", "###", "⁂"];
+///
+/// `…` and `◇` are here for the same reason `＊` is above: they are the stronger
+/// mark the `manuscript-ru` and `manuscript-ja-web` presets *write*, and a
+/// vocabulary that can export a mark but not recognise it tells the writer their
+/// own convention is prose. That gap was real — the ellipsis a Russian author
+/// typed as a break counted as a word and was never stripped.
+pub const MAJOR_MARKERS: &[&str] = &["# # #", "###", "⁂", "…", "◇"];
 
 /// The canonical mark for `tier` as **literal text** — what the author sees.
 ///
@@ -207,11 +217,30 @@ pub fn strip_markers_plain(text: &str) -> Cow<'_, str> {
     Cow::Owned(kept.join("\n"))
 }
 
-/// Cheap pre-filter: no marker exists without one of these characters, so prose
-/// containing none can be handled verbatim, without splitting it into blocks at
-/// all. The compiler relies on this to leave ordinary prose completely untouched.
+/// Cheap pre-filter: prose with no line that *could* be a marker is handled
+/// verbatim, without splitting it into blocks at all. The compiler relies on this
+/// to leave ordinary prose completely untouched.
+///
+/// A marker is a whole line by definition, so the test is line-anchored rather
+/// than a bare `contains`. That matters now that `…` is in the vocabulary: an
+/// ellipsis is ordinary punctuation in the middle of a sentence, and a substring
+/// test would report "might contain a marker" for almost every page of French or
+/// Russian prose, costing the fast path exactly where it is most wanted. Anchoring
+/// also tightens the older characters — a paragraph mentioning `*` no longer
+/// forces a block split either.
+///
+/// False positives are free (they only cost the walk the caller would have done);
+/// a false negative would silently leave a marker in the finished book, so the
+/// test admits any line built solely from marker characters, whitespace, and the
+/// backslash Djot escapes them with.
 pub fn might_contain_marker(s: &str) -> bool {
-    s.contains('*') || s.contains('#') || s.contains('⁂')
+    s.lines().any(|line| {
+        let trimmed = line.trim();
+        !trimmed.is_empty()
+            && trimmed.chars().all(|c| {
+                matches!(c, '*' | '#' | '⁂' | '…' | '＊' | '◇' | '\\') || c.is_whitespace()
+            })
+    })
 }
 
 #[cfg(test)]
