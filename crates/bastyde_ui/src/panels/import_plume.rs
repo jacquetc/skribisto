@@ -101,7 +101,14 @@ impl ImportPlumePanel {
                             // other dialogs (not a localized key).
                             .add_filter("Plume Creator project", &["plume", "plume_backup"])
                             .validation(vm.source_validation())
-                            .on_pick(move |res, _ctx| picker_vm.apply_source_defaults(res)),
+                            .on_pick(move |res, ctx| {
+                                crate::models::remember_pick(
+                                    ctx,
+                                    crate::models::FolderPurpose::ImportPlume,
+                                    res,
+                                );
+                                picker_vm.apply_source_defaults(res)
+                            }),
                     ))
                     .child(Self::hint(tr!(import_plume_source_hint()))),
             )

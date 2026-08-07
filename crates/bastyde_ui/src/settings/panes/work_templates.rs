@@ -192,6 +192,11 @@ fn import_button(vm: &NoteTemplatesViewModel) -> impl Widget {
                     ),
             );
             let _ = ctx.pick_files(req, move |res, c| {
+                crate::models::remember_pick(
+                    c,
+                    crate::models::FolderPurpose::DataInterchange,
+                    &res,
+                );
                 let FileDialogResult::Files(paths) = res else {
                     return;
                 };

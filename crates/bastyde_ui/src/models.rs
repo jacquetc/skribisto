@@ -81,7 +81,7 @@ pub use installed_dictionaries_model::{
 // manuscript, so several of these have no consumer there.
 pub use folder_memory_file::{
     FolderMemoryService, FolderPurpose, dialog_start_in, picker_starts_in, remember_dialog_dir,
-    remember_dialog_file,
+    remember_dialog_file, remember_pick,
 };
 pub use import_prefs_file::ImportPrefsService;
 pub use manuscript_digest::{LiveRow, digest_of, live_manuscript};

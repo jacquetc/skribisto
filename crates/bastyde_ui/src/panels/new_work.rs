@@ -237,7 +237,14 @@ impl NewWorkPanel {
                         crate::models::FolderPurpose::NewProjectLocation,
                         FilePickerField::new(vm.location())
                             .kind(FilePickerKind::PickFolder)
-                            .validation(vm.location_validation()),
+                            .validation(vm.location_validation())
+                            .on_pick(|res, ctx| {
+                                crate::models::remember_pick(
+                                    ctx,
+                                    crate::models::FolderPurpose::NewProjectLocation,
+                                    res,
+                                )
+                            }),
                     ))
                     .child(self.path_preview()),
             )

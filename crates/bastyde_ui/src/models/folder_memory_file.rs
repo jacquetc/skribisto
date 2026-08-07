@@ -284,6 +284,39 @@ pub fn remember_dialog_dir(
     }
 }
 
+/// Remember wherever a dialog's answer landed, whatever shape the answer took.
+///
+/// The **write twin of [`picker_starts_in`]**, and the reason it exists is that the
+/// two were not twins before: a `FilePickerField` is handed its starting directory
+/// at build time, so recording where the writer actually went is a *separate* call
+/// on a *separate* hook (`on_pick`) — easy to add the reading half and never notice
+/// the writing half is missing. Six of the app's dialogs were exactly that: they
+/// opened where you last were and then forgot where you went, so the memory could
+/// only ever be updated by some *other* dialog sharing the purpose.
+///
+/// One function over the whole `FileDialogResult` rather than a `match` at each
+/// call site: every site then reads `.on_pick(move |res, ctx| remember_pick(ctx, P, res))`,
+/// and a new dialog that forgets it is visibly missing a line rather than subtly
+/// missing an arm. Cancellation (`None` / an empty `Vec`) and `Error` record
+/// nothing — the writer did not choose a folder, so there is nothing to learn.
+pub fn remember_pick(
+    ctx: &bastyde::prelude::EventContext,
+    purpose: FolderPurpose,
+    result: &bastyde::prelude::FileDialogResult,
+) {
+    use bastyde::prelude::FileDialogResult as R;
+    match result {
+        R::File(Some(path)) | R::Saved(Some(path)) => remember_dialog_file(ctx, purpose, path),
+        R::Files(paths) => {
+            if let Some(path) = paths.first() {
+                remember_dialog_file(ctx, purpose, path);
+            }
+        }
+        R::Folder(Some(dir)) => remember_dialog_dir(ctx, purpose, dir),
+        R::File(None) | R::Saved(None) | R::Folder(None) | R::Error(_) => {}
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -401,5 +434,93 @@ mod tests {
             Some(real),
             "a relative path must be ignored rather than overwrite a usable answer"
         );
+    }
+}
+
+/// A source sweep, not a behaviour test — the defect it guards is *omission*, and
+/// no behaviour test can see a call site that was never written.
+#[cfg(test)]
+mod pairing_tests {
+    /// Every dialog that opens where the writer last was must also record where
+    /// they went.
+    ///
+    /// **Regression.** `picker_starts_in` is called at *build* time and
+    /// `remember_pick` on the `on_pick` hook, so the two halves live in different
+    /// places and adding only the first is invisible: the dialog opens in the right
+    /// folder and simply never learns a new one. Six surfaces shipped that way —
+    /// the export destination, the new-project location, the Plume source, both
+    /// Hunspell pickers, and the template import — each of which could only ever be
+    /// updated by some *other* dialog that happened to share its `FolderPurpose`.
+    ///
+    /// Reads the sources rather than exercising the widgets because that is where
+    /// the fault is. `picker_starts_in` wraps a `FilePickerField`; this asserts the
+    /// same expression also carries an `on_pick`. Crude, and it catches exactly the
+    /// mistake that was made five more times than anybody noticed.
+    #[test]
+    fn every_picker_that_starts_in_a_remembered_folder_also_records_the_new_one() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut offenders: Vec<String> = Vec::new();
+
+        for path in walk(&root) {
+            let text = std::fs::read_to_string(&path).expect("read source");
+            // Each `picker_starts_in(` call, to the end of its argument list.
+            for (index, _) in text.match_indices("picker_starts_in(") {
+                // `models/folder_memory_file.rs` declares it; it does not call it.
+                if path.ends_with("folder_memory_file.rs") {
+                    continue;
+                }
+                let rest = &text[index..];
+                let end = balanced_end(rest).unwrap_or(rest.len());
+                if !rest[..end].contains("on_pick") {
+                    let line = text[..index].matches('\n').count() + 1;
+                    offenders.push(format!(
+                        "{}:{line}",
+                        path.strip_prefix(&root).unwrap_or(&path).display()
+                    ));
+                }
+            }
+        }
+
+        assert!(
+            offenders.is_empty(),
+            "these pickers start in a remembered folder but never record the one the \
+             writer chose — add `.on_pick(|res, ctx| remember_pick(ctx, <purpose>, res))`:\n  {}",
+            offenders.join("\n  ")
+        );
+    }
+
+    /// Byte offset just past the `(` … `)` opened at the start of `text`.
+    fn balanced_end(text: &str) -> Option<usize> {
+        let open = text.find('(')?;
+        let mut depth = 0i32;
+        for (i, ch) in text[open..].char_indices() {
+            match ch {
+                '(' => depth += 1,
+                ')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(open + i + 1);
+                    }
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
+    fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+        let mut out = Vec::new();
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return out;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                out.extend(walk(&path));
+            } else if path.extension().is_some_and(|e| e == "rs") {
+                out.push(path);
+            }
+        }
+        out
     }
 }

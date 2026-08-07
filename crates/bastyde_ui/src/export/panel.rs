@@ -166,7 +166,10 @@ fn destination_field(ctx: &BuildContext, vm: &ExportViewModel) -> FilePickerFiel
         FilePickerField::new(vm.output_path())
             .kind(FilePickerKind::SaveFile)
             .default_file_name(default_name)
-            .add_filter("Export", &[current_extension(vm)]),
+            .add_filter("Export", &[current_extension(vm)])
+            .on_pick(|res, ctx| {
+                crate::models::remember_pick(ctx, crate::models::FolderPurpose::Export, res)
+            }),
     )
 }
 

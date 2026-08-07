@@ -106,7 +106,14 @@ impl AddDictionaryPanel {
                         .kind(FilePickerKind::OpenFile)
                         .add_filter("Hunspell affix (.aff)", &["aff"])
                         .validation(vm.aff_validation())
-                        .on_pick(move |res, _ctx| picker_vm.apply_aff_pick(res)),
+                        .on_pick(move |res, ctx| {
+                            crate::models::remember_pick(
+                                ctx,
+                                crate::models::FolderPurpose::AddDictionary,
+                                res,
+                            );
+                            picker_vm.apply_aff_pick(res)
+                        }),
                 ),
             )
             // ── .dic (open-file picker) ───────────────────────────────────
@@ -118,7 +125,14 @@ impl AddDictionaryPanel {
                     FilePickerField::new(vm.dic())
                         .kind(FilePickerKind::OpenFile)
                         .add_filter("Hunspell dictionary (.dic)", &["dic"])
-                        .validation(vm.dic_validation()),
+                        .validation(vm.dic_validation())
+                        .on_pick(|res, ctx| {
+                            crate::models::remember_pick(
+                                ctx,
+                                crate::models::FolderPurpose::AddDictionary,
+                                res,
+                            )
+                        }),
                 ),
             )
     }
