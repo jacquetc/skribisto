@@ -335,9 +335,10 @@ impl OverviewRowsModel {
             Origin::TrashManagement(TrashManagementEvent::RestoreItems),
             Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
         ];
-        for origin in origins {
+        // Coalesced — see `models::coalesced_reload`.
+        {
             let me = self.clone();
-            ctx.subscribe_event(origin, move |_e: &Event| me.reload());
+            crate::models::coalesced_reload::reload_on_events(ctx, origins, move || me.reload());
         }
         // Project (re)load — guarded (loose form): the slice's own source closure
         // always re-derives from this model's own `work_id`, so a sibling Work's

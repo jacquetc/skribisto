@@ -33,7 +33,7 @@ use bastyde::data::{
 use bastyde::prelude::BuildContext;
 use bastyde::prelude::Signal;
 use frontend::common::event::{
-    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event, Origin, TrashManagementEvent,
+    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Origin, TrashManagementEvent,
 };
 
 use frontend::AppContext;
@@ -456,10 +456,11 @@ impl BinderBinderItemsTreeModel {
             Origin::TrashManagement(TrashManagementEvent::RestoreItems),
             Origin::TrashManagement(TrashManagementEvent::EmptyTrash),
         ];
-        for origin in origins {
-            let me = self.clone();
-            ctx.subscribe_event(origin, move |_e: &Event| me.reload());
-        }
+        // Coalesced: one reload per frame, not one per event. A bulk operation
+        // publishes one event per item — measured, not assumed — and each reload
+        // here re-queries the whole binder. See `models::coalesced_reload`.
+        let me = self.clone();
+        crate::models::coalesced_reload::reload_on_events(ctx, origins, move || me.reload());
     }
 
     /// The uid → store-id map for the loaded rows, for a caller that must resolve keys

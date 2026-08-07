@@ -20,6 +20,7 @@ mod backup_settings_file;
 mod binder_binder_items_tree_model;
 mod binder_list_model;
 mod binder_stream;
+mod coalesced_reload;
 mod comments_list_model;
 mod corkboard_cards_model;
 mod dict_word_list_model;

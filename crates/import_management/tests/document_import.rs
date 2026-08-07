@@ -533,17 +533,17 @@ fn undoing_an_import_into_a_large_binder_stays_interactive() {
 /// 200 rows into a 4,000-item project re-reads and rebuilds that binder 200
 /// times, in one burst, while the writer watches.
 ///
-/// This is **not** fixable here: the per-item events come out of the generated
-/// `direct_access` controllers, and every bulk path in the app (trash, restore,
-/// duplicate, move) pays the same cost through the same tree model. The fix
-/// belongs in that model — a coalesced reload, the shape `MentionIndex::
-/// rescan_throttled` and `ProgressRecorder::recount_throttled` already use — and
-/// it would fix all of them at once. Recorded here rather than silently endured.
+/// This is not fixable here — the per-item events come out of the generated
+/// `direct_access` controllers, and an event that names one entity is what makes
+/// it useful to everything else that listens. **It is fixed on the reading side**
+/// instead: `bastyde_ui::models::coalesced_reload` collapses a burst into one
+/// reload per frame, for the binder tree, the trash tree and the Overview alike,
+/// so trash, restore, duplicate and move all stopped paying it too.
 ///
-/// The assertion is the tripwire that keeps this from getting *worse*: at most
-/// one event per row. A future apply that looped single creates plus a
-/// relationship call each would double or triple it, and would otherwise look
-/// fine.
+/// The assertion is the tripwire that keeps the *publishing* side from getting
+/// worse: at most one event per row. A future apply that looped single creates
+/// plus a relationship call each would double or triple it, and would otherwise
+/// look fine.
 #[test]
 fn a_batched_import_fires_at_most_one_event_per_row() {
     use common::event::{DirectAccessEntity, Origin};

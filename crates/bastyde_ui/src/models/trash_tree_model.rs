@@ -25,9 +25,7 @@ use bastyde::data::{
 use bastyde::prelude::{BuildContext, Signal};
 use frontend::AppContext;
 use frontend::common::entities::BinderItemSubRole;
-use frontend::common::event::{
-    DirectAccessEntity, EntityEvent, Event, Origin, TrashManagementEvent,
-};
+use frontend::common::event::{DirectAccessEntity, EntityEvent, Origin, TrashManagementEvent};
 
 /// Stable per-row identity. A root is keyed by its **TrashInfo** id (the handle
 /// every action needs); a cascade row by its **BinderItem** id (globally unique).
@@ -118,10 +116,10 @@ impl TrashTreeModel {
             Origin::DirectAccess(Binder(Updated)),
             Origin::DirectAccess(Binder(Removed)),
         ];
-        for origin in origins {
-            let me = self.clone();
-            ctx.subscribe_event(origin, move |_e: &Event| me.reload());
-        }
+        // Coalesced — see `models::coalesced_reload`. Empty Trash is the worst
+        // case here: it removes every trashed item, one event each.
+        let me = self.clone();
+        crate::models::coalesced_reload::reload_on_events(ctx, origins, move || me.reload());
     }
 
     pub fn reload(&self) {
