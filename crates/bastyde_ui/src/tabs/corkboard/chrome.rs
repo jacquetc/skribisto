@@ -185,8 +185,7 @@ fn card_menu(vm: &CorkboardViewModel, card: &CorkboardCard) -> impl Widget {
 
     PopoverIconButton::new(IconButton::more())
         .bare()
-        // Trap Tab inside the anchored overlay, as every popover must.
-        .content(FocusScope::new(TraversalScopePolicy::Cycle).child(list))
+        .content(list)
 }
 
 /// Pick the plain or the counted label for a batch action.

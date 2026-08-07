@@ -14,8 +14,7 @@ use bastyde::core::accesskit::Role;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    FocusScope, MaxSize, Padding, Panel, PopoverButton, ScrollArea, TextInput, TextWidget,
-    TraversalScopePolicy, VStack,
+    MaxSize, Padding, Panel, PopoverButton, ScrollArea, TextInput, TextWidget, VStack,
 };
 use skribisto_model::mentions::DiscoverableEntity;
 
@@ -176,10 +175,7 @@ pub fn cast_add_button(
         bastyde::widgets::Button::new(tr!(cast_add()))
             .variant(bastyde::widgets::ButtonVariant::Plain),
     )
-    .content(
-        FocusScope::new(TraversalScopePolicy::Cycle)
-            .child(CastAddPopover::new(candidates, already, owner_id, pin)),
-    )
+    .content(CastAddPopover::new(candidates, already, owner_id, pin))
 }
 
 /// Build candidate list from the scan's alias table.

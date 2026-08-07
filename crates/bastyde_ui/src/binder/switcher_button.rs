@@ -25,9 +25,9 @@ use std::rc::Rc;
 use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, FixedSize, FocusScope, HStack, IconButton, IconWidget, MenuItem,
-    MenuList, MessageBox, MessageBoxButtons, Padding, PopoverButton, PopoverIconButton,
-    SearchField, Spacer, StandardButton, TextWidget, TraversalScopePolicy,
+    Button, ButtonVariant, FixedSize, HStack, IconButton, IconWidget, MenuItem, MenuList,
+    MessageBox, MessageBoxButtons, Padding, PopoverButton, PopoverIconButton, SearchField, Spacer,
+    StandardButton, TextWidget,
 };
 
 use frontend::AppContext;
@@ -107,11 +107,10 @@ impl Widget for BinderSwitcherButton {
         .text_style(TextStyleRole::BodyBold)
         .trailing(IconWidget::chevron_down(12.0));
 
-        // Trap Tab inside the anchored (non-centered) popover.
         let root = ctx.add(
             PopoverButton::new(trigger)
                 .show_disclosure_caret(false)
-                .content(FocusScope::new(TraversalScopePolicy::Cycle).child(menu)),
+                .content(menu),
         );
         self.root_child = Some(root);
         vec![root]
@@ -254,5 +253,5 @@ pub fn binder_search_button(outline: OutlineViewModel) -> impl Widget {
     );
     PopoverIconButton::new(IconButton::search().toolbar())
         .show_disclosure_caret(false)
-        .content(FocusScope::new(TraversalScopePolicy::Cycle).child(panel))
+        .content(panel)
 }

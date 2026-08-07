@@ -25,9 +25,8 @@ use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::tokens::Color;
 use bastyde::widgets::{
-    Button, ButtonVariant, ColorEdit, Divider, FocusScope, HStack, IconButton, IconWidget, MaxSize,
-    Padding, Panel, PopoverIconButton, ScrollArea, TextInput, TextWidget, Toast, Toggle,
-    TraversalScopePolicy, VStack, Wrap,
+    Button, ButtonVariant, ColorEdit, Divider, HStack, IconButton, IconWidget, MaxSize, Padding,
+    Panel, PopoverIconButton, ScrollArea, TextInput, TextWidget, Toast, Toggle, VStack, Wrap,
 };
 
 use crate::app_ids::HasWorkId;
@@ -127,18 +126,12 @@ impl Widget for TagPillField {
         // `.bare()` + an explicit panel: `PopoverIconButton`'s own chrome is skipped and this
         // call site supplies it, because the picker itself is now bare so that
         // `TagDotsRow` can drop it straight into a `Popover`, which brings its own surface.
-        // Tab must cycle *inside* the popover. Without a `FocusScope` the overlay opens
-        // with focus still in the window behind it, so Tab walks straight out into the
-        // toolbar and neither the filter field nor the rows can be reached at all — a
-        // keyboard-only writer can open this and do nothing with it (WCAG 2.1.1). Same
-        // trap `ProjectSwitcherButton` documents and guards with a test; this is that
-        // pattern, not a new idea.
         let picker = Panel::new()
-            .child(
-                FocusScope::new(TraversalScopePolicy::Cycle).child(Padding::uniform(8.0).child(
-                    TagPicker::new(self.value.clone(), self.set.clone(), self.vm.clone()),
-                )),
-            )
+            .child(Padding::uniform(8.0).child(TagPicker::new(
+                self.value.clone(),
+                self.set.clone(),
+                self.vm.clone(),
+            )))
             .access_role(Role::Dialog)
             .access_label(tr!(tags_pill_add()));
         flow = flow.child(

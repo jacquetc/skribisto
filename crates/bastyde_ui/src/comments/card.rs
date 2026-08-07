@@ -49,8 +49,8 @@ use bastyde::prelude::*;
 use bastyde::tokens::CornerRadius;
 use bastyde::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use bastyde::widgets::{
-    Divider, Expand, FocusScope, HStack, IconButton, IconWidget, MenuItem, MenuList, Padding,
-    Panel, PopoverIconButton, RectWidget, Spacer, TextWidget, TraversalScopePolicy, VStack, ZStack,
+    Divider, Expand, HStack, IconButton, IconWidget, MenuItem, MenuList, Padding, Panel,
+    PopoverIconButton, RectWidget, Spacer, TextWidget, VStack, ZStack,
 };
 
 use crate::models::CommentRow;
@@ -289,10 +289,7 @@ impl Turn {
                         .on_activate_fn(move |c| v.delete_all_here_with_undo(c)),
                 );
             }
-            // Trap Tab inside the popover: without this a keyboard-only writer can
-            // open the menu and never reach its items (WCAG 2.1.1). The repo's own
-            // `a11y::tests::every_file_with_a_popover_also_traps_tab` enforces it.
-            FocusScope::new(TraversalScopePolicy::Cycle).child(list)
+            list
         };
 
         // `IconButton` is flat by construction — there is no variant to set. The

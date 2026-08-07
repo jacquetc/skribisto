@@ -27,10 +27,10 @@ use bastyde::prelude::*;
 use bastyde::res;
 use bastyde::tokens::{BorderRole, SurfaceRole, TextRole};
 use bastyde::widgets::{
-    Button, ButtonVariant, Center, Expand, FocusScope, HStack, IconButton, IconLocation,
-    IconWidget, ListView, MaxSize, MenuItem, MenuList, MessageBox, MessageBoxButtons,
-    MessageBoxResult, MinSize, Padding, Panel, PopoverButton, SearchField, Spacer, StandardButton,
-    Switcher, TextInput, TextWidget, Toast, TraversalScopePolicy, VStack, ValidationState,
+    Button, ButtonVariant, Center, Expand, HStack, IconButton, IconLocation, IconWidget, ListView,
+    MaxSize, MenuItem, MenuList, MessageBox, MessageBoxButtons, MessageBoxResult, MinSize, Padding,
+    Panel, PopoverButton, SearchField, Spacer, StandardButton, Switcher, TextInput, TextWidget,
+    Toast, VStack, ValidationState,
 };
 
 use crate::app_ids::HasWorkId;
@@ -170,8 +170,7 @@ fn preset_button(vm: &NoteTemplatesViewModel) -> impl Widget {
 
     PopoverButton::new(Button::new(tr!(settings_templates_presets())).variant(ButtonVariant::Plain))
         .bare()
-        // Trap Tab inside the anchored overlay, as every popover must.
-        .content(FocusScope::new(TraversalScopePolicy::Cycle).child(menu))
+        .content(menu)
 }
 
 /// Import one **or more** `.md`/`.djot` files — this app's first caller of `pick_files`.

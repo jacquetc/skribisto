@@ -18,10 +18,7 @@
 use std::rc::Rc;
 
 use bastyde::prelude::*;
-use bastyde::widgets::{
-    Button, ButtonVariant, FocusScope, HStack, IconButton, PopoverButton, TextWidget,
-    TraversalScopePolicy,
-};
+use bastyde::widgets::{Button, ButtonVariant, HStack, IconButton, PopoverButton, TextWidget};
 use skribisto_model::mentions::DiscoverableEntity;
 
 use super::cast_add::{CastAddPopover, CastCandidate};
@@ -81,10 +78,8 @@ pub fn pov_add_button(
     owner_id: u64,
     set: PinReference,
 ) -> impl Widget {
-    PopoverButton::new(Button::new(tr!(pov_add())).variant(ButtonVariant::Plain)).content(
-        FocusScope::new(TraversalScopePolicy::Cycle)
-            .child(CastAddPopover::new(candidates, already, owner_id, set)),
-    )
+    PopoverButton::new(Button::new(tr!(pov_add())).variant(ButtonVariant::Plain))
+        .content(CastAddPopover::new(candidates, already, owner_id, set))
 }
 
 #[cfg(test)]

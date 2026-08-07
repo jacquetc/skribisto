@@ -32,8 +32,8 @@ use bastyde::core::overlay::OverlayPlacement;
 use bastyde::data::TreeDataSource;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    ActivateOn, Expand, FocusScope, IconButton, MinSize, Padding, PopoverIconButton, ScrollBarMode,
-    SearchField, StandardTreeItem, TextWidget, TraversalScopePolicy, TreeRow, TreeView, VStack,
+    ActivateOn, Expand, IconButton, MinSize, Padding, PopoverIconButton, ScrollBarMode,
+    SearchField, StandardTreeItem, TextWidget, TreeRow, TreeView, VStack,
 };
 
 use crate::models::TreeNode;
@@ -172,45 +172,35 @@ impl Widget for GoToPalette {
                     .map(move |(q, _)| !q.trim().is_empty() && count_model.visible_count() == 0),
             );
 
-        // Trap Tab inside the popover: a keyboard-only writer must be able to
-        // reach the search field and the list without tabbing straight back out
-        // into the window behind (WCAG 2.1.1). `Cycle`, matching
-        // `ProjectSwitcherButton`; the crate's own `a11y` lint enforces this for
-        // every file that opens a popover, and it caught this one.
         // Down/Up move the highlight through the list **while focus stays in the
         // field**, so a writer never has to Tab out of what they are typing to
         // choose a result. Handled on the wrapping column so it applies whether
         // focus is still in the field or has moved into the tree.
         let keys_vm = vm.clone();
-        let body = FocusScope::new(TraversalScopePolicy::Cycle).child(
-            MinSize::new(POPUP_WIDTH, 0.0)
-                .child(
-                    VStack::new()
-                        .spacing(6.0)
-                        .child(Padding::symmetric(0.0, 2.0).child(field))
-                        .child(
-                            MinSize::new(POPUP_WIDTH, POPUP_HEIGHT)
-                                .child(Expand::new().child(tree)),
-                        )
-                        .child(empty),
-                )
-                .on_key(move |ev, _ctx| match ev {
-                    WidgetEvent::KeyDown {
-                        key: Key::ArrowDown,
-                        ..
-                    } => {
-                        keys_vm.step_selection(1);
-                        EventResponse::Handled
-                    }
-                    WidgetEvent::KeyDown {
-                        key: Key::ArrowUp, ..
-                    } => {
-                        keys_vm.step_selection(-1);
-                        EventResponse::Handled
-                    }
-                    _ => EventResponse::Ignored,
-                }),
-        );
+        let body = MinSize::new(POPUP_WIDTH, 0.0)
+            .child(
+                VStack::new()
+                    .spacing(6.0)
+                    .child(Padding::symmetric(0.0, 2.0).child(field))
+                    .child(MinSize::new(POPUP_WIDTH, POPUP_HEIGHT).child(Expand::new().child(tree)))
+                    .child(empty),
+            )
+            .on_key(move |ev, _ctx| match ev {
+                WidgetEvent::KeyDown {
+                    key: Key::ArrowDown,
+                    ..
+                } => {
+                    keys_vm.step_selection(1);
+                    EventResponse::Handled
+                }
+                WidgetEvent::KeyDown {
+                    key: Key::ArrowUp, ..
+                } => {
+                    keys_vm.step_selection(-1);
+                    EventResponse::Handled
+                }
+                _ => EventResponse::Ignored,
+            });
         let id = ctx.add_boxed(Box::new(body));
         self.root = Some(id);
         vec![id]

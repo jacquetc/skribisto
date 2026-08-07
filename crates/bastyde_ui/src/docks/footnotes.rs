@@ -347,12 +347,7 @@ fn note_row(
     )
     .bare()
     .show_disclosure_caret(false)
-    // The menu is reached by Tab as well as by pointer: a popover whose
-    // content is not a cycling focus scope opens and then strands a
-    // keyboard-only writer outside it (WCAG 2.1.1), which is exactly what
-    // `a11y::tests::every_file_with_a_popover_also_traps_tab` refuses to let
-    // ship.
-    .content(FocusScope::new(TraversalScopePolicy::Cycle).child(row_menu(id, menu_vm)))
+    .content(row_menu(id, menu_vm))
     .placement(OverlayPlacement::BelowPreferred)
     .access_label(actions);
 

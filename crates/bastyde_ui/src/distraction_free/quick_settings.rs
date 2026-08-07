@@ -23,8 +23,8 @@
 use bastyde::data::ListModel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, FocusScope, HStack, IconButton, ListView, MaxSize, PopoverIconButton,
-    ScrollArea, StandardListItem, TabInfo, TabWidget, TraversalScopePolicy, VStack,
+    Button, ButtonVariant, HStack, IconButton, ListView, MaxSize, PopoverIconButton, ScrollArea,
+    StandardListItem, TabInfo, TabWidget, VStack,
 };
 
 use crate::distraction_free::theme::DistractionFreeTheme;
@@ -87,13 +87,7 @@ fn body(
         )
         .compact_bar();
 
-    // Tab must **cycle inside** the popover, not walk out of it into the
-    // manuscript behind. A keyboard-only writer who opened this and then Tabbed
-    // straight past its contents would have no way to reach them (WCAG 2.1.1) —
-    // the invariant `a11y::every_file_with_a_popover_also_traps_tab` exists to
-    // catch exactly this, and did.
-    FocusScope::new(TraversalScopePolicy::Cycle)
-        .child(MaxSize::new(MAX_WIDTH, MAX_HEIGHT).child(tabs))
+    MaxSize::new(MAX_WIDTH, MAX_HEIGHT).child(tabs)
 }
 
 /// The theme list, plus the one way through to the full library.

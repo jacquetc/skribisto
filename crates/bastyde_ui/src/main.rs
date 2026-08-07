@@ -69,7 +69,6 @@
 // gate that has never once been green teaches nobody anything.
 #![allow(dead_code)]
 
-mod a11y;
 mod app;
 mod app_ids;
 mod backup;

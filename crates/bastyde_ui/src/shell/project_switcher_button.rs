@@ -28,9 +28,9 @@ use std::rc::Rc;
 use bastyde::core::BindingLevel;
 use bastyde::prelude::*;
 use bastyde::widgets::{
-    Button, ButtonVariant, FixedSize, FocusScope, GroupHeader, HStack, IconWidget, MaxSize,
-    MenuList, MessageBox, MessageBoxButton, MessageBoxButtons, Padding, PopoverButton, Spacer,
-    StandardButton, TextWidget, TraversalScopePolicy, VStack,
+    Button, ButtonVariant, FixedSize, GroupHeader, HStack, IconWidget, MaxSize, MenuList,
+    MessageBox, MessageBoxButton, MessageBoxButtons, Padding, PopoverButton, Spacer,
+    StandardButton, TextWidget, VStack,
 };
 
 use frontend::AppContext;
@@ -272,8 +272,7 @@ impl Widget for OpenProjectsMenu {
             }
         }
 
-        // Trap Tab inside the anchored (non-centered) overlay.
-        let root = ctx.add(FocusScope::new(TraversalScopePolicy::Cycle).child(menu));
+        let root = ctx.add(menu);
         self.root = Some(root);
         vec![root]
     }
@@ -443,7 +442,7 @@ mod tests {
                     |_| {},
                 ));
             }
-            let root = ctx.add(FocusScope::new(TraversalScopePolicy::Cycle).child(menu));
+            let root = ctx.add(menu);
             self.root = Some(root);
             vec![root]
         }

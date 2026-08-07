@@ -36,10 +36,7 @@ use bastyde::core::overlay::TooltipPlacement;
 use bastyde::core::widget::WidgetPlacement;
 use bastyde::prelude::*;
 use bastyde::tokens::{BorderRole, CornerRadius};
-use bastyde::widgets::{
-    Center, FocusScope, HStack, MinSize, Popover, RectWidget, TextWidget, TraversalScopePolicy,
-    ZStack,
-};
+use bastyde::widgets::{Center, HStack, MinSize, Popover, RectWidget, TextWidget, ZStack};
 
 use crate::models::TagRow;
 use crate::tags::contrast;
@@ -376,16 +373,10 @@ impl Widget for TagDotsRow {
             root_child: None,
         };
         let picker = TagPicker::new(self.value.clone(), self.set.clone(), vm);
-        // Tab must cycle *inside* the popover. Without a `FocusScope` the overlay opens
-        // with focus still in the window behind it, so Tab walks straight out into the
-        // toolbar and neither the filter field nor the rows can be reached at all — a
-        // keyboard-only writer can open this and do nothing with it (WCAG 2.1.1). Same
-        // trap `ProjectSwitcherButton` documents and guards with a test; this is that
-        // pattern, not a new idea.
         let id = ctx.add(
             Popover::new(tr!(tags_pill_list()))
                 .trigger(chips)
-                .content(FocusScope::new(TraversalScopePolicy::Cycle).child(picker)),
+                .content(picker),
         );
         self.root_child = Some(id);
         vec![id]
