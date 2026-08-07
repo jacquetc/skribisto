@@ -314,6 +314,15 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
             // own panel via a global action.
             .submenu(tr!(menu_import_from()), |s| {
                 s.item(MenuEntry::new(tr!(menu_import_plume())).intent("work.import_plume"))
+                    // Documents land *in* the open project rather than making a
+                    // new one, so the row is hidden with nothing open — the
+                    // same `show_open` gate the rest of the needs-a-project
+                    // group uses.
+                    .item(
+                        MenuEntry::new(tr!(menu_import_document()))
+                            .visible(show_open.clone())
+                            .intent("work.import_document"),
+                    )
             })
             .separator()
             // The book's cover. It sits in the Work menu rather than with

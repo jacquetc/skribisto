@@ -53,6 +53,9 @@ serde_json = "1.0"
 toml = "1.1.3+spec-1.1.0"
 frontend = { workspace = true }
 skribisto_model = { workspace = true }
+# The import review tree binds to `document_ingest`'s plan directly: the panel
+# edits a plan in memory, and only the accepted rows ever reach a use case.
+document_ingest = { workspace = true }
 binder_ordering = { workspace = true }
 # Direct edge (bypassing the generated `frontend` crate) for the backup settings'
 # retention policy type + the retention/fingerprint/sniff helpers used by the

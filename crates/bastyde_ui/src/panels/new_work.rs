@@ -92,6 +92,21 @@ impl NewWorkPanel {
         }
     }
 
+    /// [`Self::new_for_launcher`] for the Launcher's **New from documents…**:
+    /// the same form, carrying the documents already picked — see
+    /// [`crate::view_models::NewWorkViewModel::new_for_launcher_with_documents`].
+    pub fn new_for_launcher_with_documents(
+        app_ctx: Rc<AppContext>,
+        factory: crate::shell::windows::ProjectWindowFactory,
+        sources: Vec<std::path::PathBuf>,
+    ) -> Self {
+        Self {
+            vm: NewWorkViewModel::new_for_launcher_with_documents(app_ctx, factory, sources),
+            root_child: None,
+            name_field: std::cell::Cell::new(None),
+        }
+    }
+
     /// A left-column field label (dimmed, small).
     fn field_label(text: LocalizedString) -> TextWidget {
         TextWidget::new(text)

@@ -130,6 +130,7 @@ impl WelcomePanel {
     fn works_pane(&self, vm: &WelcomeViewModel, ctx: &mut BuildContext) -> impl Widget + 'static {
         let open_vm = vm.clone();
         let new_vm = vm.clone();
+        let documents_vm = vm.clone();
         let open_icon =
             IconWidget::from_svg_icon(res!("assets/icons/binder/folder.svg")).icon_size(16.0);
         let plus_icon =
@@ -150,6 +151,14 @@ impl WelcomePanel {
                             variant: ButtonVariant::Plain
                             icon: open_icon, IconLocation::Leading
                             on_activate_fn: move |ctx| open_vm.pick_open(ctx)
+                        }
+                        // The cold-start door for a book that is currently a
+                        // folder of Markdown files. Plain, beside Open rather
+                        // than beside New Work: it is a way *in*, not a second
+                        // kind of blank project.
+                        Button::new(tr!(welcome_new_from_documents())) {
+                            variant: ButtonVariant::Plain
+                            on_activate_fn: move |ctx| documents_vm.new_work_from_documents(ctx)
                         }
                         Button::new(tr!(welcome_new_work())) {
                             variant: ButtonVariant::Filled

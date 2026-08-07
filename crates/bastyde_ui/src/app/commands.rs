@@ -126,6 +126,11 @@ pub(super) struct CommandDeps {
     /// `user_dictionary`'s doc above for why an `app_state` lookup would be
     /// wrong the moment a second Work opens in a second window.
     pub export: ExportViewModel,
+    /// Tier-3 (per WINDOW, bound to this window's own `ids`) — threaded for the
+    /// same reason as `export` above, and one sharper: this wizard writes into
+    /// the Work whose window it was opened from, so an `app_state` lookup could
+    /// land a whole imported manuscript in the wrong project.
+    pub import_document: crate::view_models::ImportDocumentViewModel,
     /// Fixed dock ids (see [`crate::docks`]) — the reveal targets.
     pub search_dock: DockWidgetId,
     pub trash_dock: DockWidgetId,

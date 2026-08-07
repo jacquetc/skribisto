@@ -76,12 +76,18 @@ pub const MINOR_MARKERS: &[&str] = &["* * *", "***", "*", "#", "＊"];
 /// never emitted as a default — it is absent from Times New Roman, Calibri,
 /// Georgia and Kindle's Bookerly, so it risks rendering as tofu.
 ///
-/// `…` and `◇` are here for the same reason `＊` is above: they are the stronger
-/// mark the `manuscript-ru` and `manuscript-ja-web` presets *write*, and a
-/// vocabulary that can export a mark but not recognise it tells the writer their
-/// own convention is prose. That gap was real — the ellipsis a Russian author
-/// typed as a break counted as a word and was never stripped.
-pub const MAJOR_MARKERS: &[&str] = &["# # #", "###", "⁂", "…", "◇"];
+/// `. . .` and `◇` are here for the same reason `＊` is above: they are the
+/// stronger mark the `manuscript-ru` and `manuscript-ja-web` presets *write*, and
+/// a vocabulary that can export a mark but not recognise it tells the writer their
+/// own convention is prose.
+///
+/// The Russian mark is a spaced *row* of dots, never the single `…`. One ellipsis
+/// alone on a line is an ordinary beat of silence in fiction — and smart
+/// punctuation turns a typed `...` into precisely that character — so recognising
+/// it would strip a writer's silence from their word count and swap it for a break
+/// glyph on export. Spacing is what makes the mark a mark, exactly as it does for
+/// `* * *`.
+pub const MAJOR_MARKERS: &[&str] = &["# # #", "###", "⁂", ". . .", "◇"];
 
 /// The canonical mark for `tier` as **literal text** — what the author sees.
 ///
@@ -222,12 +228,11 @@ pub fn strip_markers_plain(text: &str) -> Cow<'_, str> {
 /// to leave ordinary prose completely untouched.
 ///
 /// A marker is a whole line by definition, so the test is line-anchored rather
-/// than a bare `contains`. That matters now that `…` is in the vocabulary: an
-/// ellipsis is ordinary punctuation in the middle of a sentence, and a substring
-/// test would report "might contain a marker" for almost every page of French or
-/// Russian prose, costing the fast path exactly where it is most wanted. Anchoring
-/// also tightens the older characters — a paragraph mentioning `*` no longer
-/// forces a block split either.
+/// than a bare `contains`. That matters most for `.`: a substring test would
+/// report "might contain a marker" for every page of prose ever written, costing
+/// the fast path exactly where it is most wanted, where a line built only of dots
+/// and spaces is vanishingly rare. Anchoring also tightens the older characters —
+/// a paragraph mentioning `*` no longer forces a block split either.
 ///
 /// False positives are free (they only cost the walk the caller would have done);
 /// a false negative would silently leave a marker in the finished book, so the
@@ -238,7 +243,7 @@ pub fn might_contain_marker(s: &str) -> bool {
         let trimmed = line.trim();
         !trimmed.is_empty()
             && trimmed.chars().all(|c| {
-                matches!(c, '*' | '#' | '⁂' | '…' | '＊' | '◇' | '\\') || c.is_whitespace()
+                matches!(c, '*' | '#' | '⁂' | '.' | '＊' | '◇' | '\\') || c.is_whitespace()
             })
     })
 }
@@ -351,5 +356,49 @@ mod tests {
         // not an escape — dropping the backslash would corrupt the prose.
         assert_eq!(unescape_djot("path\\name"), "path\\name");
         assert_eq!(unescape_djot("a \\* b"), "a * b");
+    }
+
+    /// A lone ellipsis is a beat of silence, not furniture.
+    ///
+    /// It was briefly in `MAJOR_MARKERS`, because the Russian preset emitted one.
+    /// That made a writer's own trailing-off paragraph vanish from their word
+    /// count and come back as a break glyph on export — and smart punctuation
+    /// turns a typed `...` into exactly that character, so it was not even a rare
+    /// spelling. The preset now emits a spaced row of dots instead, and this pins
+    /// the difference.
+    #[test]
+    fn a_lone_ellipsis_is_prose_and_a_row_of_dots_is_a_break() {
+        assert_eq!(tier_of_plain_line("…"), None);
+        assert_eq!(tier_of_plain_line("..."), None);
+        assert_eq!(
+            tier_of_plain_line(". . ."),
+            Some(SceneBreakTier::Major),
+            "the Russian preset's own mark must be recognised"
+        );
+    }
+
+    /// The word count is where the old behaviour did its damage.
+    #[test]
+    fn a_silence_beat_survives_stripping_but_a_real_mark_does_not() {
+        let prose = "He waited.\n\n…\n\nShe never came.";
+        assert_eq!(
+            strip_markers_djot(prose),
+            prose,
+            "an ellipsis paragraph is the writer's, not the app's"
+        );
+        assert_eq!(
+            strip_markers_djot("He waited.\n\n. . .\n\nShe never came."),
+            "He waited.\n\nShe never came."
+        );
+    }
+
+    /// The cheap pre-filter must not be tripped by ordinary sentences now that
+    /// `.` is a marker character — it is line-anchored precisely for this.
+    #[test]
+    fn ordinary_prose_never_reaches_the_marker_matcher() {
+        assert!(!might_contain_marker(
+            "She turned the corner. The street was gone. Nothing moved."
+        ));
+        assert!(might_contain_marker("Before.\n\n. . .\n\nAfter."));
     }
 }

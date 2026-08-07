@@ -11,6 +11,7 @@ menu-open-work = &Ouvrir une œuvre…
 menu-new-window = Nouvelle fenê&tre
 menu-import-from = &Importer depuis
 menu-import-plume = &Plume Creator (.plume)…
+menu-import-document = &Documents (Markdown, texte)…
 menu-export = E&xporter
 menu-export-book = Exporter le livre
 menu-export-part = Exporter la partie
@@ -381,6 +382,7 @@ welcome-version = Version { $version }
 welcome-search = Rechercher des œuvres
 welcome-open = Ouvrir
 welcome-new-work = Nouvelle œuvre
+welcome-new-from-documents = Depuis des documents…
 welcome-recent-works = Œuvres récentes
 welcome-empty-recents = Aucune œuvre récente.
 # Affiché à la place de la liste des œuvres récentes lorsque la recherche n'en
@@ -1612,3 +1614,91 @@ footnotes-no-caret = Placez le curseur dans le texte d'une scène pour y insére
 footnotes-not-created = La note n'a pas pu être ajoutée au projet.
 footnotes-deleted-toast = Note supprimée
 footnotes-undo-delete = Annuler
+
+# ── Importer des documents (Markdown / texte brut) ────────────────────────────
+import-document-title = Importer des documents
+import-document-close = Fermer
+import-document-step-files = Fichiers
+import-document-step-review = Vérifier
+import-document-drop-title = Déposez les documents ici
+import-document-drop-hint = Markdown (.md) et texte brut (.txt)
+import-document-browse = Parcourir…
+import-document-move-up = Monter
+import-document-move-down = Descendre
+import-document-remove-file = Retirer
+import-document-file-count = { $count ->
+    [one] 1 fichier
+   *[other] { $count } fichiers
+}
+import-document-no-files = Aucun fichier choisi pour l'instant.
+import-document-col-included = Importer
+import-document-col-title = Titre
+import-document-col-type = Type
+import-document-col-words = Mots
+import-document-col-breaks = Coupures
+import-document-col-source = Source
+import-document-level-rules = Niveaux de titre
+import-document-level-n = Titre { $level }
+import-document-destination = Destination
+import-document-destination-empty = Aucun classeur pour l'instant — créez-en un d'abord.
+import-document-plan-empty = Rien à importer pour l'instant.
+import-document-summary = { $rows ->
+    [one] 1 ligne
+   *[other] { $rows } lignes
+} · { $breaks ->
+    [one] 1 coupure de scène
+   *[other] { $breaks } coupures de scène
+}
+import-document-back = Précédent
+import-document-cancel = Annuler
+import-document-analyse = Suivant
+import-document-analysing = Lecture des documents…
+import-document-step-analysing = Lecture
+import-document-cancel-analysis = Arrêter la lecture
+import-document-analyse-failed = Les documents n'ont pas pu être lus.
+import-document-details = Détails
+import-document-import = Importer
+import-document-done = { $count ->
+    [one] 1 élément importé
+   *[other] { $count } éléments importés
+}
+import-document-undo = Annuler l'import
+# ── Diagnostics d'import ──────────────────────────────────────────────────────
+import-diagnostic-file-unreadable = « { $path } » n'a pas pu être lu : { $detail }. Les autres fichiers sont importés quand même.
+import-diagnostic-lossy-decode = { $count ->
+    [one] Un caractère de « { $path } » n'a pas pu être décodé. Enregistrez le fichier en UTF-8 pour le conserver.
+   *[other] { $count } caractères de « { $path } » n'ont pas pu être décodés. Enregistrez le fichier en UTF-8 pour les conserver.
+}
+import-diagnostic-decoded-from-bom = « { $path } » a été décodé en { $detail }, pas en UTF-8.
+import-diagnostic-empty-file = « { $path } » est vide.
+import-diagnostic-no-headings = « { $path } » ne contient aucun titre : il arrive en un seul élément.
+import-diagnostic-unsupported-format = Aucun lecteur ne prend en charge les fichiers « .{ $detail } » : « { $path } » a été ignoré.
+import-diagnostic-front-matter-not-flat = En-tête de « { $path } » : « { $detail } » n'est pas une valeur simple et a été ignoré.
+import-diagnostic-footnotes-degraded = { $count ->
+    [one] Une note de bas de page de « { $path } » arrive en texte brut — les notes ne sont pas lues depuis Markdown.
+   *[other] { $count } notes de bas de page de « { $path } » arrivent en texte brut — les notes ne sont pas lues depuis Markdown.
+}
+import-diagnostic-raw-html-dropped = { $count ->
+    [one] Un bloc HTML brut de « { $path } » a été supprimé.
+   *[other] { $count } blocs HTML bruts de « { $path } » ont été supprimés.
+}
+import-diagnostic-nested-break-dropped = { $count ->
+    [one] Une séparation de scène située dans une citation ou une liste de « { $path } » a été supprimée. Seule une séparation seule sur sa ligne est conservée.
+   *[other] { $count } séparations de scène situées dans des citations ou des listes de « { $path } » ont été supprimées. Seule une séparation seule sur sa ligne est conservée.
+}
+import-diagnostic-image-not-ingested = « { $path } » fait référence à l'image « { $detail } ». La référence arrive en texte ; l'image elle-même n'est pas copiée.
+import-diagnostic-duplicate-title = « { $title } » apparaît { $count } fois. Si vous avez déjà importé ces fichiers, cela les dupliquera.
+import-diagnostic-heading-level-jump = « { $title } » passe du niveau de titre { $from } au niveau { $to } ; il est placé un niveau sous son parent.
+import-diagnostic-illegal-combination = « { $title } » contient du texte, mais un élément de type « { $kind } » ne peut pas en contenir. Son texte serait perdu — changez son type.
+import-document-diagnostics = { $errors ->
+    [0] { $warnings ->
+            [one] 1 point à connaître
+           *[other] { $warnings } points à connaître
+        }
+   *[other] { $errors ->
+            [one] 1 fichier illisible
+           *[other] { $errors } fichiers illisibles
+        }
+}
+import-document-diagnostics-none = Rien à signaler.
+

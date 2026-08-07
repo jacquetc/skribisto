@@ -102,6 +102,11 @@ pub fn short_id(uid: Uuid) -> String {
 /// climbing from the new, shallower ceiling. Deliberately **not** the preceding
 /// sibling: siblings share an indent, so consulting one would make the file name
 /// depend on list position, and reordering a scene would rename its neighbours.
+///
+/// O(depth) for one query, but a caller resolving every row of a binder should
+/// reach for [`nearest_titled_ancestors`] instead — one query per row here adds
+/// up to O(n²) over a long run of untitled siblings, which is the common shape
+/// (most scenes in a continuous manuscript have no title).
 pub fn nearest_titled_ancestor<'a>(items: &[(i64, &'a str)], idx: usize) -> Option<&'a str> {
     let mut ceiling = items.get(idx)?.0;
     let mut j = idx;
@@ -116,6 +121,37 @@ pub fn nearest_titled_ancestor<'a>(items: &[(i64, &'a str)], idx: usize) -> Opti
         }
     }
     None
+}
+
+/// [`nearest_titled_ancestor`] for every row at once, in one forward pass.
+///
+/// Same answers, computed differently: rather than each row independently
+/// walking back over everything before it, this keeps a stack of the ancestor
+/// chain currently open, one entry per indent level, each already carrying its
+/// *own* resolved answer (its own title if it has one, otherwise whatever it
+/// inherited from its own nearest titled ancestor). A new row then only has to
+/// look at the top of the stack — the climbing has already happened once, when
+/// each ancestor was pushed — so the whole binder resolves in one O(n) pass
+/// instead of the O(n²) a long run of untitled containers would otherwise cost
+/// (a chapter of a thousand untitled scenes is exactly this run).
+pub fn nearest_titled_ancestors<'a>(items: &[(i64, &'a str)]) -> Vec<Option<&'a str>> {
+    // (indent, what a child of this entry should resolve to).
+    let mut stack: Vec<(i64, Option<&'a str>)> = Vec::new();
+    let mut out = Vec::with_capacity(items.len());
+    for &(indent, title) in items {
+        while stack.last().is_some_and(|&(ind, _)| ind >= indent) {
+            stack.pop();
+        }
+        let ancestor = stack.last().and_then(|&(_, resolved)| resolved);
+        out.push(ancestor);
+        let resolved_here = if title.trim().is_empty() {
+            ancestor
+        } else {
+            Some(title)
+        };
+        stack.push((indent, resolved_here));
+    }
+    out
 }
 
 /// Prose file name `<short_id>-<slug>.<kind>.djot`, or `None` if `role` is not a
@@ -162,7 +198,7 @@ pub fn note_template_relpath(file_id: u64, name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::slugify;
+    use super::{nearest_titled_ancestor, nearest_titled_ancestors, slugify};
 
     #[test]
     fn empty_input_falls_back_to_item() {
@@ -204,5 +240,45 @@ mod tests {
         let nfd = "Cafe\u{0301}"; // 'e' + U+0301 COMBINING ACUTE ACCENT
         assert_eq!(slugify(nfc), slugify(nfd));
         assert_eq!(slugify(nfd), "café");
+    }
+
+    /// [`nearest_titled_ancestors`] must agree with [`nearest_titled_ancestor`]
+    /// for every row — it is a faster way to compute the exact same answers, not
+    /// a different rule. Covers an untitled chapter over untitled scenes (must
+    /// keep climbing past the chapter to the book), a titled chapter (must stop
+    /// there), and a row with nothing above it (must be `None`).
+    #[test]
+    fn the_batch_form_agrees_with_the_per_row_form_on_every_row() {
+        let items: Vec<(i64, &str)> = vec![
+            (0, "The Book"),    // 0
+            (1, ""),            // 1: untitled chapter
+            (2, ""),            // 2: untitled scene under it -> "The Book"
+            (2, ""),            // 3: sibling scene -> also "The Book"
+            (1, "Chapter Two"), // 4: titled chapter
+            (2, ""),            // 5: untitled scene under it -> "Chapter Two"
+            (0, ""),            // 6: untitled second book -> None
+            (1, ""),            // 7: untitled chapter under it -> None
+            (2, ""),            // 8: untitled scene -> None
+        ];
+
+        let batch = nearest_titled_ancestors(&items);
+        assert_eq!(batch.len(), items.len());
+        for (idx, expected) in batch.iter().enumerate() {
+            assert_eq!(
+                *expected,
+                nearest_titled_ancestor(&items, idx),
+                "row {idx} disagrees between the batch and per-row forms"
+            );
+        }
+
+        assert_eq!(batch[2], Some("The Book"));
+        assert_eq!(batch[3], Some("The Book"));
+        assert_eq!(batch[5], Some("Chapter Two"));
+        assert_eq!(batch[8], None);
+    }
+
+    #[test]
+    fn the_batch_form_on_an_empty_list_is_empty() {
+        assert!(nearest_titled_ancestors(&[]).is_empty());
     }
 }

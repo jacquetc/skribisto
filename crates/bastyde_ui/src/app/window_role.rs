@@ -36,7 +36,7 @@ impl WindowRole {
     pub fn from_action(action: &PendingAction) -> Self {
         match action {
             PendingAction::AttachExisting { .. } => Self::Attached,
-            PendingAction::Load(_) | PendingAction::New(_) => Self::Owner,
+            PendingAction::Load(_) | PendingAction::New { .. } => Self::Owner,
         }
     }
 

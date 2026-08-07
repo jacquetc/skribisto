@@ -595,8 +595,17 @@ pub fn builtin_presets() -> Vec<Preset> {
             // Russian editorial practice grades a silent gap against a graphic
             // separator. Asterisks read as poetry-coded in Russian literary
             // convention, so a row of dots is the idiomatic stronger mark.
+            //
+            // A *row* of dots, spaced — not the single `…` this used to emit.
+            // One ellipsis alone on a line is an ordinary beat of silence in
+            // fiction, and the app's own smart punctuation turns a typed `...`
+            // into exactly that character, so a mark spelled that way could not
+            // be told apart from prose: the recogniser would strip a writer's
+            // silence from their word count and replace it with this glyph on
+            // export. `. . .` matches the spacing of `* * *` and cannot be
+            // mistaken for a sentence.
             scene_break: SceneBreak::BlankLine,
-            major_scene_break: SceneBreak::Glyph("…".to_string()),
+            major_scene_break: SceneBreak::Glyph(". . .".to_string()),
             ..Preset::base("manuscript-ru", "")
         },
         Preset {

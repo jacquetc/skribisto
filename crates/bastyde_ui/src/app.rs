@@ -201,7 +201,21 @@ pub enum PendingAction {
     /// Load an existing `.skrib` at this path.
     Load(String),
     /// Create a brand-new work from this DTO (the Launcher's "New Work").
-    New(NewWorkDto),
+    ///
+    /// `import_sources` is the cold-start path: the Launcher's "New from
+    /// documents…" picks the files *before* any project exists, so the chosen
+    /// paths ride here to the window that will hold them and the Import
+    /// documents wizard opens over the freshly-created project already carrying
+    /// them (see `wiring::project_events::install_cold_start_import`). Empty for
+    /// every other New Work door.
+    ///
+    /// Carried on the action rather than parked on the factory: a factory field
+    /// would mean "the next window this creates", which is an ordering
+    /// assumption nothing enforces — this names the one window that asked.
+    New {
+        dto: NewWorkDto,
+        import_sources: Vec<String>,
+    },
     /// Show a Work that is **already open** in another window of this process —
     /// Work ▸ New Window. The one action that performs no backend mutation at
     /// all: the `Work` is loaded, its `AppIds` are seeded, its singles point at
@@ -235,7 +249,7 @@ impl PendingAction {
     pub fn target_path(&self) -> &str {
         match self {
             PendingAction::Load(path) => path,
-            PendingAction::New(dto) => &dto.file_name,
+            PendingAction::New { dto, .. } => &dto.file_name,
             PendingAction::AttachExisting { path, .. } => path,
         }
     }
@@ -631,6 +645,12 @@ pub struct App {
     /// Bound to this window's own `ids`, so an export from this window scopes
     /// to *this* Work. See `app::commands::CommandDeps::export`'s doc.
     export: crate::view_models::ExportViewModel,
+    /// The Import documents wizard's state, bound to this window's own `ids` —
+    /// so a manuscript imported from this window lands in *this* project. Also
+    /// the subscriber the analysis's long-operation events are routed to (see
+    /// `app::wiring::long_ops`), which is why it must outlive the modal: the
+    /// panel is built and destroyed around it, not the other way round.
+    import_document: crate::view_models::ImportDocumentViewModel,
     /// The Tier-1 registry every open Work registers into once its own
     /// `LoadWork`/`NewWork` resolves a real `work_id` (see the `LoadWork`/
     /// `NewWork` subscribers in `build`, which also bind this window's id to
@@ -805,6 +825,7 @@ impl App {
         fullscreen: crate::view_models::FullscreenViewModel,
         focus: crate::view_models::FocusViewModel,
         export: crate::view_models::ExportViewModel,
+        import_document: crate::view_models::ImportDocumentViewModel,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
         comments_menu: Signal<bool>,
@@ -839,6 +860,7 @@ impl App {
             fullscreen,
             focus,
             export,
+            import_document,
             registry,
             quit,
             save_as_vm,
@@ -1835,6 +1857,7 @@ impl Widget for App {
             spell_docs: spell_docs.clone(),
             user_dictionary: session.user_dictionary.clone(),
             export: self.export.clone(),
+            import_document: self.import_document.clone(),
             search_dock: self.search_dock,
             trash_dock: self.trash_dock,
             footnotes_dock: self.footnotes_dock,
@@ -1851,6 +1874,10 @@ impl Widget for App {
         // on anything that renumbers), subscribed here for this window's whole build.
         editors.wire(ctx);
 
+        // The Launcher's "New from documents…" hand-off (see `ColdStartImport`).
+        // Armed by the `PendingAction::New` arm at the end of this build, taken
+        // by the subscriber `install_lifecycle` registers right below.
+        let cold_start_import = wiring::project_events::ColdStartImport::default();
         let attach_seed = wiring::project_events::install_lifecycle(
             ctx,
             wiring::project_events::LifecycleDeps {
@@ -1877,6 +1904,8 @@ impl Widget for App {
                 backup_settings: backup_settings.clone(),
                 workspace_layout: workspace_layout.clone(),
                 trash_dock: self.trash_dock,
+                import_document: self.import_document.clone(),
+                cold_start_import: cold_start_import.clone(),
             },
         );
 
@@ -1933,6 +1962,7 @@ impl Widget for App {
             &backup_scheduler,
             &restore_vm,
             &self.export,
+            &self.import_document,
             &self.session.mention_index,
             &self.session.progress_recorder,
         );
@@ -2301,8 +2331,23 @@ impl Widget for App {
                         });
                     }
                 }
-                Some(PendingAction::New(dto)) => {
+                Some(PendingAction::New {
+                    dto,
+                    import_sources,
+                }) => {
                     let target = dto.file_name.clone();
+                    // Arm the cold-start import BEFORE creating the work: the
+                    // `NewWork` subscriber that consumes it is already live, and
+                    // arming afterwards would be a race whose losing side is
+                    // silent (the files simply never appear).
+                    if !import_sources.is_empty() {
+                        cold_start_import.set(
+                            import_sources
+                                .iter()
+                                .map(std::path::PathBuf::from)
+                                .collect(),
+                        );
+                    }
                     if let Err(e) = work_management_commands::new_work(&self.app_ctx, &dto) {
                         eprintln!("skribisto: could not create '{target}': {e}");
                     }

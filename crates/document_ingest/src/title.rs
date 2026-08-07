@@ -76,14 +76,12 @@ pub fn extract_leading_ordinal(heading: &str) -> Option<ExtractedOrdinal> {
         return None;
     }
 
-    let lower = trimmed.to_lowercase();
     let mut rest = trimmed;
     let mut keyword = None;
 
     // An optional structural word first.
     for kw in KEYWORDS {
-        if lower.starts_with(kw) {
-            let after = &trimmed[kw.len()..];
+        if let Some(after) = strip_prefix_case_insensitive(trimmed, kw) {
             // Must be a whole word: "Chapterhouse" is a title, not a chapter.
             if after.is_empty() || !after.starts_with(|c: char| c.is_alphanumeric()) {
                 keyword = Some((*kw).to_string());
@@ -110,6 +108,32 @@ pub fn extract_leading_ordinal(heading: &str) -> Option<ExtractedOrdinal> {
         numeral,
         keyword,
     })
+}
+
+/// `text` with a leading `prefix` removed, matched case-insensitively — or
+/// `None` if `text` doesn't start with it.
+///
+/// Walks `text`'s own characters and accumulates the byte offset from *their*
+/// lengths, never `prefix`'s. `&text[prefix.len()..]` looks equivalent and is
+/// not: a `prefix` compared against `text.to_lowercase()` matches on lower-cased
+/// bytes, but a handful of Unicode compatibility characters change byte length
+/// under `to_lowercase` (the Kelvin sign U+212A, 3 bytes, lower-cases to plain
+/// ASCII 'k', 1 byte). Slicing `text` at `prefix`'s byte count would then land
+/// off one of `text`'s own char boundaries — not just wrong, but a panic.
+fn strip_prefix_case_insensitive<'a>(text: &'a str, prefix: &str) -> Option<&'a str> {
+    let mut text_chars = text.chars();
+    let mut prefix_chars = prefix.chars();
+    let mut consumed = 0usize;
+    loop {
+        let Some(pc) = prefix_chars.next() else {
+            return Some(&text[consumed..]);
+        };
+        let tc = text_chars.next()?;
+        if !tc.to_lowercase().eq(pc.to_lowercase()) {
+            return None;
+        }
+        consumed += tc.len_utf8();
+    }
 }
 
 /// A leading arabic or roman numeral, and what follows it.
@@ -240,5 +264,23 @@ mod tests {
         let e = extract_leading_ordinal("Chapter 3: The Storm").unwrap();
         assert_eq!(e.keyword.as_deref(), Some("chapter"));
         assert_eq!(e.numeral, Some(3));
+    }
+
+    /// A heading beginning with a Unicode compatibility character whose
+    /// lower-cased form is shorter than its own encoding (the Kelvin sign
+    /// U+212A, 3 UTF-8 bytes, lower-cases to plain ASCII 'k', 1 byte) used to
+    /// slice `trimmed` at a byte offset measured on the *lower-cased* copy —
+    /// which does not land on one of `trimmed`'s own char boundaries and can
+    /// panic. It must not, whether or not it happens to read as a keyword.
+    #[test]
+    fn a_heading_with_a_length_changing_unicode_case_fold_does_not_panic() {
+        let kelvin = '\u{212A}'; // KELVIN SIGN, lower-cases to ASCII 'k'
+        let heading = format!("{kelvin}apitel 3: Der Sturm");
+        // Must not panic; whatever it decides is secondary to that.
+        let _ = extract_leading_ordinal(&heading);
+
+        let angstrom = '\u{212B}'; // ANGSTROM SIGN, lower-cases to ASCII 'å'
+        let heading = format!("{angstrom}ngstrom Readings");
+        let _ = extract_leading_ordinal(&heading);
     }
 }

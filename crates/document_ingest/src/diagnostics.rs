@@ -16,6 +16,8 @@
 
 use std::fmt;
 
+use skribisto_model::CreateType;
+
 /// How much a diagnostic should interrupt.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DiagnosticSeverity {
@@ -70,6 +72,13 @@ pub enum ImportDiagnostic {
     /// Raw HTML was found and dropped. Djot has no general HTML passthrough and
     /// the document model does not carry one.
     RawHtmlDropped { path: String, count: usize },
+    /// A thematic break (`***`, `---`, `* * *`) was found *nested* inside
+    /// another construct — a block quote, a list item — rather than as its own
+    /// top-level block. Only a top-level break is recognised as a scene-break
+    /// marker; a nested one falls through to `text-document`'s Markdown reader,
+    /// which has no arm for it and drops it outright, the same silent loss the
+    /// top-level case exists to prevent.
+    NestedBreakDropped { path: String, count: usize },
     /// An image reference was found. Asset ingestion is not wired from this
     /// layer, so the reference survives as text but the file is not copied in.
     ImageNotIngested { path: String, target: String },
@@ -86,7 +95,14 @@ pub enum ImportDiagnostic {
     /// The type a row resolved to cannot hold the content it carries, so the
     /// content would be dropped at save time. Caught here instead, where it can
     /// still be corrected.
-    IllegalCombination { title: String, detail: String },
+    ///
+    /// Carries the offending **type**, not a sentence about it. It used to carry
+    /// `detail: String` built as `format!("a {role:?}/{sub_role:?} row cannot
+    /// hold prose")` — an English sentence with `Debug`-formatted enum names in
+    /// it, produced by the one module whose own doc says a diagnostic is *"data,
+    /// never a log line… translated at the UI boundary rather than here"*. It
+    /// went unnoticed for as long as nothing rendered it.
+    IllegalCombination { title: String, kind: CreateType },
 }
 
 impl ImportDiagnostic {
@@ -100,6 +116,7 @@ impl ImportDiagnostic {
             | FrontMatterNotFlat { .. }
             | FootnotesDegraded { .. }
             | RawHtmlDropped { .. }
+            | NestedBreakDropped { .. }
             | ImageNotIngested { .. }
             | DuplicateTitle { .. }
             | HeadingLevelJump { .. }
@@ -120,6 +137,7 @@ impl ImportDiagnostic {
             | FrontMatterNotFlat { path, .. }
             | FootnotesDegraded { path, .. }
             | RawHtmlDropped { path, .. }
+            | NestedBreakDropped { path, .. }
             | ImageNotIngested { path, .. } => Some(path),
             DuplicateTitle { .. } | HeadingLevelJump { .. } | IllegalCombination { .. } => None,
         }
@@ -140,6 +158,7 @@ impl ImportDiagnostic {
             FrontMatterNotFlat { .. } => "front-matter-not-flat",
             FootnotesDegraded { .. } => "footnotes-degraded",
             RawHtmlDropped { .. } => "raw-html-dropped",
+            NestedBreakDropped { .. } => "nested-break-dropped",
             ImageNotIngested { .. } => "image-not-ingested",
             DuplicateTitle { .. } => "duplicate-title",
             HeadingLevelJump { .. } => "heading-level-jump",
@@ -174,6 +193,12 @@ impl fmt::Display for ImportDiagnostic {
             RawHtmlDropped { path, count } => {
                 write!(f, "{path}: {count} raw HTML block(s) dropped")
             }
+            NestedBreakDropped { path, count } => {
+                write!(
+                    f,
+                    "{path}: {count} scene-break-looking line(s) inside a nested block were dropped"
+                )
+            }
             ImageNotIngested { path, target } => {
                 write!(f, "{path}: image '{target}' referenced but not imported")
             }
@@ -183,7 +208,9 @@ impl fmt::Display for ImportDiagnostic {
             HeadingLevelJump { title, from, to } => {
                 write!(f, "'{title}': heading jumped from level {from} to {to}")
             }
-            IllegalCombination { title, detail } => write!(f, "'{title}': {detail}"),
+            IllegalCombination { title, kind } => {
+                write!(f, "'{title}': a {kind:?} row cannot hold prose")
+            }
         }
     }
 }

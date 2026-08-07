@@ -9,8 +9,12 @@
 //! alongside.
 //!
 //! **Registration order is load-bearing** for `LoadWork`: seed first, then
-//! [`install_backup_sniff`] (called from here after the seed subscriber).
+//! [`install_backup_sniff`] (called from here after the seed subscriber). Same
+//! for `NewWork`: seed first, then the cold-start import — the wizard reads the
+//! `work_id` the seed writes.
 
+use std::cell::RefCell;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
@@ -265,6 +269,29 @@ pub(in crate::app) struct LifecycleDeps {
     pub backup_settings: BackupSettingsViewModel,
     pub workspace_layout: Option<WorkspaceLayoutViewModel>,
     pub trash_dock: DockWidgetId,
+    // cold-start import (installed after the New seed, same call)
+    pub import_document: crate::view_models::ImportDocumentViewModel,
+    pub cold_start_import: ColdStartImport,
+}
+
+/// The documents a Launcher "New from documents…" picked, waiting for the
+/// project they were picked for to exist.
+///
+/// A one-shot: `App::build` arms it immediately before `new_work`, and the
+/// `NewWork` subscriber below **takes** it. Taking rather than reading is what
+/// makes the second project created in the same window not re-open a wizard
+/// over documents the writer imported an hour ago.
+#[derive(Clone, Default)]
+pub(in crate::app) struct ColdStartImport(Rc<RefCell<Vec<PathBuf>>>);
+
+impl ColdStartImport {
+    pub(in crate::app) fn set(&self, paths: Vec<PathBuf>) {
+        *self.0.borrow_mut() = paths;
+    }
+
+    fn take(&self) -> Vec<PathBuf> {
+        std::mem::take(&mut *self.0.borrow_mut())
+    }
 }
 
 /// Install Load seed, attach-seed builder, backup sniff, New seed, missing-dict
@@ -458,6 +485,39 @@ pub(in crate::app) fn install_lifecycle(
                             &toast_registry_for_new,
                         );
                     }
+                }
+            },
+        );
+    }
+
+    // ── Cold-start import (must be registered AFTER the New seed) ──────────
+    //
+    // The Launcher's "New from documents…" picked its files before any project
+    // existed. The project now does, its ids are seeded (that is what the
+    // ordering buys — the wizard reads `work_id` to analyse into), so the
+    // wizard opens over it already carrying them.
+    //
+    // Deliberately does NOT start the analysis: the writer still has to see
+    // which files, in which order, and choose a destination. Opening a modal
+    // they did not ask for at this exact moment would be startling enough
+    // without it also having begun work.
+    {
+        let import = deps.import_document.clone();
+        let pending = deps.cold_start_import.clone();
+        let my_ids = deps.ids.clone();
+        ctx.subscribe_event_with_ctx(
+            Origin::WorkManagement(WorkManagementEvent::NewWork),
+            move |event: &Event, c: &mut EventContext| {
+                if !my_ids.is_bootstrap_or_own(&event.ids) {
+                    return;
+                }
+                let sources = pending.take();
+                if !sources.is_empty() {
+                    crate::panels::import_document::present_import_document(
+                        c,
+                        import.clone(),
+                        sources,
+                    );
                 }
             },
         );

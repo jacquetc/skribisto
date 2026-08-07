@@ -17,7 +17,7 @@ use super::bundle::*;
 use super::loaded::*;
 use super::media::{asset_relpath, extension_for};
 use super::slug::{
-    binder_dir_name, nearest_titled_ancestor, note_template_relpath, prose_file_name, prose_kind,
+    binder_dir_name, nearest_titled_ancestors, note_template_relpath, prose_file_name, prose_kind,
     prose_relpath,
 };
 
@@ -144,12 +144,17 @@ pub fn from_entities(
             .iter()
             .map(|i| (i.item.indent, i.item.title.as_str()))
             .collect();
+        // Resolved once for the whole binder, not once per untitled row: a long
+        // run of untitled scenes under an untitled chapter — the common shape of
+        // a continuous manuscript — would otherwise turn every save into an O(n²)
+        // walk of the binder.
+        let ancestors = nearest_titled_ancestors(&outline);
 
         let mut items = Vec::with_capacity(bwi.items.len());
         for (item_index, iwc) in bwi.items.iter().enumerate() {
             let item = &iwc.item;
             let slug_source: &str = if item.title.trim().is_empty() {
-                nearest_titled_ancestor(&outline, item_index).unwrap_or("")
+                ancestors[item_index].unwrap_or("")
             } else {
                 &item.title
             };

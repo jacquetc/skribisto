@@ -258,6 +258,53 @@ impl WelcomeViewModel {
         );
     }
 
+    /// "New from documents…" — the cold-start door for a writer whose book is
+    /// currently a folder of Markdown files and who has no project yet.
+    ///
+    /// Files first, project second. The other order would mean creating a
+    /// project, and then discovering the documents are unreadable — a project
+    /// nobody asked for, already on disk. Picking first costs a cancelled
+    /// dialog at worst.
+    ///
+    /// The chosen paths ride the create action into the new window (see
+    /// [`crate::app::PendingAction::New`]'s `import_sources`), which opens the
+    /// Import documents wizard over the finished project already carrying them.
+    /// Nothing is imported here — there is nothing to import into yet.
+    pub fn new_work_from_documents(&self, ctx: &mut EventContext) {
+        let app_ctx = self.app_ctx.clone();
+        let factory = self.factory.clone();
+        let extensions = crate::view_models::ImportDocumentViewModel::accepted_extensions();
+        let filter: Vec<&str> = extensions.iter().map(String::as_str).collect();
+        let req = FileDialogRequest::pick_files()
+            .title("Choose documents to import")
+            // A file-dialog filter label — a plain string like the other
+            // dialogs, not a localized key.
+            .add_filter("Documents", &filter);
+        let _ = ctx.pick_files(req, move |res, ectx| {
+            let FileDialogResult::Files(paths) = res else {
+                return;
+            };
+            if paths.is_empty() {
+                return;
+            }
+            let app_ctx = app_ctx.clone();
+            let factory = factory.clone();
+            ectx.present_modal(
+                ModalRequest::deferred(move |t| {
+                    t.add(NewWorkPanel::new_for_launcher_with_documents(
+                        app_ctx.clone(),
+                        factory.clone(),
+                        paths.clone(),
+                    ))
+                })
+                .presentation(ModalPresentation::InTree)
+                .title("New Work")
+                .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
+                .size(600, 680),
+            );
+        });
+    }
+
     /// The sidebar's GitHub / Discord links — hand the URL to the OS default
     /// handler, i.e. the user's browser.
     ///

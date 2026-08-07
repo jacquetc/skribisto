@@ -444,3 +444,174 @@ fn prose_on_a_type_that_cannot_hold_it_is_refused_not_swallowed() {
         "a refused import must leave nothing behind"
     );
 }
+
+// ── The two measurements the plan called for ────────────────────────────────
+//
+// Both were in M2's exit criteria and neither got written, so two decisions the
+// design rests on were argued rather than measured. They are cheap, they run in
+// the ordinary suite, and their budgets are deliberately loose: this is a
+// regression tripwire for an order-of-magnitude change, not a benchmark. A CI
+// box under load must not turn a correct build red.
+
+/// **The gate on the snapshot decision.**
+///
+/// Undo for an import is `snapshot_binder` / `restore_binder` — O(the whole
+/// binder), not O(what changed). That is fine for a hundred items and was never
+/// checked for a real manuscript. The plan named `begin_composite` as the escape
+/// hatch if this measured badly; this is the measurement that would tell us.
+///
+/// A 4,000-item binder is a long novel with every scene split out, i.e. the
+/// upper end of what anyone actually has.
+#[test]
+fn undoing_an_import_into_a_large_binder_stays_interactive() {
+    use std::time::Instant;
+
+    let mut ctx = Ctx::new();
+
+    // A binder of 4,000 items, created the cheap way — this is the *setting*
+    // for the measurement, not part of it.
+    let existing: Vec<ApplyImportRow> = (0..4_000)
+        .map(|i| ApplyImportRow::Create {
+            indent: 0,
+            kind: ImportRowKind::Scene,
+            title: format!("Scene {i}"),
+            djot: String::new(),
+        })
+        .collect();
+    import_management_controller::apply_document_import(
+        &ctx.db,
+        &ctx.hub,
+        &mut ctx.undo,
+        None,
+        &ApplyDocumentImportDto {
+            work_id: ctx.work_id,
+            binder_id: ctx.binder_id,
+            anchor_item_id: 0,
+            row: ApplyImportRow::Empty,
+            rows: ApplyImportRows::Create(existing),
+        },
+    )
+    .expect("seed");
+    assert_eq!(ctx.binder_order().len(), 4_000);
+
+    // Now the import being measured: a small one, into that large binder. The
+    // snapshot is of the *binder*, so its cost tracks the binder's size and not
+    // the import's — which is exactly the property under test.
+    let path = ctx.write("novel.md", NOVEL);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+    assert_eq!(ctx.binder_order().len(), 4_003);
+
+    let started = Instant::now();
+    ctx.undo.undo(None).expect("undo");
+    let elapsed = started.elapsed();
+    eprintln!("restore_binder over 4,000 items: {elapsed:?}");
+
+    assert_eq!(ctx.binder_order().len(), 4_000, "the import is gone");
+    // 2 s in an unoptimized debug build. Release is far faster; what this rules
+    // out is the shape where restore is quadratic in binder size and a large
+    // project's undo takes a minute.
+    assert!(
+        elapsed < std::time::Duration::from_secs(2),
+        "restore_binder over a 4,000-item binder took {elapsed:?} — \
+         if this is a real regression, `begin_composite` is the escape hatch \
+         the plan named (undo cost O(what changed) instead of O(the binder))"
+    );
+}
+
+/// **The event-coalescing check — and what it found.**
+///
+/// The question the plan asked was whether `create_multi` /
+/// `set_binder_item_relationship_multi` coalesce their events. **They do not:**
+/// a 200-row import publishes exactly 200 `BinderItem` events, a 20-row one
+/// exactly 20. Measured, not argued — which was the point of writing this.
+///
+/// What that costs, concretely: `EventBuffer` defers every event to commit, so
+/// they arrive as one burst rather than interleaved with the writing — good.
+/// But `models::binder_binder_items_tree_model` calls a full `reload()` on each
+/// one, with no throttle, and a reload re-queries the whole binder. So importing
+/// 200 rows into a 4,000-item project re-reads and rebuilds that binder 200
+/// times, in one burst, while the writer watches.
+///
+/// This is **not** fixable here: the per-item events come out of the generated
+/// `direct_access` controllers, and every bulk path in the app (trash, restore,
+/// duplicate, move) pays the same cost through the same tree model. The fix
+/// belongs in that model — a coalesced reload, the shape `MentionIndex::
+/// rescan_throttled` and `ProgressRecorder::recount_throttled` already use — and
+/// it would fix all of them at once. Recorded here rather than silently endured.
+///
+/// The assertion is the tripwire that keeps this from getting *worse*: at most
+/// one event per row. A future apply that looped single creates plus a
+/// relationship call each would double or triple it, and would otherwise look
+/// fine.
+#[test]
+fn a_batched_import_fires_at_most_one_event_per_row() {
+    use common::event::{DirectAccessEntity, Origin};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    fn events_for(rows: usize) -> usize {
+        let mut ctx = Ctx::new();
+        let seen = Arc::new(AtomicUsize::new(0));
+
+        // The hub is MPMC — one receiver, drained on its own thread, rather than
+        // several competing for the same events.
+        let rx = ctx.hub.subscribe_receiver();
+        let counter = seen.clone();
+        let drain = std::thread::spawn(move || {
+            while let Ok(event) = rx.recv() {
+                if matches!(
+                    event.origin,
+                    Origin::DirectAccess(DirectAccessEntity::BinderItem(_))
+                ) {
+                    counter.fetch_add(1, Ordering::Relaxed);
+                }
+            }
+        });
+
+        let create: Vec<ApplyImportRow> = (0..rows)
+            .map(|i| ApplyImportRow::Create {
+                indent: 0,
+                kind: ImportRowKind::Scene,
+                title: format!("Scene {i}"),
+                djot: String::new(),
+            })
+            .collect();
+        import_management_controller::apply_document_import(
+            &ctx.db,
+            &ctx.hub,
+            &mut ctx.undo,
+            None,
+            &ApplyDocumentImportDto {
+                work_id: ctx.work_id,
+                binder_id: ctx.binder_id,
+                anchor_item_id: 0,
+                row: ApplyImportRow::Empty,
+                rows: ApplyImportRows::Create(create),
+            },
+        )
+        .expect("apply");
+
+        // Events cross a channel; give them a moment to land, then close the
+        // hub's sender side by dropping the context so the drain thread ends.
+        std::thread::sleep(std::time::Duration::from_millis(300));
+        let counted = seen.load(Ordering::Relaxed);
+        drop(ctx);
+        let _ = drain.join();
+        counted
+    }
+
+    let small = events_for(20);
+    let large = events_for(200);
+    eprintln!("BinderItem events: 20 rows -> {small}, 200 rows -> {large}");
+
+    assert!(
+        small <= 20,
+        "a 20-row import fired {small} BinderItem events — more than one per row"
+    );
+    assert!(
+        large <= 200,
+        "a 200-row import fired {large} BinderItem events — more than one per row. \
+         Each one costs the binder tree a full reload, so this multiplies a cost \
+         that is already the biggest in a bulk import"
+    );
+}

@@ -123,6 +123,7 @@ fn segment(
     let mut pending_heading: Option<(u8, usize, usize)> = None;
     let mut heading_text = String::new();
     let mut html_blocks = 0usize;
+    let mut nested_rules = 0usize;
     let mut images = Vec::new();
 
     let flush_prose = |prose: &mut Option<(usize, usize)>, blocks: &mut Vec<SourceBlock>| {
@@ -177,6 +178,16 @@ fn segment(
                     .unwrap_or(SceneBreakTier::Minor);
                 blocks.push(SourceBlock::SceneBreak { tier });
             }
+            // A thematic break *inside* another construct (a block quote, a list
+            // item) is not caught by the depth == 0 arm above, so it rides along
+            // inside that construct's own merged prose span and reaches
+            // `markdown_to_djot` verbatim — which has no arm for `Event::Rule`
+            // either, and drops it just as silently. Counted rather than fixed:
+            // recognising a break nested inside arbitrary containers is a bigger
+            // change than reporting that one was lost.
+            Event::Rule if depth > 0 => {
+                nested_rules += 1;
+            }
             Event::Text(t) | Event::Code(t) if pending_heading.is_some() => {
                 heading_text.push_str(t);
             }
@@ -197,6 +208,12 @@ fn segment(
         diagnostics.push(ImportDiagnostic::RawHtmlDropped {
             path: origin.to_string(),
             count: html_blocks,
+        });
+    }
+    if nested_rules > 0 {
+        diagnostics.push(ImportDiagnostic::NestedBreakDropped {
+            path: origin.to_string(),
+            count: nested_rules,
         });
     }
     for target in images {
@@ -298,7 +315,7 @@ mod tests {
             ("###", SceneBreakTier::Major),
             ("# # #", SceneBreakTier::Major),
             ("⁂", SceneBreakTier::Major),
-            ("…", SceneBreakTier::Major),
+            (". . .", SceneBreakTier::Major),
             ("＊", SceneBreakTier::Minor),
             ("◇", SceneBreakTier::Major),
             // Not in any preset, but the commonest spelling from other tools.
@@ -323,6 +340,11 @@ mod tests {
     #[test]
     fn prose_that_merely_looks_like_a_marker_stays_prose() {
         for src in [
+            // A beat of silence, not furniture — and the shape smart punctuation
+            // produces from a typed `...`, so it is the common spelling rather
+            // than an exotic one.
+            "…",
+            "...",
             "*word*",
             "* a bullet-looking line",
             "# Chapter One",
@@ -411,5 +433,38 @@ mod tests {
         let doc = scan("Prose ends here.\n* * *\nMore prose.");
         assert_eq!(breaks(&doc), vec![SceneBreakTier::Minor]);
         assert_eq!(doc.blocks.len(), 3);
+    }
+
+    /// A thematic break *inside* a block quote is not a top-level boundary, so it
+    /// rides along inside the quote's own merged prose span and reaches
+    /// `markdown_to_djot` verbatim — which drops it, the same silent loss the
+    /// depth == 0 handling exists to prevent. It must at least be named.
+    #[test]
+    fn a_thematic_break_nested_inside_a_block_quote_is_reported_not_silently_dropped() {
+        let doc = scan("Prose.\n\n> Quoted.\n>\n> ***\n>\n> More quoted.\n\nAfter.");
+        assert!(
+            doc.diagnostics
+                .iter()
+                .any(|d| matches!(d, ImportDiagnostic::NestedBreakDropped { count: 1, .. })),
+            "a break nested inside a block quote must be named, not silently \
+             swallowed: {:?}",
+            doc.diagnostics
+        );
+        // It must not have been promoted to a real scene break either — only a
+        // top-level break is structural.
+        assert!(breaks(&doc).is_empty());
+    }
+
+    #[test]
+    fn a_top_level_break_does_not_trigger_the_nested_diagnostic() {
+        let doc = scan("Before.\n\n* * *\n\nAfter.");
+        assert!(
+            !doc.diagnostics
+                .iter()
+                .any(|d| matches!(d, ImportDiagnostic::NestedBreakDropped { .. })),
+            "a top-level break is handled at depth == 0 and must not also be \
+             counted as a dropped nested one: {:?}",
+            doc.diagnostics
+        );
     }
 }

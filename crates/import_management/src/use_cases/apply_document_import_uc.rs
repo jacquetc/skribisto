@@ -36,7 +36,7 @@
 use crate::ApplyDocumentImportDto;
 use crate::ApplyDocumentImportResultDto;
 use crate::dtos::{ApplyImportRow, ApplyImportRows};
-use crate::use_cases::analyze_document_import_uc::kind_to_create_type;
+use crate::kind_mapping::kind_to_create_type;
 use anyhow::{Result, anyhow};
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;

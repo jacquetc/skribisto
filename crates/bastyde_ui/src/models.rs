@@ -29,6 +29,7 @@ mod examples_list_model;
 mod export_styles_file;
 mod footnote_numbering;
 mod footnotes_list_model;
+pub(crate) mod import_plan_source;
 mod installed_dictionaries_model;
 mod numbering;
 mod open_docs;

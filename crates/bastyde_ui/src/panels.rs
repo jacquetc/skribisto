@@ -9,6 +9,7 @@
 //! destination picker under [`crate::trash`], and so on.
 
 pub(crate) mod about;
+pub(crate) mod import_document;
 pub(crate) mod import_plume;
 pub(crate) mod license;
 pub(crate) mod new_work;

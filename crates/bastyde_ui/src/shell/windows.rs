@@ -325,6 +325,13 @@ impl ProjectWindowFactory {
             }
         };
         let export = ExportViewModel::new(app_ctx_root.clone(), ids.clone());
+        // Tier 3, like `export` and `outline` above: bound to this window's own
+        // `ids`, so the wizard opened here imports into the project *this*
+        // window shows. Built out here rather than inside the modal because it
+        // is also what the analysis's long-operation events are routed to (see
+        // `app::wiring::long_ops`), and the modal comes and goes.
+        let import_document =
+            crate::view_models::ImportDocumentViewModel::new(app_ctx_root.clone(), ids.clone());
         let registry = self.registry.clone();
         let quit = self.quit.clone();
         // Let this Work's on-close backup hand control back to the quit sequencer
@@ -726,6 +733,7 @@ impl ProjectWindowFactory {
                     fullscreen.clone(),
                     focus.clone(),
                     export.clone(),
+                    import_document.clone(),
                     autosave_menu.clone(),
                     spellcheck_menu.clone(),
                     comments_menu.clone(),

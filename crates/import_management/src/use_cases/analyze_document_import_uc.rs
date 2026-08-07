@@ -31,8 +31,9 @@
 use crate::AnalyzeDocumentImportDto;
 use crate::DocumentImportPlanDto;
 use crate::dtos::{
-    DocumentImportRow, DocumentImportRows, ImportDiagnosticRow, ImportDiagnosticRows, ImportRowKind,
+    DocumentImportRow, DocumentImportRows, ImportDiagnosticRow, ImportDiagnosticRows,
 };
+use crate::kind_mapping::{create_type_to_kind, kind_to_create_type};
 use anyhow::{Result, anyhow};
 use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
@@ -218,44 +219,6 @@ fn flag_existing_titles(plan: &mut ImportPlan, existing: &[String]) {
     }
 }
 
-/// The DTO's flat kind ↔ the model's create vocabulary.
-///
-/// Two enums for one idea, because a Qleany DTO cannot name a type from another
-/// crate. Kept as an exhaustive `match` in both directions rather than a cast, so
-/// adding a `CreateType` fails to compile here instead of silently importing
-/// everything as a Scene.
-pub(crate) fn kind_to_create_type(kind: &ImportRowKind) -> skribisto_model::CreateType {
-    use skribisto_model::CreateType as C;
-    match kind {
-        ImportRowKind::Book => C::Book,
-        ImportRowKind::Part => C::Part,
-        ImportRowKind::Chapter => C::Chapter,
-        ImportRowKind::Scene => C::Scene,
-        ImportRowKind::Note => C::Note,
-        ImportRowKind::NoteFolder => C::NoteFolder,
-        ImportRowKind::Folder => C::Folder,
-        ImportRowKind::Paratext => C::Paratext,
-        ImportRowKind::ParatextFolder => C::ParatextFolder,
-        ImportRowKind::EndOfBook => C::EndOfBook,
-    }
-}
-
-pub(crate) fn create_type_to_kind(kind: skribisto_model::CreateType) -> ImportRowKind {
-    use skribisto_model::CreateType as C;
-    match kind {
-        C::Book => ImportRowKind::Book,
-        C::Part => ImportRowKind::Part,
-        C::Chapter => ImportRowKind::Chapter,
-        C::Scene => ImportRowKind::Scene,
-        C::Note => ImportRowKind::Note,
-        C::NoteFolder => ImportRowKind::NoteFolder,
-        C::Folder => ImportRowKind::Folder,
-        C::Paratext => ImportRowKind::Paratext,
-        C::ParatextFolder => ImportRowKind::ParatextFolder,
-        C::EndOfBook => ImportRowKind::EndOfBook,
-    }
-}
-
 /// Flatten the plan into the wire shape.
 ///
 /// Diagnostics travel as a key plus their data, never a rendered sentence: the
@@ -297,11 +260,25 @@ fn row_to_dto(row: &PlannedRow) -> DocumentImportRow {
     }
 }
 
-fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnosticRow {
+/// Map one diagnostic onto its wire row.
+///
+/// `pub(crate)` and re-exported (see `lib.rs`) rather than private, so the UI's
+/// "every diagnostic reaches a translated sentence" test can drive the **real**
+/// mapping instead of a second copy of it. A test that reimplements the mapping
+/// it is checking proves only that the copy agrees with itself.
+pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnosticRow {
     use ImportDiagnostic::*;
 
     // `detail` and `count` carry the variant's own payload, so the UI can
     // interpolate them into a translated sentence.
+    //
+    // Neither field is ever a *separator-packed* pair. `HeadingLevelJump` used to
+    // send `"{title}|{from}|{to}"` for the UI to split on `|` — which any title
+    // containing a pipe would have broken, silently and only for that writer.
+    // Every variant now maps to at most one string and one number, and anything
+    // else the sentence needs is read off the row `row_index` names: a row-scoped
+    // diagnostic's title and type are already in the plan, so sending them twice
+    // only creates two places for them to disagree.
     let (detail, count) = match d {
         FileUnreadable { reason, .. } => (reason.clone(), 0),
         LossyDecode { replacements, .. } => (String::new(), *replacements as i64),
@@ -309,13 +286,16 @@ fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnosticRo
         EmptyFile { .. } | NoHeadings { .. } => (String::new(), 0),
         UnsupportedFormat { extension, .. } => (extension.clone(), 0),
         FrontMatterNotFlat { key, .. } => (key.clone(), 0),
-        FootnotesDegraded { count, .. } | RawHtmlDropped { count, .. } => {
-            (String::new(), *count as i64)
-        }
+        FootnotesDegraded { count, .. }
+        | RawHtmlDropped { count, .. }
+        | NestedBreakDropped { count, .. } => (String::new(), *count as i64),
         ImageNotIngested { target, .. } => (target.clone(), 0),
         DuplicateTitle { title, occurrences } => (title.clone(), *occurrences as i64),
-        HeadingLevelJump { title, from, to } => (format!("{title}|{from}|{to}"), *to as i64),
-        IllegalCombination { detail, .. } => (detail.clone(), 0),
+        // The two levels, as the two fields — no separator to parse. The title
+        // comes from the row.
+        HeadingLevelJump { from, to, .. } => (from.to_string(), *to as i64),
+        // Nothing: the row carries both the title and the offending type.
+        IllegalCombination { .. } => (String::new(), 0),
     };
 
     ImportDiagnosticRow::Reported {

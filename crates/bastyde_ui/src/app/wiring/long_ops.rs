@@ -21,8 +21,8 @@ use bastyde::prelude::*;
 use frontend::common::event::{Event, LongOperationEvent, Origin, WorkManagementEvent};
 
 use crate::view_models::{
-    BackupRestoreViewModel, BackupSchedulerViewModel, ExportViewModel, ImportPlumeViewModel,
-    MentionIndex, ProgressRecorder, SaveAsViewModel,
+    BackupRestoreViewModel, BackupSchedulerViewModel, ExportViewModel, ImportDocumentViewModel,
+    ImportPlumeViewModel, MentionIndex, ProgressRecorder, SaveAsViewModel,
 };
 
 /// One row of a long-operation dispatch table: which event, and what to run on
@@ -45,12 +45,16 @@ fn route<V: Clone + 'static>(ctx: &mut BuildContext, vm: &V, handlers: &[LongOpH
     }
 }
 
+// One parameter per view-model that owns a background job; a bundle struct here would
+// be a second `CommandDeps` whose only job is to be unpacked one field per `route` call.
+#[allow(clippy::too_many_arguments)]
 pub(in crate::app) fn install(
     ctx: &mut BuildContext,
     save_as_vm: &SaveAsViewModel,
     backup_scheduler: &BackupSchedulerViewModel,
     restore_vm: &BackupRestoreViewModel,
     export_vm: &ExportViewModel,
+    import_document: &ImportDocumentViewModel,
     mention_index: &MentionIndex,
     progress_recorder: &ProgressRecorder,
 ) {
@@ -88,6 +92,35 @@ pub(in crate::app) fn install(
             (LongOperationEvent::Progress, |v: &ExportViewModel, c, e| {
                 v.on_long_op_progress(c, e)
             }),
+            (LongOperationEvent::Completed, |v, c, e| {
+                v.on_long_op_completed(c, e)
+            }),
+            (LongOperationEvent::Cancelled, |v, c, e| {
+                v.on_long_op_cancelled(c, e)
+            }),
+            (LongOperationEvent::Failed, |v, c, e| {
+                v.on_long_op_failed(c, e)
+            }),
+        ],
+    );
+
+    // Import documents — the *analysis* half only (`apply_document_import` is synchronous
+    // and undoable, so it reports nothing here). Its progress and its Cancel live inside the
+    // wizard rather than in a toast: the wizard is modal, so a toast behind it would be a
+    // surface the writer can see and not reach.
+    //
+    // Threaded in (Tier 3, per WINDOW — see `CommandDeps::import_document`), never
+    // `ctx.app_state::<ImportDocumentViewModel>()`. Note this subscribes the view-model, not
+    // the panel: the modal is built and torn down around it, and a plan that arrived while
+    // the wizard was rebuilding must still land.
+    route(
+        ctx,
+        import_document,
+        &[
+            (
+                LongOperationEvent::Progress,
+                |v: &ImportDocumentViewModel, c, e| v.on_long_op_progress(c, e),
+            ),
             (LongOperationEvent::Completed, |v, c, e| {
                 v.on_long_op_completed(c, e)
             }),

@@ -11,6 +11,7 @@ menu-open-work = &Open Work…
 menu-new-window = New &Window
 menu-import-from = &Import from
 menu-import-plume = &Plume Creator (.plume)…
+menu-import-document = &Documents (Markdown, text)…
 menu-export = E&xport
 menu-export-book = Export Book
 menu-export-part = Export Part
@@ -379,6 +380,7 @@ welcome-version = Version { $version }
 welcome-search = Search works
 welcome-open = Open
 welcome-new-work = New Work
+welcome-new-from-documents = From documents…
 welcome-recent-works = Recent Works
 welcome-empty-recents = No recent works yet.
 # Shown in place of the recents list when the search matched none of them,
@@ -1639,3 +1641,95 @@ footnotes-no-caret = Put the cursor in a scene's text to insert a footnote there
 footnotes-not-created = The footnote could not be added to the project.
 footnotes-deleted-toast = Note deleted
 footnotes-undo-delete = Undo
+
+# ── Import documents (Markdown / plain text) ──────────────────────────────────
+import-document-title = Import documents
+import-document-close = Close
+import-document-step-files = Files
+import-document-step-review = Review
+import-document-drop-title = Drop documents here
+import-document-drop-hint = Markdown (.md) and plain text (.txt)
+import-document-browse = Browse…
+import-document-move-up = Move up
+import-document-move-down = Move down
+import-document-remove-file = Remove
+import-document-file-count = { $count ->
+    [one] 1 file
+   *[other] { $count } files
+}
+import-document-no-files = No files chosen yet.
+import-document-col-included = Import
+import-document-col-title = Title
+import-document-col-type = Type
+import-document-col-words = Words
+import-document-col-breaks = Breaks
+import-document-col-source = Source
+import-document-level-rules = Heading levels
+import-document-level-n = Heading { $level }
+import-document-destination = Destination
+import-document-destination-empty = No binders yet — create one first.
+import-document-plan-empty = Nothing to import yet.
+import-document-summary = { $rows ->
+    [one] 1 row
+   *[other] { $rows } rows
+} · { $breaks ->
+    [one] 1 scene break
+   *[other] { $breaks } scene breaks
+}
+import-document-back = Back
+import-document-cancel = Cancel
+import-document-analyse = Next
+import-document-analysing = Reading documents…
+import-document-step-analysing = Reading
+import-document-cancel-analysis = Stop reading
+import-document-analyse-failed = The documents could not be read.
+import-document-details = Details
+import-document-import = Import
+import-document-done = { $count ->
+    [one] 1 item imported
+   *[other] { $count } items imported
+}
+import-document-undo = Undo
+# ── Import diagnostics ────────────────────────────────────────────────────────
+# One per `document_ingest::ImportDiagnostic::key()`. The variant's data arrives
+# as arguments; the sentence is assembled here, per locale. A row-scoped
+# diagnostic gets its { $title } and { $kind } from the row it names, never from
+# the wire.
+import-diagnostic-file-unreadable = “{ $path }” could not be read: { $detail }. The other files still import.
+import-diagnostic-lossy-decode = { $count ->
+    [one] One character in “{ $path }” did not decode. Re-save the file as UTF-8 to keep it.
+   *[other] { $count } characters in “{ $path }” did not decode. Re-save the file as UTF-8 to keep them.
+}
+import-diagnostic-decoded-from-bom = “{ $path }” was decoded as { $detail }, not UTF-8.
+import-diagnostic-empty-file = “{ $path }” is empty.
+import-diagnostic-no-headings = “{ $path }” has no headings, so it arrives as one item.
+import-diagnostic-unsupported-format = Nothing reads “.{ $detail }” files, so “{ $path }” was skipped.
+import-diagnostic-front-matter-not-flat = Front matter in “{ $path }”: “{ $detail }” is not a simple value and was skipped.
+import-diagnostic-footnotes-degraded = { $count ->
+    [one] One footnote in “{ $path }” arrives as plain text — footnotes are not read from Markdown.
+   *[other] { $count } footnotes in “{ $path }” arrive as plain text — footnotes are not read from Markdown.
+}
+import-diagnostic-raw-html-dropped = { $count ->
+    [one] One block of raw HTML in “{ $path }” was dropped.
+   *[other] { $count } blocks of raw HTML in “{ $path }” were dropped.
+}
+import-diagnostic-nested-break-dropped = { $count ->
+    [one] One scene break inside a quote or list in “{ $path }” was dropped. Only a break on its own line is kept.
+   *[other] { $count } scene breaks inside quotes or lists in “{ $path }” were dropped. Only a break on its own line is kept.
+}
+import-diagnostic-image-not-ingested = “{ $path }” refers to the image “{ $detail }”. The reference arrives as text; the picture itself is not copied in.
+import-diagnostic-duplicate-title = “{ $title }” appears { $count } times. If you have imported these files before, this will duplicate them.
+import-diagnostic-heading-level-jump = “{ $title }” jumps from heading level { $from } to { $to }; it is placed one level under its parent.
+import-diagnostic-illegal-combination = “{ $title }” carries prose, but a { $kind } cannot hold any. Its text would be dropped — change its type.
+import-document-diagnostics = { $errors ->
+    [0] { $warnings ->
+            [one] 1 thing to know
+           *[other] { $warnings } things to know
+        }
+   *[other] { $errors ->
+            [one] 1 file could not be read
+           *[other] { $errors } files could not be read
+        }
+}
+import-document-diagnostics-none = Nothing to report.
+

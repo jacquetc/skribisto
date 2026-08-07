@@ -270,6 +270,12 @@ pub struct NewWorkViewModel {
     app_ctx: Rc<AppContext>,
     /// Where "Create Work" puts the new project — see [`CreateTarget`].
     target: CreateTarget,
+    /// Documents the Launcher's "New from documents…" already picked, riding
+    /// along to the window that will hold the project (see
+    /// [`crate::app::PendingAction::New`]'s `import_sources`). Empty for every
+    /// other door, and meaningless for [`CreateTarget::InPlace`] — that path
+    /// has a window with a live Import documents wizard of its own.
+    import_sources: Vec<String>,
 }
 
 /// Where [`NewWorkViewModel::create`] puts the project it is about to create.
@@ -323,6 +329,7 @@ impl NewWorkViewModel {
             paratext_presets: presets,
             app_ctx,
             target: CreateTarget::InPlace(ids),
+            import_sources: Vec::new(),
         }
     }
 
@@ -332,6 +339,26 @@ impl NewWorkViewModel {
     /// Launcher closes behind it.
     pub fn new_for_launcher(app_ctx: Rc<AppContext>, factory: ProjectWindowFactory) -> Self {
         Self::in_a_new_window(app_ctx, factory, true)
+    }
+
+    /// [`Self::new_for_launcher`] for the Launcher's **New from documents…**:
+    /// the same form, plus the files the writer already chose. They travel with
+    /// the create action to the new window, which opens the Import documents
+    /// wizard over the finished project already carrying them.
+    ///
+    /// Carried rather than imported here because there is nothing to import
+    /// *into* yet — the project does not exist until this form is submitted.
+    pub fn new_for_launcher_with_documents(
+        app_ctx: Rc<AppContext>,
+        factory: ProjectWindowFactory,
+        sources: Vec<std::path::PathBuf>,
+    ) -> Self {
+        let mut vm = Self::in_a_new_window(app_ctx, factory, true);
+        vm.import_sources = sources
+            .iter()
+            .map(|p| p.to_string_lossy().to_string())
+            .collect();
+        vm
     }
 
     /// For `NewWorkPanel::new_beside_current` — presented from a project window
@@ -361,6 +388,7 @@ impl NewWorkViewModel {
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
             app_ctx,
+            import_sources: Vec::new(),
             target: CreateTarget::NewWindow {
                 factory,
                 close_presenting_window,
@@ -538,7 +566,10 @@ impl NewWorkViewModel {
                 // The returned `InitialWindowState` is only kept by `main.rs`'s
                 // very first window (see `window_config`'s doc) — every later
                 // window, like this one, discards it.
-                let (config, _state) = factory.window_config(PendingAction::New(self.dto()));
+                let (config, _state) = factory.window_config(PendingAction::New {
+                    dto: self.dto(),
+                    import_sources: self.import_sources.clone(),
+                });
                 ctx.open_window(config);
                 if *close_presenting_window {
                     ctx.close_window();

@@ -23,7 +23,7 @@
 
 use common::entities::ContentRole;
 use skribisto_model::scene_break;
-use skribisto_model::{ChapterMode, CreateType, allowed_content, content_allowed};
+use skribisto_model::{ChapterMode, CreateType, allowed_content};
 
 use crate::block::{SourceBlock, SourceDocument};
 use crate::diagnostics::ImportDiagnostic;
@@ -56,25 +56,6 @@ pub struct PlannedRow {
     pub diagnostics: Vec<ImportDiagnostic>,
 }
 
-impl PlannedRow {
-    /// The `ContentRole` this row's prose should be stored under, or `None` when
-    /// the row's type holds no prose.
-    pub fn prose_role(&self) -> Option<ContentRole> {
-        let (role, sub_role) = self.create_type.combo(ChapterMode::Folder);
-        for candidate in [
-            ContentRole::SceneText,
-            ContentRole::NoteText,
-            ContentRole::ParatextText,
-        ] {
-            if content_allowed(&role, &sub_role, &candidate) {
-                return Some(candidate);
-            }
-        }
-        let _ = allowed_content(&role, &sub_role);
-        None
-    }
-}
-
 /// A reviewable import.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ImportPlan {
@@ -102,12 +83,34 @@ pub fn build_plan(
 ) -> ImportPlan {
     let mut plan = ImportPlan::default();
 
+    // The heading ladder spans the whole import, not each document.
+    //
+    // The level → type rules already do (`infer_rules` is fed every level any
+    // document used), and the two must agree: a per-document ladder gave
+    // `## Chapter Two` in a file of its own the type Chapter — from the global
+    // rule — at indent 0, while `## Chapter Two` under a `#` in another file
+    // landed at indent 1. Same heading, same type, two different depths, one of
+    // them outside the book it belongs to. A book split across files shares one
+    // heading convention; that is the whole reason the files are being imported
+    // together.
+    let mut open_levels: Vec<u8> = Vec::new();
+
     for doc in docs {
         plan.diagnostics.extend(doc.diagnostics.iter().cloned());
         if doc.is_empty() {
             continue;
         }
-        append_document(&mut plan, doc, rules, base_indent);
+        append_document(&mut plan, doc, rules, base_indent, &mut open_levels);
+    }
+
+    // Word counts, once, on the assembled prose — and with markers stripped,
+    // because a break is furniture the writer placed, not words they wrote.
+    // Out here rather than per document: inside the loop it re-counted every
+    // row already in the plan for each further document.
+    for row in &mut plan.rows {
+        row.word_count = scene_break::strip_markers_djot(&row.djot)
+            .split_whitespace()
+            .count();
     }
 
     flag_duplicate_titles(&mut plan);
@@ -120,11 +123,12 @@ fn append_document(
     doc: &SourceDocument,
     rules: &LevelRules,
     base_indent: i64,
-) {
     // Heading level → the indent its row sits at. Rebuilt as levels are met so a
     // document that skips a level (`#` then `####`) nests one step, not three:
-    // the phantom-folder failure Scrivener is documented to produce.
-    let mut open_levels: Vec<u8> = Vec::new();
+    // the phantom-folder failure Scrivener is documented to produce. Owned by
+    // [`build_plan`] and carried across documents — see the note there.
+    open_levels: &mut Vec<u8>,
+) {
     // The row currently collecting prose. A document may open with prose before
     // any heading, which becomes a row of its own rather than being silently
     // attached to the first heading that follows.
@@ -198,15 +202,6 @@ fn append_document(
         }
     }
     push(plan, current.take());
-
-    // Word counts are computed once, at the end, on the assembled prose — and
-    // with markers stripped, because a break is furniture the writer placed, not
-    // words they wrote.
-    for row in &mut plan.rows {
-        row.word_count = scene_break::strip_markers_djot(&row.djot)
-            .split_whitespace()
-            .count();
-    }
 }
 
 /// The row that collects prose appearing before a document's first heading.
@@ -279,13 +274,11 @@ fn flag_illegal_combinations(plan: &mut ImportPlan, chapter_mode: &ChapterMode) 
             continue;
         }
         let (role, sub_role) = row.create_type.combo(chapter_mode.clone());
-        let holds_prose = allowed_content(&role, &sub_role)
-            .iter()
-            .any(|r| !matches!(r, ContentRole::SynopsisText) && is_prose_role(r));
+        let holds_prose = allowed_content(&role, &sub_role).iter().any(is_prose_role);
         if !holds_prose {
             row.diagnostics.push(ImportDiagnostic::IllegalCombination {
                 title: row.title.clone(),
-                detail: format!("a {role:?}/{sub_role:?} row cannot hold prose"),
+                kind: row.create_type,
             });
         }
     }
@@ -349,6 +342,68 @@ mod tests {
                 .contains(scene_break::canonical_djot(SceneBreakTier::Minor))
         );
         assert_eq!(row.word_count, 3, "markers are furniture, not words");
+    }
+
+    /// A book split across files shares one heading convention, so the ladder
+    /// has to span them. Per document, this `## Chapter Two` — the only heading
+    /// in its file — became a top-level row: type Chapter (the rules are global)
+    /// at indent 0, i.e. a chapter sitting *outside* the book its sibling is in.
+    #[test]
+    fn the_heading_ladder_spans_every_document_in_one_import() {
+        let first = doc(
+            "01.md",
+            vec![heading(1, "Book"), heading(2, "Chapter One"), prose("x")],
+        );
+        let second = doc("02.md", vec![heading(2, "Chapter Two"), prose("y")]);
+
+        let rules = infer_rules(&[1, 2], CreateType::Book);
+        let plan = build_plan(&[first, second], &rules, ChapterMode::Folder, 0);
+
+        let shape: Vec<(i64, &str)> = plan
+            .rows
+            .iter()
+            .map(|r| (r.indent, r.title.as_str()))
+            .collect();
+        assert_eq!(
+            shape,
+            vec![(0, "Book"), (1, "Chapter One"), (1, "Chapter Two")],
+            "both chapters belong to the book"
+        );
+    }
+
+    /// …and a later file that opens at the *top* level still starts over, which
+    /// is what makes the ordinary one-file-per-chapter export work.
+    #[test]
+    fn a_later_document_reopening_the_top_level_returns_to_the_top() {
+        let first = doc(
+            "01.md",
+            vec![heading(1, "One"), heading(2, "A scene"), prose("x")],
+        );
+        let second = doc("02.md", vec![heading(1, "Two"), prose("y")]);
+
+        let rules = infer_rules(&[1, 2], CreateType::Chapter);
+        let plan = build_plan(&[first, second], &rules, ChapterMode::Folder, 0);
+
+        let shape: Vec<(i64, &str)> = plan
+            .rows
+            .iter()
+            .map(|r| (r.indent, r.title.as_str()))
+            .collect();
+        assert_eq!(shape, vec![(0, "One"), (1, "A scene"), (0, "Two")]);
+    }
+
+    /// Word counting moved out of the per-document loop; it must still be right
+    /// for every row of a multi-document import, not only the last one's.
+    #[test]
+    fn every_document_gets_its_words_counted() {
+        let first = doc("01.md", vec![heading(1, "One"), prose("one two three")]);
+        let second = doc("02.md", vec![heading(1, "Two"), prose("four five")]);
+
+        let rules = infer_rules(&[1], CreateType::Chapter);
+        let plan = build_plan(&[first, second], &rules, ChapterMode::Folder, 0);
+
+        let counts: Vec<usize> = plan.rows.iter().map(|r| r.word_count).collect();
+        assert_eq!(counts, vec![3, 2]);
     }
 
     #[test]

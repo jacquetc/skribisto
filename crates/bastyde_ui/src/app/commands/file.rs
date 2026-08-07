@@ -15,6 +15,7 @@ use bastyde::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use bastyde::prelude::*;
 
 use crate::intents::AppIntent;
+use crate::panels::import_document::present_import_document;
 use crate::panels::import_plume::ImportPlumePanel;
 use crate::panels::new_work::NewWorkPanel;
 use crate::settings::SettingsPanel;
@@ -170,6 +171,22 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 .size(600, 500),
         );
     }));
+
+    // Import documents (Markdown / plain text) INTO the open project: presents the wizard.
+    // Menu-only, no shortcut. Global so the title-bar overlay menu reaches it.
+    //
+    // Unlike `work.import_plume` just above, the view-model is **threaded**, not looked up in
+    // `app_state`: Plume produces a brand-new file nobody has opened, so one shared instance is
+    // right for it; this one writes into the Work *this window* shows, and `app_state` holds
+    // exactly one process-wide slot seeded by whichever window was built first. That lookup
+    // would land an imported manuscript in another project — silently, and undoably only on
+    // that project's stack.
+    {
+        let import = deps.import_document.clone();
+        ctx.register_action_global(Action::new("work.import_document").on_invoke(move |_i, c| {
+            present_import_document(c, import.clone(), Vec::new());
+        }));
+    }
 
     // Close Work (Ctrl+W): the `work.close` *action* is registered in `App::build` (it shares
     // the unsaved-changes guard with the window close); here we only add its global shortcut.

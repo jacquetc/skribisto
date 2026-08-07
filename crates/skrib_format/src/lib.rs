@@ -75,8 +75,8 @@ pub use mapping::{bundle_to_loaded, from_entities, mark_as_backup};
 pub use reader::{peek_manifest, read_bundle};
 pub use shape::{SkribShape, detect_shape};
 pub use slug::{
-    binder_dir_name, nearest_titled_ancestor, prose_file_name, prose_kind, prose_relpath, short_id,
-    slugify,
+    binder_dir_name, nearest_titled_ancestor, nearest_titled_ancestors, prose_file_name,
+    prose_kind, prose_relpath, short_id, slugify,
 };
 pub use sniff::{BackupSniff, sniff_backup, sniff_backup_filename};
 pub use tree_read::{Gathered, TreeReader, gather};

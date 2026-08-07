@@ -83,6 +83,17 @@ pub enum AppIntent {
     #[name = "work.import_plume"]
     ImportPlumeCreator,
 
+    /// Import Markdown / plain-text documents **into the open project** —
+    /// presents the Import documents wizard. Fired from File ▸ Import from ▸
+    /// Documents. Consumed by a global `work.import_document` action.
+    ///
+    /// Unlike [`Self::ImportPlumeCreator`], which produces a brand-new `.skrib`
+    /// nobody has opened, this one writes into the Work this window is showing —
+    /// which is why its view-model is per-window (Tier 3) and threaded through
+    /// `CommandDeps` rather than resolved from `ctx.app_state`.
+    #[name = "work.import_document"]
+    ImportDocument,
+
     /// Open an **already-chosen** `.skrib` over the project in this window.
     ///
     /// Fired by the doors that pick the path themselves and live outside `App`:
