@@ -163,28 +163,48 @@ fn default_heading_separator() -> String {
 /// chapter heading — and enough published fiction does it that a writer who remembers it
 /// that way is not misremembering. So it is a choice, not a rule, and the default is the
 /// documented convention.
-/// Where a footnote's text is set.
+/// Where a note's text is set — at the foot of the page, or gathered as endnotes.
 ///
-/// Footnotes and endnotes are the same feature with the marker in the same place —
-/// only the text moves — so this is one option rather than two features. What a
-/// given format can honour differs, and the writer's choice is honoured as far as
-/// the format allows rather than refused:
+/// A note that leaves the foot of the page stops being a footnote and becomes an
+/// **endnote**; the marker in the prose does not move, only the text does. That is
+/// why this is one option rather than two features — and why the variants say
+/// "endnotes" rather than describing a position. A writer looking for endnotes
+/// should find them under that word, which is the one every style guide uses.
+///
+/// All three placements are ordinary editorial choices, not a scale from best to
+/// worst: Chicago offers exactly these, and the back-of-book "Notes" section is
+/// what most trade non-fiction ships.
+///
+/// What a given format can honour differs, and the writer's choice is honoured as
+/// far as the format allows rather than refused:
 ///
 /// * PDF, DOCX and LaTeX set a real page-bottom footnote.
 /// * EPUB and HTML have no page bottom — a reflowable book has no pages — so the
 ///   `noteref`/`aside` pair becomes a pop-up. That is the format's own idiom, not a
 ///   compromise.
 /// * Markdown and plain text can only list them at the end.
+///
+/// **Nothing reads this yet**: every value renders identically, notes landing once
+/// at the end of the compiled document. It is named and documented ahead of the
+/// behaviour deliberately, so the vocabulary is settled before anything depends on
+/// it — see the note in `settings/panes/export_styles.rs` on why it has no control.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum FootnotePlacement {
     /// At the foot of the page the reference falls on. What "footnote" means.
     #[default]
     PageBottom,
-    /// Gathered at the end of each chapter.
-    ChapterEnd,
-    /// Gathered at the end of the book.
-    BookEnd,
+    /// Endnotes, gathered at the end of each chapter.
+    EndnotesPerChapter,
+    /// Endnotes, gathered at the end of the book — the back-of-book "Notes"
+    /// section.
+    ///
+    /// Named for what it *is* rather than where it sits, because "book end" is
+    /// already taken twice over in this codebase for something else entirely:
+    /// `BinderItemSubRole::BookEnd` is a book's closing matter, and
+    /// `CreateType::EndOfBook` is labelled `create-book-end`. A third meaning
+    /// would have been one too many — and "bookend" is a shelf ornament.
+    EndnotesAtEnd,
 }
 
 /// Where a footnote's numbering restarts. Mirrors
