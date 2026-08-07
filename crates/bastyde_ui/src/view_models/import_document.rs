@@ -35,11 +35,11 @@ use frontend::commands::{long_operation_commands, undo_redo_commands};
 use frontend::common::event::Event;
 use frontend::import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyImportRow, ApplyImportRows,
-    DocumentImportRow, DocumentImportRows, ImportDiagnosticRow, ImportDiagnosticRows,
-    ImportRowKind,
+    DocumentImportRow, DocumentImportRows, DropPosition, ImportComment, ImportCommentKind,
+    ImportDiagnosticRow, ImportDiagnosticRows, ImportOrphanReason, ImportReply, ImportRowKind,
 };
 
-use document_ingest::plan::PlannedRow;
+use document_ingest::plan::{PlannedComment, PlannedRow};
 use document_ingest::{ImportPlan, ScannerRegistry};
 use skribisto_model::CreateType;
 
@@ -95,6 +95,13 @@ pub const LEVEL_TYPES: &[CreateType] = &[
     CreateType::Chapter,
     CreateType::Scene,
 ];
+
+/// `ImportDiagnostic::IllegalCombination`'s key, as `document_ingest` spells it.
+///
+/// Named rather than inlined because it is matched in two directions — the row-scoped
+/// entries carrying it are cleared and rebuilt on every retype — and a typo in either
+/// would silently stop marking the rows it is there to mark.
+const ILLEGAL_COMBINATION: &str = "illegal-combination";
 
 /// A diagnostic, translated at the boundary rather than carried as a sentence.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -174,6 +181,34 @@ impl Diagnostic {
                 kind = kind
                     .map(|k| crate::binder::create_labels::recommendation_label(k).resolve_now())
                     .unwrap_or_default()
+            )),
+            "tracked-changes-flattened" => tr!(import_diagnostic_tracked_changes_flattened(
+                path = path,
+                count = count
+            )),
+            "text-box-dropped" => tr!(import_diagnostic_text_box_dropped(
+                path = path,
+                count = count
+            )),
+            "embedded-object-dropped" => tr!(import_diagnostic_embedded_object_dropped(
+                path = path,
+                count = count
+            )),
+            "field-flattened" => tr!(import_diagnostic_field_flattened(
+                path = path,
+                count = count
+            )),
+            "unknown-style-level" => tr!(import_diagnostic_unknown_style_level(
+                path = path,
+                detail = detail
+            )),
+            "comment-unanchored" => tr!(import_diagnostic_comment_unanchored(
+                path = path,
+                detail = detail
+            )),
+            "comment-replies-flattened" => tr!(import_diagnostic_comment_replies_flattened(
+                path = path,
+                count = count
             )),
             // Not silence: a diagnostic nobody translated is still a diagnostic,
             // and the writer would rather read a raw key than lose the warning.
@@ -424,20 +459,31 @@ impl ImportDocumentViewModel {
             .get()
             .ok_or_else(|| anyhow::anyhow!("import: no project is open"))?;
 
+        // The destination, verbatim — never a depth or a kind worked out here.
+        //
+        // This used to send `(Book, 0)` whatever the writer had pointed at, so an
+        // import into a chapter arrived as a top-level book spliced between that
+        // chapter and its own scenes, which then re-parented onto it. What a
+        // destination *means* is `binder_ordering`'s question, and both halves of the
+        // use case now ask it there; the wizard's job is only to say where the writer
+        // pointed.
+        let destination = self.destination.selected();
         let dto = AnalyzeDocumentImportDto {
             work_id,
-            binder_id: self
-                .destination
-                .selected()
-                .map(|d| d.binder_id)
-                .unwrap_or(0),
+            binder_id: destination.as_ref().map(|d| d.binder_id).unwrap_or(0),
             source_paths: self
                 .file_paths()
                 .iter()
                 .map(|p| p.to_string_lossy().to_string())
                 .collect(),
-            start_kind: ImportRowKind::Book,
-            base_indent: 0,
+            anchor_item_id: destination
+                .as_ref()
+                .and_then(|d| d.anchor_item_id)
+                .unwrap_or(0),
+            drop_position: destination
+                .as_ref()
+                .map(|d| to_dto_position(d.position.clone()))
+                .unwrap_or(DropPosition::Into),
         };
         let op = frontend::commands::import_management_commands::analyze_document_import(
             &self.app_ctx,
@@ -598,6 +644,9 @@ impl ImportDocumentViewModel {
 
     pub fn set_diagnostics(&self, diagnostics: Vec<Diagnostic>) {
         self.diagnostics.set(diagnostics);
+        // The analyser's own illegal-combination entries are recomputed here too, so
+        // there is exactly one rule deciding which rows are marked — this one.
+        self.recheck_types();
     }
 
     /// Every diagnostic, worst first, already turned into the writer's sentence.
@@ -664,6 +713,7 @@ impl ImportDocumentViewModel {
             pinned.push(key);
             self.pinned.set(pinned);
         }
+        self.recheck_types();
     }
 
     pub fn is_pinned(&self, key: PlanRowKey) -> bool {
@@ -694,6 +744,101 @@ impl ImportDocumentViewModel {
                 self.plan.set_type(key, kind);
             }
         }
+        self.recheck_types();
+    }
+
+    // ── what apply would refuse ─────────────────────────────────────────────
+
+    /// Re-derive the "this row's type cannot hold its prose" diagnostic against the
+    /// types the rows carry **now**.
+    ///
+    /// `IllegalCombination` is computed once, inside `build_plan`, from the types the
+    /// *analyser* inferred. But the review step exists precisely so the writer can
+    /// change those types — and retyping a row that carries prose into a Book, a Part
+    /// or a folder makes an import that `apply_document_import` refuses outright,
+    /// aborting the whole transaction. Before this, the strip went on reporting the
+    /// state the plan arrived in, no marker appeared on the offending row, and Import
+    /// stayed enabled: the writer pressed it and lost the lot.
+    ///
+    /// Row-scoped `illegal-combination` entries are rebuilt wholesale rather than
+    /// patched, so a row retyped *back* to something legal loses its marker too.
+    fn recheck_types(&self) {
+        let mut diagnostics: Vec<Diagnostic> = self
+            .diagnostics
+            .get()
+            .into_iter()
+            .filter(|d| !(d.key == ILLEGAL_COMBINATION && d.row.is_some()))
+            .collect();
+
+        for key in self.plan.keys_in_order() {
+            if self.holds_its_prose(key) {
+                continue;
+            }
+            diagnostics.push(Diagnostic {
+                key: ILLEGAL_COMBINATION.to_string(),
+                severity: "warning".to_string(),
+                path: String::new(),
+                detail: String::new(),
+                count: 0,
+                row: Some(key),
+            });
+        }
+        self.diagnostics.set(diagnostics);
+    }
+
+    /// False when this row carries prose that its current type cannot store.
+    ///
+    /// Asks `skribisto_model` rather than deciding: the constraint matrix is the one
+    /// authority, and `apply_document_import` asks it the same question at write time
+    /// (`prose_role_for`). A second opinion here would only tell the writer the import
+    /// was fine and let the backend refuse it.
+    fn holds_its_prose(&self, key: PlanRowKey) -> bool {
+        let Some(row) = self.plan.row(key) else {
+            return true;
+        };
+        if row.djot.trim().is_empty() {
+            return true;
+        }
+        let Some(kind) = self.plan.type_of(key) else {
+            return true;
+        };
+        let (role, sub_role) = kind.combo(self.chapter_mode());
+        skribisto_model::allowed_content(&role, &sub_role)
+            .iter()
+            .any(|r| {
+                matches!(
+                    r,
+                    frontend::common::entities::ContentRole::SceneText
+                        | frontend::common::entities::ContentRole::NoteText
+                        | frontend::common::entities::ContentRole::ParatextText
+                )
+            })
+    }
+
+    /// How this project encodes a Chapter. Read live rather than cached: it is a
+    /// per-`Work` setting, and this view-model outlives any one analysis.
+    fn chapter_mode(&self) -> frontend::common::entities::ChapterMode {
+        self.ids
+            .work_id
+            .get()
+            .and_then(|id| frontend::commands::work_commands::get_work(&self.app_ctx, &id).ok())
+            .flatten()
+            .map(|w| w.chapter_mode)
+            .unwrap_or(frontend::common::entities::ChapterMode::Folder)
+    }
+
+    /// The included rows `apply_document_import` would refuse, by title.
+    ///
+    /// Drives both the Import button's enabled state and the sentence that says why
+    /// it is off — a disabled button with no reason is worse than one that fails.
+    pub fn blocking_rows(&self) -> Vec<String> {
+        self.plan
+            .keys_in_order()
+            .into_iter()
+            .filter(|k| self.is_included(*k))
+            .filter(|k| !self.holds_its_prose(*k))
+            .filter_map(|k| self.plan.row(k).map(|r| r.title))
+            .collect()
     }
 
     // ── inclusion ───────────────────────────────────────────────────────────
@@ -735,10 +880,17 @@ impl ImportDocumentViewModel {
             .count()
     }
 
+    /// Whether Import may be pressed.
+    ///
+    /// Includes "no included row would be refused by the backend". `apply_document_import`
+    /// runs in one transaction and returns `Err` on the first row whose type cannot hold
+    /// its prose — so one bad row does not lose one row, it loses the whole import. The
+    /// review step is where that is still fixable, so it is refused here.
     pub fn can_apply(&self) -> bool {
         self.included_count() > 0
             && self.ids.work_id.get().is_some()
             && self.destination.selected().is_some()
+            && self.blocking_rows().is_empty()
     }
 
     // ── commit ──────────────────────────────────────────────────────────────
@@ -767,6 +919,7 @@ impl ImportDocumentViewModel {
                 work_id,
                 binder_id: destination.binder_id,
                 anchor_item_id: destination.anchor_item_id.unwrap_or(0),
+                drop_position: to_dto_position(destination.position.clone()),
                 row: ApplyImportRow::Empty,
                 rows: ApplyImportRows::Create(rows),
             },
@@ -792,6 +945,11 @@ impl ImportDocumentViewModel {
                     kind: create_type_to_kind(kind),
                     title: row.title,
                     djot: row.djot,
+                    // Handed straight back as they arrived. The writer reviews
+                    // *rows*, and retyping a title or a type cannot move a comment:
+                    // its quote was measured against this row's prose, and the prose
+                    // is what the review step never edits.
+                    comments: row.comments.iter().map(comment_to_dto).collect(),
                 })
             })
             .collect()
@@ -861,6 +1019,21 @@ fn infer_level_rules(plan: &ImportPlan, levels: &[u8]) -> Vec<(u8, CreateType)> 
     rules
 }
 
+/// The picker's own `DropPosition` → the import feature's DTO enum.
+///
+/// Two enums for one idea, because a Qleany DTO enum cannot be shared across crates —
+/// `trash_management` carries the identical pair and maps it the same way
+/// (`restore_items_to_uc::to_drop_place`). Exhaustive, so a fourth position added to
+/// the widget fails to compile here rather than defaulting to something plausible.
+fn to_dto_position(place: frontend::trash_management::DropPosition) -> DropPosition {
+    use frontend::trash_management::DropPosition as Picked;
+    match place {
+        Picked::Before => DropPosition::Before,
+        Picked::After => DropPosition::After,
+        Picked::Into => DropPosition::Into,
+    }
+}
+
 /// The DTO's flat kind ↔ the model's create vocabulary.
 ///
 /// A second copy of `import_management::kind_mapping`, and deliberately so: that
@@ -882,6 +1055,148 @@ fn create_type_to_kind(kind: CreateType) -> ImportRowKind {
     }
 }
 
+/// One imported comment, DTO → plan.
+///
+/// A pure, exhaustive field copy in both directions ([`comment_to_dto`] is the
+/// twin). Nothing here decides anything: the anchor was proved against this row's
+/// Djot back in `document_ingest::plan`, and the review step edits titles and types
+/// but never prose — so a comment that arrives correct stays correct.
+///
+/// Returns `None` for `ImportComment::Empty`, the default variant nothing populates.
+fn comment_from_dto(comment: &ImportComment) -> Option<PlannedComment> {
+    let ImportComment::Found {
+        kind,
+        author_name,
+        created_at,
+        body,
+        resolved,
+        orphaned,
+        orphan_reason,
+        range_start,
+        range_length,
+        quote_prefix,
+        quote_exact,
+        quote_exact_truncated,
+        quote_suffix,
+        block_ordinal_hint,
+        replies,
+    } = comment
+    else {
+        return None;
+    };
+    Some(PlannedComment {
+        kind: match kind {
+            ImportCommentKind::Range => frontend::common::entities::CommentAnchorKind::Range,
+            ImportCommentKind::Paragraph => {
+                frontend::common::entities::CommentAnchorKind::Paragraph
+            }
+            ImportCommentKind::Document => frontend::common::entities::CommentAnchorKind::Document,
+        },
+        anchor: skribisto_model::comment_anchor::Anchor {
+            start: (*range_start).max(0) as usize,
+            length: (*range_length).max(0) as usize,
+            prefix: quote_prefix.clone(),
+            exact: quote_exact.clone(),
+            exact_truncated: *quote_exact_truncated,
+            suffix: quote_suffix.clone(),
+            block_ordinal: (*block_ordinal_hint).max(0) as usize,
+            block_span: 1,
+        },
+        orphaned: *orphaned,
+        orphan_reason: match orphan_reason {
+            ImportOrphanReason::NotOrphaned => {
+                frontend::common::entities::CommentOrphanReason::NotOrphaned
+            }
+            ImportOrphanReason::TextNotFound => {
+                frontend::common::entities::CommentOrphanReason::TextNotFound
+            }
+            ImportOrphanReason::Ambiguous => {
+                frontend::common::entities::CommentOrphanReason::Ambiguous
+            }
+            ImportOrphanReason::TargetDeleted => {
+                frontend::common::entities::CommentOrphanReason::TargetDeleted
+            }
+        },
+        author: author_name.clone(),
+        created: parse_rfc3339(created_at),
+        body: body.clone(),
+        resolved: *resolved,
+        replies: replies
+            .iter()
+            .filter_map(|reply| {
+                let ImportReply::Found {
+                    author_name,
+                    created_at,
+                    body,
+                } = reply
+                else {
+                    return None;
+                };
+                Some(document_ingest::SourceAnnotationReply {
+                    author: author_name.clone(),
+                    created: parse_rfc3339(created_at),
+                    body: body.clone(),
+                })
+            })
+            .collect(),
+    })
+}
+
+/// One imported comment, plan → DTO. The twin of [`comment_from_dto`].
+fn comment_to_dto(comment: &PlannedComment) -> ImportComment {
+    ImportComment::Found {
+        kind: match comment.kind {
+            frontend::common::entities::CommentAnchorKind::Range => ImportCommentKind::Range,
+            frontend::common::entities::CommentAnchorKind::Paragraph => {
+                ImportCommentKind::Paragraph
+            }
+            frontend::common::entities::CommentAnchorKind::Document => ImportCommentKind::Document,
+        },
+        author_name: comment.author.clone(),
+        created_at: comment.created.map(|d| d.to_rfc3339()).unwrap_or_default(),
+        body: comment.body.clone(),
+        resolved: comment.resolved,
+        orphaned: comment.orphaned,
+        orphan_reason: match comment.orphan_reason {
+            frontend::common::entities::CommentOrphanReason::NotOrphaned => {
+                ImportOrphanReason::NotOrphaned
+            }
+            frontend::common::entities::CommentOrphanReason::TextNotFound => {
+                ImportOrphanReason::TextNotFound
+            }
+            frontend::common::entities::CommentOrphanReason::Ambiguous => {
+                ImportOrphanReason::Ambiguous
+            }
+            frontend::common::entities::CommentOrphanReason::TargetDeleted => {
+                ImportOrphanReason::TargetDeleted
+            }
+        },
+        range_start: comment.anchor.start as i64,
+        range_length: comment.anchor.length as i64,
+        quote_prefix: comment.anchor.prefix.clone(),
+        quote_exact: comment.anchor.exact.clone(),
+        quote_exact_truncated: comment.anchor.exact_truncated,
+        quote_suffix: comment.anchor.suffix.clone(),
+        block_ordinal_hint: comment.anchor.block_ordinal as i64,
+        replies: comment
+            .replies
+            .iter()
+            .map(|reply| ImportReply::Found {
+                author_name: reply.author.clone(),
+                created_at: reply.created.map(|d| d.to_rfc3339()).unwrap_or_default(),
+                body: reply.body.clone(),
+            })
+            .collect(),
+    }
+}
+
+/// An empty string means the source carried no date, which is not an error.
+fn parse_rfc3339(value: &str) -> Option<chrono::DateTime<chrono::Utc>> {
+    chrono::DateTime::parse_from_rfc3339(value.trim())
+        .ok()
+        .map(|d| d.with_timezone(&chrono::Utc))
+}
+
 /// Read a plan and its diagnostics back out of the analyse DTO.
 pub fn plan_from_dto(
     rows: &DocumentImportRows,
@@ -900,6 +1215,7 @@ pub fn plan_from_dto(
                 djot,
                 scene_breaks,
                 word_count,
+                comments,
                 origin,
                 included,
             } = row
@@ -918,6 +1234,7 @@ pub fn plan_from_dto(
                 djot: djot.clone(),
                 scene_breaks: *scene_breaks as usize,
                 word_count: *word_count as usize,
+                comments: comments.iter().filter_map(comment_from_dto).collect(),
                 origin: origin.clone(),
                 included: *included,
                 diagnostics: Vec::new(),
@@ -1009,6 +1326,20 @@ mod tests {
         clear();
     }
 
+    /// A container row: a real one carries no prose of its own.
+    ///
+    /// The fixture used to give *every* row prose, including its Book — a shape the
+    /// analyser cannot produce (`infer_rules` keeps the deepest level prose-bearing)
+    /// and one `apply_document_import` refuses outright. It went unnoticed while
+    /// nothing checked; the live type check now does, which is the point of it.
+    fn container(indent: i64, title: &str, kind: CreateType) -> PlannedRow {
+        PlannedRow {
+            djot: String::new(),
+            word_count: 0,
+            ..planned(indent, title, kind)
+        }
+    }
+
     fn planned(indent: i64, title: &str, kind: CreateType) -> PlannedRow {
         PlannedRow {
             indent,
@@ -1020,6 +1351,7 @@ mod tests {
             word_count: 2,
             origin: "a.md".into(),
             included: true,
+            comments: Vec::new(),
             diagnostics: Vec::new(),
         }
     }
@@ -1030,7 +1362,7 @@ mod tests {
         let vm = ImportDocumentViewModel::new(Rc::new(AppContext::new()), AppIds::default());
         let plan = ImportPlan {
             rows: vec![
-                planned(0, "Book", CreateType::Book),
+                container(0, "Book", CreateType::Book),
                 planned(1, "Chapter One", CreateType::Chapter),
                 planned(2, "Scene A", CreateType::Scene),
                 planned(2, "Scene B", CreateType::Scene),
@@ -1269,7 +1601,7 @@ mod tests {
     fn the_level_rules_are_what_the_analysed_rows_actually_say() {
         let plan = ImportPlan {
             rows: vec![
-                planned(0, "Book", CreateType::Book),
+                container(0, "Book", CreateType::Book),
                 planned(1, "One", CreateType::Chapter),
                 planned(2, "A", CreateType::Scene),
                 planned(1, "Two", CreateType::Chapter),
@@ -1322,15 +1654,51 @@ mod tests {
         }
     }
 
+    /// A match with no wildcard arm, so a new `ImportDiagnostic` variant upstream
+    /// stops this crate from compiling until the sample list below, the `message`
+    /// arms, and both `.ftl` files have caught up.
+    ///
+    /// It does nothing at run time on purpose — the compiler is the assertion.
+    fn exhaustive_over_every_variant(d: &document_ingest::ImportDiagnostic) {
+        use document_ingest::ImportDiagnostic::*;
+        match d {
+            FileUnreadable { .. }
+            | LossyDecode { .. }
+            | DecodedFromBom { .. }
+            | EmptyFile { .. }
+            | NoHeadings { .. }
+            | UnsupportedFormat { .. }
+            | FrontMatterNotFlat { .. }
+            | FootnotesDegraded { .. }
+            | RawHtmlDropped { .. }
+            | NestedBreakDropped { .. }
+            | ImageNotIngested { .. }
+            | DuplicateTitle { .. }
+            | HeadingLevelJump { .. }
+            | IllegalCombination { .. }
+            | TrackedChangesFlattened { .. }
+            | TextBoxDropped { .. }
+            | EmbeddedObjectDropped { .. }
+            | FieldFlattened { .. }
+            | UnknownStyleLevel { .. }
+            | CommentUnanchored { .. }
+            | CommentRepliesFlattened { .. } => {}
+        }
+    }
+
     /// **Every** diagnostic `document_ingest` can raise must reach a translated
     /// sentence.
     ///
-    /// The list is built from the real `ImportDiagnostic` variants, mapped
-    /// through the real DTO mapper, so a fifteenth variant added upstream fails
-    /// here rather than silently landing in the fallback arm — which is what a
-    /// hand-written list of key strings would have allowed. Fourteen collected
-    /// diagnostics that nothing rendered is the bug this whole surface exists to
-    /// close; a fifteenth quietly joining them would be the same bug again.
+    /// The samples are real `ImportDiagnostic` variants, mapped through the real
+    /// DTO mapper, so a variant added upstream fails here rather than silently
+    /// landing in the fallback arm. Collected diagnostics that nothing rendered is
+    /// the bug this whole surface exists to close; a new one quietly joining them
+    /// would be the same bug again.
+    ///
+    /// [`exhaustive_over_every_variant`] is what keeps the list honest: a `vec!` of
+    /// samples is only as complete as whoever last edited it, and this test's own
+    /// note used to claim it was built from the variants when it was not. That
+    /// claim is now enforced by the compiler.
     #[test]
     fn every_diagnostic_the_importer_can_raise_has_a_sentence() {
         use document_ingest::ImportDiagnostic as D;
@@ -1391,7 +1759,39 @@ mod tests {
                 title: "A part".into(),
                 kind: CreateType::Part,
             },
+            D::TrackedChangesFlattened {
+                path: "/tmp/a.docx".into(),
+                count: 6,
+            },
+            D::TextBoxDropped {
+                path: "/tmp/a.docx".into(),
+                count: 1,
+            },
+            D::EmbeddedObjectDropped {
+                path: "/tmp/a.odt".into(),
+                count: 2,
+            },
+            D::FieldFlattened {
+                path: "/tmp/a.docx".into(),
+                count: 9,
+            },
+            D::UnknownStyleLevel {
+                path: "/tmp/a.docx".into(),
+                style: "HeadingChapter".into(),
+            },
+            D::CommentUnanchored {
+                path: "/tmp/a.docx".into(),
+                quote: "Is this the right word?".into(),
+            },
+            D::CommentRepliesFlattened {
+                path: "/tmp/a.odt".into(),
+                count: 3,
+            },
         ];
+
+        for raised in &every {
+            exhaustive_over_every_variant(raised);
+        }
 
         with_real_messages(|| {
             for raised in &every {
@@ -1424,6 +1824,78 @@ mod tests {
 
     /// Worst first. A file that could not be opened at all must not sit under
     /// three notes about footnotes.
+    /// **Regression.** Retyping a row into something that cannot hold its prose must
+    /// stop the import, mark the row, and say so.
+    ///
+    /// `apply_document_import` runs in one transaction and returns `Err` on the first
+    /// such row — so pressing Import lost the *whole* import, however many files it
+    /// covered. The plan's own `illegal-combination` diagnostic was computed once at
+    /// analysis time and never recomputed, so the strip reported the pre-retype state,
+    /// no marker appeared, and the button stayed enabled. The review step is where this
+    /// is still fixable.
+    #[test]
+    fn retyping_a_row_so_it_cannot_hold_its_prose_stops_the_import() {
+        let vm = vm();
+        assert!(
+            vm.blocking_rows().is_empty(),
+            "the fixture starts out applyable"
+        );
+
+        // Scene A carries prose; a Part cannot hold any.
+        vm.retype_row(PlanRowKey(2), CreateType::Part);
+
+        assert_eq!(
+            vm.blocking_rows(),
+            vec!["Scene A".to_string()],
+            "the offending row must be named, so the writer can find it"
+        );
+        assert!(
+            !vm.can_apply(),
+            "Import must refuse rather than lose the batch"
+        );
+        assert_eq!(
+            vm.diagnostics_for_row(PlanRowKey(2)).len(),
+            1,
+            "and the row must be marked in the tree"
+        );
+
+        // Retyping it back clears all three.
+        vm.retype_row(PlanRowKey(2), CreateType::Scene);
+        assert!(vm.blocking_rows().is_empty());
+        assert!(
+            vm.diagnostics_for_row(PlanRowKey(2)).is_empty(),
+            "a row put right must lose its marker too"
+        );
+    }
+
+    /// A row the writer unticked is never created, so it cannot block anything.
+    #[test]
+    fn an_excluded_row_does_not_block_the_import() {
+        let vm = vm();
+        vm.retype_row(PlanRowKey(2), CreateType::Part);
+        assert!(!vm.blocking_rows().is_empty());
+
+        vm.set_included(PlanRowKey(2), false);
+        assert!(
+            vm.blocking_rows().is_empty(),
+            "excluding the row removes the reason to refuse"
+        );
+    }
+
+    /// The same trap reached the other way: a *bulk* level rule can make a whole
+    /// level illegal at once, and it must be caught the same way a single retype is.
+    #[test]
+    fn a_bulk_level_rule_that_breaks_rows_stops_the_import_too() {
+        let vm = vm();
+        vm.set_level_rule(3, CreateType::Part);
+        assert_eq!(
+            vm.blocking_rows(),
+            vec!["Scene A".to_string(), "Scene B".to_string()],
+            "every row the rule touched"
+        );
+        assert!(!vm.can_apply());
+    }
+
     #[test]
     fn diagnostics_are_read_worst_first() {
         let vm = vm();
@@ -1600,5 +2072,132 @@ mod tests {
             breaks, 1,
             "the scene break is reported, not silently dropped"
         );
+    }
+
+    /// Build a `.skrib` holding an imported `.docx`, comments and all, at
+    /// `$SKRIBISTO_IMPORT_FIXTURE_OUT`.
+    ///
+    /// `#[ignore]` because it is a tool, not an assertion: it exists so a real
+    /// project carrying imported comments can be opened in the running app. The
+    /// store-level correctness is asserted by `skribisto-import-management`'s
+    /// integration tests; what only the live app can show is whether an imported
+    /// comment *renders* — in the margin beside the sentence it names, and in the
+    /// comments dock — which is exactly the failure the anchor module's own doc
+    /// calls invisible until someone's comment has moved to the wrong sentence.
+    ///
+    ///     SKRIBISTO_IMPORT_FIXTURE_OUT=/tmp/imported.skrib \
+    ///       cargo test -p bastyde_ui a_docx_import_saved_as_a_project -- --ignored --nocapture
+    #[test]
+    #[ignore = "a fixture builder for live inspection, not a check"]
+    fn a_docx_import_saved_as_a_project() {
+        use frontend::commands::{handling_app_lifecycle_commands, work_management_commands};
+        use frontend::work_management::{NewWorkDto, NewWorkTemplate, SaveWorkDto};
+
+        let out = std::env::var("SKRIBISTO_IMPORT_FIXTURE_OUT")
+            .expect("set SKRIBISTO_IMPORT_FIXTURE_OUT to the .skrib to write");
+        let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../document_ingest/tests/fixtures/word-shaped.docx");
+        assert!(
+            source.exists(),
+            "run document_ingest's fixtures/generate.py"
+        );
+
+        let app_ctx = Rc::new(AppContext::new());
+        handling_app_lifecycle_commands::initialize_app(&app_ctx).unwrap();
+        work_management_commands::new_work(
+            &app_ctx,
+            &NewWorkDto {
+                file_name: out.clone(),
+                is_folder: false,
+                // The emptiest template there is: the point of this fixture is to
+                // look at what the *import* produced, and a dozen seeded chapters
+                // above it are a dozen rows of noise.
+                template_kind: NewWorkTemplate::EmptyNovel,
+                labels: vec![],
+                language: vec!["en".to_string()],
+                author_name: "Cyril".into(),
+                chapter_scene_mode: false,
+                paratext_front: Vec::new(),
+                paratext_back: Vec::new(),
+            },
+        )
+        .unwrap();
+        let work_id = frontend::commands::work_commands::get_all_work(&app_ctx)
+            .unwrap()
+            .first()
+            .map(|w| w.id)
+            .expect("the work just created");
+
+        let ids = AppIds::default();
+        ids.work_id.set(Some(work_id));
+        let vm = ImportDocumentViewModel::new(app_ctx.clone(), ids);
+        vm.add_files([source]);
+
+        let op = vm.start_analysis().expect("the analysis starts");
+        let deadline = std::time::Instant::now() + Duration::from_secs(30);
+        loop {
+            if frontend::commands::import_management_commands::get_analyze_document_import_result(
+                &app_ctx, &op,
+            )
+            .ok()
+            .flatten()
+            .is_some()
+            {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "analysis never finished"
+            );
+            std::thread::sleep(Duration::from_millis(20));
+        }
+
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+        tree.run_with_event_context(&mut bastyde::core::NoopWindowOps, |ctx| {
+            vm.on_long_op_completed(ctx, &long_op_event(&op));
+        });
+        assert_eq!(vm.step().get(), STEP_REVIEW);
+
+        let carried: usize = vm.plan().rows().iter().map(|r| r.comments.len()).sum();
+        assert_eq!(carried, 2, "two comment threads reached the review step");
+
+        // Land it in the first binder, at the end. The picker is keyed by durable
+        // uid, so the binder's own uid is the destination.
+        let binder_id = frontend::commands::work_commands::get_work_relationship(
+            &app_ctx,
+            &work_id,
+            &frontend::common::direct_access::work::WorkRelationshipField::Binders,
+        )
+        .unwrap()
+        .first()
+        .copied()
+        .expect("the template made a binder");
+        let binder_uid = frontend::commands::binder_commands::get_binder(&app_ctx, &binder_id)
+            .unwrap()
+            .expect("binder row")
+            .uid;
+        vm.destination().reload();
+        vm.destination()
+            .preselect(crate::models::BinderTreeKey::Binder(binder_uid));
+        let created = vm.apply().expect("apply");
+        assert!(!created.is_empty());
+
+        let path = work_management_commands::save_work(
+            &app_ctx,
+            &SaveWorkDto {
+                media_root: crate::media_paths::media_root_string(),
+                work_id,
+                file_name: out.clone(),
+                overwrite: true,
+            },
+        )
+        .expect("start save");
+        // `save_work` is a long operation; wait for the file to appear.
+        let deadline = std::time::Instant::now() + Duration::from_secs(30);
+        while !std::path::Path::new(&out).exists() {
+            assert!(std::time::Instant::now() < deadline, "save never finished");
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        println!("WROTE {out} (op {path})");
     }
 }

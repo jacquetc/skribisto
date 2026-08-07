@@ -1677,6 +1677,7 @@ import-document-col-title = Title
 import-document-col-type = Type
 import-document-col-words = Words
 import-document-col-breaks = Breaks
+import-document-col-comments = Comments
 import-document-col-source = Source
 import-document-level-rules = Heading levels
 import-document-level-n = Heading { $level }
@@ -1735,6 +1736,13 @@ import-diagnostic-image-not-ingested = “{ $path }” refers to the image “{ 
 import-diagnostic-duplicate-title = “{ $title }” appears { $count } times. If you have imported these files before, this will duplicate them.
 import-diagnostic-heading-level-jump = “{ $title }” jumps from heading level { $from } to { $to }; it is placed one level under its parent.
 import-diagnostic-illegal-combination = “{ $title }” carries prose, but a { $kind } cannot hold any. Its text would be dropped — change its type.
+import-diagnostic-tracked-changes-flattened = { $path } was mid-revision: { $count } tracked change(s) were accepted, and deletions dropped. That is the final text — but check it is the version you meant.
+import-diagnostic-text-box-dropped = { $path } holds { $count } text box(es). Their text sits outside the document's flow, so where it belongs in a manuscript cannot be answered — they are not imported.
+import-diagnostic-embedded-object-dropped = { $path } holds { $count } embedded object(s) — a chart, an equation or similar. There is nothing in a manuscript that could hold them.
+import-diagnostic-field-flattened = { $path } holds { $count } field(s) — a page number, a cross-reference, a date. Each keeps the text it was last showing and will not update again.
+import-diagnostic-unknown-style-level = { $path } uses the style “{ $detail }”, which looks like a heading but names no level. Those paragraphs are imported as prose rather than guessed at a depth.
+import-diagnostic-comment-unanchored = The comment “{ $detail }” in { $path } could not be attached to the words it was about. It is kept on its item, where you can move it.
+import-diagnostic-comment-replies-flattened = { $count } reply/replies in { $path } named a comment that is not in the file, so they arrive as comments of their own.
 import-document-diagnostics = { $errors ->
     [0] { $warnings ->
             [one] 1 thing to know

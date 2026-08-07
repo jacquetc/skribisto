@@ -11,7 +11,7 @@ use common::database::CommandUnitOfWork;
 use common::database::write_guard::WriteTransactionGuard;
 use common::database::{db_context::DbContext, transactions::Transaction};
 #[allow(unused_imports)]
-use common::entities::{Binder, BinderItem, Content, Work};
+use common::entities::{Binder, BinderItem, Comment, CommentReply, Content, Work};
 use common::event::ImportManagementEvent::ApplyDocumentImport;
 use common::event::{AllEvent, DirectAccessEntity, Event, EventBuffer, EventHub, Origin};
 #[allow(unused_imports)]
@@ -130,13 +130,19 @@ impl CommandUnitOfWork for ApplyDocumentImportUnitOfWork {
 // the list on the trait in ../use_cases/apply_document_import_uc.rs — the two are
 // maintained in lockstep forever once scaffolded.
 #[macros::uow_action(entity = "Work", action = "Get")]
+#[macros::uow_action(entity = "Work", action = "GetRelationship")]
+#[macros::uow_action(entity = "Work", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "SetRelationship")]
 #[macros::uow_action(entity = "Binder", action = "Snapshot")]
 #[macros::uow_action(entity = "Binder", action = "Restore")]
 #[macros::uow_action(entity = "BinderItem", action = "CreateOrphan")]
+#[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Comment", action = "CreateOrphan")]
+#[macros::uow_action(entity = "Comment", action = "SetRelationship")]
+#[macros::uow_action(entity = "CommentReply", action = "CreateOrphan")]
 impl ApplyDocumentImportUnitOfWorkTrait for ApplyDocumentImportUnitOfWork {
     fn publish_apply_document_import_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

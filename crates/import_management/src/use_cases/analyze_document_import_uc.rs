@@ -31,22 +31,24 @@
 use crate::AnalyzeDocumentImportDto;
 use crate::DocumentImportPlanDto;
 use crate::dtos::{
-    DocumentImportRow, DocumentImportRows, ImportDiagnosticRow, ImportDiagnosticRows,
+    DocumentImportRow, DocumentImportRows, DropPosition, ImportComment, ImportCommentKind,
+    ImportDiagnosticRow, ImportDiagnosticRows, ImportOrphanReason, ImportReply, ImportRowKind,
 };
-use crate::kind_mapping::{create_type_to_kind, kind_to_create_type};
+use crate::kind_mapping::create_type_to_kind;
 use anyhow::{Result, anyhow};
 use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
-use common::entities::{BinderItem, Work};
+use common::entities::{BinderItem, CommentAnchorKind, CommentOrphanReason, Work};
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
 use std::sync::Arc;
 
-use document_ingest::plan::PlannedRow;
+use document_ingest::plan::{PlannedComment, PlannedRow};
 use document_ingest::{
     ImportDiagnostic, ImportPlan, ScannerRegistry, SourceDocument, build_plan, infer_rules,
     sort_documents, structure,
 };
+use skribisto_model::CreateType;
 
 pub trait AnalyzeDocumentImportUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn AnalyzeDocumentImportUnitOfWorkTrait>;
@@ -62,6 +64,7 @@ pub trait AnalyzeDocumentImportUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Work", action = "GetRO")]
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipRO")]
 #[macros::uow_action(entity = "BinderItem", action = "GetMultiRO")]
+#[macros::uow_action(entity = "BinderItem", action = "GetRO")]
 pub trait AnalyzeDocumentImportUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
     fn publish_analyze_document_import_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -106,6 +109,11 @@ impl LongOperation for AnalyzeDocumentImportUseCase {
         })?;
         let chapter_mode = work.chapter_mode.clone();
         let existing_titles = self.existing_titles(uow.as_ref())?;
+        // Inside the transaction with the two reads above, not after it: the anchor is
+        // a store read like any other, and the destination has to be resolved before
+        // the filesystem work begins so a vanished one fails fast rather than after a
+        // minute of parsing.
+        let (start, base_indent) = self.destination_shape(uow.as_ref())?;
 
         uow.end_transaction()?;
 
@@ -154,11 +162,8 @@ impl LongOperation for AnalyzeDocumentImportUseCase {
         ));
 
         sort_documents(&mut docs);
-        let rules = infer_rules(
-            &structure::levels_used(&docs),
-            kind_to_create_type(&self.dto.start_kind),
-        );
-        let mut plan = build_plan(&docs, &rules, chapter_mode, self.dto.base_indent);
+        let rules = infer_rules(&structure::levels_used(&docs), start);
+        let mut plan = build_plan(&docs, &rules, chapter_mode, base_indent);
         flag_existing_titles(&mut plan, &existing_titles);
 
         progress_callback(OperationProgress::new(100.0, Some("completed".to_string())));
@@ -174,6 +179,57 @@ impl LongOperation for AnalyzeDocumentImportUseCase {
 }
 
 impl AnalyzeDocumentImportUseCase {
+    /// What the chosen destination means: the kind its shallowest imported row
+    /// should be, and the indent it should sit at.
+    ///
+    /// **Derived, never taken from the caller.** The wizard used to send
+    /// `(Book, 0)` whatever the writer had pointed at, so importing into a chapter
+    /// produced a book at top level — spliced between that chapter and its scenes,
+    /// which then re-parented onto the import. `binder_ordering::resolve_item_target`
+    /// is the same function `restore_items_to` resolves the identical question with;
+    /// asking it here is what keeps the two features answering alike.
+    ///
+    /// The kind steps one rung down the ladder from what the destination *is* when
+    /// importing **into** a container, and matches it when landing **beside** a row —
+    /// exactly what `infer_rules`' own doc prescribes ("importing into a Book means
+    /// the shallowest heading is a Part; importing at the root means it is a Book").
+    ///
+    /// This is a *preview*: `apply_document_import` resolves the indent again at
+    /// write time and shifts the accepted rows to match, because the binder can move
+    /// between the writer reviewing a plan and accepting it.
+    fn destination_shape(
+        &self,
+        uow: &dyn AnalyzeDocumentImportUnitOfWorkTrait,
+    ) -> Result<(CreateType, i64)> {
+        // A whole binder: the top level, and the top of the ladder.
+        if self.dto.anchor_item_id == 0 || self.dto.binder_id == 0 {
+            return Ok((CreateType::Book, 0));
+        }
+        let Some(anchor) = uow.get_binder_item(&self.dto.anchor_item_id)? else {
+            // The row went away between the writer pointing at it and this running.
+            // Not fatal: the plan simply previews a top-level import, and apply
+            // resolves it again against whatever is there by then.
+            return Ok((CreateType::Book, 0));
+        };
+        let into = matches!(self.dto.drop_position, DropPosition::Into)
+            && anchor.role == common::entities::BinderItemRole::Folder;
+
+        let base_indent = if into {
+            anchor.indent + 1
+        } else {
+            anchor.indent
+        };
+        // An anchor the create vocabulary does not describe, or one off the
+        // structural ladder (a note, a paratext, a plain folder): there is no rung to
+        // step from, so the import keeps the depth the writer pointed at and starts at
+        // the top of the ladder. Better a flat import exactly where they asked than a
+        // guessed nesting somewhere else.
+        let start = CreateType::of(&anchor.role, &anchor.sub_role)
+            .and_then(|kind| structure::start_kind_at(kind, into))
+            .unwrap_or(CreateType::Book);
+        Ok((start, base_indent))
+    }
+
     /// Titles already present in the destination binder, lower-cased.
     ///
     /// A binder that cannot be read is not fatal: the warning it would have
@@ -241,8 +297,58 @@ fn to_dto(plan: ImportPlan) -> DocumentImportPlanDto {
     DocumentImportPlanDto {
         row: DocumentImportRow::Empty,
         rows: DocumentImportRows::Found(rows),
+        // Declaration-only fields: these exist so the generated file declares their
+        // types. What matters rides inside the rows.
+        row_kind: ImportRowKind::default(),
+        comment_kind: ImportCommentKind::default(),
+        orphan_reason: ImportOrphanReason::default(),
+        comment: ImportComment::Empty,
+        reply: ImportReply::Empty,
         diagnostic: ImportDiagnosticRow::Empty,
         diagnostics: ImportDiagnosticRows::Reported(diagnostics),
+    }
+}
+
+/// One planned comment on the wire.
+///
+/// Field for field, with no interpretation: `document_ingest` already proved this
+/// anchor against the very Djot the row carries, using the same matcher the editor
+/// re-anchors with. Anything decided again here would be a second opinion about a
+/// question that has already been answered correctly.
+fn comment_to_dto(comment: &PlannedComment) -> ImportComment {
+    ImportComment::Found {
+        kind: match comment.kind {
+            CommentAnchorKind::Range => ImportCommentKind::Range,
+            CommentAnchorKind::Paragraph => ImportCommentKind::Paragraph,
+            CommentAnchorKind::Document => ImportCommentKind::Document,
+        },
+        author_name: comment.author.clone(),
+        created_at: comment.created.map(|d| d.to_rfc3339()).unwrap_or_default(),
+        body: comment.body.clone(),
+        resolved: comment.resolved,
+        orphaned: comment.orphaned,
+        orphan_reason: match comment.orphan_reason {
+            CommentOrphanReason::NotOrphaned => ImportOrphanReason::NotOrphaned,
+            CommentOrphanReason::TextNotFound => ImportOrphanReason::TextNotFound,
+            CommentOrphanReason::Ambiguous => ImportOrphanReason::Ambiguous,
+            CommentOrphanReason::TargetDeleted => ImportOrphanReason::TargetDeleted,
+        },
+        range_start: comment.anchor.start as i64,
+        range_length: comment.anchor.length as i64,
+        quote_prefix: comment.anchor.prefix.clone(),
+        quote_exact: comment.anchor.exact.clone(),
+        quote_exact_truncated: comment.anchor.exact_truncated,
+        quote_suffix: comment.anchor.suffix.clone(),
+        block_ordinal_hint: comment.anchor.block_ordinal as i64,
+        replies: comment
+            .replies
+            .iter()
+            .map(|reply| ImportReply::Found {
+                author_name: reply.author.clone(),
+                created_at: reply.created.map(|d| d.to_rfc3339()).unwrap_or_default(),
+                body: reply.body.clone(),
+            })
+            .collect(),
     }
 }
 
@@ -255,6 +361,7 @@ fn row_to_dto(row: &PlannedRow) -> DocumentImportRow {
         djot: row.djot.clone(),
         scene_breaks: row.scene_breaks as i64,
         word_count: row.word_count as i64,
+        comments: row.comments.iter().map(comment_to_dto).collect(),
         origin: row.origin.clone(),
         included: row.included,
     }
@@ -290,6 +397,16 @@ pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnost
         | RawHtmlDropped { count, .. }
         | NestedBreakDropped { count, .. } => (String::new(), *count as i64),
         ImageNotIngested { target, .. } => (target.clone(), 0),
+        TrackedChangesFlattened { count, .. }
+        | TextBoxDropped { count, .. }
+        | EmbeddedObjectDropped { count, .. }
+        | FieldFlattened { count, .. }
+        | CommentRepliesFlattened { count, .. } => (String::new(), *count as i64),
+        UnknownStyleLevel { style, .. } => (style.clone(), 0),
+        // The comment's own opening words, so the writer recognises which note the
+        // importer could not place. Its body, not the prose it was about — a
+        // sentence naming the prose reads as though the manuscript were at fault.
+        CommentUnanchored { quote, .. } => (quote.clone(), 0),
         DuplicateTitle { title, occurrences } => (title.clone(), *occurrences as i64),
         // The two levels, as the two fields — no separator to parse. The title
         // comes from the row.

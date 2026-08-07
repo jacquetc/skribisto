@@ -58,6 +58,11 @@ pub struct PlanRowView {
     pub djot: String,
     pub word_count: usize,
     pub scene_breaks: usize,
+    /// The editors' comments that came with this row's prose, carried whole rather
+    /// than counted: the review tree shows how many, and the apply step hands these
+    /// same anchors straight back to the backend. Counting them here and re-reading
+    /// the files later would mean scanning every document twice.
+    pub comments: Vec<document_ingest::plan::PlannedComment>,
     pub origin: String,
     /// Diagnostics belonging to this row.
     pub diagnostics: Vec<document_ingest::ImportDiagnostic>,
@@ -67,7 +72,11 @@ struct Inner {
     rows: RefCell<Vec<PlanRowView>>,
     /// The live type of each row. Separate from `rows` because it is what the
     /// combo column both reads and writes.
-    types: RefCell<HashMap<PlanRowKey, Signal<CreateType>>>,
+    /// `Option` because that is what a `ComboBox` binds, and the combo must be handed
+    /// **this** signal rather than a snapshot of it — see [`ImportPlanSource::type_signal`].
+    /// The model always keeps it `Some`; the combo only ever clears a selection when its
+    /// *item source* mutates, and the type column's items are a fixed static list.
+    types: RefCell<HashMap<PlanRowKey, Signal<Option<CreateType>>>>,
     /// Whether the writer has ticked this row itself. Whether it will actually be
     /// created also depends on its ancestors — see the view-model's `is_included`.
     included: RefCell<HashMap<PlanRowKey, Signal<bool>>>,
@@ -105,7 +114,7 @@ impl ImportPlanSource {
         let mut included = HashMap::with_capacity(plan.rows.len());
         for (index, row) in plan.rows.iter().enumerate() {
             let key = PlanRowKey(index as u32);
-            types.insert(key, Signal::new(row.create_type));
+            types.insert(key, Signal::new(Some(row.create_type)));
             included.insert(key, Signal::new(row.included));
             rows.push(view_of(key, row));
         }
@@ -130,19 +139,27 @@ impl ImportPlanSource {
     }
 
     /// The live type signal for one row — what the combo column binds to.
-    pub fn type_signal(&self, key: PlanRowKey) -> Option<Signal<CreateType>> {
+    /// The row's **live** type signal, for the combo cell to bind.
+    ///
+    /// Handing the combo `Signal::new(Some(type_of(key)))` instead — a fresh signal
+    /// holding a snapshot taken while the cell was being built — is what made the
+    /// bulk "every level-2 heading is a Chapter" rule look broken: `set_type` wrote
+    /// the real signal, the cell was watching a copy, and nothing re-sourced the
+    /// table because retyping is not a shape change. The combo owns and observes
+    /// whatever signal it is given, so it must be given this one.
+    pub fn type_signal(&self, key: PlanRowKey) -> Option<Signal<Option<CreateType>>> {
         self.inner.types.borrow().get(&key).cloned()
     }
 
     pub fn type_of(&self, key: PlanRowKey) -> Option<CreateType> {
-        self.inner.types.borrow().get(&key).map(|s| s.get())
+        self.inner.types.borrow().get(&key).and_then(|s| s.get())
     }
 
     /// Retype one row. Used by the combo column, and by the level-rule table when
     /// it reapplies itself.
     pub fn set_type(&self, key: PlanRowKey, kind: CreateType) {
         if let Some(signal) = self.inner.types.borrow().get(&key) {
-            signal.set(kind);
+            signal.set(Some(kind));
         }
     }
 
@@ -253,6 +270,7 @@ fn view_of(key: PlanRowKey, row: &PlannedRow) -> PlanRowView {
         djot: row.djot.clone(),
         word_count: row.word_count,
         scene_breaks: row.scene_breaks,
+        comments: row.comments.clone(),
         origin: row.origin.clone(),
         diagnostics: row.diagnostics.clone(),
     }
@@ -358,6 +376,7 @@ mod tests {
             word_count: 0,
             origin: "a.md".into(),
             included: true,
+            comments: Vec::new(),
             diagnostics: Vec::new(),
         }
     }
@@ -438,14 +457,40 @@ mod tests {
         assert_eq!(s.subtree(PlanRowKey(0)).len(), 5);
     }
 
+    /// A signal handed out before a retype still sees it — which is what a combo
+    /// cell needs, since it takes its signal once when the cell is built.
+    ///
+    /// This test passed all along while the type column was in fact binding
+    /// `Signal::new(Some(type_of(key)))` — a *copy* — so "the cell sees the change"
+    /// was a claim about a cell nobody had wired that way. The model was right; the
+    /// panel was not. The column now binds `type_signal(key)` itself.
     #[test]
     fn retyping_a_row_is_visible_through_its_signal() {
         let s = source();
         let signal = s.type_signal(PlanRowKey(2)).expect("row 2 has a type");
-        assert_eq!(signal.get(), CreateType::Scene);
+        assert_eq!(signal.get(), Some(CreateType::Scene));
         s.set_type(PlanRowKey(2), CreateType::Note);
-        assert_eq!(signal.get(), CreateType::Note, "the cell sees the change");
+        assert_eq!(
+            signal.get(),
+            Some(CreateType::Note),
+            "the cell sees the change"
+        );
         assert_eq!(s.type_of(PlanRowKey(2)), Some(CreateType::Note));
+    }
+
+    /// Retyping must NOT re-source the table: the view rebuilding on every combo
+    /// change would throw away scroll position and the writer's expand state, and
+    /// the cells no longer need it now that they bind the live signal.
+    #[test]
+    fn a_retype_is_not_a_shape_change() {
+        let s = source();
+        let before = s.version_signal().get();
+        s.set_type(PlanRowKey(1), CreateType::Note);
+        assert_eq!(
+            s.version_signal().get(),
+            before,
+            "retyping changes a value, not the shape of the tree"
+        );
     }
 
     #[test]

@@ -82,6 +82,35 @@ pub enum ImportDiagnostic {
     /// An image reference was found. Asset ingestion is not wired from this
     /// layer, so the reference survives as text but the file is not copied in.
     ImageNotIngested { path: String, target: String },
+    /// The document was mid-revision: tracked insertions were accepted and tracked
+    /// deletions dropped, which is what "the final text" means — but a writer
+    /// handed a file with somebody's unaccepted edits in it should be told, not
+    /// left to notice later that a sentence they remember rejecting is in their
+    /// manuscript.
+    TrackedChangesFlattened { path: String, count: usize },
+    /// A text box, shape or frame was found. Its text is not part of the document's
+    /// flow, so where it belongs in a linear manuscript is genuinely unanswerable —
+    /// it is named rather than guessed at.
+    TextBoxDropped { path: String, count: usize },
+    /// An embedded object (a chart, an equation, an OLE object) was found. There is
+    /// nothing in the prose model that could hold it.
+    EmbeddedObjectDropped { path: String, count: usize },
+    /// A field — a page number, a cross-reference, a table of contents, a date —
+    /// was replaced by the text it was last showing. That text is right today and
+    /// will not update again.
+    FieldFlattened { path: String, count: usize },
+    /// A paragraph was styled as a heading but named no outline level this scanner
+    /// could read, so it was imported as prose. Names it rather than guessing a
+    /// depth, because a wrong depth silently reshapes the book.
+    UnknownStyleLevel { path: String, style: String },
+    /// A comment's quoted text was not found in the converted prose, so it was
+    /// attached to its row as a whole rather than to a span. The comment is kept —
+    /// it is the writer's, and the most valuable thing an editor sends back.
+    CommentUnanchored { path: String, quote: String },
+    /// Replies could not be recovered as replies and became comments of their own.
+    /// ODF has no standardised threading, so this is the honest outcome for a file
+    /// whose producer did not use one this scanner recognises.
+    CommentRepliesFlattened { path: String, count: usize },
     /// Two rows want the same title inside one destination. Not an error — a
     /// manuscript may legitimately have two scenes called "Later" — but it is
     /// the shape a double-import takes, which is worth catching before commit.
@@ -120,7 +149,14 @@ impl ImportDiagnostic {
             | ImageNotIngested { .. }
             | DuplicateTitle { .. }
             | HeadingLevelJump { .. }
-            | IllegalCombination { .. } => Warning,
+            | IllegalCombination { .. }
+            | TrackedChangesFlattened { .. }
+            | TextBoxDropped { .. }
+            | EmbeddedObjectDropped { .. }
+            | FieldFlattened { .. }
+            | UnknownStyleLevel { .. }
+            | CommentUnanchored { .. }
+            | CommentRepliesFlattened { .. } => Warning,
         }
     }
 
@@ -138,7 +174,14 @@ impl ImportDiagnostic {
             | FootnotesDegraded { path, .. }
             | RawHtmlDropped { path, .. }
             | NestedBreakDropped { path, .. }
-            | ImageNotIngested { path, .. } => Some(path),
+            | ImageNotIngested { path, .. }
+            | TrackedChangesFlattened { path, .. }
+            | TextBoxDropped { path, .. }
+            | EmbeddedObjectDropped { path, .. }
+            | FieldFlattened { path, .. }
+            | UnknownStyleLevel { path, .. }
+            | CommentUnanchored { path, .. }
+            | CommentRepliesFlattened { path, .. } => Some(path),
             DuplicateTitle { .. } | HeadingLevelJump { .. } | IllegalCombination { .. } => None,
         }
     }
@@ -163,6 +206,13 @@ impl ImportDiagnostic {
             DuplicateTitle { .. } => "duplicate-title",
             HeadingLevelJump { .. } => "heading-level-jump",
             IllegalCombination { .. } => "illegal-combination",
+            TrackedChangesFlattened { .. } => "tracked-changes-flattened",
+            TextBoxDropped { .. } => "text-box-dropped",
+            EmbeddedObjectDropped { .. } => "embedded-object-dropped",
+            FieldFlattened { .. } => "field-flattened",
+            UnknownStyleLevel { .. } => "unknown-style-level",
+            CommentUnanchored { .. } => "comment-unanchored",
+            CommentRepliesFlattened { .. } => "comment-replies-flattened",
         }
     }
 }
@@ -210,6 +260,25 @@ impl fmt::Display for ImportDiagnostic {
             }
             IllegalCombination { title, kind } => {
                 write!(f, "'{title}': a {kind:?} row cannot hold prose")
+            }
+            TrackedChangesFlattened { path, count } => {
+                write!(f, "{path}: {count} tracked change(s) accepted")
+            }
+            TextBoxDropped { path, count } => write!(f, "{path}: {count} text box(es) dropped"),
+            EmbeddedObjectDropped { path, count } => {
+                write!(f, "{path}: {count} embedded object(s) dropped")
+            }
+            FieldFlattened { path, count } => {
+                write!(f, "{path}: {count} field(s) replaced by their text")
+            }
+            UnknownStyleLevel { path, style } => {
+                write!(f, "{path}: style '{style}' names no heading level")
+            }
+            CommentUnanchored { path, quote } => {
+                write!(f, "{path}: comment '{quote}' could not be anchored")
+            }
+            CommentRepliesFlattened { path, count } => {
+                write!(f, "{path}: {count} reply/replies became separate comments")
             }
         }
     }

@@ -21,18 +21,54 @@ publish = false
 [lib]
 name = "document_ingest"
 
+# One feature per input format, as `sources.rs` prescribed before there was
+# anything heavy to gate: a consumer that only imports Markdown does not build an
+# OOXML parser. The registry, the file-picker filter and the drop zone's accept
+# list all read `ScannerRegistry::accepted_extensions`, so the gating reaches the
+# UI with no second list to keep in step.
+#
+# Check the gating with `cargo tree -p skribisto-document-ingest
+# --no-default-features --features markdown --depth 1`, never with a `grep` over
+# the whole tree: `docx-rs` also arrives far below through text-document's own
+# DOCX *export*, which has nothing to do with these features and would make a
+# working gate look broken.
+[features]
+default = ["markdown", "odt", "docx"]
+# `.md` and `.txt` — plain text runs through the Markdown scanner by design, so
+# the two travel together.
+markdown = ["dep:pulldown-cmark"]
+odt = ["dep:zip", "dep:roxmltree"]
+# `zip`/`roxmltree` alongside `docx-rs` for the supplementary pass over
+# `word/document.xml`: two constructs a manuscript really uses — a comment anchored
+# to a point rather than a range, and a horizontal rule — live in elements the typed
+# reader does not surface. See `sources::docx::RawScan`.
+docx = ["dep:zip", "dep:roxmltree", "dep:docx-rs"]
+
 [dependencies]
 common = { workspace = true }
 skribisto_model = { workspace = true }
 skrib_format = { workspace = true }
 anyhow = { workspace = true }
+# Timestamps on imported comments — the same type `EntityBase` stores them in, so
+# a `.docx` comment keeps the date its author wrote it rather than the date it was
+# imported.
+chrono = { workspace = true }
 # Byte-order-mark sniffing and never-panicking lossy decode. Already the
 # workspace's answer to "these bytes claim an encoding" (bastyde_ui's spellcheck
 # reads a Hunspell .aff's declared SET line with it).
 encoding_rs = "0.8"
 # The CommonMark parser. Its `into_offset_iter` is why the scanner owns its own
 # parse rather than leaning on text-document, which exposes no source offsets.
-pulldown-cmark = "0.13"
+pulldown-cmark = { version = "0.13", optional = true }
+# `.docx` and `.odt` are both zip containers of XML. Same versions
+# `import_management` reads `.plume` with — one zip reader and one XML parser in
+# the tree, not three.
+zip = { version = "8.6.0", default-features = false, features = ["deflate"], optional = true }
+roxmltree = { version = "0.21.1", optional = true }
+# The OOXML reader. `read_docx` gives a typed document tree with paragraph
+# properties, tracked changes as first-class children, and the comment/
+# comments-extended parts — all of which would otherwise be hand-parsed XML.
+docx-rs = { version = "0.4.22", optional = true }
 # Spelled-out ordinals in headings — "Chapter Three", "Chapitre premier". A
 # per-language number-word table is the whole job, and this one already carries
 # seven of them (en/fr/de/es/it/pt/nl), compound forms included

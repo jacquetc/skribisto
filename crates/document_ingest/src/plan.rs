@@ -20,15 +20,64 @@
 //! Djot source is a thematic break, which the document model cannot represent and
 //! the parser discards, so an unescaped marker would simply vanish on the next
 //! load. `scene_break::canonical_djot` is the one authority on those bytes.
+//!
+//! ## Imported comments are anchored here, against the prose that will be stored
+//!
+//! A scanner captures an editor's comment against **one block's** plain text,
+//! because a block is what survives into a row. This is where those become
+//! [`PlannedComment`]s: the row's Djot is assembled, its plain text is re-derived
+//! through the *same* parse the editor will do (`skrib_format::djot_plain_text`),
+//! and every quote is proved against it by `comment_anchor::resolve` — the same
+//! function that re-anchors a comment on every reopen.
+//!
+//! Proving rather than computing is the point. The offsets could be arrived at by
+//! arithmetic, and they mostly would be right; a comment that is mostly right is
+//! one silently attached to the wrong sentence, which the anchor module's own doc
+//! calls the failure that "is invisible until someone's comment has silently moved".
+//! A quote that does not survive the conversion is reported and the comment is kept
+//! as an orphan the writer can see and act on — never quietly repositioned.
 
-use common::entities::ContentRole;
+use common::entities::{CommentAnchorKind, CommentOrphanReason, ContentRole};
+use skribisto_model::comment_anchor::{self, Anchor, Resolution};
 use skribisto_model::scene_break;
 use skribisto_model::{ChapterMode, CreateType, allowed_content};
 
-use crate::block::{SourceBlock, SourceDocument};
+use crate::block::{
+    AnnotationKind, SourceAnnotation, SourceAnnotationReply, SourceBlock, SourceDocument,
+};
 use crate::diagnostics::ImportDiagnostic;
 use crate::structure::LevelRules;
 use crate::title;
+
+/// One imported comment, anchored against the row it belongs to.
+///
+/// Shaped like the `Comment` entity it becomes, so `apply_document_import` reads it
+/// field by field with no second interpretation of what an anchor means.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlannedComment {
+    pub kind: CommentAnchorKind,
+    /// In the row's own plain-text character space — what
+    /// `skrib_format::djot_plain_text` reports for `PlannedRow::djot`, which is
+    /// what the editor's document will report when the row is opened.
+    pub anchor: Anchor,
+    /// True when the quote could not be found in the converted prose. The comment is
+    /// still created: an orphan the writer can see and re-place beats a comment that
+    /// was thrown away, and beats one confidently pointed at the wrong sentence.
+    pub orphaned: bool,
+    pub orphan_reason: CommentOrphanReason,
+    pub author: String,
+    pub created: Option<chrono::DateTime<chrono::Utc>>,
+    pub body: String,
+    pub resolved: bool,
+    pub replies: Vec<SourceAnnotationReply>,
+}
+
+impl PlannedComment {
+    /// Turns in this thread — the opening comment plus its replies.
+    pub fn turns(&self) -> usize {
+        1 + self.replies.len()
+    }
+}
 
 /// One row the import would create.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,6 +102,9 @@ pub struct PlannedRow {
     pub origin: String,
     /// Whether to create it. The review step unchecks rather than deletes.
     pub included: bool,
+    /// Editors' comments arriving with this row's prose, already anchored against
+    /// it. Empty for a format that carries none.
+    pub comments: Vec<PlannedComment>,
     pub diagnostics: Vec<ImportDiagnostic>,
 }
 
@@ -98,6 +150,14 @@ pub fn build_plan(
     for doc in docs {
         plan.diagnostics.extend(doc.diagnostics.iter().cloned());
         if doc.is_empty() {
+            // Nothing became a row, so a comment on this document has no prose to
+            // point into and nowhere to live. Named rather than dropped.
+            for annotation in &doc.annotations {
+                plan.diagnostics.push(ImportDiagnostic::CommentUnanchored {
+                    path: doc.origin.clone(),
+                    quote: body_preview(&annotation.body),
+                });
+            }
             continue;
         }
         append_document(&mut plan, doc, rules, base_indent, &mut open_levels);
@@ -113,9 +173,82 @@ pub fn build_plan(
             .count();
     }
 
+    anchor_comments(&mut plan);
     flag_duplicate_titles(&mut plan);
     flag_illegal_combinations(&mut plan, &chapter_mode);
     plan
+}
+
+/// Prove every imported comment against the prose that will actually be stored.
+///
+/// One `djot_plain_text` per row that carries comments — and none at all for the
+/// common case of an import with none, which is every Markdown import.
+///
+/// The offsets the scanner supplied are a *hint*, not an answer: they are exact
+/// arithmetic over the block texts, but the conversion between them and this row's
+/// Djot is a real parse, and the only way to know the quote still points at the same
+/// words is to look. `comment_anchor::resolve` is the same three-tier matcher that
+/// re-anchors the comment on every reopen, so a comment that lands here lands there.
+fn anchor_comments(plan: &mut ImportPlan) {
+    for row in &mut plan.rows {
+        if row.comments.is_empty() {
+            continue;
+        }
+        let Ok((text, block_starts)) = skrib_format::djot_plain_text(&row.djot) else {
+            // The Djot this planner just built failed to parse. Every comment on
+            // the row becomes a comment on the row as a whole rather than a lie
+            // about where it points.
+            for comment in &mut row.comments {
+                comment.kind = CommentAnchorKind::Document;
+                comment.anchor = Anchor::default();
+            }
+            continue;
+        };
+
+        for comment in &mut row.comments {
+            if comment.kind == CommentAnchorKind::Document {
+                comment.anchor = Anchor::default();
+                continue;
+            }
+            let is_paragraph = comment.kind == CommentAnchorKind::Paragraph;
+            comment.anchor.block_ordinal =
+                comment_anchor::block_of(&block_starts, comment.anchor.start);
+
+            match comment_anchor::resolve(&text, &comment.anchor, is_paragraph, &block_starts) {
+                Resolution::Anchored { start, length } => {
+                    // Re-capture at the proven position, so what is stored was
+                    // measured against this row's text rather than a block's.
+                    let ordinal = comment_anchor::block_of(&block_starts, start);
+                    let mut anchor = comment_anchor::capture(&text, start, start + length, ordinal);
+                    anchor.block_span = comment.anchor.block_span.max(1);
+                    comment.anchor = anchor;
+                }
+                Resolution::Orphan(reason) => {
+                    comment.orphaned = true;
+                    comment.orphan_reason = reason;
+                    row.diagnostics.push(ImportDiagnostic::CommentUnanchored {
+                        path: row.origin.clone(),
+                        quote: body_preview(&comment.body),
+                    });
+                }
+            }
+        }
+    }
+}
+
+/// A short, single-line rendering of a comment body, for a diagnostic.
+///
+/// The *body*, not the quote: a diagnostic naming "the passage beginning 'She
+/// turned…'" reads as though the prose were at fault, while the writer recognises
+/// their editor's note instantly.
+fn body_preview(body: &str) -> String {
+    let one_line = body.split_whitespace().collect::<Vec<_>>().join(" ");
+    let chars: Vec<char> = one_line.chars().collect();
+    if chars.len() <= 60 {
+        one_line
+    } else {
+        format!("{}…", chars[..59].iter().collect::<String>())
+    }
 }
 
 fn append_document(
@@ -133,6 +266,11 @@ fn append_document(
     // any heading, which becomes a row of its own rather than being silently
     // attached to the first heading that follows.
     let mut current: Option<PlannedRow> = None;
+    // How long the current row's prose is in *plain text*, mirroring `append_djot`'s
+    // `\n\n` join with the single `\n` it renders to. This is what rebases a
+    // block-relative comment offset into a row-relative one; `anchor_comments` then
+    // proves the result rather than trusting it.
+    let mut plain_len = 0usize;
 
     let push = |plan: &mut ImportPlan, row: Option<PlannedRow>| {
         if let Some(row) = row
@@ -142,10 +280,14 @@ fn append_document(
         }
     };
 
-    for block in &doc.blocks {
+    for (block_index, block) in doc.blocks.iter().enumerate() {
+        // Where this block's text begins inside the row it is about to join.
+        let block_offset = if plain_len == 0 { 0 } else { plain_len + 1 };
+
         match block {
             SourceBlock::Heading { level, text } => {
                 push(plan, current.take());
+                plain_len = 0;
 
                 while open_levels.last().is_some_and(|open| *open >= *level) {
                     open_levels.pop();
@@ -187,21 +329,73 @@ fn append_document(
                     word_count: 0,
                     origin: doc.origin.clone(),
                     included: true,
+                    comments: Vec::new(),
                     diagnostics,
                 });
             }
-            SourceBlock::Prose { djot } => {
+            SourceBlock::Prose { djot, text } => {
                 let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
                 append_djot(&mut row.djot, djot);
+                plain_len = block_offset + text.chars().count();
             }
             SourceBlock::SceneBreak { tier } => {
                 let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
                 append_djot(&mut row.djot, scene_break::canonical_djot(*tier));
                 row.scene_breaks += 1;
+                plain_len = block_offset + scene_break::canonical_plain(*tier).chars().count();
             }
+        }
+
+        // Comments on this block belong to whichever row it just joined. A comment
+        // on a *heading* has no prose to point into — a heading becomes a row's
+        // title — so it becomes a comment on the row as a whole, which is exactly
+        // what `CommentAnchorKind::Document` is for.
+        for annotation in doc
+            .annotations
+            .iter()
+            .filter(|a| a.block_index == block_index)
+        {
+            let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
+            row.comments
+                .push(planned_comment(annotation, block, block_offset));
         }
     }
     push(plan, current.take());
+}
+
+/// Rebase one scanned annotation onto the row its block joined.
+///
+/// The anchor arrives measured against the block's own text; shifting `start` by
+/// where that block begins in the row is the whole of the rebasing. Everything else
+/// — the quote, its context, whether it was truncated — is carried across untouched,
+/// because it describes prose rather than position.
+fn planned_comment(
+    annotation: &SourceAnnotation,
+    block: &SourceBlock,
+    block_offset: usize,
+) -> PlannedComment {
+    let kind = match annotation.kind {
+        // A heading is a title, not prose, so nothing inside it can be pointed at.
+        _ if matches!(block, SourceBlock::Heading { .. }) => CommentAnchorKind::Document,
+        AnnotationKind::Range => CommentAnchorKind::Range,
+        AnnotationKind::Paragraph => CommentAnchorKind::Paragraph,
+        AnnotationKind::Document => CommentAnchorKind::Document,
+    };
+    let mut anchor = annotation.anchor.clone();
+    anchor.start += block_offset;
+    anchor.block_span = anchor.block_span.max(1);
+
+    PlannedComment {
+        kind,
+        anchor,
+        orphaned: false,
+        orphan_reason: CommentOrphanReason::NotOrphaned,
+        author: annotation.author.clone(),
+        created: annotation.created,
+        body: annotation.body.clone(),
+        resolved: annotation.resolved,
+        replies: annotation.replies.clone(),
+    }
 }
 
 /// The row that collects prose appearing before a document's first heading.
@@ -220,6 +414,7 @@ fn leading_row(doc: &SourceDocument, rules: &LevelRules, base_indent: i64) -> Pl
         word_count: 0,
         origin: doc.origin.clone(),
         included: true,
+        comments: Vec::new(),
         diagnostics: Vec::new(),
     }
 }
@@ -311,7 +506,7 @@ mod tests {
     }
 
     fn prose(s: &str) -> SourceBlock {
-        SourceBlock::Prose { djot: s.into() }
+        SourceBlock::prose(s, s)
     }
 
     #[test]

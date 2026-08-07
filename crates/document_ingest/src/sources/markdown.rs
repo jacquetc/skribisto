@@ -130,9 +130,13 @@ fn segment(
         if let Some((start, end)) = prose.take() {
             let raw = &body[start..end];
             if !raw.trim().is_empty() {
-                let djot = skrib_format::markdown_to_djot(raw)?;
+                // Both answers from one parse: the Djot that gets stored, and the
+                // plain text an annotation would be measured against. Markdown
+                // carries no annotations, but a block must describe itself the
+                // same way whichever scanner made it.
+                let (djot, text) = skrib_format::markdown_to_djot_and_text(raw)?;
                 if !djot.trim().is_empty() {
-                    blocks.push(SourceBlock::Prose { djot });
+                    blocks.push(SourceBlock::Prose { djot, text });
                 }
             }
         }
@@ -374,7 +378,7 @@ mod tests {
     #[test]
     fn emphasis_survives_as_djot_rather_than_flipping_to_strong() {
         let doc = scan("He was *utterly* lost.");
-        let SourceBlock::Prose { djot } = &doc.blocks[0] else {
+        let SourceBlock::Prose { djot, .. } = &doc.blocks[0] else {
             panic!("expected prose, got {:?}", doc.blocks);
         };
         assert!(djot.contains("_utterly_"), "got {djot:?}");

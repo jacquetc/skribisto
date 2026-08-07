@@ -32,7 +32,10 @@ pub mod structure;
 pub mod text;
 pub mod title;
 
-pub use block::{SourceBlock, SourceDocument, SourceMetadata};
+pub use block::{
+    AnnotationKind, SourceAnnotation, SourceAnnotationReply, SourceBlock, SourceDocument,
+    SourceMetadata,
+};
 pub use diagnostics::{DiagnosticSeverity, ImportDiagnostic};
 pub use order::{natural_cmp, sort_documents};
 pub use plan::{ImportPlan, PlannedRow, build_plan};

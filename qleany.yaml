@@ -1918,7 +1918,63 @@ features:
       # What the shallowest heading level becomes. Chosen from the destination,
       # since importing under a Book means the first level is a Part while
       # importing at the root means it is a Book.
-      - name: start_kind
+      # The destination, as the writer pointed at it. NOT a pre-computed indent
+      # and kind: what depth an import starts at, and what the shallowest heading
+      # becomes, follow from where it is going -- and the same question is asked
+      # again at apply time against a binder that may have moved on. Deriving it
+      # here and again there means one rule, `binder_ordering`'s, rather than the
+      # UI's guess baked into a plan.
+      #
+      # 0 = the binder itself (the writer chose a whole binder, or there is
+      # nothing in it yet).
+      - name: anchor_item_id
+        type: uinteger
+      - name: drop_position
+        type: enum
+        enum_name: DropPosition
+        enum_values:
+        - Before
+        - After
+        - Into
+    dto_out:
+      name: DocumentImportPlanDto
+      fields:
+      # One flat, depth-encoded row list rather than a tree -- the same `row` +
+      # `rows` escape hatch analysis_management's flat lists use, and the shape
+      # the binder actually has (an ordered stream plus an indent).
+      - name: row
+        type: enum
+        enum_name: DocumentImportRow
+        enum_values:
+        - Empty
+        # `comments` carries the editors' notes the source format brought with it
+        # (`.docx`, `.odt`; never Markdown, which has no comment syntax). They ride
+        # the *plan* rather than only the apply DTO because the writer reviews the
+        # plan and the UI hands it straight back -- exactly as `djot` already does.
+        # Sending only a count here would mean re-reading every file at apply time
+        # to recover what this pass already worked out.
+        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, scene_breaks: i64, word_count: i64, comments: Vec<ImportComment>, origin: String, included: bool }"
+      - name: rows
+        type: enum
+        enum_name: DocumentImportRows
+        enum_values:
+        - Empty
+        - "Found(Vec<DocumentImportRow>)"
+      # One imported comment, sent field for field rather than as one blob --
+      # because these ARE the Comment entity's fields, and neither the UI nor
+      # `apply_document_import` gets to reinterpret what an anchor means. The quote
+      # was already proved against this row's own Djot by
+      # `document_ingest::plan::anchor_comments`, using the same matcher that
+      # re-anchors a comment on every reopen.
+      #
+      # `comment_kind` / `orphan_reason` / `comment` / `reply` are declared as
+      # fields so the types exist in the generated file, the way `row` declares
+      # `DocumentImportRow`; only the ones inside a row are ever populated.
+      # Declared here rather than as an input on the analyse DTO, where it used to be
+      # `start_kind`: what the shallowest heading becomes is derived from the
+      # destination now, so nothing sends it. The rows below still name a type each,
+      # so the type must exist.
+      - name: row_kind
         type: enum
         enum_name: ImportRowKind
         enum_values:
@@ -1932,26 +1988,35 @@ features:
         - Paratext
         - ParatextFolder
         - EndOfBook
-      - name: base_indent
-        type: integer
-    dto_out:
-      name: DocumentImportPlanDto
-      fields:
-      # One flat, depth-encoded row list rather than a tree -- the same `row` +
-      # `rows` escape hatch analysis_management's flat lists use, and the shape
-      # the binder actually has (an ordered stream plus an indent).
-      - name: row
+      - name: comment_kind
         type: enum
-        enum_name: DocumentImportRow
+        enum_name: ImportCommentKind
+        enum_values:
+        - Range
+        - Paragraph
+        - Document
+      - name: orphan_reason
+        type: enum
+        enum_name: ImportOrphanReason
+        enum_values:
+        - NotOrphaned
+        - TextNotFound
+        - Ambiguous
+        - TargetDeleted
+      # `created_at` is RFC 3339: a DTO carries no chrono type, and the date the
+      # editor actually wrote the note is worth more than the date it was imported.
+      - name: comment
+        type: enum
+        enum_name: ImportComment
         enum_values:
         - Empty
-        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, scene_breaks: i64, word_count: i64, origin: String, included: bool }"
-      - name: rows
+        - "Found { kind: ImportCommentKind, author_name: String, created_at: String, body: String, resolved: bool, orphaned: bool, orphan_reason: ImportOrphanReason, range_start: i64, range_length: i64, quote_prefix: String, quote_exact: String, quote_exact_truncated: bool, quote_suffix: String, block_ordinal_hint: i64, replies: Vec<ImportReply> }"
+      - name: reply
         type: enum
-        enum_name: DocumentImportRows
+        enum_name: ImportReply
         enum_values:
         - Empty
-        - "Found(Vec<DocumentImportRow>)"
+        - "Found { author_name: String, created_at: String, body: String }"
       # Diagnostics travel as a key plus its data rather than a rendered
       # sentence, so the UI can say them in the writer's own locale -- the house
       # rule is that user-visible strings go through Fluent and data stays
@@ -1981,6 +2046,14 @@ features:
     - Binder
     - BinderItem
     - Content
+    # An editor's comments, when the source format carried them (`.docx`, `.odt`).
+    # This is the one honest dent in "a new format costs a SourceScanner and one
+    # register() line and zero manifest entries": importing comments is a *pipeline*
+    # capability, not a format's, and it is paid once here for every format that
+    # will ever carry them. Creating them inside this use case is also what puts
+    # them in the same undo entry as the rows they annotate.
+    - Comment
+    - CommentReply
     undoable: true
     dto_in:
       name: ApplyDocumentImportDto
@@ -1989,9 +2062,19 @@ features:
         type: uinteger
       - name: binder_id
         type: uinteger
-      # The row to insert after, or 0 to append at the end of the binder.
+      # The row the writer pointed at, or 0 for the binder itself. Where the block
+      # actually lands is resolved from it here, at write time, through
+      # `binder_ordering` -- an anchor's own subtree has to be stepped over, or the
+      # import lands between a container and its children and re-parents them.
       - name: anchor_item_id
         type: uinteger
+      - name: drop_position
+        type: enum
+        enum_name: DropPosition
+        enum_values:
+        - Before
+        - After
+        - Into
       # Deliberately a narrower row than the plan's: word counts, break counts
       # and diagnostics are review-time information and have no business in a
       # write. What is left is what actually gets created.
@@ -2000,7 +2083,10 @@ features:
         enum_name: ApplyImportRow
         enum_values:
         - Empty
-        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String }"
+        # The very `ImportComment`s the plan carried, handed straight back. One
+        # declaration, one shape, no translation step in between for the two halves
+        # to disagree across.
+        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String, comments: Vec<ImportComment> }"
       - name: rows
         type: enum
         enum_name: ApplyImportRows

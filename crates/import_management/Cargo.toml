@@ -25,6 +25,10 @@ anyhow = { workspace = true }
 common = { workspace = true }
 macros = { workspace = true }
 skribisto_model = { workspace = true }
+# The one authority on "where does a block land relative to an anchor, and at what
+# indent" — shared with trash_management, which resolves the identical question for
+# restore-to-destination through the same helpers.
+binder_ordering = { workspace = true }
 skrib_format = { workspace = true }
 # The format-agnostic ingest pipeline: block model, scanner seam, planning.
 document_ingest = { workspace = true }

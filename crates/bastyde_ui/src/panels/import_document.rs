@@ -573,16 +573,17 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
             let Some(key) = type_source.key_at(cx.row_index) else {
                 return Box::new(Spacer::new()) as Box<dyn Widget>;
             };
-            let Some(current) = type_source.type_of(key) else {
+            // The row's own live signal, never a snapshot of it — a bulk level
+            // rule writes this signal, and a cell bound to a copy would go on
+            // showing the type the row had when its cell happened to be built.
+            let Some(selected) = type_source.type_signal(key) else {
                 return Box::new(Spacer::new());
             };
             let retype = type_vm.clone();
             Box::new(
-                ComboBox::from_items(
-                    ROW_TYPES.to_vec(),
-                    Signal::new(Some(current)),
-                    |kind: &CreateType| recommendation_label(*kind),
-                )
+                ComboBox::from_items(ROW_TYPES.to_vec(), selected, |kind: &CreateType| {
+                    recommendation_label(*kind)
+                })
                 .variant(ComboBoxVariant::Plain)
                 .on_select(move |kind: &CreateType, _ctx| retype.retype_row(key, *kind)),
             )
@@ -661,6 +662,27 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     )
     .width(ColumnWidth::Fixed(80.0));
 
+    // How many editors' notes come with this row. Threads, not turns: a comment
+    // with four replies is one note, and the number a writer wants before pressing
+    // Import is "how many things is somebody asking me about", not "how many
+    // paragraphs of conversation".
+    //
+    // Blank rather than 0 for a row with none, matching the breaks column beside
+    // it: a column of zeros reads as a measurement that failed.
+    let comments = Column::new(
+        "comments",
+        tr!(import_document_col_comments()),
+        move |row: &PlanRowView, _cx: &CellContext| {
+            let text = if row.comments.is_empty() {
+                String::new()
+            } else {
+                row.comments.len().to_string()
+            };
+            Box::new(TextWidget::new(lit!(text))) as Box<dyn Widget>
+        },
+    )
+    .width(ColumnWidth::Fixed(80.0));
+
     let has_rows = {
         let s = source.clone();
         source
@@ -685,6 +707,7 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
                 .add_column(origin_col)
                 .add_column(words)
                 .add_column(breaks)
+                .add_column(comments)
                 .row_height(30.0),
         )
 }
@@ -831,6 +854,7 @@ mod tests {
             word_count: 1,
             origin: "a.md".into(),
             included: true,
+            comments: Vec::new(),
             diagnostics: Vec::new(),
         }
     }

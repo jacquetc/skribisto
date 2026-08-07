@@ -45,12 +45,20 @@ impl ScannerRegistry {
         Self::default()
     }
 
-    /// Every scanner shipped today. A future ODT or DOCX scanner is one more
-    /// line here — the rest of the pipeline does not change.
+    /// Every scanner this build carries — one line per format, each behind its own
+    /// cargo feature. Adding a format really is one more line here; the rest of the
+    /// pipeline does not change.
     pub fn with_builtin_scanners() -> Self {
         let mut registry = Self::new();
-        registry.register(Box::new(crate::sources::markdown::MarkdownScanner));
-        registry.register(Box::new(crate::sources::plain::PlainTextScanner));
+        #[cfg(feature = "markdown")]
+        {
+            registry.register(Box::new(crate::sources::markdown::MarkdownScanner));
+            registry.register(Box::new(crate::sources::plain::PlainTextScanner));
+        }
+        #[cfg(feature = "odt")]
+        registry.register(Box::new(crate::sources::odt::OdtScanner));
+        #[cfg(feature = "docx")]
+        registry.register(Box::new(crate::sources::docx::DocxScanner));
         registry
     }
 

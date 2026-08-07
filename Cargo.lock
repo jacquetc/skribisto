@@ -5601,12 +5601,16 @@ name = "skribisto-document-ingest"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "chrono",
+ "docx-rs",
  "encoding_rs",
  "pulldown-cmark",
+ "roxmltree 0.21.1",
  "skribisto-common",
  "skribisto-model",
  "skribisto-skrib-format",
  "text2num",
+ "zip 8.6.0",
 ]
 
 [[package]]
@@ -5677,6 +5681,7 @@ dependencies = [
  "roxmltree 0.21.1",
  "serde",
  "serde_json",
+ "skribisto-binder-ordering",
  "skribisto-common",
  "skribisto-direct-access",
  "skribisto-document-ingest",
@@ -6169,7 +6174,7 @@ dependencies = [
 
 [[package]]
 name = "text-document"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "anyhow",
  "base64",
@@ -6184,7 +6189,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-common"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "anyhow",
  "base64",
@@ -6207,7 +6212,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-direct-access"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6220,7 +6225,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-editing"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6233,7 +6238,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-formatting"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6246,7 +6251,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-frontend"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6264,7 +6269,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-inspection"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6277,7 +6282,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-io"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "anyhow",
  "chrono",
@@ -6299,7 +6304,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-macros"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -6309,7 +6314,7 @@ dependencies = [
 
 [[package]]
 name = "text-document-search"
-version = "1.8.0"
+version = "1.9.3"
 dependencies = [
  "anyhow",
  "caseless",
@@ -6327,7 +6332,7 @@ dependencies = [
 
 [[package]]
 name = "text-typeset"
-version = "1.7.0"
+version = "1.8.1"
 dependencies = [
  "etagere",
  "fontdb",

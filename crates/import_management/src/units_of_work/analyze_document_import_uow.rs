@@ -69,6 +69,7 @@ impl QueryUnitOfWork for AnalyzeDocumentImportUnitOfWork {
 #[macros::uow_action(entity = "Work", action = "GetRO", thread_safe = true)]
 #[macros::uow_action(entity = "Binder", action = "GetRelationshipRO", thread_safe = true)]
 #[macros::uow_action(entity = "BinderItem", action = "GetMultiRO", thread_safe = true)]
+#[macros::uow_action(entity = "BinderItem", action = "GetRO", thread_safe = true)]
 impl AnalyzeDocumentImportUnitOfWorkTrait for AnalyzeDocumentImportUnitOfWork {
     fn publish_analyze_document_import_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

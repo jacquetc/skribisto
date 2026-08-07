@@ -105,6 +105,16 @@ impl DestinationPicker {
         self.apply_pending();
     }
 
+    /// Load the tree now, rather than on the next frame.
+    ///
+    /// In the app this never needs calling: the model loads itself from backend
+    /// events and reloads on the frame tick. A headless caller has no frame loop and
+    /// no event pump, so without this the tree is permanently empty and a
+    /// [`preselect`](Self::preselect) can never resolve.
+    pub(crate) fn reload(&self) {
+        self.model.reload();
+    }
+
     /// Try to satisfy a held [`preselect`](Self::preselect). Cheap and idempotent —
     /// called once at request time and again on every reload until it resolves.
     fn apply_pending(&self) {

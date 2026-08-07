@@ -46,6 +46,18 @@ pub mod typography;
 /// Pure measurement over strings and ids — no store, no entities, no UI.
 pub mod analysis;
 
+/// Where a comment points, and how it keeps pointing there — capture, live shift,
+/// and the three-tier re-anchor. Pure functions over plain text, on the same terms
+/// as `scene_break` and `mentions`.
+///
+/// It lived in `bastyde_ui::comments` until the document importer needed to capture
+/// an anchor for an editor's comment coming out of a `.docx` or `.odt`. Capturing
+/// with a *copy* of these rules is how a stored quote and the matcher that resolves
+/// it silently drift apart — and this is the one module whose own doc says being
+/// subtly wrong here "is invisible until someone's comment has silently moved to
+/// the wrong sentence". One authority, two callers.
+pub mod comment_anchor;
+
 /// The compile spine: fold the flat `(role, sub_role)` item stream into an export scope.
 /// Shares its structural predicates with the UI's Full Chapter/Part/Book stream view.
 pub mod compile;
@@ -453,6 +465,40 @@ impl CreateType {
     /// the "hide once the book already has one" gating.
     pub fn closes_book(self) -> bool {
         matches!(self, CreateType::EndOfBook)
+    }
+
+    /// The inverse of [`combo`](Self::combo): which `CreateType` a stored row *is*.
+    ///
+    /// `combo` has always been one-way, so every caller that needed to ask "what kind
+    /// of thing did the writer just point at" either guessed or did without. The
+    /// document importer needs it to answer the only question that matters about a
+    /// destination — what should land inside it — and guessing there is what put an
+    /// imported book between a chapter and its own scenes.
+    ///
+    /// **Mode-independent, and that is not a shortcut.** `Chapter` is the one type
+    /// whose encoding depends on `ChapterMode`, and both encodings share the
+    /// `ChapterScene` sub_role — so `(Folder, ChapterScene)` and `(Item, ChapterScene)`
+    /// both answer `Chapter` without needing to know which mode produced them. Asking
+    /// for the mode would only invite a caller to pass the wrong one.
+    ///
+    /// `None` for a pair outside `COMBINATIONS` — including the two title-bearing
+    /// markers (`Text`, `BookBegin`) that no `CreateType` creates.
+    pub fn of(role: &Role, sub_role: &SubRole) -> Option<CreateType> {
+        match (role, sub_role) {
+            (Role::Folder, SubRole::Book) => Some(CreateType::Book),
+            (Role::Folder, SubRole::Part) => Some(CreateType::Part),
+            (Role::Folder, SubRole::ChapterScene) | (Role::Item, SubRole::ChapterScene) => {
+                Some(CreateType::Chapter)
+            }
+            (Role::Item, SubRole::Scene) => Some(CreateType::Scene),
+            (Role::Item, SubRole::Note) => Some(CreateType::Note),
+            (Role::Folder, SubRole::Note) => Some(CreateType::NoteFolder),
+            (Role::Folder, SubRole::None) => Some(CreateType::Folder),
+            (Role::Item, SubRole::Paratext) => Some(CreateType::Paratext),
+            (Role::Folder, SubRole::Paratext) => Some(CreateType::ParatextFolder),
+            (Role::Item, SubRole::BookEnd) => Some(CreateType::EndOfBook),
+            _ => None,
+        }
     }
 }
 
@@ -1588,5 +1634,48 @@ mod tests {
                 Some(c.clone())
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod create_type_inverse_tests {
+    use super::*;
+
+    /// `of` must be the exact inverse of `combo`, under **both** chapter modes —
+    /// otherwise a caller asking "what is this row" gets a different answer than the
+    /// one that created it, which is how an import ends up nesting under the wrong
+    /// thing.
+    #[test]
+    fn every_create_type_round_trips_through_its_stored_pair() {
+        for mode in [ChapterMode::Folder, ChapterMode::Flat] {
+            for kind in CANONICAL {
+                let (role, sub_role) = kind.combo(mode.clone());
+                assert_eq!(
+                    CreateType::of(&role, &sub_role),
+                    Some(*kind),
+                    "{kind:?} under {mode:?} came back as something else"
+                );
+            }
+        }
+    }
+
+    /// Both chapter encodings answer `Chapter`, which is what lets `of` take no mode.
+    #[test]
+    fn a_chapter_is_a_chapter_whichever_way_it_is_stored() {
+        assert_eq!(
+            CreateType::of(&Role::Folder, &SubRole::ChapterScene),
+            Some(CreateType::Chapter)
+        );
+        assert_eq!(
+            CreateType::of(&Role::Item, &SubRole::ChapterScene),
+            Some(CreateType::Chapter)
+        );
+    }
+
+    /// A pair no `CreateType` creates has no answer, rather than a plausible wrong one.
+    #[test]
+    fn a_pair_outside_the_create_vocabulary_has_no_create_type() {
+        assert_eq!(CreateType::of(&Role::Item, &SubRole::Text), None);
+        assert_eq!(CreateType::of(&Role::Item, &SubRole::BookBegin), None);
     }
 }

@@ -1650,6 +1650,7 @@ import-document-col-title = Titre
 import-document-col-type = Type
 import-document-col-words = Mots
 import-document-col-breaks = Coupures
+import-document-col-comments = Commentaires
 import-document-col-source = Source
 import-document-level-rules = Niveaux de titre
 import-document-level-n = Titre { $level }
@@ -1704,6 +1705,13 @@ import-diagnostic-image-not-ingested = « { $path } » fait référence à l'ima
 import-diagnostic-duplicate-title = « { $title } » apparaît { $count } fois. Si vous avez déjà importé ces fichiers, cela les dupliquera.
 import-diagnostic-heading-level-jump = « { $title } » passe du niveau de titre { $from } au niveau { $to } ; il est placé un niveau sous son parent.
 import-diagnostic-illegal-combination = « { $title } » contient du texte, mais un élément de type « { $kind } » ne peut pas en contenir. Son texte serait perdu — changez son type.
+import-diagnostic-tracked-changes-flattened = { $path } était en cours de révision : { $count } modification(s) suivie(s) ont été acceptées et les suppressions écartées. C'est le texte final — vérifiez que c'est bien la version voulue.
+import-diagnostic-text-box-dropped = { $path } contient { $count } zone(s) de texte. Leur contenu est hors du fil du document : impossible de dire où il se place dans un manuscrit, il n'est donc pas importé.
+import-diagnostic-embedded-object-dropped = { $path } contient { $count } objet(s) incorporé(s) — graphique, équation ou similaire. Rien dans un manuscrit ne peut les accueillir.
+import-diagnostic-field-flattened = { $path } contient { $count } champ(s) — numéro de page, renvoi, date. Chacun conserve le texte affiché en dernier et ne se mettra plus à jour.
+import-diagnostic-unknown-style-level = { $path } utilise le style « { $detail } », qui ressemble à un titre mais n'indique aucun niveau. Ces paragraphes sont importés comme texte plutôt que devinés.
+import-diagnostic-comment-unanchored = Le commentaire « { $detail } » dans { $path } n'a pas pu être rattaché aux mots qu'il visait. Il est conservé sur son élément, où vous pouvez le déplacer.
+import-diagnostic-comment-replies-flattened = { $count } réponse(s) dans { $path } désignent un commentaire absent du fichier : elles arrivent donc comme des commentaires à part entière.
 import-document-diagnostics = { $errors ->
     [0] { $warnings ->
             [one] 1 point à connaître

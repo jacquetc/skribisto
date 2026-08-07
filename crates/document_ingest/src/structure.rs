@@ -36,6 +36,49 @@ const LADDER: &[CreateType] = &[
     CreateType::Scene,
 ];
 
+/// Whether a starting kind can hold the prose of a headingless document.
+///
+/// Deliberately about the *container* axis rather than the constraint matrix: asking
+/// `skribisto_model::allowed_content` needs a `(role, sub_role)`, which needs the
+/// project's `ChapterMode`, which this function does not have and should not need —
+/// a Book holds no prose under either mode, and neither does a Part or any folder.
+/// `plan::flag_illegal_combinations` still asks the matrix properly, per row, with the
+/// mode in hand; this only has to avoid *seeding* a rule that it would then flag.
+fn start_holds_prose(kind: CreateType) -> bool {
+    !matches!(
+        kind,
+        CreateType::Book
+            | CreateType::Part
+            | CreateType::Folder
+            | CreateType::NoteFolder
+            | CreateType::ParatextFolder
+    )
+}
+
+/// What the shallowest imported heading should become, landing at a destination.
+///
+/// The other half of [`infer_rules`]' `start` parameter: that function's doc states
+/// the rule ("importing into a Book means the shallowest heading is a Part; importing
+/// at the root means it is a Book") and this is where the rule actually lives, beside
+/// the `LADDER` it steps.
+///
+/// `into` is "inside this container" as opposed to "beside this row". Landing beside
+/// something makes the import its **sibling**, so it takes that row's own kind; landing
+/// inside steps one rung down, and stops at the bottom — a Scene inside a Scene is still
+/// a Scene, the same clamp that keeps a stray `#####` from inventing a phantom level.
+///
+/// An anchor off the ladder — a note, a paratext, a plain folder — has no rung to step
+/// from. `None` says so rather than guessing; the caller decides what a destination it
+/// cannot reason about should mean, and the honest answer there is "leave the import
+/// where the writer put it".
+pub fn start_kind_at(anchor: CreateType, into: bool) -> Option<CreateType> {
+    let rung = LADDER.iter().position(|k| *k == anchor)?;
+    if !into {
+        return Some(anchor);
+    }
+    Some(LADDER[(rung + 1).min(LADDER.len() - 1)])
+}
+
 /// Heading level (1–6) → what to create for it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LevelRules {
@@ -103,8 +146,24 @@ pub fn infer_rules(levels_used: &[u8], start: CreateType) -> LevelRules {
     used.dedup();
 
     if used.is_empty() {
-        // No headings at all: whatever arrives is one row of the starting kind.
-        return LevelRules::from_table(BTreeMap::from([(1, start)]));
+        // No headings at all: whatever arrives is one row — and that row holds the
+        // whole file's prose, so it cannot be a kind that holds none.
+        //
+        // This used to be the starting kind verbatim, which was only ever safe
+        // because every caller happened to pass a prose-bearing one. Deriving the
+        // start from the destination stopped that being true: importing a headingless
+        // file at the root starts at `Book`, and a Book with prose is a plan
+        // `apply_document_import` is obliged to refuse — losing the import rather than
+        // the paragraph. The same reasoning as the deepest-level re-anchor below, for
+        // the case that has no levels to anchor.
+        let kind = if start_holds_prose(start) {
+            start
+        } else {
+            // The bottom of the ladder, which is prose-bearing by construction — the
+            // same guarantee `kind_for(u8::MAX)` already leans on.
+            *LADDER.last().unwrap_or(&CreateType::Scene)
+        };
+        return LevelRules::from_table(BTreeMap::from([(1, kind)]));
     }
 
     let start_index = LADDER.iter().position(|k| *k == start).unwrap_or(0);
@@ -252,5 +311,104 @@ mod tests {
             CreateType::Part,
             "other levels untouched"
         );
+    }
+}
+
+#[cfg(test)]
+mod start_kind_tests {
+    use super::*;
+
+    /// Inside a container, the import starts one rung deeper — the rule
+    /// `infer_rules`' own doc states.
+    #[test]
+    fn landing_inside_a_container_steps_one_rung_down() {
+        assert_eq!(
+            start_kind_at(CreateType::Book, true),
+            Some(CreateType::Part)
+        );
+        assert_eq!(
+            start_kind_at(CreateType::Part, true),
+            Some(CreateType::Chapter)
+        );
+        assert_eq!(
+            start_kind_at(CreateType::Chapter, true),
+            Some(CreateType::Scene)
+        );
+    }
+
+    /// …and stops at the bottom rather than inventing a level below Scene.
+    #[test]
+    fn the_ladder_has_a_floor() {
+        assert_eq!(
+            start_kind_at(CreateType::Scene, true),
+            Some(CreateType::Scene)
+        );
+    }
+
+    /// Beside a row means a sibling of it, at its own rung.
+    #[test]
+    fn landing_beside_a_row_matches_it() {
+        for kind in [
+            CreateType::Book,
+            CreateType::Part,
+            CreateType::Chapter,
+            CreateType::Scene,
+        ] {
+            assert_eq!(start_kind_at(kind, false), Some(kind));
+        }
+    }
+
+    /// A destination the ladder does not describe gets no answer, not a plausible one.
+    #[test]
+    fn an_off_ladder_destination_has_no_rung() {
+        for kind in [
+            CreateType::Note,
+            CreateType::NoteFolder,
+            CreateType::Folder,
+            CreateType::Paratext,
+            CreateType::ParatextFolder,
+            CreateType::EndOfBook,
+        ] {
+            assert_eq!(start_kind_at(kind, true), None, "for {kind:?}");
+            assert_eq!(start_kind_at(kind, false), None, "for {kind:?}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod headingless_start_tests {
+    use super::*;
+
+    /// **Regression.** A file with no headings is one row holding all its prose, so
+    /// that row must be able to hold prose — whatever the destination started at.
+    ///
+    /// Importing a headingless `.md` at the root starts the ladder at `Book`, and a
+    /// Book with prose is a plan `apply_document_import` refuses outright: the writer
+    /// loses the whole import, not the paragraph. It went unseen while every caller
+    /// passed a prose-bearing start by hand.
+    #[test]
+    fn a_headingless_import_never_lands_on_a_kind_that_holds_no_prose() {
+        for start in [
+            CreateType::Book,
+            CreateType::Part,
+            CreateType::Folder,
+            CreateType::NoteFolder,
+            CreateType::ParatextFolder,
+        ] {
+            let rules = infer_rules(&[], start);
+            let kind = rules.kind_for(u8::MAX);
+            assert!(
+                start_holds_prose(kind),
+                "starting at {start:?} produced {kind:?}, which holds no prose"
+            );
+        }
+    }
+
+    /// A start that already holds prose is left exactly as it is.
+    #[test]
+    fn a_prose_bearing_start_is_kept() {
+        for start in [CreateType::Scene, CreateType::Chapter, CreateType::Note] {
+            assert_eq!(infer_rules(&[], start).kind_for(u8::MAX), start);
+        }
     }
 }

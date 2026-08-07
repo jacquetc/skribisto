@@ -35,7 +35,7 @@ use direct_access::work::work_controller;
 use import_management::import_management_controller;
 use import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyImportRow, ApplyImportRows,
-    DocumentImportRow, DocumentImportRows, ImportDiagnosticRows, ImportRowKind,
+    DocumentImportRow, DocumentImportRows, DropPosition, ImportDiagnosticRows, ImportRowKind,
 };
 
 struct Ctx {
@@ -119,13 +119,27 @@ impl Ctx {
     ///
     /// The long-operation manager runs it on its own thread, so this polls for
     /// the result the way the UI does rather than reaching past the framework.
-    fn analyse(&mut self, paths: Vec<String>, start: ImportRowKind) -> Vec<DocumentImportRow> {
+    /// Analyse into the binder itself (the top level).
+    fn analyse(&mut self, paths: Vec<String>, _start: ImportRowKind) -> Vec<DocumentImportRow> {
+        self.analyse_at(paths, 0, DropPosition::Into)
+    }
+
+    /// Analyse against a destination, as the wizard does.
+    ///
+    /// `start_kind` and `base_indent` are no longer the caller's to choose — they are
+    /// derived from where the import is going, which is the whole of finding #1.
+    fn analyse_at(
+        &mut self,
+        paths: Vec<String>,
+        anchor_item_id: EntityId,
+        drop_position: DropPosition,
+    ) -> Vec<DocumentImportRow> {
         let dto = AnalyzeDocumentImportDto {
             work_id: self.work_id,
             binder_id: self.binder_id,
             source_paths: paths,
-            start_kind: start,
-            base_indent: 0,
+            anchor_item_id,
+            drop_position,
         };
         let op = import_management_controller::analyze_document_import(
             &self.db,
@@ -135,6 +149,11 @@ impl Ctx {
         )
         .expect("start analyse");
 
+        // Deadlined, not a bare spin: a long operation that fails without ever
+        // reporting a result would otherwise hang the whole test binary with no clue
+        // which test did it — which is exactly what happened the first time an
+        // analyse started refusing a destination.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
         let plan = loop {
             if let Some(result) = import_management_controller::get_analyze_document_import_result(
                 &self.long_ops,
@@ -144,6 +163,10 @@ impl Ctx {
             {
                 break result;
             }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "analyse never produced a result"
+            );
             std::thread::sleep(std::time::Duration::from_millis(5));
         };
 
@@ -154,6 +177,15 @@ impl Ctx {
     }
 
     fn apply(&mut self, rows: Vec<DocumentImportRow>, anchor: EntityId) -> Vec<EntityId> {
+        self.apply_at(rows, anchor, DropPosition::Into)
+    }
+
+    fn apply_at(
+        &mut self,
+        rows: Vec<DocumentImportRow>,
+        anchor: EntityId,
+        drop_position: DropPosition,
+    ) -> Vec<EntityId> {
         let create_rows: Vec<ApplyImportRow> = rows
             .into_iter()
             .filter_map(|r| match r {
@@ -162,6 +194,7 @@ impl Ctx {
                     kind,
                     title,
                     djot,
+                    comments,
                     included,
                     ..
                 } if included => Some(ApplyImportRow::Create {
@@ -169,6 +202,11 @@ impl Ctx {
                     kind,
                     title,
                     djot,
+                    // Handed straight back, exactly as the UI does: this helper is
+                    // "accept the whole plan", and a plan carrying comments that
+                    // silently did not get created would make every comment test
+                    // pass for the wrong reason.
+                    comments,
                 }),
                 _ => None,
             })
@@ -183,6 +221,7 @@ impl Ctx {
                 work_id: self.work_id,
                 binder_id: self.binder_id,
                 anchor_item_id: anchor,
+                drop_position,
                 row: ApplyImportRow::Empty,
                 rows: ApplyImportRows::Create(create_rows),
             },
@@ -221,6 +260,61 @@ impl Ctx {
             .expect("item")
             .expect("item row")
             .title
+    }
+
+    /// Copy a committed container fixture into the scratch directory.
+    ///
+    /// `document_ingest`'s own tests read these files too, and read them harder —
+    /// this is the half those cannot reach: whether the comments they recovered
+    /// actually become rows in a store.
+    fn copy_fixture(&self, name: &str) -> String {
+        let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../document_ingest/tests/fixtures")
+            .join(name);
+        let target = self._dir.path().join(name);
+        std::fs::copy(&source, &target)
+            .unwrap_or_else(|e| panic!("{name} is missing — run its generate.py ({e})"));
+        target.to_string_lossy().to_string()
+    }
+
+    /// Every comment on this Work, with its replies, in creation order.
+    fn comments(
+        &self,
+    ) -> Vec<(
+        direct_access::comment::dtos::CommentDto,
+        Vec<direct_access::comment_reply::dtos::CommentReplyDto>,
+    )> {
+        work_controller::get_relationship(
+            &self.db,
+            &self.work_id,
+            &common::direct_access::work::WorkRelationshipField::Comments,
+        )
+        .expect("work comments")
+        .into_iter()
+        .map(|id| {
+            let comment = direct_access::comment::comment_controller::get(&self.db, &id)
+                .expect("comment")
+                .expect("comment row");
+            let replies = direct_access::comment_reply::comment_reply_controller::get_multi(
+                &self.db,
+                &comment.replies,
+            )
+            .expect("replies")
+            .into_iter()
+            .flatten()
+            .collect();
+            (comment, replies)
+        })
+        .collect()
+    }
+
+    /// The plain text of the prose an item stores, in the coordinate space a
+    /// comment anchor is measured in.
+    fn plain_of(&self, item_id: EntityId) -> String {
+        let djot = self.prose_of(item_id).unwrap_or_default();
+        skrib_format::djot_plain_text(&djot)
+            .expect("the stored Djot parses")
+            .0
     }
 }
 
@@ -378,8 +472,8 @@ fn a_missing_file_is_reported_and_the_rest_still_import() {
         work_id: ctx.work_id,
         binder_id: ctx.binder_id,
         source_paths: vec![good, missing],
-        start_kind: ImportRowKind::Scene,
-        base_indent: 0,
+        anchor_item_id: 0,
+        drop_position: DropPosition::Into,
     };
     let op = import_management_controller::analyze_document_import(
         &ctx.db,
@@ -429,12 +523,14 @@ fn prose_on_a_type_that_cannot_hold_it_is_refused_not_swallowed() {
             work_id: ctx.work_id,
             binder_id: ctx.binder_id,
             anchor_item_id: 0,
+            drop_position: DropPosition::Into,
             row: ApplyImportRow::Empty,
             rows: ApplyImportRows::Create(vec![ApplyImportRow::Create {
                 indent: 0,
                 kind: ImportRowKind::Book,
                 title: "A Book".into(),
                 djot: "Prose a Book cannot hold.".into(),
+                comments: Vec::new(),
             }]),
         },
     );
@@ -476,6 +572,7 @@ fn undoing_an_import_into_a_large_binder_stays_interactive() {
             kind: ImportRowKind::Scene,
             title: format!("Scene {i}"),
             djot: String::new(),
+            comments: Vec::new(),
         })
         .collect();
     import_management_controller::apply_document_import(
@@ -487,6 +584,7 @@ fn undoing_an_import_into_a_large_binder_stays_interactive() {
             work_id: ctx.work_id,
             binder_id: ctx.binder_id,
             anchor_item_id: 0,
+            drop_position: DropPosition::Into,
             row: ApplyImportRow::Empty,
             rows: ApplyImportRows::Create(existing),
         },
@@ -574,6 +672,7 @@ fn a_batched_import_fires_at_most_one_event_per_row() {
                 kind: ImportRowKind::Scene,
                 title: format!("Scene {i}"),
                 djot: String::new(),
+                comments: Vec::new(),
             })
             .collect();
         import_management_controller::apply_document_import(
@@ -585,6 +684,7 @@ fn a_batched_import_fires_at_most_one_event_per_row() {
                 work_id: ctx.work_id,
                 binder_id: ctx.binder_id,
                 anchor_item_id: 0,
+                drop_position: DropPosition::Into,
                 row: ApplyImportRow::Empty,
                 rows: ApplyImportRows::Create(create),
             },
@@ -613,5 +713,313 @@ fn a_batched_import_fires_at_most_one_event_per_row() {
         "a 200-row import fired {large} BinderItem events — more than one per row. \
          Each one costs the binder tree a full reload, so this multiplies a cost \
          that is already the biggest in a bulk import"
+    );
+}
+
+// ── imported comments ───────────────────────────────────────────────────────
+
+/// The full journey for an editor's note: out of a `.docx`, through the plan, into
+/// a `Comment` row anchored to the words it was about.
+///
+/// `document_ingest`'s own tests prove the scanner reads the file; this proves the
+/// half they cannot see — that what it read becomes rows in a store, pointing where
+/// it said, with its thread intact.
+#[test]
+fn an_editors_comments_survive_the_whole_journey_into_the_store() {
+    let mut ctx = Ctx::new();
+    let path = ctx.copy_fixture("word-shaped.docx");
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    let created = ctx.apply(rows, 0);
+
+    let comments = ctx.comments();
+    assert_eq!(comments.len(), 2, "two threads, not three: {comments:#?}");
+
+    let (ranged, replies) = comments
+        .iter()
+        .find(|(c, _)| c.body == "Is this the right word?")
+        .expect("the ranged comment");
+
+    assert_eq!(ranged.author_name, "Editor");
+    assert_eq!(ranged.kind, common::entities::CommentAnchorKind::Range);
+    assert!(
+        !ranged.orphaned,
+        "the quote was proved before it was stored"
+    );
+    assert_eq!(ranged.quote_exact, "the street was gone");
+    assert_eq!(
+        ranged.created_at.to_rfc3339(),
+        "2026-01-02T03:04:05+00:00",
+        "the author's own date, not the moment of import"
+    );
+
+    assert_eq!(replies.len(), 1, "the thread is one level deep");
+    assert_eq!(replies[0].author_name, "Writer");
+    assert_eq!(replies[0].body, "Yes, I meant it.");
+
+    // The anchor has to point at that text in the prose *as stored*, which is the
+    // only claim that matters: everything up to here could be right while the
+    // offsets pointed at the wrong sentence.
+    let owner = created
+        .iter()
+        .find(|id| ctx.plain_of(**id).contains("the street was gone"))
+        .expect("the row holding the quoted prose");
+    let plain: Vec<char> = ctx.plain_of(*owner).chars().collect();
+    let start = ranged.range_start as usize;
+    let end = start + ranged.range_length as usize;
+    assert!(end <= plain.len(), "the anchor runs past the prose");
+    assert_eq!(
+        plain[start..end].iter().collect::<String>(),
+        "the street was gone",
+        "the stored offsets point somewhere else"
+    );
+}
+
+/// Resolved in Word, resolved in Skribisto — and the whole-paragraph comment keeps
+/// the paragraph it was on.
+#[test]
+fn a_resolved_paragraph_comment_arrives_resolved_and_covers_its_paragraph() {
+    let mut ctx = Ctx::new();
+    let path = ctx.copy_fixture("word-shaped.docx");
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    let created = ctx.apply(rows, 0);
+
+    let comments = ctx.comments();
+    let (paragraph, _) = comments
+        .iter()
+        .find(|(c, _)| c.body == "A whole-paragraph note.")
+        .expect("the paragraph comment");
+
+    assert!(paragraph.resolved, "w15:done was not carried across");
+    assert_eq!(
+        paragraph.kind,
+        common::entities::CommentAnchorKind::Paragraph
+    );
+
+    let owner = created
+        .iter()
+        .find(|id| {
+            ctx.plain_of(**id)
+                .contains("The second chapter opens quietly.")
+        })
+        .expect("the row holding the second chapter");
+    let plain: Vec<char> = ctx.plain_of(*owner).chars().collect();
+    let start = paragraph.range_start as usize;
+    let end = start + paragraph.range_length as usize;
+    assert_eq!(
+        plain[start..end].iter().collect::<String>(),
+        "The second chapter opens quietly."
+    );
+}
+
+/// Undo must take the comments back with the rows.
+///
+/// The undo snapshot is `Binder`-scoped and a `Comment` hangs off the `Work`, so
+/// restoring the binder alone would leave every imported note behind — attached to
+/// `Content` rows that no longer exist, and visible in the comments dock as notes
+/// about a manuscript the writer just undid.
+#[test]
+fn undoing_an_import_takes_its_comments_back_too() {
+    let mut ctx = Ctx::new();
+    let path = ctx.copy_fixture("word-shaped.docx");
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+    assert_eq!(ctx.comments().len(), 2);
+
+    ctx.undo.undo(None).expect("undo");
+    assert!(
+        ctx.comments().is_empty(),
+        "the comments outlived the rows they annotated: {:#?}",
+        ctx.comments()
+    );
+
+    ctx.undo.redo(None).expect("redo");
+    assert_eq!(ctx.comments().len(), 2, "redo must put them back");
+}
+
+/// An `.odt` from LibreOffice takes the same journey — different spelling, same
+/// destination. Worth its own test rather than a loop: if only one format were
+/// broken, a shared assertion would name neither.
+#[test]
+fn an_odt_from_libreoffice_lands_its_comments_too() {
+    let mut ctx = Ctx::new();
+    let path = ctx.copy_fixture("libreoffice.odt");
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let comments = ctx.comments();
+    assert_eq!(comments.len(), 2, "{comments:#?}");
+    let (ranged, replies) = comments
+        .iter()
+        .find(|(c, _)| c.body == "Is this the right word?")
+        .expect("the ranged comment");
+    assert_eq!(ranged.quote_exact, "the street was gone");
+    assert_eq!(replies.len(), 1);
+    assert_eq!(replies[0].body, "Yes, I meant it.");
+}
+
+/// Markdown has no comments, and importing one must not invent any.
+#[test]
+fn a_markdown_import_creates_no_comments() {
+    let mut ctx = Ctx::new();
+    let path = ctx.write("novel.md", NOVEL);
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+    assert!(ctx.comments().is_empty());
+}
+
+// ── the destination's own depth ─────────────────────────────────────────────
+
+/// Every pre-existing row's parent, derived the way `binder_ordering` derives it:
+/// the nearest preceding row with a strictly smaller indent.
+///
+/// Deliberately re-derived here rather than imported. This asserts what the *binder*
+/// means, and a helper shared with the code under test would agree with that code
+/// even when both were wrong.
+fn parents(ctx: &Ctx) -> std::collections::HashMap<EntityId, Option<EntityId>> {
+    let order = ctx.binder_order();
+    let indent: Vec<i64> = order
+        .iter()
+        .map(|id| {
+            binder_item_controller::get(&ctx.db, id)
+                .expect("item")
+                .expect("row")
+                .indent
+        })
+        .collect();
+
+    let mut out = std::collections::HashMap::new();
+    for (i, id) in order.iter().enumerate() {
+        let mut parent = None;
+        for j in (0..i).rev() {
+            if indent[j] < indent[i] {
+                parent = Some(order[j]);
+                break;
+            }
+        }
+        out.insert(*id, parent);
+    }
+    out
+}
+
+/// **Regression.** An import must add rows; it must never re-home one that was
+/// already there.
+///
+/// `apply_document_import` splices its block immediately after the anchor *row* —
+/// not after that row's subtree — and every imported row arrives at the plan's
+/// `base_indent`, which the wizard hardcodes to 0 whatever destination the writer
+/// chose. Land an indent-0 block between a chapter and its scenes and the scenes'
+/// nearest preceding smaller indent becomes the *imported* row: they silently
+/// change parent. "Import here…" made that reachable from any row in the binder.
+///
+/// Stated as an invariant rather than as an expected shape on purpose: it holds
+/// whatever indent the fix decides an import should start at, so it cannot be
+/// satisfied by teaching it the answer.
+#[test]
+fn importing_into_a_chapter_never_re_parents_what_was_already_there() {
+    let mut ctx = Ctx::new();
+
+    // A book with a chapter that has a scene of its own.
+    let existing = ctx.write(
+        "existing.md",
+        "# The Book\n\n## Chapter One\n\n### A scene\n\nProse.\n",
+    );
+    let created = {
+        let rows = ctx.analyse(vec![existing], ImportRowKind::Book);
+        ctx.apply(rows, 0)
+    };
+    assert_eq!(created.len(), 3, "book, chapter, scene");
+    let chapter = created[1];
+    let scene = created[2];
+
+    let before = parents(&ctx);
+    assert_eq!(
+        before[&scene],
+        Some(chapter),
+        "the fixture itself must be nested, or this test proves nothing"
+    );
+
+    // Import again, pointing at the chapter — what "Import here…" does.
+    let incoming = ctx.write("incoming.md", "# Another Book\n\nProse.\n");
+    let rows = ctx.analyse(vec![incoming], ImportRowKind::Book);
+    ctx.apply(rows, chapter);
+
+    let after = parents(&ctx);
+    for (id, parent) in &before {
+        assert_eq!(
+            after.get(id),
+            Some(parent),
+            "row {id} changed parent: was {parent:?}, now {:?} — an import re-homed \
+             a row that was already in the binder",
+            after.get(id)
+        );
+    }
+}
+
+/// The other half of the same fix: an import *into* a container lands inside it, at
+/// the right depth, after whatever was already there.
+///
+/// The invariant test above proves nothing is broken; this proves something is right.
+/// Both are needed — "changes no parents" is also satisfied by refusing to import.
+#[test]
+fn importing_into_a_chapter_lands_inside_it_after_its_existing_scenes() {
+    let mut ctx = Ctx::new();
+    let existing = ctx.write(
+        "existing.md",
+        "# The Book\n\n## Chapter One\n\n### First scene\n\nProse.\n",
+    );
+    let created = {
+        let rows = ctx.analyse(vec![existing], ImportRowKind::Book);
+        ctx.apply(rows, 0)
+    };
+    let (chapter, first_scene) = (created[1], created[2]);
+
+    let incoming = ctx.write("incoming.md", "# Later scene\n\nMore prose.\n");
+    let rows = ctx.analyse_at(vec![incoming], chapter, DropPosition::Into);
+    let imported = ctx.apply_at(rows, chapter, DropPosition::Into);
+    assert_eq!(imported.len(), 1);
+
+    // Inside the chapter, and a sibling of the scene already there.
+    let after = parents(&ctx);
+    assert_eq!(
+        after[&imported[0]],
+        Some(chapter),
+        "the import must land inside the chapter the writer pointed at"
+    );
+    assert_eq!(after[&first_scene], Some(chapter), "beside what was there");
+
+    // …and after it, not before: a container's existing children keep their order and
+    // the new material appends.
+    let order = ctx.binder_order();
+    let at = |id| order.iter().position(|x| *x == id).unwrap();
+    assert!(
+        at(first_scene) < at(imported[0]),
+        "the import appends after the chapter's existing scenes"
+    );
+}
+
+/// Landing *beside* a leaf makes the import its sibling, at the leaf's own depth —
+/// not a child of it, and not back at the top level.
+#[test]
+fn importing_beside_a_scene_makes_it_a_sibling() {
+    let mut ctx = Ctx::new();
+    let existing = ctx.write(
+        "existing.md",
+        "# The Book\n\n## Chapter One\n\n### First scene\n\nProse.\n",
+    );
+    let created = {
+        let rows = ctx.analyse(vec![existing], ImportRowKind::Book);
+        ctx.apply(rows, 0)
+    };
+    let (chapter, first_scene) = (created[1], created[2]);
+
+    let incoming = ctx.write("incoming.md", "# Later scene\n\nMore prose.\n");
+    let rows = ctx.analyse_at(vec![incoming], first_scene, DropPosition::After);
+    let imported = ctx.apply_at(rows, first_scene, DropPosition::After);
+
+    let after = parents(&ctx);
+    assert_eq!(
+        after[&imported[0]],
+        Some(chapter),
+        "a sibling of the scene shares the scene's parent"
     );
 }
