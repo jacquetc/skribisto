@@ -32,7 +32,7 @@ use teksilo::prelude::TextStyleRole;
 use teksilo::prelude::*;
 use teksilo::widgets::{
     Button, ButtonVariant, CellContext, Checkbox, Column, ColumnWidth, ComboBox, DropZone, Expand,
-    FixedSize, HStack, ListView, Padding, Panel, ProgressBar, ScrollArea, Spacer, Step, Stepper,
+    FixedSize, HStack, ListView, MaxSize, Padding, Panel, ProgressBar, Spacer, Step, Stepper,
     Switcher, TextWidget, TreeTableView, VStack,
 };
 
@@ -46,6 +46,10 @@ use crate::view_models::import_document::{
 
 const CARD_W: f32 = 920.0;
 const CARD_H: f32 = 620.0;
+
+/// The diagnostics strip's height cap — headline plus about three rows, after
+/// which the list scrolls itself.
+const STRIP_HEIGHT: f32 = 74.0;
 
 /// What a caller already knows when it opens the wizard.
 ///
@@ -425,19 +429,18 @@ fn destination_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
 /// Shown only when there is something to say. An empty box announcing that
 /// nothing is wrong costs a third of the tree's height to say nothing.
 fn diagnostics_strip(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
-    let rows: ListModel<(String, LocalizedString)> = ListModel::new();
-    let counts = Signal::new((0usize, 0usize));
-
-    // Refilled whenever a fresh analysis lands. `diagnostics()` is the signal the
-    // view-model writes; everything below reads its own mirror of it.
-    let mirror = rows.clone();
-    let counts_sink = counts.clone();
-    let source_vm = vm.clone();
-    let refresh = vm.diagnostics().map(move |all| {
-        mirror.replace_all(source_vm.diagnostic_messages());
-        counts_sink.set(source_vm.diagnostic_counts());
-        all.len()
-    });
+    // The view-model owns the rows and refills them on every write to
+    // `diagnostics` — see `ImportDocumentViewModel::diagnostic_rows`. This used
+    // to be a local `ListModel` filled by a side effect *inside* a mapped
+    // signal, kept alive by a zero-width label whose only job was to read it:
+    // the rows never reached the screen (they were built but never measured, so
+    // every one laid out 0×0) and the label leaked its counter as a stray number
+    // beside the headline.
+    let rows = vm.diagnostic_rows();
+    let counting_vm = vm.clone();
+    let counts = vm
+        .diagnostics()
+        .map(move |_| counting_vm.diagnostic_counts());
 
     let headline = counts.map(|(errors, warnings)| {
         tr!(import_document_diagnostics(
@@ -477,30 +480,27 @@ fn diagnostics_strip(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     let body = VStack::new()
         .spacing(2.0)
         .child(
-            HStack::new()
-                .spacing(6.0)
-                .child(
-                    TextWidget::new(lit!(""))
-                        .text(headline)
-                        .style(TextStyleRole::SmallBold)
-                        .color(headline_color),
-                )
-                .child(Spacer::new())
-                // Invisible; it exists so the list refills when a fresh analysis
-                // replaces the diagnostics.
-                .child(
-                    FixedSize::new()
-                        .width(0.0)
-                        .child(TextWidget::new(lit!("")).text(refresh.map(|n| n.to_string()))),
-                ),
+            TextWidget::new(lit!(""))
+                .text(headline)
+                .style(TextStyleRole::SmallBold)
+                .color(headline_color),
         )
-        .child(Expand::vertical().child(ScrollArea::new().child(list)));
+        // The `ListView` scrolls itself — wrapping it in a `ScrollArea` gave the
+        // strip a second, outer scrollbar over a viewport the list never knew
+        // about, which is the empty scroller this box used to be. `Expand` so the
+        // list is *allocated* the leftover height: a virtualized list sizes its
+        // viewport from an allocation, and one that is only measured falls back
+        // to a 200 px window it then gets clipped out of.
+        .child(Expand::vertical().child(list));
 
-    // Height-pinned and scrollable rather than growing: a file with forty image
-    // references must not push the tree off the card.
+    // Height-capped rather than growing: a file with forty image references must
+    // not push the tree off the card. `MaxSize`, not `FixedSize`: a height-only
+    // `FixedSize` proposes `width: None` to its child, and a virtualized list
+    // measured with no width places every row at 0×0 — visible in the a11y tree,
+    // invisible on screen. `MaxSize` forwards the width it was given.
     Switcher::new(vm.diagnostics().map(|d| usize::from(!d.is_empty())))
         .child(Spacer::new())
-        .child(Expand::horizontal().child(FixedSize::new().height(74.0).child(body)))
+        .child(Expand::horizontal().child(MaxSize::height(STRIP_HEIGHT).child(body)))
 }
 
 /// One combo per heading level the documents actually used.
@@ -815,11 +815,11 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
 mod tests {
     use super::*;
     use crate::app_ids::AppIds;
-    use teksilo::core::widget_tree::WidgetTree;
     use document_ingest::ImportPlan;
     use document_ingest::plan::PlannedRow;
     use frontend::AppContext;
     use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
 
     fn planned(indent: i64, title: &str, kind: CreateType, breaks: usize) -> PlannedRow {
         PlannedRow {
@@ -990,6 +990,91 @@ mod tests {
         );
     }
 
+    /// The strip's rows must be **on screen**, not merely in the tree.
+    ///
+    /// The bug this pins: the list was a virtualized `ListView` inside a
+    /// `ScrollArea` inside a height-only `FixedSize`. That `FixedSize` proposes
+    /// `width: None`, so every row measured 0×0 and was placed nowhere — the
+    /// writer saw a headline saying "3 things to know" above an empty box with a
+    /// scrollbar. The old test counted `ListView`s and passed throughout.
+    #[test]
+    fn every_diagnostic_row_has_a_size() {
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportDocumentViewModel::new(app_ctx.clone(), AppIds::default());
+        vm.on_plan_ready(
+            &ImportPlan {
+                rows: vec![planned(0, "Book", CreateType::Book, 0)],
+                diagnostics: Vec::new(),
+            },
+            vec![1],
+            vec![(1, CreateType::Book)],
+        );
+        vm.set_diagnostics(vec![crate::view_models::import_document::Diagnostic {
+            key: "no-headings".into(),
+            severity: "info".into(),
+            path: "/tmp/a.md".into(),
+            detail: String::new(),
+            count: 0,
+            row: None,
+        }]);
+        let (tree, id) = mount(vm.clone(), &app_ctx);
+
+        // The view-model is what holds the rows now — no mirror in the view, and
+        // nothing that only fills when an invisible widget happens to be read.
+        assert!(
+            vm.diagnostic_rows().len() >= 2,
+            "the analyser's entry and the illegal-combination one must both be listed"
+        );
+
+        let list = first_containing(&tree, id, "ListView").expect("the strip mounts a list");
+        let bounds = tree.bounds(list);
+        assert!(
+            bounds.width > 100.0,
+            "the diagnostics list must be laid out at a real width, got {bounds:?}"
+        );
+        // Capped, and capped by something that actually constrains it: under the
+        // old `FixedSize` the list reported its 200 px fallback and was merely
+        // clipped, which is how a scrollbar appeared over nothing.
+        assert!(
+            bounds.height > 0.0 && bounds.height <= STRIP_HEIGHT,
+            "the list must be capped at the strip's height, got {bounds:?}"
+        );
+        // No outer scroller around it: the list scrolls itself, and the second
+        // one was a scrollbar over a viewport the list never knew about.
+        assert!(
+            ancestors(&tree, id, list).iter().all(|a| !tree
+                .widget_type_name(*a)
+                .is_some_and(|n| n.contains("ScrollArea"))),
+            "the diagnostics list must not sit inside a ScrollArea"
+        );
+    }
+
+    /// Every ancestor of `needle` up to `root`, nearest first.
+    fn ancestors(tree: &WidgetTree, root: WidgetId, needle: WidgetId) -> Vec<WidgetId> {
+        fn walk(
+            tree: &WidgetTree,
+            here: WidgetId,
+            needle: WidgetId,
+            path: &mut Vec<WidgetId>,
+        ) -> bool {
+            if here == needle {
+                return true;
+            }
+            for c in tree.children(here) {
+                path.push(here);
+                if walk(tree, c, needle, path) {
+                    return true;
+                }
+                path.pop();
+            }
+            false
+        }
+        let mut path = Vec::new();
+        walk(tree, root, needle, &mut path);
+        path.reverse();
+        path
+    }
+
     fn count_of(tree: &WidgetTree, root: WidgetId, needle: &str) -> usize {
         let here = usize::from(
             tree.widget_type_name(root)
@@ -1001,7 +1086,6 @@ mod tests {
             .map(|c| count_of(tree, c, needle))
             .sum::<usize>()
     }
-
 
     /// Review keeps the plan tree tall; Destination keeps the outline tree tall.
     ///

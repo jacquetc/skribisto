@@ -56,6 +56,7 @@ use teksilo::core::styles::PanelVariant;
 use teksilo::i18n::{LocalizedString, localized};
 use teksilo::prelude::*;
 use teksilo::res;
+use teksilo::widgets::stepper::ChromePosition;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{
     ComboBox, Divider, Expand, FilePickerField, FilePickerKind, FixedSize, FormLayout, HStack,
@@ -516,13 +517,23 @@ impl Widget for NewWorkPanel {
         // (`PendingAction::New`'s `then_import`).
         .on_finish(move |ctx, _ctrl| create_vm.create(ctx));
 
+        // Which flow this is, in the Stepper's own chrome slot. `Top` is not the
+        // default — chrome is QWizard's watermark slot, so it lands in a leading
+        // sidebar column unless told otherwise, and a one-line title there is a
+        // 230 dp margin holding four words. The strip names the steps but not
+        // the wizard, and "From documents…" differs from plain New Work in ways
+        // the writer should be able to see before its last page.
+        let stepper = stepper
+            .chrome(TextWidget::new(self.title()).style(TextStyleRole::BodyBold))
+            .chrome_position(ChromePosition::Top);
+
         // Add the stepper first so its first focusable descendant — the Work
-        // name field on step one — can be captured for `initial_focus_hint`.
+        // name field on step one — can be captured for `initial_focus_hint`
+        // (the chrome banner is a label, so it does not take the slot).
         let stepper_id = ctx.add(stepper);
         self.name_field
             .set(ctx.first_focusable_descendant(stepper_id));
 
-        let title = self.title();
         let root = teksu!(ctx => FixedSize {
                 width: CARD_W
                 height: CARD_H
@@ -530,20 +541,8 @@ impl Widget for NewWorkPanel {
                     variant: PanelVariant::Raised
                     corner_radius: 10.0
                     padding: 12.0
-                    VStack {
-                        spacing: 10.0
-                        // Which flow this is. The indicator strip names the
-                        // steps but not the wizard, and "From documents…"
-                        // differs from plain New Work in ways the writer should
-                        // be able to see before its last page.
-                        Padding::symmetric(0.0, 4.0) {
-                            TextWidget::new(title) {
-                                style: TextStyleRole::BodyBold
-                            }
-                        }
-                        Expand::vertical {
-                            child_id: stepper_id
-                        }
+                    Expand::vertical {
+                        child_id: stepper_id
                     }
                 }
             }
@@ -649,7 +648,8 @@ mod tests {
     /// rather than being assumed to follow from the ordinary one.
     #[test]
     fn the_from_documents_panel_builds_and_lays_out() {
-        let mut panel = NewWorkPanel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let mut panel =
+            NewWorkPanel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
         panel.vm = panel.vm.clone().for_documents();
         let mut tree = WidgetTree::new();
         let id = tree.add_boxed(Box::new(panel));

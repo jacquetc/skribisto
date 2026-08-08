@@ -262,6 +262,15 @@ pub struct ImportDocumentViewModel {
     /// The analysed plan, as a tree.
     plan: ImportPlanSource,
     diagnostics: Signal<Vec<Diagnostic>>,
+    /// The same diagnostics, already turned into the writer's sentences, as the
+    /// list model the strip binds.
+    ///
+    /// Owned here and written eagerly by [`Self::set_diagnostics`] rather than
+    /// mirrored in the view: the panel used to fill its own `ListModel` from a
+    /// side effect inside a mapped signal, read by a zero-width label that
+    /// existed only to force that map to run. Layer B owns the data; the view
+    /// binds it.
+    diagnostic_rows: ListModel<(String, LocalizedString)>,
 
     /// Heading level → type. Editing one entry retypes every row that came from
     /// that level and has not been individually pinned.
@@ -301,6 +310,7 @@ impl ImportDocumentViewModel {
             controller: StepperController::new(STEP_COUNT),
             plan: ImportPlanSource::empty(),
             diagnostics: Signal::new(Vec::new()),
+            diagnostic_rows: ListModel::new(),
             level_rules: Signal::new(Vec::new()),
             pinned: Signal::new(Vec::new()),
             row_levels: Signal::new(Vec::new()),
@@ -406,6 +416,7 @@ impl ImportDocumentViewModel {
         self.controller.reset();
         self.plan.set_plan(&ImportPlan::default());
         self.diagnostics.set(Vec::new());
+        self.refill_diagnostic_rows();
         self.level_rules.set(Vec::new());
         self.pinned.set(Vec::new());
         self.row_levels.set(Vec::new());
@@ -543,6 +554,28 @@ impl ImportDocumentViewModel {
                 (3, CreateType::Scene),
             ],
         );
+        // Two of the fourteen things an import can have to admit to. Seeded so the
+        // diagnostics strip — a third of the review step, and the reason the
+        // feature exists — is actually on screen in a mocks build; without them it
+        // is a surface no mock run can ever see.
+        self.set_diagnostics(vec![
+            Diagnostic {
+                key: "footnotes-degraded".into(),
+                severity: "warning".into(),
+                path: "mock.md".into(),
+                detail: String::new(),
+                count: 3,
+                row: None,
+            },
+            Diagnostic {
+                key: "no-headings".into(),
+                severity: "info".into(),
+                path: "mock-notes.md".into(),
+                detail: String::new(),
+                count: 0,
+                row: None,
+            },
+        ]);
     }
 
     /// Start the read-only analysis. Returns the long-operation id.
@@ -736,6 +769,7 @@ impl ImportDocumentViewModel {
         self.level_rules.set(rules);
         self.pinned.set(Vec::new());
         self.diagnostics.set(Vec::new());
+        self.refill_diagnostic_rows();
         *self.active.borrow_mut() = None;
         // Busy off before any step jump — see `abandon_analysis`.
         self.busy.set(false);
@@ -758,7 +792,21 @@ impl ImportDocumentViewModel {
         self.diagnostics.set(diagnostics);
         // The analyser's own illegal-combination entries are recomputed here too, so
         // there is exactly one rule deciding which rows are marked — this one.
+        // `recheck_types` writes `diagnostics` again and refills the rows.
         self.recheck_types();
+    }
+
+    /// The sentences the diagnostics strip lists — bind this, do not mirror it.
+    pub fn diagnostic_rows(&self) -> ListModel<(String, LocalizedString)> {
+        self.diagnostic_rows.clone()
+    }
+
+    /// Re-render [`Self::diagnostic_messages`] into the bound list model.
+    ///
+    /// Every write to `diagnostics` goes through here, so the list can never
+    /// disagree with the headline that counts the same entries.
+    fn refill_diagnostic_rows(&self) {
+        self.diagnostic_rows.replace_all(self.diagnostic_messages());
     }
 
     /// Every diagnostic, worst first, already turned into the writer's sentence.
@@ -800,7 +848,11 @@ impl ImportDocumentViewModel {
         let all = self.diagnostics.get();
         (
             all.iter().filter(|d| d.is_error()).count(),
-            all.iter().filter(|d| d.is_warning()).count(),
+            // Everything that is not an error, not only the `warning` severity:
+            // the headline counts what the list below it shows, and an `info`
+            // entry is a line in that list. Counting warnings alone said "1
+            // thing to know" over three visible sentences.
+            all.iter().filter(|d| !d.is_error()).count(),
         )
     }
 
@@ -931,6 +983,7 @@ impl ImportDocumentViewModel {
             });
         }
         self.diagnostics.set(diagnostics);
+        self.refill_diagnostic_rows();
     }
 
     /// False when this row carries prose that its current type cannot store.
@@ -1171,8 +1224,20 @@ impl ImportDocumentViewModel {
     ///
     /// Under `mocks`, Next stays enabled once not busy (the mock plan is planted
     /// synchronously on the Files→Review advance).
+    ///
+    /// **Also refuses while a row would be refused by the backend.** That rule
+    /// used to live only on Finish, two steps later, where nothing on screen
+    /// could explain it: a writer who picked a destination watched Import stay
+    /// grey with the cause — a Book row carrying prose — on a page they had
+    /// already left. `blocking_rows` is fixable *here* (retype the row, or
+    /// untick it) and the diagnostics strip right below the tree says which row
+    /// and why, so this is where the flow has to stop.
     pub fn can_proceed_from_review_signal(&self) -> Signal<bool> {
-        self.busy.map(|b| !*b)
+        let me = self.clone();
+        let plan_v = self.plan.version_signal();
+        self.busy
+            .zip(&plan_v)
+            .map(move |(busy, _)| !*busy && me.blocking_rows().is_empty())
     }
 
     /// Reactive Finish gate for the Destination step — same rules as
@@ -2084,6 +2149,60 @@ mod tests {
         );
     }
 
+    /// **Regression.** A blocking row must stop the writer on Review, not two
+    /// steps later on a page that cannot explain it.
+    ///
+    /// What the writer met: a Book row carrying prose — the ordinary shape of
+    /// "import a book" — walked through Review, through Destination, and then sat
+    /// there with a chosen destination and a grey Import button. The cause was
+    /// real and the refusal correct, but it was stated on a page they had left,
+    /// so the button simply looked broken. Review is where a row can be retyped
+    /// or unticked, so Review is where the flow stops.
+    #[test]
+    fn a_blocking_row_holds_the_writer_on_the_review_step() {
+        let vm = vm();
+        let gate = vm.can_proceed_from_review_signal();
+        assert!(gate.get(), "an applyable plan may go on to Destination");
+
+        vm.retype_row(PlanRowKey(2), CreateType::Part);
+        assert!(
+            !gate.get(),
+            "a row the backend would refuse must hold Next, where it is fixable"
+        );
+
+        // Both ways out of it re-open the gate, reactively.
+        vm.set_included(PlanRowKey(2), false);
+        assert!(gate.get(), "unticking the row is one way out");
+        vm.set_included(PlanRowKey(2), true);
+        assert!(!gate.get());
+        vm.retype_row(PlanRowKey(2), CreateType::Scene);
+        assert!(gate.get(), "retyping it is the other");
+    }
+
+    /// The strip's rows are the view-model's own, written on every diagnostics
+    /// change — the view used to mirror them from a side effect inside a mapped
+    /// signal, which is how a headline said "3 things to know" over an empty box.
+    #[test]
+    fn the_diagnostic_rows_follow_every_change() {
+        let vm = vm();
+        let rows = vm.diagnostic_rows();
+        assert_eq!(rows.len(), vm.diagnostic_messages().len());
+
+        // A retype adds an illegal-combination entry; the rows must gain it
+        // without anyone reading a signal to make it happen.
+        let before = rows.len();
+        vm.retype_row(PlanRowKey(2), CreateType::Part);
+        assert_eq!(rows.len(), before + 1);
+        assert_eq!(rows.len(), vm.diagnostic_messages().len());
+
+        // And the headline counts exactly what the list shows — infos included.
+        let (errors, others) = vm.diagnostic_counts();
+        assert_eq!(errors + others, rows.len());
+
+        vm.reset();
+        assert_eq!(rows.len(), 0, "a reset empties the strip too");
+    }
+
     /// A row the writer unticked is never created, so it cannot block anything.
     #[test]
     fn an_excluded_row_does_not_block_the_import() {
@@ -2148,7 +2267,11 @@ mod tests {
             .map(|(s, _)| s)
             .collect();
         assert_eq!(severities, vec!["error", "warning", "info"]);
-        assert_eq!(vm.diagnostic_counts(), (1, 1));
+        // One error, and two entries that are not errors. The second number is
+        // everything the list shows below the headline, not the `warning`
+        // severity alone — a headline that counted warnings only said "1 thing to
+        // know" above three visible sentences.
+        assert_eq!(vm.diagnostic_counts(), (1, 2));
     }
 
     /// A row-scoped diagnostic names its row, and the sentence is built from the
