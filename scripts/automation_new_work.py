@@ -23,14 +23,25 @@ paratext ComboBoxes → **step 3**: the Template RadioGroup and an enabled
 (roles + the .skrib path) so the harness passes whatever UI language is
 persisted.
 
-Note: this script does not click "Create Work" — creating from the Launcher
-opens a *second* (project) window and closes the Launcher; that transition is
+Then a second phase for the Launcher's **From documents…**, which reuses the very
+same wizard for a project an import is about to fill: it must open *directly*
+(that door used to pick files first and then have the import wizard ask for them
+again), title itself for the flow, ask the language only on step 2, offer no
+template on step 3, and — this one does press Finish, in an isolated config over a
+scratch folder — hand off to a project window with the import wizard already open
+over the new project.
+
+Note: the ordinary "Create Work" is not clicked; creating from the Launcher opens
+a *second* (project) window and closes the Launcher, and that transition is
 covered end-to-end by `automation_welcome.py`.
 
 Reuses the launch + scrape-socket/token + connect scaffolding from
 automation_welcome.py.
 """
-import base64, json, os, re, select, subprocess, sys, tempfile, time
+import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture
 
 SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
 MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
@@ -59,10 +70,10 @@ def fail(msg, app=None, mcp=None, log=None):
 class Session:
     """One launched app + connected MCP server."""
 
-    def __init__(self, args):
+    def __init__(self, args, env=None):
         self.log = tempfile.NamedTemporaryFile(suffix=".log", delete=False).name
         self.app = subprocess.Popen([SKRIBISTO, *args], stdout=open(self.log, "w"),
-                                    stderr=subprocess.STDOUT)
+                                    stderr=subprocess.STDOUT, env=env)
         sock = tok = None
         deadline = time.time() + 20
         while time.time() < deadline:
@@ -503,6 +514,116 @@ print("PASS: step 3 shows the templates + flat-chapters toggle, Create enabled")
 s.shot("/tmp/sk-new-work-step3.png")
 
 s.close()
+time.sleep(1.0)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# The Launcher's "From documents…" — the same wizard, a different purpose.
+# ══════════════════════════════════════════════════════════════════════════════
+# This door used to open a bare file picker first and then ask for the very same
+# files again in the import wizard afterwards. It now goes straight to this
+# wizard, which drops the questions an import answers for itself (template,
+# paratexts) and says on its last step what comes next.
+#
+# Run in an isolated config + a scratch folder, because unlike the phase above it
+# does press Finish: the whole point is the handoff — project created, import
+# wizard opened over it, files chosen there, once.
+print("\n== From documents… ==")
+env = fixture.isolated_config(locale="en-US", label="new-work-docs")
+target = tempfile.mkdtemp(prefix="new-work-docs-")
+s = Session([], env=env)
+s.tools()
+if not s.wait_label("welcome sections"):
+    fail("the Launcher window did not appear", s.app, s.mcp, s.log)
+
+docs_btn = next((n for n in s.nodes() if n.get("role") == "Button"
+                 and "from documents" in (n.get("label") or "").lower()), None)
+if not docs_btn:
+    fail("no 'From documents…' button on the Launcher", s.app, s.mcp, s.log)
+s.call("invoke_action", {"node": docs_btn["id"], "action": "click"})
+time.sleep(1.2)
+
+# No file picker: the wizard itself is what the click opens. (A native picker is
+# a separate OS surface the bridge cannot see — what it *can* see is that the
+# wizard is already up, which the old flow could not manage until files had been
+# chosen and the dialog dismissed.)
+if not s.by_role("Form"):
+    s.dump("after 'From documents…'")
+    fail("clicking 'From documents…' did not open the New Work wizard directly",
+         s.app, s.mcp, s.log)
+if not s.find_label_contains("from documents", timeout=3):
+    fail("the wizard does not title itself as the from-documents flow",
+         s.app, s.mcp, s.log)
+print("PASS: 'From documents…' opens the wizard directly, titled for the flow")
+s.shot("/tmp/sk-new-work-docs-step1.png")
+
+# Fill step one and walk.
+raw, _ = s.call("snapshot_tree")
+focus_id = json.loads(raw["content"][0]["text"]).get("focus")
+name_field = next((n for n in s.nodes() if n.get("id") == focus_id), None)
+if name_field is None or name_field.get("role") != "TextInput":
+    fail("the from-documents wizard must open focused on the Work name",
+         s.app, s.mcp, s.log)
+s.call("type_text", {"node": name_field["id"], "text": "Imported Book"})
+time.sleep(0.5)
+location_field = next((n for n in s.by_role("TextInput", "TextField")
+                       if "/" in val(n) and n["id"] != name_field["id"]), None)
+if location_field is None:
+    fail("could not identify the Location field", s.app, s.mcp, s.log)
+s.call("set_value", {"node": location_field["id"], "value": target})
+time.sleep(0.6)
+
+advance()
+combos = s.by_role("ComboBox")
+print(f"step 2 structure: ComboBox x{len(combos)}")
+# One, not two: the paratext picker is absent — with no template there is no
+# Book row to furnish, so it could only lie.
+if len(combos) != 1:
+    s.dump("from-documents step 2")
+    fail(f"expected only the language ComboBox on step 2, got {len(combos)}",
+         s.app, s.mcp, s.log)
+print("PASS: step 2 asks the language only")
+
+advance()
+radios = s.by_role("RadioButton")
+checkboxes = s.by_role("CheckBox", "Switch")
+print(f"step 3 structure: RadioButton x{len(radios)}, toggle x{len(checkboxes)}")
+if radios:
+    fail(f"the template picker must be gone from a from-documents wizard "
+         f"({len(radios)} tiles found) — a template collides with the import",
+         s.app, s.mcp, s.log)
+if not checkboxes:
+    fail("the flat-chapters toggle must stay: it is Work.chapter_mode, which "
+         "every chapter the import creates resolves through", s.app, s.mcp, s.log)
+create_btn = find_button(("import",), exclude=("cancel", "annuler"))
+if not create_btn or not node_enabled(create_btn["id"]):
+    s.dump("from-documents step 3")
+    fail("expected an enabled 'Create & import…' on the last step", s.app, s.mcp, s.log)
+print(f"PASS: step 3 explains what comes next; finish is {create_btn.get('label')!r}")
+s.shot("/tmp/sk-new-work-docs-step3.png")
+
+# Finish → the project window, with the import wizard already over it.
+s.call("invoke_action", {"node": create_btn["id"], "action": "click"})
+deadline = time.time() + 40
+opened = False
+while time.time() < deadline and not opened:
+    opened = any("import documents" in (n.get("label") or "").lower() for n in s.nodes())
+    if not opened:
+        time.sleep(0.5)
+created = os.listdir(target)
+print(f"created: {created}")
+if not opened:
+    s.dump("after Create & import")
+    fail("the import wizard did not open over the freshly created project",
+         s.app, s.mcp, s.log)
+if "imported-book.skrib" not in created:
+    fail(f"the project was not created at {target}: {created}", s.app, s.mcp, s.log)
+print("PASS: Create & import → project on disk + the import wizard over it")
+s.shot("/tmp/sk-new-work-docs-after.png")
+s.close()
+# The project this phase created is a test artefact, not a fixture: take it with
+# us, or every run leaves another one in the scratch directory.
+shutil.rmtree(target, ignore_errors=True)
 
 print("\nALL PASS")
 sys.exit(0)

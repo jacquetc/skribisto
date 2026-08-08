@@ -203,7 +203,6 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 import.clone(),
                 ImportDocumentOptions {
                     destination: Some(*destination),
-                    ..Default::default()
                 },
             );
         }));

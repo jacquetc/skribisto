@@ -47,21 +47,19 @@ use crate::view_models::import_document::{
 const CARD_W: f32 = 920.0;
 const CARD_H: f32 = 620.0;
 
-/// Present the wizard over the current window, optionally pre-loaded with files.
-///
-/// `sources` is what the cold-start door hands over: a writer who chose
-/// "New from documents…" on the Launcher already picked their files before the
-/// project existed, and asking again would be the wizard forgetting what it was
-/// opened for. Every other door passes an empty slice.
 /// What a caller already knows when it opens the wizard.
 ///
 /// A struct rather than more positional parameters: there are three call sites now
 /// (the File menu, the Launcher's cold start, the binder's "Import here…") and each
-/// knows a different subset, which reads badly as a second bare `Vec` argument.
+/// knows a different subset.
+///
+/// Files are deliberately **not** among them. The Launcher's cold-start door used
+/// to pick them before the project existed and hand them over here, which meant
+/// the writer answered "which documents?" twice — once in a bare file picker, and
+/// again on this wizard's first step, which is the only place the answer can be
+/// reviewed, reordered and pointed somewhere.
 #[derive(Default)]
 pub struct ImportDocumentOptions {
-    /// Files already chosen — the Launcher's cold-start path picks them first.
-    pub sources: Vec<PathBuf>,
     /// Where the import should land, when the caller already knows. `None` leaves the
     /// writer to choose, which is what the File menu does.
     pub destination: Option<crate::models::BinderTreeKey>,
@@ -73,7 +71,6 @@ pub fn present_import_document(
     options: ImportDocumentOptions,
 ) {
     vm.reset();
-    vm.add_files(options.sources);
     // The destination picker was minted with the window (often while `work_id`
     // was still `None`), and unlike the outline/trash it is not reloaded on
     // LoadWork/NewWork. Without this, the review step always shows the empty
@@ -1035,7 +1032,10 @@ mod tests {
 
         fn size_of(tree: &WidgetTree, root: WidgetId, needle: &str) -> Option<(f32, f32)> {
             fn find(tree: &WidgetTree, root: WidgetId, needle: &str) -> Option<WidgetId> {
-                if tree.widget_type_name(root).is_some_and(|n| n.contains(needle)) {
+                if tree
+                    .widget_type_name(root)
+                    .is_some_and(|n| n.contains(needle))
+                {
                     return Some(root);
                 }
                 tree.children(root)

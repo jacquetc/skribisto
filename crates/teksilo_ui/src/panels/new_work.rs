@@ -8,6 +8,13 @@
 //! with the framework's indicator strip and Cancel / Back / Next / Create Work
 //! footer. See `teksilo` docs `widgets/stepper.md`.
 //!
+//! The Launcher's **From documents…** reuses this same wizard in
+//! [`NewWorkPurpose::FromDocuments`]: same first step, a language-only second
+//! step, and a third step that replaces the template picker with what happens
+//! next — the import wizard opening over the project this one creates. Its
+//! template is pinned to None, because every template lays down a manuscript the
+//! import would then be poured beside.
+//!
 //! The split follows what the writer must decide *before* anything can be
 //! created versus what merely shapes the project:
 //!   1. **Details** — name, author, format, where it lands. The only step with a
@@ -58,7 +65,7 @@ use teksilo::widgets::{
 
 use frontend::AppContext;
 
-use crate::view_models::NewWorkViewModel;
+use crate::view_models::{NewWorkPurpose, NewWorkViewModel};
 
 /// The card size. Wider and slightly shorter than the old single-column form:
 /// the indicator strip and footer take the height the scrolling form used to,
@@ -117,18 +124,28 @@ impl NewWorkPanel {
         }
     }
 
-    /// [`Self::new_for_launcher`] for the Launcher's **New from documents…**:
-    /// the same form, carrying the documents already picked — see
-    /// [`crate::view_models::NewWorkViewModel::new_for_launcher_with_documents`].
-    pub fn new_for_launcher_with_documents(
+    /// [`Self::new_for_launcher`] for the Launcher's **From documents…**: the
+    /// same wizard without the questions an import answers for itself — see
+    /// [`crate::view_models::NewWorkViewModel::new_for_launcher_from_documents`].
+    pub fn new_for_launcher_from_documents(
         app_ctx: Rc<AppContext>,
         factory: crate::shell::windows::ProjectWindowFactory,
-        sources: Vec<std::path::PathBuf>,
     ) -> Self {
         Self {
-            vm: NewWorkViewModel::new_for_launcher_with_documents(app_ctx, factory, sources),
+            vm: NewWorkViewModel::new_for_launcher_from_documents(app_ctx, factory),
             root_child: None,
             name_field: std::cell::Cell::new(None),
+        }
+    }
+
+    /// The wizard's own title — the modal draws it, because `present_modal`
+    /// ignores `ModalRequest::title` for an `InTree` presentation and a bare
+    /// indicator strip does not say what flow you are in. It is also the one
+    /// visible difference between the two doors before their third step.
+    fn title(&self) -> LocalizedString {
+        match self.vm.purpose() {
+            NewWorkPurpose::Project => tr!(new_work_title()),
+            NewWorkPurpose::FromDocuments => tr!(new_work_documents_title()),
         }
     }
 }
@@ -265,9 +282,7 @@ fn details_step(vm: &NewWorkViewModel, start_dir: Option<PathBuf>) -> impl Widge
                             .layout(TileLayout::Row)
                             .tile(
                                 RadioTile::new()
-                                    .icon(tile_icon(res!(
-                                        "assets/icons/new_work/single-file.svg"
-                                    )))
+                                    .icon(tile_icon(res!("assets/icons/new_work/single-file.svg")))
                                     .title(tr!(new_work_single_file()))
                                     .description(tr!(new_work_single_file_desc())),
                             )
@@ -293,43 +308,51 @@ fn details_step(vm: &NewWorkViewModel, start_dir: Option<PathBuf>) -> impl Widge
     )
 }
 
-/// Step two — the project's default writing language and its paratext tradition.
+/// Step two — the project's default writing language, and (for an ordinary
+/// project) its paratext tradition.
 ///
 /// The paratext picker greys out for the templates that build no book (None,
 /// Notebook). That choice is made on the *next* step, so the control can turn
 /// inapplicable behind the writer's back — greyed rather than hidden, so at
 /// worst they come back and find the answer they gave no longer applies, never
 /// a control that has vanished.
+///
+/// It is absent altogether in [`NewWorkPurpose::FromDocuments`], whose template
+/// is pinned to None: paratexts are only ever built around a Book row, so the
+/// picker there could not do anything at all — and a permanently greyed control
+/// is worse than no control.
 fn language_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
-    step_page(
-        FormLayout::new()
-            .label(tr!(new_work_step_language()))
-            .label_gap(16.0)
-            .row_spacing(18.0)
-            // ── Default language ──────────────────────────────────────────
-            .line(
-                field_label(tr!(new_work_language())),
-                VStack::new()
-                    .spacing(6.0)
-                    .child(FixedSize::new().width(240.0).child(language_combo(vm)))
-                    .child(hint(tr!(new_work_language_hint()))),
-            )
-            .full_width(Divider::new())
-            // ── Paratext structure: the front and back matter a tradition opens and
-            // closes a book with. Orthogonal to the template — how much book, and
-            // which tradition, are two questions. ─────────────────────────
-            .line(
-                field_label(tr!(new_work_paratext())),
-                VStack::new()
-                    .spacing(6.0)
-                    .child(
-                        FixedSize::new()
-                            .width(240.0)
-                            .child(paratext_combo(vm).enabled(vm.paratext_applicable())),
-                    )
-                    .child(hint(tr!(new_work_paratext_hint()))),
-            ),
-    )
+    let form = FormLayout::new()
+        .label(tr!(new_work_step_language()))
+        .label_gap(16.0)
+        .row_spacing(18.0)
+        // ── Default language ──────────────────────────────────────────────
+        .line(
+            field_label(tr!(new_work_language())),
+            VStack::new()
+                .spacing(6.0)
+                .child(FixedSize::new().width(240.0).child(language_combo(vm)))
+                .child(hint(tr!(new_work_language_hint()))),
+        );
+
+    let form = match vm.purpose() {
+        NewWorkPurpose::FromDocuments => form,
+        // ── Paratext structure: the front and back matter a tradition opens and
+        // closes a book with. Orthogonal to the template — how much book, and
+        // which tradition, are two questions. ─────────────────────────────
+        NewWorkPurpose::Project => form.full_width(Divider::new()).line(
+            field_label(tr!(new_work_paratext())),
+            VStack::new()
+                .spacing(6.0)
+                .child(
+                    FixedSize::new()
+                        .width(240.0)
+                        .child(paratext_combo(vm).enabled(vm.paratext_applicable())),
+                )
+                .child(hint(tr!(new_work_paratext_hint()))),
+        ),
+    };
+    step_page(form)
 }
 
 /// Step three — how much book to generate, and whether its chapters are flat.
@@ -389,6 +412,47 @@ fn template_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
     )
 }
 
+/// Step three for [`NewWorkPurpose::FromDocuments`] — what happens after
+/// "Create & import", in place of the template picker.
+///
+/// The page exists because the flow has a seam the writer would otherwise walk
+/// into blind: creating the project and importing into it are two operations,
+/// and the second one opens a wizard of its own the moment the first finishes.
+/// Saying so here is the difference between "why is it asking me for files
+/// again?" and "right, that is the part I was told about".
+///
+/// It keeps the flat-chapters toggle: that is `Work.chapter_mode`, which every
+/// chapter the import creates is resolved through, so it is the one structural
+/// question this form must still ask.
+fn import_next_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
+    step_page(
+        VStack::new()
+            .spacing(12.0)
+            .child(
+                TextWidget::new(tr!(new_work_documents_next_title()))
+                    .style(TextStyleRole::BodyBold),
+            )
+            .child(TextWidget::new(tr!(new_work_documents_next_body())))
+            .child(
+                TextWidget::new(tr!(new_work_documents_no_template()))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+            )
+            .child(Divider::new())
+            .child(
+                Toggle::new(vm.chapter_scene())
+                    .label(tr!(new_work_chapter_scene()))
+                    .enabled(vm.chapter_scene_applicable())
+                    .rich_tooltip_content(chapter_scene_tooltip()),
+            )
+            .child(
+                TextWidget::new(tr!(new_work_documents_chapter_scene_hint()))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+            ),
+    )
+}
+
 impl std::fmt::Debug for NewWorkPanel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("NewWorkPanel").finish()
@@ -405,13 +469,23 @@ impl Widget for NewWorkPanel {
 
         let details_vm = self.vm.clone();
         let language_vm = self.vm.clone();
-        let template_vm = self.vm.clone();
+        let last_vm = self.vm.clone();
         let create_vm = self.vm.clone();
+        let purpose = self.vm.purpose();
+
+        // The last step and the button that leaves it are the whole difference
+        // between the two doors: an ordinary project chooses a template and
+        // Creates; a from-documents project is told what comes next and Creates
+        // & imports.
+        let finish_label = match purpose {
+            NewWorkPurpose::Project => tr!(new_work_create()),
+            NewWorkPurpose::FromDocuments => tr!(new_work_create_and_import()),
+        };
 
         let stepper = Stepper::new()
             .back_label(tr!(new_work_back()))
             .next_label(tr!(new_work_next()))
-            .finish_label(tr!(new_work_create()))
+            .finish_label(finish_label)
             .cancel(tr!(new_work_cancel()), |ctx, _ctrl| ctx.dismiss_modal())
             .step(
                 Step::new(tr!(new_work_step_details()))
@@ -423,20 +497,32 @@ impl Widget for NewWorkPanel {
             .step(
                 Step::new(tr!(new_work_step_language()))
                     .content(move || language_step(&language_vm)),
-            )
-            .step(
-                Step::new(tr!(new_work_step_template()))
-                    .content(move || template_step(&template_vm)),
-            )
-            // Create Work. `create` dismisses on success and toasts on failure,
-            // leaving the wizard up on the last step to retry.
-            .on_finish(move |ctx, _ctrl| create_vm.create(ctx));
+            );
+
+        // Two `.step(..)` arms rather than one boxed factory: `Step::content`
+        // takes a concrete `W: Widget`, and `Box<dyn Widget>` is not itself a
+        // `Widget`.
+        let stepper = match purpose {
+            NewWorkPurpose::Project => stepper.step(
+                Step::new(tr!(new_work_step_template())).content(move || template_step(&last_vm)),
+            ),
+            NewWorkPurpose::FromDocuments => stepper.step(
+                Step::new(tr!(new_work_step_import())).content(move || import_next_step(&last_vm)),
+            ),
+        }
+        // Create Work. `create` dismisses on success and toasts on failure,
+        // leaving the wizard up on the last step to retry. From documents,
+        // the import wizard opens over the new project the moment it exists
+        // (`PendingAction::New`'s `then_import`).
+        .on_finish(move |ctx, _ctrl| create_vm.create(ctx));
 
         // Add the stepper first so its first focusable descendant — the Work
         // name field on step one — can be captured for `initial_focus_hint`.
         let stepper_id = ctx.add(stepper);
-        self.name_field.set(ctx.first_focusable_descendant(stepper_id));
+        self.name_field
+            .set(ctx.first_focusable_descendant(stepper_id));
 
+        let title = self.title();
         let root = teksu!(ctx => FixedSize {
                 width: CARD_W
                 height: CARD_H
@@ -444,8 +530,20 @@ impl Widget for NewWorkPanel {
                     variant: PanelVariant::Raised
                     corner_radius: 10.0
                     padding: 12.0
-                    Expand::vertical {
-                        child_id: stepper_id
+                    VStack {
+                        spacing: 10.0
+                        // Which flow this is. The indicator strip names the
+                        // steps but not the wizard, and "From documents…"
+                        // differs from plain New Work in ways the writer should
+                        // be able to see before its last page.
+                        Padding::symmetric(0.0, 4.0) {
+                            TextWidget::new(title) {
+                                style: TextStyleRole::BodyBold
+                            }
+                        }
+                        Expand::vertical {
+                            child_id: stepper_id
+                        }
                     }
                 }
             }
@@ -461,7 +559,7 @@ impl Widget for NewWorkPanel {
     /// the same gap the Import documents wizard closes this way.
     fn accessibility(&self, builder: &mut teksilo::core::accessibility::AccessNodeBuilder) {
         builder.set_role(Role::Dialog);
-        builder.set_name(tr!(new_work_title()).resolve_now());
+        builder.set_name(self.title().resolve_now());
     }
 
     /// Open with the Work name field focused, so the dialog is typeable the moment
@@ -520,10 +618,20 @@ mod tests {
     #[test]
     fn every_step_builds_and_lays_out() {
         let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let documents =
+            NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new())
+                .for_documents();
         for (name, page) in [
-            ("details", Box::new(details_step(&vm, None)) as Box<dyn Widget>),
+            (
+                "details",
+                Box::new(details_step(&vm, None)) as Box<dyn Widget>,
+            ),
             ("language", Box::new(language_step(&vm))),
             ("template", Box::new(template_step(&vm))),
+            // The from-documents variants: a language step with no paratext row,
+            // and the "what happens next" page in place of the templates.
+            ("language/documents", Box::new(language_step(&documents))),
+            ("import-next", Box::new(import_next_step(&documents))),
         ] {
             let mut tree = WidgetTree::new();
             let id = tree.add_boxed(page);
@@ -534,5 +642,19 @@ mod tests {
                 "step {name} laid out to nothing"
             );
         }
+    }
+
+    /// The from-documents wizard is a different set of steps and a different
+    /// finish label, assembled in `build` — so it gets its own build/layout pass
+    /// rather than being assumed to follow from the ordinary one.
+    #[test]
+    fn the_from_documents_panel_builds_and_lays_out() {
+        let mut panel = NewWorkPanel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        panel.vm = panel.vm.clone().for_documents();
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(panel));
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+        let b = tree.bounds(id);
+        assert_eq!((b.width, b.height), (CARD_W, CARD_H));
     }
 }

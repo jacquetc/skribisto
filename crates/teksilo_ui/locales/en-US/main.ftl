@@ -786,6 +786,14 @@ new-work-step-language = Language & structure
 new-work-step-template = Template
 new-work-back = Back
 new-work-next = Next
+# The same wizard, opened from the Launcher's "From documents…"
+new-work-documents-title = New Work from documents
+new-work-step-import = Import
+new-work-create-and-import = Create & import…
+new-work-documents-next-title = Your documents come next
+new-work-documents-next-body = Creating the project opens the import wizard over it, where you choose the documents, review the structure Skribisto reads from them, and pick where it lands. Nothing is written into the project until you confirm it there.
+new-work-documents-no-template = This project starts empty on purpose: no template, so the imported documents are the only thing in it.
+new-work-documents-chapter-scene-hint = Applies to the chapters the import creates. You can change it later in the project's settings.
 # Format tile descriptions
 new-work-single-file-desc = One .skrib archive (zip). Portable, easy to back up.
 new-work-bundle-desc = A folder holding every text & asset. Friendlier to version control.

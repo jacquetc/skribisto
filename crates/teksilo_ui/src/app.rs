@@ -205,20 +205,17 @@ pub enum PendingAction {
     Load(String),
     /// Create a brand-new work from this DTO (the Launcher's "New Work").
     ///
-    /// `import_sources` is the cold-start path: the Launcher's "New from
-    /// documents…" picks the files *before* any project exists, so the chosen
-    /// paths ride here to the window that will hold them and the Import
-    /// documents wizard opens over the freshly-created project already carrying
-    /// them (see `wiring::project_events::install_cold_start_import`). Empty for
-    /// every other New Work door.
+    /// `then_import` is the cold-start path: the Launcher's "From documents…"
+    /// creates the project this flag rides with, and the Import documents wizard
+    /// opens over it as soon as it exists (see the cold-start subscriber in
+    /// `wiring::project_events`). The files themselves are chosen *there* — the
+    /// door used to pick them first and then ask again in the wizard. `false`
+    /// for every other New Work door.
     ///
     /// Carried on the action rather than parked on the factory: a factory field
     /// would mean "the next window this creates", which is an ordering
     /// assumption nothing enforces — this names the one window that asked.
-    New {
-        dto: NewWorkDto,
-        import_sources: Vec<String>,
-    },
+    New { dto: NewWorkDto, then_import: bool },
     /// Show a Work that is **already open** in another window of this process —
     /// Work ▸ New Window. The one action that performs no backend mutation at
     /// all: the `Work` is loaded, its `AppIds` are seeded, its singles point at
@@ -2351,22 +2348,14 @@ impl Widget for App {
                         });
                     }
                 }
-                Some(PendingAction::New {
-                    dto,
-                    import_sources,
-                }) => {
+                Some(PendingAction::New { dto, then_import }) => {
                     let target = dto.file_name.clone();
                     // Arm the cold-start import BEFORE creating the work: the
                     // `NewWork` subscriber that consumes it is already live, and
                     // arming afterwards would be a race whose losing side is
-                    // silent (the files simply never appear).
-                    if !import_sources.is_empty() {
-                        cold_start_import.set(
-                            import_sources
-                                .iter()
-                                .map(std::path::PathBuf::from)
-                                .collect(),
-                        );
+                    // silent (the wizard simply never opens).
+                    if then_import {
+                        cold_start_import.arm();
                     }
                     if let Err(e) = work_management_commands::new_work(&self.app_ctx, &dto) {
                         eprintln!("skribisto: could not create '{target}': {e}");

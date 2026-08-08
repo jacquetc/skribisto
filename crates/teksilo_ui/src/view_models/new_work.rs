@@ -29,6 +29,11 @@
 //!     project in place would re-point the sibling's project out from under it;
 //!     the new project therefore gets a window of its own and both existing
 //!     windows are left exactly as they were.
+//!
+//! Orthogonal to *where* the project lands is *what it is for* — see
+//! [`NewWorkPurpose`]. The Launcher's "From documents…" reuses this whole form
+//! for the project an import is about to fill, which changes which questions are
+//! worth asking, not where the answers go.
 
 use std::path::Path;
 use std::rc::Rc;
@@ -270,12 +275,34 @@ pub struct NewWorkViewModel {
     app_ctx: Rc<AppContext>,
     /// Where "Create Work" puts the new project — see [`CreateTarget`].
     target: CreateTarget,
-    /// Documents the Launcher's "New from documents…" already picked, riding
-    /// along to the window that will hold the project (see
-    /// [`crate::app::PendingAction::New`]'s `import_sources`). Empty for every
-    /// other door, and meaningless for [`CreateTarget::InPlace`] — that path
-    /// has a window with a live Import documents wizard of its own.
-    import_sources: Vec<String>,
+    /// What the project being created is *for* — see [`NewWorkPurpose`].
+    purpose: NewWorkPurpose,
+}
+
+/// What the project this form creates is for.
+///
+/// The Launcher's "From documents…" makes a project whose entire content is
+/// about to be imported, which silences two of the form's questions rather than
+/// adding a form of its own:
+///   * **Template** — every template lays down a manuscript the import is then
+///     poured beside, which is the collision the writer sees as duplicate
+///     chapters. `FromDocuments` pins `NewWorkTemplate::None`.
+///   * **Book structure** — paratexts are only ever built around a Book row (see
+///     `work_management`'s `build_template_with_paratexts`), and with no
+///     template there is no book to furnish, so the picker could only lie.
+///
+/// The other questions all still matter: a name and a location because the file
+/// must go somewhere, a language because the imported prose is spell-checked in
+/// it, and flat chapters because that is `Work.chapter_mode`, which is what the
+/// import resolves its own chapter rows through.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum NewWorkPurpose {
+    /// An ordinary project: every question is asked.
+    Project,
+    /// A project the Import documents wizard is about to fill — the Launcher's
+    /// "From documents…". Creation is followed by that wizard opening over the
+    /// new project (see [`crate::app::PendingAction::New`]'s `then_import`).
+    FromDocuments,
 }
 
 /// Where [`NewWorkViewModel::create`] puts the project it is about to create.
@@ -329,7 +356,7 @@ impl NewWorkViewModel {
             paratext_presets: presets,
             app_ctx,
             target: CreateTarget::InPlace(ids),
-            import_sources: Vec::new(),
+            purpose: NewWorkPurpose::Project,
         }
     }
 
@@ -341,24 +368,35 @@ impl NewWorkViewModel {
         Self::in_a_new_window(app_ctx, factory, true)
     }
 
-    /// [`Self::new_for_launcher`] for the Launcher's **New from documents…**:
-    /// the same form, plus the files the writer already chose. They travel with
-    /// the create action to the new window, which opens the Import documents
-    /// wizard over the finished project already carrying them.
+    /// [`Self::new_for_launcher`] for the Launcher's **From documents…**: the
+    /// same form in [`NewWorkPurpose::FromDocuments`], followed by the Import
+    /// documents wizard opening over the project it creates.
     ///
-    /// Carried rather than imported here because there is nothing to import
-    /// *into* yet — the project does not exist until this form is submitted.
-    pub fn new_for_launcher_with_documents(
+    /// The files are **not** chosen here. They used to be — the door opened a
+    /// file picker before the form — and the writer then met the very same
+    /// question again in the import wizard afterwards, because that wizard is
+    /// where files are reviewed, ordered and pointed at a destination. One
+    /// question, asked once, in the place that can act on the answer.
+    pub fn new_for_launcher_from_documents(
         app_ctx: Rc<AppContext>,
         factory: ProjectWindowFactory,
-        sources: Vec<std::path::PathBuf>,
     ) -> Self {
-        let mut vm = Self::in_a_new_window(app_ctx, factory, true);
-        vm.import_sources = sources
-            .iter()
-            .map(|p| p.to_string_lossy().to_string())
-            .collect();
-        vm
+        Self::in_a_new_window(app_ctx, factory, true).for_documents()
+    }
+
+    /// Switch this form to [`NewWorkPurpose::FromDocuments`].
+    ///
+    /// Separate from the constructor because the purpose is orthogonal to where
+    /// the project lands ([`CreateTarget`]) — only the Launcher door needs it
+    /// today, but nothing about it is Launcher-specific.
+    pub(crate) fn for_documents(mut self) -> Self {
+        self.purpose = NewWorkPurpose::FromDocuments;
+        // No template, and therefore no paratexts: the import supplies the
+        // structure. Pinned on the state rather than only in the view, so the
+        // DTO is right even though the form never shows these controls.
+        self.template_idx.set(0);
+        self.paratext_preset.set(None);
+        self
     }
 
     /// For `NewWorkPanel::new_beside_current` — presented from a project window
@@ -388,12 +426,18 @@ impl NewWorkViewModel {
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
             app_ctx,
-            import_sources: Vec::new(),
+            purpose: NewWorkPurpose::Project,
             target: CreateTarget::NewWindow {
                 factory,
                 close_presenting_window,
             },
         }
+    }
+
+    /// What this project is for — the view asks so it can drop the questions
+    /// [`NewWorkPurpose::FromDocuments`] answers on the writer's behalf.
+    pub fn purpose(&self) -> NewWorkPurpose {
+        self.purpose
     }
 
     // ── Signal accessors (bound by the view) ───────────────────────────────
@@ -423,7 +467,16 @@ impl NewWorkViewModel {
     /// selection — true only for the three manuscript templates (Empty Novel,
     /// Light Novel, Novel = indices 1/2/3). Drives the toggle's `enabled` state
     /// so it greys out for None (0) / Notebook (4).
+    ///
+    /// Always true for [`NewWorkPurpose::FromDocuments`], whose template is
+    /// pinned to None: the flag is not really about the template but about
+    /// `Work.chapter_mode`, and the import resolves every chapter row it creates
+    /// through that mode. Greying it there would be the form refusing to ask the
+    /// one structural question the import actually obeys.
     pub fn chapter_scene_applicable(&self) -> Signal<bool> {
+        if self.purpose == NewWorkPurpose::FromDocuments {
+            return Signal::new(true);
+        }
         self.template_idx.map(|i| matches!(*i, 1..=3))
     }
 
@@ -431,8 +484,14 @@ impl NewWorkViewModel {
     /// because front and back matter are the furniture of a book and the other templates
     /// build none. Greyed rather than hidden, so the control does not appear and vanish
     /// as the template changes.
+    ///
+    /// Never for [`NewWorkPurpose::FromDocuments`] — its template is None, so
+    /// there is no Book row to furnish and the picker is not shown at all.
     pub fn paratext_applicable(&self) -> Signal<bool> {
-        self.chapter_scene_applicable()
+        if self.purpose == NewWorkPurpose::FromDocuments {
+            return Signal::new(false);
+        }
+        self.template_idx.map(|i| matches!(*i, 1..=3))
     }
 
     /// The reactive "Will create …" path — recomputes as name/location/format
@@ -592,7 +651,7 @@ impl NewWorkViewModel {
                 // window, like this one, discards it.
                 let (config, _state) = factory.window_config(PendingAction::New {
                     dto: self.dto(),
-                    import_sources: self.import_sources.clone(),
+                    then_import: self.purpose == NewWorkPurpose::FromDocuments,
                 });
                 ctx.open_window(config);
                 if *close_presenting_window {
@@ -737,10 +796,14 @@ mod tests {
     fn the_details_gate_needs_a_name_and_a_writable_folder() {
         let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
         let gate = vm.can_create();
-        vm.location().set(std::env::temp_dir().to_string_lossy().to_string());
+        vm.location()
+            .set(std::env::temp_dir().to_string_lossy().to_string());
         assert!(!gate.get(), "a blank name must hold the wizard on step one");
         vm.name().set("Tidewrack".into());
-        assert!(gate.get(), "a usable name + a writable folder must open Next");
+        assert!(
+            gate.get(),
+            "a usable name + a writable folder must open Next"
+        );
         // A name that slugifies to nothing is as unusable as a blank one.
         vm.name().set("///".into());
         assert!(!gate.get());
@@ -761,6 +824,41 @@ mod tests {
         assert!(gate.get(), "an untouched mocks form must still advance");
         vm.location().set("/nonexistent-skribisto-probe".into());
         assert!(gate.get(), "no filesystem probe may gate a mocks build");
+    }
+
+    /// The Launcher's "From documents…" must create an **empty** project: a
+    /// template would lay down a manuscript beside the one about to be imported,
+    /// which is exactly the duplication the flow exists to avoid. Paratexts go
+    /// with it — they are only ever built around a Book row, which no longer
+    /// exists.
+    #[test]
+    fn a_from_documents_project_carries_no_template_and_no_paratexts() {
+        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new())
+            .for_documents();
+        vm.location().set("~/Books".into());
+        vm.name().set("Tidewrack".into());
+
+        let dto = vm.dto();
+        assert_eq!(dto.template_kind, NewWorkTemplate::None);
+        assert!(dto.paratext_front.is_empty() && dto.paratext_back.is_empty());
+        // The picker is not shown, and could do nothing if it were.
+        assert!(!vm.paratext_applicable().get());
+        // …but flat chapters still matter: that is `Work.chapter_mode`, which
+        // every chapter the import creates is resolved through.
+        assert!(vm.chapter_scene_applicable().get());
+        vm.chapter_scene().set(true);
+        assert!(vm.dto().chapter_scene_mode);
+    }
+
+    /// A paratext preselected from the interface locale must not sneak into a
+    /// from-documents project: `for_documents` clears the choice, so nothing
+    /// depends on the preset file happening to match no locale.
+    #[test]
+    fn from_documents_clears_a_preselected_paratext() {
+        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        vm.paratext_preset().set(Some("us-trade-novel".into()));
+        let vm = vm.for_documents();
+        assert_eq!(vm.paratext_preset().get(), None);
     }
 
     #[test]

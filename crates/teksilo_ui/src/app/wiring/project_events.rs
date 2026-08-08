@@ -13,8 +13,7 @@
 //! for `NewWork`: seed first, then the cold-start import — the wizard reads the
 //! `work_id` the seed writes.
 
-use std::cell::RefCell;
-use std::path::PathBuf;
+use std::cell::Cell;
 use std::rc::Rc;
 
 use teksilo::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
@@ -274,23 +273,27 @@ pub(in crate::app) struct LifecycleDeps {
     pub cold_start_import: ColdStartImport,
 }
 
-/// The documents a Launcher "New from documents…" picked, waiting for the
-/// project they were picked for to exist.
+/// A Launcher "From documents…" waiting for the project it is about to fill to
+/// exist.
 ///
 /// A one-shot: `App::build` arms it immediately before `new_work`, and the
 /// `NewWork` subscriber below **takes** it. Taking rather than reading is what
 /// makes the second project created in the same window not re-open a wizard
-/// over documents the writer imported an hour ago.
+/// nobody asked for.
+///
+/// A flag rather than the picked file list it used to carry: the files are now
+/// chosen inside the import wizard, which is the only surface that can review
+/// and order them anyway.
 #[derive(Clone, Default)]
-pub(in crate::app) struct ColdStartImport(Rc<RefCell<Vec<PathBuf>>>);
+pub(in crate::app) struct ColdStartImport(Rc<Cell<bool>>);
 
 impl ColdStartImport {
-    pub(in crate::app) fn set(&self, paths: Vec<PathBuf>) {
-        *self.0.borrow_mut() = paths;
+    pub(in crate::app) fn arm(&self) {
+        self.0.set(true);
     }
 
-    fn take(&self) -> Vec<PathBuf> {
-        std::mem::take(&mut *self.0.borrow_mut())
+    fn take(&self) -> bool {
+        self.0.replace(false)
     }
 }
 
@@ -492,15 +495,13 @@ pub(in crate::app) fn install_lifecycle(
 
     // ── Cold-start import (must be registered AFTER the New seed) ──────────
     //
-    // The Launcher's "New from documents…" picked its files before any project
-    // existed. The project now does, its ids are seeded (that is what the
-    // ordering buys — the wizard reads `work_id` to analyse into), so the
-    // wizard opens over it already carrying them.
+    // The Launcher's "From documents…" made this project *for* an import. The
+    // project now exists and its ids are seeded (that is what the ordering buys
+    // — the wizard reads `work_id` to analyse into), so the wizard opens over
+    // it, on its own first step: choose the files.
     //
-    // Deliberately does NOT start the analysis: the writer still has to see
-    // which files, in which order, and choose a destination. Opening a modal
-    // they did not ask for at this exact moment would be startling enough
-    // without it also having begun work.
+    // The form that created the project said this was coming (its last step is
+    // about nothing else), so the wizard is expected rather than startling.
     {
         let import = deps.import_document.clone();
         let pending = deps.cold_start_import.clone();
@@ -511,15 +512,11 @@ pub(in crate::app) fn install_lifecycle(
                 if !my_ids.is_bootstrap_or_own(&event.ids) {
                     return;
                 }
-                let sources = pending.take();
-                if !sources.is_empty() {
+                if pending.take() {
                     crate::panels::import_document::present_import_document(
                         c,
                         import.clone(),
-                        crate::panels::import_document::ImportDocumentOptions {
-                            sources,
-                            ..Default::default()
-                        },
+                        crate::panels::import_document::ImportDocumentOptions::default(),
                     );
                 }
             },

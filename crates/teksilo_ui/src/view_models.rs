@@ -187,7 +187,7 @@ pub use go_to::GoToViewModel;
 pub use import_document::ImportDocumentViewModel;
 pub use import_plume::ImportPlumeViewModel;
 pub use mention_index::{MentionIndex, MentionRow};
-pub use new_work::NewWorkViewModel;
+pub use new_work::{NewWorkPurpose, NewWorkViewModel};
 pub use note_templates::NoteTemplatesViewModel;
 pub use open_failure::open_failure_toast;
 pub use outline::OutlineViewModel;

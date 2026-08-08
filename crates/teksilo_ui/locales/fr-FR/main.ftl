@@ -791,6 +791,14 @@ new-work-step-language = Langue et structure
 new-work-step-template = Modèle
 new-work-back = Précédent
 new-work-next = Suivant
+# Le même assistant, ouvert depuis « Depuis des documents… » du lanceur
+new-work-documents-title = Nouvelle œuvre depuis des documents
+new-work-step-import = Importation
+new-work-create-and-import = Créer et importer…
+new-work-documents-next-title = Vos documents arrivent ensuite
+new-work-documents-next-body = La création du projet ouvre l'assistant d'importation par-dessus : vous y choisissez les documents, vérifiez la structure que Skribisto y lit, et indiquez où elle doit atterrir. Rien n'est écrit dans le projet tant que vous ne l'avez pas confirmé là-bas.
+new-work-documents-no-template = Ce projet démarre volontairement vide : aucun modèle, afin que les documents importés en soient le seul contenu.
+new-work-documents-chapter-scene-hint = S'applique aux chapitres créés par l'importation. Vous pourrez le changer plus tard dans les réglages du projet.
 # Descriptions des tuiles de format
 new-work-single-file-desc = Une archive .skrib (zip). Portable, facile à sauvegarder.
 new-work-bundle-desc = Un dossier contenant chaque texte & ressource. Adapté au contrôle de version.
