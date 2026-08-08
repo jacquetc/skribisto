@@ -11,7 +11,7 @@ menu-open-work = &Open Work…
 menu-new-window = New &Window
 menu-import-from = &Import from
 menu-import-plume = &Plume Creator (.plume)…
-menu-import-document = &Documents (Markdown, text)…
+menu-import-document = &Documents (Markdown, Word, ODT)…
 menu-export = E&xport
 menu-export-book = Export Book
 menu-export-part = Export Part
@@ -1656,13 +1656,13 @@ footnotes-not-created = The footnote could not be added to the project.
 footnotes-deleted-toast = Note deleted
 footnotes-undo-delete = Undo
 
-# ── Import documents (Markdown / plain text) ──────────────────────────────────
+# ── Import documents (Markdown / Word / ODT / plain text) ─────────────────────
 import-document-title = Import documents
 import-document-close = Close
 import-document-step-files = Files
 import-document-step-review = Review
 import-document-drop-title = Drop documents here
-import-document-drop-hint = Markdown (.md) and plain text (.txt)
+import-document-drop-hint = Markdown (.md), Word (.docx), OpenDocument (.odt) and plain text (.txt)
 import-document-browse = Browse…
 import-document-move-up = Move up
 import-document-move-down = Move down

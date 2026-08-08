@@ -78,13 +78,13 @@ pub enum AppIntent {
     NewWork,
 
     /// Import a Plume Creator (.plume) project — presents the Import Plume modal.
-    /// Fired from File ▸ Import from ▸ Plume Creator. Consumed by a global
+    /// Fired from Work ▸ Import from ▸ Plume Creator. Consumed by a global
     /// `work.import_plume` action in `App::build`.
     #[name = "work.import_plume"]
     ImportPlumeCreator,
 
     /// Import Markdown / plain-text documents **into the open project** —
-    /// presents the Import documents wizard. Fired from File ▸ Import from ▸
+    /// presents the Import documents wizard. Fired from Work ▸ Import from ▸
     /// Documents. Consumed by a global `work.import_document` action.
     ///
     /// Unlike [`Self::ImportPlumeCreator`], which produces a brand-new `.skrib`

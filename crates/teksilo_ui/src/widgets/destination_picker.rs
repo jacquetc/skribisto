@@ -105,14 +105,23 @@ impl DestinationPicker {
         self.apply_pending();
     }
 
-    /// Load the tree now, rather than on the next frame.
+    /// Load the tree now, rather than waiting for a backend event.
     ///
-    /// In the app this never needs calling: the model loads itself from backend
-    /// events and reloads on the frame tick. A headless caller has no frame loop and
-    /// no event pump, so without this the tree is permanently empty and a
-    /// [`preselect`](Self::preselect) can never resolve.
+    /// Needed whenever the picker outlives the moment `work_id` becomes real:
+    /// the model sources rows once at construction and then only on filter
+    /// changes or structural events, and a LoadWork that bulk-fills the store
+    /// does not re-fire Binder Created events. The Import documents wizard is
+    /// the main caller — its view-model is minted with the window, often while
+    /// no project is open yet.
+    ///
+    /// A headless caller has no frame loop and no event pump either, so without
+    /// this the tree is permanently empty and a [`preselect`](Self::preselect)
+    /// can never resolve. Always follows the reload with
+    /// [`apply_pending`](Self::apply_pending) so a destination asked for against
+    /// an empty tree still lands once the rows arrive.
     pub(crate) fn reload(&self) {
         self.model.reload();
+        self.apply_pending();
     }
 
     /// Try to satisfy a held [`preselect`](Self::preselect). Cheap and idempotent —

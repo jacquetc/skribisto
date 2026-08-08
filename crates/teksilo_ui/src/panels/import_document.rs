@@ -70,6 +70,13 @@ pub fn present_import_document(
 ) {
     vm.reset();
     vm.add_files(options.sources);
+    // The destination picker was minted with the window (often while `work_id`
+    // was still `None`), and unlike the outline/trash it is not reloaded on
+    // LoadWork/NewWork. Without this, the review step always shows the empty
+    // copy — "No binders yet" — even when the project has binders. Reload
+    // *before* preselect so a remembered or "Import here…" row can resolve
+    // against a filled tree rather than sitting as a held request forever.
+    vm.destination().reload();
     // An explicit destination wins — "Import here…" is the writer answering the question
     // right now, which outranks what they answered last time.
     let destination = options.destination.or_else(|| {

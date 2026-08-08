@@ -1548,11 +1548,12 @@ mod tests {
         );
     }
 
-    /// The picker and the drop zone must offer exactly what a scanner can read.
+    /// The picker and the drop zone must offer exactly what a scanner can read —
+    /// Markdown, plain text, Word and ODT (default `document_ingest` features).
     #[test]
     fn the_accepted_extensions_come_from_the_scanners_themselves() {
         let extensions = ImportDocumentViewModel::accepted_extensions();
-        for expected in ["md", "markdown", "txt"] {
+        for expected in ["md", "markdown", "txt", "docx", "odt"] {
             assert!(
                 extensions.iter().any(|e| e == expected),
                 "missing {expected} in {extensions:?}"

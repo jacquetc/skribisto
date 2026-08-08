@@ -235,17 +235,19 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
     // Work menu = the File menu under a project-centric name. Grouping and
     // separators follow the usual desktop document-app File menu:
     //
-    //   1. Open / create          New, Open, New Window, Import
-    //   2. Persist / ship out     Save, Save As, Export
+    //   1. Open / create          New, Open, New Window
+    //   2. Persist / ship out     Save, Save As, Import from…, Export
     //   3. Archive                Back up now, Backups…
     //   4. Leave this work        Close Work, Welcome…
     //   5. App preferences        Settings
     //   6. Exit process           Quit
     //
     // Separators sit between those groups only — never inside a group, and
-    // never stacked. Import lives with Open (foreign formats that start a
-    // work); Export lives with Save (write the current work out). Welcome
-    // sits next to Close because both return to the Launcher (`welcome.show`
+    // never stacked. Import from sits just before Export: both move content
+    // across the project boundary (in vs out). Plume still *starts* a work,
+    // but Documents land in the open one, so the submenu lives with the
+    // project-scoped ship-out group rather than with New/Open. Welcome sits
+    // next to Close because both return to the Launcher (`welcome.show`
     // aliases `work.close`).
     MenuModel::new()
         .menu(tr!(menu_work()), move |m| {
@@ -308,22 +310,6 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                     .intent("window.new")
                     .shortcut("window.new"),
             )
-            // Import from another writing app. Open-adjacent: it
-            // starts a work from a foreign format. Submenu so
-            // more importers can slot in later; each opens its
-            // own panel via a global action.
-            .submenu(tr!(menu_import_from()), |s| {
-                s.item(MenuEntry::new(tr!(menu_import_plume())).intent("work.import_plume"))
-                    // Documents land *in* the open project rather than making a
-                    // new one, so the row is hidden with nothing open — the
-                    // same `show_open` gate the rest of the needs-a-project
-                    // group uses.
-                    .item(
-                        MenuEntry::new(tr!(menu_import_document()))
-                            .visible(show_open.clone())
-                            .intent("work.import_document"),
-                    )
-            })
             .separator()
             // The book's cover. It sits in the Work menu rather than with
             // Insert image…, because it belongs to the book and not to
@@ -423,6 +409,23 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
                         });
                     }),
             )
+            // Import from… sits immediately before Export. Plume starts a new
+            // work; Documents land *in* the open project — both move content
+            // across the project boundary, the mirror image of Export. Submenu
+            // so more importers can slot in later; each opens its own panel
+            // via a global action. Documents are hidden with nothing open —
+            // the same `show_open` gate the rest of this group uses.
+            .submenu(tr!(menu_import_from()), {
+                let show_docs = show_open.clone();
+                move |s| {
+                    s.item(MenuEntry::new(tr!(menu_import_plume())).intent("work.import_plume"))
+                        .item(
+                            MenuEntry::new(tr!(menu_import_document()))
+                                .visible(show_docs)
+                                .intent("work.import_document"),
+                        )
+                }
+            })
             // The same focus-adaptive quick-export list the title-bar
             // Export split-button shows — one source (the view-model's
             // `applicable` scopes), two surfaces. Each visible entry fires

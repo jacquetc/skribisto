@@ -11,7 +11,7 @@ menu-open-work = &Ouvrir une œuvre…
 menu-new-window = Nouvelle fenê&tre
 menu-import-from = &Importer depuis
 menu-import-plume = &Plume Creator (.plume)…
-menu-import-document = &Documents (Markdown, texte)…
+menu-import-document = &Documents (Markdown, Word, ODT)…
 menu-export = E&xporter
 menu-export-book = Exporter le livre
 menu-export-part = Exporter la partie
@@ -1629,13 +1629,13 @@ footnotes-not-created = La note n'a pas pu être ajoutée au projet.
 footnotes-deleted-toast = Note supprimée
 footnotes-undo-delete = Annuler
 
-# ── Importer des documents (Markdown / texte brut) ────────────────────────────
+# ── Importer des documents (Markdown / Word / ODT / texte brut) ───────────────
 import-document-title = Importer des documents
 import-document-close = Fermer
 import-document-step-files = Fichiers
 import-document-step-review = Vérifier
 import-document-drop-title = Déposez les documents ici
-import-document-drop-hint = Markdown (.md) et texte brut (.txt)
+import-document-drop-hint = Markdown (.md), Word (.docx), OpenDocument (.odt) et texte brut (.txt)
 import-document-browse = Parcourir…
 import-document-move-up = Monter
 import-document-move-down = Descendre
