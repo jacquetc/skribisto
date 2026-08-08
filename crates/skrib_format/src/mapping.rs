@@ -453,6 +453,13 @@ pub fn from_entities(
         // See `crate::history::load`.
         history: crate::history::HistoryLog::default(),
         binders: bundled_binders,
+        // Empty here for the same reason as `history`, and with the same
+        // obligation on the caller. Carried files exist only on disk — no store
+        // entity has ever heard of one — so a bundle built from entities cannot
+        // know about them, and writing this bundle as-is would delete every
+        // unmodelled file the project had. Each write path fills it from the
+        // bundle it derives from; see `crate::carry::load`.
+        carried: std::collections::BTreeMap::new(),
     }
 }
 

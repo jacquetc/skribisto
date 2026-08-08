@@ -9,7 +9,7 @@
 use anyhow::{Context, Result};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -53,10 +53,51 @@ fn write_if_changed(path: &Path, bytes: &[u8]) -> Result<bool> {
     Ok(true)
 }
 
+/// Bundle-root-relative path of `path`, `/`-separated, or `None` if `path` is
+/// not under `root` (or is not UTF-8). The key shape [`WorkBundle::carried`]
+/// uses, and the one the prunes below compare against.
+fn rel_key(root: &Path, path: &Path) -> Option<String> {
+    let rel = path.strip_prefix(root).ok()?;
+    Some(rel.to_str()?.replace('\\', "/"))
+}
+
+/// The set of paths a write is carrying through untouched, in the form the
+/// prunes need: "is this file on disk one I must not delete?".
+///
+/// The prunes exist to remove *stale modelled* files — a renamed template's old
+/// blob, a replaced image, a thinned history blob. A carried file is by
+/// definition none of those: this build did not write it and cannot judge it, so
+/// deleting it would be exactly the silent destruction carrying exists to stop.
+struct Carried<'a> {
+    root: &'a Path,
+    paths: &'a BTreeMap<String, CarriedFile>,
+}
+
+impl Carried<'_> {
+    fn holds(&self, path: &Path) -> bool {
+        rel_key(self.root, path).is_some_and(|k| self.paths.contains_key(&k))
+    }
+}
+
 pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
     fs::create_dir_all(root).with_context(|| format!("creating {}", root.display()))?;
     let binders_dir = root.join("binders");
     fs::create_dir_all(&binders_dir).ok();
+
+    let carried = Carried {
+        root,
+        paths: &bundle.carried,
+    };
+
+    // Carried files go down **first**, so that anything this build also models
+    // overwrites them with its own authoritative bytes rather than the other way
+    // round. `write_if_changed` keeps the exploded shape diff-minimal: a carried
+    // file whose bytes did not change is not rewritten, so it stays out of the
+    // git diff exactly like modelled content.
+    for (rel, file) in &bundle.carried {
+        write_if_changed(&root.join(rel), &file.bytes)
+            .with_context(|| format!("writing carried file {rel}"))?;
+    }
 
     // Work-level manifests.
     write_if_changed(&root.join("tags.ron"), to_ron(&bundle.tags)?.as_bytes())?;
@@ -129,7 +170,7 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         write_if_changed(&root.join(rel), body.as_bytes())?;
         expected_templates.insert(fname);
     }
-    prune_dir(&templates_dir, &expected_templates, "djot")?;
+    prune_dir(&templates_dir, &expected_templates, "djot", &carried)?;
 
     // Assets: an index plus one blob each, the same split templates use — but
     // written as bytes, not text. `write_if_changed` already takes `&[u8]` and
@@ -164,7 +205,7 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         write_if_changed(&root.join(rel), bytes)?;
         expected_assets.insert(fname);
     }
-    prune_assets_dir(&assets_dir, &expected_assets)?;
+    prune_assets_dir(&assets_dir, &expected_assets, &carried)?;
 
     // The history log: an index plus one content-addressed blob per recorded
     // state, the same split assets use. Written only when the log is non-empty, so
@@ -178,7 +219,7 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
         // Nothing to keep — remove any index left from a previous save so the
         // on-disk state matches the bundle rather than resurrecting a stale log.
         let _ = fs::remove_file(root.join(HISTORY_INDEX));
-        prune_dir(&history_dir, &BTreeSet::new(), "djot")?;
+        prune_dir(&history_dir, &BTreeSet::new(), "djot", &carried)?;
     } else {
         fs::create_dir_all(&history_dir)
             .with_context(|| format!("creating {}", history_dir.display()))?;
@@ -194,7 +235,7 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
             write_if_changed(&root.join(blob_relpath(&hash)), text.as_bytes())?;
             expected_blobs.insert(format!("{hash}.djot"));
         }
-        prune_dir(&history_dir, &expected_blobs, "djot")?;
+        prune_dir(&history_dir, &expected_blobs, "djot", &carried)?;
     }
 
     let mut expected_binder_dirs: BTreeSet<String> = BTreeSet::new();
@@ -247,12 +288,12 @@ pub fn write_folder(root: &Path, bundle: &WorkBundle) -> Result<()> {
                 }
             }
         }
-        prune_dir(&tdir, &expected_prose, "djot")?;
+        prune_dir(&tdir, &expected_prose, "djot", &carried)?;
         // Prunes a sidecar whose last comment or footnote was deleted, too —
         // `expected_sidecars` only holds the ones that still have content.
         // `items.ron` lives in the binder dir, not `text/`, so pruning "ron" here
         // cannot reach it.
-        prune_dir(&tdir, &expected_sidecars, "ron")?;
+        prune_dir(&tdir, &expected_sidecars, "ron", &carried)?;
 
         // items.ron (after its prose blobs exist).
         let items_file = ItemsFile {
@@ -301,8 +342,9 @@ pub(crate) fn footnotes_file_name(prose_file_name: &str) -> String {
     format!("{stem}.footnotes.ron")
 }
 
-/// Remove files in `dir` with extension `ext` whose name is not in `keep`.
-fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str) -> Result<()> {
+/// Remove files in `dir` with extension `ext` whose name is not in `keep` — and
+/// which this write is not carrying through (see [`Carried`]).
+fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str, carried: &Carried) -> Result<()> {
     let Ok(entries) = fs::read_dir(dir) else {
         return Ok(());
     };
@@ -311,6 +353,7 @@ fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str) -> Result<()> {
         if p.extension().and_then(|e| e.to_str()) == Some(ext)
             && let Some(name) = p.file_name().and_then(|n| n.to_str())
             && !keep.contains(name)
+            && !carried.holds(&p)
         {
             fs::remove_file(&p).ok();
         }
@@ -326,7 +369,7 @@ fn prune_dir(dir: &Path, keep: &BTreeSet<String>, ext: &str) -> Result<()> {
 /// content-addressed, so *replacing* an image writes a new filename and orphans
 /// the old blob. Without this a project would keep every version of every
 /// picture ever swapped out.
-fn prune_assets_dir(dir: &Path, keep: &BTreeSet<String>) -> Result<()> {
+fn prune_assets_dir(dir: &Path, keep: &BTreeSet<String>, carried: &Carried) -> Result<()> {
     let Ok(entries) = fs::read_dir(dir) else {
         return Ok(());
     };
@@ -335,6 +378,7 @@ fn prune_assets_dir(dir: &Path, keep: &BTreeSet<String>) -> Result<()> {
         if p.is_file()
             && let Some(name) = p.file_name().and_then(|n| n.to_str())
             && !keep.contains(name)
+            && !carried.holds(&p)
         {
             fs::remove_file(&p).ok();
         }
@@ -342,6 +386,15 @@ fn prune_assets_dir(dir: &Path, keep: &BTreeSet<String>) -> Result<()> {
     Ok(())
 }
 
+/// Remove whole binder directories the bundle no longer lists.
+///
+/// Deliberately **not** carry-aware, unlike its two neighbours. A directory
+/// disappears here only because the binder itself is gone from the bundle —
+/// the writer deleted it — and an unmodelled sidecar that belonged to a deleted
+/// binder has nothing left to annotate. Carrying it would resurrect a file for a
+/// binder that no longer exists, growing the project forever. Carrying protects
+/// data whose *meaning* this build cannot judge; it does not override a
+/// deletion the writer actually asked for.
 fn prune_binder_dirs(binders_dir: &Path, keep: &BTreeSet<String>) -> Result<()> {
     let Ok(entries) = fs::read_dir(binders_dir) else {
         return Ok(());
@@ -516,6 +569,30 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         });
     }
 
+    // Everything on disk the reader above did not claim. Walking the tree once,
+    // *after* the modelled reads, is what makes this self-maintaining: a file
+    // kind added to the format later needs no entry in a list here, and a file
+    // kind this build has never heard of is preserved rather than dropped.
+    //
+    // Directories are not carried — only files. An empty directory holds no
+    // data, and `write_if_changed` recreates any parent a carried file needs.
+    let mut carried: BTreeMap<String, CarriedFile> = BTreeMap::new();
+    for entry in walkdir::WalkDir::new(root).sort_by_file_name() {
+        let entry = entry.with_context(|| format!("walking {}", root.display()))?;
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let Some(key) = rel_key(root, entry.path()) else {
+            continue;
+        };
+        if super::carry::is_modelled(&key) {
+            continue;
+        }
+        let bytes = fs::read(entry.path())
+            .with_context(|| format!("reading unmodelled bundle file {key}"))?;
+        carried.insert(key, CarriedFile::new(bytes));
+    }
+
     Ok(WorkBundle {
         manifest,
         tags,
@@ -532,6 +609,7 @@ pub fn read_folder(root: &Path) -> Result<WorkBundle> {
         orphan_footnotes,
         history,
         binders,
+        carried,
     })
 }
 

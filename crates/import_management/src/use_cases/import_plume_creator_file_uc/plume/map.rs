@@ -201,6 +201,12 @@ pub fn build_bundle(
         // the moment of import, and the first save records that state.
         history: Default::default(),
         binders,
+        // A `.plume` archive is a foreign format read field by field, not a
+        // `.skrib` bundle with unmodelled files in it, so there is nothing to
+        // carry: everything the importer understood is above, and everything it
+        // did not is reported as a warning rather than smuggled into the new
+        // project as opaque bytes.
+        carried: Default::default(),
     };
 
     Mapped {

@@ -228,6 +228,7 @@ mod tests {
             orphan_footnotes: Vec::new(),
             history: Default::default(),
             binders: vec![],
+            carried: Default::default(),
         }
     }
 

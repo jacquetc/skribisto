@@ -752,6 +752,52 @@ pub struct WorkBundle {
     #[serde(skip)]
     pub history: crate::history::HistoryLog,
     pub binders: Vec<BundledBinder>,
+    /// Files found in the bundle that **this build does not model**, preserved
+    /// verbatim across a load→save cycle. Keyed by path relative to the bundle
+    /// root, always with `/` separators.
+    ///
+    /// Without this the format destroys what it does not understand: every
+    /// write rebuilds the archive (or prunes the folder) from the modelled
+    /// fields alone, so a file written by a newer build — or by an edition with
+    /// features this one lacks — vanishes the first time an older build saves.
+    /// A writer who opened their project in a build without feature X to check
+    /// one thing would lose all of X's data, with no error and no way back.
+    ///
+    /// Carrying is deliberately *dumb*: opaque bytes in, the same bytes out, no
+    /// parsing and no interpretation. That is what makes it safe for a build to
+    /// preserve data whose meaning it cannot know.
+    ///
+    /// Anything that *does* understand one of these files reads it from here and
+    /// writes it back here; [`super::folder_io::write_folder`] writes carried
+    /// files **before** the modelled ones, so a file that is both carried and
+    /// modelled ends up with the modelled bytes.
+    #[serde(default)]
+    pub carried: BTreeMap<String, CarriedFile>,
+}
+
+/// One unmodelled bundle file, held as opaque bytes plus a digest.
+///
+/// The split mirrors [`AssetFile`]: the bytes are `#[serde(skip)]` so the
+/// content fingerprint — which RON-serialises the whole bundle on every save —
+/// never encodes an opaque blob as a bracketed decimal list, while the `digest`
+/// *is* serialised so a change to a carried file still changes the project's
+/// fingerprint. Skipping both would make carried data invisible to
+/// skip-if-unchanged, and a Pro-edition project whose only change was its
+/// structure plan would silently stop being backed up.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct CarriedFile {
+    /// blake3 of [`Self::bytes`], hex. Cheap to hash, stable across runs, and
+    /// the only part of a carried file the fingerprint needs to see.
+    pub digest: String,
+    #[serde(skip)]
+    pub bytes: Vec<u8>,
+}
+
+impl CarriedFile {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        let digest = blake3::hash(&bytes).to_hex().to_string();
+        Self { digest, bytes }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

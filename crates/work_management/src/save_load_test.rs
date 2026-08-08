@@ -2872,3 +2872,71 @@ fn note_templates_survive_a_save_load_round_trip() {
         "every template must round-trip with its body and its starred flag, in order"
     );
 }
+
+/// A file the format does not model must survive a real `save_work`, not just a
+/// direct `write_bundle`.
+///
+/// The unit test in `skrib_format` proves the writer preserves what the reader
+/// hands it; this proves the *save use case* hands it anything at all. It is the
+/// half that is easy to get wrong, because a save builds its bundle from store
+/// entities — which have never heard of an unmodelled file — so without
+/// `carry::load` reading the source back, `from_entities` would produce an empty
+/// carry set and the write would delete the file with no error anywhere.
+///
+/// Saving **in place** is the case that matters: it is what autosave does every
+/// few seconds, so a regression here destroys a Pro-edition project's data
+/// within seconds of a community build opening it.
+#[test]
+fn an_unmodelled_file_survives_a_real_save_work() {
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().join("Novel");
+    let path = project.to_str().unwrap().to_string();
+    skrib::write_bundle(&path, SkribShape::ExplodedFolder, &sample_bundle()).unwrap();
+
+    // Planted the way a build with a feature this one lacks would have left it —
+    // and planted *inside* `binders/<b>/text/`, deliberately.
+    //
+    // A root-level file would prove nothing here: no prune runs at the bundle
+    // root, so an exploded folder keeps one whether or not carrying works. The
+    // sidecar prune does sweep this directory for stray `.ron`, which makes this
+    // the shortest path from "carrying is broken" to "the writer's data is gone".
+    let root = &project;
+    let binder_dir = std::fs::read_dir(root.join("binders"))
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .find(|p| p.is_dir())
+        .expect("the sample project has a binder directory");
+    let planted = binder_dir.join("text").join("plot.beats.ron");
+    std::fs::write(&planted, b"(beats: [(at: 0.5)])").unwrap();
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.clone(),
+        },
+    )
+    .expect("load");
+
+    let uc = SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            media_root: String::new(),
+            work_id: live_work_id(&db),
+            file_name: path.clone(),
+            overwrite: true,
+        },
+    );
+    uc.execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("save in place");
+
+    assert_eq!(
+        std::fs::read(&planted).ok().as_deref(),
+        Some(b"(beats: [(at: 0.5)])".as_slice()),
+        "save_work destroyed a bundle file it does not model"
+    );
+}

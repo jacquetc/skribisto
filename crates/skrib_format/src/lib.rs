@@ -23,6 +23,12 @@
 #[cfg(test)]
 mod asset_tests;
 mod bundle;
+/// Preserving bundle files this build does not model, so a save never destroys
+/// what it cannot read. `pub` because every write path has to fetch the carry
+/// set off the bundle it derives from — exactly like [`history`].
+pub mod carry;
+#[cfg(test)]
+mod carry_tests;
 /// Which versions of a row are worth showing, and where its timeline begins and ends.
 pub mod changes;
 pub mod convert;
@@ -69,7 +75,8 @@ mod zip_io;
 // `from_entities` builds one from store entities.
 pub use bundle::{
     BinderFile, BinderItemFile, BinderTagFile, BinderWithItems, BundleKind, BundledBinder,
-    BundledItem, CommentFile, CommentReplyFile, CommentWithReplies, DictWordFile, FORMAT_VERSION,
+    BundledItem, CarriedFile, CommentFile, CommentReplyFile, CommentWithReplies, DictWordFile,
+    FORMAT_VERSION,
     FootnoteFile, FootnoteWithContent, HolidayFile, InlineContent, ItemWithContents, ItemsFile,
     MilestoneFile, NoteTemplateFile, PaceFile, PaceWithChildren, ProgressSnapshotFile,
     ProjectManifest, ProseRef, ShapeTag, SmartPunctuationFile, TextReplacementRuleFile,

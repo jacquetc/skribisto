@@ -187,6 +187,16 @@ pub enum HistoryAction {
     },
 }
 
+impl HistoryAction {
+    /// The bundle this write derives from. Both variants have one, and the
+    /// carry-through read needs it without caring which variant it is.
+    pub fn source(&self) -> &str {
+        match self {
+            Self::Carry { source } | Self::Record { source, .. } => source,
+        }
+    }
+}
+
 pub fn serialize_and_write(
     g: &Gathered,
     target: String,
@@ -212,6 +222,16 @@ pub fn serialize_and_write(
         &g.binders,
         shape_tag,
     );
+    // Files the format does not model travel with the project, on every write
+    // path. Read from the *source* bundle, never the target: `save_as` and
+    // `backup_now` must bring the original's unmodelled files with them, and
+    // reading the target would carry a backup's own stale contents instead.
+    //
+    // Both `HistoryAction` variants name the same source for the same reason,
+    // so this is lifted out of the match rather than repeated inside it — one
+    // write path forgetting the call is how a writer loses data silently.
+    bundle.carried = skrib::carry::load(history.source());
+
     match history {
         HistoryAction::Carry { source } => {
             bundle.history = skrib::history::load(&source);
