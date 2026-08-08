@@ -785,6 +785,12 @@ new-work-template-novel = Roman
 new-work-template-notebook = Carnet
 new-work-cancel = Annuler
 new-work-create = Créer l'œuvre
+# Étapes de l'assistant et navigation
+new-work-step-details = Détails
+new-work-step-language = Langue et structure
+new-work-step-template = Modèle
+new-work-back = Précédent
+new-work-next = Suivant
 # Descriptions des tuiles de format
 new-work-single-file-desc = Une archive .skrib (zip). Portable, facile à sauvegarder.
 new-work-bundle-desc = Un dossier contenant chaque texte & ressource. Adapté au contrôle de version.

@@ -464,11 +464,25 @@ impl NewWorkViewModel {
         self.location.map(|dir| location_state(dir))
     }
 
-    /// Whether "Create Work" may fire: a non-blank name **and** a valid
-    /// location. Split into two per-field booleans so typing the name doesn't
-    /// re-probe the filesystem (the location check only reruns on a location
-    /// change).
+    /// Whether the wizard may leave its first step — a non-blank name **and** a
+    /// valid location. Split into two per-field booleans so typing the name
+    /// doesn't re-probe the filesystem (the location check only reruns on a
+    /// location change).
+    ///
+    /// This is the Stepper's only gate: it sits on the Details step, which is
+    /// where both of those fields live, so Next stays off until creation could
+    /// actually succeed. The later steps are pickers with valid defaults and
+    /// gate nothing.
+    ///
+    /// Under `--features mocks` the gate is off: a mocks build has no backend
+    /// and its "location" probe would still write to the real filesystem, so
+    /// requiring a typed name and a writable folder would stop layout work and
+    /// automation from walking past step one. Same bypass as the import
+    /// wizard's `can_analyse_signal`.
     pub fn can_create(&self) -> Signal<bool> {
+        if cfg!(feature = "mocks") {
+            return Signal::new(true);
+        }
         let name_ok = self.name.map(|n| !slugify(n).is_empty());
         let location_ok = self.location.map(|dir| location_ok(dir));
         name_ok.and(&location_ok)
@@ -547,6 +561,16 @@ impl NewWorkViewModel {
     /// path's existing error handling. Nothing is open in the Launcher window,
     /// so there is nothing to close.
     pub fn create(&self, ctx: &mut EventContext) {
+        if cfg!(feature = "mocks") {
+            // A mocks build has no backend to create into, and the gate that
+            // normally guarantees a usable name and a writable folder is off
+            // (see [`Self::can_create`]) — so the real call would try to write
+            // a project at whatever the untouched form says and toast a
+            // failure. Finish just closes the wizard, the same "walk the flow,
+            // touch nothing" bargain the import wizard's mock bypass makes.
+            ctx.dismiss_modal();
+            return;
+        }
         match &self.target {
             CreateTarget::InPlace(ids) => {
                 crate::app::close_outgoing_work(&self.app_ctx, ids.work_id.get());
@@ -704,6 +728,39 @@ mod tests {
         // Seven binder names plus the two paratext folder names, appended.
         assert_eq!(dto.labels.len(), 9);
         assert!(dto.chapter_scene_mode);
+    }
+
+    /// The wizard's one gate, in a real build: an untouched form cannot leave
+    /// step one, and a usable name over a writable folder can.
+    #[test]
+    #[cfg(not(feature = "mocks"))]
+    fn the_details_gate_needs_a_name_and_a_writable_folder() {
+        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let gate = vm.can_create();
+        vm.location().set(std::env::temp_dir().to_string_lossy().to_string());
+        assert!(!gate.get(), "a blank name must hold the wizard on step one");
+        vm.name().set("Tidewrack".into());
+        assert!(gate.get(), "a usable name + a writable folder must open Next");
+        // A name that slugifies to nothing is as unusable as a blank one.
+        vm.name().set("///".into());
+        assert!(!gate.get());
+        // …and so is a folder that does not exist.
+        vm.name().set("Tidewrack".into());
+        vm.location().set("/nonexistent-skribisto-probe".into());
+        assert!(!gate.get());
+    }
+
+    /// Under `mocks` that gate is off, or an untouched wizard could not be
+    /// walked past its first step without typing a name and pointing at a real
+    /// writable folder — which is exactly what a backend-less build is for.
+    #[test]
+    #[cfg(feature = "mocks")]
+    fn the_details_gate_is_off_under_mocks() {
+        let vm = NewWorkViewModel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
+        let gate = vm.can_create();
+        assert!(gate.get(), "an untouched mocks form must still advance");
+        vm.location().set("/nonexistent-skribisto-probe".into());
+        assert!(gate.get(), "no filesystem probe may gate a mocks build");
     }
 
     #[test]

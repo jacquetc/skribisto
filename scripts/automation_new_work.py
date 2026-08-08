@@ -3,19 +3,25 @@
 # SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
 """Drive a live Skribisto via the teksilo automation MCP bridge and verify the
-New Work modal feature end-to-end.
+New Work **wizard** end-to-end.
+
+The modal is a three-step `Stepper` (Details → Language & structure →
+Template), so this script walks all three: the old one-page form no longer
+exists and a single structural assertion could not see past step one.
 
 Flow: launch the app (no CLI arg) → the **Launcher window** opens (the
 Welcome UI is a real window now, not a modal — see `teksilo_ui::main`'s module
 docs) → click the Launcher's "New Work" button (there is no `Ctrl+N` global
 shortcut in the Launcher window — that action only exists inside an
 already-open project window's tree, so a keyboard fallback would just no-op;
-the button is the only path here) → assert the modal's structure (a Form
-landmark, the two SegmentedControls, the language ComboBox, the Cancel /
-Create buttons) → type a work name into the name field and assert the reactive
-"Will create …/<slug>.skrib" path preview recomputes (single-file vs bundle) →
-screenshot. Assertions favour locale-independent anchors (roles + the .skrib
-path) so the harness passes whatever UI language is persisted.
+the button is the only path here) → **step 1**: assert the Form landmark, the
+Format RadioGroup, that Next is gated off while the name is empty, that focus
+opens on the name field, and that the reactive "Will create …/<slug>.skrib"
+path preview recomputes (single-file vs bundle) → **step 2**: the language and
+paratext ComboBoxes → **step 3**: the Template RadioGroup and an enabled
+"Create Work" → screenshot each. Assertions favour locale-independent anchors
+(roles + the .skrib path) so the harness passes whatever UI language is
+persisted.
 
 Note: this script does not click "Create Work" — creating from the Launcher
 opens a *second* (project) window and closes the Launcher; that transition is
@@ -265,19 +271,20 @@ print(f"New Work modal opened via {how}.")
 s.dump("New Work modal")
 
 
-# ── Assert the modal's structure (locale-independent by role) ─────────────────
+# ── Step 1 (Details): assert the structure (locale-independent by role) ───────
+# Only the Details page is mounted — a `Stepper` builds the active step alone,
+# so the Template RadioGroup and the language ComboBox are legitimately absent
+# here and are asserted on their own pages further down.
 forms = s.by_role("Form")
 text_fields = s.by_role("TextInput", "TextField")
-radiogroups = s.by_role("RadioGroup")  # the two RadioTileGroups (Format, Template)
-combos = s.by_role("ComboBox")         # the language dropdown
-print(f"structure: Form x{len(forms)}, text fields x{len(text_fields)}, "
+radiogroups = s.by_role("RadioGroup")  # the Format RadioTileGroup
+combos = s.by_role("ComboBox")
+print(f"step 1 structure: Form x{len(forms)}, text fields x{len(text_fields)}, "
       f"RadioGroup x{len(radiogroups)}, ComboBox x{len(combos)}")
 if not forms:
-    fail("no Form landmark (the FormLayout body) in the New Work modal", s.app, s.mcp, s.log)
-if len(radiogroups) < 2:
-    fail("expected 2 SegmentedControls (Format + Template) as RadioGroups", s.app, s.mcp, s.log)
-if not combos:
-    fail("expected the Default-language ComboBox", s.app, s.mcp, s.log)
+    fail("no Form landmark (the FormLayout body) in the New Work wizard", s.app, s.mcp, s.log)
+if len(radiogroups) < 1:
+    fail("expected the Format RadioTileGroup as a RadioGroup", s.app, s.mcp, s.log)
 for lbl in ("cancel", "annuler"):
     if any(lbl in (b.get("label") or "").lower() for b in s.by_role("Button")):
         break
@@ -285,15 +292,22 @@ else:
     print("note: no Cancel button label matched (locale?) — continuing")
 
 
-# ── Empty name → "Create Work" DISABLED + an inline validation message ────────
-def find_create_button():
+# ── Footer buttons ────────────────────────────────────────────────────────────
+def find_button(words, exclude=()):
     for n in s.by_role("Button"):
         lab = (n.get("label") or "").lower()
-        if any(w in lab for w in ("create work", "créer", "creer")) and not any(
-            w in lab for w in ("cancel", "annuler")
-        ):
+        if any(w in lab for w in words) and not any(x in lab for x in exclude):
             return n
     return None
+
+
+def find_next_button():
+    # "Next" / "Suivant". Excluded from the Create match below, and vice versa.
+    return find_button(("next", "suivant"))
+
+
+def find_create_button():
+    return find_button(("create work", "créer", "creer"), exclude=("cancel", "annuler"))
 
 
 def node_enabled(node_id):
@@ -306,17 +320,24 @@ def node_enabled(node_id):
     return True
 
 
-create_btn = find_create_button()
-if not create_btn:
-    fail("no 'Create Work' button", s.app, s.mcp, s.log)
+# ── Empty name → "Next" DISABLED + an inline validation message ───────────────
+# The gate moved with the fields it guards: name + location live on step 1, so
+# step 1's `complete_when` is what refuses to advance. Create is not even
+# mounted yet.
+next_btn = find_next_button()
+if not next_btn:
+    s.dump("step 1")
+    fail("no 'Next' button in the wizard footer", s.app, s.mcp, s.log)
+if find_create_button():
+    fail("'Create Work' must not be reachable from step 1", s.app, s.mcp, s.log)
 statuses = [n for n in s.nodes() if n.get("role") == "Status" and (n.get("label") or "").strip()]
-print(f"empty-name state: Create enabled={node_enabled(create_btn['id'])}; "
+print(f"empty-name state: Next enabled={node_enabled(next_btn['id'])}; "
       f"validation status={[n.get('label') for n in statuses]}")
-if node_enabled(create_btn["id"]):
-    fail("Create button should be DISABLED while the Work name is empty", s.app, s.mcp, s.log)
+if node_enabled(next_btn["id"]):
+    fail("Next should be DISABLED while the Work name is empty", s.app, s.mcp, s.log)
 if not statuses:
     fail("expected an inline validation message while the name is empty", s.app, s.mcp, s.log)
-print("PASS: empty name → Create disabled + inline validation shown")
+print("PASS: empty name → Next disabled + inline validation shown")
 s.shot("/tmp/sk-new-work-invalid.png")
 
 
@@ -329,8 +350,8 @@ s.shot("/tmp/sk-new-work-invalid.png")
 #
 # The focused node is unambiguous, and asserting it is worth doing in its own
 # right: `NewWorkPanel::initial_focus_hint` points at the name field, but the
-# panel also draws its own header chrome (title strip + close X) above the
-# form, which a naive focusable-descendant fallback could land on instead.
+# stepper's indicator strip and footer sit around the step body, either of which
+# a naive focusable-descendant fallback could land on instead.
 raw, _ = s.call("snapshot_tree")
 focus_id = json.loads(raw["content"][0]["text"]).get("focus")
 name_field = next((n for n in s.nodes() if n.get("id") == focus_id), None)
@@ -353,6 +374,14 @@ if location_field is None:
 loc = val(location_field)
 print(f"name field id={name_field.get('id')}; location={loc!r}")
 
+# Identify the "Will create …" preview *before* typing, by the one property no
+# other node in the tree shares: it is a Label that is empty now and fills in
+# when the name does. Searching the whole tree for a ".skrib" value instead
+# matches the Launcher sitting behind the modal — its recent-works list is full
+# of real project paths, and the mocks build adds "/mock/Mock Project.skrib" —
+# so the assertion would read a node the dialog never wrote.
+empty_labels_before = {n["id"] for n in s.nodes() if n.get("role") == "Label" and not val(n)}
+
 # `type_text`, not `set_value`: typing is what a user does, and it is what drives
 # the field's bound signal (and through it the VM's derived path preview).
 res, _ = s.call("type_text", {"node": name_field["id"], "text": "Tidewrack"})
@@ -360,21 +389,34 @@ if isinstance(res, dict) and res.get("isError"):
     fail(f"type_text into the name field errored: {res}", s.app, s.mcp, s.log)
 time.sleep(0.8)
 
-preview = find_value_contains(".skrib", timeout=6)
+
+def filled_preview(timeout=6):
+    """The formerly-empty Label that now carries a path, or None."""
+    end = time.time() + timeout
+    while time.time() < end:
+        for n in s.nodes():
+            if n.get("id") in empty_labels_before and "/" in val(n):
+                return n
+        time.sleep(0.3)
+    return None
+
+
+preview = filled_preview()
 if preview is None:
     s.dump("after setting name")
-    fail("path preview never showed a .skrib path after setting the name", s.app, s.mcp, s.log)
+    fail("path preview never showed a path after setting the name", s.app, s.mcp, s.log)
+preview_id = preview["id"]
 path = val(preview).strip()
 print(f"single-file path preview: {path!r}")
 if not path.lower().endswith("tidewrack.skrib"):
     fail(f"preview should end with 'tidewrack.skrib', got {path!r}", s.app, s.mcp, s.log)
 print("PASS: single-file preview reacts to the name (…/tidewrack.skrib)")
 
-# A valid name + (existing, writable) location must re-enable Create.
-create_btn = find_create_button() or create_btn
-if not node_enabled(create_btn["id"]):
-    fail("Create button should be ENABLED once name + location are valid", s.app, s.mcp, s.log)
-print("PASS: valid name + location → Create enabled")
+# A valid name + (existing, writable) location must re-open the gate.
+next_btn = find_next_button() or next_btn
+if not node_enabled(next_btn["id"]):
+    fail("Next should be ENABLED once name + location are valid", s.app, s.mcp, s.log)
+print("PASS: valid name + location → Next enabled")
 
 # ── Switch format to Bundle → the preview drops the ".skrib" extension ────────
 # Format's second tile is "Bundle". RadioTiles surface as RadioButtons; the AT
@@ -382,7 +424,7 @@ print("PASS: valid name + location → Create enabled")
 # tile's bounds. Success is judged by the reactive preview (a RadioTileGroup does
 # not expose its selected label as an AT value).
 def bundle_preview():
-    n = find_value_contains("/tidewrack", timeout=3)
+    n = next((n for n in s.nodes() if n.get("id") == preview_id), None)
     return val(n).strip() if n else ""
 
 
@@ -404,8 +446,62 @@ if not bpath or bpath.lower().endswith(".skrib") or not bpath.lower().endswith("
     fail(f"bundle preview should be a bare folder '…/tidewrack', got {bpath!r}",
          s.app, s.mcp, s.log)
 print("PASS: switching to Bundle drops the extension (…/tidewrack)")
-
 s.shot("/tmp/sk-new-work-shot.png")
+
+
+# ── Step 2 (Language & structure) ─────────────────────────────────────────────
+def advance():
+    """Click Next and give the Switcher a frame to swap the step body."""
+    btn = find_next_button()
+    if not btn:
+        s.dump("looking for Next")
+        fail("no 'Next' button to advance the wizard", s.app, s.mcp, s.log)
+    res, _ = s.call("invoke_action", {"node": btn["id"], "action": "click"})
+    if isinstance(res, dict) and res.get("isError"):
+        fail(f"clicking Next errored: {res}", s.app, s.mcp, s.log)
+    time.sleep(0.8)
+
+
+advance()
+combos = s.by_role("ComboBox")
+print(f"step 2 structure: ComboBox x{len(combos)} "
+      f"-> {[c.get('label') for c in combos]}")
+# Two: the writing language, and the paratext ("Book structure") preset.
+if len(combos) < 2:
+    s.dump("step 2")
+    fail("expected the language and paratext ComboBoxes on step 2", s.app, s.mcp, s.log)
+if s.by_role("RadioGroup"):
+    fail("the Template RadioGroup belongs to step 3, not step 2", s.app, s.mcp, s.log)
+print("PASS: step 2 shows language + book structure")
+s.shot("/tmp/sk-new-work-step2.png")
+
+
+# ── Step 3 (Template) ─────────────────────────────────────────────────────────
+advance()
+radiogroups = s.by_role("RadioGroup")
+radios = s.by_role("RadioButton")
+checkboxes = s.by_role("CheckBox", "Switch")  # the "Flat chapters" toggle
+print(f"step 3 structure: RadioGroup x{len(radiogroups)}, RadioButton x{len(radios)}, "
+      f"toggle x{len(checkboxes)}")
+if not radiogroups:
+    s.dump("step 3")
+    fail("expected the Template RadioTileGroup on step 3", s.app, s.mcp, s.log)
+# Five templates: None / Empty Novel / Light Novel / Novel / Notebook.
+if len(radios) < 5:
+    fail(f"expected 5 template tiles, got {len(radios)}", s.app, s.mcp, s.log)
+if not checkboxes:
+    fail("expected the 'Flat chapters' toggle on step 3", s.app, s.mcp, s.log)
+
+create_btn = find_create_button()
+if not create_btn:
+    s.dump("step 3")
+    fail("no 'Create Work' button on the last step", s.app, s.mcp, s.log)
+if not node_enabled(create_btn["id"]):
+    fail("Create Work should be ENABLED on the last step (name + location are valid)",
+         s.app, s.mcp, s.log)
+print("PASS: step 3 shows the templates + flat-chapters toggle, Create enabled")
+s.shot("/tmp/sk-new-work-step3.png")
+
 s.close()
 
 print("\nALL PASS")

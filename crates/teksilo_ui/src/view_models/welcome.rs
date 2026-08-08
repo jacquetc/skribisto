@@ -263,7 +263,7 @@ impl WelcomeViewModel {
             .presentation(ModalPresentation::InTree)
             .title("New Work")
             .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-            .size(600, 680),
+            .size(640, 620),
         );
     }
 
@@ -320,7 +320,7 @@ impl WelcomeViewModel {
                 .presentation(ModalPresentation::InTree)
                 .title("New Work")
                 .close_behavior(ModalCloseBehavior::EscapeOrClickOutside)
-                .size(600, 680),
+                .size(640, 620),
             );
         });
     }

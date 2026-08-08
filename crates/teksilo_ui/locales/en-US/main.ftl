@@ -780,6 +780,12 @@ new-work-template-novel = Novel
 new-work-template-notebook = Notebook
 new-work-cancel = Cancel
 new-work-create = Create Work
+# Wizard steps & navigation
+new-work-step-details = Details
+new-work-step-language = Language & structure
+new-work-step-template = Template
+new-work-back = Back
+new-work-next = Next
 # Format tile descriptions
 new-work-single-file-desc = One .skrib archive (zip). Portable, easy to back up.
 new-work-bundle-desc = A folder holding every text & asset. Friendlier to version control.
