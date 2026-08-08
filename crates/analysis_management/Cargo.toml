@@ -34,9 +34,7 @@ uuid = { workspace = true }
 skrib_format = { workspace = true }
 skribisto_model = { workspace = true }
 skribisto_compiler = { workspace = true }
-# Direct path dep, as skribisto_model and mention_management both have it: text-document is
-# not a workspace dep here.
-text-document = { path = "../../../text-document/crates/public_api", version = "1.7" }
+text-document = { workspace = true }
 
 [lints]
 workspace = true

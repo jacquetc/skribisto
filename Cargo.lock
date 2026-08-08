@@ -5815,7 +5815,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "teksilo-app",
  "teksilo-async",
@@ -5838,7 +5838,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-app"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "base64",
  "png",
@@ -5860,7 +5860,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-async"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "async-channel 2.5.0",
  "teksilo-app",
@@ -5870,7 +5870,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-async-std"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "async-std",
  "teksilo-app",
@@ -5880,7 +5880,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-automation"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -5890,7 +5890,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-canvas"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "bytemuck",
  "image-webp",
@@ -5905,7 +5905,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-charts"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "teksilo-canvas",
  "teksilo-core",
@@ -5916,7 +5916,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-core"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "accesskit",
  "raw-window-handle",
@@ -5929,7 +5929,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-data"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "slotmap",
  "teksilo-core",
@@ -5937,7 +5937,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-i18n"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "fixed_decimal",
  "fluent-bundle",
@@ -5959,7 +5959,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-i18n-macros"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "fluent-syntax",
  "proc-macro2",
@@ -5969,7 +5969,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-inspector"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "serde_json",
  "teksilo-app",
@@ -5985,7 +5985,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-macros"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5995,7 +5995,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-parse"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "proc-macro2",
  "syn 3.0.2",
@@ -6003,7 +6003,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-platform"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "accesskit",
  "accesskit_winit",
@@ -6032,7 +6032,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-render"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "bytemuck",
  "teksilo-canvas",
@@ -6042,7 +6042,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-resources"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6052,7 +6052,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-settings"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "etcetera",
  "fs2",
@@ -6067,7 +6067,7 @@ dependencies = [
 
 [[package]]
 name = "teksilo-text"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "teksilo-canvas",
  "teksilo-tokens",
@@ -6077,14 +6077,14 @@ dependencies = [
 
 [[package]]
 name = "teksilo-tokens"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "teksilo-widgets"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "jiff",
  "open",

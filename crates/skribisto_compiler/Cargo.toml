@@ -25,11 +25,11 @@ skribisto_model = { workspace = true }
 skrib_format = { workspace = true }
 serde = { workspace = true }
 serde_json = "1.0"
-text-document = { path = "../../../text-document/crates/public_api", version = "1.7" }
+text-document = { workspace = true }
 skribisto_fonts = { workspace = true }
 # Bundled Noto RTL faces for PDF export (byte accessors only). Explicit features so the
 # accessors always exist regardless of feature unification.
-teksilo-text = { path = "../../../teksilo/crates/teksilo-text", version = "0.6.2", features = ["fonts-arabic", "fonts-hebrew"] }
+teksilo-text = { path = "../../../teksilo/crates/teksilo-text", version = "0.7.0", features = ["fonts-arabic", "fonts-hebrew"] }
 
 [dev-dependencies]
 tempfile = "3"

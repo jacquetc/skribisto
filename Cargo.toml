@@ -82,6 +82,9 @@ document_ingest = { package = "skribisto-document-ingest", version = "0.0.1", pa
 skribisto_compiler = { package = "skribisto-compiler", version = "0.0.1", path = "crates/skribisto_compiler" }
 skribisto_fonts = { package = "skribisto-fonts", version = "0.0.1", path = "crates/skribisto-fonts" }
 
+# Sibling repos (path deps live next to this workspace; see README "Build it, test it")
+text-document = { path = "../text-document/crates/public_api", version = "1.9.3" }
+
 [profile.release]
 lto = "fat"
 strip = true

@@ -26,7 +26,7 @@ serde = "1.0"
 chrono = { workspace = true }
 uuid = { workspace = true }
 blake3 = "1"
-text-document = { path = "../../../text-document/crates/public_api", version = "1.7" }
+text-document = { workspace = true }
 ron = "0.12.2"
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 tempfile = "3"

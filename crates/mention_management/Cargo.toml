@@ -32,8 +32,7 @@ uuid = { workspace = true }
 # matching engine, and Djot-to-plain-text.
 skrib_format = { workspace = true }
 skribisto_model = { workspace = true }
-# Direct path dep, as skribisto_model has it: text-document is not a workspace dep here.
-text-document = { path = "../../../text-document/crates/public_api", version = "1.7" }
+text-document = { workspace = true }
 
 [lints]
 workspace = true
