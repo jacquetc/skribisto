@@ -3,10 +3,13 @@
 
 //! `ImportDocumentViewModel` — the Import documents wizard's business logic.
 //!
-//! Two steps and two use cases. Step one collects files; `analyze_document_import`
-//! turns them into a plan without writing anything. Step two shows that plan as a
-//! tree the writer can retype, exclude from and re-anchor, and only then does
-//! `apply_document_import` create what is left, as one undo entry.
+//! Three Stepper steps and two use cases. **Files** collects paths; Next runs
+//! `analyze_document_import`. **Review** shows progress while that runs, then the
+//! plan as a tree the writer can retype and exclude from. **Destination** is the
+//! binder outline target alone — kept off Review so the plan tree has the card.
+//! Finish on Destination runs `apply_document_import`. The panel owns the
+//! [`teksilo::widgets::Stepper`]; this view-model owns the
+//! [`teksilo::widgets::StepperController`] so long-op handlers can jump steps.
 //!
 //! That shape is the whole point: every importer surveyed while designing this
 //! lands its guesses straight in the manuscript and leaves the writer to find the
@@ -26,9 +29,9 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
 
-use teksilo::data::ListModel;
+use teksilo::data::{ListModel, TreeDataSource};
 use teksilo::prelude::*;
-use teksilo::widgets::{MessageBox, MessageBoxButtons, Toast, ToastAction};
+use teksilo::widgets::{MessageBox, MessageBoxButtons, StepperController, Toast, ToastAction};
 
 use frontend::AppContext;
 use frontend::commands::{long_operation_commands, undo_redo_commands};
@@ -49,15 +52,14 @@ use crate::models::import_plan_source::{ImportPlanSource, PlanRowKey};
 use crate::toast_scope::ToastWorkExt;
 use crate::widgets::DestinationPicker;
 
-/// Which step of the wizard is on screen. A plain index, because the panel binds
-/// a `Switcher` to it — keep these in lock-step with the panel's `Switcher`
-/// children, which are positional.
+/// Indices into the wizard's [`StepperController`] — keep these in lock-step with
+/// the panel's `Stepper` steps (Files → Review → Destination). Analysis progress
+/// is shown *inside* Review while `busy`, not as its own indicator step.
 pub const STEP_FILES: usize = 0;
 pub const STEP_REVIEW: usize = 1;
-/// The analysis is running. Its own step rather than a toast over the modal: the
-/// wizard is already the writer's whole attention, and a progress surface behind
-/// a dialog that blocks it would be chrome nobody can act on.
-pub const STEP_ANALYSING: usize = 2;
+pub const STEP_DESTINATION: usize = 2;
+/// How many steps the import [`StepperController`] owns.
+pub const STEP_COUNT: usize = 3;
 
 /// Update-in-place key for the toast the *apply* raises. Work-scoped (see
 /// [`crate::toast_scope`]) rather than a bare static: two windows on two
@@ -251,7 +253,11 @@ pub struct ImportDocumentViewModel {
     /// signal, so a button that must grey out on an empty list needs its own
     /// reactive count. Written by every method that touches `files`.
     file_count: Signal<usize>,
-    step: Signal<usize>,
+    /// Drives the panel's `Stepper` (active step, Back/Next, indicator strip).
+    /// Owned here rather than on the panel so long-op handlers can
+    /// `go_to(Review)` / `go_to(Files)` after analysis lands or is abandoned —
+    /// the panel is torn down around this view-model, not the other way round.
+    controller: StepperController,
 
     /// The analysed plan, as a tree.
     plan: ImportPlanSource,
@@ -292,7 +298,7 @@ impl ImportDocumentViewModel {
             ids,
             files: ListModel::new(),
             file_count: Signal::new(0),
-            step: Signal::new(STEP_FILES),
+            controller: StepperController::new(STEP_COUNT),
             plan: ImportPlanSource::empty(),
             diagnostics: Signal::new(Vec::new()),
             level_rules: Signal::new(Vec::new()),
@@ -321,9 +327,18 @@ impl ImportDocumentViewModel {
             .filter_map(|i| self.files.with_item(i, Clone::clone))
             .collect()
     }
+    /// Active wizard step — the `Stepper`'s `Switcher` and any test that asks
+    /// "which page is on screen" both read this.
     pub fn step(&self) -> Signal<usize> {
-        self.step.clone()
+        self.controller.current_step_signal()
     }
+
+    /// The controller the panel's `Stepper` is driven by — also the handle
+    /// long-op handlers use to jump to Review / back to Files.
+    pub fn controller(&self) -> StepperController {
+        self.controller.clone()
+    }
+
     pub fn plan(&self) -> ImportPlanSource {
         self.plan.clone()
     }
@@ -388,7 +403,7 @@ impl ImportDocumentViewModel {
     pub fn reset(&self) {
         self.files.clear();
         self.file_count.set(0);
-        self.step.set(STEP_FILES);
+        self.controller.reset();
         self.plan.set_plan(&ImportPlan::default());
         self.diagnostics.set(Vec::new());
         self.level_rules.set(Vec::new());
@@ -445,7 +460,89 @@ impl ImportDocumentViewModel {
     }
 
     pub fn can_analyse(&self) -> bool {
+        if cfg!(feature = "mocks") {
+            // See [`Self::can_analyse_signal`] — file list is optional under mocks.
+            return !self.busy.get();
+        }
         !self.files.is_empty() && self.ids.work_id.get().is_some() && !self.busy.get()
+    }
+
+    /// Files → Review.
+    ///
+    /// Real builds start `analyze_document_import`. With `--features mocks` the
+    /// long op is skipped and a small plan is planted so the Stepper's Next can
+    /// walk Review and Destination for layout / automation without a file drop
+    /// (the bridge cannot synthesize one).
+    pub fn try_advance_from_files(&self) -> bool {
+        if cfg!(feature = "mocks") {
+            self.seed_mock_review_plan();
+            return true;
+        }
+        self.start_analysis().is_ok()
+    }
+
+    /// Plant a tiny review plan without reading disk. Used by the `mocks` Next
+    /// bypass and available to headless layout tests.
+    ///
+    /// Does **not** jump the Stepper: Files' `validate_on_next` returns true and
+    /// the footer then runs `next()` once into Review. Calling
+    /// [`on_plan_ready`](Self::on_plan_ready) here would `go_to(Review)` *and*
+    /// then `next()`, landing on Destination in one click.
+    pub fn seed_mock_review_plan(&self) {
+        use document_ingest::plan::PlannedRow;
+        let plan = ImportPlan {
+            rows: vec![
+                PlannedRow {
+                    indent: 0,
+                    create_type: CreateType::Book,
+                    title: "Mock Book".into(),
+                    stripped_ordinal: None,
+                    djot: "Opening.".into(),
+                    scene_breaks: 0,
+                    word_count: 1,
+                    origin: "mock.md".into(),
+                    included: true,
+                    comments: Vec::new(),
+                    diagnostics: Vec::new(),
+                },
+                PlannedRow {
+                    indent: 1,
+                    create_type: CreateType::Chapter,
+                    title: "Mock Chapter".into(),
+                    stripped_ordinal: None,
+                    djot: "Prose.".into(),
+                    scene_breaks: 1,
+                    word_count: 1,
+                    origin: "mock.md".into(),
+                    included: true,
+                    comments: Vec::new(),
+                    diagnostics: Vec::new(),
+                },
+                PlannedRow {
+                    indent: 2,
+                    create_type: CreateType::Scene,
+                    title: "Mock Scene".into(),
+                    stripped_ordinal: None,
+                    djot: "More prose.".into(),
+                    scene_breaks: 0,
+                    word_count: 2,
+                    origin: "mock.md".into(),
+                    included: true,
+                    comments: Vec::new(),
+                    diagnostics: Vec::new(),
+                },
+            ],
+            diagnostics: Vec::new(),
+        };
+        self.install_plan(
+            &plan,
+            vec![1, 2, 3],
+            vec![
+                (1, CreateType::Book),
+                (2, CreateType::Chapter),
+                (3, CreateType::Scene),
+            ],
+        );
     }
 
     /// Start the read-only analysis. Returns the long-operation id.
@@ -493,7 +590,9 @@ impl ImportDocumentViewModel {
         self.busy.set(true);
         self.progress.set(0.0);
         self.progress_message.set(String::new());
-        self.step.set(STEP_ANALYSING);
+        // Does **not** advance the Stepper: Files' `validate_on_next` calls this,
+        // returns `true`, and the footer then runs `controller.next()` once into
+        // Review (which shows the progress UI while `busy`).
         Ok(op)
     }
 
@@ -623,23 +722,36 @@ impl ImportDocumentViewModel {
         self.busy.set(false);
         self.progress.set(0.0);
         self.progress_message.set(String::new());
-        self.step.set(STEP_FILES);
+        // Clear busy *before* leaving Review so the panel's "left Review while
+        // busy → cancel" effect does not re-enter `cancel_analysis`.
+        self.controller.go_to(STEP_FILES);
     }
 
     // ── step two: the plan ──────────────────────────────────────────────────
 
-    /// Take a freshly analysed plan and move to the review step.
-    pub fn on_plan_ready(&self, plan: &ImportPlan, levels: Vec<u8>, rules: Vec<(u8, CreateType)>) {
+    /// Install plan state without moving the Stepper.
+    fn install_plan(&self, plan: &ImportPlan, levels: Vec<u8>, rules: Vec<(u8, CreateType)>) {
         self.plan.set_plan(plan);
         self.row_levels.set(levels);
         self.level_rules.set(rules);
         self.pinned.set(Vec::new());
         self.diagnostics.set(Vec::new());
         *self.active.borrow_mut() = None;
+        // Busy off before any step jump — see `abandon_analysis`.
         self.busy.set(false);
         self.progress.set(0.0);
         self.progress_message.set(String::new());
-        self.step.set(STEP_REVIEW);
+    }
+
+    /// Take a freshly analysed plan and put the writer on the review step.
+    ///
+    /// Already on Review when analysis was started via Next (Files → Review);
+    /// `go_to` still runs so a test that only calls this lands on the right page.
+    /// The mocks Files→Review path uses [`seed_mock_review_plan`] instead, so the
+    /// footer's single `next()` is the only advance.
+    pub fn on_plan_ready(&self, plan: &ImportPlan, levels: Vec<u8>, rules: Vec<(u8, CreateType)>) {
+        self.install_plan(plan, levels, rules);
+        self.controller.go_to(STEP_REVIEW);
     }
 
     pub fn set_diagnostics(&self, diagnostics: Vec<Diagnostic>) {
@@ -718,6 +830,41 @@ impl ImportDocumentViewModel {
 
     pub fn is_pinned(&self, key: PlanRowKey) -> bool {
         self.pinned.get().contains(&key)
+    }
+
+    /// Insert a container above every analysed row (indent 0), and push the rest
+    /// one level deeper.
+    ///
+    /// The case this exists for: several Markdown files that are chapters of one
+    /// book, with no `# Book` heading anywhere. The writer adds the Book here;
+    /// apply then creates it as the parent of everything that was analysed.
+    ///
+    /// Defaults to [`CreateType::Book`] with the same default title Create uses.
+    /// The plan tree's type combo can retype it afterwards.
+    pub fn add_top_level_header(&self) {
+        self.add_top_level_header_as(CreateType::Book);
+    }
+
+    /// As [`Self::add_top_level_header`], with an explicit container type.
+    pub fn add_top_level_header_as(&self, kind: CreateType) {
+        if self.plan.is_empty() {
+            return;
+        }
+        let title = crate::binder::create_labels::default_title(kind).resolve_now();
+        self.plan.prepend_root(kind, title);
+        // Synthetic root is not from a document heading — level 0 never matches
+        // a level-rule retype. Existing rows shift one index.
+        let mut levels = self.row_levels.get();
+        levels.insert(0, 0);
+        self.row_levels.set(levels);
+        let pinned: Vec<PlanRowKey> = self
+            .pinned
+            .get()
+            .into_iter()
+            .map(|k| PlanRowKey(k.0.saturating_add(1)))
+            .collect();
+        self.pinned.set(pinned);
+        self.recheck_types();
     }
 
     /// Map a heading level to a type, retyping every row that came from it —
@@ -997,7 +1144,46 @@ impl ImportDocumentViewModel {
     }
 
     pub fn back_to_files(&self) {
-        self.step.set(STEP_FILES);
+        self.controller.go_to(STEP_FILES);
+    }
+
+    /// Reactive Next gate for the Files step — at least one file, a project open,
+    /// and no analysis already in flight.
+    ///
+    /// Under `mocks`, files are not required: Next must stay enabled so layout
+    /// and automation can walk the Stepper without a real drop.
+    pub fn can_analyse_signal(&self) -> Signal<bool> {
+        let busy = self.busy.clone();
+        if cfg!(feature = "mocks") {
+            return busy.map(|b| !*b);
+        }
+        let files = self.file_count.clone();
+        let work = self.ids.work_id.clone();
+        files
+            .zip(&busy)
+            .zip(&work)
+            .map(|((n, b), w)| *n > 0 && !*b && w.is_some())
+    }
+
+    /// Reactive Next gate for the Review step — analysis finished (progress UI
+    /// has cleared). Destination is chosen on the next step, so it is not required
+    /// here.
+    ///
+    /// Under `mocks`, Next stays enabled once not busy (the mock plan is planted
+    /// synchronously on the Files→Review advance).
+    pub fn can_proceed_from_review_signal(&self) -> Signal<bool> {
+        self.busy.map(|b| !*b)
+    }
+
+    /// Reactive Finish gate for the Destination step — same rules as
+    /// [`Self::can_apply`], re-derived whenever the plan or the destination
+    /// selection changes.
+    pub fn can_apply_signal(&self) -> Signal<bool> {
+        let me = self.clone();
+        let plan_v = self.plan.version_signal();
+        let has_dest: Prop<bool> = self.destination.has_selection().into();
+        let has_dest = has_dest.as_signal();
+        plan_v.zip(&has_dest).map(move |_| me.can_apply())
     }
 }
 
@@ -1397,6 +1583,35 @@ mod tests {
         let vm = vm();
         assert_eq!(vm.step().get(), STEP_REVIEW);
         assert_eq!(vm.included_count(), 5);
+    }
+
+    /// Chapter files without a Book heading — wrap them under a writer-added root.
+    #[test]
+    fn a_top_level_header_wraps_every_analysed_row() {
+        let vm = ImportDocumentViewModel::new(Rc::new(AppContext::new()), AppIds::default());
+        vm.on_plan_ready(
+            &ImportPlan {
+                rows: vec![
+                    planned(0, "Chapter One", CreateType::Chapter),
+                    planned(0, "Chapter Two", CreateType::Chapter),
+                ],
+                diagnostics: Vec::new(),
+            },
+            vec![1, 1],
+            vec![(1, CreateType::Chapter)],
+        );
+        vm.add_top_level_header();
+
+        assert_eq!(vm.plan().visible_count(), 3);
+        assert_eq!(vm.plan().type_of(PlanRowKey(0)), Some(CreateType::Book));
+        assert_eq!(vm.plan().row(PlanRowKey(1)).map(|r| r.indent), Some(1));
+        assert_eq!(vm.plan().row(PlanRowKey(2)).map(|r| r.indent), Some(1));
+        // The synthetic root is included and carries no prose, so Import is not blocked.
+        assert!(vm.blocking_rows().is_empty());
+        let titles = created_titles(&vm);
+        assert_eq!(titles.len(), 3, "root + two chapters");
+        assert_eq!(titles[1], "Chapter One");
+        assert_eq!(titles[2], "Chapter Two");
     }
 
     /// One rule change instead of two hundred corrections — the reason the rule
@@ -2022,7 +2237,12 @@ mod tests {
         vm.add_files([dir.path().join("01-one.md"), dir.path().join("02-two.md")]);
 
         let op = vm.start_analysis().expect("the analysis starts");
-        assert_eq!(vm.step().get(), STEP_ANALYSING);
+        // The Stepper footer's Next advances after `validate_on_next` returns true;
+        // tests that call `start_analysis` directly must do the same jump — into
+        // Review, which shows the progress UI while `busy`.
+        vm.controller().next();
+        assert_eq!(vm.step().get(), STEP_REVIEW);
+        assert!(vm.busy().get(), "analysis is in flight on the review step");
 
         // A long operation runs on its own thread; poll for its result rather
         // than sleeping a guessed interval.

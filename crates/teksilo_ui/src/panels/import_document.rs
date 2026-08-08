@@ -4,10 +4,13 @@
 //! The **Import documents** wizard: choose files, then review the tree they would
 //! make before any of it exists.
 //!
-//! Two steps behind one `Switcher`. Step one is a drop zone and the files it has
-//! collected, in the order they will be read. Step two is the plan — every row the
-//! import would create, with the type it resolved to, editable — plus the
-//! heading-level rules that produced those types and the destination it lands in.
+//! Built on Teksilo's [`Stepper`](teksilo::widgets::Stepper): **Files → Review →
+//! Destination**, with the framework's indicator strip and Back / Next / Finish
+//! footer. Analysis progress is shown inside Review while the long op runs (not
+//! as its own step). Destination is its own page so the plan tree can use the
+//! full card. Form state lives on [`ImportDocumentViewModel`] as signals; each
+//! step's `complete_when` gates Next/Finish from those same signals; Finish
+//! applies the import. See `teksilo` docs `widgets/stepper.md`.
 //!
 //! The review step is the point of the feature. Of the twenty-three writing tools
 //! surveyed while designing this, not one shows the writer the structure it
@@ -20,6 +23,7 @@
 
 use std::path::PathBuf;
 
+use teksilo::core::BindingLevel;
 use teksilo::core::accesskit::Role;
 use teksilo::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use teksilo::core::styles::{ComboBoxVariant, PanelVariant};
@@ -27,9 +31,9 @@ use teksilo::data::{ListModel, TreeDataSource};
 use teksilo::prelude::TextStyleRole;
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    Button, ButtonVariant, CellContext, Checkbox, Column, ColumnWidth, ComboBox, Divider, DropZone,
-    Expand, FixedSize, HStack, IconButton, ListView, Padding, Panel, ProgressBar, ScrollArea,
-    Spacer, Switcher, TextWidget, Toast, TreeTableView, VStack,
+    Button, ButtonVariant, CellContext, Checkbox, Column, ColumnWidth, ComboBox, DropZone, Expand,
+    FixedSize, HStack, ListView, Padding, Panel, ProgressBar, ScrollArea, Spacer, Step, Stepper,
+    Switcher, TextWidget, TreeTableView, VStack,
 };
 
 use skribisto_model::CreateType;
@@ -37,7 +41,7 @@ use skribisto_model::CreateType;
 use crate::binder::create_labels::recommendation_label;
 use crate::models::import_plan_source::PlanRowView;
 use crate::view_models::import_document::{
-    ImportDocumentViewModel, LEVEL_TYPES, ROW_TYPES, STEP_ANALYSING, STEP_FILES, STEP_REVIEW,
+    ImportDocumentViewModel, LEVEL_TYPES, ROW_TYPES, STEP_REVIEW,
 };
 
 const CARD_W: f32 = 920.0;
@@ -118,13 +122,88 @@ impl std::fmt::Debug for ImportDocumentPanel {
 
 impl Widget for ImportDocumentPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        // Plain builders around the Switcher: it takes ordered closure-built slots
-        // the `teksu!` macro cannot express, as with DockingLayout and TabWidget.
-        // Children are positional — their order is the `STEP_*` constants.
-        let body = Switcher::new(self.vm.step())
-            .child(files_step(ctx, &self.vm))
-            .child(review_step(&self.vm))
-            .child(analysing_step(&self.vm));
+        // Leaving Review while an analysis is still running (Back, or a jump)
+        // must cancel it — otherwise a late completion would fill a plan the
+        // writer walked away from. Success and abandon clear `busy` *before*
+        // they leave Review, so this does not re-cancel them.
+        {
+            let vm = self.vm.clone();
+            let current = self.vm.controller().current_step_signal();
+            ctx.effect(&current, move |step| {
+                if *step != STEP_REVIEW && vm.busy().get() {
+                    vm.cancel_analysis();
+                }
+            });
+        }
+
+        // `Step::content` is a factory with no `BuildContext`, so the Browse
+        // start directory is resolved once here and captured into the zone.
+        let start_dir = ctx
+            .app_state::<crate::models::FolderMemoryService>()
+            .and_then(|svc| svc.last(crate::models::FolderPurpose::ImportDocuments));
+
+        let files_vm = self.vm.clone();
+        let analyse_vm = self.vm.clone();
+        let review_vm = self.vm.clone();
+        let dest_vm = self.vm.clone();
+        let finish_vm = self.vm.clone();
+        let cancel_vm = self.vm.clone();
+
+        let stepper = Stepper::new()
+            .controller(self.vm.controller())
+            .back_label(tr!(import_document_back()))
+            .next_label(tr!(import_document_analyse()))
+            .finish_label(tr!(import_document_import()))
+            .cancel(tr!(import_document_cancel()), move |ctx, _ctrl| {
+                // While the long op runs (on Review), Cancel means "stop reading".
+                if cancel_vm.busy().get() {
+                    cancel_vm.cancel_analysis();
+                } else {
+                    ctx.dismiss_modal();
+                }
+            })
+            .step(
+                Step::new(tr!(import_document_step_files()))
+                    .content(move || files_step(&files_vm, start_dir.clone()))
+                    .complete_when(self.vm.can_analyse_signal())
+                    .validate_on_next({
+                        let vm = analyse_vm;
+                        // Real: start analysis (progress on Review while busy).
+                        // `mocks`: plant a plan and advance — no file drop needed.
+                        move || vm.try_advance_from_files()
+                    }),
+            )
+            .step(
+                Step::new(tr!(import_document_step_review()))
+                    .content(move || review_step(&review_vm))
+                    // Next stays off until the long op finishes; Destination is
+                    // the page after that.
+                    .complete_when(self.vm.can_proceed_from_review_signal()),
+            )
+            .step(
+                Step::new(tr!(import_document_step_destination()))
+                    .content(move || destination_step(&dest_vm))
+                    .complete_when(self.vm.can_apply_signal()),
+            )
+            .on_finish(move |ctx, _ctrl| {
+                let landed = finish_vm.work_uid().zip(finish_vm.chosen_destination_key());
+                match finish_vm.apply() {
+                    Ok(created) => {
+                        if let Some((uid, key)) = landed
+                            && let Some(prefs) =
+                                ctx.app_state::<crate::models::ImportPrefsService>()
+                        {
+                            prefs.remember_destination(&uid, key);
+                        }
+                        // Dismiss first, then toast: the toast would otherwise
+                        // become the topmost overlay and the dismissal would take
+                        // it instead of the modal.
+                        ctx.dismiss_modal();
+                        finish_vm.offer_undo(ctx, created.len());
+                    }
+                    Err(e) => finish_vm.report_failure(ctx, &e),
+                }
+            });
 
         let root = teksu!(ctx => FixedSize {
             width: CARD_W
@@ -132,15 +211,8 @@ impl Widget for ImportDocumentPanel {
             Panel {
                 variant: PanelVariant::Raised
                 corner_radius: 10.0
-                padding: 0.0
-                VStack {
-                    spacing: 0.0
-                    Expand::horizontal { child: header(&self.vm) }
-                    Expand::horizontal { Divider }
-                    Expand::vertical { child: body }
-                    Expand::horizontal { Divider }
-                    Expand::horizontal { child: footer(&self.vm) }
-                }
+                padding: 12.0
+                Expand::vertical { child: stepper }
             }
         });
         self.root_child = Some(root);
@@ -152,9 +224,8 @@ impl Widget for ImportDocumentPanel {
     /// `ctx.present_modal` does not wrap a hand-drawn panel in a
     /// `ModalContainer` — that is the shape every custom modal in this app has
     /// (settings, new work, import Plume) — so nothing else would emit a
-    /// `Role::Dialog` node, and the title strip is a `TextWidget`, which carries
-    /// no accessible name of its own. Without this, a screen reader met a panel
-    /// that had appeared over everything and could not say what it was.
+    /// `Role::Dialog` node. Without this, a screen reader met a panel that had
+    /// appeared over everything and could not say what it was.
     fn accessibility(&self, builder: &mut teksilo::core::accessibility::AccessNodeBuilder) {
         builder.set_role(Role::Dialog);
         builder.set_name(tr!(import_document_title()).resolve_now());
@@ -168,55 +239,14 @@ impl Widget for ImportDocumentPanel {
     }
 }
 
-fn header(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
-    // Which step the writer is on, as a word rather than a counter: two steps do
-    // not need a progress apparatus. A `Switcher` rather than a mapped string,
-    // because a `LocalizedString` is resolved when it is rendered — flattening it
-    // to a `String` here would freeze it in whatever locale was current at build.
-    let where_am_i = Switcher::new(vm.step())
-        .child(
-            TextWidget::new(tr!(import_document_step_files()))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        )
-        .child(
-            TextWidget::new(tr!(import_document_step_review()))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        )
-        .child(
-            TextWidget::new(tr!(import_document_step_analysing()))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        );
-
-    FixedSize::new().height(44.0).child(
-        Padding::symmetric(8.0, 14.0).child(
-            HStack::new()
-                .spacing(8.0)
-                .child(
-                    Expand::horizontal().child(
-                        TextWidget::new(tr!(import_document_title()))
-                            .style(TextStyleRole::Small)
-                            .color(TextRole::Secondary),
-                    ),
-                )
-                .child(where_am_i)
-                .child(
-                    IconButton::clear()
-                        .tooltip(tr!(import_document_close()))
-                        .on_activate_fn(|ctx| ctx.dismiss_modal()),
-                ),
-        ),
-    )
-}
-
 /// Step one: collect the files.
 ///
-/// `ctx` only to open Browse where the writer last imported from. The zone builds its
-/// own file dialog internally, so — like `FilePickerField` — it has to be told the
-/// directory here rather than at the click.
-fn files_step(ctx: &BuildContext, vm: &ImportDocumentViewModel) -> impl Widget + use<> {
+/// `start_dir` is resolved once by the panel (the content factory has no
+/// `BuildContext`) so Browse opens where the writer last imported from.
+fn files_step(
+    vm: &ImportDocumentViewModel,
+    start_dir: Option<std::path::PathBuf>,
+) -> impl Widget + use<> {
     let drop_vm = vm.clone();
     let mut zone = DropZone::new(tr!(import_document_drop_title()))
         .subtitle(tr!(import_document_drop_hint()))
@@ -233,10 +263,7 @@ fn files_step(ctx: &BuildContext, vm: &ImportDocumentViewModel) -> impl Widget +
             }
             drop_vm.add_files(paths);
         });
-    if let Some(dir) = ctx
-        .app_state::<crate::models::FolderMemoryService>()
-        .and_then(|svc| svc.last(crate::models::FolderPurpose::ImportDocuments))
-    {
+    if let Some(dir) = start_dir {
         zone = zone.starting_dir(dir);
     }
 
@@ -308,13 +335,10 @@ fn files_step(ctx: &BuildContext, vm: &ImportDocumentViewModel) -> impl Widget +
     )
 }
 
-/// Between the two: the analysis, running.
-///
-/// Its own step rather than a toast, because the wizard is modal — a progress
-/// surface *behind* a dialog nobody can dismiss would be chrome the writer can
-/// see and not reach. Cancel lives here for the same reason: it is the only
-/// thing there is to do while this is on screen.
-fn analysing_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
+/// Progress while `analyze_document_import` runs — shown *inside* the Review
+/// step, not as its own indicator entry, so the strip stays Files / Review /
+/// Destination.
+fn analysing_body(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     let cancel_vm = vm.clone();
     Padding::symmetric(40.0, 40.0).child(
         VStack::new()
@@ -332,8 +356,6 @@ fn analysing_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
                     .label(tr!(import_document_analysing())),
             )
             .child(
-                // Which file the backend is reading. Blank until the first
-                // tick, which is honest: nothing is known yet.
                 TextWidget::new(lit!(""))
                     .text(vm.progress_message())
                     .style(TextStyleRole::Small)
@@ -350,27 +372,45 @@ fn analysing_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     )
 }
 
-/// Step two: the plan.
+/// Step two: the plan (and analysis progress while it is still being built).
+///
+/// Destination lives on the next step — pinning it here left the tree a
+/// ~150px strip that could not show a real outline.
 fn review_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
-    Padding::symmetric(12.0, 12.0).child(
+    let plan = Padding::symmetric(12.0, 12.0).child(
         VStack::new()
             .spacing(10.0)
             .child(level_rules(vm))
             .child(Expand::vertical().child(plan_tree(vm)))
-            .child(diagnostics_strip(vm))
+            .child(diagnostics_strip(vm)),
+    );
+
+    // Index 0 = plan, 1 = progress. `busy` is set before Next advances onto
+    // this step, so the first paint is the progress body.
+    Switcher::new(vm.busy().map(|b| usize::from(*b)))
+        .child(plan)
+        .child(analysing_body(vm))
+}
+
+/// Step three: where the import lands — the full card, not a footer strip.
+fn destination_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
+    Padding::symmetric(16.0, 16.0).child(
+        VStack::new()
+            .spacing(10.0)
             .child(
                 TextWidget::new(tr!(import_document_destination()))
+                    .style(TextStyleRole::Body)
+                    .color(TextRole::Primary),
+            )
+            .child(
+                TextWidget::new(tr!(import_document_destination_hint()))
                     .style(TextStyleRole::Small)
                     .color(TextRole::Secondary),
             )
-            // Same shape as the drop zone above, and the same trap: the
-            // `Expand` must sit above the height pin, not under it.
             .child(
-                Expand::horizontal().child(
-                    FixedSize::new().height(150.0).child(
-                        vm.destination()
-                            .view(tr!(import_document_destination_empty())),
-                    ),
+                Expand::vertical().child(
+                    vm.destination()
+                        .view(tr!(import_document_destination_empty())),
                 ),
             ),
     )
@@ -471,63 +511,118 @@ fn diagnostics_strip(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
 /// The affordance that makes a two-hundred-chapter import survivable: retyping a
 /// *level* is one decision where retyping its rows is two hundred. A row the
 /// writer already retyped by hand is left alone — the view-model pins it.
+///
+/// Built as its own widget that **rebuilds** when `level_rules` changes (same
+/// pattern as the tag alias chips). A `ListView` row factory under a height pin
+/// kept laying out the "Heading N" labels at zero width and the combos without
+/// a readable selected value — fine for hundreds of rows, wrong for six levels.
 fn level_rules(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
-    let rules = vm.level_rules();
-    let rules_vm = vm.clone();
+    LevelRulesStrip {
+        vm: vm.clone(),
+        root_child: None,
+    }
+}
 
-    // A `ListModel` over the levels, so adding a level after a fresh analysis
-    // rebuilds the row without this function knowing how many there are.
-    let levels: ListModel<(u8, CreateType)> = ListModel::new();
-    let mirror = levels.clone();
-    let refresh = rules.map(move |entries| {
-        mirror.replace_all(entries.clone());
-        entries.len()
-    });
+/// Compact heading-level → type map. Not a `ListView`: the rule table is tiny
+/// (a handful of levels) and must size to its labels, not to a virtualized
+/// viewport.
+struct LevelRulesStrip {
+    vm: ImportDocumentViewModel,
+    root_child: Option<WidgetId>,
+}
 
-    HStack::new()
-        .spacing(8.0)
-        .child(
-            TextWidget::new(tr!(import_document_level_rules()))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        )
-        .child(
-            Expand::horizontal().child(
-                ListView::new(levels, move |_index, entry: &(u8, CreateType), _sel| {
-                    let (level, kind) = *entry;
-                    let apply = rules_vm.clone();
-                    Box::new(
-                        HStack::new()
-                            .spacing(4.0)
-                            .child(
-                                TextWidget::new(tr!(import_document_level_n(level = level as i64)))
-                                    .style(TextStyleRole::Small),
-                            )
-                            .child(
-                                ComboBox::from_items(
-                                    LEVEL_TYPES.to_vec(),
-                                    Signal::new(Some(kind)),
-                                    |kind: &CreateType| recommendation_label(*kind),
-                                )
-                                .variant(ComboBoxVariant::Plain)
-                                .on_select(
-                                    move |kind: &CreateType, _ctx| {
-                                        apply.set_level_rule(level, *kind)
-                                    },
-                                ),
-                            ),
-                    ) as Box<dyn Widget>
-                })
-                .item_height(28.0),
-            ),
-        )
-        .child(
-            // Nothing visible; it exists so the level list re-fills when a fresh
-            // analysis changes which levels the documents used.
-            FixedSize::new()
-                .width(0.0)
-                .child(TextWidget::new(lit!("")).text(refresh.map(|n| n.to_string()))),
-        )
+impl std::fmt::Debug for LevelRulesStrip {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LevelRulesStrip").finish()
+    }
+}
+
+impl Widget for LevelRulesStrip {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // Rebuild when the level table or the plan shape changes (including a
+        // synthetic top-level insert, which renumbers every row).
+        let sid = ctx.self_id();
+        let reg = ctx.binding_registry();
+        self.vm
+            .level_rules()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+        self.vm
+            .plan()
+            .version_signal()
+            .bind_to(sid, reg, BindingLevel::Rebuild);
+
+        // Nothing to map and nothing to wrap — stay invisible until analysis
+        // (or a mock seed) has produced a plan.
+        if self.vm.plan().is_empty() {
+            let id = ctx.add(Spacer::new());
+            self.root_child = Some(id);
+            return vec![id];
+        }
+
+        let entries = self.vm.level_rules().get();
+
+        // One tight row per level: label takes its text width, combo is rigid
+        // (~120 px min) — no Expand between them, so neither can zero the other.
+        let mut rows = VStack::new().spacing(4.0);
+        for (level, kind) in entries {
+            let apply = self.vm.clone();
+            let selected = Signal::new(Some(kind));
+            rows = rows.child(
+                HStack::new()
+                    .spacing(8.0)
+                    .child(
+                        TextWidget::new(tr!(import_document_level_n(level = level as i64)))
+                            .style(TextStyleRole::Small)
+                            .color(TextRole::Secondary),
+                    )
+                    .child(
+                        ComboBox::from_items(
+                            LEVEL_TYPES.to_vec(),
+                            selected,
+                            |kind: &CreateType| recommendation_label(*kind),
+                        )
+                        .variant(ComboBoxVariant::Plain)
+                        .on_select(move |kind: &CreateType, _ctx| {
+                            apply.set_level_rule(level, *kind)
+                        }),
+                    ),
+            );
+        }
+
+        let add_vm = self.vm.clone();
+        // Several chapter-files with no Book heading: the writer adds the
+        // container here, then every analysed row sits under it. Shown even
+        // when there are no heading-level rules (headingless files).
+        let add = Button::new(tr!(import_document_add_top_level()))
+            .variant(ButtonVariant::Plain)
+            .tooltip(tr!(import_document_add_top_level_tooltip()))
+            .on_activate_fn(move |_| add_vm.add_top_level_header());
+
+        let id = ctx.add(
+            HStack::new()
+                .spacing(10.0)
+                .child(
+                    TextWidget::new(tr!(import_document_level_rules()))
+                        .style(TextStyleRole::Small)
+                        .color(TextRole::Secondary),
+                )
+                .child(Expand::horizontal().child(rows))
+                .child(add),
+        );
+        self.root_child = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root_child.into_iter().collect()
+    }
 }
 
 /// The plan itself.
@@ -719,127 +814,6 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
         )
 }
 
-fn footer(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
-    let step = vm.step();
-
-    // The summary describes whatever step is on screen. It used to describe the
-    // *plan* always, so a writer still choosing files read "0 rows · 0 scene
-    // breaks" — a count of something they had not asked for yet, sitting under
-    // a drop zone, reading like a failure.
-    //
-    // Resolved to `String` rather than carried as a `LocalizedString` because
-    // `TextWidget::text` takes a reactive string; each map re-runs on its own
-    // source, and a locale change rebuilds this parent anyway.
-    let files_summary = vm
-        .file_count()
-        .map(|n| tr!(import_document_file_count(count = *n as i64)).resolve_now());
-
-    let summary_source = vm.plan();
-    let plan_summary = summary_source.version_signal().map(move |_| {
-        let rows = summary_source.rows();
-        let breaks: usize = rows.iter().map(|r| r.scene_breaks).sum();
-        tr!(import_document_summary(
-            rows = rows.len() as i64,
-            breaks = breaks as i64
-        ))
-        .resolve_now()
-    });
-
-    // Positional, like every other `Switcher` here — the `STEP_*` order.
-    let summary = Switcher::new(step.clone())
-        .child(
-            TextWidget::new(lit!(""))
-                .text(files_summary)
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        )
-        .child(
-            TextWidget::new(lit!(""))
-                .text(plan_summary)
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        )
-        .child(
-            TextWidget::new(tr!(import_document_analysing()))
-                .style(TextStyleRole::Small)
-                .color(TextRole::Secondary),
-        );
-
-    let back_vm = vm.clone();
-    let analyse_vm = vm.clone();
-    let import_vm = vm.clone();
-
-    // Analyse needs both a step and something to read; the two greying rules
-    // are zipped rather than checked in the handler, so an empty file list
-    // reads as "not yet" instead of erroring on click.
-    let can_analyse = step
-        .zip(&vm.file_count())
-        .map(|(s, n)| *s == STEP_FILES && *n > 0);
-
-    FixedSize::new().height(52.0).child(
-        Padding::symmetric(10.0, 22.0).child(
-            HStack::new()
-                .spacing(8.0)
-                .child(
-                    Button::new(tr!(import_document_back()))
-                        .variant(ButtonVariant::Plain)
-                        .enabled(step.map(|s| *s == STEP_REVIEW))
-                        .on_activate_fn(move |_| back_vm.back_to_files()),
-                )
-                .child(Expand::horizontal().child(summary))
-                .child(
-                    Button::new(tr!(import_document_cancel()))
-                        .variant(ButtonVariant::Plain)
-                        // Not while the analysis runs: closing the wizard would
-                        // leave the operation running with nowhere to report.
-                        // The analysing step's own Cancel stops it first.
-                        .enabled(step.map(|s| *s != STEP_ANALYSING))
-                        .on_activate_fn(|ctx| ctx.dismiss_modal()),
-                )
-                .child(
-                    Button::new(tr!(import_document_analyse()))
-                        .variant(ButtonVariant::Filled)
-                        .enabled(can_analyse)
-                        .on_activate_fn(move |ctx| {
-                            if let Err(e) = analyse_vm.start_analysis() {
-                                ctx.show_toast(Toast::error(lit!(format!("{e:#}"))));
-                            }
-                        }),
-                )
-                .child(
-                    Button::new(tr!(import_document_import()))
-                        .variant(ButtonVariant::Filled)
-                        .enabled(step.map(|s| *s == STEP_REVIEW))
-                        .on_activate_fn(move |ctx| {
-                            // Read before applying: `apply` is what the wizard closes on,
-                            // and the picker's selection goes with it.
-                            let landed =
-                                import_vm.work_uid().zip(import_vm.chosen_destination_key());
-                            match import_vm.apply() {
-                                Ok(created) => {
-                                    if let Some((uid, key)) = landed
-                                        && let Some(prefs) =
-                                            ctx.app_state::<crate::models::ImportPrefsService>()
-                                    {
-                                        prefs.remember_destination(&uid, key);
-                                    }
-                                    // Dismiss first, then toast: the toast would
-                                    // otherwise become the topmost overlay and the
-                                    // dismissal would take it instead of the modal.
-                                    ctx.dismiss_modal();
-                                    import_vm.offer_undo(ctx, created.len());
-                                }
-                                // A refused import leaves the wizard up, with the
-                                // plan the writer can still fix — and nothing is
-                                // remembered, because nothing landed.
-                                Err(e) => import_vm.report_failure(ctx, &e),
-                            }
-                        }),
-                ),
-        ),
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -957,21 +931,24 @@ mod tests {
         );
     }
 
-    /// A blank half-panel under a drop zone reads as "something failed".
+    /// A blank half-panel under a drop zone reads as "something failed" — the
+    /// empty copy must be what the files step shows before anything is chosen.
+    ///
+    /// The Stepper pre-mounts every step's content, so a "no ListView in the
+    /// tree" assertion is no longer meaningful (Review's level-rules list is
+    /// always present). Count ListViews before and after adding a file instead:
+    /// choosing one must mount the files list.
     #[test]
     fn an_empty_file_list_says_so_instead_of_showing_nothing() {
         let app_ctx = Rc::new(AppContext::new());
         let vm = ImportDocumentViewModel::new(app_ctx.clone(), AppIds::default());
         let (tree, id) = mount(vm.clone(), &app_ctx);
-        assert!(
-            first_containing(&tree, id, "ListView").is_none(),
-            "with no files there is nothing to list"
-        );
+        let before = count_of(&tree, id, "ListView");
 
         vm.add_files([PathBuf::from("/tmp/a.md")]);
         let (tree, id) = mount(vm, &app_ctx);
         assert!(
-            first_containing(&tree, id, "ListView").is_some(),
+            count_of(&tree, id, "ListView") > before,
             "a chosen file must appear in a list"
         );
     }
@@ -1026,6 +1003,77 @@ mod tests {
             .into_iter()
             .map(|c| count_of(tree, c, needle))
             .sum::<usize>()
+    }
+
+
+    /// Review keeps the plan tree tall; Destination keeps the outline tree tall.
+    ///
+    /// These sizes are what the three-step split is for: destination used to share
+    /// Review as a 150 px strip. Headless (the automation bridge cannot drop files
+    /// onto the live wizard), so the two active steps are mounted by driving the
+    /// controller the same way the long-op handlers do.
+    #[test]
+    fn review_and_destination_each_get_a_full_pane() {
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportDocumentViewModel::new(app_ctx.clone(), AppIds::default());
+        vm.on_plan_ready(
+            &ImportPlan {
+                rows: vec![
+                    planned(0, "Book", CreateType::Book, 0),
+                    planned(1, "Chapter One", CreateType::Chapter, 3),
+                    planned(2, "Scene A", CreateType::Scene, 0),
+                ],
+                diagnostics: Vec::new(),
+            },
+            vec![1, 2, 3],
+            vec![
+                (1, CreateType::Book),
+                (2, CreateType::Chapter),
+                (3, CreateType::Scene),
+            ],
+        );
+
+        fn size_of(tree: &WidgetTree, root: WidgetId, needle: &str) -> Option<(f32, f32)> {
+            fn find(tree: &WidgetTree, root: WidgetId, needle: &str) -> Option<WidgetId> {
+                if tree.widget_type_name(root).is_some_and(|n| n.contains(needle)) {
+                    return Some(root);
+                }
+                tree.children(root)
+                    .into_iter()
+                    .find_map(|c| find(tree, c, needle))
+            }
+            let id = find(tree, root, needle)?;
+            let b = tree.bounds(id);
+            Some((b.width, b.height))
+        }
+
+        let (tree, id) = mount(vm.clone(), &app_ctx);
+        let (w, h) = size_of(&tree, id, "TreeTableView").expect("plan tree on Review");
+        assert!(w > 400.0, "plan tree width {w}");
+        // Heading-level rules are height-pinned to n×28; without that pin the
+        // ListView ate ~half the pane and the tree sat around 250. It should
+        // clearly clear that now that levels take a strip, not a half-panel.
+        assert!(
+            h > 300.0,
+            "plan tree height {h} — level rules / destination must not steal the pane"
+        );
+        // Inactive Destination must not claim layout while Review is showing.
+        if let Some((dw, dh)) = size_of(&tree, id, "DestinationPickerView") {
+            assert!(
+                dw * dh < 1.0,
+                "destination must be zero-sized off-step, got {dw}x{dh}"
+            );
+        }
+
+        vm.controller()
+            .go_to(crate::view_models::import_document::STEP_DESTINATION);
+        let (tree, id) = mount(vm, &app_ctx);
+        let (w, h) = size_of(&tree, id, "DestinationPickerView").expect("picker on Destination");
+        assert!(w > 400.0, "destination width {w}");
+        assert!(
+            h > 300.0,
+            "destination height {h} — the outline needs a full card, not a strip"
+        );
     }
 
     /// An empty plan must say so rather than render a blank table.

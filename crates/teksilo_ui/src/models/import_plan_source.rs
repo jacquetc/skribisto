@@ -125,6 +125,67 @@ impl ImportPlanSource {
         self.rebuild();
     }
 
+    /// Insert a container at the root and push every existing row one indent deeper.
+    ///
+    /// For the common case where several files are chapters of one book but none
+    /// of them carries a Book heading — the writer adds the Book here, then every
+    /// analysed row becomes its child. Keys are renumbered (they are plan
+    /// ordinals); callers that hold [`PlanRowKey`]s must remap or drop them.
+    pub fn prepend_root(&self, kind: CreateType, title: impl Into<String>) {
+        let snapshot: Vec<(PlanRowView, CreateType, bool)> = {
+            let rows = self.inner.rows.borrow();
+            let types = self.inner.types.borrow();
+            let included = self.inner.included.borrow();
+            rows.iter()
+                .map(|r| {
+                    let t = types
+                        .get(&r.key)
+                        .and_then(|s| s.get())
+                        .unwrap_or(CreateType::Scene);
+                    let inc = included.get(&r.key).is_some_and(|s| s.get());
+                    (r.clone(), t, inc)
+                })
+                .collect()
+        };
+
+        let mut rows = Vec::with_capacity(snapshot.len() + 1);
+        let mut types = HashMap::with_capacity(snapshot.len() + 1);
+        let mut included = HashMap::with_capacity(snapshot.len() + 1);
+
+        let root = PlanRowKey(0);
+        types.insert(root, Signal::new(Some(kind)));
+        included.insert(root, Signal::new(true));
+        rows.push(PlanRowView {
+            key: root,
+            indent: 0,
+            title: title.into(),
+            stripped_ordinal: None,
+            djot: String::new(),
+            word_count: 0,
+            scene_breaks: 0,
+            comments: Vec::new(),
+            // Empty origin marks a row the writer invented in the review step,
+            // not one a scanner produced — the Source column stays blank.
+            origin: String::new(),
+            diagnostics: Vec::new(),
+        });
+
+        for (i, (mut row, kind, ticked)) in snapshot.into_iter().enumerate() {
+            let key = PlanRowKey((i + 1) as u32);
+            row.key = key;
+            row.indent = row.indent.saturating_add(1);
+            types.insert(key, Signal::new(Some(kind)));
+            included.insert(key, Signal::new(ticked));
+            rows.push(row);
+        }
+
+        *self.inner.rows.borrow_mut() = rows;
+        *self.inner.types.borrow_mut() = types;
+        *self.inner.included.borrow_mut() = included;
+        self.inner.collapsed.borrow_mut().clear();
+        self.rebuild();
+    }
+
     /// Every row, in plan order, ignoring collapse.
     pub fn rows(&self) -> Vec<PlanRowView> {
         self.inner.rows.borrow().clone()
@@ -421,6 +482,32 @@ mod tests {
             s.child_keys(&PlanRowKey(0)),
             vec![PlanRowKey(1), PlanRowKey(4)],
             "grandchildren are not children"
+        );
+    }
+
+    /// Chapters that arrived without a Book heading sit under a writer-added root.
+    #[test]
+    fn prepending_a_root_pushes_every_row_one_indent_deeper() {
+        let s = ImportPlanSource::empty();
+        s.set_plan(&ImportPlan {
+            rows: vec![
+                row(0, "Chapter One", CreateType::Chapter),
+                row(0, "Chapter Two", CreateType::Chapter),
+            ],
+            diagnostics: Vec::new(),
+        });
+        s.prepend_root(CreateType::Book, "The Novel");
+
+        assert_eq!(s.visible_count(), 3);
+        assert_eq!(s.row(PlanRowKey(0)).map(|r| r.title).as_deref(), Some("The Novel"));
+        assert_eq!(s.type_of(PlanRowKey(0)), Some(CreateType::Book));
+        assert_eq!(s.row(PlanRowKey(0)).map(|r| r.indent), Some(0));
+        assert_eq!(s.row(PlanRowKey(1)).map(|r| r.indent), Some(1));
+        assert_eq!(s.row(PlanRowKey(2)).map(|r| r.indent), Some(1));
+        assert_eq!(
+            s.child_keys(&PlanRowKey(0)),
+            vec![PlanRowKey(1), PlanRowKey(2)],
+            "both chapters are direct children of the new book"
         );
     }
 
