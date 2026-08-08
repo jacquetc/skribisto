@@ -10,7 +10,9 @@
 //! as its own step). Destination is its own page so the plan tree can use the
 //! full card. Form state lives on [`ImportDocumentViewModel`] as signals; each
 //! step's `complete_when` gates Next/Finish from those same signals; Finish
-//! applies the import. See `teksilo` docs `widgets/stepper.md`.
+//! applies the import — and may **refuse**: the write is one transaction, so a
+//! failure returns `false` and keeps the wizard open on Destination with the
+//! plan intact. See `teksilo` docs `widgets/stepper.md`.
 //!
 //! The review step is the point of the feature. Of the twenty-three writing tools
 //! surveyed while designing this, not one shows the writer the structure it
@@ -186,6 +188,12 @@ impl Widget for ImportDocumentPanel {
                     .content(move || destination_step(&dest_vm))
                     .complete_when(self.vm.can_apply_signal()),
             )
+            // Import. The write is one transaction, so it either lands whole or
+            // not at all — and when it does not, returning `false` keeps the
+            // wizard open on Destination with the step marked in error, beside
+            // the failure toast. The plan is still there to fix or retry;
+            // reporting a finished flow over an import that never happened would
+            // have closed it.
             .on_finish(move |ctx, _ctrl| {
                 let landed = finish_vm.work_uid().zip(finish_vm.chosen_destination_key());
                 match finish_vm.apply() {
@@ -201,8 +209,12 @@ impl Widget for ImportDocumentPanel {
                         // it instead of the modal.
                         ctx.dismiss_modal();
                         finish_vm.offer_undo(ctx, created.len());
+                        true
                     }
-                    Err(e) => finish_vm.report_failure(ctx, &e),
+                    Err(e) => {
+                        finish_vm.report_failure(ctx, &e);
+                        false
+                    }
                 }
             });
 

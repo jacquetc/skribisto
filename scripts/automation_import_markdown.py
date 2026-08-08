@@ -314,15 +314,17 @@ joined = s.joined()
 check("drop documents here" in joined, "step one offers a drop zone")
 check("browse" in joined, "…and a Browse button for people who don't drag")
 
-# Greying is the whole affordance for "you have not chosen anything yet". With no
-# files, Next must be dead and Back must be dead; Cancel must not be.
+# Greying is the whole affordance for "you have not chosen anything yet": with no
+# files, Next must be dead. Back is a different story — the `Stepper` *hides* it
+# where it would have nowhere to go rather than greying it, so on step one there
+# is no Back button at all. This used to assert a greyed one and had been failing
+# against the framework's actual behaviour.
 nxt = s.match(["next"], exact=True)
 back = s.match(["back"], exact=True)
 cancel = s.match(["cancel"], exact=True)
 check(nxt is not None and nxt.get("disabled") is True,
       "Next is greyed with no files chosen")
-check(back is not None and back.get("disabled") is True,
-      "Back is greyed on the first step")
+check(back is None, "Back is absent on the first step (the Stepper hides it)")
 check(cancel is not None and cancel.get("disabled") is not True,
       "Cancel is live")
 

@@ -15,6 +15,13 @@
 //! template is pinned to None, because every template lays down a manuscript the
 //! import would then be poured beside.
 //!
+//! That branch is **four declared steps**, the last two gated on the purpose
+//! with `Step::visible_when` — the hidden one leaves navigation, the indicator
+//! strip and the a11y tree, so either door is three pages long. Declaring both
+//! keeps one builder and lets a test ask which step the flow actually reaches;
+//! the alternative (a `match` producing two step lists) put the shared builder
+//! inside the branch and made that question unaskable.
+//!
 //! The split follows what the writer must decide *before* anything can be
 //! created versus what merely shapes the project:
 //!   1. **Details** — name, author, format, where it lands. The only step with a
@@ -28,7 +35,13 @@
 //!      flat. Finish (`Create Work`) commits.
 //!
 //! No step past the first carries a gate: every control there is a picker with a
-//! valid default, so there is nothing left to be invalid about.
+//! valid default, so there is nothing left to be invalid about. Finish itself
+//! can still refuse — `create` returns `false` when the project could not be
+//! written, which holds the wizard on its last step and marks it in error rather
+//! than closing over a project that does not exist.
+//!
+//! Enter advances (the `Stepper`'s default): step one is a form, and a focused
+//! control that claims the key still wins.
 //!
 //! Under `--features mocks` that one gate is off and Finish creates nothing (see
 //! [`NewWorkViewModel::can_create`] and `create`), so the whole flow can be
@@ -60,8 +73,8 @@ use teksilo::widgets::stepper::ChromePosition;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{
     ComboBox, Divider, Expand, FilePickerField, FilePickerKind, FixedSize, FormLayout, HStack,
-    IconWidget, Padding, Panel, RadioTile, RadioTileGroup, ScrollArea, Step, Stepper, TextInput,
-    TextWidget, TileLayout, Toggle, VStack,
+    IconWidget, Padding, Panel, RadioTile, RadioTileGroup, ScrollArea, Step, Stepper,
+    StepperController, TextInput, TextWidget, TileLayout, Toggle, VStack,
 };
 
 use frontend::AppContext;
@@ -74,6 +87,15 @@ use crate::view_models::{NewWorkPurpose, NewWorkViewModel};
 const CARD_W: f32 = 640.0;
 const CARD_H: f32 = 620.0;
 
+/// Steps **declared**, which is not how many a given wizard shows: the two last
+/// ones are mutually exclusive, gated on [`NewWorkPurpose`] (see `build`).
+const STEP_COUNT: usize = 4;
+
+/// The declared step indices. The last two are the branch: only one is ever
+/// visible, so the flow is always three pages long.
+const STEP_TEMPLATE: usize = 2;
+const STEP_IMPORT: usize = 3;
+
 pub struct NewWorkPanel {
     /// Owns the form's signals for this modal session (created once in `new`).
     vm: NewWorkViewModel,
@@ -81,6 +103,10 @@ pub struct NewWorkPanel {
     /// The Work-name field, captured during `build` and handed to the modal
     /// pipeline by [`Widget::initial_focus_hint`] — see the note there.
     name_field: std::cell::Cell<Option<WidgetId>>,
+    /// Held rather than left to the `Stepper` so the flow can be driven and
+    /// inspected from outside the widget — which step is current, which are
+    /// reachable. The branch below is only observable through it.
+    controller: StepperController,
 }
 
 impl NewWorkPanel {
@@ -93,6 +119,7 @@ impl NewWorkPanel {
             vm: NewWorkViewModel::new(app_ctx, ids),
             root_child: None,
             name_field: std::cell::Cell::new(None),
+            controller: StepperController::new(STEP_COUNT),
         }
     }
 
@@ -108,6 +135,7 @@ impl NewWorkPanel {
             vm: NewWorkViewModel::new_beside_current(app_ctx, factory),
             root_child: None,
             name_field: std::cell::Cell::new(None),
+            controller: StepperController::new(STEP_COUNT),
         }
     }
 
@@ -122,6 +150,7 @@ impl NewWorkPanel {
             vm: NewWorkViewModel::new_for_launcher(app_ctx, factory),
             root_child: None,
             name_field: std::cell::Cell::new(None),
+            controller: StepperController::new(STEP_COUNT),
         }
     }
 
@@ -136,6 +165,7 @@ impl NewWorkPanel {
             vm: NewWorkViewModel::new_for_launcher_from_documents(app_ctx, factory),
             root_child: None,
             name_field: std::cell::Cell::new(None),
+            controller: StepperController::new(STEP_COUNT),
         }
     }
 
@@ -470,7 +500,8 @@ impl Widget for NewWorkPanel {
 
         let details_vm = self.vm.clone();
         let language_vm = self.vm.clone();
-        let last_vm = self.vm.clone();
+        let template_vm = self.vm.clone();
+        let import_vm = self.vm.clone();
         let create_vm = self.vm.clone();
         let purpose = self.vm.purpose();
 
@@ -483,7 +514,17 @@ impl Widget for NewWorkPanel {
             NewWorkPurpose::FromDocuments => tr!(new_work_create_and_import()),
         };
 
+        // Both last steps are **declared**, each gated on the purpose that
+        // selects it (`Step::visible_when`): the hidden one drops out of
+        // navigation, out of the indicator strip and out of the a11y tree, and
+        // the flow ends on whichever survives. Two `.step(..)` arms in a `match`
+        // was the old shape, and it put the shared builder inside the branch.
+        // Not `content_boxed` on one step: the *title* differs too ("Template"
+        // vs "Import"), and a title is not reactive.
+        let is_project = purpose == NewWorkPurpose::Project;
+
         let stepper = Stepper::new()
+            .controller(self.controller.clone())
             .back_label(tr!(new_work_back()))
             .next_label(tr!(new_work_next()))
             .finish_label(finish_label)
@@ -498,24 +539,24 @@ impl Widget for NewWorkPanel {
             .step(
                 Step::new(tr!(new_work_step_language()))
                     .content(move || language_step(&language_vm)),
-            );
-
-        // Two `.step(..)` arms rather than one boxed factory: `Step::content`
-        // takes a concrete `W: Widget`, and `Box<dyn Widget>` is not itself a
-        // `Widget`.
-        let stepper = match purpose {
-            NewWorkPurpose::Project => stepper.step(
-                Step::new(tr!(new_work_step_template())).content(move || template_step(&last_vm)),
-            ),
-            NewWorkPurpose::FromDocuments => stepper.step(
-                Step::new(tr!(new_work_step_import())).content(move || import_next_step(&last_vm)),
-            ),
-        }
-        // Create Work. `create` dismisses on success and toasts on failure,
-        // leaving the wizard up on the last step to retry. From documents,
-        // the import wizard opens over the new project the moment it exists
-        // (`PendingAction::New`'s `then_import`).
-        .on_finish(move |ctx, _ctrl| create_vm.create(ctx));
+            )
+            .step(
+                Step::new(tr!(new_work_step_template()))
+                    .visible_when(is_project)
+                    .content(move || template_step(&template_vm)),
+            )
+            .step(
+                Step::new(tr!(new_work_step_import()))
+                    .visible_when(!is_project)
+                    .content(move || import_next_step(&import_vm)),
+            )
+            // Create Work. `create` dismisses on success; on failure it toasts
+            // and returns `false`, which keeps the wizard on its last step and
+            // marks that step in error rather than reporting a flow that
+            // finished when nothing was created. From documents, the import
+            // wizard opens over the new project the moment it exists
+            // (`PendingAction::New`'s `then_import`).
+            .on_finish(move |ctx, _ctrl| create_vm.create(ctx));
 
         // Which flow this is, in the Stepper's own chrome slot. `Top` is not the
         // default — chrome is QWizard's watermark slot, so it lands in a leading
@@ -648,13 +689,55 @@ mod tests {
     /// rather than being assumed to follow from the ordinary one.
     #[test]
     fn the_from_documents_panel_builds_and_lays_out() {
+        let (_ctrl, tree, id) = mounted(true);
+        let b = tree.bounds(id);
+        assert_eq!((b.width, b.height), (CARD_W, CARD_H));
+    }
+
+    /// Mount a wizard of either purpose and hand back its controller.
+    fn mounted(from_documents: bool) -> (StepperController, WidgetTree, WidgetId) {
         let mut panel =
             NewWorkPanel::new(Rc::new(AppContext::new()), crate::app_ids::AppIds::new());
-        panel.vm = panel.vm.clone().for_documents();
+        if from_documents {
+            panel.vm = panel.vm.clone().for_documents();
+        }
+        let controller = panel.controller.clone();
         let mut tree = WidgetTree::new();
         let id = tree.add_boxed(Box::new(panel));
         tree.layout(SizeProposal::exact(CARD_W, CARD_H));
-        let b = tree.bounds(id);
-        assert_eq!((b.width, b.height), (CARD_W, CARD_H));
+        (controller, tree, id)
+    }
+
+    /// Both last steps are declared; only the one this door needs is reachable.
+    ///
+    /// The wizard is three pages long either way — walking it must never land on
+    /// the branch that does not apply, and Back must not find it either. (The
+    /// two used to be separate step *lists*, which made "is the other one
+    /// reachable?" an unaskable question.)
+    #[test]
+    fn only_the_last_step_this_purpose_needs_is_reachable() {
+        for (from_documents, wanted, hidden) in [
+            (false, STEP_TEMPLATE, STEP_IMPORT),
+            (true, STEP_IMPORT, STEP_TEMPLATE),
+        ] {
+            let (ctrl, _tree, _id) = mounted(from_documents);
+            assert_eq!(ctrl.current(), 0, "wizards open on Details");
+
+            ctrl.next();
+            assert_eq!(ctrl.current(), 1, "then Language & structure");
+
+            ctrl.next();
+            assert_eq!(
+                ctrl.current(),
+                wanted,
+                "from_documents={from_documents}: the flow must end on its own last step"
+            );
+            assert_ne!(ctrl.current(), hidden, "and never on the hidden one");
+
+            // Back retraces the pages actually visited — the hidden step is not
+            // one of them.
+            ctrl.back();
+            assert_eq!(ctrl.current(), 1);
+        }
     }
 }

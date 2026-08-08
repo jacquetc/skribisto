@@ -619,7 +619,12 @@ impl NewWorkViewModel {
     /// there is `eprintln!`-only (see `App::build`), matching the argv/Open
     /// path's existing error handling. Nothing is open in the Launcher window,
     /// so there is nothing to close.
-    pub fn create(&self, ctx: &mut EventContext) {
+    /// Returns whether the work was created — the wizard's Finish gate. `false`
+    /// keeps the writer on the last step with it marked in error, instead of a
+    /// flow that reports itself finished over a project that does not exist.
+    /// Only the in-place path can fail synchronously; the deferred ones have
+    /// handed the work to another window by the time anything could go wrong.
+    pub fn create(&self, ctx: &mut EventContext) -> bool {
         if cfg!(feature = "mocks") {
             // A mocks build has no backend to create into, and the gate that
             // normally guarantees a usable name and a writable folder is off
@@ -628,7 +633,7 @@ impl NewWorkViewModel {
             // failure. Finish just closes the wizard, the same "walk the flow,
             // touch nothing" bargain the import wizard's mock bypass makes.
             ctx.dismiss_modal();
-            return;
+            return true;
         }
         match &self.target {
             CreateTarget::InPlace(ids) => {
@@ -639,6 +644,7 @@ impl NewWorkViewModel {
                         ctx.show_toast(Toast::error(tr!(could_not_create_work(
                             error = e.to_string()
                         ))));
+                        return false;
                     }
                 }
             }
@@ -665,6 +671,7 @@ impl NewWorkViewModel {
                 }
             }
         }
+        true
     }
 }
 
