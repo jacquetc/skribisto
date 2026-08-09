@@ -213,7 +213,7 @@ pub(in crate::settings) fn work_punctuation_pane(
             field_label(tr!(settings_quote_style())),
             QUOTE_STYLES
                 .iter()
-                .fold(SegmentedControl::new(style_index), |c, s| {
+                .fold(SegmentedControl::indexed(style_index), |c, s| {
                     c.segment(Segment::new(quote_style_label(s)))
                 })
                 .enabled(style_enabled),

@@ -22,6 +22,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use teksilo::core::widget::WidgetPlacement;
+use teksilo::widgets::{SegmentId, segmented_control};
 use teksilo::data::{ChartDatum, ChartModel, ChartSeries};
 use teksilo::prelude::*;
 use teksilo::widgets::{
@@ -67,6 +68,22 @@ pub struct AnalysisCategorySpec {
     /// a registered category can read the same measurements the built-ins do — or ignore
     /// them entirely and render from its own store.
     pub view: Rc<dyn Fn(&AnalysisViewModel, &BookAnalysisResultDto) -> Box<dyn Widget>>,
+}
+
+impl AnalysisCategorySpec {
+    /// This category's stable segment identity, derived from [`Self::id`].
+    ///
+    /// Derived rather than stored so a registration cannot forget it, and so the same
+    /// category keeps the same identity across rebuilds — which is the whole reason the
+    /// bar is keyed. Hashed into the app-owned range: `SegmentId::fresh` allocates from
+    /// 2^48 up, so folding into 48 bits can never collide with a framework-allocated id.
+    pub fn segment_id(&self) -> SegmentId {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        self.id.hash(&mut h);
+        // `| 1` keeps it non-zero, which `SegmentId::from_u64` requires.
+        SegmentId::from_u64((h.finish() & 0xFFFF_FFFF_FFFF) | 1)
+    }
 }
 
 struct RegisteredCategory {
@@ -353,7 +370,7 @@ impl AnalysisPane {
     fn category_bar(&self, cats: &[AnalysisCategorySpec]) -> impl Widget {
         let mut bar = SegmentedControl::new(self.vm.category());
         for c in cats {
-            bar = bar.segment(Segment::new((c.label)()));
+            bar = bar.segment(Segment::new((c.label)()).id(c.segment_id()));
         }
         bar
     }
@@ -363,7 +380,8 @@ impl AnalysisPane {
     /// built from the **same slice** in the same order, by the same caller, which is what
     /// makes that pairing true rather than merely intended.
     fn categories(&self, cats: &[AnalysisCategorySpec], dto: &BookAnalysisResultDto) -> impl Widget {
-        let mut sw = Switcher::new(self.vm.category());
+        let ids: Vec<SegmentId> = cats.iter().map(|c| c.segment_id()).collect();
+        let mut sw = Switcher::new(segmented_control::index_signal(&self.vm.category(), &ids));
         for c in cats {
             sw = sw.child_boxed(scrolled_boxed((c.view)(&self.vm, dto)));
         }

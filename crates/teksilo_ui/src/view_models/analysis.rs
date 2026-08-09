@@ -42,6 +42,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use teksilo::prelude::*;
+use teksilo::widgets::SegmentId;
 use frontend::AppContext;
 use frontend::commands::{analysis_management_commands, progress_management_commands};
 use frontend::common::event::{Event, Origin};
@@ -137,7 +138,15 @@ pub struct AnalysisViewModel {
     /// The container this analysis is scoped to — the tab's own item.
     scope_item_id: u64,
     state: Signal<AnalysisState>,
-    category: Signal<usize>,
+    /// Which category the bar has selected, **keyed** rather than positional.
+    ///
+    /// A category may be contributed by another crate (see
+    /// `tabs::analysis::register_category`), so the list can gain and lose entries
+    /// between rebuilds. An index would silently re-point at a neighbour the moment one
+    /// registered ahead of the selected one; a `SegmentId` derived from the category's
+    /// stable string id cannot. `None` is "nothing chosen yet", which the bar resolves to
+    /// its first segment.
+    category: Signal<Option<SegmentId>>,
     /// `dirty_seq` as of the last completed run. `None` until one completes.
     analysed_at_seq: Signal<Option<u64>>,
     /// The live edit counter, shared with the save indicator.
@@ -193,7 +202,7 @@ impl AnalysisViewModel {
             ids,
             scope_item_id,
             state: Signal::new(AnalysisState::Idle),
-            category: Signal::new(0),
+            category: Signal::new(None),
             analysed_at_seq: Signal::new(None),
             dirty_seq,
             pending: Rc::new(RefCell::new(None)),
@@ -233,7 +242,7 @@ impl AnalysisViewModel {
         self.footnote_words.clone()
     }
 
-    pub fn category(&self) -> Signal<usize> {
+    pub fn category(&self) -> Signal<Option<SegmentId>> {
         self.category.clone()
     }
 

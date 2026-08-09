@@ -173,14 +173,14 @@ pub(in crate::settings) fn editor_behavior_pane(
     let choice_index = bridge_synopsis_choice(ctx, vm.synopsis_pane(), vm.synopsis_placement());
     let synopsis_control = SYNOPSIS_CHOICES
         .into_iter()
-        .fold(SegmentedControl::new(choice_index), |control, choice| {
+        .fold(SegmentedControl::indexed(choice_index), |control, choice| {
             control.segment(Segment::new(synopsis_choice_label(choice)))
         });
 
     let highlight_control =
         HighlightScope::all()
             .into_iter()
-            .fold(SegmentedControl::new(scope_index), |control, s| {
+            .fold(SegmentedControl::indexed(scope_index), |control, s| {
                 control.segment(
                     Segment::new(highlight_scope_label(s))
                         .rich_tooltip_content(highlight_scope_tip(s)),

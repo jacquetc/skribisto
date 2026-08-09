@@ -603,7 +603,7 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
 /// This is why [`skribisto_model::overview_capable`] is not
 /// `StreamLevel::for_container` — they disagree here, and only here.
 pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
-    let bar = SegmentedControl::new(tab.segment.clone())
+    let bar = SegmentedControl::indexed(tab.segment.clone())
         .segment(Segment::new(tr!(segment_notes())))
         .segment(Segment::new(tr!(overview())));
     let content = Switcher::new(tab.segment.clone())
@@ -654,7 +654,17 @@ pub fn folder_segmented(
     // the Book now has two of them, and because the positional SegmentedControl↔Switcher
     // contract is easier to keep honest when both lists are appended from the same loop
     // than when a second `Option` has to be threaded through in the same order twice.
-    let mut bar = SegmentedControl::new(tab.segment.clone())
+    // `indexed`, not the keyed `new`: the extras arrive from sibling modules in this
+    // crate (`folder_book` passes Pace and Analysis), so the list is closed and local per
+    // container kind, and position genuinely is the meaning — `tabs.rs` pins the Book's
+    // Overview at index 6 and its neighbours by number.
+    //
+    // ⚠ This is the one call site that must become keyed *before* `container.segments`
+    // becomes a real extension slot. The moment a segment can be contributed from another
+    // crate, an index stops meaning the same thing whenever one registers ahead of the
+    // selected one — which is exactly what `SegmentedControl::new` exists to prevent, and
+    // what the analysis bar already does now that its categories are a registry.
+    let mut bar = SegmentedControl::indexed(tab.segment.clone())
         .segment(Segment::new(own_label))
         .segment(Segment::new(manuscript_label))
         .segment(Segment::new(tr!(full_synopsis())));

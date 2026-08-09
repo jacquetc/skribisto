@@ -331,7 +331,7 @@ impl SelectionColumn {
             .child(field_label(tr!(export_section_what())));
         if let Some(quick) = self.vm.quick_scope() {
             col = col.child(
-                SegmentedControl::new(self.vm.segment_index())
+                SegmentedControl::indexed(self.vm.segment_index())
                     .segment(Segment::new(scope_label(&quick)))
                     .segment(Segment::new(tr!(export_custom_selection()))),
             );

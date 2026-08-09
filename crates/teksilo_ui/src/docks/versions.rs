@@ -446,7 +446,7 @@ impl VersionsPanel {
 fn scope_bar(vm: VersionsViewModel) -> impl Widget + use<> {
     // The segmented control writes the view-model's own signal, so there is
     // nothing to mirror and no effect to re-register on each rebuild.
-    let scope = SegmentedControl::new(vm.scope_index())
+    let scope = SegmentedControl::indexed(vm.scope_index())
         .segment(Segment::new(tr!(versions_scope_synopsis())))
         .segment(Segment::new(tr!(versions_scope_prose())));
     let only = vm.pinned_only().get();

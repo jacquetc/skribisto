@@ -798,7 +798,7 @@ impl Widget for StyleEditor {
                 _ => LineSpacing::Double,
             };
         });
-        let spacing = SegmentedControl::new(spacing_idx)
+        let spacing = SegmentedControl::indexed(spacing_idx)
             .segment(Segment::new(tr!(settings_styles_spacing_single())))
             .segment(Segment::new(tr!(settings_styles_spacing_onehalf())))
             .segment(Segment::new(tr!(settings_styles_spacing_double())));
@@ -830,7 +830,7 @@ impl Widget for StyleEditor {
                 _ => EpigraphPlacement::AfterHeading,
             };
         });
-        let placement = SegmentedControl::new(placement_idx)
+        let placement = SegmentedControl::indexed(placement_idx)
             .segment(Segment::new(tr!(settings_styles_epigraph_after())))
             .segment(Segment::new(tr!(settings_styles_epigraph_before())));
 
@@ -890,7 +890,7 @@ impl Widget for StyleEditor {
                 _ => ImageHandling::CopyBeside,
             };
         });
-        let images = SegmentedControl::new(images_idx)
+        let images = SegmentedControl::indexed(images_idx)
             .segment(Segment::new(tr!(settings_styles_images_beside())))
             .segment(Segment::new(tr!(settings_styles_images_embed())))
             .segment(Segment::new(tr!(settings_styles_images_omit())));

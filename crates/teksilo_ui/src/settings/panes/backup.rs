@@ -331,7 +331,7 @@ fn add_policy_rows(
         tr!(settings_backup_retention_keep_n()),
     )
     .with_more(tr!(settings_backup_retention_tip_more()));
-    let mode_control = SegmentedControl::new(retention_mode.clone())
+    let mode_control = SegmentedControl::indexed(retention_mode.clone())
         .segment(
             Segment::new(tr!(settings_backup_retention_tiered())).rich_tooltip_content(tiered_tip),
         )

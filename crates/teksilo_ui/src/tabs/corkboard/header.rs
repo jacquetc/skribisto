@@ -194,7 +194,7 @@ impl Widget for NestedFlatToggle {
         }
         // The scope hint sits on each `Segment` — `tooltip` is a per-segment
         // affordance, not a property of the control as a whole.
-        let ctrl = SegmentedControl::new(self.index.clone())
+        let ctrl = SegmentedControl::indexed(self.index.clone())
             .segment(
                 Segment::new(tr!(corkboard_view_nested())).tooltip(tr!(corkboard_scope_hint())),
             )
