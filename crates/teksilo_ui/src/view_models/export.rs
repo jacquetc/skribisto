@@ -1165,6 +1165,7 @@ mod tests {
             &vm.app_ctx,
             None,
             &CreateFootnoteDto {
+                uid: Default::default(),
                 created_at: now,
                 updated_at: now,
                 content: Some(content_id),

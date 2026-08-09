@@ -176,6 +176,7 @@ fn main() -> anyhow::Result<()> {
     // story-bible note without it is invisible to the scan and to the point-of-view picker.
     bundle.tags.push(BinderTagFile {
         file_id: TAG_ID,
+        uid: common::uid::fixture_uid(0),
         created_at: now.clone(),
         updated_at: now.clone(),
         name: "Character".to_string(),
@@ -227,6 +228,7 @@ fn main() -> anyhow::Result<()> {
         item.tag_ids = vec![TAG_ID];
         item.prose_refs = vec![ProseRef {
             file_id: content_id,
+            uid: common::uid::fixture_uid(0),
             created_at: now.clone(),
             updated_at: now.clone(),
             activated: true,
@@ -273,6 +275,7 @@ fn main() -> anyhow::Result<()> {
         let content_id = SYNOPSIS_CONTENT_BASE + bundled.item.file_id;
         bundled.item.prose_refs.push(ProseRef {
             file_id: content_id,
+            uid: common::uid::fixture_uid(0),
             created_at: now.clone(),
             updated_at: now.clone(),
             activated: true,

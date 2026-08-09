@@ -60,11 +60,59 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             7 => step_v7_to_v8(bundle),
             8 => step_v8_to_v9(bundle),
             9 => step_v9_to_v10(bundle),
+            10 => step_v10_to_v11(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
     }
     Ok(())
+}
+
+/// v10 → v11 mints a durable `uid` for every tag, comment, footnote and content row.
+///
+/// The same idea as [`step_v2_to_v3`] and [`step_v9_to_v10`], extended to the rows an
+/// **out-of-tree** consumer needs to name. Nothing in this workspace required them: a
+/// comment finds its `Content` by where its sidecar sits on disk, and a tag is looked up
+/// by name. Neither trick is available to code that is not this crate, and a `file_id` is
+/// only a store id at save time — so without these, no row outside the core tree could
+/// refer to a particular scene text, synopsis, note, tag, remark or footnote at all.
+///
+/// A tag also could not be referenced by *name* even in principle: names are editable, so
+/// a rename would silently rebind every reference to it.
+///
+/// Idempotent, like both its predecessors: a row that already carries a uid keeps it, so
+/// re-running the step — or meeting a half-migrated bundle — never re-mints and never
+/// breaks an existing reference.
+fn step_v10_to_v11(bundle: &mut WorkBundle) {
+    for t in &mut bundle.tags {
+        t.uid = common::uid::heal_uid(t.uid);
+    }
+    for c in &mut bundle.orphan_comments {
+        c.uid = common::uid::heal_uid(c.uid);
+    }
+    for f in &mut bundle.orphan_footnotes {
+        f.uid = common::uid::heal_uid(f.uid);
+    }
+    for bb in &mut bundle.binders {
+        for bi in &mut bb.items {
+            for pr in &mut bi.item.prose_refs {
+                pr.uid = common::uid::heal_uid(pr.uid);
+            }
+            for ic in &mut bi.item.inline_contents {
+                ic.uid = common::uid::heal_uid(ic.uid);
+            }
+            for list in bi.comments.values_mut() {
+                for c in list {
+                    c.uid = common::uid::heal_uid(c.uid);
+                }
+            }
+            for list in bi.footnotes.values_mut() {
+                for f in list {
+                    f.uid = common::uid::heal_uid(f.uid);
+                }
+            }
+        }
+    }
 }
 
 /// v3 → v4 turned `dict_language` from a space-separated string into a real list.

@@ -244,6 +244,7 @@ fn a_field_that_moved_under_us_is_skipped_and_reported() {
         &ctx,
         stack,
         &frontend::content::dtos::UpdateContentDto {
+            uid: victim.uid,
             id: victim.id,
             created_at: victim.created_at,
             updated_at: victim.updated_at,
@@ -317,6 +318,7 @@ fn preserve_case_keeps_the_case_it_found() {
         &ctx,
         None,
         &frontend::content::dtos::UpdateContentDto {
+            uid: victim.uid,
             id: victim.id,
             created_at: victim.created_at,
             updated_at: victim.updated_at,
@@ -405,6 +407,7 @@ fn a_rename_spares_the_markup_and_keeps_the_styling() {
         &ctx,
         None,
         &frontend::content::dtos::UpdateContentDto {
+            uid: victim.uid,
             id: victim.id,
             created_at: victim.created_at,
             updated_at: victim.updated_at,
@@ -527,6 +530,7 @@ fn manuscript_of(scenes: usize) -> AppContext {
             &ctx,
             None,
             &[CreateContentDto {
+                uid: Default::default(),
                 created_at: now,
                 updated_at: now,
                 activated: true,

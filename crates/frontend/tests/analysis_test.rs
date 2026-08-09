@@ -160,6 +160,7 @@ fn fixture() -> Fixture {
             &ctx,
             Some(setup),
             &[CreateContentDto {
+                uid: Default::default(),
                 created_at: now(),
                 updated_at: now(),
                 activated: true,
@@ -349,6 +350,7 @@ fn a_part_heading_is_not_measured_as_a_scene() {
         &ctx,
         Some(setup),
         &[CreateContentDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             activated: true,
@@ -363,6 +365,7 @@ fn a_part_heading_is_not_measured_as_a_scene() {
         &ctx,
         Some(setup),
         &[CreateContentDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             activated: true,

@@ -81,6 +81,20 @@ use std::collections::BTreeMap;
 /// over a one-time rename would cost more than it saves. This mirrors v2 → v3, which
 /// added the binder uids on exactly the same reasoning and likewise claimed no floor.
 ///
+/// v11 added `uid` to `BinderTagFile`, `CommentFile`, `FootnoteFile`, `ProseRef` and
+/// `InlineContent` — the v3/v10 idea extended to the rows an **out-of-tree** consumer needs
+/// to name. Nothing in this workspace needed them: a comment finds its `Content` by where
+/// its sidecar sits on disk, and a tag is found by name. Neither trick is available to code
+/// outside this crate, and a name is editable, so a rename would silently rebind every
+/// reference. Additive (`#[serde(default)]` + `step_v10_to_v11` mints the empties).
+///
+/// **No floor arm, deliberately** — the same call as v3 and v10, for the same reason. An
+/// older build that resaves a v11 bundle drops these uids, and an external reference to one
+/// then dangles. That is recoverable: whatever holds such references cannot rely on the core
+/// tree to cascade deletions to it anyway, so it must already handle an orphan. Refusing to
+/// open a project over a dangling reference would cost more than it saves — unlike v8/v9,
+/// where an older build's first save *deleted* images and footnotes outright.
+///
 /// # Before bumping this, answer one question
 ///
 /// *Does this change need an arm in
@@ -99,7 +113,7 @@ use std::collections::BTreeMap;
 /// A required field added without `#[serde(default)]` is the one shape that is *not*
 /// caught mechanically. It degrades to a raw parse error — never to data loss — but it
 /// degrades, so give every additive field its `default` and the question stays easy.
-pub const FORMAT_VERSION: u32 = 10;
+pub const FORMAT_VERSION: u32 = 11;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -355,6 +369,11 @@ pub struct SmartPunctuationFile {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BinderTagFile {
     pub file_id: u64,
+    /// Durable per-row identity (UUID v4), stable across every save→load cycle —
+    /// unlike `file_id`, which is only the store id at save time. `#[serde(default)]`
+    /// so pre-v11 bundles still deserialize (nil), and `migrate_bundle` fills them in.
+    #[serde(default)]
+    pub uid: uuid::Uuid,
     pub created_at: String,
     pub updated_at: String,
     pub name: String,
@@ -539,6 +558,11 @@ pub struct BinderFile {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct InlineContent {
     pub file_id: u64,
+    /// Durable per-row identity (UUID v4), stable across every save→load cycle —
+    /// unlike `file_id`, which is only the store id at save time. `#[serde(default)]`
+    /// so pre-v11 bundles still deserialize (nil), and `migrate_bundle` fills them in.
+    #[serde(default)]
+    pub uid: uuid::Uuid,
     pub created_at: String,
     pub updated_at: String,
     pub activated: bool,
@@ -575,6 +599,11 @@ pub struct CommentReplyFile {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CommentFile {
     pub file_id: u64,
+    /// Durable per-row identity (UUID v4), stable across every save→load cycle —
+    /// unlike `file_id`, which is only the store id at save time. `#[serde(default)]`
+    /// so pre-v11 bundles still deserialize (nil), and `migrate_bundle` fills them in.
+    #[serde(default)]
+    pub uid: uuid::Uuid,
     pub created_at: String,
     pub updated_at: String,
     pub kind: CommentAnchorKind,
@@ -607,6 +636,11 @@ pub struct CommentFile {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FootnoteFile {
     pub file_id: u64,
+    /// Durable per-row identity (UUID v4), stable across every save→load cycle —
+    /// unlike `file_id`, which is only the store id at save time. `#[serde(default)]`
+    /// so pre-v11 bundles still deserialize (nil), and `migrate_bundle` fills them in.
+    #[serde(default)]
+    pub uid: uuid::Uuid,
     pub created_at: String,
     pub updated_at: String,
     /// What `[^label]` in the prose names.
@@ -620,6 +654,11 @@ pub struct FootnoteFile {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProseRef {
     pub file_id: u64,
+    /// Durable per-row identity (UUID v4), stable across every save→load cycle —
+    /// unlike `file_id`, which is only the store id at save time. `#[serde(default)]`
+    /// so pre-v11 bundles still deserialize (nil), and `migrate_bundle` fills them in.
+    #[serde(default)]
+    pub uid: uuid::Uuid,
     pub created_at: String,
     pub updated_at: String,
     pub activated: bool,

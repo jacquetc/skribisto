@@ -281,6 +281,7 @@ pub(crate) fn materialize(
     let mut tag_ids: Vec<EntityId> = Vec::new();
     for t in &loaded.tags {
         let created = uow.create_orphan_binder_tag(&BinderTag {
+            uid: t.uid,
             created_at: t.created_at,
             updated_at: t.updated_at,
             name: t.name.clone(),
@@ -391,6 +392,7 @@ pub(crate) fn materialize(
             let mut content_ids: Vec<EntityId> = Vec::new();
             for c in &li.contents {
                 let created_content = uow.create_orphan_content(&Content {
+                    uid: c.uid,
                     created_at: c.created_at,
                     updated_at: c.updated_at,
                     activated: c.activated,
@@ -631,6 +633,7 @@ pub(crate) fn materialize(
         // thread that silently points nowhere.
         let lost_target = lc.content.is_some() && resolved_content.is_none();
         let created = uow.create_orphan_comment(&Comment {
+            uid: lc.uid,
             created_at: lc.created_at,
             updated_at: lc.updated_at,
             kind: lc.kind.clone(),
@@ -676,6 +679,7 @@ pub(crate) fn materialize(
     for lf in &loaded.footnotes {
         let resolved_content = lf.content.and_then(|i| content_map.get(&i).copied());
         let created = uow.create_orphan_footnote(&common::entities::Footnote {
+            uid: lf.uid,
             created_at: lf.created_at,
             updated_at: lf.updated_at,
             label: lf.label.clone(),
@@ -989,6 +993,9 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
             tag_map.insert(*old, fid);
             BinderTag {
                 id: fid,
+                // The legacy format has no durable identity to carry, so mint one
+                // here rather than leave a nil that every reader has to special-case.
+                uid: common::uid::new_uid(),
                 created_at: now,
                 updated_at: now,
                 name: t.name.clone(),
@@ -1041,6 +1048,7 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
                 .iter()
                 .map(|c| Content {
                     id: fresh(),
+                    uid: common::uid::new_uid(),
                     created_at: now,
                     updated_at: now,
                     activated: it.activated,

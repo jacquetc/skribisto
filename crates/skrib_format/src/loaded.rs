@@ -113,6 +113,9 @@ pub struct LoadedMilestone {
 }
 
 pub struct LoadedComment {
+    /// Durable identity, carried from disk so anything outside the core entity
+    /// tree can still name this row after a reload.
+    pub uid: uuid::Uuid,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     /// Annotated Content **file id** (remapped at materialise time). `None` means
@@ -136,6 +139,9 @@ pub struct LoadedComment {
 
 /// One footnote as read from a bundle, before its ids are minted.
 pub struct LoadedFootnote {
+    /// Durable identity, carried from disk so anything outside the core entity
+    /// tree can still name this row after a reload.
+    pub uid: uuid::Uuid,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     /// Annotated Content **file id** (remapped at materialise time). `None` means

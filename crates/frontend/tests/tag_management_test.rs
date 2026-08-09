@@ -86,6 +86,7 @@ fn mk_tag(fx: &Fixture, name: &str, discoverable: bool) -> EntityId {
         &fx.ctx,
         Some(fx.setup),
         &CreateBinderTagDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             name: name.into(),

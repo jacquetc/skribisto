@@ -170,6 +170,7 @@ fn sample_inputs() -> SampleInputs {
         // the new fields actually survive a write/read cycle.
         BinderTag {
             id: 10,
+            uid: common::uid::fixture_uid(10),
             created_at: now,
             updated_at: now,
             name: "Important".into(),
@@ -179,6 +180,7 @@ fn sample_inputs() -> SampleInputs {
         },
         BinderTag {
             id: 11,
+            uid: common::uid::fixture_uid(11),
             created_at: now,
             updated_at: now,
             name: "Idea".into(),
@@ -210,6 +212,7 @@ fn sample_inputs() -> SampleInputs {
         for cr in allowed_content(&role, &sub_role) {
             contents.push(Content {
                 id: content_id,
+                uid: common::uid::fixture_uid(0),
                 created_at: now,
                 updated_at: now,
                 activated: true,
@@ -388,6 +391,7 @@ fn sample_footnotes(binders: &[BinderWithItems]) -> Vec<FootnoteWithContent> {
         FootnoteWithContent {
             footnote: common::entities::Footnote {
                 id: 7000,
+                uid: common::uid::fixture_uid(7000),
                 created_at: now,
                 updated_at: now,
                 content: Some(scene),
@@ -398,6 +402,7 @@ fn sample_footnotes(binders: &[BinderWithItems]) -> Vec<FootnoteWithContent> {
         FootnoteWithContent {
             footnote: common::entities::Footnote {
                 id: 7001,
+                uid: common::uid::fixture_uid(7001),
                 created_at: now,
                 updated_at: now,
                 content: None,
@@ -415,6 +420,7 @@ fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
         CommentWithReplies {
             comment: Comment {
                 id: 5000,
+                uid: common::uid::fixture_uid(5000),
                 created_at: now,
                 updated_at: now,
                 content: Some(scene),
@@ -453,6 +459,7 @@ fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
         CommentWithReplies {
             comment: Comment {
                 id: 5010,
+                uid: common::uid::fixture_uid(5010),
                 created_at: now,
                 updated_at: now,
                 content: Some(scene),
@@ -476,6 +483,7 @@ fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
         CommentWithReplies {
             comment: Comment {
                 id: 5020,
+                uid: common::uid::fixture_uid(5020),
                 created_at: now,
                 updated_at: now,
                 // No anchor: the Content this once pointed at is gone. Without the
@@ -728,6 +736,7 @@ fn disallowed_content_is_dropped() {
     let contents = vec![
         Content {
             id: 1,
+            uid: common::uid::fixture_uid(1),
             created_at: now,
             updated_at: now,
             activated: true,
@@ -736,6 +745,7 @@ fn disallowed_content_is_dropped() {
         },
         Content {
             id: 2,
+            uid: common::uid::fixture_uid(2),
             created_at: now,
             updated_at: now,
             activated: true,
@@ -2581,6 +2591,7 @@ fn the_floor_ignores_content_dropped_by_content_allowed() {
     victim.item.sub_role = BinderItemSubRole::Book;
     victim.contents = vec![Content {
         id: 9001,
+        uid: common::uid::fixture_uid(9001),
         created_at: ts(),
         updated_at: ts(),
         activated: true,
@@ -2727,4 +2738,103 @@ fn the_version_floor_tracks_whether_footnotes_are_present() {
         crate::version_gate::compute_min_read_version(&bundle) < 9,
         "removing every footnote must drop the floor again"
     );
+}
+
+/// v11 mints a uid for every row an out-of-tree consumer can name.
+///
+/// The v3 test above covers binders and items; this covers the four kinds added in v11,
+/// and it is the one that matters for anything holding references from *outside* the
+/// core entity tree — a nil uid there is not merely missing, it is a key every other
+/// nil-identified row collides on.
+#[test]
+fn migrating_a_pre_v11_bundle_mints_a_uid_for_tags_comments_footnotes_and_contents() {
+    let mut bundle = build_bundle_with_footnotes(ShapeTag::Folder);
+    bundle.manifest.format_version = 10;
+    for t in &mut bundle.tags {
+        t.uid = uuid::Uuid::nil();
+    }
+    for b in &mut bundle.binders {
+        for i in &mut b.items {
+            for pr in &mut i.item.prose_refs {
+                pr.uid = uuid::Uuid::nil();
+            }
+            for ic in &mut i.item.inline_contents {
+                ic.uid = uuid::Uuid::nil();
+            }
+            for list in i.comments.values_mut() {
+                for c in list {
+                    c.uid = uuid::Uuid::nil();
+                }
+            }
+            for list in i.footnotes.values_mut() {
+                for f in list {
+                    f.uid = uuid::Uuid::nil();
+                }
+            }
+        }
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+
+    // Every uid distinct as well as present: minting them all from one shared value
+    // would satisfy "not nil" and still collapse every reference onto one key.
+    let mut seen = std::collections::HashSet::new();
+    let mut checked = 0usize;
+    let mut check = |uid: uuid::Uuid, what: &str| {
+        assert!(!uid.is_nil(), "{what} left without a uid");
+        assert!(seen.insert(uid), "{what} got a duplicate uid");
+    };
+    for t in &bundle.tags {
+        check(t.uid, "tag");
+        checked += 1;
+    }
+    for b in &bundle.binders {
+        for i in &b.items {
+            for pr in &i.item.prose_refs {
+                check(pr.uid, "prose content");
+                checked += 1;
+            }
+            for ic in &i.item.inline_contents {
+                check(ic.uid, "inline content");
+                checked += 1;
+            }
+            for list in i.comments.values() {
+                for c in list {
+                    check(c.uid, "comment");
+                    checked += 1;
+                }
+            }
+            for list in i.footnotes.values() {
+                for f in list {
+                    check(f.uid, "footnote");
+                    checked += 1;
+                }
+            }
+        }
+    }
+    assert!(
+        checked > 0,
+        "the fixture must actually contain rows of these kinds, or this test proves nothing"
+    );
+}
+
+/// The v11 step keeps identities it did not mint, exactly like its v3 counterpart.
+#[test]
+fn the_v11_step_never_re_mints_an_existing_uid() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 10;
+    let kept: Vec<uuid::Uuid> = bundle.tags.iter().map(|t| t.uid).collect();
+    assert!(
+        kept.len() > 1,
+        "needs at least two tags to tell 'kept' from 'all re-minted'"
+    );
+    bundle.tags[0].uid = uuid::Uuid::nil();
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    let after: Vec<uuid::Uuid> = bundle.tags.iter().map(|t| t.uid).collect();
+    assert!(!after[0].is_nil(), "the nil one was filled");
+    assert_ne!(after[0], kept[0], "…with a fresh value");
+    assert_eq!(after[1..], kept[1..], "identified tags must keep their uid");
 }

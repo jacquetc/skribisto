@@ -379,6 +379,7 @@ fn a_case_insensitive_search_over_turkish_prose_does_not_panic() {
         &ctx,
         None,
         &frontend::content::dtos::UpdateContentDto {
+            uid: victim.uid,
             id: victim.id,
             created_at: victim.created_at,
             updated_at: victim.updated_at,
@@ -450,6 +451,7 @@ fn whole_word_reaches_the_matcher_and_finds_the_possessive() {
         &ctx,
         None,
         &frontend::content::dtos::UpdateContentDto {
+            uid: victim.uid,
             id: victim.id,
             created_at: victim.created_at,
             updated_at: victim.updated_at,
@@ -513,6 +515,7 @@ fn the_search_reads_the_prose_and_not_the_djot_markup() {
         &ctx,
         None,
         &frontend::content::dtos::UpdateContentDto {
+            uid: victim.uid,
             id: victim.id,
             created_at: victim.created_at,
             updated_at: victim.updated_at,
@@ -654,6 +657,7 @@ fn seed_comment(ctx: &AppContext, work: u64, body: &str, reply_body: &str) -> (u
         ctx,
         None,
         &CreateCommentDto {
+            uid: Default::default(),
             created_at: now,
             updated_at: now,
             content: Some(content),

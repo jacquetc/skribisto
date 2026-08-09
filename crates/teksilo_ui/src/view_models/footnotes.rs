@@ -629,6 +629,7 @@ mod tests {
             &app_ctx,
             ids.stack_id.get(),
             &CreateFootnoteDto {
+                uid: Default::default(),
                 created_at: now,
                 updated_at: now,
                 content: None,

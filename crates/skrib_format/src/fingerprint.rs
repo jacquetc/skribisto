@@ -290,6 +290,7 @@ mod tests {
     fn footnote(updated: &str, label: &str, body: &str) -> FootnoteFile {
         FootnoteFile {
             file_id: 1,
+            uid: common::uid::fixture_uid(1),
             created_at: "2020-01-01T00:00:00Z".into(),
             updated_at: updated.into(),
             label: label.into(),

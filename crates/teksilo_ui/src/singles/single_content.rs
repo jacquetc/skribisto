@@ -36,6 +36,10 @@ mod imp {
         role: RefCell<ContentRole>,
         id: Cell<Option<u64>>,
         created_at: Cell<chrono::DateTime<chrono::Utc>>,
+        /// The row's durable identity, cached for the same reason `created_at` is:
+        /// an update DTO must carry it back verbatim. A nil here would overwrite the
+        /// row's uid on every save, orphaning anything that references it.
+        uid: Cell<uuid::Uuid>,
         data: Signal<String>,
         loading_status: Signal<LoadingStatus>,
         error_message: Signal<String>,
@@ -59,9 +63,9 @@ mod imp {
             role: ContentRole,
             existing: Option<&ContentDto>,
         ) -> Self {
-            let (id, data, created_at) = match existing {
-                Some(c) => (Some(c.id), c.data.clone(), c.created_at),
-                None => (None, String::new(), chrono::Utc::now()),
+            let (id, data, created_at, uid) = match existing {
+                Some(c) => (Some(c.id), c.data.clone(), c.created_at, c.uid),
+                None => (None, String::new(), chrono::Utc::now(), uuid::Uuid::nil()),
             };
             let status = if id.is_some() {
                 LoadingStatus::Loaded
@@ -74,6 +78,7 @@ mod imp {
                     role: RefCell::new(role),
                     id: Cell::new(id),
                     created_at: Cell::new(created_at),
+                    uid: Cell::new(uid),
                     data: Signal::new(data),
                     loading_status: Signal::new(status),
                     error_message: Signal::new(String::new()),
@@ -92,6 +97,7 @@ mod imp {
                     role: RefCell::new(ContentRole::default()),
                     id: Cell::new(Some(id)),
                     created_at: Cell::new(chrono::Utc::now()),
+                    uid: Cell::new(uuid::Uuid::nil()),
                     data: Signal::new(String::new()),
                     loading_status: Signal::new(LoadingStatus::Unloaded),
                     error_message: Signal::new(String::new()),
@@ -149,6 +155,7 @@ mod imp {
                         ctx,
                         stack,
                         &UpdateContentDto {
+                            uid: self.inner.uid.get(),
                             id,
                             created_at: self.inner.created_at.get(),
                             updated_at: now,
@@ -166,6 +173,7 @@ mod imp {
                         ctx,
                         stack,
                         &CreateContentDto {
+                            uid: Default::default(),
                             created_at: now,
                             updated_at: now,
                             activated: true,
@@ -177,6 +185,9 @@ mod imp {
                     )?;
                     self.inner.id.set(Some(created.id));
                     self.inner.created_at.set(now);
+                    // `with_identity` minted this at the creation boundary; without
+                    // caching it the very next save would update the row with a nil uid.
+                    self.inner.uid.set(created.uid);
                 }
             }
             self.inner.dirty.set(false);
@@ -211,6 +222,7 @@ mod imp {
                 Some(c) => {
                     self.inner.id.set(Some(c.id));
                     self.inner.created_at.set(c.created_at);
+                    self.inner.uid.set(c.uid);
                     self.inner.data.set(c.data);
                 }
                 None => {
@@ -251,6 +263,7 @@ mod imp {
                 Ok(Some(c)) => {
                     *self.inner.role.borrow_mut() = c.role;
                     self.inner.created_at.set(c.created_at);
+                    self.inner.uid.set(c.uid);
                     self.inner.data.set(c.data);
                     self.inner.dirty.set(false);
                     self.inner.error_message.set(String::new());

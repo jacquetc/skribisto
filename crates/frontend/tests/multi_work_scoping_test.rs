@@ -316,6 +316,7 @@ fn seed_mentionable_scene(
         ctx,
         None,
         &CreateBinderTagDto {
+            uid: Default::default(),
             created_at: n,
             updated_at: n,
             name: "character".into(),
@@ -355,6 +356,7 @@ fn seed_mentionable_scene(
         ctx,
         None,
         &[CreateContentDto {
+            uid: Default::default(),
             created_at: n,
             updated_at: n,
             activated: true,
@@ -408,6 +410,7 @@ fn seed_prose_scene(ctx: &AppContext, binder_id: EntityId, words: usize) {
         ctx,
         None,
         &[CreateContentDto {
+            uid: Default::default(),
             created_at: n,
             updated_at: n,
             activated: true,
@@ -803,6 +806,7 @@ fn seed_needle_scene(ctx: &AppContext, binder_id: EntityId, title: &str, prose: 
         ctx,
         None,
         &[CreateContentDto {
+            uid: Default::default(),
             created_at: n,
             updated_at: n,
             activated: true,
@@ -1161,6 +1165,7 @@ fn seed_scene_pair(
             ctx,
             None,
             &[CreateContentDto {
+                uid: Default::default(),
                 created_at: n,
                 updated_at: n,
                 activated: true,

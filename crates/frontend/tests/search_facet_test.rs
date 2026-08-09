@@ -129,6 +129,7 @@ fn ctx_with_one_of_each() -> (AppContext, Vec<(BinderItemSubRole, u64)>) {
         &ctx,
         None,
         &[CreateContentDto {
+            uid: Default::default(),
             created_at: now,
             updated_at: now,
             activated: true,

@@ -68,6 +68,7 @@ fn make_fixture() -> Fixture {
         &ctx,
         Some(setup),
         &CreateContentDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             activated: true,
@@ -97,6 +98,7 @@ fn mk_comment(fx: &Fixture, stack: u64, body: &str) -> EntityId {
         &fx.ctx,
         Some(stack),
         &CreateCommentDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             content: Some(fx.content),
@@ -223,6 +225,7 @@ fn resolving_a_comment_is_undoable() {
         &fx.ctx,
         Some(stack),
         &UpdateCommentDto {
+            uid: cur.uid,
             id: cur.id,
             created_at: cur.created_at,
             updated_at: now(),
@@ -395,6 +398,7 @@ fn duplicating_a_content_row_does_not_carry_its_comments_along() {
         &fx.ctx,
         Some(fx.setup),
         &CreateContentDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             activated: true,
@@ -471,5 +475,44 @@ fn purging_the_anchored_content_leaves_a_disposable_orphan() {
         comment_commands::get_comment(&fx.ctx, &id)
             .expect("get")
             .is_none()
+    );
+}
+
+/// The creation boundary mints a durable identity for every row that has one.
+///
+/// Every caller here passes `uid: Default::default()` — a nil — which is the shape
+/// almost all call sites take, and the reason `with_identity` lives on the controller
+/// rather than at each of them. Without it these rows are created nil-identified: not
+/// merely "missing an id", but all sharing the *same* key, so anything indexing by
+/// identity collapses them onto one another. It still compiles, and nothing warns.
+#[test]
+fn creating_a_row_mints_a_uid_rather_than_leaving_it_nil() {
+    let fx = make_fixture();
+
+    // Content — created by the fixture itself, through the same boundary.
+    let content = content_commands::get_content(&fx.ctx, &fx.content)
+        .expect("get content")
+        .expect("content exists");
+    assert!(
+        !content.uid.is_nil(),
+        "a created Content must carry a durable identity"
+    );
+
+    // Comment.
+    let comment_id = mk_comment(&fx, fx.setup, "Does the lamp survive this scene?");
+    let comment = comment_commands::get_comment(&fx.ctx, &comment_id)
+        .expect("get comment")
+        .expect("comment exists");
+    assert!(!comment.uid.is_nil(), "a created Comment must carry one too");
+
+    // Two rows of the same kind must not share an identity — the failure a nil
+    // produces is indistinguishable from "present" unless distinctness is checked.
+    let second_id = mk_comment(&fx, fx.setup, "And the keeper?");
+    let second = comment_commands::get_comment(&fx.ctx, &second_id)
+        .expect("get second comment")
+        .expect("exists");
+    assert_ne!(
+        comment.uid, second.uid,
+        "two comments must not share a uid — that is what a nil default produces"
     );
 }

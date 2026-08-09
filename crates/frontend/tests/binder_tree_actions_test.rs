@@ -220,6 +220,7 @@ fn add_content(fx: &Fixture, item_id: EntityId, role: ContentRole, data: &str) -
         &fx.ctx,
         Some(fx.setup),
         &CreateContentDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             activated: true,
@@ -1345,6 +1346,7 @@ fn duplicate_reverts_cloned_tag_links() {
         &fx.ctx,
         Some(fx.setup),
         &CreateBinderTagDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             name: "Important".into(),

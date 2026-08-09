@@ -522,6 +522,14 @@ entities:
 - name: Comment
   inherits_from: EntityBase
   fields:
+  # A durable identity, for the same reason Binder, BinderItem and NoteTemplate carry
+  # one: an `EntityId` is re-minted on every `load_work`, so nothing that outlives a
+  # session can key on it. This is what lets a row be referenced from *outside* the
+  # core entity tree — an extension's own store holds `uid`s, never store ids.
+  # For a comment specifically: an editorial round trip hands remarks to a reader and
+  # collects them back, which has to recognise the same remark across two sessions.
+  - name: uid
+    type: uuid
   - name: content
     type: entity
     entity: Content
@@ -622,6 +630,14 @@ entities:
 - name: Footnote
   inherits_from: EntityBase
   fields:
+  # A durable identity, for the same reason Binder, BinderItem and NoteTemplate carry
+  # one: an `EntityId` is re-minted on every `load_work`, so nothing that outlives a
+  # session can key on it. This is what lets a row be referenced from *outside* the
+  # core entity tree — an extension's own store holds `uid`s, never store ids.
+  # A footnote is book content — the writer's words — so anything that annotates or
+  # cross-references one must survive a reopen rather than silently rebind.
+  - name: uid
+    type: uuid
   - name: content
     type: entity
     entity: Content
@@ -771,6 +787,14 @@ entities:
 - name: BinderTag
   inherits_from: EntityBase
   fields:
+  # A durable identity, for the same reason Binder, BinderItem and NoteTemplate carry
+  # one: an `EntityId` is re-minted on every `load_work`, so nothing that outlives a
+  # session can key on it. This is what lets a row be referenced from *outside* the
+  # core entity tree — an extension's own store holds `uid`s, never store ids.
+  # A tag is referenced by name today, and a name is editable: renaming "Ambroise"
+  # would silently break every external reference to that tag.
+  - name: uid
+    type: uuid
   - name: name
     type: string
   # Background colour, chosen by the writer. The *text* colour is deliberately not
@@ -793,6 +817,15 @@ entities:
   single_model: true
   inherits_from: EntityBase
   fields:
+  # A durable identity, for the same reason Binder, BinderItem and NoteTemplate carry
+  # one: an `EntityId` is re-minted on every `load_work`, so nothing that outlives a
+  # session can key on it. This is what lets a row be referenced from *outside* the
+  # core entity tree — an extension's own store holds `uid`s, never store ids.
+  # The sharp one. A comment finds its Content by *where its sidecar sits on disk*;
+  # nothing outside this crate has that trick, so without a uid no external row can
+  # name a particular scene text, synopsis or note body at all.
+  - name: uid
+    type: uuid
   - name: activated
     type: boolean
   - name: role

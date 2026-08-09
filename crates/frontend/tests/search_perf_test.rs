@@ -109,6 +109,7 @@ fn big_manuscript() -> AppContext {
             &ctx,
             None,
             &[CreateContentDto {
+                uid: Default::default(),
                 created_at: now,
                 updated_at: now,
                 activated: true,

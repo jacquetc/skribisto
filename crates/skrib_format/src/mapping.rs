@@ -171,6 +171,7 @@ pub fn from_entities(
                 match prose_kind(&c.role) {
                     None => inline_contents.push(InlineContent {
                         file_id: c.id,
+                        uid: c.uid,
                         created_at: fmt_dt(&c.created_at),
                         updated_at: fmt_dt(&c.updated_at),
                         activated: c.activated,
@@ -182,6 +183,7 @@ pub fn from_entities(
                             .expect("prose_kind matched");
                         prose_refs.push(ProseRef {
                             file_id: c.id,
+                            uid: c.uid,
                             created_at: fmt_dt(&c.created_at),
                             updated_at: fmt_dt(&c.updated_at),
                             activated: c.activated,
@@ -307,6 +309,7 @@ pub fn from_entities(
             .iter()
             .map(|t| BinderTagFile {
                 file_id: t.id,
+                uid: t.uid,
                 created_at: fmt_dt(&t.created_at),
                 updated_at: fmt_dt(&t.updated_at),
                 name: t.name.clone(),
@@ -474,6 +477,7 @@ fn comment_to_file(cwr: &CommentWithReplies) -> CommentFile {
     let c = &cwr.comment;
     CommentFile {
         file_id: c.id,
+        uid: c.uid,
         created_at: fmt_dt(&c.created_at),
         updated_at: fmt_dt(&c.updated_at),
         kind: c.kind.clone(),
@@ -570,6 +574,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
         .map(|t| {
             Ok(BinderTag {
                 id: t.file_id,
+                uid: t.uid,
                 created_at: parse_dt(&t.created_at)?,
                 updated_at: parse_dt(&t.updated_at)?,
                 name: t.name.clone(),
@@ -686,6 +691,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
             for ic in &f.inline_contents {
                 contents.push(Content {
                     id: ic.file_id,
+                    uid: ic.uid,
                     created_at: parse_dt(&ic.created_at)?,
                     updated_at: parse_dt(&ic.updated_at)?,
                     activated: ic.activated,
@@ -703,6 +709,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                 })?;
                 contents.push(Content {
                     id: pr.file_id,
+                    uid: pr.uid,
                     created_at: parse_dt(&pr.created_at)?,
                     updated_at: parse_dt(&pr.updated_at)?,
                     activated: pr.activated,
@@ -917,6 +924,7 @@ fn footnote_to_file(fwc: &FootnoteWithContent) -> FootnoteFile {
     let f = &fwc.footnote;
     FootnoteFile {
         file_id: f.id,
+        uid: f.uid,
         created_at: fmt_dt(&f.created_at),
         updated_at: fmt_dt(&f.updated_at),
         label: f.label.clone(),
@@ -926,6 +934,7 @@ fn footnote_to_file(fwc: &FootnoteWithContent) -> FootnoteFile {
 
 fn footnote_from_file(ff: &FootnoteFile, content: Option<u64>) -> Result<LoadedFootnote> {
     Ok(LoadedFootnote {
+        uid: ff.uid,
         created_at: parse_dt(&ff.created_at)?,
         updated_at: parse_dt(&ff.updated_at)?,
         content,
@@ -936,6 +945,7 @@ fn footnote_from_file(ff: &FootnoteFile, content: Option<u64>) -> Result<LoadedF
 
 fn comment_from_file(cf: &CommentFile, content: Option<u64>) -> Result<LoadedComment> {
     Ok(LoadedComment {
+        uid: cf.uid,
         created_at: parse_dt(&cf.created_at)?,
         updated_at: parse_dt(&cf.updated_at)?,
         content,

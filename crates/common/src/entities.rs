@@ -333,6 +333,7 @@ pub struct Comment {
     pub created_at: chrono::DateTime<chrono::Utc>,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub uid: uuid::Uuid,
     pub content: Option<EntityId>,
     pub kind: CommentAnchorKind,
     pub author_name: String,
@@ -378,6 +379,7 @@ pub struct Footnote {
     pub created_at: chrono::DateTime<chrono::Utc>,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub uid: uuid::Uuid,
     pub content: Option<EntityId>,
     pub label: String,
     pub body: String,
@@ -486,6 +488,7 @@ pub struct BinderTag {
     pub created_at: chrono::DateTime<chrono::Utc>,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub uid: uuid::Uuid,
     pub name: String,
     pub color: String,
     pub details: String,
@@ -505,6 +508,7 @@ pub struct Content {
     pub created_at: chrono::DateTime<chrono::Utc>,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub uid: uuid::Uuid,
     pub activated: bool,
     pub role: ContentRole,
     pub data: String,

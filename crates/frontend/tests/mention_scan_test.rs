@@ -126,6 +126,7 @@ fn fixture() -> Fixture {
         &ctx,
         Some(setup),
         &CreateBinderTagDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             name: "character".into(),
@@ -161,6 +162,7 @@ fn fixture() -> Fixture {
         &ctx,
         Some(setup),
         &[CreateContentDto {
+            uid: Default::default(),
             created_at: now(),
             updated_at: now(),
             activated: true,

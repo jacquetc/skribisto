@@ -404,6 +404,7 @@ mod imp {
                 &self.inner.ctx,
                 stack_id,
                 &CreateFootnoteDto {
+                    uid: Default::default(),
                     created_at: now,
                     updated_at: now,
                     content: Some(content_id),
@@ -450,6 +451,9 @@ mod imp {
                 &self.inner.ctx,
                 stack_id,
                 &UpdateFootnoteDto {
+                    // Carried through unchanged: a nil here would write over the row's durable
+                    // identity on every edit, orphaning anything that references it.
+                    uid: dto.uid,
                     id,
                     created_at: dto.created_at,
                     updated_at: chrono::Utc::now(),
@@ -495,6 +499,9 @@ mod imp {
                         &self.inner.ctx,
                         stack_id,
                         &UpdateContentDto {
+                            // Carried through unchanged: a nil here would write over the row's durable
+                            // identity on every edit, orphaning anything that references it.
+                            uid: c.uid,
                             id: *content_id,
                             created_at: c.created_at,
                             updated_at: chrono::Utc::now(),
@@ -1268,6 +1275,9 @@ mod real_backend_tests {
             &app_ctx,
             stack,
             &UpdateContentDto {
+                // Carried through unchanged: a nil here would write over the row's durable
+                // identity on every edit, orphaning anything that references it.
+                uid: original.uid,
                 id: content_id,
                 created_at: original.created_at,
                 updated_at: chrono::Utc::now(),
@@ -1283,6 +1293,7 @@ mod real_backend_tests {
             &app_ctx,
             stack,
             &CreateFootnoteDto {
+                uid: Default::default(),
                 created_at: now,
                 updated_at: now,
                 content: Some(content_id),

@@ -15,6 +15,28 @@ use common::undo_redo::UndoRedoManager;
 use common::{database::db_context::DbContext, event::EventHub, types::EntityId};
 use std::sync::Arc;
 
+/// Guarantee every newly **created** row has a durable identity.
+///
+/// Minting here rather than at each call site makes this a property of the
+/// creation boundary: a caller that builds its DTO with `..Default::default()`
+/// (which most do) would otherwise leave the uid nil, and every such row would
+/// collide on the same key in anything that indexes by identity. A caller that
+/// DID supply one keeps it, so a load carries its uids through.
+///
+/// **Creation only.** Applying this to an update would re-mint the identity of
+/// any row whose update DTO left the uid nil, silently orphaning every
+/// reference to it — the exact failure a durable uid exists to prevent.
+///
+/// ⚠ Hand-written, and lost if this file is regenerated — the same warning
+/// `binder_item_controller` carries. Losing it still compiles; rows just go
+/// back to being created nil-identified, silently.
+fn with_identity(mut e: common::entities::Comment) -> common::entities::Comment {
+    if e.uid.is_nil() {
+        e.uid = common::uid::new_uid();
+    }
+    e
+}
+
 pub fn create_orphan(
     db_context: &DbContext,
     event_hub: &Arc<EventHub>,
@@ -24,7 +46,7 @@ pub fn create_orphan(
 ) -> Result<CommentDto> {
     let uow_factory = CommentWriteUoWFactory::new(db_context, event_hub);
     let mut uc = use_cases::UndoableCreateOrphanUseCase::new(uow_factory);
-    let entity_in: common::entities::Comment = entity.into();
+    let entity_in: common::entities::Comment = with_identity(entity.into());
     let result = uc.execute(&entity_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
     Ok(result.into())
@@ -39,7 +61,7 @@ pub fn create_orphan_multi(
 ) -> Result<Vec<CommentDto>> {
     let uow_factory = CommentWriteUoWFactory::new(db_context, event_hub);
     let entities_in: Vec<common::entities::Comment> =
-        entities.iter().map(|dto| dto.into()).collect();
+        entities.iter().map(|dto| with_identity(dto.into())).collect();
     let mut uc = use_cases::UndoableCreateOrphanUseCase::new(uow_factory);
     let result = uc.execute_multi(&entities_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
@@ -56,7 +78,7 @@ pub fn create(
     index: i32,
 ) -> Result<CommentDto> {
     let uow_factory = CommentWriteUoWFactory::new(db_context, event_hub);
-    let entity_in: common::entities::Comment = entity.into();
+    let entity_in: common::entities::Comment = with_identity(entity.into());
     let strategy = use_cases::OwnerStrategy::Appending;
     let mut uc = use_cases::UndoableCreateUseCase::new(uow_factory, strategy);
     let result = uc.execute(&entity_in, owner_id, index)?;
@@ -75,7 +97,7 @@ pub fn create_multi(
 ) -> Result<Vec<CommentDto>> {
     let uow_factory = CommentWriteUoWFactory::new(db_context, event_hub);
     let entities_in: Vec<common::entities::Comment> =
-        entities.iter().map(|dto| dto.into()).collect();
+        entities.iter().map(|dto| with_identity(dto.into())).collect();
     let strategy = use_cases::OwnerStrategy::Appending;
     let mut uc = use_cases::UndoableCreateUseCase::new(uow_factory, strategy);
     let result = uc.execute_multi(&entities_in, owner_id, index)?;

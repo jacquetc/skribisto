@@ -48,6 +48,7 @@ fn ts() -> DateTime<Utc> {
 fn content(id: u64, role: ContentRole, data: &str) -> Content {
     Content {
         id,
+        uid: common::uid::fixture_uid(id),
         created_at: ts(),
         updated_at: ts(),
         activated: true,
@@ -138,6 +139,7 @@ fn sample_bundle() -> WorkBundle {
     let tags = vec![
         BinderTag {
             id: 10,
+            uid: common::uid::fixture_uid(10),
             created_at: ts(),
             updated_at: ts(),
             name: "Important".into(),
@@ -147,6 +149,7 @@ fn sample_bundle() -> WorkBundle {
         },
         BinderTag {
             id: 11,
+            uid: common::uid::fixture_uid(11),
             created_at: ts(),
             updated_at: ts(),
             name: "Idea".into(),
@@ -473,6 +476,7 @@ fn comments_survive_the_store_round_trip_and_stay_anchored() {
             pr.file_id,
             vec![skrib::CommentFile {
                 file_id: 7001,
+                uid: common::uid::fixture_uid(7001),
                 created_at: "2020-01-01T00:00:00Z".into(),
                 updated_at: "2020-01-01T00:00:00Z".into(),
                 kind: CommentAnchorKind::Range,
@@ -501,6 +505,7 @@ fn comments_survive_the_store_round_trip_and_stay_anchored() {
     };
     original.orphan_comments.push(skrib::CommentFile {
         file_id: 7010,
+        uid: common::uid::fixture_uid(7010),
         created_at: "2020-01-01T00:00:00Z".into(),
         updated_at: "2020-01-01T00:00:00Z".into(),
         kind: CommentAnchorKind::Range,

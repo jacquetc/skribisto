@@ -136,6 +136,7 @@ fn make_item(
             ctx,
             None,
             &CreateContentDto {
+                uid: Default::default(),
                 activated: true,
                 role,
                 data: data.into(),

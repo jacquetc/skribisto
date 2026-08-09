@@ -401,6 +401,7 @@ mod imp {
                 &self.inner.ctx,
                 stack_id,
                 &CreateCommentDto {
+                    uid: Default::default(),
                     created_at: now,
                     updated_at: now,
                     content: Some(content_id),
@@ -597,6 +598,9 @@ mod imp {
                 return;
             };
             let mut dto = UpdateCommentDto {
+                // Carried through unchanged: a nil here would write over the row's durable
+                // identity on every edit, orphaning anything that references it.
+                uid: cur.uid,
                 id: cur.id,
                 created_at: cur.created_at,
                 updated_at: chrono::Utc::now(),

@@ -312,6 +312,8 @@ impl<'a> Builder<'a> {
         let file_id = self.ids.take();
         let color = TAG_PALETTE[self.tags.len() % TAG_PALETTE.len()].to_string();
         self.tags.push(BinderTagFile {
+            // A Plume project carries no durable identity, so every imported row mints one.
+            uid: common::uid::new_uid(),
             file_id,
             created_at: self.now.clone(),
             updated_at: self.now.clone(),
@@ -796,6 +798,7 @@ impl<'a> Builder<'a> {
             let content_id = self.ids.take();
             match prose_kind(&content_role) {
                 None => inline_contents.push(InlineContent {
+                    uid: common::uid::new_uid(),
                     file_id: content_id,
                     created_at: self.now.clone(),
                     updated_at: self.now.clone(),
@@ -807,6 +810,7 @@ impl<'a> Builder<'a> {
                     let name = prose_file_name(item_uid, title, &content_role)
                         .expect("prose_kind matched");
                     prose_refs.push(ProseRef {
+                        uid: common::uid::new_uid(),
                         file_id: content_id,
                         created_at: self.now.clone(),
                         updated_at: self.now.clone(),

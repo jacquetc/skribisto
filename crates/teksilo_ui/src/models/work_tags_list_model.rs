@@ -249,6 +249,7 @@ mod imp {
             let owner = owner_id?;
             let now = chrono::Utc::now();
             let dto = CreateBinderTagDto {
+                uid: Default::default(),
                 created_at: now,
                 updated_at: now,
                 name: name.trim().to_string(),
@@ -291,6 +292,9 @@ mod imp {
                 }
             };
             let dto = UpdateBinderTagDto {
+                // Carried through unchanged: a nil here would write over the row's durable
+                // identity on every edit, orphaning anything that references it.
+                uid: existing.uid,
                 id,
                 created_at: existing.created_at,
                 updated_at: chrono::Utc::now(),
