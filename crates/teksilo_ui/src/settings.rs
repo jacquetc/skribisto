@@ -80,15 +80,21 @@ const TEXT_SCALE_DEFAULT: f32 = 1.0;
 
 // ── Category tree model ──────────────────────────────────────────────────────
 
-/// A selectable settings page (a tree *leaf* → its own pane). The discriminant
-/// order is the `Switcher` child order, so `pane as usize` is the page index —
-/// a new variant must be *appended*, never inserted, or it renumbers every
-/// later `Switcher` slot. Tree position is entirely `build_tree`'s business
-/// and unrelated to this order (e.g. `WorkAuthor` shows first in the tree
-/// despite a late discriminant).
+/// A selectable settings page (a tree *leaf* → its own pane).
+///
+/// Identity is [`Pane::id`], a stable string — **not** the discriminant. The
+/// discriminant used to be the page's `Switcher` slot, which made "append, never
+/// insert" a real rule with a real cost: getting it wrong shifted every later page's
+/// content by one, silently, and it shipped that way once. The `Switcher` index is now
+/// derived from the pane list itself (see `build`), so declaration order in the enum
+/// carries no meaning at all and a variant may be inserted anywhere.
+///
+/// The string id is what an extension-contributed page would carry, since it cannot be
+/// given a variant here; giving the built-ins one now means the two kinds are already
+/// addressed the same way.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 enum Pane {
-    Appearance = 0,
+    Appearance,
     MenusToolbars,
     Notifications,
     SceneTypography,
@@ -136,8 +142,42 @@ enum Pane {
 }
 
 impl Pane {
-    fn index(self) -> usize {
-        self as usize
+    /// Stable identity, not shown to the writer.
+    ///
+    /// Deliberately not derived from the discriminant: the point is that reordering or
+    /// inserting a variant must not change what a page *is*. An extension page would
+    /// namespace its own (`"ext.style"`).
+    fn id(self) -> &'static str {
+        match self {
+            Pane::Appearance => "appearance",
+            Pane::MenusToolbars => "menus-toolbars",
+            Pane::Notifications => "notifications",
+            Pane::SceneTypography => "scene-typography",
+            Pane::SynopsisTypography => "synopsis-typography",
+            Pane::NotesTypography => "notes-typography",
+            Pane::EditorBehavior => "editor-behavior",
+            Pane::Goals => "goals",
+            Pane::Corkboard => "corkboard",
+            Pane::Dictionaries => "dictionaries",
+            Pane::Autosave => "autosave",
+            Pane::ExportFormats => "export-formats",
+            Pane::Paratext => "paratext",
+            Pane::Keymap => "keymap",
+            Pane::WorkStructure => "work-structure",
+            Pane::WorkPunctuation => "work-punctuation",
+            Pane::Punctuation => "punctuation",
+            Pane::Backup => "backup",
+            Pane::WorkBackup => "work-backup",
+            Pane::WorkLanguage => "work-language",
+            Pane::WorkDictionary => "work-dictionary",
+            Pane::Spellcheck => "spellcheck",
+            Pane::WorkTags => "work-tags",
+            Pane::WorkAuthor => "work-author",
+            Pane::WorkTextReplacements => "work-text-replacements",
+            Pane::DistractionFree => "distraction-free",
+            Pane::DistractionFreeThemes => "distraction-free-themes",
+            Pane::WorkTemplates => "work-templates",
+        }
     }
 
     fn label(self) -> LocalizedString {
@@ -1439,22 +1479,22 @@ impl Widget for SettingsPanel {
             // this being put next to `tags_pane` where it reads more naturally.
             (Pane::WorkTemplates, templates_pane),
         ];
-        if let Some((slot, (pane, _))) =
-            panes.iter().enumerate().find(|(i, (p, _))| p.index() != *i)
-        {
-            // A pane inserted at the wrong slot shifts every later pane's content by one — the
-            // failure that shipped once already. Catch it the instant the panel builds.
-            debug_assert!(
-                false,
-                "settings Switcher child {slot} serves a pane whose discriminant is {}, \
-                 not {slot} — insert it at its discriminant position",
-                pane.index()
-            );
-        }
-        let content = panes.into_iter().fold(
-            Switcher::new(self.selected_pane.map(|p| p.index())),
-            |sw, (_, body)| sw.child_boxed(body),
-        );
+        // The list IS the order. Deriving the `Switcher` index by looking the selected
+        // pane up in this very vec is what makes the pairing true rather than merely
+        // asserted: previously the index was `pane as usize` and a page added at the
+        // wrong slot shifted every later page's content by one — silently, and it
+        // shipped that way once. A `debug_assert!` caught it in debug builds only.
+        // Nothing to catch now; the two cannot disagree.
+        //
+        // An unknown pane resolves to slot 0, matching `Switcher`'s own out-of-range
+        // behaviour: showing the first page beats showing a blank panel.
+        let order: Vec<Pane> = panes.iter().map(|(p, _)| *p).collect();
+        let index = self
+            .selected_pane
+            .map(move |sel| order.iter().position(|p| p == sel).unwrap_or(0));
+        let content = panes
+            .into_iter()
+            .fold(Switcher::new(index), |sw, (_, body)| sw.child_boxed(body));
 
         let footer = self.footer(vm, scale, not_defaults);
         let right = VStack::new()
@@ -1601,19 +1641,17 @@ mod tests {
     // `scripts/automation_settings.py` rather than headlessly — the same boundary
     // the settings-dependent `WelcomePanel` sits on.
 
-    /// The `Switcher` is indexed by `Pane::index()`, so its child at slot i must be pane i's
-    /// body; `build()` tags each child with the `Pane` it serves and a `debug_assert` trips on
-    /// a mismatch (a pane once shipped inserted at the wrong slot, silently shifting every
-    /// later pane's content onto its neighbour).
+    /// Every pane's id is unique.
     ///
-    /// This test guards the half of the contract reachable headlessly — that the discriminants
-    /// form a gap-free `0..N`, so `index()` is a valid `Switcher` slot for every pane. The
-    /// child↔pane pairing itself needs a built panel (`SettingsStore` app-state a bare
-    /// `WidgetTree` can't provide), so that half is only checked by the `debug_assert` above
-    /// plus `run-app`.
+    /// Replaces `pane_discriminants_are_a_gap_free_range`, which pinned a property that no
+    /// longer exists: the `Switcher` slot is now looked up in the pane list rather than
+    /// being `pane as usize`, so declaration order carries no meaning and there is no gap
+    /// to leave. What *does* still have to hold is that two pages cannot share an
+    /// identity — a duplicate would make the tree select one and the panel show the other.
     #[test]
-    fn pane_discriminants_are_a_gap_free_range() {
-        // Every variant, in declaration order — a new pane must be appended here too.
+    fn every_pane_id_is_unique() {
+        // Every variant. Unlike the list this replaces, order here is irrelevant — the
+        // test is about the set, so a pane inserted anywhere is fine as long as it is here.
         let all = [
             Pane::Appearance,
             Pane::MenusToolbars,
@@ -1644,14 +1682,16 @@ mod tests {
             Pane::DistractionFreeThemes,
             Pane::WorkTemplates,
         ];
-        for (i, pane) in all.iter().enumerate() {
-            assert_eq!(
-                pane.index(),
-                i,
-                "{} is not at slot {i}",
-                pane.label().resolve_now()
+        let mut seen = std::collections::HashSet::new();
+        for pane in all {
+            assert!(
+                seen.insert(pane.id()),
+                "two settings pages share the id '{}' — the tree would select one and the \
+                 panel show the other",
+                pane.id()
             );
         }
+        assert_eq!(seen.len(), all.len());
     }
 
     /// The Goals pane bridges `CountingMethodSetting` to the `RadioGroup`'s `usize`
