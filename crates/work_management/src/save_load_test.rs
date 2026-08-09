@@ -2884,7 +2884,7 @@ fn note_templates_survive_a_save_load_round_trip() {
 /// carry set and the write would delete the file with no error anywhere.
 ///
 /// Saving **in place** is the case that matters: it is what autosave does every
-/// few seconds, so a regression here destroys a Pro-edition project's data
+/// few seconds, so a regression here destroys an extension's data in a project
 /// within seconds of a community build opening it.
 #[test]
 fn an_unmodelled_file_survives_a_real_save_work() {
@@ -2938,5 +2938,75 @@ fn an_unmodelled_file_survives_a_real_save_work() {
         std::fs::read(&planted).ok().as_deref(),
         Some(b"(beats: [(at: 0.5)])".as_slice()),
         "save_work destroyed a bundle file it does not model"
+    );
+}
+
+/// A registered contributor's files reach the bundle, and **override** the copy
+/// already on disk.
+///
+/// The override direction is the whole point of the hook. `carry::load` reads
+/// what the previous save left in the file; a contributor holds what is true
+/// now. If the on-disk read won, every save would write the stale copy back
+/// over the extension's live state — a bug that looks exactly like "my changes
+/// don't save" and has no error anywhere to explain it.
+#[test]
+fn a_bundle_contributor_writes_into_the_project_and_beats_the_stale_copy() {
+    use crate::bundle_contributors::{BundleContributor, register};
+    use std::collections::BTreeMap;
+
+    let bundle = sample_bundle();
+    let uid = bundle.manifest.work.unique_id.clone();
+
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().join("Novel");
+    let path = project.to_str().unwrap().to_string();
+    skrib::write_bundle(&path, SkribShape::ExplodedFolder, &bundle).unwrap();
+    // The previous save's version, as `carry::load` will find it.
+    std::fs::create_dir_all(project.join("ext")).unwrap();
+    std::fs::write(project.join("ext/data.ron"), b"(stale)").unwrap();
+
+    /// Scoped to one project id on purpose: the registry is process-wide and
+    /// tests run in parallel, so a contributor that answered for every project
+    /// would leak files into unrelated tests' bundles.
+    struct OneProject(String);
+    impl BundleContributor for OneProject {
+        fn files(&self, work_unique_id: &str) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+            let mut out = BTreeMap::new();
+            if work_unique_id == self.0 {
+                out.insert("ext/data.ron".to_string(), b"(live)".to_vec());
+            }
+            Ok(out)
+        }
+    }
+    let _handle = register("test.e2e", Arc::new(OneProject(uid.clone())));
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.clone(),
+        },
+    )
+    .expect("load");
+
+    let uc = SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            media_root: String::new(),
+            work_id: live_work_id(&db),
+            file_name: path.clone(),
+            overwrite: true,
+        },
+    );
+    uc.execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("save");
+
+    assert_eq!(
+        std::fs::read(project.join("ext/data.ron")).ok().as_deref(),
+        Some(b"(live)".as_slice()),
+        "the contributor's current state must win over the copy read off disk"
     );
 }

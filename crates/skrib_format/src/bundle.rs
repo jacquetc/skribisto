@@ -782,7 +782,7 @@ pub struct WorkBundle {
 /// never encodes an opaque blob as a bracketed decimal list, while the `digest`
 /// *is* serialised so a change to a carried file still changes the project's
 /// fingerprint. Skipping both would make carried data invisible to
-/// skip-if-unchanged, and a Pro-edition project whose only change was its
+/// skip-if-unchanged, and a project whose only change was an extension's
 /// structure plan would silently stop being backed up.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct CarriedFile {

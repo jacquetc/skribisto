@@ -60,7 +60,10 @@ const ROOT_MANIFESTS: &[&str] = &[
 /// `false` means "carry it through untouched". Being wrong in that direction
 /// costs a preserved file nobody reads; being wrong in the other direction
 /// deletes a writer's data, which is why anything unrecognised is carried.
-pub(crate) fn is_modelled(rel: &str) -> bool {
+/// `pub` because it is also the guard on the save hook: a bundle contributor
+/// asking to write a modelled path is refused, so an extension can add to a
+/// project but never rewrite the manuscript inside it.
+pub fn is_modelled(rel: &str) -> bool {
     if rel == MANIFEST_NAME || ROOT_MANIFESTS.contains(&rel) {
         return true;
     }
