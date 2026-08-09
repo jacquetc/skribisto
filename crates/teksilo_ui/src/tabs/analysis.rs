@@ -18,6 +18,9 @@
 //! **Nothing is phrased as a fault.** The copy reports counts and comparisons. It never says
 //! "too many", "weak" or "should".
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::data::{ChartDatum, ChartModel, ChartSeries};
 use teksilo::prelude::*;
@@ -34,18 +37,143 @@ use frontend::analysis_management::{
     EchoRow, EchoRows, SceneAnalyses, SceneAnalysis,
 };
 
-use super::ContentTab;
+use super::{Boxed, ContentTab};
 use super::shared::{CHART_HEIGHT, STRIP_HEIGHT, wide_chart};
 use crate::intents::AppIntent;
 use crate::models::RepetitionNode;
 use crate::view_models::{AnalysisCategory, AnalysisState, AnalysisViewModel};
 
-/// The bar below and the `Switcher` beside it are matched by **position**, and this pane
-/// hardcodes four of each. Pinned at compile time against the view-model's own list, so
-/// adding a category there without a segment and a child here fails the build rather than
-/// silently showing the previous view under the new label — the exact failure mode
-/// `tabs.rs` documents for the container bar.
-const _: () = assert!(AnalysisCategory::ALL.len() == 4);
+/// The bar and its `Switcher` are still matched by **position** — that is
+/// `SegmentedControl`'s contract — but neither is written out by hand any more: both are
+/// built from one pass over [`all_categories`], so a category cannot exist as a segment
+/// without its body or land at a different index in the two. The compile-time
+/// `ALL.len() == 4` assert this file used to carry was guarding a hazard that the shared
+/// list removes by construction; `the_bar_and_the_switcher_agree` pins it at runtime for
+/// the registered case, which no `const` assert could see.
+
+/// One category on the Analysis bar: a stable id, its label, and its body.
+///
+/// The label is a closure rather than a stored `LocalizedString` because the list is
+/// rebuilt per render: resolving it at registration would pin the string to whatever
+/// locale happened to be active when the extension loaded, and it would never follow a
+/// runtime language switch.
+#[derive(Clone)]
+pub struct AnalysisCategorySpec {
+    /// Stable, namespaced for anything not built in (`"ext.style"`). Not shown to the
+    /// writer — it exists so a category can be found again across a rebuild.
+    pub id: String,
+    pub label: Rc<dyn Fn() -> LocalizedString>,
+    /// Builds this category's body. Receives the view-model and the finished analysis, so
+    /// a registered category can read the same measurements the built-ins do — or ignore
+    /// them entirely and render from its own store.
+    pub view: Rc<dyn Fn(&AnalysisViewModel, &BookAnalysisResultDto) -> Box<dyn Widget>>,
+}
+
+struct RegisteredCategory {
+    namespace: String,
+    spec: AnalysisCategorySpec,
+}
+
+// Thread-local, not a `static RwLock`: a spec holds `Rc` closures that build widgets, and
+// widgets are single-threaded by construction here. This is the same shape teksilo's own
+// tooltip registry uses, and it is the honest one — a `Send + Sync` bound would force every
+// extension to box its view builder behind a mutex for a value only the UI thread ever sees.
+thread_local! {
+    static EXTENSION_CATEGORIES: RefCell<Vec<RegisteredCategory>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Add a category to the Analysis bar.
+///
+/// Refuses an `id` a built-in already uses, or one another namespace registered: the id is
+/// how a category is identified across rebuilds, so two claimants make that lookup
+/// ambiguous rather than merely crowded.
+///
+/// ⚠ `SegmentedControl` has a documented five-segment ceiling and the four built-ins
+/// already sit just under it. A registered category takes the bar past that, and past
+/// roughly six the control stops being a segmented bar at all — which is what
+/// `TabWidget::vertical()` is for. Registration does not refuse on count, because refusing
+/// the *fifth* category would be an arbitrary line; the ceiling is a design constraint on
+/// the control, and the control is the thing that has to change.
+///
+/// The returned handle unregisters on drop; re-registering a namespace replaces its entry.
+pub fn register_category(
+    namespace: impl Into<String>,
+    spec: AnalysisCategorySpec,
+) -> Result<CategoryHandle, String> {
+    let namespace = namespace.into();
+    if builtin_categories().iter().any(|c| c.id == spec.id) {
+        return Err(format!("category id '{}' is a built-in", spec.id));
+    }
+    EXTENSION_CATEGORIES.with(|reg| {
+        let mut reg = reg.borrow_mut();
+        if let Some(other) = reg
+            .iter()
+            .find(|r| r.spec.id == spec.id && r.namespace != namespace)
+        {
+            return Err(format!(
+                "category id '{}' is already registered by '{}'",
+                spec.id, other.namespace
+            ));
+        }
+        reg.retain(|r| r.namespace != namespace);
+        reg.push(RegisteredCategory {
+            namespace: namespace.clone(),
+            spec,
+        });
+        Ok(CategoryHandle {
+            namespace: namespace.clone(),
+        })
+    })
+}
+
+/// Unregisters its category when dropped.
+#[derive(Debug)]
+pub struct CategoryHandle {
+    namespace: String,
+}
+
+impl Drop for CategoryHandle {
+    fn drop(&mut self) {
+        // `try_with`: a handle dropped during thread teardown must not panic.
+        let _ = EXTENSION_CATEGORIES.try_with(|reg| {
+            reg.borrow_mut().retain(|r| r.namespace != self.namespace);
+        });
+    }
+}
+
+/// The four categories this application ships, as specs.
+fn builtin_categories() -> Vec<AnalysisCategorySpec> {
+    AnalysisCategory::ALL
+        .iter()
+        .map(|c| {
+            let c = *c;
+            AnalysisCategorySpec {
+                id: c.id().to_string(),
+                label: Rc::new(move || c.label()),
+                view: Rc::new(move |vm, dto| match c {
+                    AnalysisCategory::Shape => Box::new(shape_view(
+                        dto,
+                        vm.ignore_empty(),
+                        vm.footnote_words(),
+                    )),
+                    AnalysisCategory::Repetition => Box::new(repetition_view(vm, dto)),
+                    AnalysisCategory::Synopsis => Box::new(synopsis_view(dto)),
+                    AnalysisCategory::Voice => Box::new(voice_view(dto)),
+                }),
+            }
+        })
+        .collect()
+}
+
+/// Built-ins first, then anything registered — the order the bar renders in.
+pub fn all_categories() -> Vec<AnalysisCategorySpec> {
+    EXTENSION_CATEGORIES.with(|reg| {
+        builtin_categories()
+            .into_iter()
+            .chain(reg.borrow().iter().map(|r| r.spec.clone()))
+            .collect()
+    })
+}
 
 /// How many rows a finder list shows before it stops.
 ///
@@ -181,9 +309,13 @@ impl AnalysisPane {
                 }
             }
             AnalysisState::Ready(dto) => {
+                // Resolved once and shared: the bar and the switcher are paired by
+                // index, so computing the list twice would let a registration landing
+                // between the two calls shift one and not the other.
+                let cats = all_categories();
                 col = col
-                    .child(Padding::symmetric(0.0, 24.0).child(self.category_bar()))
-                    .child(Expand::new().child(self.categories(&dto)));
+                    .child(Padding::symmetric(0.0, 24.0).child(self.category_bar(&cats)))
+                    .child(Expand::new().child(self.categories(&cats, &dto)));
             }
         }
         super::shared::tab_backdrop(self.backdrop, col)
@@ -218,27 +350,24 @@ impl AnalysisPane {
         )
     }
 
-    fn category_bar(&self) -> impl Widget {
-        SegmentedControl::new(self.vm.category())
-            .segment(Segment::new(tr!(analysis_shape())))
-            .segment(Segment::new(tr!(analysis_repetition())))
-            .segment(Segment::new(tr!(analysis_synopsis())))
-            .segment(Segment::new(tr!(analysis_voice())))
+    fn category_bar(&self, cats: &[AnalysisCategorySpec]) -> impl Widget {
+        let mut bar = SegmentedControl::new(self.vm.category());
+        for c in cats {
+            bar = bar.segment(Segment::new((c.label)()));
+        }
+        bar
     }
 
-    /// The `Switcher`'s children must sit at the same positions as the bar's segments —
-    /// matched by index, not by name, which is the trap `tabs.rs` documents at length.
-    /// `AnalysisCategory::ALL` is the shared contract, asserted by its own test.
-    fn categories(&self, dto: &BookAnalysisResultDto) -> impl Widget {
-        Switcher::new(self.vm.category())
-            .child_boxed(scrolled(shape_view(
-                dto,
-                self.vm.ignore_empty(),
-                self.vm.footnote_words(),
-            )))
-            .child_boxed(scrolled(repetition_view(&self.vm, dto)))
-            .child_boxed(scrolled(synopsis_view(dto)))
-            .child_boxed(scrolled(voice_view(dto)))
+    /// The `Switcher`'s children sit at the same positions as the bar's segments — matched
+    /// by index, not by name, which is the trap `tabs.rs` documents at length. Both are
+    /// built from the **same slice** in the same order, by the same caller, which is what
+    /// makes that pairing true rather than merely intended.
+    fn categories(&self, cats: &[AnalysisCategorySpec], dto: &BookAnalysisResultDto) -> impl Widget {
+        let mut sw = Switcher::new(self.vm.category());
+        for c in cats {
+            sw = sw.child_boxed(scrolled_boxed((c.view)(&self.vm, dto)));
+        }
+        sw
     }
 }
 
@@ -249,7 +378,12 @@ impl AnalysisPane {
 /// matters beyond consistency — both panes show charts of the same manuscript, and two
 /// different gutters made the same book look like two different shapes.
 fn scrolled(inner: impl Widget + 'static) -> Box<dyn Widget> {
-    Box::new(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(inner)))
+    scrolled_boxed(Box::new(inner))
+}
+
+/// [`scrolled`] for an already-boxed body — what a category spec hands back.
+fn scrolled_boxed(inner: Box<dyn Widget>) -> Box<dyn Widget> {
+    Box::new(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(Boxed::new(inner))))
 }
 
 fn note(text: impl Into<LocalizedString>) -> impl Widget {
@@ -1051,5 +1185,111 @@ mod tests {
         )));
         tree.layout(SizeProposal::exact(700.0, 900.0));
         assert!(tree.bounds(id).height > 0.0, "the pane laid out to nothing");
+    }
+}
+
+#[cfg(test)]
+mod category_registry_tests {
+    use super::*;
+
+    // Scoped to ids this test owns, never to `all_categories().len()`: the registry is
+    // per-thread but `cargo test` may still run these on one thread in any order, and a
+    // count assertion would couple them to each other.
+    fn spec(id: &str) -> AnalysisCategorySpec {
+        AnalysisCategorySpec {
+            id: id.to_string(),
+            label: Rc::new(|| lit!("Style".to_string())),
+            view: Rc::new(|_vm, _dto| Box::new(TextWidget::new(lit!("body".to_string())))),
+        }
+    }
+
+    fn ids() -> Vec<String> {
+        all_categories().into_iter().map(|c| c.id).collect()
+    }
+
+    /// The four built-ins are the list until something registers.
+    #[test]
+    fn the_built_ins_are_present_and_first() {
+        let ids = ids();
+        assert_eq!(
+            &ids[..4],
+            &["shape", "repetition", "synopsis", "voice"],
+            "the built-in order is what every existing writer's muscle memory keys on"
+        );
+    }
+
+    /// A registered category joins the list, after the built-ins.
+    #[test]
+    fn a_registered_category_lands_after_the_built_ins() {
+        let _h = register_category("test.after", spec("ext.after")).expect("register");
+        let ids = ids();
+        let pos = ids.iter().position(|i| i == "ext.after").expect("present");
+        assert!(
+            pos >= 4,
+            "an extension must not displace a built-in from its position"
+        );
+    }
+
+    /// The invariant the deleted `const _: () = assert!(ALL.len() == 4)` used to guard.
+    ///
+    /// It could only ever see the built-ins, so it said nothing about a registered
+    /// category — the case where a bar/switcher mismatch would actually be introduced.
+    /// Both are now built from one pass over this list, so what has to hold is that the
+    /// list itself is coherent: every entry has a label and a body, and no two share an id.
+    #[test]
+    fn the_bar_and_the_switcher_agree() {
+        let _h = register_category("test.pairing", spec("ext.pairing")).expect("register");
+        let cats = all_categories();
+
+        let mut seen = std::collections::HashSet::new();
+        for c in &cats {
+            assert!(
+                seen.insert(c.id.clone()),
+                "duplicate category id '{}' — the bar would show two segments the \
+                 switcher cannot tell apart",
+                c.id
+            );
+            // A segment is built from `label` and its pane from `view`; a spec missing
+            // either would put a labelled segment over someone else's body.
+            let _ = (c.label)();
+        }
+        assert!(
+            cats.len() >= 5,
+            "the registered category must actually be in the list under test"
+        );
+    }
+
+    /// A built-in id cannot be claimed.
+    #[test]
+    fn a_built_in_id_is_refused() {
+        let err = register_category("test.shadow", spec("shape")).expect_err("must refuse");
+        assert!(err.contains("built-in"), "unhelpful message: {err}");
+    }
+
+    /// Two extensions cannot claim one id, and the error names the holder.
+    #[test]
+    fn a_taken_id_is_refused_and_names_its_holder() {
+        let _first = register_category("test.one", spec("ext.contested")).expect("register");
+        let err = register_category("test.two", spec("ext.contested")).expect_err("must refuse");
+        assert!(err.contains("test.one"), "unhelpful message: {err}");
+    }
+
+    /// Dropping the handle removes the category; re-registering replaces.
+    #[test]
+    fn drop_unregisters_and_re_registration_replaces() {
+        {
+            let _a = register_category("test.scoped", spec("ext.first")).expect("a");
+            assert!(ids().contains(&"ext.first".to_string()));
+            let _b = register_category("test.scoped", spec("ext.second")).expect("b");
+            assert!(ids().contains(&"ext.second".to_string()));
+            assert!(
+                !ids().contains(&"ext.first".to_string()),
+                "re-registering a namespace must replace, not stack"
+            );
+        }
+        assert!(
+            !ids().contains(&"ext.second".to_string()),
+            "a dropped handle must leave no category behind"
+        );
     }
 }

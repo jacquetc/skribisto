@@ -83,8 +83,38 @@ impl AnalysisCategory {
     /// The category at a bar position. `None` for an out-of-range index, so a widening of
     /// the bar without a matching arm mounts nothing rather than silently showing a
     /// neighbour — the positional trap this codebase has been bitten by before.
+    ///
+    /// ⚠ Indexes the **built-ins only**. The bar itself is
+    /// `tabs::analysis::all_categories()`, which appends registered categories after
+    /// these, so an index past the built-ins is a registered one and yields `None` here.
+    /// That is the honest answer for a function whose return type is this enum — nothing
+    /// in it can name a category it has never heard of.
     pub fn from_index(i: usize) -> Option<Self> {
         Self::ALL.get(i).copied()
+    }
+
+    /// Stable identifier, not shown to the writer.
+    ///
+    /// Deliberately unprefixed where a registered category is namespaced (`"ext.style"`):
+    /// the built-ins are the ones a registration may not shadow, so their ids read as the
+    /// reserved words they are.
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Shape => "shape",
+            Self::Repetition => "repetition",
+            Self::Synopsis => "synopsis",
+            Self::Voice => "voice",
+        }
+    }
+
+    /// The bar label. Resolved per call so a runtime locale switch reaches it.
+    pub fn label(self) -> LocalizedString {
+        match self {
+            Self::Shape => tr!(analysis_shape()),
+            Self::Repetition => tr!(analysis_repetition()),
+            Self::Synopsis => tr!(analysis_synopsis()),
+            Self::Voice => tr!(analysis_voice()),
+        }
     }
 }
 
@@ -431,8 +461,10 @@ mod tests {
     /// this stops being a segmented control at all.
     #[test]
     fn the_category_count_stays_within_the_segmented_control_ceiling() {
+        // The *built-in* count. The bar itself is `tabs::analysis::all_categories()`,
+        // which may be longer; the five-segment ceiling is a constraint on
+        // `SegmentedControl`, and `register_category`'s doc records what happens past it.
         assert_eq!(AnalysisCategory::ALL.len(), 4);
-        assert!(AnalysisCategory::ALL.len() <= 5);
     }
 
     /// Nothing has been measured, so nothing can be out of date.

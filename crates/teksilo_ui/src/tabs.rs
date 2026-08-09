@@ -50,7 +50,9 @@ use crate::view_models::{
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
 // (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
-pub(crate) mod analysis;
+/// `pub`, not `pub(crate)`: an extension registers its own Analysis category through
+/// [`analysis::register_category`], which it could not name from outside the crate.
+pub mod analysis;
 pub(crate) mod corkboard;
 mod folder_book;
 mod folder_chapter_scene;
