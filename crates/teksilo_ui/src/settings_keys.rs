@@ -199,27 +199,39 @@ pub static SETTINGS: &[SettingSpec] = &[
         check: check::<bool>,
         doc: "Reopen a container tab on the same segment the last one of its type used.",
     },
+    // Segment *ids*, not indices. A position stopped being a stable name for a segment
+    // the moment `container.segments` let one be contributed — see
+    // `tabs::shared::segments`. An install written before this carries an integer here;
+    // `SettingsStore` falls back to the default on a deserialize failure, so the
+    // remembered view resets once and sticks again after the next manual switch.
     SettingSpec {
         key: "editor.last_view.book",
-        ty: "integer (segment index)",
-        default: || val(0),
-        check: check::<usize>,
-        doc: "Remembered segment index for Book tabs (written by the app; see \
-              editor.remember_view).",
+        ty: "string (segment id)",
+        default: || val(crate::tabs::shared::segments::SEG_OWN),
+        check: check::<String>,
+        doc: "Remembered segment id for Book tabs — e.g. \"own\", \"manuscript\", \
+              \"analysis\", \"overview\" (written by the app; see editor.remember_view).",
     },
     SettingSpec {
         key: "editor.last_view.part",
-        ty: "integer (segment index)",
-        default: || val(0),
-        check: check::<usize>,
-        doc: "Remembered segment index for Part tabs.",
+        ty: "string (segment id)",
+        default: || val(crate::tabs::shared::segments::SEG_OWN),
+        check: check::<String>,
+        doc: "Remembered segment id for Part tabs.",
     },
     SettingSpec {
         key: "editor.last_view.chapter",
-        ty: "integer (segment index)",
-        default: || val(0),
-        check: check::<usize>,
-        doc: "Remembered segment index for Chapter tabs.",
+        ty: "string (segment id)",
+        default: || val(crate::tabs::shared::segments::SEG_OWN),
+        check: check::<String>,
+        doc: "Remembered segment id for Chapter-folder tabs.",
+    },
+    SettingSpec {
+        key: "editor.last_view.note",
+        ty: "string (segment id)",
+        default: || val(crate::tabs::shared::segments::SEG_NOTES),
+        check: check::<String>,
+        doc: "Remembered segment id for notes-folder tabs (\"notes\" or \"overview\").",
     },
     SettingSpec {
         key: crate::TYPEWRITER_KEY,
@@ -978,8 +990,8 @@ mod tests {
     /// The other direction. A registered key that no longer exists in the app is dead
     /// weight that `--dump-config` still advertises as settable.
     ///
-    /// Four keys are legitimately not declared as `*_KEY` constants and are exempt: the
-    /// three `editor.last_view.*` (inline literals in `EditorViewMemory::new`) and
+    /// Five keys are legitimately not declared as `*_KEY` constants and are exempt: the
+    /// four `editor.last_view.*` (inline literals in `EditorViewMemory::new`) and
     /// teksilo's own `accessibility.text_scale` (a `SettingsKey<f32>` in the framework).
     #[test]
     fn every_registered_key_still_exists() {
@@ -988,6 +1000,7 @@ mod tests {
             "editor.last_view.book",
             "editor.last_view.part",
             "editor.last_view.chapter",
+            "editor.last_view.note",
             teksilo::settings::TEXT_SCALE_KEY.key,
         ];
 

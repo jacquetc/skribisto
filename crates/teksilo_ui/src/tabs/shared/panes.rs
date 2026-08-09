@@ -16,6 +16,8 @@
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
+use super::segments;
+use teksilo::widgets::{SegmentId, segmented_control};
 use teksilo::widgets::{
     Accordion, Center, Expand, GroupHeader, HStack, IconButton, IconButtonSize, Padding,
     RectWidget, ScrollArea, Segment, SegmentedControl, Spacer, Splitter, Switcher, TextWidget,
@@ -603,27 +605,29 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
 /// This is why [`skribisto_model::overview_capable`] is not
 /// `StreamLevel::for_container` — they disagree here, and only here.
 pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
-    let bar = SegmentedControl::indexed(tab.segment.clone())
-        .segment(Segment::new(tr!(segment_notes())))
-        .segment(Segment::new(tr!(overview())));
-    let content = Switcher::new(tab.segment.clone())
-        .child(folder_synopsis_body(tab))
-        .child_boxed(crate::tabs::overview::overview_pane(tab));
-
-    let col = VStack::new()
-        .spacing(8.0)
-        .child(vspace(10.0))
-        .child(centered(bar, &tab.column_width))
-        .child(Expand::new().child(content));
+    let items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![
+        (
+            segments::SEG_NOTES,
+            tr!(segment_notes()),
+            Box::new(folder_synopsis_body(tab)) as Box<dyn Widget>,
+        ),
+        (
+            segments::SEG_OVERVIEW,
+            tr!(overview()),
+            crate::tabs::overview::overview_pane(tab),
+        ),
+    ];
     // Remembered per type, exactly like the five-segment containers: reopening a notes
-    // folder returns to whichever of its two views you last used.
-    Box::new(RememberSegment {
-        segment: tab.segment.clone(),
-        memory: tab.view_memory.clone(),
-        sub_role: tab.sub_role().clone(),
-        child: Some(tab_backdrop(tab.backdrop_role(), col)),
-        child_id: None,
-    })
+    // folder returns to whichever of its two views you last used. That claim used to be
+    // false — `EditorViewMemory::stored` had no `Note` arm, so this wrapper was a silent
+    // permanent no-op here. It has one now.
+    Box::new(RememberSegment::wrap(tab, items, |bar, content| {
+        VStack::new()
+            .spacing(8.0)
+            .child(vspace(10.0))
+            .child(centered(bar, &tab.column_width))
+            .child(Expand::new().child(content))
+    }))
 }
 
 /// The body every folder container shares: a `SegmentedControl` over
@@ -643,64 +647,72 @@ pub fn folder_synopsis_with_overview(tab: &ContentTab) -> Box<dyn Widget> {
 ///
 /// The `Switcher` mounts only the child at the selected index, and an out-of-range
 /// selection mounts nothing (no panic).
+/// The segmented body every manuscript container shares.
+///
+/// `extras` are the container's own additional segments — the Book's Pace and Analysis —
+/// each carrying a stable id alongside its label. Segments registered through
+/// [`segments::register_container_segment`] are appended after them and before Corkboard
+/// and Overview, which is where an analytical view belongs rather than trailing the two
+/// views *of* the manuscript.
 pub fn folder_segmented(
     tab: &ContentTab,
     own_label: impl Into<LocalizedString>,
     manuscript_label: impl Into<LocalizedString>,
-    extras: Vec<(LocalizedString, Box<dyn Widget>)>,
+    extras: Vec<(&'static str, LocalizedString, Box<dyn Widget>)>,
 ) -> Box<dyn Widget> {
-    // Container-specific segments (the Book's "Pace" and "Analysis") are inserted here, in
-    // order, before Corkboard and Overview. A `Vec` rather than a single `Option` because
-    // the Book now has two of them, and because the positional SegmentedControl↔Switcher
-    // contract is easier to keep honest when both lists are appended from the same loop
-    // than when a second `Option` has to be threaded through in the same order twice.
-    // `indexed`, not the keyed `new`: the extras arrive from sibling modules in this
-    // crate (`folder_book` passes Pace and Analysis), so the list is closed and local per
-    // container kind, and position genuinely is the meaning — `tabs.rs` pins the Book's
-    // Overview at index 6 and its neighbours by number.
-    //
-    // ⚠ This is the one call site that must become keyed *before* `container.segments`
-    // becomes a real extension slot. The moment a segment can be contributed from another
-    // crate, an index stops meaning the same thing whenever one registers ahead of the
-    // selected one — which is exactly what `SegmentedControl::new` exists to prevent, and
-    // what the analysis bar already does now that its categories are a registry.
-    let mut bar = SegmentedControl::indexed(tab.segment.clone())
-        .segment(Segment::new(own_label))
-        .segment(Segment::new(manuscript_label))
-        .segment(Segment::new(tr!(full_synopsis())));
-    let mut content = Switcher::new(tab.segment.clone())
-        .child(folder_own_pane(tab))
-        .child(stream_pane(tab, SplitFlavour::Prose))
-        .child(stream_pane(tab, SplitFlavour::Synopsis));
-    for (label, pane) in extras {
-        bar = bar.segment(Segment::new(label));
-        content = content.child_boxed(pane);
+    // ONE ordered list, resolved once, feeding the bar, the `Switcher` and the
+    // remembered-view lookup alike. Building any of the three from a separate pass would
+    // let a registration landing in between shift one and not the others — the same
+    // reasoning `tabs::analysis` records for the category bar.
+    let sub_role = tab.sub_role().clone();
+    let mut items: Vec<(&str, LocalizedString, Box<dyn Widget>)> = vec![
+        (
+            segments::SEG_OWN,
+            own_label.into(),
+            Box::new(folder_own_pane(tab)) as Box<dyn Widget>,
+        ),
+        (
+            segments::SEG_MANUSCRIPT,
+            manuscript_label.into(),
+            Box::new(stream_pane(tab, SplitFlavour::Prose)),
+        ),
+        (
+            segments::SEG_SYNOPSIS,
+            tr!(full_synopsis()),
+            Box::new(stream_pane(tab, SplitFlavour::Synopsis)),
+        ),
+    ];
+    items.extend(extras.into_iter().map(|(id, label, pane)| {
+        let id: &str = id;
+        (id, label, pane)
+    }));
+    for spec in segments::registered_for(&sub_role) {
+        // Leaked so the id borrows for the rest of this build. Bounded by the number of
+        // distinct registered segment ids in the process — a handful, registered once at
+        // startup — not by how often a tab is built.
+        let id: &'static str = Box::leak(spec.id.clone().into_boxed_str());
+        items.push((id, (spec.label)(), (spec.view)(tab)));
     }
-    // Corkboard and Overview are both real segments now; each Switcher child must sit at
-    // the same positional index as its segment — the two are matched by position, not by
-    // name, so a segment added without its child (or vice versa) silently shifts every
-    // later view by one.
-    bar = bar.segment(Segment::new(tr!(corkboard())));
-    content = content.child_boxed(crate::tabs::corkboard::corkboard_pane(tab));
-    let bar = bar.segment(Segment::new(tr!(overview())));
-    let content = content.child_boxed(crate::tabs::overview::overview_pane(tab));
+    items.push((
+        segments::SEG_CORKBOARD,
+        tr!(corkboard()),
+        crate::tabs::corkboard::corkboard_pane(tab),
+    ));
+    items.push((
+        segments::SEG_OVERVIEW,
+        tr!(overview()),
+        crate::tabs::overview::overview_pane(tab),
+    ));
 
-    let col = VStack::new()
-        .spacing(8.0)
-        .child(vspace(10.0))
-        .child(centered(bar, &tab.column_width))
-        // Fill the remaining height so the selected segment (especially a stream's
-        // `ScrollArea`) gets a bounded viewport to fill.
-        .child(Expand::new().child(content));
-    // Persist the chosen view per container type, so a new tab of this type inherits
-    // it (gated by the `editor.remember_view` toggle inside the memory).
-    Box::new(RememberSegment {
-        segment: tab.segment.clone(),
-        memory: tab.view_memory.clone(),
-        sub_role: tab.sub_role().clone(),
-        child: Some(tab_backdrop(tab.backdrop_role(), col)),
-        child_id: None,
-    })
+    Box::new(RememberSegment::wrap(tab, items, |bar, content| {
+        VStack::new()
+            .spacing(8.0)
+            .child(vspace(10.0))
+            .child(centered(bar, &tab.column_width))
+            // Fill the remaining height so the selected segment (especially a stream's
+            // `ScrollArea`) gets a bounded viewport to fill.
+            .child(Expand::new().child(content))
+    }))
 }
 
 /// Transparent passthrough that persists the container's `SegmentedControl`
@@ -711,11 +723,56 @@ pub fn folder_segmented(
 /// context, so the effect is set up here (in a widget's `build`). Mirrors
 /// `editor::DirtyOnEdit`: it adds one child and forwards layout to it unchanged.
 struct RememberSegment {
-    segment: Signal<usize>,
+    segment: Signal<Option<SegmentId>>,
     memory: EditorViewMemory,
     sub_role: BinderItemSubRole,
+    /// Ordered `(string id, derived SegmentId)` for this container's segments.
+    ///
+    /// The derivation is one-way, so this is the only route from the `SegmentId` the
+    /// control fires back to the string [`EditorViewMemory`] persists. Without it the
+    /// effect below would have to store the number, which is exactly what makes a
+    /// remembered view unrecoverable across a restart.
+    ids: Vec<(String, SegmentId)>,
     child: Option<Box<dyn Widget>>,
     child_id: Option<WidgetId>,
+}
+
+impl RememberSegment {
+    /// Build the bar and its `Switcher` from one ordered list and wrap the result.
+    ///
+    /// Both are built here, from the same slice, in the same pass — the pairing is
+    /// positional by `SegmentedControl`'s contract, and this is what makes it true rather
+    /// than merely intended. Every segment pins an explicit id: `Segment::new` would
+    /// otherwise mint `SegmentId::fresh()`, a process-global counter, and a remembered
+    /// view keyed on one of those could never be found again after a restart.
+    fn wrap(
+        tab: &ContentTab,
+        items: Vec<(&str, LocalizedString, Box<dyn Widget>)>,
+        shell: impl FnOnce(crate::tabs::Boxed, crate::tabs::Boxed) -> VStack,
+    ) -> Self {
+        let ids: Vec<(String, SegmentId)> = items
+            .iter()
+            .map(|(id, _, _)| ((*id).to_string(), segments::segment_id(id)))
+            .collect();
+        let keys: Vec<SegmentId> = ids.iter().map(|(_, k)| *k).collect();
+
+        let mut bar = SegmentedControl::new(tab.segment.clone());
+        let mut content = Switcher::new(segmented_control::index_signal(&tab.segment, &keys));
+        for ((_, label, pane), key) in items.into_iter().zip(keys.iter().copied()) {
+            bar = bar.segment(Segment::new(label).id(key));
+            content = content.child_boxed(pane);
+        }
+
+        let col = shell(crate::tabs::Boxed::new(Box::new(bar)), crate::tabs::Boxed::new(Box::new(content)));
+        Self {
+            segment: tab.segment.clone(),
+            memory: tab.view_memory.clone(),
+            sub_role: tab.sub_role().clone(),
+            ids,
+            child: Some(tab_backdrop(tab.backdrop_role(), col)),
+            child_id: None,
+        }
+    }
 }
 
 impl std::fmt::Debug for RememberSegment {
@@ -730,12 +787,23 @@ impl Widget for RememberSegment {
         let id = ctx.add_boxed(child);
         self.child_id = Some(id);
         let (memory, sub_role) = (self.memory.clone(), self.sub_role.clone());
+        let ids = self.ids.clone();
         // `ctx.effect` fires only on *changes*, not on setup — so a rebuild installs
         // a fresh observer that stays quiet until the user actually switches the
         // `SegmentedControl`. That's what keeps a rebuild of one tab from writing its
         // segment over the view another same-type tab just chose (regression-tested by
         // `tabs::tests::same_type_tabs_share_one_last_view_and_the_last_switch_wins`).
-        ctx.effect(&self.segment, move |v| memory.remember(&sub_role, *v));
+        ctx.effect(&self.segment, move |v| {
+            // Look the fired id back up to the string it was derived from. An id this
+            // container does not own (a stale remembered value from a segment that is no
+            // longer registered) is simply not persisted — better than writing back a
+            // string nothing will resolve next launch.
+            if let Some(sel) = *v
+                && let Some((id, _)) = ids.iter().find(|(_, key)| *key == sel)
+            {
+                memory.remember(&sub_role, id);
+            }
+        });
         vec![id]
     }
 

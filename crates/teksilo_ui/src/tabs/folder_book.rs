@@ -23,8 +23,16 @@ pub fn render(tab: &ContentTab) -> Box<dyn Widget> {
         tr!(segment_book()),
         tr!(full_book()),
         vec![
-            (tr!(segment_pace()), super::pace::pace_pane(tab)),
-            (tr!(analysis_segment()), super::analysis::analysis_pane(tab)),
+            (
+                shared::segments::SEG_PACE,
+                tr!(segment_pace()),
+                super::pace::pace_pane(tab),
+            ),
+            (
+                shared::segments::SEG_ANALYSIS,
+                tr!(analysis_segment()),
+                super::analysis::analysis_pane(tab),
+            ),
         ],
     )
 }

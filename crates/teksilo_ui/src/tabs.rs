@@ -168,7 +168,13 @@ pub struct ContentTab {
     view_state_ports: Rc<crate::view_models::ViewStatePorts>,
     /// Selected segment for the folder container's `SegmentedControl` — per-tab
     /// (each pane keeps its own segment).
-    pub segment: Signal<usize>,
+    /// Which segment the container's bar has selected, **keyed** rather than positional.
+    ///
+    /// A segment can be contributed through `shared::segments`, so the list is no longer
+    /// closed: an index would silently re-point at a neighbour the moment one registered
+    /// ahead of the selected one. `None` is "nothing chosen", which the bar resolves to
+    /// its first segment. Ids come from `shared::segments::segment_id`.
+    pub segment: Signal<Option<teksilo::widgets::SegmentId>>,
     pub column_width: Signal<f32>,
     /// Persisted "show synopsis pane" setting (Settings ▸ Manuscript & Fonts),
     /// consumed live by the dual-pane writing editor.
@@ -1504,8 +1510,11 @@ mod tests {
         use BinderItemRole::*;
         use BinderItemSubRole::*;
         let ctx = Rc::new(AppContext::new());
-        // (sub_role, the Overview's index in that container's bar)
-        for (sub_role, overview_index) in [(ChapterScene, 4), (Part, 4), (Book, 6), (Note, 1)] {
+        // Just the container kinds now. This used to carry each one's Overview *index*
+        // — (ChapterScene, 4), (Part, 4), (Book, 6), (Note, 1) — a table that existed
+        // solely because the bar was positional, and that had to be corrected by hand
+        // every time a segment was inserted. Addressing the segment by id retires it.
+        for sub_role in [ChapterScene, Part, Book, Note] {
             let tab = tab_for(
                 &ctx,
                 101, // the mock Book container — its fixture subtree has rows
@@ -1518,7 +1527,7 @@ mod tests {
                 crate::view_models::EditorViewMemory::detached(false),
                 &AppIds::new(),
             );
-            tab.segment.set(overview_index);
+            tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OVERVIEW)));
             // The Overview pane subscribes to backend events in its wiring child, so it
             // needs a tree that has an event source (see `crate::test_support`).
             let mut tree = crate::test_support::tree_with_events(&ctx);
@@ -1526,7 +1535,7 @@ mod tests {
             tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
             let table = first_containing(&tree, id, "TreeTableView").unwrap_or_else(|| {
                 panic!(
-                    "Folder/{sub_role:?} segment {overview_index} mounted no TreeTableView — \
+                    "Folder/{sub_role:?}'s Overview segment mounted no TreeTableView — \
                      the segment and its Switcher child have drifted out of step"
                 )
             });
@@ -1564,7 +1573,12 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(4);
+        // The Analysis segment, by id. This line previously read `set(4)` — and my first
+        // pass at this migration rewrote every `set(4)` to the Overview id, because on a
+        // Chapter/Part index 4 *is* Overview. On a Book it is Analysis. That is precisely
+        // the confusion the keyed bar exists to make impossible, and it slipped through
+        // because this test is `mocks`-gated and never ran in a default-feature run.
+        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_ANALYSIS)));
         assert!(
             tab.analysis().is_some(),
             "a Book carries an Analysis view-model"
@@ -1576,8 +1590,8 @@ mod tests {
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
         let pane = first_containing(&tree, id, "AnalysisPane").expect(
-            "segment 4 of a Book mounted no AnalysisPane — the segment and its Switcher \
-             child have drifted out of step",
+            "a Book's Analysis segment mounted no AnalysisPane — the segment and its \
+             Switcher child have drifted out of step",
         );
         let b = tree.bounds(pane);
         assert!(
@@ -1626,7 +1640,9 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(6); // the Book's Overview (Pace and Analysis sit before it)
+        // Addressed by id: what used to be "index 6" is just the Overview segment now,
+        // and stays correct however many segments precede it.
+        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OVERVIEW)));
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1200.0, 700.0));
@@ -1699,7 +1715,7 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(6); // the Book's Overview, after Pace and Analysis
+        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OVERVIEW)));
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let root = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1200.0, 700.0));
@@ -1777,7 +1793,7 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(6); // the Book's Overview, after Pace and Analysis
+        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OVERVIEW)));
 
         // The pane is rebuilt at each step rather than mutated: the editing signal is
         // bound at `BindingLevel::Rebuild`, so a rebuild is exactly what the framework
@@ -1876,7 +1892,10 @@ mod tests {
         // (sub_role, the Corkboard's index in that container's bar) — always one
         // before the Overview, which `the_overview_segment_mounts_a_table` pins.
         // `Folder/Note` has neither (a subtree, but no manuscript extent).
-        for (sub_role, corkboard_index) in [(ChapterScene, 3), (Part, 3), (Book, 5)] {
+        // The per-container Corkboard index table — (ChapterScene, 3), (Part, 3),
+        // (Book, 5) — is gone for the same reason as the Overview one above: the segment
+        // is addressed by id, so a Book's two extra segments no longer shift it.
+        for sub_role in [ChapterScene, Part, Book] {
             let tab = tab_for(
                 &ctx,
                 101,
@@ -1893,7 +1912,7 @@ mod tests {
                 tab.corkboard().is_some(),
                 "Folder/{sub_role:?} carries a Corkboard view-model"
             );
-            tab.segment.set(corkboard_index);
+            tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_CORKBOARD)));
             // The board's wiring child subscribes to backend events, so a bare
             // `WidgetTree` would panic with no event source registered.
             let mut tree = crate::test_support::tree_with_events(&ctx);
@@ -1901,7 +1920,7 @@ mod tests {
             tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
             let grid = first_containing(&tree, id, "GridView").unwrap_or_else(|| {
                 panic!(
-                    "Folder/{sub_role:?} segment {corkboard_index} mounted no GridView — \
+                    "Folder/{sub_role:?}'s Corkboard segment mounted no GridView — \
                      the segment and its Switcher child have drifted out of step"
                 )
             });
@@ -2043,7 +2062,7 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(3); // Corkboard
+        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_CORKBOARD)));
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let root = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1400.0, 900.0));
@@ -2178,21 +2197,21 @@ mod tests {
         };
         // Open a chapter; it starts on its own page.
         let chapter1 = open(1);
-        assert_eq!(chapter1.segment.get(), 0);
+        assert_eq!(chapter1.segment.get(), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
         let mut tree = WidgetTree::new();
         tree.add_boxed(tab_pane(&chapter1)); // sets up the persist effect
         tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
-        // Switch it to "Full Chapter" (index 1).
-        chapter1.segment.set(1);
+        // Switch it to the manuscript stream ("Full Chapter").
+        chapter1.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)));
         assert_eq!(
             mem.initial(&ChapterScene),
-            1,
+            Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)),
             "the chosen view was remembered"
         );
         // A newly-opened chapter inherits it.
         assert_eq!(
             open(2).segment.get(),
-            1,
+            Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)),
             "a new chapter opens on Full Chapter"
         );
         // ...but a Scene (no segmented control) is unaffected.
@@ -2208,7 +2227,10 @@ mod tests {
             mem.clone(),
             &AppIds::new(),
         );
-        assert_eq!(scene.segment.get(), 0);
+        // `None`, not "segment 0": a Scene has no segmented bar at all, and the keyed
+        // signal can now say so. The old positional signal had to spell that as an index
+        // into a control this tab does not have.
+        assert_eq!(scene.segment.get(), Option::None);
     }
 
     /// Two open tabs of the same container type share one per-type memory: each of
@@ -2246,8 +2268,8 @@ mod tests {
         // Both open on their own page (memory starts at 0), so no stream mounts.
         let a = open(1);
         let b = open(2);
-        assert_eq!(a.segment.get(), 0);
-        assert_eq!(b.segment.get(), 0);
+        assert_eq!(a.segment.get(), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
+        assert_eq!(b.segment.get(), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
         let build = |tab: &ContentTab| {
             let mut tree = WidgetTree::new();
             tree.add_boxed(tab_pane(tab));
@@ -2257,13 +2279,13 @@ mod tests {
         let _ta = build(&a);
         let _tb = build(&b);
         // Merely opening + building a second same-type tab wrote nothing.
-        assert_eq!(mem.initial(&ChapterScene), 0);
-        a.segment.set(1); // A switches → Full Chapter
-        assert_eq!(mem.initial(&ChapterScene), 1);
-        b.segment.set(2); // B switches → Full Synopsis: last switch wins
-        assert_eq!(mem.initial(&ChapterScene), 2);
-        a.segment.set(0); // A switches back → its switch wins in turn
-        assert_eq!(mem.initial(&ChapterScene), 0);
+        assert_eq!(mem.initial(&ChapterScene), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
+        a.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT))); // A switches → Full Chapter
+        assert_eq!(mem.initial(&ChapterScene), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)));
+        b.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_SYNOPSIS))); // B → Full Synopsis: last switch wins
+        assert_eq!(mem.initial(&ChapterScene), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_SYNOPSIS)));
+        a.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN))); // A switches back → its switch wins in turn
+        assert_eq!(mem.initial(&ChapterScene), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
     }
 
     /// First node at/under `root` whose type name *contains* `needle` (DFS pre-order).
@@ -3458,7 +3480,7 @@ mod tests {
 
         // Segment 1 is the manuscript stream (own page / manuscript / Full
         // Synopsis / Corkboard / Overview).
-        tab.segment.set(1);
+        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)));
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1400.0, 900.0));

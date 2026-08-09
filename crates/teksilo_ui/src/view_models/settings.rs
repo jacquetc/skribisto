@@ -15,7 +15,10 @@
 //! `EventContext`); this VM still owns the persisted `dark` / `locale` mirrors so
 //! `App` can keep `DARK_KEY` / `LOCALE_KEY` in sync for the startup restore.
 
-use teksilo::prelude::*; // EventContext, Signal, intui
+use teksilo::prelude::*;
+use teksilo::widgets::SegmentId;
+
+use crate::tabs::shared::segments as seg; // EventContext, Signal, intui
 use teksilo::settings::SettingsStore;
 
 use frontend::common::entities::BinderItemSubRole;
@@ -117,18 +120,24 @@ pub struct EditorTypographySet {
 #[derive(Clone)]
 pub struct EditorViewMemory {
     enabled: Signal<bool>,
-    book: Signal<usize>,
-    part: Signal<usize>,
-    chapter: Signal<usize>,
+    // Segment **ids**, not indices. A position stopped naming a segment stably the moment
+    // `container.segments` let one be contributed; see `tabs::shared::segments`. Stored as
+    // the string rather than the derived `SegmentId` because the derivation is one-way —
+    // and because a human-legible `general.toml` is the point of the settings schema.
+    book: Signal<String>,
+    part: Signal<String>,
+    chapter: Signal<String>,
+    note: Signal<String>,
 }
 
 impl EditorViewMemory {
     pub fn new(store: &SettingsStore) -> Self {
         Self {
             enabled: store.signal(REMEMBER_VIEW_KEY, REMEMBER_VIEW_DEFAULT),
-            book: store.signal("editor.last_view.book", 0usize),
-            part: store.signal("editor.last_view.part", 0usize),
-            chapter: store.signal("editor.last_view.chapter", 0usize),
+            book: store.signal("editor.last_view.book", seg::SEG_OWN.to_string()),
+            part: store.signal("editor.last_view.part", seg::SEG_OWN.to_string()),
+            chapter: store.signal("editor.last_view.chapter", seg::SEG_OWN.to_string()),
+            note: store.signal("editor.last_view.note", seg::SEG_NOTES.to_string()),
         }
     }
 
@@ -138,9 +147,10 @@ impl EditorViewMemory {
     pub fn detached(enabled: bool) -> Self {
         Self {
             enabled: Signal::new(enabled),
-            book: Signal::new(0),
-            part: Signal::new(0),
-            chapter: Signal::new(0),
+            book: Signal::new(seg::SEG_OWN.to_string()),
+            part: Signal::new(seg::SEG_OWN.to_string()),
+            chapter: Signal::new(seg::SEG_OWN.to_string()),
+            note: Signal::new(seg::SEG_NOTES.to_string()),
         }
     }
 
@@ -151,7 +161,7 @@ impl EditorViewMemory {
 
     /// The persisted last-view signal for a segmented container sub-role, or `None`
     /// for a type with no `SegmentedControl`.
-    fn stored(&self, sub_role: &BinderItemSubRole) -> Option<Signal<usize>> {
+    fn stored(&self, sub_role: &BinderItemSubRole) -> Option<Signal<String>> {
         use BinderItemSubRole::*;
         match sub_role {
             Book => Some(self.book.clone()),
@@ -160,6 +170,16 @@ impl EditorViewMemory {
             // container with a `SegmentedControl`; the flat chapter is a prose tab and
             // never asks for this.
             ChapterScene => Some(self.chapter.clone()),
+            // A notes folder has a two-segment bar of its own
+            // (`folder_synopsis_with_overview`), and it was wrapped in `RememberSegment`
+            // like the others while this arm was missing — so its remembered view was a
+            // silent permanent no-op, and the comment claiming otherwise was false.
+            //
+            // `Paratext` shares that arm, not a key of its own: `folder_paratext::render`
+            // delegates to the very same `folder_synopsis_with_overview`, so the two have
+            // the same two segments and the same choice to remember. Giving Paratext its
+            // own key would split one setting into two for one bar.
+            Note | Paratext => Some(self.note.clone()),
             // `None` is shadowed by `BinderItemSubRole::None` under the glob import.
             _ => Option::None,
         }
@@ -167,22 +187,31 @@ impl EditorViewMemory {
 
     /// The segment index a freshly-opened tab of `sub_role` should start on: the
     /// remembered view when enabled, else the container's own page (0).
-    pub fn initial(&self, sub_role: &BinderItemSubRole) -> usize {
-        if self.enabled.get() {
-            self.stored(sub_role).map(|s| s.get()).unwrap_or(0)
-        } else {
-            0
+    /// The segment a freshly-opened tab of `sub_role` should start on: the remembered one
+    /// when enabled, else `None` — which the bar resolves to its first segment.
+    ///
+    /// Deriving the [`SegmentId`] here rather than storing it is what makes the stored
+    /// string authoritative: the number is recomputed every launch, so it cannot drift, and
+    /// an id whose segment no longer exists resolves to slot 0 through
+    /// `segmented_control::index_signal` exactly as an absent one does.
+    pub fn initial(&self, sub_role: &BinderItemSubRole) -> Option<SegmentId> {
+        if !self.enabled.get() {
+            return Option::None;
         }
+        self.stored(sub_role)
+            .map(|s| s.get())
+            .filter(|id| !id.is_empty())
+            .map(|id| seg::segment_id(&id))
     }
 
     /// Record `segment` as the last view for `sub_role` (no-op when disabled, for a
     /// non-segmented type, or when already equal).
-    pub fn remember(&self, sub_role: &BinderItemSubRole, segment: usize) {
+    pub fn remember(&self, sub_role: &BinderItemSubRole, segment: &str) {
         if self.enabled.get()
             && let Some(s) = self.stored(sub_role)
             && s.get() != segment
         {
-            s.set(segment);
+            s.set(segment.to_string());
         }
     }
 }
@@ -996,32 +1025,99 @@ mod tests {
     fn view_memory_round_trips_per_type() {
         use BinderItemSubRole::*;
         let m = EditorViewMemory::detached(true);
-        assert_eq!(m.initial(&Book), 0, "starts on the container's own page");
-        m.remember(&Book, 3);
-        assert_eq!(m.initial(&Book), 3, "a new Book tab inherits the last view");
+        let id = |s: &str| Some(seg::segment_id(s));
+        assert_eq!(
+            m.initial(&Book),
+            id(seg::SEG_OWN),
+            "starts on the container's own page"
+        );
+        m.remember(&Book, seg::SEG_ANALYSIS);
+        assert_eq!(
+            m.initial(&Book),
+            id(seg::SEG_ANALYSIS),
+            "a new Book tab inherits the last view"
+        );
         // Per-type isolation.
-        m.remember(&ChapterScene, 1);
-        assert_eq!(m.initial(&ChapterScene), 1);
-        assert_eq!(m.initial(&Book), 3, "types don't cross-contaminate");
+        m.remember(&ChapterScene, seg::SEG_MANUSCRIPT);
+        assert_eq!(m.initial(&ChapterScene), id(seg::SEG_MANUSCRIPT));
+        assert_eq!(
+            m.initial(&Book),
+            id(seg::SEG_ANALYSIS),
+            "types don't cross-contaminate"
+        );
         // A non-segmented type (a plain Scene) has no view memory.
-        m.remember(&Scene, 2);
-        assert_eq!(m.initial(&Scene), 0);
+        m.remember(&Scene, seg::SEG_MANUSCRIPT);
+        assert_eq!(m.initial(&Scene), Option::None);
+    }
+
+    /// A notes folder remembers its view like every other segmented container.
+    ///
+    /// `stored()` had no `Note` arm, so this was a silent permanent no-op while the
+    /// wrapper around `folder_synopsis_with_overview` claimed otherwise in a comment.
+    #[test]
+    fn a_notes_folder_remembers_its_view() {
+        use BinderItemSubRole::*;
+        let m = EditorViewMemory::detached(true);
+        assert_eq!(
+            m.initial(&Note),
+            Some(seg::segment_id(seg::SEG_NOTES)),
+            "a notes folder starts on its own page"
+        );
+        m.remember(&Note, seg::SEG_OVERVIEW);
+        assert_eq!(
+            m.initial(&Note),
+            Some(seg::segment_id(seg::SEG_OVERVIEW)),
+            "and returns to the view it was left on"
+        );
+        assert_eq!(
+            m.initial(&Book),
+            Some(seg::segment_id(seg::SEG_OWN)),
+            "without touching another container type's memory"
+        );
+    }
+
+    /// A front/back-matter folder shares the notes folder's memory.
+    ///
+    /// `folder_paratext::render` delegates to the same
+    /// `shared::folder_synopsis_with_overview` as `folder_note`, so the two have the same
+    /// two segments and the same choice to remember — one key, not two. Missed on the
+    /// first pass of the `Note` fix, which left `Paratext` with the identical silent
+    /// no-op the fix existed to remove.
+    #[test]
+    fn a_paratext_folder_shares_the_notes_view_memory() {
+        use BinderItemSubRole::*;
+        let m = EditorViewMemory::detached(true);
+        m.remember(&Paratext, seg::SEG_OVERVIEW);
+        assert_eq!(
+            m.initial(&Paratext),
+            Some(seg::segment_id(seg::SEG_OVERVIEW)),
+            "a paratext folder must remember its view at all"
+        );
+        assert_eq!(
+            m.initial(&Note),
+            Some(seg::segment_id(seg::SEG_OVERVIEW)),
+            "…out of the same store as the notes folder, since it is the same bar"
+        );
     }
 
     #[test]
     fn view_memory_disabled_is_inert() {
         use BinderItemSubRole::*;
         let m = EditorViewMemory::detached(true);
-        m.remember(&Part, 2); // recorded while enabled
+        m.remember(&Part, seg::SEG_SYNOPSIS); // recorded while enabled
         m.enabled().set(false);
         assert_eq!(
             m.initial(&Part),
-            0,
-            "disabled always starts on the own page"
+            Option::None,
+            "disabled starts wherever the bar's first segment is"
         );
-        m.remember(&Part, 1); // no-op while disabled
+        m.remember(&Part, seg::SEG_MANUSCRIPT); // no-op while disabled
         m.enabled().set(true);
-        assert_eq!(m.initial(&Part), 2, "the disabled write was ignored");
+        assert_eq!(
+            m.initial(&Part),
+            Some(seg::segment_id(seg::SEG_SYNOPSIS)),
+            "the disabled write was ignored"
+        );
     }
 
     #[test]

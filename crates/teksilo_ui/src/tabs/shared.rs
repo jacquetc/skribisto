@@ -24,9 +24,12 @@ pub(crate) mod charts;
 pub(crate) mod dictionary_menu;
 pub(crate) mod editor;
 mod panes;
+/// The `container.segments` extension slot and the stable ids the bar is keyed by.
+pub mod segments;
 mod stream;
 
 pub use charts::*;
 pub use editor::*;
 pub use panes::*;
+pub use segments::*;
 pub use stream::*;

@@ -2093,7 +2093,11 @@ mod tests {
 
     /// The segment signal of the open tab for `item_id` in `side`, if any.
     #[cfg(feature = "mocks")]
-    fn tab_segment(vm: &EditorsViewModel, side: Side, item_id: u64) -> Option<Signal<usize>> {
+    fn tab_segment(
+        vm: &EditorsViewModel,
+        side: Side,
+        item_id: u64,
+    ) -> Option<Signal<Option<teksilo::widgets::SegmentId>>> {
         let pane = vm.pane(side);
         (0..pane.tabs.len()).find_map(|i| {
             pane.tabs
@@ -2119,17 +2123,19 @@ mod tests {
         let vm = editors();
         vm.open_or_focus(101, "Book One"); // Folder/Book (mock fixture)
         vm.open_or_focus(103, "Scene at dawn"); // Item/Scene — a *different* type
-        // Put the Book tab on the Pace segment (index 3).
+        // Put the Book tab on the Pace segment — addressed by id, so this stays correct
+        // however many segments precede it.
+        let pace = Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_PACE));
         tab_segment(&vm, Side::Primary, 101)
             .expect("book tab open")
-            .set(3);
+            .set(pace);
         // Editing the Book's word-count goal fires `BinderItem::Updated` for the Book.
         vm.items_updated(&[101]);
         // The Book's tab must be the SAME one (its type did not change), so its segment
         // must still be Pace — not reset to 0 by a spurious rebuild.
         assert_eq!(
             tab_segment(&vm, Side::Primary, 101).map(|s| s.get()),
-            Some(3),
+            Some(pace),
             "editing the Book's goal rebuilt its tab (segment reset) because another \
              differently-typed tab was open"
         );

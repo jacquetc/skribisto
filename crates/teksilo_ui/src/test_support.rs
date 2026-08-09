@@ -7,8 +7,8 @@
 //! child so they re-source on backend changes — the Overview table, the Corkboard grid,
 //! the manuscript stream. A bare [`WidgetTree`](teksilo::core::widget_tree::WidgetTree)
 //! has no event source, and `subscribe_event` *panics* when there is none, so those panes
-//! simply could not be laid out in a test at all. They were therefore only ever tested at
-//! segment 0, which is precisely the segment none of them occupy.
+//! simply could not be laid out in a test at all. They were therefore only ever tested on
+//! the container's own page, which is precisely the segment none of them occupy.
 //!
 //! [`tree_with_events`] closes that hole: it registers the same
 //! [`EventSource`](teksilo::core::event_source::EventSource) adapter the real app does,
