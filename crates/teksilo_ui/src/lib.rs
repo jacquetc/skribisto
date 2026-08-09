@@ -69,44 +69,56 @@
 // gate that has never once been green teaches nobody anything.
 #![allow(dead_code)]
 
-mod app;
-mod app_ids;
-mod backup;
-mod backup_paths;
-mod binder;
-mod comments;
-mod crash_report;
-mod date_convert;
-mod distraction_free;
-mod docks;
-mod export;
-mod icons;
-mod intents;
-mod media_paths;
-mod models;
-mod note_templates;
-mod panels;
-mod sessions;
-mod settings;
-mod settings_keys;
-mod shell;
-mod singles;
-mod spellcheck;
-mod statusbar;
-mod tabs;
-mod tags;
-mod text_replacement;
-mod toast_scope;
-mod trash;
-mod widgets;
+//! ## Module visibility
+//!
+//! The modules below are `pub` because this crate **is** the application and the
+//! extension seam has to reach into it — a private module is unreachable from a
+//! downstream crate however public its contents are. That makes this a large
+//! surface, deliberately: the alternative is re-exporting types one at a time as
+//! each extension needs them, which turns every extension into a change here.
+//!
+//! `test_support` is the exception and stays crate-private: it is `#[cfg(test)]`
+//! scaffolding, not API.
+
+
+pub mod app;
+pub mod app_ids;
+pub mod backup;
+pub mod backup_paths;
+pub mod binder;
+pub mod comments;
+pub mod crash_report;
+pub mod date_convert;
+pub mod distraction_free;
+pub mod docks;
+pub mod export;
+pub mod icons;
+pub mod intents;
+pub mod media_paths;
+pub mod models;
+pub mod note_templates;
+pub mod panels;
+pub mod sessions;
+pub mod settings;
+pub mod settings_keys;
+pub mod shell;
+pub mod singles;
+pub mod spellcheck;
+pub mod statusbar;
+pub mod tabs;
+pub mod tags;
+pub mod text_replacement;
+pub mod toast_scope;
+pub mod trash;
+pub mod widgets;
 // The pane tests that need fixture rows are mocks-gated, but the search preview's
 // layout tests build their own `OpenDoc`, so they run on the real backend too —
 // and both need an event source. Hence the plain `test` gate.
 #[cfg(test)]
 mod test_support;
-mod tooltip_registry;
-mod version;
-mod view_models;
+pub mod tooltip_registry;
+pub mod version;
+pub mod view_models;
 
 use std::rc::Rc;
 use std::sync::Arc;
@@ -581,7 +593,14 @@ impl EventSource for EventHubSource {
     }
 }
 
-fn main() {
+/// Build and run the Skribisto application.
+///
+/// This is the whole binary: `src/bin/skribisto.rs` is a one-line `fn main` that
+/// calls it. The split is not cosmetic — a `[[bin]]`-only crate cannot be
+/// depended on, so nothing outside this workspace could name `ContentTab`,
+/// `AppIds`, a view-model, or any other type here. Everything the extension seam
+/// needs to reach lives behind this boundary.
+pub fn run() {
     // ── Panic diagnostics — before anything at all ────────────────────────────
     //
     // Ahead of even the election, so a panic while parsing arguments or binding

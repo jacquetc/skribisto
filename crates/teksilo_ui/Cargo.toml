@@ -11,9 +11,16 @@ license.workspace = true
 readme = "../../README.md"
 publish = false
 
+# The library IS the application; the binary below is a one-line `fn main` that
+# calls `run()`. A `[[bin]]`-only crate cannot be depended on, which put every
+# type in this crate out of reach of anything outside the workspace.
+[lib]
+name = "teksilo_ui"
+path = "src/lib.rs"
+
 [[bin]]
 name = "skribisto"
-path = "src/main.rs"
+path = "src/bin/skribisto.rs"
 
 # macOS packaging via cargo-packager (consumed by .github/workflows/release-macos.yml).
 # `signing_identity` is deliberately ABSENT: cargo-packager codesigns only when
