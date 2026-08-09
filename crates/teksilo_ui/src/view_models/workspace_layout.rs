@@ -449,7 +449,7 @@ impl WorkspaceLayoutViewModel {
             })
             .collect();
 
-        for dock in crate::docks::APP_DOCKS
+        for dock in crate::docks::all_docks()
             .iter()
             .filter(|d| unknown.contains(&d.id))
         {
@@ -567,7 +567,7 @@ mod tests {
     fn registered_model() -> DockingModel {
         let model = DockingModel::new();
         let mut layout = DockingLayout::new(model.clone());
-        for dock in crate::docks::APP_DOCKS {
+        for dock in &crate::docks::all_docks() {
             layout = layout.dock(DockWidget::new(dock.widget_id(), lit!("Dock"), |_| {
                 RectWidget::new()
             }));
@@ -598,7 +598,7 @@ mod tests {
     /// Mount only the docks a v4-era build knew, in roster order — i.e. reproduce
     /// the desk a pre-comments Skribisto would have captured.
     fn desk_as_of_v4(model: &DockingModel) {
-        for dock in crate::docks::APP_DOCKS
+        for dock in crate::docks::all_docks()
             .iter()
             .filter(|d| V4_ROSTER.contains(&d.id))
         {

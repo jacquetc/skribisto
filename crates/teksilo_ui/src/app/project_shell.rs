@@ -515,7 +515,7 @@ impl App {
             // That is `own_tab`; the stacking placement instead shows both at once in
             // a vertical split, which starves the binder.
             let docking = outline.docking();
-            for dock in crate::docks::APP_DOCKS {
+            for dock in &crate::docks::all_docks() {
                 docking.open_dock(dock.widget_id(), dock.location());
             }
             // The binder is the selected leading panel on launch, and the inspector
