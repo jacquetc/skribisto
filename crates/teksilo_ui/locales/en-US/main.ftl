@@ -1886,3 +1886,6 @@ timeline-no-text-of-its-own = This has no text of its own — it's a heading for
 timeline-reader-close = Close
 timeline-reader-stamp = As it was on { $date }
 timeline-reader-deleted = This is no longer in your project. You can read it and copy it out here.
+
+# The Settings tree's section for pages an extension contributed.
+settings-sec-extensions = Extensions

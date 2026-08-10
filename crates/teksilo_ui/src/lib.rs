@@ -103,6 +103,7 @@ pub mod panels;
 pub mod read_signal;
 pub mod sessions;
 pub mod settings;
+pub mod settings_ext;
 pub mod settings_keys;
 pub mod shell;
 pub mod singles;

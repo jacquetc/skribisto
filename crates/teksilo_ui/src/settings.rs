@@ -139,6 +139,14 @@ enum Pane {
     DistractionFreeThemes,
     /// Per-project note templates (under the open Work's section, beside Tags).
     WorkTemplates,
+    /// A page an extension contributed, carrying its registered id.
+    ///
+    /// A variant rather than a separate parallel concept, so a contributed page
+    /// *is* a page everywhere: the tree, the switcher, the search index and the
+    /// selection signal all take it without a second code path. `&'static str`
+    /// keeps `Pane` `Copy`, which the `HashMap<Pane, NodeId>` and `Signal<Pane>`
+    /// below both rely on — and an extension's id is a literal anyway.
+    Extension(&'static str),
 }
 
 impl Pane {
@@ -177,6 +185,9 @@ impl Pane {
             Pane::DistractionFree => "distraction-free",
             Pane::DistractionFreeThemes => "distraction-free-themes",
             Pane::WorkTemplates => "work-templates",
+            // Already namespaced by `settings_ext::register_page`, which refuses
+            // an id without a dot.
+            Pane::Extension(id) => id,
         }
     }
 
@@ -205,6 +216,15 @@ impl Pane {
             Pane::WorkDictionary => tr!(settings_page_personal_dictionary()),
             Pane::WorkTags => tr!(settings_page_tags()),
             Pane::WorkTemplates => tr!(settings_page_templates()),
+            // Resolved through the registry rather than stored, so a runtime
+            // locale switch reaches a contributed page's label too. A page that
+            // has since been unregistered falls back to its id — visible, and
+            // better than an empty row.
+            Pane::Extension(id) => crate::settings_ext::registered_pages()
+                .iter()
+                .find(|p| p.id == id)
+                .map(|p| (p.label)())
+                .unwrap_or_else(|| lit!(id.to_string())),
             Pane::WorkAuthor => tr!(settings_page_author()),
             Pane::WorkTextReplacements => tr!(settings_page_text_replacements()),
             Pane::Spellcheck => tr!(settings_page_spellcheck()),
@@ -225,6 +245,13 @@ enum Sec {
     /// The open project. Its displayed label is "Work: `<title>`" (the title is
     /// filled in at tree-build time — the enum stays data-free / `Copy`).
     Work,
+    /// Pages contributed through `settings_ext`. Present only when something is
+    /// registered, and last, so an install with no extensions is unchanged.
+    ///
+    /// One fixed section rather than a parent each registration names: letting a
+    /// registration address the app's own tree would make that tree's shape a
+    /// compatibility promise, and rearranging Settings is ordinary work.
+    Extensions,
 }
 
 impl Sec {
@@ -236,6 +263,7 @@ impl Sec {
             Sec::BackupSync => tr!(settings_sec_backup()),
             Sec::CompileExport => tr!(settings_sec_compile()),
             Sec::Work => tr!(settings_sec_work()),
+            Sec::Extensions => tr!(settings_sec_extensions()),
         }
     }
 
@@ -247,6 +275,9 @@ impl Sec {
             Sec::BackupSync => res!("assets/icons/settings/backup.svg"),
             Sec::CompileExport => res!("assets/icons/settings/compile.svg"),
             Sec::Work => res!("assets/icons/binder/book.svg"),
+            // No icon of its own to ship; the section reads by its label like the
+            // nested groups do.
+            Sec::Extensions => res!("assets/icons/settings/appearance.svg"),
         }
     }
 }
@@ -802,6 +833,21 @@ impl SettingsPanel {
             );
             work_node = Some(wk);
         }
+
+        // Anything an extension registered, last and only when there is
+        // something — an install with no extensions gets exactly the tree it had.
+        //
+        // A snapshot, taken as this window is built; see `settings_ext`.
+        let mut extensions_node: Option<NodeId> = None;
+        if crate::settings_ext::has_pages() {
+            let ex = model.insert_root(7, Node::Section(Sec::Extensions));
+            for (i, page) in crate::settings_ext::registered_pages().iter().enumerate() {
+                let pane = Pane::Extension(page.id);
+                nodes.insert(pane, model.insert_child(ex, i, Node::Page(pane)));
+            }
+            extensions_node = Some(ex);
+        }
+
         // The dynamic section label needs the title inside the row closure.
         let work_title_row = work_title.unwrap_or_default();
 
@@ -897,6 +943,7 @@ impl SettingsPanel {
             | Pane::WorkTemplates
             | Pane::WorkAuthor
             | Pane::WorkTextReplacements => work_node,
+            Pane::Extension(_) => extensions_node,
             Pane::Keymap => None,
         };
         if let Some(sec) = section_of(self.selected_pane.get()) {
@@ -1479,6 +1526,18 @@ impl Widget for SettingsPanel {
             // this being put next to `tags_pane` where it reads more naturally.
             (Pane::WorkTemplates, templates_pane),
         ];
+        // Anything an extension registered, appended in the same order
+        // `build_tree` inserted its nodes — the `Switcher` index is derived from
+        // this vec below, so the two cannot disagree however the list grows.
+        //
+        // Built here, with the real `BuildContext`, so a contributed page reaches
+        // `ctx.settings()` and binds its own keys exactly as a built-in pane does.
+        let mut panes = panes;
+        for page in crate::settings_ext::registered_pages() {
+            let body = crate::settings_ext::build_page(page.id, ctx)
+                .unwrap_or_else(|| Box::new(teksilo::widgets::Spacer::new()));
+            panes.push((Pane::Extension(page.id), body));
+        }
         // The list IS the order. Deriving the `Switcher` index by looking the selected
         // pane up in this very vec is what makes the pairing true rather than merely
         // asserted: previously the index was `pane as usize` and a page added at the
@@ -1692,6 +1751,45 @@ mod tests {
             );
         }
         assert_eq!(seen.len(), all.len());
+        assert_eq!(
+            all.len(),
+            every_built_in_pane().len(),
+            "the shared list has drifted from this one"
+        );
+    }
+
+    /// Every built-in page, shared by the tests above and below.
+    fn every_built_in_pane() -> Vec<Pane> {
+        vec![
+            Pane::Appearance,
+            Pane::MenusToolbars,
+            Pane::Notifications,
+            Pane::SceneTypography,
+            Pane::SynopsisTypography,
+            Pane::NotesTypography,
+            Pane::EditorBehavior,
+            Pane::Goals,
+            Pane::Corkboard,
+            Pane::Dictionaries,
+            Pane::Autosave,
+            Pane::ExportFormats,
+            Pane::Paratext,
+            Pane::Keymap,
+            Pane::WorkStructure,
+            Pane::WorkPunctuation,
+            Pane::Punctuation,
+            Pane::Backup,
+            Pane::WorkBackup,
+            Pane::WorkLanguage,
+            Pane::WorkDictionary,
+            Pane::Spellcheck,
+            Pane::WorkTags,
+            Pane::WorkAuthor,
+            Pane::WorkTextReplacements,
+            Pane::DistractionFree,
+            Pane::DistractionFreeThemes,
+            Pane::WorkTemplates,
+        ]
     }
 
     /// The Goals pane bridges `CountingMethodSetting` to the `RadioGroup`'s `usize`
@@ -1711,5 +1809,47 @@ mod tests {
         assert_eq!(method_to_index(CountingMethodSetting::Auto), 0);
         assert_eq!(method_to_index(CountingMethodSetting::CjkHybrid), 3);
         assert_eq!(index_to_method(99), CountingMethodSetting::Auto);
+    }
+
+    /// **What makes an extension page unable to collide with a built-in.**
+    ///
+    /// `settings_ext::register_page` refuses an id with no dot in it, and every
+    /// built-in id here is a bare kebab-case word. That is the whole guarantee —
+    /// so if a built-in ever takes a dotted id, an extension could shadow it and
+    /// the tree would select one page while the panel showed another. This is the
+    /// test that would say so.
+    #[test]
+    fn no_built_in_page_id_is_namespaced() {
+        for pane in every_built_in_pane() {
+            assert!(
+                !pane.id().contains('.'),
+                "built-in page '{}' took a dotted id — an extension page can now shadow it",
+                pane.id()
+            );
+        }
+    }
+
+    /// A contributed page keeps its registered label, and falls back to its id
+    /// rather than an empty row if the extension is gone.
+    #[test]
+    fn an_extension_page_labels_itself_and_degrades_visibly() {
+        let pane = Pane::Extension("t.settings.page");
+        assert_eq!(pane.id(), "t.settings.page");
+        assert_eq!(
+            pane.label().resolve_now(),
+            "t.settings.page",
+            "an unregistered page must still render something identifiable"
+        );
+
+        let _h = crate::settings_ext::register_page(
+            "test.settings.label",
+            crate::settings_ext::SettingsPage {
+                id: "t.settings.page",
+                label: Rc::new(|| lit!("Structure".to_string())),
+                build: Rc::new(|_| Box::new(teksilo::widgets::Spacer::new())),
+            },
+        )
+        .expect("register");
+        assert_eq!(pane.label().resolve_now(), "Structure");
     }
 }
