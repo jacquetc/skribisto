@@ -670,14 +670,20 @@ fn place_annotation(
 /// The verb is localised — "Répondre à", "Reply to", "Antwort an" — so matching the string would
 /// work in whatever language this was written against and silently stop working in the others.
 /// What is stable is the punctuation the timestamp and quote are wrapped in, and that is what is
-/// tested: a parenthesised group holding digits and a separator, followed by `): "` and a closing
-/// quote at the end.
+/// tested: a parenthesised **timestamp**, followed by `): "` and a closing quote at the end.
 ///
-/// Three guards keep it from eating a real reply. It must be the **first** paragraph, there must
+/// Four guards keep it from eating a real reply. It must be the **first** paragraph, there must
 /// be **another paragraph after it** (a reply that is *only* a citation has had its content
-/// deleted, and dropping it would leave an empty reply rather than an odd one), and the shape has
-/// to match in full. When in doubt the paragraph is kept: an editor's words showing up with an
-/// odd prefix is a blemish, and an editor's words disappearing is data loss.
+/// deleted, and dropping it would leave an empty reply rather than an odd one), the shape has to
+/// match in full, and the parenthesised group has to hold a **date and a time**, not merely some
+/// digits. When in doubt the paragraph is kept: an editor's words showing up with an odd prefix
+/// is a blemish, and an editor's words disappearing is data loss.
+///
+/// That last guard is not hypothetical tightening. "Digits and a separator" also describes an
+/// ordinary editorial note — `My note from our call (10/14): "cut this scene entirely"` — which
+/// this ate, silently, on both formats and whatever application wrote them. Requiring a clock
+/// time as well as a date costs nothing (every locale LibreOffice writes this in stamps both)
+/// and takes the false positive from plausible to contrived.
 fn without_reply_citation(paragraphs: &[Vec<Run>]) -> &[Vec<Run>] {
     if paragraphs.len() < 2 {
         return paragraphs;
@@ -704,15 +710,30 @@ fn is_reply_citation(text: &str) -> bool {
     let Some(boundary) = boundary else {
         return false;
     };
-    // A parenthesised group before it, holding a date or a time — at least three digits and a
-    // `:` or `/` separator. That is what distinguishes a citation from an ordinary sentence
-    // that happens to end in a quotation.
+    // A parenthesised group before it, holding a full timestamp: a clock time (`:` between
+    // digits) *and* a date (a `/`, `-` or `.` between digits), with at least four digits
+    // between them. Both halves are required because either alone also describes an ordinary
+    // editorial note — `(10/14)`, `(p. 231)` — and this runs on every reply of every file,
+    // whichever application wrote it.
     let Some(open) = text[..boundary].rfind('(') else {
         return false;
     };
     let inside = &text[open + 1..boundary];
-    inside.chars().filter(char::is_ascii_digit).count() >= 3
-        && inside.contains([':', '/', '-', '.'])
+    inside.chars().filter(char::is_ascii_digit).count() >= 4
+        && separates_digits(inside, &[':'])
+        && separates_digits(inside, &['/', '-', '.'])
+}
+
+/// Whether any of `seps` appears in `text` with a digit on both sides.
+///
+/// A bare `contains` would accept the hyphen in an em-dashed aside or the full stop ending the
+/// sentence before the parenthesis; what a timestamp actually looks like is digits *around* its
+/// separators.
+fn separates_digits(text: &str, seps: &[char]) -> bool {
+    let chars: Vec<char> = text.chars().collect();
+    chars
+        .windows(3)
+        .any(|w| w[0].is_ascii_digit() && seps.contains(&w[1]) && w[2].is_ascii_digit())
 }
 
 fn body_to_djot(paragraphs: &[Vec<Run>]) -> Result<String> {
@@ -1368,5 +1389,126 @@ mod tests {
             body_to_djot(&[vec![Run::plain("   ")]]).expect("convert"),
             ""
         );
+    }
+
+    // ── the reply-citation stripper ─────────────────────────────────────────────────────
+
+    /// What LibreOffice actually writes, in the locales it writes it in.
+    #[test]
+    fn a_word_processors_own_citation_line_is_recognised() {
+        for line in [
+            "Répondre à  (10/08/2026, 09:27): \"en sorte qu\"",
+            "Reply to Editor (08/10/2026, 09:27): \u{201C}the passage\u{201D}",
+            "Antwort an Lektor (10.08.2026, 09:27): \"die Stelle\"",
+            "Ответить (2026-08-10, 09:27): \u{00AB}текст\u{00BB}",
+        ] {
+            assert!(is_reply_citation(line), "not recognised: {line}");
+        }
+    }
+
+    /// The editor's own words, which merely share the punctuation.
+    ///
+    /// Every one of these was eaten by the shape test before it required a clock time as well
+    /// as a date: the reply arrived in the writer's thread with its first paragraph missing,
+    /// on both formats, whichever application wrote the file.
+    #[test]
+    fn a_real_reply_that_merely_looks_like_one_is_kept() {
+        for line in [
+            "My note from our call (10/14): \"cut this scene entirely\"",
+            "See the style guide (p. 231): \"never open on weather\"",
+            "As we agreed (rev. 3.2): \"this chapter stays\"",
+            "She said it herself (twice): \"I am not going\"",
+            "Compare chapters 4-5 with 11-12: \"the same beat\"",
+        ] {
+            assert!(!is_reply_citation(line), "wrongly eaten: {line}");
+        }
+    }
+
+    /// A citation with nothing after it is a reply whose content the editor deleted. Dropping
+    /// the only paragraph would leave an empty reply rather than an odd one.
+    #[test]
+    fn a_reply_that_is_only_a_citation_keeps_it() {
+        let only = vec![vec![Run::plain(
+            "Répondre à  (10/08/2026, 09:27): \"en sorte qu\"",
+        )]];
+        assert_eq!(without_reply_citation(&only).len(), 1);
+    }
+
+    #[test]
+    fn a_citation_ahead_of_real_words_is_dropped_and_the_words_are_not() {
+        let reply = vec![
+            vec![Run::plain(
+                "Répondre à  (10/08/2026, 09:27): \"en sorte qu\"",
+            )],
+            vec![Run::plain("My reply")],
+        ];
+        let kept = without_reply_citation(&reply);
+        assert_eq!(kept.len(), 1);
+        assert_eq!(kept[0][0].text, "My reply");
+    }
+
+    // ── attaching marks to annotations ──────────────────────────────────────────────────
+
+    fn comment_mark(block: usize, start: usize, length: usize, tag: &str) -> CommentMark {
+        CommentMark {
+            uid_tag: tag.into(),
+            block,
+            start,
+            length,
+        }
+    }
+
+    /// The function's whole documented purpose — position, not name and not order — and until
+    /// now nothing tested it with more than one comment in play. Gutting the `(block, start)`
+    /// check to "the first unclaimed annotation" left every round-trip test green.
+    #[test]
+    fn each_mark_reaches_the_annotation_at_its_own_position() {
+        // Deliberately out of order relative to the annotations, which is the case an
+        // order-based match would get wrong.
+        let mut annotations = vec![
+            annotation(0, 5, 4),
+            annotation(0, 40, 6),
+            annotation(2, 5, 4),
+        ];
+        let marks = [
+            comment_mark(2, 5, 4, "tag-third"),
+            comment_mark(0, 40, 6, "tag-second"),
+            comment_mark(0, 5, 4, "tag-first"),
+        ];
+        attach_comment_marks(&mut annotations, &marks);
+
+        assert_eq!(annotations[0].uid_tag.as_deref(), Some("tag-first"));
+        assert_eq!(annotations[1].uid_tag.as_deref(), Some("tag-second"));
+        assert_eq!(annotations[2].uid_tag.as_deref(), Some("tag-third"));
+    }
+
+    /// A mark whose comment the editor deleted is simply unused, and an annotation the editor
+    /// wrote themselves keeps no tag — which is what makes it import as a new comment.
+    #[test]
+    fn a_mark_without_an_annotation_and_an_annotation_without_a_mark_both_survive() {
+        let mut annotations = vec![annotation(0, 5, 4), annotation(0, 90, 3)];
+        let marks = [
+            comment_mark(0, 90, 3, "tag-ours"),
+            comment_mark(1, 12, 5, "tag-for-a-deleted-comment"),
+        ];
+        attach_comment_marks(&mut annotations, &marks);
+
+        assert_eq!(annotations[0].uid_tag, None, "the editor's own remark");
+        assert_eq!(annotations[1].uid_tag.as_deref(), Some("tag-ours"));
+    }
+
+    /// A paragraph comment stores no range of its own and takes the mark's, so the extent the
+    /// editor's application maintained is what comes home.
+    #[test]
+    fn a_paragraph_comment_adopts_its_marks_extent_but_a_ranged_one_keeps_its_own() {
+        let mut annotations = vec![annotation(0, 5, 0), annotation(1, 5, 4)];
+        let marks = [
+            comment_mark(0, 5, 30, "tag-para"),
+            comment_mark(1, 5, 99, "tag-range"),
+        ];
+        attach_comment_marks(&mut annotations, &marks);
+
+        assert_eq!(annotations[0].length, 30, "a paragraph comment adopts it");
+        assert_eq!(annotations[1].length, 4, "a ranged one keeps what it had");
     }
 }

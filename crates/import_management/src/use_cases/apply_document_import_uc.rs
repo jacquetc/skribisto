@@ -83,11 +83,13 @@
 //     its own `Remove` action and its own undo story; this milestone's stated
 //     job is recognition (no duplication on re-import), not garbage collection,
 //     and an unreachable row here is inert data, not a correctness bug.
-//   * A matched comment's `content` link is always repointed at *this* import's
-//     freshly created `Content` row, never left on whatever row a previous import
+//   * A matched comment's `content` link is always repointed at the `Content` row
+//     *this* pass is writing into, never left on whatever row a previous import
 //     attached it to — the returning file describes the current pass at the
 //     passage, and the old row a previous import made is that pass's own
-//     business, not this one's.
+//     business, not this one's. For a creation that row is the one just made; for
+//     an update it is the row the matched item already had, which is the whole
+//     point of updating in place.
 //
 // **Undo has to put an updated row's PREVIOUS state back, not just detach it.**
 // The existing `Binder`-scoped snapshot (see the note above) does not cover
@@ -343,8 +345,26 @@ impl ApplyDocumentImportUseCase {
 
             let content_id = prose_content_of(uow.as_mut(), item_id)?;
             let Some(content_id) = content_id else {
-                // The row holds no prose row to write into or anchor against. Creating one
-                // here would be a different operation than the writer asked for.
+                // The row holds no prose row to write into or anchor against — a Book, a Part,
+                // a bare folder. An update naming one is a disagreement between the two halves
+                // of this feature, the same disagreement the creation pass below refuses
+                // outright, and it reaches here when a row was retyped between the export and
+                // the reimport.
+                //
+                // Skipping it silently is the one thing it must not do. Everything an update
+                // carries is the editor's work, and dropping the lot without a word leaves the
+                // writer believing their remarks came home. Nothing has been written yet — the
+                // whole import is one transaction — so refusing puts them back on the wizard
+                // with the row still there to untick or retype.
+                if !djot.trim().is_empty() || !comments.is_empty() {
+                    return Err(anyhow!(
+                        "apply_document_import: a returning row brings {} comment(s) and \
+                         {} character(s) of prose home to a row that stores none",
+                        comments.len(),
+                        djot.trim().chars().count()
+                    ));
+                }
+                // Nothing to lose: an empty row matched an empty row.
                 continue;
             };
 
@@ -390,11 +410,13 @@ impl ApplyDocumentImportUseCase {
                 title,
                 djot,
                 comments,
-                // Carried on the wire and not yet read here: this milestone teaches the
-                // *importer* to recover a row's identity, and the next one teaches this use
-                // case to act on it (update the row it names instead of creating a second
-                // copy beside it). Named rather than `..` so that adding the action arm is a
-                // change to one line here, not a hunt for where the identity went.
+                // Deliberately unread on this arm. Acting on a recovered identity is what
+                // `ApplyImportRow::Update` above is for, and a row reaching *this* arm is one
+                // the reconcile step decided to create — either because nothing in the
+                // destination paired with it, or because the writer chose a new row over
+                // updating the one that did. Its tag says where it came from, which is
+                // history, not an instruction. Named rather than `..` so the next reader can
+                // see that it was considered and not forgotten.
                 source_uid_tag: _,
             } = row
             else {
@@ -823,8 +845,10 @@ fn create_or_update_comment(
                 uid: existing.uid,
                 // File-authoritative: everything describing what the note says
                 // and where it points, including which `Content` row it is
-                // anchored to — always *this* import's freshly created row,
-                // never whatever an earlier import last attached it to.
+                // anchored to — always the row this pass is writing into, never
+                // whatever an earlier import last attached it to. On an update
+                // that is the matched item's existing row; on a creation, the
+                // one just made.
                 updated_at: written,
                 content: Some(content_id),
                 kind: anchor_kind(kind),
@@ -977,6 +1001,13 @@ fn prose_role_for(
 /// A nil uid is skipped. It means a row created before identity was minted, which no mark can
 /// name — and hashing it would give every such row the same tag, so the first would answer for
 /// all of them.
+///
+/// A **trashed** row is skipped too. Trashing flips `activated` and leaves the row exactly
+/// where it was (see the trash model), so it is still in this list and its tag still resolves.
+/// The wizard filters it out when it builds the merge, but the writer may trash a chapter from
+/// another window between reviewing the merge and pressing Import — and an update that landed
+/// then would write the editor's prose and remarks into a row nothing on screen shows. The
+/// writer would find it only by restoring from the trash, or lose it by emptying it.
 fn items_by_uid_tag(
     uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
     order: &[EntityId],
@@ -985,7 +1016,7 @@ fn items_by_uid_tag(
         .get_binder_item_multi(order)?
         .into_iter()
         .flatten()
-        .filter(|item| !item.uid.is_nil())
+        .filter(|item| !item.uid.is_nil() && item.activated)
         .map(|item| (skribisto_model::round_trip::uid_tag(&item.uid), item.id))
         .collect())
 }

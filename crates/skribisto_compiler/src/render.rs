@@ -535,6 +535,10 @@ fn comment_payload_into(
         .map(|c| (c.comment.id, c))
         .collect();
 
+    // Every comment that got a mark, collected rather than emitted inline so its **ordinal**
+    // can be worked out once the whole set is known — see the emission below.
+    let mut anchored: Vec<(u32, u32, uuid::Uuid)> = Vec::new();
+
     for p in &placements {
         let Some(cwr) = by_id.get(&p.comment_id) else {
             continue;
@@ -567,16 +571,52 @@ fn comment_payload_into(
                         .collect(),
                 });
                 if with_marks && !cwr.comment.uid.is_nil() {
-                    out.marks.insert(text_document::DocumentMark::range(
-                        start as u32,
-                        (start + length) as u32,
-                        skribisto_model::round_trip::comment_mark_name(&cwr.comment.uid),
-                    ));
+                    anchored.push((start as u32, (start + length) as u32, cwr.comment.uid));
                 }
             }
             // Already counted and skipped above.
             skribisto_model::comment_anchor::Resolution::Orphan(_) => {}
         }
+    }
+
+    // The marks, ordered to agree with the comments they carry the identity of.
+    //
+    // The two payloads are sorted independently by whichever writer receives them, and a
+    // comment breaks a tie on its `uid` while a mark breaks one on its `name` — which is
+    // `fnv(uid)`, so the two orders are unrelated. Two comments on the identical range (two
+    // paragraph comments on one paragraph, since `comment_anchor::resolve` gives every
+    // paragraph comment the whole paragraph) could therefore be written with their annotations
+    // in one order and their marks in the other, and a reader matching them by position would
+    // hand each the other's identity: the editor's remark comes home on the wrong thread.
+    //
+    // So the ordinal is stated here, from the same order the comment payload will be sorted
+    // into. `DocumentComment.uid` is the uuid's *string*, so that is what the rank is taken on.
+    //
+    // ⚠ One tie this cannot break: a comment with a **nil** uid gets no mark at all, so if one
+    // shares an exact range with a real comment, the returning file has two annotations there
+    // and one mark, and the reader gives the mark to whichever annotation comes first. Nil uids
+    // are a legacy shape (rows made before identity was minted) and the overlap needs both at
+    // once, but it is a real hole and not a solved one.
+    anchored.sort_by(|a, b| {
+        a.0.cmp(&b.0)
+            .then(a.1.cmp(&b.1))
+            .then(a.2.to_string().cmp(&b.2.to_string()))
+    });
+    let mut ordinal = 0u32;
+    for (i, (start, end, uid)) in anchored.iter().enumerate() {
+        ordinal = if i > 0 && (anchored[i - 1].0, anchored[i - 1].1) == (*start, *end) {
+            ordinal + 1
+        } else {
+            0
+        };
+        out.marks.insert(
+            text_document::DocumentMark::range(
+                *start,
+                *end,
+                skribisto_model::round_trip::comment_mark_name(uid),
+            )
+            .with_ordinal(ordinal),
+        );
     }
     Ok(())
 }
@@ -3572,6 +3612,93 @@ mod tests {
             .take((c.end - c.start) as usize)
             .collect();
         assert_eq!(got, "the hills", "rebased onto the wrong words: {got:?}");
+    }
+
+    /// Two comments on the identical range come out with their marks in the same order as
+    /// their annotations.
+    ///
+    /// The two payloads are sorted independently by whichever writer receives them, on keys
+    /// that do not agree: a comment ties on its uid, a mark on its name, and the name is a hash
+    /// of that uid. Two paragraph comments on one paragraph resolve to the identical extent —
+    /// `comment_anchor::resolve` always gives a paragraph comment the whole paragraph — so the
+    /// tie is ordinary, not contrived. Written in opposite orders, a reader matching by
+    /// position gives each comment the other's identity, and the editor's remark comes home on
+    /// the wrong thread.
+    #[test]
+    fn two_comments_on_one_range_keep_their_marks_in_step_with_their_annotations() {
+        use common::entities::{Comment, CommentAnchorKind};
+
+        let mut g = flat_book();
+        let scene = "The wind rose over the hills.";
+        let (text, starts) = skrib_format::djot_plain_text(scene).expect("plain");
+        let anchor = skribisto_model::comment_anchor::capture(
+            &text,
+            0,
+            text.chars().count(),
+            skribisto_model::comment_anchor::block_of(&starts, 0),
+        );
+        // Two paragraph comments on the same paragraph: the same extent, by construction.
+        let paragraph_comment = |id: u64| skrib_format::CommentWithReplies {
+            comment: Comment {
+                id,
+                uid: common::uid::fixture_uid(id),
+                content: Some(3),
+                kind: CommentAnchorKind::Paragraph,
+                author_name: "Mara Vane".into(),
+                author_initials: "MV".into(),
+                body: format!("Remark {id}"),
+                range_start: anchor.start as u64,
+                range_length: anchor.length as u64,
+                quote_prefix: anchor.prefix.clone(),
+                quote_exact: anchor.exact.clone(),
+                quote_exact_truncated: anchor.exact_truncated,
+                quote_suffix: anchor.suffix.clone(),
+                block_ordinal_hint: anchor.block_ordinal as u64,
+                ..Default::default()
+            },
+            replies: Vec::new(),
+        };
+        g.comments = vec![paragraph_comment(920), paragraph_comment(921)];
+
+        let p = preset("neutral");
+        let r = req(&g, &[100, 101, 102], &p, ExportFormat::Docx);
+        let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+        let Payloads {
+            comments, marks, ..
+        } = export_payloads(&r, &built).unwrap();
+
+        assert_eq!(comments.len(), 2, "both comments are written");
+
+        // The order each payload will actually be written in. Row marks share the payload and
+        // are not what this is about.
+        let comment_uids: Vec<String> = comments
+            .in_document_order()
+            .iter()
+            .map(|c| c.uid.clone())
+            .collect();
+        let mark_names: Vec<String> = marks
+            .in_document_order()
+            .iter()
+            .filter(|m| {
+                m.name
+                    .starts_with(skribisto_model::round_trip::COMMENT_PREFIX)
+            })
+            .map(|m| m.name.clone())
+            .collect();
+        assert_eq!(mark_names.len(), 2, "both comments carry identity");
+
+        let expected: Vec<String> = comment_uids
+            .iter()
+            .map(|u| {
+                skribisto_model::round_trip::comment_mark_name(
+                    &u.parse::<uuid::Uuid>().expect("a uid round-trips"),
+                )
+            })
+            .collect();
+        assert_eq!(
+            mark_names, expected,
+            "the marks must be written in the same order as the comments they identify"
+        );
     }
 
     /// A format that cannot bring comments home is not given any. Reading them and then

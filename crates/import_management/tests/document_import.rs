@@ -25,6 +25,7 @@ use common::undo_redo::UndoRedoManager;
 use direct_access::binder::binder_controller;
 use direct_access::binder::dtos::CreateBinderDto;
 use direct_access::binder_item::binder_item_controller;
+use direct_access::binder_item::dtos::{BinderItemDto, UpdateBinderItemDto};
 use direct_access::content::content_controller;
 use direct_access::root::dtos::CreateRootDto;
 use direct_access::root::root_controller;
@@ -34,10 +35,37 @@ use direct_access::work::dtos::CreateWorkDto;
 use direct_access::work::work_controller;
 use import_management::import_management_controller;
 use import_management::{
-    AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyImportRow, ApplyImportRows,
-    DocumentImportRow, DocumentImportRows, DropPosition, ImportComment, ImportCommentKind,
-    ImportDiagnosticRows, ImportOrphanReason, ImportRowKind,
+    AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyDocumentImportResultDto, ApplyImportRow,
+    ApplyImportRows, DocumentImportRow, DocumentImportRows, DropPosition, ImportComment,
+    ImportCommentKind, ImportDiagnosticRows, ImportOrphanReason, ImportRowKind,
 };
+
+/// A read DTO as the update DTO of the same row, changing nothing.
+///
+/// The generated update DTO carries every field, so a test that wants to flip one has to
+/// restate all of them; this keeps that in one place.
+fn to_update_dto(item: BinderItemDto) -> UpdateBinderItemDto {
+    UpdateBinderItemDto {
+        id: item.id,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        uid: item.uid,
+        title: item.title,
+        sub_title: item.sub_title,
+        role: item.role,
+        sub_role: item.sub_role,
+        label: item.label,
+        activated: item.activated,
+        is_favorite: item.is_favorite,
+        is_exportable: item.is_exportable,
+        exclude_from_numbering: item.exclude_from_numbering,
+        indent: item.indent,
+        word_count_goal: item.word_count_goal,
+        char_count_goal: item.char_count_goal,
+        dict_language: item.dict_language,
+        aliases: item.aliases,
+    }
+}
 // M-S7 round-trip tests: build a real "returning" `.docx`/`.odt` via
 // `text-document`'s own writer, carrying real local `Comment`/`CommentReply`
 // uids — see the `Ctx::write_bytes` doc and the tests themselves, grouped under
@@ -1960,6 +1988,17 @@ impl Ctx {
     /// because choosing between "take their wording" and "take only their notes" is a
     /// decision the writer makes in the wizard.
     fn apply_rows(&mut self, rows: Vec<ApplyImportRow>) -> Vec<EntityId> {
+        self.try_apply_rows(rows)
+            .expect("apply")
+            .created_ids
+            .clone()
+    }
+
+    /// As [`Ctx::apply_rows`], for the cases where refusing *is* the behaviour under test.
+    fn try_apply_rows(
+        &mut self,
+        rows: Vec<ApplyImportRow>,
+    ) -> anyhow::Result<ApplyDocumentImportResultDto> {
         import_management_controller::apply_document_import(
             &self.db,
             &self.hub,
@@ -1974,8 +2013,24 @@ impl Ctx {
                 rows: ApplyImportRows::Create(rows),
             },
         )
-        .expect("apply")
-        .created_ids
+    }
+
+    /// Trash a row the way the trash model does: `activated` flips, the row stays put.
+    fn trash(&mut self, item_id: EntityId) {
+        let item = binder_item_controller::get(&self.db, &item_id)
+            .expect("item")
+            .expect("item row");
+        binder_item_controller::update(
+            &self.db,
+            &self.hub,
+            &mut self.undo,
+            None,
+            &UpdateBinderItemDto {
+                activated: false,
+                ..to_update_dto(item)
+            },
+        )
+        .expect("trash the row");
     }
 
     /// The one item in this binder whose title is `title`.
@@ -2000,6 +2055,24 @@ fn a_project_with_one_row(ctx: &mut Ctx) -> (EntityId, String) {
         .uid;
     assert!(!uid.is_nil(), "a created row mints a durable identity");
     (item_id, skribisto_model::round_trip::uid_tag(&uid))
+}
+
+/// A Book: a row the constraint matrix gives no prose `Content` at all.
+fn a_row_that_stores_no_prose(ctx: &mut Ctx) -> EntityId {
+    ctx.apply_rows(vec![ApplyImportRow::Create {
+        indent: 0,
+        kind: ImportRowKind::Book,
+        title: "A Book".into(),
+        djot: String::new(),
+        comments: Vec::new(),
+        source_uid_tag: String::new(),
+    }]);
+    let book = ctx.item_named("A Book");
+    assert!(
+        ctx.prose_of(book).is_none(),
+        "a Book must store no prose for these tests to mean anything"
+    );
+    book
 }
 
 fn update_row(
@@ -2114,6 +2187,107 @@ fn an_update_for_a_row_that_is_gone_is_skipped_not_fatal() {
         ctx.prose_of(item_id).as_deref(),
         Some("The original wording."),
         "a stale tag must not write into some other row"
+    );
+}
+
+/// A trashed row is not a place to put the editor's work.
+///
+/// Trashing flips `activated` and leaves the row exactly where it was, so its tag still
+/// resolves in the binder's ordered list. The wizard filters trashed rows out when it builds
+/// the merge, but a `Work` can be open in several windows — the writer can trash a chapter in
+/// one while the import wizard sits on the merge step in another. An update that landed then
+/// would put the editor's prose and remarks somewhere the outline does not show, to be found
+/// only by restoring, or lost by emptying the trash.
+#[test]
+fn an_update_never_writes_into_a_trashed_row() {
+    let mut ctx = Ctx::new();
+    let (item_id, tag) = a_project_with_one_row(&mut ctx);
+
+    // Between the merge and the Import button.
+    ctx.trash(item_id);
+
+    ctx.apply_rows(vec![update_row(
+        &tag,
+        true,
+        "The editor's better wording.",
+        vec![an_editors_comment(
+            "Is this the right word?",
+            "original",
+            "The ",
+            " wording.",
+        )],
+    )]);
+
+    assert_eq!(
+        ctx.prose_of(item_id).as_deref(),
+        Some("The original wording."),
+        "a trashed row keeps whatever it had"
+    );
+    assert!(
+        ctx.comments().is_empty(),
+        "and gains no remark it would hide"
+    );
+}
+
+/// A row that stores no prose cannot quietly swallow a returning one.
+///
+/// A Book, a Part or a bare folder has no prose `Content` to write into or anchor against. An
+/// update naming one used to be skipped in silence — prose and every comment on it gone, with
+/// a result DTO that counts only creations, so nothing downstream could tell. The creation
+/// pass refuses the identical shape outright; this is the same refusal on the other path.
+///
+/// Nothing has been written when it refuses: the import is one transaction, so the writer
+/// lands back on the wizard with the row still there to untick or retype.
+#[test]
+fn an_update_onto_a_row_that_stores_no_prose_refuses_rather_than_dropping_it() {
+    let mut ctx = Ctx::new();
+    let (_, _) = a_project_with_one_row(&mut ctx);
+
+    let book = a_row_that_stores_no_prose(&mut ctx);
+    let uid = binder_item_controller::get(&ctx.db, &book)
+        .expect("item")
+        .expect("item row")
+        .uid;
+    let tag = skribisto_model::round_trip::uid_tag(&uid);
+
+    let err = ctx
+        .try_apply_rows(vec![update_row(
+            &tag,
+            true,
+            "Front matter the editor rewrote.",
+            vec![an_editors_comment("Fix this", "matter", "Front ", " the")],
+        )])
+        .expect_err("an update with nowhere to put its prose must not report success");
+    let text = format!("{err:#}");
+    assert!(
+        text.contains("stores none"),
+        "the refusal has to say what was about to be lost: {text}"
+    );
+
+    // And nothing landed: one transaction, refused whole.
+    assert!(ctx.comments().is_empty(), "no comment was written");
+}
+
+/// The same shape carrying nothing is not an error — an empty row matched an empty row, and
+/// there is no loss to report.
+#[test]
+fn an_update_onto_a_prose_less_row_carrying_nothing_is_simply_skipped() {
+    let mut ctx = Ctx::new();
+    let (chapter, _) = a_project_with_one_row(&mut ctx);
+
+    let book = a_row_that_stores_no_prose(&mut ctx);
+    let uid = binder_item_controller::get(&ctx.db, &book)
+        .expect("item")
+        .expect("item row")
+        .uid;
+    let tag = skribisto_model::round_trip::uid_tag(&uid);
+
+    ctx.apply_rows(vec![update_row(&tag, true, "   ", Vec::new())]);
+
+    assert_eq!(
+        ctx.prose_of(chapter).as_deref(),
+        Some("The original wording."),
+        "and the rest of the project is untouched"
     );
 }
 
