@@ -196,19 +196,19 @@ pub fn register_command(
         // The shortcut id is a field of its own, so a clash on it is possible
         // between two commands whose intents do not clash at all. Unchecked, the
         // later registration silently wins the keystroke.
-        if let Some(s) = &command.shortcut {
-            if let Some(other) = reg.iter().find(|r| {
+        if let Some(s) = &command.shortcut
+            && let Some(other) = reg.iter().find(|r| {
                 r.namespace != namespace
                     && r.command
                         .shortcut
                         .as_ref()
                         .is_some_and(|o| o.name == s.name)
-            }) {
-                return Err(format!(
-                    "shortcut id '{}' is already registered by '{}'",
-                    s.name, other.namespace
-                ));
-            }
+            })
+        {
+            return Err(format!(
+                "shortcut id '{}' is already registered by '{}'",
+                s.name, other.namespace
+            ));
         }
         reg.retain(|r| r.namespace != namespace);
         reg.push(Registered {

@@ -1859,3 +1859,6 @@ timeline-no-text-of-its-own = Ceci n'a pas de texte propre â€” c'est un intitulÃ
 timeline-reader-close = Fermer
 timeline-reader-stamp = Tel quel le { $date }
 timeline-reader-deleted = Cela n'est plus dans votre projet. Vous pouvez le lire et le copier ici.
+
+# The Settings tree's section for pages an extension contributed.
+settings-sec-extensions = Extensions

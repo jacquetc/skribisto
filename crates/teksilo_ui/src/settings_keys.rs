@@ -38,6 +38,15 @@
 use std::path::Path;
 
 use serde::Serialize;
+
+/// The `toml` this crate's public API speaks.
+///
+/// [`SettingSpec`] carries `toml::Value` in its `default` and `check` fields, so
+/// an extension declaring its own `toml` dependency at a different version gets
+/// "expected `toml::value::Value`, found `toml::Value`" — an error that names one
+/// type twice and explains nothing. Re-exported so a registration writes
+/// `teksilo_ui::settings_keys::toml::Value` and the mismatch is unexpressible.
+pub use toml;
 use serde::de::DeserializeOwned;
 
 use frontend::common::entities::QuoteStyle;
@@ -46,6 +55,13 @@ use skribisto_model::counting::CountingMethodSetting;
 use crate::view_models::{HighlightScope, TypewriterAnchor};
 
 /// One settable key: what it is called, what it holds, and what it means.
+///
+/// `Copy`, and every field is `'static` — a `&'static str` or a plain `fn`
+/// pointer — which is what lets the built-in table and an extension's registered
+/// keys be handled as one list without leaking or cloning. It also makes the
+/// whole type `Send + Sync`, so the registry behind [`crate::settings_ext`] can be
+/// an ordinary `RwLock` rather than a `thread_local!`.
+#[derive(Clone, Copy)]
 pub struct SettingSpec {
     /// The dotted TOML path, exactly as it appears in `general.toml`.
     pub key: &'static str,
@@ -630,9 +646,40 @@ pub static SETTINGS: &[SettingSpec] = &[
     },
 ];
 
+/// Every settable key: the application's own, then anything an extension
+/// registered through [`crate::settings_ext`].
+///
+/// Read through this rather than [`SETTINGS`] everywhere below, so an extension's
+/// keys reach `--dump-config`, `--config` and the did-you-mean suggestion by the
+/// same route the app's own do. A key that could be *set* but not *dumped* would
+/// be exactly the silent-configuration failure this module exists to abolish,
+/// one layer out.
+pub fn all_specs() -> Vec<SettingSpec> {
+    SETTINGS
+        .iter()
+        .copied()
+        .chain(crate::settings_ext::registered_settings())
+        .collect()
+}
+
+/// The top-level section of every key the **application** declares (`editor`,
+/// `ui`, `backup`, …).
+///
+/// Derived from [`SETTINGS`] at runtime, never hand-listed: this is what
+/// [`crate::settings_ext::register_settings`] refuses an extension key under, and
+/// a hand-copied list would rot into a guard that passes while the collision it
+/// exists to catch goes through — which is precisely what happened to
+/// `commands_ext`'s first cut.
+pub fn app_sections() -> std::collections::BTreeSet<&'static str> {
+    SETTINGS
+        .iter()
+        .filter_map(|s| s.key.split('.').next())
+        .collect()
+}
+
 /// The spec for `key`, if it is a settable one.
-pub fn spec(key: &str) -> Option<&'static SettingSpec> {
-    SETTINGS.iter().find(|s| s.key == key)
+pub fn spec(key: &str) -> Option<SettingSpec> {
+    all_specs().into_iter().find(|s| s.key == key)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -816,8 +863,8 @@ pub fn merge_into(general: &Path, pins: &[(String, toml::Value)]) -> Result<(), 
 /// does not match half the table while a long dotted one still tolerates a wrong segment.
 fn nearest(key: &str) -> Option<&'static str> {
     let budget = (key.len() / 3).clamp(2, 6);
-    SETTINGS
-        .iter()
+    all_specs()
+        .into_iter()
         .map(|s| (distance(key, s.key), s.key))
         .filter(|(d, _)| *d <= budget)
         .min_by_key(|(d, _)| *d)
@@ -865,7 +912,7 @@ pub fn dump(general: &Path) -> String {
          # Keep the lines you want pinned, delete the rest.\n\n",
     );
 
-    for spec in SETTINGS {
+    for spec in all_specs() {
         let on_disk = lookup(&disk, spec.key);
         let value = on_disk.cloned().unwrap_or_else(|| (spec.default)());
         let origin = if on_disk.is_some() { "set" } else { "default" };
