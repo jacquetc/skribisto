@@ -607,6 +607,20 @@ impl EventSource for EventHubSource {
 /// `AppIds`, a view-model, or any other type here. Everything the extension seam
 /// needs to reach lives behind this boundary.
 pub fn run() {
+    // ── Windows: rejoin the launching terminal, if any ────────────────────────
+    //
+    // The binaries are linked for the GUI subsystem (`#![windows_subsystem =
+    // "windows"]` in `src/bin/skribisto.rs`), which also detaches stdout/stderr.
+    // Reattach to the parent's console so `--dump-config`, pin-validation errors
+    // and panic reports still print when launched from a terminal. Failure just
+    // means no console to join (a double-click) — the normal GUI case. Redirected
+    // handles (`> file`) are set via STARTF_USESTDHANDLES and survive the attach.
+    #[cfg(windows)]
+    unsafe {
+        use ::windows::Win32::System::Console::{ATTACH_PARENT_PROCESS, AttachConsole};
+        let _ = AttachConsole(ATTACH_PARENT_PROCESS);
+    }
+
     // ── Panic diagnostics — before anything at all ────────────────────────────
     //
     // Ahead of even the election, so a panic while parsing arguments or binding
