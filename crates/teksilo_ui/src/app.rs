@@ -1908,12 +1908,10 @@ impl Widget for App {
             work: session.save_state.handle(),
             // Tier 3: *this* window's focus. Built from this window's own
             // view-models, never `ctx.app_state` — a second window on the same
-            // Work is looking somewhere else.
-            active: crate::active_context::ActiveContext::new(
-                &editors.active_context(),
-                &editors.focused_side_signal(),
-                &self.outline.selection_signal(),
-            ),
+            // Work is looking somewhere else. Through `for_window` rather than
+            // picking the signals here, so this call site cannot drift from what
+            // `active_context`'s own test exercises.
+            active: crate::active_context::ActiveContext::for_window(&editors, &self.outline),
         };
         crate::commands_ext::register_all_extension_commands(ctx, &seam);
 

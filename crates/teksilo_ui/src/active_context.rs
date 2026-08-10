@@ -130,6 +130,24 @@ impl ActiveContext {
         }
     }
 
+    /// The context for **this window**, read off its own view-models.
+    ///
+    /// The one call the production site makes, so which signals get bridged is
+    /// decided here rather than at the call site. That is the point: the failure
+    /// this shape rules out is a refactor passing a *fresh* `Signal` instead of
+    /// the live one — which compiles, lays out, and leaves every dock's focus
+    /// tracking permanently stuck on its initial value, with nothing to see.
+    pub(crate) fn for_window(
+        editors: &crate::view_models::EditorsViewModel,
+        outline: &crate::view_models::OutlineViewModel,
+    ) -> Self {
+        Self::new(
+            &editors.active_context(),
+            &editors.focused_side_signal(),
+            &outline.selection_signal(),
+        )
+    }
+
     /// A context wired to nothing — for the standalone/test construction sites
     /// that have no window behind them. Its signals never change.
     pub(crate) fn detached() -> Self {

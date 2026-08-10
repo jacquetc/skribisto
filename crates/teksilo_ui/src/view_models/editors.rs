@@ -2556,4 +2556,38 @@ mod tests {
         );
         assert_eq!(window_a.saved_seq().get(), window_b.saved_seq().get());
     }
+
+    /// **The production wiring of the extension seam's focus view, exercised.**
+    ///
+    /// `ActiveContext::for_window` exists so `App::build` cannot choose which
+    /// signals to bridge; this proves the choice it makes is the live one, against
+    /// a real `EditorsViewModel`.
+    ///
+    /// Without it the only coverage was `ActiveContext::new` over signals a test
+    /// made up — which passes just as happily if the call site hands over a fresh
+    /// `Signal::new(None)`, leaving every dock's focus tracking stuck on its
+    /// initial value with nothing to see.
+    #[test]
+    fn for_window_bridges_the_seam_to_this_windows_editors() {
+        use crate::active_context::ActivePane;
+        use crate::view_models::OutlineViewModel;
+
+        let vm = editors();
+        let outline = OutlineViewModel::new_default(vm.app_ctx.clone(), vm.ids.clone());
+        let cx = crate::active_context::ActiveContext::for_window(&vm, &outline);
+
+        assert_eq!(cx.active_pane().get(), ActivePane::Primary);
+        assert_eq!(cx.active_item().get(), None);
+
+        // Drive the real view-model, not a stand-in.
+        vm.set_focused(Side::Secondary);
+        assert_eq!(
+            cx.active_pane().get(),
+            ActivePane::Secondary,
+            "the seam context is not bridged to this window's editors"
+        );
+
+        vm.set_focused(Side::Primary);
+        assert_eq!(cx.active_pane().get(), ActivePane::Primary);
+    }
 }

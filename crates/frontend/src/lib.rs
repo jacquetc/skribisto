@@ -23,6 +23,17 @@ pub use app_context::AppContext;
 pub use common::event::{Event, Origin};
 pub use common::long_operation::OperationProgress;
 pub use common::types::EntityId;
+/// The `flume` this crate's public API speaks.
+///
+/// [`EventHubClient::start`] takes a `flume::Receiver<()>` as its shutdown
+/// channel, so anything outside this workspace that wants to run the event loop
+/// — an extension standing up a headless harness, most of all — must hand over
+/// one built by the *same* flume. Declaring its own gives
+/// "expected `Receiver<()>`, found `Receiver<_>`", which names one type twice
+/// and explains nothing. Re-exported so the mismatch is unexpressible, exactly
+/// as `teksilo_ui::settings_keys` re-exports `toml` for the same reason.
+pub use flume;
+
 pub use event_hub_client::EventHubClient;
 pub use flat_event::{FlatEvent, FlatEventKind};
 

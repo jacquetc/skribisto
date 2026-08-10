@@ -354,6 +354,8 @@ pub fn has_menu_rows() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app_ids::AppIds;
+    use frontend::AppContext;
     use teksilo::prelude::{Key, Modifiers, lit};
     use teksilo::widgets::{MenuModel, MenuNode};
 
@@ -661,5 +663,203 @@ mod tests {
         let _a = register_command("test.cmd.chord.same", cmd.clone()).expect("first");
         let _b = register_command("test.cmd.chord.same", cmd)
             .expect("a namespace must not collide with its own previous registration");
+    }
+
+    // ── Ownership: the whole reason this module exists ───────────────────────
+    //
+    // A global registration belongs to the widget whose `build()` made it and is
+    // torn down when that widget rebuilds or is destroyed. An extension has no
+    // always-mounted widget, so registering from its own panel gives a command
+    // that dies when the panel closes.
+    //
+    // The *action* table is private to teksilo (`WidgetTree::global_actions`, no
+    // public reader, and `dispatch_intent` is crate-private), so these assert on
+    // the **shortcut** half — which `register_all_extension_commands` registers
+    // through the identical `ctx.register_*_global` call, in the same closure,
+    // owned by the same `self_id()`. `ShortcutRegistry::owner_of` makes that
+    // ownership directly observable. The end-to-end firing is covered downstream
+    // by `scripts/automation_pro_command.py`.
+
+    /// Stands in for `App`: a stable root that registers the extension commands,
+    /// with a child panel that comes and goes.
+    struct FakeApp {
+        cx: SeamContext,
+        /// Whether the panel is mounted. Flipping it rebuilds this widget, which
+        /// destroys the panel — what a dock closing does.
+        show_panel: Signal<bool>,
+    }
+
+    impl std::fmt::Debug for FakeApp {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("FakeApp").finish()
+        }
+    }
+
+    impl teksilo::prelude::Widget for FakeApp {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<teksilo::prelude::WidgetId> {
+            use teksilo::core::BindingLevel;
+            let sid = ctx.self_id();
+            let reg = ctx.binding_registry();
+            self.show_panel.bind_to(sid, reg, BindingLevel::Rebuild);
+
+            register_all_extension_commands(ctx, &self.cx);
+
+            if self.show_panel.get() {
+                vec![ctx.add(Panel)]
+            } else {
+                vec![ctx.add(teksilo::widgets::Spacer::new())]
+            }
+        }
+        fn layout_response(
+            &self,
+            proposal: teksilo::prelude::SizeProposal,
+            _ctx: &teksilo::prelude::LayoutContext,
+        ) -> teksilo::prelude::LayoutResponse {
+            proposal.resolve(0.0, 0.0).into()
+        }
+    }
+
+    /// A panel that registers a shortcut **of its own**, the way an extension
+    /// would have had to before `commands_ext` existed.
+    #[derive(Debug)]
+    struct Panel;
+
+    /// The id that panel claims. Its fate is the counterfactual these tests turn on.
+    const PANEL_OWNED: &str = "t.panel.owned";
+
+    impl teksilo::prelude::Widget for Panel {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<teksilo::prelude::WidgetId> {
+            ctx.register_shortcut_global(
+                Shortcut::new(PANEL_OWNED)
+                    .name("Owned by the panel".to_string())
+                    .primary(KeyStroke::new(Key::F7, Modifiers::NONE))
+                    .build(),
+            );
+            vec![ctx.add(teksilo::widgets::Spacer::new())]
+        }
+        fn layout_response(
+            &self,
+            proposal: teksilo::prelude::SizeProposal,
+            _ctx: &teksilo::prelude::LayoutContext,
+        ) -> teksilo::prelude::LayoutResponse {
+            proposal.resolve(0.0, 0.0).into()
+        }
+    }
+
+    fn seam_context() -> SeamContext {
+        let app_ctx = Rc::new(AppContext::new());
+        crate::docks::DockContext {
+            app_ctx: app_ctx.clone(),
+            ids: AppIds::new(),
+            work: crate::view_models::WorkHandle::detached(app_ctx, AppIds::new()),
+            active: crate::active_context::ActiveContext::detached(),
+        }
+    }
+
+    fn with_shortcut(intent: &'static str) -> ExtensionCommand {
+        let mut cmd = command(intent);
+        cmd.shortcut = Some(ShortcutSpec {
+            name: intent,
+            label: "Test",
+            primary: KeyStroke::new(Key::F8, Modifiers::NONE),
+        });
+        cmd
+    }
+
+    /// **The door's central claim, with its counterfactual.**
+    ///
+    /// A global registration belongs to the widget whose `build()` made it and is
+    /// torn down when that widget is destroyed. So the same panel closing that
+    /// takes away a shortcut the *panel* registered must leave one registered
+    /// through `App` untouched — otherwise an extension's command would silently
+    /// stop working the moment its dock was closed, which is exactly what this
+    /// module exists to prevent.
+    ///
+    /// Asserted on the **shortcut** half: teksilo keeps its global *action* table
+    /// private (no public reader, and `dispatch_intent` is crate-private), while
+    /// `register_all_extension_commands` registers both through the identical
+    /// `ctx.register_*_global` pair, in one closure, owned by the same
+    /// `self_id()`. `scripts/automation_pro_command.py` drives the action itself
+    /// against the running app.
+    #[test]
+    fn a_command_outlives_the_panel_that_a_panel_owned_one_does_not() {
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::prelude::SizeProposal;
+
+        let _h = register_command("test.cmd.own", with_shortcut("t10.own")).expect("register");
+
+        let show_panel = Signal::new(true);
+        let mut tree = WidgetTree::new();
+        let root = tree.add_boxed(Box::new(FakeApp {
+            cx: seam_context(),
+            show_panel: show_panel.clone(),
+        }));
+        tree.layout(SizeProposal::exact(400.0, 300.0));
+
+        assert_eq!(
+            tree.shortcut_registry().owner_of("t10.own"),
+            Some(root),
+            "the command must be owned by the root that registered it, not by a panel"
+        );
+        let panel_owner = tree.shortcut_registry().owner_of(PANEL_OWNED);
+        assert!(
+            panel_owner.is_some() && panel_owner != Some(root),
+            "the fixture panel must really own its own shortcut, or the counterfactual proves nothing"
+        );
+
+        // The panel closes.
+        show_panel.set(false);
+        tree.layout(SizeProposal::exact(400.0, 300.0));
+
+        assert_eq!(
+            tree.shortcut_registry().owner_of(PANEL_OWNED),
+            None,
+            "a panel-owned registration must die with the panel — if this ever stops \
+             holding, the reason commands_ext exists has gone away"
+        );
+        assert_eq!(
+            tree.shortcut_registry().owner_of("t10.own"),
+            Some(root),
+            "…and the extension's command, registered through App, must survive it"
+        );
+        assert!(tree.shortcut_registry().get_default("t10.own").is_some());
+    }
+
+    /// A rebuild of the owning root re-registers exactly one — neither losing the
+    /// command nor stacking a second copy on top of it.
+    #[test]
+    fn rebuilding_the_root_re_registers_exactly_one() {
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::prelude::SizeProposal;
+
+        let _h =
+            register_command("test.cmd.rebuild", with_shortcut("t11.rebuild")).expect("register");
+
+        let show_panel = Signal::new(false);
+        let mut tree = WidgetTree::new();
+        let root = tree.add_boxed(Box::new(FakeApp {
+            cx: seam_context(),
+            show_panel: show_panel.clone(),
+        }));
+        tree.layout(SizeProposal::exact(400.0, 300.0));
+        let before = tree.shortcut_registry().len();
+        assert_eq!(tree.shortcut_registry().owner_of("t11.rebuild"), Some(root));
+
+        // Any rebuild of the root re-runs `register_all_extension_commands`.
+        show_panel.set(true);
+        tree.layout(SizeProposal::exact(400.0, 300.0));
+        show_panel.set(false);
+        tree.layout(SizeProposal::exact(400.0, 300.0));
+
+        assert_eq!(
+            tree.shortcut_registry().owner_of("t11.rebuild"),
+            Some(root),
+            "a rebuild dropped the command"
+        );
+        assert_eq!(
+            tree.shortcut_registry().len(),
+            before,
+            "a rebuild registered a second copy of every command"
+        );
     }
 }

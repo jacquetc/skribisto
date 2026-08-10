@@ -3340,3 +3340,95 @@ fn a_backup_carries_unmodelled_files_and_the_contributors_current_state() {
         "a backup must carry a contributor's CURRENT state, as a save does"
     );
 }
+
+/// **Two projects open at once, and each event names exactly one of them.**
+///
+/// The whole point of the payload being `unique_id` rather than a store id: a
+/// listener keys its state by project, so an event misattributed to the wrong one
+/// would load or evict the wrong plan. Opening B must not tell a listener anything
+/// about A, and closing A must not tell it anything about B.
+#[test]
+fn lifecycle_events_name_exactly_the_project_they_are_about() {
+    let log_a = LifecycleLog::new("multi-uid-a");
+    let log_b = LifecycleLog::new("multi-uid-b");
+    let _ha = crate::lifecycle::register("test.lc.multi.a", log_a.clone());
+    let _hb = crate::lifecycle::register("test.lc.multi.b", log_b.clone());
+
+    let (_dir_a, path_a) = write_sample_with_uid("multi-uid-a");
+    let (_dir_b, path_b) = write_sample_with_uid("multi-uid-b");
+
+    // One store, two Works open at once — the arrangement `Root.works` allows and
+    // the one every multi-project bug in this seam has needed.
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path_a.clone(),
+        },
+    )
+    .expect("load A");
+    assert_eq!(log_a.events().len(), 1, "opening A tells A's listener once");
+    assert!(
+        log_b.events().is_empty(),
+        "opening A must say nothing about B"
+    );
+
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path_b.clone(),
+        },
+    )
+    .expect("load B");
+    assert_eq!(
+        log_a.events().len(),
+        1,
+        "opening B must not fire a second Opened for A"
+    );
+    assert_eq!(log_b.events().len(), 1, "…and exactly one for B");
+
+    // Close A only. Both Works are in the store, so this is the case where a
+    // wrong `unique_id` — the trap `close_work_uc` reads BEFORE teardown to
+    // avoid — would evict the surviving project's state.
+    let work_a = *db
+        .get_store()
+        .works
+        .read()
+        .unwrap()
+        .iter()
+        .find(|(_, w)| w.unique_id == "multi-uid-a")
+        .expect("A is open")
+        .0;
+    work_management_controller::close_work(&db, &hub, &CloseWorkDto { work_id: work_a })
+        .expect("close A");
+
+    let closed_a: Vec<_> = log_a
+        .events()
+        .into_iter()
+        .filter(|e| matches!(e, crate::lifecycle::LifecycleEvent::Closed { .. }))
+        .collect();
+    assert_eq!(closed_a.len(), 1, "closing A tells A's listener once");
+    assert!(
+        !log_b
+            .events()
+            .iter()
+            .any(|e| matches!(e, crate::lifecycle::LifecycleEvent::Closed { .. })),
+        "closing A reported B as closed — a listener would have evicted the open project"
+    );
+
+    // …and B really is still open, so the event was not merely mislabelled.
+    assert!(
+        db.get_store()
+            .works
+            .read()
+            .unwrap()
+            .values()
+            .any(|w| w.unique_id == "multi-uid-b"),
+        "closing A removed B from the store"
+    );
+}
