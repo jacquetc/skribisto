@@ -1438,6 +1438,16 @@ impl ImportDocumentViewModel {
         self.merge_version.set(self.merge_version.get() + 1);
     }
 
+    /// Plant a merge without a destination or a store behind it, for layout tests.
+    ///
+    /// The real path needs a binder to read and a destination to read it against; what a
+    /// layout test is asking is whether the step mounts the table, which is a question about
+    /// the panel and not about the backend.
+    pub fn seed_merge_for_test(&self, rows: Vec<MergeRowView>) {
+        *self.merge.borrow_mut() = rows;
+        self.merge_version.set(self.merge_version.get() + 1);
+    }
+
     /// The merge sequence, for the reconcile step's table.
     pub fn merge_rows(&self) -> Vec<MergeRowView> {
         self.merge.borrow().clone()

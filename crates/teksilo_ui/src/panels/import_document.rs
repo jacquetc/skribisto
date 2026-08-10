@@ -1503,4 +1503,109 @@ mod tests {
             "an empty plan must not mount a table"
         );
     }
+    /// The merge step mounts, and it is a table over the merge — not the review tree again.
+    ///
+    /// A step that silently failed to build would compile perfectly well, which is exactly the
+    /// class of mistake this file's other layout tests exist for.
+    #[test]
+    fn the_merge_step_mounts_its_table() {
+        use crate::view_models::import_document::{MergeRowKey, MergeRowView};
+        use skribisto_model::reconcile::{RowAction, RowStatus};
+
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportDocumentViewModel::new(app_ctx.clone(), AppIds::default());
+
+        // A merge with one row on both sides and one the file added — the shape the whole
+        // two-column design exists for.
+        vm.seed_merge_for_test(vec![
+            MergeRowView {
+                key: MergeRowKey::Current(uuid::Uuid::from_u128(1)),
+                indent: 0,
+                current_title: Some("Chapter One".into()),
+                current_item_id: Some(1),
+                incoming_title: Some("Chapter One".into()),
+                incoming_key: None,
+                status: RowStatus::EditorEdited,
+                moved: false,
+                actions: vec![RowAction::TakeImport, RowAction::KeepCurrent],
+            },
+            MergeRowView {
+                key: MergeRowKey::Current(uuid::Uuid::from_u128(2)),
+                indent: 0,
+                current_title: None,
+                current_item_id: None,
+                incoming_title: Some("A chapter they added".into()),
+                incoming_key: None,
+                status: RowStatus::New,
+                moved: false,
+                actions: vec![RowAction::CreateNew, RowAction::Ignore],
+            },
+        ]);
+
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+        let id = tree.add_boxed(Box::new(WidgetHolder::new(reconcile_step(&vm))));
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+
+        assert!(
+            first_containing(&tree, id, "TreeTableView").is_some(),
+            "the merge step must mount its table"
+        );
+        let bounds = tree.bounds(id);
+        assert!(bounds.width > 0.0 && bounds.height > 0.0, "{bounds:?}");
+    }
+
+    /// With nothing to line up — a first import — the step says so in a sentence rather than
+    /// showing a table of identical "create it" dropdowns.
+    #[test]
+    fn the_merge_step_says_so_when_there_is_nothing_to_reconcile() {
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportDocumentViewModel::new(app_ctx.clone(), AppIds::default());
+        vm.seed_merge_for_test(Vec::new());
+
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+        let id = tree.add_boxed(Box::new(WidgetHolder::new(reconcile_step(&vm))));
+        tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+
+        assert!(
+            first_containing(&tree, id, "TreeTableView").is_none(),
+            "an empty merge must not mount a table"
+        );
+    }
+
+    /// A bare host for a `impl Widget` the step factory returns, so it can be mounted without
+    /// the whole wizard around it.
+    #[derive(Debug)]
+    struct WidgetHolder {
+        child: Option<Box<dyn Widget>>,
+        id: Option<WidgetId>,
+    }
+
+    impl WidgetHolder {
+        fn new(child: impl Widget + 'static) -> Self {
+            Self {
+                child: Some(Box::new(child)),
+                id: None,
+            }
+        }
+    }
+
+    impl Widget for WidgetHolder {
+        fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+            match self.child.take() {
+                Some(child) => {
+                    let id = ctx.add_boxed(child);
+                    self.id = Some(id);
+                    vec![id]
+                }
+                None => self.id.into_iter().collect(),
+            }
+        }
+
+        fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+            self.id
+                .and_then(|id| ctx.child_size(id, proposal))
+                .map(LayoutResponse::from)
+                .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+        }
+    }
 }
