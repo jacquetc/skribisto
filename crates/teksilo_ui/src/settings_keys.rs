@@ -38,6 +38,15 @@
 use std::path::Path;
 
 use serde::Serialize;
+
+/// The `toml` this crate's public API speaks.
+///
+/// [`SettingSpec`] carries `toml::Value` in its `default` and `check` fields, so
+/// an extension declaring its own `toml` dependency at a different version gets
+/// "expected `toml::value::Value`, found `toml::Value`" — an error that names one
+/// type twice and explains nothing. Re-exported so a registration writes
+/// `teksilo_ui::settings_keys::toml::Value` and the mismatch is unexpressible.
+pub use toml;
 use serde::de::DeserializeOwned;
 
 use frontend::common::entities::QuoteStyle;
