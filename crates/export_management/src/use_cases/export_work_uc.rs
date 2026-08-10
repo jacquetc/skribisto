@@ -12,7 +12,9 @@ use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
-use common::entities::{Asset, Binder, BinderItem, BinderTag, Content, Footnote, Work};
+use common::entities::{
+    Asset, Binder, BinderItem, BinderTag, Comment, CommentReply, Content, Footnote, Work,
+};
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
 use skrib_format::{TreeReader, gather};
@@ -38,6 +40,9 @@ pub trait ExportWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "Asset", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetMultiRO")]
 #[macros::uow_action(entity = "Footnote", action = "GetRelationshipRO")]
+#[macros::uow_action(entity = "Comment", action = "GetMultiRO")]
+#[macros::uow_action(entity = "Comment", action = "GetRelationshipRO")]
+#[macros::uow_action(entity = "CommentReply", action = "GetMultiRO")]
 pub trait ExportWorkUnitOfWorkTrait: QueryUnitOfWork + Send + Sync {
     fn publish_export_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -62,6 +67,38 @@ impl<'a> TreeReader for dyn ExportWorkUnitOfWorkTrait + 'a {
     }
     fn asset_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<common::entities::Asset>>> {
         self.get_asset_multi(ids)
+    }
+    /// Export reads comments — but never puts one in the manuscript.
+    ///
+    /// They ride out as a side payload the DOCX and ODT writers attach beside the prose, so a
+    /// draft sent to an editor carries the writer's own remarks and comes back with the
+    /// editor's. `skribisto_compiler` decides which formats actually carry them
+    /// (`ExportFormat::carries_comments`); a plain-text or EPUB export reads the rows and
+    /// builds no payload from them.
+    ///
+    /// Read unconditionally rather than only for those two formats, deliberately. Making it
+    /// conditional would mean threading the chosen format into a `TreeReader` — a trait whose
+    /// whole job is "how do I read this store", which has no business knowing what the caller
+    /// intends to write. The cost avoided is a handful of entity fetches on an operation that
+    /// already walks the entire manuscript and writes a file.
+    fn reads_comments(&self) -> bool {
+        true
+    }
+    fn comment_multi(&self, ids: &[EntityId]) -> Result<Vec<Option<common::entities::Comment>>> {
+        self.get_comment_multi(ids)
+    }
+    fn comment_rel(
+        &self,
+        id: &EntityId,
+        field: &common::direct_access::comment::CommentRelationshipField,
+    ) -> Result<Vec<EntityId>> {
+        self.get_comment_relationship(id, field)
+    }
+    fn comment_reply_multi(
+        &self,
+        ids: &[EntityId],
+    ) -> Result<Vec<Option<common::entities::CommentReply>>> {
+        self.get_comment_reply_multi(ids)
     }
     /// Export / analysis reads no templates: they are project furniture, not manuscript
     /// content, and nothing downstream of here consumes them. Explicit rather than
@@ -197,6 +234,8 @@ fn run_export(
         ExportResultDto {
             exported_count: stats.items as i64,
             output_path: dto.output_path.clone(),
+            comments_written: stats.comments_written as i64,
+            comments_orphaned: stats.comments_orphaned as i64,
         },
     ))
 }
@@ -238,6 +277,7 @@ fn map_format(f: &ExportFormat) -> skribisto_compiler::ExportFormat {
         ExportFormat::Html => C::Html,
         ExportFormat::Latex => C::Latex,
         ExportFormat::Docx => C::Docx,
+        ExportFormat::Odt => C::Odt,
         ExportFormat::Epub => C::Epub,
         ExportFormat::Pdf => C::Pdf,
     }

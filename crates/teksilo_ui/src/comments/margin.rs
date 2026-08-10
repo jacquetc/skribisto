@@ -603,8 +603,8 @@ mod tests {
         use crate::comments::session::{CommentHighlightSession, LiveAnchor};
         use crate::models::CommentsListModel;
         use crate::view_models::{CommentPalette, CommentsViewModel};
-        use teksilo::text_document::TextDocument;
         use frontend::common::entities::ContentRole;
+        use teksilo::text_document::TextDocument;
 
         /// A margin over the mock fixture's first thread, anchored to real text.
         fn margin() -> (CommentsViewModel, CommentMargin) {

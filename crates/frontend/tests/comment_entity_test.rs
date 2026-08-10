@@ -104,6 +104,7 @@ fn mk_comment(fx: &Fixture, stack: u64, body: &str) -> EntityId {
             content: Some(fx.content),
             kind: CommentAnchorKind::Range,
             author_name: "Jane".into(),
+            author_initials: "J".into(),
             body: body.into(),
             resolved: false,
             orphaned: false,
@@ -231,6 +232,7 @@ fn resolving_a_comment_is_undoable() {
             updated_at: now(),
             kind: cur.kind,
             author_name: cur.author_name,
+            author_initials: cur.author_initials,
             body: cur.body,
             resolved: true,
             orphaned: cur.orphaned,
@@ -274,9 +276,11 @@ fn replies_thread_in_order() {
             &fx.ctx,
             Some(fx.setup),
             &CreateCommentReplyDto {
+                uid: common::uid::fixture_uid(7000 + reply_ids.len() as u64),
                 created_at: now(),
                 updated_at: now(),
                 author_name: "Jane".into(),
+                author_initials: "J".into(),
                 body: body.into(),
             },
         )

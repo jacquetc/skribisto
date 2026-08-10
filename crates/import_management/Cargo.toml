@@ -47,6 +47,12 @@ skribisto_model = { workspace = true }
 # The integration test builds `.plume` fixtures (zip + loose dir) in a scratch
 # dir; `skrib_format` (a normal dep) reads the produced `.skrib` back.
 tempfile = "3"
+# M-S7 round-trip test: builds a real `.docx`/`.odt` "returning file" via
+# `text-document`'s own writer (real `DocumentComment`/`CommentReply` uids), the
+# same dev-only wiring `document_ingest`'s own `odt_writer_roundtrip.rs`/
+# `docx_writer_roundtrip.rs` already use — dev-only so this crate's runtime
+# dependency graph never grows a writer it does not otherwise need.
+text-document = { workspace = true }
 
 [lints]
 workspace = true

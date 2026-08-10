@@ -19,13 +19,17 @@ in a binary. These pin *reality*.
 
   word-shaped.docx  Office Open XML as Word writes it, authored here: `w:outlineLvl`
                     headings, a ranged comment with a threaded reply through
-                    `w15:commentsEx`, a resolved point comment, and tracked changes.
-                    Not produced by Word (which is not available on this machine) —
-                    the wire format is Word's, the authorship is ours, and this file
-                    says so rather than implying otherwise.
+                    `w15:commentsEx`, a resolved point comment, tracked changes, and
+                    an unanchored comment of its own carrying bold/italic emphasis
+                    across two paragraphs (M-S4: a comment body is Djot, not plain
+                    text). Not produced by Word (which is not available on this
+                    machine) — the wire format is Word's, the authorship is ours,
+                    and this file says so rather than implying otherwise.
   libreoffice.odt   LibreOffice's own writer, from the flat ODF below. Carries an
                     `office:annotation` thread via `loext:parent-name`, a resolved
-                    comment, and a ranged comment closed by `office:annotation-end`.
+                    comment, a ranged comment closed by `office:annotation-end`, and
+                    a second point comment on the same paragraph carrying bold/
+                    italic emphasis across two paragraphs (M-S4).
   pandoc.odt        pandoc, from the Markdown below.
   pandoc.docx       pandoc, from the same Markdown — so the two formats can be
                     asserted to produce the *same* prose from the same source.
@@ -113,6 +117,9 @@ def word_shaped_docx(path):
   <w:p w14:paraId="AAAA0002"><w:r><w:t>Yes, I meant it.</w:t></w:r></w:p></w:comment>
 <w:comment w:id="3" w:author="Editor" w:date="2026-01-04T03:04:05Z" w:initials="E">
   <w:p w14:paraId="AAAA0003"><w:r><w:t>A whole-paragraph note.</w:t></w:r></w:p></w:comment>
+<w:comment w:id="4" w:author="Editor" w:date="2026-01-06T03:04:05Z" w:initials="E">
+  <w:p w14:paraId="AAAA0004"><w:r><w:t xml:space="preserve">This needs </w:t></w:r><w:r><w:rPr><w:b/></w:rPr><w:t>real</w:t></w:r><w:r><w:t xml:space="preserve"> emphasis, and </w:t></w:r><w:r><w:rPr><w:i/></w:rPr><w:t>italics</w:t></w:r><w:r><w:t xml:space="preserve"> too.</w:t></w:r></w:p>
+  <w:p w14:paraId="AAAA0006"><w:r><w:t>A second paragraph in the same note.</w:t></w:r></w:p></w:comment>
 </w:comments>'''
 
     extended = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -182,7 +189,7 @@ FLAT_ODT = '''<?xml version="1.0" encoding="UTF-8"?>
   <text:h text:outline-level="2">Chapter One</text:h>
   <text:p>She turned the corner and <office:annotation office:name="c1"><dc:creator>Editor</dc:creator><dc:date>2026-01-02T03:04:05</dc:date><text:p>Is this the right word?</text:p></office:annotation><text:span text:style-name="Em">the street was gone</text:span><office:annotation-end office:name="c1"/><office:annotation office:name="c2" loext:parent-name="c1"><dc:creator>Writer</dc:creator><dc:date>2026-01-03T03:04:05</dc:date><text:p>Yes, I meant it.</text:p></office:annotation>. In its place, <text:span text:style-name="Strong">nothing</text:span>.</text:p>
   <text:h text:outline-level="2">Chapter Two</text:h>
-  <text:p>The second chapter opens quietly.<office:annotation office:name="c3" loext:resolved="true"><dc:creator>Editor</dc:creator><dc:date>2026-01-04T03:04:05</dc:date><text:p>A whole-paragraph note.</text:p></office:annotation></text:p>
+  <text:p>The second chapter opens quietly.<office:annotation office:name="c3" loext:resolved="true"><dc:creator>Editor</dc:creator><dc:date>2026-01-04T03:04:05</dc:date><text:p>A whole-paragraph note.</text:p></office:annotation><office:annotation office:name="c4"><dc:creator>Editor</dc:creator><dc:date>2026-01-06T03:04:05</dc:date><text:p>This needs <text:span text:style-name="Strong">real</text:span> emphasis, and <text:span text:style-name="Em">italics</text:span> too.</text:p><text:p>A second paragraph in the same note.</text:p></office:annotation></text:p>
  </office:text></office:body>
 </office:document>
 '''

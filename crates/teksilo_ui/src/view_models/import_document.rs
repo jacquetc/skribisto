@@ -1317,7 +1317,9 @@ fn create_type_to_kind(kind: CreateType) -> ImportRowKind {
 fn comment_from_dto(comment: &ImportComment) -> Option<PlannedComment> {
     let ImportComment::Found {
         kind,
+        uid,
         author_name,
+        author_initials,
         created_at,
         body,
         resolved,
@@ -1368,7 +1370,9 @@ fn comment_from_dto(comment: &ImportComment) -> Option<PlannedComment> {
                 frontend::common::entities::CommentOrphanReason::TargetDeleted
             }
         },
+        uid: *uid,
         author: author_name.clone(),
+        author_initials: author_initials.clone(),
         created: parse_rfc3339(created_at),
         body: body.clone(),
         resolved: *resolved,
@@ -1376,7 +1380,9 @@ fn comment_from_dto(comment: &ImportComment) -> Option<PlannedComment> {
             .iter()
             .filter_map(|reply| {
                 let ImportReply::Found {
+                    uid,
                     author_name,
+                    author_initials,
                     created_at,
                     body,
                 } = reply
@@ -1384,7 +1390,9 @@ fn comment_from_dto(comment: &ImportComment) -> Option<PlannedComment> {
                     return None;
                 };
                 Some(document_ingest::SourceAnnotationReply {
+                    uid: *uid,
                     author: author_name.clone(),
+                    author_initials: author_initials.clone(),
                     created: parse_rfc3339(created_at),
                     body: body.clone(),
                 })
@@ -1403,7 +1411,9 @@ fn comment_to_dto(comment: &PlannedComment) -> ImportComment {
             }
             frontend::common::entities::CommentAnchorKind::Document => ImportCommentKind::Document,
         },
+        uid: comment.uid,
         author_name: comment.author.clone(),
+        author_initials: comment.author_initials.clone(),
         created_at: comment.created.map(|d| d.to_rfc3339()).unwrap_or_default(),
         body: comment.body.clone(),
         resolved: comment.resolved,
@@ -1433,7 +1443,9 @@ fn comment_to_dto(comment: &PlannedComment) -> ImportComment {
             .replies
             .iter()
             .map(|reply| ImportReply::Found {
+                uid: reply.uid,
                 author_name: reply.author.clone(),
+                author_initials: reply.author_initials.clone(),
                 created_at: reply.created.map(|d| d.to_rfc3339()).unwrap_or_default(),
                 body: reply.body.clone(),
             })

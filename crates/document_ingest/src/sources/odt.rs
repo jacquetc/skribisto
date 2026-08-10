@@ -59,11 +59,11 @@ use std::io::Read;
 use anyhow::{Result, anyhow};
 use roxmltree::{Document, Node};
 
-use crate::block::{SourceAnnotationReply, SourceDocument};
+use crate::block::SourceDocument;
 use crate::diagnostics::ImportDiagnostic;
 use crate::scanner::SourceScanner;
 use crate::sources::rich::{
-    ParagraphKind, RichAnnotation, RichBlock, RichDocument, Run, RunStyle, assemble,
+    ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply, Run, RunStyle, assemble,
 };
 
 const NS_OFFICE: &str = "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
@@ -75,6 +75,15 @@ const NS_DRAW: &str = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
 const NS_DC: &str = "http://purl.org/dc/elements/1.1/";
 const NS_XLINK: &str = "http://www.w3.org/1999/xlink";
 const NS_LOEXT: &str = "urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0";
+/// Skribisto's own extension namespace, carrying `skrb:uid` on `<office:annotation>` —
+/// the exact same URI `text-document`'s `export_odt_uc` declares (`odt_render::NAMESPACES`)
+/// under the same `skrb` prefix. Read here (M-S7) so a re-import of a file Skribisto
+/// itself exported recognises its own comments instead of duplicating them — see
+/// `RichAnnotation::uid`'s own doc. There is no ODT-side equivalent for
+/// `author_initials`: ODF's `<office:annotation>` schema has no carrier for it (the
+/// module doc above already states this format ceiling for the writer's side; it is
+/// the same ceiling here, on the reader's).
+const NS_SKRB: &str = "urn:ferntech:text-document:comment:1";
 
 /// Field elements whose text is the value they were last showing.
 ///
@@ -801,25 +810,52 @@ impl<'a> Walker<'a> {
             .find(|c| is(c, NS_DC, "date"))
             .map(element_text)
             .and_then(|d| parse_date(&d));
-        let body = node
-            .children()
-            .filter(|c| is(c, NS_TEXT, "p"))
-            .map(element_text)
-            .collect::<Vec<_>>()
-            .join("\n");
+        // One `Vec<Run>` per `<text:p>` — the comment's own text, styled but not
+        // yet Djot. `rich::assemble` converts it, alongside manuscript prose,
+        // rather than this scanner reimplementing that pipeline for a comment's
+        // paragraphs. `element_text`'s flat concatenation used to be used here,
+        // which is why a bold or italic word inside a comment used to vanish on
+        // import: it reads every text node under the annotation regardless of
+        // the `text:span` carrying it, so the run's own formatting was never
+        // even looked at.
+        // One builder across every `<text:p>`, not one buffer per paragraph: a line break
+        // *inside* a paragraph has to be able to end it, which a per-paragraph buffer
+        // cannot express. Each `<text:p>` closes its own paragraph on the way out, so
+        // Enter (separate elements) and Shift+Enter (`<text:line-break/>`) both arrive as
+        // real paragraph boundaries and read back identically.
+        let mut body = AnnotationBody::default();
+        for p in node.children().filter(|c| is(c, NS_TEXT, "p")) {
+            let base = p
+                .attribute((NS_TEXT, "style-name"))
+                .map(|s| self.styles.text_style(s))
+                .unwrap_or_default();
+            self.annotation_inline(p, base, None, &mut body);
+            body.break_paragraph();
+        }
+        let paragraphs: Vec<Vec<Run>> = body.finish();
         let resolved = node
             .attribute((NS_LOEXT, "resolved"))
             .is_some_and(|v| v == "true");
         let name = node.attribute((NS_OFFICE, "name"));
+        // Only Skribisto's own writer puts this attribute on `<office:annotation>` —
+        // an unparsable or absent value (a plain LibreOffice comment) is `None`, not
+        // an error: the comment is still imported, just as one an editor authored
+        // fresh. See `NS_SKRB`'s own doc.
+        let uid = node
+            .attribute((NS_SKRB, "uid"))
+            .and_then(|v| uuid::Uuid::parse_str(v).ok());
 
         // A reply joins its parent's thread rather than becoming a comment.
         if let Some(parent) = node.attribute((NS_LOEXT, "parent-name")) {
             match self.by_name.get(parent).copied() {
                 Some(index) => {
-                    self.annotations[index].replies.push(SourceAnnotationReply {
+                    self.annotations[index].replies.push(RichReply {
+                        uid,
                         author,
+                        // ODF has no carrier for this at all — see `NS_SKRB`'s doc.
+                        author_initials: String::new(),
                         created,
-                        body,
+                        paragraphs,
                     });
                     return;
                 }
@@ -834,9 +870,11 @@ impl<'a> Walker<'a> {
             block_index: self.blocks.len(),
             start: build.len,
             length: 0,
+            uid,
             author,
+            author_initials: String::new(),
             created,
-            body,
+            paragraphs,
             resolved,
             replies: Vec::new(),
         });
@@ -850,6 +888,92 @@ impl<'a> Walker<'a> {
                     start: build.len,
                 },
             );
+        }
+    }
+
+    /// Character-styled runs for one paragraph of a comment or reply's own
+    /// text — the same `text:span`/`text:a`/`text:s`/`text:tab` vocabulary
+    /// [`Self::inline`] reads for manuscript prose, narrowed to what an
+    /// annotation's own `<text:p>` can actually hold.
+    ///
+    /// A separate method rather than a call into [`Self::inline`] itself: that
+    /// one also handles footnotes, frames, tables and nested annotations, all of
+    /// which touch `self`'s diagnostic counters (`self.footnotes`,
+    /// `self.text_boxes`, …) and none of which a comment's own body can contain
+    /// — LibreOffice offers no UI to put a footnote or a frame *inside* a
+    /// comment, and no UI to comment on a comment either. Reusing `inline`
+    /// directly would silently start counting those against the manuscript's
+    /// own diagnostics for constructs that live in a margin note instead.
+    fn annotation_inline(
+        &self,
+        node: Node<'_, '_>,
+        style: RunStyle,
+        link: Option<&str>,
+        out: &mut AnnotationBody,
+    ) {
+        for child in node.children() {
+            if child.is_text() {
+                let text = child.text().unwrap_or_default();
+                if !text.is_empty() {
+                    out.push(Run {
+                        text: text.to_string(),
+                        style,
+                        link: link.map(str::to_string),
+                        image: None,
+                    });
+                }
+                continue;
+            }
+            if !child.is_element() {
+                continue;
+            }
+            match (child.tag_name().namespace(), child.tag_name().name()) {
+                (Some(NS_TEXT), "span") => {
+                    let inner = child
+                        .attribute((NS_TEXT, "style-name"))
+                        .map(|s| merge(style, self.styles.text_style(s)))
+                        .unwrap_or(style);
+                    self.annotation_inline(child, inner, link, out);
+                }
+                (Some(NS_TEXT), "a") => {
+                    let url = child.attribute((NS_XLINK, "href")).unwrap_or_default();
+                    self.annotation_inline(child, style, Some(url), out);
+                }
+                (Some(NS_TEXT), "s") => {
+                    let count: usize = child
+                        .attribute((NS_TEXT, "c"))
+                        .and_then(|v| v.parse().ok())
+                        .unwrap_or(1);
+                    out.push(Run {
+                        text: " ".repeat(count),
+                        style,
+                        link: link.map(str::to_string),
+                        image: None,
+                    });
+                }
+                // A tab collapses to a single space: a comment box has no tab stops of
+                // its own to honour, so the words either side still read correctly and
+                // only the exact whitespace differs.
+                (Some(NS_TEXT), "tab") => {
+                    out.push(Run {
+                        text: " ".into(),
+                        style,
+                        link: link.map(str::to_string),
+                        image: None,
+                    });
+                }
+                // A deliberate line break starts a new paragraph, exactly as it does for
+                // manuscript prose in [`Self::inline`] and for a `.docx` comment in
+                // `docx::CommentBodyBuilder`. An editor who writes a two-line note with
+                // Shift+Enter meant two lines; collapsing them to a space silently
+                // reflows their remark into one run-on sentence, and — worse — makes the
+                // same note import differently depending on whether it was written in
+                // LibreOffice or in Word.
+                (Some(NS_TEXT), "line-break") => out.break_paragraph(),
+                // Unknown inline element: take its text rather than drop it,
+                // matching `Self::inline`'s own fallback.
+                _ => self.annotation_inline(child, style, link, out),
+            }
         }
     }
 
@@ -871,6 +995,44 @@ impl<'a> Walker<'a> {
                 .unwrap_or(open.start)
         };
         self.annotations[open.annotation].length = end.saturating_sub(open.start);
+    }
+}
+
+/// A comment or reply body under construction: finished paragraphs, plus the one still
+/// being filled.
+///
+/// The ODF counterpart of `docx::CommentBodyBuilder`, and it exists for the same reason.
+/// A body is `Vec<Vec<Run>>` — one inner vector per paragraph — but the runs arrive from a
+/// recursive walk that cannot see paragraph boundaries, and a `<text:line-break/>` can end
+/// a paragraph from *inside* one. Threading a single builder through the walk is what lets
+/// the break reach the outer vector; a plain `&mut Vec<Run>` per paragraph structurally
+/// cannot, which is exactly how a Shift+Enter in a LibreOffice comment used to arrive as a
+/// space.
+#[derive(Default)]
+struct AnnotationBody {
+    paragraphs: Vec<Vec<Run>>,
+    current: Vec<Run>,
+}
+
+impl AnnotationBody {
+    fn push(&mut self, run: Run) {
+        self.current.push(run);
+    }
+
+    /// End the paragraph in progress.
+    ///
+    /// A no-op when nothing has been collected, so consecutive breaks — and the closing
+    /// break every `<text:p>` performs — cannot manufacture empty paragraphs, which
+    /// `body_to_djot` would turn into stray blank `<p>` elements.
+    fn break_paragraph(&mut self) {
+        if !self.current.is_empty() {
+            self.paragraphs.push(std::mem::take(&mut self.current));
+        }
+    }
+
+    fn finish(mut self) -> Vec<Vec<Run>> {
+        self.break_paragraph();
+        self.paragraphs
     }
 }
 

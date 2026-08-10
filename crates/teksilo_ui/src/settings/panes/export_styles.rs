@@ -680,6 +680,7 @@ fn format_label(f: ExportFormat) -> LocalizedString {
         ExportFormat::Djot => "Djot",
         ExportFormat::Latex => "LaTeX",
         ExportFormat::Docx => "DOCX",
+        ExportFormat::Odt => "ODT",
         ExportFormat::Epub => "EPUB",
         ExportFormat::Pdf => "PDF",
     })

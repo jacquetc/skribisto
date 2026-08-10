@@ -482,6 +482,7 @@ fn comment_to_file(cwr: &CommentWithReplies) -> CommentFile {
         updated_at: fmt_dt(&c.updated_at),
         kind: c.kind.clone(),
         author_name: c.author_name.clone(),
+        author_initials: c.author_initials.clone(),
         body: c.body.clone(),
         resolved: c.resolved,
         orphaned: c.orphaned,
@@ -498,9 +499,11 @@ fn comment_to_file(cwr: &CommentWithReplies) -> CommentFile {
             .iter()
             .map(|r| CommentReplyFile {
                 file_id: r.id,
+                uid: r.uid,
                 created_at: fmt_dt(&r.created_at),
                 updated_at: fmt_dt(&r.updated_at),
                 author_name: r.author_name.clone(),
+                author_initials: r.author_initials.clone(),
                 body: r.body.clone(),
             })
             .collect(),
@@ -951,6 +954,7 @@ fn comment_from_file(cf: &CommentFile, content: Option<u64>) -> Result<LoadedCom
         content,
         kind: cf.kind.clone(),
         author_name: cf.author_name.clone(),
+        author_initials: cf.author_initials.clone(),
         body: cf.body.clone(),
         resolved: cf.resolved,
         orphaned: cf.orphaned,
@@ -967,9 +971,14 @@ fn comment_from_file(cf: &CommentFile, content: Option<u64>) -> Result<LoadedCom
             .iter()
             .map(|r| {
                 Ok(LoadedCommentReply {
+                    // Healed rather than trusted: a pre-v12 bundle carries nil here, and
+                    // the migration only reaches bundles it parses — a reply arriving by
+                    // any other route still needs an identity before anything keys on it.
+                    uid: common::uid::heal_uid(r.uid),
                     created_at: parse_dt(&r.created_at)?,
                     updated_at: parse_dt(&r.updated_at)?,
                     author_name: r.author_name.clone(),
+                    author_initials: r.author_initials.clone(),
                     body: r.body.clone(),
                 })
             })

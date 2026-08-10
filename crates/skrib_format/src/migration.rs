@@ -20,6 +20,10 @@
 //! legacy project.
 
 use anyhow::Result;
+// The Djot exporter's own escaper, shared rather than reimplemented: a second definition
+// would disagree with it about exactly the awkward bodies (`- ` at a line start, a title
+// in `[brackets]`, prose about `snake_case`) while agreeing on everything easy.
+use text_document::{needs_djot_escaping, plain_text_to_djot};
 
 use super::bundle::{FORMAT_VERSION, WorkBundle};
 
@@ -61,6 +65,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             8 => step_v8_to_v9(bundle),
             9 => step_v9_to_v10(bundle),
             10 => step_v10_to_v11(bundle),
+            11 => step_v11_to_v12(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -109,6 +114,81 @@ fn step_v10_to_v11(bundle: &mut WorkBundle) {
             for list in bi.footnotes.values_mut() {
                 for f in list {
                     f.uid = common::uid::heal_uid(f.uid);
+                }
+            }
+        }
+    }
+}
+
+/// v11 → v12 mints a `uid` for every comment **reply**, and promotes every comment and
+/// reply body from plain text to Djot.
+///
+/// # Why replies needed their own identity
+///
+/// v11 gave the thread one. That is enough to *find* a returning thread and not enough to
+/// reconcile what is inside it: an editor who answers in the middle of a conversation
+/// shifts every later reply by one, so matching them positionally re-imports the tail as
+/// duplicates. Same argument as v11's, one level down.
+///
+/// # Why the bodies are rewritten rather than reinterpreted
+///
+/// `body` is now Djot, and most stored bodies already *are* the Djot that means
+/// themselves — "Check this scene." parses to "Check this scene.". The ones that are not
+/// would change meaning on the next read: a remark reading `*not* like this` would come
+/// back emphasised, and one opening `- ` would become a list item. So every body is run
+/// through [`plain_text_to_djot`], the same escaper the Djot **exporter** uses, so the two
+/// cannot disagree about which strings are awkward.
+///
+/// Escaping is skipped where it would be a no-op ([`needs_djot_escaping`]), which keeps
+/// ordinary bodies byte-identical on disk — and that matters beyond tidiness: a body left
+/// untouched still reads correctly in an older build, so only projects that genuinely held
+/// markup-like text are changed at all.
+///
+/// # Idempotency
+///
+/// Re-running must not double-escape. That is not automatic — `plain_text_to_djot` is not
+/// idempotent on its own output (`\*` would become `\\\*`) — so the guard is the format
+/// stamp: `migrate_bundle` advances `format_version` past 11 once, and this step never runs
+/// against a v12 bundle. The uid half *is* independently idempotent, via `heal_uid`.
+///
+/// # The two shapes that change, and why neither loses meaning
+///
+/// A *plain-text* round trip through Djot cannot reproduce a **blank line** inside a body,
+/// nor **trailing whitespace** on a line — `text_document::djot_round_trip_is_lossy` names
+/// both, and it is the right tool for a caller whose exact bytes matter.
+///
+/// It is deliberately not used here, because for this field the bytes are not the meaning.
+/// A blank line in a plain-text comment body *is* the plain-text encoding of a paragraph
+/// break; once the body is Djot that break is carried by the paragraph structure itself,
+/// which is strictly more faithful than the character that stood in for it. The card
+/// renders two paragraphs either way. Trailing spaces on a line carry no meaning in a
+/// remark at all.
+///
+/// So nothing is quietly dropped: what changes is the *encoding* of a break the writer
+/// will still see — which is why this step owes them no reporting channel.
+fn step_v11_to_v12(bundle: &mut WorkBundle) {
+    fn heal_body(body: &mut String) {
+        if needs_djot_escaping(body) {
+            *body = plain_text_to_djot(body);
+        }
+    }
+
+    for c in &mut bundle.orphan_comments {
+        heal_body(&mut c.body);
+        for r in &mut c.replies {
+            r.uid = common::uid::heal_uid(r.uid);
+            heal_body(&mut r.body);
+        }
+    }
+    for bb in &mut bundle.binders {
+        for bi in &mut bb.items {
+            for list in bi.comments.values_mut() {
+                for c in list {
+                    heal_body(&mut c.body);
+                    for r in &mut c.replies {
+                        r.uid = common::uid::heal_uid(r.uid);
+                        heal_body(&mut r.body);
+                    }
                 }
             }
         }

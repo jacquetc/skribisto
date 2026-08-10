@@ -113,7 +113,7 @@ use std::collections::BTreeMap;
 /// A required field added without `#[serde(default)]` is the one shape that is *not*
 /// caught mechanically. It degrades to a raw parse error — never to data loss — but it
 /// degrades, so give every additive field its `default` and the question stays easy.
-pub const FORMAT_VERSION: u32 = 11;
+pub const FORMAT_VERSION: u32 = 12;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -576,9 +576,23 @@ pub struct InlineContent {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CommentReplyFile {
     pub file_id: u64,
+    /// Durable per-row identity, on the same terms as [`CommentFile::uid`] and for the
+    /// same reason one level down: an editorial round trip that recognised only the
+    /// thread would have to match the replies inside it by position, so an editor
+    /// answering in the *middle* of a conversation would re-import every later reply as
+    /// a duplicate. `#[serde(default)]` so pre-v12 bundles still deserialize (nil), and
+    /// `migrate_bundle` fills them in.
+    #[serde(default)]
+    pub uid: uuid::Uuid,
     pub created_at: String,
     pub updated_at: String,
     pub author_name: String,
+    /// The replier's own initials, as Word shows them (`w:initials`). `#[serde(default)]`
+    /// for pre-v12 bundles, where it reads as empty — and an empty value makes the
+    /// writers emit no initials rather than a guessed one.
+    #[serde(default)]
+    pub author_initials: String,
+    /// Djot, as on [`CommentFile::body`].
     pub body: String,
 }
 
@@ -608,6 +622,14 @@ pub struct CommentFile {
     pub updated_at: String,
     pub kind: CommentAnchorKind,
     pub author_name: String,
+    /// The author's initials, as Word shows them beside a comment (`w:initials`).
+    /// Never derived from `author_name`: an editor's initials arrive in the file and are
+    /// theirs to choose. `#[serde(default)]` for pre-v12 bundles.
+    #[serde(default)]
+    pub author_initials: String,
+    /// Djot — an editor's remark arrives from `.docx`/`.odt` carrying its own emphasis.
+    /// Plain text is still valid Djot, so a body written before this became rich reads
+    /// back unchanged; `migrate_bundle` escapes the ones that would not.
     pub body: String,
     pub resolved: bool,
     pub orphaned: bool,

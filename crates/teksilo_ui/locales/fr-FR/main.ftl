@@ -923,6 +923,7 @@ export-chip-notes-included = Notes incluses
 export-chip-notes-excluded = Notes exclues
 # Formats de sortie
 export-format-docx = Word
+export-format-odt = LibreOffice
 export-format-html = HTML
 export-format-markdown = Markdown
 export-format-djot = Djot
@@ -1465,6 +1466,13 @@ comments-status-open = Ouvert
 comments-status-resolved = Résolu
 comments-status-orphaned = Texte introuvable
 comments-orphan-snippet = (le texte commenté a disparu)
+# Un commentaire dont l'ancrage a été résolu avec succès mais qui n'a aucune
+# position réelle à indiquer — importé depuis un format sans notion de position
+# dans le texte pour ce cas (un titre, un paragraphe vide, un tableau). À
+# distinguer de « Texte introuvable » : rien n'a disparu, il n'y a simplement
+# jamais eu de position.
+comments-status-unplaced = Aucune position dans le texte
+comments-unplaced-snippet = (non rattaché à un texte)
 comments-reply-count = { $count } réponses
 comments-menu-resolve = Résoudre
 comments-menu-reopen = Rouvrir
@@ -1616,6 +1624,11 @@ card-point-of-view = Point de vue
 card-aliases = Aussi appelé
 
 export-orphan-footnotes-title = Notes sans appel
+export-comments-dropped =
+    { $count ->
+        [one] Un commentaire n'a pas pu être placé dans le texte exporté et a été omis.
+       *[other] { $count } commentaires n'ont pas pu être placés dans le texte exporté et ont été omis.
+    }
 export-orphan-footnotes =
     { $count ->
         [one] Une note de bas de page n'est plus appelée nulle part dans le manuscrit. Son texte n'apparaîtra pas dans le livre exporté.

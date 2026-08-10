@@ -54,10 +54,14 @@ pub enum SourceBlock {
     /// ODT reader.
     ///
     /// **`text` is not a convenience copy.** It is the coordinate space an
-    /// annotation's quote is measured in — the same space `to_plain_text` reports
-    /// for the live editor document — and it comes from the *same parse* as `djot`
-    /// so the two cannot describe different content. Deriving it later would mean
-    /// parsing the Djot a second time and hoping the answer matched.
+    /// annotation's quote and *hint* offsets are measured in, and it comes from the
+    /// *same parse* as `djot` so the two cannot describe different content. Deriving
+    /// it later would mean parsing the Djot a second time and hoping the answer
+    /// matched. It is the plain-text *export* (no `U+FFFC` table anchors), which is
+    /// fine for a hint: before anything is stored, `plan::anchor_comments` proves
+    /// every quote against the row's **addressable** text
+    /// (`skrib_format::djot_plain_text`, anchors counted) and re-captures the anchor
+    /// there, so a hint that drifts past a table is corrected by the quote match.
     Prose { djot: String, text: String },
     /// A scene break the scanner recognised. Carrying the tier here — rather
     /// than the raw glyph — is what keeps `skribisto_model`'s vocabulary the one
@@ -121,7 +125,23 @@ pub enum AnnotationKind {
 /// always names the thread root, never a peer reply).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SourceAnnotationReply {
+    /// The identity this reply carried in the source file, when the file is one
+    /// Skribisto itself exported — the DOCX writer's `skrb:uid` on `<w:comment>`
+    /// (M-S1) or the ODT writer's `skrb:uid` on `<office:annotation>` (M-S2).
+    /// `None` when the scanner found no such attribute: a reply an editor typed
+    /// straight into Word or LibreOffice, never one Skribisto minted. This is
+    /// exactly what lets a re-import recognise "the same reply come back" instead
+    /// of creating a second one — see `apply_document_import_uc`'s own doc for how
+    /// the distinction is used.
+    pub uid: Option<uuid::Uuid>,
     pub author: String,
+    /// Read from `w:initials` on DOCX. Always empty on ODT — ODF's
+    /// `office:annotation` has no carrier for it (a documented format ceiling, see
+    /// `text-document`'s `export_odt_uc` module doc, not a bug to fix here). Empty
+    /// means "none", the same convention [`SourceAnnotation::author`]'s sibling
+    /// fields already use — never `Option`, so an empty string from a source that
+    /// genuinely has no initials cannot be confused with an absent read.
+    pub author_initials: String,
     pub created: Option<chrono::DateTime<chrono::Utc>>,
     pub body: String,
 }
@@ -140,7 +160,12 @@ pub struct SourceAnnotation {
     /// in what order, so it can rebase these exactly — whereas a document-absolute
     /// offset would have to be corrected for every block the row did *not* take.
     pub anchor: Anchor,
+    /// See [`SourceAnnotationReply::uid`] — the same recognition mechanism, for the
+    /// thread's opening comment rather than one of its replies.
+    pub uid: Option<uuid::Uuid>,
     pub author: String,
+    /// See [`SourceAnnotationReply::author_initials`].
+    pub author_initials: String,
     pub created: Option<chrono::DateTime<chrono::Utc>>,
     pub body: String,
     pub resolved: bool,

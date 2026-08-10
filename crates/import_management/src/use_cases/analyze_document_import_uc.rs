@@ -322,7 +322,9 @@ fn comment_to_dto(comment: &PlannedComment) -> ImportComment {
             CommentAnchorKind::Paragraph => ImportCommentKind::Paragraph,
             CommentAnchorKind::Document => ImportCommentKind::Document,
         },
+        uid: comment.uid,
         author_name: comment.author.clone(),
+        author_initials: comment.author_initials.clone(),
         created_at: comment.created.map(|d| d.to_rfc3339()).unwrap_or_default(),
         body: comment.body.clone(),
         resolved: comment.resolved,
@@ -344,7 +346,9 @@ fn comment_to_dto(comment: &PlannedComment) -> ImportComment {
             .replies
             .iter()
             .map(|reply| ImportReply::Found {
+                uid: reply.uid,
                 author_name: reply.author.clone(),
+                author_initials: reply.author_initials.clone(),
                 created_at: reply.created.map(|d| d.to_rfc3339()).unwrap_or_default(),
                 body: reply.body.clone(),
             })

@@ -918,6 +918,7 @@ export-chip-notes-included = Notes included
 export-chip-notes-excluded = Notes excluded
 # Output formats
 export-format-docx = Word
+export-format-odt = LibreOffice
 export-format-html = HTML
 export-format-markdown = Markdown
 export-format-djot = Djot
@@ -1458,6 +1459,12 @@ comments-status-open = Open
 comments-status-resolved = Resolved
 comments-status-orphaned = Lost its text
 comments-orphan-snippet = (the commented text is gone)
+# A comment that resolved successfully yet has no live range to point at — an
+# import from a format with no text-position concept for it (a heading, a blank
+# paragraph, a table). Distinct from "Lost its text": nothing went missing, it
+# never had a position to begin with.
+comments-status-unplaced = No text position
+comments-unplaced-snippet = (not anchored to any text)
 comments-reply-count = { $count } replies
 comments-menu-resolve = Resolve
 comments-menu-reopen = Reopen
@@ -1643,6 +1650,11 @@ card-point-of-view = Point of view
 card-aliases = Also known as
 
 export-orphan-footnotes-title = Footnotes with no reference
+export-comments-dropped =
+    { $count ->
+        [one] One comment could not be placed in the exported text and was left out.
+       *[other] { $count } comments could not be placed in the exported text and were left out.
+    }
 export-orphan-footnotes =
     { $count ->
         [one] One footnote is no longer referenced anywhere in the manuscript. Its text will not appear in the exported book.

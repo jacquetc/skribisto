@@ -254,6 +254,48 @@ fn a_comment_keeps_the_date_its_author_wrote_it() {
     }
 }
 
+/// M-S4: a comment's own text is Djot now, not plain text — an editor who bolds
+/// or italicises a word in their remark, or writes it as two paragraphs, must
+/// see that survive the import rather than being flattened to plain prose.
+/// Both scanners carry a comment authored exactly that way.
+#[test]
+fn a_comment_with_bold_and_italic_imports_with_formatting_intact() {
+    for name in ["word-shaped.docx", "libreoffice.odt"] {
+        let doc = scan(name);
+        let rich = doc
+            .annotations
+            .iter()
+            .find(|a| a.body.contains("real") && a.body.contains("italics"))
+            .unwrap_or_else(|| {
+                panic!(
+                    "no richly formatted comment found in {name}: {:?}",
+                    doc.annotations
+                )
+            });
+        assert!(
+            rich.body.contains("*real*"),
+            "bold did not survive as Djot in {name}: {:?}",
+            rich.body
+        );
+        assert!(
+            rich.body.contains("_italics_"),
+            "italic did not survive as Djot in {name}: {:?}",
+            rich.body
+        );
+        assert!(
+            rich.body.contains("A second paragraph in the same note."),
+            "the second paragraph did not survive in {name}: {:?}",
+            rich.body
+        );
+        assert_ne!(
+            rich.body,
+            "This needs real emphasis, and italics too.\n\nA second paragraph in the same note.",
+            "the body must carry Djot markers, not the plain text a flattening \
+             scanner would have produced, in {name}"
+        );
+    }
+}
+
 // ── what a container carries that Markdown does not ─────────────────────────
 
 /// Accepted insertions, dropped deletions — and one sentence saying so, because a

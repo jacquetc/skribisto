@@ -663,6 +663,7 @@ fn seed_comment(ctx: &AppContext, work: u64, body: &str, reply_body: &str) -> (u
             content: Some(content),
             kind: CommentAnchorKind::Range,
             author_name: "Jane".into(),
+            author_initials: "J".into(),
             body: body.into(),
             resolved: false,
             orphaned: false,
@@ -684,9 +685,11 @@ fn seed_comment(ctx: &AppContext, work: u64, body: &str, reply_body: &str) -> (u
         ctx,
         None,
         &CreateCommentReplyDto {
+            uid: common::uid::fixture_uid(6001),
             created_at: now,
             updated_at: now,
             author_name: "Marc".into(),
+            author_initials: "M".into(),
             body: reply_body.into(),
         },
     )

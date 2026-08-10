@@ -113,10 +113,31 @@ impl Default for CommentRow {
 }
 
 impl CommentRow {
-    /// Whether this row still points at live text. An orphan is *shown*, always —
-    /// it just cannot be navigated to or highlighted.
+    /// Whether this row still points at live text you can seek the caret to and
+    /// highlight. An orphan is *shown*, always — it just cannot be navigated to.
+    ///
+    /// `range_length > 0` is as load-bearing here as `orphaned` and `content_id`:
+    /// a comment can resolve *successfully* to an empty range.
+    /// `CommentAnchorKind::Document` — the kind the importer minted for a comment
+    /// on a heading, a blank paragraph or a table before it stopped being able to
+    /// point at prose at all (see `document_ingest::plan`'s module doc, and
+    /// `sources::rich`'s for the two cases that still mint it) — resolves to
+    /// exactly `Anchor::default()`: a genuine zero-length range, not a missing
+    /// one, so `orphaned` stays `false` for it. Before this guard checked
+    /// `range_length`, such a row reported itself anchored and a click seeked to
+    /// a fabricated `(0, 0)` instead of nowhere. See [`Self::is_unplaced`].
     pub fn is_anchored(&self) -> bool {
-        !self.orphaned && self.content_id.is_some()
+        !self.orphaned && self.content_id.is_some() && self.range_length > 0
+    }
+
+    /// True for a comment that resolved successfully yet has nowhere to point:
+    /// not orphaned — its `Content` is alive and its anchor "resolved" — but its
+    /// range is empty. This is `CommentAnchorKind::Document`'s only surviving
+    /// shape (see [`Self::is_anchored`]'s doc for why). The docks give it its own
+    /// badge and snippet rather than the blank quote a `range_length: 0` row
+    /// would otherwise render, and refuse to seek it anywhere.
+    pub fn is_unplaced(&self) -> bool {
+        !self.orphaned && self.content_id.is_some() && self.range_length == 0
     }
 
     /// Open threads are the actionable ones, and the number the binder-tree badge
@@ -401,12 +422,23 @@ mod imp {
                 &self.inner.ctx,
                 stack_id,
                 &CreateCommentDto {
-                    uid: Default::default(),
+                    // Minted here, not left nil. `uid` is what an editorial round trip
+                    // matches a returning comment on: exported into the `.docx`/`.odt`
+                    // and read back to recognise *this* remark rather than create a
+                    // second copy of it. A nil uid makes every round trip duplicate
+                    // every comment, and the failure only shows up on the second one.
+                    uid: common::uid::new_uid(),
                     created_at: now,
                     updated_at: now,
                     content: Some(content_id),
                     kind,
                     author_name: author_name.to_string(),
+                    // Seeded once, from the name this comment is being signed with, so a
+                    // comment we export carries a margin label in Word instead of an
+                    // anonymous one. An editor's own initials arrive inside the file they
+                    // send back and are never overwritten by this — see
+                    // `skribisto_model::initials`.
+                    author_initials: skribisto_model::initials::initials_from_name(author_name),
                     body: body.to_string(),
                     resolved: false,
                     orphaned: false,
@@ -472,9 +504,14 @@ mod imp {
                 &self.inner.ctx,
                 stack_id,
                 &CreateCommentReplyDto {
+                    // A reply needs its own identity for the same reason its thread does,
+                    // one level down: matching replies by position would re-import every
+                    // reply after one the editor inserted mid-conversation.
+                    uid: common::uid::new_uid(),
                     created_at: now,
                     updated_at: now,
                     author_name: author_name.to_string(),
+                    author_initials: skribisto_model::initials::initials_from_name(author_name),
                     body: body.to_string(),
                 },
             )
@@ -518,9 +555,14 @@ mod imp {
                 stack_id,
                 &UpdateCommentReplyDto {
                     id: cur.id,
+                    // Carried through unchanged, exactly as `update_with` does for a
+                    // comment: a nil here would overwrite the row's durable identity on
+                    // every keystroke-committed edit.
+                    uid: cur.uid,
                     created_at: cur.created_at,
                     updated_at: chrono::Utc::now(),
                     author_name: cur.author_name,
+                    author_initials: cur.author_initials,
                     body: body.to_string(),
                 },
             ) {
@@ -606,6 +648,9 @@ mod imp {
                 updated_at: chrono::Utc::now(),
                 kind: cur.kind,
                 author_name: cur.author_name,
+                // Carried through for the same reason `uid` is: an edit to a thread's
+                // resolved state must not silently blank the label its author chose.
+                author_initials: cur.author_initials,
                 body: cur.body,
                 resolved: cur.resolved,
                 orphaned: cur.orphaned,
@@ -1055,9 +1100,10 @@ mod imp {
     }
 
     /// A fabricated set covering every shape a dock has to render: an open range
-    /// comment with a thread, a resolved paragraph comment, and an orphan — so the
-    /// mock build exercises the "no home" bucket and the resolved styling too,
-    /// rather than only the happy row.
+    /// comment with a thread, a resolved paragraph comment, an orphan, and an
+    /// *unplaced* comment — so the mock build exercises the "no home" bucket, the
+    /// resolved styling, and `is_unplaced`'s own badge too, rather than only the
+    /// happy row.
     ///
     /// The two anchored ones are positioned against the real fabricated prose of
     /// `MOCK_ITEM` ("This is the fabricated body of scene 201. The morning light
@@ -1074,12 +1120,18 @@ mod imp {
                 item_title: MOCK_ITEM_TITLE.into(),
                 kind: CommentAnchorKind::Range,
                 author_name: "Jane".into(),
-                body: "Is this too on-the-nose?".into(),
+                // Real Djot markup, deliberately — a body is Djot now (M-S4), and
+                // a mocks fixture with none would let a card, a dock preview line
+                // or the AccessKit summary silently regress to showing an
+                // editor's `*emphasis*` as literal asterisks without the visual
+                // QA path (`--features mocks`, no backend needed) ever catching
+                // it.
+                body: "Is this *too* on-the-nose?".into(),
                 replies: vec![
                     super::ReplyRow {
                         id: 11,
                         author_name: "Marc".into(),
-                        body: "A little. But it is the title image.".into(),
+                        body: "A little. But it is the _title image_.".into(),
                         created_at: now,
                     },
                     super::ReplyRow {
@@ -1153,6 +1205,28 @@ flowing prose per row."
                 created_at: now,
                 ..Default::default()
             },
+            CommentRow {
+                // `CommentAnchorKind::Document`'s only surviving shape: a comment
+                // the import pipeline could not point at any prose (a heading, in
+                // the pre-fix importer; a blank paragraph or a table today — see
+                // `document_ingest::plan`'s module doc). Its `Content` is alive
+                // and it is *not* orphaned — `range_length: 0` is the only tell —
+                // so without `is_unplaced` this row would render a blank quote
+                // and fabricate a seek to (0, 0) on click.
+                id: 5,
+                content_id: Some(content),
+                item_id: Some(MOCK_ITEM),
+                item_title: MOCK_ITEM_TITLE.into(),
+                kind: CommentAnchorKind::Document,
+                author_name: "Editor".into(),
+                body: "Left as a note on the whole scene by whoever wrote it \
+in Word."
+                    .into(),
+                range_start: 0,
+                range_length: 0,
+                created_at: now,
+                ..Default::default()
+            },
         ];
         sort_rows(&mut rows);
         rows
@@ -1172,6 +1246,11 @@ mod tests {
             content_id: if orphaned { None } else { Some(1) },
             block_ordinal_hint: block,
             range_start: start,
+            // A real (non-zero) length, matching every ordinary quote. This
+            // helper is about position and orphan state, not `is_unplaced`'s own
+            // zero-length case — the tests that need that build a `CommentRow`
+            // by hand instead (see `a_resolved_but_empty_anchor_is_unplaced`).
+            range_length: if orphaned { 0 } else { 4 },
             orphaned,
             ..Default::default()
         }
@@ -1208,6 +1287,46 @@ mod tests {
         let o = row(1, None, 0, 0, true);
         assert!(!o.is_anchored());
         assert!(row(2, Some(3), 0, 0, false).is_anchored());
+    }
+
+    /// `CommentAnchorKind::Document`'s only surviving shape: a comment whose
+    /// anchor *resolved* — its `Content` is alive, it is not `orphaned` — but
+    /// resolved to a zero-length range. Before `is_anchored` checked
+    /// `range_length`, this exact shape reported itself anchored and a click
+    /// against it seeked to a fabricated `(0, 0)`.
+    #[test]
+    fn a_resolved_but_empty_anchor_is_unplaced_not_anchored() {
+        let r = CommentRow {
+            content_id: Some(7),
+            orphaned: false,
+            range_start: 0,
+            range_length: 0,
+            ..Default::default()
+        };
+        assert!(
+            r.is_unplaced(),
+            "a live Content with an empty range is exactly what is_unplaced means"
+        );
+        assert!(
+            !r.is_anchored(),
+            "an empty range must never be treated as a live position"
+        );
+    }
+
+    /// Orphaned takes priority over unplaced: a comment with no home at all is
+    /// described by `orphaned`, not by `is_unplaced` — the two states are
+    /// mutually exclusive even though neither has anywhere to seek.
+    #[test]
+    fn an_orphan_is_never_reported_as_unplaced_either() {
+        let o = row(1, None, 0, 0, true);
+        assert!(!o.is_unplaced());
+    }
+
+    /// A comment with a real, positive-length range is neither unplaced nor
+    /// orphaned — the ordinary case `is_unplaced` must not misclassify.
+    #[test]
+    fn an_ordinary_anchored_comment_is_not_unplaced() {
+        assert!(!row(2, Some(3), 0, 0, false).is_unplaced());
     }
 
     #[test]

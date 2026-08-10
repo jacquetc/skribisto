@@ -109,7 +109,7 @@ pub fn markdown_to_djot_and_text(markdown: &str) -> Result<(String, String)> {
     Ok((doc.to_djot()?, doc.to_plain_text()?))
 }
 
-/// The plain text of a Djot string, plus every block's start offset.
+/// The **addressable** text of a Djot string, plus every block's start offset.
 ///
 /// The two coordinates `skribisto_model::comment_anchor` speaks — document-absolute
 /// **character** offsets, and the block index a paragraph comment falls back to.
@@ -122,16 +122,24 @@ pub fn markdown_to_djot_and_text(markdown: &str) -> Result<(String, String)> {
 /// created, because a quote that fails to match is a comment silently attached to
 /// the wrong sentence.
 ///
-/// `to_plain_text` and `blocks().position()` are the same pair
+/// `to_addressable_text` and `blocks().position()` are the same pair
 /// `comments::binding::snapshot` reads off a live editor document, so an anchor
 /// verified here resolves identically the first time the row is opened.
+///
+/// It must be `to_addressable_text()` and NOT `to_plain_text()`: block positions,
+/// selections and search offsets all live in the document's own char space, where an
+/// embedded table occupies its `U+FFFC` anchor plus a `\n` separator. `to_plain_text()`
+/// is the human-readable export and omits the anchor, so pairing it with these starts
+/// skewed every offset after a table by two characters — a comment made on
+/// `"salt-bleached"` in a row with a table stored its quote as `"lt-bleached d"`.
+/// `spike_block_starts.rs` / `spike_table_capture.rs` pin the repaired pairing.
 pub fn djot_plain_text(djot: &str) -> Result<(String, Vec<usize>)> {
     if djot.trim().is_empty() {
         return Ok((String::new(), Vec::new()));
     }
     let doc = TextDocument::new();
     doc.set_djot(djot)?.wait()?;
-    let text = doc.to_plain_text()?;
+    let text = doc.to_addressable_text()?;
     let starts = doc.blocks().into_iter().map(|b| b.position()).collect();
     Ok((text, starts))
 }

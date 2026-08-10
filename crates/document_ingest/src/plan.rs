@@ -36,6 +36,23 @@
 //! calls the failure that "is invisible until someone's comment has silently moved".
 //! A quote that does not survive the conversion is reported and the comment is kept
 //! as an orphan the writer can see and act on — never quietly repositioned.
+//!
+//! ## This planner never mints `CommentAnchorKind::Document`
+//!
+//! Neither DOCX nor ODF has a "comment on the whole document" concept — `Document`
+//! is a kind neither format can express, and the comment UI never wires it up
+//! either (there is no surface to open one from). A comment landing on a *heading*
+//! block used to become one; it becomes a `Paragraph` comment on the row's first
+//! block instead (see [`planned_comment`]), and a comment on a row whose Djot
+//! failed to parse becomes a `Paragraph` comment pinned to block 0 with an empty
+//! quote (see [`anchor_comments`]) — both real, storable anchors rather than a
+//! placeholder kind. `sources::rich` still mints `Document` for the two cases that
+//! genuinely have no text to point at (a blank paragraph, a table) — a deliberate,
+//! separate decision, not an oversight here. The enum variant itself is not
+//! removed: comments minted before this change exist on disk and must keep
+//! loading, and the UI (`docks::comments`) still renders them — as a comment that
+//! resolved successfully yet has nowhere to point, never as one that silently
+//! vanished.
 
 use common::entities::{CommentAnchorKind, CommentOrphanReason, ContentRole};
 use skribisto_model::comment_anchor::{self, Anchor, Resolution};
@@ -56,7 +73,7 @@ use crate::title;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlannedComment {
     pub kind: CommentAnchorKind,
-    /// In the row's own plain-text character space — what
+    /// In the row's own **addressable** character space — what
     /// `skrib_format::djot_plain_text` reports for `PlannedRow::djot`, which is
     /// what the editor's document will report when the row is opened.
     pub anchor: Anchor,
@@ -65,10 +82,21 @@ pub struct PlannedComment {
     /// was thrown away, and beats one confidently pointed at the wrong sentence.
     pub orphaned: bool,
     pub orphan_reason: CommentOrphanReason,
+    /// Carried straight across from `SourceAnnotation::uid` (M-S7) — the identity
+    /// this comment carried in the source file, when that file is one Skribisto
+    /// itself exported. `apply_document_import_uc` is what turns this into "update
+    /// the matching `Comment` row" rather than "create a new one" — see its own
+    /// module doc for the recognition rule and what it does and does not update.
+    pub uid: Option<uuid::Uuid>,
     pub author: String,
+    /// See `SourceAnnotation::author_initials` — empty means "none".
+    pub author_initials: String,
     pub created: Option<chrono::DateTime<chrono::Utc>>,
     pub body: String,
     pub resolved: bool,
+    /// Each reply already carries its own `SourceAnnotationReply::uid` /
+    /// `author_initials` — nothing to rebase here, since a reply has no anchor of
+    /// its own to prove against this row's Djot.
     pub replies: Vec<SourceAnnotationReply>,
 }
 
@@ -195,13 +223,28 @@ fn anchor_comments(plan: &mut ImportPlan) {
             continue;
         }
         let Ok((text, block_starts)) = skrib_format::djot_plain_text(&row.djot) else {
-            // The Djot this planner just built failed to parse. Every comment on
-            // the row becomes a comment on the row as a whole rather than a lie
-            // about where it points.
-            for comment in &mut row.comments {
-                comment.kind = CommentAnchorKind::Document;
-                comment.anchor = Anchor::default();
-            }
+            // The Djot this planner just built failed to parse, so there is no
+            // parsed text to prove any quote against — not even "the row's first
+            // block", which is what a heading comment falls back to below, and
+            // which depends on this very parse having succeeded.
+            //
+            // This is *not* `CommentAnchorKind::Document`: that kind is reserved
+            // for a format that genuinely has no text to point into (a blank
+            // paragraph, a table — see `sources::rich`'s module doc), and it is
+            // neither DOCX nor ODF's vocabulary, nor one the comment UI ever
+            // wires up. A row whose Djot failed to parse is not that — it is an
+            // ordinary paragraph comment whose text simply is not available
+            // *yet*. So every comment on the row becomes a `Paragraph` comment
+            // pinned to block 0 with an empty quote: exactly the tier-3 fallback
+            // `comment_anchor::resolve` already falls back to when a paragraph's
+            // wording cannot be found (`_ => anchor.block_ordinal`). It cannot be
+            // resolved here — there is no parsed text to resolve it against —
+            // but it is a real, storable anchor rather than a zero-length
+            // placeholder tied to a kind the UI cannot render, so the live
+            // editor's own re-anchor pass places it on block 0 the first time
+            // the row is actually opened (by which point its Djot, whatever this
+            // planner built, is what the editor parses too).
+            pin_to_first_block(&mut row.comments);
             continue;
         };
 
@@ -236,13 +279,47 @@ fn anchor_comments(plan: &mut ImportPlan) {
     }
 }
 
+/// Give every comment in `comments` a `Paragraph` anchor pinned to block 0 with
+/// an empty quote — the parse-failure fallback `anchor_comments` uses, pulled out
+/// so it is unit-testable on its own. In practice `djot_plain_text` failing on
+/// Djot this planner just built is vanishingly rare (the parser it wraps is
+/// lenient rather than rejecting), so this path is exercised directly here
+/// rather than by trying to manufacture a real parse failure.
+fn pin_to_first_block(comments: &mut [PlannedComment]) {
+    for comment in comments {
+        comment.kind = CommentAnchorKind::Paragraph;
+        comment.anchor = Anchor {
+            block_span: 1,
+            ..Anchor::default()
+        };
+    }
+}
+
 /// A short, single-line rendering of a comment body, for a diagnostic.
 ///
 /// The *body*, not the quote: a diagnostic naming "the passage beginning 'She
 /// turned…'" reads as though the prose were at fault, while the writer recognises
 /// their editor's note instantly.
+///
+/// `body` is Djot (M-S4: an imported comment can carry its own emphasis), and this
+/// is a plain-text preview — `skrib_format::djot_plain_text` strips the markup
+/// *before* the whitespace collapse and the 60-character truncation run over it,
+/// so a bold word does not turn the review panel into `"...the *right* word..."`
+/// with the asterisks counted as visible characters the writer never typed.
+///
+/// `skrib_format` (already a dependency here, via `anchor_comments`'s own use of
+/// its `djot_plain_text`) rather than pulling in `text-document` directly: a
+/// second, direct dependency on it would need docx-rs unified against
+/// `document_io`'s own exact `=0.4.21` pin, for a function this crate does not
+/// otherwise need. On the vanishingly rare parse failure this falls back to the
+/// raw Djot rather than losing the preview outright — `djot_plain_text`'s own
+/// doc calls that failure "vanishingly rare" for exactly this reason: the parser
+/// it wraps is lenient rather than rejecting.
 fn body_preview(body: &str) -> String {
-    let one_line = body.split_whitespace().collect::<Vec<_>>().join(" ");
+    let plain = skrib_format::djot_plain_text(body)
+        .map(|(text, _)| text)
+        .unwrap_or_else(|_| body.to_string());
+    let one_line = plain.split_whitespace().collect::<Vec<_>>().join(" ");
     let chars: Vec<char> = one_line.chars().collect();
     if chars.len() <= 60 {
         one_line
@@ -348,8 +425,8 @@ fn append_document(
 
         // Comments on this block belong to whichever row it just joined. A comment
         // on a *heading* has no prose to point into — a heading becomes a row's
-        // title — so it becomes a comment on the row as a whole, which is exactly
-        // what `CommentAnchorKind::Document` is for.
+        // title — so `planned_comment` gives it a `Paragraph` anchor on the row's
+        // first block instead of a quote it could never carry.
         for annotation in doc
             .annotations
             .iter()
@@ -368,21 +445,46 @@ fn append_document(
 /// The anchor arrives measured against the block's own text; shifting `start` by
 /// where that block begins in the row is the whole of the rebasing. Everything else
 /// — the quote, its context, whether it was truncated — is carried across untouched,
-/// because it describes prose rather than position.
+/// because it describes prose rather than position. The one exception is a
+/// heading's annotation, which carries no offset across at all — see below.
 fn planned_comment(
     annotation: &SourceAnnotation,
     block: &SourceBlock,
     block_offset: usize,
 ) -> PlannedComment {
+    let is_heading = matches!(block, SourceBlock::Heading { .. });
     let kind = match annotation.kind {
-        // A heading is a title, not prose, so nothing inside it can be pointed at.
-        _ if matches!(block, SourceBlock::Heading { .. }) => CommentAnchorKind::Document,
+        // A heading is a title, not prose — it becomes the row's `title` field,
+        // never its Djot — so nothing inside it can be pointed at with a quote.
+        //
+        // This used to become `CommentAnchorKind::Document`: a kind neither DOCX
+        // nor ODF (the only formats that carry comments at all) can express, and
+        // one the comment UI never wires up — see the crate's design note on why
+        // the importer stopped minting it. It becomes a `Paragraph` comment
+        // instead, with an empty quote and no offset carried across (below):
+        // `anchor_comments` re-derives that, once the row's Djot is fully
+        // assembled, into a real anchor on the row's *first* block — the same
+        // tier-3 "fall back to the block ordinal" path `comment_anchor::resolve`
+        // already takes for a paragraph comment whose wording cannot be found.
+        _ if is_heading => CommentAnchorKind::Paragraph,
         AnnotationKind::Range => CommentAnchorKind::Range,
         AnnotationKind::Paragraph => CommentAnchorKind::Paragraph,
         AnnotationKind::Document => CommentAnchorKind::Document,
     };
-    let mut anchor = annotation.anchor.clone();
-    anchor.start += block_offset;
+    // A heading's own offset describes a position inside the *title*, which is
+    // never part of the row's Djot — carrying it across (`+= block_offset`)
+    // would hand `anchor_comments`' block lookup an offset that happens to land
+    // in some unrelated block instead of the row's first one. Starting from a
+    // blank anchor is what makes the block-ordinal fallback described above
+    // land on block 0, deliberately, rather than by accident.
+    let mut anchor = if is_heading {
+        Anchor::default()
+    } else {
+        annotation.anchor.clone()
+    };
+    if !is_heading {
+        anchor.start += block_offset;
+    }
     anchor.block_span = anchor.block_span.max(1);
 
     PlannedComment {
@@ -390,7 +492,9 @@ fn planned_comment(
         anchor,
         orphaned: false,
         orphan_reason: CommentOrphanReason::NotOrphaned,
+        uid: annotation.uid,
         author: annotation.author.clone(),
+        author_initials: annotation.author_initials.clone(),
         created: annotation.created,
         body: annotation.body.clone(),
         resolved: annotation.resolved,
@@ -739,6 +843,181 @@ mod tests {
                 .iter()
                 .any(|d| matches!(d, ImportDiagnostic::IllegalCombination { .. })),
             "a Book holds no prose, and save-time would drop it silently"
+        );
+    }
+
+    // ── Comments no longer mint `CommentAnchorKind::Document` ──────────────
+    //
+    // Neither DOCX nor ODF has a "comment on the whole document" concept, and
+    // the comment UI never wires one up either — see the module doc. Both sites
+    // that used to mint it are covered here.
+
+    fn annotation(block_index: usize, kind: AnnotationKind, body: &str) -> SourceAnnotation {
+        SourceAnnotation {
+            block_index,
+            kind,
+            anchor: Anchor::default(),
+            uid: None,
+            author: "Editor".into(),
+            author_initials: String::new(),
+            created: None,
+            body: body.into(),
+            resolved: false,
+            replies: Vec::new(),
+        }
+    }
+
+    /// A comment landing on a heading block — what `sources::rich` produces for
+    /// any comment on a heading (`place.exact` is always `false` there) — must
+    /// become a `Paragraph` comment on the row's first *real* block, not
+    /// `CommentAnchorKind::Document`. It must also be a genuine, resolved anchor
+    /// (a real captured quote), not merely relabelled and left pointing nowhere.
+    #[test]
+    fn a_comment_on_a_heading_lands_as_a_paragraph_comment_on_the_rows_first_block() {
+        let mut d = doc(
+            "a.md",
+            vec![
+                heading(1, "Chapter One"),
+                prose("First paragraph."),
+                prose("Second paragraph."),
+            ],
+        );
+        // Mirrors `sources::rich::assemble`'s own shape for a heading comment:
+        // `AnnotationKind::Document`, block 0 (the heading), no usable anchor.
+        d.annotations = vec![annotation(0, AnnotationKind::Document, "Nice opening.")];
+
+        let rules = infer_rules(&[1], CreateType::Chapter);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        assert_eq!(plan.rows.len(), 1);
+        let row = &plan.rows[0];
+        assert_eq!(row.comments.len(), 1, "the comment must survive");
+        let c = &row.comments[0];
+        assert_eq!(
+            c.kind,
+            CommentAnchorKind::Paragraph,
+            "must not be CommentAnchorKind::Document any more"
+        );
+        assert!(
+            !c.orphaned,
+            "the row has real prose to fall back to, so this must resolve, not orphan"
+        );
+        assert_eq!(
+            c.anchor.block_ordinal, 0,
+            "pinned to the row's first block, not the heading (which has no block at all)"
+        );
+        assert!(
+            !c.anchor.exact.is_empty(),
+            "a real quote must be captured from the first block, not left empty"
+        );
+        assert!(
+            c.anchor.exact.contains("First paragraph"),
+            "the captured quote must actually be the first block's text, got {:?}",
+            c.anchor.exact
+        );
+    }
+
+    /// A heading comment on a row with **no** prose at all (nothing ever follows
+    /// the heading) has nothing to fall back to. It must still not be
+    /// `CommentAnchorKind::Document` — it becomes a `Paragraph` comment that
+    /// honestly reports itself orphaned, exactly as a paragraph comment whose
+    /// wording vanished entirely would.
+    #[test]
+    fn a_comment_on_a_heading_with_no_following_prose_becomes_an_orphaned_paragraph_comment() {
+        let mut d = doc("a.md", vec![heading(1, "Chapter One")]);
+        d.annotations = vec![annotation(0, AnnotationKind::Document, "Nice title.")];
+
+        let rules = infer_rules(&[1], CreateType::Chapter);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        assert_eq!(plan.rows.len(), 1, "the heading still becomes a row");
+        let c = &plan.rows[0].comments[0];
+        assert_eq!(c.kind, CommentAnchorKind::Paragraph);
+        assert!(
+            c.orphaned,
+            "nothing in the row's Djot to point at, so it must say so rather than \
+             silently claim block 0 of an empty document"
+        );
+    }
+
+    /// `pin_to_first_block` is `anchor_comments`' fallback for a row whose Djot
+    /// failed to parse — unit-tested directly (rather than through `build_plan`)
+    /// because a genuine Djot parse failure is not something a fixture string can
+    /// manufacture: `skrib_format::djot_plain_text` wraps a lenient parser that
+    /// recovers from anything rather than rejecting it, so `Err` in practice is
+    /// reserved for background-task plumbing, not content. See `anchor_comments`'
+    /// doc for why this fallback is a `Paragraph` anchor rather than
+    /// `CommentAnchorKind::Document`.
+    #[test]
+    fn the_parse_failure_fallback_pins_every_comment_to_block_zero_with_an_empty_quote() {
+        let mut comments = vec![
+            planned_comment(
+                &annotation(0, AnnotationKind::Range, "A range comment."),
+                &prose("Some prose."),
+                0,
+            ),
+            planned_comment(
+                &annotation(0, AnnotationKind::Document, "A document comment."),
+                &prose("Some prose."),
+                0,
+            ),
+        ];
+
+        pin_to_first_block(&mut comments);
+
+        for c in &comments {
+            assert_eq!(
+                c.kind,
+                CommentAnchorKind::Paragraph,
+                "must not be CommentAnchorKind::Document"
+            );
+            assert_eq!(c.anchor.block_ordinal, 0);
+            assert_eq!(c.anchor.block_span, 1);
+            assert_eq!(c.anchor.start, 0);
+            assert_eq!(c.anchor.length, 0);
+            assert!(
+                c.anchor.exact.is_empty(),
+                "the quote must be empty, not guessed"
+            );
+            assert!(
+                !c.orphaned,
+                "not resolved yet — that is the live editor's job on open"
+            );
+        }
+    }
+
+    /// The bug this exists to fix: a formatted comment body must not show its
+    /// Djot markup in a diagnostic — an editor's `*right*` reads to the writer as
+    /// `right` with two stray asterisks, not as the bold word it actually is.
+    #[test]
+    fn a_body_preview_strips_djot_markup_before_truncating() {
+        assert_eq!(
+            body_preview("Is this the *right* word?"),
+            "Is this the right word?",
+            "the emphasis markers must not survive into the preview"
+        );
+        assert_eq!(
+            body_preview("*Bold* and _italic_ and {-struck-} text."),
+            "Bold and italic and struck text.",
+            "every marker family must be stripped, not only emphasis"
+        );
+    }
+
+    /// The truncation itself still has to work on the *stripped* text, or a body
+    /// that is short in Djot but long once its escaping backslashes are dropped
+    /// (or the reverse) would be measured against the wrong length.
+    #[test]
+    fn a_body_preview_truncates_the_stripped_text_not_the_raw_djot() {
+        let preview = body_preview(&"*x* ".repeat(40));
+        assert!(
+            preview.chars().count() <= 60,
+            "preview ran past 60 chars: {} ({})",
+            preview.chars().count(),
+            preview
+        );
+        assert!(
+            !preview.contains('*'),
+            "markup leaked into the preview: {preview:?}"
         );
     }
 }

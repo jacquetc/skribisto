@@ -49,6 +49,12 @@ common = { workspace = true }
 skribisto_model = { workspace = true }
 skrib_format = { workspace = true }
 anyhow = { workspace = true }
+# `SourceAnnotation::uid`/`SourceAnnotationReply::uid` (M-S7): the identity a
+# comment carried in the source file when that file is one Skribisto itself
+# exported — the DOCX/ODT writers' own `skrb:uid` attribute, read back here so
+# `apply_document_import_uc` can recognise a round-tripped comment instead of
+# duplicating it. Same crate + feature set `common`'s own entities already use.
+uuid = { workspace = true }
 # Timestamps on imported comments — the same type `EntityBase` stores them in, so
 # a `.docx` comment keeps the date its author wrote it rather than the date it was
 # imported.
@@ -68,7 +74,23 @@ roxmltree = { version = "0.21.1", optional = true }
 # The OOXML reader. `read_docx` gives a typed document tree with paragraph
 # properties, tracked changes as first-class children, and the comment/
 # comments-extended parts — all of which would otherwise be hand-parsed XML.
-docx-rs = { version = "0.4.22", optional = true }
+#
+# Pinned exactly, matching `text-document`'s `document_io` crate (the DOCX
+# *writer*, for comment export): that crate pins docx-rs because its comment
+# writer patches raw XML bytes out of `Docx::build()`'s output for fields
+# docx-rs's public builder cannot set — an undocumented internal shape a loose
+# `"0.4"` could drift out from under. Cargo resolves one version across a
+# semver-compatible range, so reader and writer must name the *same* one or the
+# workspace stops resolving at all.
+#
+# The shared version is **0.4.22**, not the writer's original `=0.4.21`: this
+# reader was already on 0.4.22, and unifying downward would have silently
+# downgraded it to satisfy a pin added later. The writer is safe here —
+# `elements/comment.rs`, `elements/comment_extended.rs` and `elements/paragraph.rs`
+# are byte-identical between the two releases, `xml_docx.rs` differs only in doc
+# comments, and the `CommentExtended::new(para_id)` auto-collector is unchanged.
+# Verified by diffing the extracted crate sources rather than assumed.
+docx-rs = { version = "=0.4.22", optional = true }
 # Spelled-out ordinals in headings — "Chapter Three", "Chapitre premier". A
 # per-language number-word table is the whole job, and this one already carries
 # seven of them (en/fr/de/es/it/pt/nl), compound forms included
@@ -77,6 +99,15 @@ docx-rs = { version = "0.4.22", optional = true }
 # already names keywords for would be several hundred lines of vocabulary this
 # project has no way to review in every one of them.
 text2num = "2.7"
+
+[dev-dependencies]
+# M-T2a round trip: `text-document` now has an ODT *writer* (`TextDocument::to_odt_with_options`)
+# to go with this crate's ODT *reader* (`sources::odt::OdtScanner`) — dev-only, so it proves the
+# two agree on the wire format without this crate depending on text-document's export machinery
+# at runtime (`odt.rs`'s own doc comment: this scanner deliberately reads raw XML rather than
+# leaning on text-document, which exposes no source offsets — that reasoning is about the
+# *reader*, and does not apply to a *test* proving the writer and reader are consistent).
+text-document = { workspace = true }
 
 [lints]
 workspace = true

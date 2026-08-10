@@ -69,8 +69,9 @@ const EXPORT_TOAST_ID: &str = "export.work";
 /// produce a PDF and would only surface a build-config error, so the option is omitted entirely
 /// rather than shown as a format that always fails.
 #[cfg(feature = "pdf")]
-const PANEL_FORMATS: [ExportFormat; 8] = [
+const PANEL_FORMATS: [ExportFormat; 9] = [
     ExportFormat::Docx,
+    ExportFormat::Odt,
     ExportFormat::Pdf,
     ExportFormat::Epub,
     ExportFormat::Html,
@@ -80,8 +81,9 @@ const PANEL_FORMATS: [ExportFormat; 8] = [
     ExportFormat::Latex,
 ];
 #[cfg(not(feature = "pdf"))]
-const PANEL_FORMATS: [ExportFormat; 7] = [
+const PANEL_FORMATS: [ExportFormat; 8] = [
     ExportFormat::Docx,
+    ExportFormat::Odt,
     ExportFormat::Epub,
     ExportFormat::Html,
     ExportFormat::Markdown,
@@ -99,6 +101,7 @@ fn extension_of(f: &ExportFormat) -> &'static str {
         ExportFormat::Html => "html",
         ExportFormat::Latex => "tex",
         ExportFormat::Docx => "docx",
+        ExportFormat::Odt => "odt",
         ExportFormat::Epub => "epub",
         ExportFormat::Pdf => "pdf",
     }
@@ -150,6 +153,7 @@ pub fn scope_label(scope: &ExportScopeKind) -> teksilo::i18n::LocalizedString {
 pub fn format_label(f: &ExportFormat) -> teksilo::i18n::LocalizedString {
     match f {
         ExportFormat::Docx => tr!(export_format_docx()),
+        ExportFormat::Odt => tr!(export_format_odt()),
         ExportFormat::Html => tr!(export_format_html()),
         ExportFormat::Markdown => tr!(export_format_markdown()),
         ExportFormat::Djot => tr!(export_format_djot()),
@@ -970,10 +974,28 @@ impl ExportViewModel {
                 // format actually renders) is visible only in the file itself.
                 let to_open = res.output_path.clone();
                 let to_reveal = res.output_path.clone();
+                // The path, plus — only when there is something to say — how many comments
+                // could not be placed. Said on the *completion* toast rather than as a
+                // preflight dialog, because whether a comment can be placed is only knowable
+                // once the document has been compiled and its anchor re-resolved against the
+                // result; asking beforehand would mean compiling twice to produce a guess.
+                //
+                // A warning rather than a failure: the export succeeded, and the writer may
+                // well already know a note lost its passage. It says so once, plainly, beside
+                // the file it just wrote.
+                let body = if res.comments_orphaned > 0 {
+                    format!(
+                        "{}\n{}",
+                        res.output_path,
+                        tr!(export_comments_dropped(count = res.comments_orphaned)).resolve_now()
+                    )
+                } else {
+                    res.output_path.clone()
+                };
                 ctx.show_toast(
                     Toast::success(done)
                         .scoped_op_id(EXPORT_TOAST_ID, work_id, &op_id)
-                        .body(lit!(res.output_path.clone()))
+                        .body(lit!(body))
                         // Longer than the plain six seconds: an offer nobody has time to
                         // read is not an offer.
                         .auto_dismiss_after(Duration::from_secs(12))

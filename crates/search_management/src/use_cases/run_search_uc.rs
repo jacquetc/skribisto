@@ -467,6 +467,14 @@ impl RunSearchUseCase {
     ///   "never hide what we cannot name": an orphaned comment is precisely the one a
     ///   writer needs to find in order to deal with it, and search may be the only
     ///   surface that can still reach it.
+    ///
+    /// `Comment.body`/`CommentReply.body` are Djot now (M-S4), the same as a
+    /// footnote's, so this goes through [`corpus_cache::corpus_for`] exactly as
+    /// [`Self::footnote_fields`] does — `FieldText::Plain` would match text inside
+    /// an emphasis marker or an escaping backslash the writer never wrote, and its
+    /// occurrence count would disagree with what `replace_in_project` re-derives
+    /// inside the parsed document, tripping that use case's "the text moved under
+    /// me, skip this field" guard on a comment that never actually changed.
     fn comment_fields(
         &self,
         uow: &mut Box<dyn RunSearchUnitOfWorkTrait>,
@@ -496,18 +504,31 @@ impl RunSearchUseCase {
             if trashed && !dto.include_trashed {
                 continue;
             }
+            // Shared by the comment and every one of its replies: they carry the
+            // same `locale` (inherited from the same owning item, or `Root` for
+            // an orphaned thread), and the fold rules are the same either way.
+            let fold_spec = MatchOptions {
+                case_sensitive: dto.case_sensitive,
+                diacritic_sensitive: dto.diacritic_sensitive,
+                whole_word: dto.whole_word,
+                locale,
+            }
+            .fold_spec();
             if !comment.body.is_empty() {
-                out.push(Field {
-                    item_id,
-                    item_title: item_title.clone(),
-                    match_field: MatchField::Comment,
-                    text: FieldText::Plain(comment.body.clone()),
-                    trashed,
-                    locale,
-                    comment_id: comment.id,
-                    reply_id: 0,
-                    footnote_id: 0,
-                });
+                let corpus = corpus_cache::corpus_for(&comment.body, &fold_spec);
+                if !corpus.source().is_empty() {
+                    out.push(Field {
+                        item_id,
+                        item_title: item_title.clone(),
+                        match_field: MatchField::Comment,
+                        text: FieldText::Prose(corpus),
+                        trashed,
+                        locale,
+                        comment_id: comment.id,
+                        reply_id: 0,
+                        footnote_id: 0,
+                    });
+                }
             }
             let reply_ids =
                 uow.get_comment_relationship(&comment.id, &CommentRelationshipField::Replies)?;
@@ -519,11 +540,15 @@ impl RunSearchUseCase {
                 if reply.body.is_empty() {
                     continue;
                 }
+                let corpus = corpus_cache::corpus_for(&reply.body, &fold_spec);
+                if corpus.source().is_empty() {
+                    continue;
+                }
                 out.push(Field {
                     item_id,
                     item_title: item_title.clone(),
                     match_field: MatchField::CommentReply,
-                    text: FieldText::Plain(reply.body.clone()),
+                    text: FieldText::Prose(corpus),
                     trashed,
                     locale,
                     // The THREAD in both cases — that is what the margin and the docks

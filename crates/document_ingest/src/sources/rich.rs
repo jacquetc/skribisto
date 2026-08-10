@@ -225,11 +225,39 @@ pub struct RichAnnotation {
     pub start: usize,
     /// `0` means the comment had no range — it belongs to the paragraph.
     pub length: usize,
+    /// The uid this comment carried in the source file, when the file is one
+    /// Skribisto itself exported (the DOCX/ODT writers' own `skrb:uid` attribute —
+    /// see [`crate::block::SourceAnnotation::uid`]). `None` for a comment an editor
+    /// typed straight into Word or LibreOffice.
+    pub uid: Option<uuid::Uuid>,
     pub author: String,
+    /// See [`crate::block::SourceAnnotation::author_initials`] — empty means
+    /// "none", never carried at all on ODT.
+    pub author_initials: String,
     pub created: Option<chrono::DateTime<chrono::Utc>>,
-    pub body: String,
+    /// The comment's own text, one `Vec` of [`Run`]s per paragraph — **not yet
+    /// Djot**. An editor's remark can carry the same bold/italic/underline/
+    /// strikethrough a manuscript paragraph can, and it is converted the same
+    /// way: [`assemble`] runs every annotation (and every reply) through
+    /// [`body_to_djot`] in the one pass that already owns the "never hand-emit
+    /// Djot" pipeline, so a scanner never has to carry a second copy of it just
+    /// to stringify a comment.
+    pub paragraphs: Vec<Vec<Run>>,
     pub resolved: bool,
-    pub replies: Vec<SourceAnnotationReply>,
+    pub replies: Vec<RichReply>,
+}
+
+/// One reply, before its body is converted — see [`RichAnnotation::paragraphs`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RichReply {
+    /// See [`RichAnnotation::uid`] — the same recognition mechanism, for one reply
+    /// rather than the thread's opening comment.
+    pub uid: Option<uuid::Uuid>,
+    pub author: String,
+    /// See [`RichAnnotation::author_initials`].
+    pub author_initials: String,
+    pub created: Option<chrono::DateTime<chrono::Utc>>,
+    pub paragraphs: Vec<Vec<Run>>,
 }
 
 /// What a container scanner produces, before any Skribisto vocabulary is applied.
@@ -294,6 +322,24 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
     flush(&mut pending, out, &mut placement)?;
 
     for annotation in &doc.annotations {
+        // Converted once, here — the one place in either scanner that turns a
+        // comment's own paragraphs into Djot, on the same terms manuscript prose
+        // gets converted a few lines up. Doing this per-annotation rather than
+        // inside each scanner's own recursive walk is what keeps `docx.rs` and
+        // `odt.rs` from needing their own copy of `html_to_djot_and_text`'s
+        // error handling — there is exactly one call site to get right.
+        let body = body_to_djot(&annotation.paragraphs)?;
+        let mut replies = Vec::with_capacity(annotation.replies.len());
+        for reply in &annotation.replies {
+            replies.push(SourceAnnotationReply {
+                uid: reply.uid,
+                author: reply.author.clone(),
+                author_initials: reply.author_initials.clone(),
+                created: reply.created,
+                body: body_to_djot(&reply.paragraphs)?,
+            });
+        }
+
         match placement.get(annotation.block_index).copied().flatten() {
             Some(place) => {
                 let block_text = out.blocks[place.source_block].plain_text().to_string();
@@ -301,28 +347,47 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
                     .plain_text()
                     .chars()
                     .count();
-                out.annotations
-                    .push(place_annotation(annotation, place, &block_text, member_len));
+                out.annotations.push(place_annotation(
+                    annotation,
+                    place,
+                    &block_text,
+                    member_len,
+                    body,
+                    replies,
+                ));
             }
             // The block it pointed at produced nothing at all — a comment on a
             // paragraph that was blank, or one the scanner indexed past the end.
             // The comment is still the writer's, so it is carried as a comment on
             // the document rather than dropped, and it says so.
             None => {
+                // The diagnostic's quote is plain text, not Djot — a message
+                // naming "the passage beginning '*Is this*'" would show the
+                // writer their editor's own markup rather than their editor's
+                // words. `preview`'s own contract is a plain string it collapses
+                // whitespace in, so the Djot is converted back down for it here
+                // rather than changing what `preview` accepts. Falls back to the
+                // raw Djot on the vanishingly rare parse failure — a diagnostic
+                // with a slightly rougher quote beats one silently skipped.
+                let plain = skrib_format::djot_plain_text(&body)
+                    .map(|(text, _)| text)
+                    .unwrap_or_else(|_| body.clone());
                 out.diagnostics
                     .push(crate::diagnostics::ImportDiagnostic::CommentUnanchored {
                         path: out.origin.clone(),
-                        quote: preview(&annotation.body),
+                        quote: preview(&plain),
                     });
                 out.annotations.push(SourceAnnotation {
                     block_index: out.blocks.len().saturating_sub(1),
                     kind: AnnotationKind::Document,
                     anchor: Anchor::default(),
+                    uid: annotation.uid,
                     author: annotation.author.clone(),
+                    author_initials: annotation.author_initials.clone(),
                     created: annotation.created,
-                    body: annotation.body.clone(),
+                    body,
                     resolved: annotation.resolved,
-                    replies: annotation.replies.clone(),
+                    replies,
                 });
             }
         }
@@ -431,6 +496,8 @@ fn place_annotation(
     place: Placement,
     block_text: &str,
     member_len: usize,
+    body: String,
+    replies: Vec<SourceAnnotationReply>,
 ) -> SourceAnnotation {
     let (kind, anchor) = if !place.exact {
         (AnnotationKind::Document, Anchor::default())
@@ -465,12 +532,50 @@ fn place_annotation(
         block_index: place.source_block,
         kind,
         anchor,
+        uid: annotation.uid,
         author: annotation.author.clone(),
+        author_initials: annotation.author_initials.clone(),
         created: annotation.created,
-        body: annotation.body.clone(),
+        body,
         resolved: annotation.resolved,
-        replies: annotation.replies.clone(),
+        replies,
     }
+}
+
+/// Convert a comment or reply's own paragraphs — an editor's remark, carrying
+/// whatever emphasis they gave it — into the Djot [`common::entities::Comment`]
+/// (via `skribisto_model`'s crate boundary, [`SourceAnnotation::body`]) and
+/// [`SourceAnnotationReply::body`] now store.
+///
+/// Goes through the same HTML→Djot pipeline manuscript prose takes ([`flush`]),
+/// not a comment-only emitter: see the module doc's "never hand-emit Djot" for
+/// why a second emitter would have to re-derive Djot's swapped emphasis
+/// delimiters and its escaping rules on its own, and would eventually disagree
+/// with the one manuscript prose already trusts.
+///
+/// A paragraph carrying no text and no image contributes nothing — the same
+/// rule [`RichBlock::is_blank`] applies to manuscript prose, so a remark that is
+/// entirely whitespace (an editor who pressed Enter twice and typed nothing)
+/// does not turn into a bare, meaningless Djot paragraph marker. An annotation
+/// with no non-blank paragraph at all converts to the empty string, exactly as
+/// `flush` produces no block for an all-blank prose run.
+fn body_to_djot(paragraphs: &[Vec<Run>]) -> Result<String> {
+    let mut html = String::new();
+    for runs in paragraphs {
+        if runs
+            .iter()
+            .all(|r| r.image.is_none() && r.text.trim().is_empty())
+        {
+            continue;
+        }
+        html.push_str("<p>");
+        html.push_str(&runs_html(runs));
+        html.push_str("</p>");
+    }
+    if html.is_empty() {
+        return Ok(String::new());
+    }
+    Ok(skrib_format::html_to_djot_and_text(&html)?.0)
 }
 
 /// One block's HTML.
@@ -664,9 +769,11 @@ mod tests {
             block_index,
             start,
             length,
+            uid: None,
             author: "Editor".into(),
+            author_initials: String::new(),
             created: None,
-            body: "Is this the right word?".into(),
+            paragraphs: vec![vec![Run::plain("Is this the right word?")]],
             resolved: false,
             replies: Vec::new(),
         }
@@ -963,4 +1070,142 @@ mod tests {
         assert_eq!(preview("  two\n  lines  "), "two lines");
         assert_eq!(preview(&"x".repeat(80)).chars().count(), 60);
     }
+
+    // ── Rich comment bodies (M-S4) ──────────────────────────────────────────
+    //
+    // A comment's own text goes through the same HTML→Djot pipeline as
+    // manuscript prose, so its emphasis survives instead of being flattened —
+    // see `body_to_djot`'s doc.
+
+    #[test]
+    fn a_comments_own_emphasis_survives_as_djot() {
+        let doc = assemble_doc(
+            vec![RichBlock::body(vec![Run::plain("A paragraph.")])],
+            vec![RichAnnotation {
+                block_index: 0,
+                start: 0,
+                length: 0,
+                uid: None,
+                author: "Editor".into(),
+                author_initials: String::new(),
+                created: None,
+                paragraphs: vec![vec![
+                    Run::plain("Is this "),
+                    Run::styled("really", bold()),
+                    Run::plain(" the "),
+                    Run::styled(
+                        "right",
+                        RunStyle {
+                            italic: true,
+                            ..Default::default()
+                        },
+                    ),
+                    Run::plain(" word?"),
+                ]],
+                resolved: false,
+                replies: Vec::new(),
+            }],
+        );
+        assert_eq!(
+            doc.annotations[0].body,
+            "Is this *really* the _right_ word?"
+        );
+    }
+
+    /// A reply carries the same richness as the opening comment — the card
+    /// treats every turn alike, and so must the importer.
+    #[test]
+    fn a_replys_own_emphasis_survives_as_djot_too() {
+        let doc = assemble_doc(
+            vec![RichBlock::body(vec![Run::plain("A paragraph.")])],
+            vec![RichAnnotation {
+                block_index: 0,
+                start: 0,
+                length: 0,
+                uid: None,
+                author: "Editor".into(),
+                author_initials: String::new(),
+                created: None,
+                paragraphs: vec![vec![Run::plain("Opening remark.")]],
+                resolved: false,
+                replies: vec![RichReply {
+                    uid: None,
+                    author: "Writer".into(),
+                    author_initials: String::new(),
+                    created: None,
+                    paragraphs: vec![vec![Run::styled("Fixed.", bold())]],
+                }],
+            }],
+        );
+        assert_eq!(doc.annotations[0].replies.len(), 1);
+        assert_eq!(doc.annotations[0].replies[0].body, "*Fixed.*");
+    }
+
+    /// A comment written as more than one paragraph — the LibreOffice
+    /// convention for "Enter" inside a comment box — keeps both paragraphs
+    /// rather than being glued into one run-on sentence.
+    #[test]
+    fn a_multi_paragraph_comment_keeps_both_paragraphs() {
+        let doc = assemble_doc(
+            vec![RichBlock::body(vec![Run::plain("A paragraph.")])],
+            vec![RichAnnotation {
+                block_index: 0,
+                start: 0,
+                length: 0,
+                uid: None,
+                author: "Editor".into(),
+                author_initials: String::new(),
+                created: None,
+                paragraphs: vec![
+                    vec![Run::plain("First thought.")],
+                    vec![Run::plain("Second thought.")],
+                ],
+                resolved: false,
+                replies: Vec::new(),
+            }],
+        );
+        let body = &doc.annotations[0].body;
+        assert!(body.contains("First thought."), "got {body:?}");
+        assert!(body.contains("Second thought."), "got {body:?}");
+        assert_ne!(
+            body, "First thought.Second thought.",
+            "the paragraph break must survive, not glue the two sentences together"
+        );
+    }
+
+    /// A paragraph that is entirely whitespace — an editor who pressed Enter
+    /// twice without typing anything — must not turn into a bare, meaningless
+    /// Djot paragraph marker, the same rule `RichBlock::is_blank` applies to
+    /// manuscript prose.
+    #[test]
+    fn a_blank_paragraph_in_a_comment_contributes_nothing() {
+        let doc = assemble_doc(
+            vec![RichBlock::body(vec![Run::plain("A paragraph.")])],
+            vec![RichAnnotation {
+                block_index: 0,
+                start: 0,
+                length: 0,
+                uid: None,
+                author: "Editor".into(),
+                author_initials: String::new(),
+                created: None,
+                paragraphs: vec![vec![Run::plain("Only thought.")], vec![Run::plain("   ")]],
+                resolved: false,
+                replies: Vec::new(),
+            }],
+        );
+        assert_eq!(doc.annotations[0].body, "Only thought.");
+    }
+
+    /// An annotation with no paragraphs at all (defensive — neither scanner
+    /// produces this) converts to the empty string rather than erroring.
+    #[test]
+    fn an_annotation_with_no_paragraphs_converts_to_an_empty_body() {
+        assert_eq!(body_to_djot(&[]).expect("convert"), "");
+        assert_eq!(
+            body_to_djot(&[vec![Run::plain("   ")]]).expect("convert"),
+            ""
+        );
+    }
+
 }

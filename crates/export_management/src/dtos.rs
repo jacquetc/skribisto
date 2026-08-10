@@ -25,6 +25,9 @@ pub enum ExportFormat {
     Html,
     Latex,
     Docx,
+    /// OpenDocument Text — the format a LibreOffice-using editor works in, and the second
+    /// half (with DOCX) of the editorial comment round trip.
+    Odt,
     Epub,
     Pdf,
 }
@@ -45,4 +48,17 @@ pub enum ExportScopeKind {
 pub struct ExportResultDto {
     pub exported_count: i64,
     pub output_path: String,
+    /// Comments written into the file. 0 for every format that does not carry them.
+    pub comments_written: i64,
+    /// Comments that belonged in this export and could not be placed, so were left out.
+    ///
+    /// Reported *after* the export rather than warned about before it, unlike orphaned
+    /// footnotes: whether a comment can be placed is only knowable once the document has been
+    /// compiled and its anchor re-resolved against the result. A preflight would have to do
+    /// the entire compile a second time to guess at this, and would still be guessing.
+    ///
+    /// Counts only real failures. A comment on a row outside the export scope was never a
+    /// candidate and is not counted here — a warning that fires on every healthy "Export
+    /// Chapter 5" is a warning writers learn to ignore.
+    pub comments_orphaned: i64,
 }

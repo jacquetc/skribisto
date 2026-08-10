@@ -426,6 +426,7 @@ fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
                 content: Some(scene),
                 kind: CommentAnchorKind::Range,
                 author_name: "Jane".into(),
+                author_initials: "J".into(),
                 body: "Is this too on-the-nose?".into(),
                 resolved: false,
                 orphaned: false,
@@ -442,16 +443,20 @@ fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
             replies: vec![
                 CommentReply {
                     id: 5001,
+                    uid: common::uid::fixture_uid(5001),
                     created_at: now,
                     updated_at: now,
                     author_name: "Jane".into(),
+                    author_initials: "J".into(),
                     body: "Maybe. Sleep on it.".into(),
                 },
                 CommentReply {
                     id: 5002,
+                    uid: common::uid::fixture_uid(5002),
                     created_at: now,
                     updated_at: now,
                     author_name: "Marc".into(),
+                    author_initials: "M".into(),
                     body: "Keep it — it lands.".into(),
                 },
             ],
@@ -465,6 +470,7 @@ fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
                 content: Some(scene),
                 kind: CommentAnchorKind::Paragraph,
                 author_name: "Jane".into(),
+                author_initials: "J".into(),
                 body: "This whole paragraph drags.".into(),
                 resolved: true,
                 orphaned: false,
@@ -491,6 +497,7 @@ fn sample_comments(binders: &[BinderWithItems]) -> Vec<CommentWithReplies> {
                 content: None,
                 kind: CommentAnchorKind::Range,
                 author_name: "Marc".into(),
+                author_initials: "M".into(),
                 body: "Whatever this was about, it is gone now.".into(),
                 resolved: false,
                 orphaned: true,
@@ -1090,6 +1097,68 @@ fn an_orphaned_comment_survives_a_round_trip_via_the_orphanage() {
     assert_eq!(o.quote_exact, "vanished");
 }
 
+/// **M-S4.** `Comment.body`/`CommentReply.body` are Djot now, and a body
+/// carrying real markup — including a backslash, Djot's own escape character,
+/// and a literal quote mark — must come back byte-for-byte identical. RON is a
+/// text format with its own quoting and escaping rules; a body that collided
+/// with them would be exactly the kind of corruption a round-trip test on a
+/// plain, markup-free body could never catch.
+#[test]
+fn a_formatted_comment_and_reply_body_round_trips_byte_for_byte() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+
+    let formatted_comment = "Is this *really* the _right_ word? Maybe \\*not\\*.";
+    let formatted_reply = "Keep the {-strikethrough-} and the \"quotes\" too.";
+
+    let mut touched = false;
+    for item in &mut bundle.binders[0].items {
+        for list in item.comments.values_mut() {
+            if let Some(c) = list.first_mut()
+                && let Some(r) = c.replies.first_mut()
+            {
+                c.body = formatted_comment.to_string();
+                r.body = formatted_reply.to_string();
+                touched = true;
+            }
+        }
+    }
+    assert!(
+        touched,
+        "the fixture must carry a comment with at least one reply, or this test \
+         proves nothing"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("MyNovel");
+    write_bundle(root.to_str().unwrap(), SkribShape::ExplodedFolder, &bundle).unwrap();
+    let read = read_bundle(root.to_str().unwrap()).unwrap();
+
+    let mut found_comment = false;
+    let mut found_reply = false;
+    for item in &read.binders[0].items {
+        for list in item.comments.values() {
+            for c in list {
+                if c.body == formatted_comment {
+                    found_comment = true;
+                }
+                for r in &c.replies {
+                    if r.body == formatted_reply {
+                        found_reply = true;
+                    }
+                }
+            }
+        }
+    }
+    assert!(
+        found_comment,
+        "the formatted comment body did not round-trip byte-for-byte"
+    );
+    assert!(
+        found_reply,
+        "the formatted reply body did not round-trip byte-for-byte"
+    );
+}
+
 #[test]
 fn the_orphanage_file_disappears_once_the_last_orphan_is_gone() {
     let mut bundle = build_bundle(ShapeTag::Folder);
@@ -1377,6 +1446,106 @@ fn uids_survive_a_write_read_round_trip_unchanged() {
         .collect();
     assert!(!before.is_empty(), "fixture must carry uids");
     assert_eq!(before, after, "every uid must round-trip byte-identical");
+}
+
+/// v11 → v12, uid half: every **reply** gains a durable identity.
+///
+/// v11 gave the thread one and stopped there. A thread that can be recognised while its
+/// replies cannot is not enough for an editorial round trip: an editor answering in the
+/// middle of a conversation shifts every later reply by one, so position-matching
+/// re-imports the tail as duplicates.
+#[test]
+fn migrating_a_pre_v12_bundle_mints_a_uid_for_every_comment_reply() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 11;
+    for b in &mut bundle.binders {
+        for i in &mut b.items {
+            for list in i.comments.values_mut() {
+                for c in list {
+                    for r in &mut c.replies {
+                        r.uid = uuid::Uuid::nil();
+                    }
+                }
+            }
+        }
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+    let mut seen = std::collections::HashSet::new();
+    let mut replies_checked = 0usize;
+    for b in &bundle.binders {
+        for i in &b.items {
+            for list in i.comments.values() {
+                for c in list {
+                    for r in &c.replies {
+                        assert!(!r.uid.is_nil(), "reply left without a uid");
+                        assert!(seen.insert(r.uid), "duplicate reply uid minted");
+                        replies_checked += 1;
+                    }
+                }
+            }
+        }
+    }
+    assert!(
+        replies_checked > 0,
+        "the fixture must actually carry replies, or this test proves nothing"
+    );
+}
+
+/// v11 → v12, body half: a stored plain-text body that *reads* as markup is escaped, and
+/// one that does not is left byte-identical.
+///
+/// The second half matters as much as the first. Rewriting every body would make an older
+/// build show backslashes in remarks that never needed them, so only genuinely ambiguous
+/// text is touched.
+#[test]
+fn migrating_a_pre_v12_bundle_escapes_only_the_bodies_that_would_change_meaning() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 11;
+
+    let ambiguous = "*not* emphasis, and snake_case too";
+    let ordinary = "An ordinary remark.";
+
+    // Two bodies with known shapes, so the assertion is about this step rather than about
+    // whatever the shared fixture happened to contain.
+    {
+        let list = bundle
+            .binders
+            .iter_mut()
+            .flat_map(|b| b.items.iter_mut())
+            .flat_map(|i| i.comments.values_mut())
+            .find(|l| l.len() >= 2)
+            .expect("the fixture must carry a Content with at least two comments");
+        list[0].body = ambiguous.to_string();
+        list[1].body = ordinary.to_string();
+    }
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    let list = bundle
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter())
+        .flat_map(|i| i.comments.values())
+        .find(|l| l.len() >= 2)
+        .expect("the same list must still be there");
+
+    assert_ne!(
+        list[0].body, ambiguous,
+        "a body that would re-read as markup must be escaped"
+    );
+    assert_eq!(
+        text_document::djot_to_plain_text(&list[0].body, &Default::default()),
+        ambiguous,
+        "…and the escaped form must parse back to exactly the text the writer typed"
+    );
+    assert_eq!(
+        list[1].body, ordinary,
+        "a body that already means itself must be left byte-identical, so an older build \
+         still reads it unchanged"
+    );
 }
 
 #[test]

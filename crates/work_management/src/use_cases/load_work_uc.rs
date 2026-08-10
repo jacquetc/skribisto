@@ -632,9 +632,11 @@ pub(crate) fn materialize(
         let mut reply_ids: Vec<EntityId> = Vec::new();
         for r in &lc.replies {
             let created = uow.create_orphan_comment_reply(&CommentReply {
+                uid: r.uid,
                 created_at: r.created_at,
                 updated_at: r.updated_at,
                 author_name: r.author_name.clone(),
+                author_initials: r.author_initials.clone(),
                 body: r.body.clone(),
                 id: 0,
             })?;
@@ -652,6 +654,7 @@ pub(crate) fn materialize(
             updated_at: lc.updated_at,
             kind: lc.kind.clone(),
             author_name: lc.author_name.clone(),
+            author_initials: lc.author_initials.clone(),
             body: lc.body.clone(),
             resolved: lc.resolved,
             orphaned: lc.orphaned || lost_target || lc.content.is_none(),

@@ -5432,7 +5432,9 @@ dependencies = [
  "skribisto-common",
  "skribisto-model",
  "skribisto-skrib-format",
+ "text-document",
  "text2num",
+ "uuid",
  "zip 8.6.0",
 ]
 
@@ -5512,6 +5514,7 @@ dependencies = [
  "skribisto-model",
  "skribisto-skrib-format",
  "tempfile",
+ "text-document",
  "uuid",
  "zip 8.6.0",
 ]

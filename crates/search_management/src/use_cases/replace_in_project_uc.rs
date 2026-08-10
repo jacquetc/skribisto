@@ -90,8 +90,9 @@ pub trait ReplaceInProjectUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
 #[macros::uow_action(entity = "Content", action = "GetMulti")]
 #[macros::uow_action(entity = "Content", action = "Update")]
-// A comment hit rewrites the thread's own body or one reply's — plain strings on
-// their own rows, reached by the ids the `SearchResult` carries.
+// A comment hit rewrites the thread's own body or one reply's — Djot on its own
+// row, reached by the ids the `SearchResult` carries, on the same
+// `BatchDocument` pipeline a footnote hit already used.
 #[macros::uow_action(entity = "Footnote", action = "Get")]
 #[macros::uow_action(entity = "Footnote", action = "Update")]
 #[macros::uow_action(entity = "Comment", action = "Get")]
@@ -256,15 +257,20 @@ impl ReplaceInProjectUseCase {
                     touched_items.insert(row.binder_item_id);
                     occurrences_replaced += hits.len() as u64;
                 }
-                // A comment's own body, or one reply's. Plain strings on their own
-                // rows — no Djot, no parser — so this is the same direct rewrite as
-                // a title, against the ids the row carries rather than a Content.
+                // A comment's own body, or one reply's. Djot now (M-S4), the same as
+                // a footnote's — so this takes the same splice inside a parsed
+                // `BatchDocument` the `Footnote` arm below uses, NOT a raw string
+                // replace: an editor's remark can carry its own emphasis
+                // (`skrib_format`'s v11→v12 migration escaped every legacy
+                // plain-text body into Djot precisely so this would be safe), and a
+                // string rewrite would happily corrupt a marker mid-word.
                 //
                 // These rows only ever arrive here when the writer ticked them: the
                 // UI excludes every comment hit by default, so renaming a character
                 // cannot quietly edit the notes that discuss the old name. The guard
-                // below is the same one prose gets — a body edited since review is
-                // skipped and reported, never rewritten from a stale count.
+                // below is the same one prose gets — a body whose occurrence count no
+                // longer matches what the writer reviewed is skipped and reported,
+                // never rewritten from a stale count.
                 MatchField::Comment | MatchField::CommentReply => {
                     let is_reply = matches!(row.match_field, MatchField::CommentReply);
                     let current = if is_reply {
@@ -284,13 +290,27 @@ impl ReplaceInProjectUseCase {
                             }
                         }
                     };
-                    let hits = crate::matching::occurrences(&current, &search.query, opts);
+
+                    let batch = BatchDocument::new()?;
+                    batch.set_djot(&current, &DjotImportOptions::default())?;
+
+                    let hits = batch.find_all(&search.query, &find_opts)?;
                     if hits.len() as u64 != row.occurrence_count {
                         skipped_stale.push(row.id);
                         continue;
                     }
-                    let rewritten =
-                        crate::matching::replace_all(&current, &search.query, opts, case_of);
+                    if hits.is_empty() {
+                        continue;
+                    }
+
+                    let replaced = batch.find_and_replace(
+                        &search.query,
+                        &ReplaceOptions::new(find_opts.clone())
+                            .with_format_policy(ReplaceFormatPolicy::PreserveIfFullyCovered),
+                        |matched, _| Some(case_of(matched)),
+                    )?;
+
+                    let rewritten = batch.to_djot(&DjotExportOptions::default())?;
                     if is_reply {
                         let Some(mut reply): Option<CommentReply> =
                             uow.get_comment_reply(&row.reply_id)?
@@ -313,7 +333,7 @@ impl ReplaceInProjectUseCase {
                     // Deliberately NOT added to `touched_items`: that set drives the
                     // per-item "this scene changed" reporting, and a comment is not
                     // the scene. An orphaned thread has no item to name at all.
-                    occurrences_replaced += hits.len() as u64;
+                    occurrences_replaced += replaced as u64;
                 }
                 // A footnote's body. Djot, like a scene's — so it takes the same
                 // splice inside a parsed document, NOT the plain-string rewrite a

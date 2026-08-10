@@ -123,6 +123,11 @@ pub struct LoadedComment {
     pub content: Option<u64>,
     pub kind: CommentAnchorKind,
     pub author_name: String,
+    /// The author's own initials, as an editor's word processor records them. Empty
+    /// when the source carried none — never derived, so a writer's chosen form is not
+    /// overwritten by a guess.
+    pub author_initials: String,
+    /// Djot.
     pub body: String,
     pub resolved: bool,
     pub orphaned: bool,
@@ -152,9 +157,16 @@ pub struct LoadedFootnote {
 }
 
 pub struct LoadedCommentReply {
+    /// Durable identity, on the same terms as [`LoadedComment::uid`] — a reply has to be
+    /// recognisable across an editorial round trip in its own right, or an answer
+    /// inserted mid-conversation re-imports every later reply as a duplicate.
+    pub uid: uuid::Uuid,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub author_name: String,
+    /// The replier's own initials. Empty when the source carried none.
+    pub author_initials: String,
+    /// Djot.
     pub body: String,
 }
 

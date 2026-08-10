@@ -37,6 +37,14 @@ use import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyImportRow, ApplyImportRows,
     DocumentImportRow, DocumentImportRows, DropPosition, ImportDiagnosticRows, ImportRowKind,
 };
+// M-S7 round-trip tests: build a real "returning" `.docx`/`.odt` via
+// `text-document`'s own writer, carrying real local `Comment`/`CommentReply`
+// uids — see the `Ctx::write_bytes` doc and the tests themselves, grouped under
+// the "M-S7: recognition on re-import" section near the bottom of this file.
+use text_document::{
+    CommentReply as TdCommentReply, DocumentComment, DocumentComments, DocxExportOptions,
+    FindOptions, OdtExportOptions, TextDocument,
+};
 
 struct Ctx {
     db: DbContext,
@@ -112,6 +120,16 @@ impl Ctx {
     fn write(&self, name: &str, body: &str) -> String {
         let path = self._dir.path().join(name);
         std::fs::write(&path, body).expect("write fixture");
+        path.to_string_lossy().to_string()
+    }
+
+    /// As [`Ctx::write`], for a binary container (`.docx`/`.odt`) — the M-S7
+    /// round-trip tests build these fresh via `text-document`'s own writer
+    /// rather than reading a checked-in fixture, so they can carry the exact
+    /// local `Comment`/`CommentReply` uids a given test needs to recognise.
+    fn write_bytes(&self, name: &str, bytes: &[u8]) -> String {
+        let path = self._dir.path().join(name);
+        std::fs::write(&path, bytes).expect("write fixture");
         path.to_string_lossy().to_string()
     }
 
@@ -260,6 +278,20 @@ impl Ctx {
             .expect("item")
             .expect("item row")
             .title
+    }
+
+    /// The `Content` row id an item's prose lives on, if it has any — what a
+    /// recognised `Comment::content` should be repointed at after a re-import
+    /// lands on a *different* row than the one it was first attached to.
+    fn content_id_of(&self, item_id: EntityId) -> Option<EntityId> {
+        binder_item_controller::get_relationship(
+            &self.db,
+            &item_id,
+            &BinderItemRelationshipField::Contents,
+        )
+        .expect("contents")
+        .first()
+        .copied()
     }
 
     /// Copy a committed container fixture into the scratch directory.
@@ -732,7 +764,12 @@ fn an_editors_comments_survive_the_whole_journey_into_the_store() {
     let created = ctx.apply(rows, 0);
 
     let comments = ctx.comments();
-    assert_eq!(comments.len(), 2, "two threads, not three: {comments:#?}");
+    // Three threads: the ranged comment (with its reply), the whole-paragraph
+    // note, and the unanchored, richly-formatted comment M-S4's fixture carries
+    // (`word-shaped.docx`'s comment 4 — see `tests/fixtures/generate.py`) to
+    // prove a comment's own bold/italic survives the *whole* journey into the
+    // store, not merely the scanner `document_ingest`'s own tests already cover.
+    assert_eq!(comments.len(), 3, "three threads: {comments:#?}");
 
     let (ranged, replies) = comments
         .iter()
@@ -771,6 +808,24 @@ fn an_editors_comments_survive_the_whole_journey_into_the_store() {
         plain[start..end].iter().collect::<String>(),
         "the street was gone",
         "the stored offsets point somewhere else"
+    );
+
+    // The rich comment: its Djot markers must reach the `Comment` row itself,
+    // not just `document_ingest`'s own `SourceAnnotation` — proving
+    // `apply_document_import_uc` carries the body through unflattened.
+    let (rich, _) = comments
+        .iter()
+        .find(|(c, _)| c.body.contains("real") && c.body.contains("italics"))
+        .expect("the richly formatted comment");
+    assert!(
+        rich.body.contains("*real*"),
+        "bold did not survive into the stored Comment: {:?}",
+        rich.body
+    );
+    assert!(
+        rich.body.contains("_italics_"),
+        "italic did not survive into the stored Comment: {:?}",
+        rich.body
     );
 }
 
@@ -823,7 +878,9 @@ fn undoing_an_import_takes_its_comments_back_too() {
     let path = ctx.copy_fixture("word-shaped.docx");
     let rows = ctx.analyse(vec![path], ImportRowKind::Book);
     ctx.apply(rows, 0);
-    assert_eq!(ctx.comments().len(), 2);
+    // Three threads — see `an_editors_comments_survive_the_whole_journey_into_the_store`
+    // for why the fixture carries a third, unanchored one.
+    assert_eq!(ctx.comments().len(), 3);
 
     ctx.undo.undo(None).expect("undo");
     assert!(
@@ -833,7 +890,7 @@ fn undoing_an_import_takes_its_comments_back_too() {
     );
 
     ctx.undo.redo(None).expect("redo");
-    assert_eq!(ctx.comments().len(), 2, "redo must put them back");
+    assert_eq!(ctx.comments().len(), 3, "redo must put them back");
 }
 
 /// An `.odt` from LibreOffice takes the same journey — different spelling, same
@@ -847,7 +904,9 @@ fn an_odt_from_libreoffice_lands_its_comments_too() {
     ctx.apply(rows, 0);
 
     let comments = ctx.comments();
-    assert_eq!(comments.len(), 2, "{comments:#?}");
+    // Three threads — see the DOCX test's own note on the fixture's third,
+    // richly-formatted comment (M-S4).
+    assert_eq!(comments.len(), 3, "{comments:#?}");
     let (ranged, replies) = comments
         .iter()
         .find(|(c, _)| c.body == "Is this the right word?")
@@ -855,6 +914,21 @@ fn an_odt_from_libreoffice_lands_its_comments_too() {
     assert_eq!(ranged.quote_exact, "the street was gone");
     assert_eq!(replies.len(), 1);
     assert_eq!(replies[0].body, "Yes, I meant it.");
+
+    let (rich, _) = comments
+        .iter()
+        .find(|(c, _)| c.body.contains("real") && c.body.contains("italics"))
+        .expect("the richly formatted comment");
+    assert!(
+        rich.body.contains("*real*"),
+        "bold did not survive into the stored Comment: {:?}",
+        rich.body
+    );
+    assert!(
+        rich.body.contains("_italics_"),
+        "italic did not survive into the stored Comment: {:?}",
+        rich.body
+    );
 }
 
 /// Markdown has no comments, and importing one must not invent any.
@@ -1022,4 +1096,628 @@ fn importing_beside_a_scene_makes_it_a_sibling() {
         Some(chapter),
         "a sibling of the scene shares the scene's parent"
     );
+}
+
+// ── M-S7: recognition on re-import ──────────────────────────────────────────
+//
+// The decisive proof the milestone exists for: importing a `.docx`/`.odt`
+// Skribisto itself exported must RECOGNISE a comment it already has (matched by
+// `Comment.uid`, the writer's own `skrb:uid` attribute) and update that row in
+// place, never create a second copy of it. Every test below builds its
+// "returning file" fresh via `text-document`'s own writer — the same dev-only
+// wiring `document_ingest`'s own `docx_writer_roundtrip.rs`/
+// `odt_writer_roundtrip.rs` use — rather than reading a checked-in fixture,
+// because the whole point is to carry a *real* local `Comment`/`CommentReply`
+// uid this Work already has, which no static fixture could ever do (a uid is
+// minted at runtime, on the first import).
+
+/// No heading, so the whole thing becomes one leading row named after the
+/// document — the same shape `text-document`'s own `docx_comment_export_tests`/
+/// `odt_writer_roundtrip.rs` comment fixtures use.
+const MANUSCRIPT: &str = "\
+This manuscript opens with a sentence that needs review.
+
+A second, unrelated paragraph follows.
+";
+
+/// `[start, end)` of `needle`'s first occurrence in `doc`, in the addressable
+/// character space `DocumentComment::start`/`end` are defined in.
+fn find_range(doc: &TextDocument, needle: &str) -> (u32, u32) {
+    let m = doc
+        .find(needle, 0, &FindOptions::default())
+        .expect("find")
+        .unwrap_or_else(|| panic!("{needle:?} not found in the document"));
+    (m.position as u32, (m.position + m.length) as u32)
+}
+
+/// Build `djot` into a real document, hand it to `make_comments` (which can
+/// call [`find_range`] against it before deciding what to anchor), and export
+/// the result to a real `.docx`. Returns the file's bytes.
+fn build_docx(djot: &str, make_comments: impl FnOnce(&TextDocument) -> DocumentComments) -> Vec<u8> {
+    let doc = TextDocument::new();
+    doc.set_djot_sync(djot).expect("set_djot_sync");
+    let comments = make_comments(&doc);
+
+    let path = std::env::temp_dir().join(format!(
+        "import_mgmt_docx_roundtrip_{}_{}.docx",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or_default()
+    ));
+    doc.to_docx_with_options(
+        &path.to_string_lossy(),
+        DocxExportOptions {
+            comments,
+            ..Default::default()
+        },
+    )
+    .expect("to_docx_with_options")
+    .wait()
+    .expect("docx export completes");
+    let bytes = std::fs::read(&path).expect("read exported docx");
+    let _ = std::fs::remove_file(&path);
+    bytes
+}
+
+/// As [`build_docx`], for `.odt`.
+fn build_odt(djot: &str, make_comments: impl FnOnce(&TextDocument) -> DocumentComments) -> Vec<u8> {
+    let doc = TextDocument::new();
+    doc.set_djot_sync(djot).expect("set_djot_sync");
+    let comments = make_comments(&doc);
+
+    let path = std::env::temp_dir().join(format!(
+        "import_mgmt_odt_roundtrip_{}_{}.odt",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or_default()
+    ));
+    doc.to_odt_with_options(
+        &path.to_string_lossy(),
+        OdtExportOptions {
+            comments,
+            ..Default::default()
+        },
+    )
+    .expect("to_odt_with_options")
+    .wait()
+    .expect("odt export completes");
+    let bytes = std::fs::read(&path).expect("read exported odt");
+    let _ = std::fs::remove_file(&path);
+    bytes
+}
+
+/// One root comment on "needs review" (no uid — an editor's own first pass) with
+/// one reply, exported to `.docx`.
+fn first_returning_docx() -> Vec<u8> {
+    build_docx(MANUSCRIPT, |doc| {
+        let range = find_range(doc, "needs review");
+        let mut root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: String::new(),
+            author: "Editor".to_string(),
+            author_initials: "ED".to_string(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: "Please look at this.".to_string(),
+            replies: Vec::new(),
+        };
+        root.replies.push(TdCommentReply {
+            uid: String::new(),
+            author: "Writer".to_string(),
+            author_initials: "WR".to_string(),
+            date: "2026-01-01T01:00:00Z".to_string(),
+            body: "Will do.".to_string(),
+        });
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+        comments
+    })
+}
+
+/// As [`first_returning_docx`], for `.odt`.
+fn first_returning_odt() -> Vec<u8> {
+    build_odt(MANUSCRIPT, |doc| {
+        let range = find_range(doc, "needs review");
+        let mut root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: String::new(),
+            author: "Editor".to_string(),
+            author_initials: String::new(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: "Please look at this.".to_string(),
+            replies: Vec::new(),
+        };
+        root.replies.push(TdCommentReply {
+            uid: String::new(),
+            author: "Writer".to_string(),
+            author_initials: String::new(),
+            date: "2026-01-01T01:00:00Z".to_string(),
+            body: "Will do.".to_string(),
+        });
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+        comments
+    })
+}
+
+/// A `.docx` carrying the SAME thread again, keyed by `comment_uid`/`reply_uid` —
+/// simulating Skribisto's own re-export of an already-recognised comment coming
+/// back from a further round of editing, with a changed body on both turns.
+fn returning_docx_for(comment_uid: uuid::Uuid, reply_uid: uuid::Uuid, resolved: bool) -> Vec<u8> {
+    build_docx(MANUSCRIPT, |doc| {
+        let range = find_range(doc, "needs review");
+        let mut root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: comment_uid.to_string(),
+            author: "Editor".to_string(),
+            author_initials: "ED".to_string(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved,
+            body: "Please look at this *closely*.".to_string(),
+            replies: Vec::new(),
+        };
+        root.replies.push(TdCommentReply {
+            uid: reply_uid.to_string(),
+            author: "Writer".to_string(),
+            author_initials: "WR".to_string(),
+            date: "2026-01-01T01:00:00Z".to_string(),
+            body: "Will do, on it now.".to_string(),
+        });
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+        comments
+    })
+}
+
+/// The decisive proof, for DOCX: a returning file carrying an already-recognised
+/// comment's real uid updates that row in place — same id, same uid, refreshed
+/// body/resolved state — and repoints it at the NEW import's own `Content` row,
+/// never leaving it on the row the first import created.
+#[test]
+fn reimporting_a_returning_docx_recognises_the_comment_instead_of_duplicating_it() {
+    let mut ctx = Ctx::new();
+
+    let first_path = ctx.write_bytes("returned-1.docx", &first_returning_docx());
+    let rows = ctx.analyse(vec![first_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let before = ctx.comments();
+    assert_eq!(before.len(), 1, "one thread from the first import: {before:#?}");
+    let (first_comment, first_replies) = &before[0];
+    assert_ne!(
+        first_comment.uid,
+        uuid::Uuid::nil(),
+        "apply_document_import_uc must mint a uid for an editor-authored comment"
+    );
+    let local_uid = first_comment.uid;
+    let local_id = first_comment.id;
+    assert_eq!(first_replies.len(), 1);
+    let reply_uid = first_replies[0].uid;
+    let reply_id = first_replies[0].id;
+
+    let second_bytes = returning_docx_for(local_uid, reply_uid, true);
+    let second_path = ctx.write_bytes("returned-2.docx", &second_bytes);
+    let rows = ctx.analyse(vec![second_path], ImportRowKind::Book);
+    let second_created = ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(
+        after.len(),
+        1,
+        "the recognised comment must be updated, not duplicated: {after:#?}"
+    );
+    let (updated_comment, updated_replies) = &after[0];
+    assert_eq!(updated_comment.id, local_id, "same row, not a new one");
+    assert_eq!(updated_comment.uid, local_uid, "identity never changes");
+    assert!(
+        updated_comment.resolved,
+        "the returning file's resolved state is authoritative"
+    );
+    assert!(
+        updated_comment.body.contains("closely"),
+        "the returning file's body is authoritative: {:?}",
+        updated_comment.body
+    );
+    assert_eq!(
+        updated_comment.author_initials, "ED",
+        "w:initials must survive the whole journey, not just the scanner"
+    );
+
+    assert_eq!(updated_replies.len(), 1, "still one reply, not two");
+    assert_eq!(
+        updated_replies[0].id, reply_id,
+        "the reply row is the same one, updated in place"
+    );
+    assert_eq!(updated_replies[0].uid, reply_uid);
+    assert_eq!(updated_replies[0].body, "Will do, on it now.");
+
+    // The comment's `content` must now point at the SECOND import's row, not
+    // the first's.
+    let second_content_id = ctx.content_id_of(second_created[0]);
+    assert!(second_content_id.is_some(), "the second row must carry prose");
+    assert_eq!(
+        updated_comment.content, second_content_id,
+        "a recognised comment repoints at whichever import most recently touched it"
+    );
+}
+
+/// The ODT twin of the DOCX test above — same recognition, different container.
+/// `author_initials` is not asserted here: ODF has no carrier for it at all (a
+/// documented format ceiling — see `export_odt_uc`'s module doc), so it is
+/// always empty regardless of what either returning file claimed.
+#[test]
+fn reimporting_a_returning_odt_recognises_the_comment_instead_of_duplicating_it() {
+    let mut ctx = Ctx::new();
+
+    let first_path = ctx.write_bytes("returned-1.odt", &first_returning_odt());
+    let rows = ctx.analyse(vec![first_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let before = ctx.comments();
+    assert_eq!(before.len(), 1, "{before:#?}");
+    let (first_comment, first_replies) = &before[0];
+    let local_uid = first_comment.uid;
+    let local_id = first_comment.id;
+    let reply_uid = first_replies[0].uid;
+    let reply_id = first_replies[0].id;
+
+    let second_bytes = build_odt(MANUSCRIPT, |doc| {
+        let range = find_range(doc, "needs review");
+        let mut root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: local_uid.to_string(),
+            author: "Editor".to_string(),
+            author_initials: String::new(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: true,
+            body: "Please look at this *closely*.".to_string(),
+            replies: Vec::new(),
+        };
+        root.replies.push(TdCommentReply {
+            uid: reply_uid.to_string(),
+            author: "Writer".to_string(),
+            author_initials: String::new(),
+            date: "2026-01-01T01:00:00Z".to_string(),
+            body: "Will do, on it now.".to_string(),
+        });
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+        comments
+    });
+    let second_path = ctx.write_bytes("returned-2.odt", &second_bytes);
+    let rows = ctx.analyse(vec![second_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(after.len(), 1, "must not duplicate: {after:#?}");
+    let (updated_comment, updated_replies) = &after[0];
+    assert_eq!(updated_comment.id, local_id);
+    assert_eq!(updated_comment.uid, local_uid);
+    assert!(updated_comment.resolved);
+    assert!(updated_comment.body.contains("closely"));
+    assert_eq!(updated_replies.len(), 1);
+    assert_eq!(updated_replies[0].id, reply_id);
+}
+
+/// A second, immediately-following round trip must still not duplicate — the
+/// bug this milestone exists to fix was exactly "export -> edit -> import
+/// TWICE", not merely once.
+#[test]
+fn a_second_consecutive_round_trip_still_does_not_duplicate() {
+    let mut ctx = Ctx::new();
+
+    let first_path = ctx.write_bytes("returned-1.docx", &first_returning_docx());
+    let rows = ctx.analyse(vec![first_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let seed = ctx.comments();
+    let local_uid = seed[0].0.uid;
+    let local_id = seed[0].0.id;
+    let reply_uid = seed[0].1[0].uid;
+
+    for (name, resolved) in [("returned-2.docx", false), ("returned-3.docx", true)] {
+        let bytes = returning_docx_for(local_uid, reply_uid, resolved);
+        let path = ctx.write_bytes(name, &bytes);
+        let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+        ctx.apply(rows, 0);
+
+        let comments = ctx.comments();
+        assert_eq!(
+            comments.len(),
+            1,
+            "round trip {name} duplicated the comment: {comments:#?}"
+        );
+        assert_eq!(comments[0].0.id, local_id, "round trip {name} changed the row identity");
+        assert_eq!(comments[0].1.len(), 1, "round trip {name} duplicated the reply");
+    }
+}
+
+/// Undoing a re-import that RECOGNISED a comment must restore that row's
+/// PREVIOUS state, not merely detach it — the `updated_comments`/
+/// `updated_replies` machinery `execute`'s own module doc describes, as
+/// distinct from `set_comments_attached` (which only ever applies to a row this
+/// transaction *created*). A detach here would make an already-existing,
+/// previously-visible comment vanish, which is a correctness bug undo must
+/// never have.
+#[test]
+fn undoing_a_recognised_update_restores_its_previous_state_not_just_detaches_it() {
+    let mut ctx = Ctx::new();
+
+    let first_path = ctx.write_bytes("returned-1.docx", &first_returning_docx());
+    let rows = ctx.analyse(vec![first_path], ImportRowKind::Book);
+    let first_created = ctx.apply(rows, 0);
+
+    let seed = ctx.comments();
+    let local_uid = seed[0].0.uid;
+    let local_id = seed[0].0.id;
+    let reply_uid = seed[0].1[0].uid;
+    let reply_id = seed[0].1[0].id;
+    let first_content_id = ctx.content_id_of(first_created[0]);
+
+    let second_bytes = returning_docx_for(local_uid, reply_uid, true);
+    let second_path = ctx.write_bytes("returned-2.docx", &second_bytes);
+    let rows = ctx.analyse(vec![second_path], ImportRowKind::Book);
+    let second_created = ctx.apply(rows, 0);
+    let second_content_id = ctx.content_id_of(second_created[0]);
+
+    // Sanity: the update really did happen before undo gets to work.
+    let updated = ctx.comments();
+    assert_eq!(updated.len(), 1);
+    assert!(updated[0].0.resolved);
+    assert!(updated[0].0.body.contains("closely"));
+    assert_eq!(updated[0].0.content, second_content_id);
+
+    ctx.undo.undo(None).expect("undo the second (recognising) import");
+
+    let after_undo = ctx.comments();
+    assert_eq!(
+        after_undo.len(),
+        1,
+        "the comment must still be there — undo must not detach a row that \
+         already existed before this import ran: {after_undo:#?}"
+    );
+    let (reverted_comment, reverted_replies) = &after_undo[0];
+    assert_eq!(reverted_comment.id, local_id, "same row throughout");
+    assert_eq!(reverted_comment.uid, local_uid);
+    assert!(
+        !reverted_comment.resolved,
+        "undo must restore the PRE-second-import resolved state"
+    );
+    assert_eq!(
+        reverted_comment.body, "Please look at this.",
+        "undo must restore the pre-second-import body"
+    );
+    assert_eq!(
+        reverted_comment.content, first_content_id,
+        "undo must repoint content back at the row it was on before this import"
+    );
+    assert_eq!(reverted_replies.len(), 1);
+    assert_eq!(reverted_replies[0].id, reply_id);
+    assert_eq!(reverted_replies[0].body, "Will do.");
+
+    ctx.undo.redo(None).expect("redo the second (recognising) import");
+    let after_redo = ctx.comments();
+    assert_eq!(after_redo.len(), 1);
+    assert!(after_redo[0].0.resolved, "redo must re-apply the update");
+    assert!(after_redo[0].0.body.contains("closely"));
+    assert_eq!(after_redo[0].0.content, second_content_id);
+    assert_eq!(after_redo[0].1[0].body, "Will do, on it now.");
+}
+
+/// A comment the file carries no recognisable uid for — an editor's own brand
+/// new remark, added alongside an already-recognised one — is genuinely new: it
+/// is created, not merged into the recognised thread, and mints its own fresh
+/// uid distinct from every uid already in play.
+#[test]
+fn an_editors_own_new_comment_with_no_uid_is_created_and_gets_a_fresh_uid() {
+    let mut ctx = Ctx::new();
+
+    let first_path = ctx.write_bytes("returned-1.docx", &first_returning_docx());
+    let rows = ctx.analyse(vec![first_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let seed = ctx.comments();
+    let local_uid = seed[0].0.uid;
+    let reply_uid = seed[0].1[0].uid;
+
+    let second_bytes = build_docx(MANUSCRIPT, |doc| {
+        let recognised_range = find_range(doc, "needs review");
+        let mut recognised = DocumentComment {
+            start: recognised_range.0,
+            end: recognised_range.1,
+            uid: local_uid.to_string(),
+            author: "Editor".to_string(),
+            author_initials: "ED".to_string(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: "Please look at this.".to_string(),
+            replies: Vec::new(),
+        };
+        recognised.replies.push(TdCommentReply {
+            uid: reply_uid.to_string(),
+            author: "Writer".to_string(),
+            author_initials: "WR".to_string(),
+            date: "2026-01-01T01:00:00Z".to_string(),
+            body: "Will do.".to_string(),
+        });
+
+        let new_range = find_range(doc, "second, unrelated paragraph");
+        let brand_new = DocumentComment {
+            start: new_range.0,
+            end: new_range.1,
+            uid: String::new(),
+            author: "New Editor".to_string(),
+            author_initials: "NE".to_string(),
+            date: "2026-02-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: "Totally new remark.".to_string(),
+            replies: Vec::new(),
+        };
+
+        let mut comments = DocumentComments::new();
+        comments.insert(recognised);
+        comments.insert(brand_new);
+        comments
+    });
+    let second_path = ctx.write_bytes("returned-2.docx", &second_bytes);
+    let rows = ctx.analyse(vec![second_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(
+        after.len(),
+        2,
+        "the recognised comment stays one row, the new remark becomes a second: {after:#?}"
+    );
+    let (new_comment, _) = after
+        .iter()
+        .find(|(c, _)| c.body == "Totally new remark.")
+        .expect("the brand new comment");
+    assert_ne!(
+        new_comment.uid,
+        uuid::Uuid::nil(),
+        "a freshly created comment must mint a real uid"
+    );
+    assert_ne!(
+        new_comment.uid, local_uid,
+        "the new comment's uid must not collide with the recognised one's"
+    );
+    assert!(
+        after.iter().any(|(c, _)| c.uid == local_uid),
+        "the recognised comment must still be there, untouched in identity"
+    );
+}
+
+/// A reply an editor inserts in the MIDDLE of a thread must not make the reply
+/// that used to sit in that position — and every reply after it — look like a
+/// new one. Matching is by uid, never by position: R1 stays R1, R2 stays R2,
+/// wherever they now sit in the file's own order, and only the truly new,
+/// uid-less middle reply gets created.
+#[test]
+fn a_reply_inserted_mid_conversation_does_not_duplicate_the_replies_after_it() {
+    let mut ctx = Ctx::new();
+
+    let first_bytes = build_docx(MANUSCRIPT, |doc| {
+        let range = find_range(doc, "needs review");
+        let mut root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: String::new(),
+            author: "Editor".to_string(),
+            author_initials: "ED".to_string(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: "Please look at this.".to_string(),
+            replies: Vec::new(),
+        };
+        root.replies.push(TdCommentReply {
+            uid: String::new(),
+            author: "Writer".to_string(),
+            author_initials: "WR".to_string(),
+            date: "2026-01-01T01:00:00Z".to_string(),
+            body: "First reply.".to_string(),
+        });
+        root.replies.push(TdCommentReply {
+            uid: String::new(),
+            author: "Writer".to_string(),
+            author_initials: "WR".to_string(),
+            date: "2026-01-01T02:00:00Z".to_string(),
+            body: "Second reply.".to_string(),
+        });
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+        comments
+    });
+    let first_path = ctx.write_bytes("returned-1.docx", &first_bytes);
+    let rows = ctx.analyse(vec![first_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let seed = ctx.comments();
+    assert_eq!(seed[0].1.len(), 2, "two replies from the first import: {seed:#?}");
+    let comment_uid = seed[0].0.uid;
+    let r1 = &seed[0].1[0];
+    let r2 = &seed[0].1[1];
+    assert_eq!(r1.body, "First reply.");
+    assert_eq!(r2.body, "Second reply.");
+    let (r1_id, r1_uid) = (r1.id, r1.uid);
+    let (r2_id, r2_uid) = (r2.id, r2.uid);
+
+    // The editor's return: R1 first, then a brand-new reply with no uid, then
+    // R2 — in the file's own order, exactly as an editor inserting a reply
+    // mid-thread in Word or LibreOffice would produce.
+    let second_bytes = build_docx(MANUSCRIPT, |doc| {
+        let range = find_range(doc, "needs review");
+        let mut root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            uid: comment_uid.to_string(),
+            author: "Editor".to_string(),
+            author_initials: "ED".to_string(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body: "Please look at this.".to_string(),
+            replies: Vec::new(),
+        };
+        root.replies.push(TdCommentReply {
+            uid: r1_uid.to_string(),
+            author: "Writer".to_string(),
+            author_initials: "WR".to_string(),
+            date: "2026-01-01T01:00:00Z".to_string(),
+            body: "First reply.".to_string(),
+        });
+        root.replies.push(TdCommentReply {
+            uid: String::new(),
+            author: "Editor".to_string(),
+            author_initials: "ED".to_string(),
+            date: "2026-01-01T01:30:00Z".to_string(),
+            body: "Inserted reply.".to_string(),
+        });
+        root.replies.push(TdCommentReply {
+            uid: r2_uid.to_string(),
+            author: "Writer".to_string(),
+            author_initials: "WR".to_string(),
+            date: "2026-01-01T02:00:00Z".to_string(),
+            body: "Second reply.".to_string(),
+        });
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+        comments
+    });
+    let second_path = ctx.write_bytes("returned-2.docx", &second_bytes);
+    let rows = ctx.analyse(vec![second_path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(after.len(), 1, "still one thread: {after:#?}");
+    let replies = &after[0].1;
+    assert_eq!(
+        replies.len(),
+        3,
+        "two recognised replies plus one genuinely new one: {replies:#?}"
+    );
+
+    assert_eq!(replies[0].id, r1_id, "R1 keeps its row");
+    assert_eq!(replies[0].uid, r1_uid, "R1 keeps its identity");
+    assert_eq!(replies[0].body, "First reply.");
+
+    assert_eq!(replies[1].body, "Inserted reply.", "the new reply lands in the middle");
+    assert_ne!(replies[1].id, r1_id);
+    assert_ne!(replies[1].id, r2_id, "the inserted reply must be a genuinely new row");
+    assert_ne!(replies[1].uid, uuid::Uuid::nil(), "it must mint a real uid");
+
+    assert_eq!(
+        replies[2].id, r2_id,
+        "R2 keeps its row even though it no longer sits at index 1 — matched by uid, not position"
+    );
+    assert_eq!(replies[2].uid, r2_uid, "R2 keeps its identity");
+    assert_eq!(replies[2].body, "Second reply.");
 }

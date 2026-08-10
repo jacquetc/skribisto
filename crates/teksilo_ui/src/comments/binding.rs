@@ -117,14 +117,21 @@ impl CommentBinding {
         self.content_id
     }
 
-    /// The document's plain text and every block's start offset, both in the
+    /// The document's addressable text and every block's start offset, both in the
     /// document-absolute **character** space the anchor engine speaks.
+    ///
+    /// `to_addressable_text()`, NOT `to_plain_text()`: the selection offsets the editor
+    /// hands [`add_range`](Self::add_range) and the block starts read here live in the
+    /// document's own char space, where an embedded table occupies its `U+FFFC` anchor
+    /// plus a `\n` separator. The plain-text *export* omits that anchor, so slicing it
+    /// with these offsets captured the quote two characters off per preceding table —
+    /// a comment on `"salt-bleached"` stored `"lt-bleached d"`.
     ///
     /// Read fresh on each use rather than cached: the caller is about to anchor
     /// against it, and a snapshot taken a keystroke ago would anchor to text that
     /// is no longer there.
     fn snapshot(&self) -> (String, Vec<usize>) {
-        let text = self.doc.to_plain_text().unwrap_or_default();
+        let text = self.doc.to_addressable_text().unwrap_or_default();
         let starts: Vec<usize> = self
             .doc
             .blocks()
@@ -265,10 +272,15 @@ impl CommentBinding {
                 if row.orphaned {
                     return None;
                 }
+                // The body is Djot (M-S4), and a screen reader speaking it verbatim
+                // would announce an editor's own emphasis as literal asterisks and
+                // underscores — `crate::comments::preview::plain_preview` is the one
+                // shared conversion every such summary goes through.
+                let preview = crate::comments::preview::plain_preview(&row.body);
                 let mut summary = if row.author_name.is_empty() {
-                    row.body.clone()
+                    preview
                 } else {
-                    format!("{}: {}", row.author_name, row.body)
+                    format!("{}: {}", row.author_name, preview)
                 };
                 if row.reply_count() > 0 {
                     summary.push_str(&format!(" ({} replies)", row.reply_count()));

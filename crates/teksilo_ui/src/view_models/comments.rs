@@ -129,6 +129,16 @@ pub struct CommentsViewModel {
     /// structure changing, and a signal read during `build` would make the card
     /// re-run its own build every time the flag was consumed.
     pending_focus: Rc<Cell<Option<ThreadEntry>>>,
+    /// The turn whose body is live under a caret right now, if any.
+    ///
+    /// Set by the card's own body editor on every *real* focus change (see
+    /// `comments::card::TurnBodyStyle`, the same shape
+    /// `docks::footnotes::NoteBodyStyle` uses for `FootnotesViewModel::editing`),
+    /// and consulted by [`body_doc`](Self::body_doc) before ever re-syncing an
+    /// already-cached document from a body change that landed elsewhere — see
+    /// that function's own doc for why "is someone typing into this exact turn
+    /// right now" is the one thing that must gate a re-sync.
+    editing: Signal<Option<ThreadEntry>>,
     /// Whether anchored comments are **drawn** — Tools ▸ Comments.
     ///
     /// Presentation only. The model keeps loading, the docks keep listing, the
@@ -282,6 +292,7 @@ impl CommentsViewModel {
             pending_seek: Signal::new(None),
             body_docs: Rc::new(RefCell::new(HashMap::new())),
             pending_focus: Rc::new(Cell::new(None)),
+            editing: Signal::new(None),
             visible: Signal::new(true),
             palette: Signal::new(CommentPalette::default()),
         }
@@ -322,26 +333,70 @@ impl CommentsViewModel {
         self.palette.set(CommentPalette::for_theme(dark));
     }
 
-    /// The live document behind one comment's body, created on first use and
-    /// seeded from the stored text.
+    /// The live document behind one turn's body, created on first use and seeded
+    /// from the stored Djot.
     ///
-    /// Seeded **only** on creation: re-seeding on every call would fight the writer
-    /// mid-keystroke, since the store is updated from this very document.
+    /// Cached, and not rebuilt from `initial` on every pass, for the reason the
+    /// footnote dock's own `body_doc` records: a card is rebuilt whenever the
+    /// comment set changes — a reply, a resolve, an edit elsewhere — and
+    /// re-minting the document under a writer's caret drops it mid-word.
+    ///
+    /// **But "cached" must not mean "frozen forever".** A body can change out
+    /// from under this cache without ever going through it — Search & Replace, an
+    /// Undo, or a second window on the same `Work` all write `Comment.body`/
+    /// `CommentReply.body` directly, and nothing downstream of that pushes it
+    /// into a document that already exists. Left alone, the stale text would sit
+    /// invisibly in the card until the writer's next keystroke here committed
+    /// `doc.to_djot()` right back over whatever had just landed — silently
+    /// discarding it.
+    ///
+    /// So this re-syncs whenever `initial` disagrees with what the cached
+    /// document currently holds — but **only** when `entry` is not the turn
+    /// [`editing`](Self::editing) says is live under a caret right now (kept
+    /// current by the body editor's own real focus signal — see
+    /// `comments::card::TurnBodyStyle`). That gate is what keeps a self-typed
+    /// edit from tripping this at all: `on_change` commits synchronously to the
+    /// backend on every keystroke, and event dispatch here is synchronous too, so
+    /// by the time this function runs again for a turn the writer is actively in,
+    /// `initial` already equals what they just typed — no disagreement, no
+    /// re-sync attempted. It is only a genuinely external rewrite that
+    /// disagrees, and gating on focus is what stops handling *that* from
+    /// re-introducing the exact clobbered-caret bug this cache exists to
+    /// prevent — the fix must not trade one bug for the other.
     pub fn body_doc(&self, entry: ThreadEntry, initial: &str) -> TextDocument {
         let mut docs = self.body_docs.borrow_mut();
-        docs.entry(entry)
-            .or_insert_with(|| {
-                let doc = TextDocument::new();
-                let _ = doc.set_plain_text(initial);
-                doc
-            })
-            .clone()
+        if let Some(doc) = docs.get(&entry) {
+            let stale = doc.to_djot().unwrap_or_default() != initial;
+            let live_under_a_caret = self.editing.get() == Some(entry);
+            if stale && !live_under_a_caret {
+                let _ = doc.set_djot_sync(initial);
+            }
+            return doc.clone();
+        }
+        let doc = TextDocument::new();
+        let _ = doc.set_djot_sync(initial);
+        docs.insert(entry, doc.clone());
+        doc
     }
 
     /// Drop a comment's cached document — called when the thread is deleted, so a
     /// long session does not accumulate documents for notes that no longer exist.
     fn forget_body_doc(&self, entry: ThreadEntry) {
         self.body_docs.borrow_mut().remove(&entry);
+    }
+
+    /// Which turn's body is live under a caret right now — the dock's own
+    /// no-op-for-nothing-focused answer is `None`. See [`body_doc`](Self::body_doc)'s
+    /// doc for why this matters beyond bookkeeping.
+    pub fn editing(&self) -> Signal<Option<ThreadEntry>> {
+        self.editing.clone()
+    }
+
+    /// Record which turn's body is live under a caret, or that none is. Called
+    /// by `comments::card::TurnBodyStyle` on every real focus change of that
+    /// turn's editor.
+    pub fn set_editing(&self, entry: Option<ThreadEntry>) {
+        self.editing.set(entry);
     }
 
     // ── focus ───────────────────────────────────────────────────────────────
@@ -971,5 +1026,109 @@ mod tests {
         ] {
             assert!(f.admits(&r));
         }
+    }
+
+    fn vm() -> CommentsViewModel {
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        CommentsViewModel::new(
+            CommentsListModel::new(ctx.clone(), crate::app_ids::AppIds::new()),
+            ctx,
+            Signal::new(None),
+        )
+    }
+
+    // ── `body_doc`: seeded as Djot, cached, and re-synced only when safe ─────
+    //
+    // Mirrors `FootnotesViewModel::body_doc`'s own tests exactly — the two
+    // caches share the same clobbered-caret hazard and the same fix.
+
+    #[test]
+    fn body_doc_seeds_from_djot_not_plain_text() {
+        let vm = vm();
+        let entry = ThreadEntry::Comment(1);
+        // `set_plain_text` would have rendered the emphasis markers literally;
+        // `set_djot_sync` parses them, and `to_djot()` round-trips them back —
+        // proof the seed actually went through the Djot importer.
+        let doc = vm.body_doc(entry, "Is this *really* the word?");
+        assert_eq!(doc.to_djot().unwrap(), "Is this *really* the word?");
+        assert_eq!(
+            doc.to_plain_text().unwrap(),
+            "Is this really the word?",
+            "the parsed document must know the emphasis is markup, not literal \
+             asterisks — which only happens if the seed went through the Djot \
+             importer, not set_plain_text"
+        );
+    }
+
+    /// A body's cache is not rebuilt from `initial` while the turn is live
+    /// under a caret — re-syncing there would be the exact clobbered-caret bug
+    /// the cache exists to prevent, traded for the disappearing-edit bug this
+    /// fixes.
+    #[test]
+    fn body_doc_does_not_resync_a_turn_that_is_being_typed_into() {
+        let vm = vm();
+        let entry = ThreadEntry::Comment(1);
+        let first = vm.body_doc(entry, "first draft");
+        assert_eq!(first.to_djot().unwrap(), "first draft");
+
+        vm.set_editing(Some(entry));
+        let still_cached = vm.body_doc(entry, "an external rewrite landed here");
+        assert_eq!(
+            still_cached.to_djot().unwrap(),
+            "first draft",
+            "a turn live under a caret must not be overwritten out from under the writer"
+        );
+    }
+
+    /// A body's cache **is** refreshed once the turn is no longer the one
+    /// being typed into — an external rewrite (Search & Replace, an Undo, a
+    /// second window) must not stay invisible in the card forever, only while
+    /// a caret actually sits in that exact turn.
+    #[test]
+    fn body_doc_resyncs_a_turn_that_is_not_being_typed_into() {
+        let vm = vm();
+        let entry = ThreadEntry::Reply(9);
+        let first = vm.body_doc(entry, "first draft");
+        assert_eq!(first.to_djot().unwrap(), "first draft");
+
+        // Not editing this turn (nor any turn) — the default state whenever
+        // the writer's caret is elsewhere.
+        let resynced = vm.body_doc(entry, "an external rewrite landed here");
+        assert_eq!(
+            resynced.to_djot().unwrap(),
+            "an external rewrite landed here",
+            "a body changed elsewhere must reach an already-cached document"
+        );
+        // The SAME cached `TextDocument` was updated in place, not replaced —
+        // the turn's live handle (already held by a mounted editor, if any)
+        // must see the new text too.
+        assert_eq!(first.to_djot().unwrap(), "an external rewrite landed here");
+    }
+
+    /// A comment's turn and a reply's turn are different `ThreadEntry` keys
+    /// even when — as here — nothing else distinguishes them; `editing` must
+    /// not confuse the two, or a caret in a reply would block a resync of the
+    /// comment it replies to.
+    #[test]
+    fn editing_gates_only_the_exact_entry_it_names() {
+        let vm = vm();
+        let comment = ThreadEntry::Comment(1);
+        let reply = ThreadEntry::Reply(1);
+        vm.body_doc(comment, "comment draft");
+        vm.body_doc(reply, "reply draft");
+
+        vm.set_editing(Some(reply));
+        let comment_doc = vm.body_doc(comment, "an external rewrite of the comment");
+        assert_eq!(
+            comment_doc.to_djot().unwrap(),
+            "an external rewrite of the comment",
+            "the comment is not the turn being edited, so it must resync freely"
+        );
+        let reply_doc = vm.body_doc(reply, "an external rewrite of the reply");
+        assert_eq!(
+            reply_doc.to_djot().unwrap(),
+            "reply draft",
+            "the reply IS the turn being edited, so it must not be clobbered"
+        );
     }
 }

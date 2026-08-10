@@ -456,6 +456,213 @@ fn a_rename_spares_the_markup_and_keeps_the_styling() {
     );
 }
 
+/// Anchor a thread (plus one reply) to the first Content row in the fixture, and
+/// hand back `(comment_id, reply_id)`. Mirrors `run_search_test.rs`'s own
+/// `seed_comment` — the two test binaries are compiled independently and this
+/// repo duplicates small fixtures like this one rather than adding a shared
+/// `tests/common` module for a single helper.
+fn seed_comment(ctx: &AppContext, work: u64, body: &str, reply_body: &str) -> (u64, u64) {
+    use frontend::commands::{binder_item_commands, comment_commands, comment_reply_commands};
+    use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+    use frontend::common::direct_access::comment::CommentRelationshipField;
+    use frontend::common::direct_access::work::WorkRelationshipField;
+    use frontend::common::entities::{CommentAnchorKind, CommentOrphanReason};
+    use frontend::direct_access::comment::dtos::CreateCommentDto;
+    use frontend::direct_access::comment_reply::dtos::CreateCommentReplyDto;
+    use frontend::direct_access::work::dtos::WorkRelationshipDto;
+
+    let now = chrono::Utc::now();
+    let content = {
+        use frontend::commands::binder_commands;
+        use frontend::common::direct_access::binder::BinderRelationshipField;
+        let binders =
+            work_commands::get_work_relationship(ctx, &work, &WorkRelationshipField::Binders)
+                .expect("work binders");
+        binders
+            .into_iter()
+            .flat_map(|b| {
+                binder_commands::get_binder_relationship(
+                    ctx,
+                    &b,
+                    &BinderRelationshipField::BinderItems,
+                )
+                .expect("binder items")
+            })
+            .find_map(|item| {
+                binder_item_commands::get_binder_item_relationship(
+                    ctx,
+                    &item,
+                    &BinderItemRelationshipField::Contents,
+                )
+                .ok()
+                .and_then(|c| c.first().copied())
+            })
+            .expect("this work has at least one Content row")
+    };
+
+    let comment = comment_commands::create_orphan_comment(
+        ctx,
+        None,
+        &CreateCommentDto {
+            uid: Default::default(),
+            created_at: now,
+            updated_at: now,
+            content: Some(content),
+            kind: CommentAnchorKind::Range,
+            author_name: "Jane".into(),
+            author_initials: "J".into(),
+            body: body.into(),
+            resolved: false,
+            orphaned: false,
+            orphan_reason: CommentOrphanReason::NotOrphaned,
+            range_start: 0,
+            range_length: 4,
+            quote_prefix: String::new(),
+            quote_exact: "The ".into(),
+            quote_exact_truncated: false,
+            quote_suffix: String::new(),
+            block_ordinal_hint: 0,
+            replies: vec![],
+        },
+    )
+    .expect("create comment")
+    .id;
+
+    let reply = comment_reply_commands::create_orphan_comment_reply(
+        ctx,
+        None,
+        &CreateCommentReplyDto {
+            uid: common::uid::fixture_uid(6001),
+            created_at: now,
+            updated_at: now,
+            author_name: "Marc".into(),
+            author_initials: "M".into(),
+            body: reply_body.into(),
+        },
+    )
+    .expect("create reply")
+    .id;
+    comment_commands::set_comment_relationship(
+        ctx,
+        None,
+        &frontend::direct_access::comment::dtos::CommentRelationshipDto {
+            id: comment,
+            field: CommentRelationshipField::Replies,
+            right_ids: vec![reply],
+        },
+    )
+    .expect("wire reply onto comment");
+
+    let mut ids =
+        work_commands::get_work_relationship(ctx, &work, &WorkRelationshipField::Comments)
+            .expect("work comments");
+    ids.push(comment);
+    work_commands::set_work_relationship(
+        ctx,
+        None,
+        &WorkRelationshipDto {
+            id: work,
+            field: WorkRelationshipField::Comments,
+            right_ids: ids,
+        },
+    )
+    .expect("wire comment onto work");
+    (comment, reply)
+}
+
+/// **M-S4.** A comment's own body is Djot now, not a plain string, and a rename
+/// touching one must go through the same document-splice pipeline prose gets —
+/// see the `Comment`/`CommentReply` arm's own doc for why a raw string rewrite
+/// would be wrong here. Two things prove that:
+///
+/// * The occurrence count `run_search` reports (scanned through
+///   `corpus_cache::corpus_for`, i.e. the **parsed** prose) must still match what
+///   `replace_in_project` re-derives by parsing the same body into a
+///   `BatchDocument` — if the two disagreed, every formatted comment would be
+///   reported stale and Replace All would silently skip it.
+/// * The emphasis marker around the renamed word must survive the splice, not
+///   be corrupted or dropped by it — the exact failure mode a plain
+///   `str::replace` over the raw Djot would risk (`*Aurélien*` losing its `*`s,
+///   or the replacement landing inside the marker instead of the word).
+#[test]
+fn a_replace_inside_a_formatted_comment_body_does_not_corrupt_its_djot_markers() {
+    let ctx = loaded_ctx();
+    let stack = Some(undo_redo_commands::create_new_stack(&ctx));
+    let work = work_id(&ctx);
+
+    let (comment_id, reply_id) = seed_comment(
+        &ctx,
+        work,
+        "Is *Aurélien* really the right name here?",
+        "I still think *Aurélien* works.",
+    );
+
+    let mut q = search(&ctx, "Aurélien");
+    q.search_titles = false;
+    q.search_synopsis = false;
+    q.search_body = false;
+    q.search_comments = true;
+    search_management_commands::run_search(&ctx, &q).expect("run_search");
+
+    let out = search_management_commands::replace_in_project(
+        &ctx,
+        stack,
+        &ReplaceInProjectDto {
+            work_id: work,
+            replacement: "Aurélian".to_string(),
+            preserve_case: true,
+            excluded_result_ids: vec![],
+        },
+    )
+    .expect("replace_in_project");
+
+    assert!(
+        out.skipped_stale.is_empty(),
+        "the comment/reply occurrence count must agree between run_search and \
+         replace_in_project, or every formatted comment would be reported stale \
+         and never actually rewritten: {:?}",
+        out.skipped_stale
+    );
+    assert_eq!(
+        out.occurrences_replaced, 2,
+        "one occurrence in the comment, one in the reply"
+    );
+
+    let comment = frontend::commands::comment_commands::get_comment(&ctx, &comment_id)
+        .unwrap()
+        .unwrap();
+    assert!(
+        comment.body.contains("*Aurélian*"),
+        "the emphasis around the renamed word must survive the splice: {:?}",
+        comment.body
+    );
+    assert!(
+        !comment.body.contains("Aurélien"),
+        "the old name must actually be gone: {:?}",
+        comment.body
+    );
+
+    let reply = frontend::commands::comment_reply_commands::get_comment_reply(&ctx, &reply_id)
+        .unwrap()
+        .unwrap();
+    assert!(
+        reply.body.contains("*Aurélian*"),
+        "the reply's own emphasis must survive too: {:?}",
+        reply.body
+    );
+
+    // …and it undoes in the same one step as a prose rename.
+    undo_redo_commands::undo(&ctx, stack).expect("undo");
+    let restored = frontend::commands::comment_commands::get_comment(&ctx, &comment_id)
+        .unwrap()
+        .unwrap();
+    assert!(
+        restored.body.contains("*Aurélien*"),
+        "undo must put the comment's exact original Djot back: {:?}",
+        restored.body
+    );
+}
+
 /// A manuscript of `n` one-paragraph scenes, every one of them naming Aurélien — the shape
 /// of the operation this feature exists for: renaming a character who is *in the book*.
 ///

@@ -30,12 +30,16 @@
 //! margin deliberately rebuilds on the comment set's *shape* rather than on its
 //! text, so typing cannot re-mint the very editor being typed into.
 //!
-//! ## One menu per turn, not a row of buttons
+//! ## One menu per turn, not a row of buttons — except for Bold and Italic
 //!
-//! Everything but writing lives behind a single chevron: reply, resolve, delete,
+//! Everything else lives behind a single chevron: reply, resolve, delete,
 //! delete-all. A permanently-visible reply field is the wrong default — most
 //! comments in a manuscript are never replied to, and a field that is usually
 //! empty costs vertical space on *every* card to serve the minority that use it.
+//!
+//! Bold and Italic are the one exception, standing beside the chevron rather
+//! than inside its menu — see [`mark_button`] for why they exist at all and why
+//! only these two.
 //!
 //! Replies are a **flat** thread, appended to the comment however deep in the
 //! conversation the reply was asked for. That mirrors OOXML, whose
@@ -47,12 +51,13 @@ use teksilo::core::overlay::OverlayPlacement;
 use teksilo::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
 use teksilo::prelude::*;
 use teksilo::tokens::CornerRadius;
-use teksilo::widgets::rich_text::{RichTextEditor, ScrollPolicy};
+use teksilo::widgets::rich_text::{EditorHandle, RichTextEditor, ScrollPolicy};
 use teksilo::widgets::{
     Divider, Expand, HStack, IconButton, IconWidget, MenuItem, MenuList, Padding, Panel,
     PopoverIconButton, RectWidget, Spacer, TextWidget, VStack, ZStack,
 };
 
+use crate::icons::format as glyph;
 use crate::models::CommentRow;
 use crate::view_models::{CommentPalette, CommentsViewModel, ThreadEntry};
 
@@ -124,13 +129,32 @@ pub fn comment_card(
 /// unfocused, focus-ring width focused, both from theme border roles) and exposes no
 /// way to suppress it. Matching only the fill would leave the box outlined — the same
 /// framed-form problem, minus the colour.
-#[derive(Debug, Clone, Copy)]
+///
+/// It is also the one place in the card that knows, moment to moment, whether a
+/// caret is genuinely sitting in *this* turn's body — so `make_body` forwards
+/// `cfg.is_focused` to [`CommentsViewModel::set_editing`], exactly as
+/// `docks::footnotes::NoteBodyStyle` does for its own dock. Without this,
+/// [`CommentsViewModel::body_doc`]'s "is someone typing into this exact turn
+/// right now" gate would have nothing truthful to read and could only guess.
 struct CommentBodyStyle {
     palette: CommentPalette,
+    entry: ThreadEntry,
+    vm: CommentsViewModel,
 }
 
 impl RichTextEditorStyle for CommentBodyStyle {
     fn make_body(&self, cfg: &RichTextEditorStyleConfig, ctx: &mut BuildContext) -> WidgetId {
+        {
+            let vm = self.vm.clone();
+            let entry = self.entry;
+            ctx.effect(&cfg.is_focused, move |focused| {
+                if *focused {
+                    vm.set_editing(Some(entry));
+                } else if vm.editing().get() == Some(entry) {
+                    vm.set_editing(None);
+                }
+            });
+        }
         // Read-only bodies stay bare, exactly as the default recipe leaves them:
         // there is no field to blend in the first place.
         if cfg.is_read_only {
@@ -218,27 +242,58 @@ impl Turn {
 
         // ── The editable body ────────────────────────────────────────────
         let doc = vm.body_doc(entry, &self.body);
+        // `.handle()` is read off the builder before any of the consuming
+        // `.style()`/`.on_change()` calls below — it is a cheap clone of the
+        // editor's own shared state (see `RichTextEditor::handle`'s doc), so
+        // taking it here costs nothing and is what lets the mark buttons act on
+        // *this* turn's editor rather than needing the app-wide `FormatViewModel`
+        // registry — see [`mark_button`]'s own doc for why that registry is the
+        // wrong door for a comment.
+        let editor_widget = RichTextEditor::editor(doc.clone());
+        let handle = editor_widget.handle();
         let body = {
             let vm = vm.clone();
             let doc = doc.clone();
-            RichTextEditor::editor(doc.clone())
+            editor_widget
                 .min_lines(BODY_MIN_LINES)
                 .v_scroll_policy(ScrollPolicy::AlwaysOff)
                 .style(CommentBodyStyle {
                     palette: self.palette,
+                    entry,
+                    vm: vm.clone(),
                 })
                 .on_change(move || {
-                    // Straight through to the store. The document is the source of
-                    // truth while the card lives; this keeps the row — and
-                    // therefore both docks and the screen-reader summary — in step
-                    // with it.
-                    let text = doc.to_plain_text().unwrap_or_default();
+                    // Straight through to the store, as Djot — a comment's own
+                    // emphasis is real content now (M-S4), and committing
+                    // `to_plain_text()` here would silently strip it on the very
+                    // first keystroke after opening the card, before Search &
+                    // Replace or the importer ever entered the picture. The
+                    // document is the source of truth while the card lives; this
+                    // keeps the row — and therefore both docks and the
+                    // screen-reader summary — in step with it.
+                    let text = doc.to_djot().unwrap_or_default();
                     match entry {
                         ThreadEntry::Comment(id) => vm.set_body(id, &text, None),
                         ThreadEntry::Reply(id) => vm.set_reply_body(id, &text, None),
                     }
                 })
         };
+
+        // ── The one formatting affordance ──────────────────────────────────
+        let mark_buttons = HStack::new()
+            .spacing(2.0)
+            .child(mark_button(
+                glyph::bold(),
+                tr!(format_bold()),
+                handle.clone(),
+                |h| h.toggle_bold(),
+            ))
+            .child(mark_button(
+                glyph::italic(),
+                tr!(format_italic()),
+                handle,
+                |h| h.toggle_italic(),
+            ));
 
         // ── The one menu ─────────────────────────────────────────────────
         let comment_id = self.comment_id;
@@ -344,10 +399,63 @@ impl Turn {
                     // The editor first, so it is the row's first focusable
                     // descendant — which is what `build` focuses on creation.
                     .child(Expand::horizontal().child(body))
+                    .child(mark_buttons)
                     .child(more),
             )
             .child(meta)
     }
+}
+
+/// One character-mark button, acting on `handle` directly rather than through
+/// the app-wide `FormatViewModel`.
+///
+/// `FormatViewModel`'s editor registry (see its own module doc) is what lets
+/// the trailing Format dock reach a stream row's synopsis or a corkboard
+/// card's body — the surfaces where the writer's manuscript caret can be — but
+/// a comment's `Turn` never registers with it, and joining that registry would
+/// answer the wrong question: the registry is "which editor is the writer's
+/// **manuscript** caret in", one live target for the whole window, while a
+/// margin can hold several open cards across several documents at once with no
+/// single per-tab slot for any of them to be sticky in. This button skips the
+/// resolver entirely and acts on the handle its own `Turn` already minted —
+/// the same "just use the editor I built" shape `docks::search_preview` uses
+/// for the one editor it knows about, deliberately bypassing
+/// `TypographyBoundEditor`'s registration for the same reason.
+///
+/// Without *some* door onto formatting here, M-S4's data model is rich and
+/// nothing in the UI could actually author that richness: an editor's own
+/// bold survives an import, but a writer replying to it in Skribisto would
+/// have had no way to bold a word of their own reply. Bold and Italic, not
+/// the dock's full toolkit — a margin note is a remark, not a manuscript, and
+/// those two are what an editorial exchange actually reaches for; headings,
+/// lists and tables belong to planning prose, not a one-paragraph aside.
+///
+/// Unlike the Format dock's own buttons (`docks::format::toggle_button`), this
+/// does not mirror a pressed/lit state: doing that safely means polling
+/// `EditorHandle::format_version()` off the frame tick rather than an effect
+/// directly on it, exactly the trap `FormatViewModel`'s own module doc warns
+/// about (the signal is written from inside the editor's `state.borrow_mut()`,
+/// so an effect on it fires while that borrow is still held and panics). A
+/// card has no frame-tick refresh of its own to hang that poll on, so the
+/// button acts — genuinely toggling the selection's bold or italic, real
+/// formatting applied through the real `EditorHandle` API — without also
+/// claiming to show whether the caret is already sitting in bold text.
+fn mark_button(
+    icon: IconWidget,
+    tooltip: LocalizedString,
+    handle: EditorHandle,
+    toggle: fn(&EditorHandle),
+) -> IconButton {
+    IconButton::new(icon)
+        .toolbar()
+        // Tab-order only, matching the Format dock's own buttons: pressing one
+        // must not steal the caret out of the body it is about to act on.
+        .focusable(false)
+        .tooltip(tooltip)
+        .on_activate_fn(move |ctx| {
+            toggle(&handle);
+            ctx.request_frame();
+        })
 }
 
 /// `dd/mm/yyyy hh:mm`, matching the reference presentation.
@@ -522,7 +630,11 @@ mod tests {
     fn a_turn_body_paints_the_card_colour_in_both_focus_states() {
         for dark in [false, true] {
             let palette = CommentPalette::for_theme(dark);
-            let style = CommentBodyStyle { palette };
+            let style = CommentBodyStyle {
+                palette,
+                entry: ThreadEntry::Comment(1),
+                vm: vm(),
+            };
             assert_eq!(
                 style.palette.card, palette.card,
                 "dark={dark}: the body fill must be the card's own colour"
@@ -582,5 +694,96 @@ mod tests {
         let dark = CommentPalette::for_theme(true);
         assert_ne!(light.card, dark.card);
         assert_ne!(light.wash, dark.wash);
+    }
+
+    // ── The comment-scoped formatting affordance (M-S4) ──────────────────────
+    //
+    // Real formatting through a real `EditorHandle`, not a decorative button:
+    // both tests drive an actual click through `WidgetTree` and check the
+    // document's own Djot came out changed, the same proof
+    // `docks::format`'s own `opening_the_heading_picker_leaves_the_dock_standing`
+    // uses for a real pointer tap rather than poking a view-model.
+
+    #[test]
+    fn clicking_the_bold_button_toggles_bold_on_the_selection() {
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::text_document::TextDocument;
+
+        let doc = TextDocument::new();
+        doc.set_djot_sync("Keep it.").expect("seed the document");
+        let editor = RichTextEditor::editor(doc.clone());
+        let handle = editor.handle();
+        handle.select_range(0, 4); // "Keep"
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add(mark_button(
+            glyph::bold(),
+            tr!(format_bold()),
+            handle.clone(),
+            |h| h.toggle_bold(),
+        ));
+        tree.layout(teksilo::prelude::SizeProposal::exact(30.0, 30.0));
+
+        assert!(!handle.is_bold(), "the selection must not start bold");
+        tree.click(id);
+        assert!(handle.is_bold(), "the click must have turned bold on");
+        assert_eq!(
+            doc.to_djot().unwrap(),
+            "*Keep* it.",
+            "the mark must land in the document as real Djot, not a cosmetic toggle"
+        );
+    }
+
+    /// Italic gets the same proof, so the two buttons are not sharing one
+    /// tested code path by coincidence while the other silently does nothing.
+    #[test]
+    fn clicking_the_italic_button_toggles_italic_on_the_selection() {
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::text_document::TextDocument;
+
+        let doc = TextDocument::new();
+        doc.set_djot_sync("Keep it.").expect("seed the document");
+        let editor = RichTextEditor::editor(doc.clone());
+        let handle = editor.handle();
+        handle.select_range(0, 4);
+
+        let mut tree = WidgetTree::new();
+        let id = tree.add(mark_button(
+            glyph::italic(),
+            tr!(format_italic()),
+            handle.clone(),
+            |h| h.toggle_italic(),
+        ));
+        tree.layout(teksilo::prelude::SizeProposal::exact(30.0, 30.0));
+        tree.click(id);
+
+        assert!(handle.is_italic(), "the click must have turned italic on");
+        assert_eq!(doc.to_djot().unwrap(), "_Keep_ it.");
+    }
+
+    /// Every turn — the opening comment and every reply — mounts its own pair
+    /// of mark buttons, not only the first: a reply must be formattable
+    /// exactly like the comment it answers.
+    #[test]
+    fn every_turn_gets_its_own_mark_buttons() {
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let row = CommentRow {
+            id: 6,
+            body: "Opening.".into(),
+            replies: vec![ReplyRow {
+                id: 20,
+                body: "A reply.".into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let id = tree.add_boxed(Box::new(comment_card(vm(), row, CommentPalette::default())));
+        tree.layout(teksilo::prelude::SizeProposal::exact(300.0, 400.0));
+        assert!(
+            tree.bounds(id).height > 0.0,
+            "a card with mark buttons on both the comment and its reply laid out \
+             to nothing"
+        );
     }
 }

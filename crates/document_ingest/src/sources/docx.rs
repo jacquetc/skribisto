@@ -48,8 +48,9 @@
 //!
 //! ## The supplementary pass, and why it is not paranoia
 //!
-//! Two constructs a manuscript genuinely uses are invisible to the typed reader, and
-//! [`RawScan`] reads them straight out of `word/document.xml`:
+//! Three constructs a manuscript genuinely uses are invisible to the typed reader, and
+//! [`RawScan`] reads them straight out of the container's own XML — two from
+//! `word/document.xml`, one from `word/comments.xml`:
 //!
 //! * **A comment anchored to a point rather than a range.** LibreOffice's `.docx`
 //!   export writes these as a bare `w:commentReference` with no
@@ -61,9 +62,16 @@
 //!   else. `ParagraphBorders` keeps every side private, so this cannot be asked of
 //!   the typed tree; and refusing to read it would make DOCX unable to carry a break
 //!   its writer can see, for the same reason the ODT scanner reads ODF's spelling.
+//! * **A comment's `skrb:uid` and `w:initials` (M-S7).** `docx_rs::Comment` (the
+//!   typed reader's own comment type) carries neither field at all — verified
+//!   against its actual source, not assumed (see [`RawScan`]'s own doc). Only
+//!   Skribisto's own DOCX writer (`text-document`'s `export_docx_uc::patch_comment_extras`)
+//!   ever puts a `skrb:uid` on a `<w:comment>`, so reading it back here is what lets
+//!   `apply_document_import_uc` recognise a comment it already created on a previous
+//!   export, instead of duplicating it on every round trip.
 //!
-//! It is one extra read of one zip member, and it answers both questions from the
-//! same parse. The alternative was two silent losses.
+//! It is a small number of extra reads over the same zip, and each answers a question
+//! the typed tree cannot. The alternative was silent loss on every one of them.
 
 use std::collections::{HashMap, HashSet};
 
@@ -75,11 +83,11 @@ use docx_rs::{
     TableRowChild, Underline,
 };
 
-use crate::block::{SourceAnnotationReply, SourceBlock, SourceDocument};
+use crate::block::{SourceBlock, SourceDocument};
 use crate::diagnostics::ImportDiagnostic;
 use crate::scanner::SourceScanner;
 use crate::sources::rich::{
-    ParagraphKind, RichAnnotation, RichBlock, RichDocument, Run, RunStyle, assemble,
+    ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply, Run, RunStyle, assemble,
 };
 
 pub struct DocxScanner;
@@ -106,8 +114,8 @@ impl SourceScanner for DocxScanner {
         let mut doc = SourceDocument::new(display_name, origin);
 
         let styles = StyleTable::new(&docx);
-        let comments = CommentTable::new(&docx);
         let raw = RawScan::read(bytes).unwrap_or_default();
+        let comments = CommentTable::new(&docx, &styles, &raw.comment_attrs);
         let mut walker = Walker::new(&styles, &comments, &raw, origin);
         walker.walk(&docx.document.children);
         let rich = walker.finish();
@@ -295,9 +303,20 @@ fn apply_run_property(property: &RunProperty, style: &mut RunStyle) {
 // ---------------------------------------------------------------------------
 
 struct CommentMeta {
+    /// Only Skribisto's own writer puts these two on a `<w:comment>` — see
+    /// [`RawScan`]'s own doc on why they need a raw pass at all, and
+    /// [`crate::sources::rich::RichAnnotation::uid`] for what recognising one lets
+    /// `apply_document_import_uc` do. `initials` is empty (never `None`) for the
+    /// ordinary case of a comment with no `w:initials`, mirroring
+    /// `RichAnnotation::author_initials`'s own convention.
+    uid: Option<uuid::Uuid>,
+    initials: String,
     author: String,
     created: Option<chrono::DateTime<chrono::Utc>>,
-    body: String,
+    /// One `Vec` of [`Run`]s per paragraph — not yet Djot. See
+    /// [`crate::sources::rich::RichAnnotation::paragraphs`]: the conversion is
+    /// centralised in `rich::assemble`, not duplicated here.
+    paragraphs: Vec<Vec<Run>>,
     resolved: bool,
     parent: Option<usize>,
 }
@@ -309,7 +328,7 @@ struct CommentTable {
 }
 
 impl CommentTable {
-    fn new(docx: &Docx) -> Self {
+    fn new(docx: &Docx, styles: &StyleTable, comment_attrs: &HashMap<usize, CommentAttrs>) -> Self {
         // `w15:done` lives in commentsExtended, keyed by the *paragraph* id of the
         // comment's first paragraph — the same join `docx_rs` uses internally for
         // threading, and the only key the two parts share.
@@ -322,7 +341,11 @@ impl CommentTable {
         let mut by_id = HashMap::new();
         for comment in docx.comments.inner() {
             order.push(comment.id);
-            by_id.insert(comment.id, meta_of(comment, &done_by_paragraph));
+            let attrs = comment_attrs.get(&comment.id);
+            by_id.insert(
+                comment.id,
+                meta_of(comment, &done_by_paragraph, styles, attrs),
+            );
         }
         CommentTable { order, by_id }
     }
@@ -332,33 +355,140 @@ impl CommentTable {
     }
 }
 
-fn meta_of(comment: &Comment, done_by_paragraph: &HashMap<&str, bool>) -> CommentMeta {
-    let mut body_parts: Vec<String> = Vec::new();
+fn meta_of(
+    comment: &Comment,
+    done_by_paragraph: &HashMap<&str, bool>,
+    styles: &StyleTable,
+    attrs: Option<&CommentAttrs>,
+) -> CommentMeta {
+    let mut builder = CommentBodyBuilder::new(styles);
     let mut resolved = false;
     for child in &comment.children {
         if let CommentChild::Paragraph(paragraph) = child {
             if let Some(done) = done_by_paragraph.get(paragraph.id.as_str()) {
                 resolved |= *done;
             }
-            body_parts.push(paragraph_text(paragraph));
+            builder.paragraph(paragraph);
         }
     }
     CommentMeta {
+        uid: attrs.and_then(|a| a.uid),
+        initials: attrs.map(|a| a.initials.clone()).unwrap_or_default(),
         author: comment.author.clone(),
         created: parse_date(&comment.date),
-        body: body_parts.join("\n").trim().to_string(),
+        paragraphs: builder.finish(),
         resolved,
         parent: comment.parent_comment_id,
     }
 }
 
-/// The plain text of a comment's own paragraph — its body, never prose.
-fn paragraph_text(paragraph: &Paragraph) -> String {
-    let mut out = String::new();
-    collect_paragraph_text(&paragraph.children, &mut out);
-    out
+/// Builds the styled paragraphs of one comment or reply's own text — the same
+/// bold/italic/underline/strikethrough machinery [`Walker::run`] applies to
+/// manuscript prose ([`StyleTable::run_style`]), narrowed to what a `w:comment`
+/// can actually contain.
+///
+/// Deliberately narrower than [`Walker::paragraph_children`]: a comment carries
+/// no tracked change of its *own* review pass (`w:ins`/`w:del`/`w:moveFrom` track
+/// edits to the *manuscript*, never to a margin note — though a comment can sit
+/// inside an accepted `w:ins`/`w:moveTo` span, which is why those two are still
+/// read here), no nested comment (Word offers no UI to comment on a comment), no
+/// field, footnote or embedded object. What is left — `w:r`, `w:hyperlink`, a tab
+/// — is exactly what `collect_paragraph_text` used to flatten this to; the
+/// difference is that a run's own formatting now survives with it.
+struct CommentBodyBuilder<'a> {
+    styles: &'a StyleTable,
+    paragraphs: Vec<Vec<Run>>,
+    current: Vec<Run>,
 }
 
+impl<'a> CommentBodyBuilder<'a> {
+    fn new(styles: &'a StyleTable) -> Self {
+        CommentBodyBuilder {
+            styles,
+            paragraphs: Vec::new(),
+            current: Vec::new(),
+        }
+    }
+
+    /// Consume one `w:comment`/reply paragraph, then close it off — a `w:comment`
+    /// with several `<w:p>` children is an editor who pressed Enter inside the
+    /// comment box, and each becomes its own Djot paragraph.
+    fn paragraph(&mut self, paragraph: &Paragraph) {
+        self.children(&paragraph.children, &paragraph.property, None);
+        self.paragraphs.push(std::mem::take(&mut self.current));
+    }
+
+    fn children(
+        &mut self,
+        children: &[ParagraphChild],
+        property: &ParagraphProperty,
+        link: Option<&str>,
+    ) {
+        for child in children {
+            match child {
+                ParagraphChild::Run(run) => self.run(run, property, link),
+                // Accepted: this is the text as it stands, same as manuscript prose.
+                ParagraphChild::Insert(insert) => {
+                    for c in &insert.children {
+                        if let InsertChild::Run(run) = c {
+                            self.run(run, property, link);
+                        }
+                    }
+                }
+                ParagraphChild::MoveTo(move_to) => {
+                    for c in &move_to.children {
+                        if let MoveToChild::Run(run) = c {
+                            self.run(run, property, link);
+                        }
+                    }
+                }
+                ParagraphChild::Hyperlink(hyperlink) => {
+                    let url = match &hyperlink.link {
+                        docx_rs::HyperlinkData::External { rid: _, path } => Some(path.clone()),
+                        docx_rs::HyperlinkData::Anchor { anchor } => Some(format!("#{anchor}")),
+                    };
+                    self.children(&hyperlink.children, property, url.as_deref().or(link));
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn run(&mut self, run: &DocxRun, property: &ParagraphProperty, link: Option<&str>) {
+        let style = self.styles.run_style(property, &run.run_property);
+        for rc in &run.children {
+            match rc {
+                RunChild::Text(text) => self.current.push(Run {
+                    text: text.text.clone(),
+                    style,
+                    link: link.map(str::to_string),
+                    image: None,
+                }),
+                RunChild::Tab(_) | RunChild::PTab(_) => self.current.push(Run {
+                    text: " ".into(),
+                    style,
+                    link: link.map(str::to_string),
+                    image: None,
+                }),
+                // The conversion drops `<br>` outright and would glue the two
+                // lines together — the same reason `Walker::run` splits a break
+                // into a fresh block for manuscript prose.
+                RunChild::Break(_) | RunChild::CarriageReturn(_) => {
+                    self.paragraphs.push(std::mem::take(&mut self.current));
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn finish(self) -> Vec<Vec<Run>> {
+        self.paragraphs
+    }
+}
+
+/// The plain text of a table cell's own paragraph. Only table cells still want
+/// this: a comment's own text goes through [`CommentBodyBuilder`] instead, so its
+/// formatting is not flattened away.
 fn collect_paragraph_text(children: &[ParagraphChild], out: &mut String) {
     for child in children {
         match child {
@@ -419,26 +549,51 @@ fn parse_date(value: &str) -> Option<chrono::DateTime<chrono::Utc>> {
 // ---------------------------------------------------------------------------
 
 const NS_W: &str = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+/// Skribisto's own extension namespace, carrying `skrb:uid` on `<w:comment>` — the
+/// exact same URI `text-document`'s `export_docx_uc` declares
+/// (`export_docx_uc::SKRB_NAMESPACE_URI`) under the same `skrb` prefix. See the
+/// module doc's "supplementary pass" note for why reading it needs a raw pass at
+/// all: `docx_rs::Comment` has no field for it or for `w:initials`.
+const NS_SKRB: &str = "urn:ferntech:text-document:comment:1";
+
+/// What only Skribisto's own writer puts on a `<w:comment>` — read once from
+/// `word/comments.xml`, keyed by `w:id` (the same plain `usize` `docx_rs::Comment::id`
+/// already is, so no join table is needed to match the two up).
+#[derive(Debug, Clone, Default)]
+struct CommentAttrs {
+    uid: Option<uuid::Uuid>,
+    /// Empty (never absent) when `w:initials=""` or the attribute is missing —
+    /// the same "empty means none" convention `RichAnnotation::author_initials`
+    /// documents.
+    initials: String,
+}
 
 /// What the typed reader does not surface — see the module note.
 ///
-/// Everything is keyed by **top-level paragraph ordinal**: the *n*-th `w:p` that is
-/// a direct child of `w:body` is the *n*-th `DocumentChild::Paragraph`, in the same
-/// order, so the two passes agree without either knowing about the other. A
-/// paragraph inside a table or an `w:sdt` is deliberately not counted, on either
-/// side.
+/// The paragraph-keyed fields (`references`, `rules`) are keyed by **top-level
+/// paragraph ordinal**: the *n*-th `w:p` that is a direct child of `w:body` is the
+/// *n*-th `DocumentChild::Paragraph`, in the same order, so the two passes agree
+/// without either knowing about the other. A paragraph inside a table or an
+/// `w:sdt` is deliberately not counted, on either side. `comment_attrs` needs no
+/// such join: it is keyed by the comment's own `w:id`, which both this pass and
+/// `docx_rs::Comment::id` read off the identical attribute.
 #[derive(Default)]
 struct RawScan {
     /// Paragraph ordinal → the point comments in it, as `(comment id, char offset)`.
     references: HashMap<usize, Vec<(usize, usize)>>,
     /// Paragraph ordinals that are a horizontal rule.
     rules: HashSet<usize>,
+    /// `w:id` → the `skrb:uid`/`w:initials` attributes only Skribisto's own writer
+    /// puts on that comment's `<w:comment>` — see [`CommentAttrs`].
+    comment_attrs: HashMap<usize, CommentAttrs>,
 }
 
 impl RawScan {
-    /// Returns `None` when the member cannot be read or parsed. That is not a
-    /// failure worth stopping an import for: without it the scanner behaves as it
-    /// would have without this pass at all.
+    /// Returns `None` when `word/document.xml` cannot be read or parsed. That is
+    /// not a failure worth stopping an import for: without it the scanner behaves
+    /// as it would have without this pass at all. `word/comments.xml` is read
+    /// best-effort within the same zip open — a document with no comments has no
+    /// such member, and that is not an error either, just an empty `comment_attrs`.
     fn read(bytes: &[u8]) -> Option<RawScan> {
         let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).ok()?;
         let xml = {
@@ -479,8 +634,47 @@ impl RawScan {
                 scan.references.insert(ordinal, found);
             }
         }
+
+        scan.comment_attrs = read_comment_attrs(&mut zip).unwrap_or_default();
         Some(scan)
     }
+}
+
+/// Read `word/comments.xml` for the two attributes only Skribisto's own writer sets
+/// — see [`CommentAttrs`]. `None` when the member is absent (no comments at all) or
+/// not well-formed; either way the caller falls back to an empty map, which is
+/// exactly what a plain Word/LibreOffice `.docx` already looks like from here.
+fn read_comment_attrs<R: std::io::Read + std::io::Seek>(
+    zip: &mut zip::ZipArchive<R>,
+) -> Option<HashMap<usize, CommentAttrs>> {
+    let xml = {
+        let mut file = zip.by_name("word/comments.xml").ok()?;
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut file, &mut buffer).ok()?;
+        String::from_utf8_lossy(&buffer).into_owned()
+    };
+    let document = roxmltree::Document::parse(&xml).ok()?;
+    let mut out = HashMap::new();
+    for node in document
+        .descendants()
+        .filter(|n| n.is_element() && n.tag_name().name() == "comment")
+    {
+        let Some(id) = node
+            .attribute((NS_W, "id"))
+            .and_then(|v| v.parse::<usize>().ok())
+        else {
+            continue;
+        };
+        let uid = node
+            .attribute((NS_SKRB, "uid"))
+            .and_then(|v| uuid::Uuid::parse_str(v).ok());
+        let initials = node
+            .attribute((NS_W, "initials"))
+            .unwrap_or_default()
+            .to_string();
+        out.insert(id, CommentAttrs { uid, initials });
+    }
+    Some(out)
 }
 
 /// An empty paragraph whose only border is at the bottom — Word's horizontal rule,
@@ -663,10 +857,12 @@ impl<'a> Walker<'a> {
                 .and_then(|p| self.annotation_of.get(&p).copied())
             {
                 Some(index) => {
-                    self.annotations[index].replies.push(SourceAnnotationReply {
+                    self.annotations[index].replies.push(RichReply {
+                        uid: meta.uid,
                         author: meta.author.clone(),
+                        author_initials: meta.initials.clone(),
                         created: meta.created,
-                        body: meta.body.clone(),
+                        paragraphs: meta.paragraphs.clone(),
                     });
                 }
                 None => {
@@ -677,9 +873,11 @@ impl<'a> Walker<'a> {
                         block_index: usize::MAX,
                         start: 0,
                         length: 0,
+                        uid: meta.uid,
                         author: meta.author.clone(),
+                        author_initials: meta.initials.clone(),
                         created: meta.created,
-                        body: meta.body.clone(),
+                        paragraphs: meta.paragraphs.clone(),
                         resolved: meta.resolved,
                         replies: Vec::new(),
                     });
@@ -1037,10 +1235,12 @@ impl<'a> Walker<'a> {
             .parent
             .and_then(|p| self.annotation_of.get(&p).copied())
         {
-            self.annotations[index].replies.push(SourceAnnotationReply {
+            self.annotations[index].replies.push(RichReply {
+                uid: meta.uid,
                 author: meta.author.clone(),
+                author_initials: meta.initials.clone(),
                 created: meta.created,
-                body: meta.body.clone(),
+                paragraphs: meta.paragraphs.clone(),
             });
             return;
         }
@@ -1050,9 +1250,11 @@ impl<'a> Walker<'a> {
             block_index: block,
             start,
             length: 0,
+            uid: meta.uid,
             author: meta.author.clone(),
+            author_initials: meta.initials.clone(),
             created: meta.created,
-            body: meta.body.clone(),
+            paragraphs: meta.paragraphs.clone(),
             resolved: meta.resolved,
             replies: Vec::new(),
         });

@@ -22,6 +22,12 @@ pub enum ExportFormat {
     Html,
     Latex,
     Docx,
+    /// OpenDocument Text — what a LibreOffice-using editor works in natively.
+    ///
+    /// Carries comments, like [`Docx`](Self::Docx) and unlike every other format here: those
+    /// two are the whole editorial round trip, and an editor who does not own Word should not
+    /// have to convert through a format they do not use to take part in it.
+    Odt,
     Epub,
     Pdf,
 }
@@ -36,9 +42,24 @@ impl ExportFormat {
             ExportFormat::Html => "html",
             ExportFormat::Latex => "tex",
             ExportFormat::Docx => "docx",
+            ExportFormat::Odt => "odt",
             ExportFormat::Epub => "epub",
             ExportFormat::Pdf => "pdf",
         }
+    }
+
+    /// Whether this format carries the writer's comments out to an editor and back.
+    ///
+    /// True for exactly DOCX and ODT. Not a property of the *writer* — every format could
+    /// technically be given some annotation syntax — but of the **round trip**: these are the
+    /// two an editor marks up and returns, and the two Skribisto can read comments back from.
+    /// LaTeX was considered and dropped for precisely that reason: there is no LaTeX importer,
+    /// so anchored comments would leave and never come home.
+    ///
+    /// The export path reads comments from the store only when this is true, which is what
+    /// keeps a plain-text or EPUB export from paying for rows it cannot use.
+    pub fn carries_comments(self) -> bool {
+        matches!(self, ExportFormat::Docx | ExportFormat::Odt)
     }
 
     /// Whether the format is rendered synchronously to a `String` (vs. written to a file).

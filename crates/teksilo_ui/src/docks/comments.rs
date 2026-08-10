@@ -293,24 +293,87 @@ fn thread_list(
                 // during the following frame, and the editor consumes the parked
                 // seek as it attaches. An item that was already open rebuilds on
                 // focus and consumes it the same way.
-                //
-                // An orphan is deliberately excluded: it has no live range, and
-                // landing the caret at a stale offset would be a lie. Opening its
-                // item is still useful, and the row's own badge says why there is
-                // nowhere to jump to.
-                if row.is_anchored()
-                    && let Some(content_id) = row.content_id
-                {
-                    vm.request_seek(
-                        content_id,
-                        row.range_start as usize,
-                        (row.range_start + row.range_length) as usize,
-                    );
+                if let Some((content_id, start, end)) = seek_target(&row) {
+                    vm.request_seek(content_id, start, end);
                 }
                 on_open(item_id, row.item_title.clone());
             }
         }
     })
+}
+
+/// Where to seek when `row` is activated, or `None` when there is nowhere to
+/// jump to — pulled out of the `on_activate` closure above so "never fabricate a
+/// seek target" is provable without a widget tree.
+///
+/// Two rows answer `None`, for different reasons that both end up the same way:
+///
+/// * **An orphan** has no live range at all — landing the caret at a stale offset
+///   would be a lie. Opening its item is still useful (`thread_list` does that
+///   regardless), and the row's own badge says why there is nowhere to jump to.
+/// * **An unplaced comment** (`CommentRow::is_unplaced` —
+///   `CommentAnchorKind::Document`'s only surviving shape) *did* resolve, to a
+///   genuine zero-length range. Before `CommentRow::is_anchored` accounted for
+///   `range_length`, this row read as anchored and this function would have
+///   handed back `(content_id, 0, 0)` — a fabricated seek to the top of the
+///   document for a comment that was never placed there.
+fn seek_target(row: &CommentRow) -> Option<(u64, usize, usize)> {
+    if row.is_anchored()
+        && let Some(content_id) = row.content_id
+    {
+        Some((
+            content_id,
+            row.range_start as usize,
+            (row.range_start + row.range_length) as usize,
+        ))
+    } else {
+        None
+    }
+}
+
+/// The quoted snippet a card's label shows: what the comment is *about*.
+///
+/// A paragraph comment gets a pilcrow instead of quotation marks, an orphan gets
+/// its own explanatory sentence, and an **unplaced** comment
+/// (`CommentRow::is_unplaced` — see [`seek_target`]) gets one too, rather than
+/// the empty `“”` its blank quote would otherwise render: that blank pair of
+/// quotation marks, indistinguishable from a card with nothing wrong at all, is
+/// exactly the "blank in the dock" half of the bug this function fixes.
+fn comment_snippet(row: &CommentRow) -> LocalizedString {
+    // Shown, not stored: the quote keeps the sentinel so it still matches the
+    // prose it was captured from, but a `U+FFFC` in this list would draw as an
+    // unrenderable box. `🖼` reads as "there is a picture here", which is what a
+    // comment spanning one is about.
+    let quoted = crate::comments::anchor::for_display(&row.quote_exact);
+    if row.orphaned {
+        tr!(comments_orphan_snippet())
+    } else if row.is_unplaced() {
+        tr!(comments_unplaced_snippet())
+    } else if row.kind == frontend::common::entities::CommentAnchorKind::Paragraph {
+        // A pilcrow instead of quotation marks, so "about this paragraph" and
+        // "about this phrase" are distinguishable without a second column.
+        lit!(format!("¶ {quoted}"))
+    } else {
+        lit!(format!("“{quoted}”"))
+    }
+}
+
+/// The footer status word: Open / Resolved / Lost its text / Not placed in text.
+///
+/// Orphaned and unplaced are mutually exclusive on `CommentRow` (see
+/// `CommentRow::is_anchored`'s doc), but both take priority over resolved/open —
+/// a reader needs to know *first* whether a card has anywhere to point, and only
+/// then whether its thread is settled.
+fn comment_status(row: &CommentRow) -> LocalizedString {
+    if row.orphaned {
+        tr!(comments_status_orphaned())
+    } else if row.is_unplaced() {
+        tr!(comments_status_unplaced())
+    } else if row.resolved {
+        tr!(comments_status_resolved())
+    } else {
+        tr!(comments_status_open())
+    }
 }
 
 /// One thread, rendered as a card.
@@ -323,52 +386,42 @@ fn comment_card(
     let id = row.id;
     let resolved = row.resolved;
     let orphaned = row.orphaned;
+    let unplaced = row.is_unplaced();
 
-    // The quoted snippet: what the comment is *about*. A paragraph comment gets a
-    // pilcrow instead of quotation marks, so "about this phrase" and "about this
-    // whole paragraph" are distinguishable without a second column.
-    // Shown, not stored: the quote keeps the sentinel so it still matches the
-    // prose it was captured from, but a `U+FFFC` in this list would draw as an
-    // unrenderable box. `🖼` reads as "there is a picture here", which is what a
-    // comment spanning one is about.
-    let quoted = crate::comments::anchor::for_display(&row.quote_exact);
-    let snippet = if orphaned {
-        tr!(comments_orphan_snippet())
-    } else if row.kind == frontend::common::entities::CommentAnchorKind::Paragraph {
-        // A pilcrow instead of quotation marks, so "about this paragraph" and
-        // "about this phrase" are distinguishable without a second column.
-        lit!(format!("¶ {quoted}"))
-    } else {
-        lit!(format!("“{quoted}”"))
-    };
+    let snippet = comment_snippet(row);
 
     // The latest turn carries **its own** author, not the thread's: a summary that
     // read "Jane: keep it" when Marc wrote it attributes the wrong opinion.
+    //
+    // The body is Djot (M-S4), and this line is a preview, not the body itself —
+    // `crate::comments::preview::plain_preview` is the shared conversion that
+    // keeps a bold or italic word from showing up here as literal asterisks and
+    // underscores.
     let body_line = if let Some(last) = row.latest_reply().filter(|r| !r.body.is_empty()) {
-        format!("{}: {}", last.author_name, last.body)
+        format!(
+            "{}: {}",
+            last.author_name,
+            crate::comments::preview::plain_preview(&last.body)
+        )
     } else {
-        format!("{}: {}", row.author_name, row.body)
+        format!(
+            "{}: {}",
+            row.author_name,
+            crate::comments::preview::plain_preview(&row.body)
+        )
     };
 
-    let status = if orphaned {
-        tr!(comments_status_orphaned())
-    } else if resolved {
-        tr!(comments_status_resolved())
-    } else {
-        tr!(comments_status_open())
-    };
+    let status = comment_status(row);
     let mut footer =
         HStack::new()
             .spacing(6.0)
-            .child(
-                TextWidget::new(status)
-                    .style(TextStyleRole::Tiny)
-                    .color(if orphaned {
-                        TextRole::Warning
-                    } else {
-                        TextRole::Secondary
-                    }),
-            );
+            .child(TextWidget::new(status).style(TextStyleRole::Tiny).color(
+                if orphaned || unplaced {
+                    TextRole::Warning
+                } else {
+                    TextRole::Secondary
+                },
+            ));
     if row.reply_count() > 0 {
         footer = footer.child(
             TextWidget::new(tr!(comments_reply_count(count = row.reply_count() as i64)))
@@ -497,6 +550,96 @@ mod tests {
                 }
             );
         }
+    }
+
+    /// Builds an otherwise-default `CommentRow` shaped like
+    /// `CommentAnchorKind::Document`'s only surviving shape: successfully
+    /// resolved (a live `Content`, not `orphaned`) yet pointing at an empty
+    /// range. Before `CommentRow::is_anchored` accounted for `range_length`,
+    /// this exact shape reported itself anchored — a blank quote in the dock,
+    /// and a click that seeked to a fabricated `(0, 0)`.
+    fn unplaced_row() -> CommentRow {
+        CommentRow {
+            id: 9,
+            content_id: Some(3),
+            item_id: Some(7),
+            item_title: "Scene".into(),
+            kind: frontend::common::entities::CommentAnchorKind::Document,
+            author_name: "Editor".into(),
+            body: "A note on the whole scene.".into(),
+            range_start: 0,
+            range_length: 0,
+            ..Default::default()
+        }
+    }
+
+    /// The pure-logic half of the fix: `seek_target` must never hand back a
+    /// position for a row with nowhere to point, whether that is because it is
+    /// orphaned or because it resolved to an empty range.
+    #[test]
+    fn neither_an_orphan_nor_an_unplaced_row_fabricates_a_seek_target() {
+        let orphan = CommentRow {
+            content_id: None,
+            orphaned: true,
+            ..Default::default()
+        };
+        assert_eq!(seek_target(&orphan), None);
+        assert_eq!(seek_target(&unplaced_row()), None);
+    }
+
+    /// The ordinary case must still work: a real, positive-length range does
+    /// produce a seek target, and it is the row's actual range.
+    #[test]
+    fn an_anchored_row_seeks_to_its_own_range() {
+        let row = CommentRow {
+            content_id: Some(3),
+            range_start: 10,
+            range_length: 5,
+            ..Default::default()
+        };
+        assert_eq!(seek_target(&row), Some((3, 10, 15)));
+    }
+
+    /// The visible half of the fix: an unplaced row gets its own snippet and
+    /// status text, not the blank `“”` quote and "Open" status that made it
+    /// indistinguishable from a healthy, anchored comment.
+    #[test]
+    fn an_unplaced_row_gets_its_own_snippet_and_status_not_a_blank_quote() {
+        let row = unplaced_row();
+        assert_eq!(
+            comment_snippet(&row).resolve_now(),
+            tr!(comments_unplaced_snippet()).resolve_now(),
+        );
+        assert_ne!(
+            comment_snippet(&row).resolve_now(),
+            "“”",
+            "must not render the blank-quote snippet an ordinary Range comment gets"
+        );
+        assert_eq!(
+            comment_status(&row).resolve_now(),
+            tr!(comments_status_unplaced()).resolve_now(),
+        );
+    }
+
+    /// Not invisible: the card a real dock renders for an unplaced row lays out
+    /// to a genuine, non-zero size — it is not silently collapsed, skipped by
+    /// some filter, or otherwise dropped from what the writer sees.
+    #[test]
+    fn an_unplaced_row_still_renders_a_real_card() {
+        let ctx = std::rc::Rc::new(frontend::AppContext::new());
+        let mut tree = crate::test_support::tree_with_events(&ctx);
+        let id = tree.add_boxed(Box::new(comment_card(
+            &unplaced_row(),
+            CommentScope::Document,
+            vm(),
+            Signal::new(None),
+        )));
+        tree.layout(teksilo::prelude::SizeProposal::exact(300.0, 200.0));
+        let b = tree.bounds(id);
+        assert!(
+            b.width > 0.0 && b.height > 0.0,
+            "an unplaced card laid out to zero size ({b:?})"
+        );
     }
 
     /// The orphan chip is part of the always-on contract: it must be built whether

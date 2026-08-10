@@ -547,9 +547,25 @@ entities:
       - Paragraph
       # The Content row as a whole. Carries no text anchor and can never orphan
       # from text drift.
+      #
+      # Retained for rows already on disk, but NO LONGER MINTED: neither OOXML nor
+      # ODF can express a comment on a document rather than on text, so a kind the
+      # editorial round trip cannot carry must not enter the store. The importer's
+      # former mint sites now emit a Paragraph anchor instead.
       - Document
   - name: author_name
     type: string
+  # The author's initials, as Word shows them beside a comment (`w:initials`). Not
+  # derived from `author_name` on demand: an editor's own initials arrive in the file
+  # and are theirs to choose — "Mary-Jane O'Brien" is as plausibly MO as MJO — so
+  # deriving would quietly overwrite what a real person set. Empty when the source
+  # carried none, and the writers then emit nothing rather than a guess.
+  - name: author_initials
+    type: string
+  # Djot, like `Footnote.body` — an editor's remark arrives from `.docx`/`.odt` with
+  # its own emphasis, and flattening it to plain text lost the writer's meaning on
+  # the way in. Plain text is still valid Djot, so a row written before this became
+  # rich reads back unchanged.
   - name: body
     type: string
   - name: resolved
@@ -656,8 +672,22 @@ entities:
 - name: CommentReply
   inherits_from: EntityBase
   fields:
+  # A reply needs its own durable identity for the same reason its thread does, and
+  # it cannot borrow the thread's: an editorial round trip that recognised only the
+  # opening comment would have to reconcile the replies underneath it positionally,
+  # so a reply inserted on the far side would re-import as a duplicate of its
+  # neighbour. Matching by uid is the only reconciliation that survives an editor
+  # answering in the middle of a conversation.
+  - name: uid
+    type: uuid
   - name: author_name
     type: string
+  # As on `Comment` — a reply is its own `<w:comment>` in OOXML and its own
+  # `office:annotation` in ODF, each carrying the replier's own initials. Dropping
+  # them here would lose half the round trip's fidelity for no saving.
+  - name: author_initials
+    type: string
+  # Djot, as on `Comment.body`.
   - name: body
     type: string
   undoable: true
@@ -2038,18 +2068,29 @@ features:
         - TargetDeleted
       # `created_at` is RFC 3339: a DTO carries no chrono type, and the date the
       # editor actually wrote the note is worth more than the date it was imported.
+      #
+      # `uid` (M-S7): the DOCX/ODT writer's own private-namespace attribute
+      # (`skrb:uid` — see `text-document`'s `export_docx_uc`/`export_odt_uc`),
+      # read back by the two scanners. `None` for a comment neither scanner found
+      # a uid on -- an editor's own remark typed straight into Word or
+      # LibreOffice, never one Skribisto exported. `apply_document_import_uc`
+      # is what turns that distinction into "update the matching row" versus
+      # "create a new one, minting a uid" -- see its own module doc.
+      # `author_initials` mirrors `Comment`/`CommentReply`'s own field: read from
+      # `w:initials` on DOCX, always empty on ODT (ODF's `office:annotation` has
+      # no carrier for it -- a documented format ceiling, not a bug).
       - name: comment
         type: enum
         enum_name: ImportComment
         enum_values:
         - Empty
-        - "Found { kind: ImportCommentKind, author_name: String, created_at: String, body: String, resolved: bool, orphaned: bool, orphan_reason: ImportOrphanReason, range_start: i64, range_length: i64, quote_prefix: String, quote_exact: String, quote_exact_truncated: bool, quote_suffix: String, block_ordinal_hint: i64, replies: Vec<ImportReply> }"
+        - "Found { kind: ImportCommentKind, uid: Option<Uuid>, author_name: String, author_initials: String, created_at: String, body: String, resolved: bool, orphaned: bool, orphan_reason: ImportOrphanReason, range_start: i64, range_length: i64, quote_prefix: String, quote_exact: String, quote_exact_truncated: bool, quote_suffix: String, block_ordinal_hint: i64, replies: Vec<ImportReply> }"
       - name: reply
         type: enum
         enum_name: ImportReply
         enum_values:
         - Empty
-        - "Found { author_name: String, created_at: String, body: String }"
+        - "Found { uid: Option<Uuid>, author_name: String, author_initials: String, created_at: String, body: String }"
       # Diagnostics travel as a key plus its data rather than a rendered
       # sentence, so the UI can say them in the writer's own locale -- the house
       # rule is that user-visible strings go through Fluent and data stays

@@ -142,7 +142,11 @@ impl CommandUnitOfWork for ApplyDocumentImportUnitOfWork {
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Comment", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Comment", action = "SetRelationship")]
+#[macros::uow_action(entity = "Comment", action = "GetMulti")]
+#[macros::uow_action(entity = "Comment", action = "Update")]
 #[macros::uow_action(entity = "CommentReply", action = "CreateOrphan")]
+#[macros::uow_action(entity = "CommentReply", action = "GetMulti")]
+#[macros::uow_action(entity = "CommentReply", action = "Update")]
 impl ApplyDocumentImportUnitOfWorkTrait for ApplyDocumentImportUnitOfWork {
     fn publish_apply_document_import_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

@@ -132,10 +132,21 @@ pub trait TreeReader {
         field: &FootnoteRelationshipField,
     ) -> Result<Vec<EntityId>>;
 
-    // ── Comments (save-only). Export deliberately never serialises them: comments are
-    // working notes that must not reach the compiled manuscript, which is Scrivener's
-    // rule too. So export leaves `reads_comments` false and these defaulted, and the
-    // guarantee is structural rather than a flag someone can get wrong. ──
+    // ── Comments. Defaulted off, so a reader that has no use for them cannot accidentally
+    // pay for them; the save path and the export path both switch them on deliberately.
+    //
+    // The rule this used to state — "export never reads comments" — was right about the
+    // manuscript and wrong about the file. A comment must still never reach the *compiled
+    // document*: it is a working note, not prose, and Scrivener draws the same line. It does
+    // now reach the exported `.docx`/`.odt`, as a **side payload** of anchored ranges the
+    // writer attaches beside the text, because that is the editorial round trip — a draft goes
+    // out for comment and comes back with the editor's remarks, which Skribisto reads.
+    //
+    // So the guarantee is unchanged where it matters and is still structural: nothing here
+    // puts a comment into the prose. What changed is only that the export path now asks for
+    // them. Which *formats* carry them is decided far from here, by
+    // `ExportFormat::carries_comments` — DOCX and ODT, the two Skribisto can also read
+    // comments back from. ──
     fn reads_comments(&self) -> bool {
         false
     }

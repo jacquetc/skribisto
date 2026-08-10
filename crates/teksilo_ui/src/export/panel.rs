@@ -120,6 +120,7 @@ fn place_fill(bounds: Rect, children: &mut [WidgetPlacement]) {
 fn format_ext(f: &ExportFormat) -> &'static str {
     match f {
         ExportFormat::Docx => ".docx",
+        ExportFormat::Odt => ".odt",
         ExportFormat::Html => ".html",
         ExportFormat::Markdown => ".md",
         ExportFormat::Djot => ".dj",

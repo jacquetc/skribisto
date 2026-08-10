@@ -337,6 +337,7 @@ pub struct Comment {
     pub content: Option<EntityId>,
     pub kind: CommentAnchorKind,
     pub author_name: String,
+    pub author_initials: String,
     pub body: String,
     pub resolved: bool,
     pub orphaned: bool,
@@ -398,7 +399,9 @@ pub struct CommentReply {
     pub created_at: chrono::DateTime<chrono::Utc>,
     #[serde(with = "chrono::serde::ts_milliseconds")]
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub uid: uuid::Uuid,
     pub author_name: String,
+    pub author_initials: String,
     pub body: String,
 }
 

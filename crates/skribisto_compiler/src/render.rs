@@ -24,7 +24,7 @@ use skribisto_model::language;
 use skribisto_model::numbering::{self, Numbered, NumberingRules};
 use skribisto_model::scene_break::{self, SceneBreakTier};
 use text_document::{
-    DocumentComments, DocxExportOptions, EpubExportOptions, MarkdownExportOptions,
+    DocxExportOptions, EpubExportOptions, MarkdownExportOptions,
     PdfExportOptions, PlainTextExportOptions, TextDirection, TextDocument,
 };
 
@@ -113,6 +113,29 @@ struct Assembled {
     /// rendered output instead would mean re-finding each `src` through the
     /// escaping rules of six different formats.
     image_refs: Vec<String>,
+    /// Every `Content` whose prose reached the compiled document, in emission order.
+    ///
+    /// The record a comment needs to be rebased (see [`comment_rebase`]). It cannot be
+    /// recovered afterwards: the compiled document is one flat stream with no memory of which
+    /// row each paragraph came from, and the rows are not simply concatenated — headings, a
+    /// title page, epigraphs and scene-break glyphs are interleaved, and out-of-scope rows are
+    /// omitted entirely. Recorded here, while `assemble` still knows.
+    emitted: Vec<EmittedContent>,
+}
+
+/// One `Content` row's prose, as it was handed to the compiled document.
+#[derive(Debug, Clone)]
+pub(crate) struct EmittedContent {
+    /// The `Content` row's own id — what a `Comment` points at.
+    pub(crate) content_id: u64,
+    /// The row's stored Djot, *before* `push_prose` transformed it.
+    ///
+    /// Deliberately the stored form rather than the emitted form: it is the string the
+    /// comment's quote was captured against, so it is what the anchor engine must be shown.
+    /// The transformation `push_prose` applies (a scene-break marker becoming the preset's
+    /// rendering) is exactly why the window search downstream is block-wise and tolerant
+    /// rather than a whole-row string comparison.
+    djot: String,
 }
 
 /// What a render produced, for the result DTO / a toast.
@@ -120,6 +143,16 @@ struct Assembled {
 pub struct RenderStats {
     pub items: usize,
     pub words: usize,
+    /// Comments written into the exported file. Always 0 for a format that does not
+    /// [carry comments](ExportFormat::carries_comments).
+    pub comments_written: usize,
+    /// Comments that belonged in this export and could not be placed, so were dropped.
+    ///
+    /// **Not** a count of every comment missing from the file: a comment on a row outside the
+    /// export scope was never a candidate and is not counted. This is the number the writer
+    /// deserves to be told about, and nothing more — a warning that fires on a perfectly good
+    /// scoped export teaches people to ignore it.
+    pub comments_orphaned: usize,
 }
 
 /// One included item, resolved: the entity, its content rows, and its effective language.
@@ -159,10 +192,17 @@ pub fn render_to_file(
     cancel: &AtomicBool,
 ) -> Result<RenderStats> {
     let built = assemble(req, progress, cancel)?;
-    let (doc, stats, langs) = (&built.doc, built.stats, &built.langs);
+    let (doc, mut stats, langs) = (&built.doc, built.stats, &built.langs);
     if cancel.load(Ordering::Relaxed) {
         return Err(anyhow!("operation cancelled"));
     }
+    // Resolved once, before the format arms, so the two writers that carry comments consume
+    // the same payload rather than each rebasing for itself — two rebases of one document
+    // could disagree, and the disagreement would show up as a comment landing in different
+    // places in the `.docx` and the `.odt` of the same export.
+    let (comments, comments_orphaned) = comment_payload(req, &built)?;
+    stats.comments_written = comments.len();
+    stats.comments_orphaned = comments_orphaned;
     match req.format {
         f if f.is_text() => {
             let handling = req.preset.image_handling;
@@ -172,15 +212,29 @@ pub fn render_to_file(
         }
         ExportFormat::Docx => {
             let out = path.to_string_lossy().into_owned();
-            let opts = docx_options(
+            let mut opts = docx_options(
                 req.preset,
                 &req.gathered.work.title,
                 &req.gathered.work.author_name,
                 collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
             );
+            opts.comments = comments;
             doc.to_docx_with_options(&out, opts)?
                 .wait()
                 .map_err(|e| anyhow!("writing DOCX '{out}': {e:#}"))?;
+        }
+        ExportFormat::Odt => {
+            let out = path.to_string_lossy().into_owned();
+            let mut opts = odt_options(
+                req.preset,
+                &req.gathered.work.title,
+                &req.gathered.work.author_name,
+                collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
+            );
+            opts.comments = comments;
+            doc.to_odt_with_options(&out, opts)?
+                .wait()
+                .map_err(|e| anyhow!("writing ODT '{out}': {e:#}"))?;
         }
         ExportFormat::Epub => {
             let out = path.to_string_lossy().into_owned();
@@ -281,6 +335,173 @@ const TWIPS_PER_IN: f32 = 1440.0;
 /// *effective* — page size, margins, font, double-spacing, first-line indent, ragged/justified
 /// alignment, and page-numbered header all flow from here; per-block RTL is emitted by the
 /// exporter itself from each block's direction, so it needs no option.
+/// The editor-facing comment payload for one assembled document, plus how many comments
+/// could not be placed.
+///
+/// Empty for every format that does not [carry comments](ExportFormat::carries_comments) —
+/// the two writers that do are the two an editor marks up and returns, and a payload built
+/// for any other format would be work done to be discarded.
+///
+/// # What is and is not counted as a failure
+///
+/// Three populations arrive here and only two of them are the writer's problem:
+///
+/// * A comment on a row **outside the export scope** — or on a synopsis a preset omits — is
+///   not in this document at all. [`comment_rebase::place_comments`] leaves it out of its
+///   result entirely, so it never reaches the count. Warning about it would fire on every
+///   "Export Chapter 5" that has notes anywhere else in the book.
+/// * A comment **already orphaned at rest** has no valid quote to place, so it resolves to an
+///   orphan and is counted. The writer has seen it flagged in the dock too.
+/// * A comment that **failed to rebase** — its quote resolved in the editor but not against
+///   the compiled text — is counted, and is the surprising one worth telling the writer
+///   about, because it looks perfectly healthy in the margin.
+///
+/// A counted comment is dropped from the payload rather than written at a guessed position:
+/// the whole anchor model exists to avoid a comment that is *mostly* right.
+fn comment_payload(
+    req: &RenderRequest,
+    built: &Assembled,
+) -> Result<(text_document::DocumentComments, usize)> {
+    let mut payload = text_document::DocumentComments::new();
+    if !req.format.carries_comments() || req.gathered.comments.is_empty() {
+        return Ok((payload, 0));
+    }
+
+    // The ADDRESSABLE text and the block starts that index it. Pairing an offset with
+    // `to_plain_text()` instead is the classic form of this bug in this codebase: that string
+    // is the human-readable export, it omits each table's `U+FFFC` anchor, and every offset
+    // after a table lands two characters out in it.
+    let text = built.doc.to_addressable_text()?;
+    let starts: Vec<usize> = built
+        .doc
+        .blocks()
+        .into_iter()
+        .map(|b| b.position())
+        .collect();
+
+    // The row's own Djot, per Content, so an anchor can be rebuilt against the text it was
+    // captured on.
+    let djot_by_content: std::collections::HashMap<u64, &str> = built
+        .emitted
+        .iter()
+        .map(|e| (e.content_id, e.djot.as_str()))
+        .collect();
+
+    let to_place: Vec<comment_rebase::CommentToPlace> = req
+        .gathered
+        .comments
+        .iter()
+        .filter_map(|cwr| {
+            let content_id = cwr.comment.content?;
+            let row_djot = djot_by_content.get(&content_id).copied().unwrap_or("");
+            Some(comment_rebase::CommentToPlace {
+                comment_id: cwr.comment.id,
+                content_id,
+                anchor: comment_rebase::anchor_of(&cwr.comment, row_djot),
+                is_paragraph: cwr.comment.kind == common::entities::CommentAnchorKind::Paragraph,
+            })
+        })
+        .collect();
+
+    let placements = comment_rebase::place_comments(&text, &starts, &built.emitted, &to_place);
+    let by_id: std::collections::HashMap<u64, &skrib_format::CommentWithReplies> = req
+        .gathered
+        .comments
+        .iter()
+        .map(|c| (c.comment.id, c))
+        .collect();
+
+    let mut orphaned = 0usize;
+    for p in &placements {
+        let Some(cwr) = by_id.get(&p.comment_id) else {
+            continue;
+        };
+        if comment_rebase::orphan_reason(p).is_some() {
+            orphaned += 1;
+            continue;
+        }
+        match p.resolution {
+            skribisto_model::comment_anchor::Resolution::Anchored { start, length } => {
+                payload.insert(text_document::DocumentComment {
+                    start: start as u32,
+                    end: (start + length) as u32,
+                    uid: cwr.comment.uid.to_string(),
+                    author: cwr.comment.author_name.clone(),
+                    author_initials: cwr.comment.author_initials.clone(),
+                    date: cwr.comment.created_at.to_rfc3339(),
+                    resolved: cwr.comment.resolved,
+                    body: cwr.comment.body.clone(),
+                    replies: cwr
+                        .replies
+                        .iter()
+                        .map(|r| text_document::CommentReply {
+                            uid: r.uid.to_string(),
+                            author: r.author_name.clone(),
+                            author_initials: r.author_initials.clone(),
+                            date: r.created_at.to_rfc3339(),
+                            body: r.body.clone(),
+                        })
+                        .collect(),
+                });
+            }
+            // Already counted and skipped above.
+            skribisto_model::comment_anchor::Resolution::Orphan(_) => {}
+        }
+    }
+    Ok((payload, orphaned))
+}
+
+/// The ODT counterpart of [`docx_options`], mapping the same preset onto ODF's own
+/// options struct.
+///
+/// A near-copy on purpose, and deliberately **not** a shared generic over the two. The
+/// structs are field-for-field alike today because ODF and OOXML happen to want the same
+/// page and typography knobs in the same units, not because either format guarantees it —
+/// their vocabularies are unrelated, and the first knob one grows without the other would
+/// turn a clever abstraction into a worse copy. The duplication is small, local and
+/// obvious; the coupling would not be.
+fn odt_options(
+    preset: &Preset,
+    work_title: &str,
+    work_author: &str,
+    images: text_document::ExportImages,
+) -> text_document::OdtExportOptions {
+    let (page_w, page_h) = match preset.page_size {
+        PageSize::A4 => (11906u32, 16838u32),
+        PageSize::Letter => (12240, 15840),
+        PageSize::A5 => (8391, 11906),
+    };
+    let m = &preset.margin;
+    let in_to_twips = |i: f32| (i * TWIPS_PER_IN).round() as i32;
+    text_document::OdtExportOptions {
+        images,
+        page_width_twips: Some(page_w),
+        page_height_twips: Some(page_h),
+        margin_top_twips: Some(in_to_twips(m.top_in)),
+        margin_bottom_twips: Some(in_to_twips(m.bottom_in)),
+        margin_left_twips: Some(in_to_twips(m.left_in)),
+        margin_right_twips: Some(in_to_twips(m.right_in)),
+        font_family: (!preset.font_family.trim().is_empty()).then(|| preset.font_family.clone()),
+        font_half_points: Some((preset.font_size_pt * 2.0).round().max(2.0) as usize),
+        line_spacing_twips: Some(match preset.line_spacing {
+            LineSpacing::Single => 240,
+            LineSpacing::OneAndHalf => 360,
+            LineSpacing::Double => 480,
+        }),
+        first_line_indent_twips: (preset.first_line_indent_in > 0.0)
+            .then(|| in_to_twips(preset.first_line_indent_in)),
+        paragraph_spacing_after_twips: (preset.paragraph_spacing_pt > 0.0)
+            .then(|| (preset.paragraph_spacing_pt * 20.0).round() as i32),
+        justify: preset.justify,
+        page_numbers: true,
+        running_header: manuscript_header(work_title, work_author),
+        heading_styles: Vec::new(),
+        // As in `docx_options`: the comment payload is filled by the export use case, the
+        // only layer that has resolved an anchor against the compiled document.
+        ..Default::default()
+    }
+}
+
 fn docx_options(
     preset: &Preset,
     work_title: &str,
@@ -321,22 +542,18 @@ fn docx_options(
         // `DocxHeadingStyle::default_ramp` scaled off the body size, which is
         // exactly the output this function produced before the field existed.
         heading_styles: Vec::new(),
-        // **No comment threads, and this is not yet wired.** The field became
-        // required when `text-document` grew a DOCX comment writer; nothing here
-        // can fill it, because this crate is handed no comment data at all — the
-        // export path's `TreeReader::reads_comments` is `false`, so `Gathered.comments`
-        // is empty by the time a stream reaches the compiler.
+        // Every remaining option keeps its default. Spelled `..Default::default()`
+        // rather than field-by-field on purpose: this struct belongs to
+        // `text-document`, which grows a field whenever a new DOCX capability
+        // lands (comments, most recently). Enumerating them exhaustively here
+        // means each such addition breaks *this* crate's build for no reason —
+        // and the compile error names a struct in another repository, which is a
+        // poor place to send the next reader.
         //
-        // Filling it is a feature, not a call-site fix: each `DocumentComment`
-        // needs `start`/`end` offsets **into the compiled stream**, and a comment's
-        // stored anchor is a quote (prefix/exact/suffix), deliberately not an
-        // offset — so every thread has to be re-anchored against text that scene
-        // concatenation and separator insertion have already moved. That work is
-        // the `comment-export-spike` branch; this line is what keeps `master`
-        // compiling in the meantime.
-        //
-        // Until then a DOCX export carries the prose and none of the margin notes.
-        comments: DocumentComments::default(),
+        // The comment payload is populated by the export use case, which is the
+        // only layer that has resolved a comment's anchor against the compiled
+        // document; a preset knows nothing about anchors and must not guess.
+        ..Default::default()
     }
 }
 
@@ -505,6 +722,9 @@ fn text_render(
             },
             images: html_images.clone(),
         })?,
+        // Spelled out in full rather than with `..Default::default()`: LaTeX carries no
+        // comments (there is no LaTeX importer, so they would leave and never come home), so
+        // unlike `docx_options`/`odt_options` this struct has nothing left to default.
         ExportFormat::Latex => doc.to_latex_with_options(text_document::LatexExportOptions {
             document_class: "article".into(),
             include_preamble: true,
@@ -547,6 +767,9 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
     // renders as. It outlives the row loop because the paragraph following a
     // break may belong to the next item.
     let mut pending_attrs: Vec<String> = Vec::new();
+    // Every Content whose prose actually reaches `out`, in the order it reaches it — the
+    // record `comment_rebase` walks with its monotone cursor.
+    let mut emitted_contents: Vec<EmittedContent> = Vec::new();
 
     let work_rtl = is_rtl_row(preset, req.work_lang);
 
@@ -724,8 +947,9 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
         // 3. The main prose (a scene's SceneText, a note's NoteText) — appended verbatim
         //    since it is already Djot.
         if let Some(role) = main_prose_role(&row.item.sub_role)
-            && let Some(prose) = content_of(row.contents, role)
+            && let Some(prose_row) = row_content_of(row.contents, role)
         {
+            let prose = prose_row.data.as_str();
             // Only a scene's own prose is scanned for break markers. A
             // marker typed into a Note is just literal text — the model is
             // about scene flow.
@@ -754,18 +978,28 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
             if !matches!(row.item.sub_role, BinderItemSubRole::Paratext) {
                 words += w;
             }
+            // Recorded only when the row genuinely printed something. A scene whose whole
+            // prose is a single break marker emits nothing, and listing it here would give
+            // the rebase a window to hunt for that is not in the document — which is how a
+            // later row's comment ends up matching an earlier row's text.
+            if emitted {
+                emitted_contents.push(EmittedContent {
+                    content_id: prose_row.id,
+                    djot: prose.to_string(),
+                });
+            }
             contributed |= emitted;
         }
 
         // 4. The synopsis, if the preset keeps it.
         if preset.include_synopses
-            && let Some(syn) = content_of(row.contents, ContentRole::SynopsisText)
+            && let Some(syn_row) = row_content_of(row.contents, ContentRole::SynopsisText)
         {
             // A synopsis is commentary, not the scene's prose — never
             // scanned for markers, and its words are not the manuscript's.
             let (_, emitted) = push_prose(
                 &mut out,
-                syn,
+                &syn_row.data,
                 row_rtl,
                 preset,
                 false,
@@ -773,6 +1007,17 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
                 &[],
             );
             contributed |= emitted;
+            // A synopsis carries comments of its own, and they are a *different* window from
+            // the scene's: two remarks quoting the same sentence, one on the prose and one on
+            // the summary of it, must not be able to claim each other's position. Recorded
+            // only when `include_synopses` is on — with it off the synopsis is not in the
+            // document, and a comment on it is out of scope rather than orphaned.
+            if emitted {
+                emitted_contents.push(EmittedContent {
+                    content_id: syn_row.id,
+                    djot: syn_row.data.clone(),
+                });
+            }
         }
 
         // Re-armed *after* the row: the break this row consumed was its own, and the page
@@ -854,9 +1099,14 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
         stats: RenderStats {
             items: emitted_items,
             words,
+            // Filled by `render_to_file` once the format is known — `assemble` builds the
+            // document, and whether comments ride along is a property of the writer.
+            comments_written: 0,
+            comments_orphaned: 0,
         },
         langs,
         image_refs: skrib_format::media::referenced_paths(&out),
+        emitted: emitted_contents,
     })
 }
 
@@ -1559,10 +1809,20 @@ fn mark_epigraph(djot: &str, extra: &[String]) -> (String, bool) {
 }
 
 fn content_of(contents: &[Content], role: ContentRole) -> Option<&str> {
+    row_content_of(contents, role).map(|c| c.data.as_str())
+}
+
+/// The same lookup as [`content_of`], but keeping the whole row.
+///
+/// Separate because a comment hangs off a **`Content`**, not off a `BinderItem`: a remark on a
+/// scene's prose and one on the same scene's synopsis are anchored against two different
+/// strings, and only the row's own id distinguishes them. `content_of` deliberately keeps
+/// returning `&str` — every existing caller wants the prose and nothing else, and threading an
+/// id through them would be noise.
+fn row_content_of(contents: &[Content], role: ContentRole) -> Option<&Content> {
     contents
         .iter()
         .find(|c| c.role == role && c.activated && !c.data.is_empty())
-        .map(|c| c.data.as_str())
 }
 
 /// The item's own title content (ChapterTitle / PartTitle / BookTitle), falling back to the
@@ -3069,6 +3329,227 @@ mod tests {
         let _ = std::fs::remove_file(&path);
     }
 
+    /// `flat_book`, plus one anchored comment with a reply on the first scene, and one
+    /// comment whose quoted words are not in the manuscript at all.
+    fn flat_book_with_comments() -> Gathered {
+        use common::entities::{Comment, CommentAnchorKind, CommentReply};
+        let mut g = flat_book();
+        let scene = "The wind rose over the hills.";
+        let (text, starts) = skrib_format::djot_plain_text(scene).expect("plain");
+        let at = text.find("the hills").expect("fixture phrase") ;
+        let start = text[..at].chars().count();
+        let anchor = skribisto_model::comment_anchor::capture(
+            &text,
+            start,
+            start + "the hills".chars().count(),
+            skribisto_model::comment_anchor::block_of(&starts, start),
+        );
+
+        g.comments = vec![
+            skrib_format::CommentWithReplies {
+                comment: Comment {
+                    id: 900,
+                    uid: common::uid::fixture_uid(900),
+                    content: Some(3),
+                    kind: CommentAnchorKind::Range,
+                    author_name: "Mara Vane".into(),
+                    author_initials: "MV".into(),
+                    body: "Is this the right hill?".into(),
+                    range_start: anchor.start as u64,
+                    range_length: anchor.length as u64,
+                    quote_prefix: anchor.prefix.clone(),
+                    quote_exact: anchor.exact.clone(),
+                    quote_exact_truncated: anchor.exact_truncated,
+                    quote_suffix: anchor.suffix.clone(),
+                    block_ordinal_hint: anchor.block_ordinal as u64,
+                    replies: vec![901],
+                    ..Default::default()
+                },
+                replies: vec![CommentReply {
+                    id: 901,
+                    uid: common::uid::fixture_uid(901),
+                    author_name: "Editor".into(),
+                    author_initials: "E".into(),
+                    body: "It is.".into(),
+                    ..Default::default()
+                }],
+            },
+            skrib_format::CommentWithReplies {
+                comment: Comment {
+                    id: 910,
+                    uid: common::uid::fixture_uid(910),
+                    content: Some(3),
+                    kind: CommentAnchorKind::Range,
+                    author_name: "Mara Vane".into(),
+                    author_initials: "MV".into(),
+                    body: "About a sentence I deleted.".into(),
+                    quote_exact: "a sentence that is no longer anywhere".into(),
+                    range_length: 10,
+                    ..Default::default()
+                },
+                replies: vec![],
+            },
+        ];
+        g
+    }
+
+    /// The payload the writers receive: anchored comments in, unplaceable ones counted and
+    /// dropped rather than written at a guess.
+    #[test]
+    fn the_comment_payload_carries_the_thread_and_counts_the_orphan() {
+        let g = flat_book_with_comments();
+        let p = preset("neutral");
+        let r = req(&g, &[100, 101, 102], &p, ExportFormat::Docx);
+        let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+
+        let (payload, orphaned) = comment_payload(&r, &built).unwrap();
+        assert_eq!(payload.len(), 1, "the placeable comment is written");
+        assert_eq!(orphaned, 1, "the one whose words are gone is counted, not written");
+
+        let c = payload
+            .get(&common::uid::fixture_uid(900).to_string())
+            .expect("keyed by the comment's own uid");
+        assert_eq!(c.author, "Mara Vane");
+        assert_eq!(c.author_initials, "MV");
+        assert_eq!(c.body, "Is this the right hill?");
+        assert!(c.end > c.start, "a range comment must span real characters");
+        assert_eq!(c.replies.len(), 1, "the thread's reply travels with it");
+        assert_eq!(c.replies[0].author, "Editor");
+        assert_eq!(c.replies[0].uid, common::uid::fixture_uid(901).to_string());
+
+        // The range must land on the words the comment was made on, in the COMPILED
+        // document — the whole point of rebasing.
+        let text = built.doc.to_addressable_text().unwrap();
+        let got: String = text
+            .chars()
+            .skip(c.start as usize)
+            .take((c.end - c.start) as usize)
+            .collect();
+        assert_eq!(got, "the hills", "rebased onto the wrong words: {got:?}");
+    }
+
+    /// A format that cannot bring comments home is not given any. Reading them and then
+    /// discarding them is deliberate (see `comment_payload`); writing them would not be.
+    #[test]
+    fn a_format_that_does_not_carry_comments_gets_an_empty_payload() {
+        let g = flat_book_with_comments();
+        let p = preset("neutral");
+        for f in [ExportFormat::Epub, ExportFormat::Html, ExportFormat::Latex] {
+            let r = req(&g, &[100, 101, 102], &p, f);
+            let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+            let (payload, orphaned) = comment_payload(&r, &built).unwrap();
+            assert_eq!(payload.len(), 0, "{f:?} must carry no comments");
+            assert_eq!(orphaned, 0, "{f:?} must not warn about them either");
+        }
+    }
+
+    /// The counts reach `RenderStats` through a real export, for both carrying formats.
+    ///
+    /// The payload builder has its own test; this one exists because a correct builder wired
+    /// to nothing would still pass that test, and the writer's toast reads these numbers.
+    #[test]
+    fn a_real_export_reports_what_it_wrote_and_what_it_dropped() {
+        let g = flat_book_with_comments();
+        let p = preset("neutral");
+        for (fmt, ext) in [(ExportFormat::Docx, "docx"), (ExportFormat::Odt, "odt")] {
+            let path = std::env::temp_dir()
+                .join(format!("skrib-comments-{}.{ext}", std::process::id()));
+            let stats = render_to_file(
+                &req(&g, &[100, 101, 102], &p, fmt),
+                &path,
+                &|_| {},
+                &AtomicBool::new(false),
+            )
+            .unwrap_or_else(|e| panic!("{fmt:?} export failed: {e:#}"));
+
+            assert_eq!(stats.comments_written, 1, "{fmt:?} should write the placeable comment");
+            assert_eq!(
+                stats.comments_orphaned, 1,
+                "{fmt:?} should report the one it could not place"
+            );
+            let _ = std::fs::remove_file(&path);
+        }
+    }
+
+    /// A format that carries no comments reports no counts — so its toast stays silent
+    /// rather than warning about something the writer cannot act on.
+    #[test]
+    fn a_non_carrying_format_reports_no_comment_counts() {
+        let g = flat_book_with_comments();
+        let p = preset("neutral");
+        let path = std::env::temp_dir().join(format!("skrib-nocomments-{}.epub", std::process::id()));
+        let stats = render_to_file(
+            &req(&g, &[100, 101, 102], &p, ExportFormat::Epub),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert_eq!(stats.comments_written, 0);
+        assert_eq!(stats.comments_orphaned, 0);
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// ODT reaches a real file through the whole pipeline, and the file is a real ODF
+    /// package.
+    ///
+    /// The `mimetype`-first check is not decoration: ODF requires that entry to be the
+    /// **first** in the zip and **stored uncompressed**, and a package that gets it wrong
+    /// still unzips fine — it simply stops being recognised as a text document by the
+    /// applications this format exists to reach. A "non-empty file" assertion alone would
+    /// pass on exactly that failure.
+    #[test]
+    fn odt_export_writes_a_real_odf_package() {
+        let g = flat_book();
+        let p = preset("neutral");
+        let path = std::env::temp_dir().join(format!("skrib-export-{}.odt", std::process::id()));
+        let stats = render_to_file(
+            &req(&g, &[100, 101, 102], &p, ExportFormat::Odt),
+            &path,
+            &|_| {},
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert!(path.exists(), "odt file should be written");
+        assert!(stats.items >= 2);
+
+        let bytes = std::fs::read(&path).unwrap();
+        // The local-file-header signature, then the first entry's name.
+        assert_eq!(&bytes[0..4], b"PK\x03\x04", "not a zip: {:?}", &bytes[0..4]);
+        assert!(
+            bytes.windows(8).take(64).any(|w| w == b"mimetype"),
+            "`mimetype` must be the first entry of an ODF package"
+        );
+        assert!(
+            bytes
+                .windows(39)
+                .any(|w| w == b"application/vnd.oasis.opendocument.text"),
+            "the package must declare the OpenDocument Text media type"
+        );
+        let _ = std::fs::remove_file(&path);
+    }
+
+    /// The two formats that carry an editor's comments, and only those two. A format added
+    /// to this set without a reader to bring the comments home would send remarks on a
+    /// one-way trip — the reason LaTeX was considered and dropped.
+    #[test]
+    fn only_docx_and_odt_carry_comments() {
+        for f in [ExportFormat::Docx, ExportFormat::Odt] {
+            assert!(f.carries_comments(), "{f:?} must carry comments");
+        }
+        for f in [
+            ExportFormat::Djot,
+            ExportFormat::PlainText,
+            ExportFormat::Markdown,
+            ExportFormat::Html,
+            ExportFormat::Latex,
+            ExportFormat::Epub,
+            ExportFormat::Pdf,
+        ] {
+            assert!(!f.carries_comments(), "{f:?} must NOT carry comments");
+        }
+    }
+
     #[test]
     fn docx_export_writes_a_non_empty_file() {
         let g = flat_book();
@@ -4561,3 +5042,8 @@ mod tests {
         );
     }
 }
+
+/// Rebasing a comment's row-local anchor onto the compiled document — the one conversion the
+/// whole comment-export feature rests on. See the module's own docs for why it is a
+/// re-resolution and not arithmetic.
+pub mod comment_rebase;

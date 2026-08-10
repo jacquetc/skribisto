@@ -361,9 +361,12 @@ impl CommentHighlightSession {
         if starts.is_empty() {
             return;
         }
+        // The addressable length, in the same char space as `starts` — the export
+        // (`to_plain_text`) omits each table's `U+FFFC` anchor and would undercount
+        // the last block's extent by two chars per table in the row.
         let total = self
             .doc
-            .to_plain_text()
+            .to_addressable_text()
             .map(|t| t.chars().count())
             .unwrap_or(0);
         for a in anchors.iter_mut().filter(|a| a.is_paragraph) {
