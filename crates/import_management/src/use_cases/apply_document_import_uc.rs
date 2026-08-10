@@ -152,6 +152,9 @@ pub trait ApplyDocumentImportUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "GetMulti")]
 #[macros::uow_action(entity = "BinderItem", action = "SetRelationship")]
 #[macros::uow_action(entity = "Content", action = "CreateOrphan")]
+#[macros::uow_action(entity = "BinderItem", action = "GetRelationship")]
+#[macros::uow_action(entity = "Content", action = "GetMulti")]
+#[macros::uow_action(entity = "Content", action = "Update")]
 #[macros::uow_action(entity = "Comment", action = "CreateOrphan")]
 #[macros::uow_action(entity = "Comment", action = "SetRelationship")]
 // M-S7 (recognition on re-import): `GetMulti` reads `Work.comments` up front so
@@ -965,6 +968,54 @@ fn prose_role_for(
     None
 }
 
+/// Every row of this binder, indexed by the tag a round-trip mark spells.
+///
+/// Built once per import rather than per row: a manuscript has hundreds of rows and a
+/// returning file updates many of them, and hashing every uid once is the difference between
+/// one pass over the binder and one pass per update.
+///
+/// A nil uid is skipped. It means a row created before identity was minted, which no mark can
+/// name — and hashing it would give every such row the same tag, so the first would answer for
+/// all of them.
+fn items_by_uid_tag(
+    uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
+    order: &[EntityId],
+) -> Result<HashMap<String, EntityId>> {
+    Ok(uow
+        .get_binder_item_multi(order)?
+        .into_iter()
+        .flatten()
+        .filter(|item| !item.uid.is_nil())
+        .map(|item| (skribisto_model::round_trip::uid_tag(&item.uid), item.id))
+        .collect())
+}
+
+/// The `Content` row holding this item's prose, if it has one.
+///
+/// "Prose" is the same three roles [`prose_role_for`] can create — scene text, note text,
+/// paratext — never a title or a synopsis. A returning file's chapter is the chapter's *prose*,
+/// and writing it into the row that holds the title would put a manuscript where a heading goes.
+///
+/// `None` when the item has no prose row at all, which is an ordinary shape (an empty chapter
+/// folder) and not an error.
+fn prose_content_of(
+    uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
+    item_id: EntityId,
+) -> Result<Option<EntityId>> {
+    let ids = uow.get_binder_item_relationship(&item_id, &BinderItemRelationshipField::Contents)?;
+    Ok(uow
+        .get_content_multi(&ids)?
+        .into_iter()
+        .flatten()
+        .find(|c| {
+            matches!(
+                c.role,
+                ContentRole::SceneText | ContentRole::NoteText | ContentRole::ParatextText
+            )
+        })
+        .map(|c| c.id))
+}
+
 /// How far to move the whole accepted block so its shallowest row sits at
 /// `base_indent`.
 ///
@@ -977,7 +1028,9 @@ fn indent_shift(rows: &[&ApplyImportRow], base_indent: i64) -> i64 {
         .iter()
         .filter_map(|row| match row {
             ApplyImportRow::Create { indent, .. } => Some(*indent),
-            ApplyImportRow::Empty => None,
+            // An update touches a row already in the binder at its own depth; it takes part
+            // in no splice and must not drag the created block up or down.
+            ApplyImportRow::Update { .. } | ApplyImportRow::Empty => None,
         })
         .min()
         .unwrap_or(0);

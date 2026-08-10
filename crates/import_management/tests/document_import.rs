@@ -35,7 +35,8 @@ use direct_access::work::work_controller;
 use import_management::import_management_controller;
 use import_management::{
     AnalyzeDocumentImportDto, ApplyDocumentImportDto, ApplyImportRow, ApplyImportRows,
-    DocumentImportRow, DocumentImportRows, DropPosition, ImportDiagnosticRows, ImportRowKind,
+    DocumentImportRow, DocumentImportRows, DropPosition, ImportComment, ImportCommentKind,
+    ImportDiagnosticRows, ImportOrphanReason, ImportRowKind,
 };
 // M-S7 round-trip tests: build a real "returning" `.docx`/`.odt` via
 // `text-document`'s own writer, carrying real local `Comment`/`CommentReply`
@@ -1943,5 +1944,204 @@ fn a_reply_with_no_uid_is_recognised_by_its_author_and_date() {
     assert!(
         after.iter().any(|r| r.body == "Thanks."),
         "the editor's new reply arrived"
+    );
+}
+
+// ── Bringing a returning file home to the rows it came from ─────────────────
+//
+// Every test above creates. These update: the writer sends a draft out, the editor
+// marks it up, and the file comes back to *the book it left from* rather than
+// landing beside it as a second copy. `ApplyImportRow::Update` names its target by
+// the round-trip mark the file carried; `replace_prose` says whether the editor's
+// wording is wanted, or only their remarks.
+
+impl Ctx {
+    /// Apply hand-built rows — the update half, which no analysis produces on its own
+    /// because choosing between "take their wording" and "take only their notes" is a
+    /// decision the writer makes in the wizard.
+    fn apply_rows(&mut self, rows: Vec<ApplyImportRow>) -> Vec<EntityId> {
+        import_management_controller::apply_document_import(
+            &self.db,
+            &self.hub,
+            &mut self.undo,
+            None,
+            &ApplyDocumentImportDto {
+                work_id: self.work_id,
+                binder_id: self.binder_id,
+                anchor_item_id: 0,
+                drop_position: DropPosition::Into,
+                row: ApplyImportRow::Empty,
+                rows: ApplyImportRows::Create(rows),
+            },
+        )
+        .expect("apply")
+        .created_ids
+    }
+
+    /// The one item in this binder whose title is `title`.
+    fn item_named(&self, title: &str) -> EntityId {
+        self.binder_order()
+            .into_iter()
+            .find(|id| self.title_of(*id) == title)
+            .unwrap_or_else(|| panic!("no row titled {title:?}"))
+    }
+}
+
+/// One ordinary import, and the mark tag its row would be named by on the way back.
+fn a_project_with_one_row(ctx: &mut Ctx) -> (EntityId, String) {
+    let path = ctx.write("chapter.md", "# Chapter One\n\nThe original wording.\n");
+    let rows = ctx.analyse(vec![path], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let item_id = ctx.item_named("Chapter One");
+    let uid = binder_item_controller::get(&ctx.db, &item_id)
+        .expect("item")
+        .expect("item row")
+        .uid;
+    assert!(!uid.is_nil(), "a created row mints a durable identity");
+    (item_id, skribisto_model::round_trip::uid_tag(&uid))
+}
+
+fn update_row(
+    tag: &str,
+    replace_prose: bool,
+    djot: &str,
+    comments: Vec<ImportComment>,
+) -> ApplyImportRow {
+    ApplyImportRow::Update {
+        target_uid_tag: tag.to_string(),
+        replace_prose,
+        djot: djot.to_string(),
+        comments,
+    }
+}
+
+fn an_editors_comment(body: &str, exact: &str, prefix: &str, suffix: &str) -> ImportComment {
+    ImportComment::Found {
+        kind: ImportCommentKind::Range,
+        uid: None,
+        uid_tag: String::new(),
+        author_name: "Editor".into(),
+        author_initials: "ED".into(),
+        created_at: "2026-01-01T00:00:00Z".into(),
+        body: body.into(),
+        resolved: false,
+        orphaned: false,
+        orphan_reason: ImportOrphanReason::NotOrphaned,
+        range_start: prefix.chars().count() as i64,
+        range_length: exact.chars().count() as i64,
+        quote_prefix: prefix.into(),
+        quote_exact: exact.into(),
+        quote_exact_truncated: false,
+        quote_suffix: suffix.into(),
+        block_ordinal_hint: 0,
+        replies: Vec::new(),
+    }
+}
+
+/// The case the whole feature exists for: the editor's remarks come home and not one
+/// word of the manuscript is touched.
+#[test]
+fn comments_only_brings_the_notes_and_leaves_the_prose_alone() {
+    let mut ctx = Ctx::new();
+    let (item_id, tag) = a_project_with_one_row(&mut ctx);
+
+    ctx.apply_rows(vec![update_row(
+        &tag,
+        false,
+        "PROSE THAT MUST NOT BE WRITTEN",
+        vec![an_editors_comment(
+            "Is this the right word?",
+            "original",
+            "The ",
+            " wording.",
+        )],
+    )]);
+
+    assert_eq!(
+        ctx.prose_of(item_id).as_deref(),
+        Some("The original wording."),
+        "comments-only must not touch a word of the manuscript"
+    );
+    let comments = ctx.comments();
+    assert_eq!(comments.len(), 1, "the editor's remark came home");
+    assert_eq!(comments[0].0.body, "Is this the right word?");
+    assert_eq!(
+        comments[0].0.content,
+        ctx.content_id_of(item_id),
+        "and is anchored to the row it was made on"
+    );
+}
+
+/// The other half: the editor rewrote the chapter and the writer wants their wording.
+#[test]
+fn take_import_replaces_the_prose_of_the_row_the_mark_names() {
+    let mut ctx = Ctx::new();
+    let (item_id, tag) = a_project_with_one_row(&mut ctx);
+    let before = ctx.binder_order().len();
+
+    ctx.apply_rows(vec![update_row(
+        &tag,
+        true,
+        "The editor's better wording.",
+        Vec::new(),
+    )]);
+
+    assert_eq!(
+        ctx.prose_of(item_id).as_deref(),
+        Some("The editor's better wording.")
+    );
+    assert_eq!(
+        ctx.binder_order().len(),
+        before,
+        "an update must not create a second copy of the row"
+    );
+}
+
+/// A tag naming a row this project no longer has is skipped, not fatal: the writer may
+/// have deleted the chapter between sending the draft and reading it back, which is an
+/// ordinary thing to do — and the rest of the file still has to land.
+#[test]
+fn an_update_for_a_row_that_is_gone_is_skipped_not_fatal() {
+    let mut ctx = Ctx::new();
+    let (item_id, tag) = a_project_with_one_row(&mut ctx);
+    let stale = skribisto_model::round_trip::uid_tag(&uuid::Uuid::from_u128(0xdead_beef));
+    assert_ne!(stale, tag);
+
+    ctx.apply_rows(vec![update_row(&stale, true, "Nowhere to go.", Vec::new())]);
+
+    assert_eq!(
+        ctx.prose_of(item_id).as_deref(),
+        Some("The original wording."),
+        "a stale tag must not write into some other row"
+    );
+}
+
+/// Undo has to put the previous prose back.
+///
+/// The binder snapshot the import already takes is whole-store and restores the
+/// destination subtree — which reaches Contents. This is the test that says so, because
+/// "it should already be covered" is exactly the kind of claim that is wrong once.
+#[test]
+fn undoing_an_update_restores_the_prose_it_overwrote() {
+    let mut ctx = Ctx::new();
+    let (item_id, tag) = a_project_with_one_row(&mut ctx);
+
+    ctx.apply_rows(vec![update_row(
+        &tag,
+        true,
+        "The editor's better wording.",
+        Vec::new(),
+    )]);
+    assert_eq!(
+        ctx.prose_of(item_id).as_deref(),
+        Some("The editor's better wording.")
+    );
+
+    ctx.undo.undo(None).expect("undo");
+    assert_eq!(
+        ctx.prose_of(item_id).as_deref(),
+        Some("The original wording."),
+        "undo must restore the writer's own prose"
     );
 }

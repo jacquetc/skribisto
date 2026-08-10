@@ -1671,7 +1671,8 @@ mod tests {
             .into_iter()
             .filter_map(|r| match r {
                 ApplyImportRow::Create { title, .. } => Some(title),
-                ApplyImportRow::Empty => None,
+                // An update names no title — it points at a row that already has one.
+                ApplyImportRow::Update { .. } | ApplyImportRow::Empty => None,
             })
             .collect()
     }

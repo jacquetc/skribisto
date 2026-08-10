@@ -2177,6 +2177,15 @@ features:
         # the row it came from instead of landing beside it as a second copy. Empty for a row
         # that is genuinely new.
         - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String, comments: Vec<ImportComment>, source_uid_tag: String }"
+        # A row the returning file brings home to one the project already has, named by the
+        # round-trip mark it carried. `Create` makes a row; this touches one.
+        #
+        # There is no "leave it alone" variant and there does not need to be: a row the writer
+        # decided to keep as it is simply is not sent, exactly as an unticked row is not.
+        #
+        # `replace_prose` false is the case the whole feature exists for -- bring the editor's
+        # remarks home and do not touch a word of the manuscript.
+        - "Update { target_uid_tag: String, replace_prose: bool, djot: String, comments: Vec<ImportComment> }"
       - name: rows
         type: enum
         enum_name: ApplyImportRows
