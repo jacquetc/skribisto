@@ -160,7 +160,7 @@ impl<T> ProjectStore<T> {
     /// Takes a [`WorkScoped`] rather than a raw uid so it cannot name a project
     /// the caller never opened.
     pub fn evict(&self, scope: &WorkScoped<T>) {
-        self.forget_by_uid(&scope.uid);
+        scope.forget();
     }
 }
 
@@ -242,6 +242,18 @@ impl<T> WorkScoped<T> {
     /// Whether this project has a value at all.
     pub fn exists(&self) -> bool {
         self.store.with_by_uid(&self.uid, |_| ()).is_some()
+    }
+
+    /// Drop this project's slot, back to the state before anything was stored.
+    ///
+    /// Not the same as storing `T::default()`, and the difference reaches disk:
+    /// [`ProjectStoreContributor`] writes a file for a project that *has* a
+    /// value, however empty, and writes none for one that has no slot. So an undo
+    /// that steps back past the first edit a project ever received has to come
+    /// here, or it leaves an empty file behind in a project that was never
+    /// touched.
+    pub fn forget(&self) {
+        self.store.forget_by_uid(&self.uid);
     }
 }
 
