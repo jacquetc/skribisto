@@ -25,8 +25,8 @@ mod imp {
     use std::cell::Cell;
     use std::rc::Rc;
 
-    use teksilo::prelude::*;
     use chrono::{DateTime, Duration, NaiveDate, Utc};
+    use teksilo::prelude::*;
 
     use frontend::AppContext;
     use frontend::commands::{
@@ -292,8 +292,8 @@ mod imp {
     use std::collections::HashMap;
     use std::rc::Rc;
 
-    use teksilo::prelude::*;
     use chrono::NaiveDate;
+    use teksilo::prelude::*;
 
     use frontend::AppContext;
 

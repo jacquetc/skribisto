@@ -40,11 +40,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use skrib_format::changes::{Timeline, timeline_for};
+use skrib_format::versions::{BackupVersions, LogVersions, SourceKind, VersionSource};
 use teksilo::data::{SelectionMode, SelectionModel};
 use teksilo::prelude::{AsyncRuntimeHandle, Signal, spawn_blocking};
 use teksilo::widgets::DateRange;
-use skrib_format::changes::{Timeline, timeline_for};
-use skrib_format::versions::{BackupVersions, LogVersions, SourceKind, VersionSource};
 
 use common::entities::ContentRole;
 

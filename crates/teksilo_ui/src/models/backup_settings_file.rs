@@ -48,11 +48,11 @@
 use std::rc::Rc;
 use std::time::Duration;
 
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use teksilo::settings::{
     AppPaths, Migrator, Reloadable, SettingsFile, SettingsFileError, Versioned,
 };
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 
 /// Debounce parameter accepted by [`open_with_delay`](BackupSettingsService::open_with_delay)/[`open_at`](BackupSettingsService::open_at) for call-site
 /// stability only. `SettingsFile::load`'s writes are always a synchronous

@@ -33,9 +33,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use frontend::AppContext;
 use teksilo::data::{KeyedSelectionModel, SelectionMode, TreeDataSource};
 use teksilo::prelude::*;
-use frontend::AppContext;
 
 use crate::app_ids::AppIds;
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, TreeFilters, TreeNode};

@@ -15,10 +15,10 @@
 #[allow(unused_imports)]
 use super::*;
 
+use std::rc::Rc;
 use teksilo::widgets::{
     CellContext, Column, ColumnWidth, PinnedSide, TableAlignment, TextInput, TruncationPolicy,
 };
-use std::rc::Rc;
 
 use uuid::Uuid;
 

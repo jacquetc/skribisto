@@ -19,13 +19,13 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
+use frontend::AppContext;
+use frontend::common::entities::BinderItemSubRole;
+use frontend::common::event::{DirectAccessEntity, EntityEvent, Origin, TrashManagementEvent};
 use teksilo::data::{
     DragEligibility, DropCommit, DropQuery, DropResponse, FlatEntry, TreeDataSlice, TreeDataSource,
 };
 use teksilo::prelude::{BuildContext, Signal};
-use frontend::AppContext;
-use frontend::common::entities::BinderItemSubRole;
-use frontend::common::event::{DirectAccessEntity, EntityEvent, Origin, TrashManagementEvent};
 
 /// Stable per-row identity. A root is keyed by its **TrashInfo** id (the handle
 /// every action needs); a cascade row by its **BinderItem** id (globally unique).

@@ -594,11 +594,11 @@ mod tests {
     #[cfg(not(feature = "mocks"))]
     #[test]
     fn deleting_a_real_note_offers_an_undo_toast() {
-        use teksilo::i18n::lit;
-        use teksilo::widgets::{Button, ToastInstallOptions, ToastRegistry};
         use frontend::commands::{footnote_commands, work_commands, work_management_commands};
         use frontend::direct_access::CreateFootnoteDto;
         use frontend::work_management::LoadWorkDto;
+        use teksilo::i18n::lit;
+        use teksilo::widgets::{Button, ToastInstallOptions, ToastRegistry};
 
         let app_ctx = Rc::new(frontend::AppContext::new());
         let ids = crate::app_ids::AppIds::new();

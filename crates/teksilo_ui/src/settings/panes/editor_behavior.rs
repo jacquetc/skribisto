@@ -171,21 +171,19 @@ pub(in crate::settings) fn editor_behavior_pane(
         });
     }
     let choice_index = bridge_synopsis_choice(ctx, vm.synopsis_pane(), vm.synopsis_placement());
-    let synopsis_control = SYNOPSIS_CHOICES
-        .into_iter()
-        .fold(SegmentedControl::indexed(choice_index), |control, choice| {
-            control.segment(Segment::new(synopsis_choice_label(choice)))
-        });
+    let synopsis_control = SYNOPSIS_CHOICES.into_iter().fold(
+        SegmentedControl::indexed(choice_index),
+        |control, choice| control.segment(Segment::new(synopsis_choice_label(choice))),
+    );
 
-    let highlight_control =
-        HighlightScope::all()
-            .into_iter()
-            .fold(SegmentedControl::indexed(scope_index), |control, s| {
-                control.segment(
-                    Segment::new(highlight_scope_label(s))
-                        .rich_tooltip_content(highlight_scope_tip(s)),
-                )
-            });
+    let highlight_control = HighlightScope::all().into_iter().fold(
+        SegmentedControl::indexed(scope_index),
+        |control, s| {
+            control.segment(
+                Segment::new(highlight_scope_label(s)).rich_tooltip_content(highlight_scope_tip(s)),
+            )
+        },
+    );
 
     let form = FormLayout::new()
         .label(tr!(settings_page_editor_behavior()))
@@ -266,10 +264,10 @@ pub(in crate::settings) fn editor_behavior_pane(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use teksilo::core::widget_tree::WidgetTree;
-    use teksilo::core::{LayoutContext, LayoutResponse, Widget, WidgetId};
     use std::cell::Cell;
     use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
+    use teksilo::core::{LayoutContext, LayoutResponse, Widget, WidgetId};
 
     /// Registers the bridge inside a real `BuildContext` and hands the index signal back,
     /// so a test can act as the `SegmentedControl` does: write the index, observe the pair.

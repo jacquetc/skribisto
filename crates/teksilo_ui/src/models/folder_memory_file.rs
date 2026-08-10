@@ -29,8 +29,8 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use teksilo::settings::{AppPaths, Migrator, SettingsFile, SettingsFileError, Versioned};
 use serde::{Deserialize, Serialize};
+use teksilo::settings::{AppPaths, Migrator, SettingsFile, SettingsFileError, Versioned};
 
 /// Accepted for call-site stability only; `SettingsFile`'s writes are a synchronous
 /// locked read-modify-write with no debounce (see the siblings).

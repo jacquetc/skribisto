@@ -30,10 +30,10 @@ mod imp {
     use std::path::Path;
     use std::rc::Rc;
 
+    use serde::{Deserialize, Serialize};
     use teksilo::data::ListModel;
     use teksilo::prelude::*;
     use teksilo::settings::{AppPaths, Keyed, MruEntry, MruList};
-    use serde::{Deserialize, Serialize};
 
     use frontend::AppContext;
     use frontend::commands::{work_commands, work_info_commands};

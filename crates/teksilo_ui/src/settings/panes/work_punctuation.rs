@@ -3,10 +3,10 @@
 
 //! Work: `<name>` ▸ Punctuation — the project's typographic house style.
 
+use frontend::common::entities::QuoteStyle;
 use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{Segment, SegmentedControl};
-use frontend::common::entities::QuoteStyle;
 
 use crate::text_replacement::typography::{
     QuoteSystem, mirrored_for, ruleset_for, uses_guillemet_inner_spacing,
@@ -265,9 +265,9 @@ pub(in crate::settings) fn work_punctuation_pane(
 #[cfg(all(test, feature = "mocks"))]
 mod tests {
     use super::*;
-    use teksilo::core::widget_tree::WidgetTree;
     use frontend::AppContext;
     use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
 
     use crate::singles::{SingleSmartPunctuation, SingleWork};
 

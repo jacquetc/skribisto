@@ -34,8 +34,6 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use teksilo::prelude::Signal;
-use teksilo::text_document::matching::FoldLocale;
 use frontend::AppContext;
 use frontend::commands::mention_management_commands;
 use frontend::common::event::Event;
@@ -43,6 +41,8 @@ use frontend::mention_management::{
     MentionEntity, MentionHit, MentionHits, MentionTable, ScanMentionsDto,
 };
 use skribisto_model::mentions::{self, DiscoverableEntity};
+use teksilo::prelude::Signal;
+use teksilo::text_document::matching::FoldLocale;
 
 use crate::app_ids::AppIds;
 

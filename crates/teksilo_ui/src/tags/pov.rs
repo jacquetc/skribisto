@@ -17,9 +17,9 @@
 
 use std::rc::Rc;
 
+use skribisto_model::mentions::DiscoverableEntity;
 use teksilo::prelude::*;
 use teksilo::widgets::{Button, ButtonVariant, HStack, IconButton, PopoverButton, TextWidget};
-use skribisto_model::mentions::DiscoverableEntity;
 
 use super::cast_add::{CastAddPopover, CastCandidate};
 use super::mention_list::PinReference;

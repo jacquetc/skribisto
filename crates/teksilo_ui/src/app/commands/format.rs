@@ -8,8 +8,8 @@
 //! canonical mark at the caret; an export preset decides how it prints (a Shunn
 //! `#`, a dinkus, or a bare gap, per region).
 
-use teksilo::prelude::*;
 use skribisto_model::scene_break::SceneBreakTier;
+use teksilo::prelude::*;
 
 use super::CommandDeps;
 

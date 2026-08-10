@@ -198,9 +198,9 @@ impl Widget for BackupChoicePanel {
 #[cfg(all(test, feature = "mocks"))]
 mod tests {
     use super::*;
-    use teksilo::core::widget_tree::WidgetTree;
     use frontend::AppContext;
     use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
 
     fn make_restore(app_ctx: Rc<AppContext>) -> BackupRestoreViewModel {
         let ids = crate::app_ids::AppIds::new();

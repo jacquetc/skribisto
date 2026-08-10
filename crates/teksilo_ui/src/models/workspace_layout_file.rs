@@ -37,9 +37,9 @@
 
 use std::time::Duration;
 
+use serde::{Deserialize, Serialize};
 use teksilo::settings::{AppPaths, Migrator, SettingsFile, SettingsFileError, Versioned};
 use teksilo::widgets::{DockLayoutState, SplitterState};
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Accepted for call-site stability only. `SettingsFile`'s writes are a

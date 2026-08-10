@@ -701,11 +701,11 @@ mod tests {
 /// whose list model only fabricates rows in that feature set.
 #[cfg(all(test, feature = "mocks"))]
 mod live_editor_tests {
+    use frontend::AppContext;
     use teksilo::core::widget_tree::WidgetTree;
     use teksilo::prelude::SizeProposal;
     use teksilo::text_document::TextDocument;
     use teksilo::widgets::rich_text::{EditorHandle, RichTextEditor};
-    use frontend::AppContext;
 
     use super::*;
     use crate::app_ids::AppIds;

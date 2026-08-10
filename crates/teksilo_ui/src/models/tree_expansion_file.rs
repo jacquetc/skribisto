@@ -25,8 +25,8 @@
 
 use std::time::Duration;
 
-use teksilo::settings::{AppPaths, Migrator, SettingsFile, SettingsFileError, Versioned};
 use serde::{Deserialize, Serialize};
+use teksilo::settings::{AppPaths, Migrator, SettingsFile, SettingsFileError, Versioned};
 use uuid::Uuid;
 
 /// Accepted for call-site stability only; `SettingsFile`'s writes are a synchronous

@@ -45,9 +45,9 @@
 //! editor tab headers, which share this mapping, give it none. Judge a new glyph
 //! in the tab strip, where it stands alone.
 
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use teksilo::res;
 use teksilo::widgets::IconWidget;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 
 /// Leading-icon size (dp) — matches the outline rows and the tab headers.
 pub const ICON_SIZE: f32 = 16.0;

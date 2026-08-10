@@ -172,7 +172,10 @@ mod tests {
             !got.contains_key("project.skrib"),
             "an extension must never be able to rewrite the manifest"
         );
-        assert_eq!(got.get("guard/ok.ron").map(Vec::as_slice), Some(&b"fine"[..]));
+        assert_eq!(
+            got.get("guard/ok.ron").map(Vec::as_slice),
+            Some(&b"fine"[..])
+        );
     }
 
     #[test]

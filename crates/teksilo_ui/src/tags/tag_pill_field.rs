@@ -611,9 +611,9 @@ fn swatch(color: teksilo::tokens::Color) -> impl Widget {
 #[cfg(test)]
 mod flow_tests {
     use super::*;
-    use teksilo::core::widget_tree::WidgetTree;
     use frontend::AppContext;
     use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
 
     /// TagPillField must reflow chips under a narrow proposal the same way
     /// LanguagePillField / AliasPillField do — a composing-widget bug that

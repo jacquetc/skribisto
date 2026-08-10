@@ -507,7 +507,10 @@ fn creating_a_row_mints_a_uid_rather_than_leaving_it_nil() {
     let comment = comment_commands::get_comment(&fx.ctx, &comment_id)
         .expect("get comment")
         .expect("comment exists");
-    assert!(!comment.uid.is_nil(), "a created Comment must carry one too");
+    assert!(
+        !comment.uid.is_nil(),
+        "a created Comment must carry one too"
+    );
 
     // Two rows of the same kind must not share an identity — the failure a nil
     // produces is indistinguishable from "present" unless distinctness is checked.

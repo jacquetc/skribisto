@@ -9,6 +9,7 @@
 
 use std::rc::Rc;
 
+use skribisto_model::mentions::DiscoverableEntity;
 use teksilo::core::BindingLevel;
 use teksilo::core::accesskit::Role;
 use teksilo::core::widget::WidgetPlacement;
@@ -16,7 +17,6 @@ use teksilo::prelude::*;
 use teksilo::widgets::{
     MaxSize, Padding, Panel, PopoverButton, ScrollArea, TextInput, TextWidget, VStack,
 };
-use skribisto_model::mentions::DiscoverableEntity;
 
 use super::mention_list::PinReference;
 

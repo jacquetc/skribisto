@@ -13,16 +13,16 @@
 //! body covers every combination in its group. The manuscript-stream pane the
 //! containers share lives in [`stream`](super::stream).
 
+use super::segments;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
-use super::segments;
-use teksilo::widgets::{SegmentId, segmented_control};
 use teksilo::widgets::{
     Accordion, Center, Expand, GroupHeader, HStack, IconButton, IconButtonSize, Padding,
     RectWidget, ScrollArea, Segment, SegmentedControl, Spacer, Splitter, Switcher, TextWidget,
     VStack, ZStack,
 };
+use teksilo::widgets::{SegmentId, segmented_control};
 
 use frontend::common::entities::BinderItemSubRole;
 
@@ -763,7 +763,10 @@ impl RememberSegment {
             content = content.child_boxed(pane);
         }
 
-        let col = shell(crate::tabs::Boxed::new(Box::new(bar)), crate::tabs::Boxed::new(Box::new(content)));
+        let col = shell(
+            crate::tabs::Boxed::new(Box::new(bar)),
+            crate::tabs::Boxed::new(Box::new(content)),
+        );
         Self {
             segment: tab.segment.clone(),
             memory: tab.view_memory.clone(),

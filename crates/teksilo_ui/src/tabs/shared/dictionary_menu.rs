@@ -235,10 +235,10 @@ fn dedup_keep_first(words: Vec<String>) -> Vec<String> {
 mod tests {
     use super::*;
     use crate::spellcheck::SpellChecker;
+    use std::rc::Rc;
     use teksilo::core::widget_tree::WidgetTree;
     use teksilo::text_document::Color;
     use teksilo::widgets::rich_text::RichTextEditor;
-    use std::rc::Rc;
 
     fn doc(text: &str) -> TextDocument {
         let d = TextDocument::new();

@@ -36,10 +36,10 @@
 
 use std::io::{BufRead, BufReader, Write};
 
-use teksilo::app::AppEventProxy;
 use interprocess::local_socket::prelude::*;
 use interprocess::local_socket::{ListenerOptions, Stream};
 use serde::{Deserialize, Serialize};
+use teksilo::app::AppEventProxy;
 
 use crate::shell::open_registry::{self, SocketId};
 

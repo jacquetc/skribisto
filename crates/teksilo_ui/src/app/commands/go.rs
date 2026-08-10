@@ -21,8 +21,8 @@
 //! focused, or nothing of that kind in that direction — no wraparound) is a quiet
 //! no-op, the same shape `format.scene_break`'s own internal guard already uses.
 
-use teksilo::prelude::*;
 use skribisto_model::{GoDirection, GoKind};
+use teksilo::prelude::*;
 
 use crate::view_models::EditorsViewModel;
 

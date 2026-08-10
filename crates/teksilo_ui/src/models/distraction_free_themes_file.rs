@@ -26,10 +26,10 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use serde::{Deserialize, Serialize};
 use teksilo::settings::{
     AppPaths, Migrator, Reloadable, SettingsFile, SettingsFileError, Versioned,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::distraction_free::theme::{DistractionFreeTheme, builtin_themes};
 

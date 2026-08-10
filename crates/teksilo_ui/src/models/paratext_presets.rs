@@ -45,10 +45,10 @@
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use serde::{Deserialize, Serialize};
 use teksilo::settings::{
     AppPaths, Migrator, Reloadable, SettingsFile, SettingsFileError, Versioned,
 };
-use serde::{Deserialize, Serialize};
 
 /// The four traditions shipped with the app. Data, not code — each is one file.
 const BUNDLED: &[(&str, &str)] = &[

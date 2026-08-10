@@ -36,7 +36,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use teksilo::prelude::{TeksiloWindowId, Signal};
+use teksilo::prelude::{Signal, TeksiloWindowId};
 
 use super::WorkSession;
 

@@ -507,9 +507,9 @@ mod tests {
     /// does" bug F1 describes.
     #[test]
     fn a_save_as_failure_captured_before_a_switch_never_collides_with_the_new_works_own() {
+        use frontend::common::event::{LongOperationEvent, Origin};
         use teksilo::i18n::lit;
         use teksilo::widgets::{Button, ToastInstallOptions, ToastRegistry};
-        use frontend::common::event::{LongOperationEvent, Origin};
 
         fn failed_event(op_id: &str) -> Event {
             Event {

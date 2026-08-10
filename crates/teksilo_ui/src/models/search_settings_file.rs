@@ -30,10 +30,10 @@
 use std::rc::Rc;
 use std::time::Duration;
 
+use serde::{Deserialize, Serialize};
 use teksilo::settings::{
     AppPaths, Migrator, Reloadable, SettingsFile, SettingsFileError, Versioned,
 };
-use serde::{Deserialize, Serialize};
 
 /// Accepted for call-site stability only. `SettingsFile::load`'s writes are a
 /// synchronous locked read-modify-write — there is no debounce to configure

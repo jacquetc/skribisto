@@ -487,8 +487,8 @@ impl ImportPlumeViewModel {
 #[cfg(test)]
 mod tests {
     use super::*; // brings `FileDialogResult` in via the parent's prelude glob
-    use teksilo::widgets::ValidationState;
     use std::path::PathBuf;
+    use teksilo::widgets::ValidationState;
 
     #[test]
     fn output_stem_strips_plume_extensions() {

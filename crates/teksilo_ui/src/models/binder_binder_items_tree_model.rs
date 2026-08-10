@@ -25,6 +25,9 @@ use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
+use frontend::common::event::{
+    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Origin, TrashManagementEvent,
+};
 use teksilo::core::ObserverHandle;
 use teksilo::data::{
     DragEligibility, DropCommit, DropPosition, DropQuery, DropResponse, FlatEntry, TreeDataSlice,
@@ -32,9 +35,6 @@ use teksilo::data::{
 };
 use teksilo::prelude::BuildContext;
 use teksilo::prelude::Signal;
-use frontend::common::event::{
-    BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Origin, TrashManagementEvent,
-};
 
 use frontend::AppContext;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
@@ -996,8 +996,8 @@ mod rows {
 #[cfg(all(test, feature = "mocks"))]
 mod tests {
     use super::*;
-    use teksilo::data::DragSource;
     use frontend::AppContext;
+    use teksilo::data::DragSource;
 
     fn default_filters() -> TreeFilters {
         TreeFilters {

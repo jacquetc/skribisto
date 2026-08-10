@@ -292,8 +292,8 @@ impl Widget for DestinationPickerView {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use teksilo::prelude::SizeProposal;
     use std::rc::Rc;
+    use teksilo::prelude::SizeProposal;
 
     fn picker() -> DestinationPicker {
         DestinationPicker::new(Rc::new(AppContext::new()), Signal::new(None))
@@ -346,8 +346,8 @@ mod tests {
 #[cfg(all(test, not(feature = "mocks")))]
 mod real_backend_tests {
     use super::*;
-    use teksilo::prelude::SizeProposal;
     use std::rc::Rc;
+    use teksilo::prelude::SizeProposal;
 
     /// A picker over the shipped fixture, mounted so its tree is live.
     ///

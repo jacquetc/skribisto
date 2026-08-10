@@ -9,10 +9,10 @@
 //! same reason [`TypewriterAnchor`](super::TypewriterAnchor) does — it is business logic, read
 //! by both the pane and the editor wiring.
 
+use serde::{Deserialize, Serialize};
 use teksilo::prelude::Signal;
 use teksilo::text_document::{Color, HighlightFormat};
 use teksilo::widgets::rich_text::caret_highlight::{CaretHighlight, CaretHighlightScope};
-use serde::{Deserialize, Serialize};
 
 /// How much text around the caret is shaded while you write.
 ///

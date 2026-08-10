@@ -530,8 +530,8 @@ impl Widget for FormatDock {
 mod tests {
     use super::*;
     use crate::view_models::FormatSurface;
-    use teksilo::core::widget_tree::WidgetTree;
     use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
 
     /// A view-model with nothing focused — enough to build the dock, since the
     /// dock reads groups and signals, never the editor directly.

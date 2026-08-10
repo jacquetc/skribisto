@@ -240,9 +240,9 @@ mod tests {
     use crate::app_ids::AppIds;
     use crate::docks::TRASH_DOCK_ID;
     use crate::models::TrashTreeModel;
+    use frontend::AppContext;
     use teksilo::prelude::SizeProposal;
     use teksilo::widgets::{DockWidgetId, DockingModel};
-    use frontend::AppContext;
 
     fn trash_vm(app_ctx: &std::rc::Rc<AppContext>) -> TrashViewModel {
         let ids = AppIds::default();

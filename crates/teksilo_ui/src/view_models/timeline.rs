@@ -60,9 +60,9 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
+use chrono::{DateTime, Utc};
 use teksilo::prelude::{AsyncRuntimeHandle, Signal, spawn_blocking};
 use teksilo::widgets::DateRange;
-use chrono::{DateTime, Utc};
 
 use common::entities::ContentRole;
 use skrib_format::versions::{

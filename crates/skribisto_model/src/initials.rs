@@ -68,7 +68,10 @@ mod tests {
 
     #[test]
     fn a_long_name_is_capped() {
-        assert_eq!(initials_from_name("One Two Three Four Five").len(), MAX_INITIALS);
+        assert_eq!(
+            initials_from_name("One Two Three Four Five").len(),
+            MAX_INITIALS
+        );
     }
 
     #[test]

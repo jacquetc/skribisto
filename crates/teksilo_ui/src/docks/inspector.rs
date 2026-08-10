@@ -13,6 +13,7 @@
 
 use std::rc::Rc;
 
+use jiff::civil::Date;
 use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
@@ -20,7 +21,6 @@ use teksilo::widgets::{
     Button, ButtonVariant, DateEdit, DockOpenLocation, DockSide, DockWidget, DockWidgetId, HStack,
     Padding, PopoverButton, TextWidget, Toggle, VStack,
 };
-use jiff::civil::Date;
 
 use frontend::AppContext;
 use frontend::commands::{binder_commands, binder_item_commands, work_commands};

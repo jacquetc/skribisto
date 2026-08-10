@@ -11,9 +11,9 @@
 //! fallible (`jiff` years are `i16`); a corrupt out-of-range date reads as `None` (treated
 //! as "no date"), never a panic.
 
-use teksilo::widgets::DateRange;
 use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use jiff::civil::Date;
+use teksilo::widgets::DateRange;
 
 /// Today, as the version surfaces date their rows.
 ///

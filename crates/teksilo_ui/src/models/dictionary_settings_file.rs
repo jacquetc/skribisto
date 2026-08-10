@@ -27,10 +27,10 @@
 
 use std::rc::Rc;
 
+use serde::{Deserialize, Serialize};
 use teksilo::settings::{
     AppPaths, Migrator, Reloadable, SettingsFile, SettingsFileError, Versioned,
 };
-use serde::{Deserialize, Serialize};
 
 /// One accepted-licence record.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]

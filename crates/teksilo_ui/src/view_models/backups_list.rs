@@ -374,10 +374,10 @@ mod tests {
     /// to ONE entry if the id were ever bare again.
     #[test]
     fn delete_failure_toasts_for_two_works_both_stay_live_in_a_real_registry() {
-        use teksilo::i18n::lit;
-        use teksilo::widgets::{Button, ToastInstallOptions, ToastRegistry};
         use frontend::AppContext;
         use std::rc::Rc;
+        use teksilo::i18n::lit;
+        use teksilo::widgets::{Button, ToastInstallOptions, ToastRegistry};
 
         let vm_a = BackupsListViewModel::new(String::new(), String::new(), Vec::new(), Some(1));
         let vm_b = BackupsListViewModel::new(String::new(), String::new(), Vec::new(), Some(2));

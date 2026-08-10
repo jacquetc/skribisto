@@ -692,9 +692,9 @@ impl Widget for ChipsRow {
 mod tests {
     use super::*;
     use crate::app_ids::AppIds;
-    use teksilo::core::widget_tree::WidgetTree;
     use frontend::AppContext;
     use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
 
     /// The whole panel — title strip, both body columns, and the footer — must
     /// build and lay out headlessly at the modal's card size.

@@ -69,7 +69,9 @@ fn a_line_break_inside_a_comment_becomes_a_paragraph_break() {
          meant two. body = {body:?}"
     );
     assert_eq!(
-        skrib_format::djot_plain_text(&body).expect("the body is Djot").0,
+        skrib_format::djot_plain_text(&body)
+            .expect("the body is Djot")
+            .0,
         "Cut this paragraph?\nIt repeats ch. 3.",
         "two paragraphs, joined by exactly one newline when read back. body = {body:?}"
     );
@@ -84,7 +86,9 @@ fn two_paragraphs_written_with_enter_still_arrive_as_two() {
     ));
 
     assert_eq!(
-        skrib_format::djot_plain_text(&body).expect("the body is Djot").0,
+        skrib_format::djot_plain_text(&body)
+            .expect("the body is Djot")
+            .0,
         "Cut this paragraph?\nIt repeats ch. 3.",
         "body = {body:?}"
     );
@@ -100,7 +104,9 @@ fn a_tab_inside_a_comment_stays_a_space() {
     ));
 
     assert_eq!(
-        skrib_format::djot_plain_text(&body).expect("the body is Djot").0,
+        skrib_format::djot_plain_text(&body)
+            .expect("the body is Djot")
+            .0,
         "Cut this? It repeats.",
         "body = {body:?}"
     );
@@ -115,7 +121,9 @@ fn consecutive_line_breaks_do_not_make_empty_paragraphs() {
     ));
 
     assert_eq!(
-        skrib_format::djot_plain_text(&body).expect("the body is Djot").0,
+        skrib_format::djot_plain_text(&body)
+            .expect("the body is Djot")
+            .0,
         "First.\nSecond.",
         "body = {body:?}"
     );

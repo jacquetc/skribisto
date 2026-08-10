@@ -53,11 +53,11 @@ use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use teksilo::prelude::*;
-use teksilo::widgets::{MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton};
 use frontend::commands::work_management_commands;
 use frontend::work_management::CloseWorkDto;
 use frontend::{AppContext, Event};
+use teksilo::prelude::*;
+use teksilo::widgets::{MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton};
 
 use crate::app::PendingExit;
 use crate::sessions::{WorkRegistry, WorkSession};

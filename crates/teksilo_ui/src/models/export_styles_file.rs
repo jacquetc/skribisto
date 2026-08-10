@@ -22,11 +22,11 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use serde::{Deserialize, Serialize};
+use skribisto_compiler::{Preset, builtin_presets};
 use teksilo::settings::{
     AppPaths, Migrator, Reloadable, SettingsFile, SettingsFileError, Versioned,
 };
-use serde::{Deserialize, Serialize};
-use skribisto_compiler::{Preset, builtin_presets};
 
 /// The persisted user styles: a version stamp + each user preset as a JSON string.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

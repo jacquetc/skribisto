@@ -18,12 +18,12 @@
 //! than Word's (compress by default, with a per-document switch users routinely
 //! report as not working).
 
+use frontend::AppContext;
 use teksilo::prelude::*;
 use teksilo::settings::SettingsExt;
 use teksilo::widgets::{
     InputDialog, MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton, Toast,
 };
-use frontend::AppContext;
 
 use crate::toast_scope::ToastWorkExt;
 use crate::view_models::images::{self, PendingImage, SizePolicy};

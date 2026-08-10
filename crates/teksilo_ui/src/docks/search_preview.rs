@@ -472,11 +472,11 @@ fn footnote_empty_state(vm: &SearchReplaceViewModel) -> impl Widget {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use teksilo::core::widget_tree::WidgetTree;
-    use teksilo::prelude::SizeProposal;
     use frontend::AppContext;
     use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
     use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
+    use teksilo::prelude::SizeProposal;
 
     use crate::app_ids::AppIds;
     use crate::models::{OpenDocsStore, SearchResultsModel, SearchSettingsService};

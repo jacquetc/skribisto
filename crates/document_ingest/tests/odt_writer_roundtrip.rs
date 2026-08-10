@@ -47,7 +47,9 @@
 
 use document_ingest::{AnnotationKind, ScannerRegistry, SourceBlock, SourceDocument};
 use std::path::Path;
-use text_document::{CommentReply, DocumentComment, DocumentComments, FindOptions, OdtExportOptions};
+use text_document::{
+    CommentReply, DocumentComment, DocumentComments, FindOptions, OdtExportOptions,
+};
 
 /// Djot chosen to exercise headings, inline formatting, a hyperlink, a nested list, and a
 /// blockquote — everything `document_ingest::sources::odt`'s reader actually turns into
@@ -150,7 +152,10 @@ fn the_odt_writer_produces_a_file_this_crates_odt_reader_recognises_and_reads_ba
         prose.contains("The city held its breath before the"),
         "prose text missing: {prose:?}"
     );
-    assert!(prose.contains("storm"), "the italicised word must survive as text: {prose:?}");
+    assert!(
+        prose.contains("storm"),
+        "the italicised word must survive as text: {prose:?}"
+    );
     assert!(
         prose.contains("Aurélien"),
         "a non-ASCII character must survive byte-for-byte: {prose:?}"
@@ -335,10 +340,18 @@ fn a_resolved_comment_thread_with_a_rich_body_and_a_reply_round_trips() {
         annotation.body
     );
 
-    assert_eq!(annotation.replies.len(), 1, "the reply must survive as one thread member");
+    assert_eq!(
+        annotation.replies.len(),
+        1,
+        "the reply must survive as one thread member"
+    );
     let reply = &annotation.replies[0];
     assert_eq!(reply.author, "Bob Writer");
-    assert_eq!(reply.uid, Some(reply_uid), "a reply's own uid must survive too");
+    assert_eq!(
+        reply.uid,
+        Some(reply_uid),
+        "a reply's own uid must survive too"
+    );
     assert!(
         reply.body.contains("Good catch") && reply.body.contains("fix"),
         "reply body text missing: {:?}",
@@ -383,9 +396,17 @@ fn an_unresolved_comment_thread_stays_unresolved() {
     );
     let source = scan(&bytes);
 
-    assert_eq!(source.annotations.len(), 1, "diagnostics: {:?}", source.diagnostics);
+    assert_eq!(
+        source.annotations.len(),
+        1,
+        "diagnostics: {:?}",
+        source.diagnostics
+    );
     let annotation = &source.annotations[0];
-    assert!(!annotation.resolved, "an unresolved thread must not come back resolved");
+    assert!(
+        !annotation.resolved,
+        "an unresolved thread must not come back resolved"
+    );
     assert_eq!(annotation.anchor.exact, "second, unrelated paragraph");
     assert!(annotation.body.contains("Still needs a look."));
 }
@@ -434,7 +455,12 @@ fn two_comments_on_two_different_paragraphs_both_survive_independently() {
     );
     let source = scan(&bytes);
 
-    assert_eq!(source.annotations.len(), 2, "diagnostics: {:?}", source.diagnostics);
+    assert_eq!(
+        source.annotations.len(),
+        2,
+        "diagnostics: {:?}",
+        source.diagnostics
+    );
     let mut by_author: Vec<(&str, &str)> = source
         .annotations
         .iter()
@@ -481,7 +507,12 @@ fn a_comment_with_no_uid_reads_back_as_none() {
     );
     let source = scan(&bytes);
 
-    assert_eq!(source.annotations.len(), 1, "diagnostics: {:?}", source.diagnostics);
+    assert_eq!(
+        source.annotations.len(),
+        1,
+        "diagnostics: {:?}",
+        source.diagnostics
+    );
     assert_eq!(
         source.annotations[0].uid, None,
         "an empty skrb:uid must not parse as a real uid"

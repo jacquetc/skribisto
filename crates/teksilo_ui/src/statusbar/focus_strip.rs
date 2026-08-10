@@ -379,12 +379,12 @@ impl Widget for FocusStrip {
 mod tests {
     use super::*;
     use crate::models::{OpenDocsStore, StatsModel};
-    use teksilo::core::accesskit::Role;
-    use teksilo::core::widget_tree::WidgetTree;
     use frontend::AppContext;
     use skribisto_model::counting::CountingMethodSetting;
     use std::rc::Rc;
     use std::sync::atomic::{AtomicU32, Ordering};
+    use teksilo::core::accesskit::Role;
+    use teksilo::core::widget_tree::WidgetTree;
 
     fn temp_store() -> teksilo::settings::SettingsStore {
         static N: AtomicU32 = AtomicU32::new(0);

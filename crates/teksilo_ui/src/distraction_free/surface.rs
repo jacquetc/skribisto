@@ -378,12 +378,12 @@ mod tests {
         FocusViewModel, GoToViewModel, SaveStateViewModel, Side, SurfaceDeps, ViewState,
         WritingSessionViewModel,
     };
-    use teksilo::core::widget_tree::WidgetTree;
     use frontend::AppContext;
     use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
     use skribisto_model::counting::CountingMethodSetting;
     use std::rc::Rc;
     use std::sync::atomic::{AtomicU32, Ordering};
+    use teksilo::core::widget_tree::WidgetTree;
 
     const NORMAL_COLUMN: f32 = 700.0;
     const SURFACE_COLUMN: f32 = 420.0;

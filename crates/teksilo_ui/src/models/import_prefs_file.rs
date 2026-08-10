@@ -27,8 +27,8 @@
 
 use std::time::Duration;
 
-use teksilo::settings::{AppPaths, Migrator, SettingsFile, SettingsFileError, Versioned};
 use serde::{Deserialize, Serialize};
+use teksilo::settings::{AppPaths, Migrator, SettingsFile, SettingsFileError, Versioned};
 
 use super::BinderTreeKey;
 

@@ -9,7 +9,7 @@
 //! a session `register` (attach already bumped the refcount). One function so
 //! the three paths cannot drift.
 
-use teksilo::prelude::{TeksiloWindowId, Signal};
+use teksilo::prelude::{Signal, TeksiloWindowId};
 use teksilo::widgets::{ToastAudience, ToastRegistry};
 
 use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry};

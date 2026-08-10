@@ -185,8 +185,8 @@ mod tests {
     // a real widget through a real `WidgetTree`, so what runs is the closure
     // that was actually handed to `ctx.effect`.
 
-    use teksilo::core::widget_tree::WidgetTree;
     use std::rc::Rc as StdRc;
+    use teksilo::core::widget_tree::WidgetTree;
 
     /// A widget that wires one coalescer and counts its reloads.
     struct Probe {

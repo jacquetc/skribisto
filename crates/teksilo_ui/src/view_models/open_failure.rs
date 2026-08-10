@@ -30,10 +30,10 @@
 //! the generic chain, which is why `skrib_format` types it
 //! ([`SkribFormatError::TooNew`]) instead of leaving the UI to pattern-match prose.
 
+use skrib_format::SkribFormatError;
 use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::widgets::Toast;
-use skrib_format::SkribFormatError;
 
 /// The toast for a failed `load_work` on `path`.
 ///

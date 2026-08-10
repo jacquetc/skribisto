@@ -443,9 +443,9 @@ impl Widget for Pill {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::Cell;
     use teksilo::core::widget_tree::WidgetTree;
     use teksilo::widgets::IconWidget;
-    use std::cell::Cell;
 
     /// The visible chip's height, i.e. what `place_children` actually placed. The `Pill`
     /// widget itself is the test's root and so is handed the window-sized proposal whatever

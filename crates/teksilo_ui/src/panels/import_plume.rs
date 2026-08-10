@@ -247,9 +247,9 @@ impl Widget for ImportPlumePanel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use teksilo::core::widget_tree::WidgetTree;
     use frontend::AppContext;
     use std::rc::Rc;
+    use teksilo::core::widget_tree::WidgetTree;
 
     /// The whole panel — header, the `FormLayout` body (two `FilePickerField`s,
     /// a `TextInput`, the preview, the warning), and the footer — must build and

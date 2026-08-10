@@ -60,8 +60,10 @@ pub fn create_orphan_multi(
     entities: &[CreateCommentDto],
 ) -> Result<Vec<CommentDto>> {
     let uow_factory = CommentWriteUoWFactory::new(db_context, event_hub);
-    let entities_in: Vec<common::entities::Comment> =
-        entities.iter().map(|dto| with_identity(dto.into())).collect();
+    let entities_in: Vec<common::entities::Comment> = entities
+        .iter()
+        .map(|dto| with_identity(dto.into()))
+        .collect();
     let mut uc = use_cases::UndoableCreateOrphanUseCase::new(uow_factory);
     let result = uc.execute_multi(&entities_in)?;
     undo_redo_manager.add_command_to_stack(Box::new(uc), stack_id)?;
@@ -96,8 +98,10 @@ pub fn create_multi(
     index: i32,
 ) -> Result<Vec<CommentDto>> {
     let uow_factory = CommentWriteUoWFactory::new(db_context, event_hub);
-    let entities_in: Vec<common::entities::Comment> =
-        entities.iter().map(|dto| with_identity(dto.into())).collect();
+    let entities_in: Vec<common::entities::Comment> = entities
+        .iter()
+        .map(|dto| with_identity(dto.into()))
+        .collect();
     let strategy = use_cases::OwnerStrategy::Appending;
     let mut uc = use_cases::UndoableCreateUseCase::new(uow_factory, strategy);
     let result = uc.execute_multi(&entities_in, owner_id, index)?;

@@ -10,8 +10,8 @@
 //! of thing the house rules keep out of `build()` — and because both the pane
 //! and the editor wiring read it.
 
-use teksilo::prelude::Signal;
 use serde::{Deserialize, Serialize};
+use teksilo::prelude::Signal;
 
 /// Where the caret's line is held on screen while typewriter scrolling is on.
 ///

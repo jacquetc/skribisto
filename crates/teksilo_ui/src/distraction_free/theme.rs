@@ -55,8 +55,8 @@
 //! and `tags::presets`: type-safe, and they cannot fail to parse at runtime. They
 //! are read-only — the settings pane offers Duplicate on them and nothing else.
 
-use teksilo::tokens::Color;
 use serde::{Deserialize, Serialize};
+use teksilo::tokens::Color;
 
 /// Which light/dark base a theme's colours sit on.
 ///

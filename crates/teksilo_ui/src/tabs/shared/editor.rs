@@ -2789,8 +2789,8 @@ impl Widget for CenterColumnFlowing {
 #[cfg(all(test, feature = "mocks"))]
 mod frame_loop_tests {
     use super::*;
-    use teksilo::core::widget_tree::WidgetTree;
     use frontend::AppContext;
+    use teksilo::core::widget_tree::WidgetTree;
 
     use crate::app_ids::AppIds;
     use crate::models::TextReplacementRuleListModel;

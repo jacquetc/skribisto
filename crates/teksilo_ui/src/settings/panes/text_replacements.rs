@@ -556,8 +556,8 @@ fn empty_state() -> impl Widget {
 mod tests {
     use std::rc::Rc;
 
-    use teksilo::prelude::SizeProposal;
     use frontend::AppContext;
+    use teksilo::prelude::SizeProposal;
 
     use super::*;
     use crate::app_ids::AppIds;

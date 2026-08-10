@@ -76,11 +76,10 @@ mod zip_io;
 pub use bundle::{
     BinderFile, BinderItemFile, BinderTagFile, BinderWithItems, BundleKind, BundledBinder,
     BundledItem, CarriedFile, CommentFile, CommentReplyFile, CommentWithReplies, DictWordFile,
-    FORMAT_VERSION,
-    FootnoteFile, FootnoteWithContent, HolidayFile, InlineContent, ItemWithContents, ItemsFile,
-    MilestoneFile, NoteTemplateFile, PaceFile, PaceWithChildren, ProgressSnapshotFile,
-    ProjectManifest, ProseRef, ShapeTag, SmartPunctuationFile, TextReplacementRuleFile,
-    TrashInfoFile, WorkBundle, WorkFile,
+    FORMAT_VERSION, FootnoteFile, FootnoteWithContent, HolidayFile, InlineContent,
+    ItemWithContents, ItemsFile, MilestoneFile, NoteTemplateFile, PaceFile, PaceWithChildren,
+    ProgressSnapshotFile, ProjectManifest, ProseRef, ShapeTag, SmartPunctuationFile,
+    TextReplacementRuleFile, TrashInfoFile, WorkBundle, WorkFile,
 };
 pub use convert::{
     djot_plain_text, html_to_djot, html_to_djot_and_text, markdown_to_djot,
