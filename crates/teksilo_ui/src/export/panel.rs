@@ -28,8 +28,8 @@ use teksilo::i18n::LocalizedString;
 use teksilo::prelude::*;
 use teksilo::widgets::{
     Badge, Button, ButtonVariant, ComboBox, Divider, Expand, FilePickerField, FilePickerKind,
-    FixedSize, HStack, IconButton, Padding, Panel, RadioTile, RadioTileGroup, Segment,
-    SegmentedControl, Spacer, TextWidget, TileLayout, Toggle, VStack, Wrap,
+    FixedSize, HStack, IconButton, Padding, Panel, Segment, SegmentSizing, SegmentedControl,
+    Spacer, TextWidget, Toggle, VStack, Wrap,
 };
 
 use export_management::{ExportFormat, ExportScopeKind};
@@ -116,7 +116,7 @@ fn place_fill(bounds: Rect, children: &mut [WidgetPlacement]) {
     }
 }
 
-/// The `.ext` suffix shown on a format tile.
+/// The `.ext` suffix shown in a format segment's tooltip.
 fn format_ext(f: &ExportFormat) -> &'static str {
     match f {
         ExportFormat::Docx => ".docx",
@@ -131,23 +131,20 @@ fn format_ext(f: &ExportFormat) -> &'static str {
     }
 }
 
-/// The Format picker — a wrapping grid of format cards (title + extension). An `ExportPanel`
-/// effect keeps the destination extension in step with the choice.
-fn format_grid(vm: &ExportViewModel) -> RadioTileGroup {
-    let mut grid = RadioTileGroup::new(vm.format_index())
-        .layout(TileLayout::Grid {
-            min_tile_width: 122.0,
-        })
-        .spacing(7.0)
-        .line_spacing(7.0);
+/// The Format picker — a segmented control over the fixed format list (`indexed`: the list
+/// is closed and local, so the positional binding is the meaning). Formats that don't fit
+/// the strip land in the trailing chevron menu, with the selected one always visible;
+/// `Fit` sizing keeps more of the varied-width labels on the strip than uniform slots
+/// would. Each segment's tooltip carries the file extension the tile description used to
+/// show. An `ExportPanel` effect keeps the destination extension in step with the choice.
+fn format_control(vm: &ExportViewModel) -> SegmentedControl {
+    let mut control = SegmentedControl::indexed(vm.format_index())
+        .label(tr!(export_format_label()))
+        .sizing(SegmentSizing::Fit);
     for f in ExportViewModel::panel_formats() {
-        grid = grid.tile(
-            RadioTile::new()
-                .title(format_label(f))
-                .description(lit!(format_ext(f))),
-        );
+        control = control.segment(Segment::new(format_label(f)).tooltip(lit!(format_ext(f))));
     }
-    grid
+    control
 }
 
 /// The Destination save-file field, seeded with the current output path + format filter.
@@ -440,7 +437,7 @@ impl Widget for OptionsColumn {
 
         let col = VStack::new()
             .spacing(18.0)
-            .child(section(tr!(export_format_label()), format_grid(&self.vm)))
+            .child(section(tr!(export_format_label()), format_control(&self.vm)))
             .child(self.style_section(catalogue))
             .child(section(
                 tr!(export_section_destination()),

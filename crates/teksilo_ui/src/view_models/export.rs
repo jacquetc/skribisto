@@ -552,7 +552,7 @@ impl ExportViewModel {
         ]
     }
 
-    /// The formats the picker offers (one `RadioTile` each).
+    /// The formats the picker offers (one segment each).
     pub fn panel_formats() -> &'static [ExportFormat] {
         &PANEL_FORMATS
     }
