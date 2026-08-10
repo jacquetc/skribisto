@@ -710,18 +710,54 @@ fn is_reply_citation(text: &str) -> bool {
     let Some(boundary) = boundary else {
         return false;
     };
-    // A parenthesised group before it, holding a full timestamp: a clock time (`:` between
-    // digits) *and* a date (a `/`, `-` or `.` between digits), with at least four digits
-    // between them. Both halves are required because either alone also describes an ordinary
-    // editorial note — `(10/14)`, `(p. 231)` — and this runs on every reply of every file,
-    // whichever application wrote it.
+    // A parenthesised group before it holding **nothing but a timestamp**.
+    //
+    // Asking only that the group *contain* a date-ish and a time-ish pair is not enough, and
+    // that mistake has now been made twice: `(9:15-10:30)`, `(John 3:16, Matt 5:3-12)` and
+    // `(ch. 3:16-5:22)` all satisfy it, and all three are things an editor writes. What
+    // actually distinguishes a machine-written timestamp is that there is nothing else in
+    // there — no words, no prose. So the whole group must be digits, separators and space,
+    // with at most a trailing meridiem, and must hold a date *and* a time separated by a
+    // comma, which is the shape every locale writes this in.
     let Some(open) = text[..boundary].rfind('(') else {
         return false;
     };
-    let inside = &text[open + 1..boundary];
-    inside.chars().filter(char::is_ascii_digit).count() >= 4
-        && separates_digits(inside, &[':'])
-        && separates_digits(inside, &['/', '-', '.'])
+    is_timestamp(&text[open + 1..boundary])
+}
+
+/// Whether `group` is a bare date-and-time stamp and nothing else.
+///
+/// ⚠ Deliberately ASCII-numeric. A locale that spells the date in its own script — Japanese
+/// `2026年8月10日`, Arabic-Indic digits — fails this and the citation is *kept*, which is the
+/// documented default: an editor's words showing up under an odd prefix is a blemish, and an
+/// editor's words disappearing is data loss.
+fn is_timestamp(group: &str) -> bool {
+    let group = group.trim();
+    // A meridiem is the one word allowed, and only at the end.
+    let core = ["AM", "PM", "am", "pm", "A.M.", "P.M."]
+        .iter()
+        .find_map(|m| group.strip_suffix(m))
+        .unwrap_or(group)
+        .trim();
+
+    // Date and time, in that order, separated by the comma every locale puts between them.
+    let Some((date, time)) = core.split_once(',') else {
+        return false;
+    };
+    // Nothing but digits and the separators a stamp is built from — this is what rejects
+    // `John 3:16, Matt 5:3-12`, where both halves are otherwise convincing.
+    let numeric = |s: &str| {
+        let s = s.trim();
+        !s.is_empty()
+            && s.chars()
+                .all(|c| c.is_ascii_digit() || matches!(c, '/' | '-' | '.' | ':' | ' '))
+    };
+    numeric(date)
+        && numeric(time)
+        // Two components each, at least: a bare `(2026, 9)` is not a timestamp.
+        && separates_digits(date, &['/', '-', '.'])
+        && separates_digits(time, &[':', '.'])
+        && core.chars().filter(char::is_ascii_digit).count() >= 6
 }
 
 /// Whether any of `seps` appears in `text` with a digit on both sides.
@@ -1419,8 +1455,41 @@ mod tests {
             "As we agreed (rev. 3.2): \"this chapter stays\"",
             "She said it herself (twice): \"I am not going\"",
             "Compare chapters 4-5 with 11-12: \"the same beat\"",
+            // These three survived the first tightening — "contains a date-ish pair and a
+            // time-ish pair" is satisfied by a time range, a scripture reference and a
+            // chapter-and-verse span. What rules them out is that a real stamp holds nothing
+            // but digits and separators.
+            "Confirm the schedule (9:15-10:30): \"keep as is\"",
+            "As discussed (John 3:16, Matt 5:3-12): \"consider these verses\"",
+            "Check the timeline (ch. 3:16-5:22): \"way too fast\"",
         ] {
             assert!(!is_reply_citation(line), "wrongly eaten: {line}");
+        }
+    }
+
+    /// The timestamp test on its own, since it is what carries the whole judgement.
+    #[test]
+    fn a_bare_stamp_is_told_from_anything_a_person_would_write() {
+        for stamp in [
+            "10/08/2026, 09:27",
+            "2026-08-10, 09:27",
+            "10.08.2026, 09.27",
+            "08/10/2026, 9:27 AM",
+            " 10/08/2026 , 09:27:31 ",
+        ] {
+            assert!(is_timestamp(stamp), "not a stamp: {stamp:?}");
+        }
+        for not in [
+            "9:15-10:30",
+            "John 3:16, Matt 5:3-12",
+            "ch. 3:16-5:22",
+            "2026, 9",
+            "p. 231",
+            "",
+            "10/08/2026",
+            "see fig. 3, table 4",
+        ] {
+            assert!(!is_timestamp(not), "wrongly a stamp: {not:?}");
         }
     }
 

@@ -356,15 +356,26 @@ impl ApplyDocumentImportUseCase {
                 // writer believing their remarks came home. Nothing has been written yet — the
                 // whole import is one transaction — so refusing puts them back on the wizard
                 // with the row still there to untick or retype.
-                if !djot.trim().is_empty() || !comments.is_empty() {
+                // What would actually be lost, which is not the same as what the row carries.
+                // A comments-only update never writes its `djot` — the writer asked for the
+                // remarks and nothing else — so prose it was never going to store is not a
+                // loss, and refusing over it would abort an ordinary re-import. Only prose an
+                // update *would* have written, and comments, count.
+                let prose_at_risk = *replace_prose && !djot.trim().is_empty();
+                if prose_at_risk || !comments.is_empty() {
                     return Err(anyhow!(
                         "apply_document_import: a returning row brings {} comment(s) and \
                          {} character(s) of prose home to a row that stores none",
                         comments.len(),
-                        djot.trim().chars().count()
+                        if prose_at_risk {
+                            djot.trim().chars().count()
+                        } else {
+                            0
+                        }
                     ));
                 }
-                // Nothing to lose: an empty row matched an empty row.
+                // Nothing to lose: either the row was empty, or the only thing it carried is
+                // prose this update was not going to write anyway.
                 continue;
             };
 

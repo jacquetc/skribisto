@@ -2268,6 +2268,41 @@ fn an_update_onto_a_row_that_stores_no_prose_refuses_rather_than_dropping_it() {
     assert!(ctx.comments().is_empty(), "no comment was written");
 }
 
+/// Comments-only onto a prose-less row is not a loss, so it must not refuse.
+///
+/// The refusal above asks what would be *lost*, which is not what the row carries: a
+/// comments-only update never writes its prose — the writer asked for the remarks and nothing
+/// else — so prose it was never going to store is nothing to lose. Refusing over it aborted
+/// an ordinary re-import, and the wizard could not have warned the writer first: its own
+/// blocking check cannot see this shape, so Import stayed enabled and failed on press.
+#[test]
+fn comments_only_onto_a_prose_less_row_does_not_refuse_over_prose_it_would_not_write() {
+    let mut ctx = Ctx::new();
+    let (chapter, _) = a_project_with_one_row(&mut ctx);
+
+    let book = a_row_that_stores_no_prose(&mut ctx);
+    let uid = binder_item_controller::get(&ctx.db, &book)
+        .expect("item")
+        .expect("item row")
+        .uid;
+    let tag = skribisto_model::round_trip::uid_tag(&uid);
+
+    // Carries prose, and is explicitly not going to write it.
+    ctx.try_apply_rows(vec![update_row(
+        &tag,
+        false,
+        "Front matter the row cannot hold anyway.",
+        Vec::new(),
+    )])
+    .expect("a comments-only update must not abort over prose it would not write");
+
+    assert_eq!(
+        ctx.prose_of(chapter).as_deref(),
+        Some("The original wording."),
+        "and nothing else moved"
+    );
+}
+
 /// The same shape carrying nothing is not an error — an empty row matched an empty row, and
 /// there is no loss to report.
 #[test]
