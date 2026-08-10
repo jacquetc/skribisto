@@ -392,7 +392,7 @@ impl SaveStateViewModel {
 /// ## What it closes
 ///
 /// `unsaved` is derived from `dirty_seq > saved_seq` and nothing else, and
-/// `dirty_seq` is bumped only by editor typing and a fixed list of thirteen
+/// `dirty_seq` is bumped only by editor typing and a fixed whitelist of
 /// entity events (`App::mutation_origins`). An extension's state — which may
 /// have no backend entity at all — is invisible to that list *by construction*.
 /// So an extension edit left the project reading clean, and Close/Quit/switch

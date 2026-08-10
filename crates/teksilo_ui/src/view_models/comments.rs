@@ -822,7 +822,15 @@ impl CommentsViewModel {
     /// Called at flush, not per keystroke: the backend only observes prose at
     /// flush granularity anyway, and a write per keystroke would flood the undo
     /// stack with anchor updates.
+    ///
+    /// Only anchors that actually moved are written — the same guard
+    /// [`Self::reanchor`] carries, and here it is load-bearing beyond tidiness:
+    /// `Comment(Updated)` is one of `app::mutation_origins`'s dirty-marking
+    /// events, so an unconditional write on every flush would mark the project
+    /// unsaved *during its own save*, re-arm the autosave debounce, and loop —
+    /// the exact failure mode `Content` events are excluded from that list for.
     pub fn persist_live_anchors(&self, live: &[LiveAnchor], stack_id: Option<u64>) {
+        let rows = self.model.rows();
         for a in live {
             let resolution = if a.end > a.start {
                 Resolution::Anchored {
@@ -832,7 +840,20 @@ impl CommentsViewModel {
             } else {
                 Resolution::Orphan(CommentOrphanReason::TextNotFound)
             };
-            self.model.set_anchor(a.comment_id, &resolution, stack_id);
+            let Some(row) = rows.iter().find(|r| r.id == a.comment_id) else {
+                continue; // deleted under the tracker — nothing to write to
+            };
+            let changed = match &resolution {
+                Resolution::Anchored { start, length } => {
+                    row.orphaned
+                        || *start as u64 != row.range_start
+                        || *length as u64 != row.range_length
+                }
+                Resolution::Orphan(reason) => !row.orphaned || *reason != row.orphan_reason,
+            };
+            if changed {
+                self.model.set_anchor(a.comment_id, &resolution, stack_id);
+            }
         }
     }
 
@@ -1129,6 +1150,126 @@ mod tests {
             reply_doc.to_djot().unwrap(),
             "reply draft",
             "the reply IS the turn being edited, so it must not be clobbered"
+        );
+    }
+}
+
+/// [`CommentsViewModel::persist_live_anchors`]' no-op guard, against the real
+/// store: `Comment(Updated)` is a dirty-marking event (`app::mutation_origins`),
+/// so a flush that writes unmoved anchors would mark the project unsaved during
+/// its own save and loop the autosave debounce. The guard is only provable
+/// through the real write path — the write it must skip is a backend command.
+#[cfg(all(test, not(feature = "mocks")))]
+mod persist_tests {
+    use super::*;
+    use frontend::commands::{comment_commands, content_commands, work_commands};
+    use frontend::common::entities::ContentRole;
+    use frontend::direct_access::{CreateContentDto, CreateWorkDto};
+
+    fn now() -> chrono::DateTime<chrono::Utc> {
+        chrono::Utc::now()
+    }
+
+    /// A VM over a real Work with one range comment on one prose row.
+    fn vm_with_comment() -> (CommentsViewModel, u64) {
+        let ctx = Rc::new(AppContext::new());
+        let ids = crate::app_ids::AppIds::new();
+        let work = work_commands::create_orphan_work(
+            &ctx,
+            None,
+            &CreateWorkDto {
+                created_at: now(),
+                updated_at: now(),
+                title: "W".into(),
+                ..Default::default()
+            },
+        )
+        .expect("create work")
+        .id;
+        ids.work_id.set(Some(work));
+        let content = content_commands::create_orphan_content(
+            &ctx,
+            None,
+            &CreateContentDto {
+                uid: Default::default(),
+                created_at: now(),
+                updated_at: now(),
+                activated: true,
+                role: ContentRole::SceneText,
+                data: "The lamp guttered.".into(),
+            },
+        )
+        .expect("create content")
+        .id;
+
+        let vm = CommentsViewModel::new(
+            CommentsListModel::new(ctx.clone(), ids),
+            ctx,
+            Signal::new(None),
+        );
+        let text = "The lamp guttered.";
+        let a = anchor::capture(text, 4, 8, 0); // "lamp"
+        let id = vm
+            .model()
+            .create(content, CommentAnchorKind::Range, "Jane", "note", &a, None)
+            .expect("create comment through the model");
+        (vm, id)
+    }
+
+    #[test]
+    fn an_unmoved_anchor_is_not_written_back_at_flush() {
+        let (vm, id) = vm_with_comment();
+        let before = comment_commands::get_comment(&vm.app_ctx, &id)
+            .expect("read comment")
+            .expect("comment exists");
+
+        vm.persist_live_anchors(
+            &[LiveAnchor {
+                comment_id: id,
+                start: before.range_start as usize,
+                end: (before.range_start + before.range_length) as usize,
+                is_paragraph: false,
+                resolved: false,
+            }],
+            None,
+        );
+
+        let after = comment_commands::get_comment(&vm.app_ctx, &id)
+            .expect("read comment")
+            .expect("comment exists");
+        assert_eq!(
+            after.updated_at, before.updated_at,
+            "an unmoved anchor must not be rewritten — the write raises \
+             Comment(Updated), which re-dirties the project mid-save"
+        );
+    }
+
+    #[test]
+    fn a_moved_anchor_is_still_persisted() {
+        let (vm, id) = vm_with_comment();
+        let before = comment_commands::get_comment(&vm.app_ctx, &id)
+            .expect("read comment")
+            .expect("comment exists");
+
+        vm.persist_live_anchors(
+            &[LiveAnchor {
+                comment_id: id,
+                start: before.range_start as usize + 2,
+                end: (before.range_start + before.range_length) as usize + 2,
+                is_paragraph: false,
+                resolved: false,
+            }],
+            None,
+        );
+
+        let after = comment_commands::get_comment(&vm.app_ctx, &id)
+            .expect("read comment")
+            .expect("comment exists");
+        assert_eq!(
+            after.range_start,
+            before.range_start + 2,
+            "a genuinely moved anchor must still reach the store — the guard \
+             skips no-ops, not the write-back itself"
         );
     }
 }

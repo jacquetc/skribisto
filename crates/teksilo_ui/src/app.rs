@@ -38,9 +38,11 @@ use teksilo::widgets::{
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_commands, undo_redo_commands, work_commands, work_management_commands,
+    binder_commands, comment_commands, undo_redo_commands, work_commands,
+    work_management_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
+use frontend::common::direct_access::comment::CommentRelationshipField;
 use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 use frontend::work_management::{CloseWorkDto, LoadWorkDto, NewWorkDto};
@@ -944,8 +946,20 @@ fn open_search_settings() -> crate::models::SearchSettingsService {
 /// autosave debounce). Editor *typing* is caught separately via the editors'
 /// `edited` signal; `Content` events (which fire only on flush) are excluded so a
 /// save's own flush doesn't loop the debounce.
+///
+/// `Comment`/`CommentReply`/`Footnote` are here because their bodies are edited
+/// in surfaces that are **not** the manuscript editors — the margin card and the
+/// footnotes dock commit through the generated `update_*` commands, so their
+/// events are the only signal an edit happened at all. They were missing at
+/// first, and a comment edited then closed was silently discarded with no
+/// prompt. A kind may only join this list once its write paths are checked for
+/// flush- or open-driven **unconditional** writes (the `Content` failure mode):
+/// `CommentsViewModel::persist_live_anchors`/`reanchor` and
+/// `FootnotesListModel::set_body` all skip no-op writes for exactly this reason.
 fn mutation_origins() -> Vec<Origin> {
-    use DirectAccessEntity::{Binder, BinderItem, BinderTag, DictWord, Work};
+    use DirectAccessEntity::{
+        Binder, BinderItem, BinderTag, Comment, CommentReply, DictWord, Footnote, Work,
+    };
     let mut v = Vec::new();
     for ent in [
         Work(EntityEvent::Updated),
@@ -961,6 +975,15 @@ fn mutation_origins() -> Vec<Origin> {
         DictWord(EntityEvent::Created),
         DictWord(EntityEvent::Updated),
         DictWord(EntityEvent::Removed),
+        Comment(EntityEvent::Created),
+        Comment(EntityEvent::Updated),
+        Comment(EntityEvent::Removed),
+        CommentReply(EntityEvent::Created),
+        CommentReply(EntityEvent::Updated),
+        CommentReply(EntityEvent::Removed),
+        Footnote(EntityEvent::Created),
+        Footnote(EntityEvent::Updated),
+        Footnote(EntityEvent::Removed),
     ] {
         v.push(Origin::DirectAccess(ent));
     }
@@ -969,24 +992,35 @@ fn mutation_origins() -> Vec<Origin> {
 
 /// "Is this `DirectAccess` mutation event about *my* Work?" — the guard the
 /// autosave `mutation_origins()` loop needs, and the harder half of "guard every
-/// subscriber": unlike `LoadWork`/`NewWork`/`CloseWork`, none of these five entity
+/// subscriber": unlike `LoadWork`/`NewWork`/`CloseWork`, none of these entity
 /// kinds' events carry a `work_id` — only the changed entities' own ids. Answering
 /// requires walking the relationship each entity actually has back to a `Work`:
 ///
 /// * `Work(Updated)` — the entity id IS the work id; a direct comparison.
-/// * `Binder`/`BinderTag`/`DictWord` — each is a direct `Work` one-to-many child
-///   (`qleany.yaml`'s `Work.binders`/`.tags`/`.dict_words`); one relationship read
-///   answers it.
+/// * `Binder`/`BinderTag`/`DictWord`/`Comment`/`Footnote` — each is a direct
+///   `Work` one-to-many child (`qleany.yaml`'s `Work.binders`/`.tags`/
+///   `.dict_words`/`.comments`/`.footnotes`); one relationship read answers it.
 /// * `BinderItem` — one hop further (`Work` → `Binder` → `BinderItem`): first the
 ///   Work's own binder ids, then each binder's item ids.
+/// * `CommentReply` — the same shape one door over (`Work` → `Comment` →
+///   `CommentReply`).
 ///
-/// Deliberately re-queried per event rather than cached: these are structural
-/// mutations (create/rename/move/trash), not per-keystroke prose edits (`Content`
-/// events are excluded from `mutation_origins` for exactly that reason), so they
-/// are rare enough that a live relationship read costs nothing an autosave-timer
-/// debounce would notice.
+/// Deliberately re-queried per event rather than cached: these are edits a hand
+/// makes (create/rename/move/trash, a comment or footnote body committing on
+/// change), not per-keystroke *prose* edits (`Content` events are excluded from
+/// `mutation_origins` for exactly that reason), so even the busiest of them —
+/// typing in a comment card, one `Comment(Updated)` per committed change — costs
+/// a handful of in-memory relationship reads, nothing an autosave-timer debounce
+/// would notice.
 ///
-/// An event with no ids at all (shouldn't happen for these five kinds, but no
+/// A `Removed` event can legitimately fail this walk: the generated cascade
+/// reconciles the owner's junction in the same transaction, so by the time the
+/// handler runs the removed id is no longer in the owner's list. That is fine —
+/// the same commit emits the owner's own `Updated` event (`Work(Updated)` for a
+/// removed `Comment`, `Comment(Updated)` for a removed reply), and *that* one
+/// passes. The walk only has to never claim a **sibling** Work's mutation.
+///
+/// An event with no ids at all (shouldn't happen for these kinds, but no
 /// generated event type guarantees it) is treated as in-scope — swallowing a
 /// mutation this Work's autosave should have reacted to is worse than an
 /// occasional spurious wake.
@@ -1045,7 +1079,42 @@ fn mutation_ids_belong_to_work(
                 event_ids.iter().any(|id| items.contains(id))
             })
         }
-        _ => true, // not one of `mutation_origins`'s five kinds — never reached
+        DirectAccessEntity::Comment(_) => {
+            let mine = work_commands::get_work_relationship(
+                ctx,
+                &my_work_id,
+                &WorkRelationshipField::Comments,
+            )
+            .unwrap_or_default();
+            event_ids.iter().any(|id| mine.contains(id))
+        }
+        DirectAccessEntity::CommentReply(_) => {
+            let my_comments = work_commands::get_work_relationship(
+                ctx,
+                &my_work_id,
+                &WorkRelationshipField::Comments,
+            )
+            .unwrap_or_default();
+            my_comments.iter().any(|comment_id| {
+                let replies = comment_commands::get_comment_relationship(
+                    ctx,
+                    comment_id,
+                    &CommentRelationshipField::Replies,
+                )
+                .unwrap_or_default();
+                event_ids.iter().any(|id| replies.contains(id))
+            })
+        }
+        DirectAccessEntity::Footnote(_) => {
+            let mine = work_commands::get_work_relationship(
+                ctx,
+                &my_work_id,
+                &WorkRelationshipField::Footnotes,
+            )
+            .unwrap_or_default();
+            event_ids.iter().any(|id| mine.contains(id))
+        }
+        _ => true, // not one of `mutation_origins`'s kinds — never reached
     }
 }
 
@@ -2159,7 +2228,7 @@ impl Widget for App {
             let autosave = settings.autosave();
 
             // Autosave rearms off `dirty_seq` **itself**, not off each site that
-            // bumps it. Every source — this window's typing, the thirteen
+            // bumps it. Every source — this window's typing, the
             // whitelisted entity events, and an extension's
             // `WorkHandle::mark_changed` — therefore rearms for free, with no
             // per-source special-casing. Without this an extension-only edit
@@ -2194,7 +2263,7 @@ impl Widget for App {
             }
             // Guarded: a sibling Work's mutation must not mark THIS window's Work
             // dirty or re-arm its autosave timer. Unlike `LoadWork`/`NewWork`/
-            // `CloseWork`, none of these five entity kinds' events carry a
+            // `CloseWork`, none of these entity kinds' events carry a
             // `work_id` — see `mutation_ids_belong_to_work`'s docs for the
             // relationship walk each one needs.
             for origin in mutation_origins() {
@@ -2943,5 +3012,264 @@ mod tests {
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
         )
+    }
+
+    // ── The dirty-marking whitelist ─────────────────────────────────────────
+
+    /// Every entity kind whose edits commit outside the manuscript editors must
+    /// be a dirty-marking event, or its edits are silently discarded by a
+    /// close-without-prompt. `Comment` was missing at first — a comment typed
+    /// into the margin card never showed the unsaved dot, never armed autosave,
+    /// and Close threw it away without asking. This pins each kind the whitelist
+    /// must carry so the next one added to the model fails a test instead of a
+    /// writer.
+    #[test]
+    fn every_non_editor_edit_surface_is_a_dirty_marking_event() {
+        let origins = mutation_origins();
+        use DirectAccessEntity::{Comment, CommentReply, Footnote};
+        for ent in [
+            Comment(EntityEvent::Created),
+            Comment(EntityEvent::Updated),
+            Comment(EntityEvent::Removed),
+            CommentReply(EntityEvent::Created),
+            CommentReply(EntityEvent::Updated),
+            CommentReply(EntityEvent::Removed),
+            Footnote(EntityEvent::Created),
+            Footnote(EntityEvent::Updated),
+            Footnote(EntityEvent::Removed),
+        ] {
+            assert!(
+                origins.contains(&Origin::DirectAccess(ent.clone())),
+                "{ent:?} must mark the work unsaved — its edits commit outside \
+                 the editors' `edited` signal, so this event is the only trace"
+            );
+        }
+    }
+
+    /// The deliberate exclusion stays excluded: `Content` fires only on flush,
+    /// and a save's own flush marking the project dirty again is the debounce
+    /// loop the whitelist exists to avoid.
+    #[test]
+    fn content_events_stay_off_the_dirty_marking_whitelist() {
+        for ev in [
+            EntityEvent::Created,
+            EntityEvent::Updated,
+            EntityEvent::Removed,
+        ] {
+            assert!(
+                !mutation_origins()
+                    .contains(&Origin::DirectAccess(DirectAccessEntity::Content(ev))),
+                "Content events fire on flush — whitelisting them loops autosave"
+            );
+        }
+    }
+}
+
+/// Attribution tests for [`mutation_ids_belong_to_work`], against a real store:
+/// the guard's one job is to bump *this* window's Work and never a sibling's.
+/// Real commands rather than fixtures because the walk is nothing but
+/// relationship reads — a faked store would test the fake.
+#[cfg(all(test, not(feature = "mocks")))]
+mod dirty_guard_tests {
+    use super::*;
+    use frontend::commands::{
+        comment_reply_commands, footnote_commands, smart_punctuation_commands,
+    };
+    use frontend::common::entities::{CommentAnchorKind, CommentOrphanReason, QuoteStyle};
+    use frontend::direct_access::{
+        CommentRelationshipDto, CreateCommentDto, CreateCommentReplyDto, CreateFootnoteDto,
+        CreateSmartPunctuationDto, CreateWorkDto, WorkRelationshipDto,
+    };
+
+    fn now() -> chrono::DateTime<chrono::Utc> {
+        chrono::Utc::now()
+    }
+
+    /// A Work with one comment (with one reply) and one footnote, wired exactly
+    /// as the live models wire them.
+    fn work_with_annotations(ctx: &AppContext) -> (u64, u64, u64, u64) {
+        // Each Work owns exactly one SmartPunctuation (one_to_one, strong), so
+        // the `0` placeholder a defaulted DTO carries would collide on this
+        // helper's second call under the generated uniqueness check — the same
+        // note `frontend/tests/multi_work_scoping_test.rs` records.
+        let smart_punctuation = smart_punctuation_commands::create_orphan_smart_punctuation(
+            ctx,
+            None,
+            &CreateSmartPunctuationDto {
+                created_at: now(),
+                updated_at: now(),
+                override_app_default: false,
+                dashes: false,
+                ellipsis: false,
+                quotes: false,
+                quote_style: QuoteStyle::LocaleDefault,
+                pre_punctuation_spacing: false,
+                dialogue_marker: false,
+            },
+        )
+        .expect("create smart_punctuation")
+        .id;
+        let work = work_commands::create_orphan_work(
+            ctx,
+            None,
+            &CreateWorkDto {
+                created_at: now(),
+                updated_at: now(),
+                title: "W".into(),
+                smart_punctuation,
+                ..Default::default()
+            },
+        )
+        .expect("create work")
+        .id;
+
+        let comment = comment_commands::create_orphan_comment(
+            ctx,
+            None,
+            &CreateCommentDto {
+                uid: Default::default(),
+                created_at: now(),
+                updated_at: now(),
+                content: None,
+                kind: CommentAnchorKind::Range,
+                author_name: "Jane".into(),
+                author_initials: "J".into(),
+                body: "note".into(),
+                resolved: false,
+                orphaned: false,
+                orphan_reason: CommentOrphanReason::NotOrphaned,
+                range_start: 0,
+                range_length: 4,
+                quote_prefix: String::new(),
+                quote_exact: "lamp".into(),
+                quote_exact_truncated: false,
+                quote_suffix: String::new(),
+                block_ordinal_hint: 0,
+                replies: vec![],
+            },
+        )
+        .expect("create comment")
+        .id;
+        work_commands::set_work_relationship(
+            ctx,
+            None,
+            &WorkRelationshipDto {
+                id: work,
+                field: WorkRelationshipField::Comments,
+                right_ids: vec![comment],
+            },
+        )
+        .expect("wire comment onto work");
+
+        let reply = comment_reply_commands::create_orphan_comment_reply(
+            ctx,
+            None,
+            &CreateCommentReplyDto {
+                uid: Default::default(),
+                created_at: now(),
+                updated_at: now(),
+                author_name: "Marc".into(),
+                author_initials: "M".into(),
+                body: "keep it".into(),
+            },
+        )
+        .expect("create reply")
+        .id;
+        comment_commands::set_comment_relationship(
+            ctx,
+            None,
+            &CommentRelationshipDto {
+                id: comment,
+                field: CommentRelationshipField::Replies,
+                right_ids: vec![reply],
+            },
+        )
+        .expect("wire reply onto comment");
+
+        let footnote = footnote_commands::create_orphan_footnote(
+            ctx,
+            None,
+            &CreateFootnoteDto {
+                created_at: now(),
+                updated_at: now(),
+                uid: Default::default(),
+                content: None,
+                label: "fn1".into(),
+                body: "a note".into(),
+            },
+        )
+        .expect("create footnote")
+        .id;
+        work_commands::set_work_relationship(
+            ctx,
+            None,
+            &WorkRelationshipDto {
+                id: work,
+                field: WorkRelationshipField::Footnotes,
+                right_ids: vec![footnote],
+            },
+        )
+        .expect("wire footnote onto work");
+
+        (work, comment, reply, footnote)
+    }
+
+    /// The positive half: my own comment, reply and footnote events all
+    /// attribute to my Work — through the direct read for the first and third,
+    /// and the two-hop walk for the reply.
+    #[test]
+    fn my_own_annotation_events_belong_to_my_work() {
+        let ctx = AppContext::new();
+        let (work, comment, reply, footnote) = work_with_annotations(&ctx);
+
+        use DirectAccessEntity::{Comment, CommentReply, Footnote};
+        assert!(mutation_ids_belong_to_work(
+            &ctx,
+            work,
+            Comment(EntityEvent::Updated),
+            &[comment]
+        ));
+        assert!(mutation_ids_belong_to_work(
+            &ctx,
+            work,
+            CommentReply(EntityEvent::Updated),
+            &[reply]
+        ));
+        assert!(mutation_ids_belong_to_work(
+            &ctx,
+            work,
+            Footnote(EntityEvent::Updated),
+            &[footnote]
+        ));
+    }
+
+    /// The guarding half: a sibling Work's events must not mark mine dirty —
+    /// the exact multi-window scenario the guard exists for (a mutation in
+    /// window B's project re-arming window A's autosave).
+    #[test]
+    fn a_sibling_works_annotation_events_do_not_belong_to_mine() {
+        let ctx = AppContext::new();
+        let (mine, ..) = work_with_annotations(&ctx);
+        let (_, their_comment, their_reply, their_footnote) = work_with_annotations(&ctx);
+
+        use DirectAccessEntity::{Comment, CommentReply, Footnote};
+        assert!(!mutation_ids_belong_to_work(
+            &ctx,
+            mine,
+            Comment(EntityEvent::Updated),
+            &[their_comment]
+        ));
+        assert!(!mutation_ids_belong_to_work(
+            &ctx,
+            mine,
+            CommentReply(EntityEvent::Updated),
+            &[their_reply]
+        ));
+        assert!(!mutation_ids_belong_to_work(
+            &ctx,
+            mine,
+            Footnote(EntityEvent::Updated),
+            &[their_footnote]
+        ));
     }
 }

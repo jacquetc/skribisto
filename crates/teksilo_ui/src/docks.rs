@@ -569,9 +569,9 @@ mod extension_roster_tests {
 
     /// **The second gap this context closed.** A dock could draw, but an edit it
     /// made was invisible to the unsaved-changes guard: `dirty_seq` is bumped
-    /// only by editor typing and thirteen named entity events, and an extension's
-    /// state is in neither list. Close/Quit read `unsaved == false` and proceeded
-    /// with no save issued.
+    /// only by editor typing and a whitelist of named entity events, and an
+    /// extension's state is in neither list. Close/Quit read `unsaved == false`
+    /// and proceeded with no save issued.
     ///
     /// So this asserts the path a dock actually walks: build the panel from a
     /// `DockContext` made out of a real `SaveStateViewModel`, mark a change
