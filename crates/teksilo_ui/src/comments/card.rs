@@ -30,16 +30,18 @@
 //! margin deliberately rebuilds on the comment set's *shape* rather than on its
 //! text, so typing cannot re-mint the very editor being typed into.
 //!
-//! ## One menu per turn, not a row of buttons — except for Bold and Italic
+//! ## One menu per turn, not a row of buttons
 //!
-//! Everything else lives behind a single chevron: reply, resolve, delete,
+//! Everything lives behind a single chevron: reply, resolve, delete,
 //! delete-all. A permanently-visible reply field is the wrong default — most
 //! comments in a manuscript are never replied to, and a field that is usually
 //! empty costs vertical space on *every* card to serve the minority that use it.
 //!
-//! Bold and Italic are the one exception, standing beside the chevron rather
-//! than inside its menu — see [`mark_button`] for why they exist at all and why
-//! only these two.
+//! Formatting is not an exception any more: Bold and Italic live in the body's
+//! own right-click menu, exactly where the writing editors put theirs — see
+//! [`comment_context_menu`] for why they exist at all, why only these two, and
+//! why the menu is the better home than the buttons that used to stand beside
+//! the chevron.
 //!
 //! Replies are a **flat** thread, appended to the comment however deep in the
 //! conversation the reply was asked for. That mirrors OOXML, whose
@@ -57,8 +59,8 @@ use teksilo::widgets::{
     PopoverIconButton, RectWidget, Spacer, TextWidget, VStack, ZStack,
 };
 
-use crate::icons::format as glyph;
 use crate::models::CommentRow;
+use crate::tabs::shared::editor::{CharacterMark, format_row};
 use crate::view_models::{CommentPalette, CommentsViewModel, ThreadEntry};
 
 /// How many lines of body a turn shows before it grows.
@@ -245,10 +247,10 @@ impl Turn {
         // `.handle()` is read off the builder before any of the consuming
         // `.style()`/`.on_change()` calls below — it is a cheap clone of the
         // editor's own shared state (see `RichTextEditor::handle`'s doc), so
-        // taking it here costs nothing and is what lets the mark buttons act on
+        // taking it here costs nothing and is what lets the context menu act on
         // *this* turn's editor rather than needing the app-wide `FormatViewModel`
-        // registry — see [`mark_button`]'s own doc for why that registry is the
-        // wrong door for a comment.
+        // registry — see [`comment_context_menu`]'s own doc for why that
+        // registry is the wrong door for a comment.
         let editor_widget = RichTextEditor::editor(doc.clone());
         let handle = editor_widget.handle();
         let body = {
@@ -257,6 +259,16 @@ impl Turn {
             editor_widget
                 .min_lines(BODY_MIN_LINES)
                 .v_scroll_policy(ScrollPolicy::AlwaysOff)
+                // Replace the built-in right-click menu with the comment's own —
+                // the same standard editing actions, led by the Bold/Italic
+                // strip. The factory first moves the caret to the click point
+                // (unless the click lands inside a selection) so Paste lands
+                // there and the strip formats the phrase the writer chose — the
+                // same order of operations as the writing editors' menus.
+                .context_menu(move |pt, _ctx| {
+                    handle.reposition_caret_for_context_menu(pt);
+                    Some(Box::new(comment_context_menu(handle.clone())))
+                })
                 .style(CommentBodyStyle {
                     palette: self.palette,
                     entry,
@@ -278,22 +290,6 @@ impl Turn {
                     }
                 })
         };
-
-        // ── The one formatting affordance ──────────────────────────────────
-        let mark_buttons = HStack::new()
-            .spacing(2.0)
-            .child(mark_button(
-                glyph::bold(),
-                tr!(format_bold()),
-                handle.clone(),
-                |h| h.toggle_bold(),
-            ))
-            .child(mark_button(
-                glyph::italic(),
-                tr!(format_italic()),
-                handle,
-                |h| h.toggle_italic(),
-            ));
 
         // ── The one menu ─────────────────────────────────────────────────
         let comment_id = self.comment_id;
@@ -399,63 +395,76 @@ impl Turn {
                     // The editor first, so it is the row's first focusable
                     // descendant — which is what `build` focuses on creation.
                     .child(Expand::horizontal().child(body))
-                    .child(mark_buttons)
                     .child(more),
             )
             .child(meta)
     }
 }
 
-/// One character-mark button, acting on `handle` directly rather than through
-/// the app-wide `FormatViewModel`.
+/// A comment body's right-click menu: the Bold/Italic strip above the standard
+/// edit actions (Cut / Copy / Paste / Paste Unformatted / Select All).
 ///
-/// `FormatViewModel`'s editor registry (see its own module doc) is what lets
-/// the trailing Format dock reach a stream row's synopsis or a corkboard
-/// card's body — the surfaces where the writer's manuscript caret can be — but
-/// a comment's `Turn` never registers with it, and joining that registry would
-/// answer the wrong question: the registry is "which editor is the writer's
-/// **manuscript** caret in", one live target for the whole window, while a
-/// margin can hold several open cards across several documents at once with no
-/// single per-tab slot for any of them to be sticky in. This button skips the
-/// resolver entirely and acts on the handle its own `Turn` already minted —
-/// the same "just use the editor I built" shape `docks::search_preview` uses
-/// for the one editor it knows about, deliberately bypassing
-/// `TypographyBoundEditor`'s registration for the same reason.
+/// Installing a factory disables the editor's built-in menu unconditionally,
+/// so the standard actions are re-provided here in the built-in order — the
+/// menu is the built-in one *plus* the strip, not a different vocabulary.
+///
+/// The strip acts on `handle` directly rather than through the app-wide
+/// `FormatViewModel`. That view-model's editor registry (see its own module
+/// doc) is what lets the trailing Format dock reach a stream row's synopsis or
+/// a corkboard card's body — the surfaces where the writer's manuscript caret
+/// can be — but a comment's `Turn` never registers with it, and joining that
+/// registry would answer the wrong question: the registry is "which editor is
+/// the writer's **manuscript** caret in", one live target for the whole
+/// window, while a margin can hold several open cards across several documents
+/// at once with no single per-tab slot for any of them to be sticky in. This
+/// menu skips the resolver entirely and acts on the handle its own `Turn`
+/// already minted — the same "just use the editor I built" shape
+/// `docks::search_preview` uses for the one editor it knows about,
+/// deliberately bypassing `TypographyBoundEditor`'s registration for the same
+/// reason.
 ///
 /// Without *some* door onto formatting here, M-S4's data model is rich and
 /// nothing in the UI could actually author that richness: an editor's own
 /// bold survives an import, but a writer replying to it in Skribisto would
 /// have had no way to bold a word of their own reply. Bold and Italic, not
-/// the dock's full toolkit — a margin note is a remark, not a manuscript, and
-/// those two are what an editorial exchange actually reaches for; headings,
-/// lists and tables belong to planning prose, not a one-paragraph aside.
+/// the writing editors' full four-mark strip — a margin note is a remark, not
+/// a manuscript, and those two are what an editorial exchange actually reaches
+/// for; underline and strikethrough, like headings, lists and tables, belong
+/// to planning prose, not a one-paragraph aside.
 ///
-/// Unlike the Format dock's own buttons (`docks::format::toggle_button`), this
-/// does not mirror a pressed/lit state: doing that safely means polling
+/// These marks used to be `IconButton`s standing beside the chevron, and those
+/// buttons could not show a pressed/lit state: doing that safely means polling
 /// `EditorHandle::format_version()` off the frame tick rather than an effect
-/// directly on it, exactly the trap `FormatViewModel`'s own module doc warns
-/// about (the signal is written from inside the editor's `state.borrow_mut()`,
-/// so an effect on it fires while that borrow is still held and panics). A
-/// card has no frame-tick refresh of its own to hang that poll on, so the
-/// button acts — genuinely toggling the selection's bold or italic, real
-/// formatting applied through the real `EditorHandle` API — without also
-/// claiming to show whether the caret is already sitting in bold text.
-fn mark_button(
-    icon: IconWidget,
-    tooltip: LocalizedString,
-    handle: EditorHandle,
-    toggle: fn(&EditorHandle),
-) -> IconButton {
-    IconButton::new(icon)
-        .toolbar()
-        // Tab-order only, matching the Format dock's own buttons: pressing one
-        // must not steal the caret out of the body it is about to act on.
-        .focusable(false)
-        .tooltip(tooltip)
-        .on_activate_fn(move |ctx| {
-            toggle(&handle);
-            ctx.request_frame();
-        })
+/// directly on it (the signal is written from inside the editor's
+/// `state.borrow_mut()`, so an effect on it fires while that borrow is still
+/// held and panics), and a card has no frame-tick refresh of its own to hang
+/// that poll on. The menu has no such problem — it is rebuilt on every
+/// right-click, so the strip's one-shot snapshot cannot go stale — which is
+/// why moving into the menu *gained* the lit-Bold-over-bold-text affordance
+/// the side buttons had to do without.
+fn comment_context_menu(handle: EditorHandle) -> MenuList {
+    let cut = handle.clone();
+    let copy = handle.clone();
+    let paste = handle.clone();
+    let paste_plain = handle.clone();
+    let select = handle.clone();
+    MenuList::new()
+        .item(format_row(
+            &handle,
+            &[CharacterMark::Bold, CharacterMark::Italic],
+        ))
+        .separator()
+        .item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)))
+        .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
+        .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
+        .item(
+            MenuItem::new(tr!(menu_paste_unformatted()))
+                .on_activate_fn(move |ctx| paste_plain.paste_unformatted(ctx)),
+        )
+        .separator()
+        .item(
+            MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()),
+        )
 }
 
 /// `dd/mm/yyyy hh:mm`, matching the reference presentation.
@@ -699,13 +708,35 @@ mod tests {
     // ── The comment-scoped formatting affordance (M-S4) ──────────────────────
     //
     // Real formatting through a real `EditorHandle`, not a decorative button:
-    // both tests drive an actual click through `WidgetTree` and check the
-    // document's own Djot came out changed, the same proof
-    // `docks::format`'s own `opening_the_heading_picker_leaves_the_dock_standing`
-    // uses for a real pointer tap rather than poking a view-model.
+    // the click tests build the actual right-click menu, drive a pointer tap
+    // through `WidgetTree` at its strip, and check the document's own Djot came
+    // out changed — the same proof `docks::format`'s own
+    // `opening_the_heading_picker_leaves_the_dock_standing` uses for a real
+    // pointer tap rather than poking a view-model.
+
+    /// The menu's mark buttons, in tree order — Bold first, Italic second,
+    /// matching the strip's own order. Found by walking the built tree rather
+    /// than by position, so a spacing tweak cannot silently retarget a test.
+    fn mark_buttons_in(
+        tree: &teksilo::core::widget_tree::WidgetTree,
+        root: WidgetId,
+    ) -> Vec<WidgetId> {
+        let mut found = Vec::new();
+        let mut queue = std::collections::VecDeque::from([root]);
+        while let Some(id) = queue.pop_front() {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|n| n.ends_with("::IconButton"))
+            {
+                found.push(id);
+            }
+            queue.extend(tree.children(id));
+        }
+        found
+    }
 
     #[test]
-    fn clicking_the_bold_button_toggles_bold_on_the_selection() {
+    fn the_menus_bold_button_toggles_bold_on_the_selection() {
         use teksilo::core::widget_tree::WidgetTree;
         use teksilo::text_document::TextDocument;
 
@@ -716,16 +747,19 @@ mod tests {
         handle.select_range(0, 4); // "Keep"
 
         let mut tree = WidgetTree::new();
-        let id = tree.add(mark_button(
-            glyph::bold(),
-            tr!(format_bold()),
-            handle.clone(),
-            |h| h.toggle_bold(),
-        ));
-        tree.layout(teksilo::prelude::SizeProposal::exact(30.0, 30.0));
+        let root = tree.add(comment_context_menu(handle.clone()));
+        tree.layout(teksilo::prelude::SizeProposal::exact(220.0, 300.0));
+
+        let marks = mark_buttons_in(&tree, root);
+        assert_eq!(
+            marks.len(),
+            2,
+            "the strip holds exactly Bold and Italic — a wider strip means the \
+             writing editors' four-mark row leaked into the comment menu"
+        );
 
         assert!(!handle.is_bold(), "the selection must not start bold");
-        tree.click(id);
+        tree.click(marks[0]);
         assert!(handle.is_bold(), "the click must have turned bold on");
         assert_eq!(
             doc.to_djot().unwrap(),
@@ -737,7 +771,7 @@ mod tests {
     /// Italic gets the same proof, so the two buttons are not sharing one
     /// tested code path by coincidence while the other silently does nothing.
     #[test]
-    fn clicking_the_italic_button_toggles_italic_on_the_selection() {
+    fn the_menus_italic_button_toggles_italic_on_the_selection() {
         use teksilo::core::widget_tree::WidgetTree;
         use teksilo::text_document::TextDocument;
 
@@ -748,42 +782,47 @@ mod tests {
         handle.select_range(0, 4);
 
         let mut tree = WidgetTree::new();
-        let id = tree.add(mark_button(
-            glyph::italic(),
-            tr!(format_italic()),
-            handle.clone(),
-            |h| h.toggle_italic(),
-        ));
-        tree.layout(teksilo::prelude::SizeProposal::exact(30.0, 30.0));
-        tree.click(id);
+        let root = tree.add(comment_context_menu(handle.clone()));
+        tree.layout(teksilo::prelude::SizeProposal::exact(220.0, 300.0));
+        let marks = mark_buttons_in(&tree, root);
+        tree.click(marks[1]);
 
         assert!(handle.is_italic(), "the click must have turned italic on");
         assert_eq!(doc.to_djot().unwrap(), "_Keep_ it.");
     }
 
-    /// Every turn — the opening comment and every reply — mounts its own pair
-    /// of mark buttons, not only the first: a reply must be formattable
-    /// exactly like the comment it answers.
+    /// Installing a custom context-menu factory disables the editor's built-in
+    /// menu unconditionally, so the standard edit actions only exist if this
+    /// menu re-provides them — losing one would cost the writer Cut or Paste on
+    /// every comment in the project.
     #[test]
-    fn every_turn_gets_its_own_mark_buttons() {
-        let ctx = std::rc::Rc::new(frontend::AppContext::new());
-        let row = CommentRow {
-            id: 6,
-            body: "Opening.".into(),
-            replies: vec![ReplyRow {
-                id: 20,
-                body: "A reply.".into(),
-                ..Default::default()
-            }],
-            ..Default::default()
-        };
-        let mut tree = crate::test_support::tree_with_events(&ctx);
-        let id = tree.add_boxed(Box::new(comment_card(vm(), row, CommentPalette::default())));
-        tree.layout(teksilo::prelude::SizeProposal::exact(300.0, 400.0));
-        assert!(
-            tree.bounds(id).height > 0.0,
-            "a card with mark buttons on both the comment and its reply laid out \
-             to nothing"
+    fn the_menu_keeps_the_standard_edit_actions() {
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::text_document::TextDocument;
+
+        let doc = TextDocument::new();
+        doc.set_djot_sync("Keep it.").expect("seed the document");
+        let editor = RichTextEditor::editor(doc.clone());
+
+        let mut tree = WidgetTree::new();
+        let root = tree.add(comment_context_menu(editor.handle()));
+        tree.layout(teksilo::prelude::SizeProposal::exact(220.0, 300.0));
+
+        let mut items = 0;
+        let mut queue = std::collections::VecDeque::from([root]);
+        while let Some(id) = queue.pop_front() {
+            if tree
+                .widget_type_name(id)
+                .is_some_and(|n| n.ends_with("::MenuItem"))
+            {
+                items += 1;
+            }
+            queue.extend(tree.children(id));
+        }
+        assert_eq!(
+            items, 5,
+            "Cut, Copy, Paste, Paste Unformatted and Select All — the built-in \
+             menu's own five, which the custom factory must re-provide"
         );
     }
 }

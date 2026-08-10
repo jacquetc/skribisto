@@ -482,7 +482,9 @@ fn editor_context_menu(
 
     let spelling = super::dictionary_menu::resolve_spelling(&doc, &handle, spell.as_deref());
 
-    let mut list = MenuList::new().item(format_row(&handle)).separator();
+    let mut list = MenuList::new()
+        .item(format_row(&handle, &CharacterMark::ALL))
+        .separator();
 
     // The spelling group, present only when there is something to say about
     // spelling here — ordinary prose gets a menu that starts at Cut, rather than a
@@ -577,7 +579,67 @@ fn editor_context_menu(
     list
 }
 
-/// The four character marks, as a strip across the top of the context menu.
+/// One character mark a [`format_row`] strip can offer.
+///
+/// A vocabulary rather than a fixed set so each surface states which marks it
+/// warrants: the writing editors take [`CharacterMark::ALL`], a comment card's
+/// body takes Bold and Italic only (see `comments::card::comment_context_menu`
+/// for why those two and no more).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CharacterMark {
+    Bold,
+    Italic,
+    Underline,
+    Strikethrough,
+}
+
+impl CharacterMark {
+    /// Every mark, in the strip's canonical order.
+    pub const ALL: [CharacterMark; 4] = [
+        CharacterMark::Bold,
+        CharacterMark::Italic,
+        CharacterMark::Underline,
+        CharacterMark::Strikethrough,
+    ];
+
+    fn icon(self) -> IconWidget {
+        match self {
+            CharacterMark::Bold => crate::icons::format::bold(),
+            CharacterMark::Italic => crate::icons::format::italic(),
+            CharacterMark::Underline => crate::icons::format::underline(),
+            CharacterMark::Strikethrough => crate::icons::format::strikethrough(),
+        }
+    }
+
+    fn tooltip(self) -> teksilo::i18n::LocalizedString {
+        match self {
+            CharacterMark::Bold => tr!(format_bold()),
+            CharacterMark::Italic => tr!(format_italic()),
+            CharacterMark::Underline => tr!(format_underline()),
+            CharacterMark::Strikethrough => tr!(format_strikethrough()),
+        }
+    }
+
+    fn apply(self) -> fn(&EditorHandle) {
+        match self {
+            CharacterMark::Bold => EditorHandle::toggle_bold,
+            CharacterMark::Italic => EditorHandle::toggle_italic,
+            CharacterMark::Underline => EditorHandle::toggle_underline,
+            CharacterMark::Strikethrough => EditorHandle::toggle_strikethrough,
+        }
+    }
+
+    fn read(self) -> fn(&EditorHandle) -> bool {
+        match self {
+            CharacterMark::Bold => EditorHandle::is_bold,
+            CharacterMark::Italic => EditorHandle::is_italic,
+            CharacterMark::Underline => EditorHandle::is_underline,
+            CharacterMark::Strikethrough => EditorHandle::is_strikethrough,
+        }
+    }
+}
+
+/// The requested character marks, as a strip across the top of a context menu.
 ///
 /// Acts on the **right-clicked** editor's handle rather than resolving "whichever
 /// editor has focus": the user pointed at one, and `reposition_caret_for_context_menu`
@@ -587,7 +649,11 @@ fn editor_context_menu(
 /// a toggle sets the *typing* format — the word-processor convention.)
 ///
 /// Unlike the dock, the state is read once here and never polled: the whole menu
-/// is rebuilt on every right-click, so a snapshot cannot go stale.
+/// is rebuilt on every right-click, so a snapshot cannot go stale. That is also
+/// why this is `pub` for the comment card's menu to mount: a card has no frame
+/// tick to poll `format_version()` on, so a menu rebuilt per right-click is the
+/// one place a comment can show a lit Bold without the borrow trap
+/// `FormatViewModel`'s module doc warns about.
 ///
 /// Clicking one of these does **not** close the menu — dismissal is `MenuItem`
 /// plumbing (`ctx.dismiss_self_overlay_chain`) that `IconButton` has no part in —
@@ -597,7 +663,7 @@ fn editor_context_menu(
 /// not a negation, and with no rebuild coming the button would lie for the rest of
 /// the visit. Each click therefore runs the real command and writes back what the
 /// editor actually did.
-fn format_row(handle: &EditorHandle) -> Padding {
+pub fn format_row(handle: &EditorHandle, marks: &[CharacterMark]) -> Padding {
     /// One mark: an icon, its accessible name, the command, and the state it shows.
     fn mark(
         icon: IconWidget,
@@ -636,47 +702,19 @@ fn format_row(handle: &EditorHandle) -> Padding {
             })
     }
 
-    let bold = Signal::new(handle.is_bold());
-    let italic = Signal::new(handle.is_italic());
-    let underline = Signal::new(handle.is_underline());
-    let strikethrough = Signal::new(handle.is_strikethrough());
-
-    Padding::symmetric(6.0, 6.0).child(
-        HStack::new()
-            .spacing(4.0)
-            .child(mark(
-                crate::icons::format::bold(),
-                tr!(format_bold()),
-                bold,
-                handle.clone(),
-                EditorHandle::toggle_bold,
-                EditorHandle::is_bold,
-            ))
-            .child(mark(
-                crate::icons::format::italic(),
-                tr!(format_italic()),
-                italic,
-                handle.clone(),
-                EditorHandle::toggle_italic,
-                EditorHandle::is_italic,
-            ))
-            .child(mark(
-                crate::icons::format::underline(),
-                tr!(format_underline()),
-                underline,
-                handle.clone(),
-                EditorHandle::toggle_underline,
-                EditorHandle::is_underline,
-            ))
-            .child(mark(
-                crate::icons::format::strikethrough(),
-                tr!(format_strikethrough()),
-                strikethrough,
-                handle.clone(),
-                EditorHandle::toggle_strikethrough,
-                EditorHandle::is_strikethrough,
-            )),
-    )
+    let mut row = HStack::new().spacing(4.0);
+    for m in marks {
+        let read = m.read();
+        row = row.child(mark(
+            m.icon(),
+            m.tooltip(),
+            Signal::new(read(handle)),
+            handle.clone(),
+            m.apply(),
+            read,
+        ));
+    }
+    Padding::symmetric(6.0, 6.0).child(row)
 }
 
 /// How tall a *growing* synopsis editor starts: enough to invite a couple of lines,
@@ -3145,7 +3183,7 @@ mod tests {
         handle.set_bold(true);
 
         let mut tree = WidgetTree::new();
-        let id = tree.add(format_row(&handle));
+        let id = tree.add(format_row(&handle, &CharacterMark::ALL));
         tree.layout(SizeProposal::exact(200.0, 40.0));
         assert!(
             tree.bounds(id).width > 0.0,
