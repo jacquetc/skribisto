@@ -685,7 +685,7 @@ impl Widget for WelcomePanel {
                 VStack {
                     spacing: 6.0
                     child: logo
-                    TextWidget::new(lit!("Skribisto")) {
+                    TextWidget::new(lit!(crate::identity::display_name())) {
                         style: title_style
                         color: TextRole::Primary
                     }

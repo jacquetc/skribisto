@@ -1391,6 +1391,26 @@ about-license = Distribué sous la Licence publique générale GNU, version 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Fermer
 
+# Titres de fenêtre. Le nom de l'application est une donnée (le nom de l'édition
+# en cours d'exécution) : il arrive en argument plutôt que d'être écrit ici.
+window-title = { $title } — { $app }
+window-title-numbered = { $title } — { $app } (Fenêtre { $n })
+window-title-empty = { $app }
+
+# Import des réglages au premier lancement (une édition disposant de son propre
+# dossier de configuration, qui trouve à côté ceux de l'installation communautaire).
+first-run-window-title = Bienvenue
+first-run-title = Configurer { $app }
+first-run-body = { $app } conserve ses réglages séparément de Skribisto : il démarre donc vierge. Vos préférences, projets récents, dictionnaires et disposition de fenêtre peuvent être copiés dès maintenant.
+first-run-from = Copier depuis
+first-run-to = Copier vers
+first-run-copy-note = Rien n'est déplacé ni supprimé. Skribisto conserve tous ses réglages et continue de fonctionner exactement comme avant.
+first-run-import = Importer les réglages
+first-run-start-fresh = Repartir de zéro
+first-run-import-failed = Certains réglages n'ont pas pu être importés : { $error }
+
+
+
 # ── Work ▸ Punctuation — le style typographique du projet ───────────────────
 settings-page-punctuation = Ponctuation
 settings-group-punctuation = Ponctuation intelligente

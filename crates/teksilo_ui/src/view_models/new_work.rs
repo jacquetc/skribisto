@@ -115,7 +115,7 @@ pub struct ParatextPlanDto {
 /// dialog never fails to open because of an optional settings file — the same degrade the
 /// loader applies to a malformed entry.
 fn load_paratext_presets() -> (Rc<Vec<ParatextPreset>>, Option<String>) {
-    let svc = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let svc = crate::identity::app_paths()
         .and_then(|paths| ParatextPresetsService::open(&paths).ok())
         .unwrap_or_else(ParatextPresetsService::in_memory_default);
     // The locale match is the service's own rule, asked once — not restated here, or the

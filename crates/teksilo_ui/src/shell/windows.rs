@@ -69,10 +69,10 @@ pub use super::window_ids::{
     window_id_for,
 };
 
-/// Scope D — window titles. A reactive `"{Work title} — Skribisto"` (falling
-/// back to plain `"Skribisto"` before a Work has finished loading/creating),
-/// with a `" (Window N)"` suffix once `ordinal` says this window is not the
-/// sole one showing its Work.
+/// Scope D — window titles. A reactive `"{Work title} — {app name}"` (falling
+/// back to the bare app name before a Work has finished loading/creating), with
+/// a `" (Window N)"` suffix once `ordinal` says this window is not the sole one
+/// showing its Work.
 ///
 /// **Design goal: a STABLE, distinguishable string.** On Wayland a client
 /// cannot position its own toplevel — pinning the binder window to a second
@@ -93,20 +93,46 @@ pub use super::window_ids::{
 /// reads "(Window 2)" from the first frame rather than flickering through the
 /// un-suffixed form; every other window starts at `1` and is corrected, if it
 /// ever needs to be, by its own `LoadWork`/`NewWork` subscriber.
-fn window_title_text(
-    single_work: &crate::singles::SingleWork,
-    ordinal: &Signal<usize>,
-) -> Signal<String> {
-    single_work.title().zip(ordinal).map(|(title, ord)| {
-        let base = if title.trim().is_empty() {
-            "Skribisto".to_string()
+///
+/// **The application name is [`crate::identity::display_name`], not a literal.**
+/// An edition that registered its own identity must name *itself* in the title
+/// bar, or every window claims to be the community build.
+///
+/// **The join is a Fluent key, not `format!`.** It used to be
+/// `format!("{title} — Skribisto")` plus `format!("{base} (Window {ord})")`,
+/// which left "(Window 2)" untranslated in every locale — a French window read
+/// "(Window 2)". The product name inside it stays `lit!`-shaped data (a name is
+/// not translated, the same rule that keeps entity titles out of Fluent); only
+/// the framing around it is a message.
+///
+/// ⚠ Consequence for the KWin workflow described above: a rule written against
+/// the French title will not match the English one. That is inherent in
+/// translating the string at all, and worth knowing before writing a rule.
+///
+/// Resolved eagerly with `resolve_now`, so the title re-renders whenever the Work
+/// title or the window ordinal changes. A language switch *mid-session* does not
+/// by itself re-title already-open windows — a real if small gap, and the one
+/// case where a stable KWin identity happens to be the friendlier behaviour.
+///
+/// Takes the Work's title **signal** rather than the `SingleWork` it came from:
+/// the two inputs are all this needs, and a function that reaches into a backend
+/// handle for one of them cannot be exercised without standing a backend up. Same
+/// reasoning as `ActiveContext::for_window` — narrow the input, and the wiring
+/// becomes testable instead of merely inspectable.
+fn window_title_text(work_title: Signal<String>, ordinal: &Signal<usize>) -> Signal<String> {
+    work_title.zip(ordinal).map(|(title, ord)| {
+        let app = crate::identity::display_name();
+        if title.trim().is_empty() {
+            tr!(window_title_empty(app = app)).resolve_now()
+        } else if *ord > 1 {
+            tr!(window_title_numbered(
+                title = title.clone(),
+                app = app,
+                n = *ord as i64
+            ))
+            .resolve_now()
         } else {
-            format!("{title} — Skribisto")
-        };
-        if *ord > 1 {
-            format!("{base} (Window {ord})")
-        } else {
-            base
+            tr!(window_title(title = title.clone(), app = app)).resolve_now()
         }
     })
 }
@@ -351,7 +377,7 @@ impl ProjectWindowFactory {
         // and its title reads "(Window 2)" from the very first frame rather
         // than flickering through the un-suffixed form.
         let window_ordinal: Signal<usize> = Signal::new(ordinal);
-        let title_text = window_title_text(&single_work, &window_ordinal);
+        let title_text = window_title_text(single_work.title(), &window_ordinal);
         let autosave_menu = self.autosave_menu.clone();
         let spellcheck_menu = self.spellcheck_menu.clone();
         let comments_menu = self.comments_menu.clone();
@@ -691,7 +717,7 @@ impl ProjectWindowFactory {
                                     }
                                     Expand::horizontal {
                                         Center {
-                                            TextWidget::new(lit!("Skribisto")) {
+                                            TextWidget::new(lit!(crate::identity::display_name())) {
                                                 // Scope D — live, per-Work, sibling-disambiguating
                                                 // title (see `window_title_text`'s doc).
                                                 text: title_text.clone()
@@ -723,7 +749,10 @@ impl ProjectWindowFactory {
                             }
                         )))
                     }
-                    None => tree.add(TextWidget::new(lit!("Skribisto")).text(title_text.clone())),
+                    None => tree.add(
+                        TextWidget::new(lit!(crate::identity::display_name()))
+                            .text(title_text.clone()),
+                    ),
                 };
 
                 let body = tree.add(Expand::new().child(App::new(
@@ -870,6 +899,57 @@ impl ProjectWindowFactory {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Every window must name the **running edition**, not the community build.
+    ///
+    /// Asserts all three branches — a Work with a title, one still loading, and a
+    /// second window on the same Work — because each resolves a different Fluent
+    /// key and a key whose arguments do not match its value resolves to an error
+    /// placeholder rather than failing to compile. Building the string is the only
+    /// thing that proves the arguments are actually wired.
+    #[test]
+    fn a_window_title_names_the_registered_edition() {
+        let _serial = crate::identity::lock_for_test();
+        let _h = crate::identity::register(
+            crate::identity::AppIdentity::new("eu", "acme-writer", "Acme Writer")
+                .with_display_name("Acme Writer"),
+        );
+
+        let work_title = Signal::new(String::new());
+        let ordinal = Signal::new(1usize);
+        let title = window_title_text(work_title.clone(), &ordinal);
+
+        // Before a Work has loaded there is no title, so the window is just the app.
+        assert!(
+            title.get().contains("Acme Writer"),
+            "an untitled window must still name the running edition, got {:?}",
+            title.get()
+        );
+        assert!(
+            !title.get().contains("Skribisto"),
+            "an edition's window must not claim to be the community build, got {:?}",
+            title.get()
+        );
+
+        work_title.set("The Lighthouse".to_string());
+        let titled = title.get();
+        assert!(
+            titled.contains("The Lighthouse") && titled.contains("Acme Writer"),
+            "a loaded Work must name both itself and the edition, got {titled:?}"
+        );
+
+        ordinal.set(2);
+        let numbered = title.get();
+        assert!(
+            numbered.contains("The Lighthouse") && numbered.contains('2'),
+            "a sibling window must stay distinguishable from the first, got {numbered:?}"
+        );
+        assert_ne!(
+            numbered, titled,
+            "two windows on one Work must not share a title — a KWin rule keyed on it \
+             could not tell them apart"
+        );
+    }
 
     #[test]
     fn window_id_for_a_missing_path_is_stable_and_not_shared() {

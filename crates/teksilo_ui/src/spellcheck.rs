@@ -57,8 +57,7 @@ use skribisto_model::language;
 /// `<data_dir>/dictionaries` — where our downloads live and the loader looks first. The single
 /// definition, shared by discovery ([`crate::models`]) and download ([`crate::view_models`]).
 pub(crate) fn downloaded_dictionaries_dir() -> Option<PathBuf> {
-    teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
-        .map(|p| p.data_dir().join("dictionaries"))
+    crate::identity::app_paths().map(|p| p.data_dir().join("dictionaries"))
 }
 
 /// The read-only system dictionary directories to probe, in priority order, per OS. Windows

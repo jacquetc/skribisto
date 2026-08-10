@@ -49,7 +49,7 @@ pub fn launcher_window_config(app_ctx: Rc<AppContext>) -> WindowConfig {
         // below says "Welcome to Skribisto": that names the *screen*, and it
         // is the reason the Welcome content no longer carries a title strip of
         // its own.
-        .title("Skribisto")
+        .title(crate::identity::display_name())
         .size(W, H)
         .min_size(W, H)
         .max_size(W, H)

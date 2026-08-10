@@ -33,7 +33,7 @@ mod imp {
     use serde::{Deserialize, Serialize};
     use teksilo::data::ListModel;
     use teksilo::prelude::*;
-    use teksilo::settings::{AppPaths, Keyed, MruEntry, MruList};
+    use teksilo::settings::{Keyed, MruEntry, MruList};
 
     use frontend::AppContext;
     use frontend::commands::{work_commands, work_info_commands};
@@ -88,7 +88,7 @@ mod imp {
     fn shared_mru() -> Option<MruList<RecentEntry>> {
         SHARED_MRU.with(|cell| {
             if cell.borrow().is_none() {
-                let opened = AppPaths::new("eu", "skribisto", "Skribisto").and_then(|paths| {
+                let opened = crate::identity::app_paths().and_then(|paths| {
                     MruList::open(&paths, "recents", MAX_RECENTS)
                         .map_err(|e| eprintln!("recents MRU: open failed: {e}"))
                         .ok()
@@ -204,7 +204,7 @@ mod imp {
         /// process — `main.rs` calls this before constructing any
         /// `RecentWorkListModel` for real.
         pub(crate) fn all_raw_paths() -> Vec<String> {
-            let Some(paths) = AppPaths::new("eu", "skribisto", "Skribisto") else {
+            let Some(paths) = crate::identity::app_paths() else {
                 return Vec::new();
             };
             match MruList::<RecentEntry>::open(&paths, "recents", MAX_RECENTS) {

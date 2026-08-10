@@ -1384,6 +1384,26 @@ about-license = Released under the GNU General Public License, version 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Close
 
+# Window titles. The application name is data (the running edition's own name),
+# so it arrives as an argument rather than being written into the value here.
+window-title = { $title } — { $app }
+window-title-numbered = { $title } — { $app } (Window { $n })
+window-title-empty = { $app }
+
+# First-run settings import (an edition with its own config directory, finding
+# the community installation's settings beside it).
+first-run-window-title = Welcome
+first-run-title = Set up { $app }
+first-run-body = { $app } keeps its settings separately from Skribisto, so it starts out empty. Your preferences, recent projects, dictionaries and window layout can be copied across now.
+first-run-from = Copy from
+first-run-to = Copy to
+first-run-copy-note = Nothing is moved or removed. Skribisto keeps every one of its own settings, and goes on working exactly as before.
+first-run-import = Import settings
+first-run-start-fresh = Start fresh
+first-run-import-failed = Some settings could not be imported: { $error }
+
+
+
 # ── Work ▸ Punctuation — the project's typographic house style ──────────────
 settings-page-punctuation = Punctuation
 settings-group-punctuation = Smart punctuation

@@ -46,8 +46,7 @@ static REPORTING: AtomicBool = AtomicBool::new(false);
 /// `None` when the platform gives us no data directory, which is the one case
 /// where there is nowhere sensible to write — the hook then degrades to stderr.
 pub fn crash_dir() -> Option<PathBuf> {
-    teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
-        .map(|paths| paths.data_dir().join("crash-reports"))
+    crate::identity::app_paths().map(|paths| paths.data_dir().join("crash-reports"))
 }
 
 /// Install the panic hook. Call once, as early in `main` as possible — before

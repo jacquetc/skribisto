@@ -24,7 +24,7 @@ use std::path::PathBuf;
 /// backend treats that as "no media", so a project on such a platform still
 /// opens — without its images — rather than failing to open at all.
 pub fn media_root() -> PathBuf {
-    teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    crate::identity::app_paths()
         .map(|paths| paths.data_dir().join("media"))
         .unwrap_or_default()
 }

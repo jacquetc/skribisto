@@ -114,9 +114,24 @@ fn namespace_for(config_dir: &Path) -> String {
 
 /// This installation's namespace, or `None` when no home directory is
 /// detectable. Also used to name Windows pipes (see [`socket_name`]).
+///
+/// ⚠ **Keyed to the family, not to the running edition** — `family_paths`, never
+/// `app_paths`. Every edition installed on a machine must land in one lock
+/// directory so each can see what the others hold open; keying this to the
+/// edition would give the community build and an extension build separate
+/// universes, and `BackupRestoreViewModel::check_open_elsewhere` would stop
+/// refusing to restore a backup over a project the other edition has open — the
+/// other then autosaves its stale in-memory state back over the restored file,
+/// silently.
+///
+/// The elections still separate, because the *socket name* carries the edition
+/// even though the directory does not. See [`SocketId::leaf`].
+///
+/// Sandbox isolation is unaffected: a sandbox overrides `XDG_CONFIG_HOME`, which
+/// moves the family config dir too, so the whole namespace still moves with it —
+/// which is the property this function exists for.
 pub fn namespace() -> Option<String> {
-    teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
-        .map(|p| namespace_for(p.config_dir()))
+    crate::identity::family_paths().map(|p| namespace_for(p.config_dir()))
 }
 
 /// The shared directory holding every instance's lock + socket files. Prefers an
@@ -164,9 +179,7 @@ pub fn dir() -> Option<PathBuf> {
         }),
         // Already inside this installation's own data dir. Every byte spent here
         // comes out of the macOS `sun_path` budget, so spend none.
-        None => teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")?
-            .data_dir()
-            .join("run"),
+        None => crate::identity::family_paths()?.data_dir().join("run"),
     };
     std::fs::create_dir_all(&d).ok()?;
     Some(d)
@@ -183,19 +196,44 @@ fn set_dir_override(path: Option<PathBuf>) {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SocketId {
     /// The well-known socket the single-instance election runs on. Exactly one
-    /// live instance owns it.
+    /// live instance **of one edition** owns it — see [`SocketId::leaf`] for why
+    /// this is the one name that carries an edition suffix while the directory
+    /// around it does not.
     Primary,
     /// A specific instance's own socket, reachable by pid — how a peer process
-    /// (a `--new-instance` sibling) is asked to raise a window.
+    /// (a `--new-instance` sibling, or an instance of *another edition*) is asked
+    /// to raise a window.
     Pid(u32),
 }
 
 impl SocketId {
     /// The leaf file name on Unix, and the distinguishing part of the pipe name
     /// on Windows.
+    ///
+    /// **The primary socket is per-edition; everything else is family-shared.**
+    /// That split is the whole design: [`dir`] is keyed to the *family* so every
+    /// edition installed on a machine reads the same lock files and can tell that
+    /// a peer holds a project open (without which
+    /// `BackupRestoreViewModel::check_open_elsewhere` would let one edition
+    /// restore a backup over a project another has open, and the other would then
+    /// autosave its stale state back over it). But the *election* must not be
+    /// shared: an extension build that finds a community primary hands over its
+    /// project and exits in ~half a second, and the writer gets a window with
+    /// none of the extension in it. Different socket name, separate elections,
+    /// same directory.
+    ///
+    /// The community edition keeps the bare name `primary` it has always used, so
+    /// upgrading an existing install does not briefly elect two primaries while
+    /// old and new processes look for different names.
+    ///
+    /// ⚠ A **six-hex slug**, not the readable organization name. See
+    /// [`crate::identity::AppIdentity::slug`]: this lands in a path that on macOS
+    /// must fit Darwin's 104-byte `sun_path`, and `primary-skribisto-pro` does
+    /// not. Pinned by [`tests::the_macos_socket_path_fits_in_sun_path`].
     fn leaf(self) -> String {
         match self {
-            SocketId::Primary => "primary".to_string(),
+            SocketId::Primary if crate::identity::is_community() => "primary".to_string(),
+            SocketId::Primary => format!("primary-{}", crate::identity::current().slug()),
             SocketId::Pid(pid) => format!("ipc-{pid}"),
         }
     }
@@ -490,22 +528,94 @@ mod tests {
         const DARWIN_SUN_PATH: usize = 104;
         // Generous: longer than almost any real macOS short name.
         let long_user = "jean-baptiste-de-la";
+        // The directory is the **family** one whatever edition runs (see
+        // `namespace`), so an edition with a longer application name does not
+        // lengthen this path — only its socket leaf.
         for user in ["bo", "cyril", long_user] {
             let dir =
                 format!("/Users/{user}/Library/Application Support/eu.skribisto.Skribisto/run");
             for leaf in [
                 SocketId::Primary.leaf(),
                 SocketId::Pid(4_294_967_295).leaf(),
+                // The worst case an extension edition can produce. Computed the
+                // same way `SocketId::leaf` computes it, rather than hardcoded,
+                // so shortening or lengthening the slug moves this budget with it.
+                format!(
+                    "primary-{}",
+                    crate::identity::AppIdentity::new("eu", "skribisto-pro", "Skribisto Pro")
+                        .slug()
+                ),
             ] {
                 let path = format!("{dir}/{leaf}.sock");
                 assert!(
                     path.len() < DARWIN_SUN_PATH,
                     "{path} is {} bytes; Darwin's sun_path holds {DARWIN_SUN_PATH} \
-                     including the NUL, so bind() would fail with ENAMETOOLONG",
+                     including the NUL, so bind() would fail with ENAMETOOLONG — which does \
+                     not crash, it degrades silently to Standalone and single-instance never \
+                     engages. This is why the edition suffix is a six-hex slug and not the \
+                     readable organization name.",
                     path.len()
                 );
             }
         }
+    }
+
+    /// Two editions must **elect separately** — this is the half of the design
+    /// that stops an extension build handing its project to a community primary
+    /// and exiting.
+    #[test]
+    fn editions_elect_on_different_primary_sockets() {
+        let community = SocketId::Primary.leaf();
+        let _h = crate::identity::register(crate::identity::AppIdentity::new(
+            "eu",
+            "skribisto-pro",
+            "Skribisto Pro",
+        ));
+        let edition = SocketId::Primary.leaf();
+
+        assert_ne!(
+            community, edition,
+            "an edition sharing the community's primary socket shares its election, and hands \
+             every project it is launched with to a window that has none of the extension in it"
+        );
+        assert_eq!(
+            community, "primary",
+            "the community edition must keep the bare name it has always used, so an upgrade \
+             does not briefly run two primaries"
+        );
+    }
+
+    /// …and must **share a lock directory**, which is the other half: it is what
+    /// lets `check_open_elsewhere` see that another edition holds a project open
+    /// before a backup restore overwrites it.
+    #[test]
+    fn editions_share_one_lock_directory() {
+        let community = namespace();
+        let _h = crate::identity::register(crate::identity::AppIdentity::new(
+            "eu",
+            "skribisto-pro",
+            "Skribisto Pro",
+        ));
+        assert_eq!(
+            community,
+            namespace(),
+            "the lock directory must not follow the edition, or one edition can restore a \
+             backup over a project another has open and never know"
+        );
+    }
+
+    /// The per-pid socket is what a cross-edition raise travels over, so it must
+    /// stay edition-independent: the peer whose window we want to raise is
+    /// identified by pid alone.
+    #[test]
+    fn a_peer_socket_is_addressed_by_pid_alone() {
+        let before = SocketId::Pid(4242).leaf();
+        let _h = crate::identity::register(crate::identity::AppIdentity::new(
+            "eu",
+            "skribisto-pro",
+            "Skribisto Pro",
+        ));
+        assert_eq!(before, SocketId::Pid(4242).leaf());
     }
 
     /// The suffix belongs to the `XDG_RUNTIME_DIR` branch alone — that directory

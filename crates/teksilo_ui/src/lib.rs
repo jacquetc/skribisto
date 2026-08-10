@@ -93,7 +93,9 @@ pub mod date_convert;
 pub mod distraction_free;
 pub mod docks;
 pub mod export;
+pub mod first_run;
 pub mod icons;
+pub mod identity;
 pub mod intents;
 pub mod locales;
 pub mod media_paths;
@@ -130,7 +132,7 @@ use std::sync::Arc;
 use teksilo::core::event_source::{EventSource, SubscriptionHandle};
 
 use teksilo::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
-use teksilo::settings::{AppPaths, SettingsStore};
+use teksilo::settings::SettingsStore;
 use teksilo::widgets::framework_locales;
 
 use shell::{ipc, open_registry, windows};
@@ -705,6 +707,14 @@ pub fn run() {
     // (nothing has claimed it yet). Pruning first would therefore delete the
     // saved geometry of the very window we are seconds away from restoring.
 
+    // ── Is this an edition's very first launch? ───────────────────────────────
+    // Resolved **here**, before a single settings service is opened, and not at
+    // the point of use. `first_run::pending` asks (among other things) whether
+    // this edition's `general.toml` exists yet — and opening the services below
+    // creates it, populated with defaults. Asked any later, the answer is always
+    // "no offer" on the one launch the offer exists for.
+    let first_run_offer = first_run::pending();
+
     // ── One-time startup maintenance: prune orphaned window-state rows (F4b) ──
     // `window_state.toml` gets a `work-{hash}` row every time a project window
     // opens, but nothing ever removed one — a project tried once (or an
@@ -721,7 +731,7 @@ pub fn run() {
     // is insertion order, not LRU, so trimming it would need a new recency
     // field. `"main"`/`"launcher"`/any other fixed label is never touched —
     // only `work-*` labels are ever considered.
-    if let Some(paths) = AppPaths::new("eu", "skribisto", "Skribisto") {
+    if let Some(paths) = crate::identity::app_paths() {
         match WindowStateService::open(&paths) {
             Ok(window_state) => {
                 let known_paths = known_project_paths(initial_project.as_deref());
@@ -825,7 +835,7 @@ pub fn run() {
     // on-disk discovery, and the download view-model. App-local (a downloaded `.dic` is a
     // machine-wide resource, not `Work` state) — degrades to a throwaway temp settings
     // file if the config dir is unavailable, exactly as backup settings do.
-    let dictionary_settings = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let dictionary_settings = crate::identity::app_paths()
         .and_then(|paths| {
             models::DictionarySettingsService::open(&paths)
                 .map_err(|e| eprintln!("dictionary settings: open failed: {e}"))
@@ -843,7 +853,7 @@ pub fn run() {
     // unavailable, exactly as the backup/search settings do. The VM reads the
     // project uid/path from the singles, drives the shared `DockingModel` (via the
     // outline handle), and is handed the editors once `App::build` creates them.
-    let workspace_layout_service = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let workspace_layout_service = crate::identity::app_paths()
         .and_then(|paths| {
             WorkspaceLayoutService::open(&paths)
                 .map_err(|e| eprintln!("workspace layout: open failed: {e}"))
@@ -853,7 +863,7 @@ pub fn run() {
     // Remembered Overview expand state, keyed per project + per container by durable uid
     // (`tree_expansion.toml`). A fourth `SettingsFile` sibling; on failure the feature
     // simply goes quiet rather than blocking startup, exactly as the layout service does.
-    let tree_expansion_service = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let tree_expansion_service = crate::identity::app_paths()
         .and_then(|paths| {
             TreeExpansionService::open(&paths)
                 .map_err(|e| eprintln!("tree expansion: open failed: {e}"))
@@ -869,7 +879,7 @@ pub fn run() {
     // Where each kind of file dialog last opened. App-global by nature — the folder a
     // writer exports to is theirs, not any one manuscript's — so it is opened once here
     // and read through `app_state`, the one tier that slot is actually right for.
-    let folder_memory = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let folder_memory = crate::identity::app_paths()
         .and_then(|paths| {
             models::FolderMemoryService::open(&paths)
                 .map_err(|e| eprintln!("folder memory: open failed: {e}"))
@@ -878,7 +888,7 @@ pub fn run() {
         .unwrap_or_else(models::FolderMemoryService::in_memory_default);
     // Where each project's last document import landed. Per-project rows in one
     // app-global file, like tree expansion.
-    let import_prefs = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let import_prefs = crate::identity::app_paths()
         .and_then(|paths| {
             models::ImportPrefsService::open(&paths)
                 .map_err(|e| eprintln!("import prefs: open failed: {e}"))
@@ -887,7 +897,7 @@ pub fn run() {
         .unwrap_or_else(models::ImportPrefsService::in_memory_default);
     // App-local config (a style outlives any project); degrades to a throwaway temp file if the
     // config dir is unavailable, exactly as backup settings do.
-    let export_styles_service = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let export_styles_service = crate::identity::app_paths()
         .and_then(|paths| {
             models::ExportStylesService::open(&paths)
                 .map_err(|e| eprintln!("export styles: open failed: {e}"))
@@ -898,7 +908,7 @@ pub fn run() {
     // Paratext presets — the front/back matter structures New Work can start a project
     // with, and the Settings pane edits. Opened here for the same reason export styles
     // are: one instance, so a preset written in Settings is the one New Work offers.
-    let paratext_presets_service = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let paratext_presets_service = crate::identity::app_paths()
         .and_then(|paths| {
             models::ParatextPresetsService::open(&paths)
                 .map_err(|e| eprintln!("paratext presets: open failed: {e}"))
@@ -909,7 +919,7 @@ pub fn run() {
     // The distraction-free theme library, on the same footing and for the same
     // reasons (a theme outlives any project, and the settings pane and the
     // mode's own picker must read one instance).
-    let df_themes_service = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let df_themes_service = crate::identity::app_paths()
         .and_then(|paths| {
             models::DistractionFreeThemesService::open(&paths)
                 .map_err(|e| eprintln!("distraction-free themes: open failed: {e}"))
@@ -941,7 +951,7 @@ pub fn run() {
     // project loads) so the on-open/on-close/interval hooks and the scheduler see
     // it. Degrades to a throwaway temp file if the config dir is unavailable,
     // exactly as the recents MRU does.
-    let backup_service = teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    let backup_service = crate::identity::app_paths()
         .and_then(|paths| {
             BackupSettingsService::open(&paths)
                 .map_err(|e| eprintln!("backup settings: open failed: {e}"))
@@ -1045,7 +1055,44 @@ pub fn run() {
     // `sessions::WorkSession`'s module doc) have a real value for *this*, the
     // very first window. `None` when the initial window is the Launcher (no
     // Work open yet).
-    let (initial_window_config, initial_state) = if let Some(path) = initial_project.clone() {
+    // What this launch *would* open with, had there been no first-run offer.
+    // Captured as a closure so the first-run window can perform exactly the same
+    // decision once the writer has answered — see `first_run_window::answer`.
+    let open_initial = {
+        let ctx_for_initial = app_ctx.clone();
+        let argv_path = initial_project.clone();
+        move |ectx: &mut EventContext| match argv_path.clone() {
+            Some(path) => {
+                windows::open_or_focus_project(ectx, &path);
+            }
+            None => {
+                ectx.open_window(windows::launcher_window_config(ctx_for_initial.clone()));
+            }
+        }
+    };
+    // The first launch of an edition that has its own config directory and finds
+    // the community installation's settings beside it: offer to bring them
+    // across before anything else happens. `first_run::pending` was resolved
+    // before the settings services opened (see its doc) — by now this edition's
+    // own `general.toml` exists, full of defaults, and the answer would be wrong.
+    let (initial_window_config, initial_state) = if let Some(source) = first_run_offer.clone() {
+        let open_initial = open_initial.clone();
+        let source_for_answer = source.clone();
+        (
+            shell::first_run_window::first_run_window_config(
+                source,
+                std::rc::Rc::new(move |ectx: &mut EventContext, import: bool| {
+                    shell::first_run_window::answer(
+                        ectx,
+                        &source_for_answer,
+                        import,
+                        &open_initial,
+                    );
+                }),
+            ),
+            None,
+        )
+    } else if let Some(path) = initial_project.clone() {
         // Launch with a path on argv (file manager, CLI): always skip the
         // Launcher.
         let (config, state) = project_factory.window_config(app::PendingAction::Load(path));
@@ -1305,7 +1352,7 @@ fn focus_with_token(
 /// which appends `.toml`). `--config` merges into this file and `--dump-config`
 /// reads it, so all four agree on one path by construction.
 fn general_settings_path() -> Option<std::path::PathBuf> {
-    AppPaths::new("eu", "skribisto", "Skribisto").map(|paths| paths.config_file("general"))
+    crate::identity::app_paths().map(|paths| paths.config_file("general"))
 }
 
 /// `--dump-config`: print every settable key with its effective value, then exit.
@@ -1389,7 +1436,7 @@ fn apply_config_pins(path: &str) {
 /// launch's *initial window* is the Launcher or a project — a decision made
 /// in `main`, before any widget tree (hence any `BuildContext`) exists.
 fn read_prefs() -> (bool, String, bool, bool, bool) {
-    let Some(paths) = AppPaths::new("eu", "skribisto", "Skribisto") else {
+    let Some(paths) = crate::identity::app_paths() else {
         return (
             false,
             "en-US".to_string(),

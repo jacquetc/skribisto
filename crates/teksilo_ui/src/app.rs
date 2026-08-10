@@ -931,7 +931,7 @@ impl App {
 /// unavailable — so the app still runs, search preferences just won't persist.
 fn open_search_settings() -> crate::models::SearchSettingsService {
     use crate::models::SearchSettingsService;
-    match teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto") {
+    match crate::identity::app_paths() {
         Some(paths) => SearchSettingsService::open(&paths).unwrap_or_else(|e| {
             eprintln!("search settings: open failed ({e}); using an in-memory fallback");
             SearchSettingsService::in_memory_default()

@@ -52,7 +52,7 @@ use std::path::PathBuf;
 /// [`resolve_destinations`] treats that as "fall back to beside the project", so
 /// backups never silently stop on such a platform.
 pub fn backup_root() -> PathBuf {
-    teksilo::settings::AppPaths::new("eu", "skribisto", "Skribisto")
+    crate::identity::app_paths()
         .map(|paths| paths.data_dir().join("backups"))
         .unwrap_or_default()
 }

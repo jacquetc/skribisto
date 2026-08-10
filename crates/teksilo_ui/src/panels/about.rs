@@ -88,7 +88,7 @@ impl Widget for AboutPanel {
                                     Expand::horizontal {
                                         VStack {
                                             spacing: 2.0
-                                            TextWidget::new(lit!("Skribisto")) {
+                                            TextWidget::new(lit!(crate::identity::display_name())) {
                                                 style: TextStyleRole::BodyBold
                                             }
                                             TextWidget::new(version) {
