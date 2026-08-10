@@ -514,6 +514,8 @@ impl ImportDocumentViewModel {
                     origin: "mock.md".into(),
                     included: true,
                     comments: Vec::new(),
+                    source_uid_tag: None,
+                    source_digest: None,
                     diagnostics: Vec::new(),
                 },
                 PlannedRow {
@@ -527,6 +529,8 @@ impl ImportDocumentViewModel {
                     origin: "mock.md".into(),
                     included: true,
                     comments: Vec::new(),
+                    source_uid_tag: None,
+                    source_digest: None,
                     diagnostics: Vec::new(),
                 },
                 PlannedRow {
@@ -540,6 +544,8 @@ impl ImportDocumentViewModel {
                     origin: "mock.md".into(),
                     included: true,
                     comments: Vec::new(),
+                    source_uid_tag: None,
+                    source_digest: None,
                     diagnostics: Vec::new(),
                 },
             ],
@@ -1150,6 +1156,10 @@ impl ImportDocumentViewModel {
                     // its quote was measured against this row's prose, and the prose
                     // is what the review step never edits.
                     comments: row.comments.iter().map(comment_to_dto).collect(),
+                    // The row's own identity, handed back untouched for the same reason its
+                    // comments are: the review step edits titles and types, never which row
+                    // a passage *is*.
+                    source_uid_tag: row.source_uid_tag.clone().unwrap_or_default(),
                 })
             })
             .collect()
@@ -1318,6 +1328,7 @@ fn comment_from_dto(comment: &ImportComment) -> Option<PlannedComment> {
     let ImportComment::Found {
         kind,
         uid,
+        uid_tag,
         author_name,
         author_initials,
         created_at,
@@ -1371,6 +1382,8 @@ fn comment_from_dto(comment: &ImportComment) -> Option<PlannedComment> {
             }
         },
         uid: *uid,
+        // Empty on the wire means "this file carried no mark for this comment".
+        uid_tag: (!uid_tag.is_empty()).then(|| uid_tag.clone()),
         author: author_name.clone(),
         author_initials: author_initials.clone(),
         created: parse_rfc3339(created_at),
@@ -1404,6 +1417,7 @@ fn comment_from_dto(comment: &ImportComment) -> Option<PlannedComment> {
 /// One imported comment, plan → DTO. The twin of [`comment_from_dto`].
 fn comment_to_dto(comment: &PlannedComment) -> ImportComment {
     ImportComment::Found {
+        uid_tag: comment.uid_tag.clone().unwrap_or_default(),
         kind: match comment.kind {
             frontend::common::entities::CommentAnchorKind::Range => ImportCommentKind::Range,
             frontend::common::entities::CommentAnchorKind::Paragraph => {
@@ -1481,6 +1495,8 @@ pub fn plan_from_dto(
                 comments,
                 origin,
                 included,
+                source_uid_tag,
+                source_digest,
             } = row
             else {
                 continue;
@@ -1500,6 +1516,9 @@ pub fn plan_from_dto(
                 comments: comments.iter().filter_map(comment_from_dto).collect(),
                 origin: origin.clone(),
                 included: *included,
+                // Empty on the wire means the file carried no mark for this row.
+                source_uid_tag: (!source_uid_tag.is_empty()).then(|| source_uid_tag.clone()),
+                source_digest: (!source_digest.is_empty()).then(|| source_digest.clone()),
                 diagnostics: Vec::new(),
             });
         }
@@ -1615,6 +1634,8 @@ mod tests {
             origin: "a.md".into(),
             included: true,
             comments: Vec::new(),
+            source_uid_tag: None,
+            source_digest: None,
             diagnostics: Vec::new(),
         }
     }

@@ -63,6 +63,14 @@ pub struct PlanRowView {
     /// same anchors straight back to the backend. Counting them here and re-reading
     /// the files later would mean scanning every document twice.
     pub comments: Vec<document_ingest::plan::PlannedComment>,
+    /// Which `BinderItem` this row *was*, when the file is one this project exported — the
+    /// round-trip mark it arrived with. Carried through the review the same way `comments` is,
+    /// and for the same reason: the review edits titles and types, never which row a passage
+    /// is, and re-deriving it at apply time would mean reading every file a second time.
+    pub source_uid_tag: Option<String>,
+    /// The digest that mark carried — this row's prose as it was exported. See
+    /// `document_ingest::plan::PlannedRow::source_digest`.
+    pub source_digest: Option<String>,
     pub origin: String,
     /// Diagnostics belonging to this row.
     pub diagnostics: Vec<document_ingest::ImportDiagnostic>,
@@ -164,6 +172,10 @@ impl ImportPlanSource {
             word_count: 0,
             scene_breaks: 0,
             comments: Vec::new(),
+            // A row the writer invented in the review step was in no file, so no mark named
+            // it and it can only ever be created.
+            source_uid_tag: None,
+            source_digest: None,
             // Empty origin marks a row the writer invented in the review step,
             // not one a scanner produced — the Source column stays blank.
             origin: String::new(),
@@ -332,6 +344,8 @@ fn view_of(key: PlanRowKey, row: &PlannedRow) -> PlanRowView {
         word_count: row.word_count,
         scene_breaks: row.scene_breaks,
         comments: row.comments.clone(),
+        source_uid_tag: row.source_uid_tag.clone(),
+        source_digest: row.source_digest.clone(),
         origin: row.origin.clone(),
         diagnostics: row.diagnostics.clone(),
     }
@@ -438,6 +452,8 @@ mod tests {
             origin: "a.md".into(),
             included: true,
             comments: Vec::new(),
+            source_uid_tag: None,
+            source_digest: None,
             diagnostics: Vec::new(),
         }
     }
@@ -499,7 +515,10 @@ mod tests {
         s.prepend_root(CreateType::Book, "The Novel");
 
         assert_eq!(s.visible_count(), 3);
-        assert_eq!(s.row(PlanRowKey(0)).map(|r| r.title).as_deref(), Some("The Novel"));
+        assert_eq!(
+            s.row(PlanRowKey(0)).map(|r| r.title).as_deref(),
+            Some("The Novel")
+        );
         assert_eq!(s.type_of(PlanRowKey(0)), Some(CreateType::Book));
         assert_eq!(s.row(PlanRowKey(0)).map(|r| r.indent), Some(0));
         assert_eq!(s.row(PlanRowKey(1)).map(|r| r.indent), Some(1));

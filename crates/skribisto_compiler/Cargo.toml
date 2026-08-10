@@ -25,6 +25,9 @@ skribisto_model = { workspace = true }
 skrib_format = { workspace = true }
 serde = { workspace = true }
 serde_json = "1.0"
+# `BinderItem.uid`, carried into a round-trip row mark so a returning `.docx`/`.odt` can be
+# matched back onto the rows it came from. Same crate + feature set `common`'s entities use.
+uuid = { workspace = true }
 text-document = { workspace = true }
 skribisto_fonts = { workspace = true }
 # Bundled Noto RTL faces for PDF export (byte accessors only). Explicit features so the
@@ -34,6 +37,9 @@ teksilo-text = { path = "../../../teksilo/crates/teksilo-text", version = "0.7.0
 [dev-dependencies]
 tempfile = "3"
 png = "0.18"
+# Reading a packed `.docx`/`.odt` back to prove a round-trip mark reached the file rather than
+# only the payload. Dev-only: the writers themselves live in text-document.
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 
 [features]
 # Opt-in: enables text-document's Typst-backed PDF exporter. Off by default so the standard

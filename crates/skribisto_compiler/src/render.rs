@@ -24,8 +24,8 @@ use skribisto_model::language;
 use skribisto_model::numbering::{self, Numbered, NumberingRules};
 use skribisto_model::scene_break::{self, SceneBreakTier};
 use text_document::{
-    DocxExportOptions, EpubExportOptions, MarkdownExportOptions,
-    PdfExportOptions, PlainTextExportOptions, TextDirection, TextDocument,
+    DocxExportOptions, EpubExportOptions, MarkdownExportOptions, PdfExportOptions,
+    PlainTextExportOptions, TextDirection, TextDocument,
 };
 
 use crate::headings::{self, Level};
@@ -128,6 +128,14 @@ struct Assembled {
 pub(crate) struct EmittedContent {
     /// The `Content` row's own id — what a `Comment` points at.
     pub(crate) content_id: u64,
+    /// The uid of the `BinderItem` this content belongs to — what a **round-trip row mark**
+    /// spells, so a returning file can be matched back onto the binder it came from.
+    ///
+    /// The item's, not the content's: a `Content` id is re-minted on every `load_work` and would
+    /// name nothing after a save/reload, while `BinderItem.uid` is the project's one durable
+    /// handle on a row. Nil for a row created before identity was minted, which
+    /// [`row_marks`] skips rather than writing a mark that names nothing.
+    pub(crate) item_uid: uuid::Uuid,
     /// The row's stored Djot, *before* `push_prose` transformed it.
     ///
     /// Deliberately the stored form rather than the emitted form: it is the string the
@@ -136,6 +144,22 @@ pub(crate) struct EmittedContent {
     /// rendering) is exactly why the window search downstream is block-wise and tolerant
     /// rather than a whole-row string comparison.
     djot: String,
+}
+
+impl EmittedContent {
+    /// This row's prose as plain text — what a round-trip digest is taken over.
+    ///
+    /// The *stored* Djot's plain text, matching what `document_ingest` will report for the same
+    /// row when the file comes back: both sides go through
+    /// [`skribisto_model::round_trip::normalize`], which cancels the whitespace and
+    /// invisible-character differences a trip through an editor introduces. A row whose Djot
+    /// cannot be parsed digests as empty rather than failing the export — a mark is an aid, not
+    /// content.
+    fn djot_plain(&self) -> String {
+        skrib_format::djot_plain_text(&self.djot)
+            .map(|(text, _)| text)
+            .unwrap_or_default()
+    }
 }
 
 /// What a render produced, for the result DTO / a toast.
@@ -200,7 +224,11 @@ pub fn render_to_file(
     // the same payload rather than each rebasing for itself — two rebases of one document
     // could disagree, and the disagreement would show up as a comment landing in different
     // places in the `.docx` and the `.odt` of the same export.
-    let (comments, comments_orphaned) = comment_payload(req, &built)?;
+    let Payloads {
+        comments,
+        marks,
+        orphaned: comments_orphaned,
+    } = export_payloads(req, &built)?;
     stats.comments_written = comments.len();
     stats.comments_orphaned = comments_orphaned;
     match req.format {
@@ -219,6 +247,7 @@ pub fn render_to_file(
                 collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
             );
             opts.comments = comments;
+            opts.marks = marks;
             doc.to_docx_with_options(&out, opts)?
                 .wait()
                 .map_err(|e| anyhow!("writing DOCX '{out}': {e:#}"))?;
@@ -232,6 +261,7 @@ pub fn render_to_file(
                 collect_images(req.gathered, req.media_dir, Some(&built.image_refs)),
             );
             opts.comments = comments;
+            opts.marks = marks;
             doc.to_odt_with_options(&out, opts)?
                 .wait()
                 .map_err(|e| anyhow!("writing ODT '{out}': {e:#}"))?;
@@ -358,13 +388,42 @@ const TWIPS_PER_IN: f32 = 1440.0;
 ///
 /// A counted comment is dropped from the payload rather than written at a guessed position:
 /// the whole anchor model exists to avoid a comment that is *mostly* right.
-fn comment_payload(
-    req: &RenderRequest,
-    built: &Assembled,
-) -> Result<(text_document::DocumentComments, usize)> {
-    let mut payload = text_document::DocumentComments::new();
-    if !req.format.carries_comments() || req.gathered.comments.is_empty() {
-        return Ok((payload, 0));
+///
+/// A preset with [`include_comments`](crate::preset::Preset::include_comments) off returns the
+/// same empty payload **and a zero count**. That is not laziness about the count: a comment left
+/// out because the writer asked for a clean copy was not *dropped*, and reporting it as one
+/// would put "3 comments could not be placed" on a perfectly correct export. A warning that
+/// fires when nothing is wrong is how writers learn to stop reading warnings.
+/// Everything a comment-carrying writer is handed beside the document itself.
+pub(crate) struct Payloads {
+    pub comments: text_document::DocumentComments,
+    /// Round-trip marks — the bookmarks that let a returning file be recognised as this
+    /// project's work. See [`skribisto_model::round_trip`] for what the names say.
+    pub marks: text_document::DocumentMarks,
+    /// Comments that belonged in this export and could not be placed.
+    pub orphaned: usize,
+}
+
+/// Build both payloads from **one** pass over the compiled document.
+///
+/// One pass, not two, because a row's window is found by a forward heuristic search (see
+/// [`comment_rebase::locate_windows`]) and two independent searches are free to disagree. They
+/// must not: a row mark is anchored at the start of the very window its own comments are rebased
+/// into, so a disagreement would put a row's identity and its notes in different places in the
+/// same file — and the file is the only thing the reader gets.
+fn export_payloads(req: &RenderRequest, built: &Assembled) -> Result<Payloads> {
+    let mut out = Payloads {
+        comments: text_document::DocumentComments::new(),
+        marks: text_document::DocumentMarks::new(),
+        orphaned: 0,
+    };
+
+    let want_comments = req.format.carries_comments()
+        && req.preset.include_comments
+        && !req.gathered.comments.is_empty();
+    let want_marks = req.format.carries_round_trip_marks() && req.preset.include_round_trip_marks;
+    if !want_comments && !want_marks {
+        return Ok(out);
     }
 
     // The ADDRESSABLE text and the block starts that index it. Pairing an offset with
@@ -378,7 +437,72 @@ fn comment_payload(
         .into_iter()
         .map(|b| b.position())
         .collect();
+    let windows = comment_rebase::locate_windows(&text, &starts, &built.emitted);
 
+    if want_marks {
+        for m in row_marks(built, &windows) {
+            out.marks.insert(m);
+        }
+    }
+    if want_comments {
+        comment_payload_into(req, built, &text, &starts, &windows, &mut out, want_marks)?;
+    }
+    Ok(out)
+}
+
+/// One point mark per exported `BinderItem`, at the first character of its prose.
+///
+/// **Per item, not per `Content`** — a scene and its own synopsis are two contents of one row,
+/// and two marks naming the same uid would collide (a bookmark name is unique in a document, and
+/// `DocumentMarks` is keyed by it, so the second would silently replace the first). The item's
+/// first emitted content wins, which is its manuscript prose whenever it has any.
+///
+/// A row whose uid is still nil is skipped. That is a row created before `with_identity` ran;
+/// it has no durable identity to write, and a mark naming the nil uuid would claim every such
+/// row was the same one.
+fn row_marks(
+    built: &Assembled,
+    windows: &std::collections::HashMap<u64, comment_rebase::Window>,
+) -> Vec<text_document::DocumentMark> {
+    let mut seen: std::collections::HashSet<uuid::Uuid> = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for e in &built.emitted {
+        if e.item_uid.is_nil() || !seen.insert(e.item_uid) {
+            continue;
+        }
+        let Some(w) = windows.get(&e.content_id) else {
+            // The row's prose could not be located in the compiled text. Nothing to anchor to,
+            // and re-import falls back to matching this row by type and title.
+            continue;
+        };
+        out.push(text_document::DocumentMark::point(
+            w.lo as u32,
+            skribisto_model::round_trip::row_mark_name(&e.item_uid, &e.djot_plain()),
+        ));
+    }
+    out
+}
+
+/// Rebase every comment into its row's window and fill `out`.
+///
+/// `with_marks` additionally emits one **range** mark per comment that found a home, over the
+/// very characters the comment covers. That is what lets a returning file re-anchor a comment
+/// from a position the editor's own application maintained through their edits, instead of
+/// re-matching a quote against prose they may have rewritten — and it is the only identity a
+/// comment has once it comes back, since neither Word nor LibreOffice preserves the private uid
+/// attribute the writer also emits.
+///
+/// An orphaned comment gets no mark: it is not written into the file at all, so there would be
+/// nothing for the mark to name.
+fn comment_payload_into(
+    req: &RenderRequest,
+    built: &Assembled,
+    text: &str,
+    starts: &[usize],
+    windows: &std::collections::HashMap<u64, comment_rebase::Window>,
+    out: &mut Payloads,
+    with_marks: bool,
+) -> Result<()> {
     // The row's own Djot, per Content, so an anchor can be rebuilt against the text it was
     // captured on.
     let djot_by_content: std::collections::HashMap<u64, &str> = built
@@ -403,7 +527,7 @@ fn comment_payload(
         })
         .collect();
 
-    let placements = comment_rebase::place_comments(&text, &starts, &built.emitted, &to_place);
+    let placements = comment_rebase::place_comments_in(text, starts, windows, &to_place);
     let by_id: std::collections::HashMap<u64, &skrib_format::CommentWithReplies> = req
         .gathered
         .comments
@@ -411,18 +535,17 @@ fn comment_payload(
         .map(|c| (c.comment.id, c))
         .collect();
 
-    let mut orphaned = 0usize;
     for p in &placements {
         let Some(cwr) = by_id.get(&p.comment_id) else {
             continue;
         };
         if comment_rebase::orphan_reason(p).is_some() {
-            orphaned += 1;
+            out.orphaned += 1;
             continue;
         }
         match p.resolution {
             skribisto_model::comment_anchor::Resolution::Anchored { start, length } => {
-                payload.insert(text_document::DocumentComment {
+                out.comments.insert(text_document::DocumentComment {
                     start: start as u32,
                     end: (start + length) as u32,
                     uid: cwr.comment.uid.to_string(),
@@ -443,12 +566,19 @@ fn comment_payload(
                         })
                         .collect(),
                 });
+                if with_marks && !cwr.comment.uid.is_nil() {
+                    out.marks.insert(text_document::DocumentMark::range(
+                        start as u32,
+                        (start + length) as u32,
+                        skribisto_model::round_trip::comment_mark_name(&cwr.comment.uid),
+                    ));
+                }
             }
             // Already counted and skipped above.
             skribisto_model::comment_anchor::Resolution::Orphan(_) => {}
         }
     }
-    Ok((payload, orphaned))
+    Ok(())
 }
 
 /// The ODT counterpart of [`docx_options`], mapping the same preset onto ODF's own
@@ -985,6 +1115,7 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
             if emitted {
                 emitted_contents.push(EmittedContent {
                     content_id: prose_row.id,
+                    item_uid: row.item.uid,
                     djot: prose.to_string(),
                 });
             }
@@ -1015,6 +1146,7 @@ fn assemble(req: &RenderRequest, progress: &dyn Fn(f32), cancel: &AtomicBool) ->
             if emitted {
                 emitted_contents.push(EmittedContent {
                     content_id: syn_row.id,
+                    item_uid: row.item.uid,
                     djot: syn_row.data.clone(),
                 });
             }
@@ -1931,6 +2063,13 @@ mod tests {
                 id,
                 role: BinderItemRole::Item,
                 sub_role,
+                // Explicit, like `is_exportable`/`activated` below and for the same reason:
+                // `Default` is the **nil** uuid, and a nil uid is what a row carries only
+                // before `with_identity` has ever run on it. Leaving it nil here would make
+                // every fixture silently exercise the "this row has no durable identity"
+                // path — so round-trip marks, which are keyed on it, would never be written
+                // in any test.
+                uid: common::uid::fixture_uid(id),
                 // Split, not wrapped: `iwc(.., "", ..)` must mean "no language, so
                 // inherit" — wrapping made it `[""]`, which reads as tagged.
                 dict_language: language::parse_legacy_list(lang),
@@ -3336,7 +3475,7 @@ mod tests {
         let mut g = flat_book();
         let scene = "The wind rose over the hills.";
         let (text, starts) = skrib_format::djot_plain_text(scene).expect("plain");
-        let at = text.find("the hills").expect("fixture phrase") ;
+        let at = text.find("the hills").expect("fixture phrase");
         let start = text[..at].chars().count();
         let anchor = skribisto_model::comment_anchor::capture(
             &text,
@@ -3402,9 +3541,16 @@ mod tests {
         let r = req(&g, &[100, 101, 102], &p, ExportFormat::Docx);
         let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
 
-        let (payload, orphaned) = comment_payload(&r, &built).unwrap();
+        let Payloads {
+            comments: payload,
+            orphaned,
+            ..
+        } = export_payloads(&r, &built).unwrap();
         assert_eq!(payload.len(), 1, "the placeable comment is written");
-        assert_eq!(orphaned, 1, "the one whose words are gone is counted, not written");
+        assert_eq!(
+            orphaned, 1,
+            "the one whose words are gone is counted, not written"
+        );
 
         let c = payload
             .get(&common::uid::fixture_uid(900).to_string())
@@ -3429,7 +3575,7 @@ mod tests {
     }
 
     /// A format that cannot bring comments home is not given any. Reading them and then
-    /// discarding them is deliberate (see `comment_payload`); writing them would not be.
+    /// discarding them is deliberate (see `export_payloads`); writing them would not be.
     #[test]
     fn a_format_that_does_not_carry_comments_gets_an_empty_payload() {
         let g = flat_book_with_comments();
@@ -3437,9 +3583,336 @@ mod tests {
         for f in [ExportFormat::Epub, ExportFormat::Html, ExportFormat::Latex] {
             let r = req(&g, &[100, 101, 102], &p, f);
             let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
-            let (payload, orphaned) = comment_payload(&r, &built).unwrap();
+            let Payloads {
+                comments: payload,
+                orphaned,
+                ..
+            } = export_payloads(&r, &built).unwrap();
             assert_eq!(payload.len(), 0, "{f:?} must carry no comments");
             assert_eq!(orphaned, 0, "{f:?} must not warn about them either");
+        }
+    }
+
+    /// A writer who asked for a clean copy gets one — and is not warned about it.
+    ///
+    /// The zero orphan count is the half worth pinning. The same book with comments *on*
+    /// reports one comment it could not place (the test above), so an implementation that
+    /// merely skipped writing the payload while still counting the failures would produce
+    /// "1 comment could not be placed" on an export that was exactly what was asked for.
+    #[test]
+    fn a_preset_with_comments_off_writes_none_and_warns_about_none() {
+        let g = flat_book_with_comments();
+        let mut p = preset("neutral");
+        p.include_comments = false;
+        for f in [ExportFormat::Docx, ExportFormat::Odt] {
+            let r = req(&g, &[100, 101, 102], &p, f);
+            let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+            let Payloads {
+                comments: payload,
+                orphaned,
+                ..
+            } = export_payloads(&r, &built).unwrap();
+            assert_eq!(payload.len(), 0, "{f:?} was asked for a clean copy");
+            assert_eq!(
+                orphaned, 0,
+                "{f:?} must not report a deliberate omission as a dropped comment"
+            );
+        }
+    }
+
+    /// The default keeps doing what every export did before the switch existed.
+    ///
+    /// Cheap, and it guards the one mistake this field could make silently: `#[serde(default)]`
+    /// on a bool is `false`, so a preset saved before the field existed would stop carrying
+    /// comments with nothing in the UI or the file to say why.
+    #[test]
+    fn comments_and_marks_default_to_on_for_every_shipped_preset() {
+        for p in crate::preset::builtin_presets() {
+            assert!(
+                p.include_comments,
+                "{} ships with comments off — deliberate? see the field's doc comment",
+                p.id
+            );
+            assert!(p.include_round_trip_marks, "{} ships with marks off", p.id);
+        }
+        // A preset file as it was saved before these fields existed: a real one, with exactly
+        // the two keys removed. Hand-writing a minimal JSON object would not do — most of
+        // `Preset` has no serde default, so such a file would fail to load for reasons that
+        // have nothing to do with what is under test.
+        let mut saved = serde_json::to_value(preset("neutral")).expect("a preset serialises");
+        let obj = saved.as_object_mut().expect("a preset is a JSON object");
+        obj.remove("include_comments");
+        obj.remove("include_round_trip_marks");
+        let restored: crate::preset::Preset =
+            serde_json::from_value(saved).expect("a preset file predating the fields still loads");
+        assert!(restored.include_comments, "an absent key must read as on");
+        assert!(restored.include_round_trip_marks, "likewise for marks");
+    }
+
+    // ── Round-trip marks ────────────────────────────────────────────────────────────────
+
+    /// Every exported row is named, at the first character of its own prose.
+    #[test]
+    fn every_exported_row_gets_a_mark_at_the_start_of_its_prose() {
+        use skribisto_model::round_trip::{MarkName, parse_mark_name};
+
+        let g = flat_book();
+        let p = preset("neutral");
+        let r = req(&g, &[100, 101, 102], &p, ExportFormat::Docx);
+        let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+        let payloads = export_payloads(&r, &built).unwrap();
+
+        // 101 and 102 carry prose. 100 is a `BookBegin` whose only content is the book title,
+        // which is a heading rather than a `Content` this export emits — so it has no window
+        // and no mark, and that is right: there is no passage to point at.
+        let rows: Vec<&text_document::DocumentMark> = payloads
+            .marks
+            .iter()
+            .filter(|m| matches!(parse_mark_name(&m.name), Some(MarkName::Row { .. })))
+            .collect();
+        assert_eq!(rows.len(), 2, "one mark per row with prose: {rows:?}");
+
+        let text = built.doc.to_addressable_text().unwrap();
+        for (item_id, phrase) in [(101u64, "The wind rose"), (102, "She walked on")] {
+            let uid = common::uid::fixture_uid(item_id);
+            let mark = rows
+                .iter()
+                .find(|m| {
+                    matches!(
+                        parse_mark_name(&m.name),
+                        Some(MarkName::Row { ref uid_tag, .. })
+                            if skribisto_model::round_trip::uid_matches(&uid, uid_tag)
+                    )
+                })
+                .unwrap_or_else(|| panic!("no mark for item {item_id}"));
+            assert!(mark.is_point(), "a row mark names a position, not a span");
+            let at: String = text.chars().skip(mark.start as usize).take(20).collect();
+            assert!(
+                at.starts_with(phrase),
+                "item {item_id}'s mark landed on {at:?}, not on its own prose"
+            );
+        }
+    }
+
+    /// The digest in a row's name is the digest of that row's prose — which is what makes the
+    /// three-way "who changed this" comparison possible on re-import at all.
+    #[test]
+    fn a_rows_mark_carries_the_digest_of_its_own_prose() {
+        use skribisto_model::round_trip::{MarkName, digest, parse_mark_name};
+
+        let g = flat_book();
+        let p = preset("neutral");
+        let r = req(&g, &[101], &p, ExportFormat::Odt);
+        let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+        let payloads = export_payloads(&r, &built).unwrap();
+
+        let mark = payloads
+            .marks
+            .iter()
+            .find(|m| matches!(parse_mark_name(&m.name), Some(MarkName::Row { .. })))
+            .expect("the chapter is marked");
+        match parse_mark_name(&mark.name).unwrap() {
+            MarkName::Row { digest: d, .. } => {
+                assert_eq!(d, digest("The wind rose over the hills."));
+            }
+            other => panic!("parsed as {other:?}"),
+        }
+    }
+
+    /// A scene and its synopsis are two `Content`s of **one** row.
+    ///
+    /// Both are emitted when the preset keeps synopses, and both would mint a name from the same
+    /// `BinderItem.uid`. A bookmark name is unique in a document and `DocumentMarks` is keyed by
+    /// it, so the second would silently replace the first — leaving the row's identity anchored
+    /// in its summary rather than its prose, with nothing anywhere to say so.
+    #[test]
+    fn a_row_with_a_synopsis_is_marked_once_on_its_prose() {
+        use skribisto_model::round_trip::{MarkName, parse_mark_name};
+
+        let mut g = flat_book();
+        g.binders[0].items[1].contents.push(c(
+            9,
+            ContentRole::SynopsisText,
+            "A summary of the storm chapter.",
+        ));
+        let mut p = preset("neutral");
+        p.include_synopses = true;
+        let r = req(&g, &[101], &p, ExportFormat::Docx);
+        let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+        let payloads = export_payloads(&r, &built).unwrap();
+
+        let rows: Vec<&text_document::DocumentMark> = payloads
+            .marks
+            .iter()
+            .filter(|m| matches!(parse_mark_name(&m.name), Some(MarkName::Row { .. })))
+            .collect();
+        assert_eq!(rows.len(), 1, "one row, one mark: {rows:?}");
+
+        let text = built.doc.to_addressable_text().unwrap();
+        let at: String = text.chars().skip(rows[0].start as usize).take(13).collect();
+        assert_eq!(
+            at, "The wind rose",
+            "the row's identity must sit on its prose, not on its synopsis"
+        );
+        match parse_mark_name(&rows[0].name).unwrap() {
+            MarkName::Row { digest: d, .. } => assert_eq!(
+                d,
+                skribisto_model::round_trip::digest("The wind rose over the hills."),
+                "the digest must be the prose's, not the synopsis's"
+            ),
+            other => panic!("parsed as {other:?}"),
+        }
+    }
+
+    /// A placed comment is bracketed by a mark over exactly the characters it covers — the only
+    /// identity it has once an editor has saved the file, since neither Word nor LibreOffice
+    /// keeps the private uid attribute the writer also emits.
+    #[test]
+    fn a_placed_comment_gets_a_range_mark_over_its_own_characters() {
+        use skribisto_model::round_trip::{MarkName, parse_mark_name, uid_matches};
+
+        let g = flat_book_with_comments();
+        let p = preset("neutral");
+        let r = req(&g, &[100, 101, 102], &p, ExportFormat::Docx);
+        let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+        let payloads = export_payloads(&r, &built).unwrap();
+
+        let comment_marks: Vec<&text_document::DocumentMark> = payloads
+            .marks
+            .iter()
+            .filter(|m| matches!(parse_mark_name(&m.name), Some(MarkName::Comment { .. })))
+            .collect();
+        // One mark for the comment that found a home; the orphan is not in the file, so there
+        // is nothing for a mark to name.
+        assert_eq!(comment_marks.len(), 1, "{comment_marks:?}");
+
+        let uid = common::uid::fixture_uid(900);
+        match parse_mark_name(&comment_marks[0].name).unwrap() {
+            MarkName::Comment { uid_tag } => assert!(uid_matches(&uid, &uid_tag)),
+            other => panic!("parsed as {other:?}"),
+        }
+
+        let written = payloads.comments.get(&uid.to_string()).expect("written");
+        assert_eq!(
+            (comment_marks[0].start, comment_marks[0].end),
+            (written.start, written.end),
+            "the mark and the comment must bracket the same characters, or a returning file \
+             re-anchors the comment somewhere the editor never put it"
+        );
+
+        let text = built.doc.to_addressable_text().unwrap();
+        let covered: String = text
+            .chars()
+            .skip(comment_marks[0].start as usize)
+            .take((comment_marks[0].end - comment_marks[0].start) as usize)
+            .collect();
+        assert_eq!(covered, "the hills");
+    }
+
+    #[test]
+    fn a_preset_with_marks_off_writes_none() {
+        let g = flat_book_with_comments();
+        let mut p = preset("neutral");
+        p.include_round_trip_marks = false;
+        for f in [ExportFormat::Docx, ExportFormat::Odt] {
+            let r = req(&g, &[100, 101, 102], &p, f);
+            let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+            let payloads = export_payloads(&r, &built).unwrap();
+            assert!(
+                payloads.marks.is_empty(),
+                "{f:?} was asked for a clean copy"
+            );
+            assert!(
+                !payloads.comments.is_empty(),
+                "{f:?} must still carry its comments — the two switches are separate questions"
+            );
+        }
+    }
+
+    #[test]
+    fn a_format_that_cannot_carry_marks_gets_none() {
+        let g = flat_book();
+        let p = preset("neutral");
+        for f in [
+            ExportFormat::Epub,
+            ExportFormat::Html,
+            ExportFormat::Latex,
+            ExportFormat::Markdown,
+        ] {
+            assert!(!f.carries_round_trip_marks(), "{f:?}");
+            let r = req(&g, &[100, 101, 102], &p, f);
+            let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+            assert!(
+                export_payloads(&r, &built).unwrap().marks.is_empty(),
+                "{f:?}"
+            );
+        }
+    }
+
+    /// A row created before identity was minted carries the nil uuid. Marking it would name
+    /// nothing — and worse, every such row would mint the *same* name, so the last one written
+    /// would be the only one in the file.
+    #[test]
+    fn a_row_with_no_durable_identity_is_left_unmarked() {
+        use skribisto_model::round_trip::{MarkName, parse_mark_name};
+
+        let mut g = flat_book();
+        g.binders[0].items[1].item.uid = uuid::Uuid::nil();
+        let p = preset("neutral");
+        let r = req(&g, &[101, 102], &p, ExportFormat::Odt);
+        let built = assemble(&r, &|_| {}, &AtomicBool::new(false)).unwrap();
+        let payloads = export_payloads(&r, &built).unwrap();
+
+        let rows: Vec<&text_document::DocumentMark> = payloads
+            .marks
+            .iter()
+            .filter(|m| matches!(parse_mark_name(&m.name), Some(MarkName::Row { .. })))
+            .collect();
+        assert_eq!(rows.len(), 1, "only the identified row is marked: {rows:?}");
+        match parse_mark_name(&rows[0].name).unwrap() {
+            MarkName::Row { uid_tag, .. } => assert!(skribisto_model::round_trip::uid_matches(
+                &common::uid::fixture_uid(102),
+                &uid_tag
+            )),
+            other => panic!("parsed as {other:?}"),
+        }
+    }
+
+    /// Marks reach the file, not merely the payload.
+    #[test]
+    fn a_real_export_writes_its_marks_into_both_containers() {
+        let g = flat_book_with_comments();
+        let p = preset("neutral");
+        for (fmt, ext, part) in [
+            (ExportFormat::Docx, "docx", "word/document.xml"),
+            (ExportFormat::Odt, "odt", "content.xml"),
+        ] {
+            let dir = tempfile::tempdir().unwrap();
+            let path = dir.path().join(format!("marked.{ext}"));
+            render_to_file(
+                &req(&g, &[100, 101, 102], &p, fmt),
+                &path,
+                &|_| {},
+                &AtomicBool::new(false),
+            )
+            .unwrap_or_else(|e| panic!("{fmt:?} export failed: {e:#}"));
+
+            let bytes = std::fs::read(&path).unwrap();
+            let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
+            let mut xml = String::new();
+            std::io::Read::read_to_string(&mut zip.by_name(part).unwrap(), &mut xml).unwrap();
+
+            let row = skribisto_model::round_trip::row_mark_name(
+                &common::uid::fixture_uid(101),
+                "The wind rose over the hills.",
+            );
+            let comment =
+                skribisto_model::round_trip::comment_mark_name(&common::uid::fixture_uid(900));
+            assert!(xml.contains(&row), "{fmt:?} lost the row mark {row}");
+            assert!(
+                xml.contains(&comment),
+                "{fmt:?} lost the comment mark {comment}"
+            );
         }
     }
 
@@ -3452,8 +3925,8 @@ mod tests {
         let g = flat_book_with_comments();
         let p = preset("neutral");
         for (fmt, ext) in [(ExportFormat::Docx, "docx"), (ExportFormat::Odt, "odt")] {
-            let path = std::env::temp_dir()
-                .join(format!("skrib-comments-{}.{ext}", std::process::id()));
+            let path =
+                std::env::temp_dir().join(format!("skrib-comments-{}.{ext}", std::process::id()));
             let stats = render_to_file(
                 &req(&g, &[100, 101, 102], &p, fmt),
                 &path,
@@ -3462,7 +3935,10 @@ mod tests {
             )
             .unwrap_or_else(|e| panic!("{fmt:?} export failed: {e:#}"));
 
-            assert_eq!(stats.comments_written, 1, "{fmt:?} should write the placeable comment");
+            assert_eq!(
+                stats.comments_written, 1,
+                "{fmt:?} should write the placeable comment"
+            );
             assert_eq!(
                 stats.comments_orphaned, 1,
                 "{fmt:?} should report the one it could not place"
@@ -3477,7 +3953,8 @@ mod tests {
     fn a_non_carrying_format_reports_no_comment_counts() {
         let g = flat_book_with_comments();
         let p = preset("neutral");
-        let path = std::env::temp_dir().join(format!("skrib-nocomments-{}.epub", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("skrib-nocomments-{}.epub", std::process::id()));
         let stats = render_to_file(
             &req(&g, &[100, 101, 102], &p, ExportFormat::Epub),
             &path,

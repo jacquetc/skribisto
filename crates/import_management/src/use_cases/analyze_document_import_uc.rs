@@ -323,6 +323,10 @@ fn comment_to_dto(comment: &PlannedComment) -> ImportComment {
             CommentAnchorKind::Document => ImportCommentKind::Document,
         },
         uid: comment.uid,
+        // Empty rather than `Option`: the generated DTO takes a `String`, and the two absent
+        // cases mean the same thing to every reader — this file carried no mark for this
+        // comment, so it is one the editor wrote.
+        uid_tag: comment.uid_tag.clone().unwrap_or_default(),
         author_name: comment.author.clone(),
         author_initials: comment.author_initials.clone(),
         created_at: comment.created.map(|d| d.to_rfc3339()).unwrap_or_default(),
@@ -368,6 +372,10 @@ fn row_to_dto(row: &PlannedRow) -> DocumentImportRow {
         comments: row.comments.iter().map(comment_to_dto).collect(),
         origin: row.origin.clone(),
         included: row.included,
+        // Empty for a first arrival, a foreign file, or a row the editor added — see
+        // `PlannedRow::source_uid_tag`.
+        source_uid_tag: row.source_uid_tag.clone().unwrap_or_default(),
+        source_digest: row.source_digest.clone().unwrap_or_default(),
     }
 }
 

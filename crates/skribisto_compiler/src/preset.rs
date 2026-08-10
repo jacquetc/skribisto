@@ -62,6 +62,20 @@ impl ExportFormat {
         matches!(self, ExportFormat::Docx | ExportFormat::Odt)
     }
 
+    /// Whether the format can carry the bookmarks that let a returning file be recognised as
+    /// this project's work — see [`skribisto_model::round_trip`].
+    ///
+    /// The same two formats as [`carries_comments`](Self::carries_comments) today, and a
+    /// separate question on purpose. That one asks "can an editor's remarks travel in this
+    /// file"; this one asks "can this file's identity survive the trip". They happen to have the
+    /// same answer because both needs are met by the same pair of round-trippable containers,
+    /// but a format could gain one without the other — an importable format with no annotation
+    /// syntax would want marks and not comments — and folding them into one predicate is how a
+    /// later change quietly turns off the wrong half.
+    pub fn carries_round_trip_marks(self) -> bool {
+        matches!(self, ExportFormat::Docx | ExportFormat::Odt)
+    }
+
     /// Whether the format is rendered synchronously to a `String` (vs. written to a file).
     pub fn is_text(self) -> bool {
         matches!(
@@ -473,6 +487,36 @@ pub struct Preset {
     /// dropping the author's front matter while the built-ins kept it.
     #[serde(default = "yes")]
     pub include_paratexts: bool,
+    /// Send the margin comments out with the manuscript, as real comments in the exported
+    /// file. Only the two formats that [carry comments](ExportFormat::carries_comments) can
+    /// honour it; everywhere else it is inert.
+    ///
+    /// `default = "yes"` for the usual reason — a bare `#[serde(default)]` reads `false` for
+    /// every preset saved before this field existed, which would silently stop those presets
+    /// exporting comments — and because *on* is what every export did before the toggle. The
+    /// off case is the clean copy: a manuscript going to an agent should not arrive carrying
+    /// the writer's notes to themselves.
+    ///
+    /// Left **on for the built-ins too**, submission-shaped ones included. Turning it off
+    /// there would surprise someone who reaches for Shunn to send a draft to their editor,
+    /// and the switch is one click away and visible.
+    #[serde(default = "yes")]
+    pub include_comments: bool,
+    /// Write the invisible identifiers that let a returning file update this project instead
+    /// of landing beside it as a second copy — one bookmark per exported row, one bracketing
+    /// each comment's range. Honoured by the same two formats.
+    ///
+    /// Deliberately **not** folded into [`include_comments`](Self::include_comments): they
+    /// answer different questions. Row marks matter to an export carrying no comments at all
+    /// (they are what makes re-import recognise chapters), and a writer who wants comments in
+    /// the file may still want no internal identifiers in it.
+    ///
+    /// A mark is a bookmark, so it is invisible in both readers and costs a reader nothing;
+    /// *on* is the right default, and `default = "yes"` keeps it that way for presets saved
+    /// before the field existed. The off case is the same clean copy as above — a file
+    /// leaving for someone who will never send it back has no use for identity.
+    #[serde(default = "yes")]
+    pub include_round_trip_marks: bool,
 
     // Localization.
     #[serde(default)]
@@ -539,6 +583,8 @@ impl Preset {
             include_epigraphs: true,
             epigraph_placement: EpigraphPlacement::AfterHeading,
             include_paratexts: true,
+            include_comments: true,
+            include_round_trip_marks: true,
             heading_language: HeadingLanguage::Auto,
             digit_style: DigitStyle::Western,
             direction: DirectionMode::Auto,

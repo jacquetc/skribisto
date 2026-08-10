@@ -125,7 +125,7 @@ use common::entities::{
 use common::snapshot::EntityTreeSnapshot;
 use common::types::EntityId;
 use skribisto_model::{allowed_content, content_allowed, is_valid_combination};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub trait ApplyDocumentImportUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn ApplyDocumentImportUnitOfWorkTrait>;
@@ -281,6 +281,14 @@ impl ApplyDocumentImportUseCase {
             .map(|c| (c.uid, c))
             .collect();
 
+        // The same rows, indexed by the tag a round-trip mark spells — see
+        // `ExistingComments::by_tag` for why this, and not the uid map above, is what a real
+        // returning file is recognised through.
+        let existing_comments_by_tag: HashMap<String, uuid::Uuid> = existing_comments_by_uid
+            .keys()
+            .map(|uid| (skribisto_model::round_trip::uid_tag(uid), *uid))
+            .collect();
+
         // Everything the import creates gets one timestamp, the way every other
         // creation path in this codebase does — a row's `created_at` records the
         // import, not how long the parsing took.
@@ -311,6 +319,12 @@ impl ApplyDocumentImportUseCase {
                 title,
                 djot,
                 comments,
+                // Carried on the wire and not yet read here: this milestone teaches the
+                // *importer* to recover a row's identity, and the next one teaches this use
+                // case to act on it (update the row it names instead of creating a second
+                // copy beside it). Named rather than `..` so that adding the action arm is a
+                // change to one line here, not a hunt for where the identity went.
+                source_uid_tag: _,
             } = row
             else {
                 continue;
@@ -396,6 +410,7 @@ impl ApplyDocumentImportUseCase {
                             comments: &existing_comments_by_uid,
                             replies: &existing_replies_by_uid,
                             reply_owner: &reply_owner_by_uid,
+                            by_tag: &existing_comments_by_tag,
                         },
                         &mut updated_comments,
                         &mut updated_replies,
@@ -557,6 +572,14 @@ struct ExistingComments<'a> {
     /// only when it already belongs to the thread being updated; see the map's own
     /// construction for what reparenting one would corrupt.
     reply_owner: &'a HashMap<uuid::Uuid, EntityId>,
+    /// `round_trip::uid_tag(comment.uid)` → that uid, for every comment the Work holds.
+    ///
+    /// The index recognition actually runs on. `ImportComment::uid` arrives populated only from
+    /// a file no editor has saved — Word and LibreOffice both delete the private attribute it
+    /// comes from — so on a real returning file the only identity present is the bookmark's
+    /// tag, and a tag is a one-way hash that cannot be turned back into a uid. Hashing what the
+    /// project already has is how the two are brought together.
+    by_tag: &'a HashMap<String, uuid::Uuid>,
 }
 
 fn create_or_update_comment(
@@ -572,10 +595,12 @@ fn create_or_update_comment(
         comments: existing_comments,
         replies: existing_replies,
         reply_owner,
+        by_tag,
     } = existing;
     let ImportComment::Found {
         kind,
         uid,
+        uid_tag,
         author_name,
         author_initials,
         created_at,
@@ -611,8 +636,23 @@ fn create_or_update_comment(
     // depends on whether it already belongs to *this* thread — and that question needs the
     // thread's own id. `None` while creating a brand-new comment, where no incoming reply can
     // legitimately have an existing owner at all.
-    let existing_comment = uid.and_then(|u| existing_comments.get(&u));
+    // Which comment this *is*, resolved from whichever carrier the file still has.
+    //
+    // The uid first, because it is exact when present — a file this app wrote that no editor
+    // has opened. Then the mark's tag, which is the case that actually happens: both Word and
+    // LibreOffice delete the private attribute the uid rides on, so a manuscript coming back
+    // from a real editor carries only the bookmark. Without this second step, recognition
+    // works in tests and never once in practice, and every returning file duplicates every
+    // comment it brought.
+    let resolved_uid: Option<uuid::Uuid> = uid
+        .filter(|u| existing_comments.contains_key(u))
+        .or_else(|| Some(*by_tag.get(uid_tag.as_str())?).filter(|_| !uid_tag.is_empty()));
+    let existing_comment = resolved_uid.and_then(|u| existing_comments.get(&u));
     let existing_id: Option<EntityId> = existing_comment.map(|c| c.id);
+
+    // Existing replies of *this* thread already claimed by an incoming one, so two incoming
+    // replies cannot both match the same row — see the natural-key fallback below.
+    let mut claimed: HashSet<uuid::Uuid> = HashSet::new();
 
     let mut reply_ids: Vec<EntityId> = Vec::with_capacity(replies.len());
     for reply in replies {
@@ -634,7 +674,34 @@ fn create_or_update_comment(
         // `reply_owner`'s construction. `existing_id` is the comment being updated, and is
         // `None` while creating a brand-new one, where no incoming reply can legitimately
         // already have an owner.
-        let recognised = reply_uid.filter(|u| reply_owner.get(u).copied() == existing_id);
+        let recognised = reply_uid
+            .filter(|u| reply_owner.get(u).copied() == existing_id)
+            .or_else(|| {
+                // **A reply carries no mark of its own.** Both formats anchor a reply to the
+                // same range as the thread it answers, so there is no span for a bookmark to
+                // bracket and nothing to name it with — and the uid above is gone the moment
+                // an editor saves. Left there, the *second* round trip re-creates every reply
+                // the first one brought home, and a thread grows a duplicate of itself on
+                // every exchange.
+                //
+                // So a reply falls back to its natural key: the author who wrote it and the
+                // moment they wrote it, both carried natively by ODF (`dc:creator`/`dc:date`)
+                // and OOXML (`w:author`/`w:date`). Two replies by one author in the same
+                // second is not a thing that happens; two replies by *different* authors, or
+                // the same author at different times, never collide. Scoped to this thread's
+                // own replies, and each existing row can be claimed only once.
+                existing_id?;
+                let hit = existing_replies.values().find(|r| {
+                    reply_owner.get(&r.uid).copied() == existing_id
+                        && !claimed.contains(&r.uid)
+                        && r.author_name == *author_name
+                        && r.created_at == at
+                })?;
+                Some(hit.uid)
+            })
+            .inspect(|u| {
+                claimed.insert(*u);
+            });
         let reply_id = match recognised.and_then(|u| existing_replies.get(&u)) {
             Some(existing) => {
                 let updated = CommentReply {
@@ -969,6 +1036,7 @@ mod tests {
             title: "row".into(),
             djot: String::new(),
             comments: Vec::new(),
+            source_uid_tag: String::new(),
         }
     }
 

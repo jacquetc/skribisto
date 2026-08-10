@@ -163,6 +163,21 @@ pub struct SourceAnnotation {
     /// See [`SourceAnnotationReply::uid`] — the same recognition mechanism, for the
     /// thread's opening comment rather than one of its replies.
     pub uid: Option<uuid::Uuid>,
+    /// The identity a **round-trip mark** carries for this comment: a bookmark pair named
+    /// `skrb_c<tag>` bracketing exactly the characters the comment covers.
+    ///
+    /// The carrier that actually survives. `uid` above only ever arrives on a file no editor
+    /// has saved — Word and LibreOffice both delete the private attribute it comes from,
+    /// measured against a real returning file. A bookmark is first-class in both formats and
+    /// comes back untouched, so on any realistic round trip this is what identifies the
+    /// comment and `uid` is `None`.
+    ///
+    /// **A tag, not a uid**: [`skribisto_model::round_trip::uid_tag`] is a one-way hash, so
+    /// this cannot be turned back into a `Uuid`. It is a *lookup key* — the importer computes
+    /// the tag of each comment the project already holds and matches. That is by design: the
+    /// full 36-character uuid does not fit in a bookmark name beside anything else, and Word
+    /// caps a name at 40 characters.
+    pub uid_tag: Option<String>,
     pub author: String,
     /// See [`SourceAnnotationReply::author_initials`].
     pub author_initials: String,
@@ -170,6 +185,30 @@ pub struct SourceAnnotation {
     pub body: String,
     pub resolved: bool,
     pub replies: Vec<SourceAnnotationReply>,
+}
+
+/// One row's identity, recovered from a round-trip mark the export wrote.
+///
+/// A zero-length bookmark named `skrb_r<tag>_<digest>`, sitting at the first character of the
+/// row's prose. It answers the only question a returning file cannot otherwise answer: *which
+/// of the writer's rows is this passage?*
+///
+/// The alternative — matching by heading text and position — is a guess, and a bad one on a
+/// real manuscript. In the file this was first read back from, the commented word ("Québec")
+/// occurs sixty-one times and half the chapters share a title shape; the mark is what makes
+/// the answer exact instead of plausible.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceRowMark {
+    /// Index into [`SourceDocument::blocks`] of the block the mark sits in.
+    pub block_index: usize,
+    /// A lookup key for `BinderItem.uid` — see [`SourceAnnotation::uid_tag`] for why this is
+    /// a hash rather than the uid itself.
+    pub uid_tag: String,
+    /// The digest of this row's prose **as it was exported**, from
+    /// [`skribisto_model::round_trip::digest`]. Compared against the digest of the prose in
+    /// this file and of the prose the project holds now, it says which side changed the row —
+    /// the baseline for a three-way merge, travelling in the file rather than stored anywhere.
+    pub digest: String,
 }
 
 impl SourceAnnotation {
@@ -211,6 +250,11 @@ pub struct SourceDocument {
     /// Editors' comments the scanner recovered, in document order. Empty for a
     /// format that has no comments — see the module note above.
     pub annotations: Vec<SourceAnnotation>,
+    /// Round-trip row marks the scanner recovered, in document order. Empty unless this file
+    /// is one Skribisto exported — which is exactly the case where the import is a *return*
+    /// rather than a first arrival, and the only case where matching onto existing rows is
+    /// even a question.
+    pub row_marks: Vec<SourceRowMark>,
     /// Everything the scanner wants the writer to know about this document.
     /// A scanner reports rather than refuses wherever it can: one unreadable
     /// file in sixty must not abort the other fifty-nine.
@@ -226,6 +270,7 @@ impl SourceDocument {
             metadata: SourceMetadata::default(),
             blocks: Vec::new(),
             annotations: Vec::new(),
+            row_marks: Vec::new(),
             diagnostics: Vec::new(),
         }
     }

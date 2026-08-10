@@ -5404,6 +5404,8 @@ dependencies = [
  "teksilo-text",
  "tempfile",
  "text-document",
+ "uuid",
+ "zip 8.6.0",
 ]
 
 [[package]]
@@ -5553,6 +5555,7 @@ dependencies = [
  "skribisto-common",
  "text-document",
  "unicode-segmentation",
+ "uuid",
 ]
 
 [[package]]

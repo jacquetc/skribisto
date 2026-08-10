@@ -33,7 +33,7 @@ use skribisto_compiler::{
 };
 use skribisto_model::scene_break::SceneBreakTier;
 
-use crate::settings::{field_label, group};
+use crate::settings::{field_label, group, hint};
 use crate::view_models::ExportStylesViewModel;
 
 /// One list row (built-in or user), derived from a [`Preset`].
@@ -531,6 +531,14 @@ fn preset_sheet(p: &Preset) -> impl Widget + 'static {
             yes_no(p.include_paratexts),
         ),
         (
+            tr!(settings_styles_field_comments()),
+            yes_no(p.include_comments),
+        ),
+        (
+            tr!(settings_styles_field_round_trip_marks()),
+            yes_no(p.include_round_trip_marks),
+        ),
+        (
             tr!(settings_styles_field_images()),
             image_handling_label(p.image_handling),
         ),
@@ -875,6 +883,18 @@ impl Widget for StyleEditor {
             p.include_paratexts = v
         });
 
+        // Editor round trip. Both switches are inert outside DOCX and ODT — the only two
+        // formats that can carry either — and both stay enabled anyway rather than being
+        // gated on the style's `formats` hint: that field is a *hint* (empty means "all"),
+        // so gating on it would grey out a switch that the very next export honours.
+        // The hint line under each says which formats read it.
+        let comments = Signal::new(preset.include_comments);
+        bind_field(ctx, &self.vm, &id, &comments, |p, v| p.include_comments = v);
+        let round_trip_marks = Signal::new(preset.include_round_trip_marks);
+        bind_field(ctx, &self.vm, &id, &round_trip_marks, |p, v| {
+            p.include_round_trip_marks = v
+        });
+
         // What the referencing formats do with the manuscript's pictures. Three
         // choices rather than a switch, because "beside the document" and "inside
         // it" are both ways of keeping them — the difference is what the reader
@@ -1000,6 +1020,19 @@ impl Widget for StyleEditor {
             .line(field_label(tr!(settings_styles_field_images())), images)
             // Spanning both columns, with the file's own section-header idiom and its
             // breathing room above.
+            .full_width(
+                Padding::new(14.0, 0.0, 0.0, 0.0)
+                    .child(group(tr!(settings_styles_group_round_trip()))),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_comments())),
+                Toggle::new(comments).labelled_externally(),
+            )
+            .line(
+                field_label(tr!(settings_styles_field_round_trip_marks())),
+                Toggle::new(round_trip_marks).labelled_externally(),
+            )
+            .full_width(hint(tr!(settings_styles_round_trip_hint())))
             .full_width(
                 Padding::new(14.0, 0.0, 0.0, 0.0).child(group(tr!(settings_styles_group_pages()))),
             )
@@ -1276,6 +1309,10 @@ mod tests {
         ("word_count", |p, v| p.title_page_word_count = v),
         ("include_paratexts", |p, v| p.include_paratexts = v),
         ("include_footnotes", |p, v| p.include_footnotes = v),
+        ("include_comments", |p, v| p.include_comments = v),
+        ("include_round_trip_marks", |p, v| {
+            p.include_round_trip_marks = v
+        }),
     ];
 
     /// A widget whose only job is to run `bind_field` over `FIELDS` — `bind_field` needs a
@@ -1315,6 +1352,8 @@ mod tests {
             "word_count" => p.title_page_word_count,
             "include_paratexts" => p.include_paratexts,
             "include_footnotes" => p.include_footnotes,
+            "include_comments" => p.include_comments,
+            "include_round_trip_marks" => p.include_round_trip_marks,
             other => panic!("unknown field {other}"),
         }
     }

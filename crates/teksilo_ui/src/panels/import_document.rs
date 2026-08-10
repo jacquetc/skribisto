@@ -845,6 +845,8 @@ mod tests {
             origin: "a.md".into(),
             included: true,
             comments: Vec::new(),
+            source_uid_tag: None,
+            source_digest: None,
             diagnostics: Vec::new(),
         }
     }

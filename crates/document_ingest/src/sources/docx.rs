@@ -87,8 +87,10 @@ use crate::block::{SourceBlock, SourceDocument};
 use crate::diagnostics::ImportDiagnostic;
 use crate::scanner::SourceScanner;
 use crate::sources::rich::{
-    ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply, Run, RunStyle, assemble,
+    CommentMark, OpenMark, ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply,
+    RichRowMark, Run, RunStyle, assemble, attach_comment_marks,
 };
+use skribisto_model::round_trip;
 
 pub struct DocxScanner;
 
@@ -762,6 +764,12 @@ struct Walker<'a> {
     /// Comment id → index into `annotations`, so a reply can find its thread.
     annotation_of: HashMap<usize, usize>,
     open: HashMap<usize, OpenRange>,
+    row_marks: Vec<RichRowMark>,
+    /// Comment marks closed so far, matched to their annotations in `finish`.
+    comment_marks: Vec<CommentMark>,
+    /// Bookmark **id** → the comment mark it opened. Keyed by id and not by name because
+    /// OOXML's `w:bookmarkEnd` carries the id alone — see `close_mark`.
+    open_marks: HashMap<usize, OpenMark>,
     seen: HashSet<usize>,
     diagnostics: Vec<ImportDiagnostic>,
     tracked_changes: usize,
@@ -795,6 +803,9 @@ impl<'a> Walker<'a> {
             annotations: Vec::new(),
             annotation_of: HashMap::new(),
             open: HashMap::new(),
+            row_marks: Vec::new(),
+            comment_marks: Vec::new(),
+            open_marks: HashMap::new(),
             seen: HashSet::new(),
             diagnostics: Vec::new(),
             tracked_changes: 0,
@@ -829,10 +840,11 @@ impl<'a> Walker<'a> {
                     self.open_comment(start.id, block, 0);
                 }
                 DocumentChild::CommentEnd(end) => self.close_comment(end, None),
-                DocumentChild::BookmarkStart(_)
-                | DocumentChild::BookmarkEnd(_)
-                | DocumentChild::TableOfContents(_)
-                | DocumentChild::Section(_) => {}
+                // Between paragraphs rather than inside one — it belongs to whatever comes
+                // next, the same rule `CommentStart` above follows.
+                DocumentChild::BookmarkStart(start) => self.open_mark(start.id, &start.name, 0),
+                DocumentChild::BookmarkEnd(end) => self.close_mark(end.id, None),
+                DocumentChild::TableOfContents(_) | DocumentChild::Section(_) => {}
             }
         }
     }
@@ -874,6 +886,9 @@ impl<'a> Walker<'a> {
                         start: 0,
                         length: 0,
                         uid: meta.uid,
+                        // A comment with no range has nothing for a mark to bracket, so no
+                        // mark can name it.
+                        uid_tag: None,
                         author: meta.author.clone(),
                         author_initials: meta.initials.clone(),
                         created: meta.created,
@@ -935,9 +950,12 @@ impl<'a> Walker<'a> {
             });
         }
 
+        attach_comment_marks(&mut self.annotations, &self.comment_marks);
+
         RichDocument {
             blocks: std::mem::take(&mut self.blocks),
             annotations: std::mem::take(&mut self.annotations),
+            row_marks: std::mem::take(&mut self.row_marks),
         }
     }
 
@@ -1083,7 +1101,14 @@ impl<'a> Walker<'a> {
                     }
                 }
                 ParagraphChild::PageNum(_) | ParagraphChild::NumPages(_) => self.fields += 1,
-                ParagraphChild::BookmarkStart(_) | ParagraphChild::BookmarkEnd(_) => {}
+                // Round-trip marks (`skrb_r…`, `skrb_c…`) carry this app's own identity
+                // through an editor's save; every other bookmark in the document — a
+                // cross-reference target, a table-of-contents entry — falls through to being
+                // ignored, exactly as before.
+                ParagraphChild::BookmarkStart(start) => {
+                    self.open_mark(start.id, &start.name, build.len)
+                }
+                ParagraphChild::BookmarkEnd(end) => self.close_mark(end.id, Some(build.len)),
             }
         }
     }
@@ -1251,6 +1276,9 @@ impl<'a> Walker<'a> {
             start,
             length: 0,
             uid: meta.uid,
+            // Filled by `attach_comment_marks` after the walk — the bookmark carrying it
+            // closes later, and on a file an editor has saved may even open first.
+            uid_tag: None,
             author: meta.author.clone(),
             author_initials: meta.initials.clone(),
             created: meta.created,
@@ -1301,6 +1329,57 @@ impl<'a> Walker<'a> {
         self.annotation_of
             .iter()
             .any(|(id, at)| *at == index && *end == CommentRangeEnd::new(*id))
+    }
+
+    /// `<w:bookmarkStart>` — a round-trip mark, or one of the many bookmarks that are not.
+    ///
+    /// A **row** mark is recorded straight away: OOXML has no self-closing bookmark, so this
+    /// app writes a point mark as a start immediately followed by its end, and the position
+    /// that matters is the start's. A **comment** mark is held open until its end tag gives it
+    /// an extent.
+    fn open_mark(&mut self, id: usize, name: &str, start: usize) {
+        match round_trip::parse_mark_name(name) {
+            Some(round_trip::MarkName::Row { uid_tag, digest }) => {
+                self.row_marks.push(RichRowMark {
+                    block_index: self.blocks.len(),
+                    uid_tag,
+                    digest,
+                });
+            }
+            Some(round_trip::MarkName::Comment { uid_tag }) => {
+                self.open_marks.insert(
+                    id,
+                    OpenMark {
+                        uid_tag,
+                        block: self.blocks.len(),
+                        start,
+                    },
+                );
+            }
+            None => {}
+        }
+    }
+
+    /// `<w:bookmarkEnd>` — closes a comment mark.
+    ///
+    /// **By numeric id, never by name.** OOXML spells a bookmark's name only on its start; the
+    /// end carries `w:id` alone. A reader looking for the name on both halves finds a range
+    /// that never closes, which is the shape of this bug most likely to be written by someone
+    /// porting the ODF reader across, where both halves *are* named.
+    fn close_mark(&mut self, id: usize, at: Option<usize>) {
+        let Some(open) = self.open_marks.remove(&id) else {
+            return;
+        };
+        let end = match at {
+            Some(offset) if open.block == self.blocks.len() => offset,
+            _ => open.start,
+        };
+        self.comment_marks.push(CommentMark {
+            uid_tag: open.uid_tag,
+            block: open.block,
+            start: open.start,
+            length: end.saturating_sub(open.start),
+        });
     }
 }
 

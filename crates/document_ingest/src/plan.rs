@@ -88,6 +88,11 @@ pub struct PlannedComment {
     /// the matching `Comment` row" rather than "create a new one" — see its own
     /// module doc for the recognition rule and what it does and does not update.
     pub uid: Option<uuid::Uuid>,
+    /// See [`crate::block::SourceAnnotation::uid_tag`] — the identity that survives an
+    /// editor's save, and therefore the one that does the recognising in practice. A *lookup
+    /// key* rather than a uid: `apply_document_import_uc` hashes each comment the project
+    /// already holds and matches on the result.
+    pub uid_tag: Option<String>,
     pub author: String,
     /// See `SourceAnnotation::author_initials` — empty means "none".
     pub author_initials: String,
@@ -133,6 +138,17 @@ pub struct PlannedRow {
     /// Editors' comments arriving with this row's prose, already anchored against
     /// it. Empty for a format that carries none.
     pub comments: Vec<PlannedComment>,
+    /// The `BinderItem` this row *was*, when the file being imported is one this project
+    /// exported — recovered from a round-trip mark. `None` for a first arrival, for a file
+    /// from anywhere else, and for a row the writer added inside the file.
+    ///
+    /// A lookup key rather than a uid; see [`PlannedComment::uid_tag`].
+    pub source_uid_tag: Option<String>,
+    /// The digest of this row's prose **as it was exported**, from the same mark. Compared
+    /// against the digest of the prose in this file and of the prose the project holds now, it
+    /// answers "who changed this row" — the baseline of a three-way merge, carried in the file
+    /// rather than stored anywhere. `None` whenever `source_uid_tag` is.
+    pub source_digest: Option<String>,
     pub diagnostics: Vec<ImportDiagnostic>,
 }
 
@@ -407,6 +423,9 @@ fn append_document(
                     origin: doc.origin.clone(),
                     included: true,
                     comments: Vec::new(),
+                    // Filled by the mark loop below, once this row is the current one.
+                    source_uid_tag: None,
+                    source_digest: None,
                     diagnostics,
                 });
             }
@@ -435,6 +454,23 @@ fn append_document(
             let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
             row.comments
                 .push(planned_comment(annotation, block, block_offset));
+        }
+
+        // A round-trip mark on this block names the row the block just joined. **First mark
+        // wins**: a row's identity is written once, at its first character, so a second mark
+        // inside the same row can only mean the writer's chapters have been merged in the
+        // editor — in which case the row genuinely is the first of them, and quietly adopting
+        // the second's identity would move the other chapter's history onto this one.
+        for mark in doc
+            .row_marks
+            .iter()
+            .filter(|m| m.block_index == block_index)
+        {
+            let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
+            if row.source_uid_tag.is_none() {
+                row.source_uid_tag = Some(mark.uid_tag.clone());
+                row.source_digest = Some(mark.digest.clone());
+            }
         }
     }
     push(plan, current.take());
@@ -493,6 +529,7 @@ fn planned_comment(
         orphaned: false,
         orphan_reason: CommentOrphanReason::NotOrphaned,
         uid: annotation.uid,
+        uid_tag: annotation.uid_tag.clone(),
         author: annotation.author.clone(),
         author_initials: annotation.author_initials.clone(),
         created: annotation.created,
@@ -519,6 +556,8 @@ fn leading_row(doc: &SourceDocument, rules: &LevelRules, base_indent: i64) -> Pl
         origin: doc.origin.clone(),
         included: true,
         comments: Vec::new(),
+        source_uid_tag: None,
+        source_digest: None,
         diagnostics: Vec::new(),
     }
 }
@@ -858,6 +897,7 @@ mod tests {
             kind,
             anchor: Anchor::default(),
             uid: None,
+            uid_tag: None,
             author: "Editor".into(),
             author_initials: String::new(),
             created: None,

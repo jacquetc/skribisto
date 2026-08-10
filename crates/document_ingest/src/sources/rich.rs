@@ -71,6 +71,7 @@ use skribisto_model::scene_break;
 
 use crate::block::{
     AnnotationKind, SourceAnnotation, SourceAnnotationReply, SourceBlock, SourceDocument,
+    SourceRowMark,
 };
 
 /// Character formatting a container format can express and Djot can carry.
@@ -230,6 +231,9 @@ pub struct RichAnnotation {
     /// see [`crate::block::SourceAnnotation::uid`]). `None` for a comment an editor
     /// typed straight into Word or LibreOffice.
     pub uid: Option<uuid::Uuid>,
+    /// See [`crate::block::SourceAnnotation::uid_tag`] — the identity carried by a
+    /// `skrb_c…` bookmark pair, which is what actually survives an editor's save.
+    pub uid_tag: Option<String>,
     pub author: String,
     /// See [`crate::block::SourceAnnotation::author_initials`] — empty means
     /// "none", never carried at all on ODT.
@@ -260,11 +264,79 @@ pub struct RichReply {
     pub paragraphs: Vec<Vec<Run>>,
 }
 
+/// One round-trip row mark, before its block index is rebased onto the neutral block model.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RichRowMark {
+    /// Index into [`RichDocument::blocks`].
+    pub block_index: usize,
+    pub uid_tag: String,
+    pub digest: String,
+}
+
+/// A round-trip comment mark whose bookmark range has been opened and not yet closed.
+///
+/// Shared by both container scanners rather than written twice: ODF and OOXML disagree about
+/// how a bookmark is spelled — ODF names both halves, OOXML names only the start and closes by
+/// numeric id — but what a mark *means* once opened is identical, and two copies of that would
+/// eventually disagree about which annotation a mark belongs to.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OpenMark {
+    pub uid_tag: String,
+    pub block: usize,
+    pub start: usize,
+}
+
+/// A closed comment mark: which characters it bracketed, and whose identity it carries.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommentMark {
+    pub uid_tag: String,
+    pub block: usize,
+    pub start: usize,
+    pub length: usize,
+}
+
+/// Give each annotation the identity of the round-trip mark bracketing the same text.
+///
+/// Matched on `(block, start)` — not by name, and not by document order.
+///
+/// **Not by name** because there is no shared name to match on: LibreOffice rewrites
+/// `office:name` to its own `__Annotation__…` on save, and OOXML's comment ids are reassigned
+/// freely. That an annotation's own identity does not survive is the entire reason a bookmark
+/// carries it instead.
+///
+/// **Not by order** because an editor adds and deletes comments wherever they like, so the
+/// third annotation in the returning file need not be the third mark.
+///
+/// A mark with no annotation at its position is simply unused — the editor deleted the comment
+/// and the bookmark outlived it, which both applications allow. An annotation with no mark
+/// keeps `uid_tag: None` and imports as a new comment, which is exactly right for one the
+/// editor wrote themselves.
+pub fn attach_comment_marks(annotations: &mut [RichAnnotation], marks: &[CommentMark]) {
+    for mark in marks {
+        let hit = annotations
+            .iter_mut()
+            .find(|a| a.block_index == mark.block && a.start == mark.start && a.uid_tag.is_none());
+        if let Some(a) = hit {
+            a.uid_tag = Some(mark.uid_tag.clone());
+            // The mark's extent is what the comment covered when it was written, and a
+            // bookmark is maintained by the editor's own application as text moves around it.
+            // Adopted only when the annotation has no range of its own, so a genuine
+            // paragraph comment — which means "the whole paragraph" and stores zero — stays
+            // one instead of silently acquiring a range.
+            if a.length == 0 && mark.length > 0 {
+                a.length = mark.length;
+            }
+        }
+    }
+}
+
 /// What a container scanner produces, before any Skribisto vocabulary is applied.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RichDocument {
     pub blocks: Vec<RichBlock>,
     pub annotations: Vec<RichAnnotation>,
+    /// See [`crate::block::SourceRowMark`]. Empty for every file this app did not write.
+    pub row_marks: Vec<RichRowMark>,
 }
 
 /// Turn a rich document into the neutral block model, carrying its comments.
@@ -321,6 +393,23 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
     }
     flush(&mut pending, out, &mut placement)?;
 
+    // Row marks, rebased onto the neutral block model the same way an annotation is.
+    //
+    // A mark whose rich block produced nothing is **dropped**, not carried to a neighbouring
+    // block. It names a row by pointing at a passage, and pointing it at a different passage
+    // than the one it was written into would be worse than not having it: the fallback when a
+    // mark is missing is matching by type and title, which is a guess the writer can see and
+    // correct, while a mark is trusted outright.
+    for mark in &doc.row_marks {
+        if let Some(place) = placement.get(mark.block_index).copied().flatten() {
+            out.row_marks.push(SourceRowMark {
+                block_index: place.source_block,
+                uid_tag: mark.uid_tag.clone(),
+                digest: mark.digest.clone(),
+            });
+        }
+    }
+
     for annotation in &doc.annotations {
         // Converted once, here — the one place in either scanner that turns a
         // comment's own paragraphs into Djot, on the same terms manuscript prose
@@ -336,7 +425,7 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
                 author: reply.author.clone(),
                 author_initials: reply.author_initials.clone(),
                 created: reply.created,
-                body: body_to_djot(&reply.paragraphs)?,
+                body: body_to_djot(without_reply_citation(&reply.paragraphs))?,
             });
         }
 
@@ -382,6 +471,7 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
                     kind: AnnotationKind::Document,
                     anchor: Anchor::default(),
                     uid: annotation.uid,
+                    uid_tag: annotation.uid_tag.clone(),
                     author: annotation.author.clone(),
                     author_initials: annotation.author_initials.clone(),
                     created: annotation.created,
@@ -533,6 +623,7 @@ fn place_annotation(
         kind,
         anchor,
         uid: annotation.uid,
+        uid_tag: annotation.uid_tag.clone(),
         author: annotation.author.clone(),
         author_initials: annotation.author_initials.clone(),
         created: annotation.created,
@@ -559,6 +650,71 @@ fn place_annotation(
 /// does not turn into a bare, meaningless Djot paragraph marker. An annotation
 /// with no non-blank paragraph at all converts to the empty string, exactly as
 /// `flush` produces no block for an all-blank prose run.
+/// A reply's own paragraphs, with LibreOffice's citation block removed if it wrote one.
+///
+/// LibreOffice's **Reply** button does not merely thread a reply — it prepends a paragraph
+/// quoting what is being replied to, in the shape
+///
+/// ```text
+/// Répondre à  (10/08/2026, 09:27): "…"
+/// ```
+///
+/// Left alone, that paragraph is imported as part of the editor's words, and it *accumulates*:
+/// every export-reply-import cycle prepends another one, and a thread that has been round-tripped
+/// three times reads as three nested quotations before its actual content. Worse, the same reply
+/// coming back a second time no longer matches what the project stored, so a re-import that
+/// should have been a no-op reports it as edited.
+///
+/// # Detected by shape, not by wording
+///
+/// The verb is localised — "Répondre à", "Reply to", "Antwort an" — so matching the string would
+/// work in whatever language this was written against and silently stop working in the others.
+/// What is stable is the punctuation the timestamp and quote are wrapped in, and that is what is
+/// tested: a parenthesised group holding digits and a separator, followed by `): "` and a closing
+/// quote at the end.
+///
+/// Three guards keep it from eating a real reply. It must be the **first** paragraph, there must
+/// be **another paragraph after it** (a reply that is *only* a citation has had its content
+/// deleted, and dropping it would leave an empty reply rather than an odd one), and the shape has
+/// to match in full. When in doubt the paragraph is kept: an editor's words showing up with an
+/// odd prefix is a blemish, and an editor's words disappearing is data loss.
+fn without_reply_citation(paragraphs: &[Vec<Run>]) -> &[Vec<Run>] {
+    if paragraphs.len() < 2 {
+        return paragraphs;
+    }
+    let first: String = paragraphs[0].iter().map(|r| r.text.as_str()).collect();
+    if is_reply_citation(first.trim()) {
+        &paragraphs[1..]
+    } else {
+        paragraphs
+    }
+}
+
+/// Whether `text` is a word processor's own "replying to X" citation line.
+fn is_reply_citation(text: &str) -> bool {
+    // Ends with a closing quote — straight or typographic, since which one appears depends on
+    // the editor's autocorrect settings rather than on anything structural.
+    if !text.ends_with(['"', '\u{201D}', '\u{00BB}']) {
+        return false;
+    }
+    // The timestamp/quote boundary: `): ` followed by an opening quote.
+    let boundary = ["): \"", "): \u{201C}", "): \u{00AB}"]
+        .iter()
+        .find_map(|b| text.rfind(b));
+    let Some(boundary) = boundary else {
+        return false;
+    };
+    // A parenthesised group before it, holding a date or a time — at least three digits and a
+    // `:` or `/` separator. That is what distinguishes a citation from an ordinary sentence
+    // that happens to end in a quotation.
+    let Some(open) = text[..boundary].rfind('(') else {
+        return false;
+    };
+    let inside = &text[open + 1..boundary];
+    inside.chars().filter(char::is_ascii_digit).count() >= 3
+        && inside.contains([':', '/', '-', '.'])
+}
+
 fn body_to_djot(paragraphs: &[Vec<Run>]) -> Result<String> {
     let mut html = String::new();
     for runs in paragraphs {
@@ -757,6 +913,7 @@ mod tests {
             &RichDocument {
                 blocks,
                 annotations,
+                row_marks: Vec::new(),
             },
             &mut out,
         )
@@ -770,6 +927,7 @@ mod tests {
             start,
             length,
             uid: None,
+            uid_tag: None,
             author: "Editor".into(),
             author_initials: String::new(),
             created: None,
@@ -1086,6 +1244,7 @@ mod tests {
                 start: 0,
                 length: 0,
                 uid: None,
+                uid_tag: None,
                 author: "Editor".into(),
                 author_initials: String::new(),
                 created: None,
@@ -1123,6 +1282,7 @@ mod tests {
                 start: 0,
                 length: 0,
                 uid: None,
+                uid_tag: None,
                 author: "Editor".into(),
                 author_initials: String::new(),
                 created: None,
@@ -1153,6 +1313,7 @@ mod tests {
                 start: 0,
                 length: 0,
                 uid: None,
+                uid_tag: None,
                 author: "Editor".into(),
                 author_initials: String::new(),
                 created: None,
@@ -1186,6 +1347,7 @@ mod tests {
                 start: 0,
                 length: 0,
                 uid: None,
+                uid_tag: None,
                 author: "Editor".into(),
                 author_initials: String::new(),
                 created: None,
@@ -1207,5 +1369,4 @@ mod tests {
             ""
         );
     }
-
 }

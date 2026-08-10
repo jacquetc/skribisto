@@ -33,6 +33,15 @@ in a binary. These pin *reality*.
   pandoc.odt        pandoc, from the Markdown below.
   pandoc.docx       pandoc, from the same Markdown — so the two formats can be
                     asserted to produce the *same* prose from the same source.
+  roundtrip.odt     LibreOffice's own writer, from `ROUNDTRIP_FODT` below: the
+                    returning-file case. Carries Skribisto's two bookmark marks
+                    (`skrb_r…` on a row, a `skrb_c…` pair around a comment range)
+                    *and* a `skrb:uid` attribute on the annotation — so a test can
+                    pin both halves of what an editor's save does: the bookmarks
+                    survive, the private attribute does not.
+  roundtrip.docx    the same source through LibreOffice's OOXML writer, pinning the
+                    same two facts on the Word path — where `skrb:uid` does not even
+                    reach `comments.xml`.
 
 Needs `soffice` and `pandoc` on PATH for all but the first.
 """
@@ -195,6 +204,46 @@ FLAT_ODT = '''<?xml version="1.0" encoding="UTF-8"?>
 '''
 
 
+# The returning file: what an editor hands back after opening an export and saving.
+#
+# Two carriers are deliberately present on the same annotation, because the whole
+# point of this fixture is that they do not fare alike:
+#
+#   * `skrb:uid` — a private-namespace attribute. It is the identity carrier the
+#     first comment-export milestone relied on, and LibreOffice **deletes it on
+#     save**, along with the namespace declaration. Verified against a real
+#     returning file (LibreOffice 25.8.5.2) before this fixture existed.
+#   * `skrb_c…` — a bookmark pair around the same range. Bookmarks are first-class
+#     in both ODF and OOXML, so both writers preserve them, name and position.
+#
+# `skrb_r…` marks the row. Its name packs a 64-bit `BinderItem.uid` prefix and a
+# 48-bit digest of the row's normalised text at export time; 35 characters, chosen
+# to stay inside Word's 40-character cap on bookmark names.
+#
+# The reply's leading "Répondre à …" paragraph is not decoration: it is the citation
+# block LibreOffice's own Reply button writes into the body, transcribed from a real
+# returning file. It has to be stripped on import or it accumulates in the writer's
+# thread on every round trip.
+ROUNDTRIP_FODT = '''<?xml version="1.0" encoding="UTF-8"?>
+<office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+ xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+ xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+ xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+ xmlns:dc="http://purl.org/dc/elements/1.1/"
+ xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0"
+ xmlns:skrb="urn:ferntech:text-document:comment:1"
+ office:version="1.3" office:mimetype="application/vnd.oasis.opendocument.text">
+ <office:body><office:text>
+  <text:h text:outline-level="1">The Salt Road</text:h>
+  <text:h text:outline-level="2">Chapter One</text:h>
+  <text:p><text:bookmark text:name="skrb_r0000000000000001_aaaaaaaaaaaa"/>She turned the corner and <text:bookmark-start text:name="skrb_c000000000000c001"/><office:annotation office:name="c1" skrb:uid="6f1d4c9e-0b2a-4d7f-9c31-5a8e2b6f0d44"><dc:creator>Editor</dc:creator><dc:date>2026-01-02T03:04:05</dc:date><text:p>Is this the right word?</text:p></office:annotation>the street was gone<office:annotation-end office:name="c1"/><text:bookmark-end text:name="skrb_c000000000000c001"/><office:annotation office:name="c2" loext:parent-name="c1" skrb:uid="1a7b93d0-55e4-42c6-8f10-c3d9a4e70b28"><dc:creator>Writer</dc:creator><dc:date>2026-01-03T03:04:05</dc:date><text:p text:style-name="Comment">Répondre à <text:s/>(02/01/2026, 03:04): &quot;Is this the right word?&quot;</text:p><text:p text:style-name="Comment">Yes, I meant it.</text:p></office:annotation>. In its place, nothing.</text:p>
+  <text:h text:outline-level="2">Chapter Two</text:h>
+  <text:p><text:bookmark text:name="skrb_r0000000000000002_bbbbbbbbbbbb"/>The second chapter opens quietly.</text:p>
+ </office:text></office:body>
+</office:document>
+'''
+
+
 def convert(source_text, source_name, out_name, tool):
     """Write `source_text`, run `tool` on it, and move the result beside this file."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -231,6 +280,8 @@ def main():
     convert(FLAT_ODT, "source.fodt", "libreoffice.odt", "soffice")
     convert(MARKDOWN, "source.md", "pandoc.odt", "pandoc")
     convert(MARKDOWN, "source.md", "pandoc.docx", "pandoc")
+    convert(ROUNDTRIP_FODT, "roundtrip.fodt", "roundtrip.odt", "soffice")
+    convert(ROUNDTRIP_FODT, "roundtrip.fodt", "roundtrip.docx", "soffice")
     return 0
 
 

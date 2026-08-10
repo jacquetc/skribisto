@@ -55,9 +55,11 @@ use super::EmittedContent;
 
 /// Where one `Content`'s prose landed in the compiled document, in character offsets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Window {
-    lo: usize,
-    hi: usize,
+pub(crate) struct Window {
+    /// First character of this Content's prose in the compiled text — also where a round-trip
+    /// row mark is anchored, so the returning file says which `BinderItem` this passage was.
+    pub lo: usize,
+    pub hi: usize,
 }
 
 /// One comment, resolved against the compiled document.
@@ -99,7 +101,11 @@ fn blocks_of(text: &str, starts: &[usize]) -> Vec<Vec<char>> {
     let mut out = Vec::new();
     for (i, &s) in starts.iter().enumerate() {
         let s = s.min(chars.len());
-        let end = starts.get(i + 1).copied().unwrap_or(chars.len()).min(chars.len());
+        let end = starts
+            .get(i + 1)
+            .copied()
+            .unwrap_or(chars.len())
+            .min(chars.len());
         if end <= s {
             continue;
         }
@@ -137,7 +143,12 @@ fn blocks_of(text: &str, starts: &[usize]) -> Vec<Vec<char>> {
 /// paragraph-plus-marker resolved across the paragraph *after* it. A short window costs a
 /// comment its placement, and it is reported; a long one silently brackets text the writer
 /// never selected.
-fn locate(compiled: &[char], compiled_starts: &[usize], own_djot: &str, cursor: usize) -> Option<Window> {
+fn locate(
+    compiled: &[char],
+    compiled_starts: &[usize],
+    own_djot: &str,
+    cursor: usize,
+) -> Option<Window> {
     let (own_text, own_starts) = djot_plain_text(own_djot).ok()?;
     let blocks = blocks_of(&own_text, &own_starts);
 
@@ -244,17 +255,32 @@ fn rebase(
 /// not orphaned. That distinction is the caller's whole warning story: a comment on a row
 /// outside the export scope, or on a synopsis the preset omits, has not failed — it simply is
 /// not in this document, and warning about it would cry wolf on every scoped export.
+#[cfg(test)]
 pub(crate) fn place_comments(
     compiled_text: &str,
     compiled_starts: &[usize],
     emitted: &[EmittedContent],
     comments: &[CommentToPlace],
 ) -> Vec<CommentPlacement> {
-    let compiled: Vec<char> = compiled_text.chars().collect();
+    let windows = locate_windows(compiled_text, compiled_starts, emitted);
+    place_comments_in(compiled_text, compiled_starts, &windows, comments)
+}
 
-    // One window per emitted Content, walked in emission order so the cursor only moves
-    // forward. Built once: a comment lookup must not re-scan, or two comments on the same row
-    // could disagree about where that row is.
+/// Where each emitted `Content`'s prose landed in the compiled document.
+///
+/// Split out from [`place_comments`] because the export needs the same answer twice and must
+/// not compute it twice: a comment is rebased into its row's window, and a **round-trip row
+/// mark** is anchored at that window's start. Two independent scans could disagree — the search
+/// is heuristic and cursor-dependent — and a mark that disagreed with its own row's comments
+/// would put the two in different places in the same file.
+///
+/// Walked in emission order so the cursor only moves forward.
+pub(crate) fn locate_windows(
+    compiled_text: &str,
+    compiled_starts: &[usize],
+    emitted: &[EmittedContent],
+) -> HashMap<EntityId, Window> {
+    let compiled: Vec<char> = compiled_text.chars().collect();
     let mut windows: HashMap<EntityId, Window> = HashMap::new();
     let mut cursor = 0usize;
     for e in emitted {
@@ -268,7 +294,17 @@ pub(crate) fn place_comments(
             windows.insert(e.content_id, w);
         }
     }
+    windows
+}
 
+/// Rebase every comment into the window its own `Content` occupies.
+pub(crate) fn place_comments_in(
+    compiled_text: &str,
+    compiled_starts: &[usize],
+    windows: &HashMap<EntityId, Window>,
+    comments: &[CommentToPlace],
+) -> Vec<CommentPlacement> {
+    let compiled: Vec<char> = compiled_text.chars().collect();
     comments
         .iter()
         .filter_map(|c| {
@@ -447,7 +483,8 @@ mod tests {
     }
 
     const S1: &str = "The wind rose over the hills and the salt-bleached door rattled all night.";
-    const S2: &str = "She counted the lamps again. The harbour was quiet, and the boats were still.";
+    const S2: &str =
+        "She counted the lamps again. The harbour was quiet, and the boats were still.";
     const S3: &str = "The wind rose over the hills once more, but nobody was left to hear it.";
 
     fn three_scene_book() -> Gathered {
@@ -499,9 +536,13 @@ mod tests {
 
         let (text, placed) = run(&g, &include, &p, &comments);
         assert_eq!(placed.len(), 3, "every comment's row is in the export");
-        for (want, got) in ["salt-bleached door", "the boats were still", "nobody was left"]
-            .iter()
-            .zip(&placed)
+        for (want, got) in [
+            "salt-bleached door",
+            "the boats were still",
+            "nobody was left",
+        ]
+        .iter()
+        .zip(&placed)
         {
             assert_eq!(&words_at(&text, got), want, "placement {got:?}");
         }
@@ -601,7 +642,11 @@ mod tests {
         c1.anchor.suffix = String::new();
 
         let (_, placed) = run(&g, &include, &p, &[c1]);
-        assert_eq!(placed.len(), 1, "the row IS in scope, so it must be reported");
+        assert_eq!(
+            placed.len(),
+            1,
+            "the row IS in scope, so it must be reported"
+        );
         assert_eq!(
             orphan_reason(&placed[0]),
             Some(CommentOrphanReason::TextNotFound),
@@ -685,7 +730,10 @@ mod tests {
         // Captured as the editor captures a selection covering the first paragraph and the
         // marker's own block — but NOT the paragraph after it.
         let (row_text, row_starts) = djot_plain_text(with_break).expect("plain");
-        let end = row_starts.get(2).copied().unwrap_or(row_text.chars().count());
+        let end = row_starts
+            .get(2)
+            .copied()
+            .unwrap_or(row_text.chars().count());
         let mut anchor = comment_anchor::capture(&row_text, 0, end.saturating_sub(1), 0);
         anchor.block_span = 2;
 
@@ -728,7 +776,11 @@ mod tests {
         }];
 
         let (_, placed) = run(&g, &include, &p, &comments);
-        assert_eq!(placed.len(), 1, "the row is in scope, so it must be reported");
+        assert_eq!(
+            placed.len(),
+            1,
+            "the row is in scope, so it must be reported"
+        );
         assert_eq!(
             orphan_reason(&placed[0]),
             Some(CommentOrphanReason::TextNotFound),

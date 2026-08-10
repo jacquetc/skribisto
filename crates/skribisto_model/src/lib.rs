@@ -73,6 +73,14 @@ pub mod footnote_numbering;
 /// seeded once when a row is created, never recomputed over a value an editor supplied.
 pub mod initials;
 pub mod numbering;
+/// Line a returning manuscript up against the one the project holds: which rows are the same
+/// rows, who changed what, and where a chapter the editor inserted belongs.
+pub mod reconcile;
+/// The bookmark names an export writes so a returning file can be recognised as *this*
+/// project's — and the digest that says which side changed the prose. Shared by the exporter
+/// that mints them and the scanners that read them back, because two spellings of one scheme
+/// is a round trip that silently never matches.
+pub mod round_trip;
 pub mod scene_break;
 
 /// The per-project chapter storage mode — generated on the `Work` entity, re-exported

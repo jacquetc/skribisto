@@ -214,6 +214,7 @@ impl Ctx {
                     djot,
                     comments,
                     included,
+                    source_uid_tag,
                     ..
                 } if included => Some(ApplyImportRow::Create {
                     indent,
@@ -223,8 +224,10 @@ impl Ctx {
                     // Handed straight back, exactly as the UI does: this helper is
                     // "accept the whole plan", and a plan carrying comments that
                     // silently did not get created would make every comment test
-                    // pass for the wrong reason.
+                    // pass for the wrong reason. The row's own identity travels the
+                    // same way, and for the same reason.
                     comments,
+                    source_uid_tag,
                 }),
                 _ => None,
             })
@@ -563,6 +566,7 @@ fn prose_on_a_type_that_cannot_hold_it_is_refused_not_swallowed() {
                 title: "A Book".into(),
                 djot: "Prose a Book cannot hold.".into(),
                 comments: Vec::new(),
+                source_uid_tag: String::new(),
             }]),
         },
     );
@@ -605,6 +609,7 @@ fn undoing_an_import_into_a_large_binder_stays_interactive() {
             title: format!("Scene {i}"),
             djot: String::new(),
             comments: Vec::new(),
+            source_uid_tag: String::new(),
         })
         .collect();
     import_management_controller::apply_document_import(
@@ -705,6 +710,7 @@ fn a_batched_import_fires_at_most_one_event_per_row() {
                 title: format!("Scene {i}"),
                 djot: String::new(),
                 comments: Vec::new(),
+                source_uid_tag: String::new(),
             })
             .collect();
         import_management_controller::apply_document_import(
@@ -1133,7 +1139,10 @@ fn find_range(doc: &TextDocument, needle: &str) -> (u32, u32) {
 /// Build `djot` into a real document, hand it to `make_comments` (which can
 /// call [`find_range`] against it before deciding what to anchor), and export
 /// the result to a real `.docx`. Returns the file's bytes.
-fn build_docx(djot: &str, make_comments: impl FnOnce(&TextDocument) -> DocumentComments) -> Vec<u8> {
+fn build_docx(
+    djot: &str,
+    make_comments: impl FnOnce(&TextDocument) -> DocumentComments,
+) -> Vec<u8> {
     let doc = TextDocument::new();
     doc.set_djot_sync(djot).expect("set_djot_sync");
     let comments = make_comments(&doc);
@@ -1290,7 +1299,11 @@ fn reimporting_a_returning_docx_recognises_the_comment_instead_of_duplicating_it
     ctx.apply(rows, 0);
 
     let before = ctx.comments();
-    assert_eq!(before.len(), 1, "one thread from the first import: {before:#?}");
+    assert_eq!(
+        before.len(),
+        1,
+        "one thread from the first import: {before:#?}"
+    );
     let (first_comment, first_replies) = &before[0];
     assert_ne!(
         first_comment.uid,
@@ -1342,7 +1355,10 @@ fn reimporting_a_returning_docx_recognises_the_comment_instead_of_duplicating_it
     // The comment's `content` must now point at the SECOND import's row, not
     // the first's.
     let second_content_id = ctx.content_id_of(second_created[0]);
-    assert!(second_content_id.is_some(), "the second row must carry prose");
+    assert!(
+        second_content_id.is_some(),
+        "the second row must carry prose"
+    );
     assert_eq!(
         updated_comment.content, second_content_id,
         "a recognised comment repoints at whichever import most recently touched it"
@@ -1436,8 +1452,15 @@ fn a_second_consecutive_round_trip_still_does_not_duplicate() {
             1,
             "round trip {name} duplicated the comment: {comments:#?}"
         );
-        assert_eq!(comments[0].0.id, local_id, "round trip {name} changed the row identity");
-        assert_eq!(comments[0].1.len(), 1, "round trip {name} duplicated the reply");
+        assert_eq!(
+            comments[0].0.id, local_id,
+            "round trip {name} changed the row identity"
+        );
+        assert_eq!(
+            comments[0].1.len(),
+            1,
+            "round trip {name} duplicated the reply"
+        );
     }
 }
 
@@ -1476,7 +1499,9 @@ fn undoing_a_recognised_update_restores_its_previous_state_not_just_detaches_it(
     assert!(updated[0].0.body.contains("closely"));
     assert_eq!(updated[0].0.content, second_content_id);
 
-    ctx.undo.undo(None).expect("undo the second (recognising) import");
+    ctx.undo
+        .undo(None)
+        .expect("undo the second (recognising) import");
 
     let after_undo = ctx.comments();
     assert_eq!(
@@ -1504,7 +1529,9 @@ fn undoing_a_recognised_update_restores_its_previous_state_not_just_detaches_it(
     assert_eq!(reverted_replies[0].id, reply_id);
     assert_eq!(reverted_replies[0].body, "Will do.");
 
-    ctx.undo.redo(None).expect("redo the second (recognising) import");
+    ctx.undo
+        .redo(None)
+        .expect("redo the second (recognising) import");
     let after_redo = ctx.comments();
     assert_eq!(after_redo.len(), 1);
     assert!(after_redo[0].0.resolved, "redo must re-apply the update");
@@ -1642,7 +1669,11 @@ fn a_reply_inserted_mid_conversation_does_not_duplicate_the_replies_after_it() {
     ctx.apply(rows, 0);
 
     let seed = ctx.comments();
-    assert_eq!(seed[0].1.len(), 2, "two replies from the first import: {seed:#?}");
+    assert_eq!(
+        seed[0].1.len(),
+        2,
+        "two replies from the first import: {seed:#?}"
+    );
     let comment_uid = seed[0].0.uid;
     let r1 = &seed[0].1[0];
     let r2 = &seed[0].1[1];
@@ -1709,9 +1740,15 @@ fn a_reply_inserted_mid_conversation_does_not_duplicate_the_replies_after_it() {
     assert_eq!(replies[0].uid, r1_uid, "R1 keeps its identity");
     assert_eq!(replies[0].body, "First reply.");
 
-    assert_eq!(replies[1].body, "Inserted reply.", "the new reply lands in the middle");
+    assert_eq!(
+        replies[1].body, "Inserted reply.",
+        "the new reply lands in the middle"
+    );
     assert_ne!(replies[1].id, r1_id);
-    assert_ne!(replies[1].id, r2_id, "the inserted reply must be a genuinely new row");
+    assert_ne!(
+        replies[1].id, r2_id,
+        "the inserted reply must be a genuinely new row"
+    );
     assert_ne!(replies[1].uid, uuid::Uuid::nil(), "it must mint a real uid");
 
     assert_eq!(
@@ -1720,4 +1757,191 @@ fn a_reply_inserted_mid_conversation_does_not_duplicate_the_replies_after_it() {
     );
     assert_eq!(replies[2].uid, r2_uid, "R2 keeps its identity");
     assert_eq!(replies[2].body, "Second reply.");
+}
+
+// ── The carrier that actually survives an editor ────────────────────────────
+//
+// Everything in the M-S7 section above recognises a returning comment by its
+// `skrb:uid` — an attribute **both Word and LibreOffice delete on save**. Measured
+// against a real returning file: a manuscript exported from this app, commented in
+// LibreOffice 25.8 and saved, came back with every `skrb:uid` gone and the namespace
+// declaration with them. So those tests describe a file nobody has opened, and the
+// path they cover never runs in practice.
+//
+// What survives is a **bookmark**, and these are the tests for the recognition that
+// rests on one. The returning files below carry an empty `uid` — exactly what the
+// scanner sees after an editor's save — and identify their comment only through a
+// `skrb_c…` mark naming the local row's own tag.
+
+/// As [`build_odt`], plus the round-trip marks a real export writes beside the comments.
+fn build_odt_marked(
+    djot: &str,
+    make: impl FnOnce(&TextDocument) -> (DocumentComments, text_document::DocumentMarks),
+) -> Vec<u8> {
+    let doc = TextDocument::new();
+    doc.set_djot_sync(djot).expect("set_djot_sync");
+    let (comments, marks) = make(&doc);
+
+    let path = std::env::temp_dir().join(format!(
+        "import_mgmt_odt_marked_{}_{}.odt",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or_default()
+    ));
+    doc.to_odt_with_options(
+        &path.to_string_lossy(),
+        OdtExportOptions {
+            comments,
+            marks,
+            ..Default::default()
+        },
+    )
+    .expect("to_odt_with_options")
+    .wait()
+    .expect("odt export completes");
+    let bytes = std::fs::read(&path).expect("read exported odt");
+    let _ = std::fs::remove_file(&path);
+    bytes
+}
+
+/// A returning `.odt` whose comment is identified **only** by its mark: the uid is
+/// empty, the way an editor's save leaves it.
+fn returning_odt_marked_only(
+    comment_uid: uuid::Uuid,
+    body: &str,
+    replies: Vec<(&str, &str, &str)>,
+) -> Vec<u8> {
+    let replies: Vec<(String, String, String)> = replies
+        .into_iter()
+        .map(|(a, d, b)| (a.to_string(), d.to_string(), b.to_string()))
+        .collect();
+    let body = body.to_string();
+    build_odt_marked(MANUSCRIPT, move |doc| {
+        let range = find_range(doc, "needs review");
+        let root = DocumentComment {
+            start: range.0,
+            end: range.1,
+            // Gone, as an editor's save leaves it.
+            uid: String::new(),
+            author: "Editor".to_string(),
+            author_initials: String::new(),
+            date: "2026-01-01T00:00:00Z".to_string(),
+            resolved: false,
+            body,
+            replies: replies
+                .into_iter()
+                .map(|(author, date, body)| TdCommentReply {
+                    uid: String::new(),
+                    author,
+                    author_initials: String::new(),
+                    date,
+                    body,
+                })
+                .collect(),
+        };
+        let mut comments = DocumentComments::new();
+        comments.insert(root);
+
+        let mut marks = text_document::DocumentMarks::new();
+        marks.insert(text_document::DocumentMark::range(
+            range.0,
+            range.1,
+            skribisto_model::round_trip::comment_mark_name(&comment_uid),
+        ));
+        (comments, marks)
+    })
+}
+
+/// The decisive proof for the carrier that survives: a returning file whose comment
+/// has **no uid at all** still updates the row it names, because its mark does.
+///
+/// Without this, every editorial round trip duplicates every comment it brings home —
+/// and the uid-based tests above would all still pass.
+#[test]
+fn a_comment_with_no_uid_is_recognised_by_its_round_trip_mark() {
+    let mut ctx = Ctx::new();
+    let first = ctx.write_bytes("first.odt", &first_returning_odt());
+    let rows = ctx.analyse(vec![first], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let before = ctx.comments();
+    assert_eq!(before.len(), 1, "the first import creates one comment");
+    let local_uid = before[0].0.uid;
+    let local_id = before[0].0.id;
+
+    let again = ctx.write_bytes(
+        "again.odt",
+        &returning_odt_marked_only(local_uid, "Please look at this *closely*.", vec![]),
+    );
+    let rows = ctx.analyse(vec![again], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments();
+    assert_eq!(
+        after.len(),
+        1,
+        "the mark must identify the existing comment, not add a second: {after:#?}"
+    );
+    assert_eq!(after[0].0.id, local_id, "same row");
+    assert_eq!(
+        after[0].0.uid, local_uid,
+        "identity is local, never the file's"
+    );
+    assert_eq!(
+        after[0].0.body, "Please look at this *closely*.",
+        "the editor's revised wording is what the file is for"
+    );
+}
+
+/// A reply has no mark of its own — both formats anchor it to the thread's range —
+/// so on a real returning file it arrives with no identity whatsoever.
+///
+/// It is recognised by its natural key instead: the author who wrote it and the moment
+/// they did, both carried natively by ODF and OOXML. Without that, the *second* round
+/// trip re-creates every reply the first brought home, and a thread grows a duplicate
+/// of itself on every exchange.
+#[test]
+fn a_reply_with_no_uid_is_recognised_by_its_author_and_date() {
+    let mut ctx = Ctx::new();
+    let first = ctx.write_bytes("first.odt", &first_returning_odt());
+    let rows = ctx.analyse(vec![first], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let before = ctx.comments();
+    let local_uid = before[0].0.uid;
+    assert_eq!(before[0].1.len(), 1, "the first import creates one reply");
+    let reply_id = before[0].1[0].id;
+
+    // The same thread coming home again: the original reply (same author, same
+    // instant) plus a new one the editor added.
+    let again = ctx.write_bytes(
+        "again.odt",
+        &returning_odt_marked_only(
+            local_uid,
+            "Please look at this.",
+            vec![
+                ("Writer", "2026-01-01T01:00:00Z", "Will do."),
+                ("Editor", "2026-02-02T02:00:00Z", "Thanks."),
+            ],
+        ),
+    );
+    let rows = ctx.analyse(vec![again], ImportRowKind::Book);
+    ctx.apply(rows, 0);
+
+    let after = ctx.comments()[0].1.clone();
+    assert_eq!(
+        after.len(),
+        2,
+        "the first reply must be recognised, not duplicated: {after:#?}"
+    );
+    assert!(
+        after.iter().any(|r| r.id == reply_id),
+        "the existing reply kept its row"
+    );
+    assert!(
+        after.iter().any(|r| r.body == "Thanks."),
+        "the editor's new reply arrived"
+    );
 }

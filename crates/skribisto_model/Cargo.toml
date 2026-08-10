@@ -19,6 +19,9 @@ name = "skribisto_model"
 common = { workspace = true }
 text-document = { workspace = true }
 serde = { version = "1.0", features = ["derive"] }
+# `round_trip` mints and reads the bookmark names that carry a `BinderItem`/`Comment` uid
+# through a `.docx`/`.odt` and back. Same crate + feature set `common`'s own entities use.
+uuid = { workspace = true }
 # The analysis tokenizer: one UAX #29 word definition shared by every repetition and
 # vocabulary measure, so they cannot disagree about what a word is.
 unicode-segmentation = "1"

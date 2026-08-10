@@ -192,7 +192,12 @@ pub struct Gathered {
     pub trash_infos: Vec<TrashInfo>,
     pub paces: Vec<PaceWithChildren>,
     pub progress_snapshots: Vec<ProgressSnapshot>,
-    /// Empty on the export path, which never reads comments (see `reads_comments`).
+    /// Empty only for a reader that leaves `reads_comments` at its default `false`. Save,
+    /// save-as, backup **and export** all switch it on — export because the `.docx`/`.odt`
+    /// writers carry comments as a side payload beside the prose, which is the editorial round
+    /// trip. (This used to say "empty on the export path, which never reads comments"; that
+    /// stopped being true when comment export landed, and the trait's own doc above explains
+    /// what the unchanged guarantee actually is.)
     pub comments: Vec<CommentWithReplies>,
     pub footnotes: Vec<FootnoteWithContent>,
     pub binders: Vec<BinderWithItems>,

@@ -2016,7 +2016,13 @@ features:
         # plan and the UI hands it straight back -- exactly as `djot` already does.
         # Sending only a count here would mean re-reading every file at apply time
         # to recover what this pass already worked out.
-        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, scene_breaks: i64, word_count: i64, comments: Vec<ImportComment>, origin: String, included: bool }"
+        # `source_uid_tag` / `source_digest` are the round-trip mark this row arrived with,
+        # when the file is one this project exported: which `BinderItem` the passage was, and
+        # what its prose digested to at export time. Empty for a first arrival and for a file
+        # from anywhere else. They ride the plan for the same reason `comments` does -- the
+        # writer reviews the plan and the UI hands it straight back, and re-deriving them at
+        # apply time would mean re-reading every file.
+        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, scene_breaks: i64, word_count: i64, comments: Vec<ImportComment>, origin: String, included: bool, source_uid_tag: String, source_digest: String }"
       - name: rows
         type: enum
         enum_name: DocumentImportRows
@@ -2084,7 +2090,12 @@ features:
         enum_name: ImportComment
         enum_values:
         - Empty
-        - "Found { kind: ImportCommentKind, uid: Option<Uuid>, author_name: String, author_initials: String, created_at: String, body: String, resolved: bool, orphaned: bool, orphan_reason: ImportOrphanReason, range_start: i64, range_length: i64, quote_prefix: String, quote_exact: String, quote_exact_truncated: bool, quote_suffix: String, block_ordinal_hint: i64, replies: Vec<ImportReply> }"
+        # `uid_tag` is the identity a round-trip *mark* carried for this comment, and is the
+        # one that survives in practice: `uid` above comes from a private XML attribute that
+        # both Word and LibreOffice delete on save, so on any real returning file it is None
+        # and this is not. A lookup key rather than a uid -- see
+        # `skribisto_model::round_trip::uid_tag`. Empty when the file carried no mark.
+        - "Found { kind: ImportCommentKind, uid: Option<Uuid>, uid_tag: String, author_name: String, author_initials: String, created_at: String, body: String, resolved: bool, orphaned: bool, orphan_reason: ImportOrphanReason, range_start: i64, range_length: i64, quote_prefix: String, quote_exact: String, quote_exact_truncated: bool, quote_suffix: String, block_ordinal_hint: i64, replies: Vec<ImportReply> }"
       - name: reply
         type: enum
         enum_name: ImportReply
@@ -2160,7 +2171,12 @@ features:
         # The very `ImportComment`s the plan carried, handed straight back. One
         # declaration, one shape, no translation step in between for the two halves
         # to disagree across.
-        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String, comments: Vec<ImportComment> }"
+        #
+        # `source_uid_tag` is the exception to "narrower than the plan": it is not
+        # review-time information but identity, and it is what lets a returning file update
+        # the row it came from instead of landing beside it as a second copy. Empty for a row
+        # that is genuinely new.
+        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String, comments: Vec<ImportComment>, source_uid_tag: String }"
       - name: rows
         type: enum
         enum_name: ApplyImportRows

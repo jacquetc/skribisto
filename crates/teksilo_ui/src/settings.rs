@@ -459,8 +459,9 @@ pub(crate) fn field_label(text: LocalizedString) -> TextWidget {
         .color(TextRole::Secondary)
 }
 
-/// A dimmed sub-field hint line.
-fn hint(text: LocalizedString) -> TextWidget {
+/// A dimmed sub-field hint line. `pub(crate)` so `panes::export_styles` says which formats
+/// read the round-trip switches in the same voice every other hint in the window uses.
+pub(crate) fn hint(text: LocalizedString) -> TextWidget {
     TextWidget::new(text)
         .style(TextStyleRole::Small)
         .color(TextRole::Secondary)

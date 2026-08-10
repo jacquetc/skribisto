@@ -63,8 +63,10 @@ use crate::block::SourceDocument;
 use crate::diagnostics::ImportDiagnostic;
 use crate::scanner::SourceScanner;
 use crate::sources::rich::{
-    ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply, Run, RunStyle, assemble,
+    CommentMark, OpenMark, ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply,
+    RichRowMark, Run, RunStyle, assemble, attach_comment_marks,
 };
+use skribisto_model::round_trip;
 
 const NS_OFFICE: &str = "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
 const NS_TEXT: &str = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
@@ -496,6 +498,11 @@ struct Walker<'a> {
     origin: String,
     blocks: Vec<RichBlock>,
     annotations: Vec<RichAnnotation>,
+    row_marks: Vec<RichRowMark>,
+    /// Comment marks closed so far, matched to their annotations in `finish`.
+    comment_marks: Vec<CommentMark>,
+    /// Bookmark name → the comment mark it opened.
+    open_marks: HashMap<String, OpenMark>,
     /// `office:name` → index into `annotations`, for `annotation-end` and for
     /// `loext:parent-name`.
     by_name: HashMap<String, usize>,
@@ -523,6 +530,9 @@ impl<'a> Walker<'a> {
             origin: origin.to_string(),
             blocks: Vec::new(),
             annotations: Vec::new(),
+            row_marks: Vec::new(),
+            comment_marks: Vec::new(),
+            open_marks: HashMap::new(),
             by_name: HashMap::new(),
             open: HashMap::new(),
             diagnostics: Vec::new(),
@@ -590,9 +600,12 @@ impl<'a> Walker<'a> {
             }
         }
 
+        attach_comment_marks(&mut self.annotations, &self.comment_marks);
+
         RichDocument {
             blocks: std::mem::take(&mut self.blocks),
             annotations: std::mem::take(&mut self.annotations),
+            row_marks: std::mem::take(&mut self.row_marks),
         }
     }
 
@@ -632,9 +645,12 @@ impl<'a> Walker<'a> {
                         .attribute((NS_TEXT, "style-name"))
                         .and_then(|s| self.styles.outline_level(s));
                     match declared {
-                        Some(level) if !element_text(child).trim().is_empty() => {
-                            self.paragraph(child, ParagraphKind::Heading { level: level.max(1) })
-                        }
+                        Some(level) if !element_text(child).trim().is_empty() => self.paragraph(
+                            child,
+                            ParagraphKind::Heading {
+                                level: level.max(1),
+                            },
+                        ),
                         _ => self.paragraph(child, ParagraphKind::Body),
                     }
                 }
@@ -813,12 +829,18 @@ impl<'a> Walker<'a> {
                     self.footnotes += 1;
                 }
                 (Some(NS_DRAW), "frame") | (Some(NS_DRAW), "g") => self.frame(child, build, style),
+                // A bookmark is ordinarily nothing to a manuscript importer — a
+                // cross-reference target, a table-of-contents entry, LibreOffice's own
+                // `__Fieldmark__`. Three names are not: the round-trip marks this app writes
+                // into its own exports (`skrb_r…`, `skrb_c…`). Everything else still falls
+                // through to being ignored, and `round_trip::parse_mark_name` is strict about
+                // the shape precisely so a foreign bookmark cannot be mistaken for identity.
+                (Some(NS_TEXT), "bookmark") => self.point_mark(child, build),
+                (Some(NS_TEXT), "bookmark-start") => self.open_mark(child, build),
+                (Some(NS_TEXT), "bookmark-end") => self.close_mark(child, build),
                 (Some(NS_TEXT), "change-start")
                 | (Some(NS_TEXT), "change-end")
                 | (Some(NS_TEXT), "change")
-                | (Some(NS_TEXT), "bookmark")
-                | (Some(NS_TEXT), "bookmark-start")
-                | (Some(NS_TEXT), "bookmark-end")
                 | (Some(NS_TEXT), "soft-page-break") => {}
                 (Some(NS_TEXT), field) if FIELD_ELEMENTS.contains(&field) => {
                     self.fields += 1;
@@ -856,6 +878,79 @@ impl<'a> Walker<'a> {
                     let _ = style;
                 }
             }
+        }
+    }
+
+    /// `<text:bookmark>` — a zero-length mark. A row mark is written this way; a comment mark
+    /// never is (it always brackets characters), so one arriving here is a degenerate write we
+    /// have no use for and ignore rather than guess at.
+    fn point_mark(&mut self, node: Node<'_, '_>, build: &ParaBuild) {
+        let Some(name) = node.attribute((NS_TEXT, "name")) else {
+            return;
+        };
+        if let Some(round_trip::MarkName::Row { uid_tag, digest }) =
+            round_trip::parse_mark_name(name)
+        {
+            self.row_marks.push(RichRowMark {
+                block_index: self.blocks.len(),
+                uid_tag,
+                digest,
+            });
+        }
+        let _ = build;
+    }
+
+    /// `<text:bookmark-start>` — opens a comment mark's range. A *row* mark arriving as a range
+    /// is accepted at its start: ODF permits it, and a row mark's extent has never meant
+    /// anything (it names a position), so there is nothing to lose by taking the position and
+    /// letting the matching end tag fall through.
+    fn open_mark(&mut self, node: Node<'_, '_>, build: &ParaBuild) {
+        let Some(name) = node.attribute((NS_TEXT, "name")) else {
+            return;
+        };
+        match round_trip::parse_mark_name(name) {
+            Some(round_trip::MarkName::Row { uid_tag, digest }) => {
+                self.row_marks.push(RichRowMark {
+                    block_index: self.blocks.len(),
+                    uid_tag,
+                    digest,
+                });
+            }
+            Some(round_trip::MarkName::Comment { uid_tag }) => {
+                self.open_marks.insert(
+                    name.to_string(),
+                    OpenMark {
+                        uid_tag,
+                        block: self.blocks.len(),
+                        start: build.len,
+                    },
+                );
+            }
+            None => {}
+        }
+    }
+
+    /// `<text:bookmark-end>` — closes a comment mark, giving the exact character range the
+    /// comment covered when it was written. Recorded for `finish` to match against the
+    /// annotations, which cannot be done here: on a file an editor has saved, the annotation
+    /// and its mark are two independent elements whose order is the editor's to choose.
+    fn close_mark(&mut self, node: Node<'_, '_>, build: &ParaBuild) {
+        let Some(name) = node.attribute((NS_TEXT, "name")) else {
+            return;
+        };
+        if let Some(open) = self.open_marks.remove(name) {
+            self.comment_marks.push(CommentMark {
+                uid_tag: open.uid_tag,
+                block: open.block,
+                start: open.start,
+                // A mark that opened in an earlier block has no meaningful length here; the
+                // start is what identifies it, and `finish` matches on that.
+                length: if open.block == self.blocks.len() {
+                    build.len.saturating_sub(open.start)
+                } else {
+                    0
+                },
+            });
         }
     }
 
@@ -931,6 +1026,10 @@ impl<'a> Walker<'a> {
             start: build.len,
             length: 0,
             uid,
+            // Filled by `attach_comment_marks` once the whole document is walked — the
+            // bookmark carrying it may close after this point, and on a file an editor has
+            // saved it may even precede the annotation.
+            uid_tag: None,
             author,
             author_initials: String::new(),
             created,
