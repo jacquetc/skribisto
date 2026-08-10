@@ -252,6 +252,11 @@ struct RawParaStyle {
     parent: Option<String>,
     /// A bottom border with nothing else — the ODF spelling of a horizontal rule.
     rule: Option<bool>,
+    /// `style:default-outline-level` — the heading depth this style *declares*.
+    ///
+    /// ODF lets a paragraph style say it is a heading, which is how a document can carry a
+    /// full chapter structure without a single `<text:h>` in it. See [`StyleTable::outline_level`].
+    outline_level: Option<u8>,
     /// The text properties a paragraph style carries in its own right; a run with
     /// no span of its own inherits them.
     text: RawTextStyle,
@@ -306,12 +311,17 @@ impl StyleTable {
                             .all(|s| p.attribute((NS_FO, *s)).is_none_or(|v| v == "none"));
                         has_bottom && sides_clear
                     });
+                let outline_level = node
+                    .attribute((NS_STYLE, "default-outline-level"))
+                    .and_then(|v| v.trim().parse::<u8>().ok())
+                    .filter(|l| (1..=10).contains(l));
                 self.para.insert(
                     name.to_string(),
                     RawParaStyle {
                         parent: parent.clone(),
                         rule,
                         text,
+                        outline_level,
                     },
                 );
             }
@@ -378,6 +388,42 @@ impl StyleTable {
     }
 
     /// Whether a paragraph style is the ODF spelling of a horizontal rule.
+    /// The heading depth a paragraph style declares, walking the inheritance chain.
+    ///
+    /// # Why a `<text:p>` can be a heading
+    ///
+    /// This module's own doc says ODF states heading depth explicitly on `<text:h>`, so none of
+    /// DOCX's style-name guesswork is needed. True, and incomplete: ODF lets a *paragraph
+    /// style* declare the same thing with `style:default-outline-level`, and a document written
+    /// from a novel template does exactly that — its chapters are `<text:p>` in a "Chapter
+    /// title" style whose definition says `default-outline-level="2"`, with no `<text:h>`
+    /// anywhere in the file. Read only as `<text:h>`, a 90 000-word manuscript with
+    /// twenty-seven chapters arrives as one scene.
+    ///
+    /// This is still not name guessing — nothing here looks at what a style is *called*. The
+    /// level is a value the document itself states, in the vocabulary's own attribute; it is
+    /// simply stated in a second place, which the reader now looks at.
+    ///
+    /// The chain matters as much as the attribute: a real document applies an **automatic**
+    /// style (`P12`) to each chapter, and only its `style:parent-style-name` reaches the named
+    /// style carrying the level. Same walk, and same 32-step guard, as [`Self::is_rule`].
+    fn outline_level(&self, name: &str) -> Option<u8> {
+        let mut current = Some(name.to_string());
+        let mut guard = 0;
+        while let Some(n) = current {
+            let raw = self.para.get(&n)?;
+            if let Some(level) = raw.outline_level {
+                return Some(level);
+            }
+            current = raw.parent.clone();
+            guard += 1;
+            if guard > 32 {
+                return None;
+            }
+        }
+        None
+    }
+
     fn is_rule(&self, name: &str) -> bool {
         let mut current = Some(name.to_string());
         let mut guard = 0;
@@ -576,7 +622,21 @@ impl<'a> Walker<'a> {
                         )]));
                         continue;
                     }
-                    self.paragraph(child, ParagraphKind::Body);
+                    // A paragraph whose style declares an outline level *is* a heading — the
+                    // shape every novel-template document uses, where chapters are styled
+                    // `<text:p>` and the file contains no `<text:h>` at all. See
+                    // `StyleTable::outline_level`. An empty one is not: a blank paragraph
+                    // left in a heading style is spacing, and promoting it would open a
+                    // titleless chapter.
+                    let declared = child
+                        .attribute((NS_TEXT, "style-name"))
+                        .and_then(|s| self.styles.outline_level(s));
+                    match declared {
+                        Some(level) if !element_text(child).trim().is_empty() => {
+                            self.paragraph(child, ParagraphKind::Heading { level: level.max(1) })
+                        }
+                        _ => self.paragraph(child, ParagraphKind::Body),
+                    }
                 }
                 (Some(NS_TEXT), "list") => self.walk_list(child, 0),
                 (Some(NS_TEXT), "section") => self.walk_container(child),
