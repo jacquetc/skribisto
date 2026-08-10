@@ -35,6 +35,7 @@ mod export_styles_file;
 mod folder_memory_file;
 mod footnote_numbering;
 mod footnotes_list_model;
+pub(crate) mod import_merge_source;
 pub(crate) mod import_plan_source;
 mod import_prefs_file;
 mod installed_dictionaries_model;

@@ -32,6 +32,7 @@ use teksilo::core::styles::{ComboBoxVariant, PanelVariant};
 use teksilo::data::{ListModel, TreeDataSource};
 use teksilo::prelude::TextStyleRole;
 use teksilo::prelude::*;
+use teksilo::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use teksilo::widgets::{
     Button, ButtonVariant, CellContext, Checkbox, Column, ColumnWidth, ComboBox, DropZone, Expand,
     FixedSize, HStack, ListView, MaxSize, Padding, Panel, ProgressBar, Spacer, Step, Stepper,
@@ -41,10 +42,12 @@ use teksilo::widgets::{
 use skribisto_model::CreateType;
 
 use crate::binder::create_labels::recommendation_label;
+use crate::models::import_merge_source::ImportMergeSource;
 use crate::models::import_plan_source::PlanRowView;
 use crate::view_models::import_document::{
-    ImportDocumentViewModel, LEVEL_TYPES, ROW_TYPES, STEP_REVIEW,
+    ImportDocumentViewModel, LEVEL_TYPES, MergeRowView, ROW_TYPES, STEP_REVIEW,
 };
+use skribisto_model::reconcile::{RowAction, RowStatus};
 
 const CARD_W: f32 = 920.0;
 const CARD_H: f32 = 620.0;
@@ -149,6 +152,8 @@ impl Widget for ImportDocumentPanel {
         let analyse_vm = self.vm.clone();
         let review_vm = self.vm.clone();
         let dest_vm = self.vm.clone();
+        let merge_vm = self.vm.clone();
+        let reconcile_vm = self.vm.clone();
         let finish_vm = self.vm.clone();
         let cancel_vm = self.vm.clone();
 
@@ -186,7 +191,22 @@ impl Widget for ImportDocumentPanel {
             .step(
                 Step::new(tr!(import_document_step_destination()))
                     .content(move || destination_step(&dest_vm))
-                    .complete_when(self.vm.can_apply_signal()),
+                    .complete_when(self.vm.can_apply_signal())
+                    .validate_on_next({
+                        // The merge is computed here rather than in the next step's content
+                        // factory, because the factory may run once while this runs on every
+                        // advance — and the whole question is about the destination that was
+                        // *just* chosen.
+                        let vm = merge_vm;
+                        move || {
+                            vm.rebuild_merge();
+                            true
+                        }
+                    }),
+            )
+            .step(
+                Step::new(tr!(import_document_step_reconcile()))
+                    .content(move || reconcile_step(&reconcile_vm)),
             )
             // Import. The write is one transaction, so it either lands whole or
             // not at all — and when it does not, returning `false` keeps the
@@ -427,6 +447,302 @@ fn destination_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
                 ),
             ),
     )
+}
+
+/// Step four: what the returning file does to the book it left from.
+///
+/// Shown only when there is something to line up. A first import into an empty destination
+/// matches nothing, and a table of identical "create it" dropdowns would be a page of ceremony
+/// saying what the row count already said — so that case gets one sentence instead.
+fn reconcile_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
+    let source = ImportMergeSource::empty();
+    source.set_rows(vm.merge_rows());
+
+    // Re-sourced whenever the merge is rebuilt — which is on every entry to this step, because
+    // the writer may have gone back and chosen a different destination.
+    let refill_vm = vm.clone();
+    let refill_source = source.clone();
+    let refilled = vm.merge_version().map(move |_| {
+        refill_source.set_rows(refill_vm.merge_rows());
+        0usize
+    });
+
+    let has_matches = {
+        let me = vm.clone();
+        vm.merge_version()
+            .map(move |_| usize::from(me.has_anything_to_reconcile()))
+    };
+
+    // Deliberately not a live count of what matched. `TextWidget`'s reactive setter takes a
+    // plain `String`, so a translated plural cannot be bound to a signal — and a count read
+    // once at build time would go stale the moment the writer went back and chose a different
+    // destination. The table below says which rows matched, in more detail than a number
+    // could, so the header says what the step is *for* and leaves the counting to it.
+    let header = TextWidget::new(tr!(import_document_reconcile_hint()))
+        .style(TextStyleRole::Small)
+        .color(TextRole::Secondary);
+
+    let body = VStack::new()
+        .spacing(8.0)
+        .child(header)
+        // A zero-width reader for the re-source signal. `Switcher` below binds
+        // `has_matches`, which does not itself re-run `set_rows`; without something
+        // observing `refilled` the table would keep showing the previous destination's merge.
+        .child(MaxSize::new(0.0, 0.0).child(Switcher::new(refilled).child(Spacer::new())))
+        .child(Expand::vertical().child(merge_tree(vm, source)));
+
+    Padding::symmetric(16.0, 12.0).child(
+        Switcher::new(has_matches)
+            .child(
+                Padding::symmetric(8.0, 40.0).child(
+                    TextWidget::new(tr!(import_document_reconcile_all_new()))
+                        .style(TextStyleRole::Small)
+                        .color(TextRole::Secondary),
+                ),
+            )
+            .child(body),
+    )
+}
+
+/// The merge table: the project's tree down the left, the returning file beside it.
+fn merge_tree(vm: &ImportDocumentViewModel, source: ImportMergeSource) -> impl Widget + use<> {
+    // Column 0 is the tree, and it is the **project's** tree — blank on a row only the file
+    // has, which is what makes an inserted chapter read as the gap it is.
+    let current = Column::new(
+        "current",
+        tr!(import_document_col_current()),
+        move |row: &MergeRowView, _cx: &CellContext| match &row.current_title {
+            Some(title) => Box::new(TextWidget::new(lit!(title.clone()))) as Box<dyn Widget>,
+            None => Box::new(Spacer::new()),
+        },
+    );
+
+    let incoming = Column::new(
+        "incoming",
+        tr!(import_document_col_incoming()),
+        move |row: &MergeRowView, _cx: &CellContext| match &row.incoming_title {
+            Some(title) => Box::new(TextWidget::new(lit!(title.clone())).color(
+                if row.current_title.is_some() {
+                    TextRole::Primary
+                } else {
+                    // A row only the file has: named in the colour of something being added,
+                    // so the eye finds the insertions without reading the Status column.
+                    TextRole::Success
+                },
+            )) as Box<dyn Widget>,
+            None => Box::new(Spacer::new()),
+        },
+    );
+
+    let status = Column::new(
+        "status",
+        tr!(import_document_col_status()),
+        move |row: &MergeRowView, _cx: &CellContext| {
+            Box::new(
+                TextWidget::new(status_label(row.status, row.moved))
+                    .style(TextStyleRole::Small)
+                    .color(if row.status.needs_attention() {
+                        TextRole::Warning
+                    } else {
+                        TextRole::Secondary
+                    }),
+            ) as Box<dyn Widget>
+        },
+    )
+    .width(ColumnWidth::Fixed(150.0));
+
+    // `CellContext` carries a flat row index and no node identity, so a per-row control has to
+    // resolve its own key through the source — a delegate that closed over `cx.row_index`
+    // would act on whatever row happened to sit at that position after a collapse.
+    let action_source = source.clone();
+    let action_vm = vm.clone();
+    let action = Column::new(
+        "action",
+        tr!(import_document_col_action()),
+        move |row: &MergeRowView, cx: &CellContext| {
+            let Some(key) = action_source.key_at(cx.row_index) else {
+                return Box::new(Spacer::new()) as Box<dyn Widget>;
+            };
+            if row.actions.len() < 2 {
+                // Exactly one thing may happen to this row — a missing row can only be kept.
+                // A combo box offering one choice is a control that cannot be used.
+                return Box::new(
+                    TextWidget::new(action_label(
+                        row.actions.first().copied().unwrap_or(RowAction::Ignore),
+                    ))
+                    .style(TextStyleRole::Small)
+                    .color(TextRole::Secondary),
+                );
+            }
+            let selected = Signal::new(Some(action_vm.action_for(row)));
+            let pick = action_vm.clone();
+            Box::new(
+                ComboBox::from_items(row.actions.clone(), selected, |a: &RowAction| {
+                    action_label(*a)
+                })
+                .variant(ComboBoxVariant::Plain)
+                .on_select(move |a: &RowAction, _ctx| pick.set_action(key, *a)),
+            )
+        },
+    )
+    .width(ColumnWidth::Fixed(190.0));
+
+    let compare_source = source.clone();
+    let compare_vm = vm.clone();
+    let compare = Column::new(
+        "compare",
+        lit!(""),
+        move |row: &MergeRowView, cx: &CellContext| {
+            if !row.can_compare() {
+                return Box::new(Spacer::new()) as Box<dyn Widget>;
+            }
+            let Some(key) = compare_source.key_at(cx.row_index) else {
+                return Box::new(Spacer::new());
+            };
+            let open = compare_vm.clone();
+            Box::new(
+                Button::new(tr!(import_document_compare()))
+                    .variant(ButtonVariant::Ghost)
+                    .on_activate_fn(move |ctx| {
+                        if let Some(row) = open.merge_row(key) {
+                            show_compare(ctx, &open, &row);
+                        }
+                    }),
+            )
+        },
+    )
+    .width(ColumnWidth::Fixed(110.0));
+
+    TreeTableView::from_source(source)
+        .add_column(current)
+        .add_column(incoming)
+        .add_column(status)
+        .add_column(action)
+        .add_column(compare)
+        .row_height(30.0)
+}
+
+fn status_label(status: RowStatus, moved: bool) -> LocalizedString {
+    if moved {
+        return tr!(import_document_status_moved());
+    }
+    match status {
+        RowStatus::Identical => tr!(import_document_status_identical()),
+        RowStatus::EditorEdited => tr!(import_document_status_editor_edited()),
+        RowStatus::YouEdited => tr!(import_document_status_you_edited()),
+        RowStatus::Conflict => tr!(import_document_status_conflict()),
+        RowStatus::Different => tr!(import_document_status_different()),
+        RowStatus::New => tr!(import_document_status_new()),
+        RowStatus::Missing => tr!(import_document_status_missing()),
+    }
+}
+
+fn action_label(action: RowAction) -> LocalizedString {
+    match action {
+        RowAction::CommentsOnly => tr!(import_document_action_comments_only()),
+        RowAction::TakeImport => tr!(import_document_action_take_import()),
+        RowAction::KeepCurrent => tr!(import_document_action_keep_current()),
+        RowAction::CreateNew => tr!(import_document_action_create_new()),
+        RowAction::Ignore => tr!(import_document_action_ignore()),
+    }
+}
+
+/// The two sides of one row, side by side and read-only.
+///
+/// Through the same renderer the Versions dock uses, over the shared [`DiffPane`] — one
+/// rendering with two sources rather than two implementations of "show me a diff".
+fn show_compare(ctx: &mut EventContext, vm: &ImportDocumentViewModel, row: &MergeRowView) {
+    let (current, incoming) = vm.compare_prose(row);
+    let title = row
+        .current_title
+        .clone()
+        .or_else(|| row.incoming_title.clone())
+        .unwrap_or_default();
+    ctx.present_modal(
+        ModalRequest::deferred(move |t| {
+            t.add(ComparePanel::new(current.clone(), incoming.clone()))
+        })
+        .presentation(ModalPresentation::InTree)
+        .title(lit!(title))
+        .size(COMPARE_W as u32, COMPARE_H as u32)
+        .close_behavior(ModalCloseBehavior::EscapeOrClickOutside),
+    );
+}
+
+const COMPARE_W: f32 = 720.0;
+const COMPARE_H: f32 = 520.0;
+
+/// One row's two versions, rendered by the same machinery the Versions dock uses.
+///
+/// A widget rather than an inline tree because `ModalRequest::deferred` builds its content
+/// into the host's own tree — and because the [`DiffPane`] has to outlive a rebuild, or the
+/// comparison would reload and lose its scroll position on every repaint.
+struct ComparePanel {
+    pane: crate::widgets::DiffPane,
+    root_child: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for ComparePanel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ComparePanel").finish()
+    }
+}
+
+impl ComparePanel {
+    fn new(current: String, incoming: String) -> Self {
+        let pane = crate::widgets::DiffPane::new();
+        let diff = crate::view_models::version_diff::diff_djot(&current, &incoming);
+        pane.show(&crate::view_models::version_diff::render(
+            &diff,
+            None,
+            &|n| format!("[{n}]"),
+        ));
+        Self {
+            pane,
+            root_child: None,
+        }
+    }
+}
+
+impl Widget for ComparePanel {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        let editor = RichTextEditor::read_only(self.pane.doc.clone())
+            .content_padding_symmetric(6.0, 8.0)
+            .h_scroll_policy(ScrollPolicy::AlwaysOff);
+
+        let root = teksu!(ctx => FixedSize {
+            width: COMPARE_W
+            height: COMPARE_H
+            Panel {
+                variant: PanelVariant::Raised
+                corner_radius: 10.0
+                padding: 14.0
+                VStack {
+                    spacing: 8.0
+                    TextWidget::new(tr!(import_document_compare_legend())) {
+                        style: TextStyleRole::Small
+                        color: TextRole::Secondary
+                    }
+                    Expand::vertical { child: editor }
+                    HStack {
+                        Spacer
+                        Button::new(tr!(import_document_compare_close())) {
+                            on_activate_fn: |ctx| ctx.dismiss_modal()
+                        }
+                    }
+                }
+            }
+        });
+        self.root_child = Some(root);
+        vec![root]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root_child
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
 }
 
 /// What the importer had to decide, lose or guess — said out loud, before Import.

@@ -37,12 +37,10 @@
 //! the change is "difficult to spot", and opening on three thousand identical
 //! words answers the wrong question.
 
-use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
-use teksilo::text_document::TextDocument;
 use teksilo::widgets::rich_text::{RichTextEditor, ScrollPolicy};
 use teksilo::widgets::{
     Button, ButtonVariant, DateRangeEdit, Divider, DockOpenLocation, DockSide, DockWidget,
@@ -57,6 +55,7 @@ use skrib_format::versions::SourceKind;
 use crate::view_models::version_diff::{self, CollapseRule};
 use crate::view_models::versions::TimelineView;
 use crate::view_models::{VersionDiff, VersionsViewModel};
+use crate::widgets::DiffPane;
 
 /// Package the versions panel as a trailing `DockWidget`.
 pub fn versions_dock(
@@ -95,62 +94,6 @@ pub type UidLookup = Rc<dyn Fn(u64) -> Option<uuid::Uuid>>;
 /// reaching past its own seam. Assembled in `app::project_shell`; the sequence
 /// itself lives in `app::restore_version`.
 pub type RestoreFn = Rc<dyn Fn(&mut EventContext, crate::view_models::RestoreRequest)>;
-
-/// Where the comparison is shown. Owned by the panel so it survives a rebuild —
-/// a fresh document each time would reset the scroll position on every keystroke
-/// elsewhere in the app.
-///
-/// `set_djot_sync` is the right call *here* and the wrong one for a restore: it
-/// clears undo history, which costs nothing on a throwaway view document with no
-/// undo stack and no comment anchors, and would be destructive on a real one.
-struct DiffPane {
-    doc: TextDocument,
-    /// The Djot currently loaded, so an unchanged rendering is not reloaded.
-    loaded: RefCell<String>,
-    /// Character offsets of each change in `doc`, for jump-to-next-change.
-    offsets: Rc<RefCell<Vec<usize>>>,
-    /// Which change the next jump goes to.
-    cursor: Rc<Cell<usize>>,
-    handle: RefCell<Option<teksilo::widgets::rich_text::EditorHandle>>,
-}
-
-impl DiffPane {
-    fn new() -> Self {
-        Self {
-            doc: TextDocument::new(),
-            loaded: RefCell::new(String::new()),
-            offsets: Rc::new(RefCell::new(Vec::new())),
-            cursor: Rc::new(Cell::new(0)),
-            handle: RefCell::new(None),
-        }
-    }
-
-    /// Load a rendering, if it is not the one already there.
-    fn show(&self, rendered: &version_diff::Rendered) {
-        if *self.loaded.borrow() == rendered.djot {
-            return;
-        }
-        // A failed import leaves the previous text in place, which would be a lie.
-        // Clearing is the honest fallback, and the summary line above still says
-        // what changed.
-        if self.doc.set_djot_sync(&rendered.djot).is_err() {
-            let _ = self.doc.set_djot_sync("");
-        }
-        *self.loaded.borrow_mut() = rendered.djot.clone();
-        *self.offsets.borrow_mut() = rendered.change_offsets.clone();
-        self.cursor.set(0);
-    }
-
-    fn clear(&self) {
-        if self.loaded.borrow().is_empty() {
-            return;
-        }
-        let _ = self.doc.set_djot_sync("");
-        self.loaded.borrow_mut().clear();
-        self.offsets.borrow_mut().clear();
-        self.cursor.set(0);
-    }
-}
 
 struct VersionsPanel {
     vm: VersionsViewModel,

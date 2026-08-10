@@ -54,14 +54,19 @@ use crate::models::import_plan_source::{ImportPlanSource, PlanRowKey};
 use crate::toast_scope::ToastWorkExt;
 use crate::widgets::DestinationPicker;
 
-/// Indices into the wizard's [`StepperController`] — keep these in lock-step with
-/// the panel's `Stepper` steps (Files → Review → Destination). Analysis progress
-/// is shown *inside* Review while `busy`, not as its own indicator step.
+/// Indices into the wizard's [`StepperController`] — keep these in lock-step with the panel's
+/// `Stepper` steps (Files → Review → Destination → Reconcile). Analysis progress is shown
+/// *inside* Review while `busy`, not as its own indicator step.
+///
+/// Reconcile comes **after** Destination and cannot come before it: lining a returning file up
+/// against the project is a question about a particular subtree, and until one is chosen there
+/// is nothing to line it up against.
 pub const STEP_FILES: usize = 0;
 pub const STEP_REVIEW: usize = 1;
 pub const STEP_DESTINATION: usize = 2;
+pub const STEP_RECONCILE: usize = 3;
 /// How many steps the import [`StepperController`] owns.
-pub const STEP_COUNT: usize = 3;
+pub const STEP_COUNT: usize = 4;
 
 /// Update-in-place key for the toast the *apply* raises. Work-scoped (see
 /// [`crate::toast_scope`]) rather than a bare static: two windows on two
@@ -1402,9 +1407,16 @@ impl ImportDocumentViewModel {
                 (None, Some((k, _))) => MergeRowKey::Incoming(*k),
                 (None, None) => continue,
             };
+            // A row only the file has sits at its neighbours' depth, not at the root. The
+            // plan's own indent is in the *file's* coordinate space and means nothing here;
+            // what the writer is reading is their own tree with a gap in it, and a chapter
+            // the editor inserted between two chapters belongs beside them.
+            let indent = cur
+                .map(|(item, _)| item.indent)
+                .unwrap_or_else(|| out.last().map(|r: &MergeRowView| r.indent).unwrap_or(0));
             out.push(MergeRowView {
                 key,
-                indent: cur.map(|(item, _)| item.indent).unwrap_or(0),
+                indent,
                 current_title: cur.map(|(item, _)| item.title.clone()),
                 current_item_id: cur.map(|(item, _)| item.id),
                 incoming_title: inc.map(|(_, r)| r.title.clone()),
@@ -1429,6 +1441,12 @@ impl ImportDocumentViewModel {
     /// The merge sequence, for the reconcile step's table.
     pub fn merge_rows(&self) -> Vec<MergeRowView> {
         self.merge.borrow().clone()
+    }
+
+    /// One merge row by its durable key — what a cell delegate resolves before acting, since
+    /// the framework hands it a flat index and no identity.
+    pub fn merge_row(&self, key: MergeRowKey) -> Option<MergeRowView> {
+        self.merge.borrow().iter().find(|m| m.key == key).cloned()
     }
 
     /// Bumped whenever [`rebuild_merge`](Self::rebuild_merge) runs.
@@ -2923,5 +2941,205 @@ mod tests {
             std::thread::sleep(Duration::from_millis(50));
         }
         println!("WROTE {out} (op {path})");
+    }
+    // ── the merge, and what it makes of the plan ────────────────────────────────────────
+
+    /// The same shape as [`vm`], but every row carrying the round-trip mark a returning file
+    /// would have brought — which is what makes an `Update` possible at all.
+    fn vm_from_a_returning_file() -> ImportDocumentViewModel {
+        let vm = ImportDocumentViewModel::new(Rc::new(AppContext::new()), AppIds::default());
+        let tagged = |indent: i64, title: &str, kind: CreateType, tag: &str| PlannedRow {
+            source_uid_tag: Some(tag.into()),
+            source_digest: Some("aaaaaaaaaaaa".into()),
+            ..planned(indent, title, kind)
+        };
+        let plan = ImportPlan {
+            rows: vec![
+                container(0, "Book", CreateType::Book),
+                tagged(1, "Chapter One", CreateType::Chapter, "tag-one"),
+                tagged(2, "Scene A", CreateType::Scene, "tag-a"),
+                tagged(2, "Scene B", CreateType::Scene, "tag-b"),
+                tagged(1, "Chapter Two", CreateType::Chapter, "tag-two"),
+            ],
+            diagnostics: Vec::new(),
+        };
+        vm.on_plan_ready(
+            &plan,
+            vec![1, 2, 3, 3, 2],
+            vec![
+                (1, CreateType::Book),
+                (2, CreateType::Chapter),
+                (3, CreateType::Scene),
+            ],
+        );
+        vm
+    }
+
+    use skribisto_model::reconcile::RowAction;
+
+    /// A merge row as the reconcile step would hold one, without a store behind it.
+    fn merged(
+        key: MergeRowKey,
+        incoming: Option<PlanRowKey>,
+        actions: Vec<RowAction>,
+    ) -> MergeRowView {
+        MergeRowView {
+            key,
+            indent: 0,
+            current_title: matches!(key, MergeRowKey::Current(_)).then(|| "Chapter One".into()),
+            current_item_id: matches!(key, MergeRowKey::Current(_)).then_some(7),
+            incoming_title: incoming.map(|_| "Chapter One".into()),
+            incoming_key: incoming,
+            status: RowStatus::EditorEdited,
+            moved: false,
+            actions,
+        }
+    }
+
+    /// With no merge at all — a first import, or a plan accepted before the reconcile step
+    /// existed — every included row is created, exactly as it always was.
+    #[test]
+    fn without_a_merge_every_row_is_still_created() {
+        let vm = vm();
+        let rows = vm.rows_to_create();
+        assert_eq!(rows.len(), 5);
+        assert!(
+            rows.iter()
+                .all(|r| matches!(r, ApplyImportRow::Create { .. }))
+        );
+    }
+
+    /// The case the feature exists for: bring the remarks, leave the manuscript alone.
+    #[test]
+    fn comments_only_sends_an_update_that_does_not_replace_the_prose() {
+        let vm = vm_from_a_returning_file();
+        let key = vm.plan().keys_in_order()[1];
+
+        *vm.merge.borrow_mut() = vec![merged(
+            MergeRowKey::Current(uuid::Uuid::from_u128(1)),
+            Some(key),
+            vec![RowAction::CommentsOnly, RowAction::TakeImport],
+        )];
+
+        let rows = vm.rows_to_create();
+        let update = rows
+            .iter()
+            .find_map(|r| match r {
+                ApplyImportRow::Update {
+                    target_uid_tag,
+                    replace_prose,
+                    ..
+                } => Some((target_uid_tag.clone(), *replace_prose)),
+                _ => None,
+            })
+            .expect("the matched row became an update");
+        assert_eq!(update.0, "tag-one");
+        assert!(!update.1, "comments-only must not replace the prose");
+    }
+
+    #[test]
+    fn take_import_sends_an_update_that_does() {
+        let vm = vm_from_a_returning_file();
+        let key = vm.plan().keys_in_order()[1];
+        let row_key = MergeRowKey::Current(uuid::Uuid::from_u128(1));
+        *vm.merge.borrow_mut() = vec![merged(
+            row_key,
+            Some(key),
+            vec![RowAction::CommentsOnly, RowAction::TakeImport],
+        )];
+        vm.set_action(row_key, RowAction::TakeImport);
+
+        assert!(vm.rows_to_create().iter().any(|r| matches!(
+            r,
+            ApplyImportRow::Update {
+                replace_prose: true,
+                ..
+            }
+        )));
+    }
+
+    /// A row the writer is keeping produces no instruction at all — the same way an unticked
+    /// row does. There is nothing to send, and sending a no-op would be an invitation to write
+    /// one by accident later.
+    #[test]
+    fn keeping_a_row_sends_nothing_for_it() {
+        let vm = vm_from_a_returning_file();
+        let key = vm.plan().keys_in_order()[1];
+        let row_key = MergeRowKey::Current(uuid::Uuid::from_u128(1));
+        *vm.merge.borrow_mut() = vec![merged(
+            row_key,
+            Some(key),
+            vec![RowAction::CommentsOnly, RowAction::KeepCurrent],
+        )];
+        vm.set_action(row_key, RowAction::KeepCurrent);
+
+        let rows = vm.rows_to_create();
+        assert_eq!(rows.len(), 4, "the kept row is absent: {rows:#?}");
+        assert!(
+            rows.iter()
+                .all(|r| matches!(r, ApplyImportRow::Create { .. }))
+        );
+    }
+
+    /// A decision is remembered against the row's own identity, so re-sourcing the merge —
+    /// which is what going back and choosing a different destination does — cannot hand one
+    /// row's instruction to another.
+    #[test]
+    fn a_decision_survives_the_merge_being_rebuilt() {
+        let vm = vm();
+        let row_key = MergeRowKey::Current(uuid::Uuid::from_u128(1));
+        let other = MergeRowKey::Current(uuid::Uuid::from_u128(2));
+        *vm.merge.borrow_mut() = vec![
+            merged(
+                row_key,
+                None,
+                vec![RowAction::CommentsOnly, RowAction::TakeImport],
+            ),
+            merged(
+                other,
+                None,
+                vec![RowAction::CommentsOnly, RowAction::TakeImport],
+            ),
+        ];
+        vm.set_action(row_key, RowAction::TakeImport);
+
+        // The same two rows, in the other order — as a different destination might produce.
+        *vm.merge.borrow_mut() = vec![
+            merged(
+                other,
+                None,
+                vec![RowAction::CommentsOnly, RowAction::TakeImport],
+            ),
+            merged(
+                row_key,
+                None,
+                vec![RowAction::CommentsOnly, RowAction::TakeImport],
+            ),
+        ];
+        let rows = vm.merge_rows();
+        assert_eq!(
+            vm.action_for(&rows[1]),
+            RowAction::TakeImport,
+            "kept its own"
+        );
+        assert_eq!(
+            vm.action_for(&rows[0]),
+            RowAction::CommentsOnly,
+            "and did not inherit it"
+        );
+    }
+
+    /// A first import into an empty destination has nothing to line up, and the step says so
+    /// in one sentence instead of a table of identical dropdowns.
+    #[test]
+    fn nothing_to_reconcile_when_every_row_is_new() {
+        let vm = vm();
+        *vm.merge.borrow_mut() = vec![merged(
+            MergeRowKey::Incoming(vm.plan().keys_in_order()[1]),
+            Some(vm.plan().keys_in_order()[1]),
+            vec![RowAction::CreateNew],
+        )];
+        assert!(!vm.has_anything_to_reconcile());
+        assert_eq!(vm.matched_count(), 0);
     }
 }

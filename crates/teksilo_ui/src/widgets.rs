@@ -13,9 +13,11 @@
 //! land, and it is the same question with the same answer shape.
 
 pub mod destination_picker;
+pub mod diff_pane;
 pub mod pill;
 pub mod structure_number;
 
 pub use destination_picker::DestinationPicker;
+pub(crate) use diff_pane::DiffPane;
 pub use pill::{Pill, PillTooltip, attach_labelled_composite_tooltip};
 pub use structure_number::StructureNumber;
