@@ -24,9 +24,15 @@
 //! The base is deliberately high so it can never collide with a `fresh()` id
 //! (the framework mints those from `1`, e.g. for a user-dragged dock split).
 
-use std::sync::{LazyLock, RwLock};
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use teksilo::widgets::{DockOpenLocation, DockSide, DockWidgetId};
+use teksilo::prelude::{LocalizedString, Widget};
+use teksilo::widgets::{DockOpenLocation, DockSide, DockWidget, DockWidgetId, IconWidget};
+
+use frontend::AppContext;
+
+use crate::app_ids::AppIds;
 
 /// Base for the fixed app-dock ids (see the module docs). Chosen well above any
 /// `DockWidgetId::fresh()` value the process could reach.
@@ -56,6 +62,7 @@ pub const TIMELINE_DOCK_ID: u64 = DOCK_ID_BASE + 11;
 
 /// One app dock's declared home: its stable id plus where it mounts on a desk
 /// nobody has arranged yet.
+#[derive(Clone, Copy, Debug)]
 pub struct AppDock {
     pub id: u64,
     pub side: DockSide,
@@ -180,53 +187,139 @@ pub const APP_DOCK_ID_CEILING: u64 = DOCK_ID_BASE + 0xFFFF;
 /// launch and `import_state` drops the whole saved tree as unknown.
 pub const EXTENSION_DOCK_ID_FLOOR: u64 = APP_DOCK_ID_CEILING + 1;
 
-struct Registered {
-    namespace: String,
-    dock: AppDock,
+/// What the app hands an extension so its dock can build a panel.
+///
+/// Deliberately the *ids-only* state and the backend handle, and nothing else.
+/// The app's own docks are passed their view-models directly because they are
+/// built in the same function that owns those view-models; an extension is not,
+/// and handing it `EditorsViewModel` or `OutlineViewModel` would make every
+/// internal refactor of those a breaking change for everything installed.
+///
+/// It is enough: `app_ctx` reaches the store and the event hub, and `ids` carries
+/// the open `Work` as a `Signal`, so an extension builds its own reactive models
+/// from the two exactly as [`crate::models`] does.
+///
+/// **Per window, not per process** — `ids` is Tier 2 (per open `Work`), so a
+/// second window on a second project gets its own context. Anything cached off
+/// this must be keyed accordingly; see [`crate::sessions::WorkSession`].
+#[derive(Clone)]
+pub struct DockContext {
+    pub app_ctx: Rc<AppContext>,
+    pub ids: AppIds,
+    /// This Work's save state, narrowed to what an extension may touch: mark a
+    /// change so it joins the same unsaved-changes guard a manuscript edit does.
+    ///
+    /// Without it a dock that edits its own state left the project reading clean,
+    /// and Close/Quit proceeded with no save issued — see [`WorkHandle`] for the
+    /// full account.
+    pub work: crate::view_models::WorkHandle,
+    /// What the writer is looking at in **this** window — see
+    /// [`crate::active_context`]. Docks get it and tabs do not: a tab is already
+    /// scoped to one container, a dock sits outside every tab.
+    pub active: crate::active_context::ActiveContext,
 }
 
-static EXTENSION_DOCKS: LazyLock<RwLock<Vec<Registered>>> =
-    LazyLock::new(|| RwLock::new(Vec::new()));
+/// An extension's dock: where it sits, what it is called, and what it draws.
+///
+/// [`AppDock`] carries only placement, because it has to be `const`-constructible
+/// for [`APP_DOCKS`]. A registration additionally needs the content factory —
+/// without it a registered dock would take a slot on the rail and open onto
+/// nothing, which is exactly what this type exists to make impossible.
+/// Resolves a slot's label per build, so a runtime locale switch reaches it.
+///
+/// Named because all three UI slots share the shape and clippy asks for it —
+/// [`ExtensionDock::title`], [`crate::tabs::shared::segments::ContainerSegmentSpec::label`]
+/// and [`crate::tabs::analysis::AnalysisCategorySpec::label`].
+pub type LabelFn = Rc<dyn Fn() -> LocalizedString>;
+
+/// Builds an extension dock's panel from the app handles it is given.
+pub type DockBuildFn = Rc<dyn Fn(&DockContext) -> Box<dyn Widget>>;
+
+/// Builds an extension dock's rail glyph.
+pub type IconFn = Rc<dyn Fn() -> IconWidget>;
+
+#[derive(Clone)]
+pub struct ExtensionDock {
+    /// Its id and where it mounts on a desk nobody has arranged yet.
+    pub placement: AppDock,
+    /// Resolved per build, so a runtime locale switch reaches the tab label —
+    /// the same reason [`crate::tabs::shared::segments::ContainerSegmentSpec`]
+    /// stores a closure rather than a `LocalizedString`.
+    pub title: LabelFn,
+    /// The rail glyph. A rail dock with no icon is reachable only by its tooltip,
+    /// so this is worth supplying, but the framework does not require it.
+    pub icon: Option<IconFn>,
+    /// Builds the panel, once per placement (and again after a close/re-open).
+    pub build: DockBuildFn,
+}
+
+struct Registered {
+    namespace: String,
+    dock: ExtensionDock,
+}
+
+// Thread-local rather than a `static RwLock`: an `ExtensionDock` holds `Rc`
+// closures that build widgets, and `Rc` is not `Send`. Same shape as the
+// container-segment and analysis-category registries. Every reader below runs on
+// the UI thread — `project_shell` builds the layout, and
+// `WorkspaceLayoutViewModel` reconciles a restored desk — so a per-thread
+// registry is the same registry in every case that matters.
+thread_local! {
+    static EXTENSION_DOCKS: RefCell<Vec<Registered>> = const { RefCell::new(Vec::new()) };
+}
 
 /// Add an extension's dock to the roster.
 ///
 /// Registering is all that is required: [`all_docks`] feeds the first-run mount,
-/// and [`all_dock_ids`] feeds the `known_docks` set, so an extension dock reaches a
-/// desk saved before the extension existed through the very mechanism that already
-/// carries a newly added app dock there.
+/// [`app_dock_ids`] feeds the `known_docks` set, and [`registered_dock_widgets`]
+/// feeds the content — so an extension dock reaches a desk saved before the
+/// extension existed through the very mechanism that already carries a newly added
+/// app dock there.
 ///
-/// Returns `Err` when `dock.id` is below [`EXTENSION_DOCK_ID_FLOOR`] or already
+/// Returns `Err` when the id is below [`EXTENSION_DOCK_ID_FLOOR`] or already
 /// taken. Both are refusals rather than warnings: a colliding id does not fail
 /// visibly, it makes a saved layout mount one dock's geometry for another panel —
 /// and it would do so only for writers who already had a desk saved, which is the
 /// hardest kind of report to act on.
 ///
+/// ⚠ Like every registry in the extension seam this is read as a **snapshot**, by
+/// `project_shell` when it builds a window's docking layout. Register at startup,
+/// before any project window exists.
+///
 /// The returned handle unregisters on drop. Registering the same namespace twice
 /// replaces the earlier entry rather than stacking a second copy.
-pub fn register_dock(namespace: impl Into<String>, dock: AppDock) -> Result<DockHandle, String> {
-    if dock.id < EXTENSION_DOCK_ID_FLOOR {
+pub fn register_dock(
+    namespace: impl Into<String>,
+    dock: ExtensionDock,
+) -> Result<DockHandle, String> {
+    let id = dock.placement.id;
+    if id < EXTENSION_DOCK_ID_FLOOR {
         return Err(format!(
-            "dock id {:#x} is inside the application's reserved range; extension ids start at {:#x}",
-            dock.id, EXTENSION_DOCK_ID_FLOOR
+            "dock id {id:#x} is inside the application's reserved range; extension ids start at \
+             {EXTENSION_DOCK_ID_FLOOR:#x}"
         ));
     }
     let namespace = namespace.into();
-    let mut reg = EXTENSION_DOCKS.write().unwrap_or_else(|e| e.into_inner());
-    if let Some(other) = reg
-        .iter()
-        .find(|r| r.dock.id == dock.id && r.namespace != namespace)
-    {
-        return Err(format!(
-            "dock id {:#x} is already registered by '{}'",
-            dock.id, other.namespace
-        ));
-    }
-    reg.retain(|r| r.namespace != namespace);
-    reg.push(Registered {
-        namespace: namespace.clone(),
-        dock,
-    });
-    Ok(DockHandle { namespace })
+    EXTENSION_DOCKS.with(|reg| {
+        let mut reg = reg.borrow_mut();
+        if let Some(other) = reg
+            .iter()
+            .find(|r| r.dock.placement.id == id && r.namespace != namespace)
+        {
+            return Err(format!(
+                "dock id {id:#x} is already registered by '{}'",
+                other.namespace
+            ));
+        }
+        reg.retain(|r| r.namespace != namespace);
+        reg.push(Registered {
+            namespace: namespace.clone(),
+            dock,
+        });
+        Ok(DockHandle {
+            namespace: namespace.clone(),
+        })
+    })
 }
 
 /// Unregisters its dock when dropped.
@@ -237,8 +330,10 @@ pub struct DockHandle {
 
 impl Drop for DockHandle {
     fn drop(&mut self) {
-        let mut reg = EXTENSION_DOCKS.write().unwrap_or_else(|e| e.into_inner());
-        reg.retain(|r| r.namespace != self.namespace);
+        // `try_with`: a handle released during thread teardown must not panic.
+        let _ = EXTENSION_DOCKS.try_with(|reg| {
+            reg.borrow_mut().retain(|r| r.namespace != self.namespace);
+        });
     }
 }
 
@@ -249,25 +344,51 @@ impl Drop for DockHandle {
 /// extension's dock as well as for one of ours. Built-ins come first so their
 /// first-run rail order is unaffected by what is installed.
 pub fn all_docks() -> Vec<AppDock> {
-    let reg = EXTENSION_DOCKS.read().unwrap_or_else(|e| e.into_inner());
-    APP_DOCKS
-        .iter()
-        .map(|d| AppDock {
-            id: d.id,
-            side: d.side,
-            own_tab: d.own_tab,
-        })
-        .chain(reg.iter().map(|r| AppDock {
-            id: r.dock.id,
-            side: r.dock.side,
-            own_tab: r.dock.own_tab,
-        }))
-        .collect()
+    let registered = EXTENSION_DOCKS.with(|reg| {
+        reg.borrow()
+            .iter()
+            .map(|r| r.dock.placement.clone())
+            .collect::<Vec<_>>()
+    });
+    APP_DOCKS.iter().cloned().chain(registered).collect()
 }
 
 /// Every roster id, for the `known_docks` set persisted with a captured desk.
 pub fn app_dock_ids() -> Vec<u64> {
     all_docks().iter().map(|d| d.id).collect()
+}
+
+/// The registered docks as real [`DockWidget`]s, for `project_shell` to chain onto
+/// its `DockingLayout` beside the app's own.
+///
+/// Separate from [`all_docks`] because the two answer different questions and have
+/// different callers: the roster is *placement* and is also read by the restore-time
+/// reconcile, which has no `DockContext` and needs none. This is *content*, and
+/// exists only where a layout is being built.
+pub fn registered_dock_widgets(cx: &DockContext) -> Vec<DockWidget> {
+    EXTENSION_DOCKS.with(|reg| {
+        reg.borrow()
+            .iter()
+            .map(|r| {
+                let dock = r.dock.clone();
+                let cx = cx.clone();
+                let build = dock.build.clone();
+                let widget =
+                    DockWidget::new(dock.placement.widget_id(), (dock.title)(), move |_id| {
+                        crate::tabs::Boxed::new(build(&cx))
+                    })
+                    .show_header(true)
+                    .default_location(dock.placement.location());
+                match &dock.icon {
+                    Some(icon) => {
+                        let icon = icon.clone();
+                        widget.icon(move || icon())
+                    }
+                    None => widget,
+                }
+            })
+            .collect()
+    })
 }
 
 pub mod comments;
@@ -293,11 +414,24 @@ mod extension_roster_tests {
     // alive (or dropping) moves that number under this one's feet. Every check
     // below is scoped to ids this test owns. Offsets are unique per test for the
     // same reason.
-    fn ext_dock(offset: u64) -> AppDock {
+    fn placement(offset: u64) -> AppDock {
         AppDock {
             id: EXTENSION_DOCK_ID_FLOOR + offset,
             side: DockSide::Trailing,
             own_tab: true,
+        }
+    }
+
+    fn ext_dock(offset: u64) -> ExtensionDock {
+        ExtensionDock {
+            placement: placement(offset),
+            title: Rc::new(|| teksilo::prelude::lit!("Demo".to_string())),
+            icon: None,
+            build: Rc::new(|_| {
+                Box::new(teksilo::widgets::TextWidget::new(teksilo::prelude::lit!(
+                    "body".to_string()
+                )))
+            }),
         }
     }
 
@@ -352,15 +486,13 @@ mod extension_roster_tests {
     /// report into an error at startup.
     #[test]
     fn an_id_in_the_apps_reserved_range_is_refused() {
-        let err = register_dock(
-            "test.collide",
-            AppDock {
-                id: OUTLINE_DOCK_ID,
-                side: DockSide::Leading,
-                own_tab: true,
-            },
-        )
-        .expect_err("must refuse a built-in id");
+        let mut clash = ext_dock(0);
+        clash.placement = AppDock {
+            id: OUTLINE_DOCK_ID,
+            side: DockSide::Leading,
+            own_tab: true,
+        };
+        let err = register_dock("test.collide", clash).expect_err("must refuse a built-in id");
         assert!(err.contains("reserved range"), "unhelpful message: {err}");
     }
 
@@ -375,6 +507,98 @@ mod extension_roster_tests {
         );
     }
 
+    /// **The gap this type closed.** Registration used to carry placement alone,
+    /// so a registered dock took a rail slot, was mounted by the first-run walk
+    /// over [`all_docks`] — and opened onto nothing, because dock *content* is a
+    /// separate hand-chained list in `project_shell` that a registration had no
+    /// way into. It failed silently, as an empty panel.
+    ///
+    /// So this asserts the whole path: a registration yields a real `DockWidget`
+    /// carrying the extension's own id, and the widget it builds lays out.
+    #[test]
+    fn a_registered_dock_yields_a_dock_widget_that_actually_draws() {
+        use teksilo::core::widget_tree::WidgetTree;
+        use teksilo::prelude::SizeProposal;
+        use teksilo::widgets::{DockingLayout, DockingModel, Spacer};
+
+        let id = EXTENSION_DOCK_ID_FLOOR + 6;
+        let _h = register_dock("test.content", ext_dock(6)).expect("register");
+
+        let app_ctx = Rc::new(AppContext::new());
+        let cx = DockContext {
+            app_ctx: app_ctx.clone(),
+            ids: AppIds::new(),
+            work: crate::view_models::WorkHandle::detached(app_ctx, AppIds::new()),
+            active: crate::active_context::ActiveContext::detached(),
+        };
+        let widgets = registered_dock_widgets(&cx);
+        assert_eq!(
+            widgets.len(),
+            1,
+            "the registration must produce exactly one DockWidget"
+        );
+
+        // Handed to a `DockingLayout` exactly as `project_shell` hands it one.
+        // `dock()` registers with the model immediately, so the model itself is
+        // the witness that the widget carries the id the roster mounts — the one
+        // linkage that, broken, mounts a pane the layout was never given.
+        let model = DockingModel::new();
+        let mut layout = DockingLayout::new(model.clone()).center(Spacer::new());
+        for w in widgets {
+            layout = layout.dock(w);
+        }
+        assert!(
+            model.is_registered(DockWidgetId::from_raw(id)),
+            "the DockWidget must carry the extension's own id"
+        );
+        assert!(
+            all_docks().iter().any(|d| d.id == id),
+            "…and the roster must mount that same id"
+        );
+
+        // And the content is real, not an empty box: the failure being guarded is
+        // a dock that mounts and draws nothing.
+        let mut tree = WidgetTree::new();
+        let wid = tree.add_boxed((ext_dock(6).build)(&cx));
+        tree.layout(SizeProposal::exact(300.0, 400.0));
+        assert!(
+            tree.bounds(wid).width > 0.0,
+            "the registered dock's panel laid out to zero width"
+        );
+    }
+
+    /// **The second gap this context closed.** A dock could draw, but an edit it
+    /// made was invisible to the unsaved-changes guard: `dirty_seq` is bumped
+    /// only by editor typing and thirteen named entity events, and an extension's
+    /// state is in neither list. Close/Quit read `unsaved == false` and proceeded
+    /// with no save issued.
+    ///
+    /// So this asserts the path a dock actually walks: build the panel from a
+    /// `DockContext` made out of a real `SaveStateViewModel`, mark a change
+    /// through it, and see the *view-model the app's guard reads* go dirty.
+    #[test]
+    fn a_dock_that_marks_a_change_reaches_the_unsaved_guard() {
+        let app_ctx = Rc::new(AppContext::new());
+        let ids = AppIds::new();
+        let save_state = crate::view_models::SaveStateViewModel::new(app_ctx.clone(), ids.clone());
+        assert!(!save_state.is_unsaved(), "a fresh Work starts clean");
+
+        let cx = DockContext {
+            app_ctx,
+            ids,
+            work: save_state.handle(),
+            active: crate::active_context::ActiveContext::detached(),
+        };
+
+        // Exactly what a dock's build closure does with its context.
+        cx.work.mark_changed(true);
+
+        assert!(
+            save_state.is_unsaved(),
+            "an extension's edit must gate Close/Quit like any manuscript edit"
+        );
+    }
+
     /// Re-registering one namespace replaces rather than stacks, and dropping the
     /// handle leaves nothing behind.
     #[test]
@@ -385,7 +609,10 @@ mod extension_roster_tests {
             assert!(has(old));
             let _b = register_dock("test.same", ext_dock(5)).expect("re-register");
             assert!(has(new), "the later registration must be live");
-            assert!(!has(old), "…and the earlier one gone, not stacked beside it");
+            assert!(
+                !has(old),
+                "…and the earlier one gone, not stacked beside it"
+            );
         }
         assert!(!has(new), "a dropped handle must leave no dock behind");
     }

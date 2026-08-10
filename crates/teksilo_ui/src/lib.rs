@@ -80,12 +80,13 @@
 //! `test_support` is the exception and stays crate-private: it is `#[cfg(test)]`
 //! scaffolding, not API.
 
-
+pub mod active_context;
 pub mod app;
 pub mod app_ids;
 pub mod backup;
 pub mod backup_paths;
 pub mod binder;
+pub mod commands_ext;
 pub mod comments;
 pub mod crash_report;
 pub mod date_convert;
@@ -94,10 +95,12 @@ pub mod docks;
 pub mod export;
 pub mod icons;
 pub mod intents;
+pub mod locales;
 pub mod media_paths;
 pub mod models;
 pub mod note_templates;
 pub mod panels;
+pub mod read_signal;
 pub mod sessions;
 pub mod settings;
 pub mod settings_keys;
@@ -556,8 +559,8 @@ pub const CORKBOARD_PARA_SPACING_AFTER_DEFAULT: f32 = 6.0;
 /// exactly "Literata", "EB Garamond", "Source Serif 4" (verified via the font
 /// name tables), matching the `*_FONT_FAMILY_DEFAULT` values above.
 fn register_editor_fonts() -> teksilo::text::VecFontRegistrar {
-    use teksilo::text::{FontFaceSpec, VecFontRegistrar};
     use std::sync::Arc;
+    use teksilo::text::{FontFaceSpec, VecFontRegistrar};
     let face = |bytes: &'static [u8]| FontFaceSpec {
         data: Arc::new(bytes.to_vec()),
         is_default: false,
@@ -748,9 +751,18 @@ pub fn run() {
 
     let theme = if dark { intui::dark() } else { intui::light() };
 
+    // The one place the app's supported locales are named. `locales::registered_locales`
+    // is filtered against exactly this list, so an extension can never make a
+    // language selectable that the app itself has no strings for.
+    const SUPPORTED_LOCALES: &[&str] = &["en-US", "fr-FR"];
+
     let i18n = I18nConfig::new()
         .source_locale("en-US".parse().unwrap())
-        .supported_locales(["en-US".parse().unwrap(), "fr-FR".parse().unwrap()])
+        .supported_locales(
+            SUPPORTED_LOCALES
+                .iter()
+                .map(|l| l.parse().expect("a supported locale tag must parse")),
+        )
         // Directory layout: one `.ftl` per topic per locale. The `tr!` macro
         // auto-detects `locales/en-US/` and validates keys across every file
         // in it, so the writing-model tooltips can live in their own file.
@@ -778,6 +790,17 @@ pub fn run() {
         .auto_detect_os_locale(false)
         .fallback_locale("en-US".parse().unwrap())
         .framework_locales(framework_locales());
+
+    // Extension strings, folded in **after** the app's own. `compile_in` extends
+    // (teksilo `b924a27e` — before that a second call silently discarded these
+    // four files and the window came up in message keys), and the manager merges
+    // per locale keeping the FIRST definition of a key. So the app's own strings
+    // win every collision: an extension gets its namespaced keys onto the screen
+    // and cannot redefine `work-save` under the File menu.
+    let extension_locales = locales::registered_locales(SUPPORTED_LOCALES);
+    let i18n = extension_locales.iter().fold(i18n, |cfg, bundle| {
+        cfg.compile_in(&[(bundle.locale.as_str(), bundle.resources.as_slice())])
+    });
 
     // The app-global (Tier 1) registry: `root_id` (see `app_ids.rs`'s module doc
     // for why that one field lives here and not on the per-Work `AppIds`) plus

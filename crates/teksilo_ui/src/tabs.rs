@@ -31,15 +31,15 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+use frontend::AppContext;
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use frontend::direct_access::ContentDto;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
 use teksilo::text_document::TextDocument;
 use teksilo::widgets::{
     Banner, Button, ButtonVariant, Expand, Orientation, PaneDescriptor, SplitterModel, VStack,
 };
-use frontend::AppContext;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
-use frontend::direct_access::ContentDto;
 
 use crate::app_ids::AppIds;
 use crate::models::{OpenDoc, OpenDocsStore};
@@ -70,7 +70,11 @@ mod item_scene;
 mod item_text;
 pub(crate) mod overview;
 pub(crate) mod pace;
-pub(crate) mod shared;
+/// `pub`, not `pub(crate)`, because [`shared::segments`] is an extension slot: a
+/// `pub` item inside a `pub(crate)` module is unreachable from outside the crate
+/// however public it looks, which is exactly what `container.segments` was until
+/// something outside the crate first tried to use it.
+pub mod shared;
 
 /// Which of the item's two names this field edits.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -140,8 +144,20 @@ pub struct ContentTab {
     /// stream's and the corkboard's: a `Folder/Note` has no manuscript extent, so it has
     /// no stream, but it does have a subtree worth tabulating.
     overview: Option<crate::view_models::OverviewViewModel>,
-    /// The app's entity ids — needed for the undo stack when a name field commits.
+    /// The app's entity ids — needed for the undo stack when a name field commits,
+    /// and published by [`Self::ids`] for the `container.segments` slot.
     ids: AppIds,
+    /// This Work's save state, narrowed to what a registered segment may touch —
+    /// published by [`Self::work`] for the same slot, and for the same reason
+    /// `ids`/`app_ctx` are: a segment that edited its own state without it left
+    /// the project reading clean, and Close/Quit discarded the edit in silence.
+    work: crate::view_models::WorkHandle,
+    /// The backend handle this tab was built against.
+    ///
+    /// Kept even though every sub-view-model was already handed its own clone at
+    /// construction: it is what [`Self::app_ctx`] publishes, and a registered
+    /// segment has no other route to the store — see that accessor's docs.
+    app_ctx: Rc<AppContext>,
     /// The per-editor find banner (Ctrl+F) — `Some` only when this tab has a main
     /// prose field to search. Persisted on the tab so it survives tab rebuilds
     /// (its `FindSession` + query outlive the widget tree it draws into).
@@ -398,6 +414,10 @@ pub fn tab_for(
         // default `SettingsViewModel::distraction_free_width` seeds from.
         Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
         crate::view_models::FormatViewModel::detached(),
+        // A standalone tab has no `WorkSession`, so it gets its own inert save
+        // state rather than a null object: marking a change on it is a real state
+        // change on a real object, there is simply no window polling it.
+        crate::view_models::WorkHandle::detached(ctx.clone(), ids.clone()),
     )
 }
 
@@ -552,6 +572,7 @@ impl ContentTab {
         distraction_free: Signal<bool>,
         distraction_free_width: Signal<f32>,
         format: crate::view_models::FormatViewModel,
+        work: crate::view_models::WorkHandle,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
         // the stream (Book only). Built first, so it can borrow `app_ctx` before
@@ -626,7 +647,7 @@ impl ContentTab {
             tree_expansion.clone(),
         );
         let stream = StreamViewModel::new(
-            app_ctx,
+            app_ctx.clone(),
             ids.clone(),
             docs,
             open_doc.item_id,
@@ -683,6 +704,8 @@ impl ContentTab {
             corkboard,
             overview,
             ids,
+            work,
+            app_ctx,
             find,
             synopsis_handle: Rc::new(RefCell::new(None)),
             view_state: Signal::new(crate::view_models::ViewState::default()),
@@ -809,6 +832,35 @@ impl ContentTab {
     /// The `BinderItem` this tab edits.
     pub fn item_id(&self) -> u64 {
         self.open_doc.item_id
+    }
+
+    /// The app's entity ids — the open `Work`, its `WorkInfo`, its undo stack.
+    ///
+    /// `pub` for the [`shared::segments`] slot. A registered segment is handed
+    /// nothing but this tab, so without these two accessors it can read the
+    /// document but never the project it belongs to — which makes the slot usable
+    /// only by a segment that renders from its own state and needs no context at
+    /// all. Capturing an `AppContext` at registration time is *not* the way round
+    /// it: the app builds its own in `run`, so an extension that made one early
+    /// would be reading a second, permanently empty store.
+    pub fn ids(&self) -> &AppIds {
+        &self.ids
+    }
+
+    /// The backend handle — the store and the event hub this tab was built
+    /// against. See [`Self::ids`] for why a slot needs it.
+    pub fn app_ctx(&self) -> Rc<AppContext> {
+        self.app_ctx.clone()
+    }
+
+    /// This Work's save state, narrowed for the [`shared::segments`] slot: a
+    /// registered segment calls `work().mark_changed(..)` with the outcome of its
+    /// own mutation so the edit joins the manuscript's unsaved-changes guard.
+    ///
+    /// `pub` for the same reason [`Self::ids`] and [`Self::app_ctx`] are — a
+    /// segment is handed nothing but this tab.
+    pub fn work(&self) -> &crate::view_models::WorkHandle {
+        &self.work
     }
     /// The `(role, sub_role)` pair this tab edits — what [`tab_pane`] dispatches on.
     pub fn role(&self) -> &BinderItemRole {
@@ -1134,8 +1186,8 @@ impl ProseField {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use teksilo::core::widget_tree::WidgetTree;
     use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+    use teksilo::core::widget_tree::WidgetTree;
 
     /// A per-type typography set with distinguishable fonts (Scene/Synopsis =
     /// Literata, Notes = Inter) so tests can assert the right bundle reaches the
@@ -1527,7 +1579,10 @@ mod tests {
                 crate::view_models::EditorViewMemory::detached(false),
                 &AppIds::new(),
             );
-            tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OVERVIEW)));
+            tab.segment
+                .set(Some(crate::tabs::shared::segments::segment_id(
+                    crate::tabs::shared::segments::SEG_OVERVIEW,
+                )));
             // The Overview pane subscribes to backend events in its wiring child, so it
             // needs a tree that has an event source (see `crate::test_support`).
             let mut tree = crate::test_support::tree_with_events(&ctx);
@@ -1578,7 +1633,10 @@ mod tests {
         // Chapter/Part index 4 *is* Overview. On a Book it is Analysis. That is precisely
         // the confusion the keyed bar exists to make impossible, and it slipped through
         // because this test is `mocks`-gated and never ran in a default-feature run.
-        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_ANALYSIS)));
+        tab.segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_ANALYSIS,
+            )));
         assert!(
             tab.analysis().is_some(),
             "a Book carries an Analysis view-model"
@@ -1642,7 +1700,10 @@ mod tests {
         );
         // Addressed by id: what used to be "index 6" is just the Overview segment now,
         // and stays correct however many segments precede it.
-        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OVERVIEW)));
+        tab.segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_OVERVIEW,
+            )));
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1200.0, 700.0));
@@ -1715,7 +1776,10 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OVERVIEW)));
+        tab.segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_OVERVIEW,
+            )));
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let root = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1200.0, 700.0));
@@ -1793,7 +1857,10 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OVERVIEW)));
+        tab.segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_OVERVIEW,
+            )));
 
         // The pane is rebuilt at each step rather than mutated: the editing signal is
         // bound at `BindingLevel::Rebuild`, so a rebuild is exactly what the framework
@@ -1912,7 +1979,10 @@ mod tests {
                 tab.corkboard().is_some(),
                 "Folder/{sub_role:?} carries a Corkboard view-model"
             );
-            tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_CORKBOARD)));
+            tab.segment
+                .set(Some(crate::tabs::shared::segments::segment_id(
+                    crate::tabs::shared::segments::SEG_CORKBOARD,
+                )));
             // The board's wiring child subscribes to backend events, so a bare
             // `WidgetTree` would panic with no event source registered.
             let mut tree = crate::test_support::tree_with_events(&ctx);
@@ -2062,7 +2132,10 @@ mod tests {
             crate::view_models::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
-        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_CORKBOARD)));
+        tab.segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_CORKBOARD,
+            )));
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let root = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1400.0, 900.0));
@@ -2197,21 +2270,34 @@ mod tests {
         };
         // Open a chapter; it starts on its own page.
         let chapter1 = open(1);
-        assert_eq!(chapter1.segment.get(), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
+        assert_eq!(
+            chapter1.segment.get(),
+            Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_OWN
+            ))
+        );
         let mut tree = WidgetTree::new();
         tree.add_boxed(tab_pane(&chapter1)); // sets up the persist effect
         tree.layout(teksilo::prelude::SizeProposal::exact(1000.0, 700.0));
         // Switch it to the manuscript stream ("Full Chapter").
-        chapter1.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)));
+        chapter1
+            .segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_MANUSCRIPT,
+            )));
         assert_eq!(
             mem.initial(&ChapterScene),
-            Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)),
+            Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_MANUSCRIPT
+            )),
             "the chosen view was remembered"
         );
         // A newly-opened chapter inherits it.
         assert_eq!(
             open(2).segment.get(),
-            Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)),
+            Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_MANUSCRIPT
+            )),
             "a new chapter opens on Full Chapter"
         );
         // ...but a Scene (no segmented control) is unaffected.
@@ -2268,8 +2354,18 @@ mod tests {
         // Both open on their own page (memory starts at 0), so no stream mounts.
         let a = open(1);
         let b = open(2);
-        assert_eq!(a.segment.get(), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
-        assert_eq!(b.segment.get(), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
+        assert_eq!(
+            a.segment.get(),
+            Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_OWN
+            ))
+        );
+        assert_eq!(
+            b.segment.get(),
+            Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_OWN
+            ))
+        );
         let build = |tab: &ContentTab| {
             let mut tree = WidgetTree::new();
             tree.add_boxed(tab_pane(tab));
@@ -2279,13 +2375,42 @@ mod tests {
         let _ta = build(&a);
         let _tb = build(&b);
         // Merely opening + building a second same-type tab wrote nothing.
-        assert_eq!(mem.initial(&ChapterScene), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
-        a.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT))); // A switches → Full Chapter
-        assert_eq!(mem.initial(&ChapterScene), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)));
-        b.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_SYNOPSIS))); // B → Full Synopsis: last switch wins
-        assert_eq!(mem.initial(&ChapterScene), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_SYNOPSIS)));
-        a.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN))); // A switches back → its switch wins in turn
-        assert_eq!(mem.initial(&ChapterScene), Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_OWN)));
+        assert_eq!(
+            mem.initial(&ChapterScene),
+            Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_OWN
+            ))
+        );
+        a.segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_MANUSCRIPT,
+            ))); // A switches → Full Chapter
+        assert_eq!(
+            mem.initial(&ChapterScene),
+            Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_MANUSCRIPT
+            ))
+        );
+        b.segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_SYNOPSIS,
+            ))); // B → Full Synopsis: last switch wins
+        assert_eq!(
+            mem.initial(&ChapterScene),
+            Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_SYNOPSIS
+            ))
+        );
+        a.segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_OWN,
+            ))); // A switches back → its switch wins in turn
+        assert_eq!(
+            mem.initial(&ChapterScene),
+            Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_OWN
+            ))
+        );
     }
 
     /// First node at/under `root` whose type name *contains* `needle` (DFS pre-order).
@@ -2343,6 +2468,7 @@ mod tests {
             Signal::new(false),
             Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
             crate::view_models::FormatViewModel::detached(),
+            crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
         );
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let root = tree.add_boxed(tab_pane(&tab));
@@ -2551,6 +2677,47 @@ mod tests {
 
         let end = mk(BookEnd);
         assert!(end.main().is_none() && end.synopsis().is_none() && end.title().is_none());
+    }
+
+    /// A tab hands out the **same** backend handles it was built with.
+    ///
+    /// This is what makes the `container.segments` slot usable at all. A
+    /// registered segment receives nothing but the tab, and an extension cannot
+    /// capture an `AppContext` at registration time — the app builds its own
+    /// inside `run`, long afterwards, so a captured one is a second, permanently
+    /// empty store. A segment reading through it would render a convincing
+    /// "nothing here" forever, with no error and nothing to grep for.
+    #[test]
+    fn a_tab_publishes_the_backend_handles_it_was_built_with() {
+        let ctx = Rc::new(AppContext::new());
+        let ids = AppIds::new();
+        ids.work_id.set(Some(4242));
+        let tab = tab_for(
+            &ctx,
+            1,
+            &BinderItemRole::Item,
+            &BinderItemSubRole::Scene,
+            &[],
+            Signal::new(700.0),
+            Signal::new(true),
+            test_typography(),
+            crate::view_models::EditorViewMemory::detached(false),
+            &ids,
+        );
+
+        assert!(
+            Rc::ptr_eq(&tab.app_ctx(), &ctx),
+            "the tab handed back a different AppContext than it was built with"
+        );
+        assert_eq!(
+            tab.ids().work_id.get(),
+            Some(4242),
+            "the tab handed back a different AppIds than it was built with"
+        );
+        // And it is the live handle, not a snapshot: an id set afterwards has to
+        // be visible through it, or a segment built early would read a stale work.
+        ids.work_id.set(Some(99));
+        assert_eq!(tab.ids().work_id.get(), Some(99));
     }
 
     /// The widest right edge anywhere under `id`, with the widget that owns it — the
@@ -3386,6 +3553,7 @@ mod tests {
                 df.clone(),
                 df_width.clone(),
                 crate::view_models::FormatViewModel::detached(),
+                crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
             )
         };
         let distraction_free_width = Signal::new(620.0);
@@ -3476,11 +3644,15 @@ mod tests {
             Signal::new(true),
             Signal::new(420.0),
             crate::view_models::FormatViewModel::detached(),
+            crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
         );
 
         // Segment 1 is the manuscript stream (own page / manuscript / Full
         // Synopsis / Corkboard / Overview).
-        tab.segment.set(Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_MANUSCRIPT)));
+        tab.segment
+            .set(Some(crate::tabs::shared::segments::segment_id(
+                crate::tabs::shared::segments::SEG_MANUSCRIPT,
+            )));
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let id = tree.add_boxed(tab_pane(&tab));
         tree.layout(teksilo::prelude::SizeProposal::exact(1400.0, 900.0));

@@ -12,11 +12,11 @@
 
 use std::rc::Rc;
 
+use skribisto_model::SubRoleExt;
+use skribisto_model::scene_break::{self, SceneBreakTier};
 use teksilo::data::ListModel;
 use teksilo::prelude::*; // Signal, tr!, lit!
 use teksilo::widgets::{Orientation, PaneDescriptor, SplitterModel, TabHandle, TabId, TabInfo};
-use skribisto_model::SubRoleExt;
-use skribisto_model::scene_break::{self, SceneBreakTier};
 
 use frontend::AppContext;
 use frontend::direct_access::BinderItemDto;
@@ -84,6 +84,12 @@ pub struct EditorsViewModel {
     focused_side: Signal<Side>,
     /// The `BinderItem` of the focused pane's active tab — the "open document".
     active_item: Signal<Option<u64>>,
+    /// The same item, resolved to what the extension seam publishes: durable
+    /// `uid` plus `role`/`sub_role` alongside the store id. Kept beside
+    /// `active_item` (rather than derived from it on demand) because
+    /// `crate::active_context::ActiveContext` bridges it by *observation*, and a
+    /// derived signal cannot be observed.
+    active_ctx: Signal<Option<crate::active_context::ActiveItem>>,
     /// Whether the focused pane's active tab edits a scene's own prose — the
     /// live form of [`Self::focused_carries_scene`], for menu enablement. Kept
     /// as a signal (not a derived map) because it is computed by walking the
@@ -198,6 +204,7 @@ impl EditorsViewModel {
             splitter,
             focused_side: Signal::new(Side::Primary),
             active_item: Signal::new(None),
+            active_ctx: Signal::new(None),
             scene_focused,
             go,
             format,
@@ -253,6 +260,18 @@ impl EditorsViewModel {
         self.active_item.clone()
     }
 
+    /// The same item with its durable `uid` and its `(role, sub_role)` — the raw
+    /// material [`crate::active_context::ActiveContext`] publishes to a dock.
+    /// In-crate only; the seam sees the read-only projection.
+    pub(crate) fn active_context(&self) -> Signal<Option<crate::active_context::ActiveItem>> {
+        self.active_ctx.clone()
+    }
+
+    /// Which pane has focus, live. In-crate only, for the same reason.
+    pub(crate) fn focused_side_signal(&self) -> Signal<Side> {
+        self.focused_side.clone()
+    }
+
     // ── Focus / active item ─────────────────────────────────────────────────
 
     /// Mark `side` as the focused pane and refresh the open-item marker. Called
@@ -272,6 +291,23 @@ impl EditorsViewModel {
             .and_then(|tab| self.item_of_tab(side, tab));
         if self.active_item.get() != active {
             self.active_item.set(active);
+        }
+        // The seam's richer view of the same item. Resolved here rather than
+        // derived on demand so it is a mutable signal an observer can bridge, and
+        // recomputed unconditionally (not only when `active` changed) because
+        // `promote_uc` retypes an item **in place**: the id is unmoved, the
+        // `sub_role` is not. `binder_ops::item_dto` is the same read
+        // `sync_go_targets` below already pays on every focus change.
+        let ctx_item = active.and_then(|id| {
+            binder_ops::item_dto(&self.app_ctx, id).map(|dto| crate::active_context::ActiveItem {
+                id,
+                uid: dto.uid,
+                role: dto.role,
+                sub_role: dto.sub_role,
+            })
+        });
+        if self.active_ctx.get() != ctx_item {
+            self.active_ctx.set(ctx_item);
         }
         let carries = self.focused_carries_scene();
         if self.scene_focused.get() != carries {
@@ -649,6 +685,9 @@ impl EditorsViewModel {
             distraction_free,
             self.distraction_free_width.clone(),
             self.format.clone(),
+            // The **shared** Work save state, not a fresh one: a segment's edit
+            // must bump the counter this window's close guard reads.
+            self.save_state.handle(),
         )
     }
 
@@ -1146,6 +1185,12 @@ impl EditorsViewModel {
         self.split_active.set(false);
         self.focused_side.set(Side::Primary);
         self.active_item.set(None);
+        // The seam's view of the same thing. Set here rather than left to
+        // `sync_active_item` because this method deliberately bypasses it (there
+        // is nothing to recompute from — both panes are already empty), and a
+        // second answer to "what is focused" that stayed behind would have a dock
+        // still naming a document from the project that just closed.
+        self.active_ctx.set(None);
     }
 
     // ── Internals ───────────────────────────────────────────────────────────
@@ -1972,6 +2017,122 @@ mod tests {
                 Some("Chapter 1")
             );
         }
+
+        /// The seam's richer view of the focused item, over a **real** manuscript:
+        /// `binder_ops::item_dto` reads the store, so the uid and the
+        /// `(role, sub_role)` only exist where real rows do. Gated off `mocks` for
+        /// the same reason `captions` is.
+        #[cfg(not(feature = "mocks"))]
+        mod active_context {
+            use super::captions::{seed_item, seed_work};
+            use super::*;
+            use frontend::commands::binder_item_commands;
+            use frontend::direct_access::UpdateBinderItemDto;
+
+            /// The dock-facing view must name the focused pane's item, carry its
+            /// **durable** uid (an `EntityId` is re-minted by every `load_work`), and
+            /// follow focus across a split.
+            #[test]
+            fn it_reflects_the_focused_panes_item() {
+                let vm = editors();
+                let binder = seed_work(&vm);
+                let first = seed_item(&vm, binder, "One", BinderItemSubRole::Scene, -1);
+                let second = seed_item(&vm, binder, "Two", BinderItemSubRole::Note, -1);
+
+                assert_eq!(
+                    vm.active_context().get(),
+                    None,
+                    "nothing open, nothing focused"
+                );
+
+                vm.open_in(Side::Primary, first, "One");
+                let a = vm.active_context().get().expect("an item is focused");
+                assert_eq!(a.id, first);
+                assert_eq!(a.sub_role, BinderItemSubRole::Scene);
+                assert!(
+                    !a.uid.is_nil(),
+                    "a durable uid is the only key an extension may persist"
+                );
+
+                vm.set_split(true);
+                vm.open_in(Side::Secondary, second, "Two");
+                vm.set_focused(Side::Secondary);
+                let b = vm.active_context().get().expect("the side pane is focused");
+                assert_eq!(b.id, second);
+                assert_eq!(b.sub_role, BinderItemSubRole::Note);
+                assert_ne!(a.uid, b.uid);
+
+                vm.close_all();
+                assert_eq!(
+                    vm.active_context().get(),
+                    None,
+                    "closing every tab unfocuses"
+                );
+            }
+
+            /// Two answers to one question must not drift: whatever else changes,
+            /// the id in the seam's view is the id the app itself calls active.
+            #[test]
+            fn it_never_disagrees_with_active_item() {
+                let vm = editors();
+                let binder = seed_work(&vm);
+                let one = seed_item(&vm, binder, "One", BinderItemSubRole::Scene, -1);
+                let two = seed_item(&vm, binder, "Two", BinderItemSubRole::Scene, -1);
+                let agree = |vm: &EditorsViewModel| {
+                    assert_eq!(
+                        vm.active_item().get(),
+                        vm.active_context().get().map(|c| c.id),
+                        "the two views of `what is focused` disagree"
+                    );
+                };
+
+                agree(&vm);
+                vm.open_in(Side::Primary, one, "One");
+                agree(&vm);
+                vm.set_split(true);
+                vm.open_in(Side::Secondary, two, "Two");
+                agree(&vm);
+                vm.set_focused(Side::Primary);
+                agree(&vm);
+                vm.close_all();
+                agree(&vm);
+            }
+
+            /// **The staleness Promote causes.** Retyping an item rewrites its
+            /// `sub_role` in place: the id does not move, the pane does not change,
+            /// the selection does not change. A `sub_role` cached on focus change
+            /// alone would stay wrong until the writer happened to click elsewhere.
+            #[test]
+            fn retyping_the_focused_item_refreshes_its_sub_role() {
+                let vm = editors();
+                let binder = seed_work(&vm);
+                let id = seed_item(&vm, binder, "One", BinderItemSubRole::Scene, -1);
+                vm.open_in(Side::Primary, id, "One");
+                assert_eq!(
+                    vm.active_context().get().map(|c| c.sub_role),
+                    Some(BinderItemSubRole::Scene)
+                );
+
+                binder_item_commands::update_binder_item(
+                    &vm.app_ctx,
+                    None,
+                    &UpdateBinderItemDto {
+                        id,
+                        sub_role: BinderItemSubRole::Note,
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
+                // What `App`'s `BinderItem::Updated` subscription calls.
+                vm.sync_active_item();
+
+                assert_eq!(
+                    vm.active_context().get().map(|c| c.sub_role),
+                    Some(BinderItemSubRole::Note),
+                    "a Promote left the seam reporting the item's old type"
+                );
+            }
+        }
     }
 
     /// [`EditorsViewModel::release_own_open_docs`] is the on_removed-driven
@@ -2125,7 +2286,9 @@ mod tests {
         vm.open_or_focus(103, "Scene at dawn"); // Item/Scene — a *different* type
         // Put the Book tab on the Pace segment — addressed by id, so this stays correct
         // however many segments precede it.
-        let pace = Some(crate::tabs::shared::segments::segment_id(crate::tabs::shared::segments::SEG_PACE));
+        let pace = Some(crate::tabs::shared::segments::segment_id(
+            crate::tabs::shared::segments::SEG_PACE,
+        ));
         tab_segment(&vm, Side::Primary, 101)
             .expect("book tab open")
             .set(pace);

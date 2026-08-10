@@ -44,7 +44,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use teksilo::prelude::*;
-use teksilo::widgets::TextWidget;
 use teksilo::widgets::SegmentId;
 
 use frontend::common::entities::BinderItemSubRole;
@@ -83,6 +82,12 @@ pub fn segment_id(id: &str) -> SegmentId {
     SegmentId::from_u64((hash & 0xFFFF_FFFF_FFFF) | 1)
 }
 
+/// Builds a registered segment's body from the tab it is shown on.
+pub type SegmentViewFn = Rc<dyn Fn(&ContentTab) -> Box<dyn Widget>>;
+
+/// Decides which containers a registered segment appears on.
+pub type ShowsOnFn = Rc<dyn Fn(&BinderItemSubRole) -> bool>;
+
 /// One segment on a container tab's bar.
 #[derive(Clone)]
 pub struct ContainerSegmentSpec {
@@ -92,12 +97,12 @@ pub struct ContainerSegmentSpec {
     /// Resolved per build, so a runtime locale switch reaches the label. Storing a
     /// `LocalizedString` at registration would pin it to whichever locale was active when
     /// the extension loaded.
-    pub label: Rc<dyn Fn() -> LocalizedString>,
+    pub label: crate::docks::LabelFn,
     /// Builds the segment's body.
-    pub view: Rc<dyn Fn(&ContentTab) -> Box<dyn Widget>>,
+    pub view: SegmentViewFn,
     /// Which containers show it. The Book's Pace and Analysis are the built-in precedent for
     /// a segment that is not on every container.
-    pub shows_on: Rc<dyn Fn(&BinderItemSubRole) -> bool>,
+    pub shows_on: ShowsOnFn,
 }
 
 impl ContainerSegmentSpec {
@@ -203,6 +208,7 @@ pub fn registered_for(sub_role: &BinderItemSubRole) -> Vec<ContainerSegmentSpec>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use teksilo::widgets::TextWidget;
 
     fn spec(id: &str) -> ContainerSegmentSpec {
         ContainerSegmentSpec {
@@ -225,8 +231,16 @@ mod tests {
         assert_ne!(segment_id("overview"), segment_id("corkboard"));
         // `SegmentId::fresh` allocates from 2^48 upward; everything derived here must sit
         // below that, or an app id could one day equal a framework one.
-        for id in [SEG_OWN, SEG_MANUSCRIPT, SEG_SYNOPSIS, SEG_PACE, SEG_ANALYSIS,
-                   SEG_CORKBOARD, SEG_OVERVIEW, SEG_NOTES] {
+        for id in [
+            SEG_OWN,
+            SEG_MANUSCRIPT,
+            SEG_SYNOPSIS,
+            SEG_PACE,
+            SEG_ANALYSIS,
+            SEG_CORKBOARD,
+            SEG_OVERVIEW,
+            SEG_NOTES,
+        ] {
             assert!(
                 segment_id(id).get() < (1u64 << 48),
                 "`{id}` derives an id inside the framework's reserved range"
@@ -237,11 +251,22 @@ mod tests {
     /// Every built-in id is distinct. A collision would make two segments the same segment.
     #[test]
     fn built_in_ids_are_all_distinct() {
-        let all = [SEG_OWN, SEG_MANUSCRIPT, SEG_SYNOPSIS, SEG_PACE, SEG_ANALYSIS,
-                   SEG_CORKBOARD, SEG_OVERVIEW, SEG_NOTES];
+        let all = [
+            SEG_OWN,
+            SEG_MANUSCRIPT,
+            SEG_SYNOPSIS,
+            SEG_PACE,
+            SEG_ANALYSIS,
+            SEG_CORKBOARD,
+            SEG_OVERVIEW,
+            SEG_NOTES,
+        ];
         let mut seen = std::collections::HashSet::new();
         for id in all {
-            assert!(seen.insert(segment_id(id)), "`{id}` collides with another built-in");
+            assert!(
+                seen.insert(segment_id(id)),
+                "`{id}` collides with another built-in"
+            );
         }
         assert_eq!(seen.len(), all.len());
     }
@@ -256,16 +281,16 @@ mod tests {
 
     #[test]
     fn a_built_in_id_is_refused() {
-        let err = register_container_segment("test.shadow", spec(SEG_OVERVIEW))
-            .expect_err("must refuse");
+        let err =
+            register_container_segment("test.shadow", spec(SEG_OVERVIEW)).expect_err("must refuse");
         assert!(err.contains("built-in"), "unhelpful message: {err}");
     }
 
     #[test]
     fn a_taken_id_is_refused_and_names_its_holder() {
         let _first = register_container_segment("test.a", spec("ext.contested")).expect("ok");
-        let err = register_container_segment("test.b", spec("ext.contested"))
-            .expect_err("must refuse");
+        let err =
+            register_container_segment("test.b", spec("ext.contested")).expect_err("must refuse");
         assert!(err.contains("test.a"), "unhelpful message: {err}");
     }
 

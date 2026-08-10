@@ -22,7 +22,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use teksilo::core::widget::WidgetPlacement;
-use teksilo::widgets::{SegmentId, segmented_control};
 use teksilo::data::{ChartDatum, ChartModel, ChartSeries};
 use teksilo::prelude::*;
 use teksilo::widgets::{
@@ -30,6 +29,7 @@ use teksilo::widgets::{
     ScrollBarMode, Segment, SegmentedControl, Spacer, StandardTreeItem, Switcher, TextWidget,
     Toggle, TreeRow, TreeView, VStack,
 };
+use teksilo::widgets::{SegmentId, segmented_control};
 use teksilo_charts::BarChart;
 use teksilo_charts::reference_line::ReferenceLine;
 
@@ -38,8 +38,8 @@ use frontend::analysis_management::{
     EchoRow, EchoRows, SceneAnalyses, SceneAnalysis,
 };
 
-use super::{Boxed, ContentTab};
 use super::shared::{CHART_HEIGHT, STRIP_HEIGHT, wide_chart};
+use super::{Boxed, ContentTab};
 use crate::intents::AppIntent;
 use crate::models::RepetitionNode;
 use crate::view_models::{AnalysisCategory, AnalysisState, AnalysisViewModel};
@@ -52,6 +52,9 @@ use crate::view_models::{AnalysisCategory, AnalysisState, AnalysisViewModel};
 /// list removes by construction; `the_bar_and_the_switcher_agree` pins it at runtime for
 /// the registered case, which no `const` assert could see.
 
+/// Builds a registered category's body from the view-model and the finished analysis.
+pub type CategoryViewFn = Rc<dyn Fn(&AnalysisViewModel, &BookAnalysisResultDto) -> Box<dyn Widget>>;
+
 /// One category on the Analysis bar: a stable id, its label, and its body.
 ///
 /// The label is a closure rather than a stored `LocalizedString` because the list is
@@ -63,11 +66,11 @@ pub struct AnalysisCategorySpec {
     /// Stable, namespaced for anything not built in (`"ext.style"`). Not shown to the
     /// writer — it exists so a category can be found again across a rebuild.
     pub id: String,
-    pub label: Rc<dyn Fn() -> LocalizedString>,
+    pub label: crate::docks::LabelFn,
     /// Builds this category's body. Receives the view-model and the finished analysis, so
     /// a registered category can read the same measurements the built-ins do — or ignore
     /// them entirely and render from its own store.
-    pub view: Rc<dyn Fn(&AnalysisViewModel, &BookAnalysisResultDto) -> Box<dyn Widget>>,
+    pub view: CategoryViewFn,
 }
 
 impl AnalysisCategorySpec {
@@ -77,12 +80,15 @@ impl AnalysisCategorySpec {
     /// category keeps the same identity across rebuilds — which is the whole reason the
     /// bar is keyed. Hashed into the app-owned range: `SegmentId::fresh` allocates from
     /// 2^48 up, so folding into 48 bits can never collide with a framework-allocated id.
+    ///
+    /// The **same** derivation the container bar uses
+    /// ([`crate::tabs::shared::segments::segment_id`]), and deliberately not a second one:
+    /// this was a `DefaultHasher`, whose output std explicitly does not guarantee across
+    /// Rust versions. Nothing persists an analysis category today — only the container
+    /// segment is remembered — so it has cost nothing yet, and it is exactly the kind of
+    /// thing that costs everything the first time something does.
     pub fn segment_id(&self) -> SegmentId {
-        use std::hash::{Hash, Hasher};
-        let mut h = std::collections::hash_map::DefaultHasher::new();
-        self.id.hash(&mut h);
-        // `| 1` keeps it non-zero, which `SegmentId::from_u64` requires.
-        SegmentId::from_u64((h.finish() & 0xFFFF_FFFF_FFFF) | 1)
+        crate::tabs::shared::segments::segment_id(&self.id)
     }
 }
 
@@ -168,11 +174,9 @@ fn builtin_categories() -> Vec<AnalysisCategorySpec> {
                 id: c.id().to_string(),
                 label: Rc::new(move || c.label()),
                 view: Rc::new(move |vm, dto| match c {
-                    AnalysisCategory::Shape => Box::new(shape_view(
-                        dto,
-                        vm.ignore_empty(),
-                        vm.footnote_words(),
-                    )),
+                    AnalysisCategory::Shape => {
+                        Box::new(shape_view(dto, vm.ignore_empty(), vm.footnote_words()))
+                    }
                     AnalysisCategory::Repetition => Box::new(repetition_view(vm, dto)),
                     AnalysisCategory::Synopsis => Box::new(synopsis_view(dto)),
                     AnalysisCategory::Voice => Box::new(voice_view(dto)),
@@ -379,7 +383,11 @@ impl AnalysisPane {
     /// by index, not by name, which is the trap `tabs.rs` documents at length. Both are
     /// built from the **same slice** in the same order, by the same caller, which is what
     /// makes that pairing true rather than merely intended.
-    fn categories(&self, cats: &[AnalysisCategorySpec], dto: &BookAnalysisResultDto) -> impl Widget {
+    fn categories(
+        &self,
+        cats: &[AnalysisCategorySpec],
+        dto: &BookAnalysisResultDto,
+    ) -> impl Widget {
         let ids: Vec<SegmentId> = cats.iter().map(|c| c.segment_id()).collect();
         let mut sw = Switcher::new(segmented_control::index_signal(&self.vm.category(), &ids));
         for c in cats {
@@ -1076,8 +1084,8 @@ mod tests {
     fn the_repetition_tree_mounts_with_every_text_closed() {
         use crate::app_ids::AppIds;
         use crate::view_models::AnalysisViewModel;
-        use teksilo::prelude::{Signal, SizeProposal};
         use frontend::analysis_management::{EchoRow, EchoRows};
+        use teksilo::prelude::{Signal, SizeProposal};
 
         let ctx = std::rc::Rc::new(frontend::AppContext::new());
         let vm = AnalysisViewModel::new(ctx.clone(), AppIds::new(), 1, Signal::new(0));

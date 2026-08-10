@@ -19,7 +19,11 @@
 mod backup_settings_file;
 mod binder_binder_items_tree_model;
 mod binder_list_model;
-mod binder_stream;
+/// `pub`: `ordered_binder_items` + `BinderItemRef` are how anything outside this
+/// crate reads the work's flat item stream — and the `(id, uid, title)` triple is
+/// the only correct way to key extension data to a row, since `EntityId` is
+/// re-minted on every load.
+pub mod binder_stream;
 mod coalesced_reload;
 mod comments_list_model;
 mod corkboard_cards_model;

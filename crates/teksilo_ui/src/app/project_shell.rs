@@ -53,6 +53,13 @@ pub(super) struct ShellParts {
     pub single_work_info: crate::singles::SingleWorkInfo,
     pub restore_vm: crate::view_models::BackupRestoreViewModel,
     pub save_as_vm: crate::view_models::SaveAsViewModel,
+    /// What every extension slot in this window is handed — built **once** in
+    /// `App::build` and shared with `commands_ext`, not rebuilt here.
+    ///
+    /// Its `active` field bridges three of this window's signals by observation,
+    /// so a second one would be a second set of observers doing identical work,
+    /// and two objects obliged to agree with nothing making them.
+    pub seam: crate::docks::DockContext,
 }
 
 impl App {
@@ -76,6 +83,7 @@ impl App {
             single_work_info,
             restore_vm,
             save_as_vm,
+            seam,
         } = parts;
 
         let active_item = editors.active_item();
@@ -495,6 +503,18 @@ impl App {
                 timeline.clone(),
                 self.timeline_dock,
             ));
+        // Anything an extension registered, after every app dock. Content only —
+        // the *placement* of these already comes from `docks::all_docks()` below,
+        // which is the same roster the restore-time reconcile reads. Both halves
+        // are needed and they are deliberately separate calls: a registration that
+        // reached the roster but not this list would mount a rail slot that opens
+        // onto nothing.
+        //
+        // A snapshot, taken as this window is built — see `docks::register_dock`.
+        let mut layout = layout;
+        for dock in crate::docks::registered_dock_widgets(&seam) {
+            layout = layout.dock(dock);
+        }
         // The docks used to be *disabled* while the mode was active, so "the
         // editor takes the whole surface". They are not any more: the mode
         // parks this entire shell dormant behind its own surface, so there is

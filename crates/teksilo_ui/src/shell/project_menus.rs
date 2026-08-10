@@ -8,12 +8,12 @@
 
 use std::rc::Rc;
 
-use teksilo::core::menu_item_id::MenuItemId;
-use teksilo::prelude::*;
-use teksilo::widgets::{DockSide, MenuEntry, MenuModel, MenuNode};
 use export_management::ExportScopeKind;
 use frontend::AppContext;
 use frontend::common::entities::WorkShape;
+use teksilo::core::menu_item_id::MenuItemId;
+use teksilo::prelude::*;
+use teksilo::widgets::{DockSide, MenuEntry, MenuModel, MenuNode};
 
 use crate::intents::AppIntent;
 use crate::singles::{SingleWork, SingleWorkInfo};
@@ -1123,31 +1123,41 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
         // Tools — where every office suite keeps spell-check. Its own
         // top-level section rather than a View entry: View toggles what a
         // *dock* shows, whereas this changes how the manuscript is *processed*.
-        .menu(tr!(menu_tools()), move |m| {
+        .menu(tr!(menu_tools()), move |mut m| {
             // The master spell-check switch. `checked(..)` is Teksilo's
             // **reflect-only** mark — it mirrors the setting read-only and the
             // intent is what drives it. NOT `.checkable()`, which would write
             // the signal on click and fight the store-backed value.
-            m.item(
-                MenuEntry::new(tr!(menu_spellcheck()))
-                    .checked(menu_spellcheck.clone())
-                    .intent("spellcheck.toggle")
-                    .shortcut("spellcheck.toggle"),
-            )
-            // Show or hide the anchored-comment marks and their
-            // margin. Same reflect-only `checked(..)` as its
-            // neighbour above, for the same reason: the persisted
-            // setting is the truth and the intent is its only
-            // writer, so `.checkable()` — which writes the bound
-            // signal on click — would fight it. It hides the
-            // presentation, not the data: both comment docks keep
-            // listing every thread, and a screen reader keeps
-            // announcing them.
-            .item(
-                MenuEntry::new(tr!(menu_comments()))
-                    .checked(menu_comments.clone())
-                    .intent("comments.toggle"),
-            )
+            m = m
+                .item(
+                    MenuEntry::new(tr!(menu_spellcheck()))
+                        .checked(menu_spellcheck.clone())
+                        .intent("spellcheck.toggle")
+                        .shortcut("spellcheck.toggle"),
+                )
+                // Show or hide the anchored-comment marks and their
+                // margin. Same reflect-only `checked(..)` as its
+                // neighbour above, for the same reason: the persisted
+                // setting is the truth and the intent is its only
+                // writer, so `.checkable()` — which writes the bound
+                // signal on click — would fight it. It hides the
+                // presentation, not the data: both comment docks keep
+                // listing every thread, and a screen reader keeps
+                // announcing them.
+                .item(
+                    MenuEntry::new(tr!(menu_comments()))
+                        .checked(menu_comments.clone())
+                        .intent("comments.toggle"),
+                );
+            // Anything an extension registered, after the app's own rows and
+            // behind a separator so the two groups read as what they are. A
+            // snapshot taken as this window's menu is assembled — which is also
+            // what makes it idempotent: the rows are built with the menu, never
+            // pushed into it afterwards, so an `App` rebuild cannot double them.
+            if crate::commands_ext::has_menu_rows() {
+                m = crate::commands_ext::menu_rows(m.separator());
+            }
+            m
         })
         // Help sits last, as it does on every desktop platform.
         // "About" is fired by name only (no payload), so it needs

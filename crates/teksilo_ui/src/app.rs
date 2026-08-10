@@ -1883,6 +1883,40 @@ impl Widget for App {
         };
         commands::register_all(ctx, &command_deps);
 
+        // Anything an extension registered, onto **App's own** context, right
+        // beside the app's own commands and for exactly that reason: a global
+        // action belongs to the widget whose `build()` registered it, and is torn
+        // down when that widget rebuilds or is destroyed. An extension has no
+        // always-mounted widget of its own, so registering here — the window's
+        // stable root — is the only way its shortcut keeps working once its panel
+        // is closed. Its Tools-menu rows are assembled with the menu itself, in
+        // `project_menus`; see `commands_ext`'s module docs.
+        //
+        // A snapshot, taken as this window builds — see `commands_ext::register_command`.
+        //
+        // Built **once** per build and shared with the dock roster below (through
+        // `ShellParts::seam`): `ActiveContext` bridges three of this window's
+        // signals by observation, so a second instance would be a second set of
+        // observers doing identical work — and two objects obliged to agree about
+        // the writer's focus with nothing making them.
+        let seam = crate::docks::DockContext {
+            app_ctx: self.app_ctx.clone(),
+            ids: session.ids.clone(),
+            // Tier 2: the Work's own save state, shared with every window on it,
+            // so an extension's edit gates this project's close exactly like a
+            // manuscript edit.
+            work: session.save_state.handle(),
+            // Tier 3: *this* window's focus. Built from this window's own
+            // view-models, never `ctx.app_state` — a second window on the same
+            // Work is looking somewhere else.
+            active: crate::active_context::ActiveContext::new(
+                &editors.active_context(),
+                &editors.focused_side_signal(),
+                &self.outline.selection_signal(),
+            ),
+        };
+        crate::commands_ext::register_all_extension_commands(ctx, &seam);
+
         // On project load/new/close/attach: lifecycle seed, backup sniff, dict offer.
         // Binder-item tab sync is not lifecycle — it rides every edit, not the boundaries —
         // so it is the editors' own `wire` (rebuild on retype, close on remove, re-caption
@@ -2026,6 +2060,28 @@ impl Widget for App {
             });
         }
 
+        // A focused item can be **retyped in place**: Promote rewrites a
+        // `sub_role` (flat Chapter ↔ Chapter folder, Scene ↔ Note) leaving the id,
+        // the pane and the selection exactly where they were. So the
+        // `(role, sub_role)` `ActiveContext` publishes would stay at its old value
+        // until the writer happened to click elsewhere — a stale answer to the one
+        // question a dock asks it. Nothing else here needs the resync: `active_item`
+        // is an id and the id does not move.
+        {
+            let editors = editors.clone();
+            ctx.subscribe_event(
+                Origin::DirectAccess(DirectAccessEntity::BinderItem(EntityEvent::Updated)),
+                move |e: &Event| {
+                    let Some(active) = editors.active_item().get() else {
+                        return;
+                    };
+                    if e.ids.contains(&active) {
+                        editors.sync_active_item();
+                    }
+                },
+            );
+        }
+
         // ── Autosave ─────────────────────────────────────────────────────────
         // Mirror the persisted setting into the menu's plain signal (the title-bar
         // menu lives outside `App` and can't read `ctx.settings()`).
@@ -2104,20 +2160,34 @@ impl Widget for App {
             let wake = ctx.wake_at_handle();
             let autosave = settings.autosave();
 
-            let on_mutation = {
+            // Autosave rearms off `dirty_seq` **itself**, not off each site that
+            // bumps it. Every source — this window's typing, the thirteen
+            // whitelisted entity events, and an extension's
+            // `WorkHandle::mark_changed` — therefore rearms for free, with no
+            // per-source special-casing. Without this an extension-only edit
+            // would still gate close/quit/switch/Ctrl+S (those read `unsaved`
+            // directly) but would never trigger a timed write, so a crash before
+            // the next manual save would lose it.
+            {
                 let countdown = countdown.clone();
                 let wake = wake.clone();
                 let autosave = autosave.clone();
+                ctx.effect(&save_state.dirty_seq(), move |_| {
+                    if let Some(at) = countdown.on_mutation(Instant::now(), autosave.get()) {
+                        wake.set(Some(at));
+                    }
+                });
+            }
+
+            let on_mutation = {
                 let save_state = save_state.clone();
                 Rc::new(move || {
                     // Bump the shared edit sequence: this mutation is now ahead of
                     // whatever the last save covered, so the derived `unsaved` goes
                     // true for every window onto this project — and stays true if
-                    // the save in flight (if any) predates it.
+                    // the save in flight (if any) predates it. The rearm rides on
+                    // the bump, above.
                     save_state.bump_dirty();
-                    if let Some(at) = countdown.on_mutation(Instant::now(), autosave.get()) {
-                        wake.set(Some(at));
-                    }
                 })
             };
             {
@@ -2308,6 +2378,7 @@ impl Widget for App {
                 single_work_info: single_work_info.clone(),
                 restore_vm: restore_vm.clone(),
                 save_as_vm: save_as_vm.clone(),
+                seam,
             },
         );
         self.root_child = Some(root);

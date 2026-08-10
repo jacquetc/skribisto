@@ -41,11 +41,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use teksilo::prelude::*;
-use teksilo::widgets::SegmentId;
 use frontend::AppContext;
 use frontend::commands::{analysis_management_commands, progress_management_commands};
 use frontend::common::event::{Event, Origin};
+use teksilo::prelude::*;
+use teksilo::widgets::SegmentId;
 
 use frontend::analysis_management::{AnalyzeBookDto, BookAnalysisResultDto};
 use frontend::progress_management::{CountWordsDto, WordCountResultDto};
@@ -244,6 +244,23 @@ impl AnalysisViewModel {
 
     pub fn category(&self) -> Signal<Option<SegmentId>> {
         self.category.clone()
+    }
+
+    /// The backend handle and the app's entity ids.
+    ///
+    /// `pub` for the `analysis.category` slot: a registered category is handed
+    /// this view-model and the finished analysis, so without these it can render
+    /// only from its own state. Capturing an `AppContext` at registration time is
+    /// not the way round it — the app builds its own inside `run`, so an
+    /// extension that made one early would read a second, permanently empty
+    /// store. Same reasoning as [`crate::tabs::ContentTab::ids`].
+    pub fn app_ctx(&self) -> Rc<AppContext> {
+        self.ctx.clone()
+    }
+
+    /// See [`Self::app_ctx`].
+    pub fn ids(&self) -> &AppIds {
+        &self.ids
     }
 
     pub fn scope_item_id(&self) -> u64 {

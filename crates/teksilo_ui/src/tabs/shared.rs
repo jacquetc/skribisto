@@ -31,5 +31,7 @@ mod stream;
 pub use charts::*;
 pub use editor::*;
 pub use panes::*;
-pub use segments::*;
+// No `pub use segments::*` — `segments` is already a `pub mod`, so a glob adds
+// nothing and warns as an unused import. Reach it by path
+// (`tabs::shared::segments::…`), which is also how an extension names the slot.
 pub use stream::*;

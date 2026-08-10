@@ -199,6 +199,13 @@ impl SaveStateViewModel {
         }
     }
 
+    /// An extension-safe view onto this Work's save state — see [`WorkHandle`].
+    pub fn handle(&self) -> WorkHandle {
+        WorkHandle {
+            inner: self.clone(),
+        }
+    }
+
     /// Issue `save_work` and record it as the running op. `false` if the
     /// command could not be issued at all.
     ///
@@ -375,6 +382,81 @@ impl SaveStateViewModel {
         *self.inner.last_completed.borrow_mut() = None;
         *self.inner.last_failed.borrow_mut() = None;
         *self.inner.failure_reported.borrow_mut() = None;
+    }
+}
+
+/// Extension-safe view onto this Work's save state, reachable from every
+/// UI-facing seam slot ([`DockContext`](crate::docks::DockContext),
+/// [`ContentTab`](crate::tabs::ContentTab)).
+///
+/// ## What it closes
+///
+/// `unsaved` is derived from `dirty_seq > saved_seq` and nothing else, and
+/// `dirty_seq` is bumped only by editor typing and a fixed list of thirteen
+/// entity events (`App::mutation_origins`). An extension's state — which may
+/// have no backend entity at all — is invisible to that list *by construction*.
+/// So an extension edit left the project reading clean, and Close/Quit/switch
+/// took the `Proceed` branch with no save issued: the edit was gone, silently,
+/// with the writer never asked. This is the one door that had to exist before
+/// any of the others were worth having.
+///
+/// ## Why it is narrower than [`SaveStateViewModel`]
+///
+/// No `request_save` (a per-mutation save request would defeat [`SaveQueue`]
+/// coalescing), and no `mark_clean`/`on_save_completed`/`on_save_failed` — those
+/// own the *one* save queue and the *one* dirty flag for the whole Work, so an
+/// extension calling `mark_clean()` would silently declare every other pending
+/// edit written, the manuscript's included.
+///
+/// Cheap to clone; every clone drives the same Work.
+#[derive(Clone)]
+pub struct WorkHandle {
+    inner: SaveStateViewModel,
+}
+
+impl WorkHandle {
+    /// A handle wired to a save state nothing polls — for the standalone-tab and
+    /// test construction sites that have no `WorkSession` behind them. Marking it
+    /// changed is a real state change on a real object; it just has no window
+    /// reading it.
+    pub(crate) fn detached(app_ctx: Rc<AppContext>, ids: AppIds) -> Self {
+        SaveStateViewModel::new(app_ctx, ids).handle()
+    }
+
+    /// Record a change — **if there was one**.
+    ///
+    /// Takes the outcome of the mutation rather than being a bare command, so the
+    /// caller cannot forget the check. A bare `mark_dirty()` invites the one
+    /// failure this seam cannot afford twice: called from a `build()` or a
+    /// segment's view closure, it would mark the project dirty on *every frame*,
+    /// so the save queue never drains, autosave never stops re-arming, and the
+    /// close guard prompts forever. Every mutating method on a well-built
+    /// extension store already returns `bool` for exactly this reason; this makes
+    /// that the only shape available.
+    ///
+    /// ```ignore
+    /// cx.work.mark_changed(plan.bind(beat_id, Some(uid)));
+    /// ```
+    pub fn mark_changed(&self, changed: bool) {
+        if changed {
+            self.inner.bump_dirty();
+        }
+    }
+
+    /// The Work's monotonic edit sequence — bind a "you have unsaved work"
+    /// affordance to it.
+    pub fn dirty_seq(&self) -> crate::read_signal::ReadSignal<u64> {
+        crate::read_signal::ReadSignal::new(self.inner.dirty_seq())
+    }
+
+    /// The highest edit sequence actually written to disk.
+    pub fn saved_seq(&self) -> crate::read_signal::ReadSignal<u64> {
+        crate::read_signal::ReadSignal::new(self.inner.saved_seq())
+    }
+
+    /// Whether this Work holds edits not yet on disk.
+    pub fn is_unsaved(&self) -> bool {
+        self.inner.is_unsaved()
     }
 }
 
@@ -700,5 +782,71 @@ mod tests {
         };
         assert!(vm.claim_generic_failure_report(&anonymous));
         assert!(vm.claim_generic_failure_report(&anonymous));
+    }
+
+    // ── WorkHandle ───────────────────────────────────────────────────────────
+
+    /// The handle must feed the *same* counter a manuscript edit does — a second,
+    /// parallel "extension unsaved" flag would have to be learned by every
+    /// close/quit/switch/Ctrl+S/autosave site, and the one that forgot it would
+    /// be the one that loses the data.
+    #[test]
+    fn a_marked_change_is_indistinguishable_from_a_manuscript_edit() {
+        let vm = vm();
+        let handle = vm.handle();
+        assert!(!vm.is_unsaved());
+
+        handle.mark_changed(true);
+        assert!(
+            vm.is_unsaved(),
+            "the close guard reads this exact predicate"
+        );
+        assert_eq!(vm.dirty_seq().get(), 1);
+        assert_eq!(handle.dirty_seq().get(), 1);
+
+        // …and a real save covers it, exactly as it covers typing.
+        vm.mark_clean();
+        assert!(!vm.is_unsaved());
+        assert!(!handle.is_unsaved());
+    }
+
+    /// `mark_changed(false)` is the shape that makes per-frame misuse
+    /// unexpressible: a view closure that calls it every build with "nothing
+    /// happened" must leave the project exactly as clean as it found it.
+    #[test]
+    fn marking_no_change_is_inert_however_often_it_runs() {
+        let vm = vm();
+        let handle = vm.handle();
+        for _ in 0..1000 {
+            handle.mark_changed(false);
+        }
+        assert_eq!(vm.dirty_seq().get(), 0);
+        assert!(!vm.is_unsaved());
+    }
+
+    /// Every clone drives one Work — a handle taken by a dock and one taken by a
+    /// tab must not be two different dirty flags.
+    #[test]
+    fn clones_of_the_handle_share_one_work() {
+        let vm = vm();
+        let a = vm.handle();
+        let b = a.clone();
+        let c = vm.handle();
+        a.mark_changed(true);
+        assert!(b.is_unsaved());
+        assert!(c.is_unsaved());
+        assert_eq!(b.dirty_seq().get(), 1);
+    }
+
+    /// Nothing an extension is handed may be written back: setting `dirty_seq`
+    /// backwards would make a Work with unsaved edits report itself clean.
+    #[test]
+    fn the_published_sequences_are_read_only() {
+        let vm = vm();
+        let handle = vm.handle();
+        handle.mark_changed(true);
+        assert!(handle.dirty_seq().signal().try_set(0).is_err());
+        assert!(handle.saved_seq().signal().try_set(99).is_err());
+        assert!(handle.is_unsaved(), "…and the Work is still dirty");
     }
 }
