@@ -370,6 +370,20 @@ pub enum MergeRowKey {
     Incoming(PlanRowKey),
 }
 
+/// What the writer decided about one merge row, and the row it was decided about.
+///
+/// The two travel together on purpose. The action alone does not say what to write: an
+/// `Update` needs the **destination's** identity, and the only place that is known is the
+/// pairing the reconcile step made. Reading it off the incoming row's own mark instead — which
+/// is absent for every row paired by title — is what made a Take-import create a second copy.
+#[derive(Clone, Debug)]
+struct MergeDecision {
+    action: RowAction,
+    /// `round_trip::uid_tag` of the destination item, or `None` for a row the project does not
+    /// have — which is exactly the shape that may not be updated.
+    target_uid_tag: Option<String>,
+}
+
 /// One line of the merge, as the reconcile step shows it.
 #[derive(Clone, Debug)]
 pub struct MergeRowView {
@@ -1385,9 +1399,29 @@ impl ImportDocumentViewModel {
     pub fn rows_to_create(&self) -> Vec<ApplyImportRow> {
         // What the reconcile step decided, if the writer got that far. Keyed by the plan row
         // each decision is about, so the walk below stays in plan order.
-        let decided: HashMap<PlanRowKey, RowAction> = self.merge.with_rows(|rows| {
+        let decided: HashMap<PlanRowKey, MergeDecision> = self.merge.with_rows(|rows| {
             rows.iter()
-                .filter_map(|m| Some((m.incoming_key?, self.action_for(m))))
+                .filter_map(|m| {
+                    Some((
+                        m.incoming_key?,
+                        MergeDecision {
+                            action: self.action_for(m),
+                            // The **destination's** tag, read off the merge row's own key —
+                            // never the incoming row's mark. `reconcile::pair` pairs on title
+                            // and type when a file carries no marks at all (exported with
+                            // `include_round_trip_marks` off, or produced by another tool), and
+                            // those rows are offered Take-import and Comments-only like any
+                            // other. Taking the target from the incoming mark turned every one
+                            // of them into a second copy of the chapter it was asked to update.
+                            target_uid_tag: match m.key {
+                                MergeRowKey::Current(uid) => {
+                                    Some(skribisto_model::round_trip::uid_tag(&uid))
+                                }
+                                MergeRowKey::Incoming(_) => None,
+                            },
+                        },
+                    ))
+                })
                 .collect()
         });
 
@@ -1404,23 +1438,33 @@ impl ImportDocumentViewModel {
                 let comments: Vec<_> = row.comments.iter().map(comment_to_dto).collect();
                 let tag = row.source_uid_tag.clone().unwrap_or_default();
 
-                match decided.get(&key).copied() {
+                match decided.get(&key) {
                     // Bring it home to the row it came from. `TakeImport` wants the editor's
                     // wording as well as their remarks; `CommentsOnly` wants only the remarks,
                     // which is the case this whole feature exists for.
-                    Some(action @ (RowAction::TakeImport | RowAction::CommentsOnly))
-                        if !tag.is_empty() =>
-                    {
-                        Some(vec![ApplyImportRow::Update {
-                            target_uid_tag: tag,
-                            replace_prose: action == RowAction::TakeImport,
-                            djot: row.djot.clone(),
-                            comments,
-                        }])
-                    }
+                    Some(MergeDecision {
+                        action: action @ (RowAction::TakeImport | RowAction::CommentsOnly),
+                        target_uid_tag: Some(target),
+                    }) => Some(vec![ApplyImportRow::Update {
+                        target_uid_tag: target.clone(),
+                        replace_prose: *action == RowAction::TakeImport,
+                        djot: row.djot.clone(),
+                        comments,
+                    }]),
+                    // Unreachable by construction — `reconcile` offers these two only on a row
+                    // that has a destination side, and a row without one gets a key that says
+                    // so. Writing nothing is the right way to be wrong here: creating a
+                    // duplicate is precisely the bug the arm above exists to close.
+                    Some(MergeDecision {
+                        action: RowAction::TakeImport | RowAction::CommentsOnly,
+                        target_uid_tag: None,
+                    }) => None,
                     // Nothing is written for a row the writer is keeping as it is. There is no
                     // "leave it alone" instruction to send, and there does not need to be.
-                    Some(RowAction::KeepCurrent | RowAction::Ignore) => None,
+                    Some(MergeDecision {
+                        action: RowAction::KeepCurrent | RowAction::Ignore,
+                        ..
+                    }) => None,
                     // `CreateNew`, or no decision at all — a first import, or a plan the writer
                     // accepted without ever reaching the reconcile step.
                     _ => Some(self.created_rows_for(key, &row, kind, comments, tag)),
@@ -3207,8 +3251,93 @@ mod tests {
                 _ => None,
             })
             .expect("the matched row became an update");
-        assert_eq!(update.0, "tag-one");
+        // The **destination's** tag, not the incoming row's own mark. The two coincide on a
+        // file this project exported and never touched, which is why asserting the incoming
+        // one here looked right for a release — see the test below for where they part.
+        assert_eq!(
+            update.0,
+            skribisto_model::round_trip::uid_tag(&uuid::Uuid::from_u128(1))
+        );
         assert!(!update.1, "comments-only must not replace the prose");
+    }
+
+    /// A row paired by **title**, with no mark anywhere in the file.
+    ///
+    /// `reconcile::pair`'s second rung matches on type and title, for a file exported with
+    /// `include_round_trip_marks` off or produced by another tool entirely — and it offers
+    /// Take-import and Comments-only on the rows it pairs, like any other. The instruction
+    /// used to be built from the *incoming* row's mark, which such a row does not have, so the
+    /// writer's explicit "take the editor's wording" silently became a second copy of the
+    /// chapter. Both existing update tests use a file whose marks happen to name the right
+    /// destination, so neither could see it.
+    #[test]
+    fn a_row_paired_without_any_mark_still_updates_the_row_it_was_paired_with() {
+        // `vm()`, not `vm_from_a_returning_file()`: not one of its plan rows carries a tag.
+        let vm = vm();
+        let key = vm.plan().keys_in_order()[1];
+        let destination = uuid::Uuid::from_u128(42);
+        let row_key = MergeRowKey::Current(destination);
+        vm.seed_merge_for_test(vec![merged(
+            row_key,
+            Some(key),
+            vec![RowAction::TakeImport, RowAction::KeepCurrent],
+        )]);
+        vm.set_action(row_key, RowAction::TakeImport);
+
+        let rows = vm.rows_to_create();
+        let update = rows
+            .iter()
+            .find_map(|r| match r {
+                ApplyImportRow::Update {
+                    target_uid_tag,
+                    replace_prose,
+                    ..
+                } => Some((target_uid_tag.clone(), *replace_prose)),
+                _ => None,
+            })
+            .expect("a title-paired row the writer chose to take must become an update");
+        assert_eq!(
+            update.0,
+            skribisto_model::round_trip::uid_tag(&destination),
+            "the update names the row it was paired with"
+        );
+        assert!(update.1, "take-import replaces the prose");
+        assert!(
+            !created_titles(&vm).contains(&"Chapter One".to_string()),
+            "and no second copy of it is created: {:#?}",
+            created_titles(&vm)
+        );
+    }
+
+    /// The same shape, chosen as Comments-only: the remarks land on the paired row, and the
+    /// 90 000 words underneath it are not re-imported beside themselves.
+    #[test]
+    fn a_title_paired_row_taking_only_comments_creates_nothing() {
+        let vm = vm();
+        let key = vm.plan().keys_in_order()[1];
+        let destination = uuid::Uuid::from_u128(42);
+        let row_key = MergeRowKey::Current(destination);
+        vm.seed_merge_for_test(vec![merged(
+            row_key,
+            Some(key),
+            vec![RowAction::CommentsOnly, RowAction::TakeImport],
+        )]);
+
+        let rows = vm.rows_to_create();
+        assert!(
+            rows.iter().any(|r| matches!(
+                r,
+                ApplyImportRow::Update {
+                    replace_prose: false,
+                    ..
+                }
+            )),
+            "comments-only on a title-paired row is still an update: {rows:#?}"
+        );
+        assert!(
+            !created_titles(&vm).contains(&"Chapter One".to_string()),
+            "and creates no duplicate"
+        );
     }
 
     #[test]

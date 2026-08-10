@@ -262,6 +262,19 @@ pub fn align(existing: &[ExistingRow], incoming: &[IncomingRow]) -> Vec<MergeRow
         is_anchor[paired[p].0] = true;
     }
 
+    // Every existing row some incoming row pairs with, anchor or not.
+    //
+    // The forward-fill below has to consult this and not only `emitted`. A row the editor
+    // *moved* is paired out of order: it is emitted where the file puts it, which may be after
+    // an anchor whose fill sweeps past it. Asking "has it been emitted yet" gets `false` for a
+    // row that simply has not been reached, and the walk announces a chapter as deleted that
+    // the returning file is still carrying — then emits it a second time when its own pairing
+    // comes round. Moving the *first* row to the end is enough to do it.
+    let mut claimed = vec![false; existing.len()];
+    for j in pairs.iter().flatten() {
+        claimed[*j] = true;
+    }
+
     let mut out = Vec::with_capacity(incoming.len() + existing.len());
     let mut emitted = vec![false; existing.len()];
     let mut next_existing = 0usize;
@@ -272,7 +285,7 @@ pub fn align(existing: &[ExistingRow], incoming: &[IncomingRow]) -> Vec<MergeRow
                 // Everything the current stream holds before this anchor and the file no
                 // longer has, in its own order.
                 while next_existing < j {
-                    if !emitted[next_existing] {
+                    if !emitted[next_existing] && !claimed[next_existing] {
                         out.push(missing_row(next_existing));
                         emitted[next_existing] = true;
                     }
@@ -631,6 +644,97 @@ mod tests {
             1,
             "exactly the one that jumped: {rows:#?}"
         );
+    }
+
+    /// The mirror of the test above, which is the rotation that was broken.
+    ///
+    /// Moving the **first** chapter to the end puts a paired-but-moved row behind every anchor,
+    /// so the anchor walk's forward-fill sweeps over it before its own pairing is reached. It
+    /// used to announce that row as deleted and then emit it a second time, correctly, further
+    /// down: the writer read "Chapter One — missing" directly above "Chapter One — moved".
+    #[test]
+    fn moving_the_first_chapter_to_the_end_does_not_report_it_as_deleted() {
+        let e = [
+            existing("t1", "One", "First."),
+            existing("t2", "Two", "Second."),
+            existing("t3", "Three", "Third."),
+        ];
+        let i = [
+            returning("t2", "Two", "Second.", "Second."),
+            returning("t3", "Three", "Third.", "Third."),
+            returning("t1", "One", "First.", "First."),
+        ];
+        let rows = align(&e, &i);
+        assert_eq!(rows.len(), 3, "three rows in, three rows out: {rows:#?}");
+        assert!(
+            !rows.iter().any(|r| r.status == RowStatus::Missing),
+            "the file still carries every chapter: {rows:#?}"
+        );
+        assert_eq!(
+            rows.iter().filter(|r| r.moved).count(),
+            1,
+            "exactly the one that jumped: {rows:#?}"
+        );
+    }
+
+    /// The invariant, over **every** reordering rather than the two anyone thought to write.
+    ///
+    /// Both hand-written move tests passed while a third rotation was broken, which is the
+    /// argument for exhausting the space: four rows is 24 permutations and costs nothing.
+    #[test]
+    fn no_reordering_makes_a_row_appear_twice_or_vanish() {
+        let e = [
+            existing("t1", "One", "First."),
+            existing("t2", "Two", "Second."),
+            existing("t3", "Three", "Third."),
+            existing("t4", "Four", "Fourth."),
+        ];
+        let tags = ["t1", "t2", "t3", "t4"];
+        let titles = ["One", "Two", "Three", "Four"];
+        let proses = ["First.", "Second.", "Third.", "Fourth."];
+
+        for order in permutations(&[0, 1, 2, 3]) {
+            let i: Vec<IncomingRow> = order
+                .iter()
+                .map(|&n| returning(tags[n], titles[n], proses[n], proses[n]))
+                .collect();
+            let rows = align(&e, &i);
+
+            for j in 0..e.len() {
+                assert_eq!(
+                    rows.iter().filter(|r| r.current == Some(j)).count(),
+                    1,
+                    "existing row {j} appears once for order {order:?}: {rows:#?}"
+                );
+            }
+            for k in 0..i.len() {
+                assert_eq!(
+                    rows.iter().filter(|r| r.incoming == Some(k)).count(),
+                    1,
+                    "incoming row {k} appears once for order {order:?}: {rows:#?}"
+                );
+            }
+            assert!(
+                !rows.iter().any(|r| r.status == RowStatus::Missing),
+                "a pure reordering deletes nothing, order {order:?}: {rows:#?}"
+            );
+        }
+    }
+
+    fn permutations(items: &[usize]) -> Vec<Vec<usize>> {
+        if items.len() <= 1 {
+            return vec![items.to_vec()];
+        }
+        let mut out = Vec::new();
+        for (at, &head) in items.iter().enumerate() {
+            let mut rest = items.to_vec();
+            rest.remove(at);
+            for mut tail in permutations(&rest) {
+                tail.insert(0, head);
+                out.push(tail);
+            }
+        }
+        out
     }
 
     #[test]
