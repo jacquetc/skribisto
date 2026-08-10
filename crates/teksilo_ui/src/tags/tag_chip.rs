@@ -292,8 +292,15 @@ impl Widget for FixedDot {
         vec![id]
     }
 
-    fn layout_response(&self, proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
-        proposal.resolve(self.size, self.size).into()
+    fn layout_response(&self, _proposal: SizeProposal, _ctx: &LayoutContext) -> LayoutResponse {
+        // Unconditionally the pinned square — never `proposal.resolve`, which
+        // defers to any specified axis. `Center` used to measure with an
+        // unspecified proposal (so `resolve` happened to fall back to the
+        // square), but it now offers its bounds so adaptive children can cap
+        // themselves — and under that bounded proposal `resolve` handed back
+        // the whole 18×row-height cell: the exact bar this widget exists to
+        // prevent.
+        Size::new(self.size, self.size).into()
     }
 
     fn children(&self) -> Vec<WidgetId> {
