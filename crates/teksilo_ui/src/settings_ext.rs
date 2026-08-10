@@ -120,7 +120,10 @@ pub fn register_settings(
             ));
         }
         if settings_keys::SETTINGS.iter().any(|s| s.key == spec.key) {
-            return Err(format!("setting key '{}' is one of the app's own", spec.key));
+            return Err(format!(
+                "setting key '{}' is one of the app's own",
+                spec.key
+            ));
         }
         if taken.contains(&spec.key) {
             return Err(format!(
@@ -343,7 +346,8 @@ mod tests {
     #[test]
     fn dropping_the_handle_unregisters_the_keys() {
         {
-            let _h = register_settings("test.set.drop", vec![spec("t2.enabled")]).expect("register");
+            let _h =
+                register_settings("test.set.drop", vec![spec("t2.enabled")]).expect("register");
             assert!(settings_keys::spec("t2.enabled").is_some());
         }
         assert!(settings_keys::spec("t2.enabled").is_none());
@@ -388,8 +392,8 @@ mod tests {
     #[test]
     fn a_second_extension_cannot_take_a_taken_key() {
         let _first = register_settings("test.set.first", vec![spec("t3.shared")]).expect("first");
-        let err = register_settings("test.set.second", vec![spec("t3.shared")])
-            .expect_err("must refuse");
+        let err =
+            register_settings("test.set.second", vec![spec("t3.shared")]).expect_err("must refuse");
         assert!(err.contains("already registered"), "unhelpful: {err}");
     }
 
@@ -403,8 +407,14 @@ mod tests {
             vec![spec("t4.good"), spec("editor.bad"), spec("t4.also_good")],
         )
         .expect_err("must refuse the batch");
-        assert!(err.contains("editor.bad"), "the error must name the offender: {err}");
-        assert!(!registered("t4.good"), "a refused batch must register nothing");
+        assert!(
+            err.contains("editor.bad"),
+            "the error must name the offender: {err}"
+        );
+        assert!(
+            !registered("t4.good"),
+            "a refused batch must register nothing"
+        );
         assert!(!registered("t4.also_good"));
     }
 
@@ -432,8 +442,7 @@ mod tests {
     /// which only works because `nearest` searches the combined list.
     #[test]
     fn a_typo_in_an_extension_key_suggests_the_real_one() {
-        let _h =
-            register_settings("test.set.typo", vec![spec("t6.tolerance")]).expect("register");
+        let _h = register_settings("test.set.typo", vec![spec("t6.tolerance")]).expect("register");
         let dir = tempfile::tempdir().unwrap();
         let pins = dir.path().join("pins.toml");
         std::fs::write(&pins, "t6.tolerence = false\n").unwrap();
