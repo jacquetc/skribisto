@@ -455,23 +455,19 @@ fn destination_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
 /// matches nothing, and a table of identical "create it" dropdowns would be a page of ceremony
 /// saying what the row count already said — so that case gets one sentence instead.
 fn reconcile_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
-    let source = ImportMergeSource::empty();
-    source.set_rows(vm.merge_rows());
+    // The merge lives on the view-model and is re-sourced there, by `rebuild_merge`, on every
+    // entry to this step — the writer may have gone back and chosen a different destination.
+    //
+    // Nothing here may refill it. This step once built its own source and re-sourced it from a
+    // `Signal::map` closure, on the assumption that a derived signal recomputes when its input
+    // changes. It recomputes on every *read* — including every visibility evaluation the
+    // `Switcher` below performs, which is once a frame. Writing the table's rows from there
+    // bumped the version signal the table is bound to, so reading the step dirtied it and
+    // dirtying it scheduled the frame that read it again: the wizard's fourth page pegged a
+    // core and never finished a frame, showing its header and an empty table.
+    let source = vm.merge_source();
 
-    // Re-sourced whenever the merge is rebuilt — which is on every entry to this step, because
-    // the writer may have gone back and chosen a different destination.
-    let refill_vm = vm.clone();
-    let refill_source = source.clone();
-    let refilled = vm.merge_version().map(move |_| {
-        refill_source.set_rows(refill_vm.merge_rows());
-        0usize
-    });
-
-    let has_matches = {
-        let me = vm.clone();
-        vm.merge_version()
-            .map(move |_| usize::from(me.has_anything_to_reconcile()))
-    };
+    let has_matches = vm.anything_to_reconcile().map(|m| usize::from(*m));
 
     // Deliberately not a live count of what matched. `TextWidget`'s reactive setter takes a
     // plain `String`, so a translated plural cannot be bound to a signal — and a count read
@@ -485,10 +481,6 @@ fn reconcile_step(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     let body = VStack::new()
         .spacing(8.0)
         .child(header)
-        // A zero-width reader for the re-source signal. `Switcher` below binds
-        // `has_matches`, which does not itself re-run `set_rows`; without something
-        // observing `refilled` the table would keep showing the previous destination's merge.
-        .child(MaxSize::new(0.0, 0.0).child(Switcher::new(refilled).child(Spacer::new())))
         .child(Expand::vertical().child(merge_tree(vm, source)));
 
     Padding::symmetric(16.0, 12.0).child(
@@ -1587,8 +1579,59 @@ mod tests {
             first_containing(&tree, id, "TreeTableView").is_some(),
             "the merge step must mount its table"
         );
+        // Mounting the table is not the same as filling it: the step spent a release showing
+        // an empty one. Both seeded rows offer two actions, so both get a combo box.
+        assert_eq!(
+            count_of(&tree, id, "ComboBox"),
+            2,
+            "each merge row must render its own action control"
+        );
         let bounds = tree.bounds(id);
         assert!(bounds.width > 0.0 && bounds.height > 0.0, "{bounds:?}");
+    }
+
+    /// Reading the merge step must never *write* to it.
+    ///
+    /// The step used to refill its table from a `Signal::map` closure, on the assumption that a
+    /// derived signal recomputes when its input changes. It recomputes on every read, and a
+    /// `Switcher`'s visibility bindings read once a frame — so the closure bumped the version
+    /// signal the table is bound to, which dirtied the table, which scheduled the frame that
+    /// read the closure again. The wizard's fourth page pegged a core and never finished a
+    /// frame. Nothing about a single build says so, which is why this pumps layout and watches
+    /// the version instead of looking at the widgets.
+    #[test]
+    fn mounting_the_merge_step_does_not_re_source_its_table() {
+        use crate::view_models::import_document::{MergeRowKey, MergeRowView};
+        use skribisto_model::reconcile::{RowAction, RowStatus};
+        use teksilo::data::TreeDataSource;
+
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportDocumentViewModel::new(app_ctx.clone(), AppIds::default());
+        vm.seed_merge_for_test(vec![MergeRowView {
+            key: MergeRowKey::Current(uuid::Uuid::from_u128(1)),
+            indent: 0,
+            current_title: Some("Chapter One".into()),
+            current_item_id: Some(1),
+            incoming_title: Some("Chapter One".into()),
+            incoming_key: None,
+            status: RowStatus::EditorEdited,
+            moved: false,
+            actions: vec![RowAction::TakeImport, RowAction::KeepCurrent],
+        }]);
+
+        let settled = vm.merge_source().version_signal().get();
+
+        let mut tree = crate::test_support::tree_with_events(&app_ctx);
+        tree.add_boxed(Box::new(WidgetHolder::new(reconcile_step(&vm))));
+        for _ in 0..4 {
+            tree.layout(SizeProposal::exact(CARD_W, CARD_H));
+        }
+
+        assert_eq!(
+            vm.merge_source().version_signal().get(),
+            settled,
+            "drawing the step re-sourced its table — the loop is back"
+        );
     }
 
     /// With nothing to line up — a first import — the step says so in a sentence rather than

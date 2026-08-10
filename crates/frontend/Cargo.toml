@@ -50,6 +50,10 @@ skribisto_model = { workspace = true }
 # The DOCX export test unzips its own output: a `.docx` is a zip of XML parts, and the
 # things worth asserting about one (page breaks, defined heading styles) live in that XML.
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+# The round-trip harness digests a stored row's prose the same way the import wizard does,
+# and the wizard reduces Djot to plain text first. Same function, or the two digests would
+# differ for reasons that have nothing to do with the round trip.
+skrib_format = { workspace = true }
 
 [lints]
 workspace = true

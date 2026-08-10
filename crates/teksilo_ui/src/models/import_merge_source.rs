@@ -88,6 +88,14 @@ impl ImportMergeSource {
         self.inner.rows.borrow().len()
     }
 
+    /// Read the whole sequence without copying it.
+    ///
+    /// The view-model holds this source *as* its merge state rather than keeping a second
+    /// `Vec` beside it, so its own queries read through here.
+    pub fn with_rows<R>(&self, f: impl FnOnce(&[MergeRowView]) -> R) -> R {
+        f(&self.inner.rows.borrow())
+    }
+
     /// The row behind a key, cloned.
     pub fn row(&self, key: MergeRowKey) -> Option<MergeRowView> {
         self.inner

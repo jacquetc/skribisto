@@ -293,8 +293,8 @@ pub fn align(existing: &[ExistingRow], incoming: &[IncomingRow]) -> Vec<MergeRow
     }
 
     // Whatever the current stream still holds past the last anchor.
-    for j in 0..existing.len() {
-        if !emitted[j] {
+    for (j, done) in emitted.iter().enumerate() {
+        if !done {
             out.push(missing_row(j));
         }
     }

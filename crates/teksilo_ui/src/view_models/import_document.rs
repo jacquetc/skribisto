@@ -50,6 +50,7 @@ use skribisto_model::reconcile::{self, ExistingRow, IncomingRow, RowAction, RowS
 
 use super::long_op::{TrackedOp, event_id, parse_payload, payload_id};
 use crate::app_ids::AppIds;
+use crate::models::import_merge_source::ImportMergeSource;
 use crate::models::import_plan_source::{ImportPlanSource, PlanRowKey, PlanRowView};
 use crate::toast_scope::ToastWorkExt;
 use crate::widgets::DestinationPicker;
@@ -311,15 +312,27 @@ pub struct ImportDocumentViewModel {
     /// Empty until the writer leaves the destination step, because it *cannot* be computed
     /// before then: matching a returning file against the project is a question about a
     /// particular subtree, and there is no answer until one is chosen.
-    merge: Rc<RefCell<Vec<MergeRowView>>>,
+    ///
+    /// Held as the bindable source itself rather than as a plain `Vec` the panel copies into
+    /// one, for the same reason [`plan`](Self::plan) is: a table's contents are state, and
+    /// state belongs here. The panel built its own source once and refilled it from a
+    /// `Signal::map` closure — which teksilo recomputes on *every* read, including every
+    /// visibility evaluation — so reading the step wrote to it, which dirtied it, which forced
+    /// another read. The wizard's fourth page spun at 100% CPU and never finished a frame.
+    merge: ImportMergeSource,
     /// What the writer decided for each merge row, keyed by the row's own durable key.
     ///
     /// Keyed by [`MergeRowKey`] and never by position: going Back and choosing a different
     /// destination rebuilds the whole sequence, and decisions keyed by an index would be
     /// silently reassigned to other rows.
     merge_actions: Rc<RefCell<HashMap<MergeRowKey, RowAction>>>,
-    /// Bumped whenever the merge is rebuilt, so the panel's table re-sources.
+    /// Bumped whenever the merge is rebuilt or a row's action changes.
     merge_version: Signal<u64>,
+    /// Whether the merge has any row the destination already holds.
+    ///
+    /// A plain signal rather than something derived from [`merge`](Self::merge): the step
+    /// picks its page from it, and a page choice is re-read on every frame.
+    merge_has_matches: Signal<bool>,
     /// What to do with a row whose prose its own type cannot hold — see [`StrayProse`].
     stray_prose: Rc<RefCell<HashMap<PlanRowKey, StrayProse>>>,
 }
@@ -389,9 +402,10 @@ impl ImportDocumentViewModel {
             app_ctx,
             ids,
             stray_prose: Rc::new(RefCell::new(HashMap::new())),
-            merge: Rc::new(RefCell::new(Vec::new())),
+            merge: ImportMergeSource::empty(),
             merge_actions: Rc::new(RefCell::new(HashMap::new())),
             merge_version: Signal::new(0),
+            merge_has_matches: Signal::new(false),
             files: ListModel::new(),
             file_count: Signal::new(0),
             controller: StepperController::new(STEP_COUNT),
@@ -1155,7 +1169,7 @@ impl ImportDocumentViewModel {
                 }
                 None => Vec::new(),
             },
-            None => ordered.iter().copied().collect(),
+            None => ordered.to_vec(),
         };
 
         scope
@@ -1371,12 +1385,11 @@ impl ImportDocumentViewModel {
     pub fn rows_to_create(&self) -> Vec<ApplyImportRow> {
         // What the reconcile step decided, if the writer got that far. Keyed by the plan row
         // each decision is about, so the walk below stays in plan order.
-        let decided: HashMap<PlanRowKey, RowAction> = self
-            .merge
-            .borrow()
-            .iter()
-            .filter_map(|m| Some((m.incoming_key?, self.action_for(m))))
-            .collect();
+        let decided: HashMap<PlanRowKey, RowAction> = self.merge.with_rows(|rows| {
+            rows.iter()
+                .filter_map(|m| Some((m.incoming_key?, self.action_for(m))))
+                .collect()
+        });
 
         self.plan
             .keys_in_order()
@@ -1412,7 +1425,6 @@ impl ImportDocumentViewModel {
                     // accepted without ever reaching the reconcile step.
                     _ => Some(self.created_rows_for(key, &row, kind, comments, tag)),
                 }
-                .map(|rows| rows)
             })
             .flatten()
             .collect()
@@ -1536,15 +1548,7 @@ impl ImportDocumentViewModel {
             });
         }
 
-        *self.merge.borrow_mut() = out;
-        // Decisions for rows that are no longer in the sequence are dropped, so a destination
-        // the writer tried and abandoned cannot leave an instruction behind.
-        let live: std::collections::HashSet<MergeRowKey> =
-            self.merge.borrow().iter().map(|m| m.key).collect();
-        self.merge_actions
-            .borrow_mut()
-            .retain(|k, _| live.contains(k));
-        self.merge_version.set(self.merge_version.get() + 1);
+        self.publish_merge(out);
     }
 
     /// Plant a merge without a destination or a store behind it, for layout tests.
@@ -1553,19 +1557,43 @@ impl ImportDocumentViewModel {
     /// layout test is asking is whether the step mounts the table, which is a question about
     /// the panel and not about the backend.
     pub fn seed_merge_for_test(&self, rows: Vec<MergeRowView>) {
-        *self.merge.borrow_mut() = rows;
+        self.publish_merge(rows);
+    }
+
+    /// Hand a freshly computed sequence to the table and settle everything that follows from
+    /// it, in one place so the two callers cannot drift.
+    ///
+    /// This is the **only** writer of the merge, and it is reached from a command — leaving
+    /// the destination step — never from a render. Nothing the panel does may write here:
+    /// the table's version signal is what marks the table dirty, so a write during a read
+    /// would schedule the frame that reads again.
+    fn publish_merge(&self, rows: Vec<MergeRowView>) {
+        // Decisions for rows that are no longer in the sequence are dropped, so a destination
+        // the writer tried and abandoned cannot leave an instruction behind.
+        let live: std::collections::HashSet<MergeRowKey> = rows.iter().map(|m| m.key).collect();
+        let has_matches = rows.iter().any(|m| m.current_item_id.is_some());
+        self.merge.set_rows(rows);
+        self.merge_actions
+            .borrow_mut()
+            .retain(|k, _| live.contains(k));
+        self.merge_has_matches.set(has_matches);
         self.merge_version.set(self.merge_version.get() + 1);
     }
 
     /// The merge sequence, for the reconcile step's table.
     pub fn merge_rows(&self) -> Vec<MergeRowView> {
-        self.merge.borrow().clone()
+        self.merge.with_rows(|rows| rows.to_vec())
+    }
+
+    /// The bindable merge, for the reconcile step's table to source itself from.
+    pub fn merge_source(&self) -> ImportMergeSource {
+        self.merge.clone()
     }
 
     /// One merge row by its durable key — what a cell delegate resolves before acting, since
     /// the framework hands it a flat index and no identity.
     pub fn merge_row(&self, key: MergeRowKey) -> Option<MergeRowView> {
-        self.merge.borrow().iter().find(|m| m.key == key).cloned()
+        self.merge.row(key)
     }
 
     /// Bumped whenever [`rebuild_merge`](Self::rebuild_merge) runs.
@@ -1593,19 +1621,21 @@ impl ImportDocumentViewModel {
     /// False for a first import into an empty destination, where every row is new and a table
     /// of identical "create it" dropdowns would be a page of ceremony saying nothing.
     pub fn has_anything_to_reconcile(&self) -> bool {
-        self.merge
-            .borrow()
-            .iter()
-            .any(|m| m.current_item_id.is_some())
+        self.merge_has_matches.get()
+    }
+
+    /// The same question, bindable — what the step picks its page from.
+    pub fn anything_to_reconcile(&self) -> Signal<bool> {
+        self.merge_has_matches.clone()
     }
 
     /// How many rows the returning file brings home rather than adds.
     pub fn matched_count(&self) -> usize {
-        self.merge
-            .borrow()
-            .iter()
-            .filter(|m| m.current_item_id.is_some() && m.incoming_key.is_some())
-            .count()
+        self.merge.with_rows(|rows| {
+            rows.iter()
+                .filter(|m| m.current_item_id.is_some() && m.incoming_key.is_some())
+                .count()
+        })
     }
 
     /// The prose on either side of one row, for the compare view.
@@ -3159,11 +3189,11 @@ mod tests {
         let vm = vm_from_a_returning_file();
         let key = vm.plan().keys_in_order()[1];
 
-        *vm.merge.borrow_mut() = vec![merged(
+        vm.seed_merge_for_test(vec![merged(
             MergeRowKey::Current(uuid::Uuid::from_u128(1)),
             Some(key),
             vec![RowAction::CommentsOnly, RowAction::TakeImport],
-        )];
+        )]);
 
         let rows = vm.rows_to_create();
         let update = rows
@@ -3186,11 +3216,11 @@ mod tests {
         let vm = vm_from_a_returning_file();
         let key = vm.plan().keys_in_order()[1];
         let row_key = MergeRowKey::Current(uuid::Uuid::from_u128(1));
-        *vm.merge.borrow_mut() = vec![merged(
+        vm.seed_merge_for_test(vec![merged(
             row_key,
             Some(key),
             vec![RowAction::CommentsOnly, RowAction::TakeImport],
-        )];
+        )]);
         vm.set_action(row_key, RowAction::TakeImport);
 
         assert!(vm.rows_to_create().iter().any(|r| matches!(
@@ -3210,11 +3240,11 @@ mod tests {
         let vm = vm_from_a_returning_file();
         let key = vm.plan().keys_in_order()[1];
         let row_key = MergeRowKey::Current(uuid::Uuid::from_u128(1));
-        *vm.merge.borrow_mut() = vec![merged(
+        vm.seed_merge_for_test(vec![merged(
             row_key,
             Some(key),
             vec![RowAction::CommentsOnly, RowAction::KeepCurrent],
-        )];
+        )]);
         vm.set_action(row_key, RowAction::KeepCurrent);
 
         let rows = vm.rows_to_create();
@@ -3233,7 +3263,7 @@ mod tests {
         let vm = vm();
         let row_key = MergeRowKey::Current(uuid::Uuid::from_u128(1));
         let other = MergeRowKey::Current(uuid::Uuid::from_u128(2));
-        *vm.merge.borrow_mut() = vec![
+        vm.seed_merge_for_test(vec![
             merged(
                 row_key,
                 None,
@@ -3244,11 +3274,11 @@ mod tests {
                 None,
                 vec![RowAction::CommentsOnly, RowAction::TakeImport],
             ),
-        ];
+        ]);
         vm.set_action(row_key, RowAction::TakeImport);
 
         // The same two rows, in the other order — as a different destination might produce.
-        *vm.merge.borrow_mut() = vec![
+        vm.seed_merge_for_test(vec![
             merged(
                 other,
                 None,
@@ -3259,7 +3289,7 @@ mod tests {
                 None,
                 vec![RowAction::CommentsOnly, RowAction::TakeImport],
             ),
-        ];
+        ]);
         let rows = vm.merge_rows();
         assert_eq!(
             vm.action_for(&rows[1]),
@@ -3278,11 +3308,11 @@ mod tests {
     #[test]
     fn nothing_to_reconcile_when_every_row_is_new() {
         let vm = vm();
-        *vm.merge.borrow_mut() = vec![merged(
+        vm.seed_merge_for_test(vec![merged(
             MergeRowKey::Incoming(vm.plan().keys_in_order()[1]),
             Some(vm.plan().keys_in_order()[1]),
             vec![RowAction::CreateNew],
-        )];
+        )]);
         assert!(!vm.has_anything_to_reconcile());
         assert_eq!(vm.matched_count(), 0);
     }
