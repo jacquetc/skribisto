@@ -126,6 +126,7 @@ impl CommandUnitOfWork for CloseWorkUnitOfWork {
 #[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "RemoveMulti")]
+#[macros::uow_action(entity = "Work", action = "Get")]
 impl CloseWorkUnitOfWorkTrait for CloseWorkUnitOfWork {
     fn publish_close_work_event(&self, ids: Vec<EntityId>, data: Option<String>) {
         self.event_hub.send_event(Event {

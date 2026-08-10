@@ -9,6 +9,13 @@
 /// backend half of the extension seam.
 pub mod bundle_contributors;
 pub mod dtos;
+/// Project opened / closed / saved, for code outside this workspace. The third
+/// part of the backend seam, beside `bundle_contributors` and `project_store`.
+pub mod lifecycle;
+/// One value per open project, keyed by `Work.unique_id` — the `Send + Sync`
+/// half of an extension's own state, and the structural cure for the singleton
+/// that evicted one project's data when a second opened. Also part of the seam.
+pub mod project_store;
 mod units_of_work;
 pub(crate) mod use_cases;
 mod work_io;

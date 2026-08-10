@@ -197,6 +197,40 @@ impl HistoryAction {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// "Every `BinderItem` uid this project holds" — the prune list a
+// [`crate::lifecycle`] listener works from, since no cascade ever reaches one.
+//
+// **Both forms live here, side by side, on purpose.** A project's item tree is
+// reachable through two different types — `Gathered` on the way out and
+// `LoadedWork` on the way in — so one function cannot serve both without a trait
+// neither shape otherwise needs. Co-locating them is what stops the pair
+// drifting: changing what "live" means (excluding trashed items, say, or adding
+// a new child collection) has to be done twice, and a reader who finds one
+// cannot miss the other.
+//
+// There is a third answer, deliberately not here: `new_work_uc` collects uids as
+// it *creates* the items, because a brand-new project has no tree to walk yet.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// From the ordered read a save is built from.
+pub(crate) fn live_binder_item_uids(g: &Gathered) -> Vec<uuid::Uuid> {
+    g.binders
+        .iter()
+        .flat_map(|b| b.items.iter().map(|i| i.item.uid))
+        .collect()
+}
+
+/// From the neutral graph a load materialises. These are the uids the bundle
+/// carries, which the materialiser preserves verbatim.
+pub(crate) fn loaded_binder_item_uids(loaded: &skrib_format::LoadedWork) -> Vec<uuid::Uuid> {
+    loaded
+        .binders
+        .iter()
+        .flat_map(|b| b.items.iter().map(|i| i.item.uid))
+        .collect()
+}
+
 pub fn serialize_and_write(
     g: &Gathered,
     target: String,
@@ -204,6 +238,7 @@ pub fn serialize_and_write(
     shape_tag: ShapeTag,
     media_dir: &std::path::Path,
     history: HistoryAction,
+    kind: crate::lifecycle::SaveKind,
 ) -> Result<String> {
     let mut bundle = skrib::from_entities(
         &g.work,
@@ -258,5 +293,16 @@ pub fn serialize_and_write(
         }
     }
     skrib::write_bundle(&target, shape, &bundle).map_err(|e| anyhow!("writing '{target}': {e}"))?;
+    // The backend seam's "a write landed" hook, beside the contributor call it
+    // mirrors: same function, same `unique_id`, same once-per-write cardinality
+    // that both get here for free.
+    if crate::lifecycle::has_listeners() {
+        crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Saved {
+            unique_id: g.work.unique_id.clone(),
+            path: target.clone(),
+            kind,
+            live_binder_item_uids: live_binder_item_uids(g),
+        });
+    }
     Ok(target)
 }

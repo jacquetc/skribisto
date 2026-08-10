@@ -232,6 +232,14 @@ fn run_save(
         policy: skrib_format::history::DEFAULT_POLICY,
         min_keep: skrib_format::history::DEFAULT_MIN_KEEP,
     };
-    let output_path = work_io::serialize_and_write(&g, target, shape, tag, &media_dir, history)?;
+    let output_path = work_io::serialize_and_write(
+        &g,
+        target,
+        shape,
+        tag,
+        &media_dir,
+        history,
+        crate::lifecycle::SaveKind::Save,
+    )?;
     Ok((work_id, SaveResultDto { output_path }))
 }

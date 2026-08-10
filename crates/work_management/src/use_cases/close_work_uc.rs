@@ -29,6 +29,9 @@ pub trait CloseWorkUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "WorkInfo", action = "GetRelationshipsFromRightIds")]
 #[macros::uow_action(entity = "WorkInfo", action = "RemoveMulti")]
 #[macros::uow_action(entity = "Work", action = "RemoveMulti")]
+// Read the Work's `unique_id` before the teardown erases the row — see
+// `execute` for why the ordering is the whole point.
+#[macros::uow_action(entity = "Work", action = "Get")]
 pub trait CloseWorkUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_close_work_event(&self, ids: Vec<EntityId>, data: Option<String>);
 }
@@ -65,6 +68,14 @@ impl CloseWorkUseCase {
         let work_id = dto.work_id as EntityId;
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
+        // Read the durable identity **before** the teardown. Afterwards the row
+        // is gone and this comes back empty — with no compiler error and no
+        // failing test, just a `Closed` event naming no project, so every
+        // extension keeps that project's state resident forever.
+        let unique_id = uow
+            .get_work(&work_id)?
+            .map(|w| w.unique_id)
+            .unwrap_or_default();
         match work_io::close_current_work(&*uow, work_id) {
             Ok(()) => {
                 uow.commit()?;
@@ -72,6 +83,11 @@ impl CloseWorkUseCase {
                 // WorkManagement events publishing an empty id vec (every sibling —
                 // LoadWork/SaveWork/SaveAs/BackupNow/NewWork — publishes `vec![work_id]`).
                 uow.publish_close_work_event(vec![work_id], None);
+                // The backend seam's "this project is gone" hook — after the
+                // teardown, since that is what it reports, and unconditional
+                // (unlike `Opened`/`Saved`) because the payload is one string
+                // already in hand and eviction rides on it.
+                crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Closed { unique_id });
                 Ok(())
             }
             Err(e) => {

@@ -2959,8 +2959,16 @@ fn a_bundle_contributor_writes_into_the_project_and_beats_the_stale_copy() {
     use crate::bundle_contributors::{BundleContributor, register};
     use std::collections::BTreeMap;
 
-    let bundle = sample_bundle();
-    let uid = bundle.manifest.work.unique_id.clone();
+    let mut bundle = sample_bundle();
+    // A uid **this test alone** owns. Every fixture project shares
+    // `sample_bundle`'s, and the contributor registry is process-wide with tests
+    // running in parallel — so a contributor scoped to the shared uid still
+    // leaks its file into a sibling test's bundle. That is not hypothetical: it
+    // is what made `backup_multi_destination_is_resilient_and_dedups` flake once
+    // backups started collecting contributor files, since the extra file moves
+    // the content fingerprint that skip-if-unchanged compares.
+    let uid = "contributor-e2e-uid".to_string();
+    bundle.manifest.work.unique_id = uid.clone();
 
     let dir = tempfile::tempdir().unwrap();
     let project = dir.path().join("Novel");
@@ -3013,5 +3021,318 @@ fn a_bundle_contributor_writes_into_the_project_and_beats_the_stale_copy() {
         std::fs::read(project.join("ext/data.ron")).ok().as_deref(),
         Some(b"(live)".as_slice()),
         "the contributor's current state must win over the copy read off disk"
+    );
+}
+
+// ── The lifecycle hook (`crate::lifecycle`) through the real use cases ───────
+
+/// A listener scoped to **one** project. The registry is process-wide and tests
+/// run in parallel, so anything wider counts a sibling test's events as its own —
+/// which is why every test below gives its project a uid it alone names.
+struct LifecycleLog {
+    uid: String,
+    seen: std::sync::Mutex<Vec<crate::lifecycle::LifecycleEvent>>,
+}
+
+impl LifecycleLog {
+    fn new(uid: &str) -> Arc<Self> {
+        Arc::new(Self {
+            uid: uid.to_string(),
+            seen: std::sync::Mutex::new(Vec::new()),
+        })
+    }
+    fn events(&self) -> Vec<crate::lifecycle::LifecycleEvent> {
+        self.seen.lock().unwrap().clone()
+    }
+}
+
+impl crate::lifecycle::LifecycleListener for LifecycleLog {
+    fn on_event(&self, event: &crate::lifecycle::LifecycleEvent) {
+        use crate::lifecycle::LifecycleEvent::*;
+        let mine = match event {
+            Opened { unique_id, .. } | Closed { unique_id } | Saved { unique_id, .. } => {
+                unique_id == &self.uid
+            }
+        };
+        if mine {
+            self.seen.lock().unwrap().push(event.clone());
+        }
+    }
+}
+
+/// Write `sample_bundle` under a uid this test alone owns, so a process-wide
+/// listener can tell its own project's events from a sibling's.
+fn write_sample_with_uid(uid: &str) -> (tempfile::TempDir, String) {
+    let mut bundle = sample_bundle();
+    bundle.manifest.work.unique_id = uid.to_string();
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().join("Novel");
+    let path = project.to_str().unwrap().to_string();
+    skrib::write_bundle(&path, SkribShape::ExplodedFolder, &bundle).unwrap();
+    (dir, path)
+}
+
+/// Opening a project fires exactly one `Opened`, naming the project by its
+/// durable id and path, and carrying **every** live item uid — the prune list an
+/// extension has no other way to build, since no cascade ever reaches one.
+#[test]
+fn loading_a_project_fires_opened_with_its_live_item_uids() {
+    let log = LifecycleLog::new("lifecycle-open-uid");
+    let _h = crate::lifecycle::register("test.lc.open", log.clone());
+
+    let (_dir, path) = write_sample_with_uid("lifecycle-open-uid");
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.clone(),
+        },
+    )
+    .expect("load");
+
+    let events = log.events();
+    assert_eq!(events.len(), 1, "exactly one Opened per load: {events:?}");
+    match &events[0] {
+        crate::lifecycle::LifecycleEvent::Opened {
+            path: p,
+            live_binder_item_uids,
+            ..
+        } => {
+            assert_eq!(p, &path);
+            let in_store = db.get_store().binder_items.read().unwrap().len();
+            assert_eq!(
+                live_binder_item_uids.len(),
+                in_store,
+                "every item in the project must be in the prune list"
+            );
+            assert!(
+                live_binder_item_uids.iter().all(|u| !u.is_nil()),
+                "a nil uid prunes nothing and matches everything"
+            );
+        }
+        other => panic!("expected Opened, got {other:?}"),
+    }
+}
+
+/// Closing fires exactly one `Closed`, and it names the project.
+///
+/// **The ordering that makes it work:** `unique_id` is read *before* the
+/// teardown. Read after, it would come back empty — with no compiler error and
+/// nothing failing — so every extension would keep that project's state resident
+/// for the life of the process, and re-opening it would find the stale slot.
+#[test]
+fn closing_a_project_fires_closed_naming_the_project_that_closed() {
+    let log = LifecycleLog::new("lifecycle-close-uid");
+    let _h = crate::lifecycle::register("test.lc.close", log.clone());
+
+    let (_dir, path) = write_sample_with_uid("lifecycle-close-uid");
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path,
+        },
+    )
+    .expect("load");
+    let work_id = live_work_id(&db);
+
+    work_management_controller::close_work(&db, &hub, &CloseWorkDto { work_id }).expect("close");
+
+    let closed: Vec<_> = log
+        .events()
+        .into_iter()
+        .filter(|e| matches!(e, crate::lifecycle::LifecycleEvent::Closed { .. }))
+        .collect();
+    assert_eq!(closed.len(), 1, "exactly one Closed per close: {closed:?}");
+    // …and it really did fire after the teardown, not before.
+    assert!(
+        db.get_store().works.read().unwrap().is_empty(),
+        "close_work must have removed the subtree"
+    );
+}
+
+/// A save fires exactly one `Saved`, tagged for the write that produced it and
+/// naming the file the bytes went to.
+#[test]
+fn saving_fires_one_saved_tagged_with_the_kind_of_write() {
+    let log = LifecycleLog::new("lifecycle-save-uid");
+    let _h = crate::lifecycle::register("test.lc.save", log.clone());
+
+    let (_dir, path) = write_sample_with_uid("lifecycle-save-uid");
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.clone(),
+        },
+    )
+    .expect("load");
+
+    SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            media_root: String::new(),
+            work_id: live_work_id(&db),
+            file_name: path.clone(),
+            overwrite: true,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save");
+
+    let saved: Vec<_> = log
+        .events()
+        .into_iter()
+        .filter_map(|e| match e {
+            crate::lifecycle::LifecycleEvent::Saved { kind, path, .. } => Some((kind, path)),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(saved.len(), 1, "exactly one Saved per save: {saved:?}");
+    assert_eq!(saved[0].0, crate::lifecycle::SaveKind::Save);
+    assert_eq!(saved[0].1, path);
+}
+
+/// A backup writes one file **per destination**, so it fires one `Saved` per
+/// destination — each naming its own backup file, never the project.
+///
+/// Cross-checked against what actually landed on disk, because the failure this
+/// guards is a listener mirroring three destinations off one notification.
+#[test]
+fn a_backup_fires_one_saved_per_destination_written() {
+    let log = LifecycleLog::new("lifecycle-backup-uid");
+    let _h = crate::lifecycle::register("test.lc.backup", log.clone());
+
+    let (dir, path) = write_sample_with_uid("lifecycle-backup-uid");
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.clone(),
+        },
+    )
+    .expect("load");
+
+    let dests: Vec<String> = (0..3)
+        .map(|i| {
+            let d = dir.path().join(format!("dest{i}"));
+            std::fs::create_dir_all(&d).unwrap();
+            d.to_str().unwrap().to_string()
+        })
+        .collect();
+    let res = BackupNowUseCase::new(
+        Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
+        &plain_backup_dto(live_work_id(&db), dests, vec![]),
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("backup");
+    assert_eq!(res.succeeded_paths.len(), 3);
+
+    let mut announced: Vec<String> = log
+        .events()
+        .into_iter()
+        .filter_map(|e| match e {
+            crate::lifecycle::LifecycleEvent::Saved {
+                kind: crate::lifecycle::SaveKind::Backup,
+                path,
+                ..
+            } => Some(path),
+            _ => None,
+        })
+        .collect();
+    announced.sort();
+    let mut written = res.succeeded_paths.clone();
+    written.sort();
+    assert_eq!(
+        announced, written,
+        "one Saved per backup actually written, naming that file"
+    );
+}
+
+/// **A backup used to lose every unmodelled file.** It builds its bundle by hand
+/// rather than through `work_io::serialize_and_write`, and so had neither
+/// `carry::load` nor the contributor collection — so an extension's data (and
+/// any carried file from a build that did not model it) was silently absent from
+/// every backup, and restoring one wiped it from the project.
+#[test]
+fn a_backup_carries_unmodelled_files_and_the_contributors_current_state() {
+    use crate::bundle_contributors::{BundleContributor, register};
+    use std::collections::BTreeMap;
+
+    let uid = "backup-carry-uid";
+    let (dir, path) = write_sample_with_uid(uid);
+    // A file the format does not model, as a previous save left it.
+    std::fs::create_dir_all(std::path::Path::new(&path).join("ext")).unwrap();
+    std::fs::write(
+        std::path::Path::new(&path).join("ext/stale.ron"),
+        b"(from disk)",
+    )
+    .unwrap();
+
+    struct OneProject(String);
+    impl BundleContributor for OneProject {
+        fn files(&self, work_unique_id: &str) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+            let mut out = BTreeMap::new();
+            if work_unique_id == self.0 {
+                out.insert("ext/live.ron".to_string(), b"(from memory)".to_vec());
+            }
+            Ok(out)
+        }
+    }
+    let _c = register("test.backup-carry", Arc::new(OneProject(uid.to_string())));
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.clone(),
+        },
+    )
+    .expect("load");
+
+    let dest = dir.path().join("backups");
+    std::fs::create_dir_all(&dest).unwrap();
+    let res = BackupNowUseCase::new(
+        Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
+        &plain_backup_dto(
+            live_work_id(&db),
+            vec![dest.to_str().unwrap().to_string()],
+            vec![],
+        ),
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("backup");
+
+    let restored = skrib::read_bundle(&res.succeeded_paths[0]).expect("read the backup");
+    assert_eq!(
+        restored
+            .carried
+            .get("ext/stale.ron")
+            .map(|f| f.bytes.as_slice()),
+        Some(&b"(from disk)"[..]),
+        "a backup dropped an unmodelled file, so restoring it would delete that file"
+    );
+    assert_eq!(
+        restored
+            .carried
+            .get("ext/live.ron")
+            .map(|f| f.bytes.as_slice()),
+        Some(&b"(from memory)"[..]),
+        "a backup must carry a contributor's CURRENT state, as a save does"
     );
 }

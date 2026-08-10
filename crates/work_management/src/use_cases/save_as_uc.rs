@@ -260,7 +260,15 @@ fn run_save_as(
     let history = work_io::HistoryAction::Carry {
         source: source.clone(),
     };
-    let output = work_io::serialize_and_write(&g, target, shape, tag, &media_dir, history)?;
+    let output = work_io::serialize_and_write(
+        &g,
+        target,
+        shape,
+        tag,
+        &media_dir,
+        history,
+        crate::lifecycle::SaveKind::SaveAs,
+    )?;
     Ok((
         work_id,
         SaveAsResultDto {

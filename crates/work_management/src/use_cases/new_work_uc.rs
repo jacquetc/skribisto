@@ -170,6 +170,9 @@ impl NewWorkUseCase {
 
         // Template subtree: binders → items → content (already model-valid).
         let mut binder_ids: Vec<EntityId> = Vec::new();
+        // Every item the template creates, for the seam's `Opened` payload — a
+        // listener's only prune list, since no cascade ever reaches one.
+        let mut created_item_uids: Vec<uuid::Uuid> = Vec::new();
         let paratexts = ParatextPlan {
             front: dto.paratext_front.clone(),
             back: dto.paratext_back.clone(),
@@ -232,6 +235,7 @@ impl NewWorkUseCase {
                     )?;
                 }
                 item_ids.push(item.id);
+                created_item_uids.push(item.uid);
             }
             if !item_ids.is_empty() {
                 uow.set_binder_relationship(
@@ -344,6 +348,17 @@ impl NewWorkUseCase {
         uow.commit()?;
 
         uow.publish_new_work_event(vec![work.id], None);
+        // The backend seam's "a project is open" hook — see `load_work_uc` for
+        // the same call and why it sits after the commit. A brand-new project's
+        // items come from the template that just built them, so the uid list is
+        // read back off the store rather than off a bundle that does not exist.
+        if crate::lifecycle::has_listeners() {
+            crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Opened {
+                unique_id: work.unique_id.clone(),
+                path: dto.file_name.clone(),
+                live_binder_item_uids: created_item_uids,
+            });
+        }
         Ok(())
     }
 }

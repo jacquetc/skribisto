@@ -287,6 +287,23 @@ fn run_backup(
         &g.binders,
         ShapeTag::Zip,
     );
+    // Files the format does not model travel with the project on **every** write
+    // path — including this one, which builds its bundle by hand instead of going
+    // through `work_io::serialize_and_write` and so had neither half of the pair.
+    // A backup was silently dropping every carried file and every extension's
+    // data, and restoring one then wiped them from the project. Same order as
+    // `serialize_and_write`: disk first, live contributor state over the top,
+    // because what a contributor holds is current and what the last save left on
+    // disk is not.
+    //
+    // Before the fingerprint on purpose: `CarriedFile` serialises its digest for
+    // exactly this reason, so a project whose only change is an extension's own
+    // data is not skipped as unchanged.
+    bundle.carried = skrib::carry::load(&source);
+    for (path, bytes) in crate::bundle_contributors::collect(&unique_id) {
+        bundle.carried.insert(path, skrib::CarriedFile::new(bytes));
+    }
+
     let content_hash = skrib::content_fingerprint(&bundle);
     // Carry the project's history into the backup, and record nothing: a backup is
     // a snapshot of a state the writer already reached, not a new revision of it.
@@ -342,6 +359,19 @@ fn run_backup(
             // still get written.
             match write_and_verify(&source, dir, stamp, &bundle, &unique_id) {
                 Ok(target) => {
+                    // One `Saved` per destination actually written — a skipped
+                    // one wrote nothing and must not claim it did. Deliberately
+                    // not once per backup *run*: with three destinations there
+                    // are three files, and a listener that mirrors them needs to
+                    // know about each.
+                    if crate::lifecycle::has_listeners() {
+                        crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Saved {
+                            unique_id: unique_id.clone(),
+                            path: target.clone(),
+                            kind: crate::lifecycle::SaveKind::Backup,
+                            live_binder_item_uids: work_io::live_binder_item_uids(&g),
+                        });
+                    }
                     succeeded_paths.push(target);
                     swept_dirs.push(resolve_backup_dir(&source, dir));
                 }

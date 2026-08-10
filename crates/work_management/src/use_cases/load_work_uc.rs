@@ -152,6 +152,20 @@ impl LoadWorkUseCase {
 
         uow.commit()?;
         uow.publish_load_work_event(vec![mat.work_id], None);
+        // The backend seam's "a project is open" hook, after the commit so a
+        // listener that reads the store sees the whole subtree. Built from
+        // `loaded` rather than re-read: those uids are the durable ones the
+        // bundle carries, and the materialiser preserves them.
+        //
+        // Gated so a vanilla install pays a lock read, not a walk of every item
+        // in the manuscript.
+        if crate::lifecycle::has_listeners() {
+            crate::lifecycle::notify(crate::lifecycle::LifecycleEvent::Opened {
+                unique_id: loaded.work.unique_id.clone(),
+                path: dto.file_name.clone(),
+                live_binder_item_uids: crate::work_io::loaded_binder_item_uids(&loaded),
+            });
+        }
         Ok(())
     }
 }
