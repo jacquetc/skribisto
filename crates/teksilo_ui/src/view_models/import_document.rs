@@ -2776,6 +2776,60 @@ mod tests {
         assert!(!child_empty, "and it is where the prose went");
     }
 
+    /// The same shape on a row that came home from a returning file.
+    ///
+    /// M8's own tests all build their plan from `vm()`, whose rows carry no mark, so the
+    /// scenario the milestone was written for — a book's front matter coming back on the Book
+    /// row, from a file this project exported — had no coverage at all. The paratext this
+    /// mints is a row *this* import is creating, so it carries no borrowed identity: the mark
+    /// named the container, and the container is the row that keeps it.
+    #[test]
+    fn stray_prose_on_a_returning_row_still_becomes_a_paratext_carrying_no_identity() {
+        let vm = vm_from_a_returning_file();
+        // `vm_from_a_returning_file`'s row 2 is a tagged Scene; retyping it to a Part makes it
+        // a container carrying prose, which is exactly the shape M8 exists for.
+        vm.retype_row(PlanRowKey(2), CreateType::Part);
+
+        let created: Vec<(String, i64, bool, String)> = vm
+            .rows_to_create()
+            .iter()
+            .filter_map(|r| match r {
+                ApplyImportRow::Create {
+                    title,
+                    indent,
+                    djot,
+                    source_uid_tag,
+                    ..
+                } => Some((
+                    title.clone(),
+                    *indent,
+                    djot.trim().is_empty(),
+                    source_uid_tag.clone(),
+                )),
+                _ => None,
+            })
+            .collect();
+
+        let at = created
+            .iter()
+            .position(|(t, _, empty, _)| t == "Scene A" && *empty)
+            .expect("the container is created, and holds no prose");
+        let (_, container_indent, _, container_tag) = created[at].clone();
+        assert_eq!(
+            container_tag, "tag-a",
+            "the container keeps the identity the mark named"
+        );
+
+        let (child_title, child_indent, child_empty, child_tag) = created[at + 1].clone();
+        assert_eq!(child_title, "Scene A");
+        assert_eq!(child_indent, container_indent + 1, "just inside it");
+        assert!(!child_empty, "and it is where the prose went");
+        assert!(
+            child_tag.is_empty(),
+            "a row this import is minting has no history to claim: {child_tag:?}"
+        );
+    }
+
     /// The other choice: drop the text and keep the row.
     #[test]
     fn discarding_stray_prose_creates_the_row_alone() {

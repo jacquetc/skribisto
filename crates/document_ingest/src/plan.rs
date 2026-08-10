@@ -458,9 +458,24 @@ fn append_document(
 
         // A round-trip mark on this block names the row the block just joined. **First mark
         // wins**: a row's identity is written once, at its first character, so a second mark
-        // inside the same row can only mean the writer's chapters have been merged in the
+        // inside the same row usually means the writer's chapters have been merged in the
         // editor — in which case the row genuinely is the first of them, and quietly adopting
         // the second's identity would move the other chapter's history onto this one.
+        //
+        // ⚠ There is one case where "usually" is wrong, and it is left wrong on purpose. A row
+        // only ever opens on a `Heading`, so an exported row that carries **no heading of its
+        // own** — a paratext, by design — has its mark folded into whichever row precedes it.
+        // Under every shipped preset that is harmless, and in fact right: a Book earns no mark
+        // (its type stores no prose), so the paratext's is the first and the merged row pairs
+        // back to the paratext. It only bites with `include_synopses` on *and* a non-empty
+        // synopsis on the Book itself, where the Book's mark arrives first and the row pairs
+        // against a Book — which stores no prose, so `apply_document_import` refuses the whole
+        // import rather than losing it.
+        //
+        // Fixing it means letting a disagreeing mark open a new row, which would also split a
+        // genuinely merged chapter back in two and lose the editor's merge. That is a trade
+        // between two wrong answers and wants a decision, not a quiet preference, so it is
+        // recorded here rather than made.
         for mark in doc
             .row_marks
             .iter()
