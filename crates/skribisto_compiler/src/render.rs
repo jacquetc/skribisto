@@ -24,8 +24,8 @@ use skribisto_model::language;
 use skribisto_model::numbering::{self, Numbered, NumberingRules};
 use skribisto_model::scene_break::{self, SceneBreakTier};
 use text_document::{
-    DocxExportOptions, EpubExportOptions, MarkdownExportOptions, PdfExportOptions,
-    PlainTextExportOptions, TextDirection, TextDocument,
+    DocumentComments, DocxExportOptions, EpubExportOptions, MarkdownExportOptions,
+    PdfExportOptions, PlainTextExportOptions, TextDirection, TextDocument,
 };
 
 use crate::headings::{self, Level};
@@ -321,6 +321,22 @@ fn docx_options(
         // `DocxHeadingStyle::default_ramp` scaled off the body size, which is
         // exactly the output this function produced before the field existed.
         heading_styles: Vec::new(),
+        // **No comment threads, and this is not yet wired.** The field became
+        // required when `text-document` grew a DOCX comment writer; nothing here
+        // can fill it, because this crate is handed no comment data at all — the
+        // export path's `TreeReader::reads_comments` is `false`, so `Gathered.comments`
+        // is empty by the time a stream reaches the compiler.
+        //
+        // Filling it is a feature, not a call-site fix: each `DocumentComment`
+        // needs `start`/`end` offsets **into the compiled stream**, and a comment's
+        // stored anchor is a quote (prefix/exact/suffix), deliberately not an
+        // offset — so every thread has to be re-anchored against text that scene
+        // concatenation and separator insertion have already moved. That work is
+        // the `comment-export-spike` branch; this line is what keeps `master`
+        // compiling in the meantime.
+        //
+        // Until then a DOCX export carries the prose and none of the margin notes.
+        comments: DocumentComments::default(),
     }
 }
 
@@ -489,7 +505,11 @@ fn text_render(
             },
             images: html_images.clone(),
         })?,
-        ExportFormat::Latex => doc.to_latex_with_options("article", true, omit)?,
+        ExportFormat::Latex => doc.to_latex_with_options(text_document::LatexExportOptions {
+            document_class: "article".into(),
+            include_preamble: true,
+            omit_images: omit,
+        })?,
         other => return Err(anyhow!("{other:?} is not a text format")),
     })
 }
