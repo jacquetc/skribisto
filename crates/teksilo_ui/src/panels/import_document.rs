@@ -45,7 +45,7 @@ use crate::binder::create_labels::recommendation_label;
 use crate::models::import_merge_source::ImportMergeSource;
 use crate::models::import_plan_source::PlanRowView;
 use crate::view_models::import_document::{
-    ImportDocumentViewModel, LEVEL_TYPES, MergeRowView, ROW_TYPES, STEP_REVIEW,
+    ImportDocumentViewModel, LEVEL_TYPES, MergeRowView, ROW_TYPES, STEP_REVIEW, StrayProse,
 };
 use skribisto_model::reconcile::{RowAction, RowStatus};
 
@@ -622,6 +622,14 @@ fn merge_tree(vm: &ImportDocumentViewModel, source: ImportMergeSource) -> impl W
         .row_height(30.0)
 }
 
+/// What becomes of prose on a row that cannot hold it.
+fn stray_prose_label(choice: StrayProse) -> LocalizedString {
+    match choice {
+        StrayProse::AsParatext => tr!(import_document_stray_as_paratext()),
+        StrayProse::Discard => tr!(import_document_stray_discard()),
+    }
+}
+
 fn status_label(status: RowStatus, moved: bool) -> LocalizedString {
     if moved {
         return tr!(import_document_status_moved());
@@ -1110,6 +1118,34 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
     )
     .width(ColumnWidth::Fixed(80.0));
 
+    // Only ever populated for a row carrying prose its own type cannot hold — a Book, a Part
+    // or a folder, which store none. Blank everywhere else, because a column of empty combo
+    // boxes would suggest a decision exists on every row when it exists on almost none.
+    let stray_source = source.clone();
+    let stray_vm = vm.clone();
+    let stray = Column::new(
+        "stray",
+        tr!(import_document_col_stray_prose()),
+        move |_row: &PlanRowView, cx: &CellContext| {
+            let Some(key) = stray_source.key_at(cx.row_index) else {
+                return Box::new(Spacer::new()) as Box<dyn Widget>;
+            };
+            let Some(choice) = stray_vm.stray_prose_for(key) else {
+                return Box::new(Spacer::new());
+            };
+            let selected = Signal::new(Some(choice));
+            let pick = stray_vm.clone();
+            Box::new(
+                ComboBox::from_items(StrayProse::ALL.to_vec(), selected, |c: &StrayProse| {
+                    stray_prose_label(*c)
+                })
+                .variant(ComboBoxVariant::Plain)
+                .on_select(move |c: &StrayProse, _ctx| pick.set_stray_prose(key, *c)),
+            )
+        },
+    )
+    .width(ColumnWidth::Fixed(170.0));
+
     let has_rows = {
         let s = source.clone();
         source
@@ -1131,6 +1167,7 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
                 .add_column(flag)
                 .add_column(title)
                 .add_column(kind)
+                .add_column(stray)
                 .add_column(origin_col)
                 .add_column(words)
                 .add_column(breaks)

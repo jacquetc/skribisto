@@ -50,7 +50,7 @@ use skribisto_model::reconcile::{self, ExistingRow, IncomingRow, RowAction, RowS
 
 use super::long_op::{TrackedOp, event_id, parse_payload, payload_id};
 use crate::app_ids::AppIds;
-use crate::models::import_plan_source::{ImportPlanSource, PlanRowKey};
+use crate::models::import_plan_source::{ImportPlanSource, PlanRowKey, PlanRowView};
 use crate::toast_scope::ToastWorkExt;
 use crate::widgets::DestinationPicker;
 
@@ -320,6 +320,32 @@ pub struct ImportDocumentViewModel {
     merge_actions: Rc<RefCell<HashMap<MergeRowKey, RowAction>>>,
     /// Bumped whenever the merge is rebuilt, so the panel's table re-sources.
     merge_version: Signal<u64>,
+    /// What to do with a row whose prose its own type cannot hold — see [`StrayProse`].
+    stray_prose: Rc<RefCell<HashMap<PlanRowKey, StrayProse>>>,
+}
+
+/// What becomes of prose sitting on a row whose type cannot store it.
+///
+/// A Book, a Part or a folder holds no prose — the constraint matrix says so, and
+/// `apply_document_import` refuses such a row outright. A returning file produces exactly that
+/// shape whenever a book's front matter comes back: the paratext was a row of its own on the
+/// way out, its heading was never written, and on the way back its prose lands on the Book.
+///
+/// Until this existed the wizard simply stopped — Next greyed out, with the only remedies
+/// being to retype the Book into something that holds prose or to untick it, which is to say
+/// to drop the book. Neither is what the writer meant.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StrayProse {
+    /// Give the text a `Paratext` row of its own, just inside the row it arrived on. The
+    /// default, because it is what the writer had before they exported: a paratext.
+    AsParatext,
+    /// Create the row and drop the text.
+    Discard,
+}
+
+impl StrayProse {
+    /// Both choices, in the order the picker offers them.
+    pub const ALL: [StrayProse; 2] = [StrayProse::AsParatext, StrayProse::Discard];
 }
 
 /// A merge row's durable identity — what a decision is remembered against.
@@ -362,6 +388,7 @@ impl ImportDocumentViewModel {
         Self {
             app_ctx,
             ids,
+            stray_prose: Rc::new(RefCell::new(HashMap::new())),
             merge: Rc::new(RefCell::new(Vec::new())),
             merge_actions: Rc::new(RefCell::new(HashMap::new())),
             merge_version: Signal::new(0),
@@ -1198,16 +1225,48 @@ impl ImportDocumentViewModel {
 
     /// The included rows `apply_document_import` would refuse, by title.
     ///
-    /// Drives both the Import button's enabled state and the sentence that says why
-    /// it is off — a disabled button with no reason is worse than one that fails.
+    /// Drives both the Import button's enabled state and the sentence that says why it is off —
+    /// a disabled button with no reason is worse than one that fails.
+    ///
+    /// **Empty in practice, and deliberately still computed.** A row carrying prose its type
+    /// cannot hold used to stop the wizard here; it is now resolved per row by
+    /// [`StrayProse`], and `rows_to_create` splits the text into a `Paratext` of its own rather
+    /// than sending an illegal row. So nothing blocks any more — and this stays as the guard
+    /// that would notice if that split ever stopped happening, because the backend's own
+    /// refusal is an error dialog and this is a sentence beside the row it is about.
     pub fn blocking_rows(&self) -> Vec<String> {
         self.plan
             .keys_in_order()
             .into_iter()
             .filter(|k| self.is_included(*k))
             .filter(|k| !self.holds_its_prose(*k))
+            .filter(|k| self.stray_prose_for(*k).is_none())
             .filter_map(|k| self.plan.row(k).map(|r| r.title))
             .collect()
+    }
+
+    /// What will happen to this row's stray prose, or `None` if it has none.
+    ///
+    /// `Some` for every row that needs it, because there is always a resolution: the writer's
+    /// choice when they made one, and [`StrayProse::AsParatext`] otherwise. That is what turns
+    /// a dead end into a decision.
+    pub fn stray_prose_for(&self, key: PlanRowKey) -> Option<StrayProse> {
+        if self.holds_its_prose(key) {
+            return None;
+        }
+        Some(
+            self.stray_prose
+                .borrow()
+                .get(&key)
+                .copied()
+                .unwrap_or(StrayProse::AsParatext),
+        )
+    }
+
+    /// Record what the writer chose for one row's stray prose.
+    pub fn set_stray_prose(&self, key: PlanRowKey, choice: StrayProse) {
+        self.stray_prose.borrow_mut().insert(key, choice);
+        self.plan.touch();
     }
 
     // ── inclusion ───────────────────────────────────────────────────────────
@@ -1251,10 +1310,13 @@ impl ImportDocumentViewModel {
 
     /// Whether Import may be pressed.
     ///
-    /// Includes "no included row would be refused by the backend". `apply_document_import`
-    /// runs in one transaction and returns `Err` on the first row whose type cannot hold
-    /// its prose — so one bad row does not lose one row, it loses the whole import. The
-    /// review step is where that is still fixable, so it is refused here.
+    /// Includes "no included row would be refused by the backend" — see [`blocking_rows`],
+    /// which is empty in practice now that a row unable to hold its prose is resolved rather
+    /// than refused. Kept in the condition because `apply_document_import` runs in one
+    /// transaction and returns `Err` on the first such row: one bad row would not lose one
+    /// row, it would lose the whole import.
+    ///
+    /// [`blocking_rows`]: Self::blocking_rows
     pub fn can_apply(&self) -> bool {
         self.included_count() > 0
             && self.ids.work_id.get().is_some()
@@ -1336,31 +1398,78 @@ impl ImportDocumentViewModel {
                     Some(action @ (RowAction::TakeImport | RowAction::CommentsOnly))
                         if !tag.is_empty() =>
                     {
-                        Some(ApplyImportRow::Update {
+                        Some(vec![ApplyImportRow::Update {
                             target_uid_tag: tag,
                             replace_prose: action == RowAction::TakeImport,
-                            djot: row.djot,
+                            djot: row.djot.clone(),
                             comments,
-                        })
+                        }])
                     }
                     // Nothing is written for a row the writer is keeping as it is. There is no
                     // "leave it alone" instruction to send, and there does not need to be.
                     Some(RowAction::KeepCurrent | RowAction::Ignore) => None,
                     // `CreateNew`, or no decision at all — a first import, or a plan the writer
                     // accepted without ever reaching the reconcile step.
-                    _ => Some(ApplyImportRow::Create {
-                        indent: row.indent,
-                        kind: create_type_to_kind(kind),
-                        title: row.title,
-                        djot: row.djot,
-                        comments,
-                        // The row's own identity, handed back untouched for the same reason its
-                        // comments are.
-                        source_uid_tag: tag,
-                    }),
+                    _ => Some(self.created_rows_for(key, &row, kind, comments, tag)),
                 }
+                .map(|rows| rows)
             })
+            .flatten()
             .collect()
+    }
+
+    /// One plan row, as the one or two rows that will actually be created.
+    ///
+    /// Two when the row carries prose its own type cannot hold — a Book, a Part or a folder,
+    /// which store none. `apply_document_import` refuses such a row outright, and a returning
+    /// file produces exactly that shape whenever a book's front matter comes home: the paratext
+    /// was a row of its own on the way out, its heading was never written, and on the way back
+    /// its prose lands on the Book.
+    ///
+    /// So the text gets a `Paratext` row of its own, one level inside the row it arrived on —
+    /// which is what the writer had before they exported — and the container is created empty.
+    /// Or the text is dropped, if that is what they chose. Until this existed the wizard simply
+    /// stopped, with the only remedies being to retype the Book or to untick it, which is to say
+    /// to drop the book.
+    ///
+    /// The comments go with the prose rather than with the container: a comment points into a
+    /// passage, and the passage is what moves.
+    fn created_rows_for(
+        &self,
+        key: PlanRowKey,
+        row: &PlanRowView,
+        kind: CreateType,
+        comments: Vec<ImportComment>,
+        tag: String,
+    ) -> Vec<ApplyImportRow> {
+        let container = |djot: String, comments: Vec<ImportComment>| ApplyImportRow::Create {
+            indent: row.indent,
+            kind: create_type_to_kind(kind),
+            title: row.title.clone(),
+            djot,
+            comments,
+            // The row's own identity, handed back untouched for the same reason its comments
+            // are: the review step edits titles and types, never which row a passage *is*.
+            source_uid_tag: tag.clone(),
+        };
+
+        match self.stray_prose_for(key) {
+            None => vec![container(row.djot.clone(), comments)],
+            Some(StrayProse::Discard) => vec![container(String::new(), Vec::new())],
+            Some(StrayProse::AsParatext) => vec![
+                container(String::new(), Vec::new()),
+                ApplyImportRow::Create {
+                    indent: row.indent + 1,
+                    kind: create_type_to_kind(CreateType::Paratext),
+                    title: row.title.clone(),
+                    djot: row.djot.clone(),
+                    comments,
+                    // The mark named the *container*, and the container has it. A paratext
+                    // minted here is a row this import is creating, not one it is bringing home.
+                    source_uid_tag: String::new(),
+                },
+            ],
+        }
     }
 
     // ── reconcile ───────────────────────────────────────────────────────────
@@ -2513,78 +2622,98 @@ mod tests {
 
     /// Worst first. A file that could not be opened at all must not sit under
     /// three notes about footnotes.
-    /// **Regression.** Retyping a row into something that cannot hold its prose must
-    /// stop the import, mark the row, and say so.
+    /// Retyping a row into something that cannot hold its prose still *marks* it, and the
+    /// marker still clears when it is put right.
     ///
-    /// `apply_document_import` runs in one transaction and returns `Err` on the first
-    /// such row — so pressing Import lost the *whole* import, however many files it
-    /// covered. The plan's own `illegal-combination` diagnostic was computed once at
-    /// analysis time and never recomputed, so the strip reported the pre-retype state,
-    /// no marker appeared, and the button stayed enabled. The review step is where this
-    /// is still fixable.
+    /// It no longer stops the import — the prose is given a paratext instead — but the writer
+    /// still has to be told, because a row silently sprouting a child is a surprise. The
+    /// diagnostic was once computed only at analysis time, so the strip reported the pre-retype
+    /// state and no marker ever appeared; that is what this pins.
     #[test]
-    fn retyping_a_row_so_it_cannot_hold_its_prose_stops_the_import() {
+    fn retyping_a_row_so_it_cannot_hold_its_prose_marks_it() {
         let vm = vm();
-        assert!(
-            vm.blocking_rows().is_empty(),
-            "the fixture starts out applyable"
-        );
+        assert!(vm.diagnostics_for_row(PlanRowKey(2)).is_empty());
 
         // Scene A carries prose; a Part cannot hold any.
         vm.retype_row(PlanRowKey(2), CreateType::Part);
-
-        assert_eq!(
-            vm.blocking_rows(),
-            vec!["Scene A".to_string()],
-            "the offending row must be named, so the writer can find it"
-        );
-        assert!(
-            !vm.can_apply(),
-            "Import must refuse rather than lose the batch"
-        );
         assert_eq!(
             vm.diagnostics_for_row(PlanRowKey(2)).len(),
             1,
-            "and the row must be marked in the tree"
+            "the row must be marked in the tree"
+        );
+        assert!(
+            vm.blocking_rows().is_empty(),
+            "marked, but not a dead end — there is a resolution"
         );
 
-        // Retyping it back clears all three.
+        // Retyping it back clears the marker and the resolution alike.
         vm.retype_row(PlanRowKey(2), CreateType::Scene);
-        assert!(vm.blocking_rows().is_empty());
-        assert!(
-            vm.diagnostics_for_row(PlanRowKey(2)).is_empty(),
-            "a row put right must lose its marker too"
-        );
+        assert!(vm.diagnostics_for_row(PlanRowKey(2)).is_empty());
+        assert_eq!(vm.stray_prose_for(PlanRowKey(2)), None);
     }
 
-    /// **Regression.** A blocking row must stop the writer on Review, not two
-    /// steps later on a page that cannot explain it.
-    ///
-    /// What the writer met: a Book row carrying prose — the ordinary shape of
-    /// "import a book" — walked through Review, through Destination, and then sat
-    /// there with a chosen destination and a grey Import button. The cause was
-    /// real and the refusal correct, but it was stated on a page they had left,
-    /// so the button simply looked broken. Review is where a row can be retyped
-    /// or unticked, so Review is where the flow stops.
     #[test]
-    fn a_blocking_row_holds_the_writer_on_the_review_step() {
+    fn a_row_that_cannot_hold_its_prose_no_longer_stops_the_writer() {
         let vm = vm();
         let gate = vm.can_proceed_from_review_signal();
-        assert!(gate.get(), "an applyable plan may go on to Destination");
+        assert!(gate.get());
 
         vm.retype_row(PlanRowKey(2), CreateType::Part);
         assert!(
-            !gate.get(),
-            "a row the backend would refuse must hold Next, where it is fixable"
+            gate.get(),
+            "there is a resolution for this row, so it is not a dead end"
         );
+        assert!(vm.blocking_rows().is_empty());
+        assert_eq!(
+            vm.stray_prose_for(PlanRowKey(2)),
+            Some(StrayProse::AsParatext)
+        );
+    }
 
-        // Both ways out of it re-open the gate, reactively.
-        vm.set_included(PlanRowKey(2), false);
-        assert!(gate.get(), "unticking the row is one way out");
-        vm.set_included(PlanRowKey(2), true);
-        assert!(!gate.get());
-        vm.retype_row(PlanRowKey(2), CreateType::Scene);
-        assert!(gate.get(), "retyping it is the other");
+    /// And what that resolution actually produces: the container, empty, with the text just
+    /// inside it as a paratext — the shape the writer had before they exported.
+    #[test]
+    fn stray_prose_becomes_a_paratext_inside_the_row_it_arrived_on() {
+        let vm = vm();
+        vm.retype_row(PlanRowKey(2), CreateType::Part);
+
+        let rows = vm.rows_to_create();
+        let titles: Vec<(String, i64, bool)> = rows
+            .iter()
+            .filter_map(|r| match r {
+                ApplyImportRow::Create {
+                    title,
+                    indent,
+                    djot,
+                    ..
+                } => Some((title.clone(), *indent, djot.trim().is_empty())),
+                _ => None,
+            })
+            .collect();
+
+        let at = titles
+            .iter()
+            .position(|(t, _, empty)| t == "Scene A" && *empty)
+            .expect("the container is created, and holds no prose");
+        let (_, container_indent, _) = titles[at];
+        let (child_title, child_indent, child_empty) = titles[at + 1].clone();
+        assert_eq!(child_title, "Scene A", "the paratext is named for its row");
+        assert_eq!(child_indent, container_indent + 1, "just inside it");
+        assert!(!child_empty, "and it is where the prose went");
+    }
+
+    /// The other choice: drop the text and keep the row.
+    #[test]
+    fn discarding_stray_prose_creates_the_row_alone() {
+        let vm = vm();
+        vm.retype_row(PlanRowKey(2), CreateType::Part);
+        vm.set_stray_prose(PlanRowKey(2), StrayProse::Discard);
+
+        let created = vm.rows_to_create().len();
+        assert_eq!(
+            created, 5,
+            "one row per plan row — the text is gone, not given a home"
+        );
     }
 
     /// The strip's rows are the view-model's own, written on every diagnostics
@@ -2611,32 +2740,37 @@ mod tests {
         assert_eq!(rows.len(), 0, "a reset empties the strip too");
     }
 
-    /// A row the writer unticked is never created, so it cannot block anything.
+    /// A row the writer unticked is never created, so it needs no resolution either.
     #[test]
-    fn an_excluded_row_does_not_block_the_import() {
+    fn an_excluded_row_is_not_split() {
         let vm = vm();
         vm.retype_row(PlanRowKey(2), CreateType::Part);
-        assert!(!vm.blocking_rows().is_empty());
-
         vm.set_included(PlanRowKey(2), false);
+
+        let rows = vm.rows_to_create();
         assert!(
-            vm.blocking_rows().is_empty(),
-            "excluding the row removes the reason to refuse"
+            !rows.iter().any(|r| matches!(
+                r,
+                ApplyImportRow::Create { title, .. } if title == "Scene A"
+            )),
+            "an unticked row produces nothing at all, split or otherwise: {rows:#?}"
         );
     }
 
-    /// The same trap reached the other way: a *bulk* level rule can make a whole
-    /// level illegal at once, and it must be caught the same way a single retype is.
+    /// The same shape reached the other way: a *bulk* level rule can make a whole level unable
+    /// to hold its prose at once, and every row it touched is resolved the same way one retype
+    /// is.
     #[test]
-    fn a_bulk_level_rule_that_breaks_rows_stops_the_import_too() {
+    fn a_bulk_level_rule_resolves_every_row_it_breaks() {
         let vm = vm();
         vm.set_level_rule(3, CreateType::Part);
-        assert_eq!(
-            vm.blocking_rows(),
-            vec!["Scene A".to_string(), "Scene B".to_string()],
-            "every row the rule touched"
-        );
-        assert!(!vm.can_apply());
+
+        assert!(vm.blocking_rows().is_empty(), "none of them is a dead end");
+        for key in [PlanRowKey(2), PlanRowKey(3)] {
+            assert_eq!(vm.stray_prose_for(key), Some(StrayProse::AsParatext));
+        }
+        // Two containers plus two paratexts, on top of the three rows that were always fine.
+        assert_eq!(vm.rows_to_create().len(), 7);
     }
 
     #[test]

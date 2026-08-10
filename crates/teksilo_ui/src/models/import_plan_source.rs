@@ -324,6 +324,16 @@ impl ImportPlanSource {
             .set(self.inner.version.get().wrapping_add(1));
     }
 
+    /// Bump the version without changing the rows.
+    ///
+    /// For state the view-model owns *about* a row rather than in it — the stray-prose choice —
+    /// which the review tree still has to re-read when it changes.
+    pub fn touch(&self) {
+        self.inner
+            .version
+            .set(self.inner.version.get().wrapping_add(1));
+    }
+
     fn has_children(&self, key: PlanRowKey) -> bool {
         let rows = self.inner.rows.borrow();
         let Some(at) = rows.iter().position(|r| r.key == key) else {
