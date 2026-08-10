@@ -312,6 +312,74 @@ impl ApplyDocumentImportUseCase {
         let mut updated_comments: Vec<(Comment, Comment)> = Vec::new();
         let mut updated_replies: Vec<(CommentReply, CommentReply)> = Vec::new();
 
+        // ── Rows the returning file brings home to ones already here ──────────────────
+        //
+        // Run before the creations, and touching nothing they touch: an update names a row
+        // that is already in the binder, at its own depth, and takes no part in the splice
+        // below. The two passes are disjoint by construction — a row is either one the mark
+        // matched or one it did not.
+        let by_tag = items_by_uid_tag(uow.as_mut(), &order)?;
+        for row in &rows {
+            let ApplyImportRow::Update {
+                target_uid_tag,
+                replace_prose,
+                djot,
+                comments,
+            } = row
+            else {
+                continue;
+            };
+
+            // A tag naming no row in this binder is not an error to abort the whole import
+            // over: the writer may have deleted the chapter locally between exporting and
+            // reading the file back, which is an ordinary thing to do. The row is skipped and
+            // the rest of the import lands.
+            let Some(&item_id) = by_tag.get(target_uid_tag.as_str()) else {
+                continue;
+            };
+
+            let content_id = prose_content_of(uow.as_mut(), item_id)?;
+            let Some(content_id) = content_id else {
+                // The row holds no prose row to write into or anchor against. Creating one
+                // here would be a different operation than the writer asked for.
+                continue;
+            };
+
+            if *replace_prose {
+                let mut content = uow
+                    .get_content_multi(&[content_id])?
+                    .into_iter()
+                    .flatten()
+                    .next()
+                    .ok_or_else(|| {
+                        anyhow!("apply_document_import: content {content_id} vanished mid-import")
+                    })?;
+                content.data = djot.clone();
+                content.updated_at = now;
+                uow.update_content(&content)?;
+            }
+
+            for comment in comments {
+                let outcome = create_or_update_comment(
+                    uow.as_mut(),
+                    comment,
+                    content_id,
+                    now,
+                    &ExistingComments {
+                        comments: &existing_comments_by_uid,
+                        replies: &existing_replies_by_uid,
+                        reply_owner: &reply_owner_by_uid,
+                        by_tag: &existing_comments_by_tag,
+                    },
+                    &mut updated_comments,
+                    &mut updated_replies,
+                )?;
+                if outcome.newly_created {
+                    created_comment_ids.push(outcome.id);
+                }
+            }
+        }
+
         for row in &rows {
             let ApplyImportRow::Create {
                 indent,
