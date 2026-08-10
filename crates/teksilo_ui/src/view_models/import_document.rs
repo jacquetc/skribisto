@@ -25,6 +25,7 @@
 //! whichever window happened to be built first.
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
@@ -45,6 +46,7 @@ use frontend::import_management::{
 use document_ingest::plan::{PlannedComment, PlannedRow};
 use document_ingest::{ImportPlan, ScannerRegistry};
 use skribisto_model::CreateType;
+use skribisto_model::reconcile::{self, ExistingRow, IncomingRow, RowAction, RowStatus};
 
 use super::long_op::{TrackedOp, event_id, parse_payload, payload_id};
 use crate::app_ids::AppIds;
@@ -297,6 +299,56 @@ pub struct ImportDocumentViewModel {
     progress: Signal<f32>,
     /// The backend's own progress line — which file it is reading.
     progress_message: Signal<String>,
+
+    /// The plan lined up against what the destination already holds, rebuilt whenever the
+    /// destination changes.
+    ///
+    /// Empty until the writer leaves the destination step, because it *cannot* be computed
+    /// before then: matching a returning file against the project is a question about a
+    /// particular subtree, and there is no answer until one is chosen.
+    merge: Rc<RefCell<Vec<MergeRowView>>>,
+    /// What the writer decided for each merge row, keyed by the row's own durable key.
+    ///
+    /// Keyed by [`MergeRowKey`] and never by position: going Back and choosing a different
+    /// destination rebuilds the whole sequence, and decisions keyed by an index would be
+    /// silently reassigned to other rows.
+    merge_actions: Rc<RefCell<HashMap<MergeRowKey, RowAction>>>,
+    /// Bumped whenever the merge is rebuilt, so the panel's table re-sources.
+    merge_version: Signal<u64>,
+}
+
+/// A merge row's durable identity — what a decision is remembered against.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum MergeRowKey {
+    /// A row the project holds: its `BinderItem.uid`.
+    Current(uuid::Uuid),
+    /// A row only the returning file has: its key in the plan.
+    Incoming(PlanRowKey),
+}
+
+/// One line of the merge, as the reconcile step shows it.
+#[derive(Clone, Debug)]
+pub struct MergeRowView {
+    pub key: MergeRowKey,
+    /// Depth in the current tree, so the first column can draw a real outline.
+    pub indent: i64,
+    /// The project's row: its title and the item it is. `None` when the editor added this row.
+    pub current_title: Option<String>,
+    pub current_item_id: Option<u64>,
+    /// The returning file's row. `None` when the file no longer has it.
+    pub incoming_title: Option<String>,
+    pub incoming_key: Option<PlanRowKey>,
+    pub status: RowStatus,
+    /// The editor moved it — see [`skribisto_model::reconcile::MergeRow::moved`].
+    pub moved: bool,
+    pub actions: Vec<RowAction>,
+}
+
+impl MergeRowView {
+    /// Whether a side-by-side comparison is meaningful: both sides have prose to show.
+    pub fn can_compare(&self) -> bool {
+        self.current_item_id.is_some() && self.incoming_key.is_some()
+    }
 }
 
 impl ImportDocumentViewModel {
@@ -305,6 +357,9 @@ impl ImportDocumentViewModel {
         Self {
             app_ctx,
             ids,
+            merge: Rc::new(RefCell::new(Vec::new())),
+            merge_actions: Rc::new(RefCell::new(HashMap::new())),
+            merge_version: Signal::new(0),
             files: ListModel::new(),
             file_count: Signal::new(0),
             controller: StepperController::new(STEP_COUNT),
@@ -1021,6 +1076,109 @@ impl ImportDocumentViewModel {
             })
     }
 
+    /// The rows the chosen destination already holds, in stream order.
+    ///
+    /// The *subtree*, not the whole binder: dropping into a chapter reconciles against that
+    /// chapter's own rows, and matching a returning chapter against the entire manuscript
+    /// would let a title guess reach across the book. A binder destination is the whole
+    /// binder, which is the same rule with the root as the anchor.
+    ///
+    /// Read live from the backend rather than from a cached model: the binder can change
+    /// between the writer analysing an import and accepting it, and a merge computed against a
+    /// stale tree would offer to update rows that have moved.
+    fn destination_rows(&self) -> Vec<(DestinationItem, ExistingRow)> {
+        use frontend::commands::{binder_commands, binder_item_commands};
+        use frontend::common::direct_access::binder::BinderRelationshipField;
+
+        let Some(dest) = self.destination.selected() else {
+            return Vec::new();
+        };
+        let ids = binder_commands::get_binder_relationship(
+            &self.app_ctx,
+            &dest.binder_id,
+            &BinderRelationshipField::BinderItems,
+        )
+        .unwrap_or_default();
+        let by_id: HashMap<u64, _> =
+            binder_item_commands::get_binder_item_multi(&self.app_ctx, &ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .map(|it| (it.id, it))
+                .collect();
+
+        // "X plus every following item with a strictly greater indent" — the binder has no
+        // parent/child graph, only an ordered stream and a depth, and this is what a subtree
+        // means in it. Same rule `binder_ordering` states for move and restore.
+        let ordered: Vec<_> = ids.iter().filter_map(|id| by_id.get(id)).collect();
+        let scope: Vec<_> = match dest.anchor_item_id {
+            Some(anchor) => match ordered.iter().position(|it| it.id == anchor) {
+                Some(at) => {
+                    let depth = ordered[at].indent;
+                    ordered[at + 1..]
+                        .iter()
+                        .take_while(|it| it.indent > depth)
+                        .copied()
+                        .collect()
+                }
+                None => Vec::new(),
+            },
+            None => ordered.iter().copied().collect(),
+        };
+
+        scope
+            .into_iter()
+            // A trashed row is not part of the manuscript, and offering to update one would
+            // quietly bring it back.
+            .filter(|it| it.activated && !it.uid.is_nil())
+            // A row whose (role, sub_role) is not in the constraint matrix cannot be
+            // named by the vocabulary the plan speaks, so it cannot be paired with anything
+            // the file brings — it is left out rather than guessed at.
+            .filter_map(|it| {
+                let create_type = CreateType::of(&it.role, &it.sub_role)?;
+                Some((
+                    DestinationItem {
+                        id: it.id,
+                        uid: it.uid,
+                        title: it.title.clone(),
+                        indent: it.indent,
+                    },
+                    ExistingRow {
+                        uid_tag: skribisto_model::round_trip::uid_tag(&it.uid),
+                        title: it.title.clone(),
+                        create_type,
+                        digest: digest_of_djot(&self.item_prose(it.id).unwrap_or_default()),
+                    },
+                ))
+            })
+            .collect()
+    }
+
+    /// The prose stored on one binder item, if it has any.
+    fn item_prose(&self, item_id: u64) -> Option<String> {
+        use frontend::commands::{binder_item_commands, content_commands};
+        use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
+        use frontend::common::entities::ContentRole;
+
+        let ids = binder_item_commands::get_binder_item_relationship(
+            &self.app_ctx,
+            &item_id,
+            &BinderItemRelationshipField::Contents,
+        )
+        .ok()?;
+        content_commands::get_content_multi(&self.app_ctx, &ids)
+            .ok()?
+            .into_iter()
+            .flatten()
+            .find(|c| {
+                matches!(
+                    c.role,
+                    ContentRole::SceneText | ContentRole::NoteText | ContentRole::ParatextText
+                )
+            })
+            .map(|c| c.data)
+    }
+
     /// How this project encodes a Chapter. Read live rather than cached: it is a
     /// per-`Work` setting, and this view-model outlives any one analysis.
     fn chapter_mode(&self) -> frontend::common::entities::ChapterMode {
@@ -1133,12 +1291,26 @@ impl ImportDocumentViewModel {
         Ok(result.created_ids)
     }
 
-    /// The accepted rows, in plan order, carrying whatever the writer retyped.
+    /// The rows the import would write, in plan order, carrying whatever the writer decided.
     ///
-    /// Public so a test can assert on exactly what would be created without
-    /// needing a store behind it — the thing that is expensive to check any other
-    /// way, and the thing a mistake here would silently get wrong.
+    /// Two shapes come out of here, and which one a row takes is the reconcile step's whole
+    /// output: a row the returning file brings home to one the project already has becomes an
+    /// `Update` naming it; everything else becomes a `Create`. A row the writer chose to leave
+    /// alone becomes nothing at all — the same way an unticked row does.
+    ///
+    /// Public so a test can assert on exactly what would be written without needing a store
+    /// behind it — the thing that is expensive to check any other way, and the thing a mistake
+    /// here would silently get wrong.
     pub fn rows_to_create(&self) -> Vec<ApplyImportRow> {
+        // What the reconcile step decided, if the writer got that far. Keyed by the plan row
+        // each decision is about, so the walk below stays in plan order.
+        let decided: HashMap<PlanRowKey, RowAction> = self
+            .merge
+            .borrow()
+            .iter()
+            .filter_map(|m| Some((m.incoming_key?, self.action_for(m))))
+            .collect();
+
         self.plan
             .keys_in_order()
             .into_iter()
@@ -1146,23 +1318,175 @@ impl ImportDocumentViewModel {
             .filter_map(|key| {
                 let row = self.plan.row(key)?;
                 let kind = self.plan.type_of(key)?;
-                Some(ApplyImportRow::Create {
-                    indent: row.indent,
-                    kind: create_type_to_kind(kind),
-                    title: row.title,
-                    djot: row.djot,
-                    // Handed straight back as they arrived. The writer reviews
-                    // *rows*, and retyping a title or a type cannot move a comment:
-                    // its quote was measured against this row's prose, and the prose
-                    // is what the review step never edits.
-                    comments: row.comments.iter().map(comment_to_dto).collect(),
-                    // The row's own identity, handed back untouched for the same reason its
-                    // comments are: the review step edits titles and types, never which row
-                    // a passage *is*.
-                    source_uid_tag: row.source_uid_tag.clone().unwrap_or_default(),
-                })
+                // Handed straight back as they arrived. The writer reviews *rows*, and
+                // retyping a title or a type cannot move a comment: its quote was measured
+                // against this row's prose, and the prose is what the review step never edits.
+                let comments: Vec<_> = row.comments.iter().map(comment_to_dto).collect();
+                let tag = row.source_uid_tag.clone().unwrap_or_default();
+
+                match decided.get(&key).copied() {
+                    // Bring it home to the row it came from. `TakeImport` wants the editor's
+                    // wording as well as their remarks; `CommentsOnly` wants only the remarks,
+                    // which is the case this whole feature exists for.
+                    Some(action @ (RowAction::TakeImport | RowAction::CommentsOnly))
+                        if !tag.is_empty() =>
+                    {
+                        Some(ApplyImportRow::Update {
+                            target_uid_tag: tag,
+                            replace_prose: action == RowAction::TakeImport,
+                            djot: row.djot,
+                            comments,
+                        })
+                    }
+                    // Nothing is written for a row the writer is keeping as it is. There is no
+                    // "leave it alone" instruction to send, and there does not need to be.
+                    Some(RowAction::KeepCurrent | RowAction::Ignore) => None,
+                    // `CreateNew`, or no decision at all — a first import, or a plan the writer
+                    // accepted without ever reaching the reconcile step.
+                    _ => Some(ApplyImportRow::Create {
+                        indent: row.indent,
+                        kind: create_type_to_kind(kind),
+                        title: row.title,
+                        djot: row.djot,
+                        comments,
+                        // The row's own identity, handed back untouched for the same reason its
+                        // comments are.
+                        source_uid_tag: tag,
+                    }),
+                }
             })
             .collect()
+    }
+
+    // ── reconcile ───────────────────────────────────────────────────────────
+
+    /// Line the plan up against what the chosen destination already holds.
+    ///
+    /// Called on the way *into* the reconcile step, and rebuilt on every entry: the writer may
+    /// go back and choose a different destination, and the whole question is about a
+    /// particular subtree. Decisions already made survive, because they are keyed by
+    /// [`MergeRowKey`] rather than by position.
+    pub fn rebuild_merge(&self) {
+        let existing = self.destination_rows();
+        let incoming: Vec<(PlanRowKey, IncomingRow)> = self
+            .plan
+            .keys_in_order()
+            .into_iter()
+            .filter(|k| self.is_included(*k))
+            .filter_map(|key| {
+                let row = self.plan.row(key)?;
+                let kind = self.plan.type_of(key)?;
+                Some((
+                    key,
+                    IncomingRow {
+                        source_uid_tag: row.source_uid_tag.clone(),
+                        source_digest: row.source_digest.clone(),
+                        title: row.title.clone(),
+                        create_type: kind,
+                        digest: digest_of_djot(&row.djot),
+                    },
+                ))
+            })
+            .collect();
+
+        let incoming_rows: Vec<IncomingRow> = incoming.iter().map(|(_, r)| r.clone()).collect();
+        let existing_rows: Vec<ExistingRow> = existing.iter().map(|(_, r)| r.clone()).collect();
+        let aligned = reconcile::align(&existing_rows, &incoming_rows);
+
+        let mut out = Vec::with_capacity(aligned.len());
+        for m in aligned {
+            let cur = m.current.and_then(|j| existing.get(j));
+            let inc = m.incoming.and_then(|i| incoming.get(i));
+            let key = match (cur, inc) {
+                (Some((item, _)), _) => MergeRowKey::Current(item.uid),
+                (None, Some((k, _))) => MergeRowKey::Incoming(*k),
+                (None, None) => continue,
+            };
+            out.push(MergeRowView {
+                key,
+                indent: cur.map(|(item, _)| item.indent).unwrap_or(0),
+                current_title: cur.map(|(item, _)| item.title.clone()),
+                current_item_id: cur.map(|(item, _)| item.id),
+                incoming_title: inc.map(|(_, r)| r.title.clone()),
+                incoming_key: inc.map(|(k, _)| *k),
+                status: m.status,
+                moved: m.moved,
+                actions: m.actions,
+            });
+        }
+
+        *self.merge.borrow_mut() = out;
+        // Decisions for rows that are no longer in the sequence are dropped, so a destination
+        // the writer tried and abandoned cannot leave an instruction behind.
+        let live: std::collections::HashSet<MergeRowKey> =
+            self.merge.borrow().iter().map(|m| m.key).collect();
+        self.merge_actions
+            .borrow_mut()
+            .retain(|k, _| live.contains(k));
+        self.merge_version.set(self.merge_version.get() + 1);
+    }
+
+    /// The merge sequence, for the reconcile step's table.
+    pub fn merge_rows(&self) -> Vec<MergeRowView> {
+        self.merge.borrow().clone()
+    }
+
+    /// Bumped whenever [`rebuild_merge`](Self::rebuild_merge) runs.
+    pub fn merge_version(&self) -> Signal<u64> {
+        self.merge_version.clone()
+    }
+
+    /// What will happen to this row: the writer's choice, or the safe default for its shape.
+    pub fn action_for(&self, row: &MergeRowView) -> RowAction {
+        self.merge_actions
+            .borrow()
+            .get(&row.key)
+            .copied()
+            .unwrap_or_else(|| row.actions.first().copied().unwrap_or(RowAction::Ignore))
+    }
+
+    /// Record what the writer chose for one row.
+    pub fn set_action(&self, key: MergeRowKey, action: RowAction) {
+        self.merge_actions.borrow_mut().insert(key, action);
+        self.merge_version.set(self.merge_version.get() + 1);
+    }
+
+    /// Whether the returning file has anything to reconcile against at all.
+    ///
+    /// False for a first import into an empty destination, where every row is new and a table
+    /// of identical "create it" dropdowns would be a page of ceremony saying nothing.
+    pub fn has_anything_to_reconcile(&self) -> bool {
+        self.merge
+            .borrow()
+            .iter()
+            .any(|m| m.current_item_id.is_some())
+    }
+
+    /// How many rows the returning file brings home rather than adds.
+    pub fn matched_count(&self) -> usize {
+        self.merge
+            .borrow()
+            .iter()
+            .filter(|m| m.current_item_id.is_some() && m.incoming_key.is_some())
+            .count()
+    }
+
+    /// The prose on either side of one row, for the compare view.
+    ///
+    /// `(what the project holds, what the file brings)`. Either may be empty — a row present on
+    /// only one side has nothing to show on the other, and the view says so rather than
+    /// pretending the passage was deleted or invented.
+    pub fn compare_prose(&self, row: &MergeRowView) -> (String, String) {
+        let current = row
+            .current_item_id
+            .and_then(|id| self.item_prose(id))
+            .unwrap_or_default();
+        let incoming = row
+            .incoming_key
+            .and_then(|k| self.plan.row(k))
+            .map(|r| r.djot)
+            .unwrap_or_default();
+        (current, incoming)
     }
 
     /// Say that `created` rows landed, and offer to take them back.
@@ -1260,6 +1584,28 @@ impl ImportDocumentViewModel {
         let has_dest = has_dest.as_signal();
         plan_v.zip(&has_dest).map(move |_| me.can_apply())
     }
+}
+
+/// One row of the destination, as the merge view needs to name it.
+#[derive(Clone, Debug)]
+pub struct DestinationItem {
+    pub id: u64,
+    pub uid: uuid::Uuid,
+    pub title: String,
+    pub indent: i64,
+}
+
+/// The digest of a row's prose, over its plain reading.
+///
+/// Through the same `djot_plain_text` the exporter used when it wrote the mark, so the two
+/// sides of a three-way comparison are measured the same way. A row whose Djot will not parse
+/// digests as empty rather than failing the merge — an unreadable row is one the writer needs
+/// to see, not one the wizard should refuse to show them.
+fn digest_of_djot(djot: &str) -> String {
+    let plain = skrib_format::djot_plain_text(djot)
+        .map(|(t, _)| t)
+        .unwrap_or_default();
+    skribisto_model::round_trip::digest(&plain)
 }
 
 /// The level → type table the analysis's own rows imply.
