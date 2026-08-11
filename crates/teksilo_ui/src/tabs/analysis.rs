@@ -40,13 +40,13 @@ use super::shared::{CHART_HEIGHT, STRIP_HEIGHT, wide_chart};
 use super::{Boxed, ContentTab};
 use crate::view_models::{AnalysisCategory, AnalysisState, AnalysisViewModel};
 
-/// The bar and its `Switcher` are still matched by **position** — that is
-/// `SegmentedControl`'s contract — but neither is written out by hand: both are built from
-/// one pass over [`all_categories`], so a category cannot exist as a segment without its
-/// body or land at a different index in the two. A compile-time assert on the built-in
-/// count could never have seen that hazard, because the hazard only exists once a category
-/// is contributed; `the_bar_and_the_switcher_agree` pins it at runtime for exactly that
-/// case.
+// The bar and its `Switcher` are still matched by **position** — that is
+// `SegmentedControl`'s contract — but neither is written out by hand: both are built from
+// one pass over [`all_categories`], so a category cannot exist as a segment without its
+// body or land at a different index in the two. A compile-time assert on the built-in
+// count could never have seen that hazard, because the hazard only exists once a category
+// is contributed; `the_bar_and_the_switcher_agree` pins it at runtime for exactly that
+// case.
 
 /// Builds a registered category's body from the view-model and the finished analysis.
 pub type CategoryViewFn = Rc<dyn Fn(&AnalysisViewModel, &BookAnalysisResultDto) -> Box<dyn Widget>>;
