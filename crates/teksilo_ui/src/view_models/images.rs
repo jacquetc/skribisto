@@ -214,7 +214,7 @@ pub fn set_cover(
     stack_id: Option<u64>,
     work_id: Option<u64>,
     image: Option<&PendingImage>,
-) -> Result<(), ()> {
+) -> anyhow::Result<()> {
     use frontend::commands::{asset_commands, work_commands};
     use frontend::common::direct_access::work::WorkRelationshipField;
 
@@ -230,10 +230,8 @@ pub fn set_cover(
                 app_ctx,
                 &work_id,
                 &WorkRelationshipField::Assets,
-            )
-            .map_err(|_| ())?;
-            asset_commands::get_asset_multi(app_ctx, &ids)
-                .map_err(|_| ())?
+            )?;
+            asset_commands::get_asset_multi(app_ctx, &ids)?
                 .into_iter()
                 .flatten()
                 .collect::<Vec<_>>()
@@ -252,7 +250,7 @@ pub fn set_cover(
         }
         let mut dto = to_update(asset);
         dto.is_cover = false;
-        asset_commands::update_asset(app_ctx, stack_id, &dto).map_err(|_| ())?;
+        asset_commands::update_asset(app_ctx, stack_id, &dto)?;
     }
 
     let Some(image) = image else {
@@ -266,7 +264,7 @@ pub fn set_cover(
         if !asset.is_cover {
             let mut dto = to_update(asset);
             dto.is_cover = true;
-            asset_commands::update_asset(app_ctx, stack_id, &dto).map_err(|_| ())?;
+            asset_commands::update_asset(app_ctx, stack_id, &dto)?;
         }
         return Ok(());
     }
@@ -290,7 +288,6 @@ pub fn set_cover(
         -1,
     )
     .map(|_| ())
-    .map_err(|_| ())
 }
 
 /// An `UpdateAssetDto` carrying an asset's current values, for a caller about to

@@ -140,7 +140,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Some(tab.format.clone()),
                     Some(tab.typewriter.clone()),
                     Some(tab.caret_band()),
-                Some(tab.writing_games()),
+                    Some(tab.writing_games()),
                     // No view-state ports: a stream is many editors on one page,
                     // so "the caret of this tab" has no single answer here. Same
                     // reason the synopsis rows below take no handle sink.
@@ -177,7 +177,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Some(tab.format.clone()),
                     Some(tab.typewriter.clone()),
                     Some(tab.caret_band()),
-                Some(tab.writing_games()),
+                    Some(tab.writing_games()),
                     // The synopsis is its own `Content` row with its own threads —
                     // see the prose column above.
                     own_comments.clone().map(|b| b.with_gutter(gutter.clone())),

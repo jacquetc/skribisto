@@ -57,9 +57,7 @@ pub(in crate::settings) fn games_pane(
         .label_gap(16.0)
         .row_spacing(14.0)
         .full_width(group(tr!(settings_group_games_forward())))
-        .full_width(
-            Toggle::new(games.always_forward()).label(tr!(settings_games_forward_toggle())),
-        )
+        .full_width(Toggle::new(games.always_forward()).label(tr!(settings_games_forward_toggle())))
         .full_width(hint(tr!(settings_games_forward_hint())))
         // The session warning is the whole reason this pane reads differently
         // from every other one: everything else in this window is remembered.

@@ -119,8 +119,7 @@ fn write(djot: &str, ext: &str, dir: &Path) -> PathBuf {
 }
 
 fn scan(bytes: &[u8], ext: &str) -> SourceDocument {
-    ScannerRegistry::with_builtin_scanners()
-        .scan_bytes(Path::new(&format!("book.{ext}")), bytes)
+    ScannerRegistry::with_builtin_scanners().scan_bytes(Path::new(&format!("book.{ext}")), bytes)
 }
 
 /// A temporary directory of this test's own, removed on the way out.
@@ -336,7 +335,13 @@ fn through_libreoffice(path: &Path, filter: &str, ext: &str, dir: &Path) -> Opti
             "-env:UserInstallation=file://{}",
             profile.to_string_lossy()
         ))
-        .args(["--headless", "--norestore", "--convert-to", filter, "--outdir"])
+        .args([
+            "--headless",
+            "--norestore",
+            "--convert-to",
+            filter,
+            "--outdir",
+        ])
         .arg(&outdir)
         .arg(path)
         .status()

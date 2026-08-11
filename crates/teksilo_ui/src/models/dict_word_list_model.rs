@@ -168,6 +168,10 @@ mod imp {
             self.inner.model.len()
         }
 
+        pub fn is_empty(&self) -> bool {
+            self.len() == 0
+        }
+
         /// Create the given words under `owner_id` in a single undoable step
         /// (`create_dict_word_multi`), returning the new ids. No-op (empty) when
         /// `words` is empty or no project is open. The backend's `Created` event
@@ -345,6 +349,10 @@ mod imp {
 
         pub fn len(&self) -> usize {
             self.inner.model.len()
+        }
+
+        pub fn is_empty(&self) -> bool {
+            self.len() == 0
         }
 
         /// Fabricated add: no backend, so mutate the in-memory list directly (and

@@ -79,7 +79,7 @@ pub fn user_dictionary_pane(ctx: &mut BuildContext, vm: &UserDictionaryViewModel
     // an empty bordered box reads as "broken", a hint reads as "nothing here yet".
     let empty_idx = {
         let vm = vm.clone();
-        vm.changed_signal().map(move |_| usize::from(vm.len() == 0))
+        vm.changed_signal().map(move |_| usize::from(vm.is_empty()))
     };
     let list_card = Panel::new()
         .background(SurfaceRole::Content)

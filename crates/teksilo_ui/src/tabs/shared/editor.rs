@@ -18,9 +18,7 @@ use teksilo::text_document::TextDocument;
 use teksilo::text_document::{Color as DocColor, HighlightFormat};
 use teksilo::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use teksilo::widgets::SplitterModel;
-use teksilo::widgets::rich_text::{
-    EditCommandKind, EditorHandle, RichTextEditor, ScrollPolicy,
-};
+use teksilo::widgets::rich_text::{EditCommandKind, EditorHandle, RichTextEditor, ScrollPolicy};
 use teksilo::widgets::{
     Button, ButtonVariant, Checkbox, Expand, FixedSize, GroupHeader, HStack, IconButton,
     IconWidget, MaxSize, MenuItem, MenuList, Padding, Panel, RectWidget, Switcher, TextInput,
@@ -3346,8 +3344,7 @@ mod tests {
         let doc = TextDocument::new();
         let _ =
             doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(60));
-        let (editor, _handle) =
-            card_synopsis_editor(
+        let (editor, _handle) = card_synopsis_editor(
             doc,
             test_typo(),
             || {},

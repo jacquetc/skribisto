@@ -57,8 +57,11 @@ pub fn search_preview_dock(
     dock_id: DockWidgetId,
 ) -> DockWidget {
     DockWidget::new(dock_id, tr!(search_preview()), move |_id| {
-        FocusScope::new(TraversalScopePolicy::Continue)
-            .child(PreviewBody::new(vm.clone(), format.clone(), games.clone()))
+        FocusScope::new(TraversalScopePolicy::Continue).child(PreviewBody::new(
+            vm.clone(),
+            format.clone(),
+            games.clone(),
+        ))
     })
     .icon(crate::icons::activity::search_preview_icon)
     .show_header(false)

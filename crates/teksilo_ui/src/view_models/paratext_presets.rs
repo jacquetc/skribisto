@@ -116,6 +116,10 @@ impl ParatextPresetsViewModel {
         ParatextPresetsService::bundled().len() + self.inner.service.raw_user_presets().len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// The TOML a bundled preset is made of, so *duplicate and edit* has something to
     /// start from. Bundled presets are read-only, and this is how a writer bases their
     /// own on one rather than retyping it.

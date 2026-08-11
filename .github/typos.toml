@@ -107,3 +107,32 @@ variantes = "variantes"
 
 # "Big Sur" — macOS release name in the README.
 Sur = "Sur"
+
+# ── Words the checker only started flagging after its dictionary grew past the
+#    version CI pins (`crate-ci/typos@v1.44.0` in `spelling.yml`). Each was
+#    checked by hand and is deliberate; they are listed here so the tree stays
+#    green when that pin is bumped, rather than the bump arriving as 73 findings.
+#
+#    `ODF` is the OpenDocument Format, named ~60 times across the import/export
+#    code because that code is written against what real producers of the format
+#    emit. The rest are single sites: `capitulo` is the unaccented Spanish and
+#    Portuguese spelling, offered beside `capítulo` in the title-word vocabulary
+#    on purpose; `signes`/`espaces` are French (*signes espaces compris*, the
+#    feuillet's own definition) quoted beside the German and Japanese ones;
+#    `seeked` is the past tense this codebase uses for the verb *seek*.
+ODF = "ODF"
+odf = "odf"
+capitulo = "capitulo"
+signes = "signes"
+espaces = "espaces"
+seeked = "seeked"
+
+# ── Deliberately wrong strings, like the fixtures at the top of this file, but
+#    reached by the newer dictionary: `Secon` is a block truncated mid-word by a
+#    test asserting exactly that; `goin` is a UI string quoted in a comment
+#    *after* it ellipsised ("300 versions recorded, goin…"), which is the bug
+#    the comment describes; `tolerence` is a misspelled settings key written by
+#    the test that proves an unknown key is refused with a did-you-mean.
+Secon = "Secon"
+goin = "goin"
+tolerence = "tolerence"

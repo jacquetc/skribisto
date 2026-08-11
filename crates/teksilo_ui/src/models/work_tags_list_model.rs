@@ -229,6 +229,10 @@ mod imp {
             self.inner.model.len()
         }
 
+        pub fn is_empty(&self) -> bool {
+            self.len() == 0
+        }
+
         /// The row whose name collides with `candidate`, ignoring case and surrounding
         /// space, excluding `exclude` (the tag being renamed never collides with itself).
         pub fn colliding_name(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {
@@ -501,6 +505,10 @@ mod imp {
 
         pub fn len(&self) -> usize {
             self.inner.model.len()
+        }
+
+        pub fn is_empty(&self) -> bool {
+            self.len() == 0
         }
 
         pub fn colliding_name(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {

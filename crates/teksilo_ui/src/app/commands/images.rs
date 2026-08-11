@@ -110,7 +110,7 @@ fn register_cover(ctx: &mut BuildContext, deps: &CommandDeps) {
                     Ok(()) => c.show_toast(
                         Toast::success(tr!(cover_set())).scoped_id("images.cover", i.work_id.get()),
                     ),
-                    Err(()) => c.show_toast(
+                    Err(_) => c.show_toast(
                         Toast::error(tr!(image_not_recorded()))
                             .scoped_id("images.failed", i.work_id.get()),
                     ),
@@ -129,7 +129,7 @@ fn register_cover(ctx: &mut BuildContext, deps: &CommandDeps) {
                 Ok(()) => c.show_toast(
                     Toast::success(tr!(cover_cleared())).scoped_id("images.cover", i.work_id.get()),
                 ),
-                Err(()) => c.show_toast(
+                Err(_) => c.show_toast(
                     Toast::error(tr!(image_not_recorded()))
                         .scoped_id("images.failed", i.work_id.get()),
                 ),

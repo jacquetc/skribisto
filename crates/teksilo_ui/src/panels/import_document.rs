@@ -246,7 +246,9 @@ impl Widget for ImportDocumentPanel {
                 variant: PanelVariant::Raised
                 corner_radius: 10.0
                 padding: 12.0
-                Expand::vertical { child: stepper }
+                Expand::vertical {
+                    child: stepper
+                }
             }
         });
         self.root_child = Some(root);
@@ -724,7 +726,9 @@ impl Widget for ComparePanel {
                         style: TextStyleRole::Small
                         color: TextRole::Secondary
                     }
-                    Expand::vertical { child: editor }
+                    Expand::vertical {
+                        child: editor
+                    }
                     HStack {
                         Spacer
                         Button::new(tr!(import_document_compare_close())) {
@@ -1751,5 +1755,4 @@ mod tests {
                 .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
         }
     }
-
 }

@@ -251,6 +251,10 @@ mod imp {
             self.inner.model.len()
         }
 
+        pub fn is_empty(&self) -> bool {
+            self.len() == 0
+        }
+
         pub fn colliding_name(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {
             super::colliding_name(&self.rows(), candidate, exclude)
         }
@@ -580,6 +584,10 @@ mod imp {
 
         pub fn len(&self) -> usize {
             self.inner.model.len()
+        }
+
+        pub fn is_empty(&self) -> bool {
+            self.len() == 0
         }
 
         pub fn colliding_name(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {

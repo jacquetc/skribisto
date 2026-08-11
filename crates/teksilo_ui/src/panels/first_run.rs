@@ -89,7 +89,9 @@ impl Widget for FirstRunPanel {
                         }
                     }
                 }
-                Expand::horizontal { Divider }
+                Expand::horizontal {
+                    Divider
+                }
                 Expand::vertical {
                     Padding::symmetric(14.0, 20.0) {
                         VStack {
@@ -116,7 +118,9 @@ impl Widget for FirstRunPanel {
                         }
                     }
                 }
-                Expand::horizontal { Divider }
+                Expand::horizontal {
+                    Divider
+                }
                 Expand::horizontal {
                     Padding::symmetric(12.0, 20.0) {
                         child: buttons

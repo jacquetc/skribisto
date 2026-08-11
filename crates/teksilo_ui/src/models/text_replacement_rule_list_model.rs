@@ -194,6 +194,10 @@ mod imp {
             self.inner.model.len()
         }
 
+        pub fn is_empty(&self) -> bool {
+            self.len() == 0
+        }
+
         /// The trigger a candidate collides with, ignoring case and surrounding
         /// space, excluding `exclude`.
         pub fn colliding_trigger(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {
@@ -467,6 +471,10 @@ mod imp {
 
         pub fn len(&self) -> usize {
             self.inner.model.len()
+        }
+
+        pub fn is_empty(&self) -> bool {
+            self.len() == 0
         }
 
         pub fn colliding_trigger(&self, candidate: &str, exclude: Option<u64>) -> Option<String> {

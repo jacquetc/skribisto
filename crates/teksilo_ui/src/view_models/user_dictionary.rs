@@ -82,6 +82,10 @@ impl UserDictionaryViewModel {
         self.list.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Exact-case membership of the trimmed word.
     pub fn contains(&self, word: &str) -> bool {
         self.list.contains(word.trim())

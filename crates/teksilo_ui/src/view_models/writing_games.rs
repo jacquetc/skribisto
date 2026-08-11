@@ -231,7 +231,10 @@ mod tests {
         vm.forward_in_prose().set(false);
         vm.forward_in_synopsis().set(true);
         assert_eq!(vm.filter_for(EditorKind::Prose), CommandFilter::All);
-        assert_eq!(vm.filter_for(EditorKind::Synopsis), CommandFilter::ForwardOnly);
+        assert_eq!(
+            vm.filter_for(EditorKind::Synopsis),
+            CommandFilter::ForwardOnly
+        );
     }
 
     #[test]
