@@ -946,6 +946,29 @@ impl Widget for Inspector {
                             );
                     }
                 }
+                // Contributed sections last, after everything this application
+                // builds. Same order as the container bar and the Analysis bar:
+                // a registration adds to the panel, it never displaces what the
+                // writer already knows is at the top of it.
+                //
+                // Each is given the focused item whole and the live handles —
+                // never anything captured at registration, which would be a
+                // second, permanently empty store. Filtered by `shows_on`, so a
+                // section says nothing under a row it has nothing to say about.
+                let cx = crate::docks::inspector_sections::InspectorContext {
+                    app_ctx: &self.app_ctx,
+                    ids: &self.outline.ids(),
+                    item: &d,
+                };
+                for section in crate::docks::inspector_sections::registered_for(&d.sub_role) {
+                    col = col
+                        .child(
+                            TextWidget::new((section.label)())
+                                .style(TextStyleRole::Tiny)
+                                .color(TextRole::Secondary),
+                        )
+                        .child(crate::tabs::Boxed::new((section.view)(&cx)));
+                }
                 Box::new(Padding::symmetric(16.0, 16.0).child(col))
             }
         };

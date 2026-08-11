@@ -406,6 +406,7 @@ pub mod footnotes;
 pub mod format;
 pub mod games;
 pub mod inspector;
+pub mod inspector_sections;
 pub mod outline;
 pub mod outline_card;
 pub mod search;
