@@ -18,6 +18,12 @@
 //! Categories that don't yet carry settings (today only Menus & Toolbars) render
 //! an **empty placeholder**. Keymap embeds Teksilo's `ShortcutSettings`;
 //! Notifications embeds the toast archive `NotificationLog`.
+//!
+//! A **parent** — a section, or the nested Typography group — is a page in its own
+//! right: its title, what it is for, and a link to each thing under it
+//! (`panes::overview`). Selecting one used to switch nothing at all, so the right
+//! pane went on showing whichever leaf was open last and the window disagreed with
+//! its own tree.
 //! **Instant-apply** (the macOS / GNOME convention): every change takes effect and
 //! persists immediately, so there is no Apply/Cancel/OK staged model. The footer
 //! carries only *Reset to defaults* (left — enabled only while something differs
@@ -80,7 +86,7 @@ const TEXT_SCALE_DEFAULT: f32 = 1.0;
 
 // ── Category tree model ──────────────────────────────────────────────────────
 
-/// A selectable settings page (a tree *leaf* → its own pane).
+/// A selectable settings page — a tree *leaf*, or a *parent's own* landing page.
 ///
 /// Identity is [`Pane::id`], a stable string — **not** the discriminant. The
 /// discriminant used to be the page's `Switcher` slot, which made "append, never
@@ -92,8 +98,17 @@ const TEXT_SCALE_DEFAULT: f32 = 1.0;
 /// The string id is what an extension-contributed page would carry, since it cannot be
 /// given a variant here; giving the built-ins one now means the two kinds are already
 /// addressed the same way.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+///
+/// A parent is a variant here rather than a separate concept so that it *is* a page
+/// everywhere — the tree, the `Switcher`, the search index and the selection signal
+/// all take it without a second code path, exactly as [`Pane::Extension`] does.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 enum Pane {
+    /// A top-level section's own page: its title and a link to each page under
+    /// it (a nested group counts as one entry, linking to its own page).
+    Section(Sec),
+    /// A nested group's own page — same shape as a section's, one level in.
+    Group(GroupKind),
     Appearance,
     MenusToolbars,
     Notifications,
@@ -162,6 +177,11 @@ impl Pane {
     /// namespace its own (`"ext.style"`).
     fn id(self) -> &'static str {
         match self {
+            // Prefixed, because a parent and one of its pages may well share a
+            // word: Backup & Sync already holds a page called Backups, and
+            // "backup" can only mean one of them.
+            Pane::Section(s) => s.id(),
+            Pane::Group(g) => g.id(),
             Pane::Appearance => "appearance",
             Pane::MenusToolbars => "menus-toolbars",
             Pane::Notifications => "notifications",
@@ -199,6 +219,11 @@ impl Pane {
 
     fn label(self) -> LocalizedString {
         match self {
+            // The Work section's row and page read "Work: `<title>`"; the title
+            // is not the enum's to know, so the two places that show it compose
+            // it themselves (`build_tree`'s row closure, `section_title`).
+            Pane::Section(s) => s.label(),
+            Pane::Group(g) => g.label(),
             Pane::Appearance => tr!(settings_page_appearance()),
             Pane::MenusToolbars => tr!(settings_page_menus()),
             Pane::Notifications => tr!(settings_page_notifications()),
@@ -239,10 +264,66 @@ impl Pane {
             Pane::DistractionFreeThemes => tr!(settings_page_distraction_free_themes()),
         }
     }
+
+    /// The one line that says what is on this page — the gloss under its link on
+    /// its parent's page, and (for a parent) the lead under its own title.
+    ///
+    /// `None` only for an extension's page: [`crate::settings_ext::SettingsPage`]
+    /// carries a label and no description, and giving it one would break every
+    /// downstream construction of that struct for a line the app cannot write
+    /// itself. A link with nothing under it is the honest rendering.
+    fn description(self) -> Option<LocalizedString> {
+        Some(match self {
+            Pane::Section(s) => s.description(),
+            Pane::Group(g) => g.description(),
+            Pane::Appearance => tr!(settings_desc_appearance()),
+            Pane::MenusToolbars => tr!(settings_desc_menus()),
+            Pane::Notifications => tr!(settings_desc_notifications()),
+            Pane::SceneTypography => tr!(settings_desc_scene()),
+            Pane::SynopsisTypography => tr!(settings_desc_synopsis()),
+            Pane::NotesTypography => tr!(settings_desc_notes()),
+            Pane::EditorBehavior => tr!(settings_desc_editor_behavior()),
+            Pane::Goals => tr!(settings_desc_goals()),
+            Pane::Games => tr!(settings_desc_games()),
+            Pane::Corkboard => tr!(settings_desc_corkboard()),
+            Pane::Dictionaries => tr!(settings_desc_dictionaries()),
+            Pane::Autosave => tr!(settings_desc_autosave()),
+            Pane::ExportFormats => tr!(settings_desc_export()),
+            Pane::Paratext => tr!(settings_desc_paratext()),
+            Pane::Keymap => tr!(settings_desc_keymap()),
+            Pane::WorkStructure => tr!(settings_desc_structure()),
+            Pane::WorkPunctuation => tr!(settings_desc_work_punctuation()),
+            Pane::Punctuation => tr!(settings_desc_punctuation()),
+            Pane::Backup => tr!(settings_desc_backup()),
+            Pane::WorkBackup => tr!(settings_desc_work_backup()),
+            Pane::WorkLanguage => tr!(settings_desc_language()),
+            Pane::WorkDictionary => tr!(settings_desc_personal_dictionary()),
+            Pane::WorkTags => tr!(settings_desc_tags()),
+            Pane::WorkTemplates => tr!(settings_desc_templates()),
+            Pane::WorkAuthor => tr!(settings_desc_author()),
+            Pane::WorkTextReplacements => tr!(settings_desc_text_replacements()),
+            Pane::Spellcheck => tr!(settings_desc_spellcheck()),
+            Pane::DistractionFree => tr!(settings_desc_distraction_free()),
+            Pane::DistractionFreeThemes => tr!(settings_desc_distraction_free_themes()),
+            Pane::Extension(_) => return None,
+        })
+    }
+
+    /// Leading icon in the tree: every section, plus the top-level Keymap leaf
+    /// (design shows no icons on the indented sub-pages, groups included).
+    fn icon(self) -> Option<IconWidget> {
+        let svg = match self {
+            Pane::Section(s) => s.icon_svg(),
+            Pane::Keymap => res!("assets/icons/settings/keymap.svg"),
+            _ => return None,
+        };
+        Some(IconWidget::from_svg_icon(svg).icon_size(16.0))
+    }
 }
 
-/// A parent category (a tree *branch* → expands to its pages; no pane of its own).
-#[derive(Clone, Copy)]
+/// A top-level category — a tree *branch*, and (since it has children to list) a
+/// page of its own.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 enum Sec {
     AppearanceBehaviour,
     Editor,
@@ -262,6 +343,20 @@ enum Sec {
 }
 
 impl Sec {
+    /// Stable identity of the section's own page — `section-`-prefixed, see
+    /// [`Pane::id`].
+    fn id(self) -> &'static str {
+        match self {
+            Sec::AppearanceBehaviour => "section-appearance-behaviour",
+            Sec::Editor => "section-editor",
+            Sec::Spelling => "section-spelling",
+            Sec::BackupSync => "section-backup-sync",
+            Sec::CompileExport => "section-compile-export",
+            Sec::Work => "section-work",
+            Sec::Extensions => "section-extensions",
+        }
+    }
+
     fn label(self) -> LocalizedString {
         match self {
             Sec::AppearanceBehaviour => tr!(settings_sec_appearance_behaviour()),
@@ -271,6 +366,19 @@ impl Sec {
             Sec::CompileExport => tr!(settings_sec_compile()),
             Sec::Work => tr!(settings_sec_work()),
             Sec::Extensions => tr!(settings_sec_extensions()),
+        }
+    }
+
+    /// The lead line under the section's title on its own page.
+    fn description(self) -> LocalizedString {
+        match self {
+            Sec::AppearanceBehaviour => tr!(settings_desc_sec_appearance_behaviour()),
+            Sec::Editor => tr!(settings_desc_sec_editor()),
+            Sec::Spelling => tr!(settings_desc_sec_spelling()),
+            Sec::BackupSync => tr!(settings_desc_sec_backup()),
+            Sec::CompileExport => tr!(settings_desc_sec_compile()),
+            Sec::Work => tr!(settings_desc_sec_work()),
+            Sec::Extensions => tr!(settings_desc_sec_extensions()),
         }
     }
 
@@ -293,58 +401,267 @@ impl Sec {
 /// for a cluster of pages that would otherwise crowd their section's flat
 /// list. Currently only Editor ▸ Typography: Scene / Synopsis / Notes /
 /// Corkboard / Distraction-free (the shared Typeface/Size/Line height/
-/// First-line indent shape) plus the Distraction-free theme library. No pane
-/// of its own (expands only, like [`Sec`]) and no icon (design shows icons
-/// only on top-level sections plus the Keymap leaf — a nested group is
-/// indented like any other sub-page).
-#[derive(Clone, Copy)]
+/// First-line indent shape) plus the Distraction-free theme library. It has a
+/// page of its own, like a section, and no icon (design shows icons only on
+/// top-level sections plus the Keymap leaf — a nested group is indented like any
+/// other sub-page).
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 enum GroupKind {
     Typography,
 }
 
 impl GroupKind {
+    /// Stable identity of the group's own page — `group-`-prefixed, see
+    /// [`Pane::id`].
+    fn id(self) -> &'static str {
+        match self {
+            GroupKind::Typography => "group-typography",
+        }
+    }
+
     fn label(self) -> LocalizedString {
         match self {
             GroupKind::Typography => tr!(settings_group_typography()),
         }
     }
+
+    /// The lead line under the group's title on its own page.
+    fn description(self) -> LocalizedString {
+        match self {
+            GroupKind::Typography => tr!(settings_desc_group_typography()),
+        }
+    }
 }
 
-/// A node in the category tree: a parent section, a nested group, or a leaf page.
-#[derive(Clone, Copy)]
-enum Node {
-    Section(Sec),
-    Group(GroupKind),
+// ── The category tree, as data ───────────────────────────────────────────────
+
+/// One entry under a section: a page, or a nested group with pages of its own.
+#[derive(Clone)]
+enum Branch {
+    Page(Pane),
+    Group(GroupKind, Vec<Pane>),
+}
+
+/// One top-level row of the tree: a section with its branches, or a page that is
+/// a root in its own right (Keymap).
+#[derive(Clone)]
+enum Root {
+    Section(Sec, Vec<Branch>),
     Page(Pane),
 }
 
-impl Node {
-    fn label(self) -> LocalizedString {
-        match self {
-            Node::Section(s) => s.label(),
-            Node::Group(g) => g.label(),
-            Node::Page(p) => p.label(),
-        }
+/// **The** shape of the category tree — order, nesting and membership, in one place.
+///
+/// Three readers derive everything they need from this: the `TreeView`'s model
+/// ([`SettingsPanel::build_tree`]), the "reveal the page we opened at" expansion
+/// ([`ancestors_of`]), and each parent's own page, which lists what is under it
+/// ([`children_of`]). They used to hold that knowledge separately — a `section_of`
+/// match written out by hand beside the insert calls — which is how a page ends up
+/// in the tree but missing from its parent's list, or reachable but never revealed.
+///
+/// `has_work` adds the open project's section; `extension_pages` are the ids
+/// `settings_ext` has registered, in registration order (empty ⇒ no Extensions
+/// section at all, so an install with no extensions gets exactly the tree it had).
+fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec<Root> {
+    let mut roots = vec![
+        Root::Section(
+            Sec::AppearanceBehaviour,
+            vec![
+                Branch::Page(Pane::Appearance),
+                Branch::Page(Pane::MenusToolbars),
+                Branch::Page(Pane::Notifications),
+            ],
+        ),
+        Root::Section(
+            Sec::Editor,
+            vec![
+                // The five typography-shaped pages (Scene / Synopsis / Notes /
+                // Corkboard / Distraction-free — all four fields plus
+                // font/size/line-height/indent), and the Distraction-free theme
+                // library, live under their own nested group rather than as six
+                // more flat siblings in an already-crowded Editor list.
+                Branch::Group(
+                    GroupKind::Typography,
+                    vec![
+                        Pane::SceneTypography,
+                        Pane::SynopsisTypography,
+                        Pane::NotesTypography,
+                        Pane::Corkboard,
+                        Pane::DistractionFree,
+                        Pane::DistractionFreeThemes,
+                    ],
+                ),
+                Branch::Page(Pane::EditorBehavior),
+                // Beside Editor Behavior: the other set of switches that change
+                // what happens as the writer types, rather than how the page looks.
+                Branch::Page(Pane::Punctuation),
+                Branch::Page(Pane::Goals),
+                // Beside Goals: both are about what the writer is asking of
+                // themselves while drafting, rather than about how the page looks.
+                Branch::Page(Pane::Games),
+            ],
+        ),
+        Root::Section(
+            Sec::Spelling,
+            vec![
+                Branch::Page(Pane::Spellcheck),
+                Branch::Page(Pane::Dictionaries),
+            ],
+        ),
+        Root::Section(
+            Sec::BackupSync,
+            vec![Branch::Page(Pane::Autosave), Branch::Page(Pane::Backup)],
+        ),
+        Root::Section(
+            Sec::CompileExport,
+            vec![
+                Branch::Page(Pane::ExportFormats),
+                Branch::Page(Pane::Paratext),
+            ],
+        ),
+        Root::Page(Pane::Keymap),
+    ];
+
+    // The open project's own section (multi-project-ready): shown only when a Work
+    // is open, labelled "Work: `<title>`" by whoever renders it.
+    if has_work {
+        roots.push(Root::Section(
+            Sec::Work,
+            vec![
+                // Author leads the section: it is the one field about the *book*
+                // rather than about how the app handles it.
+                Branch::Page(Pane::WorkAuthor),
+                Branch::Page(Pane::WorkStructure),
+                Branch::Page(Pane::WorkLanguage),
+                Branch::Page(Pane::WorkBackup),
+                Branch::Page(Pane::WorkDictionary),
+                Branch::Page(Pane::WorkTags),
+                // Beside the tag palette: the other per-project catalogue the
+                // writer curates and that travels inside the `.skrib`.
+                Branch::Page(Pane::WorkTemplates),
+                // Beside the personal dictionary and the tag palette: the third
+                // per-project vocabulary the writer curates.
+                Branch::Page(Pane::WorkTextReplacements),
+                // Next to the lexicon: the other thing that rewrites prose as it
+                // is typed, and the other one that travels inside the `.skrib`.
+                Branch::Page(Pane::WorkPunctuation),
+            ],
+        ));
     }
 
-    /// Leading icon: every section, plus the top-level Keymap leaf (design shows
-    /// no icons on the indented sub-pages, which includes the nested `Group`s).
-    fn icon(self) -> Option<IconWidget> {
-        let svg = match self {
-            Node::Section(s) => s.icon_svg(),
-            Node::Page(Pane::Keymap) => res!("assets/icons/settings/keymap.svg"),
-            Node::Group(_) | Node::Page(_) => return None,
+    // Anything an extension registered, last and only when there is something.
+    if !extension_pages.is_empty() {
+        roots.push(Root::Section(
+            Sec::Extensions,
+            extension_pages
+                .iter()
+                .map(|id| Branch::Page(Pane::Extension(id)))
+                .collect(),
+        ));
+    }
+
+    roots
+}
+
+/// Every page linked from `parent`'s own page, in tree order.
+///
+/// A section lists its pages, a nested group counted as **one** entry (linking to
+/// the group's own page rather than flattening six pages into its parent's list);
+/// a group lists its pages. Anything that is not a parent has no children.
+fn children_of(spec: &[Root], parent: Pane) -> Vec<Pane> {
+    for root in spec {
+        let Root::Section(sec, branches) = root else {
+            continue;
         };
-        Some(IconWidget::from_svg_icon(svg).icon_size(16.0))
-    }
-
-    /// The pane a leaf selects; `None` for a parent section or nested group
-    /// (expands only).
-    fn pane(self) -> Option<Pane> {
-        match self {
-            Node::Page(p) => Some(p),
-            Node::Section(_) | Node::Group(_) => None,
+        if parent == Pane::Section(*sec) {
+            return branches
+                .iter()
+                .map(|b| match b {
+                    Branch::Page(p) => *p,
+                    Branch::Group(g, _) => Pane::Group(*g),
+                })
+                .collect();
         }
+        for branch in branches {
+            if let Branch::Group(g, pages) = branch
+                && parent == Pane::Group(*g)
+            {
+                return pages.clone();
+            }
+        }
+    }
+    Vec::new()
+}
+
+/// The rows that must be expanded for `pane`'s own row to be visible — its
+/// section, then its group if it sits in one. Empty for a root.
+fn ancestors_of(spec: &[Root], pane: Pane) -> Vec<Pane> {
+    for root in spec {
+        let Root::Section(sec, branches) = root else {
+            continue;
+        };
+        for branch in branches {
+            match branch {
+                Branch::Page(p) if *p == pane => return vec![Pane::Section(*sec)],
+                Branch::Group(g, pages) => {
+                    if pane == Pane::Group(*g) {
+                        return vec![Pane::Section(*sec)];
+                    }
+                    if pages.contains(&pane) {
+                        return vec![Pane::Section(*sec), Pane::Group(*g)];
+                    }
+                }
+                Branch::Page(_) => {}
+            }
+        }
+    }
+    Vec::new()
+}
+
+/// Every pane the tree places, parents included — the `Switcher` must carry a
+/// body for each, and nothing may appear twice.
+fn all_panes(spec: &[Root]) -> Vec<Pane> {
+    let mut out = Vec::new();
+    for root in spec {
+        match root {
+            Root::Page(p) => out.push(*p),
+            Root::Section(sec, branches) => {
+                out.push(Pane::Section(*sec));
+                for branch in branches {
+                    match branch {
+                        Branch::Page(p) => out.push(*p),
+                        Branch::Group(g, pages) => {
+                            out.push(Pane::Group(*g));
+                            out.extend(pages.iter().copied());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Jumping to a page from somewhere other than its own tree row: a search
+/// suggestion, or a link on a parent's page.
+///
+/// Both have to do the same two things — move the tree's highlight and switch the
+/// right-hand pane — and a per-project page resolves to no tree node at all when
+/// nothing is open, in which case the pane still switches, landing on that page's
+/// "no project" placeholder. Correct either way.
+#[derive(Clone)]
+struct Navigator {
+    selection: KeyedSelectionModel<NodeId>,
+    nodes: Rc<HashMap<Pane, NodeId>>,
+    selected_pane: Signal<Pane>,
+}
+
+impl Navigator {
+    fn go(&self, pane: Pane) {
+        if let Some(id) = self.nodes.get(&pane) {
+            self.selection.select(*id);
+        }
+        self.selected_pane.set(pane);
     }
 }
 
@@ -607,6 +924,21 @@ fn empty_content(icon: &'static SvgIcon) -> impl Widget {
     )
 }
 
+/// A section's displayed title — static, except the open project's, which reads
+/// "Work: `<title>`".
+///
+/// Composed per resolve rather than once, so a runtime locale switch reaches the
+/// "Work" half of it (the project's own title is data and stays as typed).
+fn section_title(sec: Sec, work_title: &str) -> LocalizedString {
+    match sec {
+        Sec::Work => {
+            let title = work_title.to_string();
+            localized(move || format!("{}: {}", tr!(settings_sec_work()).resolve_now(), title))
+        }
+        other => other.label(),
+    }
+}
+
 /// A full empty pane (breadcrumb + placeholder).
 fn empty_pane(
     parent: Option<LocalizedString>,
@@ -685,234 +1017,96 @@ impl SettingsPanel {
 
     // The per-page bodies live in `settings_panel::panes` — one module per page.
     // This impl keeps only the shell: the category tree, the search field and the footer.
-    /// The category tree (left rail). Builds the `TreeModel`, seeds selection to
-    /// the active page, and wires selection → `selected_pane`. Returns the
-    /// `TreeView`, the search's page→node map, and the model for lookups.
+    /// The category tree (left rail). Walks `spec` into a `TreeModel`, seeds
+    /// selection to the active page, and wires selection → `selected_pane`.
+    /// Returns the `TreeView`, its selection model, and the page → node map every
+    /// other way of reaching a page goes through ([`Navigator`]).
+    ///
+    /// `work_title` fills the Work section's row label; it is ignored when the
+    /// spec carries no Work section.
     fn build_tree(
         &self,
         ctx: &mut BuildContext,
+        spec: &[Root],
+        work_title: String,
     ) -> (
         impl Widget,
         KeyedSelectionModel<NodeId>,
         HashMap<Pane, NodeId>,
     ) {
-        let model: TreeModel<Node> = TreeModel::new();
+        let model: TreeModel<Pane> = TreeModel::new();
         let mut nodes: HashMap<Pane, NodeId> = HashMap::new();
 
-        let ab = model.insert_root(0, Node::Section(Sec::AppearanceBehaviour));
-        nodes.insert(
-            Pane::Appearance,
-            model.insert_child(ab, 0, Node::Page(Pane::Appearance)),
-        );
-        nodes.insert(
-            Pane::MenusToolbars,
-            model.insert_child(ab, 1, Node::Page(Pane::MenusToolbars)),
-        );
-        nodes.insert(
-            Pane::Notifications,
-            model.insert_child(ab, 2, Node::Page(Pane::Notifications)),
-        );
-
-        let ed = model.insert_root(1, Node::Section(Sec::Editor));
-        // The five typography-shaped pages (Scene / Synopsis / Notes / Corkboard /
-        // Distraction-free — all four fields + font/size/line-height/indent), plus
-        // the Distraction-free theme library, live under their own nested
-        // "Typography" group rather than as six more flat siblings in an
-        // already-crowded Editor list.
-        let typo_group = model.insert_child(ed, 0, Node::Group(GroupKind::Typography));
-        nodes.insert(
-            Pane::SceneTypography,
-            model.insert_child(typo_group, 0, Node::Page(Pane::SceneTypography)),
-        );
-        nodes.insert(
-            Pane::SynopsisTypography,
-            model.insert_child(typo_group, 1, Node::Page(Pane::SynopsisTypography)),
-        );
-        nodes.insert(
-            Pane::NotesTypography,
-            model.insert_child(typo_group, 2, Node::Page(Pane::NotesTypography)),
-        );
-        nodes.insert(
-            Pane::Corkboard,
-            model.insert_child(typo_group, 3, Node::Page(Pane::Corkboard)),
-        );
-        nodes.insert(
-            Pane::DistractionFree,
-            model.insert_child(typo_group, 4, Node::Page(Pane::DistractionFree)),
-        );
-        nodes.insert(
-            Pane::DistractionFreeThemes,
-            model.insert_child(typo_group, 5, Node::Page(Pane::DistractionFreeThemes)),
-        );
-        nodes.insert(
-            Pane::EditorBehavior,
-            model.insert_child(ed, 1, Node::Page(Pane::EditorBehavior)),
-        );
-        // Beside Editor Behavior: the other set of switches that change what
-        // happens as the writer types, rather than how the page looks.
-        nodes.insert(
-            Pane::Punctuation,
-            model.insert_child(ed, 2, Node::Page(Pane::Punctuation)),
-        );
-        nodes.insert(
-            Pane::Goals,
-            model.insert_child(ed, 3, Node::Page(Pane::Goals)),
-        );
-        // Beside Goals: both are about what the writer is asking of themselves
-        // while drafting, rather than about how the page looks.
-        nodes.insert(
-            Pane::Games,
-            model.insert_child(ed, 4, Node::Page(Pane::Games)),
-        );
-
-        let sp = model.insert_root(2, Node::Section(Sec::Spelling));
-        nodes.insert(
-            Pane::Spellcheck,
-            model.insert_child(sp, 0, Node::Page(Pane::Spellcheck)),
-        );
-        nodes.insert(
-            Pane::Dictionaries,
-            model.insert_child(sp, 1, Node::Page(Pane::Dictionaries)),
-        );
-
-        let bk = model.insert_root(3, Node::Section(Sec::BackupSync));
-        nodes.insert(
-            Pane::Autosave,
-            model.insert_child(bk, 0, Node::Page(Pane::Autosave)),
-        );
-        nodes.insert(
-            Pane::Backup,
-            model.insert_child(bk, 1, Node::Page(Pane::Backup)),
-        );
-
-        let ce = model.insert_root(4, Node::Section(Sec::CompileExport));
-        nodes.insert(
-            Pane::ExportFormats,
-            model.insert_child(ce, 0, Node::Page(Pane::ExportFormats)),
-        );
-        nodes.insert(
-            Pane::Paratext,
-            model.insert_child(ce, 1, Node::Page(Pane::Paratext)),
-        );
-
-        nodes.insert(Pane::Keymap, model.insert_root(5, Node::Page(Pane::Keymap)));
-
-        // The open project's own section (multi-project-ready): shown only when a
-        // Work is open, labelled "Work: `<title>`". Read through THIS window's own
-        // `WorkSession::single_work` (never `ctx.app_state`, see this struct's
-        // `session` field doc).
-        let work_title = Some(&self.session.single_work)
-            .filter(|w| w.id().is_some())
-            .map(|w| w.title().get());
-        let mut work_node: Option<NodeId> = None;
-        if work_title.is_some() {
-            let wk = model.insert_root(6, Node::Section(Sec::Work));
-            // Author leads the section: it is the one field about the *book* rather
-            // than about how the app handles it.
-            nodes.insert(
-                Pane::WorkAuthor,
-                model.insert_child(wk, 0, Node::Page(Pane::WorkAuthor)),
-            );
-            nodes.insert(
-                Pane::WorkStructure,
-                model.insert_child(wk, 1, Node::Page(Pane::WorkStructure)),
-            );
-            nodes.insert(
-                Pane::WorkLanguage,
-                model.insert_child(wk, 2, Node::Page(Pane::WorkLanguage)),
-            );
-            nodes.insert(
-                Pane::WorkBackup,
-                model.insert_child(wk, 3, Node::Page(Pane::WorkBackup)),
-            );
-            nodes.insert(
-                Pane::WorkDictionary,
-                model.insert_child(wk, 4, Node::Page(Pane::WorkDictionary)),
-            );
-            nodes.insert(
-                Pane::WorkTags,
-                model.insert_child(wk, 5, Node::Page(Pane::WorkTags)),
-            );
-            // Beside the tag palette: the other per-project catalogue the writer curates
-            // and that travels inside the `.skrib`.
-            nodes.insert(
-                Pane::WorkTemplates,
-                model.insert_child(wk, 6, Node::Page(Pane::WorkTemplates)),
-            );
-            // Beside the personal dictionary and the tag palette: the third per-project
-            // vocabulary the writer curates.
-            nodes.insert(
-                Pane::WorkTextReplacements,
-                model.insert_child(wk, 7, Node::Page(Pane::WorkTextReplacements)),
-            );
-            // Next to the lexicon: the other thing that rewrites prose as it is
-            // typed, and the other one that travels inside the `.skrib`.
-            nodes.insert(
-                Pane::WorkPunctuation,
-                model.insert_child(wk, 8, Node::Page(Pane::WorkPunctuation)),
-            );
-            work_node = Some(wk);
-        }
-
-        // Anything an extension registered, last and only when there is
-        // something — an install with no extensions gets exactly the tree it had.
-        //
-        // A snapshot, taken as this window is built; see `settings_ext`.
-        let mut extensions_node: Option<NodeId> = None;
-        if crate::settings_ext::has_pages() {
-            let ex = model.insert_root(7, Node::Section(Sec::Extensions));
-            for (i, page) in crate::settings_ext::registered_pages().iter().enumerate() {
-                let pane = Pane::Extension(page.id);
-                nodes.insert(pane, model.insert_child(ex, i, Node::Page(pane)));
+        // The tree IS the spec — order, nesting and membership all come from it,
+        // so the rows, the reveal-on-open expansion and each parent's own page
+        // cannot describe three different trees.
+        for (i, root) in spec.iter().enumerate() {
+            match root {
+                Root::Page(page) => {
+                    nodes.insert(*page, model.insert_root(i, *page));
+                }
+                Root::Section(sec, branches) => {
+                    let sec_pane = Pane::Section(*sec);
+                    let sec_node = model.insert_root(i, sec_pane);
+                    nodes.insert(sec_pane, sec_node);
+                    for (j, branch) in branches.iter().enumerate() {
+                        match branch {
+                            Branch::Page(page) => {
+                                nodes.insert(*page, model.insert_child(sec_node, j, *page));
+                            }
+                            Branch::Group(group, pages) => {
+                                let group_pane = Pane::Group(*group);
+                                let group_node = model.insert_child(sec_node, j, group_pane);
+                                nodes.insert(group_pane, group_node);
+                                for (k, page) in pages.iter().enumerate() {
+                                    nodes.insert(*page, model.insert_child(group_node, k, *page));
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            extensions_node = Some(ex);
         }
-
-        // The dynamic section label needs the title inside the row closure.
-        let work_title_row = work_title.unwrap_or_default();
 
         // Single-selection, seeded to the active page so the pane + highlight
-        // agree on open (Manuscript & Fonts by default).
+        // agree on open (Editor ▸ Typography ▸ Scene by default).
         let selection = KeyedSelectionModel::<NodeId>::new(SelectionMode::Single);
         if let Some(id) = nodes.get(&self.selected_pane.get()) {
             selection.select(*id);
         }
 
-        // Selection → active page (leaves only; a section click just expands).
+        // Selection → active page. Every row is a page now, parents included:
+        // selecting a section used to switch nothing, so the right-hand pane went
+        // on showing whichever leaf was open last.
         {
             let selected_pane = self.selected_pane.clone();
             let model = model.clone();
             let sig = selection.selection_signal();
             ctx.effect(&sig, move |set: &HashSet<NodeId>| {
                 if let Some(id) = set.iter().next().copied()
-                    && let Some(Some(pane)) = model.with_item(id, |n: &Node| n.pane())
+                    && let Some(pane) = model.with_item(id, |p: &Pane| *p)
                 {
                     selected_pane.set(pane);
                 }
             });
         }
 
-        // A row-body click selects (leaf → pane; section → no pane); the chevron
-        // (wired via `on_toggle_rc`) expands/collapses a section. Proven config
-        // (mirrors the framework's own tree examples) — reliable for both mouse
-        // and synthetic input.
+        // A row-body click selects; the chevron (wired via `on_toggle_rc`)
+        // expands/collapses a parent. Proven config (mirrors the framework's own
+        // tree examples) — reliable for both mouse and synthetic input.
         let tree =
-            TreeView::new_with_context(model, move |node: &Node, entry, selected, rowctx| {
+            TreeView::new_with_context(model, move |pane: &Pane, entry, selected, rowctx| {
                 // The Work section's label is dynamic ("Work: `<title>`"); every
-                // other node uses its static label.
-                let label = match node {
-                    Node::Section(Sec::Work) => lit!(format!(
-                        "{}: {}",
-                        tr!(settings_sec_work()).resolve_now(),
-                        work_title_row
-                    )),
+                // other row uses its static label.
+                let label = match pane {
+                    Pane::Section(Sec::Work) => section_title(Sec::Work, &work_title),
                     other => other.label(),
                 };
                 let mut row = StandardTreeItem::new(label)
                     .from_entry(entry)
                     .selected(selected)
                     .on_toggle_rc(rowctx.toggle_callback());
-                if let Some(icon) = node.icon() {
+                if let Some(icon) = pane.icon() {
                     row = row.leading_slot(icon);
                 }
                 Box::new(row)
@@ -925,49 +1119,31 @@ impl SettingsPanel {
         // regardless of the model's default (collapse is a no-op if already so).
         // The nested Typography group opens too — it holds the default landing
         // page (Scene), so it must never start collapsed under the always-open
-        // Editor section.
-        tree.expand(ab);
-        tree.expand(ed);
-        tree.expand(typo_group);
-        tree.collapse(sp);
-        tree.collapse(bk);
-        tree.collapse(ce);
-        if let Some(wk) = work_node {
-            tree.expand(wk);
-        }
-        // Reveal the section owning the page we opened at, so a deep-link open
-        // (e.g. the toast that jumps straight to Dictionaries, under the
-        // otherwise-collapsed Spelling section) shows its highlighted tree node.
-        // Idempotent with the design-state expansion above.
-        let section_of = |p: Pane| match p {
-            Pane::Appearance | Pane::MenusToolbars | Pane::Notifications => Some(ab),
-            // The nested Typography group — `ed` (its parent, always expanded
-            // above) already guarantees these are reachable; only the group
-            // itself needs revealing.
-            Pane::SceneTypography
-            | Pane::SynopsisTypography
-            | Pane::NotesTypography
-            | Pane::Corkboard
-            | Pane::DistractionFree
-            | Pane::DistractionFreeThemes => Some(typo_group),
-            Pane::EditorBehavior | Pane::Punctuation | Pane::Goals | Pane::Games => Some(ed),
-            Pane::Spellcheck | Pane::Dictionaries => Some(sp),
-            Pane::Autosave | Pane::Backup => Some(bk),
-            Pane::ExportFormats | Pane::Paratext => Some(ce),
-            Pane::WorkStructure
-            | Pane::WorkPunctuation
-            | Pane::WorkLanguage
-            | Pane::WorkBackup
-            | Pane::WorkDictionary
-            | Pane::WorkTags
-            | Pane::WorkTemplates
-            | Pane::WorkAuthor
-            | Pane::WorkTextReplacements => work_node,
-            Pane::Extension(_) => extensions_node,
-            Pane::Keymap => None,
+        // Editor section. A pane the spec left out (Work with nothing open) has
+        // no node, so its line is a no-op rather than a special case.
+        let expand = |pane: Pane| {
+            if let Some(id) = nodes.get(&pane) {
+                tree.expand(*id);
+            }
         };
-        if let Some(sec) = section_of(self.selected_pane.get()) {
-            tree.expand(sec);
+        let collapse = |pane: Pane| {
+            if let Some(id) = nodes.get(&pane) {
+                tree.collapse(*id);
+            }
+        };
+        expand(Pane::Section(Sec::AppearanceBehaviour));
+        expand(Pane::Section(Sec::Editor));
+        expand(Pane::Group(GroupKind::Typography));
+        collapse(Pane::Section(Sec::Spelling));
+        collapse(Pane::Section(Sec::BackupSync));
+        collapse(Pane::Section(Sec::CompileExport));
+        expand(Pane::Section(Sec::Work));
+        // Reveal the page we opened at, so a deep-link open (e.g. the toast that
+        // jumps straight to Dictionaries, under the otherwise-collapsed Spelling
+        // section) shows its highlighted tree node. Idempotent with the
+        // design-state expansion above.
+        for ancestor in ancestors_of(spec, self.selected_pane.get()) {
+            expand(ancestor);
         }
 
         (tree, selection, nodes)
@@ -975,11 +1151,11 @@ impl SettingsPanel {
 
     /// The "Search settings" field, offering suggestions across every page and
     /// setting; selecting a suggestion jumps to (and highlights) its page.
-    fn search_field(
-        &self,
-        selection: KeyedSelectionModel<NodeId>,
-        nodes: HashMap<Pane, NodeId>,
-    ) -> impl Widget {
+    ///
+    /// `spec` contributes the parents: a section and the Typography group are
+    /// pages like any other now, and a search that could not reach them would be
+    /// the one place in the window still treating them as mere branches.
+    fn search_field(&self, spec: &[Root], work_title: &str, nav: Navigator) -> impl Widget {
         // (searchable label, the page it lives on). Resolved per-keystroke so it
         // follows a locale change.
         let mut idx: Vec<(LocalizedString, Pane)> = vec![
@@ -1068,11 +1244,22 @@ impl SettingsPanel {
                 ));
             }
         }
+        // The parents, from the same spec the tree is built from — so a section
+        // added there is searchable without a second list to keep in step.
+        for root in spec {
+            if let Root::Section(sec, branches) = root {
+                idx.push((section_title(*sec, work_title), Pane::Section(*sec)));
+                for branch in branches {
+                    if let Branch::Group(group, _) = branch {
+                        idx.push((group.label(), Pane::Group(*group)));
+                    }
+                }
+            }
+        }
         let index: Rc<Vec<(LocalizedString, Pane)>> = Rc::new(idx);
 
         let for_suggest = index.clone();
         let for_select = index.clone();
-        let selected_pane = self.selected_pane.clone();
 
         SearchField::new(Signal::new(String::new()))
             .placeholder(tr!(settings_search()))
@@ -1096,10 +1283,7 @@ impl SettingsPanel {
                     .iter()
                     .find(|(label, _)| label.resolve_now() == value)
                 {
-                    if let Some(id) = nodes.get(pane) {
-                        selection.select(*id);
-                    }
-                    selected_pane.set(*pane);
+                    nav.go(*pane);
                 }
             })
     }
@@ -1142,6 +1326,18 @@ impl Widget for SettingsPanel {
         let work = Some(self.session.single_work.clone());
         let stack = self.session.ids.stack_id.clone();
         let work_title = work.as_ref().map(|w| w.title().get()).unwrap_or_default();
+
+        // The shape of the whole window, resolved once: the tree walks it, the
+        // parents' pages read their children off it, and the search index takes
+        // its parents from it. Both variables it depends on are snapshots taken
+        // as this window is built — a Work opened later gets its section when the
+        // Settings window is next opened, and the extension registry is a
+        // snapshot by design (see `settings_ext`).
+        let extension_ids: Vec<&'static str> = crate::settings_ext::registered_pages()
+            .iter()
+            .map(|p| p.id)
+            .collect();
+        let spec = tree_spec(self.session.single_work.id().is_some(), &extension_ids);
         // The two Work pages edit the *entity*, not the settings store, so they go through
         // their own view-model rather than calling `SingleWork::set_*` + `save` from a pane.
         // THIS WINDOW's own session (never `ctx.app_state`), same reasoning as `work` above.
@@ -1454,18 +1650,26 @@ impl Widget for SettingsPanel {
             };
 
         // ── Left rail: search + category tree ───────────────────────────────
-        let (tree, selection, nodes) = self.build_tree(ctx);
-        let search = self.search_field(selection, nodes);
+        let (tree, selection, nodes) = self.build_tree(ctx, &spec, work_title.clone());
+        // Every way of reaching a page that isn't clicking its own row goes
+        // through this: the search suggestions, and the links on each parent's
+        // page. It must be built from the tree's own selection model and node
+        // map, or a jump would switch the pane while leaving the highlight behind.
+        let nav = Navigator {
+            selection,
+            nodes: Rc::new(nodes),
+            selected_pane: self.selected_pane.clone(),
+        };
+        let search = self.search_field(&spec, &work_title, nav.clone());
         let left = VStack::new()
             .spacing(0.0)
             .child(Padding::symmetric(10.0, 10.0).child(search))
             .child(Expand::vertical().child(Padding::symmetric(2.0, 6.0).child(tree)));
 
         // ── Right pane: the per-page content behind the selection Switcher ──
-        // The Switcher is indexed by `Pane::index()`, so its child at position i must
-        // be pane i's body. Each child is tagged with the `Pane` it serves and the
-        // order is asserted below, rather than trusted from a hand-kept `.child()`
-        // chain (see `pane_discriminants_are_a_gap_free_range` for why).
+        // The Switcher index is looked up in this very list (see below), so a page
+        // may be added anywhere in it; each child is tagged with the `Pane` it
+        // serves rather than trusted from a hand-kept `.child()` chain.
         let typo = vm.editor_typography();
         let panes: Vec<(Pane, Box<dyn Widget>)> = vec![
             (
@@ -1559,10 +1763,6 @@ impl Widget for SettingsPanel {
                 )),
             ),
             (Pane::DistractionFreeThemes, df_themes_pane),
-            // Last, because `Pane::WorkTemplates` is the last discriminant — this list is
-            // indexed BY discriminant, not by where the page sits in the tree (which is
-            // `build_tree`'s business, beside Tags). The assertion below is what caught
-            // this being put next to `tags_pane` where it reads more naturally.
             (Pane::WorkTemplates, templates_pane),
         ];
         // Anything an extension registered, appended in the same order
@@ -1576,6 +1776,44 @@ impl Widget for SettingsPanel {
             let body = crate::settings_ext::build_page(page.id, ctx)
                 .unwrap_or_else(|| Box::new(teksilo::widgets::Spacer::new()));
             panes.push((Pane::Extension(page.id), body));
+        }
+        // Every parent's own page, off the same spec the tree was built from — so
+        // a section added there arrives with its page already written, and a page
+        // moved between sections is listed by its new parent without a second
+        // edit. A parent the spec left out (the Work section with nothing open)
+        // has no page here either, and nothing can select it.
+        for root in &spec {
+            let Root::Section(sec, branches) = root else {
+                continue;
+            };
+            let parent = Pane::Section(*sec);
+            panes.push((
+                parent,
+                Box::new(panes::overview::overview_pane(
+                    parent,
+                    section_title(*sec, &work_title),
+                    None,
+                    children_of(&spec, parent),
+                    nav.clone(),
+                )),
+            ));
+            for branch in branches {
+                let Branch::Group(group, _) = branch else {
+                    continue;
+                };
+                let parent = Pane::Group(*group);
+                panes.push((
+                    parent,
+                    Box::new(panes::overview::overview_pane(
+                        parent,
+                        group.label(),
+                        // One level in, so its trail names the section it sits in.
+                        Some(section_title(*sec, &work_title)),
+                        children_of(&spec, parent),
+                        nav.clone(),
+                    )),
+                ));
+            }
         }
         // The list IS the order. Deriving the `Switcher` index by looking the selected
         // pane up in this very vec is what makes the pairing true rather than merely
@@ -1746,42 +1984,15 @@ mod tests {
     /// being `pane as usize`, so declaration order carries no meaning and there is no gap
     /// to leave. What *does* still have to hold is that two pages cannot share an
     /// identity — a duplicate would make the tree select one and the panel show the other.
+    ///
+    /// Parents are pages too, and their ids are the ones most at risk: Backup & Sync and
+    /// the page inside it are both "backup" in English, which is why one carries a
+    /// `section-` prefix.
     #[test]
     fn every_pane_id_is_unique() {
-        // Every variant. Unlike the list this replaces, order here is irrelevant — the
-        // test is about the set, so a pane inserted anywhere is fine as long as it is here.
-        let all = [
-            Pane::Appearance,
-            Pane::MenusToolbars,
-            Pane::Notifications,
-            Pane::SceneTypography,
-            Pane::SynopsisTypography,
-            Pane::NotesTypography,
-            Pane::EditorBehavior,
-            Pane::Goals,
-            Pane::Corkboard,
-            Pane::Dictionaries,
-            Pane::Autosave,
-            Pane::ExportFormats,
-            Pane::Paratext,
-            Pane::Keymap,
-            Pane::WorkStructure,
-            Pane::WorkPunctuation,
-            Pane::Punctuation,
-            Pane::Backup,
-            Pane::WorkBackup,
-            Pane::WorkLanguage,
-            Pane::WorkDictionary,
-            Pane::Spellcheck,
-            Pane::WorkTags,
-            Pane::WorkAuthor,
-            Pane::WorkTextReplacements,
-            Pane::DistractionFree,
-            Pane::DistractionFreeThemes,
-            Pane::WorkTemplates,
-        ];
+        let all = every_built_in_pane();
         let mut seen = std::collections::HashSet::new();
-        for pane in all {
+        for pane in &all {
             assert!(
                 seen.insert(pane.id()),
                 "two settings pages share the id '{}' — the tree would select one and the \
@@ -1790,16 +2001,23 @@ mod tests {
             );
         }
         assert_eq!(seen.len(), all.len());
-        assert_eq!(
-            all.len(),
-            every_built_in_pane().len(),
-            "the shared list has drifted from this one"
-        );
     }
 
-    /// Every built-in page, shared by the tests above and below.
+    /// Every built-in page — leaves and parents — shared by the tests below.
+    ///
+    /// Order is irrelevant: every test over it is about the set, so a page inserted
+    /// anywhere is fine as long as it is here. What it must be is *complete*, which
+    /// `the_tree_places_every_built_in_page_exactly_once` is what proves.
     fn every_built_in_pane() -> Vec<Pane> {
         vec![
+            Pane::Section(Sec::AppearanceBehaviour),
+            Pane::Section(Sec::Editor),
+            Pane::Section(Sec::Spelling),
+            Pane::Section(Sec::BackupSync),
+            Pane::Section(Sec::CompileExport),
+            Pane::Section(Sec::Work),
+            Pane::Section(Sec::Extensions),
+            Pane::Group(GroupKind::Typography),
             Pane::Appearance,
             Pane::MenusToolbars,
             Pane::Notifications,
@@ -1808,6 +2026,7 @@ mod tests {
             Pane::NotesTypography,
             Pane::EditorBehavior,
             Pane::Goals,
+            Pane::Games,
             Pane::Corkboard,
             Pane::Dictionaries,
             Pane::Autosave,
@@ -1829,6 +2048,276 @@ mod tests {
             Pane::DistractionFreeThemes,
             Pane::WorkTemplates,
         ]
+    }
+
+    /// The tree spec with everything switched on: a project open, one extension page.
+    fn full_spec() -> Vec<Root> {
+        tree_spec(true, &["t.extension.page"])
+    }
+
+    /// **The tree places every page, and places it once.**
+    ///
+    /// A `Pane` variant that never reaches [`tree_spec`] is a page with a body in the
+    /// `Switcher` and no row to select it — invisible, and only reachable by search if
+    /// somebody remembered to index it. One placed twice gives two rows fighting over
+    /// one highlight. Both used to be possible: the tree was a run of `insert_child`
+    /// calls with nothing checking them against the enum.
+    ///
+    /// `Pane::Games` is why this test exists in this shape — it was the one page the
+    /// old hand-kept `every_built_in_pane` list had drifted away from.
+    #[test]
+    fn the_tree_places_every_built_in_page_exactly_once() {
+        let placed = all_panes(&full_spec());
+
+        let mut seen = HashSet::new();
+        for pane in &placed {
+            assert!(
+                seen.insert(*pane),
+                "'{}' appears twice in the settings tree",
+                pane.id()
+            );
+        }
+
+        let mut expected: HashSet<Pane> = every_built_in_pane().into_iter().collect();
+        expected.insert(Pane::Extension("t.extension.page"));
+
+        let missing: Vec<&str> = expected.difference(&seen).map(|p| p.id()).collect();
+        assert!(
+            missing.is_empty(),
+            "pages with no row in the tree: {missing:?}"
+        );
+        let unexpected: Vec<&str> = seen.difference(&expected).map(|p| p.id()).collect();
+        assert!(
+            unexpected.is_empty(),
+            "the tree places pages the shared list has never heard of: {unexpected:?}"
+        );
+    }
+
+    /// **Every page is listed by exactly one parent, and every parent lists something.**
+    ///
+    /// This is the property the parent pages exist for: a page that no parent links to
+    /// can only be found by expanding the tree and reading, which is the state the
+    /// window was in before. A parent with an empty list would render a title, a lead
+    /// line and nothing at all.
+    #[test]
+    fn every_page_is_linked_from_exactly_one_parent() {
+        let spec = full_spec();
+        // Keymap is a root of its own — deliberately, it is one page and needs no
+        // section — so it is the one page with no parent to be listed by.
+        let roots: HashSet<Pane> = [Pane::Keymap].into_iter().collect();
+
+        let mut listed_by: HashMap<Pane, Vec<Pane>> = HashMap::new();
+        let mut parents = 0;
+        for parent in all_panes(&spec) {
+            let children = children_of(&spec, parent);
+            if matches!(parent, Pane::Section(_) | Pane::Group(_)) {
+                parents += 1;
+                assert!(
+                    !children.is_empty(),
+                    "'{}' is a parent with nothing under it",
+                    parent.id()
+                );
+            } else {
+                assert!(
+                    children.is_empty(),
+                    "'{}' is a leaf and must have no children",
+                    parent.id()
+                );
+            }
+            for child in children {
+                listed_by.entry(child).or_default().push(parent);
+            }
+        }
+        assert_eq!(parents, 8, "seven sections plus the Typography group");
+
+        for pane in all_panes(&spec) {
+            if roots.contains(&pane) || matches!(pane, Pane::Section(_)) {
+                continue;
+            }
+            let parents = listed_by.get(&pane).map(Vec::as_slice).unwrap_or_default();
+            assert_eq!(
+                parents.len(),
+                1,
+                "'{}' is listed by {} parents, not one",
+                pane.id(),
+                parents.len()
+            );
+        }
+    }
+
+    /// A nested group is **one** entry on its section's page, not six.
+    ///
+    /// Flattening it would undo the reason the group exists (six typography pages
+    /// crowd the Editor list), and would leave the group's own page linked from
+    /// nowhere.
+    #[test]
+    fn a_section_lists_a_nested_group_as_one_entry() {
+        let spec = full_spec();
+        let editor = children_of(&spec, Pane::Section(Sec::Editor));
+        assert_eq!(
+            editor.first().copied(),
+            Some(Pane::Group(GroupKind::Typography)),
+            "Typography leads the Editor section"
+        );
+        assert!(
+            !editor.contains(&Pane::SceneTypography),
+            "the group's pages must not also be listed by its section"
+        );
+        assert_eq!(
+            children_of(&spec, Pane::Group(GroupKind::Typography)).len(),
+            6
+        );
+    }
+
+    /// Opening straight at a page reveals it: the deep-link opens
+    /// (`open_to_dictionaries`, `open_to_games`, `open_to_backup`) and the default
+    /// landing page all sit under a parent that starts collapsed or two levels down.
+    #[test]
+    fn a_pages_ancestors_are_every_row_that_must_be_expanded_to_see_it() {
+        let spec = full_spec();
+        assert_eq!(
+            ancestors_of(&spec, Pane::SceneTypography),
+            vec![
+                Pane::Section(Sec::Editor),
+                Pane::Group(GroupKind::Typography)
+            ],
+            "the default landing page is two levels down"
+        );
+        assert_eq!(
+            ancestors_of(&spec, Pane::Dictionaries),
+            vec![Pane::Section(Sec::Spelling)]
+        );
+        assert_eq!(
+            ancestors_of(&spec, Pane::Group(GroupKind::Typography)),
+            vec![Pane::Section(Sec::Editor)],
+            "a group is revealed by its section"
+        );
+        assert!(
+            ancestors_of(&spec, Pane::Keymap).is_empty(),
+            "a root needs nothing expanded"
+        );
+        assert!(
+            ancestors_of(&spec, Pane::Section(Sec::Editor)).is_empty(),
+            "a section is a root"
+        );
+
+        // Every ancestor must itself be an expandable row, or the reveal loop in
+        // `build_tree` would look up a node that cannot be expanded.
+        for pane in all_panes(&spec) {
+            for ancestor in ancestors_of(&spec, pane) {
+                assert!(
+                    matches!(ancestor, Pane::Section(_) | Pane::Group(_)),
+                    "'{}' is not a row that expands",
+                    ancestor.id()
+                );
+            }
+        }
+    }
+
+    /// With no project open there is no Work section — so neither its page nor any of
+    /// its pages' links can be reached, rather than offering a link to a placeholder.
+    #[test]
+    fn the_work_section_is_absent_until_a_project_is_open() {
+        let closed = tree_spec(false, &[]);
+        assert!(!all_panes(&closed).contains(&Pane::Section(Sec::Work)));
+        assert!(!all_panes(&closed).contains(&Pane::WorkTags));
+        assert!(children_of(&closed, Pane::Section(Sec::Work)).is_empty());
+        assert!(
+            !all_panes(&closed).contains(&Pane::Section(Sec::Extensions)),
+            "and no Extensions section when nothing is registered"
+        );
+
+        let open = tree_spec(true, &[]);
+        assert!(all_panes(&open).contains(&Pane::Section(Sec::Work)));
+        assert_eq!(children_of(&open, Pane::Section(Sec::Work)).len(), 9);
+    }
+
+    /// Every built-in page says what it is for; only an extension's may not.
+    ///
+    /// The gloss under a link is the whole reason a parent's page beats reading the
+    /// tree, so a page arriving without one is a page whose entry says nothing the
+    /// row above it didn't. An extension's is `None` by design — `SettingsPage`
+    /// carries no description for the app to show.
+    #[test]
+    fn every_built_in_page_says_what_it_is_for() {
+        for pane in every_built_in_pane() {
+            assert!(
+                pane.description().is_some(),
+                "'{}' has no description to put under its link",
+                pane.id()
+            );
+        }
+        assert!(Pane::Extension("t.extension.page").description().is_none());
+    }
+
+    /// A link on a parent's page moves the tree's highlight *and* switches the pane.
+    ///
+    /// Doing only the second is the failure mode worth a test: the right-hand pane
+    /// would change while the tree went on highlighting the parent, which is the exact
+    /// disagreement between window and navigation that these pages were added to fix.
+    #[test]
+    fn following_a_link_moves_the_highlight_and_the_pane() {
+        let selection = KeyedSelectionModel::<NodeId>::new(SelectionMode::Single);
+        let model: TreeModel<Pane> = TreeModel::new();
+        let scene = model.insert_root(0, Pane::SceneTypography);
+        let nav = Navigator {
+            nodes: Rc::new(HashMap::from([(Pane::SceneTypography, scene)])),
+            selection: selection.clone(),
+            selected_pane: Signal::new(Pane::Section(Sec::Editor)),
+        };
+
+        nav.go(Pane::SceneTypography);
+        assert_eq!(nav.selected_pane.get(), Pane::SceneTypography);
+        assert_eq!(selection.selected_keys(), vec![scene]);
+
+        // A per-project page resolves to no node when nothing is open. The pane still
+        // switches — to that page's "no project" placeholder — rather than the click
+        // doing nothing at all.
+        nav.go(Pane::WorkTags);
+        assert_eq!(nav.selected_pane.get(), Pane::WorkTags);
+        assert_eq!(
+            selection.selected_keys(),
+            vec![scene],
+            "an unreachable page must not clear the highlight"
+        );
+    }
+
+    /// A parent's page builds and lays out — title, lead line and one entry per child.
+    ///
+    /// Headless, unlike the panel around it: `overview_pane` reads no settings store,
+    /// so it is one of the few settings surfaces a bare `WidgetTree` can host.
+    #[test]
+    fn a_parents_page_builds_and_lays_out() {
+        use teksilo::core::widget_tree::WidgetTree;
+
+        let spec = full_spec();
+        let nav = Navigator {
+            nodes: Rc::new(HashMap::new()),
+            selection: KeyedSelectionModel::<NodeId>::new(SelectionMode::Single),
+            selected_pane: Signal::new(Pane::Section(Sec::Editor)),
+        };
+        for parent in all_panes(&spec)
+            .into_iter()
+            .filter(|p| matches!(p, Pane::Section(_) | Pane::Group(_)))
+        {
+            let mut tree = WidgetTree::new();
+            let built = tree.add_boxed(Box::new(crate::tabs::Boxed::new(Box::new(
+                panes::overview::overview_pane(
+                    parent,
+                    parent.label(),
+                    None,
+                    children_of(&spec, parent),
+                    nav.clone(),
+                ),
+            ))));
+            tree.layout(SizeProposal::exact(640.0, 520.0));
+            let bounds = tree.bounds(built);
+            assert!(
+                bounds.width > 0.0 && bounds.height > 0.0,
+                "'{}' laid out to nothing",
+                parent.id()
+            );
+        }
     }
 
     /// The Goals pane bridges `CountingMethodSetting` to the `RadioGroup`'s `usize`

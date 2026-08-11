@@ -5,9 +5,13 @@
 //!
 //! `settings.rs` keeps the *shell* — the category tree, the search field, the
 //! pane-switcher and the footer — and each page's form lives here, one `*_pane` function per
-//! module (23 today). Each reaches the shell's shared helpers (`field_label`, `hint`, `group`,
+//! module (24 today). Each reaches the shell's shared helpers (`field_label`, `hint`, `group`,
 //! `slider_field`, `pane_frame`, `crumb`) through `use super::super::*` — child modules can
 //! see a parent's private items, so none of those had to be widened for this.
+//!
+//! [`overview`] is the one module that serves more than one page: every parent — each section
+//! and the nested Typography group — renders through it, from the same tree spec the tree
+//! itself is built from.
 //!
 //! One page is still an `empty_pane` placeholder (Menus & Toolbars) and has no module until
 //! it has a body. Keymap hosts Teksilo's [`ShortcutSettings`](teksilo::widgets::ShortcutSettings);
@@ -30,6 +34,7 @@ pub(super) mod games;
 pub(super) mod goals;
 pub(super) mod keymap;
 pub(super) mod notifications;
+pub(super) mod overview;
 pub(super) mod paratext;
 pub(super) mod punctuation;
 pub(super) mod spellcheck;

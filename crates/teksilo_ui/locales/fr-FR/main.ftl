@@ -224,6 +224,48 @@ settings-page-keymap = Raccourcis clavier
 # Champ de filtre de la page Raccourcis (filtre la liste ShortcutSettings par nom / id / catégorie).
 settings-keymap-filter = Filtrer les raccourcis
 
+## Fenêtre des paramètres: à quoi sert chaque page
+# Une ligne par page, affichée sous son lien dans la page de son parent — et,
+# pour un parent, sous son propre titre. Une seule ligne : elles disent ce que
+# la page contient, pas comment s'en servir.
+settings-desc-sec-appearance-behaviour = L'aspect de l'application elle-même, et ce qu'elle fait au démarrage.
+settings-desc-sec-editor = La surface d'écriture : son aspect, et ce qu'elle fait pendant que vous tapez.
+settings-desc-sec-spelling = La vérification orthographique et les dictionnaires qui la nourrissent.
+settings-desc-sec-backup = Comment votre travail atteint le disque, et quelles copies sont conservées.
+settings-desc-sec-compile = Ce qui sort de Skribisto, et sous quelle forme.
+settings-desc-sec-work = Les réglages propres à ce projet, qui voyagent dans son fichier.
+settings-desc-sec-extensions = Les pages ajoutées par les extensions installées ici.
+settings-desc-group-typography = Une page par type de texte — police, taille, interligne et espacements.
+settings-desc-appearance = Langue de l'interface, thème, taille du texte et écran d'accueil au démarrage.
+settings-desc-menus = Rien à régler ici pour l'instant.
+settings-desc-notifications = Tous les messages affichés pendant cette session, et les actions à rejouer.
+settings-desc-scene = La mise en page des scènes : police, taille, interligne, retraits et espacements.
+settings-desc-synopsis = La mise en page du volet synopsis, indépendante du manuscrit.
+settings-desc-notes = La mise en page des notes, indépendante du manuscrit.
+settings-desc-corkboard = La taille des fiches, ce qu'elles montrent, et la disposition du tableau.
+settings-desc-distraction-free = Typographie, largeur de colonne et bande de contrôle du plein écran.
+settings-desc-distraction-free-themes = La bibliothèque de thèmes du plein écran — ceux fournis et les vôtres.
+settings-desc-editor-behavior = Largeur du texte, place du synopsis, défilement machine à écrire et surlignage du curseur.
+settings-desc-punctuation = Le style typographique dont héritent les nouveaux projets.
+settings-desc-goals = Les objectifs en mots et en caractères, et la façon de compter les mots.
+settings-desc-games = Les contraintes que vous vous imposez en écrivant, comme Toujours en avant.
+settings-desc-spellcheck = L'interrupteur unique qui active ou coupe la vérification orthographique partout.
+settings-desc-dictionaries = Installer, retirer et parcourir les dictionnaires présents sur cette machine.
+settings-desc-autosave = Si vos modifications sont écrites sur le disque toutes seules.
+settings-desc-backup = Quand les copies sont prises, où elles sont rangées, et combien sont gardées.
+settings-desc-export = Les styles par lesquels passe chaque export — ceux fournis et les vôtres.
+settings-desc-paratext = Les pages liminaires et finales dont peut partir un nouveau projet.
+settings-desc-keymap = Tous les raccourcis, et ce à quoi ils sont attachés.
+settings-desc-author = Le nom qui figure sur ce projet.
+settings-desc-structure = Si les chapitres de ce projet sont des dossiers ou des éléments simples.
+settings-desc-language = La langue dans laquelle la prose de ce projet est vérifiée.
+settings-desc-work-backup = La politique de copies propre à ce projet, ou celle par défaut.
+settings-desc-personal-dictionary = Les mots que ce projet considère comme bien orthographiés.
+settings-desc-tags = Les étiquettes colorées dont ce projet marque ses éléments.
+settings-desc-templates = Les modèles de notes que vous pouvez insérer en écrivant dans ce projet.
+settings-desc-text-replacements = Les abréviations qui se déplient à la frappe dans ce projet.
+settings-desc-work-punctuation = Les guillemets, tirets et espacements que suit la prose de ce projet.
+
 ## Fenêtre des paramètres: champs
 settings-group-typography = Typographie
 settings-group-writing-column = Colonne d'écriture

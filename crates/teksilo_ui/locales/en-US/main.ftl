@@ -224,6 +224,48 @@ settings-page-keymap = Keymap
 # Filter box on the Keymap page (filters the ShortcutSettings list by name / id / category).
 settings-keymap-filter = Filter shortcuts
 
+## Settings window: what each page is for
+# One line per page, shown under that page's link on its parent's page — and,
+# for a parent, under its own title. Keep them to one line: they describe what
+# the page holds, not how to use it.
+settings-desc-sec-appearance-behaviour = How the application itself looks, and what it does when it starts.
+settings-desc-sec-editor = The writing surface: how it looks, and what it does as you type.
+settings-desc-sec-spelling = Spell-checking, and the dictionaries behind it.
+settings-desc-sec-backup = How your work reaches the disk, and what copies are kept.
+settings-desc-sec-compile = What leaves Skribisto, and in what shape.
+settings-desc-sec-work = Settings that belong to this project and travel inside its file.
+settings-desc-sec-extensions = Pages contributed by the extensions installed here.
+settings-desc-group-typography = One page per kind of text — typeface, size, line height and spacing.
+settings-desc-appearance = Interface language, theme, text size, and the launcher at startup.
+settings-desc-menus = Nothing to set here yet.
+settings-desc-notifications = Every message this session has shown, and the actions you can replay.
+settings-desc-scene = How scene prose is set: typeface, size, line height, indents and spacing.
+settings-desc-synopsis = How the synopsis pane is set, independently of the manuscript.
+settings-desc-notes = How notes are set, independently of the manuscript.
+settings-desc-corkboard = Card size, what a card shows, and how the board arranges them.
+settings-desc-distraction-free = Typography, column width and control strip for full-screen writing.
+settings-desc-distraction-free-themes = The theme library for full-screen writing — the shipped ones and your own.
+settings-desc-editor-behavior = Text width, synopsis position, typewriter scrolling and the caret highlight.
+settings-desc-punctuation = The typographic house style new projects start from.
+settings-desc-goals = Word and character targets, and how words are counted.
+settings-desc-games = Constraints you set yourself while drafting, such as Always forward.
+settings-desc-spellcheck = The single switch that turns spell-checking on and off everywhere.
+settings-desc-dictionaries = Install, remove and browse the spelling dictionaries on this machine.
+settings-desc-autosave = Whether your edits are written to disk on their own.
+settings-desc-backup = When copies are taken, where they are kept, and how many.
+settings-desc-export = The styles every export compiles through — the shipped ones and your own.
+settings-desc-paratext = The front and back matter a new project can start with.
+settings-desc-keymap = Every shortcut, and what it is bound to.
+settings-desc-author = The name that goes on this project.
+settings-desc-structure = Whether this project's chapters are folders or single items.
+settings-desc-language = The language this project's prose is checked against.
+settings-desc-work-backup = This project's own backup policy, or the general one.
+settings-desc-personal-dictionary = The words this project treats as correctly spelled.
+settings-desc-tags = The colour-coded labels this project marks its items with.
+settings-desc-templates = The note templates you can insert while writing in this project.
+settings-desc-text-replacements = Shortcuts that expand as you type in this project.
+settings-desc-work-punctuation = The quotes, dashes and spacing this project's prose follows.
+
 ## Settings window: fields
 settings-group-typography = Typography
 settings-group-writing-column = Writing column
