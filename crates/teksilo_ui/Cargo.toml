@@ -164,12 +164,16 @@ windows = { version = "0.62.2", features = [
 ] }
 
 # Embed the app icon (taskbar / exe / installer) + version metadata as Win32
-# resources via build.rs. Maintained successor to the abandoned `winres`. Only
-# pulled in when building on a Windows host (the release target is built
-# natively on windows-latest), so Linux/macOS builds skip it. winit 0.30 sets
-# PerMonitorV2 DPI awareness programmatically, so no application manifest is
-# needed here.
-[target.'cfg(windows)'.build-dependencies]
+# resources via build.rs. Maintained successor to the abandoned `winres`.
+#
+# Deliberately NOT under [target.'cfg(windows)'.build-dependencies]: for a
+# build-dependency that cfg() is evaluated against the HOST, and the Windows
+# release is cross-compiled from Linux, where the crate would then be dropped
+# entirely and the exe would ship unbranded. build.rs gates on the target via
+# CARGO_CFG_TARGET_OS instead, so for non-Windows targets this is built but
+# never called. winit 0.30 sets PerMonitorV2 DPI awareness programmatically, so
+# no application manifest is needed here.
+[build-dependencies]
 winresource = "0.1"
 
 [features]

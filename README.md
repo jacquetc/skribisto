@@ -97,7 +97,7 @@ This is a GPL v3 project, so support is on a voluntary basis. Personally, I will
 bug issues from users running Skribisto through these packaging methods:
 
 - on Linux: Flatpak only
-- on Windows: the Inno Setup installer published with a release
+- on Windows: the NSIS installer published with a release
 
 ## Help is always appreciated
 
@@ -240,18 +240,43 @@ To remove it: `flatpak remove eu.skribisto.skribisto`.
 
 ### Windows
 
-The installer is built with [Inno Setup](https://jrsoftware.org/isdl.php) from
-[package/windows/setup.iss](package/windows/setup.iss):
+The installer is built with [NSIS](https://nsis.sourceforge.io) from
+[package/windows/setup.nsi](package/windows/setup.nsi):
 
 ```powershell
 cargo build --release --target x86_64-pc-windows-msvc -p teksilo_ui --features pdf
-ISCC.exe package\windows\setup.iss
+makensis package\windows\setup.nsi
 ```
 
-CI runs an equivalent (but not verbatim) sequence: the same `cargo build` line above, followed
-by a fuller `ISCC.exe` invocation that passes `/DMyAppVersion`, `/DMySourceExe`, `/O` and `/F`
-switches and calls the tool via its full install path rather than bare `ISCC.exe`. See
-[.github/workflows/release.yml](.github/workflows/release.yml) (lines 120 and 141-145).
+CI runs an equivalent (but not verbatim) sequence natively on `windows-latest`: the same
+`cargo build` line, followed by a fuller `makensis` invocation passing `/DAPP_VERSION`,
+`/DSRC_EXE` and `/DOUT_FILE`. See [.github/workflows/release.yml](.github/workflows/release.yml).
+Note that `makensis` resolves relative paths against the directory holding the script rather than
+the working directory, so any path passed with `/D` should be absolute.
+
+#### Building it from Linux
+
+[package/windows/build.py](package/windows/build.py) does the whole job — compile, verify, zip,
+installer — on either host, which is useful when you have no Windows machine to hand. The release
+is not built this way; it stays native so a real Windows machine remains in the release path.
+
+```bash
+sudo apt-get install -y nsis clang lld llvm   # once
+rustup target add x86_64-pc-windows-msvc      # once
+cargo install --locked cargo-xwin             # once
+
+python3 package/windows/build.py --version 3.0.0
+```
+
+That writes `dist/skribisto.exe`, `dist/Skribisto-portable.zip` and `dist/Skribisto-setup.exe`.
+The target stays `x86_64-pc-windows-msvc` (not mingw): `cargo-xwin` supplies the MSVC CRT and
+Windows SDK and links with `lld-link`. On first use it downloads those from Microsoft and asks
+you to accept their licence — export `XWIN_ACCEPT_LICENSE=1` to answer ahead of time.
+
+Since a cross-build never executes the binary it produces, the script inspects the finished exe
+for the two failures that are otherwise silent: a dropped `+crt-static` flag, and an icon or
+VERSIONINFO that failed to embed. `--check-only --exe <path>` runs just those checks against any
+build, including one CI produced.
 
 ### macOS
 
