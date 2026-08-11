@@ -109,8 +109,9 @@ jobs:
         with:
           shared-key: windows
 
-      # Statically link the VC runtime so the exe has zero vcruntime140.dll
-      # dependency (the UCRT stays dynamic — it is an inbox Windows component).
+      # Statically link the CRT so the exe needs no Visual C++ redistributable.
+      # `+crt-static` takes the UCRT with it as well: a static build imports
+      # neither vcruntime140.dll nor any api-ms-win-crt-*.dll.
       - name: Configure static CRT
         shell: pwsh
         run: |
