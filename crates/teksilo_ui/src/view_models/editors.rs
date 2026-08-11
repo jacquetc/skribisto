@@ -19,6 +19,7 @@ use teksilo::prelude::*; // Signal, tr!, lit!
 use teksilo::widgets::{Orientation, PaneDescriptor, SplitterModel, TabHandle, TabId, TabInfo};
 
 use frontend::AppContext;
+use frontend::common::entities::GoalUnit;
 use frontend::direct_access::BinderItemDto;
 
 use frontend::common::event::{Event, Origin};
@@ -156,6 +157,10 @@ pub struct EditorsViewModel {
     /// The writing games this project is playing (per-`Work` activation +
     /// app-global options), handed to every tab this view-model builds.
     writing_games: crate::view_models::WritingGamesViewModel,
+    /// The open project's target unit (Tier 2, its `WorkSession`'s `SingleWork`), threaded
+    /// into every `ContentTab` for the same reason as the handles above: a second window on
+    /// a second project must not read the first one's answer.
+    goal_unit: Signal<GoalUnit>,
 }
 
 impl EditorsViewModel {
@@ -184,6 +189,7 @@ impl EditorsViewModel {
         go: GoAvailability,
         format: crate::view_models::FormatViewModel,
         writing_games: crate::view_models::WritingGamesViewModel,
+        goal_unit: Signal<GoalUnit>,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -229,6 +235,7 @@ impl EditorsViewModel {
             backup_mode,
             save_state,
             tree_expansion,
+            goal_unit,
         }
     }
 
@@ -694,6 +701,7 @@ impl EditorsViewModel {
             // The **shared** Work save state, not a fresh one: a segment's edit
             // must bump the counter this window's close guard reads.
             self.save_state.handle(),
+            self.goal_unit.clone(),
         )
     }
 
@@ -1656,6 +1664,7 @@ mod tests {
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
             crate::view_models::WritingGamesViewModel::detached(),
+            Signal::new(GoalUnit::default()),
         )
     }
 
@@ -2186,6 +2195,7 @@ mod tests {
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
             crate::view_models::WritingGamesViewModel::detached(),
+            Signal::new(GoalUnit::default()),
         );
         let ids_b = AppIds::new();
         let tree_expansion_b = crate::view_models::TreeExpansionViewModel::new(
@@ -2215,6 +2225,7 @@ mod tests {
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
             crate::view_models::WritingGamesViewModel::detached(),
+            Signal::new(GoalUnit::default()),
         );
 
         // Window A has item 1 in its primary pane and item 2 in its side pane;

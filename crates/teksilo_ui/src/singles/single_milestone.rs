@@ -34,6 +34,7 @@ mod imp {
     };
     use frontend::common::direct_access::pace::PaceRelationshipField;
     use frontend::common::direct_access::work::WorkRelationshipField;
+    use frontend::common::entities::MilestoneKind;
     use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
     use frontend::common::types::EntityId;
     use frontend::direct_access::{
@@ -197,18 +198,22 @@ mod imp {
                 .find(|m| m.target_item == Some(target))
         }
 
-        /// The target item's current title + word goal — the label and word target a
-        /// fresh (or re-saved) milestone carries, kept in step with the item.
-        fn item_label_and_goal(&self) -> (String, Option<i64>) {
+        /// The target item's current title — the label a fresh (or re-saved) milestone
+        /// carries.
+        ///
+        /// It used to return the item's word target too, which was then **stored** on the
+        /// milestone. That copy was only ever refreshed by re-saving the date, so editing
+        /// the item's target left the milestone quoting an old number, and deleting the
+        /// item left it quoting a number for something that no longer existed. The target
+        /// is now resolved wherever it is displayed (`PaceModel::load`) and never written
+        /// here.
+        fn item_label(&self) -> String {
             let Some(target) = self.inner.target_item_id.get() else {
-                return (String::new(), None);
+                return String::new();
             };
             match binder_item_commands::get_binder_item(&self.inner.ctx, &target) {
-                Ok(Some(it)) => {
-                    let goal = (it.word_count_goal > 0).then_some(it.word_count_goal);
-                    (it.title, goal)
-                }
-                _ => (String::new(), None),
+                Ok(Some(it)) => it.title,
+                _ => String::new(),
             }
         }
 
@@ -216,7 +221,7 @@ mod imp {
             let Some(target) = self.inner.target_item_id.get() else {
                 return;
             };
-            let (label, target_word_count) = self.item_label_and_goal();
+            let label = self.item_label();
             let now = Utc::now();
             if let Some(mut existing) = self.current_milestone() {
                 // Update through the *relationship*-preserving path: `UpdateMilestoneDto`
@@ -225,7 +230,10 @@ mod imp {
                 existing.updated_at = now;
                 existing.label = label;
                 existing.target_date = to_utc(date);
-                existing.target_word_count = target_word_count;
+                // Deliberately left as it is (and `None` for anything this build created):
+                // an item milestone's number lives on the item, and writing a copy here is
+                // exactly the staleness this redesign removed.
+                existing.kind = MilestoneKind::Item;
                 let _ = milestone_commands::update_milestone_with_relationships(
                     &self.inner.ctx,
                     self.stack(),
@@ -247,7 +255,9 @@ mod imp {
                     label,
                     target_item: Some(target),
                     target_date: to_utc(date),
-                    target_word_count,
+                    // Not stored: derived from `target_item`'s own target at every read.
+                    target_word_count: None,
+                    kind: MilestoneKind::Item,
                 };
                 // `create` with an owner attaches under `Pace.milestones` (the entity's one
                 // strong parent) — same mechanism as `create_pace(work_id)`.

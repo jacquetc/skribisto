@@ -18,6 +18,7 @@
 
 use common::entities::{
     BinderItemRole, BinderItemSubRole, CommentAnchorKind, CommentOrphanReason, ContentRole,
+    GoalUnit, MilestoneKind,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -95,6 +96,32 @@ use std::collections::BTreeMap;
 /// open a project over a dangling reference would cost more than it saves — unlike v8/v9,
 /// where an older build's first save *deleted* images and footnotes outright.
 ///
+/// v13 added `WorkFile.goal_unit` and `MilestoneFile.kind` — two enums that name a
+/// distinction the format was previously leaving to be re-derived, each from a signal that
+/// can go missing.
+///
+/// `goal_unit` says which of `BinderItemFile`'s two long-standing targets
+/// (`word_count_goal` / `char_count_goal`) this project's goals are expressed in. Both
+/// fields have existed since the first commit of this crate and the legacy SQLite upgrader
+/// has always migrated both, but nothing ever recorded which one a project *meant*: the
+/// pre-Rust app decided that from a global display toggle at the moment the goal dialog
+/// wrote. So the answer was only ever recoverable by looking at which number happened to
+/// be non-zero, which is exactly what `step_v12_to_v13` does, once, and then stores.
+///
+/// `kind` says whether a milestone targets one item's own goal or the whole Book's
+/// cumulative count. That was previously read off `target_item.is_some()` — and
+/// `target_item` is a **weak** reference that stops resolving when the item is deleted, so
+/// a deleted target silently reclassified the milestone and froze a stale number as if a
+/// writer had typed it.
+///
+/// **No floor arm, deliberately** — the v10/v11 call, for the v10/v11 reason. Both fields
+/// are additive with a `#[serde(default)]`, and an older build that resaves a v13 bundle
+/// simply drops them; the next current-build load re-derives both from the same idempotent
+/// heuristics this step uses. No word of anyone's book is at risk, unlike v8/v9 where an
+/// older build's first save *deleted* images and footnotes outright. The one thing that can
+/// be lost is a `goal_unit` a writer set on a project whose targets are still all empty,
+/// which re-reads as `Words`: a preference, re-set in one click, not a manuscript.
+///
 /// # Before bumping this, answer one question
 ///
 /// *Does this change need an arm in
@@ -113,7 +140,7 @@ use std::collections::BTreeMap;
 /// A required field added without `#[serde(default)]` is the one shape that is *not*
 /// caught mechanically. It degrades to a raw parse error — never to data loss — but it
 /// degrades, so give every additive field its `default` and the question stays easy.
-pub const FORMAT_VERSION: u32 = 12;
+pub const FORMAT_VERSION: u32 = 13;
 
 /// Read `dict_language` as a list, accepting the pre-v4 space-separated string.
 ///
@@ -268,6 +295,20 @@ pub struct WorkFile {
     /// for the same reason as `text_replacement_rule_ids`.
     #[serde(default)]
     pub custom_replacement_rules_enabled: bool,
+    /// Which of a `BinderItemFile`'s two targets this project's goals are read in.
+    /// Added in v13.
+    ///
+    /// Stored as the enum rather than as a bool, unlike `chapter_flat` above: that one
+    /// predates the format's willingness to name its own vocabulary, and a `goal_unit:
+    /// Characters` in a hand-read manifest says what `goal_chars: true` would not.
+    ///
+    /// `#[serde(default)]` lands `Words` on every bundle written before this existed,
+    /// which `step_v12_to_v13` then corrects for the projects that were actually keeping
+    /// a character target — the pre-Rust app wrote one field or the other depending on a
+    /// global display toggle, so which unit a legacy project meant is recoverable only
+    /// from which of the two numbers is non-zero.
+    #[serde(default)]
+    pub goal_unit: GoalUnit,
     /// The punctuation house style, nested rather than given a file of its own.
     ///
     /// `dictionary.ron` and `replacements.ron` are separate files because they
@@ -492,8 +533,8 @@ pub struct HolidayFile {
     pub end_date: Option<String>,
 }
 
-/// A per-Part/Chapter deadline inside a `PaceFile`. `target_item` is a weak reference
-/// (item `file_id`), `None` when it no longer resolves.
+/// A dated waypoint inside a `PaceFile`. `target_item` is a weak reference (item
+/// `file_id`), `None` when it no longer resolves.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MilestoneFile {
     pub file_id: u64,
@@ -502,7 +543,18 @@ pub struct MilestoneFile {
     pub label: String,
     pub target_item: Option<u64>,
     pub target_date: String,
+    /// Authoritative for `BookCumulative` only; `None` for an `Item` milestone, whose
+    /// number is derived live from its target item's own goal.
     pub target_word_count: Option<i64>,
+    /// Which kind of waypoint this is. Added in v13.
+    ///
+    /// **The reason it is stored** is precisely that `target_item` is a *weak* reference:
+    /// it can stop resolving, and before v13 that turned an item milestone into something
+    /// the loader could not tell from a book-cumulative one. `#[serde(default)]` gives
+    /// older bundles `Item`, which `step_v12_to_v13` then corrects using the only signal a
+    /// v12 file has — whether it named a target item at all.
+    #[serde(default)]
+    pub kind: MilestoneKind,
 }
 
 /// `paces.ron` — one per-Book writing plan, children nested inline.

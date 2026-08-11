@@ -470,6 +470,8 @@ impl App {
                 session.tags.clone(),
                 session.mention_index.clone(),
                 session.open_docs.clone(),
+                settings.counting_method(),
+                session.single_work.goal_unit(),
             ))
             .dock(crate::docks::format::format_dock(
                 format.clone(),
@@ -623,6 +625,8 @@ impl App {
             stats.clone(),
             single_work_info.shape().map(|s| s.is_some()),
             settings.show_characters(),
+            session.single_work.goal_unit(),
+            self.app_ctx.clone(),
         );
         // The writing session: a play/pause sprint timer + word tracker (ephemeral —
         // only its targets persist). Sits on the right of the status bar.
@@ -730,6 +734,8 @@ impl App {
             session_vm: session_vm.clone(),
             has_work: single_work_info.shape().map(|s| s.is_some()),
             show_characters: settings.show_characters(),
+            goal_unit: session.single_work.goal_unit(),
+            app_ctx: self.app_ctx.clone(),
             chrome: crate::statusbar::focus_strip::FocusStripChrome::from_settings(&settings),
             themes: ctx
                 .app_state::<crate::view_models::DistractionFreeThemesViewModel>()

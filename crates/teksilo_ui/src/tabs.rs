@@ -32,7 +32,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use frontend::AppContext;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole, GoalUnit};
 use frontend::direct_access::ContentDto;
 use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
@@ -144,6 +144,10 @@ pub struct ContentTab {
     /// stream's and the corkboard's: a `Folder/Note` has no manuscript extent, so it has
     /// no stream, but it does have a subtree worth tabulating.
     overview: Option<crate::view_models::OverviewViewModel>,
+    /// The project's target unit and the window's counting method — what the container
+    /// pages need to draw a target readout that agrees with the Overview beside it.
+    goal_unit: Signal<GoalUnit>,
+    counting_method: Signal<skribisto_model::counting::CountingMethodSetting>,
     /// The app's entity ids — needed for the undo stack when a name field commits,
     /// and published by [`Self::ids`] for the `container.segments` slot.
     ids: AppIds,
@@ -427,6 +431,8 @@ pub fn tab_for(
         // state rather than a null object: marking a change on it is a real state
         // change on a real object, there is simply no window polling it.
         crate::view_models::WorkHandle::detached(ctx.clone(), ids.clone()),
+        // Words, like a fresh project: a standalone tab has no `Work` behind it to ask.
+        Signal::new(GoalUnit::default()),
     )
 }
 
@@ -583,6 +589,7 @@ impl ContentTab {
         format: crate::view_models::FormatViewModel,
         writing_games: crate::view_models::WritingGamesViewModel,
         work: crate::view_models::WorkHandle,
+        goal_unit: Signal<GoalUnit>,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
         // the stream (Book only). Built first, so it can borrow `app_ctx` before
@@ -656,7 +663,9 @@ impl ContentTab {
             &open_doc.sub_role,
             corkboard_defaults.counting_method.clone(),
             tree_expansion.clone(),
+            goal_unit.clone(),
         );
+        let counting_method = corkboard_defaults.counting_method.clone();
         let stream = StreamViewModel::new(
             app_ctx.clone(),
             ids.clone(),
@@ -714,6 +723,8 @@ impl ContentTab {
             analysis,
             corkboard,
             overview,
+            goal_unit,
+            counting_method,
             ids,
             work,
             app_ctx,
@@ -887,6 +898,18 @@ impl ContentTab {
     /// This tab's Analysis view-model — `Some` only on a `Folder/Book`.
     pub(crate) fn analysis(&self) -> Option<&crate::view_models::AnalysisViewModel> {
         self.analysis.as_ref()
+    }
+
+    /// The project's target unit.
+    pub fn goal_unit(&self) -> &Signal<GoalUnit> {
+        &self.goal_unit
+    }
+
+    /// The counting method this window displays with — the same one the Overview and the
+    /// corkboard use, so a container's readout and its table cannot print different
+    /// numbers for the same subtree.
+    pub fn counting_method(&self) -> &Signal<skribisto_model::counting::CountingMethodSetting> {
+        &self.counting_method
     }
 
     pub fn sub_role(&self) -> &BinderItemSubRole {
@@ -2489,6 +2512,7 @@ mod tests {
             crate::view_models::FormatViewModel::detached(),
             crate::view_models::WritingGamesViewModel::detached(),
             crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
+            Signal::new(GoalUnit::default()),
         );
         let mut tree = crate::test_support::tree_with_events(&ctx);
         let root = tree.add_boxed(tab_pane(&tab));
@@ -3575,6 +3599,7 @@ mod tests {
                 crate::view_models::FormatViewModel::detached(),
                 crate::view_models::WritingGamesViewModel::detached(),
                 crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
+                Signal::new(GoalUnit::default()),
             )
         };
         let distraction_free_width = Signal::new(620.0);
@@ -3667,6 +3692,7 @@ mod tests {
             crate::view_models::FormatViewModel::detached(),
             crate::view_models::WritingGamesViewModel::detached(),
             crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
+            Signal::new(GoalUnit::default()),
         );
 
         // Segment 1 is the manuscript stream (own page / manuscript / Full

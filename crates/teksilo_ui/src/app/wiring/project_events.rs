@@ -23,7 +23,7 @@ use teksilo::widgets::{
 };
 
 use frontend::AppContext;
-use frontend::common::event::{Event, Origin, WorkManagementEvent};
+use frontend::common::event::{Event, LongOperationEvent, Origin, WorkManagementEvent};
 
 use crate::app_ids::AppIds;
 use crate::models::OpenDocsStore;
@@ -57,6 +57,14 @@ pub(in crate::app) struct BackupSniffDeps {
     pub outline: OutlineViewModel,
     pub trash_dock: DockWidgetId,
     pub session: WorkSession,
+    /// Fires `count_words` so the plan summary reads a current number.
+    pub progress_recorder: crate::view_models::ProgressRecorder,
+    /// Set when a count has been fired *for* the summary, cleared when it is shown. Keeps
+    /// the completion handler from opening a panel for the recorder's own save-path counts.
+    pub pace_pending: Signal<bool>,
+    /// The `pace.summary_on_open` setting, so the panel's checkbox can write it.
+    pub pace_show_on_open: Signal<bool>,
+    pub editors: EditorsViewModel,
 }
 
 pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupSniffDeps) {
@@ -65,9 +73,18 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
     // modal) reads the just-loaded path and sniffs its manifest. Opening a
     // backup always happens in its own window (the redirect in the open entry
     // points), so this only ever fires in a window dedicated to that backup.
+    let sniff_app_ctx = deps.app_ctx.clone();
+    let sniff_ids = deps.ids.clone();
+    let sniff_pending = deps.pace_pending.clone();
+    let sniff_show_on_open = deps.pace_show_on_open.clone();
+    let sniff_editors = deps.editors.clone();
     {
         let app_ctx = deps.app_ctx;
         let ids = deps.ids;
+        let pace_shown = deps.session.pace_summary_shown.clone();
+        let pace_pending = deps.pace_pending.clone();
+        let recorder = deps.progress_recorder.clone();
+        let summary_enabled = deps.pace_show_on_open.clone();
         let tree_expansion = deps.tree_expansion;
         let backup_mode = deps.backup_mode;
         let backup_context = deps.backup_context;
@@ -233,8 +250,64 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
                                     )),
                             );
                         }
+                        // ── The writing-plan summary ──────────────────────
+                        //
+                        // Only here, in the non-backup arm: a backup window is
+                        // a window onto a copy, and greeting it with "where the
+                        // book stands" would be answering about the wrong file.
+                        //
+                        // A fresh count is fired first rather than reading the
+                        // snapshot history straight off: that history is written
+                        // on save, so at opening its newest point can be days
+                        // old. Recording today's point also closes a real gap —
+                        // a project opened and never saved used to leave a hole
+                        // in the streak and the chart. The panel is presented on
+                        // that count's completion, below.
+                        if !pace_shown.get()
+                            && summary_enabled.get()
+                            && crate::panels::pace_summary::has_active_plan(&app_ctx, &ids)
+                        {
+                            pace_shown.set(true);
+                            pace_pending.set(true);
+                            recorder.recount();
+                        }
                     }
                 }
+            },
+        );
+    }
+    // The other half: present once the count that was just fired lands.
+    //
+    // Registered **after** the recorder's own completion handler in
+    // `wiring::long_ops`, so today's snapshot is already recorded by the time
+    // this runs and the panel's history is current rather than one count behind.
+    {
+        let app_ctx = sniff_app_ctx;
+        let ids = sniff_ids;
+        let pace_pending = sniff_pending;
+        let show_on_open = sniff_show_on_open;
+        let editors = sniff_editors;
+        ctx.subscribe_event_with_ctx(
+            Origin::LongOperation(LongOperationEvent::Completed),
+            move |_e: &Event, c: &mut EventContext| {
+                if !pace_pending.get() {
+                    return;
+                }
+                pace_pending.set(false);
+                let editors = editors.clone();
+                crate::panels::pace_summary::present(
+                    c,
+                    app_ctx.clone(),
+                    ids.clone(),
+                    show_on_open.clone(),
+                    std::rc::Rc::new(move |book_item_id, _c: &mut EventContext| {
+                        // The panel's one forward action: open the Book, which is
+                        // where every number it showed can be edited. The title
+                        // argument only seeds the tab caption — the editors model
+                        // re-reads the item's own name as it opens.
+                        editors.open_or_focus(book_item_id, "");
+                    }),
+                );
             },
         );
     }
@@ -418,6 +491,10 @@ pub(in crate::app) fn install_lifecycle(
             outline: deps.outline.clone(),
             trash_dock: deps.trash_dock,
             session: deps.session.clone(),
+            progress_recorder: deps.session.progress_recorder.clone(),
+            pace_pending: Signal::new(false),
+            pace_show_on_open: ctx.settings().signal(crate::PACE_SUMMARY_ON_OPEN_KEY, true),
+            editors: deps.editors.clone(),
         },
     );
 

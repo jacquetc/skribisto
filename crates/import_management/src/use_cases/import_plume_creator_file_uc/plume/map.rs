@@ -127,6 +127,11 @@ pub fn build_bundle(
         tag_ids: b.tags.iter().map(|t| t.file_id).collect(),
         dict_word_ids: dict.iter().map(|d| d.file_id).collect(),
         unique_id: new_unique_id(),
+        // Plume Creator had a word-goal widget, but it was a *session* sprint counter held
+        // in memory and never written to the project file, so an imported project has no
+        // targets at all and no unit to infer one from. Words is the default a new project
+        // gets; the writer picks otherwise in Settings ▸ Work ▸ Structure.
+        goal_unit: common::entities::GoalUnit::default(),
         // Plume Creator organises chapters as folders of sheets → folder mode.
         chapter_flat: false,
         // Plume has no custom-replacement concept to import.

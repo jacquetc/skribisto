@@ -530,6 +530,7 @@ mod imp {
             work_management_commands::new_work(
                 &ctx,
                 &NewWorkDto {
+                    goal_unit: Default::default(),
                     file_name: proj.to_string_lossy().into_owned(),
                     is_folder: false,
                     template_kind: NewWorkTemplate::Novel,

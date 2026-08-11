@@ -16,9 +16,9 @@ use teksilo::data::{ChartDatum, ChartModel, ChartSeries};
 use teksilo::prelude::*;
 use teksilo::tokens::{CornerRadius, FontWeight, TextStyle};
 use teksilo::widgets::{
-    Button, Center, ColumnFlow, DateEdit, DateRange, DateRangeEdit, Expand, FixedSize, FormLayout,
-    HStack, IconButton, Padding, Panel, RectWidget, ScrollArea, SpinBox, StepType, TextInput,
-    TextWidget, Toggle, VStack, Wrap, ZStack,
+    Button, ButtonVariant, Center, ColumnFlow, DateEdit, DateRange, DateRangeEdit, Expand,
+    FixedSize, FormLayout, HStack, IconButton, Padding, Panel, RectWidget, ScrollArea, SpinBox,
+    StepType, TextInput, TextWidget, Toggle, VStack, Wrap, ZStack,
 };
 use teksilo_charts::reference_line::ReferenceLine;
 use teksilo_charts::{BarChart, LineChart};
@@ -27,6 +27,7 @@ use chrono::{Datelike, Duration, NaiveDate, Utc};
 use jiff::civil::Date;
 
 use crate::date_convert::{jiff_to_naive, naive_to_jiff, naive_to_jiff_opt};
+use crate::models::{MilestoneKind, MilestoneRow};
 use crate::tabs::ContentTab;
 use crate::view_models::PaceViewModel;
 

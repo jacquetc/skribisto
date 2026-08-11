@@ -38,7 +38,7 @@ use teksilo::prelude::{BuildContext, Signal};
 use uuid::Uuid;
 
 use frontend::AppContext;
-use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+use frontend::common::entities::{BinderItemRole, BinderItemSubRole, GoalUnit};
 use frontend::common::event::{
     BinderItemManagementEvent, DirectAccessEntity, EntityEvent, Event, Origin,
     TrashManagementEvent, WorkManagementEvent,
@@ -59,6 +59,7 @@ pub const COL_TOTAL_WORDS: &str = "total_words";
 pub const COL_OPEN_COMMENTS: &str = "open_comments";
 pub const COL_TOTAL_COMMENTS: &str = "total_comments";
 pub const COL_TAGS: &str = "tags";
+pub const COL_GOAL: &str = "goal";
 
 /// One row of the Overview table: a single `BinderItem` in the container's subtree.
 ///
@@ -105,6 +106,21 @@ pub struct OverviewRow {
     /// Open rather than total, because the number a writer acts on is "what still
     /// needs me" — a chapter of resolved threads should read as done, not as busy.
     /// The total is still one hover away in the dock.
+    /// Whether this row reaches the exported book. **Per item, never inherited** — that is
+    /// how `count_words_uc` and the export scope resolver both read it, which is why the
+    /// Inspector ships an "Apply to children" button beside the switch.
+    pub is_exportable: bool,
+    /// What this row contributes to a manuscript total: its own words when it is exported,
+    /// zero when it is not.
+    ///
+    /// Kept apart from `own_words` on purpose. The **Own words** column answers "how long
+    /// is this piece", which stays true of a scene the writer has cut from the export; the
+    /// **Total** column answers "how much book is in here", which does not. Folding
+    /// `own_words` would have made the second column disagree with every other count in the
+    /// app; hiding the first would have made a 1 200-word scene read as empty.
+    pub manuscript_words: usize,
+    /// This row's target in the project's unit (`0` = none).
+    pub goal: i64,
     pub own_comments: usize,
     /// This row's own open threads plus every descendant's — the same bottom-up
     /// fold `total_words` uses, and correct while collapsed for the same reason.
@@ -196,6 +212,7 @@ impl OverviewRowsModel {
         container_id: u64,
         counting_method: Signal<CountingMethodSetting>,
         filters: OverviewFilters,
+        goal_unit: Signal<GoalUnit>,
     ) -> Self {
         let slice = TreeDataSlice::new();
         // A newly created scene appears expanded rather than hidden inside a collapsed
@@ -213,11 +230,12 @@ impl OverviewRowsModel {
             let work_id = work_id.clone();
             let f = filters.clone();
             let method = counting_method.clone();
+            let unit = goal_unit.clone();
             let scope = scope_contents.clone();
             let present = container_present.clone();
             let ids = ids_by_uid.clone();
             slice.set_source(move || {
-                let loaded = rows::load(&ctx, &work_id, container_id, method.get());
+                let loaded = rows::load(&ctx, &work_id, container_id, method.get(), &unit.get());
                 *scope.borrow_mut() = loaded.in_scope;
                 if present.get() != loaded.container_present {
                     present.set(loaded.container_present);
@@ -288,6 +306,14 @@ impl OverviewRowsModel {
             {
                 let r = resource.clone();
                 counting_method.observe(move |_| r())
+            },
+            {
+                // Switching the project's unit changes which of the two stored targets
+                // every Target cell reads. Nothing about the prose changed, but the column
+                // would keep printing the old unit's numbers until something else forced a
+                // reload.
+                let r = resource.clone();
+                goal_unit.observe(move |_| r())
             },
         ];
 
@@ -661,7 +687,11 @@ pub(crate) fn subtree_of<T>(
     }
 }
 
-/// Fold `own_words` up the tree into `total_words`, in one reverse pass.
+/// Fold `manuscript_words` up the tree into `total_words`, in one reverse pass.
+///
+/// **Not `own_words`.** The two differ for a row the export leaves out, and the totals
+/// have to agree with `count_words_uc` — the same admission gate, applied per row with no
+/// cascade, so a non-exportable chapter folder still counts the scenes inside it.
 ///
 /// Walking backwards, every entry still on the stack that is *deeper* than the current
 /// row is one of its direct children — each already carrying its own subtree's total,
@@ -680,7 +710,7 @@ pub(crate) fn fold_totals(rows: &mut [TreeRow<Uuid, OverviewRow>]) {
     let mut stack: Vec<(usize, usize, usize)> = Vec::new();
     for row in rows.iter_mut().rev() {
         let depth = row.depth;
-        let mut total = row.item.own_words.unwrap_or(0);
+        let mut total = row.item.manuscript_words;
         let mut total_c = row.item.own_comments;
         while let Some(&(child_depth, child_total, child_comments)) = stack.last() {
             if child_depth > depth {
@@ -789,7 +819,7 @@ mod rows {
     use frontend::common::direct_access::binder::BinderRelationshipField;
     use frontend::common::direct_access::comment::CommentRelationshipField;
     use frontend::common::direct_access::work::WorkRelationshipField;
-    use frontend::common::entities::ContentRole;
+    use frontend::common::entities::{ContentRole, GoalUnit};
     use frontend::direct_access::BinderItemDto;
     use skribisto_model::counting::{self, CountMethod, CountingMethodSetting};
     use skribisto_model::language;
@@ -832,6 +862,7 @@ mod rows {
         work_id: &Signal<Option<u64>>,
         container_id: u64,
         method: CountingMethodSetting,
+        unit: &GoalUnit,
     ) -> Loaded {
         let gone = |present: bool| Loaded {
             rows: Vec::new(),
@@ -938,6 +969,19 @@ mod rows {
                         title: it.title.clone(),
                         label: it.label.clone(),
                         own_words,
+                        is_exportable: it.is_exportable,
+                        // Per item, no cascade — the same rule `count_words_uc` and the
+                        // export scope resolver apply, so a non-exportable chapter folder
+                        // still counts the scenes inside it.
+                        manuscript_words: if it.is_exportable {
+                            own_words.unwrap_or(0)
+                        } else {
+                            0
+                        },
+                        goal: match unit {
+                            GoalUnit::Words => it.word_count_goal,
+                            GoalUnit::Characters => it.char_count_goal,
+                        },
                         total_words: 0, // filled by the fold below
                         tags: it.tags.clone(),
                         number: numbers
@@ -1014,7 +1058,7 @@ mod rows {
     use uuid::Uuid;
 
     use frontend::AppContext;
-    use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
+    use frontend::common::entities::{BinderItemRole, BinderItemSubRole, GoalUnit};
     use skribisto_model::counting::CountingMethodSetting;
 
     use super::{Loaded, OverviewRow, fold_totals};
@@ -1044,6 +1088,22 @@ mod rows {
                 title: title.to_string(),
                 label: label.to_string(),
                 own_words,
+                // The fixture keeps one row out of the export so the mocks build shows the
+                // muted cell and the total that excludes it — the pair this feature's
+                // whole "own length versus book length" distinction rests on.
+                is_exportable: item_id != 303,
+                manuscript_words: if item_id == 303 {
+                    0
+                } else {
+                    own_words.unwrap_or(0)
+                },
+                goal: match item_id {
+                    301 => 12_000,
+                    104 => 4_000,
+                    105 => 10_000,
+                    201 | 202 => 2_000,
+                    _ => 0,
+                },
                 total_words: 0, // filled by the fold below
                 tags: tags.to_vec(),
                 // Every fixture row is titled, so none needs the fallback.
@@ -1075,6 +1135,7 @@ mod rows {
         _work_id: &Signal<Option<u64>>,
         container_id: u64,
         _method: CountingMethodSetting,
+        _unit: &GoalUnit,
     ) -> Loaded {
         use BinderItemRole::{Folder, Item};
         use BinderItemSubRole::{ChapterScene, Note, Part, Scene};
@@ -1206,17 +1267,74 @@ mod rows {
 mod tests {
     use super::*;
 
+    /// An exportable fixture row: its own words are also what it contributes to a total.
     fn r(uid: u64, own: Option<usize>, depth: usize) -> TreeRow<Uuid, OverviewRow> {
+        row_with(uid, own, depth, true)
+    }
+
+    /// A fixture row that names its own exportability, so the two columns can be checked
+    /// against each other where they are meant to disagree.
+    fn row_with(
+        uid: u64,
+        own: Option<usize>,
+        depth: usize,
+        is_exportable: bool,
+    ) -> TreeRow<Uuid, OverviewRow> {
         TreeRow::new(
             common::uid::fixture_uid(uid),
             OverviewRow {
                 item_id: uid,
                 uid: common::uid::fixture_uid(uid),
                 own_words: own,
+                is_exportable,
+                manuscript_words: if is_exportable { own.unwrap_or(0) } else { 0 },
                 ..Default::default()
             },
             depth,
         )
+    }
+
+    /// The one place the two word columns are meant to disagree.
+    ///
+    /// A scene the writer has taken out of the export keeps its own length — the writing
+    /// is still there, and "how long is this piece" is still a question with an answer —
+    /// but it is no longer part of the book, so nothing above it counts it. This mirrors
+    /// `count_words_uc`'s own test at the backend layer; the two admission gates have to
+    /// stay the same gate or a chapter's progress bar would disagree with its export.
+    #[test]
+    fn a_row_left_out_of_the_export_keeps_its_length_but_leaves_every_total() {
+        let mut rows = vec![
+            r(1, None, 0),                    // chapter folder
+            r(2, Some(1_200), 1),             // an ordinary scene
+            row_with(3, Some(900), 1, false), // cut, but kept
+        ];
+        fold_totals(&mut rows);
+        assert_eq!(
+            rows[2].item.own_words,
+            Some(900),
+            "its own length is still the truth about it"
+        );
+        assert_eq!(
+            rows[0].item.total_words, 1_200,
+            "the chapter counts only what reaches the book"
+        );
+    }
+
+    /// Exclusion is per row and never inherited — the same rule the exporter and
+    /// `count_words_uc` apply, and the reason the Inspector needs an explicit
+    /// "Apply to children" button beside the switch.
+    #[test]
+    fn excluding_a_container_does_not_exclude_what_is_inside_it() {
+        let mut rows = vec![
+            row_with(1, None, 0, false), // an excluded chapter folder…
+            r(2, Some(500), 1),          // …whose scenes are not excluded
+            r(3, Some(300), 1),
+        ];
+        fold_totals(&mut rows);
+        assert_eq!(
+            rows[0].item.total_words, 800,
+            "the scenes inside still reach the book"
+        );
     }
 
     /// The fold sums each row's own words plus its whole subtree's — the number a
@@ -1528,6 +1646,7 @@ mod mock_tests {
             container,
             Signal::new(CountingMethodSetting::default()),
             OverviewFilters::new(),
+            Signal::new(GoalUnit::default()),
         );
         m.reload();
         m
@@ -1541,6 +1660,7 @@ mod mock_tests {
             container,
             Signal::new(CountingMethodSetting::default()),
             filters,
+            Signal::new(GoalUnit::default()),
         );
         m.reload();
         m

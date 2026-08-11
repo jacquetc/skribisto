@@ -38,8 +38,7 @@ use teksilo::widgets::{
 
 use frontend::AppContext;
 use frontend::commands::{
-    binder_commands, comment_commands, undo_redo_commands, work_commands,
-    work_management_commands,
+    binder_commands, comment_commands, undo_redo_commands, work_commands, work_management_commands,
 };
 use frontend::common::direct_access::binder::BinderRelationshipField;
 use frontend::common::direct_access::comment::CommentRelationshipField;
@@ -1353,6 +1352,7 @@ impl Widget for App {
                     go_for_editors,
                     format_for_editors,
                     writing_games_for_editors,
+                    session.single_work.goal_unit(),
                 )
             })
             .clone();
@@ -3028,6 +3028,7 @@ mod tests {
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
             crate::view_models::WritingGamesViewModel::detached(),
+            Signal::new(frontend::common::entities::GoalUnit::default()),
         )
     }
 

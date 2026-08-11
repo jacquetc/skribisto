@@ -227,7 +227,7 @@ pub use version_restore::RestoreRequest;
 pub use versions::VersionsViewModel;
 pub use view_state::{ViewState, ViewStateBinding, ViewStatePorts};
 pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
-pub use word_count_status::{CountDisplay, count_display};
+pub use word_count_status::{CountDisplay, GoalDisplay, count_display, goal_display};
 pub use work_settings::WorkSettingsViewModel;
 pub use workspace_layout::WorkspaceLayoutViewModel;
 pub use writing_games::{

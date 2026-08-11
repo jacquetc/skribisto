@@ -285,6 +285,7 @@ pub fn from_entities(
                 chapter_flat: matches!(work.chapter_mode, ChapterMode::Flat),
                 text_replacement_rule_ids: work.text_replacement_rules.clone(),
                 custom_replacement_rules_enabled: work.custom_replacement_rules_enabled,
+                goal_unit: work.goal_unit.clone(),
                 number_chapters: work.number_chapters,
                 part_resets_chapter: work.part_resets_chapter,
                 smart_punctuation: smart_punctuation.map(|sp| SmartPunctuationFile {
@@ -429,6 +430,7 @@ pub fn from_entities(
                         target_item: ms.target_item,
                         target_date: fmt_dt(&ms.target_date),
                         target_word_count: ms.target_word_count,
+                        kind: ms.kind.clone(),
                     })
                     .collect(),
             })
@@ -546,6 +548,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
             ChapterMode::Folder
         },
         custom_replacement_rules_enabled: m.work.custom_replacement_rules_enabled,
+        goal_unit: m.work.goal_unit.clone(),
         // `true` for a bundle written before the field existed — see `WorkFile`'s
         // `default_true`, the one non-`false` legacy default in this format.
         number_chapters: m.work.number_chapters,
@@ -817,6 +820,7 @@ pub fn bundle_to_loaded(bundle: WorkBundle, absolute_path: &str) -> Result<Loade
                             target_item: ms.target_item,
                             target_date: parse_dt(&ms.target_date)?,
                             target_word_count: ms.target_word_count,
+                            kind: ms.kind.clone(),
                         })
                     })
                     .collect::<Result<Vec<_>>>()?,

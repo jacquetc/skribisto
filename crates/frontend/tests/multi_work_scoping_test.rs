@@ -66,6 +66,7 @@ fn ctx_with_work_a() -> (AppContext, EntityId) {
     work_management_commands::new_work(
         &ctx,
         &NewWorkDto {
+            goal_unit: Default::default(),
             file_name: dir.to_string_lossy().to_string(),
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,
@@ -121,6 +122,7 @@ fn seed_second_work(ctx: &AppContext, title: &str) -> SecondWork {
         ctx,
         None,
         &CreateWorkDto {
+            goal_unit: Default::default(),
             created_at: n,
             updated_at: n,
             title: title.to_string(),
@@ -1804,6 +1806,7 @@ fn new_work_leaves_every_other_open_work_intact() {
     work_management_commands::new_work(
         &ctx,
         &NewWorkDto {
+            goal_unit: Default::default(),
             file_name: dir.to_string_lossy().to_string(),
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,

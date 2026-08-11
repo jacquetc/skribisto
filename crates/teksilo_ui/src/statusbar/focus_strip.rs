@@ -109,6 +109,12 @@ pub struct FocusStrip {
     session_vm: WritingSessionViewModel,
     has_work: Signal<bool>,
     show_characters: Signal<bool>,
+    /// The project's target unit and a store handle — the two things
+    /// [`WordCountIndicator`] needs to draw its target bar. Threaded through rather than
+    /// resolved here, so the strip's copy of the indicator is the same widget the status
+    /// bar builds and shows the same bar.
+    goal_unit: Signal<frontend::common::entities::GoalUnit>,
+    app_ctx: std::rc::Rc<frontend::AppContext>,
     chrome: FocusStripChrome,
     /// Whether the synopsis shows inside the mode — this window's own flag, not
     /// the global preference (see `FocusViewModel::synopsis_visible_signal`).
@@ -138,6 +144,8 @@ impl FocusStrip {
         session_vm: WritingSessionViewModel,
         has_work: Signal<bool>,
         show_characters: Signal<bool>,
+        goal_unit: Signal<frontend::common::entities::GoalUnit>,
+        app_ctx: std::rc::Rc<frontend::AppContext>,
         chrome: FocusStripChrome,
         synopsis_visible: Signal<bool>,
         synopsis_capable: Signal<bool>,
@@ -150,6 +158,8 @@ impl FocusStrip {
             session_vm,
             has_work,
             show_characters,
+            goal_unit,
+            app_ctx,
             chrome,
             synopsis_visible,
             synopsis_capable,
@@ -196,16 +206,20 @@ impl Widget for FocusStrip {
         let mut bar = Toolbar::new();
 
         if self.chrome.word_count.get() {
-            let (stats, has_work, chars) = (
+            let (stats, has_work, chars, unit, app_ctx) = (
                 self.stats.clone(),
                 self.has_work.clone(),
                 self.show_characters.clone(),
+                self.goal_unit.clone(),
+                self.app_ctx.clone(),
             );
             bar = bar.item(
                 ToolbarItem::custom(WordCountIndicator::new(
                     stats.clone(),
                     has_work.clone(),
                     chars.clone(),
+                    unit.clone(),
+                    app_ctx.clone(),
                 ))
                 // A live widget in the menu, not a one-shot row: a word count
                 // that stopped counting once it collapsed would be a worse
@@ -215,6 +229,8 @@ impl Widget for FocusStrip {
                         stats.clone(),
                         has_work.clone(),
                         chars.clone(),
+                        unit.clone(),
+                        app_ctx.clone(),
                     )) as Box<dyn Widget>
                 }),
             );
@@ -426,6 +442,8 @@ mod tests {
             session_vm,
             Signal::new(true),
             Signal::new(false),
+            Signal::new(frontend::common::entities::GoalUnit::default()),
+            ctx.clone(),
             chrome.clone(),
             Signal::new(false),
             Signal::new(true),

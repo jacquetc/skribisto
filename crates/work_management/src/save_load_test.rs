@@ -110,6 +110,8 @@ fn sample_bundle() -> WorkBundle {
     use ContentRole::*;
 
     let work = Work {
+        // Not the default: the store round trip has to prove it carries the field.
+        goal_unit: common::entities::GoalUnit::Characters,
         id: 1,
         created_at: ts(),
         updated_at: ts(),
@@ -990,6 +992,11 @@ fn paces_survive_a_save_load_round_trip() {
             end_date: Some("2020-03-08T00:00:00+00:00".into()),
         }],
         milestones: vec![skrib::MilestoneFile {
+            // Not the default, so the round trip proves the field travels. A milestone
+            // that also names a target item is an inconsistent pair the loader must not
+            // silently "correct": the stored kind is the authority precisely because a
+            // weak target reference can vanish.
+            kind: common::entities::MilestoneKind::BookCumulative,
             file_id: 420,
             created_at: T.into(),
             updated_at: T.into(),
@@ -1033,6 +1040,11 @@ fn paces_survive_a_save_load_round_trip() {
     assert_eq!(p.milestones.len(), 1);
     assert_eq!(p.milestones[0].label, "Act I done");
     assert_eq!(p.milestones[0].target_word_count, Some(20_000));
+    assert_eq!(
+        p.milestones[0].kind,
+        common::entities::MilestoneKind::BookCumulative,
+        "the stored milestone kind must survive the store, not be re-derived from target_item"
+    );
     // Weak back-links survive (ids are reassigned by the store, so just assert they resolve).
     assert!(
         p.book_item.is_some(),
@@ -1193,6 +1205,7 @@ fn new_work(db: &DbContext, hub: &Arc<EventHub>, path: &str, is_folder: bool, t:
         db,
         hub,
         &NewWorkDto {
+            goal_unit: Default::default(),
             file_name: path.to_string(),
             is_folder,
             template_kind: t,
@@ -1221,6 +1234,7 @@ fn new_work_persists_the_author_to_the_manifest() {
         &db,
         &hub,
         &NewWorkDto {
+            goal_unit: Default::default(),
             file_name: dir
                 .path()
                 .join("Authored.skrib")

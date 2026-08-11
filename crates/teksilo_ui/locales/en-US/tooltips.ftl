@@ -45,3 +45,25 @@ wm-paratext = A text that is not part of the story.
 wm-paratext-more = A preface, a dedication, an afterword, a colophon — writing that belongs to the book but not to its body. Exported wherever you put it, and never counted in the manuscript's word count. Where it goes is up to you: conventions differ by country and publisher.
 wm-paratext-folder = A folder for paratexts.
 wm-paratext-folder-more = Somewhere to keep prefaces and afterwords so they do not clutter the binder. Organising only — it carries a [synopsis](:wm-synopsis) but adds nothing to the exported book, not even its own name.
+
+# ── Word / character targets ──────────────────────────────────────────────────
+# A second cascade web beside the writing-model one. It doubles as the app's only
+# explanation of how counting works, since there is no Help surface anywhere else.
+goal-target = How long this piece is meant to be.
+goal-target-more = Set a target on anything: a [scene](:wm-scene), a [chapter](:wm-chapter), a [part](:wm-part), the whole [book](:wm-book). Each one is its own number and stands on its own — setting a target on a chapter never changes its book's, and a book's target is never a sum of the chapters inside it. What does add up is the writing: a container's [progress](:goal-progress) is everything written beneath it. Leave a target at zero and it simply is not set. The number is counted in [words or characters](:goal-unit), whichever this project uses.
+goal-unit = Whether this project counts in words or in characters.
+goal-unit-more = A project-wide choice, because a length unit belongs to the manuscript and its market rather than to one section: German and French publishing measure in signs, Japanese in 400-character sheets, Chinese by the thousand characters, most English-language publishing in words. Both numbers are kept side by side and neither is ever converted into the other, so switching the unit points every [target](:goal-target) at the other figure and switching back restores the first. What it does not do is convert anything, so targets already entered will need updating by hand.
+goal-progress = How much is written, against the target.
+goal-progress-explained = A piece with prose of its own is measured against its own length; a container against [everything written beneath it](:goal-manuscript-words). The bar warms from red through amber to green as the writing comes in, and changes again once the piece has run well past what was planned, which is worth noticing when a chapter has a length to keep to.
+goal-manuscript-words = What counts as the manuscript.
+goal-manuscript-words-more = Only prose that would actually be exported: [scenes](:wm-scene) and [chapters](:wm-chapter) carrying their own text. A [note](:wm-note) or a [paratext](:wm-paratext) is not part of the manuscript and is never counted toward one. Anything in the trash drops out, and so does anything [left out of the export](:goal-exportable).
+goal-exportable = This row is left out of the export.
+goal-exportable-more = Its own length still shows, because the writing is still there — but it counts toward no total, exactly as it will appear in no exported book. Leaving a container out does not leave the pieces inside it out: each row answers for itself, which is what the "Apply to children" button beside the switch is for.
+goal-distribute = Share this target out across what is inside.
+goal-distribute-more = Splits a [book's](:wm-book) or [part's](:wm-part) target across its immediate children so the pieces add up to it exactly. By default it fills only the ones with no target yet and leaves your own numbers alone. What it writes are ordinary [targets](:goal-target), free to edit afterwards and free to drift apart: this is one action, not a standing arrangement.
+goal-subtree-total = What the targets inside add up to.
+goal-subtree-total-more = A fact, not a target. This project never treats a container's target as the sum of the ones inside it, because that is how a folder's figure ends up moving on its own when a scene inside it is given a number. This line simply tells you what your own numbers come to, so you can compare it with the container's [target](:goal-target) yourself, or [share one out](:goal-distribute).
+goal-milestone = A date to reach something by.
+goal-milestone-more = Two kinds. One says the [book](:wm-book) should stand at a given length by a date, a waypoint on its own curve. The other says a particular [chapter](:wm-chapter) or [part](:wm-part) should have reached [its own target](:goal-target) by then, and reads that number live rather than keeping a copy of it, so editing the target updates the milestone too. Both appear on the book's [pace plan](:pace-plan).
+pace-plan = The book's writing schedule.
+pace-plan-more = A [target](:goal-target) and a deadline, with the days you write on, turned into how much a day needs. It reads the book's own target, so setting it here and setting it in the Inspector are the same number in two places. Waypoints along the way are [milestones](:goal-milestone).

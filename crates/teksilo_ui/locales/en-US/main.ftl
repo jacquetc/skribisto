@@ -1967,3 +1967,87 @@ statusbar-games-forward = Always forward
 statusbar-games-forward-tooltip =
     "Always forward" is on: deleting, cutting and undoing are disabled while you
     draft. Click to stop playing.
+# ── Word / character targets ──────────────────────────────────────────────────
+# The shared vocabulary every surface that shows a target uses: the Inspector, the
+# Overview column, the status bar, a container page and the Distribute preview. Plurals
+# select on the bare number (`$g` / `$n`) while the visible figure is the grouped string,
+# because a count printed with thin spaces is no longer a number Fluent can select on.
+goal-progress-words = { $g ->
+    [one] { $count } of { $goal } word
+   *[other] { $count } of { $goal } words
+}
+goal-progress-characters = { $g ->
+    [one] { $count } of { $goal } character
+   *[other] { $count } of { $goal } characters
+}
+goal-count-words = { $n ->
+    [one] { $count } word
+   *[other] { $count } words
+}
+goal-count-characters = { $n ->
+    [one] { $count } character
+   *[other] { $count } characters
+}
+goal-unit-words = Words
+goal-unit-characters = Characters
+
+# The Inspector's per-item target.
+inspector-goal = Target
+inspector-goal-none = No target
+
+# The Overview's target column, and the note on a row the export leaves out.
+overview-col-goal = Target
+overview-excluded-from-export = Left out of the export, so it counts toward no total
+
+# A container's own page: what the targets set inside it add up to. Deliberately not a
+# target itself, and worded so it cannot be read as one.
+goal-subtree-total-words = { $count ->
+    [one] { $items } target inside adds up to { $words } words
+   *[other] { $items } targets inside add up to { $words } words
+}
+goal-subtree-total-characters = { $count ->
+    [one] { $items } target inside adds up to { $words } characters
+   *[other] { $items } targets inside add up to { $words } characters
+}
+
+# The New Work panel's counting-unit picker, beside the language it is seeded from.
+new-work-goal-unit = Count in
+new-work-goal-unit-hint = Used for every word or character target in this project. Changeable later.
+
+# Settings ▸ Work ▸ Structure: the project's counting unit, and the warning shown before
+# switching it. No conversion happens, in either direction.
+settings-group-goal-unit = Targets
+settings-goal-unit-switch-title = Switch counting unit
+settings-goal-unit-switch-text = The targets and milestones already set for this project were entered in { $from }. Switching to { $to } does not convert them, so every existing number will now be read as { $to }.
+settings-goal-unit-switch-informative = Nothing is lost. Switch back at any time to restore the original reading, then update the targets you want to keep.
+settings-goal-unit-switch-confirm = Switch
+
+# Distribute: sharing a container's target across the pieces inside it.
+goal-distribute-action = Distribute…
+distribute-title = Distribute the target
+distribute-empty = There is nothing inside this to share the target out to.
+distribute-weight = Share out
+distribute-weight-length = By length
+distribute-weight-rows = By pieces
+distribute-weight-even = Evenly
+distribute-overwrite = Replace targets that are already set
+distribute-col-item = Item
+distribute-col-current = Now
+distribute-col-proposed = After
+distribute-total = These add up to { $total }, against a target of { $goal }.
+distribute-over-budget = The targets already set inside come to { $over } more than this container's own. Raise its target, lower theirs, or replace them.
+distribute-apply = Distribute
+distribute-cancel = Cancel
+
+# Milestones on the Book's pace: a dated waypoint, of one of two kinds.
+milestone-target-gone = Target deleted
+milestone-no-target = No target
+milestone-add = Add
+milestone-add-label = What should be reached
+
+# The writing-plan summary shown once when a project with an active plan opens.
+pace-summary-title = Where the book stands
+pace-summary-remaining = { $words } to go
+pace-summary-open = Open the plan
+pace-summary-close = Close
+pace-summary-dont-show = Do not show this when opening

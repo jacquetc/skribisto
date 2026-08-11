@@ -161,6 +161,14 @@ pub struct WorkSession {
     /// not per-window like `pending_exit` (see that field's own doc for why
     /// IT moved the other way).
     pub unsaved: Signal<bool>,
+    /// Whether this open project has already been shown its writing-plan summary.
+    ///
+    /// Tier 2 because the summary belongs to the *opening*, not to a window: Work ▸ New
+    /// Window attaches to this same session, and a second window on the same book should
+    /// not greet the writer with the same figures again. Belt and braces today — that path
+    /// never runs the `LoadWork` subscriber at all — and cheap insurance against a future
+    /// door that does.
+    pub pace_summary_shown: Signal<bool>,
 }
 
 impl WorkSession {
@@ -255,6 +263,7 @@ impl WorkSession {
         );
 
         Self {
+            pace_summary_shown: Signal::new(false),
             ids,
             single_work,
             single_work_info,

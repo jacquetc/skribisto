@@ -66,9 +66,11 @@ pub mod compile;
 /// prose. The mechanical primitive lives in `text-document`; this owns the method choice.
 pub mod counting;
 
+pub mod footnote_numbering;
 /// Which ordinal each structural row carries — one pass over the whole manuscript, so
 /// the exporter and the binder's live badge cannot disagree about what chapter this is.
-pub mod footnote_numbering;
+/// Which counting unit a project starts in, from its writing language.
+pub mod goal_unit;
 /// A person's initials, for the short label a word processor shows beside a comment —
 /// seeded once when a row is created, never recomputed over a value an editor supplied.
 pub mod initials;

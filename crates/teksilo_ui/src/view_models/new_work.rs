@@ -45,6 +45,7 @@ use teksilo::widgets::{Toast, ValidationState};
 
 use frontend::AppContext;
 use frontend::commands::work_management_commands;
+use frontend::common::entities::GoalUnit;
 use frontend::work_management::{NewWorkDto, NewWorkTemplate};
 
 use crate::app::PendingAction;
@@ -58,6 +59,7 @@ use crate::shell::windows::ProjectWindowFactory;
 /// `language` is a locale tag (e.g. `"en-US"`) that becomes the new work's
 /// `dict_language`. Parsed through the shared helper so an unset choice yields no tags
 /// rather than a list holding one empty string.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn new_work_dto(
     file_name: String,
     is_folder: bool,
@@ -66,6 +68,7 @@ pub(crate) fn new_work_dto(
     chapter_scene_mode: bool,
     paratexts: ParatextPlanDto,
     author_name: String,
+    goal_unit: GoalUnit,
 ) -> NewWorkDto {
     NewWorkDto {
         file_name,
@@ -91,6 +94,7 @@ pub(crate) fn new_work_dto(
         author_name,
         paratext_front: paratexts.front,
         paratext_back: paratexts.back,
+        goal_unit,
     }
 }
 
@@ -264,6 +268,13 @@ pub struct NewWorkViewModel {
     /// instead of a `Chapter` folder holding an empty `Scene`. Ignored by the
     /// non-manuscript templates. Defaults to `false` (the classic layout).
     chapter_scene: Signal<bool>,
+    /// Which unit this project's targets will be counted in.
+    ///
+    /// Seeded from the chosen language and re-seeded while `goal_unit_touched` is false,
+    /// so a writer who picks Japanese sees the picker move to characters — and a writer who
+    /// set it by hand keeps their answer even if they then change the language.
+    goal_unit: Signal<GoalUnit>,
+    goal_unit_touched: Signal<bool>,
     /// The chosen paratext preset's id, or empty for "None" — the writer wanting no
     /// front or back matter at all, which is a first-class answer and the default when
     /// the interface locale matches no tradition.
@@ -352,6 +363,8 @@ impl NewWorkViewModel {
             language: Signal::new(current_locale_tag()),
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
+            goal_unit: Signal::new(GoalUnit::default()),
+            goal_unit_touched: Signal::new(false),
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
             app_ctx,
@@ -423,6 +436,8 @@ impl NewWorkViewModel {
             language: Signal::new(current_locale_tag()),
             template_idx: Signal::new(DEFAULT_TEMPLATE_INDEX),
             chapter_scene: Signal::new(false),
+            goal_unit: Signal::new(GoalUnit::default()),
+            goal_unit_touched: Signal::new(false),
             paratext_preset: Signal::new(preselected),
             paratext_presets: presets,
             app_ctx,
@@ -461,6 +476,30 @@ impl NewWorkViewModel {
     }
     pub fn chapter_scene(&self) -> Signal<bool> {
         self.chapter_scene.clone()
+    }
+
+    pub fn goal_unit(&self) -> Signal<GoalUnit> {
+        self.goal_unit.clone()
+    }
+
+    /// The picker's own change handler: record that the writer has spoken, so the
+    /// language no longer overrides it.
+    pub fn set_goal_unit(&self, unit: GoalUnit) {
+        self.goal_unit_touched.set(true);
+        self.goal_unit.set(unit);
+    }
+
+    /// Re-seed the unit from the language, unless the writer has already chosen one.
+    ///
+    /// Called from an effect on the language field rather than derived, because "has the
+    /// writer touched it" is state and a derived signal cannot hold any.
+    pub fn language_changed(&self) {
+        if self.goal_unit_touched.get() {
+            return;
+        }
+        let tag = self.language.get().unwrap_or_default();
+        self.goal_unit
+            .set(skribisto_model::goal_unit::default_unit_for_language(&tag));
     }
 
     /// Whether the "write directly in chapters" toggle applies to the current
@@ -592,6 +631,7 @@ impl NewWorkViewModel {
             // Trimmed so a field containing only spaces reads as unset rather
             // than putting whitespace on the title page.
             self.author.get().trim().to_string(),
+            self.goal_unit.get(),
         )
     }
 
@@ -691,6 +731,7 @@ mod tests {
             false,
             ParatextPlanDto::default(),
             "A. Writer".into(),
+            GoalUnit::default(),
         );
         assert_eq!(dto.author_name, "A. Writer");
     }
@@ -709,6 +750,7 @@ mod tests {
                 false,
                 ParatextPlanDto::default(),
                 typed.trim().to_string(),
+                GoalUnit::default(),
             );
             assert_eq!(dto.author_name, "", "{typed:?} must arrive as unset");
         }

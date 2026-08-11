@@ -208,6 +208,79 @@ fn chapter_scene_tooltip() -> TooltipContent {
         .with_more(tr!(new_work_chapter_scene_tip_more()))
 }
 
+/// The Words/Characters picker, over a local index kept in step with the view-model both
+/// ways: the writer's choice latches it (so the language stops overriding), and a language
+/// change re-seeds it while it has not been latched.
+fn goal_unit_field(vm: &NewWorkViewModel) -> impl Widget + use<> {
+    GoalUnitField {
+        vm: vm.clone(),
+        index: Signal::new(crate::widgets::goal_unit_picker::index_of(
+            &vm.goal_unit().get(),
+        )),
+        root: None,
+    }
+}
+
+/// The picker plus the two effects that keep it and the view-model agreeing.
+///
+/// A widget rather than two loose `ctx.effect` calls, because a `Step::content` factory has
+/// no `BuildContext` — the effects have to be registered by something that gets one.
+struct GoalUnitField {
+    vm: NewWorkViewModel,
+    index: Signal<usize>,
+    root: Option<WidgetId>,
+}
+
+impl std::fmt::Debug for GoalUnitField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GoalUnitField").finish()
+    }
+}
+
+impl Widget for GoalUnitField {
+    fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
+        // The language moved: re-seed, unless the writer has already spoken. The
+        // view-model owns that decision — this only tells it the language changed.
+        {
+            let vm = self.vm.clone();
+            let index = self.index.clone();
+            ctx.effect(&self.vm.language(), move |_| {
+                vm.language_changed();
+                let seeded = crate::widgets::goal_unit_picker::index_of(&vm.goal_unit().get());
+                if index.get() != seeded {
+                    index.set(seeded);
+                }
+            });
+        }
+        // Wrapped rather than given a builder tooltip: `SegmentedControl` has none, and
+        // the explanation is about the *choice*, not about either option.
+        let id = ctx.add(crate::widgets::tip::RichTip::new(
+            crate::tooltip_registry::GOAL_UNIT,
+            FixedSize::new().width(240.0).child(
+                crate::widgets::goal_unit_picker::goal_unit_control(self.index.clone(), {
+                    // The writer moved the control: latch their choice, so the language
+                    // stops overriding it from here on.
+                    let vm = self.vm.clone();
+                    move |unit, _ctx| vm.set_goal_unit(unit)
+                }),
+            ),
+        ));
+        self.root = Some(id);
+        vec![id]
+    }
+
+    fn layout_response(&self, proposal: SizeProposal, ctx: &LayoutContext) -> LayoutResponse {
+        self.root
+            .and_then(|id| ctx.child_size(id, proposal))
+            .map(LayoutResponse::from)
+            .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
+    }
+
+    fn children(&self) -> Vec<WidgetId> {
+        self.root.into_iter().collect()
+    }
+}
+
 /// The project language dropdown, populated from the **dictionary registry** (the languages
 /// a writer can spell-check in) — NOT the app's UI-translation locales, which are a
 /// different, unrelated list (a French-UI user may well write an English novel). Bound to
@@ -364,6 +437,20 @@ fn language_step(vm: &NewWorkViewModel) -> impl Widget + use<> {
                 .spacing(6.0)
                 .child(FixedSize::new().width(240.0).child(language_combo(vm)))
                 .child(hint(tr!(new_work_language_hint()))),
+        )
+        // ── Counting unit ────────────────────────────────────────────────
+        //
+        // Beside the language, not over on the template step with the chapter
+        // toggle, because it is *derived* from the language: a control whose
+        // default moves has to be where the writer can see it move. Picking
+        // Japanese and then finding, two steps later, that the unit had quietly
+        // become characters would be the same information delivered as a surprise.
+        .line(
+            field_label(tr!(new_work_goal_unit())),
+            VStack::new()
+                .spacing(6.0)
+                .child(goal_unit_field(vm))
+                .child(hint(tr!(new_work_goal_unit_hint()))),
         );
 
     let form = match vm.purpose() {

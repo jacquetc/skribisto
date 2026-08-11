@@ -135,6 +135,14 @@ pub static SETTINGS: &[SettingSpec] = &[
               on translated text must set this.",
     },
     SettingSpec {
+        key: crate::PACE_SUMMARY_ON_OPEN_KEY,
+        ty: "bool",
+        default: || val(true),
+        check: check::<bool>,
+        doc: "Show where the book stands when a project with an active writing plan \
+              opens. Projects without one never show it.",
+    },
+    SettingSpec {
         key: crate::SHOW_WELCOME_KEY,
         ty: "bool",
         default: || val(true),

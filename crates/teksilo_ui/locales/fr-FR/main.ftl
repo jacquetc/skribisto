@@ -1957,3 +1957,92 @@ statusbar-games-forward = Droit devant
 statusbar-games-forward-tooltip =
     « Droit devant » est activé : supprimer, couper et annuler sont désactivés pendant
     que vous écrivez. Cliquez pour arrêter la partie.
+# ── Objectifs de mots / de caractères ─────────────────────────────────────────
+# Le vocabulaire partagé par toutes les surfaces qui montrent un objectif : l'Inspecteur,
+# la colonne de la Vue d'ensemble, la barre d'état, la page d'un conteneur et l'aperçu de
+# la répartition. Les pluriels se décident sur le nombre brut (`$g` / `$n`) tandis que le
+# chiffre affiché est la chaîne groupée : un compte écrit avec des espaces fines n'est plus
+# un nombre sur lequel Fluent puisse choisir.
+goal-progress-words = { $g ->
+    [one] { $count } sur { $goal } mot
+   *[other] { $count } sur { $goal } mots
+}
+goal-progress-characters = { $g ->
+    [one] { $count } sur { $goal } caractère
+   *[other] { $count } sur { $goal } caractères
+}
+goal-count-words = { $n ->
+    [one] { $count } mot
+   *[other] { $count } mots
+}
+goal-count-characters = { $n ->
+    [one] { $count } caractère
+   *[other] { $count } caractères
+}
+goal-unit-words = Mots
+goal-unit-characters = Caractères
+
+# L'objectif par élément de l'Inspecteur.
+inspector-goal = Objectif
+inspector-goal-none = Aucun objectif
+
+# La colonne d'objectif de la Vue d'ensemble, et la mention portée par une ligne que
+# l'export laisse de côté.
+overview-col-goal = Objectif
+overview-excluded-from-export = Hors export : cette ligne ne compte dans aucun total
+
+# La page propre d'un conteneur : ce à quoi s'ajoutent les objectifs définis à l'intérieur.
+# Ce n'est délibérément pas un objectif, et la formulation ne doit pas laisser croire que
+# c'en est un.
+goal-subtree-total-words = { $count ->
+    [one] { $items } objectif à l'intérieur totalise { $words } mots
+   *[other] { $items } objectifs à l'intérieur totalisent { $words } mots
+}
+goal-subtree-total-characters = { $count ->
+    [one] { $items } objectif à l'intérieur totalise { $words } caractères
+   *[other] { $items } objectifs à l'intérieur totalisent { $words } caractères
+}
+
+# Le sélecteur d'unité de comptage du panneau Nouveau projet, à côté de la langue dont il
+# tire sa valeur par défaut.
+new-work-goal-unit = Compter en
+new-work-goal-unit-hint = Utilisé pour tous les objectifs de ce projet. Modifiable ensuite.
+
+# Réglages ▸ Projet ▸ Structure : l'unité de comptage du projet, et l'avertissement affiché
+# avant d'en changer. Aucune conversion n'a lieu, dans un sens comme dans l'autre.
+settings-group-goal-unit = Objectifs
+settings-goal-unit-switch-title = Changer d'unité de comptage
+settings-goal-unit-switch-text = Les objectifs et jalons déjà définis pour ce projet ont été saisis en { $from }. Passer à { $to } ne les convertit pas : chaque nombre existant sera désormais lu comme des { $to }.
+settings-goal-unit-switch-informative = Rien n'est perdu. Revenez en arrière à tout moment pour retrouver la lecture d'origine, puis mettez à jour les objectifs à conserver.
+settings-goal-unit-switch-confirm = Changer
+
+# Répartition : partager l'objectif d'un conteneur entre les éléments qu'il contient.
+goal-distribute-action = Répartir…
+distribute-title = Répartir l'objectif
+distribute-empty = Il n'y a rien à l'intérieur à qui répartir l'objectif.
+distribute-weight = Répartir
+distribute-weight-length = Selon la longueur
+distribute-weight-rows = Selon le nombre d'éléments
+distribute-weight-even = À parts égales
+distribute-overwrite = Remplacer les objectifs déjà définis
+distribute-col-item = Élément
+distribute-col-current = Actuel
+distribute-col-proposed = Après
+distribute-total = Total : { $total }, pour un objectif de { $goal }.
+distribute-over-budget = Les objectifs déjà définis à l'intérieur dépassent de { $over } celui de ce conteneur. Augmentez le sien, réduisez les leurs, ou remplacez-les.
+distribute-apply = Répartir
+distribute-cancel = Annuler
+
+# Les jalons du rythme du livre : un point de passage daté, de l'une des deux sortes.
+milestone-target-gone = Cible supprimée
+milestone-no-target = Aucun objectif
+milestone-add = Ajouter
+milestone-add-label = Ce qui doit être atteint
+
+# Le résumé du plan d'écriture, affiché une fois à l'ouverture d'un projet dont le plan est
+# actif.
+pace-summary-title = Où en est le livre
+pace-summary-remaining = Il reste { $words }
+pace-summary-open = Ouvrir le plan
+pace-summary-close = Fermer
+pace-summary-dont-show = Ne plus afficher à l'ouverture

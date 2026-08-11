@@ -14,4 +14,6 @@ pub(crate) mod import_document;
 pub(crate) mod import_plume;
 pub(crate) mod license;
 pub(crate) mod new_work;
+/// Where the book stands, shown once when a project with an active writing plan opens.
+pub(crate) mod pace_summary;
 pub(crate) mod welcome;

@@ -34,6 +34,7 @@ fn the_root_id(ctx: &AppContext) -> u64 {
 }
 fn new_work_dto(name: &str) -> NewWorkDto {
     NewWorkDto {
+        goal_unit: Default::default(),
         file_name: format!("/tmp/{name}.skrib"),
         is_folder: false,
         template_kind: NewWorkTemplate::Novel,

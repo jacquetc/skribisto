@@ -20,6 +20,12 @@
 //!    registered here once, at boot, through
 //!    `TeksiloAppBuilder::register_tooltips` in `main.rs`.
 //!
+//! Two webs live here: the writing-model vocabulary (`wm-*`) and the word/character
+//! **target** vocabulary (`goal-*`, plus `pace-plan`). They cross-link freely — a target's
+//! explainer cites scenes and chapters, and the manuscript-counting one cites notes and
+//! paratexts — which is the point: what counts toward a book's length is a question about
+//! the writing model, not a separate topic.
+//!
 //! These double as a lightweight, in-place substitute for a separate Help
 //! document: the short `text` says what the type is; the `more` disclosure
 //! teaches the distinctive writing model (dual text + synopsis, the two chapter
@@ -61,6 +67,33 @@ pub const SCENE_BREAK_MAJOR: &str = "scene-break-major";
 /// field's "New tag…" form — and both must say the same thing.
 pub const WM_STORY_BIBLE: &str = "wm-story-bible";
 
+// ── Word / character targets ──────────────────────────────────────────────────
+//
+// A second cascade web, registered here for the same two reasons as the writing-model one:
+// a target explains itself identically wherever it is offered, and the concepts each
+// explainer cites become live links to their own entries. It is also, in practice, the
+// app's only documentation of what does and does not get counted — `FEATURES.md` records
+// that there is no help surface anywhere else.
+/// The per-item target itself: the Inspector's field, the Overview's column header.
+pub const GOAL_TARGET: &str = "goal-target";
+/// Words vs characters, on the New Work picker and the Settings one.
+pub const GOAL_UNIT: &str = "goal-unit";
+/// The bar and its reading. A concept, not a control: a cascade target only.
+pub const GOAL_PROGRESS: &str = "goal-progress";
+/// What the manuscript admits — the single gate every count in this app applies.
+pub const GOAL_MANUSCRIPT_WORDS: &str = "goal-manuscript-words";
+/// Why a row's own length can show while it counts toward nothing.
+pub const GOAL_EXPORTABLE: &str = "goal-exportable";
+/// The Distribute action and its preview.
+pub const GOAL_DISTRIBUTE: &str = "goal-distribute";
+/// The informational "what the targets inside add up to" line, which must never be
+/// mistaken for a target.
+pub const GOAL_SUBTREE_TOTAL: &str = "goal-subtree-total";
+/// The two milestone kinds.
+pub const GOAL_MILESTONE: &str = "goal-milestone";
+/// The Book's Pace plan, cited by the milestone explainer and citing it back.
+pub const PACE_PLAN: &str = "pace-plan";
+
 /// Every registered writing-model key. Consumed by the headless test that
 /// asserts every menu row's key and every `[..](:key)` cascade link in the
 /// Fluent bodies resolves to something registered here.
@@ -79,6 +112,15 @@ pub const WM_KEYS: &[&str] = &[
     SCENE_BREAK_MINOR,
     SCENE_BREAK_MAJOR,
     WM_STORY_BIBLE,
+    GOAL_TARGET,
+    GOAL_UNIT,
+    GOAL_PROGRESS,
+    GOAL_MANUSCRIPT_WORDS,
+    GOAL_EXPORTABLE,
+    GOAL_DISTRIBUTE,
+    GOAL_SUBTREE_TOTAL,
+    GOAL_MILESTONE,
+    PACE_PLAN,
 ];
 
 /// The writing-model rich tooltips, registered once at boot. Each carries a
@@ -110,6 +152,24 @@ pub fn writing_model_tooltips() -> Vec<TooltipContent> {
             .for_shortcut("format.major_scene_break"),
         TooltipContent::new(WM_STORY_BIBLE, tr!(wm_story_bible()))
             .with_more(tr!(wm_story_bible_more())),
+        TooltipContent::new(GOAL_TARGET, tr!(goal_target())).with_more(tr!(goal_target_more())),
+        TooltipContent::new(GOAL_UNIT, tr!(goal_unit())).with_more(tr!(goal_unit_more())),
+        // The `more` key is `-explained` rather than `-more`: `goal-progress-words` and
+        // friends already live in `main.ftl` as the printed readout, and a
+        // `goal-progress-more` beside them would read as one of that family.
+        TooltipContent::new(GOAL_PROGRESS, tr!(goal_progress()))
+            .with_more(tr!(goal_progress_explained())),
+        TooltipContent::new(GOAL_MANUSCRIPT_WORDS, tr!(goal_manuscript_words()))
+            .with_more(tr!(goal_manuscript_words_more())),
+        TooltipContent::new(GOAL_EXPORTABLE, tr!(goal_exportable()))
+            .with_more(tr!(goal_exportable_more())),
+        TooltipContent::new(GOAL_DISTRIBUTE, tr!(goal_distribute()))
+            .with_more(tr!(goal_distribute_more())),
+        TooltipContent::new(GOAL_SUBTREE_TOTAL, tr!(goal_subtree_total()))
+            .with_more(tr!(goal_subtree_total_more())),
+        TooltipContent::new(GOAL_MILESTONE, tr!(goal_milestone()))
+            .with_more(tr!(goal_milestone_more())),
+        TooltipContent::new(PACE_PLAN, tr!(pace_plan())).with_more(tr!(pace_plan_more())),
     ]
 }
 

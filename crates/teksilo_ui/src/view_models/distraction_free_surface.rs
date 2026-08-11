@@ -57,6 +57,11 @@ pub struct SurfaceDeps {
     /// Whether a project is open — the same test the status bar's own items use.
     pub has_work: Signal<bool>,
     pub show_characters: Signal<bool>,
+    /// The project's target unit and a store handle, for the strip's own copy of the
+    /// status bar's word-count indicator — which draws the target bar itself, so the mode
+    /// inherits it without a second implementation.
+    pub goal_unit: Signal<frontend::common::entities::GoalUnit>,
+    pub app_ctx: std::rc::Rc<frontend::AppContext>,
     pub chrome: FocusStripChrome,
     /// The theme library, and the id of the one in force. The id is an ordinary
     /// setting (one live handle — see `DistractionFreeThemesViewModel`), so the
@@ -277,6 +282,8 @@ impl DistractionFreeSurfaceViewModel {
             d.session_vm.clone(),
             d.has_work.clone(),
             d.show_characters.clone(),
+            d.goal_unit.clone(),
+            d.app_ctx.clone(),
             d.chrome.clone(),
             self.focus.synopsis_visible_signal(),
             self.synopsis_capable.clone(),

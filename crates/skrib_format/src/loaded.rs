@@ -110,6 +110,11 @@ pub struct LoadedMilestone {
     pub target_item: Option<u64>,
     pub target_date: chrono::DateTime<chrono::Utc>,
     pub target_word_count: Option<i64>,
+    /// Which kind of waypoint this is. Carried from disk rather than re-derived from
+    /// `target_item`, because that reference can fail to remap: an `Item` milestone whose
+    /// chapter was deleted must stay an `Item` milestone with a missing target, not turn
+    /// into a book-cumulative one holding a number nobody typed.
+    pub kind: common::entities::MilestoneKind,
 }
 
 pub struct LoadedComment {

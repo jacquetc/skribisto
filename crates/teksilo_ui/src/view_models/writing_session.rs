@@ -79,23 +79,18 @@ pub fn remaining(elapsed: Duration, target: Option<Duration>) -> Option<Duration
 }
 
 /// Progress toward the word goal in `0.0..=1.0`, or `None` when there is no word goal.
-pub fn words_progress(written: i64, target: Option<i64>) -> Option<f32> {
-    target
-        .filter(|t| *t > 0)
-        .map(|t| (written.max(0) as f32 / t as f32).clamp(0.0, 1.0))
-}
+///
+/// Lives in [`crate::goals::progress`] with the rest of the target vocabulary, so a
+/// sprint's gauge and a document target's bar cannot drift apart; re-exported here because
+/// the session is one of its two callers.
+pub use crate::goals::progress::words_progress;
 
-/// The bucketed red→green gauge colour for a progress ratio — kept to semantic theme
-/// roles (no colour interpolation primitive exists), so it works in light and dark.
-pub fn gauge_role(progress: f32) -> TextRole {
-    if progress < 0.34 {
-        TextRole::Error
-    } else if progress < 0.75 {
-        TextRole::Warning
-    } else {
-        TextRole::Success
-    }
-}
+/// The bucketed red→green gauge colour for a progress ratio.
+///
+/// A sprint is the *three*-band case: there is no such thing as writing too much in one, so
+/// it deliberately does not carry the overshoot band a document target uses
+/// ([`crate::goals::progress::target_role`]).
+pub use crate::goals::progress::sprint_role as gauge_role;
 
 /// `M:SS` of a duration (the status bar's compact time readout).
 pub fn format_mmss(d: Duration) -> String {
@@ -329,27 +324,18 @@ mod tests {
         );
     }
 
+    /// The gauge itself is covered where it lives (`crate::goals::progress`); this pins
+    /// the re-export, so moving it out cannot silently change what the session draws.
     #[test]
-    fn words_progress_ratio_and_no_goal() {
-        assert_eq!(words_progress(250, None), None);
-        assert_eq!(words_progress(250, Some(0)), None, "0 target = no goal");
-        assert_eq!(words_progress(250, Some(500)), Some(0.5));
+    fn the_session_gauge_is_the_three_band_one() {
         assert_eq!(words_progress(600, Some(500)), Some(1.0), "clamped at full");
-        assert_eq!(
-            words_progress(-5, Some(500)),
-            Some(0.0),
-            "negative clamps to 0"
-        );
-    }
-
-    #[test]
-    fn gauge_role_buckets_red_amber_green() {
-        assert_eq!(gauge_role(0.0), TextRole::Error);
         assert_eq!(gauge_role(0.33), TextRole::Error);
-        assert_eq!(gauge_role(0.34), TextRole::Warning);
-        assert_eq!(gauge_role(0.74), TextRole::Warning);
-        assert_eq!(gauge_role(0.75), TextRole::Success);
         assert_eq!(gauge_role(1.0), TextRole::Success);
+        assert_eq!(
+            gauge_role(crate::goals::progress::bar_fill(3.0)),
+            TextRole::Success,
+            "a sprint has no overshoot band"
+        );
     }
 
     #[test]

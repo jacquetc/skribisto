@@ -187,6 +187,7 @@ fn work_management_new(ctx: &AppContext, dir: &std::path::Path) {
     frontend::commands::work_management_commands::new_work(
         ctx,
         &NewWorkDto {
+            goal_unit: Default::default(),
             file_name: dir.to_string_lossy().to_string(),
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,

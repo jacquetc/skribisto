@@ -20,7 +20,7 @@ mod imp {
 
     use frontend::AppContext;
     use frontend::commands::work_commands;
-    use frontend::common::entities::ChapterMode;
+    use frontend::common::entities::{ChapterMode, GoalUnit};
     use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
     use frontend::direct_access::UpdateWorkDto;
 
@@ -32,6 +32,7 @@ mod imp {
         author_name: Signal<String>,
         dict_language: Signal<Vec<String>>,
         chapter_mode: Signal<ChapterMode>,
+        goal_unit: Signal<GoalUnit>,
         number_chapters: Signal<bool>,
         part_resets_chapter: Signal<bool>,
         /// The per-project master switch for the custom text-replacement lexicon.
@@ -68,6 +69,7 @@ mod imp {
                     author_name: Signal::new(String::new()),
                     dict_language: Signal::new(Vec::new()),
                     chapter_mode: Signal::new(ChapterMode::default()),
+                    goal_unit: Signal::new(GoalUnit::default()),
                     // `true`, matching the entity default and every project that predates
                     // the field — a Work is numbered unless it says otherwise.
                     number_chapters: Signal::new(true),
@@ -128,6 +130,15 @@ mod imp {
         pub fn dict_language(&self) -> Signal<Vec<String>> {
             self.inner.dict_language.clone()
         }
+        /// Which unit this project's word/character targets are expressed in.
+        ///
+        /// Per-project rather than per-item or app-global: a length unit follows the
+        /// manuscript's language and its market's convention, so a writer with a French
+        /// novel and a Japanese one needs two answers and needs only two.
+        pub fn goal_unit(&self) -> Signal<GoalUnit> {
+            self.inner.goal_unit.clone()
+        }
+
         pub fn chapter_mode(&self) -> Signal<ChapterMode> {
             self.inner.chapter_mode.clone()
         }
@@ -189,6 +200,16 @@ mod imp {
             self.mark_dirty();
             self.inner.chapter_mode.set(v);
         }
+        /// Switch which of `BinderItem`'s two targets this project reads.
+        ///
+        /// **Converts nothing.** Both numbers stay exactly as they were, so switching back
+        /// restores the original reading. The caller is expected to have warned first: the
+        /// targets already entered were written in the old unit and will now be read in
+        /// the new one, which changes what every one of them means.
+        pub fn set_goal_unit(&self, v: GoalUnit) {
+            self.mark_dirty();
+            self.inner.goal_unit.set(v);
+        }
         pub fn set_custom_replacement_rules_enabled(&self, v: bool) {
             self.mark_dirty();
             self.inner.custom_replacement_rules_enabled.set(v);
@@ -227,6 +248,7 @@ mod imp {
                 dict_language: self.inner.dict_language.get(),
                 unique_id: existing.unique_id,
                 chapter_mode: self.inner.chapter_mode.get(),
+                goal_unit: self.inner.goal_unit.get(),
                 number_chapters: self.inner.number_chapters.get(),
                 part_resets_chapter: self.inner.part_resets_chapter.get(),
                 custom_replacement_rules_enabled: self.inner.custom_replacement_rules_enabled.get(),
@@ -258,6 +280,7 @@ mod imp {
                     // that must not run once per keystroke-triggered autosave.
                     self.inner.dict_language.set_if_changed(w.dict_language);
                     self.inner.chapter_mode.set(w.chapter_mode);
+                    self.inner.goal_unit.set(w.goal_unit);
                     self.inner.number_chapters.set(w.number_chapters);
                     self.inner.part_resets_chapter.set(w.part_resets_chapter);
                     self.inner
@@ -283,6 +306,7 @@ mod imp {
             self.inner.author_name.set(String::new());
             self.inner.dict_language.set(Vec::new());
             self.inner.chapter_mode.set(ChapterMode::default());
+            self.inner.goal_unit.set(GoalUnit::default());
             self.inner.number_chapters.set(true);
             self.inner.part_resets_chapter.set(false);
             self.inner.custom_replacement_rules_enabled.set(false);
@@ -309,7 +333,7 @@ mod imp {
     use teksilo::prelude::*;
 
     use frontend::AppContext;
-    use frontend::common::entities::ChapterMode;
+    use frontend::common::entities::{ChapterMode, GoalUnit};
 
     use crate::singles::LoadingStatus;
 
@@ -319,6 +343,7 @@ mod imp {
         author_name: Signal<String>,
         dict_language: Signal<Vec<String>>,
         chapter_mode: Signal<ChapterMode>,
+        goal_unit: Signal<GoalUnit>,
         number_chapters: Signal<bool>,
         part_resets_chapter: Signal<bool>,
         custom_replacement_rules_enabled: Signal<bool>,
@@ -348,6 +373,7 @@ mod imp {
                     author_name: Signal::new("Mock Author".to_string()),
                     dict_language: Signal::new(vec!["en".to_string()]),
                     chapter_mode: Signal::new(ChapterMode::default()),
+                    goal_unit: Signal::new(GoalUnit::default()),
                     // `true`, matching the entity default and every project that predates
                     // the field — a Work is numbered unless it says otherwise.
                     number_chapters: Signal::new(true),
@@ -379,6 +405,15 @@ mod imp {
         pub fn dict_language(&self) -> Signal<Vec<String>> {
             self.inner.dict_language.clone()
         }
+        /// Which unit this project's word/character targets are expressed in.
+        ///
+        /// Per-project rather than per-item or app-global: a length unit follows the
+        /// manuscript's language and its market's convention, so a writer with a French
+        /// novel and a Japanese one needs two answers and needs only two.
+        pub fn goal_unit(&self) -> Signal<GoalUnit> {
+            self.inner.goal_unit.clone()
+        }
+
         pub fn chapter_mode(&self) -> Signal<ChapterMode> {
             self.inner.chapter_mode.clone()
         }
@@ -428,6 +463,9 @@ mod imp {
         }
         pub fn set_chapter_mode(&self, v: ChapterMode) {
             self.inner.chapter_mode.set(v);
+        }
+        pub fn set_goal_unit(&self, v: GoalUnit) {
+            self.inner.goal_unit.set(v);
         }
         pub fn set_custom_replacement_rules_enabled(&self, v: bool) {
             self.inner.custom_replacement_rules_enabled.set(v);

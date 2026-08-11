@@ -22,6 +22,10 @@ use teksilo::widgets::{
 
 use uuid::Uuid;
 
+// The same grouping every other count in the app uses — the Inspector's readout, the
+// status bar, the Distribute preview — so one number never looks like two.
+use crate::goals::format_count;
+use crate::models::COL_GOAL;
 use crate::models::{
     COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_COMMENTS,
     COL_TOTAL_WORDS, COL_TYPE,
@@ -30,11 +34,12 @@ use crate::models::{
 /// Build the column set for a table bound to `vm`.
 ///
 /// **The widths are a budget.** `TreeTableView` falls back to an internal horizontal
-/// scrollbar for overflow, but the goal is a set that never needs it: the six fixed
-/// columns cost 464 dp between them and the two flexible ones carry low minimums (120 +
+/// scrollbar for overflow, but the goal is a set that never needs it: the seven fixed
+/// columns cost 540 dp between them and the two flexible ones carry low minimums (120 +
 /// 72), so the whole set still fits an editor pane in a split window (~610 dp) with the
 /// outline and inspector docks open. Widen any of them and check that case — the margin
-/// is now thin.
+/// is thin, which is exactly why the Target column prints a bare number rather than the
+/// "1 234 / 2 000" string that would read better and cost another 130 dp.
 pub(super) fn overview_columns(vm: &OverviewViewModel) -> Vec<Column<OverviewRow>> {
     vec![
         title_column(vm),
@@ -43,6 +48,7 @@ pub(super) fn overview_columns(vm: &OverviewViewModel) -> Vec<Column<OverviewRow
         tags_column(vm),
         own_words_column(vm),
         total_words_column(vm),
+        goal_column(vm),
         open_comments_column(vm),
         total_comments_column(vm),
     ]
@@ -233,12 +239,24 @@ fn tags_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
 /// which is a different fact from an empty Scene, and printing `0` for both would make
 /// the column lie about which pieces are still unwritten — the one question it exists to
 /// answer.
+///
+/// A row the export leaves out still prints its **real** length, dimmed. It contributes
+/// nothing to any total beside it, and the two columns stop agreeing for that row — which
+/// is the honest outcome: "how long is this piece" stays true of a scene the writer has
+/// cut from the book, while "how much book is in here" does not. Printing `0` instead
+/// would make a 1 200-word scene read as unwritten.
 fn own_words_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     let vm = vm.clone();
     Column::new(
         COL_OWN_WORDS,
         tr!(overview_col_own_words()),
-        move |row, _cx| with_row_menu(&vm, row, word_cell(row.own_words)),
+        move |row: &OverviewRow, _cx: &CellContext| {
+            if row.is_exportable {
+                with_row_menu(&vm, row, word_cell(row.own_words))
+            } else {
+                with_row_menu(&vm, row, excluded_word_cell(row.own_words))
+            }
+        },
     )
     .width(ColumnWidth::Fixed(76.0))
     .alignment(TableAlignment::Trailing)
@@ -295,6 +313,47 @@ fn total_comments_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
     .sortable(true)
 }
 
+/// **Target** — how long this row is meant to be, in the project's unit.
+///
+/// A bare number, editable in place. Deliberately **not** a "1 234 / 2 000" string and
+/// deliberately not paired with a "total target" column: the width budget above has no
+/// room for the first, and the second would be the mistake every writer of a competing
+/// tool has complained about for fifteen years — a container's figure moving on its own
+/// because a scene inside it was given one. Progress rolls up in this app; targets do not.
+///
+/// The colour carries the progress instead, against the same number the **Total** column
+/// shows for the row, so the two cells cannot tell different stories.
+fn goal_column(vm: &OverviewViewModel) -> Column<OverviewRow> {
+    let vm = vm.clone();
+    Column::new(
+        COL_GOAL,
+        tr!(overview_col_goal()),
+        move |row: &OverviewRow, cx: &CellContext| {
+            if cx.is_editing {
+                return Box::new(cell_editor(&vm, row.uid, COL_GOAL));
+            }
+            if row.goal <= 0 {
+                return with_row_menu(&vm, row, word_cell(None));
+            }
+            // Measured against this row's own prose when it has any, else against
+            // everything beneath it — the same rule the Inspector's readout uses.
+            let written = row.own_words.unwrap_or(row.total_words) as i64;
+            let ratio = crate::goals::ratio(written, row.goal).unwrap_or(0.0);
+            with_row_menu(
+                &vm,
+                row,
+                TextWidget::new(lit!(crate::goals::format_goal(row.goal)))
+                    .color(crate::goals::target_role(ratio))
+                    .single_line(),
+            )
+        },
+    )
+    .width(ColumnWidth::Fixed(76.0))
+    .alignment(TableAlignment::Trailing)
+    .sortable(true)
+    .editable(true)
+}
+
 /// A right-aligned count, or a muted dash when there is nothing to count.
 fn word_cell(words: Option<usize>) -> impl Widget {
     match words {
@@ -305,19 +364,19 @@ fn word_cell(words: Option<usize>) -> impl Widget {
     .single_line()
 }
 
-/// Group a count with thin spaces, so a five-figure book total stays readable at a
-/// glance. Locale-independent on purpose: a thin space reads correctly everywhere a
-/// comma or a period would be ambiguous between the two conventions.
-fn format_count(n: usize) -> String {
-    let digits = n.to_string();
-    let mut out = String::with_capacity(digits.len() + digits.len() / 3);
-    for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i).is_multiple_of(3) {
-            out.push('\u{202F}'); // narrow no-break space
-        }
-        out.push(c);
+/// The same count, dimmed, for a row the export leaves out — with the reason on hover.
+///
+/// Dimmed rather than hidden or zeroed: the writing is still there and its length is still
+/// the answer to "how long is this piece". What it no longer is, is part of the book, which
+/// is what the neighbouring **Total** column stops counting it in.
+fn excluded_word_cell(words: Option<usize>) -> impl Widget {
+    let text = match words {
+        Some(n) => TextWidget::new(lit!(format_count(n))),
+        None => TextWidget::new(lit!("—".to_string())),
     }
-    out
+    .color(TextRole::Disabled)
+    .single_line();
+    crate::widgets::tip::RichTip::new(crate::tooltip_registry::GOAL_EXPORTABLE, text)
 }
 
 /// The in-place cell editor: a text input over the **view-model's** buffer, committing on
@@ -365,6 +424,10 @@ mod tests {
     use super::*;
 
     /// Counts are grouped for readability, and short ones are left alone.
+    ///
+    /// The grouping itself is covered where it lives (`crate::goals::format`); this pins
+    /// the fact that the table still uses that one, so the Overview's numbers cannot start
+    /// looking different from the Inspector's.
     #[test]
     fn counts_group_in_threes() {
         assert_eq!(format_count(0), "0");
@@ -372,5 +435,48 @@ mod tests {
         assert_eq!(format_count(1_000), "1\u{202F}000");
         assert_eq!(format_count(12_345), "12\u{202F}345");
         assert_eq!(format_count(1_234_567), "1\u{202F}234\u{202F}567");
+    }
+
+    /// The Target column exists, sits with the other counts, and every column id has a
+    /// comparator.
+    ///
+    /// The ids are the persistence key for sort, width and order, and the module's own doc
+    /// warns that one drifting from its comparator would render fine and silently stop
+    /// sorting — so the second half of this is the part worth having.
+    #[cfg(feature = "mocks")]
+    #[test]
+    fn the_target_column_is_in_the_set_and_sorts() {
+        use crate::models::{COL_GOAL, COL_TOTAL_WORDS};
+        let vm = crate::view_models::OverviewViewModel::new(
+            std::rc::Rc::new(frontend::AppContext::new()),
+            crate::app_ids::AppIds::new(),
+            101,
+            &frontend::common::entities::BinderItemRole::Folder,
+            &frontend::common::entities::BinderItemSubRole::Book,
+            Signal::new(Default::default()),
+            crate::view_models::TreeExpansionViewModel::new(
+                std::rc::Rc::new(frontend::AppContext::new()),
+                crate::app_ids::AppIds::new(),
+                crate::models::TreeExpansionService::in_memory_default(),
+            ),
+            Signal::new(Default::default()),
+        )
+        .expect("a Book is overview-capable");
+
+        let ids: Vec<String> = overview_columns(&vm)
+            .iter()
+            .map(|c| c.id().to_string())
+            .collect();
+        assert!(
+            ids.contains(&COL_GOAL.to_string()),
+            "no Target column: {ids:?}"
+        );
+        let goal_at = ids.iter().position(|i| i == COL_GOAL).unwrap();
+        let total_at = ids.iter().position(|i| i == COL_TOTAL_WORDS).unwrap();
+        assert_eq!(
+            goal_at,
+            total_at + 1,
+            "the Target column belongs with the counts, right after Total"
+        );
     }
 }

@@ -195,6 +195,7 @@ mod tests {
                 format_min_read_version: None,
                 shape: ShapeTag::Zip,
                 work: WorkFile {
+                    goal_unit: Default::default(),
                     file_id: 1,
                     created_at: "2020-01-01T00:00:00Z".into(),
                     updated_at: updated.into(),

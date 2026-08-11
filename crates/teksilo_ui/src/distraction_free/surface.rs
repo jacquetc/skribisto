@@ -460,6 +460,7 @@ mod tests {
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
             crate::view_models::WritingGamesViewModel::detached(),
+            Signal::new(frontend::common::entities::GoalUnit::default()),
         );
         let doc = Rc::new(OpenDoc::build(
             &app_ctx,
@@ -502,6 +503,8 @@ mod tests {
             session_vm: WritingSessionViewModel::new(stats, &store),
             has_work: Signal::new(true),
             show_characters: Signal::new(false),
+            goal_unit: Signal::new(frontend::common::entities::GoalUnit::default()),
+            app_ctx: app_ctx.clone(),
             chrome: FocusStripChrome::all_shown(),
             themes: DistractionFreeThemesViewModel::new(
                 crate::models::DistractionFreeThemesService::in_memory_default(),

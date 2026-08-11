@@ -161,6 +161,12 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
         ));
     }
     col = col.child(centered(subtitle_tag_dots(tab), &tab.column_width));
+    // How long this container is meant to be, how far along it is, and what the targets
+    // set inside it add up to — the last of which is explicitly not a target.
+    col = col.child(centered(
+        crate::tabs::shared::goal_header::container_goal_header(tab),
+        &tab.column_width,
+    ));
     // After the title, before the body — where CMOS §13.36 puts a chapter epigraph, and
     // where the compiler emits it, so the page reads in the order the export writes.
     if let Some(epi) = epigraph_section(tab) {

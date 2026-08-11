@@ -94,6 +94,7 @@ pub mod distraction_free;
 pub mod docks;
 pub mod export;
 pub mod first_run;
+pub mod goals;
 pub mod icons;
 pub mod identity;
 pub mod intents;
@@ -332,6 +333,13 @@ pub const COMMENTS_VISIBLE_DEFAULT: bool = true;
 /// startup"). Toggled in Settings ▸ Appearance & Behaviour (the Launcher
 /// itself has no inline copy of this — see `welcome_panel.rs`'s module docs).
 pub const SHOW_WELCOME_KEY: &str = "ui.show_welcome";
+
+/// Show the writing-plan summary when a project with an active plan opens.
+///
+/// App-global rather than per-project, because the projects it *would* be wrong for are
+/// already excluded: a project with no active plan never shows it at all, so there is no
+/// second answer left to give.
+pub const PACE_SUMMARY_ON_OPEN_KEY: &str = "pace.summary_on_open";
 
 // ── Editor typography (Settings ▸ Editor ▸ Scene / Synopsis / Notes) ──────────
 // Non-destructive per-editor-type defaults. Font family / line height /

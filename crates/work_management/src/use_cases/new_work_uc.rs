@@ -147,6 +147,7 @@ impl NewWorkUseCase {
             unique_id: skrib_format::new_unique_id(),
             // The per-project chapter storage mode — same source as the template's
             // per-chapter encoding, so the Create menu keeps matching the book.
+            goal_unit: dto.goal_unit.clone(),
             chapter_mode: if dto.chapter_scene_mode {
                 ChapterMode::Flat
             } else {

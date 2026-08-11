@@ -14,8 +14,16 @@
 
 pub mod destination_picker;
 pub mod diff_pane;
+/// The word/character target readout. Four surfaces draw it and must not draw it
+/// differently: the Inspector, a container page's header, the status bar, and the
+/// Distribute preview.
+pub mod goal_progress;
+/// Words or characters: the project's counting unit, in New Work and in Settings.
+pub mod goal_unit_picker;
 pub mod pill;
 pub mod structure_number;
+/// A registry rich tooltip on content that has no builder of its own.
+pub mod tip;
 
 pub use destination_picker::DestinationPicker;
 pub(crate) use diff_pane::DiffPane;

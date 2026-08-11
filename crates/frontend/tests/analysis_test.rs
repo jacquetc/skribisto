@@ -100,6 +100,7 @@ fn fixture() -> Fixture {
     frontend::commands::work_management_commands::new_work(
         &ctx,
         &NewWorkDto {
+            goal_unit: Default::default(),
             file_name: dir.to_string_lossy().to_string(),
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,
@@ -307,6 +308,7 @@ fn a_part_heading_is_not_measured_as_a_scene() {
     frontend::commands::work_management_commands::new_work(
         &ctx,
         &NewWorkDto {
+            goal_unit: Default::default(),
             file_name: dir.to_string_lossy().to_string(),
             is_folder: true,
             template_kind: NewWorkTemplate::EmptyNovel,

@@ -47,6 +47,8 @@ use frontend::trash_management::TrashBinderItemsDto;
 use skribisto_model::counting::CountingMethodSetting;
 use skribisto_model::{CreateType, PromoteTarget, Recommendation};
 
+use frontend::common::entities::GoalUnit;
+
 use crate::app_ids::AppIds;
 use crate::intents::AppIntent;
 use crate::models::{OverviewFilters, OverviewRow, OverviewRowsModel};
@@ -94,6 +96,10 @@ struct Inner {
     container_probe: SingleBinderItem,
     app_ctx: Rc<AppContext>,
     ids: AppIds,
+    /// The project's target unit — which of the two stored numbers the Target column
+    /// shows and writes. Held here rather than read at the point of use, so the column and
+    /// the write cannot end up looking at different fields.
+    goal_unit: Signal<GoalUnit>,
     observers: RefCell<Vec<ObserverHandle>>,
     /// One-shot guard for the count observer (see `wire`).
     count_wired: Cell<bool>,
@@ -116,6 +122,7 @@ pub struct OverviewViewModel {
 impl OverviewViewModel {
     /// Build the view-model for a container, or `None` when this `(role, sub_role)` has
     /// no Overview. One gate, consulted here and in `ContentTab::new` alike.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         app_ctx: Rc<AppContext>,
         ids: AppIds,
@@ -124,6 +131,7 @@ impl OverviewViewModel {
         sub_role: &frontend::common::entities::BinderItemSubRole,
         counting_method: Signal<CountingMethodSetting>,
         tree_expansion: crate::view_models::TreeExpansionViewModel,
+        goal_unit: Signal<GoalUnit>,
     ) -> Option<Self> {
         if !skribisto_model::overview_capable(role, sub_role) {
             return None;
@@ -135,6 +143,7 @@ impl OverviewViewModel {
             container_id,
             counting_method,
             filters.clone(),
+            goal_unit.clone(),
         );
         let container_probe = SingleBinderItem::new(app_ctx.clone());
         container_probe.set_id(Some(container_id));
@@ -143,6 +152,7 @@ impl OverviewViewModel {
                 container_id,
                 rows,
                 filters,
+                goal_unit,
                 selection: KeyedSelectionModel::new(SelectionMode::Multi),
                 count: Signal::new(0),
                 editing: Signal::new(None),
@@ -404,6 +414,16 @@ impl OverviewViewModel {
             .row_of(&uid)
             .map(|r| match col_id {
                 crate::models::COL_LABEL => r.label,
+                // An empty box rather than a literal "0" when there is no target: the
+                // writer types a number, and having to clear a zero first is friction for
+                // the most common case there is.
+                crate::models::COL_GOAL => {
+                    if r.goal > 0 {
+                        r.goal.to_string()
+                    } else {
+                        String::new()
+                    }
+                }
                 _ => r.title,
             })
             .unwrap_or_default();
@@ -456,6 +476,22 @@ impl OverviewViewModel {
             crate::models::COL_LABEL if value != row.label => {
                 self.set_label(row.item_id, value);
             }
+            crate::models::COL_GOAL => {
+                // Empty or `0` clears the target — a legitimate edit, exactly like
+                // clearing a label. Anything that is not a plain non-negative number is
+                // refused outright rather than coerced: silently reading "2k" as 2 would
+                // be worse than doing nothing.
+                let parsed = if value.is_empty() {
+                    Some(0)
+                } else {
+                    value.parse::<i64>().ok().filter(|n| *n >= 0)
+                };
+                if let Some(goal) = parsed
+                    && goal != row.goal
+                {
+                    self.set_goal(row.item_id, goal);
+                }
+            }
             _ => {}
         }
         self.inner.editing.set(None);
@@ -470,6 +506,20 @@ impl OverviewViewModel {
         let probe = SingleBinderItem::new(self.inner.app_ctx.clone());
         probe.set_id(Some(item_id));
         let _ = probe.set_tags(tags, self.stack());
+    }
+
+    /// Write a row's target, in whichever unit the project counts in.
+    ///
+    /// Through `SingleBinderItem`, the same writer the Inspector and Distribute use, so a
+    /// target set from any of the three is one edit and one undo entry. The unit picks
+    /// which of the two stored numbers is written; the other is left exactly as it was.
+    fn set_goal(&self, item_id: u64, goal: i64) {
+        let probe = SingleBinderItem::new(self.inner.app_ctx.clone());
+        probe.set_id(Some(item_id));
+        let _ = match self.inner.goal_unit.get() {
+            GoalUnit::Words => probe.set_word_count_goal(goal, self.stack()),
+            GoalUnit::Characters => probe.set_char_count_goal(goal, self.stack()),
+        };
     }
 
     fn set_label(&self, item_id: u64, label: &str) {
@@ -754,6 +804,7 @@ mod tests {
                 ids,
                 crate::models::TreeExpansionService::in_memory_default(),
             ),
+            Signal::new(GoalUnit::default()),
         );
         // Stands in for `wire()`, which performs the first load in the app.
         if let Some(vm) = &vm {
@@ -783,6 +834,7 @@ mod tests {
                     ids,
                     crate::models::TreeExpansionService::in_memory_default(),
                 ),
+                Signal::new(GoalUnit::default()),
             )
             .is_some()
         };
@@ -1012,6 +1064,7 @@ mod leaks {
                 ids,
                 crate::models::TreeExpansionService::in_memory_default(),
             ),
+            Signal::new(GoalUnit::default()),
         )
         .unwrap();
         vm.install_reorder();

@@ -20,6 +20,7 @@
 //! legacy project.
 
 use anyhow::Result;
+use common::entities::{GoalUnit, MilestoneKind};
 // The Djot exporter's own escaper, shared rather than reimplemented: a second definition
 // would disagree with it about exactly the awkward bodies (`- ` at a line start, a title
 // in `[brackets]`, prose about `snake_case`) while agreeing on everything easy.
@@ -66,6 +67,7 @@ pub fn migrate_bundle(bundle: &mut WorkBundle) -> Result<()> {
             9 => step_v9_to_v10(bundle),
             10 => step_v10_to_v11(bundle),
             11 => step_v11_to_v12(bundle),
+            12 => step_v12_to_v13(bundle),
             other => anyhow::bail!("no migration step from .skrib format_version {other}"),
         }
         bundle.manifest.format_version += 1;
@@ -191,6 +193,67 @@ fn step_v11_to_v12(bundle: &mut WorkBundle) {
                     }
                 }
             }
+        }
+    }
+}
+
+/// v12 → v13 records two things the format had been leaving to be re-derived: which unit a
+/// project's targets are in, and which kind each milestone is.
+///
+/// # `goal_unit`, from the only signal a v12 file carries
+///
+/// `BinderItemFile` has held both `word_count_goal` and `char_count_goal` since this
+/// crate's first commit, and the legacy SQLite upgrader has always migrated both — but
+/// nothing ever recorded which one a project *meant*. The pre-Rust app decided that from a
+/// global display toggle at the moment its goal dialog wrote, so on disk the answer only
+/// ever showed up as "which of the two numbers is non-zero".
+///
+/// So: **characters** if the project has a character target and no word target anywhere,
+/// **words** otherwise. The asymmetry is deliberate. `Words` is the default a fresh project
+/// gets and the unit the overwhelming majority of the market uses, so it is the safe answer
+/// for every ambiguous case — a project with neither target set (which is nearly all of
+/// them), and the pathological project carrying both, where the writer flipped the old
+/// app's toggle mid-draft and left numbers on either side.
+///
+/// Idempotent by construction: it reads only the two goal fields, never `goal_unit`, so
+/// re-running it on its own output produces the same answer. That matters because the field
+/// carries no floor arm — an older build that resaves a v13 bundle drops it, and the next
+/// load has to be able to work it out again from scratch.
+///
+/// # `kind`, from a reference that can go missing
+///
+/// A milestone naming a target item is an `Item` one; a milestone naming none is
+/// `BookCumulative`. That is precisely the rule the code applied *implicitly* before this
+/// field existed — reproduced here once, so it never has to be applied again.
+///
+/// The reason it must not stay implicit is that `target_item` is a **weak** reference:
+/// `load_work` drops one whose target no longer resolves. An `Item` milestone whose
+/// chapter was deleted therefore came back indistinguishable from a book-cumulative
+/// waypoint, carrying a `target_word_count` copied from the vanished chapter and presenting
+/// it as a figure the writer had typed. After this step the same situation is a state the
+/// UI can name: kind `Item`, target gone.
+fn step_v12_to_v13(bundle: &mut WorkBundle) {
+    let mut any_word_goal = false;
+    let mut any_char_goal = false;
+    for bb in &bundle.binders {
+        for bi in &bb.items {
+            any_word_goal |= bi.item.word_count_goal > 0;
+            any_char_goal |= bi.item.char_count_goal > 0;
+        }
+    }
+    bundle.manifest.work.goal_unit = if any_char_goal && !any_word_goal {
+        GoalUnit::Characters
+    } else {
+        GoalUnit::Words
+    };
+
+    for pace in &mut bundle.paces {
+        for m in &mut pace.milestones {
+            m.kind = if m.target_item.is_some() {
+                MilestoneKind::Item
+            } else {
+                MilestoneKind::BookCumulative
+            };
         }
     }
 }

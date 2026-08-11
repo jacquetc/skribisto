@@ -3006,6 +3006,7 @@ mod tests {
         work_management_commands::new_work(
             &app_ctx,
             &NewWorkDto {
+                goal_unit: Default::default(),
                 file_name: dir.path().join("p.skrib").to_string_lossy().into_owned(),
                 is_folder: false,
                 template_kind: NewWorkTemplate::Novel,
@@ -3121,6 +3122,7 @@ mod tests {
         work_management_commands::new_work(
             &app_ctx,
             &NewWorkDto {
+                goal_unit: Default::default(),
                 file_name: out.clone(),
                 is_folder: false,
                 // The emptiest template there is: the point of this fixture is to

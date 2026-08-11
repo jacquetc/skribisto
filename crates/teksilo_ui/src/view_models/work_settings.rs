@@ -23,7 +23,7 @@
 
 use teksilo::prelude::Signal;
 
-use frontend::common::entities::QuoteStyle;
+use frontend::common::entities::{GoalUnit, QuoteStyle};
 use skribisto_model::ChapterMode;
 
 use crate::singles::{SingleSmartPunctuation, SingleWork};
@@ -81,6 +81,27 @@ impl WorkSettingsViewModel {
             return;
         }
         self.work.set_chapter_mode(want);
+        self.work.save(self.stack.get());
+    }
+
+    // ── Counting unit ────────────────────────────────────────────────────────
+
+    /// Which of `BinderItem`'s two targets this project's goals are expressed in.
+    pub fn goal_unit(&self) -> Signal<GoalUnit> {
+        self.work.goal_unit()
+    }
+
+    /// Switch the unit, and persist. No-ops when already there, like its neighbours.
+    ///
+    /// **Converts nothing.** Both stored numbers stay exactly as they were, so switching
+    /// back restores the original reading — which is why the pane asks first rather than
+    /// this method refusing: it is reversible, but every target already entered will read
+    /// as a different length until the writer revisits it.
+    pub fn set_goal_unit(&self, unit: GoalUnit) {
+        if self.work.goal_unit().get() == unit {
+            return;
+        }
+        self.work.set_goal_unit(unit);
         self.work.save(self.stack.get());
     }
 

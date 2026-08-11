@@ -462,9 +462,7 @@ fn comment_context_menu(handle: EditorHandle) -> MenuList {
                 .on_activate_fn(move |ctx| paste_plain.paste_unformatted(ctx)),
         )
         .separator()
-        .item(
-            MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()),
-        )
+        .item(MenuItem::new(tr!(menu_select_all())).on_activate_fn(move |_ctx| select.select_all()))
 }
 
 /// `dd/mm/yyyy hh:mm`, matching the reference presentation.

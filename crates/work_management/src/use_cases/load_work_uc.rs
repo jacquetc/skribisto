@@ -259,6 +259,7 @@ pub(crate) fn materialize(
         updated_at: lw.updated_at,
         title: lw.title.clone(),
         author_name: lw.author_name.clone(),
+        goal_unit: lw.goal_unit.clone(),
         dict_language: lw.dict_language.clone(),
         // Single heal point for every load (legacy + new-format): preserve the
         // source's stable id, or mint a fresh one when it has none.
@@ -579,6 +580,7 @@ pub(crate) fn materialize(
                 label: ms.label.clone(),
                 target_date: ms.target_date,
                 target_word_count: ms.target_word_count,
+                kind: ms.kind.clone(),
                 id: 0,
                 // Weak back-link, wired just below through `item_map`; an id that no
                 // longer resolves is simply left unset.
@@ -950,6 +952,28 @@ pub(crate) fn create_trunk(
     Ok(())
 }
 
+/// Which unit a legacy project's targets are in, from which of the two per-item numbers
+/// it actually used. See the call site for why the rule leans to `Words`.
+///
+/// Trashed rows count: a target on a chapter the writer put in the trash is still evidence
+/// of which unit they were working in, and refusing to look at it would flip the project's
+/// unit for a writer who happened to trash the only section they had budgeted.
+fn legacy_goal_unit(p: &legacy::LegacyProject) -> common::entities::GoalUnit {
+    let mut any_words = false;
+    let mut any_chars = false;
+    for b in &p.binders {
+        for it in &b.items {
+            any_words |= it.word_count_goal > 0;
+            any_chars |= it.char_count_goal > 0;
+        }
+    }
+    if any_chars && !any_words {
+        common::entities::GoalUnit::Characters
+    } else {
+        common::entities::GoalUnit::Words
+    }
+}
+
 /// Adapt the legacy SQLite reader's output to the neutral graph, assigning
 /// internally-consistent file ids and reproducing the historic defaults
 /// (`is_exportable = true`, trashed items stay in place indexed by TrashInfo).
@@ -979,6 +1003,18 @@ fn legacy_to_loaded(p: legacy::LegacyProject, now: DateTime<Utc>) -> LoadedWork 
         // no punctuation house style.
         chapter_mode: common::entities::ChapterMode::Folder,
         custom_replacement_rules_enabled: false,
+        // Which unit this project's targets are in, from the only signal the legacy
+        // schema carries: the pre-Rust goal dialog wrote *either* `word_count_goal` *or*
+        // `char_count_goal` per item, picked by a global display toggle that was never
+        // itself persisted. So the answer is "characters" only for a project that kept a
+        // character target and no word target anywhere, and "words" for everything else —
+        // including a project with no targets at all, and one carrying both because the
+        // writer flipped that toggle mid-draft.
+        //
+        // Deliberately the same rule as `skrib_format`'s `step_v12_to_v13`, which decides
+        // it for bundle-format projects. Two paths, one heuristic: a legacy `.skrib` and a
+        // v12 `.skrib` holding the same targets must open in the same unit.
+        goal_unit: legacy_goal_unit(&p),
         // The legacy format has no numbering settings. Numbering on, parts not
         // resetting, is what the old app did and what a new project does.
         number_chapters: true,

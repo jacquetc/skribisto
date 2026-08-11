@@ -221,6 +221,53 @@ mod imp {
             Ok(())
         }
 
+        /// Set the item's word-count target. `0` clears it — the "no goal" sentinel this
+        /// field has always carried, which is why the editor is a `SpinBox` with a special
+        /// value text rather than an `Option`.
+        ///
+        /// The **only** writer of this field outside the Pace planner's Book goal, and
+        /// deliberately unrestricted by `(role, sub_role)`: a Part, a chapter, a scene and
+        /// a note may each carry one. Nothing anywhere sums them (see
+        /// [`crate::goals`]); a container's target is measured against the words actually
+        /// written beneath it, never against what its children were told to be.
+        ///
+        /// Same scalar read-modify-write as its neighbours, undoable on `stack`; the
+        /// Distribute action wraps a run of these in one composite step.
+        pub fn set_word_count_goal(&self, goal: i64, stack: Option<u64>) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            let Some(it) = self.dto() else {
+                anyhow::bail!("SingleBinderItem: item {id} not loaded");
+            };
+            let mut dto = update_dto(&it);
+            dto.word_count_goal = goal.max(0);
+            binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
+            self.refresh();
+            Ok(())
+        }
+
+        /// Set the item's character-count target — the same field one axis over.
+        ///
+        /// The two targets are stored side by side and **never converted into each other**;
+        /// `Work.goal_unit` picks which one every surface reads and edits. Flipping the
+        /// project's unit therefore points the editor at the other number and leaves this
+        /// one exactly as it was, so flipping back restores the original reading. That is
+        /// the whole reason both fields exist rather than one relabelled integer.
+        pub fn set_char_count_goal(&self, goal: i64, stack: Option<u64>) -> anyhow::Result<()> {
+            let Some(id) = self.inner.id.get() else {
+                anyhow::bail!("SingleBinderItem: no id");
+            };
+            let Some(it) = self.dto() else {
+                anyhow::bail!("SingleBinderItem: item {id} not loaded");
+            };
+            let mut dto = update_dto(&it);
+            dto.char_count_goal = goal.max(0);
+            binder_item_commands::update_binder_item(&self.inner.ctx, stack, &dto)?;
+            self.refresh();
+            Ok(())
+        }
+
         /// Set the item's numbering opt-out — the prologue lever.
         ///
         /// Distinct from [`set_exportable`](Self::set_exportable) on purpose: that one takes
@@ -633,6 +680,22 @@ mod imp {
         ) -> anyhow::Result<()> {
             if let Some(mut d) = self.inner.dto.get() {
                 d.exclude_from_numbering = on;
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
+        }
+
+        pub fn set_word_count_goal(&self, goal: i64, _stack: Option<u64>) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.word_count_goal = goal.max(0);
+                self.inner.dto.set(Some(d));
+            }
+            Ok(())
+        }
+
+        pub fn set_char_count_goal(&self, goal: i64, _stack: Option<u64>) -> anyhow::Result<()> {
+            if let Some(mut d) = self.inner.dto.get() {
+                d.char_count_goal = goal.max(0);
                 self.inner.dto.set(Some(d));
             }
             Ok(())

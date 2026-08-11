@@ -567,6 +567,7 @@ mod tests {
             format_min_read_version: None,
             shape: ShapeTag::Zip,
             work: WorkFile {
+                goal_unit: Default::default(),
                 file_id: 1,
                 created_at: String::new(),
                 updated_at: String::new(),

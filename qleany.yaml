@@ -263,6 +263,28 @@ entities:
       - Flat
   - name: custom_replacement_rules_enabled
     type: boolean
+  # Which of `BinderItem`'s two targets this project's goals are expressed in. Manuscript
+  # data, not a machine preference — a length target is a property of the book and its
+  # market, so a co-author opening the `.skrib` must read the same number in the same unit,
+  # exactly as `chapter_mode` and `number_chapters` do.
+  #
+  # Per *project*, deliberately, and not per item: a length unit follows the manuscript's
+  # language and trade convention (Normseite and feuillet count 1500 signs, a 原稿用紙 sheet
+  # 400 characters, Chinese pays by the 千字), so a writer with a French novel and a
+  # Japanese one needs two answers, and needs only two.
+  #
+  # Switching it points every editor at the *other* stored integer
+  # (`word_count_goal` <-> `char_count_goal`) and converts nothing. Words and characters are
+  # not interchangeable by any ratio worth trusting, so relabelling one number as the other
+  # -- which is what the pre-Rust app effectively did, via a global display toggle that
+  # decided which field the goal dialog wrote -- silently changes what every target means.
+  # Both numbers survive a switch, so switching back restores the original reading.
+  - name: goal_unit
+    type: enum
+    enum_name: GoalUnit
+    enum_values:
+      - Words
+      - Characters
   # Does this book number its chapters and parts at all? The manuscript-level master
   # switch, and manuscript data rather than a machine preference — a co-author opening the
   # `.skrib` gets the same answer, exactly as `chapter_mode` does.
@@ -476,8 +498,16 @@ entities:
     type: datetime
     optional: true
   undoable: true
-# A per-Part/Chapter deadline shown in the Book's Pace view. Weakly references the target
-# BinderItem (no strong ownership: deleting the item must not cascade-delete the Pace).
+# A dated waypoint on the Book's Pace timeline. Two kinds, told apart by `kind`:
+#
+#   Item            by `target_date`, `target_item` should have reached its OWN target.
+#                   The number is derived live from that item's `word_count_goal` and is
+#                   NOT stored here -- see `target_word_count` below.
+#   BookCumulative  by `target_date`, the whole Book should stand at `target_word_count`
+#                   words. No target item; the number is the writer's, typed directly.
+#
+# Weakly references the target BinderItem (no strong ownership: deleting the item must not
+# cascade-delete the Pace).
 - name: Milestone
   inherits_from: EntityBase
   fields:
@@ -490,9 +520,26 @@ entities:
     optional: true
   - name: target_date
     type: datetime
+  # Authoritative for `BookCumulative` only. For an `Item` milestone it is left `None` and
+  # never read: the number lives on the target item, and a copy of it here would go stale
+  # the moment that item's goal was edited by any path other than re-saving this milestone
+  # -- which is exactly the bug the `kind` field below exists to end.
   - name: target_word_count
     type: integer
     optional: true
+  # Stored rather than inferred from `target_item.is_some()`, which is how the two kinds
+  # were told apart before this field existed. That inference has a hole: `load_work`
+  # silently drops a weak reference whose target no longer resolves, so a deleted target
+  # item turned an `Item` milestone into something indistinguishable from a genuine
+  # `BookCumulative` one -- freezing a stale number and presenting it as a figure the
+  # writer had typed. With the kind stored, "an Item milestone whose target is gone" is a
+  # state the UI can name and offer to fix.
+  - name: kind
+    type: enum
+    enum_name: MilestoneKind
+    enum_values:
+      - Item
+      - BookCumulative
   undoable: true
 # One comment thread anchored to one PROSE Content row (SceneText / NoteText /
 # SynopsisText — title rows are plain TextInputs with no document behind them and are

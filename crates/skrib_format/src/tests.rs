@@ -8,8 +8,8 @@ use super::*;
 use chrono::{DateTime, Utc};
 use common::entities::{
     Asset, Binder, BinderItem, BinderItemRole, BinderItemSubRole, BinderTag, Comment,
-    CommentAnchorKind, CommentOrphanReason, CommentReply, Content, ContentRole, DictWord,
-    TrashInfo, Work,
+    CommentAnchorKind, CommentOrphanReason, CommentReply, Content, ContentRole, DictWord, GoalUnit,
+    MilestoneKind, TrashInfo, Work,
 };
 use skribisto_model::{allowed_content, validate_item};
 use std::collections::BTreeMap;
@@ -100,6 +100,9 @@ struct SampleInputs {
 fn sample_inputs() -> SampleInputs {
     let now = ts();
     let work = Work {
+        // Deliberately NOT the default: a lossless round trip has to prove it carries the
+        // field, and a fixture stamped `Words` would pass whether or not it did.
+        goal_unit: common::entities::GoalUnit::Characters,
         id: 1,
         created_at: now,
         updated_at: now,
@@ -1545,6 +1548,129 @@ fn migrating_a_pre_v12_bundle_escapes_only_the_bodies_that_would_change_meaning(
         list[1].body, ordinary,
         "a body that already means itself must be left byte-identical, so an older build \
          still reads it unchanged"
+    );
+}
+
+/// v13's `goal_unit` step reads the only signal a v12 file carries: which of the two
+/// per-item targets a project actually used. A project keeping character targets and no
+/// word targets meant characters.
+#[test]
+fn migrating_a_pre_v13_bundle_reads_a_character_only_project_as_characters() {
+    let mut bundle = build_bundle_with(ShapeTag::Folder, |s| {
+        for b in &mut s.binders {
+            for it in &mut b.items {
+                it.item.word_count_goal = 0;
+                it.item.char_count_goal = 9_000;
+            }
+        }
+        s.work.goal_unit = GoalUnit::Words;
+    });
+    bundle.manifest.format_version = 12;
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    assert_eq!(bundle.manifest.format_version, FORMAT_VERSION);
+    assert_eq!(bundle.manifest.work.goal_unit, GoalUnit::Characters);
+}
+
+/// Everything else reads as words: a project with no targets at all (nearly all of them),
+/// and the pathological one carrying both because the pre-Rust app's global display toggle
+/// was flipped mid-draft. `Words` is the safe answer because it is what a fresh project
+/// gets and what most of the market uses.
+#[test]
+fn migrating_a_pre_v13_bundle_reads_every_other_shape_as_words() {
+    for (words, chars) in [(0i64, 0i64), (1_000, 5_000), (1_000, 0)] {
+        let mut bundle = build_bundle_with(ShapeTag::Folder, |s| {
+            for b in &mut s.binders {
+                for it in &mut b.items {
+                    it.item.word_count_goal = words;
+                    it.item.char_count_goal = chars;
+                }
+            }
+            s.work.goal_unit = GoalUnit::Characters;
+        });
+        bundle.manifest.format_version = 12;
+
+        migration::migrate_bundle(&mut bundle).unwrap();
+
+        assert_eq!(
+            bundle.manifest.work.goal_unit,
+            GoalUnit::Words,
+            "targets {words}/{chars} should read as words"
+        );
+    }
+}
+
+/// The v13 fields carry **no floor arm**, so an older build can resave a v13 bundle and
+/// drop them. Re-deriving has to land on the same answer every time, or a project would
+/// change unit each time it passed through an older build.
+#[test]
+fn the_v13_goal_unit_step_is_idempotent() {
+    let build = || {
+        let mut b = build_bundle_with(ShapeTag::Folder, |s| {
+            for bb in &mut s.binders {
+                for it in &mut bb.items {
+                    it.item.word_count_goal = 0;
+                    it.item.char_count_goal = 400;
+                }
+            }
+        });
+        b.manifest.format_version = 12;
+        b
+    };
+    let mut once = build();
+    migration::migrate_bundle(&mut once).unwrap();
+    let mut twice = once.clone();
+    twice.manifest.format_version = 12;
+    migration::migrate_bundle(&mut twice).unwrap();
+
+    assert_eq!(once.manifest.work.goal_unit, GoalUnit::Characters);
+    assert_eq!(
+        twice.manifest.work.goal_unit, once.manifest.work.goal_unit,
+        "re-deriving must not flip the unit"
+    );
+}
+
+/// The milestone half of v13: a waypoint naming an item is an `Item` one, a waypoint
+/// naming none is `BookCumulative`. That is exactly the rule the code applied implicitly
+/// before the field existed -- applied here once, so a later deleted target item cannot
+/// silently reclassify the milestone.
+#[test]
+fn migrating_a_pre_v13_bundle_classifies_milestones_by_whether_they_name_an_item() {
+    let mut bundle = build_bundle(ShapeTag::Folder);
+    bundle.manifest.format_version = 12;
+    let ms = |file_id: u64, target_item: Option<u64>| bundle::MilestoneFile {
+        file_id,
+        created_at: "2020-01-01T00:00:00+00:00".into(),
+        updated_at: "2020-01-01T00:00:00+00:00".into(),
+        label: "waypoint".into(),
+        target_item,
+        target_date: "2020-04-01T00:00:00+00:00".into(),
+        target_word_count: Some(20_000),
+        // What a v12 file deserializes as, before the step corrects it.
+        kind: MilestoneKind::default(),
+    };
+    bundle.paces = vec![bundle::PaceFile {
+        file_id: 400,
+        created_at: "2020-01-01T00:00:00+00:00".into(),
+        updated_at: "2020-01-01T00:00:00+00:00".into(),
+        book_item: None,
+        start_date: "2020-02-01T00:00:00+00:00".into(),
+        end_date: "2020-06-01T00:00:00+00:00".into(),
+        weekday_mask: 31,
+        active: true,
+        holidays: vec![],
+        milestones: vec![ms(420, Some(7)), ms(421, None)],
+    }];
+
+    migration::migrate_bundle(&mut bundle).unwrap();
+
+    let m = &bundle.paces[0].milestones;
+    assert_eq!(m[0].kind, MilestoneKind::Item, "it names a target item");
+    assert_eq!(
+        m[1].kind,
+        MilestoneKind::BookCumulative,
+        "it names none, so its number is the Book's own"
     );
 }
 

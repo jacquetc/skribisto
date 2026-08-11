@@ -86,6 +86,13 @@ pub struct NewWorkDto {
     pub language: Vec<String>,
     pub chapter_scene_mode: bool,
     pub author_name: String,
+    /// Which unit this project's word/character targets are expressed in. Hand-added, like
+    /// the two paratext lists below — re-add it if this file is ever regenerated.
+    ///
+    /// Chosen in the New Work panel, seeded from `language` by
+    /// `skribisto_model::goal_unit::default_unit_for_language` and overridable there.
+    #[serde(default)]
+    pub goal_unit: common::entities::GoalUnit,
     // Hand-added, and dropped by regeneration if not restored — the same hazard
     // `ImportDjotDto.options` documents in `document_io`. Re-add these two (or
     // declare them in the manifest) whenever this file is regenerated.

@@ -31,14 +31,32 @@ pub struct HolidayRow {
     pub end: NaiveDate,
 }
 
-/// One milestone: a target date (and an optional word target) the writer set for
-/// a Part/Chapter or the Book itself, shown along the Book's Pace timeline.
+pub use frontend::common::entities::MilestoneKind;
+
+/// One milestone: a dated waypoint on the Book's Pace timeline, of one of two kinds.
+///
+/// * `BookCumulative` — by `target_date` the Book should stand at `target_words`, a figure
+///   the writer typed. This is the only kind for which `target_words` is stored.
+/// * `Item` — by `target_date`, `target_item` should have reached **its own** target. The
+///   number is resolved live from that item every time this row is loaded, and is
+///   deliberately not kept on the milestone: a copy went stale the moment the item's target
+///   was edited by any other path, and presented a vanished chapter's number as if the
+///   writer had typed it.
+///
+/// `target_words` is therefore `None` in two different situations for an `Item` row — the
+/// target item carries no target of its own, or it no longer resolves at all — which
+/// `target_gone` tells apart.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MilestoneRow {
     pub id: u64,
     pub label: String,
     pub target_date: NaiveDate,
     pub target_words: Option<i64>,
+    pub kind: MilestoneKind,
+    /// `true` for an `Item` milestone whose target item has been deleted. The one state
+    /// the old implicit "`target_item.is_some()` decides the kind" rule could not express,
+    /// and the reason the kind is stored.
+    pub target_gone: bool,
 }
 
 /// One recorded day's **cumulative** Book word count, taken from a
@@ -92,7 +110,7 @@ mod imp {
 
     use crate::app_ids::AppIds;
 
-    use super::{DailyCount, HolidayRow, MON_TO_FRI, MilestoneRow, PaceState};
+    use super::{DailyCount, HolidayRow, MON_TO_FRI, MilestoneKind, MilestoneRow, PaceState};
 
     /// UTC midnight for a calendar day - the on-disk convention (`record_progress_snapshot`
     /// truncates to UTC midnight, so dates round-trip through the same instant).
@@ -191,11 +209,30 @@ mod imp {
                 .unwrap_or_default()
                 .into_iter()
                 .flatten()
-                .map(|m| MilestoneRow {
-                    id: m.id,
-                    label: m.label,
-                    target_date: m.target_date.date_naive(),
-                    target_words: m.target_word_count,
+                .map(|m| {
+                    // An item milestone's number is the item's own, read now — never the
+                    // stored copy, which is what used to go stale.
+                    let (target_words, target_gone) = match m.kind {
+                        MilestoneKind::BookCumulative => (m.target_word_count, false),
+                        MilestoneKind::Item => match m.target_item {
+                            Some(id) => match binder_item_commands::get_binder_item(ctx, &id) {
+                                Ok(Some(it)) => (
+                                    (it.word_count_goal > 0).then_some(it.word_count_goal),
+                                    false,
+                                ),
+                                _ => (None, true),
+                            },
+                            None => (None, true),
+                        },
+                    };
+                    MilestoneRow {
+                        id: m.id,
+                        label: m.label,
+                        target_date: m.target_date.date_naive(),
+                        target_words,
+                        kind: m.kind,
+                        target_gone,
+                    }
                 })
                 .collect();
 
@@ -317,6 +354,10 @@ mod imp {
                 target_item: None,
                 target_date: to_utc(target_date),
                 target_word_count: target_words,
+                // A waypoint on the Book's own curve: no target item, and the number is
+                // the writer's own, so it is the one kind where `target_word_count` is
+                // authoritative rather than a copy of something else.
+                kind: MilestoneKind::BookCumulative,
             };
             let Ok(m) =
                 milestone_commands::create_orphan_milestone(&self.app_ctx, self.stack(), &dto)
@@ -445,7 +486,7 @@ mod imp {
 
     use crate::app_ids::AppIds;
 
-    use super::{DailyCount, HolidayRow, MON_TO_FRI, MilestoneRow, PaceState};
+    use super::{DailyCount, HolidayRow, MON_TO_FRI, MilestoneKind, MilestoneRow, PaceState};
 
     /// Fabricated Book pace state for the `mocks` build: a Mon–Fri schedule
     /// running from a month ago to two months out, an 80k goal, ~a month of
@@ -492,17 +533,22 @@ mod imp {
                     end: today + Duration::days(27),
                 }],
                 milestones: vec![
+                    // One of each kind, so the mocks build exercises both rows.
                     MilestoneRow {
                         id: 201,
                         label: "Part I complete".to_string(),
                         target_date: today + Duration::days(15),
                         target_words: Some(40_000),
+                        kind: MilestoneKind::Item,
+                        target_gone: false,
                     },
                     MilestoneRow {
                         id: 202,
                         label: "First draft".to_string(),
                         target_date: today + Duration::days(55),
                         target_words: Some(80_000),
+                        kind: MilestoneKind::BookCumulative,
+                        target_gone: false,
                     },
                 ],
                 history,
@@ -579,6 +625,10 @@ mod imp {
                 label,
                 target_date,
                 target_words,
+                // `add_milestone` only ever creates the Book-cumulative kind: an item
+                // milestone is born from the Inspector, keyed to the item it targets.
+                kind: MilestoneKind::BookCumulative,
+                target_gone: false,
             });
         }
 

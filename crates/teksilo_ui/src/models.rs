@@ -96,10 +96,10 @@ pub use numbering::{
 };
 pub use open_docs::{OpenDoc, OpenDocsStore, SynopsisViewerGuard};
 pub use overview_rows_model::{
-    COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_COMMENTS,
+    COL_GOAL, COL_LABEL, COL_OPEN_COMMENTS, COL_OWN_WORDS, COL_TAGS, COL_TITLE, COL_TOTAL_COMMENTS,
     COL_TOTAL_WORDS, COL_TYPE, OverviewFilters, OverviewRow, OverviewRowsModel,
 };
-pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};
+pub use pace_model::{DailyCount, HolidayRow, MilestoneKind, MilestoneRow, PaceModel};
 pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsService};
 pub use recent_work_list_model::RecentWorkListModel;
 pub use search_results_model::SearchResultsModel;

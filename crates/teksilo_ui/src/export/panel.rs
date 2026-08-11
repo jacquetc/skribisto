@@ -437,7 +437,10 @@ impl Widget for OptionsColumn {
 
         let col = VStack::new()
             .spacing(18.0)
-            .child(section(tr!(export_format_label()), format_control(&self.vm)))
+            .child(section(
+                tr!(export_format_label()),
+                format_control(&self.vm),
+            ))
             .child(self.style_section(catalogue))
             .child(section(
                 tr!(export_section_destination()),
