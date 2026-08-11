@@ -235,6 +235,7 @@ mod imp {
     };
 
     use crate::app_ids::AppIds;
+    use crate::comments::signature::Signature;
 
     use super::{CommentRow, sort_rows};
 
@@ -411,7 +412,7 @@ mod imp {
             &self,
             content_id: u64,
             kind: CommentAnchorKind,
-            author_name: &str,
+            signature: &Signature,
             body: &str,
             anchor: &crate::comments::anchor::Anchor,
             stack_id: Option<u64>,
@@ -432,13 +433,13 @@ mod imp {
                     updated_at: now,
                     content: Some(content_id),
                     kind,
-                    author_name: author_name.to_string(),
-                    // Seeded once, from the name this comment is being signed with, so a
+                    author_name: signature.name.clone(),
+                    // Stored once, from the signature resolved at this instant, so a
                     // comment we export carries a margin label in Word instead of an
-                    // anonymous one. An editor's own initials arrive inside the file they
-                    // send back and are never overwritten by this — see
-                    // `skribisto_model::initials`.
-                    author_initials: skribisto_model::initials::initials_from_name(author_name),
+                    // anonymous one. Never re-derived on read or on export: an editor's
+                    // own initials arrive inside the file they send back and are theirs
+                    // — see `crate::comments::signature`.
+                    author_initials: signature.initials.clone(),
                     body: body.to_string(),
                     resolved: false,
                     orphaned: false,
@@ -495,7 +496,7 @@ mod imp {
         pub fn reply(
             &self,
             comment_id: u64,
-            author_name: &str,
+            signature: &Signature,
             body: &str,
             stack_id: Option<u64>,
         ) -> Option<u64> {
@@ -510,8 +511,12 @@ mod imp {
                     uid: common::uid::new_uid(),
                     created_at: now,
                     updated_at: now,
-                    author_name: author_name.to_string(),
-                    author_initials: skribisto_model::initials::initials_from_name(author_name),
+                    // A reply carries its OWN signature, not the thread's — it is its own
+                    // `<w:comment>` on the way out, and a conversation between two people
+                    // that came back signed by one of them would be a lie about who said
+                    // what.
+                    author_name: signature.name.clone(),
+                    author_initials: signature.initials.clone(),
                     body: body.to_string(),
                 },
             )
@@ -859,6 +864,7 @@ mod imp {
     use frontend::common::entities::{CommentAnchorKind, CommentOrphanReason};
 
     use crate::app_ids::AppIds;
+    use crate::comments::signature::Signature;
 
     use super::{CommentRow, sort_rows};
 
@@ -947,7 +953,7 @@ mod imp {
             &self,
             content_id: u64,
             kind: CommentAnchorKind,
-            author_name: &str,
+            signature: &Signature,
             body: &str,
             anchor: &crate::comments::anchor::Anchor,
             _stack_id: Option<u64>,
@@ -961,7 +967,10 @@ mod imp {
                 item_id: Some(301),
                 item_title: "The lamp".into(),
                 kind,
-                author_name: author_name.to_string(),
+                // Only the name: `CommentRow` carries no initials, because nothing in
+                // the UI renders them — they exist for the `w:initials` a `.docx`
+                // export writes, and a mock build has no export to feed.
+                author_name: signature.name.clone(),
                 body: body.to_string(),
                 range_start: anchor.start as u64,
                 range_length: anchor.length as u64,
@@ -979,7 +988,7 @@ mod imp {
         pub fn reply(
             &self,
             comment_id: u64,
-            author_name: &str,
+            signature: &Signature,
             body: &str,
             _stack_id: Option<u64>,
         ) -> Option<u64> {
@@ -989,7 +998,7 @@ mod imp {
             let row = rows.iter_mut().find(|r| r.id == comment_id)?;
             row.replies.push(super::ReplyRow {
                 id,
-                author_name: author_name.to_string(),
+                author_name: signature.name.clone(),
                 body: body.to_string(),
                 created_at: chrono::Utc::now(),
             });
@@ -1346,7 +1355,8 @@ mod real_backend_tests {
 
     use frontend::AppContext;
     use frontend::commands::{
-        binder_item_commands, content_commands, work_commands, work_management_commands,
+        binder_item_commands, comment_commands, comment_reply_commands, content_commands,
+        work_commands, work_management_commands,
     };
     use frontend::common::direct_access::binder_item::BinderItemRelationshipField;
     use frontend::common::entities::CommentAnchorKind;
@@ -1433,7 +1443,7 @@ mod real_backend_tests {
             .create(
                 a_content(&app_ctx),
                 CommentAnchorKind::Range,
-                "Editor",
+                &crate::comments::signature::resolve("Editor", "", ""),
                 "Is this the right word?",
                 &crate::comments::anchor::Anchor {
                     start: 0,
@@ -1467,5 +1477,68 @@ mod real_backend_tests {
         // And closing empties it again rather than leaving a stale project's notes.
         model.refresh_for(None);
         assert!(model.is_empty());
+    }
+
+    /// **Regression.** Every comment this app has ever written reached disk with
+    /// `author_name: ""`, in projects whose author name was set years earlier.
+    ///
+    /// The signature was seeded by a one-shot `Signal::get` during `App::build`,
+    /// which registers no dependency and ran before `load_work` had populated
+    /// `SingleWork` — so the captured name was the empty string for the life of
+    /// the window. This pins the half that can be tested headlessly: the name and
+    /// the initials handed to `create` are what the stored row ends up carrying,
+    /// rather than being recomputed, dropped, or read from somewhere else.
+    ///
+    /// The other half — that `App::build`'s effect keeps that value current — has
+    /// no headless test: it needs a real window built before a real `load_work`,
+    /// which is the exact shape of race a `WidgetTree` cannot reproduce.
+    #[test]
+    fn a_created_comment_stores_the_signature_it_was_handed() {
+        let app_ctx = Rc::new(AppContext::new());
+        let (_ids, work_id) = loaded(&app_ctx);
+        let seeded = AppIds::new();
+        seeded.seed(&app_ctx, work_id);
+        let model = CommentsListModel::new(app_ctx.clone(), seeded);
+
+        // Explicit initials that the derivation would NOT produce, so a row
+        // carrying "MJO" would prove something re-derived them behind our back.
+        let signature = crate::comments::signature::resolve("Mary-Jane O'Brien", "MO", "");
+        let id = model
+            .create(
+                a_content(&app_ctx),
+                CommentAnchorKind::Range,
+                &signature,
+                "Cut this?",
+                &crate::comments::anchor::Anchor {
+                    start: 0,
+                    length: 3,
+                    exact: "The".into(),
+                    block_span: 1,
+                    ..Default::default()
+                },
+                None,
+            )
+            .expect("the comment is created");
+
+        let stored = comment_commands::get_comment(&app_ctx, &id)
+            .expect("read comment")
+            .expect("comment exists");
+        assert_eq!(stored.author_name, "Mary-Jane O'Brien");
+        assert_eq!(
+            stored.author_initials, "MO",
+            "the typed initials must be stored verbatim, not re-derived to MJO"
+        );
+
+        // A reply is signed in its own right — it is its own `<w:comment>` on the
+        // way out, so it must carry the signature rather than inherit the thread's.
+        let reply_signature = crate::comments::signature::resolve("Rae Okafor", "", "");
+        let reply_id = model
+            .reply(id, &reply_signature, "Keep it.", None)
+            .expect("the reply is created");
+        let stored_reply = comment_reply_commands::get_comment_reply(&app_ctx, &reply_id)
+            .expect("read reply")
+            .expect("reply exists");
+        assert_eq!(stored_reply.author_name, "Rae Okafor");
+        assert_eq!(stored_reply.author_initials, "RO");
     }
 }

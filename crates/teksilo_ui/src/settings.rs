@@ -109,6 +109,14 @@ enum Pane {
     Section(Sec),
     /// A nested group's own page — same shape as a section's, one level in.
     Group(GroupKind),
+    /// Who is using this installation — the name and initials comments are
+    /// signed with. A root page of its own, like [`Pane::Keymap`]: it is one
+    /// page's worth of content, so a section wrapping it would be a section with
+    /// a single child, and it is about the *person*, which no existing section
+    /// is. Deliberately **not** a "Skribisto" parent over the whole tree the way
+    /// LibreOffice has one — that shape exists to separate app-wide settings from
+    /// per-module ones (Writer, Calc, …), and this app has no modules.
+    User,
     Appearance,
     MenusToolbars,
     Notifications,
@@ -182,6 +190,7 @@ impl Pane {
             // "backup" can only mean one of them.
             Pane::Section(s) => s.id(),
             Pane::Group(g) => g.id(),
+            Pane::User => "user",
             Pane::Appearance => "appearance",
             Pane::MenusToolbars => "menus-toolbars",
             Pane::Notifications => "notifications",
@@ -224,6 +233,7 @@ impl Pane {
             // it themselves (`build_tree`'s row closure, `section_title`).
             Pane::Section(s) => s.label(),
             Pane::Group(g) => g.label(),
+            Pane::User => tr!(settings_page_user()),
             Pane::Appearance => tr!(settings_page_appearance()),
             Pane::MenusToolbars => tr!(settings_page_menus()),
             Pane::Notifications => tr!(settings_page_notifications()),
@@ -276,6 +286,7 @@ impl Pane {
         Some(match self {
             Pane::Section(s) => s.description(),
             Pane::Group(g) => g.description(),
+            Pane::User => tr!(settings_desc_user()),
             Pane::Appearance => tr!(settings_desc_appearance()),
             Pane::MenusToolbars => tr!(settings_desc_menus()),
             Pane::Notifications => tr!(settings_desc_notifications()),
@@ -309,11 +320,12 @@ impl Pane {
         })
     }
 
-    /// Leading icon in the tree: every section, plus the top-level Keymap leaf
+    /// Leading icon in the tree: every section, plus the two top-level leaves
     /// (design shows no icons on the indented sub-pages, groups included).
     fn icon(self) -> Option<IconWidget> {
         let svg = match self {
             Pane::Section(s) => s.icon_svg(),
+            Pane::User => res!("assets/icons/settings/user.svg"),
             Pane::Keymap => res!("assets/icons/settings/keymap.svg"),
             _ => return None,
         };
@@ -464,6 +476,10 @@ enum Root {
 /// section at all, so an install with no extensions gets exactly the tree it had).
 fn tree_spec(has_work: bool, extension_pages: &[&'static str]) -> Vec<Root> {
     let mut roots = vec![
+        // First, and a root in its own right. It is the one thing a new install
+        // wants filled in once and then never again, and every section below it
+        // is about the app's behaviour rather than about the person using it.
+        Root::Page(Pane::User),
         Root::Section(
             Sec::AppearanceBehaviour,
             vec![
@@ -1007,6 +1023,13 @@ impl SettingsPanel {
         Self::opening_at(Pane::Backup, session)
     }
 
+    /// Open straight to Settings ▸ User — the target of the "your comments are
+    /// unsigned" toast (`crate::app::warn_unsigned_comments`), which promises
+    /// that page by name.
+    pub fn open_to_user(session: WorkSession) -> Self {
+        Self::opening_at(Pane::User, session)
+    }
+
     fn opening_at(pane: Pane, session: WorkSession) -> Self {
         Self {
             selected_pane: Signal::new(pane),
@@ -1159,6 +1182,11 @@ impl SettingsPanel {
         // (searchable label, the page it lives on). Resolved per-keystroke so it
         // follows a locale change.
         let mut idx: Vec<(LocalizedString, Pane)> = vec![
+            (tr!(settings_page_user()), Pane::User),
+            // Both fields by name too: someone hunting for this is far likelier to
+            // type "initials" — the word they saw beside a comment — than "user".
+            (tr!(settings_field_user_name()), Pane::User),
+            (tr!(settings_field_user_initials()), Pane::User),
             (tr!(settings_page_appearance()), Pane::Appearance),
             (tr!(settings_page_menus()), Pane::MenusToolbars),
             (tr!(settings_page_notifications()), Pane::Notifications),
@@ -1672,6 +1700,7 @@ impl Widget for SettingsPanel {
         // serves rather than trusted from a hand-kept `.child()` chain.
         let typo = vm.editor_typography();
         let panes: Vec<(Pane, Box<dyn Widget>)> = vec![
+            (Pane::User, Box::new(panes::user::user_pane(&vm))),
             (
                 Pane::Appearance,
                 Box::new(panes::appearance::appearance_pane(&vm, scale.clone())),
@@ -2018,6 +2047,7 @@ mod tests {
             Pane::Section(Sec::Work),
             Pane::Section(Sec::Extensions),
             Pane::Group(GroupKind::Typography),
+            Pane::User,
             Pane::Appearance,
             Pane::MenusToolbars,
             Pane::Notifications,
@@ -2102,9 +2132,9 @@ mod tests {
     #[test]
     fn every_page_is_linked_from_exactly_one_parent() {
         let spec = full_spec();
-        // Keymap is a root of its own — deliberately, it is one page and needs no
-        // section — so it is the one page with no parent to be listed by.
-        let roots: HashSet<Pane> = [Pane::Keymap].into_iter().collect();
+        // User and Keymap are roots of their own — deliberately, each is one page
+        // and needs no section — so they are the pages with no parent to list them.
+        let roots: HashSet<Pane> = [Pane::User, Pane::Keymap].into_iter().collect();
 
         let mut listed_by: HashMap<Pane, Vec<Pane>> = HashMap::new();
         let mut parents = 0;
@@ -2195,6 +2225,11 @@ mod tests {
         assert!(
             ancestors_of(&spec, Pane::Keymap).is_empty(),
             "a root needs nothing expanded"
+        );
+        assert!(
+            ancestors_of(&spec, Pane::User).is_empty(),
+            "the unsigned-comments toast deep-links straight here, so it must be \
+             reachable with nothing expanded"
         );
         assert!(
             ancestors_of(&spec, Pane::Section(Sec::Editor)).is_empty(),

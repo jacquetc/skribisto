@@ -108,6 +108,10 @@ pub(super) struct CommandDeps {
     /// `fullscreen` above (see `FocusViewModel`'s own doc).
     pub focus: FocusViewModel,
     pub editors: EditorsViewModel,
+    /// This window's comment view-model — threaded only so the two "add comment"
+    /// commands can ask the *resolved* signature whether the remark they just
+    /// created is unsigned, rather than keeping a second copy of that rule.
+    pub comments: crate::view_models::CommentsViewModel,
     pub trash: TrashViewModel,
     pub search: SearchReplaceViewModel,
     pub project_switch: ProjectSwitchViewModel,

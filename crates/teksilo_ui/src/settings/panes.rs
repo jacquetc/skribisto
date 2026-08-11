@@ -5,7 +5,7 @@
 //!
 //! `settings.rs` keeps the *shell* — the category tree, the search field, the
 //! pane-switcher and the footer — and each page's form lives here, one `*_pane` function per
-//! module (24 today). Each reaches the shell's shared helpers (`field_label`, `hint`, `group`,
+//! module (25 today). Each reaches the shell's shared helpers (`field_label`, `hint`, `group`,
 //! `slider_field`, `pane_frame`, `crumb`) through `use super::super::*` — child modules can
 //! see a parent's private items, so none of those had to be widened for this.
 //!
@@ -40,6 +40,7 @@ pub(super) mod punctuation;
 pub(super) mod spellcheck;
 pub(super) mod text_replacements;
 pub(crate) mod typography;
+pub(super) mod user;
 pub(super) mod user_dictionary;
 pub(super) mod work_author;
 pub(super) mod work_language;

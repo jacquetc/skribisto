@@ -17,3 +17,4 @@ pub mod margin;
 pub mod pane;
 pub mod preview;
 pub mod session;
+pub mod signature;

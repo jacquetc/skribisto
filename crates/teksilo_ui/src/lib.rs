@@ -234,6 +234,21 @@ pub const DARK_KEY: &str = "ui.dark";
 /// the prompt come back if they ever want it to.
 pub const IMAGE_SIZE_POLICY_KEY: &str = "editor.image_size_policy";
 pub const LOCALE_KEY: &str = "ui.locale";
+/// Who is using this installation — the name a comment or reply is signed with.
+///
+/// **Not** `Work.author_name`, which is the *book's* byline: that one travels
+/// inside the `.skrib`, so signing a remark with it means an editor opening the
+/// project signs their notes with the novelist's name. This is app-level and
+/// per-installation, so it stays right whoever holds the file. Empty is the
+/// ordinary unset state — see [`crate::comments::signature`] for the fallback.
+pub const USER_NAME_KEY: &str = "user.name";
+/// The initials shown beside a comment in Word (`w:initials`), overriding what
+/// would otherwise be derived from [`USER_NAME_KEY`].
+///
+/// Explicit because no derivation rule gets every name right — "Mary-Jane
+/// O'Brien" is as plausibly `MO` as `MJO` — and initials are the sort of thing
+/// people are particular about. Empty means "derive it", not "show none".
+pub const USER_INITIALS_KEY: &str = "user.initials";
 /// Max width (px) of the centered main-text writing column.
 pub const EDITOR_WIDTH_KEY: &str = "editor.column_width";
 pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;

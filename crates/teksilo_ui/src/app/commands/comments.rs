@@ -36,18 +36,32 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
             .build(),
     );
 
+    // Both doors follow a created comment with the "nobody's name is on this"
+    // nudge. Gated on the add having *happened* — a shortcut pressed with no
+    // selection, or outside a prose editor, is a no-op and must stay silent — and
+    // then on the signature actually being anonymous, which `warn_unsigned_comments`
+    // checks for itself so the rule lives in one place.
     {
         let editors = deps.editors.clone();
-        ctx.register_action_global(
-            Action::new("comments.add").on_invoke(move |_i, c| editors.add_comment_at_selection(c)),
-        );
+        let comments = deps.comments.clone();
+        let session = deps.session.clone();
+        ctx.register_action_global(Action::new("comments.add").on_invoke(move |_i, c| {
+            if editors.add_comment_at_selection(c) {
+                crate::app::warn_unsigned_comments(&comments, &session, c);
+            }
+        }));
     }
     {
         let editors = deps.editors.clone();
-        ctx.register_action_global(
-            Action::new("comments.add_paragraph")
-                .on_invoke(move |_i, c| editors.add_paragraph_comment(c)),
-        );
+        let comments = deps.comments.clone();
+        let session = deps.session.clone();
+        ctx.register_action_global(Action::new("comments.add_paragraph").on_invoke(
+            move |_i, c| {
+                if editors.add_paragraph_comment(c) {
+                    crate::app::warn_unsigned_comments(&comments, &session, c);
+                }
+            },
+        ));
     }
 
     // Tools ▸ Comments — show or hide the marks and the margin.

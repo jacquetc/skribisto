@@ -70,7 +70,7 @@ use crate::{
     SYNOPSIS_PARA_SPACING_AFTER_DEFAULT, SYNOPSIS_PARA_SPACING_AFTER_KEY,
     SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT, SYNOPSIS_PARA_SPACING_BEFORE_KEY, SYNOPSIS_PLACEMENT_KEY,
     SYNOPSIS_SIDE_WIDTH_DEFAULT, SYNOPSIS_SIDE_WIDTH_KEY, SYNOPSIS_SIZE_DEFAULT, SYNOPSIS_SIZE_KEY,
-    TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY,
+    TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY, USER_INITIALS_KEY, USER_NAME_KEY,
 };
 
 /// One editor type's four typography knobs. Cheap to clone — every field is a
@@ -250,6 +250,12 @@ impl CorkboardDefaults {
 pub struct SettingsViewModel {
     dark: Signal<bool>,
     locale: Signal<String>,
+    /// Who is using this installation — see [`crate::USER_NAME_KEY`]. App-level
+    /// on purpose: the per-project author name is the *book's* byline, and an
+    /// editor opening someone else's `.skrib` must not sign their remarks with it.
+    user_name: Signal<String>,
+    /// Explicit initials, overriding the derivation — see [`crate::USER_INITIALS_KEY`].
+    user_initials: Signal<String>,
     column_width: Signal<f32>,
     preview_width: Signal<f32>,
     autosave: Signal<bool>,
@@ -313,6 +319,8 @@ impl SettingsViewModel {
         Self {
             dark: store.signal(DARK_KEY, false),
             locale: store.signal(LOCALE_KEY, "en-US".to_string()),
+            user_name: store.signal(USER_NAME_KEY, String::new()),
+            user_initials: store.signal(USER_INITIALS_KEY, String::new()),
             column_width: store.signal(EDITOR_WIDTH_KEY, EDITOR_WIDTH_DEFAULT),
             preview_width: store.signal(PREVIEW_WIDTH_KEY, PREVIEW_WIDTH_DEFAULT),
             autosave: store.signal(AUTOSAVE_KEY, false),
@@ -513,6 +521,18 @@ impl SettingsViewModel {
     }
     pub fn locale(&self) -> Signal<String> {
         self.locale.clone()
+    }
+
+    /// The signing name for comments — empty when unset, which the resolver in
+    /// [`crate::comments::signature`] reads as "fall back to the book's byline".
+    pub fn user_name(&self) -> Signal<String> {
+        self.user_name.clone()
+    }
+
+    /// Explicit initials — empty means "derive them from the name", never
+    /// "show none".
+    pub fn user_initials(&self) -> Signal<String> {
+        self.user_initials.clone()
     }
 
     /// The per-editor-type typography bundles (Scene / Synopsis / Notes / Corkboard).

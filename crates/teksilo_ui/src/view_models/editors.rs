@@ -501,33 +501,41 @@ impl EditorsViewModel {
     /// anchor to. The same per-EDITOR focus gate `insert_scene_break` documents
     /// applies — without it, typing in the synopsis and pressing the shortcut
     /// would annotate the manuscript prose at whatever stale caret it still held.
-    pub fn add_comment_at_selection(&self, _ctx: &mut teksilo::prelude::EventContext) {
+    ///
+    /// Returns whether a thread was actually created, so the caller can follow up
+    /// on it — today, the "these comments are unsigned" nudge. Every early return
+    /// above is a real no-op (no focus, no selection), and warning about the
+    /// signature of a comment that was never made would be noise.
+    pub fn add_comment_at_selection(&self, _ctx: &mut teksilo::prelude::EventContext) -> bool {
         let Some(handle) = self.focused_prose_handle() else {
-            return;
+            return false;
         };
         if !handle.focused_signal().get() {
-            return;
+            return false;
         }
         let Some(binding) = self.focused_comment_binding() else {
-            return;
+            return false;
         };
         let (a, p) = handle.selection();
-        binding.add_range(a.min(p), a.max(p));
+        binding.add_range(a.min(p), a.max(p)).is_some()
     }
 
     /// Comment on the paragraph the focused prose caret is in.
-    pub fn add_paragraph_comment(&self, _ctx: &mut teksilo::prelude::EventContext) {
+    ///
+    /// Returns whether a thread was created — see
+    /// [`add_comment_at_selection`](Self::add_comment_at_selection).
+    pub fn add_paragraph_comment(&self, _ctx: &mut teksilo::prelude::EventContext) -> bool {
         let Some(handle) = self.focused_prose_handle() else {
-            return;
+            return false;
         };
         if !handle.focused_signal().get() {
-            return;
+            return false;
         }
         let Some(binding) = self.focused_comment_binding() else {
-            return;
+            return false;
         };
         let (a, p) = handle.selection();
-        binding.add_paragraph(a.min(p), a.max(p));
+        binding.add_paragraph(a.min(p), a.max(p)).is_some()
     }
 
     pub fn focused_carries_scene(&self) -> bool {

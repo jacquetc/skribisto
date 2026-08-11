@@ -613,6 +613,52 @@ pub(crate) fn offer_missing_dictionaries(
     );
 }
 
+/// After a comment is created with nobody's name on it, say so once and offer the
+/// page that fixes it.
+///
+/// Fires only when the resolved signature is anonymous — with a name set, from
+/// either source, this never appears. A toast rather than a modal or a
+/// pre-flight prompt, for the same reason the missing-dictionary nudge is one:
+/// the comment has already been written and is perfectly usable unsigned, so
+/// this is information, not a decision to block on. Nothing is retroactive —
+/// filling the name in signs the *next* comment, never the ones already stored
+/// (see `comments::signature`), which is why the string says so.
+pub(crate) fn warn_unsigned_comments(
+    comments: &crate::view_models::CommentsViewModel,
+    session: &WorkSession,
+    ctx: &mut EventContext,
+) {
+    if !comments.signature().is_anonymous() {
+        return;
+    }
+    let work_id = session.ids.work_id.get();
+    let session = session.clone();
+    ctx.show_toast(
+        teksilo::widgets::Toast::info(tr!(comments_unsigned_toast()))
+            // Work-scoped for the same reason `dict.missing` is: a bare id shared
+            // by every window would let a second Work's nudge find and retarget
+            // this one's still-live toast. It also means comment after comment
+            // replaces the same toast instead of stacking one per remark.
+            .scoped_id("comments.unsigned", work_id)
+            .target_work(work_id)
+            .action(teksilo::widgets::ToastAction::primary(
+                tr!(comments_unsigned_action()),
+                move |c| {
+                    let session = session.clone();
+                    c.present_modal(
+                        ModalRequest::deferred(move |t| {
+                            t.add(SettingsPanel::open_to_user(session))
+                        })
+                        .presentation(ModalPresentation::InTree)
+                        .title("Settings")
+                        .size(920, 620)
+                        .close_behavior(ModalCloseBehavior::Manual),
+                    );
+                },
+            )),
+    );
+}
+
 pub struct App {
     app_ctx: Rc<AppContext>,
     /// The Tier-2 per-open-Work bundle (see `sessions::WorkSession`'s module
@@ -1617,9 +1663,45 @@ impl Widget for App {
             ctx.effect(&session.open_docs.edited_any(), move |_| f.note_live_edit());
         }
 
-        // The default author for new threads is the book's byline — the only name
-        // the app knows. There is no identity system and this does not invent one.
-        comments.set_default_author(&session.single_work.author_name().get());
+        // Who new threads and replies get signed by: Settings ▸ User if it is
+        // filled in, else this book's byline (see `comments::signature`).
+        //
+        // An **effect over all three sources**, not the one-shot
+        // `set_default_author(&…author_name().get())` this replaced. That read
+        // registered no dependency — `Signal::get` is a plain clone — and ran
+        // during the first `App::build`, which happens before `load_work` has
+        // populated `SingleWork`. The captured value was therefore `""` for the
+        // life of the window no matter what the project or the settings said, and
+        // every comment reached disk with `author_name: ""`. `ctx.effect` fires
+        // once with the current value and again on every change, so it covers
+        // both the seed and a name typed into Settings mid-session.
+        {
+            let user_name = settings.user_name();
+            let user_initials = settings.user_initials();
+            let work_author = session.single_work.author_name();
+            let recompute = {
+                let comments = comments.clone();
+                let user_name = user_name.clone();
+                let user_initials = user_initials.clone();
+                let work_author = work_author.clone();
+                move || {
+                    comments.set_signature(crate::comments::signature::resolve(
+                        &user_name.get(),
+                        &user_initials.get(),
+                        &work_author.get(),
+                    ));
+                }
+            };
+            {
+                let r = recompute.clone();
+                ctx.effect(&user_name, move |_: &String| r());
+            }
+            {
+                let r = recompute.clone();
+                ctx.effect(&user_initials, move |_: &String| r());
+            }
+            ctx.effect(&work_author, move |_: &String| recompute());
+        }
         comments.model().wire(ctx);
         // Hand the view-model to the open-document store so every document — the
         // ones already open from a workspace restore, and every one opened later —
@@ -1948,6 +2030,7 @@ impl Widget for App {
             fullscreen: self.fullscreen.clone(),
             focus: self.focus.clone(),
             editors: editors.clone(),
+            comments: comments.clone(),
             trash: trash.clone(),
             search: search.clone(),
             project_switch: project_switch.clone(),

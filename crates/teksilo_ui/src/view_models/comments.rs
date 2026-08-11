@@ -45,6 +45,7 @@ use frontend::common::entities::{CommentAnchorKind, CommentOrphanReason};
 
 use crate::comments::anchor::{self, Anchor, Resolution};
 use crate::comments::session::LiveAnchor;
+use crate::comments::signature::Signature;
 use crate::models::{CommentRow, CommentsListModel};
 
 /// Which threads a dock shows. Always-visible chips, including `Orphaned` at zero
@@ -102,9 +103,16 @@ pub struct CommentsViewModel {
     /// names actually present, never a fixed roster — this app has no identity
     /// system and this does not invent one.
     author: Signal<String>,
-    /// The default author for new threads: the book's byline, which is the only
-    /// name the app knows.
-    default_author: Signal<String>,
+    /// Who a thread or reply created *now* would be signed by.
+    ///
+    /// Resolved by [`crate::comments::signature::resolve`] from the app-level
+    /// identity and the project's byline, and kept current by an effect in
+    /// `App::build` over all three sources. It was a one-shot `.get()` of the
+    /// byline until 2026-08: `Signal::get` registers no dependency, so the value
+    /// captured at the first build — before `load_work` had populated
+    /// `SingleWork` — was the empty string for the life of the window, and every
+    /// comment in every project was stored unsigned.
+    signature: Signal<Signature>,
     /// A seek the editor for `content_id` should perform the moment it next
     /// attaches: `(content_id, start, end)`.
     ///
@@ -288,7 +296,7 @@ impl CommentsViewModel {
             filter: Signal::new(CommentFilter::All),
             sort: Signal::new(CommentSort::DocumentOrder),
             author: Signal::new(String::new()),
-            default_author: Signal::new(String::new()),
+            signature: Signal::new(Signature::default()),
             pending_seek: Signal::new(None),
             body_docs: Rc::new(RefCell::new(HashMap::new())),
             pending_focus: Rc::new(Cell::new(None)),
@@ -466,8 +474,25 @@ impl CommentsViewModel {
         self.sort.set(s);
     }
 
-    pub fn set_default_author(&self, name: &str) {
-        self.default_author.set(name.to_string());
+    /// Re-point the signature new comments are stored with.
+    ///
+    /// Called from an effect over every source it is derived from, never once at
+    /// build time — see the field's own doc for the bug that distinction fixed.
+    ///
+    /// `set_if_changed`, because there are three such effects (one per source)
+    /// and each fires on registration: a plain `set` would notify three times per
+    /// build for one unchanged value. The resolve itself is a few string trims,
+    /// but the notify is what would fan out.
+    pub fn set_signature(&self, signature: Signature) {
+        self.signature.set_if_changed(signature);
+    }
+
+    /// The signature a comment created now would carry.
+    ///
+    /// Public so the "your comments are unsigned" nudge can ask before deciding
+    /// to warn, rather than keeping a second, drifting copy of the same rule.
+    pub fn signature(&self) -> Signature {
+        self.signature.get()
     }
 
     /// Every distinct author present, for the dock's author chip.
@@ -551,7 +576,7 @@ impl CommentsViewModel {
         let id = self.model.create(
             content_id,
             CommentAnchorKind::Range,
-            &self.default_author.get(),
+            &self.signature.get(),
             body,
             &a,
             stack_id,
@@ -592,7 +617,7 @@ impl CommentsViewModel {
         let id = self.model.create(
             content_id,
             CommentAnchorKind::Paragraph,
-            &self.default_author.get(),
+            &self.signature.get(),
             body,
             &a,
             stack_id,
@@ -612,7 +637,7 @@ impl CommentsViewModel {
     pub fn reply(&self, comment_id: u64, body: &str, stack_id: Option<u64>) -> Option<u64> {
         let id = self
             .model
-            .reply(comment_id, &self.default_author.get(), body, stack_id)?;
+            .reply(comment_id, &self.signature.get(), body, stack_id)?;
         self.request_entry_focus(ThreadEntry::Reply(id));
         Some(id)
     }
@@ -1211,7 +1236,14 @@ mod persist_tests {
         let a = anchor::capture(text, 4, 8, 0); // "lamp"
         let id = vm
             .model()
-            .create(content, CommentAnchorKind::Range, "Jane", "note", &a, None)
+            .create(
+                content,
+                CommentAnchorKind::Range,
+                &crate::comments::signature::resolve("Jane", "", ""),
+                "note",
+                &a,
+                None,
+            )
             .expect("create comment through the model");
         (vm, id)
     }

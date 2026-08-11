@@ -109,6 +109,24 @@ fn check<T: DeserializeOwned>(v: &toml::Value) -> Result<(), String> {
 /// Grouped as the settings panes group them. Order is the dump order, so it should read
 /// top-down like a settings window rather than alphabetically.
 pub static SETTINGS: &[SettingSpec] = &[
+    // ── User ──────────────────────────────────────────────────────────────────
+    SettingSpec {
+        key: crate::USER_NAME_KEY,
+        ty: "string",
+        default: || val(""),
+        check: check::<String>,
+        doc: "Who is using this installation — the name comments and replies are signed \
+              with. Distinct from the project's own author name, which is the book's \
+              byline and travels inside the `.skrib`. Empty falls back to that byline.",
+    },
+    SettingSpec {
+        key: crate::USER_INITIALS_KEY,
+        ty: "string",
+        default: || val(""),
+        check: check::<String>,
+        doc: "The initials shown beside a comment in Word (`w:initials`). Empty derives \
+              them from the signing name rather than showing none.",
+    },
     // ── Appearance & behaviour ────────────────────────────────────────────────
     SettingSpec {
         key: crate::IMAGE_SIZE_POLICY_KEY,
