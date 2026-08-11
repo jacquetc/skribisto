@@ -136,3 +136,15 @@ seeked = "seeked"
 Secon = "Secon"
 goin = "goin"
 tolerence = "tolerence"
+
+# ── The Windows installer script and the README passage that documents it.
+#    `DOUT`/`Cpy` are fragments of NSIS syntax, not words: `/DOUT_FILE` is the
+#    `/D<name>=<value>` define flag with `OUT_FILE` after it, and `Cpy` comes
+#    out of `CopyFiles`/`SetOverwrite` handling. `cours` (*en cours
+#    d'exécution*), `Sie` and `Programm` are the French and German installer
+#    strings, which are translations rather than prose of ours to correct.
+DOUT = "DOUT"
+Cpy = "Cpy"
+cours = "cours"
+Sie = "Sie"
+Programm = "Programm"
