@@ -275,7 +275,7 @@ fn present_export(
         crate::models::FolderPurpose::DataInterchange,
         FileDialogRequest::save_file()
             .title(tr!(settings_themes_export()))
-            .default_file_name(format!("{}.json", slugify(name)))
+            .default_file_name(format!("{}.json", slugify(name, "theme")))
             .add_filter(tr!(settings_themes_json_filter()).resolve_now(), &["json"]),
     );
     let _ = ctx.save_file(req, move |res, ectx| {
@@ -311,18 +311,7 @@ fn present_export(
     });
 }
 
-fn slugify(name: &str) -> String {
-    let s: String = name
-        .chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '-' })
-        .collect();
-    let trimmed = s.trim_matches('-').to_string();
-    if trimmed.is_empty() {
-        "theme".to_string()
-    } else {
-        trimmed
-    }
-}
+use crate::shared::slug::slugify;
 
 // ── The theme editor (reactive on the selection) ──
 

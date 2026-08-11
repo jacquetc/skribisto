@@ -632,9 +632,7 @@ fn footnote_line(text: LocalizedString) -> impl Widget {
         .child(Spacer::new())
 }
 
-fn note(text: LocalizedString) -> impl Widget {
-    Padding::uniform(16.0).child(TextWidget::new(text).color(TextRole::Secondary))
-}
+use crate::shared::text::dock_note as note;
 
 #[cfg(test)]
 mod tests {

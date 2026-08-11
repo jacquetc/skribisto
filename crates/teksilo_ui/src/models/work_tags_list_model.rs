@@ -53,9 +53,7 @@ pub fn sort_rows(rows: &mut [TagRow]) {
 
 /// The comparison key for "is this name already taken". Trimmed and lowercased — the
 /// backend permits duplicates, so this only drives the UI's warning and import's skip.
-pub fn name_key(name: &str) -> String {
-    name.trim().to_lowercase()
-}
+pub use crate::shared::list_naming::name_key;
 
 /// The row whose name collides with `candidate`, ignoring case and surrounding space,
 /// excluding `exclude` (a tag being renamed never collides with itself).
@@ -65,13 +63,16 @@ pub fn name_key(name: &str) -> String {
 /// duplicate-name warning to behave differently in the app than in every test that covers
 /// it, which is the one place the difference would never be noticed.
 pub fn colliding_name(rows: &[TagRow], candidate: &str, exclude: Option<u64>) -> Option<String> {
-    let key = name_key(candidate);
-    if key.is_empty() {
-        return None;
+    crate::shared::list_naming::colliding_name(rows, candidate, exclude)
+}
+
+impl crate::shared::list_naming::NamedRow for TagRow {
+    fn row_id(&self) -> u64 {
+        self.id
     }
-    rows.iter()
-        .find(|r| Some(r.id) != exclude && name_key(&r.name) == key)
-        .map(|r| r.name.clone())
+    fn row_name(&self) -> &str {
+        &self.name
+    }
 }
 
 fn build_lookup(rows: &[TagRow]) -> HashMap<u64, TagRow> {

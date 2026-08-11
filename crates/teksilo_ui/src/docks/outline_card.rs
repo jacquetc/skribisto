@@ -177,23 +177,7 @@ impl std::fmt::Debug for OutlineCard {
 
 /// `dd/mm/yyyy hh:mm`, matching the comment card's stamp — the app's only other
 /// rendered timestamp, and not worth a second spelling.
-fn stamp(t: chrono::DateTime<chrono::Utc>) -> String {
-    use chrono::{Datelike, Timelike};
-    // `DateTime<Utc>::naive_local` is a no-op: chrono reads "local" as
-    // local-to-the-`Tz`-parameter, and UTC's offset is zero by definition. It
-    // reads like a conversion and performs none, so every timestamp in the app
-    // was shown in UTC while claiming to be the writer's own clock. Convert to
-    // the machine timezone first, which is what was meant.
-    let t = t.with_timezone(&chrono::Local).naive_local();
-    format!(
-        "{:02}/{:02}/{:04} {:02}:{:02}",
-        t.day(),
-        t.month(),
-        t.year(),
-        t.hour(),
-        t.minute()
-    )
-}
+use crate::shared::stamps::stamp;
 
 /// One `label / value` pair, stacked so a long value keeps the full width.
 ///

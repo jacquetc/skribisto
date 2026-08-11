@@ -182,18 +182,7 @@ impl NewWorkPanel {
 }
 
 /// A left-column field label (dimmed, small).
-fn field_label(text: LocalizedString) -> TextWidget {
-    TextWidget::new(text)
-        .style(TextStyleRole::Small)
-        .color(TextRole::Secondary)
-}
-
-/// A sub-field hint line (dimmed, small).
-fn hint(text: LocalizedString) -> TextWidget {
-    TextWidget::new(text)
-        .style(TextStyleRole::Small)
-        .color(TextRole::Secondary)
-}
+use crate::shared::text::{field_label, hint};
 
 /// A 16 dp tile icon (monochrome, follows the theme text color).
 fn tile_icon(icon: &'static teksilo::canvas::svg::SvgIcon) -> IconWidget {

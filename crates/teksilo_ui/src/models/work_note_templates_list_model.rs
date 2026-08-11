@@ -35,9 +35,11 @@ pub struct TemplateRow {
 /// The comparison key for "is this name already taken". Trimmed and lowercased, matching
 /// `import_note_templates`' own `name_key`, so the backend and the UI agree on what counts
 /// as a collision.
-pub fn name_key(name: &str) -> String {
-    name.trim().to_lowercase()
-}
+// Only the mock arm spells `name_key` directly; the real one reaches it through
+// `colliding_name`. `unused_imports` is not covered by the crate-level
+// `allow(dead_code)`, so the arm has to be named.
+#[cfg_attr(not(feature = "mocks"), allow(unused_imports))]
+pub use crate::shared::list_naming::name_key;
 
 /// The row whose name collides with `candidate`, ignoring case and surrounding space,
 /// excluding `exclude` (a template being renamed never collides with itself).
@@ -49,13 +51,16 @@ pub fn colliding_name(
     candidate: &str,
     exclude: Option<u64>,
 ) -> Option<String> {
-    let key = name_key(candidate);
-    if key.is_empty() {
-        return None;
+    crate::shared::list_naming::colliding_name(rows, candidate, exclude)
+}
+
+impl crate::shared::list_naming::NamedRow for TemplateRow {
+    fn row_id(&self) -> u64 {
+        self.id
     }
-    rows.iter()
-        .find(|r| Some(r.id) != exclude && name_key(&r.name) == key)
-        .map(|r| r.name.clone())
+    fn row_name(&self) -> &str {
+        &self.name
+    }
 }
 
 /// The insert menu's order: starred rows first, each group keeping the writer's own

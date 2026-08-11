@@ -469,23 +469,7 @@ fn comment_context_menu(handle: EditorHandle) -> MenuList {
 ///
 /// Deliberately not translated: it is a timestamp, which is data, and the house
 /// rule keeps data in `lit!`.
-fn stamp(t: chrono::DateTime<chrono::Utc>) -> String {
-    use chrono::{Datelike, Timelike};
-    // `DateTime<Utc>::naive_local` is a no-op: chrono reads "local" as
-    // local-to-the-`Tz`-parameter, and UTC's offset is zero by definition. It
-    // reads like a conversion and performs none, so every timestamp in the app
-    // was shown in UTC while claiming to be the writer's own clock. Convert to
-    // the machine timezone first, which is what was meant.
-    let t = t.with_timezone(&chrono::Local).naive_local();
-    format!(
-        "{:02}/{:02}/{:04} {:02}:{:02}",
-        t.day(),
-        t.month(),
-        t.year(),
-        t.hour(),
-        t.minute()
-    )
-}
+use crate::shared::stamps::stamp;
 
 #[cfg(test)]
 mod tests {

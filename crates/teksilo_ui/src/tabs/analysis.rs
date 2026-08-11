@@ -398,11 +398,7 @@ fn scrolled_boxed(inner: Box<dyn Widget>) -> Box<dyn Widget> {
     Box::new(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(Boxed::new(inner))))
 }
 
-fn note(text: impl Into<LocalizedString>) -> impl Widget {
-    TextWidget::new(text)
-        .style(TextStyleRole::Small)
-        .color(TextRole::Secondary)
-}
+use crate::shared::text::caption as note;
 
 fn heading(text: impl Into<LocalizedString>) -> impl Widget {
     TextWidget::new(text)

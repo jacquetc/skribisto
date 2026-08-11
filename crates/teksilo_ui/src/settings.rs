@@ -824,19 +824,7 @@ fn build_not_defaults(
 /// A left-column field label (dimmed, small) — matches the design's `--tx2`.
 /// `pub(crate)` so `panes::backup` shares the exact same row-label style as
 /// every built-in pane.
-pub(crate) fn field_label(text: LocalizedString) -> TextWidget {
-    TextWidget::new(text)
-        .style(TextStyleRole::Small)
-        .color(TextRole::Secondary)
-}
-
-/// A dimmed sub-field hint line. `pub(crate)` so `panes::export_styles` says which formats
-/// read the round-trip switches in the same voice every other hint in the window uses.
-pub(crate) fn hint(text: LocalizedString) -> TextWidget {
-    TextWidget::new(text)
-        .style(TextStyleRole::Small)
-        .color(TextRole::Secondary)
-}
+pub(crate) use crate::shared::text::{field_label, hint};
 
 /// A lowercase-titled section header + trailing rule (design's group headers).
 /// `pub(crate)` so the backup panes reuse the identical group-header treatment.

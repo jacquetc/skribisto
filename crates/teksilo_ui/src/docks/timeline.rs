@@ -561,9 +561,7 @@ fn unit_word(unit: BucketUnit) -> String {
     .resolve_now()
 }
 
-fn note(text: LocalizedString) -> impl Widget {
-    Padding::uniform(16.0).child(TextWidget::new(text).color(TextRole::Secondary))
-}
+use crate::shared::text::dock_note as note;
 
 /// Show one row's prose as it was at the selected moment, read-only.
 ///

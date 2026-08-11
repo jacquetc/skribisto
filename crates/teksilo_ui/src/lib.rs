@@ -108,6 +108,7 @@ pub mod sessions;
 pub mod settings;
 pub mod settings_ext;
 pub mod settings_keys;
+pub mod shared;
 pub mod shell;
 pub mod singles;
 pub mod spellcheck;

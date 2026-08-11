@@ -81,11 +81,7 @@ impl ExportPanel {
 }
 
 /// A small, dimmed section header (normal case — no full caps).
-fn field_label(text: LocalizedString) -> TextWidget {
-    TextWidget::new(text)
-        .style(TextStyleRole::Small)
-        .color(TextRole::Secondary)
-}
+use crate::shared::text::field_label;
 
 /// A labeled section: its header above the body widget.
 fn section(header: LocalizedString, body: impl Widget + 'static) -> VStack {

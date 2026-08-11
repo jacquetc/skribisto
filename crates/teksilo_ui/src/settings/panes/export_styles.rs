@@ -249,7 +249,7 @@ fn present_import(
 
 fn present_export(ctx: &mut EventContext, vm: ExportStylesViewModel, id: &str, name: &str) {
     let id = id.to_string();
-    let default_name = format!("{}.json", slugify(name));
+    let default_name = format!("{}.json", slugify(name, "export-style"));
     let req = crate::models::dialog_start_in(
         ctx,
         crate::models::FolderPurpose::DataInterchange,
@@ -294,18 +294,7 @@ fn present_export(ctx: &mut EventContext, vm: ExportStylesViewModel, id: &str, n
 }
 
 /// A filesystem-safe base name for the default export file name.
-fn slugify(name: &str) -> String {
-    let s: String = name
-        .chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '-' })
-        .collect();
-    let trimmed = s.trim_matches('-').to_string();
-    if trimmed.is_empty() {
-        "export-style".to_string()
-    } else {
-        trimmed
-    }
-}
+use crate::shared::slug::slugify;
 
 // ── The style editor (reactive on the selection) ──
 
