@@ -8,6 +8,8 @@ bck/
 build*
 # ...but a cargo build script is source, and `build*` above would swallow it.
 !crates/*/build.rs
+# ...and so is the Windows packaging script.
+!package/windows/build.py
 out/
 temp
 temp_*/

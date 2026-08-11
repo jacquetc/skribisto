@@ -84,6 +84,10 @@ jobs:
           if-no-files-found: error
 
   # -------- Windows: installer + portable zip --------
+  #
+  # Built natively on windows-latest. package/windows/build.py can produce the
+  # same artifacts by cross-compiling from Linux, but the release deliberately
+  # does not: a native build keeps a real Windows machine in the release path.
   windows:
     name: Windows package
     needs: validate
@@ -131,18 +135,22 @@ jobs:
           Copy-Item target/x86_64-pc-windows-msvc/release/skribisto.exe dist/
           Compress-Archive -Path dist/skribisto.exe -DestinationPath dist/Skribisto-portable.zip -Force
 
-      - name: Install Inno Setup
-        shell: pwsh
-        run: choco install innosetup --version=6.4.3 --no-progress -y
-
+      # NSIS ships preinstalled on the windows runner images, so there is
+      # nothing to install here.
       - name: Compile installer
         shell: pwsh
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
-            /DMyAppVersion=${{ steps.ver.outputs.version }} `
-            "/DMySourceExe=target\x86_64-pc-windows-msvc\release\skribisto.exe" `
-            /O"dist" /F"Skribisto-setup" `
-            package\windows\setup.iss
+          # makensis resolves relative paths against the script's own
+          # directory, not the working directory, so both of these must be
+          # absolute.
+          $src = Join-Path $pwd 'target\x86_64-pc-windows-msvc\release\skribisto.exe'
+          $out = Join-Path $pwd 'dist\Skribisto-setup.exe'
+          makensis /V3 `
+            "/DAPP_VERSION=${{ steps.ver.outputs.version }}" `
+            "/DSRC_EXE=$src" `
+            "/DOUT_FILE=$out" `
+            package\windows\setup.nsi
+          if ($LASTEXITCODE -ne 0) { throw "makensis failed with $LASTEXITCODE" }
 
       # ---- Optional Authenticode signing via SignPath (no-op until enrolled) ----
       - name: Determine signing mode

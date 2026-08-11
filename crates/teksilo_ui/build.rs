@@ -31,23 +31,27 @@ fn main() {
 
     println!("cargo:rustc-env=SKRIBISTO_GIT_DESCRIBE={describe}");
 
-    #[cfg(windows)]
     embed_windows_resources();
 }
 
-/// On Windows, embed the app icon + version metadata into `skribisto.exe` as
-/// Win32 resources so the taskbar, Explorer, and the Inno Setup installer show
-/// the branded icon and correct version.
+/// For a Windows *target*, embed the app icon + version metadata into
+/// `skribisto.exe` as Win32 resources so the taskbar, Explorer, and the NSIS
+/// installer show the branded icon and correct version.
 ///
-/// `#[cfg(windows)]` gates on the *host* (build scripts run on the host). The
-/// Windows release is always built natively on a Windows runner (host ==
-/// target), and the macOS/Linux builds cross-compile only among their own
-/// platforms, so host-gating matches target-gating for every configuration we
-/// build — and non-Windows hosts skip `winresource` (a `cfg(windows)`
-/// build-dependency) entirely. winit 0.30 sets PerMonitorV2 DPI awareness
-/// programmatically, so no application manifest is embedded here.
-#[cfg(windows)]
+/// Gated on the target rather than the host. Build scripts are compiled for the
+/// host, so `cfg!(windows)` is false when CI cross-compiles the Windows release
+/// from Linux — host-gating would quietly produce an unbranded exe with no
+/// VERSIONINFO. `CARGO_CFG_TARGET_OS` names the real target, and is what
+/// `winresource` itself reads to pick a resource compiler: `rc.exe` from the
+/// Windows SDK on a Windows host, `llvm-rc` when cross-compiling to the msvc
+/// target (override either with `RC_PATH`). winit 0.30 sets PerMonitorV2 DPI
+/// awareness programmatically, so no application manifest is embedded here.
 fn embed_windows_resources() {
+    println!("cargo:rerun-if-env-changed=RC_PATH");
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
+        return;
+    }
+
     const ICON: &str = "../../resources/windows/skribisto.ico";
     println!("cargo:rerun-if-changed={ICON}");
 
