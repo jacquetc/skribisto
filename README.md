@@ -53,8 +53,8 @@ touch if you hit a glaring gap.
 - Dual editor pane (prose plus synopsis), with split panes and tabs
 - Manuscript streams: read a whole Chapter, Part or Book, or every synopsis, as one document
 - Corkboard, writing sessions, live word count, pace tracking
-- An Analysis tab for the Book: pacing/shape, repetition, synopsis-vs-prose drift, and
-  vocabulary variety, always measured against the manuscript's own numbers, never a norm
+- An Analysis tab for the Book: pacing and shape — words per scene, dialogue share, footnote
+  words — always measured against the manuscript's own numbers, never a norm
 - Anchored comments in the margin (LibreOffice-style), with threaded replies and both a
   project-wide and a per-document comments dock
 - Note templates: built-in presets (character sheet, location, object, beat sheet, faction,

@@ -1371,13 +1371,19 @@ features:
 - name: analysis_management
   use_cases:
   # Read-only pass over one container's subtree (normally a Book): measure every
-  # prose row's shape, find repetition within and across scenes, and check each
-  # scene's prose against its own synopsis. Writes nothing -- measurement must
-  # never touch entities, dirty the project or push an undo entry. Modelled on
-  # scan_mentions (QueryUnitOfWork, long operation, same `gather`).
+  # prose row's shape. Writes nothing -- measurement must never touch entities,
+  # dirty the project or push an undo entry. Modelled on scan_mentions
+  # (QueryUnitOfWork, long operation, same `gather`).
   #
   # The measurements themselves live in skribisto_model::analysis, store-free and
   # unit-tested; this use case only feeds them and shapes the result.
+  #
+  # The result carries the Shape category's rows and nothing else. It used to also
+  # carry within-scene echoes, near-duplicate scene pairs, synopsis-drift rows and
+  # a book-level diversity figure -- the payloads of three Analysis categories this
+  # application no longer has. Producing them cost the heaviest work in the pass
+  # (a whole-scope token interning, then an all-pairs scene comparison) for a
+  # result with no reader, on every run.
   - name: analyze_book
     entities:
     - Work
@@ -1402,81 +1408,31 @@ features:
     dto_out:
       name: BookAnalysisResultDto
       fields:
-      # Four flat lists, each row carrying the item it belongs to, rather than a
-      # tree of nested Vecs -- the same shape (and the same `row` + `rows` enum
-      # escape hatch) mention_management's hit list uses. The manifest has no
-      # float type at all, which is the other reason every real payload rides
-      # inside a variant: the variant body is raw Rust.
+      # One flat list, each row carrying the item it belongs to, rather than a tree
+      # of nested Vecs -- the same shape (and the same `row` + `rows` enum escape
+      # hatch) mention_management's hit list uses. The manifest has no float type
+      # at all, which is the other reason the real payload rides inside a variant:
+      # the variant body is raw Rust.
       #
       # Option<f64> throughout is load-bearing, not decoration. A language with no
-      # curated dialogue convention, a scene too short for a diversity index and a
-      # synopsis with no distinctive terms must each report "not measurable" -- a
-      # 0.0 there would read as a finding rather than as an absence.
+      # curated dialogue convention must report "not measurable" -- a 0.0 there
+      # would read as a finding rather than as an absence.
       - name: scene
         type: enum
         enum_name: SceneAnalysis
         enum_values:
         - Empty
-        - "Measured { item_id: EntityId, title: String, chapter_title: String, words: i64, sentence_mean: Option<f64>, sentence_stddev: Option<f64>, paragraph_mean: Option<f64>, punctuation_per_1k: f64, dialogue: Option<f64>, synopsis_words: i64, synopsis_coverage: Option<f64> }"
+        - "Measured { item_id: EntityId, title: String, chapter_title: String, words: i64, sentence_mean: Option<f64>, sentence_stddev: Option<f64>, paragraph_mean: Option<f64>, punctuation_per_1k: f64, dialogue: Option<f64> }"
       - name: scenes
         type: enum
         enum_name: SceneAnalyses
         enum_values:
         - Empty
         - "Measured(Vec<SceneAnalysis>)"
-      # A distinctive word recurring inside the echo window. `first_at`/`first_len`
-      # are byte offsets into that scene's plain text, so the UI can jump to and
-      # highlight the occurrence.
-      - name: echo
-        type: enum
-        enum_name: EchoRow
-        enum_values:
-        - Empty
-        - "Found { item_id: EntityId, word: String, occurrences: i64, closest_gap: i64, score: f64, first_at: i64, first_len: i64 }"
-      - name: echoes
-        type: enum
-        enum_name: EchoRows
-        enum_values:
-        - Empty
-        - "Found(Vec<EchoRow>)"
-      # Containment leads and Jaccard follows, on purpose: a short scene pasted
-      # whole inside a long one scores ~1.0 containment and ~0.17 Jaccard, and it
-      # is the containment that names the writer's actual situation.
-      - name: duplicate
-        type: enum
-        enum_name: DuplicateRow
-        enum_values:
-        - Empty
-        - "Found { a_item_id: EntityId, a_title: String, b_item_id: EntityId, b_title: String, containment: f64, jaccard: f64, shared_shingles: i64 }"
-      - name: duplicates
-        type: enum
-        enum_name: DuplicateRows
-        enum_values:
-        - Empty
-        - "Found(Vec<DuplicateRow>)"
-      # `missing` is what makes this actionable: "your synopsis names Constantine
-      # and the Senate; the prose mentions neither" is a sentence a writer can act
-      # on, where a coverage score is not.
-      - name: drift
-        type: enum
-        enum_name: DriftRow
-        enum_values:
-        - Empty
-        - "Found { item_id: EntityId, title: String, covered: f64, missing: Vec<String> }"
-      - name: drifts
-        type: enum
-        enum_name: DriftRows
-        enum_values:
-        - Empty
-        - "Found(Vec<DriftRow>)"
-      # Book-level lexical diversity. `reliable` is the sample-size gate: below it
-      # the UI must say "not enough text yet" rather than print a number.
-      - name: diversity
-        type: enum
-        enum_name: BookDiversity
-        enum_values:
-        - Empty
-        - "Measured { words: i64, distinct_words: i64, mattr: Option<f64>, hdd: Option<f64>, reliable: bool }"
+      # Words of prose across the whole scope, summed from the rows above. Kept as
+      # its own field rather than left to the reader to fold, because a scope with
+      # no measurable row still has an honest answer here (`0`), where an empty
+      # `scenes` list does not distinguish "nothing written" from "not measured".
       - name: total_words
         type: uinteger
 - name: progress_management

@@ -395,18 +395,14 @@ fn a_part_heading_is_not_measured_as_a_scene() {
         "a Part heading owns no prose and must not appear as a scene; got {:?}",
         measured(&dto)
     );
-
-    // ...and therefore cannot be reported as drifted from its own synopsis.
-    if let analysis_management::DriftRows::Found(rows) = &dto.drifts {
-        for row in rows {
-            if let analysis_management::DriftRow::Found { item_id, title, .. } = row {
-                assert_ne!(
-                    *item_id, part,
-                    "a Part was reported as drifted from its synopsis: {title}"
-                );
-            }
-        }
-    }
+    // The Part carries a synopsis and no prose, which is exactly the row that used to
+    // slip in as a phantom zero-word scene: it would drag the word-count median down and
+    // then be reported as a scene whose prose does not match its synopsis. `counts_prose`
+    // is what keeps it out, so the total must be the real scene's alone.
+    assert_eq!(
+        dto.total_words, 200,
+        "the Part's synopsis must contribute nothing to the scope's word total"
+    );
 }
 
 /// The container the view is mounted on bounds the walk, and the head itself is never a row.
@@ -539,18 +535,29 @@ fn the_bundled_example_opens_and_analyses() {
         dto.total_words
     );
 
-    // The enrichment pass added a synopsis to every chapter. If a future pass drops them,
-    // the synopsis-drift feature silently has nothing to work with and its panel reads
-    // "no synopses written yet" on the app's flagship example.
-    let with_synopsis = match &dto.scenes {
-        SceneAnalyses::Measured(rows) => rows
-            .iter()
-            .filter(|r| {
-                matches!(r, SceneAnalysis::Measured { synopsis_words, .. } if *synopsis_words > 0)
-            })
-            .count(),
-        SceneAnalyses::Empty => 0,
-    };
+    // The enrichment pass added a synopsis to every chapter. Asserted against the store
+    // rather than against the analysis result, because the result no longer carries a
+    // synopsis measure — and this was never really a claim about `analyze_book`. It is a
+    // claim about the shipped fixture: a synopsis per chapter is what makes the example
+    // demonstrate the corkboard, the outline's synopsis column and every synopsis-reading
+    // surface, in this application and in anything built on it. A future enrichment pass
+    // that dropped them would leave all of those looking empty on the app's flagship file.
+    let with_synopsis = item_ids
+        .iter()
+        .filter(|id| {
+            let content_ids = binder_item_commands::get_binder_item_relationship(
+                &ctx,
+                id,
+                &frontend::common::direct_access::binder_item::BinderItemRelationshipField::Contents,
+            )
+            .unwrap_or_default();
+            content_commands::get_content_multi(&ctx, &content_ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .any(|c| c.role == ContentRole::SynopsisText && !c.data.trim().is_empty())
+        })
+        .count();
     assert!(
         with_synopsis >= 30,
         "the example ships a synopsis per chapter; found {with_synopsis}"

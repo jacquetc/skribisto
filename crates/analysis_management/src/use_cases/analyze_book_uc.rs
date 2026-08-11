@@ -22,12 +22,17 @@
 //   they have chosen not to print.
 // * Prose is read once per scene into plain text and reused by every measure. Re-parsing the
 //   Djot per metric would multiply the only genuinely expensive step in the pass.
+//
+// This pass is **per-scene and single-sweep**. It measures each scene's prose on its own and
+// never compares one scene to another — which is what keeps it linear in the size of the
+// manuscript. It used to also intern the whole scope into one vocabulary and then compare
+// every scene against every other, for three categories this application no longer has (see
+// the manifest); that work was quadratic, was the dominant cost of every run, and produced a
+// result nothing read. If a cross-scene measure is ever wanted back here, note that phases 2
+// and 4 were where the time went, not this walk.
 use crate::AnalyzeBookDto;
 use crate::BookAnalysisResultDto;
-use crate::dtos::{
-    BookDiversity, DriftRow, DriftRows, DuplicateRow, DuplicateRows, EchoRow, EchoRows,
-    SceneAnalyses, SceneAnalysis,
-};
+use crate::dtos::{SceneAnalyses, SceneAnalysis};
 use anyhow::{Result, anyhow};
 use common::database::QueryUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
@@ -37,7 +42,7 @@ use common::entities::{Binder, BinderItem, BinderTag, Content, ContentRole, Work
 use common::long_operation::{LongOperation, OperationProgress};
 use common::types::EntityId;
 use skrib_format::{TreeReader, gather};
-use skribisto_model::analysis::{lexical, prose_stats, repetition, synopsis, tokens};
+use skribisto_model::analysis::prose_stats;
 use skribisto_model::compile::{self, StreamLevel};
 use skribisto_model::language;
 use std::collections::HashMap;
@@ -172,15 +177,14 @@ impl LongOperation for AnalyzeBookUseCase {
 struct Scene {
     item_id: EntityId,
     title: String,
-    /// The chapter this scene sits under, for grouping findings.
+    /// The chapter this scene sits under, for grouping rows.
     ///
     /// Empty when there is none — a scene directly under a Part, or under the Book itself.
     /// Note that a flat `Item/ChapterScene` *is* its own chapter, so this equals `title`
-    /// there; the UI suppresses the grouping when the two match rather than drawing a
-    /// heading above a single row repeating it.
+    /// there; a reader grouping by it should suppress the grouping when the two match
+    /// rather than drawing a heading above a single row repeating it.
     chapter_title: String,
     prose: String,
-    synopsis: String,
     locale: Option<String>,
 }
 
@@ -283,7 +287,6 @@ fn run_analysis(
             title: item.title.clone(),
             chapter_title,
             prose: take(is_scene_prose),
-            synopsis: take(|r| matches!(r, ContentRole::SynopsisText)),
             locale: language::primary(lang.get(&meta.id).map(Vec::as_slice).unwrap_or_default())
                 .to_string()
                 .into(),
@@ -294,57 +297,21 @@ fn run_analysis(
         Some("Measuring...".to_string()),
     ));
 
-    // ── phase 2: one manuscript-wide vocabulary, so surprisal means something ──
+    // ── phase 2: per-scene measures ──
     //
-    // Interned across the whole scope before any measure runs: a word is only "surprising"
-    // relative to the book it sits in, and a per-scene vocabulary would call every word
-    // equally surprising and rank by nothing.
-    let mut vocab = tokens::Vocabulary::new();
-    let mut per_scene_ids: Vec<Vec<tokens::WordId>> = Vec::with_capacity(scenes.len());
-    let mut per_scene_tokens: Vec<Vec<tokens::Token>> = Vec::with_capacity(scenes.len());
-    for s in &scenes {
-        // Checked here too: this is the heaviest per-scene work in the pass, so a cancel
-        // requested during it would otherwise not be seen until phase 3 began.
-        if cancel.load(Ordering::Relaxed) {
-            return Err(anyhow!("Operation was cancelled"));
-        }
-        let (ids, toks) = tokens::intern_text(&mut vocab, &s.prose);
-        per_scene_ids.push(ids);
-        per_scene_tokens.push(toks);
-    }
-
-    // ── phase 3: per-scene measures ──
+    // Each scene stands alone: `prose_stats::measure` reads one string and returns numbers
+    // about that string. Nothing here accumulates across scenes, which is what keeps the
+    // pass linear — and why the cancel check is the only per-scene bookkeeping left.
     let mut scene_rows: Vec<SceneAnalysis> = Vec::with_capacity(scenes.len());
-    let mut echo_rows: Vec<EchoRow> = Vec::new();
-    let mut coverages: Vec<synopsis::Coverage> = Vec::with_capacity(scenes.len());
+    let mut total_words: u64 = 0;
 
-    for (i, s) in scenes.iter().enumerate() {
+    for s in &scenes {
         if cancel.load(Ordering::Relaxed) {
             return Err(anyhow!("Operation was cancelled"));
         }
         let markers = prose_stats::markers_for(s.locale.as_deref().unwrap_or(""));
         let stats = prose_stats::measure(&s.prose, s.locale.as_deref(), markers);
-
-        let cov = synopsis::coverage(&s.synopsis, &s.prose, &[], &vocab);
-
-        for e in repetition::echoes(
-            &per_scene_ids[i],
-            &per_scene_tokens[i],
-            &vocab,
-            repetition::DEFAULT_ECHO_WINDOW,
-            ECHO_MIN_SURPRISAL,
-        ) {
-            let first = e.occurrences.first().cloned().unwrap_or(0..0);
-            echo_rows.push(EchoRow::Found {
-                item_id: s.item_id,
-                word: e.word,
-                occurrences: e.occurrences.len() as i64,
-                closest_gap: e.closest_gap as i64,
-                score: e.score,
-                first_at: first.start as i64,
-                first_len: (first.end - first.start) as i64,
-            });
-        }
+        total_words += stats.words as u64;
 
         scene_rows.push(SceneAnalysis::Measured {
             item_id: s.item_id,
@@ -356,115 +323,15 @@ fn run_analysis(
             paragraph_mean: stats.mean_paragraph_words(),
             punctuation_per_1k: stats.punctuation_per_1k,
             dialogue: stats.dialogue,
-            synopsis_words: cov.synopsis_words as i64,
-            synopsis_coverage: (cov.terms_weighed >= synopsis::MIN_TERMS).then_some(cov.covered),
         });
-        coverages.push(cov);
     }
-    progress(OperationProgress::new(
-        70.0,
-        Some("Comparing scenes...".to_string()),
-    ));
-
-    // ── phase 4: cross-scene measures ──
-    let shingle_sets: Vec<repetition::ShingleSet> = per_scene_ids
-        .iter()
-        .map(|ids| repetition::ShingleSet::new(ids, repetition::DEFAULT_SHINGLE))
-        .collect();
-
-    let mut duplicate_rows: Vec<DuplicateRow> = Vec::new();
-    for a in 0..scenes.len() {
-        if cancel.load(Ordering::Relaxed) {
-            return Err(anyhow!("Operation was cancelled"));
-        }
-        for b in (a + 1)..scenes.len() {
-            let Some(sim) = repetition::compare_scenes(&shingle_sets[a], &shingle_sets[b]) else {
-                continue;
-            };
-            if sim.containment < DUPLICATE_CONTAINMENT_FLOOR {
-                continue;
-            }
-            duplicate_rows.push(DuplicateRow::Found {
-                a_item_id: scenes[a].item_id,
-                a_title: scenes[a].title.clone(),
-                b_item_id: scenes[b].item_id,
-                b_title: scenes[b].title.clone(),
-                containment: sim.containment,
-                jaccard: sim.jaccard,
-                shared_shingles: sim.shared_shingles as i64,
-            });
-        }
-    }
-    duplicate_rows.sort_by(|x, y| containment_of(y).total_cmp(&containment_of(x)));
-
-    let drift_rows: Vec<DriftRow> = synopsis::drift_outliers(&coverages, DRIFT_SIGMAS)
-        .into_iter()
-        .map(|o| DriftRow::Found {
-            item_id: scenes[o.index].item_id,
-            title: scenes[o.index].title.clone(),
-            covered: o.covered,
-            missing: o.missing,
-        })
-        .collect();
-
-    // Book-level diversity over every scene's prose, in stream order.
-    let book_ids: Vec<tokens::WordId> = per_scene_ids.iter().flatten().copied().collect();
-    let div = lexical::measure(&book_ids);
-    let total_words = book_ids.len();
-
-    // Echoes are ranked across the whole book, so the loudest surface first wherever they sit.
-    echo_rows.sort_by(|x, y| score_of(y).total_cmp(&score_of(x)));
 
     Ok((
         work_id,
         BookAnalysisResultDto {
             scene: SceneAnalysis::Empty,
             scenes: SceneAnalyses::Measured(scene_rows),
-            echo: EchoRow::Empty,
-            echoes: EchoRows::Found(echo_rows),
-            duplicate: DuplicateRow::Empty,
-            duplicates: DuplicateRows::Found(duplicate_rows),
-            drift: DriftRow::Empty,
-            drifts: DriftRows::Found(drift_rows),
-            diversity: BookDiversity::Measured {
-                words: div.words as i64,
-                distinct_words: div.distinct_words as i64,
-                mattr: div.mattr,
-                hdd: div.hdd,
-                reliable: div.reliable,
-            },
-            total_words: total_words as u64,
+            total_words,
         },
     ))
-}
-
-/// A word must be at least this surprising to be reported as an echo: rarer than about one
-/// word in a thousand, measured against this manuscript's own distribution.
-///
-/// Chosen empirically: sorting the bundled manuscript's vocabulary by surprisal, everything
-/// below ~6.5 is function words (`his`, `that`, `on`, `for`, `had`, `with`, `they`, `we`,
-/// `them`, `be`, `up`, `into`, `could`); from 7.0 up it is content (`bridge`, `dark`, `home`,
-/// `worlds`, `starships`, `battle`, `door`). Measured against the manuscript rather than a
-/// stopword list, so it needs no per-language resource, and it correctly drops a book's own
-/// recurring furniture — a protagonist named on every page is not a repetition worth flagging.
-const ECHO_MIN_SURPRISAL: f64 = 7.0;
-
-/// Below this containment two scenes merely share some phrasing, which every book does.
-const DUPLICATE_CONTAINMENT_FLOOR: f64 = 0.35;
-
-/// How far below the book's own mean coverage a scene must sit to be called drifted.
-const DRIFT_SIGMAS: f64 = 1.5;
-
-fn containment_of(r: &DuplicateRow) -> f64 {
-    match r {
-        DuplicateRow::Found { containment, .. } => *containment,
-        DuplicateRow::Empty => 0.0,
-    }
-}
-
-fn score_of(r: &EchoRow) -> f64 {
-    match r {
-        EchoRow::Found { score, .. } => *score,
-        EchoRow::Empty => 0.0,
-    }
 }

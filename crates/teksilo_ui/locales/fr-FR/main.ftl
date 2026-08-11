@@ -1410,8 +1410,6 @@ first-run-import = Importer les réglages
 first-run-start-fresh = Repartir de zéro
 first-run-import-failed = Certains réglages n'ont pas pu être importés : { $error }
 
-
-
 # ── Work ▸ Punctuation — le style typographique du projet ───────────────────
 settings-page-punctuation = Ponctuation
 settings-group-punctuation = Ponctuation intelligente
@@ -1532,9 +1530,6 @@ analysis-failed = L'analyse n'a pas pu aboutir.
 analysis-no-scenes = Aucune scène dans ce livre pour l'instant.
 
 analysis-shape = Forme
-analysis-repetition = Répétitions
-analysis-synopsis = Synopsis
-analysis-voice = Voix
 
 analysis-words-per-scene = Mots par scène
 analysis-median-words = La scène médiane de ce livre compte { $count } mots.
@@ -1546,42 +1541,12 @@ analysis-footnote-words = Mots en notes de bas de page
 analysis-footnote-words-count = { $count } mots se trouvent dans les notes de bas de page de ce livre, comptés à part du total du manuscrit.
 analysis-footnote-words-pending = Comptage des notes de bas de page…
 
-analysis-echoes = Mots répétés
-analysis-echoes-explainer = Les mots distinctifs employés deux fois à moins d'une page d'intervalle, la paire la plus rapprochée d'abord. Les mots courants sont écartés. Une répétition n'est pas une faute : c'est seulement là qu'un lecteur risque de l'entendre. Choisissez une scène pour l'ouvrir.
-analysis-no-echoes = Aucun mot ne se répète d'assez près pour ressortir.
-analysis-echo-row = « { $word } » apparaît { $count } fois, à { $gap } mots d'intervalle au plus proche.
-analysis-repetition-text-tooltip =
-    { $count ->
-        [one] Un mot distinctif se répète de près dans ce texte. Cliquez pour l'ouvrir.
-       *[other] { $count } mots distinctifs se répètent de près dans ce texte. Cliquez pour l'ouvrir.
-    }
-analysis-repetition-word-tooltip = { $count } emplois de « { $word } » sont assez rapprochés pour s'entendre comme une répétition — pas forcément toutes ses apparitions ici. Les deux plus proches sont à { $gap } mots d'intervalle, ce qui détermine si un lecteur la remarque.
-analysis-repetition-gap-short = { $gap } m
-analysis-similar-scenes = Scènes similaires
-analysis-similar-explainer = Deux scènes qui partagent de longs passages de formulation identique. En général une scène copiée puis retouchée, ou coupée en deux sans jamais diverger.
-analysis-no-similar-scenes = Aucune paire de scènes ne partage de longs passages.
-analysis-similar-row = « { $a } » et « { $b } » partagent environ { $percent } % du texte de la plus courte.
-analysis-more-rows = { $count } de plus non affichées.
-
 analysis-ignore-empty = Ignorer les textes encore vides
 analysis-empty-hidden = { $count } { $count ->
         [one] texte vide masqué
        *[other] textes vides masqués
     }.
 analysis-all-texts-empty = Tous les textes de ce livre sont encore vides.
-
-analysis-synopsis-drift = Synopsis et texte
-analysis-no-synopses = Aucun synopsis écrit pour l'instant, il n'y a donc rien à comparer.
-analysis-no-drift = Chaque synopsis suit sa scène d'aussi près que les autres.
-analysis-drift-row = « { $title } » — son synopsis mentionne { $terms }, mais pas le texte.
-
-analysis-vocabulary = Vocabulaire
-analysis-vocabulary-explainer = À quel point la formulation varie, mesurée sur une fenêtre glissante afin qu'un livre long ne soit pas mieux noté du seul fait de sa longueur. La mesure décrit l'écriture, elle ne la juge pas : une prose sobre obtient un score plus bas qu'une prose ornée par construction, et aucune des deux ne vaut mieux que l'autre.
-analysis-words-measured = { $words } mots, dont { $distinct } distincts.
-analysis-mattr = Variété du vocabulaire : { $value }
-analysis-mattr-scale = 0 correspondrait à un seul mot répété sans fin ; 1 à un livre ne réutilisant jamais un mot. La prose réelle se tient loin de ces extrêmes, et il n'y a aucune valeur à viser.
-analysis-not-enough-text = Pas encore assez de texte pour mesurer cela.
-analysis-vocabulary-caveat = Comparable au sein de ce livre uniquement.
 
 # ── Retour du filtre du classeur ─────────────────────────────────────────────
 binder-filter-count = { $shown } sur { $total } affichés
@@ -1805,7 +1770,6 @@ import-document-diagnostics = { $errors ->
         }
 }
 import-document-diagnostics-none = Rien à signaler.
-
 
 # ── Dock Versions ──
 versions-title = Versions

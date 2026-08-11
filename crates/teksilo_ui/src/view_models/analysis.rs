@@ -51,19 +51,20 @@ use frontend::analysis_management::{AnalyzeBookDto, BookAnalysisResultDto};
 use frontend::progress_management::{CountWordsDto, WordCountResultDto};
 
 use crate::app_ids::AppIds;
-use crate::models::{RepetitionTreeKey, RepetitionTreeModel};
 use crate::view_models::long_op::{TrackedOp, event_id, parse_payload};
-use teksilo::data::{KeyedSelectionModel, SelectionMode};
 
 /// Which analysis the panel is showing.
 ///
-/// Four, grouped by the question a writer is asking rather than by which measure answered
-/// it: Shape absorbs both the per-scene rhythm strands and the chapter-balance chart,
-/// because "how is this book distributed" is one question however many numbers answer it.
+/// **One built-in**, and the bar is not built from this list alone: `tabs::analysis`
+/// composes it with whatever [`crate::tabs::analysis::register_category`] has been handed,
+/// so the enum is the set of categories *this application ships*, not the set the writer
+/// sees.
 ///
-/// Well inside `SegmentedControl`'s documented five-segment ceiling, which matters because
-/// this list is the kind that grows. A fifth is fine; a sixth is not a segment any more, it
-/// is a different control.
+/// Shape is that one, and it absorbs both the per-scene rhythm strands and the
+/// chapter-balance chart, because "how is this book distributed" is one question however
+/// many numbers answer it. Three others — Repetition, Synopsis and Voice — were built in
+/// here once and are not any more; the pane that hosts them is the registry, and it does
+/// not care whether a category is compiled in or contributed.
 ///
 /// There is deliberately no Mentions category. Mention coverage is real and useful, but it
 /// is the mention feature's data, already surfaced by the Inspector's Cast and backlinks —
@@ -72,14 +73,10 @@ use teksilo::data::{KeyedSelectionModel, SelectionMode};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AnalysisCategory {
     Shape = 0,
-    Repetition = 1,
-    Synopsis = 2,
-    Voice = 3,
 }
 
 impl AnalysisCategory {
-    pub const ALL: [AnalysisCategory; 4] =
-        [Self::Shape, Self::Repetition, Self::Synopsis, Self::Voice];
+    pub const ALL: [AnalysisCategory; 1] = [Self::Shape];
 
     /// The category at a bar position. `None` for an out-of-range index, so a widening of
     /// the bar without a matching arm mounts nothing rather than silently showing a
@@ -102,9 +99,6 @@ impl AnalysisCategory {
     pub fn id(self) -> &'static str {
         match self {
             Self::Shape => "shape",
-            Self::Repetition => "repetition",
-            Self::Synopsis => "synopsis",
-            Self::Voice => "voice",
         }
     }
 
@@ -112,9 +106,6 @@ impl AnalysisCategory {
     pub fn label(self) -> LocalizedString {
         match self {
             Self::Shape => tr!(analysis_shape()),
-            Self::Repetition => tr!(analysis_repetition()),
-            Self::Synopsis => tr!(analysis_synopsis()),
-            Self::Voice => tr!(analysis_voice()),
         }
     }
 }
@@ -172,13 +163,6 @@ pub struct AnalysisViewModel {
     /// A view-model field rather than pane-local state so it survives switching categories
     /// and re-running the analysis — the writer set it once, about this book.
     ignore_empty: Signal<bool>,
-    /// The Repetition pane's tree, and the row it has selected.
-    ///
-    /// Held here rather than in the pane because a `TreeView` built from a source keeps its
-    /// expand set on the *source*: parked in the widget it would reset on every rebuild,
-    /// closing every row the writer had opened. Populated from each completed run.
-    repetition_tree: RepetitionTreeModel,
-    repetition_selection: KeyedSelectionModel<RepetitionTreeKey>,
 }
 
 impl std::fmt::Debug for AnalysisViewModel {
@@ -210,19 +194,7 @@ impl AnalysisViewModel {
             footnote_pending: Rc::new(RefCell::new(None)),
             auto_ran: Rc::new(std::cell::Cell::new(false)),
             ignore_empty: Signal::new(true),
-            repetition_tree: RepetitionTreeModel::new(),
-            // One row at a time: this tree is a way in, not a multi-select worklist.
-            repetition_selection: KeyedSelectionModel::new(SelectionMode::Single),
         }
-    }
-
-    /// The Repetition tree's source, for the pane's `TreeView`.
-    pub fn repetition_tree(&self) -> RepetitionTreeModel {
-        self.repetition_tree.clone()
-    }
-
-    pub fn repetition_selection(&self) -> KeyedSelectionModel<RepetitionTreeKey> {
-        self.repetition_selection.clone()
     }
 
     /// Whether Shape hides texts with no prose. See [`Self::ignore_empty`].
@@ -265,6 +237,28 @@ impl AnalysisViewModel {
 
     pub fn scope_item_id(&self) -> u64 {
         self.scope_item_id
+    }
+
+    /// The edit counter the displayed result was produced at, or `None` before any run
+    /// has completed.
+    ///
+    /// `pub` for the `analysis.category` slot, alongside [`Self::app_ctx`] and
+    /// [`Self::ids`]. A registered category that measures the manuscript itself — rather
+    /// than reading the result it is handed — needs to know *which* manuscript state the
+    /// pane is currently reporting on, so that its own measurement can be produced for the
+    /// same one and refreshed by the same Run button.
+    ///
+    /// This value is the honest key for that. It moves **only when a run completes**, so
+    /// re-running with nothing edited in between leaves it alone (correctly: nothing
+    /// changed), and it never moves backwards. Comparing a stored copy against it answers
+    /// "is what I computed still about the book this pane is showing" with no second
+    /// freshness notion to disagree with [`Self::is_stale`].
+    ///
+    /// Deliberately not the live `dirty_seq`: that moves on every keystroke, and a category
+    /// keyed to it would re-measure the manuscript continuously — the runaway recompute
+    /// this whole panel is manual to avoid.
+    pub fn analysed_at_seq(&self) -> Option<u64> {
+        self.analysed_at_seq.get()
     }
 
     /// Whether the manuscript has changed since the displayed result was produced.
@@ -472,25 +466,11 @@ mod tests {
             Some(AnalysisCategory::Shape)
         );
         assert_eq!(
-            AnalysisCategory::from_index(3),
-            Some(AnalysisCategory::Voice)
-        );
-        assert_eq!(
-            AnalysisCategory::from_index(4),
+            AnalysisCategory::from_index(1),
             None,
-            "a segment past the end must mount nothing, not a neighbour"
+            "a segment past the built-ins is a registered category, and nothing in this \
+             enum can name one"
         );
-    }
-
-    /// The bar and the `Switcher` are matched by position, so the count is a contract.
-    /// It also stays under `SegmentedControl`'s five-segment ceiling — the point past which
-    /// this stops being a segmented control at all.
-    #[test]
-    fn the_category_count_stays_within_the_segmented_control_ceiling() {
-        // The *built-in* count. The bar itself is `tabs::analysis::all_categories()`,
-        // which may be longer; the five-segment ceiling is a constraint on
-        // `SegmentedControl`, and `register_category`'s doc records what happens past it.
-        assert_eq!(AnalysisCategory::ALL.len(), 4);
     }
 
     /// Nothing has been measured, so nothing can be out of date.
@@ -509,6 +489,33 @@ mod tests {
         assert!(!vm.is_stale(), "no edits since the run");
         dirty.set(4);
         assert!(vm.is_stale(), "an edit landed after the run completed");
+    }
+
+    // ── the freshness key a registered category measures against ───────────────
+
+    /// `analysed_at_seq` is `None` until a run lands, and then names the manuscript state
+    /// that run described — never the live one.
+    ///
+    /// A registered category that measures the manuscript itself keys its own cached
+    /// result on this. Were it to track `dirty_seq` instead, every keystroke would
+    /// invalidate that cache and the category would re-measure the whole book
+    /// continuously.
+    #[test]
+    fn the_freshness_key_is_none_before_a_run_and_pins_the_analysed_state_after_one() {
+        let dirty = Signal::new(3);
+        let vm = vm(dirty.clone());
+        assert_eq!(vm.analysed_at_seq(), None, "nothing has been measured yet");
+
+        vm.analysed_at_seq.set(Some(3));
+        assert_eq!(vm.analysed_at_seq(), Some(3));
+
+        dirty.set(9);
+        assert_eq!(
+            vm.analysed_at_seq(),
+            Some(3),
+            "editing must not move the key — the displayed result still describes state 3, \
+             and a category keyed to this must not re-measure on every keystroke"
+        );
     }
 
     /// The counter is monotonic, so a result can never become fresh again by itself.

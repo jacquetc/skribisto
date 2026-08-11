@@ -1403,8 +1403,6 @@ first-run-import = Import settings
 first-run-start-fresh = Start fresh
 first-run-import-failed = Some settings could not be imported: { $error }
 
-
-
 # ── Work ▸ Punctuation — the project's typographic house style ──────────────
 settings-page-punctuation = Punctuation
 settings-group-punctuation = Smart punctuation
@@ -1527,9 +1525,6 @@ analysis-failed = The analysis could not finish.
 analysis-no-scenes = No scenes in this book yet.
 
 analysis-shape = Shape
-analysis-repetition = Repetition
-analysis-synopsis = Synopsis
-analysis-voice = Voice
 
 analysis-words-per-scene = Words per scene
 analysis-median-words = This book's median scene runs { $count } words.
@@ -1547,36 +1542,6 @@ analysis-footnote-words-count = { $count } words are in this book's footnotes, k
 # rest of this report is ready — said plainly rather than shown as a misleading 0.
 analysis-footnote-words-pending = Counting the footnotes…
 
-analysis-echoes = Repeated words
-# What the list is, before the list. Says the filtering out loud: a writer who notices
-# "the" missing from a repetition report should know that was a decision.
-analysis-echoes-explainer = Distinctive words you used twice within about a page of each other, closest pair first. Everyday words are left out. Repetition is not a fault — this is only where a reader is most likely to notice one. Pick a scene to open it.
-analysis-no-echoes = No word repeats closely enough to stand out.
-# The gap is the *tightest* pair, which is the number that decides whether a reader hears
-# the repeat at all — so it is said as a relationship between two uses, not as a property
-# of the word. "4 times, 12 words apart at the closest" left the reader to work out which
-# two of the four were 12 words apart.
-analysis-echo-row = “{ $word }” — { $count } times, two of them { $gap } words apart
-# The tree's parent row: a text, and how many distinct words echo inside it. The count is
-# what decides whether the row is worth opening, which is the whole point of starting closed.
-analysis-repetition-text-tooltip =
-    { $count ->
-        [one] One distinctive word repeats closely in this text. Click to open it.
-       *[other] { $count } distinctive words repeat closely in this text. Click to open it.
-    }
-# The two numbers on a word row, said as prose. The count is deliberately not "how many
-# times the word appears": uses too far from any other use are not part of the finding, and
-# a reader comparing the number against the scene would otherwise think it wrong.
-analysis-repetition-word-tooltip = { $count } uses of “{ $word }” sit close enough together to be heard as a repeat — not necessarily every time it appears here. The closest two are { $gap } words apart, which is what decides whether a reader notices.
-# The gap column, abbreviated. "w" for words: the column is read against the tooltip that
-# spells it out, and a full "words" would double the column's width for no added meaning.
-analysis-repetition-gap-short = { $gap }w
-analysis-similar-scenes = Similar scenes
-analysis-similar-explainer = Two scenes that share long runs of the same wording. Usually a scene that was copied and then edited, or one that was split in two and never grew apart.
-analysis-no-similar-scenes = No two scenes share long stretches of wording.
-analysis-similar-row = “{ $a }” and “{ $b }” share about { $percent }% of the shorter one's wording.
-analysis-more-rows = { $count } more not shown.
-
 # Shape's charts draw one bar per text, so an outlined-but-unwritten book is mostly gaps.
 analysis-ignore-empty = Ignore texts with nothing written yet
 analysis-empty-hidden = { $count } empty { $count ->
@@ -1584,25 +1549,6 @@ analysis-empty-hidden = { $count } empty { $count ->
        *[other] texts
     } hidden.
 analysis-all-texts-empty = Every text in this book is still empty.
-
-analysis-synopsis-drift = Synopsis and prose
-analysis-no-synopses = No synopses written yet, so there is nothing to compare.
-analysis-no-drift = Every synopsis tracks its scene about as closely as the others.
-analysis-drift-row = “{ $title }” — its synopsis mentions { $terms }, and the prose does not.
-
-analysis-vocabulary = Vocabulary
-# Named after what it does, not after the statistic. The window is the part worth
-# explaining: it is why a 200,000-word book is not automatically "more varied" than a
-# novella, which is the trap a plain type-token ratio falls into.
-analysis-vocabulary-explainer = How much the wording varies, measured over a sliding window so a long book is not scored higher for its length alone. It describes the writing, it does not judge it: plain prose scores lower than ornate prose by design, and neither is better.
-analysis-words-measured = { $words } words, { $distinct } distinct.
-analysis-mattr = Vocabulary variety: { $value }
-analysis-mattr-scale = 0 would be one word repeated forever; 1 would be a book that never reuses a word. Real prose sits well inside those ends, and there is no target to reach.
-analysis-not-enough-text = Not enough text yet to measure this.
-# Surface forms only: an inflected language scores higher for reasons that have
-# nothing to do with the writer, so the figure is comparable within one book and
-# one language and nowhere else.
-analysis-vocabulary-caveat = Comparable within this book only.
 
 # ── Binder filter feedback ───────────────────────────────────────────────────
 # The binder's search field lives in a popover, so once it is dismissed nothing
@@ -1835,7 +1781,6 @@ import-document-diagnostics = { $errors ->
         }
 }
 import-document-diagnostics-none = Nothing to report.
-
 
 # ── Versions dock ──
 versions-title = Versions

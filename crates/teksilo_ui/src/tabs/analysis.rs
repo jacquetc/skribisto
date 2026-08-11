@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The Analysis segment of a Book container: four views over one `analyze_book` result.
+//! The Analysis segment of a Book container: a bar of categories over one `analyze_book`
+//! result, of which this application ships one — Shape — and any number may be contributed
+//! from outside through [`register_category`].
 //!
 //! ## What every view here promises
 //!
@@ -25,32 +27,26 @@ use teksilo::core::widget::WidgetPlacement;
 use teksilo::data::{ChartDatum, ChartModel, ChartSeries};
 use teksilo::prelude::*;
 use teksilo::widgets::{
-    ActivateOn, Button, ButtonVariant, Expand, FixedSize, HStack, Padding, ScrollArea,
-    ScrollBarMode, Segment, SegmentedControl, Spacer, StandardTreeItem, Switcher, TextWidget,
-    Toggle, TreeRow, TreeView, VStack,
+    Button, ButtonVariant, Expand, HStack, Padding, ScrollArea, Segment, SegmentedControl, Spacer,
+    Switcher, TextWidget, Toggle, VStack,
 };
 use teksilo::widgets::{SegmentId, segmented_control};
 use teksilo_charts::BarChart;
 use teksilo_charts::reference_line::ReferenceLine;
 
-use frontend::analysis_management::{
-    BookAnalysisResultDto, BookDiversity, DriftRow, DriftRows, DuplicateRow, DuplicateRows,
-    EchoRow, EchoRows, SceneAnalyses, SceneAnalysis,
-};
+use frontend::analysis_management::{BookAnalysisResultDto, SceneAnalyses, SceneAnalysis};
 
 use super::shared::{CHART_HEIGHT, STRIP_HEIGHT, wide_chart};
 use super::{Boxed, ContentTab};
-use crate::intents::AppIntent;
-use crate::models::RepetitionNode;
 use crate::view_models::{AnalysisCategory, AnalysisState, AnalysisViewModel};
 
 /// The bar and its `Switcher` are still matched by **position** — that is
-/// `SegmentedControl`'s contract — but neither is written out by hand any more: both are
-/// built from one pass over [`all_categories`], so a category cannot exist as a segment
-/// without its body or land at a different index in the two. The compile-time
-/// `ALL.len() == 4` assert this file used to carry was guarding a hazard that the shared
-/// list removes by construction; `the_bar_and_the_switcher_agree` pins it at runtime for
-/// the registered case, which no `const` assert could see.
+/// `SegmentedControl`'s contract — but neither is written out by hand: both are built from
+/// one pass over [`all_categories`], so a category cannot exist as a segment without its
+/// body or land at a different index in the two. A compile-time assert on the built-in
+/// count could never have seen that hazard, because the hazard only exists once a category
+/// is contributed; `the_bar_and_the_switcher_agree` pins it at runtime for exactly that
+/// case.
 
 /// Builds a registered category's body from the view-model and the finished analysis.
 pub type CategoryViewFn = Rc<dyn Fn(&AnalysisViewModel, &BookAnalysisResultDto) -> Box<dyn Widget>>;
@@ -111,12 +107,12 @@ thread_local! {
 /// how a category is identified across rebuilds, so two claimants make that lookup
 /// ambiguous rather than merely crowded.
 ///
-/// ⚠ `SegmentedControl` has a documented five-segment ceiling and the four built-ins
-/// already sit just under it. A registered category takes the bar past that, and past
-/// roughly six the control stops being a segmented bar at all — which is what
-/// `TabWidget::vertical()` is for. Registration does not refuse on count, because refusing
-/// the *fifth* category would be an arbitrary line; the ceiling is a design constraint on
-/// the control, and the control is the thing that has to change.
+/// ⚠ `SegmentedControl` has a documented five-segment ceiling, and with one built-in the
+/// bar reaches it at the fourth registration. Past roughly six the control stops being a
+/// segmented bar at all — which is what `TabWidget::vertical()` is for. Registration does
+/// not refuse on count, because refusing the *sixth* category would be an arbitrary line;
+/// the ceiling is a design constraint on the control, and the control is the thing that has
+/// to change.
 ///
 /// The returned handle unregisters on drop; re-registering a namespace replaces its entry.
 pub fn register_category(
@@ -164,7 +160,7 @@ impl Drop for CategoryHandle {
     }
 }
 
-/// The four categories this application ships, as specs.
+/// The categories this application ships, as specs.
 fn builtin_categories() -> Vec<AnalysisCategorySpec> {
     AnalysisCategory::ALL
         .iter()
@@ -177,9 +173,6 @@ fn builtin_categories() -> Vec<AnalysisCategorySpec> {
                     AnalysisCategory::Shape => {
                         Box::new(shape_view(dto, vm.ignore_empty(), vm.footnote_words()))
                     }
-                    AnalysisCategory::Repetition => Box::new(repetition_view(vm, dto)),
-                    AnalysisCategory::Synopsis => Box::new(synopsis_view(dto)),
-                    AnalysisCategory::Voice => Box::new(voice_view(dto)),
                 }),
             }
         })
@@ -195,13 +188,6 @@ pub fn all_categories() -> Vec<AnalysisCategorySpec> {
             .collect()
     })
 }
-
-/// How many rows a finder list shows before it stops.
-///
-/// A punch-list past this length is not a punch-list, and the ranking already puts the most
-/// surprising findings first. The count of what was left out is shown rather than silently
-/// dropped — a truncated list that does not say so reads as "that's all of them".
-const MAX_ROWS: usize = 50;
 
 pub fn analysis_pane(tab: &ContentTab) -> Box<dyn Widget> {
     let Some(vm) = tab.analysis() else {
@@ -424,37 +410,6 @@ fn heading(text: impl Into<LocalizedString>) -> impl Widget {
         .color(TextRole::Secondary)
 }
 
-/// The leading paragraph of a section: what the reader is looking at, in plain language.
-///
-/// Body size rather than [`note`]'s small, because this is the text that has to be read for
-/// the figures under it to mean anything — giving it a caveat's typography would say the
-/// opposite of what it is for.
-fn explainer(text: impl Into<LocalizedString>) -> impl Widget {
-    TextWidget::new(text).color(TextRole::Secondary)
-}
-
-/// Findings, indented under the scene they belong to.
-fn indented(inner: impl Widget + 'static) -> impl Widget {
-    Padding::new(0.0, 0.0, 6.0, 16.0).child(inner)
-}
-
-/// The scene a group of findings belongs to, as a control that opens it.
-///
-/// This is the difference between a report and a punch list. Every finding here names a
-/// place in the manuscript, and the only useful next move is to go and look at it — so the
-/// scene's name is the way there, not a label printed above the numbers.
-fn scene_link(item_id: u64, title: String) -> impl Widget {
-    let open = title.clone();
-    Button::new(lit!(title))
-        .variant(ButtonVariant::Link)
-        .on_activate_fn(move |ctx| {
-            ctx.send_intent(crate::intents::AppIntent::OpenItem {
-                item_id,
-                title: open.clone(),
-            })
-        })
-}
-
 fn scenes_of(dto: &BookAnalysisResultDto) -> Vec<&SceneAnalysis> {
     match &dto.scenes {
         SceneAnalyses::Measured(rows) => rows.iter().collect(),
@@ -634,357 +589,8 @@ fn footnote_words_section(value: Option<i64>) -> impl Widget {
         .child(line)
 }
 
-// ── Repetition ────────────────────────────────────────────────────────────────
-
-/// Where each scene sits, and what it is called — the context every finding needs.
-///
-/// A flat list of `"glanced" appears 4 times` says nothing a writer can act on: they cannot
-/// go and look at it. Findings are grouped under the scene they were found in, and scenes
-/// under their chapter where that adds anything.
-struct SceneIndex {
-    /// item id → (scene title, chapter title)
-    by_id: std::collections::HashMap<u64, (String, String)>,
-    /// Scene ids in stream order, so groups read in the order the book does rather than in
-    /// whatever order the findings happened to rank.
-    order: Vec<u64>,
-}
-
-impl SceneIndex {
-    fn build(dto: &BookAnalysisResultDto) -> Self {
-        let mut by_id = std::collections::HashMap::new();
-        let mut order = Vec::new();
-        for s in scenes_of(dto) {
-            if let SceneAnalysis::Measured {
-                item_id,
-                title,
-                chapter_title,
-                ..
-            } = s
-            {
-                by_id.insert(*item_id, (title.clone(), chapter_title.clone()));
-                order.push(*item_id);
-            }
-        }
-        Self { by_id, order }
-    }
-
-    fn title(&self, id: u64) -> String {
-        self.by_id
-            .get(&id)
-            .map(|(t, _)| t.clone())
-            .unwrap_or_default()
-    }
-
-    /// The chapter heading to draw above a scene, or `None` when it would say nothing.
-    ///
-    /// Suppressed when the chapter *is* the scene — a flat `Item/ChapterScene` is its own
-    /// chapter, so a heading above it would simply repeat the row underneath.
-    fn chapter_of(&self, id: u64) -> Option<&str> {
-        let (title, chapter) = self.by_id.get(&id)?;
-        (!chapter.is_empty() && chapter != title).then_some(chapter.as_str())
-    }
-}
-
-/// Findings for one scene, in the book's own order.
-fn grouped_by_scene<T: Clone>(index: &SceneIndex, rows: &[(u64, T)]) -> Vec<(u64, Vec<T>)> {
-    let mut out: Vec<(u64, Vec<T>)> = Vec::new();
-    for id in &index.order {
-        let mine: Vec<T> = rows
-            .iter()
-            .filter(|(owner, _)| owner == id)
-            .map(|(_, r)| r.clone())
-            .collect();
-        if !mine.is_empty() {
-            out.push((*id, mine));
-        }
-    }
-    out
-}
-
-/// Repeated words, as a tree of texts you can open.
-///
-/// The echoes half is a `TreeView` — one row per text that echoes, its words beneath,
-/// **collapsed**. The flat list this replaces answered "what did you find" and left the
-/// writer to read every finding to learn which scenes were worth opening; the parent rows
-/// answer "where do I look" in one screen, and the numbers stay one click away.
-///
-/// Near-duplicate scenes stay a flat list below it, and deliberately: a duplicate pair
-/// belongs to *two* texts at once, so nesting it under one of them would misstate what was
-/// found. It already names both, which is the context that finding needs.
-fn repetition_view(vm: &AnalysisViewModel, dto: &BookAnalysisResultDto) -> impl Widget {
-    let index = SceneIndex::build(dto);
-
-    let echoes: Vec<(u64, (String, i64, i64))> = match &dto.echoes {
-        EchoRows::Found(rows) => rows
-            .iter()
-            .filter_map(|r| match r {
-                EchoRow::Found {
-                    item_id,
-                    word,
-                    occurrences,
-                    closest_gap,
-                    ..
-                } => Some((*item_id, (word.clone(), *occurrences, *closest_gap))),
-                EchoRow::Empty => None,
-            })
-            .collect(),
-        EchoRows::Empty => vec![],
-    };
-    let duplicates: Vec<&DuplicateRow> = match &dto.duplicates {
-        DuplicateRows::Found(rows) => rows.iter().collect(),
-        DuplicateRows::Empty => vec![],
-    };
-
-    // Book order for the texts, the analyser's own rank order for the words inside each —
-    // the first is where the reader is, the second is what is worth reading first.
-    let tree_model = vm.repetition_tree();
-    tree_model.set_groups(
-        grouped_by_scene(&index, &echoes)
-            .into_iter()
-            .map(|(item_id, found)| (item_id, index.title(item_id), found))
-            .collect(),
-    );
-
-    let mut col = VStack::new()
-        .spacing(6.0)
-        .child(heading(tr!(analysis_echoes())))
-        // "4 times, 12 words apart at the closest" is a measurement, not a sentence. What
-        // the writer needs first is what an echo *is* here, and that the list is already
-        // filtered down to words worth hearing about.
-        .child(explainer(tr!(analysis_echoes_explainer())));
-    if echoes.is_empty() {
-        col = col.child(note(tr!(analysis_no_echoes())));
-    } else {
-        // No `MAX_ROWS` cap here, unlike every other section. The cap exists because a flat
-        // list of a thousand text widgets is both unusable and expensive; a collapsed tree
-        // is neither — it shows one row per text and the `TreeView` realises only what is
-        // on screen. Truncating it would hide whole scenes behind a "N more not shown"
-        // note, which is precisely the "that's all of them" misreading the note was added
-        // to prevent.
-        let activate = tree_model.clone();
-        let tree = TreeView::from_source_keyed(
-            tree_model.source(),
-            vm.repetition_selection(),
-            move |node: &RepetitionNode, row: &TreeRow, selected: bool| {
-                let item = StandardTreeItem::new(lit!(node.label().to_string()))
-                    .depth(row.depth)
-                    .has_children(row.has_children)
-                    .is_expanded(row.is_expanded)
-                    .selected(selected)
-                    .on_toggle_rc(row.toggle_callback());
-                let item = match node {
-                    RepetitionNode::Item { words, .. } => item
-                        .trailing_slot(
-                            TextWidget::new(lit!(words.to_string()))
-                                .style(TextStyleRole::Small)
-                                .color(TextRole::Secondary),
-                        )
-                        .tooltip(tr!(analysis_repetition_text_tooltip(count = *words as i64))),
-                    RepetitionNode::Word {
-                        word,
-                        occurrences,
-                        closest_gap,
-                        ..
-                    } => item
-                        .trailing_slot(numbers(*occurrences, *closest_gap))
-                        .tooltip(tr!(analysis_repetition_word_tooltip(
-                            word = word.clone(),
-                            count = *occurrences,
-                            gap = *closest_gap
-                        ))),
-                };
-                Box::new(item) as Box<dyn Widget>
-            },
-        )
-        .auto_item_height(28.0)
-        .scroll_bar_style(ScrollBarMode::Overlay)
-        // A click on the row opens its text; the disclosure triangle is what expands. Both
-        // gestures are wanted here and would otherwise fight — `row_click_expands` on a
-        // parent would make "show me the words" and "take me there" the same click.
-        .row_click_expands(false)
-        .activate_on(ActivateOn::SingleClick)
-        .on_activate(move |idx, ctx| {
-            // A word row opens the text it was found in — the same destination as its
-            // parent, because the finding is only actionable in the prose.
-            if let Some(key) = activate.source().key_at(idx)
-                && let Some(node) = activate.node_of(&key)
-                && let Some(title) = activate.title_of(node.item_id())
-            {
-                ctx.send_intent(AppIntent::OpenItem {
-                    item_id: node.item_id(),
-                    title,
-                });
-            }
-        });
-        // The tree sits inside the pane's own vertical `ScrollArea`, which proposes an
-        // unbounded height and asks each child what it wants — and a scrollable answers
-        // with a constant. Left to that, the tree collapses into a small window with its
-        // own scrollbar inside the page's. A fixed height sized to the collapsed report
-        // keeps one scrollbar on the page. (The same trap the Shape charts hit.)
-        let rows = tree_model.source().visible_count().max(1);
-        col = col.child(
-            FixedSize::new()
-                .height((rows as f32 * TREE_ROW_HEIGHT).clamp(TREE_ROW_HEIGHT, TREE_MAX_HEIGHT))
-                .child(tree),
-        );
-    }
-
-    col = col
-        .child(heading(tr!(analysis_similar_scenes())))
-        .child(explainer(tr!(analysis_similar_explainer())));
-    if duplicates.is_empty() {
-        col = col.child(note(tr!(analysis_no_similar_scenes())));
-    }
-    // A near-duplicate pair belongs to two scenes at once, so it is not grouped under
-    // either — it already names both, which is the context this finding needs.
-    for row in duplicates.iter().take(MAX_ROWS) {
-        if let DuplicateRow::Found {
-            a_title,
-            b_title,
-            containment,
-            ..
-        } = row
-        {
-            col = col.child(TextWidget::new(tr!(analysis_similar_row(
-                a = a_title.clone(),
-                b = b_title.clone(),
-                percent = (containment * 100.0).round() as i64
-            ))));
-        }
-    }
-    if duplicates.len() > MAX_ROWS {
-        col = col.child(note(tr!(analysis_more_rows(
-            count = (duplicates.len() - MAX_ROWS) as i64
-        ))));
-    }
-    col
-}
-
-/// One row's height, and the tallest the tree may grow before it scrolls itself.
-const TREE_ROW_HEIGHT: f32 = 28.0;
-const TREE_MAX_HEIGHT: f32 = 520.0;
-
-/// The two numbers on a word row: how many uses read as an echo, and how close the
-/// closest two are.
-///
-/// Right-aligned in fixed columns rather than run together in a sentence, so a reader
-/// scanning down the tree compares like with like — which is the whole reason they are
-/// numbers here and prose in the tooltip.
-fn numbers(occurrences: i64, closest_gap: i64) -> impl Widget {
-    // Takes a `LocalizedString` rather than a resolved `String`: resolving here would
-    // freeze the row in the locale it was built in, and the gap cell is translated.
-    let cell = |text: LocalizedString| {
-        FixedSize::new().width(44.0).child(
-            HStack::new().child(Spacer::new()).child(
-                TextWidget::new(text)
-                    .style(TextStyleRole::Small)
-                    .color(TextRole::Secondary),
-            ),
-        )
-    };
-    HStack::new()
-        .spacing(4.0)
-        .child(cell(lit!(occurrences.to_string())))
-        .child(cell(tr!(analysis_repetition_gap_short(gap = closest_gap))))
-}
-
-// ── Synopsis ──────────────────────────────────────────────────────────────────
-
-/// Scenes whose prose tracks their synopsis less closely than the rest of this book's do.
-///
-/// The finding names the *missing terms*, not the score: "your synopsis mentions the locket
-/// and the prose does not" is something a writer can act on, where a coverage percentage is
-/// not.
-fn synopsis_view(dto: &BookAnalysisResultDto) -> impl Widget {
-    let drifts: Vec<&DriftRow> = match &dto.drifts {
-        DriftRows::Found(rows) => rows.iter().collect(),
-        DriftRows::Empty => vec![],
-    };
-    let any_synopsis = scenes_of(dto).iter().any(
-        |s| matches!(s, SceneAnalysis::Measured { synopsis_words, .. } if *synopsis_words > 0),
-    );
-
-    let mut col = VStack::new()
-        .spacing(6.0)
-        .child(heading(tr!(analysis_synopsis_drift())));
-    if !any_synopsis {
-        // Distinct from "no findings": there is nothing to compare against, which is not
-        // the same as everything matching.
-        return col.child(note(tr!(analysis_no_synopses())));
-    }
-    if drifts.is_empty() {
-        return col.child(note(tr!(analysis_no_drift())));
-    }
-    for row in drifts.iter().take(MAX_ROWS) {
-        if let DriftRow::Found { title, missing, .. } = row {
-            col = col.child(TextWidget::new(tr!(analysis_drift_row(
-                title = title.clone(),
-                terms = missing.join(", ")
-            ))));
-        }
-    }
-    if drifts.len() > MAX_ROWS {
-        col = col.child(note(tr!(analysis_more_rows(
-            count = (drifts.len() - MAX_ROWS) as i64
-        ))));
-    }
-    col
-}
-
-// ── Voice ─────────────────────────────────────────────────────────────────────
-
-/// Lexical diversity for the book as a whole.
-///
-/// Shown with its sample size, and withheld entirely below the reliability floor: a
-/// diversity figure over a few hundred words is a coin toss wearing a decimal point.
-fn voice_view(dto: &BookAnalysisResultDto) -> impl Widget {
-    let mut col = VStack::new()
-        .spacing(6.0)
-        .child(heading(tr!(analysis_vocabulary())))
-        // What the figure is, before the figure — a bare 0.742 on a page teaches the reader
-        // nothing except that something was measured.
-        .child(explainer(tr!(analysis_vocabulary_explainer())));
-    match &dto.diversity {
-        BookDiversity::Measured {
-            words,
-            distinct_words,
-            mattr,
-            reliable,
-            ..
-        } => {
-            col = col.child(note(tr!(analysis_words_measured(
-                words = *words,
-                distinct = *distinct_words
-            ))));
-            match (reliable, mattr) {
-                (true, Some(m)) => {
-                    col = col
-                        .child(TextWidget::new(tr!(analysis_mattr(
-                            value = format!("{:.3}", m)
-                        ))))
-                        // The two ends of the scale, so the number has somewhere to sit.
-                        // Deliberately not a verdict: there is no good value.
-                        .child(note(tr!(analysis_mattr_scale())));
-                }
-                _ => {
-                    col = col.child(note(tr!(analysis_not_enough_text())));
-                }
-            }
-        }
-        BookDiversity::Empty => {
-            col = col.child(note(tr!(analysis_not_enough_text())));
-        }
-    }
-    col.child(note(tr!(analysis_vocabulary_caveat())))
-}
-
 #[cfg(test)]
 mod tests {
-
-    /// The tint threshold is the shared median, not a local one — pinned here because the
-    /// property it buys is what this panel depends on: a single very long chapter must not
-    /// drag the comparison line up with it.
-    use super::SceneIndex;
     use frontend::analysis_management::{BookAnalysisResultDto, SceneAnalyses, SceneAnalysis};
 
     fn scene(item_id: u64, title: &str, chapter: &str) -> SceneAnalysis {
@@ -998,8 +604,6 @@ mod tests {
             paragraph_mean: None,
             punctuation_per_1k: 0.0,
             dialogue: None,
-            synopsis_words: 0,
-            synopsis_coverage: None,
         }
     }
 
@@ -1008,53 +612,6 @@ mod tests {
             scenes: SceneAnalyses::Measured(scenes),
             ..Default::default()
         }
-    }
-
-    /// A flat `Item/ChapterScene` is its own chapter, so a heading above it would just
-    /// repeat the row underneath. Suppressed — which is what the whole bundled example
-    /// looks like.
-    #[test]
-    fn a_scene_that_is_its_own_chapter_gets_no_redundant_heading() {
-        let index = SceneIndex::build(&dto(vec![scene(1, "Chapter 6", "Chapter 6")]));
-        assert_eq!(index.chapter_of(1), None);
-    }
-
-    #[test]
-    fn a_scene_under_a_real_chapter_is_grouped_under_it() {
-        let index = SceneIndex::build(&dto(vec![scene(1, "The attic", "Chapter 6")]));
-        assert_eq!(index.chapter_of(1), Some("Chapter 6"));
-        assert_eq!(index.title(1), "The attic");
-    }
-
-    #[test]
-    fn a_scene_with_no_enclosing_chapter_is_not_grouped() {
-        let index = SceneIndex::build(&dto(vec![scene(1, "Prologue", "")]));
-        assert_eq!(index.chapter_of(1), None);
-    }
-
-    /// Groups follow the book's order, not the findings' ranking — a report that jumps
-    /// about the manuscript is harder to work through than one that reads front to back.
-    #[test]
-    fn groups_follow_stream_order_not_finding_order() {
-        let index = SceneIndex::build(&dto(vec![scene(10, "First", ""), scene(20, "Second", "")]));
-        // Findings arrive worst-first, i.e. the later scene leads.
-        let rows = vec![(20u64, "b"), (10u64, "a"), (20u64, "c")];
-        let grouped = super::grouped_by_scene(&index, &rows);
-        assert_eq!(grouped[0].0, 10, "the earlier scene is shown first");
-        assert_eq!(grouped[1].0, 20);
-        assert_eq!(
-            grouped[1].1,
-            vec!["b", "c"],
-            "its own findings keep their ranking"
-        );
-    }
-
-    #[test]
-    fn a_scene_with_no_findings_gets_no_group() {
-        let index = SceneIndex::build(&dto(vec![scene(10, "First", ""), scene(20, "Second", "")]));
-        let grouped = super::grouped_by_scene(&index, &[(20u64, "only")]);
-        assert_eq!(grouped.len(), 1);
-        assert_eq!(grouped[0].0, 20);
     }
 
     /// Both ways an unwritten text can be recorded count as empty. The `Empty` variant is
@@ -1074,80 +631,9 @@ mod tests {
         );
     }
 
-    /// The Repetition pane mounts, and its tree opens **closed**.
-    ///
-    /// The pane had no widget test at all — every test above it exercises a pure helper,
-    /// so nothing would have noticed the tree failing to build or coming up expanded.
-    /// "Collapsed by default" is the whole reason it is a tree, and it is one flag away
-    /// from being wrong (`set_expand_new_nodes(true)`, which the binder tree does set).
-    #[test]
-    fn the_repetition_tree_mounts_with_every_text_closed() {
-        use crate::app_ids::AppIds;
-        use crate::view_models::AnalysisViewModel;
-        use frontend::analysis_management::{EchoRow, EchoRows};
-        use teksilo::prelude::{Signal, SizeProposal};
-
-        let ctx = std::rc::Rc::new(frontend::AppContext::new());
-        let vm = AnalysisViewModel::new(ctx.clone(), AppIds::new(), 1, Signal::new(0));
-
-        let echo = |item_id: u64, word: &str| EchoRow::Found {
-            item_id,
-            word: word.to_string(),
-            occurrences: 3,
-            closest_gap: 12,
-            score: 1.0,
-            first_at: 0,
-            first_len: 0,
-        };
-        let mut d = dto(vec![scene(10, "First", ""), scene(20, "Second", "")]);
-        d.echoes = EchoRows::Found(vec![
-            echo(10, "glanced"),
-            echo(10, "suddenly"),
-            echo(20, "carnelian"),
-        ]);
-
-        let mut tree = crate::test_support::tree_with_events(&ctx);
-        let id = tree.add_boxed(Box::new(super::repetition_view(&vm, &d)));
-        tree.layout(SizeProposal::exact(700.0, 900.0));
-        assert!(tree.bounds(id).height > 0.0, "the pane laid out to nothing");
-
-        // Two texts echo, so two rows — and only two: the three findings underneath them
-        // are hidden until a row is opened.
-        assert_eq!(
-            vm.repetition_tree().source().visible_count(),
-            2,
-            "the tree came up expanded — every finding is visible without a click"
-        );
-        assert_eq!(vm.repetition_tree().finding_count(), 3);
-    }
-
-    /// Expanding one text reveals its own findings and nobody else's.
-    #[test]
-    fn opening_one_text_reveals_only_its_own_words() {
-        use teksilo::data::TreeDataSource;
-
-        use crate::models::RepetitionTreeKey;
-
-        let model = crate::models::RepetitionTreeModel::new();
-        model.set_groups(vec![
-            (
-                10,
-                "First".into(),
-                vec![("glanced".into(), 3, 12), ("suddenly".into(), 2, 40)],
-            ),
-            (20, "Second".into(), vec![("carnelian".into(), 2, 8)]),
-        ]);
-        let src = model.source();
-        assert_eq!(src.visible_count(), 2, "closed to start");
-
-        src.set_expanded(&RepetitionTreeKey::Item(10), true);
-        assert_eq!(
-            src.visible_count(),
-            4,
-            "two texts plus the two words of the one that was opened"
-        );
-    }
-
+    /// The tint threshold is the shared median, not a local one — pinned here because the
+    /// property it buys is what this panel depends on: a single very long chapter must not
+    /// drag the comparison line up with it.
     #[test]
     fn the_tint_threshold_is_a_median_not_a_mean() {
         use skribisto_model::analysis::stats;
@@ -1233,13 +719,17 @@ mod category_registry_tests {
         all_categories().into_iter().map(|c| c.id).collect()
     }
 
-    /// The four built-ins are the list until something registers.
+    /// The built-in leads the list, whatever else has registered.
+    ///
+    /// Shape is the one this application ships and the one a writer opening Analysis
+    /// expects to land on, so it holds position 0 — the segment `SegmentedControl` selects
+    /// when nothing has been chosen yet.
     #[test]
     fn the_built_ins_are_present_and_first() {
         let ids = ids();
         assert_eq!(
-            &ids[..4],
-            &["shape", "repetition", "synopsis", "voice"],
+            &ids[..1],
+            &["shape"],
             "the built-in order is what every existing writer's muscle memory keys on"
         );
     }
@@ -1251,17 +741,18 @@ mod category_registry_tests {
         let ids = ids();
         let pos = ids.iter().position(|i| i == "ext.after").expect("present");
         assert!(
-            pos >= 4,
+            pos >= AnalysisCategory::ALL.len(),
             "an extension must not displace a built-in from its position"
         );
     }
 
-    /// The invariant the deleted `const _: () = assert!(ALL.len() == 4)` used to guard.
+    /// The invariant a `const _: () = assert!(ALL.len() == N)` could never have guarded.
     ///
-    /// It could only ever see the built-ins, so it said nothing about a registered
-    /// category — the case where a bar/switcher mismatch would actually be introduced.
-    /// Both are now built from one pass over this list, so what has to hold is that the
-    /// list itself is coherent: every entry has a label and a body, and no two share an id.
+    /// Such an assert could only ever see the built-ins, so it said nothing about a
+    /// registered category — the case where a bar/switcher mismatch would actually be
+    /// introduced, and the only case there is now that the bar is mostly contributed.
+    /// Both are built from one pass over this list, so what has to hold is that the list
+    /// itself is coherent: every entry has a label and a body, and no two share an id.
     #[test]
     fn the_bar_and_the_switcher_agree() {
         let _h = register_category("test.pairing", spec("ext.pairing")).expect("register");
@@ -1280,7 +771,7 @@ mod category_registry_tests {
             let _ = (c.label)();
         }
         assert!(
-            cats.len() >= 5,
+            cats.len() > AnalysisCategory::ALL.len(),
             "the registered category must actually be in the list under test"
         );
     }

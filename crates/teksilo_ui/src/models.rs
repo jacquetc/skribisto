@@ -46,7 +46,6 @@ mod overview_rows_model;
 mod pace_model;
 mod paratext_presets;
 mod recent_work_list_model;
-mod repetition_tree_model;
 mod row_search;
 mod search_results_model;
 mod search_settings_file;
@@ -103,7 +102,6 @@ pub use overview_rows_model::{
 pub use pace_model::{DailyCount, HolidayRow, MilestoneRow, PaceModel};
 pub use paratext_presets::{NEW_PRESET_TEMPLATE, ParatextPreset, ParatextPresetsService};
 pub use recent_work_list_model::RecentWorkListModel;
-pub use repetition_tree_model::{RepetitionNode, RepetitionTreeKey, RepetitionTreeModel};
 pub use search_results_model::SearchResultsModel;
 pub use search_settings_file::{SearchPrefs, SearchSettingsService};
 pub use stats_model::StatsModel;
