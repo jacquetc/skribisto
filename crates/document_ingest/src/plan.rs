@@ -57,7 +57,7 @@
 use common::entities::{CommentAnchorKind, CommentOrphanReason, ContentRole};
 use skribisto_model::comment_anchor::{self, Anchor, Resolution};
 use skribisto_model::scene_break;
-use skribisto_model::{ChapterMode, CreateType, allowed_content};
+use skribisto_model::{ChapterMode, CreateType, allowed_content, content_allowed};
 
 use crate::block::{
     AnnotationKind, SourceAnnotation, SourceAnnotationReply, SourceBlock, SourceDocument,
@@ -125,6 +125,20 @@ pub struct PlannedRow {
     /// Prose for this row, already Djot, scene-break markers already spliced in.
     /// Empty for a row that is purely structural.
     pub djot: String,
+    /// The epigraph this row heads, already Djot (one blockquote per quotation), or
+    /// empty when it has none — which is every row of every format that carries no
+    /// style information, and most rows of the ones that do.
+    ///
+    /// A field of its own rather than part of [`Self::djot`] because it becomes a
+    /// *different* `Content`: `ContentRole::EpigraphText`, not the row's prose. Folding
+    /// it into the prose is precisely the bug this exists to fix — it duplicates the
+    /// quotation on every round trip and adds its words to the manuscript's count, which
+    /// `skribisto_model`'s `an_epigraph_is_never_counted_as_prose` exists to forbid.
+    ///
+    /// Only ever non-empty on a row whose type can hold one (Part or Chapter). An
+    /// epigraph beside any other heading falls back to prose with an
+    /// [`ImportDiagnostic::EpigraphNotCarried`], so `apply` never has to decide.
+    pub epigraph: String,
     /// How many scene breaks the prose carries. Shown per row so the writer can
     /// see the granularity they are getting before committing to it — a chapter
     /// reading "4,100 words, 3 breaks" is one item, not four.
@@ -204,7 +218,14 @@ pub fn build_plan(
             }
             continue;
         }
-        append_document(&mut plan, doc, rules, base_indent, &mut open_levels);
+        append_document(
+            &mut plan,
+            doc,
+            rules,
+            &chapter_mode,
+            base_indent,
+            &mut open_levels,
+        );
     }
 
     // Word counts, once, on the assembled prose — and with markers stripped,
@@ -348,6 +369,10 @@ fn append_document(
     plan: &mut ImportPlan,
     doc: &SourceDocument,
     rules: &LevelRules,
+    // Only ever read to answer "can this row hold an epigraph" — `Chapter` is the one
+    // `CreateType` whose `(role, sub_role)` depends on it, and it is one of the two types
+    // that can.
+    chapter_mode: &ChapterMode,
     base_indent: i64,
     // Heading level → the indent its row sits at. Rebuilt as levels are met so a
     // document that skips a level (`#` then `####`) nests one step, not three:
@@ -359,6 +384,16 @@ fn append_document(
     // any heading, which becomes a row of its own rather than being silently
     // attached to the first heading that follows.
     let mut current: Option<PlannedRow> = None;
+    // An epigraph that belongs to the row the *next* heading will open — the
+    // `EpigraphPlacement::BeforeHeading` shape, where the quotation opens the chapter
+    // above its own title. Carried rather than attached on sight, because the row it
+    // belongs to does not exist yet.
+    let mut deferred_epigraph = String::new();
+    // Whether `current` was opened by a heading and has taken nothing since. An epigraph
+    // is its row's only when it sits *immediately* under the heading; one that follows a
+    // paragraph of the scene is a quotation inside the scene, which is a different thing
+    // and stays where the writer put it.
+    let mut at_row_head = false;
     // How long the current row's prose is in *plain text*, mirroring `append_djot`'s
     // `\n\n` join with the single `\n` it renders to. This is what rebases a
     // block-relative comment offset into a row-relative one; `anchor_comments` then
@@ -418,6 +453,10 @@ fn append_document(
                     title: title_text,
                     stripped_ordinal: stripped,
                     djot: String::new(),
+                    // An epigraph held over from before this heading is this row's, and
+                    // `epigraph_block` has already proven this type can hold one — it is
+                    // only ever deferred when the following heading's own type passed.
+                    epigraph: std::mem::take(&mut deferred_epigraph),
                     scene_breaks: 0,
                     word_count: 0,
                     origin: doc.origin.clone(),
@@ -428,17 +467,47 @@ fn append_document(
                     source_digest: None,
                     diagnostics,
                 });
+                at_row_head = true;
             }
             SourceBlock::Prose { djot, text } => {
                 let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
                 append_djot(&mut row.djot, djot);
                 plain_len = block_offset + text.chars().count();
+                at_row_head = false;
             }
             SourceBlock::SceneBreak { tier } => {
                 let row = current.get_or_insert_with(|| leading_row(doc, rules, base_indent));
                 append_djot(&mut row.djot, scene_break::canonical_djot(*tier));
                 row.scene_breaks += 1;
                 plain_len = block_offset + scene_break::canonical_plain(*tier).chars().count();
+                at_row_head = false;
+            }
+            SourceBlock::Epigraph { djot, text } => {
+                // Decided here, from the file's own shape, and never from the export
+                // preset that wrote it: `EpigraphPlacement` is a choice made on the way
+                // *out*, recorded nowhere in the file, and absent entirely from a
+                // document this app did not produce. What the file does say is which
+                // heading the quotation is touching, and that is what is read.
+                let placed = epigraph_block(
+                    EpigraphContext {
+                        doc,
+                        rules,
+                        chapter_mode,
+                        block_index,
+                        at_row_head,
+                    },
+                    djot,
+                    &mut current,
+                    &mut deferred_epigraph,
+                    || leading_row(doc, rules, base_indent),
+                );
+                if placed == EpigraphPlacementOutcome::KeptAsProse {
+                    // Not an epigraph after all — a quotation somewhere in the scene, or
+                    // one beside a heading whose type cannot hold it. Either way it is
+                    // this row's prose, and it advances the offsets like any other.
+                    plain_len = block_offset + text.chars().count();
+                    at_row_head = false;
+                }
             }
         }
 
@@ -491,6 +560,114 @@ fn append_document(
     push(plan, current.take());
 }
 
+/// What [`epigraph_block`] did with the quotation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum EpigraphPlacementOutcome {
+    /// It became a row's `EpigraphText` — either the row above it or the one the next
+    /// heading is about to open.
+    Attached,
+    /// It stayed in the prose stream, as the quotation it visibly is.
+    KeptAsProse,
+}
+
+/// Everything `epigraph_block` needs to read about *where* the quotation sits.
+struct EpigraphContext<'a> {
+    doc: &'a SourceDocument,
+    rules: &'a LevelRules,
+    chapter_mode: &'a ChapterMode,
+    block_index: usize,
+    at_row_head: bool,
+}
+
+/// Decide which row an epigraph belongs to, from adjacency alone.
+///
+/// An epigraph heads a part or a chapter, and both editorial placements put it against
+/// that heading — after it (Chicago, French, German and Russian practice, and this
+/// compiler's default) or above it (the `\epigraphhead` shape LaTeX ships). So the
+/// question is only ever *which* of the two headings it is touching, and the answer is
+/// read off the block stream:
+///
+/// 1. **The heading above**, when the quotation sits immediately under it and that row's
+///    type can hold an epigraph. The convention, so it wins.
+/// 2. **The heading below**, when there is no heading above it or the one above cannot
+///    hold an epigraph — a Book's, most often, since a Book heads its own front matter
+///    and the matrix gives it no `EpigraphText`.
+/// 3. **Neither**, and it stays prose. A quotation in the middle of a scene is a
+///    quotation in the middle of a scene, and moving it would be an invention; one
+///    beside a heading that cannot hold it is reported, because there the writer did
+///    mean an epigraph and needs to know it did not become one.
+///
+/// When 1 and 2 are *both* available the writer is told (an
+/// [`ImportDiagnostic::EpigraphPlacementAmbiguous`]) rather than the tie being resolved
+/// silently — the two placements are genuinely both real practice.
+fn epigraph_block(
+    ctx: EpigraphContext<'_>,
+    djot: &str,
+    current: &mut Option<PlannedRow>,
+    deferred: &mut String,
+    make_leading_row: impl Fn() -> PlannedRow,
+) -> EpigraphPlacementOutcome {
+    // The heading immediately below, if the very next block is one. Blank blocks never
+    // reach `SourceDocument::blocks`, so "the next block" really is the next thing in
+    // the document.
+    let below = match ctx.doc.blocks.get(ctx.block_index + 1) {
+        Some(SourceBlock::Heading { level, text }) => Some((ctx.rules.kind_for(*level), text)),
+        _ => None,
+    };
+
+    let above_ok = ctx.at_row_head
+        && current
+            .as_ref()
+            .is_some_and(|row| carries_epigraph(row.create_type, ctx.chapter_mode));
+    let below_ok = below.is_some_and(|(kind, _)| carries_epigraph(kind, ctx.chapter_mode));
+
+    if above_ok {
+        let row = current.as_mut().expect("above_ok proved it is Some");
+        if let Some((_, below_title)) = below.filter(|_| below_ok) {
+            row.diagnostics
+                .push(ImportDiagnostic::EpigraphPlacementAmbiguous {
+                    above: row.title.clone(),
+                    below: below_title.clone(),
+                });
+        }
+        // Appended, never assigned: a row may legitimately head two quotations, and
+        // `mark_epigraph` marks each blockquote separately on the way back out.
+        append_djot(&mut row.epigraph, djot);
+        return EpigraphPlacementOutcome::Attached;
+    }
+
+    if below_ok {
+        append_djot(deferred, djot);
+        return EpigraphPlacementOutcome::Attached;
+    }
+
+    // Report only when it was *beside* a heading. A quotation mid-scene was never
+    // claiming to be an epigraph, and warning about every one of them would train the
+    // writer to ignore the warning that matters.
+    let beside = if ctx.at_row_head {
+        current.as_ref().map(|r| (r.title.clone(), r.create_type))
+    } else {
+        below.map(|(kind, title)| (title.clone(), kind))
+    };
+    let row = current.get_or_insert_with(make_leading_row);
+    if let Some((title, kind)) = beside {
+        row.diagnostics
+            .push(ImportDiagnostic::EpigraphNotCarried { title, kind });
+    }
+    append_djot(&mut row.djot, djot);
+    EpigraphPlacementOutcome::KeptAsProse
+}
+
+/// Whether a row of this type may hold a `ContentRole::EpigraphText`.
+///
+/// Asks `skribisto_model` rather than listing the four combinations here — the
+/// constraint matrix is the one authority, and a second copy of it would drift the first
+/// time a row is added to it.
+fn carries_epigraph(create_type: CreateType, chapter_mode: &ChapterMode) -> bool {
+    let (role, sub_role) = create_type.combo(chapter_mode.clone());
+    content_allowed(&role, &sub_role, &ContentRole::EpigraphText)
+}
+
 /// Rebase one scanned annotation onto the row its block joined.
 ///
 /// The anchor arrives measured against the block's own text; shifting `start` by
@@ -503,7 +680,19 @@ fn planned_comment(
     block: &SourceBlock,
     block_offset: usize,
 ) -> PlannedComment {
-    let is_heading = matches!(block, SourceBlock::Heading { .. });
+    // Both of these are blocks whose text is *not* part of the row's Djot — a heading
+    // becomes the row's title, an epigraph becomes a `Content` of its own — so an offset
+    // into either would point at unrelated words once the row's prose is assembled. They
+    // take the same treatment for the same reason.
+    //
+    // An epigraph carries no comment layer in the editor either (see `OpenDoc::build`),
+    // so there is no anchor for an imported remark to keep even in principle; becoming a
+    // paragraph comment on the row's first block is what keeps the editor's words instead
+    // of dropping them.
+    let is_heading = matches!(
+        block,
+        SourceBlock::Heading { .. } | SourceBlock::Epigraph { .. }
+    );
     let kind = match annotation.kind {
         // A heading is a title, not prose — it becomes the row's `title` field,
         // never its Djot — so nothing inside it can be pointed at with a quote.
@@ -566,6 +755,9 @@ fn leading_row(doc: &SourceDocument, rules: &LevelRules, base_indent: i64) -> Pl
         title: doc.effective_title().to_string(),
         stripped_ordinal: None,
         djot: String::new(),
+        // Never an epigraph: this row exists because prose arrived before any heading,
+        // and an epigraph with no heading to head is not one.
+        epigraph: String::new(),
         scene_breaks: 0,
         word_count: 0,
         origin: doc.origin.clone(),
@@ -1073,6 +1265,260 @@ mod tests {
         assert!(
             !preview.contains('*'),
             "markup leaked into the preview: {preview:?}"
+        );
+    }
+
+    // ── Epigraphs ───────────────────────────────────────────────────────────
+    //
+    // The scanners decide *whether* a paragraph is an epigraph (from its named style);
+    // these decide *whose* it is. Both editorial placements are real and neither is
+    // recorded in the file, so the rule is read off adjacency alone — never off the
+    // export preset, which the importer has no way to know and a foreign file never had.
+
+    fn epi(s: &str) -> SourceBlock {
+        SourceBlock::Epigraph {
+            djot: s.into(),
+            text: s.trim_start_matches("> ").into(),
+        }
+    }
+
+    fn only_epigraph(plan: &ImportPlan) -> Vec<(&str, &str)> {
+        plan.rows
+            .iter()
+            .filter(|r| !r.epigraph.trim().is_empty())
+            .map(|r| (r.title.as_str(), r.epigraph.as_str()))
+            .collect()
+    }
+
+    /// The documented convention, and the compiler's default placement.
+    #[test]
+    fn an_epigraph_under_a_heading_belongs_to_that_heading() {
+        let d = doc(
+            "a.md",
+            vec![
+                heading(1, "Chapter One"),
+                epi("> Every winter asks twice."),
+                prose("The city held its breath."),
+            ],
+        );
+        let rules = infer_rules(&[1], CreateType::Chapter);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        assert_eq!(
+            only_epigraph(&plan),
+            vec![("Chapter One", "> Every winter asks twice.")]
+        );
+        assert_eq!(
+            plan.rows[0].djot, "The city held its breath.",
+            "the epigraph must stay out of the manuscript"
+        );
+    }
+
+    /// `EpigraphPlacement::BeforeHeading`. The case a reader keyed on "the row currently
+    /// collecting prose" gets wrong — and gets wrong *silently*, by filing Chapter Two's
+    /// quotation at the end of Chapter One's manuscript.
+    #[test]
+    fn an_epigraph_above_a_heading_belongs_to_the_heading_below_it() {
+        let d = doc(
+            "a.md",
+            vec![
+                heading(1, "Chapter One"),
+                prose("Rain all week."),
+                epi("> Every winter asks twice."),
+                heading(1, "Chapter Two"),
+                prose("The city held its breath."),
+            ],
+        );
+        let rules = infer_rules(&[1], CreateType::Chapter);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        assert_eq!(
+            only_epigraph(&plan),
+            vec![("Chapter Two", "> Every winter asks twice.")]
+        );
+        assert_eq!(
+            plan.rows[0].djot, "Rain all week.",
+            "Chapter One's prose must not have absorbed the next chapter's epigraph"
+        );
+    }
+
+    /// A quotation with prose on both sides is a quotation, not an epigraph. Moving it to
+    /// a row's `EpigraphText` would take it out of the paragraph it was written into.
+    #[test]
+    fn a_quotation_in_the_middle_of_a_scene_stays_in_the_prose() {
+        let d = doc(
+            "a.md",
+            vec![
+                heading(1, "Chapter One"),
+                prose("She read the letter."),
+                epi("> I shall not be home before the thaw."),
+                prose("Then she folded it away."),
+            ],
+        );
+        let rules = infer_rules(&[1], CreateType::Chapter);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        assert!(
+            only_epigraph(&plan).is_empty(),
+            "nothing here heads a chapter"
+        );
+        assert!(
+            plan.rows[0].djot.contains("I shall not be home"),
+            "the quotation belongs in the scene it was written into: {:?}",
+            plan.rows[0].djot
+        );
+        assert!(
+            plan.rows[0].diagnostics.is_empty(),
+            "a mid-scene quotation is ordinary and must not warn: {:?}",
+            plan.rows[0].diagnostics
+        );
+    }
+
+    /// The matrix gives a Scene `[SceneText, SynopsisText]` and no `EpigraphText` — a
+    /// scene has no head to set a quotation at. The quotation is kept, at the top of the
+    /// prose where it reads correctly, and the writer is told: here they *did* mean an
+    /// epigraph, and silently making it the scene's opening paragraph is the failure this
+    /// whole change exists to stop.
+    #[test]
+    fn an_epigraph_on_a_type_that_cannot_hold_one_falls_back_to_prose_and_says_so() {
+        let d = doc(
+            "a.md",
+            vec![
+                heading(1, "Chapter One"),
+                prose("The chapter's own words."),
+                heading(2, "Scene A"),
+                epi("> Every winter asks twice."),
+                prose("Opening words."),
+            ],
+        );
+        let rules = infer_rules(&[1, 2], CreateType::Chapter);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        let scene = plan
+            .rows
+            .iter()
+            .find(|r| r.title == "Scene A")
+            .expect("the scene row");
+        assert_eq!(
+            scene.create_type,
+            CreateType::Scene,
+            "the fixture only means anything if this really is a Scene"
+        );
+        assert!(only_epigraph(&plan).is_empty(), "a Scene heads no epigraph");
+        assert!(
+            scene.djot.starts_with("> Every winter asks twice."),
+            "the quotation must open the text it was heading: {:?}",
+            scene.djot
+        );
+        assert!(
+            scene.diagnostics.iter().any(|d| matches!(
+                d,
+                ImportDiagnostic::EpigraphNotCarried { kind, .. } if *kind == CreateType::Scene
+            )),
+            "the writer must be told: {:?}",
+            scene.diagnostics
+        );
+    }
+
+    /// A Book cannot hold one but the chapter under it can, so the epigraph falls through
+    /// to the row below rather than being demoted to prose. This is why the rule asks
+    /// whether each candidate *can carry* an epigraph instead of simply preferring the
+    /// heading above.
+    #[test]
+    fn an_epigraph_under_a_book_falls_through_to_the_chapter_below_it() {
+        let d = doc(
+            "a.md",
+            vec![
+                heading(1, "A Book"),
+                epi("> Every winter asks twice."),
+                heading(2, "Chapter One"),
+                prose("Opening words."),
+            ],
+        );
+        let rules = infer_rules(&[1, 2], CreateType::Book);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        assert_eq!(
+            only_epigraph(&plan),
+            vec![("Chapter One", "> Every winter asks twice.")]
+        );
+    }
+
+    /// Between a Part and a Chapter, both of which may hold one, the reading is genuinely
+    /// ambiguous: the convention says it heads the Part above, the other placement says it
+    /// heads the Chapter below. The convention wins and the writer is told, rather than the
+    /// tie being resolved out of sight.
+    #[test]
+    fn an_epigraph_between_two_types_that_can_both_hold_one_says_so() {
+        let d = doc(
+            "a.md",
+            vec![
+                heading(1, "Part One"),
+                epi("> Every winter asks twice."),
+                heading(2, "Chapter One"),
+                prose("Opening words."),
+            ],
+        );
+        let rules = infer_rules(&[1, 2], CreateType::Part);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        assert_eq!(
+            only_epigraph(&plan),
+            vec![("Part One", "> Every winter asks twice.")],
+            "the documented convention wins the tie"
+        );
+        assert!(
+            plan.rows[0].diagnostics.iter().any(|d| matches!(
+                d,
+                ImportDiagnostic::EpigraphPlacementAmbiguous { below, .. } if below == "Chapter One"
+            )),
+            "and the other reading is named: {:?}",
+            plan.rows[0].diagnostics
+        );
+    }
+
+    /// Two quotations at one chapter's head are two blockquotes on one field, not a
+    /// silent replacement of the first by the second. `render::mark_epigraph` marks each
+    /// blockquote separately on the way back out, so both survive a further round trip.
+    #[test]
+    fn two_epigraphs_on_one_row_are_kept_as_two_quotations() {
+        let d = doc(
+            "a.md",
+            vec![
+                heading(1, "Chapter One"),
+                epi("> The first."),
+                epi("> The second."),
+                prose("Opening words."),
+            ],
+        );
+        let rules = infer_rules(&[1], CreateType::Chapter);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        assert_eq!(
+            only_epigraph(&plan),
+            vec![("Chapter One", "> The first.\n\n> The second.")]
+        );
+    }
+
+    /// An epigraph's words are not the manuscript's — the whole reason it is a `Content`
+    /// of its own. `word_count` drives the review panel's "how much am I importing", and a
+    /// quotation counted there is a quotation counted into every pace goal downstream.
+    #[test]
+    fn an_epigraph_is_not_counted_in_the_rows_word_count() {
+        let d = doc(
+            "a.md",
+            vec![
+                heading(1, "Chapter One"),
+                epi("> One two three four five."),
+                prose("Six seven."),
+            ],
+        );
+        let rules = infer_rules(&[1], CreateType::Chapter);
+        let plan = build_plan(&[d], &rules, ChapterMode::Folder, 0);
+
+        assert_eq!(
+            plan.rows[0].word_count, 2,
+            "only the row's own prose counts"
         );
     }
 }

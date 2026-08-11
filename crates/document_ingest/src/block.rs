@@ -4,7 +4,7 @@
 //! The neutral block model every scanner produces and the whole pipeline
 //! consumes.
 //!
-//! Three variants, and the discipline that keeps it at three: **every
+//! Four variants, and the discipline that keeps it at four: **every
 //! format-specific structural heuristic is resolved inside its scanner and never
 //! crosses into this enum.** A DOCX scanner deciding that "Heading 1" (or
 //! "Titre 1", or the style id `Heading1`) means level 1 is its own business; the
@@ -13,12 +13,26 @@
 //! wants *kept* already has a lossless carrier in Djot's `{page_break_before=true}`
 //! attribute line, inside a [`SourceBlock::Prose`].
 //!
+//! [`SourceBlock::Epigraph`] is the fourth, and it obeys that rule rather than
+//! bending it. What each container had to work out for itself — that a paragraph
+//! carries the `Epigraph` or `EpigraphAttribution` named style, through however
+//! many `w:basedOn` / `style:parent-style-name` hops — is resolved in the scanner;
+//! what crosses is the verdict, exactly as a heading's depth does. It is a variant
+//! rather than a flag on `Prose` because an epigraph is not the row's prose: it
+//! becomes a `ContentRole::EpigraphText` of its own, and its words are deliberately
+//! not the manuscript's (`skribisto_model`'s `an_epigraph_is_never_counted_as_prose`
+//! pins that).
+//!
 //! One temptation deliberately refused: alignment. Screenplay importers detect a
 //! scene break from a centred paragraph, and `SourceBlock` could carry that hint
 //! — but Skribisto's scene-break vocabulary is content-based by design
 //! (`skribisto_model::scene_break`: *"fixed and preset-independent"*), matching
 //! text and never layout. A format that could detect breaks Markdown structurally
 //! cannot would be a cross-format inconsistency, not a feature.
+//!
+//! The same line divides an epigraph from an ordinary indented paragraph. A
+//! quotation is read from a style **name** the document states, never from the
+//! indent it happens to carry — see [`crate::sources::rich::ParagraphKind::Quote`].
 //!
 //! ## Annotations ride a side channel, and that is why the enum is still three
 //!
@@ -67,6 +81,22 @@ pub enum SourceBlock {
     /// than the raw glyph — is what keeps `skribisto_model`'s vocabulary the one
     /// authority on what counts as a break.
     SceneBreak { tier: SceneBreakTier },
+    /// An epigraph — the quotation set at the head of a part or a chapter, lifted
+    /// out of the prose stream because it belongs to a `Content` of its own.
+    ///
+    /// `djot` is one blockquote holding every paragraph of the quotation, which is the
+    /// shape `skribisto_compiler` reads back on the way out (`render::mark_epigraph`
+    /// marks *each* blockquote it finds, so several would export as several epigraphs).
+    /// `text` is its plain text, on the same terms as [`SourceBlock::Prose::text`].
+    ///
+    /// **Which row it belongs to is not decided here.** An epigraph sits either just
+    /// after the heading it heads or just before it — both are real editorial practice,
+    /// and `skribisto_compiler`'s `EpigraphPlacement` exports both — so the block keeps
+    /// its position in document order and [`crate::plan`] resolves the owner from the
+    /// heading it is adjacent to. The export preset that wrote the file is not
+    /// consulted, and could not be: nothing in a returning file records which preset
+    /// produced it, and a file from another project or another tool has none.
+    Epigraph { djot: String, text: String },
 }
 
 impl SourceBlock {
@@ -84,7 +114,9 @@ impl SourceBlock {
     pub fn is_empty(&self) -> bool {
         match self {
             SourceBlock::Heading { text, .. } => text.trim().is_empty(),
-            SourceBlock::Prose { djot, .. } => djot.trim().is_empty(),
+            SourceBlock::Prose { djot, .. } | SourceBlock::Epigraph { djot, .. } => {
+                djot.trim().is_empty()
+            }
             SourceBlock::SceneBreak { .. } => false,
         }
     }
@@ -97,7 +129,7 @@ impl SourceBlock {
     pub fn plain_text(&self) -> &str {
         match self {
             SourceBlock::Heading { text, .. } => text,
-            SourceBlock::Prose { text, .. } => text,
+            SourceBlock::Prose { text, .. } | SourceBlock::Epigraph { text, .. } => text,
             SourceBlock::SceneBreak { tier } => {
                 skribisto_model::scene_break::canonical_plain(*tier)
             }

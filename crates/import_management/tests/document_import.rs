@@ -17,7 +17,7 @@ use std::sync::Arc;
 use common::database::db_context::DbContext;
 use common::direct_access::binder::BinderRelationshipField;
 use common::direct_access::binder_item::BinderItemRelationshipField;
-use common::entities::ChapterMode;
+use common::entities::{ChapterMode, ContentRole};
 use common::event::EventHub;
 use common::long_operation::LongOperationManager;
 use common::types::EntityId;
@@ -241,6 +241,7 @@ impl Ctx {
                     kind,
                     title,
                     djot,
+                    epigraph,
                     comments,
                     included,
                     source_uid_tag,
@@ -254,7 +255,9 @@ impl Ctx {
                     // "accept the whole plan", and a plan carrying comments that
                     // silently did not get created would make every comment test
                     // pass for the wrong reason. The row's own identity travels the
-                    // same way, and for the same reason.
+                    // same way, and for the same reason — and so does its epigraph,
+                    // which is a second `Content` and not part of `djot`.
+                    epigraph,
                     comments,
                     source_uid_tag,
                 }),
@@ -594,6 +597,7 @@ fn prose_on_a_type_that_cannot_hold_it_is_refused_not_swallowed() {
                 kind: ImportRowKind::Book,
                 title: "A Book".into(),
                 djot: "Prose a Book cannot hold.".into(),
+                epigraph: String::new(),
                 comments: Vec::new(),
                 source_uid_tag: String::new(),
             }]),
@@ -637,6 +641,7 @@ fn undoing_an_import_into_a_large_binder_stays_interactive() {
             kind: ImportRowKind::Scene,
             title: format!("Scene {i}"),
             djot: String::new(),
+            epigraph: String::new(),
             comments: Vec::new(),
             source_uid_tag: String::new(),
         })
@@ -738,6 +743,7 @@ fn a_batched_import_fires_at_most_one_event_per_row() {
                 kind: ImportRowKind::Scene,
                 title: format!("Scene {i}"),
                 djot: String::new(),
+                epigraph: String::new(),
                 comments: Vec::new(),
                 source_uid_tag: String::new(),
             })
@@ -2064,6 +2070,7 @@ fn a_row_that_stores_no_prose(ctx: &mut Ctx) -> EntityId {
         kind: ImportRowKind::Book,
         title: "A Book".into(),
         djot: String::new(),
+        epigraph: String::new(),
         comments: Vec::new(),
         source_uid_tag: String::new(),
     }]);
@@ -2085,6 +2092,9 @@ fn update_row(
         target_uid_tag: tag.to_string(),
         replace_prose,
         djot: djot.to_string(),
+        // These tests are about prose and comments coming home; `update_row_with_epigraph`
+        // below is the one that exercises the second `Content`.
+        epigraph: String::new(),
         comments,
     }
 }
@@ -2352,5 +2362,260 @@ fn undoing_an_update_restores_the_prose_it_overwrote() {
         ctx.prose_of(item_id).as_deref(),
         Some("The original wording."),
         "undo must restore the writer's own prose"
+    );
+}
+
+// ── Epigraphs ───────────────────────────────────────────────────────────────
+//
+// A Part's or a Chapter's epigraph is a `Content` of its own — `ContentRole::EpigraphText`
+// beside the row's `SceneText`, never folded into it. Folding is the bug the reader-side
+// fix closes: an epigraph inside the manuscript is duplicated on every round trip (the
+// stored `EpigraphText` is untouched, so the next export writes it again) and its words
+// are counted as the writer's, which `skribisto_model`'s
+// `an_epigraph_is_never_counted_as_prose` pins against.
+
+/// Every `Content` on an item, as (role, data), so a test can say which is which.
+fn contents_of(ctx: &Ctx, item_id: EntityId) -> Vec<(ContentRole, String)> {
+    binder_item_controller::get_relationship(
+        &ctx.db,
+        &item_id,
+        &BinderItemRelationshipField::Contents,
+    )
+    .expect("contents")
+    .into_iter()
+    .map(|id| {
+        let c = content_controller::get(&ctx.db, &id)
+            .expect("content")
+            .expect("content row");
+        (c.role, c.data)
+    })
+    .collect()
+}
+
+fn epigraph_of(ctx: &Ctx, item_id: EntityId) -> Option<String> {
+    contents_of(ctx, item_id)
+        .into_iter()
+        .find(|(role, _)| *role == ContentRole::EpigraphText)
+        .map(|(_, data)| data)
+}
+
+/// The mark tag a row would be named by on the way back out.
+fn tag_of(ctx: &Ctx, item_id: EntityId) -> String {
+    let uid = binder_item_controller::get(&ctx.db, &item_id)
+        .expect("item")
+        .expect("item row")
+        .uid;
+    skribisto_model::round_trip::uid_tag(&uid)
+}
+
+fn create_chapter_with_epigraph(title: &str, djot: &str, epigraph: &str) -> ApplyImportRow {
+    ApplyImportRow::Create {
+        indent: 0,
+        kind: ImportRowKind::Chapter,
+        title: title.into(),
+        djot: djot.into(),
+        epigraph: epigraph.into(),
+        comments: Vec::new(),
+        source_uid_tag: String::new(),
+    }
+}
+
+#[test]
+fn a_created_chapters_epigraph_becomes_its_own_content_row() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_chapter_with_epigraph(
+        "Chapter One",
+        "The city held its breath.",
+        "> Every winter asks twice.",
+    )]);
+
+    let item = ctx.item_named("Chapter One");
+    assert_eq!(
+        epigraph_of(&ctx, item).as_deref(),
+        Some("> Every winter asks twice."),
+        "the quotation must be stored under EpigraphText"
+    );
+    // The half that actually matters: it is *not* also in the manuscript. This is the
+    // duplication the whole feature exists to stop.
+    assert_eq!(
+        ctx.prose_of(item).as_deref(),
+        Some("The city held its breath."),
+        "the prose must be the row's own words and nothing else"
+    );
+}
+
+/// The prose is still reachable through `Contents` after the epigraph joins it.
+///
+/// `prose_content_of` and `Ctx::prose_of` both read that relationship, and an epigraph
+/// written with a *second* `set_binder_item_relationship` call rather than one would have
+/// replaced the prose's id instead of joining it. That failure leaves a `Content` row
+/// alive in the store with nothing pointing at it — invisible in the app and gone at the
+/// next save, which is the worst shape a loss can take.
+#[test]
+fn adding_an_epigraph_does_not_detach_the_rows_prose() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_chapter_with_epigraph(
+        "Chapter One",
+        "The city held its breath.",
+        "> Every winter asks twice.",
+    )]);
+
+    let item = ctx.item_named("Chapter One");
+    let roles: Vec<ContentRole> = contents_of(&ctx, item)
+        .into_iter()
+        .map(|(role, _)| role)
+        .collect();
+    assert_eq!(
+        roles,
+        vec![ContentRole::SceneText, ContentRole::EpigraphText],
+        "both contents must survive, prose first"
+    );
+}
+
+/// The review step lets the writer retype a row, so a chapter's epigraph can arrive on a
+/// Scene — which the matrix gives no `EpigraphText`. The quotation moves to the head of
+/// the prose rather than the import being refused: refusing would abort every other row
+/// over one deliberate retype, and the text has somewhere sensible to go.
+#[test]
+fn an_epigraph_retyped_onto_a_row_that_cannot_hold_one_is_folded_into_its_prose() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![ApplyImportRow::Create {
+        indent: 0,
+        kind: ImportRowKind::Scene,
+        title: "Scene A".into(),
+        djot: "The city held its breath.".into(),
+        epigraph: "> Every winter asks twice.".into(),
+        comments: Vec::new(),
+        source_uid_tag: String::new(),
+    }]);
+
+    let item = ctx.item_named("Scene A");
+    assert!(
+        epigraph_of(&ctx, item).is_none(),
+        "a Scene must store no EpigraphText"
+    );
+    assert_eq!(
+        ctx.prose_of(item).as_deref(),
+        Some("> Every winter asks twice.\n\nThe city held its breath."),
+        "the quotation opens the prose it was heading, rather than being lost"
+    );
+}
+
+/// A returning file's epigraph rides `replace_prose` with the manuscript: an editor who
+/// corrected the attribution under a chapter's quotation edited the book.
+#[test]
+fn an_update_writes_the_editors_epigraph_when_it_takes_their_wording() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_chapter_with_epigraph(
+        "Chapter One",
+        "The original wording.",
+        "> As first written.",
+    )]);
+    let item = ctx.item_named("Chapter One");
+    let tag = tag_of(&ctx, item);
+
+    ctx.apply_rows(vec![ApplyImportRow::Update {
+        target_uid_tag: tag,
+        replace_prose: true,
+        djot: "The editor's better wording.".into(),
+        epigraph: "> As the editor corrected it.".into(),
+        comments: Vec::new(),
+    }]);
+
+    assert_eq!(
+        epigraph_of(&ctx, item).as_deref(),
+        Some("> As the editor corrected it.")
+    );
+    assert_eq!(
+        ctx.prose_of(item).as_deref(),
+        Some("The editor's better wording.")
+    );
+}
+
+/// A comments-only update leaves the epigraph exactly as it leaves the manuscript.
+///
+/// That is the case the whole re-import feature exists for — bring the editor's remarks
+/// home and touch not a word — and an epigraph quietly overwritten by it would be the same
+/// betrayal as a paragraph quietly overwritten by it.
+#[test]
+fn a_comments_only_update_leaves_the_epigraph_alone() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_chapter_with_epigraph(
+        "Chapter One",
+        "The original wording.",
+        "> As first written.",
+    )]);
+    let item = ctx.item_named("Chapter One");
+    let tag = tag_of(&ctx, item);
+
+    ctx.apply_rows(vec![ApplyImportRow::Update {
+        target_uid_tag: tag,
+        replace_prose: false,
+        djot: "The editor's better wording.".into(),
+        epigraph: "> As the editor corrected it.".into(),
+        comments: Vec::new(),
+    }]);
+
+    assert_eq!(
+        epigraph_of(&ctx, item).as_deref(),
+        Some("> As first written."),
+        "the writer asked for remarks only"
+    );
+}
+
+/// An absent epigraph never deletes the one the project holds.
+///
+/// A returning file carries none whenever the export it came from had
+/// `Preset::include_epigraphs` off — a choice made about the *export*, which says nothing
+/// about the book. Reading that silence as "delete it" would destroy content on the
+/// strength of an absence, and the writer would have no way to know it had happened.
+#[test]
+fn an_update_carrying_no_epigraph_does_not_delete_the_one_already_there() {
+    let mut ctx = Ctx::new();
+    ctx.apply_rows(vec![create_chapter_with_epigraph(
+        "Chapter One",
+        "The original wording.",
+        "> As first written.",
+    )]);
+    let item = ctx.item_named("Chapter One");
+    let tag = tag_of(&ctx, item);
+
+    ctx.apply_rows(vec![update_row(
+        &tag,
+        true,
+        "The editor's better wording.",
+        Vec::new(),
+    )]);
+
+    assert_eq!(
+        epigraph_of(&ctx, item).as_deref(),
+        Some("> As first written."),
+        "an export that did not carry epigraphs must not delete them"
+    );
+}
+
+/// A chapter that had none gains one, wired into `Contents` beside its prose.
+#[test]
+fn an_update_can_give_a_row_its_first_epigraph() {
+    let mut ctx = Ctx::new();
+    let (item_id, tag) = a_project_with_one_row(&mut ctx);
+    assert!(epigraph_of(&ctx, item_id).is_none(), "none to begin with");
+
+    ctx.apply_rows(vec![ApplyImportRow::Update {
+        target_uid_tag: tag,
+        replace_prose: true,
+        djot: "The editor's better wording.".into(),
+        epigraph: "> Newly added by the editor.".into(),
+        comments: Vec::new(),
+    }]);
+
+    assert_eq!(
+        epigraph_of(&ctx, item_id).as_deref(),
+        Some("> Newly added by the editor.")
+    );
+    assert_eq!(
+        ctx.prose_of(item_id).as_deref(),
+        Some("The editor's better wording."),
+        "and the prose it was appended beside is still reachable"
     );
 }

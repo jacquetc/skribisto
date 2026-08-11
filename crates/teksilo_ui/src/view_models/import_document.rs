@@ -220,6 +220,20 @@ impl Diagnostic {
                 path = path,
                 count = count
             )),
+            // Same shape as `illegal-combination`: the row knows its own title and type,
+            // so neither travels over the wire.
+            "epigraph-not-carried" => tr!(import_diagnostic_epigraph_not_carried(
+                title = title.to_string(),
+                kind = kind
+                    .map(|k| crate::binder::create_labels::recommendation_label(k).resolve_now())
+                    .unwrap_or_default()
+            )),
+            // `detail` is the *other* heading — the one that did not get the epigraph —
+            // which is the only part of this sentence the row cannot supply.
+            "epigraph-placement-ambiguous" => tr!(import_diagnostic_epigraph_placement_ambiguous(
+                title = title.to_string(),
+                below = detail
+            )),
             // Not silence: a diagnostic nobody translated is still a diagnostic,
             // and the writer would rather read a raw key than lose the warning.
             other => lit!(format!("{other}: {} ({})", self.detail, self.path)),
@@ -624,6 +638,8 @@ impl ImportDocumentViewModel {
                     title: "Mock Book".into(),
                     stripped_ordinal: None,
                     djot: "Opening.".into(),
+                    // A Book holds no epigraph — see the constraint matrix.
+                    epigraph: String::new(),
                     scene_breaks: 0,
                     word_count: 1,
                     origin: "mock.md".into(),
@@ -639,6 +655,9 @@ impl ImportDocumentViewModel {
                     title: "Mock Chapter".into(),
                     stripped_ordinal: None,
                     djot: "Prose.".into(),
+                    // A chapter can, so the mock carries one: it is the only way the
+                    // review panel's epigraph column is exercised without a real file.
+                    epigraph: "> Mock quotation.".into(),
                     scene_breaks: 1,
                     word_count: 1,
                     origin: "mock.md".into(),
@@ -654,6 +673,7 @@ impl ImportDocumentViewModel {
                     title: "Mock Scene".into(),
                     stripped_ordinal: None,
                     djot: "More prose.".into(),
+                    epigraph: String::new(),
                     scene_breaks: 0,
                     word_count: 2,
                     origin: "mock.md".into(),
@@ -1449,6 +1469,11 @@ impl ImportDocumentViewModel {
                         target_uid_tag: target.clone(),
                         replace_prose: *action == RowAction::TakeImport,
                         djot: row.djot.clone(),
+                        // Rides `replace_prose` with the manuscript, and is handed over
+                        // whether or not it will be written: the use case is what decides,
+                        // and sending it conditionally here would put that decision in two
+                        // places.
+                        epigraph: row.epigraph.clone(),
                         comments,
                     }]),
                     // Unreachable by construction — `reconcile` offers these two only on a row
@@ -1498,27 +1523,41 @@ impl ImportDocumentViewModel {
         comments: Vec<ImportComment>,
         tag: String,
     ) -> Vec<ApplyImportRow> {
-        let container = |djot: String, comments: Vec<ImportComment>| ApplyImportRow::Create {
-            indent: row.indent,
-            kind: create_type_to_kind(kind),
-            title: row.title.clone(),
-            djot,
-            comments,
-            // The row's own identity, handed back untouched for the same reason its comments
-            // are: the review step edits titles and types, never which row a passage *is*.
-            source_uid_tag: tag.clone(),
-        };
+        let container =
+            |djot: String, epigraph: String, comments: Vec<ImportComment>| ApplyImportRow::Create {
+                indent: row.indent,
+                kind: create_type_to_kind(kind),
+                title: row.title.clone(),
+                djot,
+                epigraph,
+                comments,
+                // The row's own identity, handed back untouched for the same reason its comments
+                // are: the review step edits titles and types, never which row a passage *is*.
+                source_uid_tag: tag.clone(),
+            };
+
+        // The epigraph stays with the **container** in every arm below, unlike the prose
+        // and the comments. It heads the part or the chapter, not the passage that was
+        // stranded on it — a Book's front matter moving out to a paratext of its own does
+        // not take the Book's quotation with it, and a Book has none to take. When the
+        // container's own type cannot hold one, `split_epigraph` in the use case folds it
+        // back into whatever prose the container keeps.
+        let epigraph = row.epigraph.clone();
 
         match self.stray_prose_for(key) {
-            None => vec![container(row.djot.clone(), comments)],
-            Some(StrayProse::Discard) => vec![container(String::new(), Vec::new())],
+            None => vec![container(row.djot.clone(), epigraph, comments)],
+            Some(StrayProse::Discard) => {
+                vec![container(String::new(), epigraph, Vec::new())]
+            }
             Some(StrayProse::AsParatext) => vec![
-                container(String::new(), Vec::new()),
+                container(String::new(), epigraph, Vec::new()),
                 ApplyImportRow::Create {
                     indent: row.indent + 1,
                     kind: create_type_to_kind(CreateType::Paratext),
                     title: row.title.clone(),
                     djot: row.djot.clone(),
+                    // A paratext holds no epigraph, and this one is not its anyway.
+                    epigraph: String::new(),
                     comments,
                     // The mark named the *container*, and the container has it. A paratext
                     // minted here is a row this import is creating, not one it is bringing home.
@@ -2047,6 +2086,7 @@ pub fn plan_from_dto(
                 title,
                 stripped_ordinal,
                 djot,
+                epigraph,
                 scene_breaks,
                 word_count,
                 comments,
@@ -2068,6 +2108,7 @@ pub fn plan_from_dto(
                 title: title.clone(),
                 stripped_ordinal: (!stripped_ordinal.is_empty()).then(|| stripped_ordinal.clone()),
                 djot: djot.clone(),
+                epigraph: epigraph.clone(),
                 scene_breaks: *scene_breaks as usize,
                 word_count: *word_count as usize,
                 comments: comments.iter().filter_map(comment_from_dto).collect(),
@@ -2186,6 +2227,7 @@ mod tests {
             title: title.into(),
             stripped_ordinal: None,
             djot: format!("{title} prose."),
+            epigraph: String::new(),
             scene_breaks: 0,
             word_count: 2,
             origin: "a.md".into(),
@@ -2554,7 +2596,9 @@ mod tests {
             | FieldFlattened { .. }
             | UnknownStyleLevel { .. }
             | CommentUnanchored { .. }
-            | CommentRepliesFlattened { .. } => {}
+            | CommentRepliesFlattened { .. }
+            | EpigraphNotCarried { .. }
+            | EpigraphPlacementAmbiguous { .. } => {}
         }
     }
 
@@ -2658,6 +2702,14 @@ mod tests {
             D::CommentRepliesFlattened {
                 path: "/tmp/a.odt".into(),
                 count: 3,
+            },
+            D::EpigraphNotCarried {
+                title: "A scene".into(),
+                kind: CreateType::Scene,
+            },
+            D::EpigraphPlacementAmbiguous {
+                above: "Part One".into(),
+                below: "Chapter One".into(),
             },
         ];
 

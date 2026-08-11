@@ -1737,6 +1737,7 @@ import-document-col-type = Type
 import-document-col-words = Mots
 import-document-col-breaks = Coupures
 import-document-col-comments = Commentaires
+import-document-col-epigraph = Épigraphe
 import-document-col-source = Source
 import-document-level-rules = Niveaux de titre
 import-document-level-n = Titre { $level }
@@ -1801,6 +1802,8 @@ import-diagnostic-field-flattened = { $path } contient { $count } champ(s) — n
 import-diagnostic-unknown-style-level = { $path } utilise le style « { $detail } », qui ressemble à un titre mais n'indique aucun niveau. Ces paragraphes sont importés comme texte plutôt que devinés.
 import-diagnostic-comment-unanchored = Le commentaire « { $detail } » dans { $path } n'a pas pu être rattaché aux mots qu'il visait. Il est conservé sur son élément, où vous pouvez le déplacer.
 import-diagnostic-comment-replies-flattened = { $count } réponse(s) dans { $path } désignent un commentaire absent du fichier : elles arrivent donc comme des commentaires à part entière.
+import-diagnostic-epigraph-not-carried = « { $title } » est précédé d'une épigraphe, mais un élément de type « { $kind } » ne peut pas en porter. La citation est conservée en tête de son texte.
+import-diagnostic-epigraph-placement-ambiguous = Une épigraphe se trouve entre « { $title } » et « { $below } » et pourrait précéder l'un ou l'autre. Elle a été attribuée à « { $title } », où se place habituellement une épigraphe.
 import-document-diagnostics = { $errors ->
     [0] { $warnings ->
             [one] 1 point à connaître

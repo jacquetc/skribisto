@@ -1744,6 +1744,7 @@ import-document-col-type = Type
 import-document-col-words = Words
 import-document-col-breaks = Breaks
 import-document-col-comments = Comments
+import-document-col-epigraph = Epigraph
 import-document-col-source = Source
 import-document-level-rules = Heading levels
 import-document-level-n = Heading { $level }
@@ -1812,6 +1813,8 @@ import-diagnostic-field-flattened = { $path } holds { $count } field(s) — a pa
 import-diagnostic-unknown-style-level = { $path } uses the style “{ $detail }”, which looks like a heading but names no level. Those paragraphs are imported as prose rather than guessed at a depth.
 import-diagnostic-comment-unanchored = The comment “{ $detail }” in { $path } could not be attached to the words it was about. It is kept on its item, where you can move it.
 import-diagnostic-comment-replies-flattened = { $count } reply/replies in { $path } named a comment that is not in the file, so they arrive as comments of their own.
+import-diagnostic-epigraph-not-carried = “{ $title }” is headed by an epigraph, but a { $kind } cannot hold one. The quotation is kept at the top of its text instead.
+import-diagnostic-epigraph-placement-ambiguous = An epigraph sits between “{ $title }” and “{ $below }” and could head either. It was given to “{ $title }”, which is where an epigraph usually goes.
 import-document-diagnostics = { $errors ->
     [0] { $warnings ->
             [one] 1 thing to know

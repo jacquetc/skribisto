@@ -329,6 +329,7 @@ impl ApplyDocumentImportUseCase {
                 target_uid_tag,
                 replace_prose,
                 djot,
+                epigraph,
                 comments,
             } = row
             else {
@@ -342,6 +343,21 @@ impl ApplyDocumentImportUseCase {
             let Some(&item_id) = by_tag.get(target_uid_tag.as_str()) else {
                 continue;
             };
+
+            // Resolved against the row *as it stands now*, not as it was when exported:
+            // `promote_uc` retypes an item in place, so the chapter that carried an epigraph
+            // on the way out may be a scene by the time the file comes back.
+            let target = uow
+                .get_binder_item_multi(&[item_id])?
+                .into_iter()
+                .flatten()
+                .next()
+                .ok_or_else(|| {
+                    anyhow!("apply_document_import: item {item_id} vanished mid-import")
+                })?;
+            let (djot, epigraph) =
+                split_epigraph(&target.role, &target.sub_role, djot.clone(), epigraph);
+            let (djot, epigraph) = (&djot, &epigraph);
 
             let content_id = prose_content_of(uow.as_mut(), item_id)?;
             let Some(content_id) = content_id else {
@@ -361,6 +377,9 @@ impl ApplyDocumentImportUseCase {
                 // remarks and nothing else — so prose it was never going to store is not a
                 // loss, and refusing over it would abort an ordinary re-import. Only prose an
                 // update *would* have written, and comments, count.
+                // `djot` here already carries anything `split_epigraph` folded in, so an
+                // epigraph coming home to a row that stores nothing is counted with the
+                // prose rather than slipping through as "not prose".
                 let prose_at_risk = *replace_prose && !djot.trim().is_empty();
                 if prose_at_risk || !comments.is_empty() {
                     return Err(anyhow!(
@@ -391,6 +410,12 @@ impl ApplyDocumentImportUseCase {
                 content.data = djot.clone();
                 content.updated_at = now;
                 uow.update_content(&content)?;
+
+                // The epigraph rides `replace_prose` because it *is* manuscript — an editor
+                // who corrected the attribution under a chapter's quotation edited the book,
+                // and a writer who asked for remarks only has asked for the manuscript to be
+                // left alone, epigraph included.
+                write_epigraph(uow.as_mut(), item_id, epigraph, now)?;
             }
 
             for comment in comments {
@@ -420,6 +445,7 @@ impl ApplyDocumentImportUseCase {
                 kind,
                 title,
                 djot,
+                epigraph,
                 comments,
                 // Deliberately unread on this arm. Acting on a recovered identity is what
                 // `ApplyImportRow::Update` above is for, and a row reaching *this* arm is one
@@ -443,6 +469,11 @@ impl ApplyDocumentImportUseCase {
                 ));
             }
 
+            // The review step lets the writer retype a row, so a Chapter that carried an
+            // epigraph may arrive here as a Scene. `split_epigraph` folds it back into the
+            // prose rather than refusing — see its own doc for why that beats an error.
+            let (djot, epigraph) = split_epigraph(&role, &sub_role, djot.clone(), epigraph);
+
             // Trap 3: prose whose row cannot hold it would be dropped silently at
             // the next save. Refuse it here, where the writer can still be told.
             let content_id = if djot.trim().is_empty() {
@@ -460,6 +491,23 @@ impl ApplyDocumentImportUseCase {
                     activated: true,
                     role: content_role,
                     data: djot.clone(),
+                    ..Default::default()
+                })?;
+                Some(created.id)
+            };
+
+            // The epigraph, as a `Content` of its own. `split_epigraph` already proved this
+            // combination may hold one, so no second check is needed — and none would be
+            // right, since the two must agree about which of the two contents the text is in.
+            let epigraph_content_id = if epigraph.trim().is_empty() {
+                None
+            } else {
+                let created = uow.create_orphan_content(&Content {
+                    created_at: now,
+                    updated_at: now,
+                    activated: true,
+                    role: ContentRole::EpigraphText,
+                    data: epigraph.clone(),
                     ..Default::default()
                 })?;
                 Some(created.id)
@@ -484,11 +532,18 @@ impl ApplyDocumentImportUseCase {
                 ..Default::default()
             })?;
 
-            if let Some(content_id) = content_id {
+            // Prose first, so a row created by an import has its contents in the order one
+            // created in the editor does. Set in one call rather than two — the relationship
+            // is *replaced*, not appended to, so a second call would drop the first's id.
+            let contents: Vec<EntityId> = [content_id, epigraph_content_id]
+                .into_iter()
+                .flatten()
+                .collect();
+            if !contents.is_empty() {
                 uow.set_binder_item_relationship(
                     &item.id,
                     &BinderItemRelationshipField::Contents,
-                    &[content_id],
+                    &contents,
                 )?;
             }
 
@@ -1032,6 +1087,106 @@ fn items_by_uid_tag(
         .collect())
 }
 
+/// Split an imported row's text into the prose and the epigraph this combination can
+/// actually store.
+///
+/// The plan only ever attaches an epigraph to a row whose type can hold one, so in the
+/// ordinary case this returns both untouched. It exists for the case the plan cannot see:
+/// **the review step lets the writer retype a row**, and a Chapter that carried an
+/// epigraph out of a file can reach this use case as a Scene.
+///
+/// Then the quotation is moved to the head of the row's prose rather than refused. Both
+/// halves of that are deliberate:
+///
+/// * **Not refused**, because refusing aborts the whole import — every other row with it —
+///   over one retype the writer made on purpose, and the thing at stake is a quotation
+///   that can simply be moved back afterwards. The prose refusal above earns its severity
+///   by having nowhere at all to put the text; this has somewhere.
+/// * **At the head**, because that is where an epigraph is: it is the row's opening
+///   matter, and appending it would put the quotation after the scene it introduces.
+///
+/// A row that can hold neither is still refused, by the prose check downstream — the
+/// folded text arrives there as prose and is counted as prose.
+fn split_epigraph(
+    role: &common::entities::BinderItemRole,
+    sub_role: &common::entities::BinderItemSubRole,
+    djot: String,
+    epigraph: &str,
+) -> (String, String) {
+    if epigraph.trim().is_empty() {
+        return (djot, String::new());
+    }
+    if content_allowed(role, sub_role, &ContentRole::EpigraphText) {
+        return (djot, epigraph.to_string());
+    }
+    let mut folded = epigraph.trim_end().to_string();
+    if !djot.trim().is_empty() {
+        folded.push_str("\n\n");
+        folded.push_str(djot.trim_start());
+    }
+    (folded, String::new())
+}
+
+/// Write `epigraph` onto an existing row, creating its `Content` if it has none yet.
+///
+/// A no-op for an empty `epigraph`, and that is a decision rather than a shortcut: a
+/// returning file carries no epigraph whenever the export it came from had
+/// `Preset::include_epigraphs` off, and reading that absence as "delete the quotation
+/// this chapter has" would destroy content on the strength of a choice made about the
+/// *export*. An epigraph the editor genuinely deleted stays until the writer deletes it
+/// here, which is the recoverable direction of the two.
+///
+/// `split_epigraph` has already established this row may hold one, so an item whose
+/// combination refuses `EpigraphText` never reaches here with anything to write.
+fn write_epigraph(
+    uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
+    item_id: EntityId,
+    epigraph: &str,
+    now: chrono::DateTime<chrono::Utc>,
+) -> Result<()> {
+    if epigraph.trim().is_empty() {
+        return Ok(());
+    }
+    let ids = uow.get_binder_item_relationship(&item_id, &BinderItemRelationshipField::Contents)?;
+    let existing = uow
+        .get_content_multi(&ids)?
+        .into_iter()
+        .flatten()
+        .find(|c| c.role == ContentRole::EpigraphText);
+
+    match existing {
+        Some(mut content) => {
+            content.data = epigraph.to_string();
+            // A row whose epigraph was trashed rather than deleted comes back through the
+            // same door the writer would use to retype one, so it is reactivated rather
+            // than left as a second, hidden copy beside a new row.
+            content.activated = true;
+            content.updated_at = now;
+            uow.update_content(&content)?;
+        }
+        None => {
+            let created = uow.create_orphan_content(&Content {
+                created_at: now,
+                updated_at: now,
+                activated: true,
+                role: ContentRole::EpigraphText,
+                data: epigraph.to_string(),
+                ..Default::default()
+            })?;
+            // Appended to what the row already has — this relationship is *replaced* by a
+            // set, so writing only the new id would detach the row's prose.
+            let mut all = ids;
+            all.push(created.id);
+            uow.set_binder_item_relationship(
+                &item_id,
+                &BinderItemRelationshipField::Contents,
+                &all,
+            )?;
+        }
+    }
+    Ok(())
+}
+
 /// The `Content` row holding this item's prose, if it has one.
 ///
 /// "Prose" is the same three roles [`prose_role_for`] can create — scene text, note text,
@@ -1198,6 +1353,7 @@ mod tests {
             kind: crate::dtos::ImportRowKind::Scene,
             title: "row".into(),
             djot: String::new(),
+            epigraph: String::new(),
             comments: Vec::new(),
             source_uid_tag: String::new(),
         }

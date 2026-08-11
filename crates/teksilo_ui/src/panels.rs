@@ -11,6 +11,7 @@
 pub(crate) mod about;
 pub(crate) mod first_run;
 pub(crate) mod import_document;
+pub(crate) mod import_epigraph_cell;
 pub(crate) mod import_plume;
 pub(crate) mod license;
 pub(crate) mod new_work;

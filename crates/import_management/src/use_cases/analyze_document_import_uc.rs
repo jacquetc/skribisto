@@ -367,6 +367,7 @@ fn row_to_dto(row: &PlannedRow) -> DocumentImportRow {
         title: row.title.clone(),
         stripped_ordinal: row.stripped_ordinal.clone().unwrap_or_default(),
         djot: row.djot.clone(),
+        epigraph: row.epigraph.clone(),
         scene_breaks: row.scene_breaks as i64,
         word_count: row.word_count as i64,
         comments: row.comments.iter().map(comment_to_dto).collect(),
@@ -424,7 +425,11 @@ pub fn diagnostic_to_dto(d: &ImportDiagnostic, row_index: i64) -> ImportDiagnost
         // comes from the row.
         HeadingLevelJump { from, to, .. } => (from.to_string(), *to as i64),
         // Nothing: the row carries both the title and the offending type.
-        IllegalCombination { .. } => (String::new(), 0),
+        IllegalCombination { .. } | EpigraphNotCarried { .. } => (String::new(), 0),
+        // The *other* heading — the one the epigraph could also have belonged to. This
+        // one is not on the row: `row_index` names the row that got the epigraph, and the
+        // whole point of the sentence is to name the one that did not.
+        EpigraphPlacementAmbiguous { below, .. } => (below.clone(), 0),
     };
 
     ImportDiagnosticRow::Reported {

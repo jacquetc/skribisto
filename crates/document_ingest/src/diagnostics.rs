@@ -132,6 +132,23 @@ pub enum ImportDiagnostic {
     /// never a log line… translated at the UI boundary rather than here"*. It
     /// went unnoticed for as long as nothing rendered it.
     IllegalCombination { title: String, kind: CreateType },
+    /// An epigraph was found beside a heading whose type cannot hold one, so it was
+    /// kept as ordinary prose instead.
+    ///
+    /// The constraint matrix allows `EpigraphText` on a Part or a Chapter and nowhere
+    /// else — a Book's epigraph is the book's own front matter, and a Scene has no head
+    /// to set a quotation at. Naming it is what stops the writer discovering later that
+    /// the quotation they wrote as an epigraph is now the first paragraph of a chapter.
+    EpigraphNotCarried { title: String, kind: CreateType },
+    /// An epigraph sat between two headings that could both hold it, so it was given to
+    /// the one **above** it.
+    ///
+    /// Both readings are real: `skribisto_compiler`'s `EpigraphPlacement` exports an
+    /// epigraph after its heading (the documented convention, and the default) or before
+    /// it (a designer's choice with real currency), and nothing in a returning file
+    /// records which was used. The preceding heading wins because it is the convention;
+    /// the writer is told because the other reading is not wrong, only less likely.
+    EpigraphPlacementAmbiguous { above: String, below: String },
 }
 
 impl ImportDiagnostic {
@@ -156,7 +173,12 @@ impl ImportDiagnostic {
             | FieldFlattened { .. }
             | UnknownStyleLevel { .. }
             | CommentUnanchored { .. }
-            | CommentRepliesFlattened { .. } => Warning,
+            | CommentRepliesFlattened { .. }
+            | EpigraphNotCarried { .. } => Warning,
+            // Nothing was lost and nothing needs correcting — the epigraph landed on one
+            // of the two rows it could have. Said once so a writer who meant the other
+            // one can move it, which is a click.
+            EpigraphPlacementAmbiguous { .. } => Info,
         }
     }
 
@@ -182,7 +204,11 @@ impl ImportDiagnostic {
             | UnknownStyleLevel { path, .. }
             | CommentUnanchored { path, .. }
             | CommentRepliesFlattened { path, .. } => Some(path),
-            DuplicateTitle { .. } | HeadingLevelJump { .. } | IllegalCombination { .. } => None,
+            DuplicateTitle { .. }
+            | HeadingLevelJump { .. }
+            | IllegalCombination { .. }
+            | EpigraphNotCarried { .. }
+            | EpigraphPlacementAmbiguous { .. } => None,
         }
     }
 
@@ -213,6 +239,8 @@ impl ImportDiagnostic {
             UnknownStyleLevel { .. } => "unknown-style-level",
             CommentUnanchored { .. } => "comment-unanchored",
             CommentRepliesFlattened { .. } => "comment-replies-flattened",
+            EpigraphNotCarried { .. } => "epigraph-not-carried",
+            EpigraphPlacementAmbiguous { .. } => "epigraph-placement-ambiguous",
         }
     }
 }
@@ -260,6 +288,18 @@ impl fmt::Display for ImportDiagnostic {
             }
             IllegalCombination { title, kind } => {
                 write!(f, "'{title}': a {kind:?} row cannot hold prose")
+            }
+            EpigraphNotCarried { title, kind } => {
+                write!(
+                    f,
+                    "'{title}': a {kind:?} row cannot hold an epigraph, so it was kept as prose"
+                )
+            }
+            EpigraphPlacementAmbiguous { above, below } => {
+                write!(
+                    f,
+                    "an epigraph between '{above}' and '{below}' was given to '{above}'"
+                )
             }
             TrackedChangesFlattened { path, count } => {
                 write!(f, "{path}: {count} tracked change(s) accepted")

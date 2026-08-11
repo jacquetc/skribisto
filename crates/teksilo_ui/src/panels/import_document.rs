@@ -44,6 +44,7 @@ use skribisto_model::CreateType;
 use crate::binder::create_labels::recommendation_label;
 use crate::models::import_merge_source::ImportMergeSource;
 use crate::models::import_plan_source::PlanRowView;
+use crate::panels::import_epigraph_cell::EpigraphCell;
 use crate::view_models::import_document::{
     ImportDocumentViewModel, LEVEL_TYPES, MergeRowView, ROW_TYPES, STEP_REVIEW, StrayProse,
 };
@@ -1036,7 +1037,10 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
             ) as Box<dyn Widget>
         },
     )
-    .width(ColumnWidth::Fixed(130.0));
+    // 130 → 100: thirty of the eighty pixels the epigraph column needs. A file *name* in
+    // Small/Secondary that was already ellipsising at 130 loses nothing legible by it, and
+    // the alternative was a tenth column the writer has to scroll to reach.
+    .width(ColumnWidth::Fixed(100.0));
 
     // A row the importer had to say something about. The strip below carries the
     // sentence; this is what tells you *which* row it was about without reading
@@ -1071,7 +1075,11 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
             Box::new(TextWidget::new(lit!(row.word_count.to_string()))) as Box<dyn Widget>
         },
     )
-    .width(ColumnWidth::Fixed(80.0));
+    // 80 → 73: the last twenty-one pixels, so the flexible **title** column ends up
+    // exactly as wide as it was before the epigraph column existed. The header here
+    // already ellipsised at 80 ("Comme…"), so the width was never carrying it — what
+    // has to fit is a per-row count, which is one to four digits.
+    .width(ColumnWidth::Fixed(73.0));
 
     // The break count is what tells the writer, before they commit, that a
     // four-thousand-word chapter is arriving as one row and not as four.
@@ -1087,7 +1095,11 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
             Box::new(TextWidget::new(lit!(text))) as Box<dyn Widget>
         },
     )
-    .width(ColumnWidth::Fixed(80.0));
+    // 80 → 73: the last twenty-one pixels, so the flexible **title** column ends up
+    // exactly as wide as it was before the epigraph column existed. The header here
+    // already ellipsised at 80 ("Comme…"), so the width was never carrying it — what
+    // has to fit is a per-row count, which is one to four digits.
+    .width(ColumnWidth::Fixed(73.0));
 
     // How many editors' notes come with this row. Threads, not turns: a comment
     // with four replies is one note, and the number a writer wants before pressing
@@ -1106,6 +1118,24 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
                 row.comments.len().to_string()
             };
             Box::new(TextWidget::new(lit!(text))) as Box<dyn Widget>
+        },
+    )
+    // 80 → 73: the last twenty-one pixels, so the flexible **title** column ends up
+    // exactly as wide as it was before the epigraph column existed. The header here
+    // already ellipsised at 80 ("Comme…"), so the width was never carrying it — what
+    // has to fit is a per-row count, which is one to four digits.
+    .width(ColumnWidth::Fixed(73.0));
+
+    // The quotation this row is headed by, when the source named one — a mark here and the
+    // words themselves on hover. See `import_epigraph_cell` for why it is a marker rather
+    // than a preview (the table was already exactly as wide as its card) and why the
+    // tooltip still has to be readable (an epigraph is recognised from a paragraph style,
+    // so "did it read the right paragraph" is the question a tick cannot answer).
+    let epigraph = Column::new(
+        "epigraph",
+        tr!(import_document_col_epigraph()),
+        move |row: &PlanRowView, _cx: &CellContext| {
+            Box::new(EpigraphCell::new(row.epigraph.clone())) as Box<dyn Widget>
         },
     )
     .width(ColumnWidth::Fixed(80.0));
@@ -1136,7 +1166,10 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
             )
         },
     )
-    .width(ColumnWidth::Fixed(170.0));
+    // 170 → 140: the other thirty. This combo is empty on almost every row (see above) and
+    // its longest label still fits — the width was headroom, and the epigraph column is a
+    // better use of it than headroom on a control most imports never show.
+    .width(ColumnWidth::Fixed(140.0));
 
     let has_rows = {
         let s = source.clone();
@@ -1164,6 +1197,7 @@ fn plan_tree(vm: &ImportDocumentViewModel) -> impl Widget + use<> {
                 .add_column(words)
                 .add_column(breaks)
                 .add_column(comments)
+                .add_column(epigraph)
                 .row_height(30.0),
         )
 }
@@ -1185,6 +1219,7 @@ mod tests {
             title: title.into(),
             stripped_ordinal: None,
             djot: "Prose.".into(),
+            epigraph: String::new(),
             scene_breaks: breaks,
             word_count: 1,
             origin: "a.md".into(),
@@ -1263,6 +1298,34 @@ mod tests {
         assert!(
             first_containing(&tree, id, "DestinationPickerView").is_some(),
             "the review step mounted no destination picker"
+        );
+    }
+
+    /// A plan carrying an epigraph still builds and lays out.
+    ///
+    /// The epigraph column is the ninth on the review table and the only one whose cell
+    /// text is derived rather than read straight off the row, so it is the one that can
+    /// throw while every other row renders. `epigraph_preview`'s own tests prove *what* it
+    /// says; this proves the table survives saying it.
+    #[test]
+    fn a_plan_carrying_an_epigraph_still_mounts_its_review_tree() {
+        let app_ctx = Rc::new(AppContext::new());
+        let vm = ImportDocumentViewModel::new(app_ctx.clone(), AppIds::default());
+        let mut chapter = planned(1, "Chapter One", CreateType::Chapter, 0);
+        chapter.epigraph = "> {semantic_role=epigraph}\n> Every winter asks twice.".into();
+        vm.on_plan_ready(
+            &ImportPlan {
+                rows: vec![planned(0, "Book", CreateType::Book, 0), chapter],
+                diagnostics: Vec::new(),
+            },
+            vec![1, 2],
+            vec![(1, CreateType::Book), (2, CreateType::Chapter)],
+        );
+
+        let (tree, id) = mount(vm, &app_ctx);
+        assert!(
+            first_containing(&tree, id, "TreeTableView").is_some(),
+            "the review step mounted no plan tree"
         );
     }
 
@@ -1688,4 +1751,5 @@ mod tests {
                 .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
         }
     }
+
 }

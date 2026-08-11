@@ -56,6 +56,11 @@ pub struct PlanRowView {
     /// what was taken away rather than discovering it later.
     pub stripped_ordinal: Option<String>,
     pub djot: String,
+    /// The epigraph this row heads, already Djot, or empty for the great majority of
+    /// rows. Carried through the review whole, like `comments` and for the same reason:
+    /// the review edits titles and types, never a row's text, and re-reading the file at
+    /// apply time to recover it would mean scanning every document twice.
+    pub epigraph: String,
     pub word_count: usize,
     pub scene_breaks: usize,
     /// The editors' comments that came with this row's prose, carried whole rather
@@ -169,6 +174,9 @@ impl ImportPlanSource {
             title: title.into(),
             stripped_ordinal: None,
             djot: String::new(),
+            // A container the writer added here heads nothing that was in a file, so it
+            // has no quotation to carry.
+            epigraph: String::new(),
             word_count: 0,
             scene_breaks: 0,
             comments: Vec::new(),
@@ -351,6 +359,7 @@ fn view_of(key: PlanRowKey, row: &PlannedRow) -> PlanRowView {
         title: row.title.clone(),
         stripped_ordinal: row.stripped_ordinal.clone(),
         djot: row.djot.clone(),
+        epigraph: row.epigraph.clone(),
         word_count: row.word_count,
         scene_breaks: row.scene_breaks,
         comments: row.comments.clone(),
@@ -457,6 +466,7 @@ mod tests {
             title: title.into(),
             stripped_ordinal: None,
             djot: String::new(),
+            epigraph: String::new(),
             scene_breaks: 0,
             word_count: 0,
             origin: "a.md".into(),

@@ -2025,7 +2025,12 @@ features:
         # from anywhere else. They ride the plan for the same reason `comments` does -- the
         # writer reviews the plan and the UI hands it straight back, and re-deriving them at
         # apply time would mean re-reading every file.
-        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, scene_breaks: i64, word_count: i64, comments: Vec<ImportComment>, origin: String, included: bool, source_uid_tag: String, source_digest: String }"
+        # `epigraph` rides the plan for the same reason and is kept out of `djot` for a
+        # stronger one: it becomes a `ContentRole::EpigraphText` of its own, and a quotation
+        # folded into the prose is duplicated on every round trip and counted as manuscript
+        # words. Empty for every row that heads no quotation, and for every format that
+        # carries no style information to recognise one by.
+        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, epigraph: String, scene_breaks: i64, word_count: i64, comments: Vec<ImportComment>, origin: String, included: bool, source_uid_tag: String, source_digest: String }"
       - name: rows
         type: enum
         enum_name: DocumentImportRows
@@ -2179,7 +2184,14 @@ features:
         # review-time information but identity, and it is what lets a returning file update
         # the row it came from instead of landing beside it as a second copy. Empty for a row
         # that is genuinely new.
-        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String, comments: Vec<ImportComment>, source_uid_tag: String }"
+        #
+        # `epigraph` is the second exception, and a different one: it is not review-time
+        # information either, it is a *second `Content`*. A Part's or a Chapter's epigraph
+        # is stored under `ContentRole::EpigraphText`, never inside `djot` -- folding the
+        # two together is exactly the bug the reader-side fix exists to close, since it
+        # duplicates the quotation on every round trip and adds its words to the
+        # manuscript's count. Empty for every row that heads no quotation, which is most.
+        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String, epigraph: String, comments: Vec<ImportComment>, source_uid_tag: String }"
         # A row the returning file brings home to one the project already has, named by the
         # round-trip mark it carried. `Create` makes a row; this touches one.
         #
@@ -2188,7 +2200,13 @@ features:
         #
         # `replace_prose` false is the case the whole feature exists for -- bring the editor's
         # remarks home and do not touch a word of the manuscript.
-        - "Update { target_uid_tag: String, replace_prose: bool, djot: String, comments: Vec<ImportComment> }"
+        #
+        # `epigraph` rides `replace_prose` with the manuscript, because it is manuscript: an
+        # editor who corrected the attribution under a chapter's epigraph edited the book. It
+        # is written only when non-empty, since an absent epigraph in a returning file means
+        # "this export did not carry one" (`Preset::include_epigraphs` is a choice made on the
+        # way out) far more often than it means "delete the one you have".
+        - "Update { target_uid_tag: String, replace_prose: bool, djot: String, epigraph: String, comments: Vec<ImportComment> }"
       - name: rows
         type: enum
         enum_name: ApplyImportRows

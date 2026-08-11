@@ -86,6 +86,7 @@ use docx_rs::{
 use crate::block::{SourceBlock, SourceDocument};
 use crate::diagnostics::ImportDiagnostic;
 use crate::scanner::SourceScanner;
+use crate::sources::rich;
 use crate::sources::rich::{
     CommentMark, OpenMark, ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply,
     RichRowMark, Run, RunStyle, assemble, attach_comment_marks,
@@ -233,6 +234,37 @@ impl StyleTable {
         for found in chain.iter().rev() {
             apply_run_property(&found.run_property, style);
         }
+    }
+
+    /// What a paragraph style claims this paragraph is — an epigraph, a quotation, or
+    /// nothing — following `w:basedOn` exactly as [`Self::apply_style_chain`] does.
+    ///
+    /// **Style ids, never style names.** This module's own heading rule says why: Word
+    /// localizes a style's display name ("Quote" is "Citation" in French Word, "Zitat" in
+    /// German) and does not localize its `w:styleId`. Matching the name would work on
+    /// every English manuscript and quietly fail on the first one that is not.
+    ///
+    /// The chain matters because a returning file's paragraph may reference a style
+    /// derived from ours rather than ours itself — the same reason the run-formatting
+    /// walk above follows it — and because Word's own `IntenseQuote` is `basedOn`
+    /// `Quote` in many templates.
+    ///
+    /// The vocabulary itself lives in [`rich::styled_as`], shared with the ODT scanner so
+    /// the two containers cannot disagree about the same manuscript.
+    fn quoted_as(&self, property: &ParagraphProperty) -> Option<rich::StyledAs> {
+        let mut current = property.style.as_ref().map(|s| s.val.clone());
+        let mut guard = 0;
+        while let Some(id) = current {
+            if let Some(styled) = rich::styled_as(&id) {
+                return Some(styled);
+            }
+            current = self.based_on(self.by_id.get(&id)?);
+            guard += 1;
+            if guard > 32 {
+                return None;
+            }
+        }
+        None
     }
 
     /// The style id a style is based on.
@@ -1018,7 +1050,13 @@ impl<'a> Walker<'a> {
                         .map(|l| l.val.min(8) as u8)
                         .unwrap_or(0),
                 },
-                None => ParagraphKind::Body,
+                // A list item stays a list item even inside a quotation: the
+                // numbering is the stronger claim, and Djot can only carry one of
+                // the two on a paragraph. An epigraph is never a list in practice.
+                None => self
+                    .styles
+                    .quoted_as(property)
+                    .map_or(ParagraphKind::Body, rich::kind_for_style),
             },
         };
 

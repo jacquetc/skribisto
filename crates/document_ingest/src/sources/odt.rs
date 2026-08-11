@@ -62,6 +62,7 @@ use roxmltree::{Document, Node};
 use crate::block::SourceDocument;
 use crate::diagnostics::ImportDiagnostic;
 use crate::scanner::SourceScanner;
+use crate::sources::rich;
 use crate::sources::rich::{
     CommentMark, OpenMark, ParagraphKind, RichAnnotation, RichBlock, RichDocument, RichReply,
     RichRowMark, Run, RunStyle, assemble, attach_comment_marks,
@@ -426,6 +427,35 @@ impl StyleTable {
         None
     }
 
+    /// What a paragraph style claims this paragraph is — an epigraph, a quotation, or
+    /// nothing — walking the inheritance chain the same way [`Self::outline_level`] does.
+    ///
+    /// The chain is the whole of it. Every paragraph this workspace's own ODT writer emits
+    /// with an override carries an **automatic** style (`P1`) whose only link to the named
+    /// `Epigraph` is its `style:parent-style-name`; checking the applied name alone would
+    /// recognise an epigraph in a default-options export (where `paragraph_style` shortcuts
+    /// to the parent) and miss it in every other, which is the worst of both.
+    ///
+    /// Matching on `style:name` rather than a style id is correct *for ODF specifically*:
+    /// unlike OOXML it does not localize style names, so the stored name is the stable
+    /// identifier here. See [`rich::styled_as`], which owns the vocabulary both scanners
+    /// share.
+    fn quoted_as(&self, name: &str) -> Option<rich::StyledAs> {
+        let mut current = Some(name.to_string());
+        let mut guard = 0;
+        while let Some(n) = current {
+            if let Some(styled) = rich::styled_as(&n) {
+                return Some(styled);
+            }
+            current = self.para.get(&n)?.parent.clone();
+            guard += 1;
+            if guard > 32 {
+                return None;
+            }
+        }
+        None
+    }
+
     fn is_rule(&self, name: &str) -> bool {
         let mut current = Some(name.to_string());
         let mut guard = 0;
@@ -651,7 +681,19 @@ impl<'a> Walker<'a> {
                                 level: level.max(1),
                             },
                         ),
-                        _ => self.paragraph(child, ParagraphKind::Body),
+                        // …and a paragraph whose style names it an epigraph or a quotation is
+                        // that, on the same terms: a value the document states about itself,
+                        // asked *after* the outline level so a style that somehow declared
+                        // both is still read as the heading it says it is.
+                        _ => {
+                            let styled = child
+                                .attribute((NS_TEXT, "style-name"))
+                                .and_then(|s| self.styles.quoted_as(s));
+                            self.paragraph(
+                                child,
+                                styled.map_or(ParagraphKind::Body, rich::kind_for_style),
+                            )
+                        }
                     }
                 }
                 (Some(NS_TEXT), "list") => self.walk_list(child, 0),

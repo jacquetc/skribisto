@@ -161,12 +161,91 @@ pub enum ParagraphKind {
         level: u8,
     },
     Body,
+    /// A blockquote's paragraph, recognised from the `Quote` **named paragraph style**
+    /// both this workspace's writers apply (`export_docx_uc::QUOTE_STYLE_ID`,
+    /// `odt_render::named_styles_xml`) and Word ships as a built-in.
+    ///
+    /// Never inferred from indentation. An indent is a measurement — verse, a Tab
+    /// somebody pressed, and a quotation are indistinguishable by it — so reading one as
+    /// a quotation would invent structure from layout, which this crate's block model
+    /// refuses by rule. A style *name* is the document stating what the paragraph is, in
+    /// the same way `text:outline-level` states a heading depth.
     Quote,
+    /// A blockquote the source named as an **epigraph** — the quotation set at the head
+    /// of a part or a chapter, from the `Epigraph`/`EpigraphAttribution` named styles.
+    ///
+    /// Separate from [`ParagraphKind::Quote`] because it is not the row's prose at all:
+    /// an epigraph is quoted matter belonging to `ContentRole::EpigraphText`, its words
+    /// are not the manuscript's, and it must not be counted or concatenated into a
+    /// scene. The pipeline lifts it out of the prose stream entirely — see
+    /// [`crate::block::SourceBlock::Epigraph`].
+    Epigraph,
     /// `depth` is 0-based, so a top-level bullet is 0.
     ListItem {
         ordered: bool,
         depth: u8,
     },
+}
+
+/// What a paragraph style says the paragraph *is*, when it says anything at all.
+///
+/// The one table both containers consult, so `.docx` and `.odt` cannot come to
+/// different conclusions about the same manuscript — the same reason every other
+/// post-"here are the paragraphs" decision lives in this module.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StyledAs {
+    Epigraph,
+    Quote,
+}
+
+/// Read a paragraph style's stable identifier as a claim about the paragraph.
+///
+/// **What "stable identifier" means differs by format, and the difference is the point.**
+/// OOXML localizes a style's *name* ("Quote" is "Citation" in French Word) but not its
+/// `w:styleId`, so the DOCX scanner passes ids here — the same reasoning its heading code
+/// already states for `Heading1`. ODF does not localize at all: `style:name` is the stored
+/// English name whatever the UI shows, so the ODT scanner passes names. Neither passes
+/// something a locale can move.
+///
+/// Two families are recognised:
+///
+/// * **Ours.** `Epigraph` / `EpigraphAttribution` / `Quote` — what `text-document`'s DOCX and
+///   ODT writers apply. These are what closes the round trip, and they survive an editor's
+///   save (measured against a real LibreOffice save, unlike the `skrb:uid` attribute that
+///   `round_trip`'s module doc records being deleted).
+/// * **The host applications' own.** LibreOffice's `Quotations` and Word's `IntenseQuote` /
+///   `BlockText` are the styles a writer gets by pressing the block-quote button in the
+///   application they actually wrote the manuscript in. Reading them is the same move as
+///   reading `style:default-outline-level` off a novel template's chapter style: not name
+///   *guessing*, but the document stating what a paragraph is in the vocabulary its own
+///   producer uses.
+///
+/// Matching folds case and drops separators, so `Epigraph Attribution`, `epigraph-attribution`
+/// and ODF's own `Epigraph_20_Attribution` escape all answer alike. `_20_` (ODF's escape for a
+/// space) is removed *before* the fold, or it would survive it as a literal `20`.
+pub fn styled_as(identifier: &str) -> Option<StyledAs> {
+    let folded: String = identifier
+        .replace("_20_", "")
+        .chars()
+        .filter(|c| c.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect();
+    match folded.as_str() {
+        "epigraph" | "epigraphattribution" => Some(StyledAs::Epigraph),
+        "quote" | "quotations" | "intensequote" | "blocktext" => Some(StyledAs::Quote),
+        _ => None,
+    }
+}
+
+/// The paragraph kind a resolved style verdict produces.
+///
+/// A tiny helper rather than two `match`es, because the two scanners reaching different
+/// answers here is exactly the class of drift this module exists to prevent.
+pub fn kind_for_style(styled: StyledAs) -> ParagraphKind {
+    match styled {
+        StyledAs::Epigraph => ParagraphKind::Epigraph,
+        StyledAs::Quote => ParagraphKind::Quote,
+    }
 }
 
 /// One block of a rich document.
@@ -352,12 +431,24 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
 
     // The prose run being accumulated: (rich index, html, plain text).
     let mut pending: Vec<(usize, String, String)> = Vec::new();
+    // The epigraph run being accumulated, in the same shape. Separate because an
+    // epigraph becomes a block of its own; the two never hold members at once, since
+    // each is flushed the moment the other starts.
+    let mut pending_epigraph: Vec<(usize, String, String)> = Vec::new();
 
     for (index, block) in doc.blocks.iter().enumerate() {
         if block.is_blank() {
             continue;
         }
-        match classify(block) {
+        let boundary = classify(block);
+        // An epigraph run ends at the first block that is not part of it, and the prose
+        // run ends where an epigraph starts. Flushing both at the boundary is what keeps
+        // `out.blocks` in document order — which is the whole basis on which `plan`
+        // decides, from adjacency alone, which heading an epigraph belongs to.
+        if !matches!(boundary, Boundary::Epigraph) {
+            flush_epigraph(&mut pending_epigraph, out, &mut placement)?;
+        }
+        match boundary {
             Boundary::SceneBreak(tier) => {
                 flush(&mut pending, out, &mut placement)?;
                 placement[index] = Some(Placement {
@@ -386,11 +477,18 @@ pub fn assemble(doc: &RichDocument, out: &mut SourceDocument) -> Result<()> {
                     p.exact = false;
                 }
             }
+            Boundary::Epigraph => {
+                // The prose above it is closed first, so the epigraph block lands
+                // between the two runs exactly where the document put it.
+                flush(&mut pending, out, &mut placement)?;
+                pending_epigraph.push((index, html_of(block), block.plain_text()));
+            }
             Boundary::Prose => {
                 pending.push((index, html_of(block), block.plain_text()));
             }
         }
     }
+    flush_epigraph(&mut pending_epigraph, out, &mut placement)?;
     flush(&mut pending, out, &mut placement)?;
 
     // Row marks, rebased onto the neutral block model the same way an annotation is.
@@ -501,6 +599,7 @@ enum Boundary {
     Heading { level: u8, text: String },
     SceneBreak(scene_break::SceneBreakTier),
     Table,
+    Epigraph,
     Prose,
 }
 
@@ -526,6 +625,10 @@ fn classify(block: &RichBlock) -> Boundary {
             level: *level,
             text: text.trim().to_string(),
         },
+        RichBlock::Paragraph {
+            kind: ParagraphKind::Epigraph,
+            ..
+        } => Boundary::Epigraph,
         RichBlock::Paragraph { .. } => Boundary::Prose,
     }
 }
@@ -537,19 +640,62 @@ fn flush(
     out: &mut SourceDocument,
     placement: &mut [Option<Placement>],
 ) -> Result<()> {
+    flush_run(pending, out, placement, RunKind::Prose)
+}
+
+/// The same, for a run of epigraph-styled paragraphs — one `<blockquote>` around the
+/// whole run, landing in a [`SourceBlock::Epigraph`].
+fn flush_epigraph(
+    pending: &mut Vec<(usize, String, String)>,
+    out: &mut SourceDocument,
+    placement: &mut [Option<Placement>],
+) -> Result<()> {
+    flush_run(pending, out, placement, RunKind::Epigraph)
+}
+
+/// Which of the two block kinds a flushed run becomes.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RunKind {
+    Prose,
+    Epigraph,
+}
+
+/// Convert the accumulated run into one block and record where each of its members
+/// landed inside it.
+///
+/// One function for both kinds because the offset arithmetic below is the part that
+/// must not diverge: it is what a comment's position is rebased through, and two
+/// copies of it would eventually disagree about where a paragraph starts.
+fn flush_run(
+    pending: &mut Vec<(usize, String, String)>,
+    out: &mut SourceDocument,
+    placement: &mut [Option<Placement>],
+    kind: RunKind,
+) -> Result<()> {
     if pending.is_empty() {
         return Ok(());
     }
     let members = std::mem::take(pending);
-    let html: String = members.iter().map(|(_, h, _)| h.as_str()).collect();
+    let inner: String = members.iter().map(|(_, h, _)| h.as_str()).collect();
+    // One quotation around the whole epigraph run, not one per paragraph — see
+    // `html_of`'s epigraph arm for why several would come back as several epigraphs.
+    let html = match kind {
+        RunKind::Prose => inner,
+        RunKind::Epigraph => format!("<blockquote>{inner}</blockquote>"),
+    };
     let (djot, text) = skrib_format::html_to_djot_and_text(&html)?;
     if djot.trim().is_empty() {
         return Ok(());
     }
     let source_block = out.blocks.len();
-    out.blocks.push(SourceBlock::Prose { djot, text });
-    let SourceBlock::Prose { text, .. } = &out.blocks[source_block] else {
-        unreachable!("just pushed a prose block");
+    out.blocks.push(match kind {
+        RunKind::Prose => SourceBlock::Prose { djot, text },
+        RunKind::Epigraph => SourceBlock::Epigraph { djot, text },
+    });
+    let (SourceBlock::Prose { text, .. } | SourceBlock::Epigraph { text, .. }) =
+        &out.blocks[source_block]
+    else {
+        unreachable!("just pushed a prose or epigraph block");
     };
 
     // Every block contributes one line, joined by one `\n` — but check it, because
@@ -801,7 +947,13 @@ fn html_of(block: &RichBlock) -> String {
                     let level = (*level).clamp(1, 6);
                     format!("<h{level}>{inner}</h{level}>")
                 }
-                ParagraphKind::Body => format!("<p>{inner}</p>"),
+                // An epigraph's own paragraphs are bare here: `flush_epigraph` wraps the
+                // whole run in **one** `<blockquote>`, so a two-paragraph quotation and its
+                // attribution line come back as one epigraph rather than three. Wrapping each
+                // separately (as `Quote` must, since consecutive quoted paragraphs in a scene
+                // are not necessarily one quotation) would export as three epigraphs on the
+                // next trip out — `render::mark_epigraph` marks every blockquote it finds.
+                ParagraphKind::Body | ParagraphKind::Epigraph => format!("<p>{inner}</p>"),
                 ParagraphKind::Quote => format!("<blockquote><p>{inner}</p></blockquote>"),
                 ParagraphKind::ListItem { ordered, depth } => {
                     // One `<li>` per block, nested by repeating the container.
@@ -1579,5 +1731,118 @@ mod tests {
 
         assert_eq!(annotations[0].length, 30, "a paragraph comment adopts it");
         assert_eq!(annotations[1].length, 4, "a ranged one keeps what it had");
+    }
+
+    // ── Style vocabulary ────────────────────────────────────────────────────
+
+    /// Both writers' own names, and the ODF escape for the one that contains a space.
+    #[test]
+    fn our_own_style_names_are_recognised_however_they_are_spelled() {
+        for name in [
+            "Epigraph",
+            "EpigraphAttribution",
+            "Epigraph Attribution",
+            "Epigraph_20_Attribution",
+            "epigraph-attribution",
+        ] {
+            assert_eq!(
+                styled_as(name),
+                Some(StyledAs::Epigraph),
+                "{name} names an epigraph"
+            );
+        }
+        assert_eq!(styled_as("Quote"), Some(StyledAs::Quote));
+    }
+
+    /// The styles a writer gets from the block-quote button in the application they
+    /// actually wrote the manuscript in. Reading them is the same move as reading
+    /// `style:default-outline-level` off a novel template's chapter style: the document
+    /// stating what a paragraph is, in its own producer's vocabulary.
+    #[test]
+    fn the_host_applications_own_quote_styles_are_recognised() {
+        for name in ["Quotations", "IntenseQuote", "Intense Quote", "BlockText"] {
+            assert_eq!(styled_as(name), Some(StyledAs::Quote), "{name} is a quote");
+        }
+    }
+
+    /// Everything else is body text. A style whose name merely *contains* one of the
+    /// words is not a match: folding is over the whole name, not a substring search, so a
+    /// writer's own "Quotebox Caption" stays the caption it is.
+    #[test]
+    fn an_unrelated_style_claims_nothing() {
+        for name in [
+            "Standard",
+            "Heading1",
+            "Normal",
+            "Quotebox Caption",
+            "Epigraphy",
+            "",
+        ] {
+            assert_eq!(styled_as(name), None, "{name:?} must claim nothing");
+        }
+    }
+
+    /// An epigraph run becomes **one** block holding one blockquote, however many
+    /// paragraphs it had.
+    ///
+    /// One quotation per blockquote is what `render::mark_epigraph` assumes on the way
+    /// back out — it marks every blockquote it finds — so a two-paragraph epigraph split
+    /// into two quotations here would export as two epigraphs on the next trip, and four
+    /// on the one after that.
+    #[test]
+    fn an_epigraph_run_becomes_one_block_holding_one_quotation() {
+        let doc = assemble_doc(
+            vec![
+                RichBlock::Paragraph {
+                    kind: ParagraphKind::Epigraph,
+                    runs: vec![Run::plain("All happy families are alike.")],
+                },
+                RichBlock::Paragraph {
+                    kind: ParagraphKind::Epigraph,
+                    runs: vec![Run::plain("— Tolstoy")],
+                },
+            ],
+            Vec::new(),
+        );
+
+        let blocks: Vec<&SourceBlock> = doc.blocks.iter().collect();
+        assert_eq!(blocks.len(), 1, "one run, one block: {blocks:?}");
+        let SourceBlock::Epigraph { djot, .. } = blocks[0] else {
+            panic!("expected an epigraph block, got {blocks:?}");
+        };
+        assert_eq!(
+            djot.lines().filter(|l| l.starts_with('>')).count(),
+            2,
+            "both paragraphs must sit inside the same quotation: {djot:?}"
+        );
+    }
+
+    /// An epigraph splits the prose around it rather than being lifted out of the middle
+    /// of it, so `out.blocks` stays in document order — which is the entire basis on
+    /// which `plan` decides, from adjacency, which heading the quotation belongs to.
+    #[test]
+    fn an_epigraph_keeps_its_place_in_document_order() {
+        let doc = assemble_doc(
+            vec![
+                RichBlock::body(vec![Run::plain("Before.")]),
+                RichBlock::Paragraph {
+                    kind: ParagraphKind::Epigraph,
+                    runs: vec![Run::plain("The quotation.")],
+                },
+                RichBlock::body(vec![Run::plain("After.")]),
+            ],
+            Vec::new(),
+        );
+
+        let shape: Vec<&str> = doc
+            .blocks
+            .iter()
+            .map(|b| match b {
+                SourceBlock::Prose { text, .. } => text.as_str(),
+                SourceBlock::Epigraph { .. } => "<epigraph>",
+                _ => "<other>",
+            })
+            .collect();
+        assert_eq!(shape, vec!["Before.", "<epigraph>", "After."]);
     }
 }
