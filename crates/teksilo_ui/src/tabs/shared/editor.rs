@@ -18,7 +18,9 @@ use teksilo::text_document::TextDocument;
 use teksilo::text_document::{Color as DocColor, HighlightFormat};
 use teksilo::tokens::{BorderRole, CornerRadius, SurfaceRole};
 use teksilo::widgets::SplitterModel;
-use teksilo::widgets::rich_text::{EditorHandle, RichTextEditor, ScrollPolicy};
+use teksilo::widgets::rich_text::{
+    EditCommandKind, EditorHandle, RichTextEditor, ScrollPolicy,
+};
 use teksilo::widgets::{
     Button, ButtonVariant, Checkbox, Expand, FixedSize, GroupHeader, HStack, IconButton,
     IconWidget, MaxSize, MenuItem, MenuList, Padding, Panel, RectWidget, Switcher, TextInput,
@@ -122,6 +124,11 @@ pub fn writing_column(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    // The writing games this project is playing (currently "Always forward"),
+    // which may freeze this surface while one is on. `None` on the surfaces
+    // built with no app around them (the widget tests). Which surfaces a game
+    // covers is the game's own decision, taken against this editor's kind.
+    games: Option<crate::view_models::WritingGamesViewModel>,
     // Where this document's caret should start, and the ports to publish this
     // editor's handle into so the position can be read back. `None` for every
     // surface that is not a tab's *main* prose column — a stream shows one
@@ -341,6 +348,9 @@ pub fn writing_column(
         EditorKind::Prose,
         format,
     );
+    if let Some(g) = games {
+        bound = bound.with_writing_games(g);
+    }
     if let Some(tw) = typewriter {
         bound = bound.with_typewriter(tw);
     }
@@ -424,9 +434,13 @@ fn image_context_menu(handle: EditorHandle) -> MenuList {
     let cut = handle.clone();
     let copy = handle.clone();
     let paste = handle;
-    MenuList::new()
-        .item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)))
-        .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
+    // Cutting a picture out is still taking something away — same gate as the
+    // prose menu's Cut, for the same reason.
+    let mut menu = MenuList::new();
+    if cut.command_filter().accepts(EditCommandKind::Cut) {
+        menu = menu.item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)));
+    }
+    menu.item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
         .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
         .separator()
         .item(
@@ -559,8 +573,15 @@ fn editor_context_menu(
     let paste = handle.clone();
     let paste_plain = handle.clone();
     let select = handle;
+    // Cut takes prose away, so it answers to the same policy Ctrl+X does. The
+    // menu is rebuilt on every right-click, so reading the filter here is live —
+    // and `EditorHandle::cut` deliberately bypasses the keyboard layer (it is the
+    // API paste and version-restore go through), which is exactly why this call
+    // site has to ask the question itself rather than assume the editor will.
+    if cut.command_filter().accepts(EditCommandKind::Cut) {
+        list = list.item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)));
+    }
     list = list
-        .item(MenuItem::new(tr!(menu_cut())).on_activate_fn(move |ctx| cut.cut(ctx)))
         .item(MenuItem::new(tr!(menu_copy())).on_activate_fn(move |ctx| copy.copy(ctx)))
         .item(MenuItem::new(tr!(menu_paste())).on_activate_fn(move |ctx| paste.paste(ctx)))
         .item(
@@ -774,6 +795,11 @@ pub fn synopsis_editor(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    // The writing games this project is playing (currently "Always forward"),
+    // which may freeze this surface while one is on. `None` on the surfaces
+    // built with no app around them (the widget tests). Which surfaces a game
+    // covers is the game's own decision, taken against this editor's kind.
+    games: Option<crate::view_models::WritingGamesViewModel>,
     // The synopsis is a *different* `Content` row than the body, so it carries
     // its own binding — anchoring both to "the item" would merge two distinct
     // annotations into one.
@@ -864,6 +890,9 @@ pub fn synopsis_editor(
         EditorKind::Synopsis,
         format,
     );
+    if let Some(g) = games {
+        bound = bound.with_writing_games(g);
+    }
     // Only the page-sized synopsis pins. `Compact` is a six-line box with its
     // own scrollbar — holding a line at a fixed height inside it would mean
     // nothing, and would fight the box's own caret-follow.
@@ -931,6 +960,11 @@ pub fn card_synopsis_editor(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    // The writing games this project is playing (currently "Always forward"),
+    // which may freeze this surface while one is on. `None` on the surfaces
+    // built with no app around them (the widget tests). Which surfaces a game
+    // covers is the game's own decision, taken against this editor's kind.
+    games: Option<crate::view_models::WritingGamesViewModel>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
@@ -975,7 +1009,7 @@ pub fn card_synopsis_editor(
     // caret in it after mount — a descendant walk from outside cannot reach it
     // (see `SynopsisModal::build`).
     let handle = editor.handle();
-    let bound = TypographyBoundEditor::new(
+    let mut bound = TypographyBoundEditor::new(
         editor,
         typo.clone(),
         spell,
@@ -983,6 +1017,9 @@ pub fn card_synopsis_editor(
         EditorKind::Synopsis,
         format,
     );
+    if let Some(g) = games {
+        bound = bound.with_writing_games(g);
+    }
     let widget = match caret {
         Some(band) => bound.with_caret_band(band),
         None => bound,
@@ -1109,6 +1146,11 @@ pub fn synopsis_section(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    // The writing games this project is playing (currently "Always forward"),
+    // which may freeze this surface while one is on. `None` on the surfaces
+    // built with no app around them (the widget tests). Which surfaces a game
+    // covers is the game's own decision, taken against this editor's kind.
+    games: Option<crate::view_models::WritingGamesViewModel>,
     comments: Option<crate::comments::binding::CommentBinding>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
@@ -1142,6 +1184,7 @@ pub fn synopsis_section(
                             // Compact: a bounded six-line box, never pinned.
                             Option::None,
                             caret,
+                            games,
                             comments,
                             images.clone(),
                             read_only,
@@ -1181,6 +1224,11 @@ pub fn synopsis_column(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    // The writing games this project is playing (currently "Always forward"),
+    // which may freeze this surface while one is on. `None` on the surfaces
+    // built with no app around them (the widget tests). Which surfaces a game
+    // covers is the game's own decision, taken against this editor's kind.
+    games: Option<crate::view_models::WritingGamesViewModel>,
     comments: Option<crate::comments::binding::CommentBinding>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
@@ -1227,6 +1275,7 @@ pub fn synopsis_column(
                     format,
                     typewriter,
                     caret,
+                    games,
                     comments,
                     images.clone(),
                     read_only,
@@ -1257,6 +1306,11 @@ pub fn writing_section(
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
     caret: Option<crate::view_models::CaretBand>,
+    // The writing games this project is playing (currently "Always forward"),
+    // which may freeze this surface while one is on. `None` on the surfaces
+    // built with no app around them (the widget tests). Which surfaces a game
+    // covers is the game's own decision, taken against this editor's kind.
+    games: Option<crate::view_models::WritingGamesViewModel>,
     view_state: Option<crate::view_models::ViewStateBinding>,
     comments: Option<crate::comments::binding::CommentBinding>,
     // Forwarded straight to [`writing_column`] — see its own note.
@@ -1288,6 +1342,7 @@ pub fn writing_section(
             format,
             typewriter,
             caret,
+            games,
             view_state,
             comments,
             footnotes,
@@ -1622,6 +1677,11 @@ pub fn side_synopsis_editor(
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
     caret: Option<crate::view_models::CaretBand>,
+    // The writing games this project is playing (currently "Always forward"),
+    // which may freeze this surface while one is on. `None` on the surfaces
+    // built with no app around them (the widget tests). Which surfaces a game
+    // covers is the game's own decision, taken against this editor's kind.
+    games: Option<crate::view_models::WritingGamesViewModel>,
     // Threaded like every other synopsis placement. Left at `None` this column
     // would be the one surface in the app where a synopsis quietly cannot be
     // commented on — and it is a *placement* of the same `Content` row, not a
@@ -1646,6 +1706,7 @@ pub fn side_synopsis_editor(
         format,
         None,
         caret,
+        games,
         comments,
         images,
         read_only,
@@ -2452,6 +2513,11 @@ struct TypographyBoundEditor {
     /// The handle this editor was mounted with, kept **only** so `Drop` can retire the
     /// band — see there for why nothing else may.
     banded: Option<EditorHandle>,
+    /// The writing games this project is playing, if any. Read live on every
+    /// change so switching the game on reaches editors that are already mounted —
+    /// which is the whole point: a writer turns it on *while looking at the page*.
+    /// `None` on surfaces built with no app around them (the widget tests).
+    games: Option<crate::view_models::WritingGamesViewModel>,
     /// This editor's footnote door plus the document it shows, for the *outward*
     /// half of the two-way link: the caret's position is reported so the dock can
     /// highlight the note the writer is standing on. `None` on every surface with
@@ -2481,8 +2547,21 @@ impl TypographyBoundEditor {
             typewriter: None,
             caret: None,
             banded: None,
+            games: None,
             footnotes: None,
         }
+    }
+
+    /// Let this editor be frozen by a writing game (currently "Always forward").
+    ///
+    /// Opt-in for the same reason the others are: a surface built with no app
+    /// behind it has no game to read. Which surfaces a game *covers* is the
+    /// game's own decision, taken against this editor's [`EditorKind`] — so a
+    /// caller only says "this editor is part of the app", never "this editor is
+    /// prose" a second time.
+    fn with_writing_games(mut self, games: crate::view_models::WritingGamesViewModel) -> Self {
+        self.games = Some(games);
+        self
     }
 
     /// Pin this editor's caret line per the shared typewriter setting. Opt-in,
@@ -2628,6 +2707,35 @@ impl Widget for TypographyBoundEditor {
                 // an open band follow a light/dark switch.
                 ctx.effect(&band.settings.color, move |_| push_caret_band(&h, &b));
             }
+        }
+        // Writing games. Pushed once up front so an editor built while a game is
+        // already being played is frozen from its first keystroke, then re-pushed
+        // whenever the activation *or* either "which surfaces" option changes —
+        // three separate effects, because a combined `zip` is a derived signal and
+        // `observe` panics on one (the same reason typography and the typewriter
+        // register per-field effects above).
+        //
+        // The whole rule lives in the view-model's `filter_for`: this only asks
+        // "what filter should an editor of my kind be running under now?" and
+        // hands the answer to teksilo, which owns the far harder half — which of
+        // its commands take text away, including a same-editor drag-move and a
+        // context-menu Cut that no application-level key handler would catch.
+        if let Some(games) = self.games.clone() {
+            let kind = self.kind;
+            let push = {
+                let (h, g) = (handle.clone(), games.clone());
+                move || h.set_command_filter(g.filter_for(kind))
+            };
+            push();
+            {
+                let push = push.clone();
+                ctx.effect(&games.always_forward(), move |_| push());
+            }
+            {
+                let push = push.clone();
+                ctx.effect(&games.forward_in_prose(), move |_| push());
+            }
+            ctx.effect(&games.forward_in_synopsis(), move |_| push());
         }
         // Caret-aware spell-check: feed this view's focus + caret and drive the per-frame recompute.
         if let Some(spell) = self.spell.clone() {
@@ -2829,6 +2937,7 @@ mod frame_loop_tests {
     use super::*;
     use frontend::AppContext;
     use teksilo::core::widget_tree::WidgetTree;
+    use teksilo::widgets::rich_text::CommandFilter;
 
     use crate::app_ids::AppIds;
     use crate::models::TextReplacementRuleListModel;
@@ -2900,6 +3009,8 @@ mod frame_loop_tests {
             Some(session.clone()),
             None,
             None,
+            None,
+            // No app around this tree, so no writing game either.
             None,
             None,
             // No project around this tree, so no comment binding: the margin
@@ -2973,6 +3084,155 @@ mod frame_loop_tests {
             "the handle API is intentionally outside the read-only policy — a \
              command that must respect the trash has to check it itself",
         );
+    }
+
+    // ── writing games freeze the surfaces they cover ────────────────────────
+    //
+    // The app half of "Always forward". Teksilo owns *what* a frozen editor
+    // refuses (see its `forward_only_*` tests); these pin that Skribisto puts the
+    // right editors under it, that switching the game reaches editors that are
+    // **already mounted**, and that the per-surface options are honoured.
+
+    /// A prose column carrying a game, so the wiring under test is the real one.
+    fn prose_column_playing(
+        games: &crate::view_models::WritingGamesViewModel,
+    ) -> (EditorHandle, WidgetTree) {
+        let doc = TextDocument::new();
+        let find = crate::view_models::FindViewModel::new(doc.clone());
+        let col = writing_column(
+            &doc,
+            &Signal::new(700.0),
+            &typo(),
+            MAIN_MIN_LINES,
+            || {},
+            None,
+            Some(find.clone()),
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(games.clone()),
+            None,
+            None,
+            None,
+            None,
+            false,
+        );
+        let mut tree = WidgetTree::new();
+        tree.add(col);
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+        let handle = find
+            .editor_handle()
+            .expect("writing_column attached its handle");
+        (handle, tree)
+    }
+
+    #[test]
+    fn a_prose_editor_is_frozen_while_always_forward_is_played() {
+        let games = crate::view_models::WritingGamesViewModel::detached();
+        games.set_always_forward(true);
+        let (handle, _tree) = prose_column_playing(&games);
+        assert_eq!(
+            handle.command_filter(),
+            CommandFilter::ForwardOnly,
+            "an editor built while the game is on must be frozen from its first keystroke"
+        );
+    }
+
+    #[test]
+    fn a_prose_editor_is_untouched_while_no_game_is_played() {
+        let games = crate::view_models::WritingGamesViewModel::detached();
+        let (handle, _tree) = prose_column_playing(&games);
+        assert_eq!(handle.command_filter(), CommandFilter::All);
+    }
+
+    /// The case the feature exists for: a writer switches the game on *while
+    /// looking at the page*. The mounted editor must follow without a rebuild.
+    #[test]
+    fn switching_the_game_reaches_an_already_mounted_editor() {
+        let games = crate::view_models::WritingGamesViewModel::detached();
+        let (handle, mut tree) = prose_column_playing(&games);
+        assert_eq!(handle.command_filter(), CommandFilter::All);
+
+        games.set_always_forward(true);
+        frame(&mut tree);
+        assert_eq!(
+            handle.command_filter(),
+            CommandFilter::ForwardOnly,
+            "the effect must push the new filter onto the live editor"
+        );
+
+        games.set_always_forward(false);
+        frame(&mut tree);
+        assert_eq!(
+            handle.command_filter(),
+            CommandFilter::All,
+            "and give it back the moment the game ends"
+        );
+    }
+
+    /// Turning the prose option off releases the manuscript even mid-game — the
+    /// option is not merely read once when the game starts.
+    #[test]
+    fn the_prose_option_is_honoured_live() {
+        let games = crate::view_models::WritingGamesViewModel::detached();
+        games.set_always_forward(true);
+        let (handle, mut tree) = prose_column_playing(&games);
+        assert_eq!(handle.command_filter(), CommandFilter::ForwardOnly);
+
+        games.forward_in_prose().set(false);
+        frame(&mut tree);
+        assert_eq!(
+            handle.command_filter(),
+            CommandFilter::All,
+            "prose follows the prose option, not merely the activation"
+        );
+    }
+
+    /// The programmatic API stays open while a game is on — the same boundary the
+    /// trash gate draws, and the reason the replacement engines (smart
+    /// punctuation, the custom lexicon) keep working mid-game. They rewrite *for*
+    /// the writer through `EditorHandle`, which no command filter gates.
+    #[test]
+    fn a_game_stops_typing_and_not_the_programmatic_api() {
+        let games = crate::view_models::WritingGamesViewModel::detached();
+        games.set_always_forward(true);
+        let doc = TextDocument::new();
+        let find = crate::view_models::FindViewModel::new(doc.clone());
+        let col = writing_column(
+            &doc,
+            &Signal::new(700.0),
+            &typo(),
+            MAIN_MIN_LINES,
+            || {},
+            None,
+            Some(find.clone()),
+            None,
+            None,
+            None,
+            None,
+            None,
+            Some(games.clone()),
+            None,
+            None,
+            None,
+            None,
+            false,
+        );
+        let mut tree = WidgetTree::new();
+        tree.add(col);
+        tree.layout(SizeProposal::exact(900.0, 600.0));
+        let handle = find.editor_handle().expect("handle attached");
+
+        handle.insert_text("écrit");
+        frame(&mut tree);
+        assert_eq!(
+            plain(&doc),
+            "écrit",
+            "an engine writing through the handle is not what the game forbids"
+        );
+        assert_eq!(handle.command_filter(), CommandFilter::ForwardOnly);
     }
 
     /// The ungated surface is the same in that respect, so the test above is
@@ -3087,7 +3347,18 @@ mod tests {
         let _ =
             doc.set_djot_sync(&"A line of synopsis prose that says what happens.\n\n".repeat(60));
         let (editor, _handle) =
-            card_synopsis_editor(doc, test_typo(), || {}, None, None, None, None, None, None);
+            card_synopsis_editor(
+            doc,
+            test_typo(),
+            || {},
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        );
         let mut tree = WidgetTree::new();
         let id = tree.add(FixedSize::new().width(320.0).height(200.0).child(editor));
         // Propose an *unbounded* height, the way the corkboard's GridView tile does —
@@ -3121,6 +3392,8 @@ mod tests {
             None,
             None,
             None,
+            None,
+            // No app around this tree, so no writing game either.
             None,
             // No project around this tree, so no comment binding.
             None,
@@ -3316,6 +3589,8 @@ mod typewriter_tests {
             None,
             typewriter,
             caret,
+            // No app around this tree, so no writing game either.
+            None,
             None,
             None,
             // No project around this tree, so no footnote binding and no image

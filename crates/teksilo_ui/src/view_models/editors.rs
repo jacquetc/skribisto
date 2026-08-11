@@ -153,6 +153,9 @@ pub struct EditorsViewModel {
     /// This window's Format surfaces — threaded into every `ContentTab` so
     /// editors register with the right registry (never process-wide app_state).
     format: crate::view_models::FormatViewModel,
+    /// The writing games this project is playing (per-`Work` activation +
+    /// app-global options), handed to every tab this view-model builds.
+    writing_games: crate::view_models::WritingGamesViewModel,
 }
 
 impl EditorsViewModel {
@@ -180,6 +183,7 @@ impl EditorsViewModel {
         // Shared with the title-bar's Go menu — see `GoAvailability`'s own doc.
         go: GoAvailability,
         format: crate::view_models::FormatViewModel,
+        writing_games: crate::view_models::WritingGamesViewModel,
     ) -> Self {
         // Two equal panes; the side pane starts hidden (no divider) until split.
         // The Splitter sums *every* pane's `min_size` into its own intrinsic
@@ -208,6 +212,7 @@ impl EditorsViewModel {
             scene_focused,
             go,
             format,
+            writing_games,
             column_width,
             show_synopsis,
             synopsis_placement,
@@ -685,6 +690,7 @@ impl EditorsViewModel {
             distraction_free,
             self.distraction_free_width.clone(),
             self.format.clone(),
+            self.writing_games.clone(),
             // The **shared** Work save state, not a fresh one: a segment's edit
             // must bump the counter this window's close guard reads.
             self.save_state.handle(),
@@ -1649,6 +1655,7 @@ mod tests {
             Signal::new(620.0),
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
         )
     }
 
@@ -2178,6 +2185,7 @@ mod tests {
             Signal::new(620.0),
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
         );
         let ids_b = AppIds::new();
         let tree_expansion_b = crate::view_models::TreeExpansionViewModel::new(
@@ -2206,6 +2214,7 @@ mod tests {
             Signal::new(620.0),
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
         );
 
         // Window A has item 1 in its primary pane and item 2 in its side pane;

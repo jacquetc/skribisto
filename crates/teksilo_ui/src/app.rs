@@ -792,6 +792,8 @@ pub struct App {
     search: Option<SearchReplaceViewModel>,
     /// Stable id for the leading trash dock (third rail tab).
     trash_dock: DockWidgetId,
+    /// Stable id for the leading writing-games dock.
+    games_dock: DockWidgetId,
     comments_dock: DockWidgetId,
     doc_comments_dock: DockWidgetId,
     footnotes_dock: DockWidgetId,
@@ -911,6 +913,7 @@ impl App {
             comments: None,
             footnotes: None,
             trash_dock: DockWidgetId::from_raw(crate::docks::TRASH_DOCK_ID),
+            games_dock: DockWidgetId::from_raw(crate::docks::GAMES_DOCK_ID),
             comments_dock: DockWidgetId::from_raw(crate::docks::COMMENTS_DOCK_ID),
             doc_comments_dock: DockWidgetId::from_raw(crate::docks::DOC_COMMENTS_DOCK_ID),
             footnotes_dock: DockWidgetId::from_raw(crate::docks::FOOTNOTES_DOCK_ID),
@@ -1313,6 +1316,18 @@ impl Widget for App {
         let distraction_free_width = settings.distraction_free_width();
         let go_for_editors = self.go.clone();
         let format_for_editors = self.format.clone();
+        // The writing games: this project's session-only activation (Tier 2, off
+        // `WorkSession`, so a second window on the same Work agrees and a second
+        // open project does not) paired with the two app-global "which surfaces"
+        // settings. Assembled here because this is the one place both halves are
+        // in hand — the same shape as the typewriter and caret-band bundles above.
+        let writing_games_for_editors = crate::view_models::WritingGamesViewModel::new(
+            session.always_forward.clone(),
+            crate::view_models::WritingGameOptions::new(
+                settings.games_forward_prose(),
+                settings.games_forward_synopsis(),
+            ),
+        );
         let editors = self
             .editors
             .get_or_insert_with(|| {
@@ -1337,6 +1352,7 @@ impl Widget for App {
                     distraction_free_width,
                     go_for_editors,
                     format_for_editors,
+                    writing_games_for_editors,
                 )
             })
             .clone();
@@ -3011,6 +3027,7 @@ mod tests {
             Signal::new(620.0),
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
         )
     }
 

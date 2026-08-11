@@ -20,6 +20,12 @@ pub fn outline_icon() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/activities/outline.svg"))
 }
 
+/// The Writing-games activity icon: a nib travelling along a rule with the way
+/// ahead marked. Fronts the leading rail's Writing games dock.
+pub fn games_icon() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/activities/games.svg"))
+}
+
 /// The Search activity icon: a magnifier. Fronts the **leading** search &
 /// replace dock's rail (its query, options, and result list).
 pub fn search_icon() -> IconWidget {

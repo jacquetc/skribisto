@@ -100,7 +100,25 @@ const MAX_BLOCKQUOTE_UNWRAP: usize = 16;
 /// gate skips the one sync that mattered — leaving the dock showing plain text
 /// over a document that opens bold, or the previous editor's state after a
 /// switch between two documents that happen to agree on both numbers.
-const NEVER_SEEN: (u64, usize) = (u64::MAX, usize::MAX);
+///
+/// The third component is "may this editor step through its history" — the
+/// editor's command filter, folded in because a writing game switches it while
+/// the document and the caret both stand still. Without it the dedup gate below
+/// skips the only sync that mattered and the dock keeps offering an Undo button
+/// that does nothing.
+const NEVER_SEEN: (u64, usize, bool) = (u64::MAX, usize::MAX, false);
+
+/// May this editor step back through its own history?
+///
+/// `false` while a writing game freezes it — see `WritingGamesViewModel`. Read
+/// live from the editor rather than from the game, because the Format surfaces
+/// follow *whichever* editor holds the caret and only that editor knows the
+/// filter it was given.
+fn history_allowed(handle: &EditorHandle) -> bool {
+    handle
+        .command_filter()
+        .accepts(teksilo::widgets::rich_text::EditCommandKind::Undo)
+}
 
 /// What the caret is sitting in, and therefore which control groups make sense.
 ///
@@ -444,10 +462,11 @@ pub struct FormatViewModel {
     /// and blow up the first time a group changed.
     group_visible: GroupVisibility,
 
-    /// Last `(format_version, cursor_position)` seen by [`Self::refresh`], so a
-    /// per-frame call is nearly free when nothing has moved. [`NEVER_SEEN`]
-    /// when the mirrors hold nothing worth comparing against.
-    last_seen: Rc<Cell<(u64, usize)>>,
+    /// Last `(format_version, cursor_position, history_allowed)` seen by
+    /// [`Self::refresh`], so a per-frame call is nearly free when nothing has
+    /// moved. [`NEVER_SEEN`] when the mirrors hold nothing worth comparing
+    /// against.
+    last_seen: Rc<Cell<(u64, usize, bool)>>,
 }
 
 impl std::fmt::Debug for FormatViewModel {
@@ -850,10 +869,11 @@ impl FormatViewModel {
 
         let version = handle.format_version().get();
         let caret = handle.cursor_position_signal().get();
-        if (version, caret) == self.last_seen.get() {
+        let history = history_allowed(&handle);
+        if (version, caret, history) == self.last_seen.get() {
             return;
         }
-        self.last_seen.set((version, caret));
+        self.last_seen.set((version, caret, history));
         self.sync_from(&handle);
     }
 
@@ -869,6 +889,7 @@ impl FormatViewModel {
             self.last_seen.set((
                 handle.format_version().get(),
                 handle.cursor_position_signal().get(),
+                history_allowed(&handle),
             ));
             self.sync_from(&handle);
         } else {
@@ -893,8 +914,16 @@ impl FormatViewModel {
         let direction = direction_index(handle.get_direction());
         set_if_changed(&self.direction, direction);
         set_if_changed(&self.dir_rtl, direction == DIR_RTL);
-        set_if_changed(&self.can_undo, handle.can_undo().get());
-        set_if_changed(&self.can_redo, handle.can_redo().get());
+        // Undo/redo are gated on the editor's own command filter as well as on
+        // whether there is history to step through: a writing game
+        // ("Always forward") refuses them, and these buttons reach
+        // `EditorHandle::undo` directly — a path that never passes the keyboard
+        // layer. Folding the rule in here rather than at the two call sites means
+        // the Format dock's buttons and the Format menu's entries cannot disagree,
+        // and both go quiet the moment the focused editor is frozen.
+        let history = history_allowed(handle);
+        set_if_changed(&self.can_undo, handle.can_undo().get() && history);
+        set_if_changed(&self.can_redo, handle.can_redo().get() && history);
     }
 
     fn clear_mirrors(&self) {
@@ -1149,10 +1178,22 @@ impl FormatViewModel {
     // through the prose edits in the focused document.
 
     pub fn undo(&self) {
-        self.with_editor(|h| h.undo());
+        self.with_editor(|h| {
+            if h.command_filter()
+                .accepts(teksilo::widgets::rich_text::EditCommandKind::Undo)
+            {
+                h.undo();
+            }
+        });
     }
     pub fn redo(&self) {
-        self.with_editor(|h| h.redo());
+        self.with_editor(|h| {
+            if h.command_filter()
+                .accepts(teksilo::widgets::rich_text::EditCommandKind::Redo)
+            {
+                h.redo();
+            }
+        });
     }
 
     /// Run `command` against the current editor, then re-sync the mirrors.

@@ -120,6 +120,18 @@ pub struct WorkSession {
     pub workspace_layout: WorkspaceLayoutViewModel,
     pub tree_expansion: TreeExpansionViewModel,
     pub open_docs: OpenDocsStore,
+    /// Is this project playing the **Always forward** writing game right now?
+    ///
+    /// Tier 2 on purpose: two windows on one `Work` must agree about whether
+    /// Backspace works in the same document, while a second, simultaneously-open
+    /// project must be free to draft normally. Minted fresh here and never
+    /// persisted or restored — a commitment device that outlives the sitting it
+    /// was made in reads as a broken keyboard, exactly as `FocusViewModel`
+    /// argues for distraction-free mode. Paired with the app-global "which
+    /// surfaces" settings into a
+    /// [`WritingGamesViewModel`](crate::view_models::WritingGamesViewModel)
+    /// wherever both are in hand.
+    pub always_forward: Signal<bool>,
     /// `true` while a *backup file* is open under this Work (Save + auto-backup
     /// off; the file is read-only, the content is still editable). Minted fresh
     /// here — see the module doc's "Phase 3 correction" section — never passed
@@ -182,6 +194,10 @@ impl WorkSession {
         let backup_context: Signal<Option<BackupContext>> = Signal::new(None);
         // Fresh per Work — see `Self::unsaved`'s own doc (Scope E fix).
         let unsaved = Signal::new(false);
+
+        // Fresh per Work — never shared between two simultaneously-open
+        // projects, and never seeded from anything persisted.
+        let always_forward = Signal::new(false);
 
         let single_work = SingleWork::new(app_ctx.clone());
         let single_work_info = SingleWorkInfo::new(app_ctx.clone());
@@ -254,6 +270,7 @@ impl WorkSession {
             workspace_layout,
             tree_expansion,
             open_docs,
+            always_forward,
             backup_mode,
             backup_context,
             unsaved,

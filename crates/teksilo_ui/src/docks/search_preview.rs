@@ -53,11 +53,12 @@ impl RichTextEditorStyle for SeamlessEditorStyle {
 pub fn search_preview_dock(
     vm: SearchReplaceViewModel,
     format: FormatViewModel,
+    games: crate::view_models::WritingGamesViewModel,
     dock_id: DockWidgetId,
 ) -> DockWidget {
     DockWidget::new(dock_id, tr!(search_preview()), move |_id| {
         FocusScope::new(TraversalScopePolicy::Continue)
-            .child(PreviewBody::new(vm.clone(), format.clone()))
+            .child(PreviewBody::new(vm.clone(), format.clone(), games.clone()))
     })
     .icon(crate::icons::activity::search_preview_icon)
     .show_header(false)
@@ -69,6 +70,11 @@ pub fn search_preview_dock(
 struct PreviewBody {
     vm: SearchReplaceViewModel,
     format: FormatViewModel,
+    /// The writing games this project is playing. The preview is a **live view of
+    /// the same document** a scene tab shows, so a game that has frozen the
+    /// manuscript has to freeze it here too — otherwise the band is a way to
+    /// delete prose that Backspace refuses to delete two panes away.
+    games: crate::view_models::WritingGamesViewModel,
     child_id: Option<WidgetId>,
     /// The find-highlight layer over the previewed document — so the shown
     /// paragraph highlights the same query the result list matched. Recreated per
@@ -88,10 +94,15 @@ struct PreviewBody {
 }
 
 impl PreviewBody {
-    fn new(vm: SearchReplaceViewModel, format: FormatViewModel) -> Self {
+    fn new(
+        vm: SearchReplaceViewModel,
+        format: FormatViewModel,
+        games: crate::view_models::WritingGamesViewModel,
+    ) -> Self {
         Self {
             vm,
             format,
+            games,
             child_id: None,
             find: std::rc::Rc::new(std::cell::RefCell::new(None)),
             spell_view: None,
@@ -228,6 +239,35 @@ impl Widget for PreviewBody {
                         // tabs do, or previewing a match in a 13k-word scene would
                         // rasterize every row of it on each paint.
                         .window_to_clip(true);
+                    // This band edits the manuscript, so it answers to the same
+                    // writing game every other view of that prose does. Pushed at
+                    // build and re-pushed from three effects, exactly as
+                    // `TypographyBoundEditor` does — the preview deliberately
+                    // bypasses that wrapper for typography, so it has to carry
+                    // this itself. `EditorKind::Prose`: what the band shows is a
+                    // scene's text, whichever `Content` row the match came from.
+                    {
+                        let handle = editor.handle();
+                        let games = self.games.clone();
+                        let push = {
+                            let (h, g) = (handle.clone(), games.clone());
+                            move || {
+                                h.set_command_filter(
+                                    g.filter_for(crate::view_models::EditorKind::Prose),
+                                )
+                            }
+                        };
+                        push();
+                        {
+                            let push = push.clone();
+                            ctx.effect(&games.always_forward(), move |_| push());
+                        }
+                        {
+                            let push = push.clone();
+                            ctx.effect(&games.forward_in_prose(), move |_| push());
+                        }
+                        ctx.effect(&games.forward_in_synopsis(), move |_| push());
+                    }
                     // The preview is another live view of a shared document. Feed its caret and drive
                     // the doc's spell session's per-frame recompute — otherwise an edit here would
                     // never re-tick the squiggles (stale), and the caret word wouldn't be exempt,
@@ -533,7 +573,11 @@ mod tests {
     fn editor_body_height(paragraphs: usize, dock_height: f32) -> f32 {
         let (ctx, vm) = vm_previewing(paragraphs);
         let mut tree = crate::test_support::tree_with_settings(&ctx);
-        let root = tree.add(PreviewBody::new(vm, FormatViewModel::detached()));
+        let root = tree.add(PreviewBody::new(
+            vm,
+            FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
+        ));
         tree.layout(SizeProposal::exact(900.0, dock_height));
         let body = find(&tree, root, "RichTextEditorBody")
             .expect("the preview mounts a rich text editor over the previewed document");
@@ -603,7 +647,11 @@ mod tests {
     fn the_band_fills_the_dock_so_a_tall_scene_can_scroll() {
         let (ctx, vm) = vm_previewing(40);
         let mut tree = crate::test_support::tree_with_settings(&ctx);
-        let root = tree.add(PreviewBody::new(vm, FormatViewModel::detached()));
+        let root = tree.add(PreviewBody::new(
+            vm,
+            FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
+        ));
         tree.layout(SizeProposal::exact(900.0, 400.0));
         let scroll = find(&tree, root, "ScrollArea").expect("the preview band scrolls");
         let bounds = tree.bounds(scroll);
@@ -640,7 +688,11 @@ mod tests {
         // it in for a footnote match (see that method's own comment).
 
         let mut tree = crate::test_support::tree_with_settings(&app_ctx);
-        let root = tree.add(PreviewBody::new(vm, FormatViewModel::detached()));
+        let root = tree.add(PreviewBody::new(
+            vm,
+            FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
+        ));
         tree.layout(SizeProposal::exact(900.0, 400.0));
 
         let b = tree.bounds(root);
@@ -652,6 +704,36 @@ mod tests {
             find(&tree, root, "RichTextEditorBody").is_none(),
             "a footnote's own body is not editable here — the dock, not the \
              preview band, is where it is shown and edited"
+        );
+    }
+
+    /// The preview band edits the **same document** a scene tab shows, so a
+    /// writing game that has frozen the manuscript has to freeze it here too.
+    /// Without this the band is a way to delete prose that Backspace refuses to
+    /// delete two panes away — which is how the bug shipped in review.
+    #[test]
+    fn the_preview_band_is_frozen_by_a_writing_game() {
+        use teksilo::widgets::rich_text::CommandFilter;
+
+        let (ctx, vm) = vm_previewing(2);
+        let games = crate::view_models::WritingGamesViewModel::detached();
+        games.set_always_forward(true);
+
+        let mut tree = crate::test_support::tree_with_settings(&ctx);
+        let body = PreviewBody::new(vm, FormatViewModel::detached(), games.clone());
+        let root = tree.add(body);
+        tree.layout(SizeProposal::exact(900.0, 400.0));
+
+        assert!(
+            find(&tree, root, "RichTextEditorBody").is_some(),
+            "precondition: the band mounts an editor over the previewed document"
+        );
+        // The filter is pushed onto the editor at build; the game covers prose by
+        // default, so the band must be forward-only rather than freely editable.
+        assert_eq!(
+            games.filter_for(crate::view_models::EditorKind::Prose),
+            CommandFilter::ForwardOnly,
+            "the game covers manuscript prose, which is what this band shows"
         );
     }
 }

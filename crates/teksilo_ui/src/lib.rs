@@ -501,6 +501,19 @@ pub const GOALS_COUNTING_METHOD_KEY: &str = "goals.counting_method";
 pub const GOALS_SHOW_CHARACTERS_KEY: &str = "goals.show_characters";
 pub const GOALS_SHOW_CHARACTERS_DEFAULT: bool = false;
 
+// ── Writing games (Settings ▸ Editor ▸ Writing games) ────────────────────────
+//
+// Which surfaces the "Always forward" game covers **when it is being played**.
+// Only these two are settings: whether the game is *on* is deliberately session
+// state, minted per open `Work` and never persisted — see
+// [`view_models::writing_games`] for why a commitment device that outlives the
+// sitting it was made in reads as a broken keyboard rather than as a rule.
+/// Does "Always forward" freeze manuscript prose? On: prose is what the game is for.
+pub const GAMES_FORWARD_PROSE_KEY: &str = "games.always_forward.prose";
+/// Does "Always forward" freeze synopses? Off: the synopsis is where a writer
+/// notes the fix the game has just forbidden them from making.
+pub const GAMES_FORWARD_SYNOPSIS_KEY: &str = "games.always_forward.synopsis";
+
 // ── Corkboard (Settings ▸ Editor ▸ Corkboard) ─────────────────────────────────
 /// Corkboard default mode: `true` = nested (a container's direct children; a
 /// folder card drills in), `false` = flat (all descendant leaves at once).

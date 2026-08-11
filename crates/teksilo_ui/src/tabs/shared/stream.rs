@@ -96,11 +96,12 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let format = format.clone();
             let tw = tab.typewriter.clone();
             let band = tab.caret_band();
+            let games = tab.writing_games();
             let gutter = gutter.clone();
             move |row: &StreamRow| -> Box<dyn Widget> {
                 Box::new(stream_row(
                     &vm, row, &header_cw, &editor_cw, &typo, flavour, &md, &format, &tw, &band,
-                    &gutter,
+                    &games, &gutter,
                 ))
             }
         };
@@ -139,6 +140,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Some(tab.format.clone()),
                     Some(tab.typewriter.clone()),
                     Some(tab.caret_band()),
+                Some(tab.writing_games()),
                     // No view-state ports: a stream is many editors on one page,
                     // so "the caret of this tab" has no single answer here. Same
                     // reason the synopsis rows below take no handle sink.
@@ -175,6 +177,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     Some(tab.format.clone()),
                     Some(tab.typewriter.clone()),
                     Some(tab.caret_band()),
+                Some(tab.writing_games()),
                     // The synopsis is its own `Content` row with its own threads —
                     // see the prose column above.
                     own_comments.clone().map(|b| b.with_gutter(gutter.clone())),
@@ -348,6 +351,10 @@ fn stream_row(
     format: &crate::view_models::FormatViewModel,
     typewriter: &crate::view_models::TypewriterSettings,
     caret: &crate::view_models::CaretBand,
+    // The writing games this project is playing — every row of a Full Chapter /
+    // Part / Book is a manuscript surface like the tab's own, so they freeze
+    // together or not at all.
+    games: &crate::view_models::WritingGamesViewModel,
     // The page's gutter reservation, shared by every row so the manuscript keeps
     // one measure down the page (see `ColumnWithMargin::reserve`).
     gutter: &Signal<f32>,
@@ -404,6 +411,7 @@ fn stream_row(
                         Some(format.clone()),
                         Some(typewriter.clone()),
                         Some(caret.clone()),
+                        Some(games.clone()),
                         // Per-row editor — see the container's own column above.
                         Option::None,
                         // This row's own threads. `row_doc` shares its document with
@@ -437,6 +445,7 @@ fn stream_row(
                         Some(format.clone()),
                         Some(typewriter.clone()),
                         Some(caret.clone()),
+                        Some(games.clone()),
                         // This row's synopsis threads — see above.
                         vm.row_comments(id, flavour)
                             .map(|b| b.with_gutter(gutter.clone())),

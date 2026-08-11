@@ -545,7 +545,7 @@ fn split_and_focus(secondary_count: usize, want_focus_secondary: bool) -> (bool,
 mod tests {
     use super::*;
     use crate::docks::{
-        COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID, FOOTNOTES_DOCK_ID, OUTLINE_DOCK_ID,
+        COMMENTS_DOCK_ID, DOC_COMMENTS_DOCK_ID, FOOTNOTES_DOCK_ID, GAMES_DOCK_ID, OUTLINE_DOCK_ID,
         TIMELINE_DOCK_ID, TRASH_DOCK_ID, VERSIONS_DOCK_ID,
     };
     use teksilo::prelude::*;
@@ -719,7 +719,8 @@ mod tests {
 
     /// The subtraction itself, including the case that actually shipped: today's
     /// roster minus a v4 stamp is the two comments docks, the footnotes dock, the
-    /// versions dock and the timeline band. A dock added to `project_shell` but not
+    /// versions dock, the timeline band and the writing-games panel. A dock added
+    /// to `project_shell` but not
     /// to `APP_DOCKS` would leave this list short — which is the failure mode the
     /// roster's own doc warns about, and is why every new dock has to appear here
     /// as well as there.
@@ -733,6 +734,7 @@ mod tests {
             unknown_dock_ids(&crate::docks::app_dock_ids(), &V4_ROSTER),
             vec![
                 COMMENTS_DOCK_ID,
+                GAMES_DOCK_ID,
                 DOC_COMMENTS_DOCK_ID,
                 FOOTNOTES_DOCK_ID,
                 VERSIONS_DOCK_ID,

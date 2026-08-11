@@ -459,6 +459,7 @@ mod tests {
             Signal::new(SURFACE_COLUMN),
             crate::view_models::GoAvailability::new(),
             crate::view_models::FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
         );
         let doc = Rc::new(OpenDoc::build(
             &app_ctx,

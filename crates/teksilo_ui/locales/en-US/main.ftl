@@ -213,6 +213,7 @@ settings-page-synopsis = Synopsis
 settings-page-notes = Notes
 settings-page-editor-behavior = Editor Behavior
 settings-page-goals = Goals & Word Count
+settings-page-games = Writing games
 settings-page-corkboard = Corkboard
 settings-page-distraction-free = Distraction-free
 settings-page-dictionaries = Dictionaries
@@ -1939,3 +1940,43 @@ timeline-reader-deleted = This is no longer in your project. You can read it and
 
 # The Settings tree's section for pages an extension contributed.
 settings-sec-extensions = Extensions
+
+# Writing games pane — self-imposed drafting constraints
+settings-group-games-forward = Always forward
+settings-games-forward-toggle = Play "Always forward"
+settings-games-forward-hint =
+    While you play, nothing you have written can be taken back: Backspace, Delete,
+    Cut, drag-and-drop and Undo are all disabled in the surfaces you choose below.
+    You can still type, paste, format and move around freely — the draft only grows.
+settings-games-session-warning =
+    This is a per-session choice: it is never saved. Closing the project, or quitting
+    Skribisto, always ends the game — and everything you wrote while playing becomes
+    undoable again the moment it does.
+settings-group-games-scope = Where it applies
+settings-games-in-prose = Manuscript prose
+settings-games-in-synopsis = Synopses
+settings-games-scope-hint =
+    Comments, footnotes and titles are never frozen: they are where you note the fix
+    you have just forbidden yourself from making.
+settings-games-inert-warning =
+    "Always forward" is on but applies to nothing — tick at least one surface above,
+    or it changes nothing as you write.
+
+# Writing games dock (leading rail) + the status-bar warning while a game is on
+games-title = Writing games
+games-forward-name = Always forward
+games-forward-blurb =
+    Draft without taking anything back. Deleting, cutting and undoing are disabled
+    while you play — write the next sentence instead of fixing the last one.
+games-forward-playing = Playing — deleting is disabled
+games-forward-idle = Not playing
+games-session-note = Ends when you close the project.
+games-scope-prose-and-synopsis = Applies to your prose and synopses.
+games-scope-prose = Applies to your prose.
+games-scope-synopsis = Applies to your synopses.
+games-scope-nothing = Applies to nothing yet — choose a surface in Settings.
+games-settings-link = Writing game settings…
+statusbar-games-forward = Always forward
+statusbar-games-forward-tooltip =
+    "Always forward" is on: deleting, cutting and undoing are disabled while you
+    draft. Click to stop playing.

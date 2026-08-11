@@ -86,6 +86,20 @@ impl App {
             seam,
         } = parts;
 
+        // This project's writing games: the session-only activation off its
+        // `WorkSession` (Tier 2 — every window on this Work agrees, and a second
+        // open project keeps its own) paired with the app-global "which surfaces"
+        // settings. Assembled here, the one place both halves are in hand; the
+        // dock and the status badge below share this instance, so the two can
+        // never disagree about whether a game is on.
+        let writing_games = crate::view_models::WritingGamesViewModel::new(
+            session.always_forward.clone(),
+            crate::view_models::WritingGameOptions::new(
+                settings.games_forward_prose(),
+                settings.games_forward_synopsis(),
+            ),
+        );
+
         let active_item = editors.active_item();
         let split_active = editors.split_active();
 
@@ -468,12 +482,23 @@ impl App {
             .dock(crate::docks::search_preview::search_preview_dock(
                 search.clone(),
                 self.format.clone(),
+                writing_games.clone(),
                 self.preview_dock,
             ))
             .dock(crate::docks::trash::trash_dock(
                 trash.clone(),
                 self.trash_dock,
                 on_open.clone(),
+            ))
+            // The writing games. Fired by name rather than holding a settings
+            // handle: which window's project the settings modal opens on is
+            // `App`'s decision, not this panel's.
+            .dock(crate::docks::games::games_dock(
+                writing_games.clone(),
+                self.games_dock,
+                std::rc::Rc::new(|ctx: &mut EventContext| {
+                    ctx.send_intent(Intent::new("app.settings.games"))
+                }),
             ))
             .dock(crate::docks::comments::comments_project_dock(
                 comments.clone(),
@@ -641,6 +666,14 @@ impl App {
                         .on_activate_fn(move |_| dock_lead.toggle_side_visible(DockSide::Leading)),
                 )
                 .child(save_indicator)
+                // Beside the save glyph on purpose: both are standing statements
+                // about the state the writer is in, not actions. Takes no width
+                // while no game is being played.
+                .child(crate::statusbar::game_indicator::game_indicator(
+                    &writing_games,
+                    has_work.clone(),
+                    self.backup_mode.clone(),
+                ))
                 .child(word_count_indicator)
                 .child(Spacer::new())
                 // "Go to…" sits before the session readout, on the trailing

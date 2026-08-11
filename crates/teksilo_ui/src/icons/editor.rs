@@ -22,6 +22,12 @@ pub fn close_split() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/editor/split-close.svg")).icon_size(ICON_SIZE)
 }
 
+/// A one-way arrow with the way back struck out — the status bar's "Always
+/// forward is being played, deleting is disabled" warning glyph.
+pub fn forward_only() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/editor/forward-only.svg")).icon_size(ICON_SIZE)
+}
+
 /// Save glyph with a filled dot — the status bar's "there are unsaved changes".
 pub fn save_unsaved() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/editor/save-unsaved.svg")).icon_size(ICON_SIZE)

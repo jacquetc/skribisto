@@ -156,6 +156,8 @@ mod welcome;
 mod word_count_status;
 mod work_settings;
 mod workspace_layout;
+/// Self-imposed drafting constraints — currently "Always forward".
+pub mod writing_games;
 mod writing_session;
 
 pub use add_dictionary::AddDictionaryViewModel;
@@ -228,6 +230,9 @@ pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 pub use word_count_status::{CountDisplay, count_display};
 pub use work_settings::WorkSettingsViewModel;
 pub use workspace_layout::WorkspaceLayoutViewModel;
+pub use writing_games::{
+    FORWARD_PROSE_DEFAULT, FORWARD_SYNOPSIS_DEFAULT, WritingGameOptions, WritingGamesViewModel,
+};
 pub use writing_session::{
     WritingSessionViewModel, format_mmss, gauge_role, remaining, words_progress,
 };

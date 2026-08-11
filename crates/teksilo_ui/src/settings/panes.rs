@@ -26,6 +26,7 @@ pub(super) mod distraction_free;
 pub(super) mod distraction_free_themes;
 pub(super) mod editor_behavior;
 pub(super) mod export_styles;
+pub(super) mod games;
 pub(super) mod goals;
 pub(super) mod keymap;
 pub(super) mod notifications;

@@ -67,6 +67,7 @@ fn epigraph_section(tab: &ContentTab) -> Option<impl Widget> {
             Some(tab.format.clone()),
             Some(tab.typewriter.clone()),
             Some(tab.caret_band()),
+                Some(tab.writing_games()),
             Option::None,
             tab.open_doc.images(),
             // A trashed item's text is read-only. The banner above it is a
@@ -187,6 +188,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
                 Some(tab.format.clone()),
                 Some(tab.typewriter.clone()),
                 Some(tab.caret_band()),
+                Some(tab.writing_games()),
                 tab.open_doc.comment_binding_synopsis(),
                 tab.open_doc.images(),
                 // A trashed item's text is read-only. The banner above it is a
@@ -209,6 +211,7 @@ pub fn folder_own_pane(tab: &ContentTab) -> impl Widget {
             Some(tab.format.clone()),
             Some(tab.typewriter.clone()),
             Some(tab.caret_band()),
+                Some(tab.writing_games()),
             Some(tab.view_state_binding()),
             tab.open_doc.comment_binding_main(),
             tab.open_doc.footnote_binding_main(),
@@ -351,6 +354,7 @@ fn manuscript_page(tab: &ContentTab, compact_synopsis: Option<Signal<bool>>) -> 
                 Some(tab.synopsis_handle_sink()),
                 Some(tab.format.clone()),
                 Some(tab.caret_band()),
+                Some(tab.writing_games()),
                 tab.open_doc.comment_binding_synopsis(),
                 tab.open_doc.images(),
                 // A trashed item's synopsis is read-only for the same reason its prose
@@ -376,6 +380,7 @@ fn manuscript_page(tab: &ContentTab, compact_synopsis: Option<Signal<bool>>) -> 
             Some(tab.format.clone()),
             Some(tab.typewriter.clone()),
             Some(tab.caret_band()),
+                Some(tab.writing_games()),
             Some(tab.view_state_binding()),
             tab.open_doc.comment_binding_main(),
             tab.open_doc.footnote_binding_main(),
@@ -442,6 +447,7 @@ fn side_synopsis_pane(tab: &ContentTab, sync: SideSync) -> impl Widget {
                     Some(tab.synopsis_handle_sink()),
                     Some(tab.format.clone()),
                     Some(tab.caret_band()),
+                Some(tab.writing_games()),
                     tab.open_doc.comment_binding_synopsis(),
                     tab.open_doc.images(),
                     // A trashed item's synopsis is read-only for the same reason its prose
@@ -516,6 +522,7 @@ pub fn heading(tab: &ContentTab) -> Box<dyn Widget> {
                 Some(tab.format.clone()),
                 Some(tab.typewriter.clone()),
                 Some(tab.caret_band()),
+                Some(tab.writing_games()),
                 tab.open_doc.comment_binding_synopsis(),
                 tab.open_doc.images(),
                 // A trashed item's text is read-only. The banner above it is a
@@ -583,6 +590,7 @@ fn folder_synopsis_body(tab: &ContentTab) -> impl Widget {
                 Some(tab.format.clone()),
                 Some(tab.typewriter.clone()),
                 Some(tab.caret_band()),
+                Some(tab.writing_games()),
                 tab.open_doc.comment_binding_synopsis(),
                 tab.open_doc.images(),
                 // A trashed item's text is read-only. The banner above it is a

@@ -617,6 +617,20 @@ impl SearchReplaceViewModel {
     /// its summary for the completion toast. The caller (which has an
     /// `EventContext`) surfaces the toast + its Undo, reloads open docs, and
     /// re-runs the search.
+    ///
+    /// **Deliberately outside the writing games**, and the one text-removing path
+    /// that is. "Always forward" blocks the *reflex* — the keystroke a writer
+    /// makes without deciding to — not the intent: this is a project-wide
+    /// operation reached through a dock, over a list the writer ticked result by
+    /// result, confirmed, reported by a toast and undoable from it in one step.
+    /// A game about not fiddling with the sentence you just wrote has nothing to
+    /// say about it, and gating it would turn a drafting aid into a project lock.
+    /// The **in-editor** find bar is the opposite case and *is* gated — see
+    /// `FindViewModel::may_replace`, which sits on the writing surface itself.
+    ///
+    /// If this is ever revisited, the honest fix is a confirmation naming the
+    /// game, never a silent refusal: a Replace All that quietly does nothing is
+    /// worse than either answer.
     pub fn replace_all(&self) -> anyhow::Result<ReplaceInProjectResultDto> {
         let work_id = self
             .ids

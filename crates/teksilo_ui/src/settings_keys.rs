@@ -550,6 +550,25 @@ pub static SETTINGS: &[SettingSpec] = &[
         check: check::<bool>,
         doc: "Show the character count beside the word count in the status bar.",
     },
+    // ── Writing games ─────────────────────────────────────────────────────────
+    //
+    // Which surfaces "Always forward" covers. Whether it is being *played* is
+    // per-session state and so has no key here at all — pinning it from
+    // `--config` would be pinning a commitment the writer never made.
+    SettingSpec {
+        key: crate::GAMES_FORWARD_PROSE_KEY,
+        ty: "bool",
+        default: || val(crate::view_models::FORWARD_PROSE_DEFAULT),
+        check: check::<bool>,
+        doc: "\"Always forward\" freezes manuscript prose while it is being played.",
+    },
+    SettingSpec {
+        key: crate::GAMES_FORWARD_SYNOPSIS_KEY,
+        ty: "bool",
+        default: || val(crate::view_models::FORWARD_SYNOPSIS_DEFAULT),
+        check: check::<bool>,
+        doc: "\"Always forward\" also freezes synopses while it is being played.",
+    },
     // ── Writing session ───────────────────────────────────────────────────────
     SettingSpec {
         key: "session.word_target",

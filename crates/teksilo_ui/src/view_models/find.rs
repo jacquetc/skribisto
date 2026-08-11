@@ -281,12 +281,29 @@ impl FindViewModel {
         }
     }
 
+    /// May this bar rewrite the document it is searching?
+    ///
+    /// Replacing goes through `TextDocument::find_and_replace`, which edits the
+    /// document directly and never passes the editor's keyboard layer — so a
+    /// writing game that has frozen this surface has to be asked about here, or
+    /// Ctrl+R would be a way to delete prose that Backspace refuses to.
+    ///
+    /// **Finding is untouched.** Only the replace half is withheld: re-reading,
+    /// stepping through matches and highlighting take nothing away, and a writer
+    /// drafting forward still needs to find where they were.
+    fn may_replace(&self) -> bool {
+        self.handle.borrow().as_ref().is_none_or(|h| {
+            h.command_filter()
+                .accepts(teksilo::widgets::rich_text::EditCommandKind::Cut)
+        })
+    }
+
     /// Replace the current match, then step onto the next — the find-bar
     /// convention. The edit is on the editor's own document (undoable with Ctrl+Z),
     /// applied under one lock via `find_and_replace` so no offset is carried
     /// across it.
     pub fn replace_current(&self, ctx: &mut EventContext) {
-        if self.query.get().trim().is_empty() {
+        if self.query.get().trim().is_empty() || !self.may_replace() {
             return;
         }
         let query = self.query.get();
@@ -322,7 +339,7 @@ impl FindViewModel {
     /// is testable without an `EventContext`. Returns how many occurrences changed.
     fn replace_all_now(&self) -> usize {
         let query = self.query.get();
-        if query.trim().is_empty() {
+        if query.trim().is_empty() || !self.may_replace() {
             return 0;
         }
         let opts = self.replace_options();

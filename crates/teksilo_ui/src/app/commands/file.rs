@@ -242,6 +242,24 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         }));
     }
 
+    // Settings, opened straight at Editor ▸ Writing games — what the games
+    // dock's own button fires. A separate action rather than a payload on
+    // `app.settings` because that is how this app already addresses a specific
+    // settings page (see `SettingsPanel::open_to_dictionaries`/`open_to_backup`).
+    {
+        let session = deps.session.clone();
+        ctx.register_action_global(Action::new("app.settings.games").on_invoke(move |_i, c| {
+            let session = session.clone();
+            c.present_modal(
+                ModalRequest::deferred(move |t| t.add(SettingsPanel::open_to_games(session)))
+                    .presentation(ModalPresentation::InTree)
+                    .title("Settings")
+                    .size(920, 620)
+                    .close_behavior(ModalCloseBehavior::Manual),
+            );
+        }));
+    }
+
     // Quit (Ctrl+Q): really terminates the process, accounting for **every** open Work
     // first — see `QuitSequencer`'s module doc. Single-instance means several project
     // windows in one process is the ordinary shape, so Quit must guard all of them, not

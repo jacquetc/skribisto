@@ -259,6 +259,12 @@ pub struct ContentTab {
     /// This window's Format surfaces — every writing editor this tab builds
     /// registers with it (never process-wide `app_state`).
     pub format: crate::view_models::FormatViewModel,
+    /// The writing games this project is playing, shared live: the per-`Work`
+    /// activation paired with the app-global "which surfaces" options. Every
+    /// writing editor this tab builds reads it, so switching a game on reaches
+    /// every open surface of this project at once — including the ones in a
+    /// second window, since the activation half is Tier 2.
+    pub writing_games: crate::view_models::WritingGamesViewModel,
 }
 
 /// Which prose kind a dual-pane main-text editor is, so it can pick the Scene vs
@@ -414,6 +420,9 @@ pub fn tab_for(
         // default `SettingsViewModel::distraction_free_width` seeds from.
         Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
         crate::view_models::FormatViewModel::detached(),
+        // A standalone tab plays no writing game: nothing switches one on, and
+        // the two option signals below it are the shipped defaults.
+        crate::view_models::WritingGamesViewModel::detached(),
         // A standalone tab has no `WorkSession`, so it gets its own inert save
         // state rather than a null object: marking a change on it is a real state
         // change on a real object, there is simply no window polling it.
@@ -572,6 +581,7 @@ impl ContentTab {
         distraction_free: Signal<bool>,
         distraction_free_width: Signal<f32>,
         format: crate::view_models::FormatViewModel,
+        writing_games: crate::view_models::WritingGamesViewModel,
         work: crate::view_models::WorkHandle,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
@@ -629,6 +639,7 @@ impl ContentTab {
                 cd.counting_method.clone(),
                 typography.corkboard.clone(),
                 crate::view_models::CaretBand::new(caret_highlight.clone(), caret_locale.clone()),
+                writing_games.clone(),
                 format.clone(),
             )
         });
@@ -725,7 +736,14 @@ impl ContentTab {
             distraction_free_width,
             view_memory,
             format,
+            writing_games,
         }
+    }
+
+    /// The writing games this project is playing — handed to every writing
+    /// editor this tab builds.
+    pub fn writing_games(&self) -> crate::view_models::WritingGamesViewModel {
+        self.writing_games.clone()
     }
 
     /// The Corkboard view-model — `Some` only for a folder container.
@@ -2051,6 +2069,7 @@ mod tests {
                 None,
                 None,
                 None,
+                None,
             )
             .0
         }
@@ -2468,6 +2487,7 @@ mod tests {
             Signal::new(false),
             Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
             crate::view_models::FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
             crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
         );
         let mut tree = crate::test_support::tree_with_events(&ctx);
@@ -3553,6 +3573,7 @@ mod tests {
                 df.clone(),
                 df_width.clone(),
                 crate::view_models::FormatViewModel::detached(),
+                crate::view_models::WritingGamesViewModel::detached(),
                 crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
             )
         };
@@ -3644,6 +3665,7 @@ mod tests {
             Signal::new(true),
             Signal::new(420.0),
             crate::view_models::FormatViewModel::detached(),
+            crate::view_models::WritingGamesViewModel::detached(),
             crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
         );
 

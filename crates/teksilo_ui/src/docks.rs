@@ -59,6 +59,8 @@ pub const FOOTNOTES_DOCK_ID: u64 = DOCK_ID_BASE + 9;
 pub const VERSIONS_DOCK_ID: u64 = DOCK_ID_BASE + 10;
 /// The whole project's past (bottom band, its own activity).
 pub const TIMELINE_DOCK_ID: u64 = DOCK_ID_BASE + 11;
+/// The writer's self-imposed drafting constraints (leading rail).
+pub const GAMES_DOCK_ID: u64 = DOCK_ID_BASE + 12;
 
 /// One app dock's declared home: its stable id plus where it mounts on a desk
 /// nobody has arranged yet.
@@ -120,6 +122,13 @@ pub const APP_DOCKS: &[AppDock] = &[
     },
     AppDock {
         id: COMMENTS_DOCK_ID,
+        side: DockSide::Leading,
+        own_tab: true,
+    },
+    // The writing games, last on the leading rail: the one activity here that is
+    // about the writer rather than about the manuscript.
+    AppDock {
+        id: GAMES_DOCK_ID,
         side: DockSide::Leading,
         own_tab: true,
     },
@@ -395,6 +404,7 @@ pub mod comments;
 pub mod create_split_button;
 pub mod footnotes;
 pub mod format;
+pub mod games;
 pub mod inspector;
 pub mod outline;
 pub mod outline_card;

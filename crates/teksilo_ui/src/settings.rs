@@ -102,6 +102,11 @@ enum Pane {
     NotesTypography,
     EditorBehavior,
     Goals,
+    /// Editor ▸ Writing games — the self-imposed drafting constraints
+    /// ("Always forward"). Its own page rather than a corner of Editor
+    /// Behavior: the switch at the top of it is per-session state, not a
+    /// setting, which is a distinction that needs room to be explained.
+    Games,
     Corkboard,
     Dictionaries,
     Autosave,
@@ -165,6 +170,7 @@ impl Pane {
             Pane::NotesTypography => "notes-typography",
             Pane::EditorBehavior => "editor-behavior",
             Pane::Goals => "goals",
+            Pane::Games => "games",
             Pane::Corkboard => "corkboard",
             Pane::Dictionaries => "dictionaries",
             Pane::Autosave => "autosave",
@@ -201,6 +207,7 @@ impl Pane {
             Pane::NotesTypography => tr!(settings_page_notes()),
             Pane::EditorBehavior => tr!(settings_page_editor_behavior()),
             Pane::Goals => tr!(settings_page_goals()),
+            Pane::Games => tr!(settings_page_games()),
             Pane::Corkboard => tr!(settings_page_corkboard()),
             Pane::Dictionaries => tr!(settings_page_dictionaries()),
             Pane::Autosave => tr!(settings_page_autosave()),
@@ -656,6 +663,12 @@ impl SettingsPanel {
         Self::opening_at(Pane::Dictionaries, session)
     }
 
+    /// Open straight to Editor ▸ Writing games — the target of the games dock's
+    /// own "Writing game settings…" button, which promises that page by name.
+    pub fn open_to_games(session: WorkSession) -> Self {
+        Self::opening_at(Pane::Games, session)
+    }
+
     /// Open straight to Backup & Sync ▸ Backup — the target of the
     /// "no backups configured" nudge toast.
     pub fn open_to_backup(session: WorkSession) -> Self {
@@ -744,6 +757,12 @@ impl SettingsPanel {
         nodes.insert(
             Pane::Goals,
             model.insert_child(ed, 3, Node::Page(Pane::Goals)),
+        );
+        // Beside Goals: both are about what the writer is asking of themselves
+        // while drafting, rather than about how the page looks.
+        nodes.insert(
+            Pane::Games,
+            model.insert_child(ed, 4, Node::Page(Pane::Games)),
         );
 
         let sp = model.insert_root(2, Node::Section(Sec::Spelling));
@@ -931,7 +950,7 @@ impl SettingsPanel {
             | Pane::Corkboard
             | Pane::DistractionFree
             | Pane::DistractionFreeThemes => Some(typo_group),
-            Pane::EditorBehavior | Pane::Punctuation | Pane::Goals => Some(ed),
+            Pane::EditorBehavior | Pane::Punctuation | Pane::Goals | Pane::Games => Some(ed),
             Pane::Spellcheck | Pane::Dictionaries => Some(sp),
             Pane::Autosave | Pane::Backup => Some(bk),
             Pane::ExportFormats | Pane::Paratext => Some(ce),
@@ -972,6 +991,7 @@ impl SettingsPanel {
             (tr!(settings_page_notes()), Pane::NotesTypography),
             (tr!(settings_page_editor_behavior()), Pane::EditorBehavior),
             (tr!(settings_page_goals()), Pane::Goals),
+            (tr!(settings_page_games()), Pane::Games),
             (tr!(settings_page_corkboard()), Pane::Corkboard),
             (tr!(settings_page_distraction_free()), Pane::DistractionFree),
             (
@@ -1094,6 +1114,16 @@ impl std::fmt::Debug for SettingsPanel {
 impl Widget for SettingsPanel {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
         let vm = SettingsViewModel::new(ctx.settings());
+        // Which surfaces a game covers is an app setting; whether it is being
+        // played is this project's session state. Paired here, exactly as
+        // `App::build` pairs them for the editors.
+        let games = crate::view_models::WritingGamesViewModel::new(
+            self.session.always_forward.clone(),
+            crate::view_models::WritingGameOptions::new(
+                vm.games_forward_prose(),
+                vm.games_forward_synopsis(),
+            ),
+        );
         let scale = ctx.settings().signal_for(&TEXT_SCALE_KEY);
         let theme_sig = ctx.theme_signal().clone();
         let locale_sig = current_locale();
@@ -1483,6 +1513,14 @@ impl Widget for SettingsPanel {
                 Box::new(panes::editor_behavior::editor_behavior_pane(ctx, &vm)),
             ),
             (Pane::Goals, Box::new(panes::goals::goals_pane(ctx, &vm))),
+            (
+                Pane::Games,
+                // The activation comes from THIS panel's own `WorkSession` — the
+                // project the opening window shows — never `ctx.app_state`, which
+                // is one slot per process and would let the pane start (or stop) a
+                // game in whichever project happened to open first.
+                Box::new(panes::games::games_pane(ctx, &games)),
+            ),
             (
                 Pane::Corkboard,
                 Box::new(panes::corkboard::corkboard_pane(ctx, &vm)),

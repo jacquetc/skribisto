@@ -49,7 +49,8 @@ use crate::{
     DISTRACTION_FREE_THEME_DEFAULT, DISTRACTION_FREE_THEME_KEY, DISTRACTION_FREE_TITLE_DEFAULT,
     DISTRACTION_FREE_TITLE_KEY, DISTRACTION_FREE_WIDTH_DEFAULT, DISTRACTION_FREE_WIDTH_KEY,
     DISTRACTION_FREE_WORD_COUNT_DEFAULT, DISTRACTION_FREE_WORD_COUNT_KEY, EDITOR_WIDTH_DEFAULT,
-    EDITOR_WIDTH_KEY, GOALS_COUNTING_METHOD_KEY, GOALS_SHOW_CHARACTERS_DEFAULT,
+    EDITOR_WIDTH_KEY, GAMES_FORWARD_PROSE_KEY, GAMES_FORWARD_SYNOPSIS_KEY,
+    GOALS_COUNTING_METHOD_KEY, GOALS_SHOW_CHARACTERS_DEFAULT,
     GOALS_SHOW_CHARACTERS_KEY, HIGHLIGHT_SCOPE_KEY, LOCALE_KEY, NOTES_FIRST_LINE_INDENT_DEFAULT,
     NOTES_FIRST_LINE_INDENT_KEY, NOTES_FONT_FAMILY_DEFAULT, NOTES_FONT_FAMILY_KEY,
     NOTES_LINE_HEIGHT_DEFAULT, NOTES_LINE_HEIGHT_KEY, NOTES_PARA_SPACING_AFTER_DEFAULT,
@@ -292,6 +293,11 @@ pub struct SettingsViewModel {
     // ── Goals & word count ──
     counting_method: Signal<CountingMethodSetting>,
     show_characters: Signal<bool>,
+    // ── Writing games ──
+    // Which surfaces "Always forward" covers. Whether it is being *played* is
+    // per-`Work` session state and lives on `WritingGamesViewModel`, not here.
+    games_forward_prose: Signal<bool>,
+    games_forward_synopsis: Signal<bool>,
     // ── Corkboard ──
     corkboard_nested: Signal<bool>,
     corkboard_card_size: Signal<f32>,
@@ -444,6 +450,14 @@ impl SettingsViewModel {
             counting_method: store
                 .signal(GOALS_COUNTING_METHOD_KEY, CountingMethodSetting::default()),
             show_characters: store.signal(GOALS_SHOW_CHARACTERS_KEY, GOALS_SHOW_CHARACTERS_DEFAULT),
+            games_forward_prose: store.signal(
+                GAMES_FORWARD_PROSE_KEY,
+                crate::view_models::FORWARD_PROSE_DEFAULT,
+            ),
+            games_forward_synopsis: store.signal(
+                GAMES_FORWARD_SYNOPSIS_KEY,
+                crate::view_models::FORWARD_SYNOPSIS_DEFAULT,
+            ),
             corkboard_nested: store.signal(CORKBOARD_NESTED_KEY, CORKBOARD_NESTED_DEFAULT),
             corkboard_card_size: store.signal(CORKBOARD_CARD_SIZE_KEY, CORKBOARD_CARD_SIZE_DEFAULT),
             corkboard_show_word_count: store.signal(
@@ -627,6 +641,16 @@ impl SettingsViewModel {
     /// Show the character count beside the word count in the status bar.
     pub fn show_characters(&self) -> Signal<bool> {
         self.show_characters.clone()
+    }
+
+    // ── Writing games (which surfaces "Always forward" covers) ──
+    /// Whether "Always forward" freezes manuscript prose while it is played.
+    pub fn games_forward_prose(&self) -> Signal<bool> {
+        self.games_forward_prose.clone()
+    }
+    /// Whether "Always forward" also freezes synopses while it is played.
+    pub fn games_forward_synopsis(&self) -> Signal<bool> {
+        self.games_forward_synopsis.clone()
     }
 
     // ── Corkboard (default mode + card presentation; shared live into every tab) ──
@@ -813,6 +837,10 @@ impl SettingsViewModel {
         self.highlight_scope.set(HighlightScope::default());
         self.counting_method.set(CountingMethodSetting::default());
         self.show_characters.set(GOALS_SHOW_CHARACTERS_DEFAULT);
+        self.games_forward_prose
+            .set(crate::view_models::FORWARD_PROSE_DEFAULT);
+        self.games_forward_synopsis
+            .set(crate::view_models::FORWARD_SYNOPSIS_DEFAULT);
         self.corkboard_nested.set(CORKBOARD_NESTED_DEFAULT);
         self.corkboard_card_size.set(CORKBOARD_CARD_SIZE_DEFAULT);
         self.corkboard_show_word_count

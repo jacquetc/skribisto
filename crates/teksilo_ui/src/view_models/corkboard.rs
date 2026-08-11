@@ -99,6 +99,9 @@ struct Inner {
     /// editor.
     synopsis_typo: EditorTypography,
     caret_band: crate::view_models::CaretBand,
+    /// The writing games this project is playing — a card's synopsis editor is
+    /// a synopsis surface like any other, so it follows the same option.
+    writing_games: crate::view_models::WritingGamesViewModel,
     /// This window's Format surfaces — card synopsis editors register with it.
     format: FormatViewModel,
 
@@ -134,6 +137,7 @@ impl CorkboardViewModel {
         counting_method: Signal<CountingMethodSetting>,
         synopsis_typo: EditorTypography,
         caret_band: crate::view_models::CaretBand,
+        writing_games: crate::view_models::WritingGamesViewModel,
         format: FormatViewModel,
     ) -> Self {
         let current_container = Signal::new(container_id);
@@ -170,6 +174,7 @@ impl CorkboardViewModel {
                 docs,
                 synopsis_typo,
                 caret_band,
+                writing_games,
                 format,
                 cards,
                 projection,
@@ -537,6 +542,11 @@ impl CorkboardViewModel {
     /// This window's Format surfaces for card synopsis editors.
     pub fn format(&self) -> FormatViewModel {
         self.inner.format.clone()
+    }
+
+    /// The writing games this project is playing, for card synopsis editors.
+    pub fn writing_games(&self) -> crate::view_models::WritingGamesViewModel {
+        self.inner.writing_games.clone()
     }
     /// Whether this card can be split — only a prose-bearing scene has two halves
     /// to cut. The backend enforces the same rule.
@@ -1161,6 +1171,7 @@ mod tests {
             Signal::new(CountingMethodSetting::default()),
             typo(),
             crate::view_models::CaretBand::off(),
+            crate::view_models::WritingGamesViewModel::detached(),
             FormatViewModel::detached(),
         )
     }

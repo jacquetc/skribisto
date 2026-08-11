@@ -41,6 +41,22 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
                 let Some(handle) = format.handle_for_commands() else {
                     return;
                 };
+                // Insert puts the body at the caret, **replacing the selection if
+                // there is one** — a deletion that never passes the editor's
+                // keyboard layer. Under a writing game that forbids taking prose
+                // back, collapse to the end of the selection first: the template
+                // lands after the passage rather than instead of it, which is the
+                // same answer typing over a selection gets.
+                if !handle
+                    .command_filter()
+                    .accepts(teksilo::widgets::rich_text::EditCommandKind::DeleteNext)
+                {
+                    let (start, end) = handle.selection();
+                    if start != end {
+                        let at = start.max(end);
+                        handle.select_range(at, at);
+                    }
+                }
                 handle.insert_djot(&row.body);
                 // The menu overlay took focus when it opened; without this the writer is
                 // left with no caret and has to click back into the prose before typing.

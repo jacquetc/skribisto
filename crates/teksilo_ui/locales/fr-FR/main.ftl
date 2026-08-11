@@ -213,6 +213,7 @@ settings-page-synopsis = Synopsis
 settings-page-notes = Notes
 settings-page-editor-behavior = Comportement de l'éditeur
 settings-page-goals = Objectifs et nombre de mots
+settings-page-games = Jeux d'écriture
 settings-page-corkboard = Tableau de liège
 settings-page-distraction-free = Sans distraction
 settings-page-dictionaries = Dictionnaires
@@ -1908,3 +1909,45 @@ timeline-reader-deleted = Cela n'est plus dans votre projet. Vous pouvez le lire
 
 # The Settings tree's section for pages an extension contributed.
 settings-sec-extensions = Extensions
+
+# Volet Jeux d'écriture — contraintes d'écriture volontaires
+settings-group-games-forward = Droit devant
+settings-games-forward-toggle = Jouer à « Droit devant »
+settings-games-forward-hint =
+    Tant que vous jouez, rien de ce que vous avez écrit ne peut être repris :
+    Retour arrière, Suppr, Couper, le glisser-déposer et Annuler sont désactivés dans
+    les surfaces choisies ci-dessous. Vous pouvez toujours écrire, coller, mettre en
+    forme et vous déplacer librement — le brouillon ne fait que grandir.
+settings-games-session-warning =
+    Ce choix ne vaut que pour la session en cours : il n'est jamais enregistré. Fermer
+    le projet ou quitter Skribisto met toujours fin à la partie — et tout ce que vous
+    avez écrit en jouant redevient annulable à cet instant.
+settings-group-games-scope = Où cela s'applique
+settings-games-in-prose = Texte du manuscrit
+settings-games-in-synopsis = Synopsis
+settings-games-scope-hint =
+    Les commentaires, les notes de bas de page et les titres ne sont jamais figés :
+    c'est là que vous notez la correction que vous venez de vous interdire.
+settings-games-inert-warning =
+    « Droit devant » est activé mais ne s'applique à rien — cochez au moins une surface
+    ci-dessus, sinon cela ne change rien à votre écriture.
+
+# Panneau Jeux d'écriture (rail de gauche) + l'avertissement de la barre d'état
+games-title = Jeux d'écriture
+games-forward-name = Droit devant
+games-forward-blurb =
+    Écrivez sans jamais revenir en arrière. Supprimer, couper et annuler sont
+    désactivés pendant la partie — écrivez la phrase suivante plutôt que de corriger
+    la précédente.
+games-forward-playing = Partie en cours — la suppression est désactivée
+games-forward-idle = Aucune partie en cours
+games-session-note = La partie prend fin à la fermeture du projet.
+games-scope-prose-and-synopsis = S'applique à votre texte et à vos synopsis.
+games-scope-prose = S'applique à votre texte.
+games-scope-synopsis = S'applique à vos synopsis.
+games-scope-nothing = Ne s'applique à rien pour l'instant — choisissez une surface dans les réglages.
+games-settings-link = Réglages des jeux d'écriture…
+statusbar-games-forward = Droit devant
+statusbar-games-forward-tooltip =
+    « Droit devant » est activé : supprimer, couper et annuler sont désactivés pendant
+    que vous écrivez. Cliquez pour arrêter la partie.
