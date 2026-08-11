@@ -203,9 +203,7 @@ fn chapter_scene_tooltip() -> TooltipContent {
 fn goal_unit_field(vm: &NewWorkViewModel) -> impl Widget + use<> {
     GoalUnitField {
         vm: vm.clone(),
-        index: Signal::new(crate::widgets::goal_unit_picker::index_of(
-            &vm.goal_unit().get(),
-        )),
+        index: Signal::new(crate::goals::unit_picker::index_of(&vm.goal_unit().get())),
         root: None,
     }
 }
@@ -235,7 +233,7 @@ impl Widget for GoalUnitField {
             let index = self.index.clone();
             ctx.effect(&self.vm.language(), move |_| {
                 vm.language_changed();
-                let seeded = crate::widgets::goal_unit_picker::index_of(&vm.goal_unit().get());
+                let seeded = crate::goals::unit_picker::index_of(&vm.goal_unit().get());
                 if index.get() != seeded {
                     index.set(seeded);
                 }
@@ -245,14 +243,17 @@ impl Widget for GoalUnitField {
         // the explanation is about the *choice*, not about either option.
         let id = ctx.add(crate::widgets::tip::RichTip::new(
             crate::tooltip_registry::GOAL_UNIT,
-            FixedSize::new().width(240.0).child(
-                crate::widgets::goal_unit_picker::goal_unit_control(self.index.clone(), {
-                    // The writer moved the control: latch their choice, so the language
-                    // stops overriding it from here on.
-                    let vm = self.vm.clone();
-                    move |unit, _ctx| vm.set_goal_unit(unit)
-                }),
-            ),
+            FixedSize::new()
+                .width(240.0)
+                .child(crate::goals::unit_picker::goal_unit_control(
+                    self.index.clone(),
+                    {
+                        // The writer moved the control: latch their choice, so the language
+                        // stops overriding it from here on.
+                        let vm = self.vm.clone();
+                        move |unit, _ctx| vm.set_goal_unit(unit)
+                    },
+                )),
         ));
         self.root = Some(id);
         vec![id]

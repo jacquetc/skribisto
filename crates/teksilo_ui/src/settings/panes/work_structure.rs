@@ -58,15 +58,13 @@ pub(in crate::settings) fn work_structure_pane(
     // already been given, so the writer is asked first — and a control bound to the entity
     // would already be showing the new answer while the dialog was still open, then have
     // nothing to snap back to if they said no.
-    let unit_index = Signal::new(crate::widgets::goal_unit_picker::index_of(
-        &vm.goal_unit().get(),
-    ));
+    let unit_index = Signal::new(crate::goals::unit_picker::index_of(&vm.goal_unit().get()));
     {
         // External changes (a refresh, an undo, a second window) re-seed the control.
         let vm = vm.clone();
         let unit_index = unit_index.clone();
         ctx.effect(&vm.goal_unit(), move |u| {
-            let seeded = crate::widgets::goal_unit_picker::index_of(u);
+            let seeded = crate::goals::unit_picker::index_of(u);
             if unit_index.get() != seeded {
                 unit_index.set(seeded);
             }
@@ -101,7 +99,7 @@ pub(in crate::settings) fn work_structure_pane(
         .full_width(group(tr!(settings_group_goal_unit())))
         .full_width(crate::widgets::tip::RichTip::new(
             crate::tooltip_registry::GOAL_UNIT,
-            crate::widgets::goal_unit_picker::goal_unit_control(unit_index.clone(), {
+            crate::goals::unit_picker::goal_unit_control(unit_index.clone(), {
                 let vm = vm.clone();
                 let index = unit_index.clone();
                 move |chosen, ctx| {
@@ -156,7 +154,7 @@ fn confirm_unit_switch(
         GoalUnit::Words => tr!(goal_unit_words()),
         GoalUnit::Characters => tr!(goal_unit_characters()),
     };
-    let revert = crate::widgets::goal_unit_picker::index_of(&from);
+    let revert = crate::goals::unit_picker::index_of(&from);
     MessageBox::warning(tr!(settings_goal_unit_switch_title()))
         .text(tr!(settings_goal_unit_switch_text(
             from = label(&from).resolve_now(),

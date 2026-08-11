@@ -19,8 +19,8 @@ use teksilo::widgets::{FixedSize, HStack, ProgressBar, TextWidget};
 
 use frontend::common::entities::GoalUnit;
 
-use crate::goals::format::{format_count, format_goal};
-use crate::goals::progress;
+use super::format::{format_count, format_goal};
+use super::progress;
 
 /// Width of the inline bar. Narrow on purpose: it is a glance, and the numbers beside it
 /// are the precise answer.

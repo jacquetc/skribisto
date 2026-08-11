@@ -114,7 +114,7 @@ impl Widget for ContainerGoalHeader {
         let mut col = VStack::new().spacing(4.0).child(
             HStack::new()
                 .spacing(8.0)
-                .child(crate::widgets::goal_progress::line(written, goal, &unit))
+                .child(crate::goals::readout::line(written, goal, &unit))
                 .child(distribute_button(self, goal)),
         );
         // The sum of what is inside — an observation, never a target. Shown only when

@@ -156,7 +156,7 @@ impl Widget for PaceSummaryPanel {
                                 .style(TextStyleRole::BodyBold)
                                 .single_line(),
                         )
-                        .child(crate::widgets::goal_progress::line(
+                        .child(crate::goals::readout::line(
                             row.written.max(0) as usize,
                             row.goal,
                             &frontend::common::entities::GoalUnit::Words,

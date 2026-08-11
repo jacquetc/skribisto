@@ -1060,9 +1060,7 @@ impl Widget for GoalReadout {
         // against everything beneath it. That is the whole of "a level encompasses its
         // children": the progress rolls up, the targets never do.
         let written = m.own.unwrap_or(m.subtree).by(&self.unit);
-        let id = ctx.add(crate::widgets::goal_progress::line(
-            written, self.goal, &self.unit,
-        ));
+        let id = ctx.add(crate::goals::readout::line(written, self.goal, &self.unit));
         self.root = Some(id);
         vec![id]
     }

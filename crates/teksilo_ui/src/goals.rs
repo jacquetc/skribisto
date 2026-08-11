@@ -41,6 +41,8 @@ pub mod distribute_panel;
 pub mod format;
 pub mod measure;
 pub mod progress;
+pub mod readout;
+pub mod unit_picker;
 
 pub use apportion::apportion;
 pub use distribute::{Plan, Proposal, Weighting};

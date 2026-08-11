@@ -103,10 +103,10 @@ impl WordCountIndicator {
             ctx.add(
                 teksilo::widgets::HStack::new()
                     .spacing(6.0)
-                    .child(crate::widgets::goal_progress::bar(written, goal))
+                    .child(crate::goals::readout::bar(written, goal))
                     .child(text)
                     .child(
-                        TextWidget::new(crate::widgets::goal_progress::progress_label(
+                        TextWidget::new(crate::goals::readout::progress_label(
                             written,
                             goal,
                             &self.unit.get(),
