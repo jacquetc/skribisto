@@ -4,8 +4,8 @@
 //! What the importer tells the writer, and how loudly.
 //!
 //! The loudest finding in the prior-art survey behind this feature was that
-//! manuscript import fails *silently*: Scrivener's split deleting the word it
-//! split on, Joplin dropping every relative-path image for years, md2nw quietly
+//! manuscript import fails *silently*: one tool's split deleting the word it
+//! split on, another dropping every relative-path image for years, a third quietly
 //! starting an unnamed scene whose body begins with a literal `#### `. The
 //! response is not to fail harder — it is to make every lossy decision nameable,
 //! attributable to a file or a row, and visible before anything is committed.
@@ -119,7 +119,7 @@ pub enum ImportDiagnostic {
     // ── plan-level: about the tree that would be created ────────────────────
     /// A heading was deeper than its parent by more than one level. The row is
     /// still created, clamped one level under its parent, rather than growing
-    /// the phantom nesting that Scrivener is documented to produce.
+    /// the phantom nesting that other importers are documented to produce.
     HeadingLevelJump { title: String, from: u8, to: u8 },
     /// The type a row resolved to cannot hold the content it carries, so the
     /// content would be dropped at save time. Caught here instead, where it can

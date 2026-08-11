@@ -4,7 +4,7 @@
 //! Spreading a container's target across its immediate children.
 //!
 //! Nothing else on the market does this. Every writing tool surveyed either sums child
-//! targets upward (Scrivener, and its fifteen-year-old complaint thread about the
+//! targets upward (with a fifteen-year-old complaint thread about the
 //! double-counting that causes) or has no per-child target at all; the one tool that
 //! distributes anything distributes it across *days*, not across the manuscript. So the
 //! shape here is chosen rather than copied, and two of the choices are load-bearing:

@@ -51,7 +51,7 @@ pub use title::{ExtractedOrdinal, extract_leading_ordinal};
 /// invisible when you do: the plan looks right whenever the caller happened to
 /// pass files already sorted, and comes out shuffled for the writer whose
 /// filesystem handed them over in another order — which is precisely the bug
-/// (Scrivener's 4,1,2,5,3) that `order` exists to prevent. One entry point that
+/// (the surveyed 4,1,2,5,3) that `order` exists to prevent. One entry point that
 /// cannot skip a step is worth more than three that each document their place.
 ///
 /// `start` is the kind the shallowest heading level should become — chosen from

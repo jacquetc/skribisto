@@ -251,7 +251,7 @@ fn binder_tree(
     // the item). `Copy` leaves the row in place; in-tree reorder still works —
     // one drag can drop inside the tree (reorder) or onto a pane (open).
     .exportable(DragTransferMode::Copy)
-    // Single-click to open (Scrivener convention) — arrow-key navigation only
+    // Single-click to open (the outliner convention) — arrow-key navigation only
     // moves the highlight, so stepping through the binder never spawns tabs.
     .activate_on(ActivateOn::SingleClick)
     .on_activate(move |idx, _ctx| {

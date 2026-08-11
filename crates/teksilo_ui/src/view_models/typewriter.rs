@@ -15,7 +15,7 @@ use teksilo::prelude::Signal;
 
 /// Where the caret's line is held on screen while typewriter scrolling is on.
 ///
-/// Presets rather than a free percentage, following Scrivener (Mac) and Ulysses:
+/// Presets rather than a free percentage, following established practice:
 /// the three named positions are the ones writers actually reach for, and a
 /// slider mostly invites people to pick a meaningless 37 %.
 #[derive(Serialize, Deserialize, Default, Clone, Copy, Debug, PartialEq, Eq)]

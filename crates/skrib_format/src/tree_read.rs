@@ -137,7 +137,7 @@ pub trait TreeReader {
     //
     // The rule this used to state — "export never reads comments" — was right about the
     // manuscript and wrong about the file. A comment must still never reach the *compiled
-    // document*: it is a working note, not prose, and Scrivener draws the same line. It does
+    // document*: it is a working note, not prose, and that is the standard line. It does
     // now reach the exported `.docx`/`.odt`, as a **side payload** of anchored ranges the
     // writer attaches beside the text, because that is the editorial round trip — a draft goes
     // out for comment and comes back with the editor's remarks, which Skribisto reads.

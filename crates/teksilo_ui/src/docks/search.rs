@@ -323,7 +323,7 @@ fn results_list(vm: SearchReplaceViewModel) -> impl Widget {
     })
     .auto_item_height(48.0)
     .scroll_bar_style(ScrollBarMode::Overlay)
-    // Single-click previews a result (Scrivener/outline convention); the default
+    // Single-click previews a result (the outline convention); the default
     // is DoubleClick, which would leave the preview stubbornly empty on one click.
     .activate_on(ActivateOn::SingleClick)
     .on_activate({

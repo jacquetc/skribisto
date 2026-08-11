@@ -51,10 +51,10 @@ pub struct NumberingRules {
     ///
     /// Defaults **off**, which is the trade convention: chapters run continuously across
     /// the parts of one book, so "Part Two" opens on Chapter Eleven. Chicago's survey of
-    /// published fiction finds no per-part restart, and novelWriter's independent
-    /// implementation resets scenes at a part and chapters only at a new book — the same
+    /// published fiction finds no per-part restart, and an independent implementation
+    /// elsewhere resets scenes at a part and chapters only at a new book — the same
     /// rule. It is a setting rather than a constant because the in-world "Book Two,
-    /// Chapter One" framing is real, and because Vellum exposes the same choice.
+    /// Chapter One" framing is real, and because other tools expose the same choice.
     pub part_resets_chapter: bool,
 }
 

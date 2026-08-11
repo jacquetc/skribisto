@@ -81,8 +81,8 @@ impl Preset {
     /// The Djot body.
     ///
     /// Deliberately lean. Every comparable tool that shipped a deep fixed schema backed off
-    /// it — bibisco's 138-question interview is *optional* prompts, Plottr and Manuskript
-    /// both ended up letting the user author the field list. These are a starting point the
+    /// it — one tool's 138-question interview is *optional* prompts, and two others
+    /// ended up letting the user author the field list. These are a starting point the
     /// writer edits, not a form to complete, so each one is a page of prompts at most.
     fn body(self) -> String {
         match self {

@@ -370,7 +370,7 @@ pub struct Preset {
     pub scene_break: SceneBreak,
     /// How a *major* break renders — a large time skip or decisive viewpoint
     /// change. Shunn codifies `#` vs `# # #` for exactly this distinction, and
-    /// it recurs independently in novelWriter and Russian editorial practice.
+    /// it recurs independently in other tools and in Russian editorial practice.
     #[serde(default)]
     pub major_scene_break: SceneBreak,
     #[serde(default)]
@@ -635,6 +635,10 @@ pub fn builtin_presets() -> Vec<Preset> {
         },
         Preset {
             id: "manuscript-de".to_string(),
+            // *Manuskript* is simply German for manuscript, the way the presets
+            // above and below are named in French and Spanish. It is not a
+            // reference to any application, and a sweep for those should leave
+            // it alone.
             name: "Manuskript (Normseite)".to_string(),
             font_family: "Courier New".to_string(),
             // No DIN or Duden rule governs this; German trade books largely

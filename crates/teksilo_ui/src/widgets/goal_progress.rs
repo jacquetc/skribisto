@@ -5,9 +5,9 @@
 //!
 //! Four surfaces show it — the Inspector's readout under the target field, a container
 //! page's own header, the status bar beside the live count, and the Distribute preview's
-//! footer — and they all come through here. Scrivener's outliner and its editor footer draw
-//! the same fact two different ways (the outliner silently drops the over-target state the
-//! footer has), which is a filed complaint against it and exactly the drift a shared widget
+//! footer — and they all come through here. Elsewhere an outliner and an editor footer
+//! draw the same fact two different ways (the outliner silently drops the over-target
+//! state the footer has), which is a filed complaint and exactly the drift a shared widget
 //! prevents.
 //!
 //! Everything here is a plain builder rather than `teksu!`, matching the files that host it

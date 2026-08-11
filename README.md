@@ -127,11 +127,13 @@ store, with undo/redo and an event bus alongside.
 
 The binder tree is **organisational only**. A book's real structure is a state machine over
 the flat, ordered stream of items, driven by two typed axes: a `role` (Folder or Item, purely
-a UI concern) and a composable `sub_role` (Book, Part, Chapter, Scene, ChapterScene, Note,
-Text). Text is explicit: each content row carries its own role, be it scene text, note text,
-synopsis or title. The valid combinations live in a single table, in `crates/skribisto_model`,
-which drives backend validation, the "＋ Create" menu and the editor panes alike. Anything
-absent from that table is invalid by construction.
+a UI concern) and a composable `sub_role` (Book, Part, Scene, ChapterScene, Note, Text,
+Paratext, BookBegin, BookEnd and None). There is no `Chapter` variant: a chapter is a
+UI-level composite that resolves to a folder or a flat row depending on
+`Work.chapter_mode`. Text is explicit: each content row carries its own role, be it scene
+text, note text, synopsis or title. The valid combinations live in a single table, in
+`crates/skribisto_model`, which drives backend validation, the "＋ Create" menu and the
+editor panes alike. Anything absent from that table is invalid by construction.
 
 ### The project format
 
@@ -152,6 +154,7 @@ A cargo workspace under `crates/`:
 - `teksilo_ui`, the desktop app (the binary is named `skribisto`)
 - `skribisto_model`, the writing-model constraint matrix
 - `skrib_format`, the `.skrib` bundle reader and writer
+- `document_ingest`, the format-agnostic scanner behind Markdown/DOCX/ODT import
 - `skribisto_compiler` and `skribisto-fonts`, the export pipeline and its bundled typefaces
 - `work_management`, `binder_item_management`, `trash_management`, `search_management`,
   `import_management`, `export_management`, `handling_app_lifecycle`, `progress_management`,

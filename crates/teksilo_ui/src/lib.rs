@@ -482,7 +482,7 @@ pub const TYPEWRITER_ANCHOR_KEY: &str = "editor.typewriter_anchor";
 // on its row means.
 //
 // Dashes, the ellipsis and curled quotes default **on**: that is what "smart
-// punctuation" means to a writer, it is what Word, LibreOffice and Scrivener all
+// punctuation" means to a writer, it is what Word and LibreOffice both
 // do out of the box, and every one of them is reversible with a single Ctrl+Z on
 // the keystroke that fired it.
 //
@@ -567,7 +567,7 @@ pub const CORKBOARD_SHOW_WORD_COUNT_DEFAULT: bool = true;
 /// against the card's compact 0.8.
 pub const CORKBOARD_MODAL_SIZE_KEY: &str = "corkboard.modal_size";
 pub const CORKBOARD_MODAL_SIZE_DEFAULT: f32 = 1.0;
-/// Number the cards in board order — Scrivener's card numbers. Off by default:
+/// Number the cards in board order, the way index cards are numbered. Off by default:
 /// the number is a reading aid for a structure pass, not something the writer
 /// needs on every card all the time.
 pub const CORKBOARD_SHOW_CARD_NUMBERS_KEY: &str = "corkboard.show_card_numbers";

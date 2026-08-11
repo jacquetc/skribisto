@@ -12,8 +12,8 @@
 //! no statistical charset guessing, because its failure mode is silent
 //! corruption — prose that looks fine and is subtly wrong is worse than prose
 //! with a visible replacement character and a warning attached. And nothing here
-//! can panic: Manuskript's issue #470 is a hard crash on one stray byte at
-//! position 488905 of somebody's novel, which is the outcome this exists to make
+//! can panic: a surveyed importer hard-crashes on one stray byte at position
+//! 488905 of somebody's novel, which is the outcome this exists to make
 //! impossible.
 
 use encoding_rs::Encoding;
@@ -123,7 +123,7 @@ mod tests {
         ));
     }
 
-    /// The Manuskript #470 case: one byte that is not valid UTF-8, no BOM to
+    /// The surveyed crash case: one byte that is not valid UTF-8, no BOM to
     /// explain it. It must not panic and must not abort the batch.
     #[test]
     fn an_undeclared_non_utf8_byte_is_lossy_and_counted_never_fatal() {

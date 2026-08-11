@@ -6,8 +6,8 @@
 //! Plain text is Markdown with no markup, so it runs through the Markdown
 //! scanner rather than a code path of its own. That is not laziness: the
 //! prior-art survey's clearest structural lesson is that a *separate* batch or
-//! format path is where the crashes live (Manuskript ships one importer per
-//! entry point and its folder path is the one with the open crash reports). One
+//! format path is where the crashes live (a surveyed tool ships one importer per
+//! entry point, and its folder path is the one with the open crash reports). One
 //! path, exercised by every import, stays correct.
 //!
 //! The one real difference is scene-break spelling. In `.txt` a line of `***` is

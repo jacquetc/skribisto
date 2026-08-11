@@ -43,7 +43,7 @@ use std::borrow::Cow;
 /// How strong a break the author asked for.
 ///
 /// The two-tier distinction is not a US-only idea: Shunn codifies `#` vs
-/// `# # #` for minor/major, novelWriter separates "soft" and "hard" scene
+/// `# # #` for minor/major, other tools separate "soft" and "hard" scene
 /// breaks, and Russian editorial practice distinguishes a silent gap from a
 /// graphic separator by the same logic (visible outranks invisible).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -63,7 +63,7 @@ pub const CANONICAL_MAJOR: &str = "# # #";
 
 /// Accepted spellings of a minor break, compared after normalisation.
 ///
-/// Deliberately liberal: a writer coming from Markdown, Scrivener or a plain
+/// Deliberately liberal: a writer coming from Markdown, another editor or a plain
 /// manuscript may reach for any of these, and silently treating a near-miss as
 /// ordinary prose would put a stray `***` in the finished book.
 ///

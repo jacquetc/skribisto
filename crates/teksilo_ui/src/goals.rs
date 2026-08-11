@@ -15,8 +15,8 @@
 //!
 //! 1. **A container's target is its own number. Targets are never summed, derived or
 //!    reconciled.** A `Folder/Book` with a 90 000 target and three chapters targeting
-//!    10 000 / nothing / 5 000 is four independent, simultaneously true numbers. Scrivener
-//!    sums them, has done since 2007, and it is the single most complained-about behaviour
+//!    10 000 / nothing / 5 000 is four independent, simultaneously true numbers. Tools
+//!    that sum them have done so since 2007, and it is the most complained-about behaviour
 //!    in the whole field: a folder's total silently jumping because a scene inside it was
 //!    given a target of its own. What *does* roll up is **progress** — the actual words
 //!    under a container, measured against that container's own number, which is what

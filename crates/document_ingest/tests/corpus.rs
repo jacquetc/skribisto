@@ -8,7 +8,7 @@
 //!
 //! - **Skribisto's own Markdown export**, which spells its major scene break
 //!   `# # #` — an ATX heading to any CommonMark parser.
-//! - **A folder of one-scene-per-file**, the Obsidian/Longform shape, where the
+//! - **A folder of one-scene-per-file**, the note-app shape, where the
 //!   ordering lives in the file names and there are no headings at all.
 //! - **One long manuscript** with `#`/`##`/`###` structure, the export-from-Word
 //!   shape.
@@ -99,14 +99,14 @@ Morning came late.
     );
 }
 
-/// The Obsidian/Longform shape: ordering in the file names, no headings at all.
-/// Scrivener is documented to import this in whatever order the filesystem
+/// The note-app shape: ordering in the file names, no headings at all. Other
+/// importers are documented to take this in whatever order the filesystem
 /// happened to hand it over; the numeric prefix is ordering and must not survive
 /// into the title, where it would fight Skribisto's own chapter numbering.
 #[test]
 fn a_folder_of_one_scene_per_file_becomes_one_row_each() {
     // Deliberately handed over out of order, the way a filesystem does — this is
-    // the case that landed a writer's scenes as 4, 1, 2, 5, 3 in Scrivener.
+    // the case that landed a writer's scenes as 4, 1, 2, 5, 3 elsewhere.
     let mut files: Vec<(String, String)> = (1..=12)
         .map(|i| {
             (
@@ -281,9 +281,9 @@ After the break.
     assert_eq!(plan.rows[1].scene_breaks, 1);
 }
 
-/// A batch must never be abandoned over one bad member — Manuskript's folder
-/// import crashes on a single undecodable byte, and calibre's `chapterize`
-/// exits outright below three headings.
+/// A batch must never be abandoned over one bad member — surveyed folder imports
+/// crash on a single undecodable byte, and one chapterizer exits outright below
+/// three headings.
 #[test]
 fn one_broken_file_does_not_take_the_batch_down() {
     let registry = ScannerRegistry::with_builtin_scanners();

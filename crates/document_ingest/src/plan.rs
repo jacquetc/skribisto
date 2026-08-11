@@ -376,7 +376,7 @@ fn append_document(
     base_indent: i64,
     // Heading level → the indent its row sits at. Rebuilt as levels are met so a
     // document that skips a level (`#` then `####`) nests one step, not three:
-    // the phantom-folder failure Scrivener is documented to produce. Owned by
+    // the phantom-folder failure other importers are documented to produce. Owned
     // [`build_plan`] and carried across documents — see the note there.
     open_levels: &mut Vec<u8>,
 ) {
@@ -745,8 +745,8 @@ fn planned_comment(
 
 /// The row that collects prose appearing before a document's first heading.
 ///
-/// Manuskript leaves this case unresolved in its own source comment, letting the
-/// text inherit a title it has no claim to. Giving it a row of its own named for
+/// One surveyed tool leaves this case unresolved in its own source comment, letting
+/// the text inherit a title it has no claim to. Giving it a row of its own named for
 /// the document is duller and correct: nothing is lost and nothing is misfiled.
 fn leading_row(doc: &SourceDocument, rules: &LevelRules, base_indent: i64) -> PlannedRow {
     PlannedRow {
@@ -978,7 +978,7 @@ mod tests {
     }
 
     /// A skipped level nests one step and says so, rather than growing the
-    /// phantom folders Scrivener is documented to produce.
+    /// phantom folders other importers are documented to produce.
     #[test]
     fn a_skipped_heading_level_nests_one_step_and_is_reported() {
         let d = doc(

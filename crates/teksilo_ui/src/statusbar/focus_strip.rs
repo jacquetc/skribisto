@@ -6,9 +6,9 @@
 //! status bar's content while the mode is active.
 //!
 //! **Always visible, never hover-reveal** — this app's documented EN 301 549
-//! / RGAA accessibility posture rules out a hover-only strip: both Scrivener
-//! and FocusWriter have filed bugs where a hover-only control panel cannot be
-//! brought back once dismissed. The strip exists only while the mode's surface
+//! / RGAA accessibility posture rules out a hover-only strip: other writing
+//! tools have filed bugs where a hover-only control panel cannot be brought
+//! back once dismissed. The strip exists only while the mode's surface
 //! does (`distraction_free::surface` builds it), never on hover.
 //!
 //! `WordCountIndicator` and `SessionStatusItem` drop in unchanged, over the
@@ -470,8 +470,8 @@ mod tests {
     /// are a keystroke the focused editor may legitimately swallow (Escape)
     /// and one the writer has to remember (Shift+F11), so a settings choice
     /// that could take this button away would be a way to get stranded in
-    /// fullscreen with no visible way out — the exact failure both Scrivener
-    /// and FocusWriter have filed bugs for.
+    /// fullscreen with no visible way out — the exact failure other writing
+    /// tools have filed bugs for.
     #[test]
     fn exit_survives_every_combination_of_the_chrome_settings() {
         let exit = tr!(statusbar_focus_exit()).resolve_now();

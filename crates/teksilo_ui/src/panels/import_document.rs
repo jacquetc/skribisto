@@ -753,9 +753,9 @@ impl Widget for ComparePanel {
 /// What the importer had to decide, lose or guess — said out loud, before Import.
 ///
 /// This is the feature's whole reason for existing. The prior-art survey behind
-/// it found that manuscript import fails *silently* everywhere: Scrivener's split
-/// deleting the word it split on, Joplin dropping every relative-path image for
-/// years. `document_ingest` names fourteen such moments and attaches each to a
+/// it found that manuscript import fails *silently* everywhere: a splitter
+/// deleting the word it split on, an importer dropping every relative-path image
+/// for years. `document_ingest` names fourteen such moments and attaches each to a
 /// file or a row — and until this strip existed the UI collected every one of
 /// them and showed none, which is the same failure with extra steps.
 ///

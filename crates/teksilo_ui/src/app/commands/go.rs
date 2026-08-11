@@ -63,7 +63,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     // The generic pair: keyboard/strip-only, never a menu row (the six kind-specific
     // rows above already cover the menu). Alt+Down steps forward, Alt+Up backward —
     // Down/Up rather than Left/Right so a future history feature can still claim
-    // Alt+Left/Alt+Right, matching Manuskript's own prior-art shape one axis over.
+    // Alt+Left/Alt+Right, matching the prior-art shape one axis over.
     ctx.register_shortcut_global(
         Shortcut::new("go.next")
             .name("Next")

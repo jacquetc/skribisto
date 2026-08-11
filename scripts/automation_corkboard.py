@@ -4,8 +4,8 @@
 
 """Drive a live Skribisto and verify the **Corkboard** segment.
 
-The Corkboard is a container's contents as index cards — the surface Scrivener
-made the genre's default outlining gesture. Until now its only end-to-end
+The Corkboard is a container's contents as index cards — the surface that became
+the genre's default outlining gesture. Until now its only end-to-end
 coverage was incidental (the tag-dot assertions in `automation_tag_chips.py` /
 `automation_tag_overflow.py`); this script covers the board itself.
 

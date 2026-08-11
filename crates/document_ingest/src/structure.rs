@@ -5,8 +5,8 @@
 //!
 //! ## Why this is deliberately simple
 //!
-//! Every surveyed tool that guesses hard at structure — calibre's eight-pattern
-//! regex cascade, its word-count sizing, Vellum's keyword vocabulary — is
+//! Every surveyed tool that guesses hard at structure — eight-pattern regex
+//! cascades, word-count sizing, keyword vocabularies — is
 //! guessing because it has no chance to ask. Skribisto does: nothing is committed
 //! until the writer has seen the tree and can retype any row. Once a correction
 //! costs one click, an elaborate heuristic buys very little and costs a great
@@ -26,7 +26,7 @@ use skribisto_model::CreateType;
 ///
 /// Stops at `Scene`: nothing nests inside a scene, so every level below the
 /// scene level is also a scene. That is what keeps a stray `#####` from becoming
-/// a phantom row — the failure md2nw is documented to have, where a heading
+/// a phantom row — a failure documented in other converters, where a heading
 /// deeper than the tool understood silently opened an unnamed scene whose body
 /// began with the literal `#### `.
 const LADDER: &[CreateType] = &[

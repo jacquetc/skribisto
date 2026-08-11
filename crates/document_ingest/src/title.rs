@@ -11,8 +11,8 @@
 //!
 //! So the ordinal comes off, and both halves are kept — the writer sees what was
 //! removed in the review step and can put it back on any row. Removing it
-//! silently would be the same mistake Scrivener makes when splitting on the word
-//! "Chapter" and deleting it from every title it produced.
+//! silently would be the same mistake other importers make when splitting on the
+//! word "Chapter" and deleting it from every title they produce.
 //!
 //! ## Three ways a number can be written, and one rule that guards them
 //!

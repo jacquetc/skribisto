@@ -218,7 +218,7 @@ pub(in crate::settings) fn editor_behavior_pane(
                 )),
         )
         // Where the pinned line sits. Presets rather than a percentage slider,
-        // following Scrivener and Ulysses. Disabled — not hidden — while the
+        // following the established convention. Disabled — not hidden — while the
         // toggle above is off, so the choice stays visible as part of what the
         // feature offers instead of appearing out of nowhere when it is enabled.
         .line(

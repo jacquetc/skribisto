@@ -4,9 +4,10 @@
 //! What order a set of documents lands in.
 //!
 //! The single most reported import failure in the survey behind this feature is
-//! not a parsing bug — it is this. Scrivener takes files in whatever order the
-//! filesystem hands them over, and a writer's `1 - Scene` … `5 - Scene` landed
-//! as 4, 1, 2, 5, 3. Nothing about that is recoverable afterwards except by hand.
+//! not a parsing bug — it is this. Importers commonly take files in whatever
+//! order the filesystem hands them over, and a writer's `1 - Scene` … `5 - Scene`
+//! landed as 4, 1, 2, 5, 3. Nothing about that is recoverable afterwards except
+//! by hand.
 //!
 //! Two rules, in order:
 //!
@@ -138,8 +139,8 @@ mod tests {
         docs.iter().map(|d| d.origin.as_str()).collect()
     }
 
-    /// The failure this module exists for: Scrivener took a writer's five
-    /// numbered scenes and produced 4, 1, 2, 5, 3.
+    /// The failure this module exists for: a writer's five numbered scenes
+    /// imported as 4, 1, 2, 5, 3.
     #[test]
     fn filesystem_order_is_replaced_by_the_writers_numbering() {
         let mut docs = vec![

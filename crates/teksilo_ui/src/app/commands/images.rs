@@ -14,9 +14,9 @@
 //! right, and sometimes exactly what they want for a print-quality plate. But it
 //! is a decision with consequences they cannot see at the moment of dropping a
 //! file, so the first large image asks. The prompt's "don't ask again" writes
-//! the answer to a setting, which is the LibreOffice/Scrivener posture rather
-//! than Word's (compress by default, with a per-document switch users routinely
-//! report as not working).
+//! the answer to a setting, which is the LibreOffice posture rather than Word's
+//! (compress by default, with a per-document switch users routinely report as
+//! not working).
 
 use frontend::AppContext;
 use teksilo::prelude::*;

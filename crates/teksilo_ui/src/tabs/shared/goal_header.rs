@@ -7,7 +7,7 @@
 //! Three facts, one of which is deliberately not a target. A chapter's own progress is
 //! everything written beneath it measured against **its own** number; the second line is
 //! the sum of its children's numbers, which this app never treats as the container's
-//! target and never lets drift into one. Scrivener does exactly that and has been fielding
+//! target and never lets drift into one. Other tools do exactly that and have been fielding
 //! the resulting complaint since 2007 — a folder's figure moving on its own because a scene
 //! inside it was given one — so the line is worded as an observation and rendered as one:
 //! no bar, no percentage, no colour band, nothing to click.

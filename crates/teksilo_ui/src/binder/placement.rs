@@ -116,7 +116,7 @@ pub fn insertion_point_for_item(
 /// "Next Chapter" from inside a Scene still has its own answer, per the Go menu's
 /// settled "six static rows" design (each row asks its own question, not "the next
 /// thing of whatever kind I'm currently in"). Every field is `None` when nothing of
-/// that kind lies in that direction — **no wraparound**, matching Scrivener's own
+/// that kind lies in that direction — **no wraparound**, matching the conventional
 /// Previous/Next behaviour, and this never looks outside `order` (the caller's own
 /// binder), so it never jumps to another binder either.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -334,7 +334,7 @@ mod tests {
     }
 
     /// From the last row (BookEnd): every Previous answer resolves, and — with
-    /// **no wraparound** — every Next answer is `None`, matching Scrivener's own
+    /// **no wraparound** — every Next answer is `None`, matching the conventional
     /// Previous/Next behaviour rather than cycling back to the top.
     #[test]
     fn from_the_last_row_next_never_wraps_around() {

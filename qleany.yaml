@@ -946,7 +946,7 @@ entities:
 # caret via `TextCursor::insert_djot`, so anything Djot can express (headings, lists,
 # tables) survives the trip. It is deliberately inert text: no placeholder substitution,
 # no field schema. Every comparable tool that tried a fixed character-sheet schema
-# (Plottr, Manuskript) ended up backing off into free text or user-authored field lists,
+# ended up backing off into free text or user-authored field lists,
 # because no two novelists agree on the field set.
 #
 # `starred` floats a template to the top of the insert menu; ordering below that is the
@@ -977,7 +977,7 @@ entities:
 # `string` would put the whole payload in the store — resident forever, cloned by every
 # `snapshot_work`, and serialized into the backup fingerprint. Every desktop writing tool
 # surveyed keeps image bytes as files in the container and a handle in the model
-# (DOCX `word/media/`, ODT `Pictures/`, Scrivener's package, Joplin's `resources/`), and
+# (DOCX `word/media/`, ODT `Pictures/`, and the equivalent inside every app package), and
 # LibreOffice goes further, writing the bytes to a temp file at load so the in-memory
 # `Graphic` can release them. So the bytes live in the project's media directory and in
 # `assets/<hash>.<ext>` inside the `.skrib`, and this row records what they are.

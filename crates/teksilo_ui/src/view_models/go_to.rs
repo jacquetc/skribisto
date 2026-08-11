@@ -144,8 +144,8 @@ impl GoToViewModel {
     /// This is what "quicker selection" means here, and why the popup does
     /// **not** also grow a suggestion dropdown: a dropdown over a filtered tree
     /// puts the same items on screen twice and makes Enter ambiguous between
-    /// them. Every palette a writer already knows — VS Code, Sublime, IntelliJ,
-    /// Scrivener's own Go To — has exactly one result list and moves through it
+    /// them. Every palette a writer already knows — VS Code, Sublime, IntelliJ —
+    /// has exactly one result list and moves through it
     /// from the field. So does this.
     ///
     /// Rows that are not destinations are skipped, not merely rejected on

@@ -11,16 +11,16 @@
 //! as writing too much in one, so [`sprint_role`] tops out at "good" and never flags an
 //! overshoot. A *document target* is a budget: a chapter that is half again as long as it
 //! was planned to be is worth noticing, so [`target_role`] adds a fourth band above it.
-//! Manuskript is the one surveyed tool that thought about this and it draws the same
-//! conclusion (its bands stop at 120% and then change colour); bibisco's three bands cannot
-//! tell "just made it" from "way over", and Scrivener's outliner silently drops the overrun
-//! state its editor footer has, which is a filed complaint against it.
+//! One surveyed tool thought about this and draws the same conclusion (its bands stop
+//! at 120% and then change colour); another's three bands cannot tell "just made it" from
+//! "way over", and a third's outliner silently drops the overrun state its own editor
+//! footer has, which is a filed complaint against it.
 
 use teksilo::tokens::TextRole;
 
 /// Ratio at and above which a document target reads as overshot rather than met.
 ///
-/// 1.2 follows Manuskript, the only prior art that picked a threshold deliberately. Below
+/// 1.2 follows the only prior art that picked a threshold deliberately. Below
 /// it, being over target is just "done".
 pub const OVERSHOT: f32 = 1.2;
 
