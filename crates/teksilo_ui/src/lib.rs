@@ -93,6 +93,7 @@ pub mod date_convert;
 pub mod distraction_free;
 pub mod docks;
 pub mod export;
+pub mod ext;
 pub mod first_run;
 pub mod goals;
 pub mod icons;
