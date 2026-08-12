@@ -12,8 +12,13 @@
 //! The re-attach *policy* is the subtle part and is documented per block below; the engine
 //! itself lives in [`crate::spellcheck`], and the caret-aware session wiring in
 //! `tabs::shared::editor`.
+//!
+//! [`wire`] is the per-build entry point `App::build` calls: it re-fetches the app-state
+//! handles, calls [`install`] and registers this window's dictionaries service for live
+//! reload the first time through.
 
 use teksilo::prelude::*;
+use teksilo::settings::{Reloadable, SettingsRegistry};
 
 use std::rc::Rc;
 
@@ -107,5 +112,60 @@ pub(in crate::app) fn install(
                 dictionaries.rescan();
             }
         });
+    }
+}
+
+/// What [`wire`] resolves and hands back to `App::build`.
+pub(in crate::app) struct SpellcheckWiring {
+    pub spell_docs: OpenDocsStore,
+    pub spellcheck: SpellcheckService,
+    pub dictionaries: DictionariesViewModel,
+    pub dictionary_settings_reloadable: Option<Rc<dyn Reloadable>>,
+}
+
+/// Re-fetch the shared open-docs handle, the app-state-registered checker and
+/// dictionaries view-model, [`install`] the re-attach wiring above, and — the
+/// first time through — register this window's dictionaries service for live
+/// cross-process reload of `dictionaries.toml`.
+pub(in crate::app) fn wire(
+    ctx: &mut BuildContext,
+    app_ctx: &Rc<AppContext>,
+    ids: &AppIds,
+    docs: &OpenDocsStore,
+    dictionary_settings_registered: bool,
+) -> SpellcheckWiring {
+    // ── Spell-checking wiring (Step 6). `docs` above was moved into the editors VM, so
+    // re-fetch the shared handle for the attach loop. ──
+    let spell_docs = docs.clone();
+    // Keep the store's cached language map honest: an item's `dict_language` or
+    // `sub_role` edited in place leaves the binder's shape unchanged, so only the
+    // entity event can invalidate it. Every build — the subscription is scoped to
+    // this one (see `OpenDocsStore::wire`).
+    spell_docs.wire(ctx);
+    let spellcheck = ctx
+        .app_state::<crate::spellcheck::SpellcheckService>()
+        .cloned()
+        .expect("SpellcheckService registered in main");
+    let dictionaries = ctx
+        .app_state::<crate::view_models::DictionariesViewModel>()
+        .cloned()
+        .expect("DictionariesViewModel registered in main");
+    // Dictionary / personal-word / theme changes → re-attach every open document.
+    // See `app::wiring::spellcheck` for the re-attach policy.
+    install(ctx, app_ctx, ids, &spell_docs, &spellcheck, &dictionaries);
+    // Live cross-process reload for `dictionaries.toml` (accepted licences), mirroring the
+    // backup-settings registration below.
+    let mut dictionary_settings_reloadable = None;
+    if !dictionary_settings_registered
+        && let Some(registry) = ctx.app_state::<SettingsRegistry>().cloned()
+    {
+        dictionary_settings_reloadable =
+            Some(registry.register(dictionaries.settings_reloadable()));
+    }
+    SpellcheckWiring {
+        spell_docs,
+        spellcheck,
+        dictionaries,
+        dictionary_settings_reloadable,
     }
 }

@@ -153,19 +153,19 @@ use std::sync::Arc;
 use teksilo::core::event_source::{EventSource, SubscriptionHandle};
 
 use teksilo::prelude::*; // also brings the file-dialog ext + FileDialogRequest/Result
-use teksilo::widgets::framework_locales;
 
 use shell::{ipc, windows};
 
 use frontend::AppContext;
 use frontend::EventHubClient;
-use frontend::commands::{handling_app_lifecycle_commands, work_info_commands};
+use frontend::commands::work_info_commands;
 use frontend::common::event::{Event, Origin};
 
 use app_ids::AppIds;
-use models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
-use sessions::{WorkRegistry, WorkSession};
-use view_models::{BackupSettingsViewModel, ImportPlumeViewModel, OutlineViewModel};
+use models::{TreeExpansionService, WorkspaceLayoutService};
+use sessions::WorkSession;
+use startup::{Tier1Services, UiConfig};
+use view_models::OutlineViewModel;
 
 /// The currently-open project's path (from its `WorkInfo`), if any.
 ///
@@ -293,104 +293,13 @@ impl EventSource for EventHubSource {
 /// `AppIds`, a view-model, or any other type here. Everything the extension seam
 /// needs to reach lives behind this boundary.
 pub fn run() {
-    // ── Windows: rejoin the launching terminal, if any ────────────────────────
-    //
-    // The binaries are linked for the GUI subsystem (`#![windows_subsystem =
-    // "windows"]` in `src/bin/skribisto.rs`), which also detaches stdout/stderr.
-    // Reattach to the parent's console so `--dump-config`, pin-validation errors
-    // and panic reports still print when launched from a terminal. Failure just
-    // means no console to join (a double-click) — the normal GUI case. Redirected
-    // handles (`> file`) are set via STARTF_USESTDHANDLES and survive the attach.
-    #[cfg(windows)]
-    unsafe {
-        use ::windows::Win32::System::Console::{ATTACH_PARENT_PROCESS, AttachConsole};
-        let _ = AttachConsole(ATTACH_PARENT_PROCESS);
-    }
-
-    // ── Panic diagnostics — before anything at all ────────────────────────────
-    //
-    // Ahead of even the election, so a panic while parsing arguments or binding
-    // the instance socket is still recorded. The hook chains to libstd's, takes
-    // no application locks, and writes one file; see `crash_report`'s module doc
-    // for why it deliberately does not try to dump prose.
-    crash_report::install();
-
-    // ── Single-instance election — FIRST, before anything is built ────────────
-    //
-    // A remote must not construct an `AppContext`, start the event-dispatch
-    // thread, run `initialize_app`, prune `window_state.toml`, or open a settings
-    // handle: all of those touch state the primary is concurrently using, on
-    // behalf of a process that is about to exit. Everything below this block is
-    // therefore reachable only by a primary or a standalone instance.
-    //
-    // `--new-instance`, `--config`, `--dump-config` and a bare `.skrib` path are
-    // the whole argument surface; `parse_args` is a pure function so that surface
-    // is unit-tested.
-    let args = shell::instance::parse_args(std::env::args().skip(1));
-    let initial_project = args.project.clone();
-    if let Some(error) = &args.error {
-        eprintln!("skribisto: {error}");
-        std::process::exit(2);
-    }
-
-    // ── The settings-schema flags, before anything else touches settings ──────
-    //
-    // Both are debug-only and both run ahead of the election: `--config` must
-    // land its pins on disk before `read_prefs` (below) reads the very keys it
-    // may be pinning, and `--dump-config` exits without building anything.
-    //
-    // Pins are applied *before* a dump, so `--config pins.toml --dump-config`
-    // reads as "apply these, then show me what I get" — a validate-and-preview
-    // pass that needs no window. Ordering the other way would print the state a
-    // launch was about to leave behind, which is a strictly less useful answer to
-    // the question the pair asks.
-    if let Some(path) = &args.config {
-        cli::apply_config_pins(path);
-    }
-    if args.dump_config {
-        cli::run_dump_config();
-        return;
-    }
-
-    // The desktop's own startup token (a file-manager double-click sets it), so
-    // whichever window the primary ends up showing can actually come forward on
-    // Wayland — a process cannot raise itself unprompted.
-    let launch_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
-
-    // `--config` implies standalone. A remote hands its command line to the
-    // primary and exits, and the primary's windows are already running against
-    // their own settings — so an elected-away `--config` run would pin nothing
-    // and silently observe a differently-configured app, which is precisely the
-    // failure this flag exists to remove.
-    let role = if args.new_instance || args.config.is_some() {
-        shell::instance::InstanceRole::Standalone
-    } else {
-        shell::instance::elect()
+    let (initial_project, is_primary) = match shell::instance::bootstrap() {
+        shell::instance::Bootstrap::Exit => return,
+        shell::instance::Bootstrap::Continue {
+            initial_project,
+            is_primary,
+        } => (initial_project, is_primary),
     };
-    let is_primary = matches!(role, shell::instance::InstanceRole::Primary);
-    if let shell::instance::InstanceRole::Remote(stream) = role {
-        let request = match &initial_project {
-            Some(path) => ipc::InstanceRequest::Open {
-                path: path.clone(),
-                activation_token: launch_token,
-            },
-            // A bare second launch asks for the Launcher rather than a raise:
-            // the Launcher is *how* a further project gets opened, so raising an
-            // existing project window would leave a desktop-icon user with no
-            // route to one. See `InstanceRequest::ShowLauncher`.
-            None => ipc::InstanceRequest::ShowLauncher {
-                activation_token: launch_token,
-            },
-        };
-        if shell::instance::handoff(stream, &request) {
-            return;
-        }
-        // Not acknowledged — a primary that accepted the connection and then
-        // wedged, or died mid-handshake. Fall through and launch normally: a
-        // duplicate window is a far better outcome than a launch that silently
-        // did nothing. This instance does NOT claim the primary socket (the
-        // election already resolved), so it behaves as a standalone peer.
-    }
 
     let app_ctx = Rc::new(AppContext::new());
 
@@ -407,258 +316,31 @@ pub fn run() {
     // (nothing has claimed it yet). Pruning first would therefore delete the
     // saved geometry of the very window we are seconds away from restoring.
 
-    // ── Is this an edition's very first launch? ───────────────────────────────
-    // Resolved **here**, before a single settings service is opened, and not at
-    // the point of use. `first_run::pending` asks (among other things) whether
-    // this edition's `general.toml` exists yet — and opening the services below
-    // creates it, populated with defaults. Asked any later, the answer is always
-    // "no offer" on the one launch the offer exists for.
-    let first_run_offer = first_run::pending();
+    let (first_run_offer, init_root_id) =
+        startup::launch_maintenance(&app_ctx, initial_project.as_deref());
 
-    // ── One-time startup maintenance: prune orphaned window-state rows (F4b) ──
-    // `window_state.toml` gets a `work-{hash}` row every time a project window
-    // opens, but nothing ever removed one — a project tried once (or an
-    // automation-test tempdir that no longer exists) leaves a permanent,
-    // default-geometry row behind forever. Sweep once, synchronously, before
-    // the app builder opens its own long-lived `WindowStateService` handle,
-    // and before any `RecentWorkListModel` is constructed for real (see
-    // `models::RecentWorkListModel::all_raw_paths`'s docs on why a short-lived
-    // handle here is safe). A maintenance sweep, not a reactive per-close
-    // mechanism: most orphaned rows point at tempdirs that still existed at
-    // close time and were only deleted after process exit by the test
-    // harness, so hooking `close_work` wouldn't have caught them; a raw
-    // row-count cap was also rejected, since `window_state.toml`'s row order
-    // is insertion order, not LRU, so trimming it would need a new recency
-    // field. `"main"`/`"launcher"`/any other fixed label is never touched —
-    // only `work-*` labels are ever considered.
-    if let Some(paths) = crate::identity::app_paths() {
-        match WindowStateService::open(&paths) {
-            Ok(window_state) => {
-                let known_paths = startup::known_project_paths(initial_project.as_deref());
-                startup::prune_orphaned_window_state(&window_state, &known_paths);
-                if let Err(e) = window_state.flush_now() {
-                    eprintln!("skribisto: window-state prune: flush failed: {e}");
-                }
-            }
-            Err(e) => eprintln!("skribisto: window-state prune: open failed: {e}"),
-        }
-    }
+    let UiConfig {
+        theme,
+        i18n,
+        autosave_init,
+        spellcheck_init,
+        show_welcome_init,
+    } = startup::build_ui_config();
 
-    // Seed the single shared Root + System frame into the (empty) store at
-    // startup — before any work is opened — and keep the returned Root id to
-    // point `AppIds` at it. `initialize_app` is idempotent: a later load/new
-    // reuses this frame instead of creating a second Root/System.
-    let init_root_id = match handling_app_lifecycle_commands::initialize_app(&app_ctx) {
-        Ok(res) => Some(res.root_id),
-        Err(e) => {
-            eprintln!("initialize_app failed: {e:#}");
-            None
-        }
-    };
-
-    // Read persisted UI prefs before constructing the app (same AppPaths the
-    // builder will use via `.application(...)`).
-    let (dark, locale_str, autosave_init, spellcheck_init, show_welcome_init) = cli::read_prefs();
-
-    let theme = if dark { intui::dark() } else { intui::light() };
-
-    // The one place the app's supported locales are named. `locales::registered_locales`
-    // is filtered against exactly this list, so an extension can never make a
-    // language selectable that the app itself has no strings for.
-    const SUPPORTED_LOCALES: &[&str] = &["en-US", "fr-FR"];
-
-    let i18n = I18nConfig::new()
-        .source_locale("en-US".parse().unwrap())
-        .supported_locales(
-            SUPPORTED_LOCALES
-                .iter()
-                .map(|l| l.parse().expect("a supported locale tag must parse")),
-        )
-        // Directory layout: one `.ftl` per topic per locale. The `tr!` macro
-        // auto-detects `locales/en-US/` and validates keys across every file
-        // in it, so the writing-model tooltips can live in their own file.
-        .compile_in(&[
-            (
-                "en-US",
-                &[
-                    include_str!("../locales/en-US/main.ftl"),
-                    include_str!("../locales/en-US/tooltips.ftl"),
-                    include_str!("../locales/en-US/tags.ftl"),
-                    include_str!("../locales/en-US/templates.ftl"),
-                ],
-            ),
-            (
-                "fr-FR",
-                &[
-                    include_str!("../locales/fr-FR/main.ftl"),
-                    include_str!("../locales/fr-FR/tooltips.ftl"),
-                    include_str!("../locales/fr-FR/tags.ftl"),
-                    include_str!("../locales/fr-FR/templates.ftl"),
-                ],
-            ),
-        ])
-        .user_locale(locale_str.parse().ok())
-        .auto_detect_os_locale(false)
-        .fallback_locale("en-US".parse().unwrap())
-        .framework_locales(framework_locales());
-
-    // Extension strings, folded in **after** the app's own. `compile_in` extends
-    // (teksilo `b924a27e` — before that a second call silently discarded these
-    // four files and the window came up in message keys), and the manager merges
-    // per locale keeping the FIRST definition of a key. So the app's own strings
-    // win every collision: an extension gets its namespaced keys onto the screen
-    // and cannot redefine `work-save` under the File menu.
-    let extension_locales = locales::registered_locales(SUPPORTED_LOCALES);
-    let i18n = extension_locales.iter().fold(i18n, |cfg, bundle| {
-        cfg.compile_in(&[(bundle.locale.as_str(), bundle.resources.as_slice())])
-    });
-
-    // The app-global (Tier 1) registry: `root_id` (see `app_ids.rs`'s module doc
-    // for why that one field lives here and not on the per-Work `AppIds`) plus
-    // the real `work_id`-keyed table of every currently-open `WorkSession`
-    // (Phase 2 — see `sessions::WorkRegistry`'s module doc). Registered as
-    // `app_state` so any future consumer can reach it the same way as everything
-    // else here.
-    let registry = WorkRegistry::new();
-    // Point the app at the shared Root seeded by `initialize_app` above, so the
-    // root id is known before any work is opened (a load/new refreshes it later).
-    if let Some(root_id) = init_root_id {
-        registry.set_root_id(Some(root_id));
-    }
-    // Spell-checking (Step 6): the engine is shared by every open document (one
-    // `spellbook::Dictionary` per language) — a genuinely machine-wide resource
-    // (Tier 1), handed to each window's own session so its `OpenDocsStore` can
-    // attach it. Registered as `app_state` so the language-pill field and the
-    // personal-word list reach the same instance (mute set, personal words).
-    let spellcheck = spellcheck::SpellcheckService::new();
-    // Dictionary management: accepted-licence store (cross-process, like `backup.toml`),
-    // on-disk discovery, and the download view-model. App-local (a downloaded `.dic` is a
-    // machine-wide resource, not `Work` state) — degrades to a throwaway temp settings
-    // file if the config dir is unavailable, exactly as backup settings do.
-    let dictionary_settings = crate::identity::app_paths()
-        .and_then(|paths| {
-            models::DictionarySettingsService::open(&paths)
-                .map_err(|e| eprintln!("dictionary settings: open failed: {e}"))
-                .ok()
-        })
-        .unwrap_or_else(models::DictionarySettingsService::in_memory_default);
-    let installed_dictionaries =
-        models::InstalledDictionariesModel::new(dictionary_settings.clone());
-    let dictionaries =
-        view_models::DictionariesViewModel::new(dictionary_settings, installed_dictionaries);
-    // Per-work workspace layout (open editor tabs + dock arrangement): opened
-    // eagerly here so the restore fires on the first `LoadWork`. App-local config
-    // (`workspace.toml`, keyed by `Work.unique_id`), orthogonal to the `.skrib`
-    // document — degrades to a throwaway temp file if the config dir is
-    // unavailable, exactly as the backup/search settings do. The VM reads the
-    // project uid/path from the singles, drives the shared `DockingModel` (via the
-    // outline handle), and is handed the editors once `App::build` creates them.
-    let workspace_layout_service = crate::identity::app_paths()
-        .and_then(|paths| {
-            WorkspaceLayoutService::open(&paths)
-                .map_err(|e| eprintln!("workspace layout: open failed: {e}"))
-                .ok()
-        })
-        .unwrap_or_else(WorkspaceLayoutService::in_memory_default);
-    // Remembered Overview expand state, keyed per project + per container by durable uid
-    // (`tree_expansion.toml`). A fourth `SettingsFile` sibling; on failure the feature
-    // simply goes quiet rather than blocking startup, exactly as the layout service does.
-    let tree_expansion_service = crate::identity::app_paths()
-        .and_then(|paths| {
-            TreeExpansionService::open(&paths)
-                .map_err(|e| eprintln!("tree expansion: open failed: {e}"))
-                .ok()
-        })
-        .unwrap_or_else(TreeExpansionService::in_memory_default);
-    // The Import-Plume view-model is a singleton (form + in-flight job + progress
-    // toast). Registered as app-state so `App::build` can route the import's
-    // long-operation events to it and the menu action can reach it to open the panel.
-    let import_plume = ImportPlumeViewModel::new(app_ctx.clone());
-    // Export styles ("Compile & Export" formats) — the user's editable style presets, opened
-    // eagerly here so the Settings pane and the Export panel's picker both read one instance.
-    // Where each kind of file dialog last opened. App-global by nature — the folder a
-    // writer exports to is theirs, not any one manuscript's — so it is opened once here
-    // and read through `app_state`, the one tier that slot is actually right for.
-    let folder_memory = crate::identity::app_paths()
-        .and_then(|paths| {
-            models::FolderMemoryService::open(&paths)
-                .map_err(|e| eprintln!("folder memory: open failed: {e}"))
-                .ok()
-        })
-        .unwrap_or_else(models::FolderMemoryService::in_memory_default);
-    // Where each project's last document import landed. Per-project rows in one
-    // app-global file, like tree expansion.
-    let import_prefs = crate::identity::app_paths()
-        .and_then(|paths| {
-            models::ImportPrefsService::open(&paths)
-                .map_err(|e| eprintln!("import prefs: open failed: {e}"))
-                .ok()
-        })
-        .unwrap_or_else(models::ImportPrefsService::in_memory_default);
-    // App-local config (a style outlives any project); degrades to a throwaway temp file if the
-    // config dir is unavailable, exactly as backup settings do.
-    let export_styles_service = crate::identity::app_paths()
-        .and_then(|paths| {
-            models::ExportStylesService::open(&paths)
-                .map_err(|e| eprintln!("export styles: open failed: {e}"))
-                .ok()
-        })
-        .unwrap_or_else(models::ExportStylesService::in_memory_default);
-    let export_styles = view_models::ExportStylesViewModel::new(export_styles_service);
-    // Paratext presets — the front/back matter structures New Work can start a project
-    // with, and the Settings pane edits. Opened here for the same reason export styles
-    // are: one instance, so a preset written in Settings is the one New Work offers.
-    let paratext_presets_service = crate::identity::app_paths()
-        .and_then(|paths| {
-            models::ParatextPresetsService::open(&paths)
-                .map_err(|e| eprintln!("paratext presets: open failed: {e}"))
-                .ok()
-        })
-        .unwrap_or_else(models::ParatextPresetsService::in_memory_default);
-    let paratext_presets = view_models::ParatextPresetsViewModel::new(paratext_presets_service);
-    // The distraction-free theme library, on the same footing and for the same
-    // reasons (a theme outlives any project, and the settings pane and the
-    // mode's own picker must read one instance).
-    let df_themes_service = crate::identity::app_paths()
-        .and_then(|paths| {
-            models::DistractionFreeThemesService::open(&paths)
-                .map_err(|e| eprintln!("distraction-free themes: open failed: {e}"))
-                .ok()
-        })
-        .unwrap_or_else(models::DistractionFreeThemesService::in_memory_default);
-    let df_themes = view_models::DistractionFreeThemesViewModel::new(df_themes_service);
-    // Backup-mode state (`backup_mode` true while a *backup file* is open — Save
-    // + auto-backup off, the file read-only, the content still editable;
-    // `backup_context` carries the open backup's details, driving the permanent
-    // banner + restore) is **not** constructed here any more (Phase 3): it used
-    // to be one process-wide `Signal` pair threaded unchanged into every window,
-    // which let one Work's backup-mode flag leak into a second, simultaneously-
-    // open Work's window. `WorkSession::new` now mints a fresh pair per Work —
-    // see its module doc — so the title-bar menu / `App` read theirs off
-    // `session.backup_mode`/`session.backup_context` instead (see
-    // `ProjectWindowFactory::window_config`). The personal dictionary, tag
-    // palette, tree-expansion and workspace-layout view-models moved the same
-    // way (`session.user_dictionary`/`session.tags`/`session.tree_expansion`/
-    // `session.workspace_layout`), and `save_as_vm` is minted per window by
-    // `ProjectWindowFactory` for the same reason. The punctuation house style
-    // and the per-project custom replacement lexicon ("btw" → "by the way")
-    // moved the same way too (`session.smart_punctuation`/
-    // `session.text_replacements`) — `WorkSession::new` mints a fresh instance
-    // of each per Work, so a second, simultaneously-open Work never shares
-    // this Work's punctuation row or lexicon.
-
-    // Backup ("Copies de secours") settings — opened eagerly here (before any
-    // project loads) so the on-open/on-close/interval hooks and the scheduler see
-    // it. Degrades to a throwaway temp file if the config dir is unavailable,
-    // exactly as the recents MRU does.
-    let backup_service = crate::identity::app_paths()
-        .and_then(|paths| {
-            BackupSettingsService::open(&paths)
-                .map_err(|e| eprintln!("backup settings: open failed: {e}"))
-                .ok()
-        })
-        .unwrap_or_else(BackupSettingsService::in_memory_default);
-    let backup_settings = BackupSettingsViewModel::new(backup_service);
+    let Tier1Services {
+        registry,
+        spellcheck,
+        dictionaries,
+        workspace_layout_service,
+        tree_expansion_service,
+        import_plume,
+        folder_memory,
+        import_prefs,
+        export_styles,
+        paratext_presets,
+        df_themes,
+        backup_settings,
+    } = startup::open_tier1_services(&app_ctx, init_root_id);
 
     // The title-bar menu lives outside `App` (no `ctx.settings()` there), so the
     // autosave setting is mirrored into this plain signal by `App::build` and read
@@ -953,32 +635,7 @@ pub fn run() {
         .initial_window(initial_window_config)
         .run();
 
-    // Flush the recent-works MRU synchronously so a just-opened project isn't
-    // lost inside the debounce window, and *release* it while the app is still
-    // alive — its writer is parked in a thread-local, whose destructor would
-    // otherwise run during process teardown, after the settings-writer thread it
-    // waits on has been killed (an unkillable hang; see `shutdown`'s docs). Then
-    // tear the shared Root/System frame down and fire `CleanUpBeforeExit` before
-    // the event thread is stopped.
-    crate::models::RecentWorkListModel::shutdown();
-    // Flush any pending backup-settings write (last-success hashes / timestamps /
-    // nudge flag / edited policy) so it survives the debounce window on exit.
-    backup_settings.flush_now();
-    // Drop every open-registry claim this instance holds (process exit — the
-    // "release everything" point, unlike `CloseWork`'s single-path release) so
-    // its project(s) stop showing as open in other instances' switchers, and
-    // unlink this instance's IPC socket so a later `scan()` never has to reap
-    // it as stale.
-    crate::shell::open_registry::release_all();
-    // Unlink both sockets this instance bound — its own per-pid one, and (only
-    // if it was the primary) the well-known election socket. Leaving the latter
-    // behind would make the *next* launch pay one failed connect before it could
-    // unlink and claim it.
-    crate::shell::ipc::cleanup_own_sockets(is_primary);
-    if let Err(e) = handling_app_lifecycle_commands::clean_up_before_exit(&app_ctx) {
-        eprintln!("clean_up_before_exit failed: {e:#}");
-    }
-    app_ctx.shutdown();
+    startup::shutdown(&app_ctx, &backup_settings, is_primary);
 }
 
 #[cfg(test)]

@@ -3,6 +3,10 @@
 
 use super::*;
 
+use crate::app::wiring::punctuation::punctuation_flags;
+use crate::singles::SingleSmartPunctuation;
+use crate::view_models::SettingsViewModel;
+
 // ── Work ▸ New Window: may this window replace its project in place? ────
 //
 // The predicate every switch door consults. It is the whole protection for

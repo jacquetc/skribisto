@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 
 use teksilo::data::{KeyedSelectionModel, NodeId, SelectionMode, TreeModel};
 
-use super::nav::{GroupKind, all_panes, ancestors_of};
+use super::nav::{GroupKind, Root, all_panes, ancestors_of, children_of};
 use super::*;
 use skribisto_model::counting::CountingMethodSetting;
 

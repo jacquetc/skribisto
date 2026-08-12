@@ -12,6 +12,16 @@
 //! later launch connects to it, forwards what it was asked to do, and exits in
 //! milliseconds without ever building a store, a settings writer or a window.
 //!
+//! ## Bootstrap
+//!
+//! [`bootstrap`] is what `run()` actually calls, at the very top of `main`: it
+//! reattaches the console (Windows), installs the panic hook, parses argv,
+//! applies/dumps the settings-schema flags, then runs the election below and
+//! hands off to a primary if one answers. `run()` never touches
+//! `parse_args`/`elect`/`handoff` directly — [`Bootstrap::Exit`] tells it there
+//! is nothing left to build (a dump printed, or a remote handed off);
+//! [`Bootstrap::Continue`] carries the two things it still needs.
+//!
 //! ## The election
 //!
 //! [`elect`] resolves one of three roles, in this order:
@@ -47,7 +57,9 @@ use std::time::Duration;
 use interprocess::local_socket::prelude::*;
 use interprocess::local_socket::{ListenerOptions, Stream};
 
-use crate::shell::ipc::{InstanceReply, InstanceRequest};
+use crate::cli;
+use crate::crash_report;
+use crate::shell::ipc::{self, InstanceReply, InstanceRequest};
 use crate::shell::open_registry::{self, SocketId};
 
 /// How long a remote waits for the primary to acknowledge its request before
@@ -198,6 +210,136 @@ pub fn handoff(mut stream: Stream, request: &InstanceRequest) -> bool {
         rx.recv_timeout(ACK_TIMEOUT),
         Ok(Some(InstanceReply::Accepted))
     )
+}
+
+/// What [`bootstrap`] decided, and what `run()` needs in order to keep going.
+pub(crate) enum Bootstrap {
+    /// Already handled — a remote handed its request off to the primary, or
+    /// `--dump-config` printed and exited. `run()` returns immediately without
+    /// building an `AppContext` or a window.
+    Exit,
+    /// A primary or standalone instance, free to build the rest of the app.
+    Continue {
+        /// The `.skrib` path from argv, if any.
+        initial_project: Option<String>,
+        /// Whether this process won the election (and so must also serve the
+        /// well-known socket once the app is up, not just its own per-pid one).
+        is_primary: bool,
+    },
+}
+
+/// Everything that has to happen before an `AppContext` exists: reattach the
+/// console (Windows), install the panic hook, parse argv, apply/dump the
+/// settings-schema flags, then run the election and hand off to a primary if
+/// one answers.
+///
+/// Call once, at the very top of `run()` — before the event hub, the
+/// window-state prune, `initialize_app` or any settings handle exists. See the
+/// module doc for why: a remote must touch none of them.
+pub(crate) fn bootstrap() -> Bootstrap {
+    // ── Windows: rejoin the launching terminal, if any ────────────────────────
+    //
+    // The binaries are linked for the GUI subsystem (`#![windows_subsystem =
+    // "windows"]` in `src/bin/skribisto.rs`), which also detaches stdout/stderr.
+    // Reattach to the parent's console so `--dump-config`, pin-validation errors
+    // and panic reports still print when launched from a terminal. Failure just
+    // means no console to join (a double-click) — the normal GUI case. Redirected
+    // handles (`> file`) are set via STARTF_USESTDHANDLES and survive the attach.
+    #[cfg(windows)]
+    unsafe {
+        use ::windows::Win32::System::Console::{ATTACH_PARENT_PROCESS, AttachConsole};
+        let _ = AttachConsole(ATTACH_PARENT_PROCESS);
+    }
+
+    // ── Panic diagnostics — before anything at all ────────────────────────────
+    //
+    // Ahead of even the election, so a panic while parsing arguments or binding
+    // the instance socket is still recorded. The hook chains to libstd's, takes
+    // no application locks, and writes one file; see `crash_report`'s module doc
+    // for why it deliberately does not try to dump prose.
+    crash_report::install();
+
+    // ── Single-instance election — FIRST, before anything is built ────────────
+    //
+    // A remote must not construct an `AppContext`, start the event-dispatch
+    // thread, run `initialize_app`, prune `window_state.toml`, or open a settings
+    // handle: all of those touch state the primary is concurrently using, on
+    // behalf of a process that is about to exit. Everything below this block is
+    // therefore reachable only by a primary or a standalone instance.
+    //
+    // `--new-instance`, `--config`, `--dump-config` and a bare `.skrib` path are
+    // the whole argument surface; `parse_args` is a pure function so that surface
+    // is unit-tested.
+    let args = parse_args(std::env::args().skip(1));
+    let initial_project = args.project.clone();
+    if let Some(error) = &args.error {
+        eprintln!("skribisto: {error}");
+        std::process::exit(2);
+    }
+
+    // ── The settings-schema flags, before anything else touches settings ──────
+    //
+    // Both are debug-only and both run ahead of the election: `--config` must
+    // land its pins on disk before `read_prefs` (below) reads the very keys it
+    // may be pinning, and `--dump-config` exits without building anything.
+    //
+    // Pins are applied *before* a dump, so `--config pins.toml --dump-config`
+    // reads as "apply these, then show me what I get" — a validate-and-preview
+    // pass that needs no window. Ordering the other way would print the state a
+    // launch was about to leave behind, which is a strictly less useful answer to
+    // the question the pair asks.
+    if let Some(path) = &args.config {
+        cli::apply_config_pins(path);
+    }
+    if args.dump_config {
+        cli::run_dump_config();
+        return Bootstrap::Exit;
+    }
+
+    // The desktop's own startup token (a file-manager double-click sets it), so
+    // whichever window the primary ends up showing can actually come forward on
+    // Wayland — a process cannot raise itself unprompted.
+    let launch_token = std::env::var("XDG_ACTIVATION_TOKEN").ok();
+
+    // `--config` implies standalone. A remote hands its command line to the
+    // primary and exits, and the primary's windows are already running against
+    // their own settings — so an elected-away `--config` run would pin nothing
+    // and silently observe a differently-configured app, which is precisely the
+    // failure this flag exists to remove.
+    let role = if args.new_instance || args.config.is_some() {
+        InstanceRole::Standalone
+    } else {
+        elect()
+    };
+    let is_primary = matches!(role, InstanceRole::Primary);
+    if let InstanceRole::Remote(stream) = role {
+        let request = match &initial_project {
+            Some(path) => ipc::InstanceRequest::Open {
+                path: path.clone(),
+                activation_token: launch_token,
+            },
+            // A bare second launch asks for the Launcher rather than a raise:
+            // the Launcher is *how* a further project gets opened, so raising an
+            // existing project window would leave a desktop-icon user with no
+            // route to one. See `InstanceRequest::ShowLauncher`.
+            None => ipc::InstanceRequest::ShowLauncher {
+                activation_token: launch_token,
+            },
+        };
+        if handoff(stream, &request) {
+            return Bootstrap::Exit;
+        }
+        // Not acknowledged — a primary that accepted the connection and then
+        // wedged, or died mid-handshake. Fall through and launch normally: a
+        // duplicate window is a far better outcome than a launch that silently
+        // did nothing. This instance does NOT claim the primary socket (the
+        // election already resolved), so it behaves as a standalone peer.
+    }
+
+    Bootstrap::Continue {
+        initial_project,
+        is_primary,
+    }
 }
 
 /// The command-line flag that opts out of the election entirely.
