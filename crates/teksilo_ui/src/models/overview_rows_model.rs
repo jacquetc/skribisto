@@ -813,10 +813,7 @@ mod rows {
     use uuid::Uuid;
 
     use frontend::AppContext;
-    use frontend::commands::{
-        binder_commands, binder_item_commands, comment_commands, content_commands, work_commands,
-    };
-    use frontend::common::direct_access::binder::BinderRelationshipField;
+    use frontend::commands::{comment_commands, content_commands, work_commands};
     use frontend::common::direct_access::comment::CommentRelationshipField;
     use frontend::common::direct_access::work::WorkRelationshipField;
     use frontend::common::entities::{ContentRole, GoalUnit};
@@ -1009,41 +1006,12 @@ mod rows {
         }
     }
 
-    /// Every activated binder item of `work_id` **paired with its owning binder**,
-    /// binder-major, in each binder's stored relationship order — the same order a save
-    /// writes. `indent` nests them *within* a binder, which is why the binder id has to
-    /// travel alongside: it is the only thing marking where one binder's indents stop
-    /// meaning anything to the next (see `subtree_of`).
+    /// Every activated binder item of `work_id` paired with its binder,
+    /// binder-major, in stored relationship order — see
+    /// [`crate::models::binder_stream::ordered_flat_items`], which explains why the
+    /// binder id has to travel alongside (`subtree_of` depends on it).
     fn flat_items(ctx: &AppContext, work_id: u64) -> Vec<(u64, BinderItemDto)> {
-        let mut out = Vec::new();
-        let binder_ids =
-            work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
-                .unwrap_or_default();
-        for binder_id in binder_ids {
-            let item_ids = binder_commands::get_binder_relationship(
-                ctx,
-                &binder_id,
-                &BinderRelationshipField::BinderItems,
-            )
-            .unwrap_or_default();
-            // `get_binder_item_multi` returns db-key order, so index by id and walk
-            // `item_ids` (the authoritative relationship order).
-            let by_id: HashMap<u64, BinderItemDto> =
-                binder_item_commands::get_binder_item_multi(ctx, &item_ids)
-                    .unwrap_or_default()
-                    .into_iter()
-                    .flatten()
-                    .map(|it| (it.id, it))
-                    .collect();
-            for id in item_ids {
-                if let Some(it) = by_id.get(&id)
-                    && it.activated
-                {
-                    out.push((binder_id, it.clone()));
-                }
-            }
-        }
-        out
+        crate::models::binder_stream::ordered_flat_items(ctx, work_id)
     }
 }
 

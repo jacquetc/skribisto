@@ -71,6 +71,59 @@ mod imp {
 
 pub use imp::ordered_binder_items;
 
+/// Every **activated** binder item of `work_id` paired with the binder holding it,
+/// binder-major, in each binder's stored relationship order — the same order a save
+/// writes.
+///
+/// The binder id travels alongside because `indent` nests items *within* a binder: it
+/// is the only thing marking where one binder's indents stop meaning anything to the
+/// next. A caller that does not care drops it.
+///
+/// Distinct from [`ordered_binder_items`] above in exactly one way that matters:
+/// this filters on `activated`, and that one deliberately does **not** — trashed rows
+/// stay in place so the ordinal space is stable. Two walks, two questions; the reason
+/// they cannot be one function is written here so the next person does not merge them.
+pub fn ordered_flat_items(
+    ctx: &frontend::AppContext,
+    work_id: u64,
+) -> Vec<(u64, frontend::direct_access::BinderItemDto)> {
+    use frontend::commands::{binder_commands, binder_item_commands, work_commands};
+    use frontend::common::direct_access::binder::BinderRelationshipField;
+    use frontend::common::direct_access::work::WorkRelationshipField;
+    use frontend::direct_access::BinderItemDto;
+    use std::collections::HashMap;
+
+    let mut out = Vec::new();
+    let binder_ids =
+        work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
+            .unwrap_or_default();
+    for binder_id in binder_ids {
+        let item_ids = binder_commands::get_binder_relationship(
+            ctx,
+            &binder_id,
+            &BinderRelationshipField::BinderItems,
+        )
+        .unwrap_or_default();
+        // `get_binder_item_multi` returns db-key order, so index by id and walk
+        // `item_ids` (the authoritative relationship order).
+        let by_id: HashMap<u64, BinderItemDto> =
+            binder_item_commands::get_binder_item_multi(ctx, &item_ids)
+                .unwrap_or_default()
+                .into_iter()
+                .flatten()
+                .map(|it| (it.id, it))
+                .collect();
+        for id in item_ids {
+            if let Some(it) = by_id.get(&id)
+                && it.activated
+            {
+                out.push((binder_id, it.clone()));
+            }
+        }
+    }
+    out
+}
+
 /// One item of the work's flat, binder-major stream: its live store id, its **durable**
 /// uid, and its title.
 ///
