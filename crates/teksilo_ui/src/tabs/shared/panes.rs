@@ -26,9 +26,9 @@ use teksilo::widgets::{SegmentId, segmented_control};
 
 use frontend::common::entities::BinderItemSubRole;
 
+use crate::settings::EditorViewMemory;
 use crate::stream::SplitFlavour;
 use crate::tabs::{Boxed, ContentTab};
-use crate::view_models::EditorViewMemory;
 
 use super::editor::SideSync;
 use super::{

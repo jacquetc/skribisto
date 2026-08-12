@@ -24,7 +24,7 @@ use teksilo::prelude::*;
 use teksilo::widgets::{HStack, IconButton, IconButtonSize, TextWidget};
 
 use crate::tabs::shared::VisibleWhen;
-use crate::view_models::WritingGamesViewModel;
+use crate::writing_session::WritingGamesViewModel;
 
 /// Build the status-bar game warning.
 ///

@@ -51,8 +51,8 @@ use skribisto_model::reconcile::{self, ExistingRow, IncomingRow, RowAction, RowS
 use crate::app_ids::AppIds;
 use crate::models::import_merge_source::ImportMergeSource;
 use crate::models::import_plan_source::{ImportPlanSource, PlanRowKey, PlanRowView};
+use crate::shared::long_op::{TrackedOp, event_id, parse_payload, payload_id};
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::long_op::{TrackedOp, event_id, parse_payload, payload_id};
 use crate::widgets::DestinationPicker;
 
 /// Indices into the wizard's [`StepperController`] — keep these in lock-step with the panel's

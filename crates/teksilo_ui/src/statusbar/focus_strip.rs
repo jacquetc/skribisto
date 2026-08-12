@@ -43,9 +43,10 @@ const TITLE_MAX_WIDTH: f32 = 260.0;
 // the later-declared (the writing session) goes first.
 const GO_TO_PRIORITY: i32 = 1;
 const GO_PRIORITY: i32 = 2;
+use crate::settings::SettingsViewModel;
 use crate::statusbar::session_status_item::SessionStatusItem;
 use crate::statusbar::word_count_indicator::WordCountIndicator;
-use crate::view_models::{SettingsViewModel, WritingSessionViewModel};
+use crate::writing_session::WritingSessionViewModel;
 
 /// Which of the strip's optional items are shown, one live setting signal each.
 ///
@@ -95,12 +96,12 @@ impl FocusStripChrome {
 }
 
 pub struct FocusStrip {
-    go_to_vm: crate::view_models::GoToViewModel,
+    go_to_vm: crate::go::GoToViewModel,
     /// Settings + the theme library, for the quick-access popover. `None` in the
     /// widget tests, which build a strip with no app around it.
     quick: Option<(
-        crate::view_models::SettingsViewModel,
-        crate::view_models::DistractionFreeThemesViewModel,
+        crate::settings::SettingsViewModel,
+        crate::distraction_free::DistractionFreeThemesViewModel,
     )>,
     /// The current item's name, live off a `SingleBinderItem` so a rename made
     /// from inside the mode reaches the strip.
@@ -134,10 +135,10 @@ impl FocusStrip {
     // destructured immediately. Same call as `writing_column`'s.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        go_to_vm: crate::view_models::GoToViewModel,
+        go_to_vm: crate::go::GoToViewModel,
         quick: Option<(
-            crate::view_models::SettingsViewModel,
-            crate::view_models::DistractionFreeThemesViewModel,
+            crate::settings::SettingsViewModel,
+            crate::distraction_free::DistractionFreeThemesViewModel,
         )>,
         title: Signal<String>,
         stats: StatsModel,
@@ -432,7 +433,7 @@ mod tests {
         let session_vm = WritingSessionViewModel::new(stats.clone(), &store);
         let mut tree = crate::test_support::tree_with_events(&ctx);
         tree.add(FocusStrip::new(
-            crate::view_models::GoToViewModel::new(ctx.clone(), crate::app_ids::AppIds::new()),
+            crate::go::GoToViewModel::new(ctx.clone(), crate::app_ids::AppIds::new()),
             // No quick-settings popover here: it needs a `SettingsViewModel` and
             // the theme library, and every assertion in this module is about the
             // strip's own layout and gating.

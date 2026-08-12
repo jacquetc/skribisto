@@ -285,7 +285,7 @@ pub const SYNOPSIS_PANE_KEY: &str = "editor.synopsis_pane";
 pub const SYNOPSIS_PANE_DEFAULT: bool = true;
 /// Where that pane sits: above the manuscript (the default, and what every
 /// existing project looks like) or beside it in its own column. A
-/// [`crate::view_models::SynopsisPlacement`], stored by variant name.
+/// [`crate::shared::SynopsisPlacement`], stored by variant name.
 pub const SYNOPSIS_PLACEMENT_KEY: &str = "editor.synopsis_placement";
 /// Width (px) of the Side synopsis column. Written back when the divider is
 /// dragged, and read as the seed by every tab opened afterwards.
@@ -299,13 +299,13 @@ pub const SYNOPSIS_SIDE_WIDTH_MAX: f32 = 560.0;
 /// Remember, per container item type (Book / Part / Chapter), the last
 /// `SegmentedControl` view used — so opening a new chapter lands on the same view
 /// (e.g. Full Chapter) as the last chapter. The per-type indices live under
-/// `editor.last_view.*` (see [`crate::view_models::EditorViewMemory`]).
+/// `editor.last_view.*` (see [`crate::settings::EditorViewMemory`]).
 pub const REMEMBER_VIEW_KEY: &str = "editor.remember_view";
 pub const REMEMBER_VIEW_DEFAULT: bool = true;
 /// Keep the caret line pinned at a fixed height while typing.
 pub const TYPEWRITER_KEY: &str = "editor.typewriter_scroll";
 pub const TYPEWRITER_DEFAULT: bool = true;
-/// Which height the pinned line sits at — a [`crate::view_models::TypewriterAnchor`]
+/// Which height the pinned line sits at — a [`crate::shared::TypewriterAnchor`]
 /// preset. `Option` because that is the shape a `ComboBox` selection takes; a
 /// missing value resolves to the default rather than disabling the pin.
 pub const TYPEWRITER_ANCHOR_KEY: &str = "editor.typewriter_anchor";
@@ -340,7 +340,7 @@ pub const PUNCT_DIALOGUE_KEY: &str = "editor.punctuation.dialogue_marker";
 /// dialogue instead of dashing it.
 pub const PUNCT_DIALOGUE_DEFAULT: bool = false;
 /// How much text around the caret gets an ambient band — none, the sentence, or the whole
-/// paragraph. See [`crate::view_models::HighlightScope`].
+/// paragraph. See [`crate::shared::HighlightScope`].
 ///
 /// A **new key**, not the `editor.highlight_sentence` boolean this replaces: the stored value
 /// went from a `bool` to a scope, and a key named `highlight_sentence` holding `Paragraph`
@@ -364,7 +364,7 @@ pub const GOALS_SHOW_CHARACTERS_DEFAULT: bool = false;
 // Which surfaces the "Always forward" game covers **when it is being played**.
 // Only these two are settings: whether the game is *on* is deliberately session
 // state, minted per open `Work` and never persisted — see
-// [`crate::view_models::writing_games`] for why a commitment device that outlives the
+// [`crate::writing_session::writing_games_vm`] for why a commitment device that outlives the
 // sitting it was made in reads as a broken keyboard rather than as a rule.
 /// Does "Always forward" freeze manuscript prose? On: prose is what the game is for.
 pub const GAMES_FORWARD_PROSE_KEY: &str = "games.always_forward.prose";
@@ -429,7 +429,7 @@ pub const CORKBOARD_PARA_SPACING_AFTER_DEFAULT: f32 = 6.0;
 use frontend::common::entities::QuoteStyle;
 use skribisto_model::counting::CountingMethodSetting;
 
-use crate::view_models::{HighlightScope, TypewriterAnchor};
+use crate::shared::{HighlightScope, TypewriterAnchor};
 
 /// One settable key: what it is called, what it holds, and what it means.
 ///
@@ -598,8 +598,8 @@ pub static SETTINGS: &[SettingSpec] = &[
     SettingSpec {
         key: crate::SYNOPSIS_PLACEMENT_KEY,
         ty: "one of: Top | Side",
-        default: || val(crate::view_models::SynopsisPlacement::default()),
-        check: check::<crate::view_models::SynopsisPlacement>,
+        default: || val(crate::shared::SynopsisPlacement::default()),
+        check: check::<crate::shared::SynopsisPlacement>,
         doc: "Where the synopsis sits: Top (above the manuscript) or Side (beside it). \
               Side needs room for two columns — a tab too narrow for both falls back to Top.",
     },
@@ -961,14 +961,14 @@ pub static SETTINGS: &[SettingSpec] = &[
     SettingSpec {
         key: crate::GAMES_FORWARD_PROSE_KEY,
         ty: "bool",
-        default: || val(crate::view_models::FORWARD_PROSE_DEFAULT),
+        default: || val(crate::writing_session::FORWARD_PROSE_DEFAULT),
         check: check::<bool>,
         doc: "\"Always forward\" freezes manuscript prose while it is being played.",
     },
     SettingSpec {
         key: crate::GAMES_FORWARD_SYNOPSIS_KEY,
         ty: "bool",
-        default: || val(crate::view_models::FORWARD_SYNOPSIS_DEFAULT),
+        default: || val(crate::writing_session::FORWARD_SYNOPSIS_DEFAULT),
         check: check::<bool>,
         doc: "\"Always forward\" also freezes synopses while it is being played.",
     },

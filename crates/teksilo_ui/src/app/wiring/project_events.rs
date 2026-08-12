@@ -28,17 +28,18 @@ use frontend::common::event::{Event, LongOperationEvent, Origin, WorkManagementE
 use crate::app_ids::AppIds;
 use crate::backup::{BackupRestoreViewModel, BackupSchedulerViewModel, BackupSettingsViewModel};
 use crate::binder::OutlineViewModel;
+use crate::editors::EditorsViewModel;
 use crate::models::OpenDocsStore;
+use crate::project::ProjectLifecycleViewModel;
 use crate::search::SearchReplaceViewModel;
 use crate::sessions::{WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
+use crate::settings::TreeExpansionViewModel;
 use crate::singles::SingleWork;
 use crate::spellcheck::DictionariesViewModel;
 use crate::toast_scope::ToastWorkExt;
 use crate::trash::TrashViewModel;
-use crate::view_models::{
-    EditorsViewModel, ProjectLifecycleViewModel, TreeExpansionViewModel, WorkspaceLayoutViewModel,
-};
+use crate::workspace_layout::WorkspaceLayoutViewModel;
 
 pub(in crate::app) use super::guards::{on_own_close, on_own_load_or_new};
 pub(in crate::app) use super::window_bind::bind_window_to_work;
@@ -61,7 +62,7 @@ pub(in crate::app) struct BackupSniffDeps {
     pub trash_dock: DockWidgetId,
     pub session: WorkSession,
     /// Fires `count_words` so the plan summary reads a current number.
-    pub progress_recorder: crate::view_models::ProgressRecorder,
+    pub progress_recorder: crate::shared::ProgressRecorder,
     /// Set when a count has been fired *for* the summary, cleared when it is shown. Keeps
     /// the completion handler from opening a panel for the recorder's own save-path counts.
     pub pace_pending: Signal<bool>,

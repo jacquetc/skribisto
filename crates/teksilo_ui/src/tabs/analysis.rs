@@ -38,7 +38,7 @@ use frontend::analysis_management::{BookAnalysisResultDto, SceneAnalyses, SceneA
 
 use super::shared::{CHART_HEIGHT, STRIP_HEIGHT, wide_chart};
 use super::{Boxed, ContentTab};
-use crate::view_models::{AnalysisCategory, AnalysisState, AnalysisViewModel};
+use crate::analysis::{AnalysisCategory, AnalysisState, AnalysisViewModel};
 
 // The bar and its `Switcher` are still matched by **position** — that is
 // `SegmentedControl`'s contract — but neither is written out by hand: both are built from

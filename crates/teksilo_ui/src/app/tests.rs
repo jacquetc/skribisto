@@ -4,8 +4,8 @@
 use super::*;
 
 use crate::app::wiring::punctuation::punctuation_flags;
+use crate::settings::SettingsViewModel;
 use crate::singles::SingleSmartPunctuation;
-use crate::view_models::SettingsViewModel;
 
 // ── Work ▸ New Window: may this window replace its project in place? ────
 //
@@ -353,7 +353,7 @@ fn window_teardown_forgets_the_toast_registry_entry_too() {
 /// `editors.rs`'s own private test helper (not reachable from here), kept
 /// deliberately small since nothing here exercises editor behaviour.
 fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewModel {
-    let bundle = || crate::view_models::EditorTypography {
+    let bundle = || crate::settings::EditorTypography {
         font_family: Signal::new("Literata".to_string()),
         size: Signal::new(1.0),
         line_height: Signal::new(1.5),
@@ -361,7 +361,7 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
         para_spacing_before: Signal::new(0.0),
         para_spacing_after: Signal::new(0.0),
     };
-    let typography = crate::view_models::EditorTypographySet {
+    let typography = crate::settings::EditorTypographySet {
         scene: bundle(),
         synopsis: bundle(),
         notes: bundle(),
@@ -369,33 +369,33 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
         distraction_free: bundle(),
     };
     let ids = crate::app_ids::AppIds::new();
-    let save_state = crate::view_models::SaveStateViewModel::new(app_ctx.clone(), ids.clone());
+    let save_state = crate::save::SaveStateViewModel::new(app_ctx.clone(), ids.clone());
     EditorsViewModel::new(
         app_ctx.clone(),
         Signal::new(700.0),
         Signal::new(true),
-        Signal::new(crate::view_models::SynopsisPlacement::default()),
+        Signal::new(crate::shared::SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
         typography,
-        crate::view_models::TypewriterSettings::off(),
-        crate::view_models::CaretHighlightSettings::off(),
-        crate::view_models::EditorViewMemory::detached(false),
-        crate::view_models::CorkboardDefaults::detached(),
+        crate::shared::TypewriterSettings::off(),
+        crate::shared::CaretHighlightSettings::off(),
+        crate::settings::EditorViewMemory::detached(false),
+        crate::settings::CorkboardDefaults::detached(),
         ids.clone(),
         crate::models::OpenDocsStore::new(app_ctx.clone()),
         Signal::new(false),
         save_state,
         Signal::new(false),
-        crate::view_models::TreeExpansionViewModel::new(
+        crate::settings::TreeExpansionViewModel::new(
             app_ctx.clone(),
             ids.clone(),
             crate::models::TreeExpansionService::in_memory_default(),
         ),
         Signal::new(false),
         Signal::new(620.0),
-        crate::view_models::GoAvailability::new(),
-        crate::view_models::FormatViewModel::detached(),
-        crate::view_models::WritingGamesViewModel::detached(),
+        crate::go::GoAvailability::new(),
+        crate::format::FormatViewModel::detached(),
+        crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(frontend::common::entities::GoalUnit::default()),
     )
 }

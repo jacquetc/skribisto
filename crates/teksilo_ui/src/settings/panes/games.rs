@@ -20,13 +20,13 @@ use super::super::*;
 
 /// Editor ▸ Writing games.
 ///
-/// Takes the whole [`WritingGamesViewModel`](crate::view_models::WritingGamesViewModel)
+/// Takes the whole [`WritingGamesViewModel`](crate::writing_session::WritingGamesViewModel)
 /// rather than four loose signals: the "is it bound to nothing" warning is a
 /// question about the combination, and answering it here would duplicate a rule
 /// the view-model already owns.
 pub(in crate::settings) fn games_pane(
     ctx: &mut BuildContext,
-    games: &crate::view_models::WritingGamesViewModel,
+    games: &crate::writing_session::WritingGamesViewModel,
 ) -> impl Widget {
     // `is_inert` reads three signals, so it needs re-evaluating whenever any of
     // them moves. A derived signal would recompute on every read (and panics

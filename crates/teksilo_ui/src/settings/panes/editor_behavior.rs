@@ -9,7 +9,7 @@ use teksilo::prelude::*;
 use teksilo::widgets::tooltip::TooltipContent;
 use teksilo::widgets::{ComboBox, Segment, SegmentedControl};
 
-use crate::view_models::SynopsisPlacement;
+use crate::shared::SynopsisPlacement;
 
 #[allow(unused_imports)]
 use super::super::*;

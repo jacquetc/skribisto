@@ -4,7 +4,7 @@
 //! `editor.insert_image` — putting a picture into the manuscript.
 //!
 //! The command is a shell: choose a file, decide what to do about its size, and
-//! hand the rest to [`crate::view_models::images`], which owns every step that
+//! hand the rest to [`crate::shared::images`], which owns every step that
 //! can be tested without a window.
 //!
 //! ## Why a large image is worth a question
@@ -25,8 +25,8 @@ use teksilo::widgets::{
     InputDialog, MessageBox, MessageBoxButton, MessageBoxButtons, StandardButton, Toast,
 };
 
+use crate::shared::images::{self, PendingImage, SizePolicy};
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::images::{self, PendingImage, SizePolicy};
 
 use super::CommandDeps;
 
@@ -285,7 +285,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 /// What `finish` needs, bundled so the closures that carry it stay readable.
 #[derive(Clone)]
 struct InsertDeps {
-    format: crate::view_models::FormatViewModel,
+    format: crate::format::FormatViewModel,
     docs: crate::models::OpenDocsStore,
     ids: crate::app_ids::AppIds,
     app_ctx: std::rc::Rc<AppContext>,
@@ -507,7 +507,7 @@ fn register_editing(ctx: &mut BuildContext, deps: &CommandDeps) {
 }
 
 /// The clicked image's character offset, if there is one.
-fn image_offset(format: &crate::view_models::FormatViewModel) -> Option<usize> {
+fn image_offset(format: &crate::format::FormatViewModel) -> Option<usize> {
     format.active_image().get().map(|(offset, _)| offset)
 }
 
@@ -518,7 +518,7 @@ fn image_offset(format: &crate::view_models::FormatViewModel) -> Option<usize> {
 /// since the click, and rewriting whatever is there now would be worse than
 /// doing nothing.
 fn resolve_active(
-    format: &crate::view_models::FormatViewModel,
+    format: &crate::format::FormatViewModel,
 ) -> Option<(teksilo::widgets::rich_text::EditorHandle, images::ImageRef)> {
     let (offset, _src) = format.active_image().get()?;
     let handle = format.handle_for_commands()?;

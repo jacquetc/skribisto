@@ -36,12 +36,12 @@ use frontend::AppContext;
 use frontend::commands::undo_redo_commands;
 
 use crate::backup::{BackupSchedulerViewModel, SafetyBlocker};
+use crate::editors::EditorsViewModel;
 use crate::models::OpenDocsStore;
 use crate::toast_scope::ToastWorkExt;
 use crate::versions::version_restore::{
     self, RestoreRefusal, RestoreRequest, content_id_for, slot_for,
 };
-use crate::view_models::EditorsViewModel;
 
 /// One toast per feature: a second restore replaces its own snackbar rather than
 /// stacking a tower of them.

@@ -57,13 +57,12 @@ use crate::toast_scope::ToastWorkExt;
 
 use crate::backup::{BackupSchedulerViewModel, BackupSettingsViewModel};
 use crate::binder::OutlineViewModel;
+use crate::editors::{EditorsViewModel, Side};
 use crate::export::ExportViewModel;
+use crate::project::{PendingSwitch, ProjectSwitchViewModel, UnsavedDecision, unsaved_decision};
+use crate::save::{SaveAsViewModel, SpinnerGate};
 use crate::search::SearchReplaceViewModel;
 use crate::tabs::{ContentTab, tab_pane};
-use crate::view_models::{
-    EditorsViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel, Side, SpinnerGate,
-    UnsavedDecision, unsaved_decision,
-};
 
 /// Narrowest an editor tab may be squeezed, in dp — well above teksilo's 96 dp
 /// default. A writing project's tabs are near-identical by design ("Chapter 11",
@@ -137,7 +136,7 @@ fn drain_dropped(mut payload: DragPayload, mut open: impl FnMut(u64, &str)) -> b
 /// that Work via [`close_work_and_return_to_launcher`] — which opens the
 /// Launcher only when no other Work still has an open window. Ctrl+Q / File ▸
 /// Quit never calls `close_window()` at all — `app.quit`'s action runs
-/// through [`QuitSequencer`](crate::view_models::QuitSequencer) and terminates the process. Both outcomes share
+/// through [`QuitSequencer`](crate::project::QuitSequencer) and terminates the process. Both outcomes share
 /// the exact same branch order (`unsaved_decision`/`UnsavedDecision`); only
 /// the terminal action differs.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
@@ -150,7 +149,7 @@ pub enum PendingExit {
     ReturnToLauncher,
     /// Release the open project and terminate the process entirely, once
     /// saved (and, if configured, once the on-close backup finishes) —
-    /// [`QuitSequencer`](crate::view_models::QuitSequencer)'s continuation, run from
+    /// [`QuitSequencer`](crate::project::QuitSequencer)'s continuation, run from
     /// `BackupSchedulerViewModel::do_close`. Unlike `ReturnToLauncher` this
     /// does NOT open a fresh Launcher window: the project window force-closes
     /// with nothing reopened, so `WindowManager::is_empty()` trips and the
@@ -259,7 +258,7 @@ impl PendingAction {
 pub fn close_work_and_return_to_launcher(
     app_ctx: &Rc<AppContext>,
     ids: &AppIds,
-    workspace_layout: &crate::view_models::WorkspaceLayoutViewModel,
+    workspace_layout: &crate::workspace_layout::WorkspaceLayoutViewModel,
     ctx: &mut EventContext,
 ) {
     // Capture the desk (open tabs + docks) while the store is still alive —
@@ -354,7 +353,7 @@ pub(crate) fn may_switch_project_in_place(
 }
 
 /// Persist the open project's workspace layout (open tabs + dock arrangement)
-/// through `workspace_layout` — the **calling window's own** [`WorkspaceLayoutViewModel`](crate::view_models::WorkspaceLayoutViewModel)
+/// through `workspace_layout` — the **calling window's own** [`WorkspaceLayoutViewModel`](crate::workspace_layout::WorkspaceLayoutViewModel)
 /// handle, passed in explicitly rather than resolved via
 /// `ctx.app_state::<WorkspaceLayoutViewModel>()` (multi-Work migration: that slot is
 /// one process-wide registration fixed at builder time from the *first* window's
@@ -366,7 +365,7 @@ pub(crate) fn may_switch_project_in_place(
 /// both read entirely off this Tier-2 view-model's own injected/held state;
 /// neither needs an `EventContext`.
 pub(crate) fn capture_workspace_layout(
-    workspace_layout: &crate::view_models::WorkspaceLayoutViewModel,
+    workspace_layout: &crate::workspace_layout::WorkspaceLayoutViewModel,
 ) {
     workspace_layout.capture();
     workspace_layout.capture_tree_expansion();
@@ -411,7 +410,7 @@ fn perform_exit(
     outcome: PendingExit,
     app_ctx: &Rc<AppContext>,
     ids: &AppIds,
-    workspace_layout: &crate::view_models::WorkspaceLayoutViewModel,
+    workspace_layout: &crate::workspace_layout::WorkspaceLayoutViewModel,
     ctx: &mut EventContext,
 ) {
     match outcome {
@@ -651,13 +650,13 @@ pub struct App {
     /// This window's own "was I maximized/floating before I went fullscreen"
     /// memory (Increment 1 of distraction-free — plain fullscreen). See
     /// `FullscreenViewModel`'s doc.
-    fullscreen: crate::view_models::FullscreenViewModel,
+    fullscreen: crate::shared::FullscreenViewModel,
     /// This window's own distraction-free state (Increment 2 — chrome
     /// collapse), with its own independent placement memory from
     /// [`Self::fullscreen`] — see `FocusViewModel`'s module doc for why the
     /// two toggles never share one. Reset on Close-Work/Load-Work so a stale
     /// "mode was on" never leaks into the next project this window shows.
-    focus: crate::view_models::FocusViewModel,
+    focus: crate::shared::FocusViewModel,
     /// Bound to this window's own `ids`, so an export from this window scopes
     /// to *this* Work. See `app::commands::CommandDeps::export`'s doc.
     export: crate::export::ExportViewModel,
@@ -679,7 +678,7 @@ pub struct App {
     registry: WorkRegistry,
     /// The app-global quit sequencer (`app.quit`). Shared across every window,
     /// unlike almost everything else on this struct: a quit spans them all.
-    quit: crate::view_models::QuitSequencer,
+    quit: crate::project::QuitSequencer,
     /// Built fresh alongside `session`, bound to *this* window's own `ids`/
     /// `single_work`.
     save_as_vm: SaveAsViewModel,
@@ -687,7 +686,7 @@ pub struct App {
     /// This window's own formatting surfaces (dock + menu + editor registry).
     /// Never shared — a shared instance made the last-built window win the
     /// Format dock's live target.
-    format: crate::view_models::FormatViewModel,
+    format: crate::format::FormatViewModel,
     /// This window's own in-place project-switch guard, with *this* Work's
     /// `unsaved`/`backup_mode`.
     project_switch: ProjectSwitchViewModel,
@@ -710,7 +709,7 @@ pub struct App {
     /// it can cover the title bar), but its dependencies are built here — see
     /// `DistractionFreeSurfaceViewModel`'s module doc — so `build` hands them
     /// over with `attach`.
-    df_surface: crate::view_models::DistractionFreeSurfaceViewModel,
+    df_surface: crate::distraction_free::DistractionFreeSurfaceViewModel,
     /// Plain mirror of the persisted autosave setting, read by the title-bar menu
     /// (outside `App`) to hide the manual "Save" item. `App::build` mirrors the
     /// store-backed setting into it.
@@ -746,16 +745,16 @@ pub struct App {
     /// menu before this `App`/its `EditorsViewModel` exist), forwarded to
     /// `EditorsViewModel::new` here so it can write the live answer, and read
     /// straight from the window-chrome closure's own clone for the menu's
-    /// `.enabled(..)` bindings. See [`crate::view_models::GoAvailability`]'s doc.
-    go: crate::view_models::GoAvailability,
+    /// `.enabled(..)` bindings. See [`crate::go::GoAvailability`]'s doc.
+    go: crate::go::GoAvailability,
     /// This window's "jump to any item" popup state — see `GoToViewModel`.
-    go_to: crate::view_models::GoToViewModel,
+    go_to: crate::go::GoToViewModel,
     /// `true` while the open work has edits not yet written to disk. Read by the
     /// close guard, `work.close` and the switch guard to decide whether to prompt,
     /// and by `can_save` for the Save affordances.
     ///
     /// **Derived**, not set by hand: `dirty_seq > saved_seq`, both read off the
-    /// shared [`crate::view_models::SaveStateViewModel`] (Work-scoped, not owned
+    /// shared [`crate::save::SaveStateViewModel`] (Work-scoped, not owned
     /// here — see its module docs). A plain flag cleared on save completion
     /// would lie while a save is in flight: typing during that save would be
     /// marked clean the moment it finished, even though its snapshot never
@@ -850,8 +849,8 @@ impl App {
         app_ctx: Rc<AppContext>,
         session: WorkSession,
         outline: OutlineViewModel,
-        fullscreen: crate::view_models::FullscreenViewModel,
-        focus: crate::view_models::FocusViewModel,
+        fullscreen: crate::shared::FullscreenViewModel,
+        focus: crate::shared::FocusViewModel,
         export: crate::export::ExportViewModel,
         import_document: crate::import_document::ImportDocumentViewModel,
         autosave_menu: Signal<bool>,
@@ -863,22 +862,22 @@ impl App {
             teksilo::widgets::MenuModel,
             teksilo::core::menu_item_id::MenuItemId,
         )>,
-        go: crate::view_models::GoAvailability,
-        go_to: crate::view_models::GoToViewModel,
+        go: crate::go::GoAvailability,
+        go_to: crate::go::GoToViewModel,
         unsaved: Signal<bool>,
         pending_exit: Signal<PendingExit>,
         backup_mode: Signal<bool>,
         backup_context: Signal<Option<crate::backup::BackupContext>>,
         initial_action: PendingAction,
         registry: WorkRegistry,
-        quit: crate::view_models::QuitSequencer,
+        quit: crate::project::QuitSequencer,
         save_as_vm: SaveAsViewModel,
         restore_vm: crate::backup::BackupRestoreViewModel,
-        format: crate::view_models::FormatViewModel,
+        format: crate::format::FormatViewModel,
         project_switch: ProjectSwitchViewModel,
         title_text: Signal<String>,
         window_ordinal: Signal<usize>,
-        df_surface: crate::view_models::DistractionFreeSurfaceViewModel,
+        df_surface: crate::distraction_free::DistractionFreeSurfaceViewModel,
     ) -> Self {
         Self {
             df_surface,
@@ -1474,7 +1473,7 @@ impl Widget for App {
         // three hand-kept-in-step closures here. Built fresh each build — it holds only
         // clones of handles that are themselves stable across builds, so re-creating it is
         // idempotent; the subscribers below capture their own clone.
-        let lifecycle = crate::view_models::ProjectLifecycleViewModel::new(
+        let lifecycle = crate::project::ProjectLifecycleViewModel::new(
             self.app_ctx.clone(),
             ids.clone(),
             outline.clone(),
@@ -1968,7 +1967,7 @@ impl Widget for App {
                         // enclosing `initial_loaded` guard already makes this a genuine
                         // one-shot, so the per-enqueue caveat on `run_after_mount`
                         // (a rebuilding widget enqueuing twice) cannot apply.
-                        let toast = crate::view_models::open_failure_toast(&path, &e);
+                        let toast = crate::project::open_failure_toast(&path, &e);
                         eprintln!("skribisto: could not open '{path}': {e:#}");
                         ctx.run_after_mount(move |ctx| {
                             ctx.show_toast(toast);

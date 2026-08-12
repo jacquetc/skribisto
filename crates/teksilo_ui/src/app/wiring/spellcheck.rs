@@ -91,7 +91,7 @@ pub(in crate::app) fn install(
                 ) {
                     return;
                 }
-                crate::view_models::reload_personal_words(&app_ctx, &spell, Some(my_work_id));
+                crate::project::reload_personal_words(&app_ctx, &spell, Some(my_work_id));
                 docs.attach_all();
             },
         );

@@ -4,7 +4,7 @@
 use super::*;
 use teksilo::core::widget_tree::WidgetTree;
 
-use crate::view_models::{TypewriterAnchor, TypewriterSettings};
+use crate::shared::{TypewriterAnchor, TypewriterSettings};
 
 fn typo() -> EditorTypography {
     EditorTypography {
@@ -28,7 +28,7 @@ fn column_with(typewriter: Option<TypewriterSettings>) -> (EditorHandle, WidgetT
 /// As [`column_with`], with an explicit caret band — the shape the band tests need.
 fn column_with_band(
     typewriter: Option<TypewriterSettings>,
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
 ) -> (EditorHandle, WidgetTree) {
     let (_doc, handle, tree) = column_with_document_and(typewriter, caret);
     (handle, tree)
@@ -37,14 +37,14 @@ fn column_with_band(
 /// As [`column_with_band`], handing back the document too — the caret-band tests assert
 /// on its paint spans, which is where the whole chain ends up.
 pub(super) fn column_with_document(
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
 ) -> (TextDocument, EditorHandle, WidgetTree) {
     column_with_document_and(None, caret)
 }
 
 fn column_with_document_and(
     typewriter: Option<TypewriterSettings>,
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
 ) -> (TextDocument, EditorHandle, WidgetTree) {
     let doc = TextDocument::new();
     doc.set_plain_text("Some prose to write in.").unwrap();

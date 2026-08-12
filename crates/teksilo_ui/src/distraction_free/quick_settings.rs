@@ -27,8 +27,9 @@ use teksilo::widgets::{
     StandardListItem, TabInfo, TabWidget, VStack,
 };
 
+use crate::distraction_free::DistractionFreeThemesViewModel;
 use crate::distraction_free::theme::DistractionFreeTheme;
-use crate::view_models::{DistractionFreeThemesViewModel, SettingsViewModel};
+use crate::settings::SettingsViewModel;
 
 /// Cap on the popover so it cannot outgrow a small window.
 const MAX_HEIGHT: f32 = 460.0;

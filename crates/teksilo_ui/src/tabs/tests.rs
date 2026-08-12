@@ -65,7 +65,7 @@ fn every_combination_builds_and_lays_out() {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         // Prose tabs carry a kind + a main editor; every other combination has
@@ -134,7 +134,7 @@ fn only_the_headed_combinations_offer_an_epigraph() {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         let expected = headed.iter().any(|(r, s)| r == &role && s == &sub_role);
@@ -185,7 +185,7 @@ fn the_epigraph_box_opens_only_when_there_is_something_in_it() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     assert!(
@@ -208,7 +208,7 @@ fn the_epigraph_box_opens_only_when_there_is_something_in_it() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     assert!(
@@ -233,7 +233,7 @@ fn a_trashed_tab_shows_the_restore_banner() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     tab.open_doc.trashed.set(true);
@@ -269,7 +269,7 @@ fn segmented_containers_lay_out_their_bar() {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         let mut tree = WidgetTree::new();
@@ -302,7 +302,7 @@ fn a_notes_folder_lays_out_its_two_segment_bar() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     let mut tree = WidgetTree::new();
@@ -353,7 +353,7 @@ fn the_overview_view_model_matches_the_model_gate() {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         assert_eq!(
@@ -391,7 +391,7 @@ fn the_overview_segment_mounts_a_table() {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         tab.segment
@@ -440,7 +440,7 @@ fn only_the_book_mounts_an_analysis_segment() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     // The Analysis segment, by id. This line previously read `set(4)` — and my first
@@ -483,7 +483,7 @@ fn only_the_book_mounts_an_analysis_segment() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     assert!(part.analysis().is_none(), "only a Book is analysed for now");
@@ -510,7 +510,7 @@ fn the_overview_shows_tag_dots_for_tagged_rows_only() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     // Addressed by id: what used to be "index 6" is just the Overview segment now,
@@ -588,7 +588,7 @@ fn f2_opens_the_editor_on_the_focused_cell() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     tab.segment
@@ -668,7 +668,7 @@ fn renaming_an_overview_row_mounts_a_cell_editor() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     tab.segment
@@ -737,7 +737,7 @@ fn only_a_book_has_the_extra_book_only_segments() {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         let mut tree = WidgetTree::new();
@@ -786,7 +786,7 @@ fn the_corkboard_segment_mounts_a_grid() {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         assert!(
@@ -847,7 +847,7 @@ fn a_press_in_a_card_synopsis_does_not_arm_an_ancestor_drag() {
         let doc = TextDocument::new();
         doc.set_plain_text("alpha bravo charlie delta echo")
             .unwrap();
-        let typo = crate::view_models::EditorTypography {
+        let typo = crate::settings::EditorTypography {
             font_family: Signal::new(String::new()),
             size: Signal::new(16.0),
             line_height: Signal::new(1.5),
@@ -944,7 +944,7 @@ fn a_realized_card_lays_out_with_its_dead_zone_wrappers() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     tab.segment
@@ -992,7 +992,7 @@ fn a_note_folder_has_no_corkboard() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     assert!(
@@ -1021,7 +1021,7 @@ fn a_tab_without_a_corkboard_captures_and_seeds_nothing() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     assert!(tab.capture_corkboard_state().is_none());
@@ -1046,7 +1046,7 @@ fn an_untouched_corkboard_captures_no_state() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     assert!(
@@ -1068,7 +1068,7 @@ fn switching_a_container_view_persists_and_a_new_tab_inherits() {
     use BinderItemRole::*;
     use BinderItemSubRole::*;
     let ctx = Rc::new(AppContext::new());
-    let mem = crate::view_models::EditorViewMemory::detached(true);
+    let mem = crate::settings::EditorViewMemory::detached(true);
     let open = |id: u64| {
         tab_for(
             &ctx,
@@ -1151,7 +1151,7 @@ fn same_type_tabs_share_one_last_view_and_the_last_switch_wins() {
     use BinderItemRole::*;
     use BinderItemSubRole::*;
     let ctx = Rc::new(AppContext::new());
-    let mem = crate::view_models::EditorViewMemory::detached(true);
+    let mem = crate::settings::EditorViewMemory::detached(true);
     let open = |id: u64| {
         tab_for(
             &ctx,
@@ -1249,7 +1249,7 @@ fn first_containing(tree: &WidgetTree, root: WidgetId, needle: &str) -> Option<W
 ///
 /// The pin lives on the editors, but the *range* that lets the last line
 /// reach it lives on the page — this is the link between them.
-fn scene_page_max_scroll(typewriter: crate::view_models::TypewriterSettings) -> (f32, f32) {
+fn scene_page_max_scroll(typewriter: crate::shared::TypewriterSettings) -> (f32, f32) {
     use teksilo::widgets::ScrollArea;
     let ctx = Rc::new(AppContext::new());
     let open_doc = Rc::new(OpenDoc::build(
@@ -1272,19 +1272,19 @@ fn scene_page_max_scroll(typewriter: crate::view_models::TypewriterSettings) -> 
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
         test_typography(),
         typewriter,
-        crate::view_models::CaretHighlightSettings::off(),
-        crate::view_models::EditorViewMemory::detached(false),
-        crate::view_models::CorkboardDefaults::detached(),
-        crate::view_models::TreeExpansionViewModel::new(
+        crate::shared::CaretHighlightSettings::off(),
+        crate::settings::EditorViewMemory::detached(false),
+        crate::settings::CorkboardDefaults::detached(),
+        crate::settings::TreeExpansionViewModel::new(
             ctx.clone(),
             AppIds::new(),
             crate::models::TreeExpansionService::in_memory_default(),
         ),
         Signal::new(false),
         Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
-        crate::view_models::FormatViewModel::detached(),
-        crate::view_models::WritingGamesViewModel::detached(),
-        crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
+        crate::format::FormatViewModel::detached(),
+        crate::writing_session::WritingGamesViewModel::detached(),
+        crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
     );
     let mut tree = crate::test_support::tree_with_events(&ctx);
@@ -1309,7 +1309,7 @@ fn scene_page_max_scroll(typewriter: crate::view_models::TypewriterSettings) -> 
 /// every writing surface really does go through `writing_page_scroll`.
 #[test]
 fn the_writing_page_buys_scroll_range_only_while_pinning() {
-    use crate::view_models::{TypewriterAnchor, TypewriterSettings};
+    use crate::shared::{TypewriterAnchor, TypewriterSettings};
 
     let on = |a: TypewriterAnchor| {
         scene_page_max_scroll(TypewriterSettings::new(
@@ -1473,7 +1473,7 @@ fn tab_for_loads_allowed_fields() {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         )
     };
@@ -1517,7 +1517,7 @@ fn a_tab_publishes_the_backend_handles_it_was_built_with() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &ids,
     );
 
@@ -1593,7 +1593,7 @@ fn a_window_narrower_than_the_column_does_not_overflow() {
             Signal::new(CAP),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         // A real text backend is required for a faithful narrow-window
@@ -1636,7 +1636,7 @@ fn the_writing_column_shrinks_no_further_than_its_floor() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     let mut tree = WidgetTree::new();
@@ -1700,11 +1700,11 @@ fn side_scene_editors(width: f32, collapsed: bool) -> Vec<teksilo::prelude::Rect
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     tab.synopsis_placement
-        .set(crate::view_models::SynopsisPlacement::Side);
+        .set(crate::shared::SynopsisPlacement::Side);
     if collapsed {
         tab.side_splitter
             .set_collapsed(crate::tabs::shared::editor::SYNOPSIS_PANE, true);
@@ -1816,11 +1816,11 @@ fn folding_the_side_column_leaves_the_divider_as_the_way_back() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     tab.synopsis_placement
-        .set(crate::view_models::SynopsisPlacement::Side);
+        .set(crate::shared::SynopsisPlacement::Side);
 
     let mut tree = WidgetTree::new();
     let root = tree.add_boxed(tab_pane(&tab));
@@ -1936,11 +1936,11 @@ fn only_a_real_drag_persists_the_synopsis_column_width() {
         Signal::new(700.0),
         show.clone(),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     tab.synopsis_placement
-        .set(crate::view_models::SynopsisPlacement::Side);
+        .set(crate::shared::SynopsisPlacement::Side);
     let stored = tab.synopsis_side_width.clone();
 
     let mut tree = WidgetTree::new();
@@ -2002,7 +2002,7 @@ fn a_synopsis_session_sleeps_unless_a_mounted_view_is_showing_it() {
         Signal::new(700.0),
         show.clone(),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     let doc = tab.open_doc.clone();
@@ -2056,7 +2056,7 @@ fn two_views_of_one_document_count_as_one_awake_synopsis() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     let doc = tab.open_doc.clone();
@@ -2095,7 +2095,7 @@ fn a_new_tabs_side_divider_starts_hidden_and_weightless() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     let m = &tab.side_splitter;
@@ -2151,7 +2151,7 @@ fn hiding_the_synopsis_pane_reclaims_its_height() {
             Signal::new(700.0),
             Signal::new(show),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         );
         let mut tree = WidgetTree::new();
@@ -2249,7 +2249,7 @@ fn committing_a_title_reaches_both_of_its_homes() {
         Signal::new(700.0),
         Signal::new(true),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     let title = tab.title().expect("a chapter folder has a title field");
@@ -2302,7 +2302,7 @@ fn prose_kind_distinguishes_scene_from_note() {
             Signal::new(700.0),
             Signal::new(true),
             test_typography(),
-            crate::view_models::EditorViewMemory::detached(false),
+            crate::settings::EditorViewMemory::detached(false),
             &AppIds::new(),
         )
     };
@@ -2356,20 +2356,20 @@ fn distraction_free_overrides_prose_kind_typography_while_active() {
             Signal::new(SynopsisPlacement::default()),
             Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
             typo.clone(),
-            crate::view_models::TypewriterSettings::off(),
-            crate::view_models::CaretHighlightSettings::off(),
-            crate::view_models::EditorViewMemory::detached(false),
-            crate::view_models::CorkboardDefaults::detached(),
-            crate::view_models::TreeExpansionViewModel::new(
+            crate::shared::TypewriterSettings::off(),
+            crate::shared::CaretHighlightSettings::off(),
+            crate::settings::EditorViewMemory::detached(false),
+            crate::settings::CorkboardDefaults::detached(),
+            crate::settings::TreeExpansionViewModel::new(
                 ctx.clone(),
                 AppIds::new(),
                 crate::models::TreeExpansionService::in_memory_default(),
             ),
             df.clone(),
             df_width.clone(),
-            crate::view_models::FormatViewModel::detached(),
-            crate::view_models::WritingGamesViewModel::detached(),
-            crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
+            crate::format::FormatViewModel::detached(),
+            crate::writing_session::WritingGamesViewModel::detached(),
+            crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
             Signal::new(GoalUnit::default()),
         )
     };
@@ -2449,20 +2449,20 @@ fn the_manuscript_stream_follows_the_tabs_main_typography_and_column() {
         Signal::new(SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
         typo,
-        crate::view_models::TypewriterSettings::off(),
-        crate::view_models::CaretHighlightSettings::off(),
-        crate::view_models::EditorViewMemory::detached(false),
-        crate::view_models::CorkboardDefaults::detached(),
-        crate::view_models::TreeExpansionViewModel::new(
+        crate::shared::TypewriterSettings::off(),
+        crate::shared::CaretHighlightSettings::off(),
+        crate::settings::EditorViewMemory::detached(false),
+        crate::settings::CorkboardDefaults::detached(),
+        crate::settings::TreeExpansionViewModel::new(
             ctx.clone(),
             AppIds::new(),
             crate::models::TreeExpansionService::in_memory_default(),
         ),
         Signal::new(true),
         Signal::new(420.0),
-        crate::view_models::FormatViewModel::detached(),
-        crate::view_models::WritingGamesViewModel::detached(),
-        crate::view_models::WorkHandle::detached(ctx.clone(), AppIds::new()),
+        crate::format::FormatViewModel::detached(),
+        crate::writing_session::WritingGamesViewModel::detached(),
+        crate::save::WorkHandle::detached(ctx.clone(), AppIds::new()),
         Signal::new(GoalUnit::default()),
     );
 
@@ -2532,7 +2532,7 @@ fn mounted_scene(paragraphs: usize) -> (ContentTab, WidgetTree) {
         Signal::new(700.0),
         Signal::new(false),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     let text = "The rain kept on.\n".repeat(paragraphs);
@@ -2588,7 +2588,7 @@ fn a_seeded_caret_reaches_the_editor_and_the_live_one_comes_back() {
         Signal::new(700.0),
         Signal::new(false),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     tab.main()
@@ -2599,7 +2599,7 @@ fn a_seeded_caret_reaches_the_editor_and_the_live_one_comes_back() {
         .unwrap();
     // Seeded BEFORE the pane exists — the workspace-restore and
     // distraction-free-entry path.
-    tab.seed_view_state(crate::view_models::ViewState {
+    tab.seed_view_state(crate::shared::ViewState {
         caret: 9,
         scroll: 0.0,
     });
@@ -2628,7 +2628,7 @@ fn a_seeded_caret_reaches_the_editor_and_the_live_one_comes_back() {
 fn a_stale_caret_past_the_end_is_clamped_to_the_document() {
     let (tab, _tree) = mounted_scene(2);
     let len = tab.main().unwrap().doc.character_count();
-    tab.apply_view_state(crate::view_models::ViewState {
+    tab.apply_view_state(crate::shared::ViewState {
         caret: len + 5_000,
         scroll: 0.0,
     });
@@ -2656,7 +2656,7 @@ fn rebuilding_a_pane_carries_the_caret_over() {
         Signal::new(700.0),
         Signal::new(false),
         test_typography(),
-        crate::view_models::EditorViewMemory::detached(false),
+        crate::settings::EditorViewMemory::detached(false),
         &AppIds::new(),
     );
     tab.main()

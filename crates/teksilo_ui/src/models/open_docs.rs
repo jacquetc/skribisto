@@ -41,6 +41,7 @@ use frontend::direct_access::ContentDto;
 
 use crate::comments::binding::CommentBinding;
 use crate::comments::session::CommentHighlightSession;
+use crate::settings::TextReplacementRulesViewModel;
 use crate::singles::SingleBinderItem;
 use crate::spellcheck::{SpellSession, SpellcheckService};
 use crate::tabs::{
@@ -48,7 +49,6 @@ use crate::tabs::{
 };
 use crate::text_replacement::TextReplacementSession;
 use crate::text_replacement::typography::SmartPunctuationFlags;
-use crate::view_models::TextReplacementRulesViewModel;
 
 /// One open item's live editing state, shared by every view showing that item.
 pub struct OpenDoc {
@@ -111,8 +111,8 @@ pub struct OpenDoc {
     comments_main: Option<Rc<CommentHighlightSession>>,
     comments_synopsis: Option<Rc<CommentHighlightSession>>,
     /// Where this doc's editors fetch an image they meet but do not have —
-    /// see [`crate::view_models::images::ImageSource`].
-    images: Option<crate::view_models::images::ImageSource>,
+    /// see [`crate::shared::images::ImageSource`].
+    images: Option<crate::shared::images::ImageSource>,
     /// The comment feature's view-model, installed by `App` once a project is
     /// open (mirroring `attach_spell`). `None` in the widget tests and in any
     /// build with no comment store behind it, which is what makes the whole
@@ -278,12 +278,12 @@ impl OpenDoc {
         .flatten()
         {
             let djot = field.doc.to_djot().unwrap_or_default();
-            crate::view_models::images::register_referenced(&field.doc, &djot, media_dir);
+            crate::shared::images::register_referenced(&field.doc, &djot, media_dir);
         }
         // …and stand by for the ones that arrive later. An image pasted in from
         // another editor brings its reference and not its pixels, so the editor
         // asks for them the first time it tries to paint one it does not know.
-        doc.images = Some(crate::view_models::images::ImageSource::new(
+        doc.images = Some(crate::shared::images::ImageSource::new(
             media_dir.to_path_buf(),
         ));
 
@@ -420,7 +420,7 @@ impl OpenDoc {
 
     /// The comment highlight layer on the synopsis document, if any.
     /// Where this doc's editors fetch an image they meet but do not have.
-    pub fn images(&self) -> Option<crate::view_models::images::ImageSource> {
+    pub fn images(&self) -> Option<crate::shared::images::ImageSource> {
         self.images.clone()
     }
 
@@ -1446,7 +1446,7 @@ impl OpenDocsStore {
     /// Seed one entry directly (bypassing the backend probe) at one reference, so
     /// the refcount/eviction lifecycle is testable without a loaded project.
     ///
-    /// `pub(crate)`, not private: `view_models::editors`'s own tests use this to
+    /// `pub(crate)`, not private: `editors::editors_vm`'s own tests use this to
     /// model two windows sharing one `OpenDocsStore` (Tier 2), each opening
     /// different items, for `EditorsViewModel::release_own_open_docs`'s
     /// "releases only this window's own items" contract.
@@ -1679,8 +1679,8 @@ mod tests {
     fn a_pushed_language_reaches_the_replacement_session() {
         use crate::app_ids::AppIds;
         use crate::models::TextReplacementRuleListModel;
+        use crate::settings::TextReplacementRulesViewModel;
         use crate::singles::SingleWork;
-        use crate::view_models::TextReplacementRulesViewModel;
 
         let ctx = Rc::new(AppContext::new());
         let doc = Rc::new(OpenDoc::build(

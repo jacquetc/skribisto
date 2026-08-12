@@ -30,7 +30,7 @@
 //! same frame it would have repainted on anyway.
 //!
 //! Deliberately **not** a time-based throttle like
-//! [`MentionIndex::rescan_throttled`](crate::view_models::MentionIndex). That
+//! [`MentionIndex::rescan_throttled`](crate::mentions::MentionIndex). That
 //! shape is right for an expensive *background* scan whose result can lag, and
 //! wrong for the binder tree: a throttle either makes a rename take its interval
 //! to appear, or fires immediately and coalesces nothing. A frame is the natural

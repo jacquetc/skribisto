@@ -12,7 +12,7 @@
 //! "stop underlining my Latin" had no way to say it and no way to see that they hadn't.
 //!
 //! Thin, per the house rules: it owns no state. It renders
-//! [`SettingsViewModel::spellcheck_enabled`](crate::view_models::SettingsViewModel::spellcheck_enabled)
+//! [`SettingsViewModel::spellcheck_enabled`](crate::settings::SettingsViewModel::spellcheck_enabled)
 //! (mirrored into a plain `Signal` by `App::build`,
 //! since the title bar lives outside `App` and has no `ctx.settings()`), and clicking fires the
 //! `spellcheck.toggle` intent — the same command F7 and View ▸ Check spelling fire, so all

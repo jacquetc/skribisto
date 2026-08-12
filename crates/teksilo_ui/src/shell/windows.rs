@@ -55,13 +55,14 @@ use crate::backup::BackupSettingsViewModel;
 use crate::binder::OutlineViewModel;
 use crate::export::ExportViewModel;
 use crate::export::split_button::ExportSplitButton;
+use crate::format::FormatViewModel;
 use crate::models::{TreeExpansionService, WorkspaceLayoutService};
+use crate::save::SaveAsViewModel;
 use crate::sessions::{WorkRegistry, WorkSession};
 use crate::shell::project_switcher_button::ProjectSwitcherButton;
 use crate::spellcheck::SpellcheckService;
 use crate::spellcheck::toggle_button::SpellcheckToggleButton;
 use crate::tabs::shared::editor::VisibleWhen;
-use crate::view_models::{FormatViewModel, SaveAsViewModel};
 
 // Re-export path→window identity so `shell::windows::*` stays the
 // stable public surface for call sites.
@@ -188,7 +189,7 @@ pub struct ProjectWindowFactory {
     /// running their own sequence over the same Works would prompt twice for
     /// each; and this factory already holds the only two things it needs (the
     /// registry and the autosave switch).
-    quit: crate::view_models::QuitSequencer,
+    quit: crate::project::QuitSequencer,
     // (Phase 4 removed `main_window_state`: one `Rc<RefCell<Option<WindowState>>>`
     // retargeted to the *freshest* project window, which IPC "raise" focused. It was
     // already the wrong answer with two project windows open, and single-instance
@@ -210,7 +211,7 @@ impl ProjectWindowFactory {
         comments_menu: Signal<bool>,
     ) -> Self {
         Self {
-            quit: crate::view_models::QuitSequencer::new(
+            quit: crate::project::QuitSequencer::new(
                 app_ctx.clone(),
                 registry.clone(),
                 autosave_menu.clone(),
@@ -403,29 +404,29 @@ impl ProjectWindowFactory {
         // just above: it mirrors *this* window's own focused item, so a second
         // simultaneously-open project window's Go menu never reflects the wrong
         // window's answer. See `GoAvailability`'s module doc.
-        let go = crate::view_models::GoAvailability::new();
+        let go = crate::go::GoAvailability::new();
         // The "jump to any item" popup's state. Per WINDOW, same rationale as
         // `go` just above and for a sharper reason: it owns its own binder tree
         // model and selection, so a process-wide instance would let one window's
         // popup drive another window's editor. See `GoToViewModel`'s module doc.
-        let go_to = crate::view_models::GoToViewModel::new(app_ctx_root.clone(), ids.clone());
+        let go_to = crate::go::GoToViewModel::new(app_ctx_root.clone(), ids.clone());
         // Increment 1 of distraction-free (plain fullscreen). Per WINDOW,
         // same rationale as `scene_focused` just above: this remembers
         // *this* window's own pre-fullscreen placement, so a second
         // simultaneously-open project window's F11 never restores (or
         // clobbers) the wrong window's memory. See `FullscreenViewModel`'s
         // module doc.
-        let fullscreen = crate::view_models::FullscreenViewModel::new();
+        let fullscreen = crate::shared::FullscreenViewModel::new();
         // Increment 2 of distraction-free (chrome collapse). Per WINDOW, same
         // rationale as `fullscreen` just above — see `FocusViewModel`'s
         // module doc for why it keeps its own independent placement memory
         // rather than sharing `fullscreen`'s.
-        let focus = crate::view_models::FocusViewModel::new();
+        let focus = crate::shared::FocusViewModel::new();
         // The surface the mode actually shows. Per window for the same reason
         // `focus` is; minted empty because everything it needs beyond `focus`,
         // `go_to` and `ids` is built inside `App::build`, which hands it over
         // there (see `DistractionFreeSurfaceViewModel`'s module doc).
-        let df_surface = crate::view_models::DistractionFreeSurfaceViewModel::new(
+        let df_surface = crate::distraction_free::DistractionFreeSurfaceViewModel::new(
             app_ctx_root.clone(),
             focus.clone(),
             go_to.clone(),
@@ -461,7 +462,7 @@ impl ProjectWindowFactory {
         let unsaved = session.unsaved.clone();
         // Per WINDOW, bound to *this* Work's unsaved/backup signals — never a
         // process-wide switch guard whose hooks the last owner overwrote.
-        let project_switch = crate::view_models::ProjectSwitchViewModel::new(
+        let project_switch = crate::project::ProjectSwitchViewModel::new(
             app_ctx_root.clone(),
             unsaved.clone(),
             backup_mode.clone(),

@@ -28,8 +28,8 @@ use teksilo::widgets::{
 
 use crate::app_ids::HasWorkId;
 use crate::models::TextReplacementRuleRow;
+use crate::settings::TextReplacementRulesViewModel;
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::TextReplacementRulesViewModel;
 
 const TRIGGER_COL: &str = "trigger";
 const TRIGGER_FIELD_WIDTH: f32 = 140.0;

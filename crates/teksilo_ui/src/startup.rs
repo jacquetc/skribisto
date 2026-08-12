@@ -31,7 +31,6 @@ use crate::models::{BackupSettingsService, TreeExpansionService, WorkspaceLayout
 use crate::sessions::WorkRegistry;
 use crate::shell::{open_registry, windows};
 use crate::spellcheck;
-use crate::view_models;
 
 /// Resolve the first-run offer, sweep orphaned window-state rows, and seed the
 /// shared Root/System frame — everything that has to happen before a single
@@ -267,7 +266,7 @@ pub(crate) struct Tier1Services {
     pub import_prefs: models::ImportPrefsService,
     pub export_styles: ExportStylesViewModel,
     pub paratext_presets: ParatextPresetsViewModel,
-    pub df_themes: view_models::DistractionFreeThemesViewModel,
+    pub df_themes: crate::distraction_free::DistractionFreeThemesViewModel,
     pub backup_settings: BackupSettingsViewModel,
 }
 
@@ -388,7 +387,7 @@ pub(crate) fn open_tier1_services(
                 .ok()
         })
         .unwrap_or_else(models::DistractionFreeThemesService::in_memory_default);
-    let df_themes = view_models::DistractionFreeThemesViewModel::new(df_themes_service);
+    let df_themes = crate::distraction_free::DistractionFreeThemesViewModel::new(df_themes_service);
     // Backup-mode state (`backup_mode` true while a *backup file* is open — Save
     // + auto-backup off, the file read-only, the content still editable;
     // `backup_context` carries the open backup's details, driving the permanent

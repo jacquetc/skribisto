@@ -18,8 +18,9 @@ use frontend::common::event::{Event, Origin};
 
 use crate::app_ids::AppIds;
 use crate::backup::BackupSchedulerViewModel;
+use crate::editors::EditorsViewModel;
 use crate::models::OpenDocsStore;
-use crate::view_models::{EditorsViewModel, SaveStateViewModel};
+use crate::save::SaveStateViewModel;
 
 use super::super::{mutation_ids_belong_to_work, mutation_origins};
 
@@ -69,12 +70,12 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &AutosaveDeps) {
     // one-shot wake ~1.5 s out. `wake_at` keeps the loop asleep until the
     // deadline (no 60 fps drain); the `frame_tick` effect only runs on the
     // frames that actually pump, and fires the save when the deadline passes.
-    // The countdown policy lives in `view_models::timers` (pure, `now`-injected,
+    // The countdown policy lives in `crate::save::timers` (pure, `now`-injected,
     // unit-tested); `App` keeps only the two effects it must own — arming the
     // framework's `wake_at` and actually writing to disk.
     {
         use std::time::Instant;
-        let countdown = Rc::new(crate::view_models::AutosaveCountdown::new());
+        let countdown = Rc::new(crate::save::AutosaveCountdown::new());
         let wake = ctx.wake_at_handle();
         let autosave = deps.autosave.clone();
 
@@ -155,10 +156,10 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &AutosaveDeps) {
     // re-arms. The interval (and whether it's on) comes from the open project's
     // effective policy via the scheduler; `None` disarms it.
     {
-        use crate::view_models::IntervalTick;
+        use crate::save::IntervalTick;
         use std::time::{Duration, Instant};
         let countdown =
-            crate::view_models::IntervalCountdown::new(deps.backup_scheduler.completed_epoch());
+            crate::save::IntervalCountdown::new(deps.backup_scheduler.completed_epoch());
         let wake = ctx.wake_at_handle();
         let scheduler = deps.backup_scheduler.clone();
         let tick = ctx.frame_tick();

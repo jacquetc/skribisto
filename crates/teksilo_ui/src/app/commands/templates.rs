@@ -5,7 +5,7 @@
 //! are in as a new one.
 //!
 //! Both are gated only on there being **an editor to act on**, which
-//! [`FormatViewModel::has_target`](crate::view_models::FormatViewModel::has_target) answers. Templates were note-only at first; that
+//! [`FormatViewModel::has_target`](crate::format::FormatViewModel::has_target) answers. Templates were note-only at first; that
 //! restriction is gone, so a scene, a synopsis box, a corkboard card and a stream row are
 //! all fair game. `has_target` is also *sticky*, so the gate survives the focus loss that
 //! opening the menu causes.
@@ -114,7 +114,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 /// That is the whole reason `InputDialog::validate` exists — it was added for this.
 fn present_save_as_template(
     templates: &crate::note_templates::NoteTemplatesViewModel,
-    format: crate::view_models::FormatViewModel,
+    format: crate::format::FormatViewModel,
     body: String,
     ctx: &mut EventContext,
 ) {

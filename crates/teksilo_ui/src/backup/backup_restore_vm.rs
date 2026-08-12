@@ -58,7 +58,7 @@ use crate::backup::BackupContext;
 use crate::singles::SingleWork;
 use crate::toast_scope::ToastWorkExt;
 
-use crate::view_models::long_op::{TrackedOp, event_id, parse_payload};
+use crate::shared::long_op::{TrackedOp, event_id, parse_payload};
 
 struct BackupRestorePending {
     /// The long-operation id bundled with the Work it was captured for (F4)
@@ -178,7 +178,7 @@ impl BackupRestoreViewModel {
                 // Focus the other window (best-effort raise), then let the user
                 // retry once they've closed it there.
                 StandardButton::Open => {
-                    crate::view_models::project_switcher::raise_instance(c, pid, &raise_path);
+                    crate::project::project_switcher::raise_instance(c, pid, &raise_path);
                 }
                 StandardButton::Retry => me.check_open_elsewhere(c, target.clone()),
                 _ => {}

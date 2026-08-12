@@ -108,7 +108,7 @@ pub fn inspector_dock(
     focus: Signal<Option<u64>>,
     dock_id: DockWidgetId,
     tags: crate::tags::TagsViewModel,
-    mention_index: crate::view_models::MentionIndex,
+    mention_index: crate::mentions::MentionIndex,
     open_docs: crate::models::OpenDocsStore,
     counting_method: Signal<CountingMethodSetting>,
     goal_unit: Signal<GoalUnit>,
@@ -153,7 +153,7 @@ pub(super) struct Inspector {
     /// Work's session was registered first — this dock's tag picker would then
     /// attach a *different* Work's tag id onto this window's own item.
     tags: crate::tags::TagsViewModel,
-    mention_index: crate::view_models::MentionIndex,
+    mention_index: crate::mentions::MentionIndex,
     open_docs: crate::models::OpenDocsStore,
     /// Debounced live prose for cast suggestions — never bound at Rebuild to
     /// open-doc edit counters (typing must not rebuild this dock). Frame-tick
@@ -169,7 +169,7 @@ impl Inspector {
         outline: OutlineViewModel,
         focus: Signal<Option<u64>>,
         tags: crate::tags::TagsViewModel,
-        mention_index: crate::view_models::MentionIndex,
+        mention_index: crate::mentions::MentionIndex,
         open_docs: crate::models::OpenDocsStore,
         counting_method: Signal<CountingMethodSetting>,
         goal_unit: Signal<GoalUnit>,

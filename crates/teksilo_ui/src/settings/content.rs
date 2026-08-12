@@ -31,8 +31,9 @@ use super::nav::{Branch, Navigator, Pane, Root, Sec, children_of};
 use super::{crumb, empty_pane, pane_frame, panes, section_title, tree};
 use crate::backup::BackupSettingsViewModel;
 use crate::sessions::WorkSession;
+use crate::settings::{SettingsViewModel, WorkSettingsViewModel};
 use crate::singles::SingleWork;
-use crate::view_models::{SettingsViewModel, WorkSettingsViewModel, WritingGamesViewModel};
+use crate::writing_session::WritingGamesViewModel;
 
 /// Builds the left rail and the content `Switcher`, for [`super::SettingsPanel::build`]
 /// to wrap in its header/footer chrome.
@@ -167,7 +168,7 @@ pub(super) fn build(
     // Editor ▸ Distraction-free themes — the theme library, same shape and
     // same app_state resolution as Export Formats just above.
     let df_themes_pane: Box<dyn Widget> = match ctx
-        .app_state::<crate::view_models::DistractionFreeThemesViewModel>()
+        .app_state::<crate::distraction_free::DistractionFreeThemesViewModel>()
         .cloned()
     {
         Some(themes_vm) => Box::new(pane_frame(

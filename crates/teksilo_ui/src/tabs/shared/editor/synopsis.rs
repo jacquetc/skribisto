@@ -63,16 +63,16 @@ pub fn synopsis_editor(
     // it. `None` for surfaces with no tab (the corkboard card's own editor).
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
-    typewriter: Option<crate::view_models::TypewriterSettings>,
+    typewriter: Option<crate::shared::TypewriterSettings>,
     // The ambient caret band for this surface — the shared preference plus this
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
     // The writing games this project is playing (currently "Always forward"),
     // which may freeze this surface while one is on. `None` on the surfaces
     // built with no app around them (the widget tests). Which surfaces a game
     // covers is the game's own decision, taken against this editor's kind.
-    games: Option<crate::view_models::WritingGamesViewModel>,
+    games: Option<crate::writing_session::WritingGamesViewModel>,
     // The synopsis is a *different* `Content` row than the body, so it carries
     // its own binding — anchoring both to "the item" would merge two distinct
     // annotations into one.
@@ -80,7 +80,7 @@ pub fn synopsis_editor(
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
-    images: Option<crate::view_models::images::ImageSource>,
+    images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
 ) -> impl Widget {
@@ -232,16 +232,16 @@ pub fn card_synopsis_editor(
     // The ambient caret band for this surface — the shared preference plus this
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
     // The writing games this project is playing (currently "Always forward"),
     // which may freeze this surface while one is on. `None` on the surfaces
     // built with no app around them (the widget tests). Which surfaces a game
     // covers is the game's own decision, taken against this editor's kind.
-    games: Option<crate::view_models::WritingGamesViewModel>,
+    games: Option<crate::writing_session::WritingGamesViewModel>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
-    images: Option<crate::view_models::images::ImageSource>,
+    images: Option<crate::shared::images::ImageSource>,
 ) -> (impl Widget, EditorHandle) {
     // Stand by to supply an image this document does not have. A picture
     // pasted in from another editor arrives as a reference — pixels live on the
@@ -418,17 +418,17 @@ pub fn synopsis_section(
     // The ambient caret band for this surface — the shared preference plus this
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
     // The writing games this project is playing (currently "Always forward"),
     // which may freeze this surface while one is on. `None` on the surfaces
     // built with no app around them (the widget tests). Which surfaces a game
     // covers is the game's own decision, taken against this editor's kind.
-    games: Option<crate::view_models::WritingGamesViewModel>,
+    games: Option<crate::writing_session::WritingGamesViewModel>,
     comments: Option<crate::comments::binding::CommentBinding>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
-    images: Option<crate::view_models::images::ImageSource>,
+    images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
 ) -> impl Widget {
@@ -492,21 +492,21 @@ pub fn synopsis_column(
     // (the format dock) can act on the synopsis the caret is actually in.
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
-    typewriter: Option<crate::view_models::TypewriterSettings>,
+    typewriter: Option<crate::shared::TypewriterSettings>,
     // The ambient caret band for this surface — the shared preference plus this
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
     // The writing games this project is playing (currently "Always forward"),
     // which may freeze this surface while one is on. `None` on the surfaces
     // built with no app around them (the widget tests). Which surfaces a game
     // covers is the game's own decision, taken against this editor's kind.
-    games: Option<crate::view_models::WritingGamesViewModel>,
+    games: Option<crate::writing_session::WritingGamesViewModel>,
     comments: Option<crate::comments::binding::CommentBinding>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
-    images: Option<crate::view_models::images::ImageSource>,
+    images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into.
     //
     // A **construction-time** choice, not a runtime flag: `RichTextEditor` fixes

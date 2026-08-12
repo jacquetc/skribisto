@@ -34,7 +34,7 @@ pub(super) fn push_typography(handle: &EditorHandle, typo: &EditorTypography) {
 /// Push `band`'s current scope + colour onto a live editor. Idempotent — called on mount and on
 /// every change to either, the same shape [`push_typography`] has and for the same reason: the
 /// whole bundle goes over whichever single field changed, so the two can never disagree.
-pub(super) fn push_caret_band(handle: &EditorHandle, band: &crate::view_models::CaretBand) {
+pub(super) fn push_caret_band(handle: &EditorHandle, band: &crate::shared::CaretBand) {
     handle.set_caret_highlight(band.resolve());
 }
 
@@ -142,10 +142,10 @@ pub(super) struct TypographyBoundEditor {
     /// surface. `None` for the surfaces that deliberately never pin — the
     /// compact synopsis box and the corkboard cards, both small bounded boxes
     /// where holding a line at a fixed height means nothing.
-    pub(super) typewriter: Option<crate::view_models::TypewriterSettings>,
+    pub(super) typewriter: Option<crate::shared::TypewriterSettings>,
     /// The ambient caret band for this editor. `None` on the surfaces built with no app
     /// around them (the widget tests), which draw none.
-    pub(super) caret: Option<crate::view_models::CaretBand>,
+    pub(super) caret: Option<crate::shared::CaretBand>,
     /// The handle this editor was mounted with, kept **only** so `Drop` can retire the
     /// band — see there for why nothing else may.
     pub(super) banded: Option<EditorHandle>,
@@ -153,7 +153,7 @@ pub(super) struct TypographyBoundEditor {
     /// change so switching the game on reaches editors that are already mounted —
     /// which is the whole point: a writer turns it on *while looking at the page*.
     /// `None` on surfaces built with no app around them (the widget tests).
-    pub(super) games: Option<crate::view_models::WritingGamesViewModel>,
+    pub(super) games: Option<crate::writing_session::WritingGamesViewModel>,
     /// This editor's footnote door plus the document it shows, for the *outward*
     /// half of the two-way link: the caret's position is reported so the dock can
     /// highlight the note the writer is standing on. `None` on every surface with
@@ -197,7 +197,7 @@ impl TypographyBoundEditor {
     /// prose" a second time.
     pub(super) fn with_writing_games(
         mut self,
-        games: crate::view_models::WritingGamesViewModel,
+        games: crate::writing_session::WritingGamesViewModel,
     ) -> Self {
         self.games = Some(games);
         self
@@ -205,17 +205,14 @@ impl TypographyBoundEditor {
 
     /// Pin this editor's caret line per the shared typewriter setting. Opt-in,
     /// because only the full-page writing surfaces want it.
-    pub(super) fn with_typewriter(
-        mut self,
-        typewriter: crate::view_models::TypewriterSettings,
-    ) -> Self {
+    pub(super) fn with_typewriter(mut self, typewriter: crate::shared::TypewriterSettings) -> Self {
         self.typewriter = Some(typewriter);
         self
     }
 
     /// Shade the sentence or paragraph the caret is in, per the shared setting. Opt-in
     /// only because a surface built with no app behind it has no setting to read.
-    pub(super) fn with_caret_band(mut self, caret: crate::view_models::CaretBand) -> Self {
+    pub(super) fn with_caret_band(mut self, caret: crate::shared::CaretBand) -> Self {
         self.caret = Some(caret);
         self
     }

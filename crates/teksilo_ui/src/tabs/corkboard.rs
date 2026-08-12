@@ -50,9 +50,9 @@ use crate::binder::create_labels::{
 };
 use crate::corkboard::CorkboardViewModel;
 use crate::models::{CorkboardCard, OpenDoc};
+use crate::settings::EditorTypography;
 use crate::singles::SingleCorkboardCard;
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::EditorTypography;
 
 mod card;
 mod chrome;

@@ -10,7 +10,7 @@ use teksilo::prelude::*;
 use teksilo::widgets::{MenuEntry, MenuItems};
 
 use super::{ProjectMenuParts, command, mark};
-use crate::view_models::{ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, FormatViewModel};
+use crate::format::{ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, FormatViewModel};
 
 /// The rows of the menu, in the order they appear.
 pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {

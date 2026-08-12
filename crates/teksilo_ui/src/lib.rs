@@ -90,6 +90,7 @@
 //! scaffolding, not API.
 
 pub mod active_context;
+pub mod analysis;
 pub mod app;
 pub mod app_ids;
 pub mod backup;
@@ -103,10 +104,13 @@ pub mod crash_report;
 pub mod date_convert;
 pub mod distraction_free;
 pub mod docks;
+pub mod editors;
 pub mod export;
 pub mod ext;
 pub mod first_run;
 pub mod footnotes;
+pub mod format;
+pub mod go;
 pub mod goals;
 pub mod icons;
 pub mod identity;
@@ -116,13 +120,16 @@ pub mod intents;
 pub mod ipc_serve;
 pub mod locales;
 pub mod media_paths;
+pub mod mentions;
 pub mod models;
 pub mod new_work;
 pub mod note_templates;
 pub mod overview;
 pub mod pace;
 pub mod panels;
+pub mod project;
 pub mod read_signal;
+pub mod save;
 pub mod search;
 pub mod sessions;
 pub mod settings;
@@ -149,6 +156,8 @@ pub mod toast_scope;
 pub mod trash;
 pub mod versions;
 pub mod widgets;
+pub mod workspace_layout;
+pub mod writing_session;
 // The pane tests that need fixture rows are mocks-gated, but the search preview's
 // layout tests build their own `OpenDoc`, so they run on the real backend too —
 // and both need an event source. Hence the plain `test` gate.
@@ -156,7 +165,6 @@ pub mod widgets;
 mod test_support;
 pub mod tooltip_registry;
 pub mod version;
-pub mod view_models;
 pub mod welcome;
 
 use std::rc::Rc;
@@ -606,7 +614,7 @@ pub fn run() {
         .app_state(initial_state.session.tags.clone())
         // Seed so first-build app_state readers find *some* Format; each
         // window re-points this on `App::build` to its own instance.
-        .app_state(crate::view_models::FormatViewModel::detached())
+        .app_state(crate::format::FormatViewModel::detached())
         .app_state(initial_state.session.single_work.clone())
         .app_state(initial_state.session.single_work_info.clone())
         .app_state(initial_state.outline.clone())

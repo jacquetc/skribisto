@@ -13,7 +13,7 @@
 //!   backspace-revert.
 //!
 //! The lexicon itself lives in
-//! [`TextReplacementRulesViewModel`](crate::view_models::TextReplacementRulesViewModel);
+//! [`TextReplacementRulesViewModel`](crate::settings::TextReplacementRulesViewModel);
 //! the session recompiles its engine whenever that changes.
 
 pub mod engine;

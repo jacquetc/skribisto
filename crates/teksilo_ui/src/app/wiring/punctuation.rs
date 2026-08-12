@@ -14,9 +14,9 @@ use teksilo::prelude::*;
 
 use crate::app_ids::AppIds;
 use crate::models::OpenDocsStore;
+use crate::settings::SettingsViewModel;
 use crate::singles::{SingleSmartPunctuation, SingleWork};
 use crate::text_replacement::typography::SmartPunctuationFlags;
-use crate::view_models::SettingsViewModel;
 
 /// The punctuation rules in force for the open project — the two tiers resolved
 /// into the one flag set the editor sessions run.

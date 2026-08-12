@@ -20,7 +20,7 @@ fn test_scheduler() -> BackupSchedulerViewModel {
         single_work_info.clone(),
         ids.clone(),
         backup_mode.clone(),
-        crate::view_models::TreeExpansionViewModel::new(
+        crate::settings::TreeExpansionViewModel::new(
             app_ctx.clone(),
             ids.clone(),
             crate::models::TreeExpansionService::in_memory_default(),

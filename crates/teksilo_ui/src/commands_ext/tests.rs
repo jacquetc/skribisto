@@ -399,7 +399,7 @@ fn seam_context() -> SeamContext {
     crate::docks::DockContext {
         app_ctx: app_ctx.clone(),
         ids: AppIds::new(),
-        work: crate::view_models::WorkHandle::detached(app_ctx, AppIds::new()),
+        work: crate::save::WorkHandle::detached(app_ctx, AppIds::new()),
         active: crate::active_context::ActiveContext::detached(),
     }
 }

@@ -36,8 +36,8 @@ use teksilo::widgets::{
     SearchField, StandardTreeItem, TextWidget, TreeRow, TreeView, VStack,
 };
 
+use crate::go::GoToViewModel;
 use crate::models::TreeNode;
-use crate::view_models::GoToViewModel;
 
 /// The two per-instance action names. One `GoToButton` lives in the status bar
 /// and one in the distraction-free strip, and only ever one is on screen — so

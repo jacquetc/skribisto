@@ -44,9 +44,10 @@ use teksilo::widgets::{
 use crate::app_ids::AppIds;
 use crate::models::{OpenDoc, OpenDocsStore};
 use crate::pace::PaceViewModel;
+use crate::settings::{EditorTypography, EditorTypographySet};
+use crate::shared::SynopsisPlacement;
 use crate::singles::{SingleBinderItem, SingleContent};
 use crate::stream::StreamViewModel;
-use crate::view_models::{EditorTypography, EditorTypographySet, SynopsisPlacement};
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
 // (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
@@ -134,7 +135,7 @@ pub struct ContentTab {
     /// as `pace` is. Per-tab rather than shared: two containers open side by side are two
     /// analyses of two different scopes, and one shared instance would have the second
     /// overwrite the first.
-    analysis: Option<crate::view_models::AnalysisViewModel>,
+    analysis: Option<crate::analysis::AnalysisViewModel>,
     /// The Corkboard view-model — `Some` only for a folder container (Chapter /
     /// Part / Book), gated on the same
     /// [`StreamLevel::for_container`](crate::models::StreamLevel::for_container) as `stream`.
@@ -155,7 +156,7 @@ pub struct ContentTab {
     /// published by [`Self::work`] for the same slot, and for the same reason
     /// `ids`/`app_ctx` are: a segment that edited its own state without it left
     /// the project reading clean, and Close/Quit discarded the edit in silence.
-    work: crate::view_models::WorkHandle,
+    work: crate::save::WorkHandle,
     /// The backend handle this tab was built against.
     ///
     /// Kept even though every sub-view-model was already handed its own clone at
@@ -183,9 +184,9 @@ pub struct ContentTab {
     /// shared `OpenDoc` beside the spell and replacement sessions: two split
     /// panes on one item have one `TextDocument` but two carets. The signal is
     /// the seed a freshly-built pane starts from; the ports are the live wiring.
-    /// See [`crate::view_models::ViewState`].
-    view_state: Signal<crate::view_models::ViewState>,
-    view_state_ports: Rc<crate::view_models::ViewStatePorts>,
+    /// See [`crate::shared::ViewState`].
+    view_state: Signal<crate::shared::ViewState>,
+    view_state_ports: Rc<crate::shared::ViewStatePorts>,
     /// Selected segment for the folder container's `SegmentedControl` — per-tab
     /// (each pane keeps its own segment).
     /// Which segment the container's bar has selected, **keyed** rather than positional.
@@ -235,10 +236,10 @@ pub struct ContentTab {
     /// the pinned-line preset. Every full-page writing surface this tab builds
     /// reads it, and the tab's `ScrollArea` buys its scroll-past-end range from
     /// it, so the two can never disagree about whether pinning is on.
-    pub typewriter: crate::view_models::TypewriterSettings,
+    pub typewriter: crate::shared::TypewriterSettings,
     /// The ambient caret band, shared live from Settings — how much text around the caret
     /// is shaded, and in what colour. Every writing surface this tab builds reads it.
-    pub caret_highlight: crate::view_models::CaretHighlightSettings,
+    pub caret_highlight: crate::shared::CaretHighlightSettings,
     /// The language of this tab's document, resolved once at build from the same
     /// `effective_language` the spell-checker reads. Only the band's sentence scope needs it.
     caret_locale: Option<String>,
@@ -259,16 +260,16 @@ pub struct ContentTab {
     /// Per-container-type "last view" memory: seeds this tab's initial [`Self::segment`]
     /// and (for a folder container) is written back when the user switches view, so a
     /// new tab of the same type inherits it. Shared live from Settings.
-    pub view_memory: crate::view_models::EditorViewMemory,
+    pub view_memory: crate::settings::EditorViewMemory,
     /// This window's Format surfaces — every writing editor this tab builds
     /// registers with it (never process-wide `app_state`).
-    pub format: crate::view_models::FormatViewModel,
+    pub format: crate::format::FormatViewModel,
     /// The writing games this project is playing, shared live: the per-`Work`
     /// activation paired with the app-global "which surfaces" options. Every
     /// writing editor this tab builds reads it, so switching a game on reaches
     /// every open surface of this project at once — including the ones in a
     /// second window, since the activation half is Tier 2.
-    pub writing_games: crate::view_models::WritingGamesViewModel,
+    pub writing_games: crate::writing_session::WritingGamesViewModel,
 }
 
 /// Which prose kind a dual-pane main-text editor is, so it can pick the Scene vs
@@ -378,7 +379,7 @@ pub fn tab_for(
     column_width: Signal<f32>,
     show_synopsis: Signal<bool>,
     typography: EditorTypographySet,
-    view_memory: crate::view_models::EditorViewMemory,
+    view_memory: crate::settings::EditorViewMemory,
     ids: &AppIds,
 ) -> ContentTab {
     let open_doc = Rc::new(OpenDoc::build(
@@ -406,12 +407,12 @@ pub fn tab_for(
         typography,
         // A standalone tab is never a real project window; the tab tests that
         // exercise pinning build a `ContentTab` directly and pass a live one.
-        crate::view_models::TypewriterSettings::off(),
+        crate::shared::TypewriterSettings::off(),
         // Likewise for the caret band: no Settings behind a standalone tab, so it draws none.
-        crate::view_models::CaretHighlightSettings::off(),
+        crate::shared::CaretHighlightSettings::off(),
         view_memory,
-        crate::view_models::CorkboardDefaults::detached(),
-        crate::view_models::TreeExpansionViewModel::new(
+        crate::settings::CorkboardDefaults::detached(),
+        crate::settings::TreeExpansionViewModel::new(
             ctx.clone(),
             ids.clone(),
             crate::models::TreeExpansionService::in_memory_default(),
@@ -423,14 +424,14 @@ pub fn tab_for(
         // Unreachable while the flag above stays `false` — same compile-time
         // default `SettingsViewModel::distraction_free_width` seeds from.
         Signal::new(crate::DISTRACTION_FREE_WIDTH_DEFAULT),
-        crate::view_models::FormatViewModel::detached(),
+        crate::format::FormatViewModel::detached(),
         // A standalone tab plays no writing game: nothing switches one on, and
         // the two option signals below it are the shipped defaults.
-        crate::view_models::WritingGamesViewModel::detached(),
+        crate::writing_session::WritingGamesViewModel::detached(),
         // A standalone tab has no `WorkSession`, so it gets its own inert save
         // state rather than a null object: marking a change on it is a real state
         // change on a real object, there is simply no window polling it.
-        crate::view_models::WorkHandle::detached(ctx.clone(), ids.clone()),
+        crate::save::WorkHandle::detached(ctx.clone(), ids.clone()),
         // Words, like a fresh project: a standalone tab has no `Work` behind it to ask.
         Signal::new(GoalUnit::default()),
     )
@@ -579,16 +580,16 @@ impl ContentTab {
         synopsis_placement: Signal<SynopsisPlacement>,
         synopsis_side_width: Signal<f32>,
         typography: EditorTypographySet,
-        typewriter: crate::view_models::TypewriterSettings,
-        caret_highlight: crate::view_models::CaretHighlightSettings,
-        view_memory: crate::view_models::EditorViewMemory,
-        corkboard_defaults: crate::view_models::CorkboardDefaults,
-        tree_expansion: crate::view_models::TreeExpansionViewModel,
+        typewriter: crate::shared::TypewriterSettings,
+        caret_highlight: crate::shared::CaretHighlightSettings,
+        view_memory: crate::settings::EditorViewMemory,
+        corkboard_defaults: crate::settings::CorkboardDefaults,
+        tree_expansion: crate::settings::TreeExpansionViewModel,
         distraction_free: Signal<bool>,
         distraction_free_width: Signal<f32>,
-        format: crate::view_models::FormatViewModel,
-        writing_games: crate::view_models::WritingGamesViewModel,
-        work: crate::view_models::WorkHandle,
+        format: crate::format::FormatViewModel,
+        writing_games: crate::writing_session::WritingGamesViewModel,
+        work: crate::save::WorkHandle,
         goal_unit: Signal<GoalUnit>,
     ) -> Self {
         // The Pace view-model gates on the same `StreamLevel::for_container` as
@@ -614,7 +615,7 @@ impl ContentTab {
             )
         )
         .then(|| {
-            crate::view_models::AnalysisViewModel::new(
+            crate::analysis::AnalysisViewModel::new(
                 app_ctx.clone(),
                 ids.clone(),
                 open_doc.item_id,
@@ -645,7 +646,7 @@ impl ContentTab {
                 cd.modal_size.clone(),
                 cd.counting_method.clone(),
                 typography.corkboard.clone(),
-                crate::view_models::CaretBand::new(caret_highlight.clone(), caret_locale.clone()),
+                crate::shared::CaretBand::new(caret_highlight.clone(), caret_locale.clone()),
                 writing_games.clone(),
                 format.clone(),
             )
@@ -730,8 +731,8 @@ impl ContentTab {
             app_ctx,
             find,
             synopsis_handle: Rc::new(RefCell::new(None)),
-            view_state: Signal::new(crate::view_models::ViewState::default()),
-            view_state_ports: Rc::new(crate::view_models::ViewStatePorts::default()),
+            view_state: Signal::new(crate::shared::ViewState::default()),
+            view_state_ports: Rc::new(crate::shared::ViewStatePorts::default()),
             segment,
             column_width,
             epigraph_expanded: Signal::new(open_doc_epigraph_seed),
@@ -753,7 +754,7 @@ impl ContentTab {
 
     /// The writing games this project is playing — handed to every writing
     /// editor this tab builds.
-    pub fn writing_games(&self) -> crate::view_models::WritingGamesViewModel {
+    pub fn writing_games(&self) -> crate::writing_session::WritingGamesViewModel {
         self.writing_games.clone()
     }
 
@@ -787,21 +788,21 @@ impl ContentTab {
 
     /// The live ports the mounted pane publishes its editor handle and page
     /// scroll into. Handed to `writing_column` and `writing_page_scroll`.
-    pub fn view_state_ports(&self) -> Rc<crate::view_models::ViewStatePorts> {
+    pub fn view_state_ports(&self) -> Rc<crate::shared::ViewStatePorts> {
         self.view_state_ports.clone()
     }
 
     /// The position a freshly-built pane starts from — the seed, not the live
     /// caret. Read by the deferred scroll restore, which has to know what it is
     /// aiming for before the page has a scroll range to aim within.
-    pub fn view_state(&self) -> Signal<crate::view_models::ViewState> {
+    pub fn view_state(&self) -> Signal<crate::shared::ViewState> {
         self.view_state.clone()
     }
 
     /// What a freshly-built pane is handed: the position to start at, and the
     /// ports to publish itself into.
-    pub fn view_state_binding(&self) -> crate::view_models::ViewStateBinding {
-        crate::view_models::ViewStateBinding {
+    pub fn view_state_binding(&self) -> crate::shared::ViewStateBinding {
+        crate::shared::ViewStateBinding {
             initial: self.view_state.get(),
             ports: self.view_state_ports.clone(),
         }
@@ -814,7 +815,7 @@ impl ContentTab {
     /// Reads the mounted widgets rather than the `view_state` mirror on purpose:
     /// the mirror is only ever a seed, so trusting it would persist the position
     /// the tab *opened* at rather than the one the writer left it at.
-    pub fn capture_view_state(&self) -> crate::view_models::ViewState {
+    pub fn capture_view_state(&self) -> crate::shared::ViewState {
         self.view_state_ports.capture(self.view_state.get())
     }
 
@@ -824,7 +825,7 @@ impl ContentTab {
     ///
     /// Also updates the seed, so a later rebuild of this tab starts from the
     /// same place rather than from where it was first opened.
-    pub fn apply_view_state(&self, state: crate::view_models::ViewState) {
+    pub fn apply_view_state(&self, state: crate::shared::ViewState) {
         self.view_state.set(state);
         let max_caret = self
             .main()
@@ -836,7 +837,7 @@ impl ContentTab {
     /// Set the position a **not-yet-built** pane will start from — the workspace
     /// restore and distraction-free entry paths, both of which run before the
     /// pane exists. Read once by `writing_column`/`writing_page_scroll`.
-    pub fn seed_view_state(&self, state: crate::view_models::ViewState) {
+    pub fn seed_view_state(&self, state: crate::shared::ViewState) {
         self.view_state.set(state);
     }
 
@@ -888,7 +889,7 @@ impl ContentTab {
     ///
     /// `pub` for the same reason [`Self::ids`] and [`Self::app_ctx`] are — a
     /// segment is handed nothing but this tab.
-    pub fn work(&self) -> &crate::view_models::WorkHandle {
+    pub fn work(&self) -> &crate::save::WorkHandle {
         &self.work
     }
     /// The `(role, sub_role)` pair this tab edits — what [`tab_pane`] dispatches on.
@@ -896,7 +897,7 @@ impl ContentTab {
         &self.open_doc.role
     }
     /// This tab's Analysis view-model — `Some` only on a `Folder/Book`.
-    pub(crate) fn analysis(&self) -> Option<&crate::view_models::AnalysisViewModel> {
+    pub(crate) fn analysis(&self) -> Option<&crate::analysis::AnalysisViewModel> {
         self.analysis.as_ref()
     }
 
@@ -958,8 +959,8 @@ impl ContentTab {
     }
 
     /// This tab's caret band: the shared preference plus this document's language.
-    pub fn caret_band(&self) -> crate::view_models::CaretBand {
-        crate::view_models::CaretBand::new(self.caret_highlight.clone(), self.caret_locale.clone())
+    pub fn caret_band(&self) -> crate::shared::CaretBand {
+        crate::shared::CaretBand::new(self.caret_highlight.clone(), self.caret_locale.clone())
     }
 
     /// The typography bundle for this tab's **main** prose editor: the

@@ -6,7 +6,7 @@
 //!
 //! **Every door that replaces this window's project goes through the guard.** New Work and
 //! Open Work both close the open `Work` first, so both ask
-//! [`ProjectSwitchViewModel`](crate::view_models::ProjectSwitchViewModel) rather
+//! [`ProjectSwitchViewModel`](crate::project::ProjectSwitchViewModel) rather
 //! than calling the backend — which is what they used to do, destroying unsaved edits
 //! outright. The guard performs the switch itself, now or once the deferred save lands;
 //! these actions only *ask* for it.
@@ -19,8 +19,8 @@ use crate::import_plume::ImportPlumeViewModel;
 use crate::import_plume::panel::ImportPlumePanel;
 use crate::intents::AppIntent;
 use crate::new_work::panel::NewWorkPanel;
+use crate::project::PendingSwitch;
 use crate::settings::SettingsPanel;
-use crate::view_models::PendingSwitch;
 
 use super::super::open_work_flow;
 use super::CommandDeps;

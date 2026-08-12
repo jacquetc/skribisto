@@ -24,7 +24,7 @@
 use skribisto_model::{GoDirection, GoKind};
 use teksilo::prelude::*;
 
-use crate::view_models::EditorsViewModel;
+use crate::editors::EditorsViewModel;
 
 use super::CommandDeps;
 

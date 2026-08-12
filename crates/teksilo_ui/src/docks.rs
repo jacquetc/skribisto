@@ -7,7 +7,7 @@
 //!
 //! The roster: [`crate::binder::dock`] (binder tree), [`crate::search::dock`], [`crate::trash::dock`],
 //! [`crate::comments::dock`] (project-wide) on the leading rail; [`inspector`],
-//! [`mod@format`], a per-document comments dock, [`crate::footnotes::dock`] and
+//! [`crate::format::dock`], a per-document comments dock, [`crate::footnotes::dock`] and
 //! [`crate::versions::dock`] on the trailing rail; [`crate::search::preview_dock`] and
 //! [`crate::timeline::dock`] on the bottom. See [`APP_DOCKS`] for the authoritative
 //! list and mount order.
@@ -16,7 +16,7 @@
 //!
 //! `DockLayoutState` (teksilo's serialisable dock layout) keys panes by raw
 //! `DockWidgetId` (`u64`). For the per-work layout restore
-//! ([`crate::view_models::WorkspaceLayoutViewModel`]) to match a saved layout to
+//! ([`crate::workspace_layout::WorkspaceLayoutViewModel`]) to match a saved layout to
 //! this run's docks, each logical dock must carry the **same** id every launch —
 //! a `DockWidgetId::fresh()` (a per-process atomic counter) would mint a
 //! different id each run and `import_state` would drop the whole saved tree as
@@ -95,7 +95,7 @@ impl AppDock {
 ///
 /// 1. the **first-run mount**, which walks it to arrange a fresh desk; and
 /// 2. the **restore-time reconcile**
-///    ([`WorkspaceLayoutViewModel::restore`](crate::view_models::WorkspaceLayoutViewModel::restore)),
+///    ([`WorkspaceLayoutViewModel::restore`](crate::workspace_layout::WorkspaceLayoutViewModel::restore)),
 ///    which mounts any dock a saved desk has never heard of.
 ///
 /// Consumer 2 is why adding a dock here is the *whole* job. A saved
@@ -222,7 +222,7 @@ pub struct DockContext {
     /// Without it a dock that edits its own state left the project reading clean,
     /// and Close/Quit proceeded with no save issued — see `WorkHandle` for the
     /// full account.
-    pub work: crate::view_models::WorkHandle,
+    pub work: crate::save::WorkHandle,
     /// What the writer is looking at in **this** window — see
     /// [`crate::active_context`]. Docks get it and tabs do not: a tab is already
     /// scoped to one container, a dock sits outside every tab.
@@ -402,8 +402,6 @@ pub fn registered_dock_widgets(cx: &DockContext) -> Vec<DockWidget> {
 }
 
 pub mod create_split_button;
-pub mod format;
-pub mod games;
 pub mod inspector;
 pub mod inspector_sections;
 pub mod outline_card;
@@ -531,7 +529,7 @@ mod extension_roster_tests {
         let cx = DockContext {
             app_ctx: app_ctx.clone(),
             ids: AppIds::new(),
-            work: crate::view_models::WorkHandle::detached(app_ctx, AppIds::new()),
+            work: crate::save::WorkHandle::detached(app_ctx, AppIds::new()),
             active: crate::active_context::ActiveContext::detached(),
         };
         let widgets = registered_dock_widgets(&cx);
@@ -583,7 +581,7 @@ mod extension_roster_tests {
     fn a_dock_that_marks_a_change_reaches_the_unsaved_guard() {
         let app_ctx = Rc::new(AppContext::new());
         let ids = AppIds::new();
-        let save_state = crate::view_models::SaveStateViewModel::new(app_ctx.clone(), ids.clone());
+        let save_state = crate::save::SaveStateViewModel::new(app_ctx.clone(), ids.clone());
         assert!(!save_state.is_unsaved(), "a fresh Work starts clean");
 
         let cx = DockContext {

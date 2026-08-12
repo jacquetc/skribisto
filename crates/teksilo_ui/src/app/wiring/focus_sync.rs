@@ -22,10 +22,13 @@ use teksilo::prelude::*;
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 
 use crate::backup::{BackupRestoreViewModel, BackupSchedulerViewModel};
+use crate::editors::{EditorsViewModel, Side};
 use crate::export::ExportViewModel;
 use crate::import_document::ImportDocumentViewModel;
+use crate::mentions::MentionIndex;
 use crate::note_templates::NoteTemplatesViewModel;
-use crate::view_models::{EditorsViewModel, MentionIndex, ProgressRecorder, SaveAsViewModel, Side};
+use crate::save::SaveAsViewModel;
+use crate::shared::ProgressRecorder;
 
 pub(in crate::app) struct FocusSyncDeps {
     pub templates_menu: Option<(

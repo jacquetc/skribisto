@@ -17,7 +17,7 @@
 use teksilo::prelude::*;
 
 use super::CommandDeps;
-use crate::view_models::SettingsViewModel;
+use crate::settings::SettingsViewModel;
 
 pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
     ctx.register_shortcut_global(

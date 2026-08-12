@@ -22,11 +22,11 @@ use frontend::common::event::{Event, LongOperationEvent, Origin};
 use crate::app::PendingExit;
 use crate::app_ids::AppIds;
 use crate::backup::BackupSchedulerViewModel;
+use crate::editors::EditorsViewModel;
+use crate::project::{ProjectSwitchViewModel, QuitSequencer};
+use crate::save::{DeferredResume, SaveStateViewModel};
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::{
-    DeferredResume, EditorsViewModel, ProjectSwitchViewModel, QuitSequencer, SaveStateViewModel,
-    WorkspaceLayoutViewModel,
-};
+use crate::workspace_layout::WorkspaceLayoutViewModel;
 
 /// Dedup id (Work-scoped — see [`crate::toast_scope`]) shared by every "the save
 /// failed" toast [`abandon_deferred`] raises. One id on purpose: a specific
@@ -101,7 +101,7 @@ pub(in crate::app) fn install(ctx: &mut BuildContext, deps: &SaveAndExitDeps) {
                 }
                 let saved = landed.saved_seq;
                 let pe = pending.get();
-                match crate::view_models::resume_deferred(
+                match crate::save::resume_deferred(
                     landed.follow_up_failed,
                     saved,
                     pe != PendingExit::None,

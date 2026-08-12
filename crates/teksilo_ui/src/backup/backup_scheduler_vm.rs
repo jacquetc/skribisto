@@ -46,8 +46,8 @@
 //! **Capture, don't re-read live.** `ids`/`single_work` are the *window's* own
 //! long-lived handles (this scheduler outlives any one backup), and an
 //! in-place project switch can reseed those same signals mid-flight.
-//! [`Pending::tracked`] is a [`crate::view_models::long_op::TrackedOp`], bundling the op id
-//! with a [`crate::view_models::long_op::CapturedWork`] captured once in [`BackupSchedulerViewModel::start`] —
+//! [`Pending::tracked`] is a [`crate::shared::long_op::TrackedOp`], bundling the op id
+//! with a [`crate::shared::long_op::CapturedWork`] captured once in [`BackupSchedulerViewModel::start`] —
 //! every `on_long_op_*` handler below routes and scopes its toast on
 //! `tracked.work_id()`, never `self.ids.work_id.get()`.
 
@@ -70,10 +70,10 @@ use crate::app_ids::AppIds;
 use crate::backup::BackupSettingsViewModel;
 use crate::backup::is_destination_available;
 use crate::models::{BackupPolicy, RetentionMode, uid_is_usable};
+use crate::shared::long_op::{TrackedOp, event_id, parse_payload, payload_id};
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::WorkspaceLayoutViewModel;
-use crate::view_models::long_op::{TrackedOp, event_id, parse_payload, payload_id};
+use crate::workspace_layout::WorkspaceLayoutViewModel;
 
 /// Per-window flush hooks, keyed by window: a Work with two windows must flush
 /// both editors before a backup. Aliased so the field type stays legible.
@@ -164,7 +164,7 @@ pub struct BackupSchedulerViewModel {
     /// The app-global quit sequencer, if one has been injected
     /// ([`Self::set_quit_sequencer`]). `None` in tests and in the throwaway
     /// bootstrap session `main` builds before any project window exists.
-    quit: Rc<RefCell<Option<crate::view_models::QuitSequencer>>>,
+    quit: Rc<RefCell<Option<crate::project::QuitSequencer>>>,
 }
 
 impl BackupSchedulerViewModel {
@@ -249,7 +249,7 @@ impl BackupSchedulerViewModel {
     /// The hook registry is per-Work and keyed by window, which makes it the only
     /// thing in the crate that can answer "put *this Work's* live editor buffers
     /// into the store" without holding one particular window's
-    /// `EditorsViewModel`. [`crate::view_models::QuitSequencer`] needs exactly
+    /// `EditorsViewModel`. [`crate::project::QuitSequencer`] needs exactly
     /// that: it saves Works it is not the window for, and `request_save` records
     /// an edit sequence that only means anything once the store holds everything
     /// up to it.
@@ -690,7 +690,7 @@ impl BackupSchedulerViewModel {
     /// the sequencer reaches *into* per-Work schedulers to flush and save, and
     /// making the constructor require it would put the app-global handle in the
     /// signature of every per-Work test fixture in the crate.
-    pub fn set_quit_sequencer(&self, quit: crate::view_models::QuitSequencer) {
+    pub fn set_quit_sequencer(&self, quit: crate::project::QuitSequencer) {
         *self.quit.borrow_mut() = Some(quit);
     }
 

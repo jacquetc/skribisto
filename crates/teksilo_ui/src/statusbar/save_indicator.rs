@@ -23,7 +23,7 @@
 //! that looks live while doing nothing reads as a bug.
 //!
 //! Thin, per the house rules: every decision is the pure
-//! [`crate::view_models::save_status`] table, and the write itself is
+//! [`crate::save::save_status`] table, and the write itself is
 //! `EditorsViewModel::request_save` (which flushes the editors, coalesces against
 //! any save already in flight, and reports failures).
 
@@ -36,7 +36,8 @@ use teksilo::core::color_prop::ColorProp;
 use teksilo::prelude::*;
 use teksilo::widgets::{FixedSize, IconButton, IconButtonSize, Spinner};
 
-use crate::view_models::{EditorsViewModel, SaveStatus, SpinnerGate, save_clickable, save_status};
+use crate::editors::EditorsViewModel;
+use crate::save::{SaveStatus, SpinnerGate, save_clickable, save_status};
 
 /// Keeps the status bar's other items from shifting as the glyph swaps between the
 /// icon button and the spinner.

@@ -18,7 +18,7 @@ use super::CommandDeps;
 /// Left unguarded, a dock command fired in the mode silently rearranges the
 /// desk behind the surface (e.g. the leading rail switches to Search) with no
 /// visible effect until the mode is exited.
-fn unless_distraction_free(focus: &crate::view_models::FocusViewModel, f: impl FnOnce()) {
+fn unless_distraction_free(focus: &crate::shared::FocusViewModel, f: impl FnOnce()) {
     if !focus.active_signal().get() {
         f();
     }
@@ -272,7 +272,7 @@ mod tests {
     use super::*;
     use crate::app_ids::AppIds;
     use crate::binder::OutlineViewModel;
-    use crate::view_models::FocusViewModel;
+    use crate::shared::FocusViewModel;
     use frontend::AppContext;
     use std::rc::Rc;
 

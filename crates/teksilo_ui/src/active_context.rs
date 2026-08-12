@@ -11,14 +11,14 @@
 //!
 //! Added to [`DockContext`](crate::docks::DockContext) **only**. A
 //! [`ContentTab`](crate::tabs::ContentTab) or an
-//! [`AnalysisViewModel`](crate::view_models::AnalysisViewModel) is already scoped
+//! [`AnalysisViewModel`](crate::analysis::AnalysisViewModel) is already scoped
 //! to one container by construction (`item_id()` / `scope_item_id()`), so it has
 //! no "which container am I" question for this to answer. A dock, which sits
 //! outside every tab and outlives all of them, does.
 //!
 //! ## Only types this module owns cross the seam
 //!
-//! [`ActivePane`] rather than `view_models::Side`, and `HashSet<Uuid>` rather than
+//! [`ActivePane`] rather than `editors::Side`, and `HashSet<Uuid>` rather than
 //! `models::BinderTreeKey`. Every type on a seam context is a compatibility
 //! promise: publishing an internal enum makes renaming it a breaking change for
 //! everything installed. Two variants and a uuid set are cheaper to own than that
@@ -37,9 +37,9 @@ use uuid::Uuid;
 
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 
+use crate::editors::Side;
 use crate::models::BinderTreeKey;
 use crate::read_signal::ReadSignal;
-use crate::view_models::Side;
 
 /// The `BinderItem` the focused editor pane is showing.
 ///
@@ -138,7 +138,7 @@ impl ActiveContext {
     /// the live one — which compiles, lays out, and leaves every dock's focus
     /// tracking permanently stuck on its initial value, with nothing to see.
     pub(crate) fn for_window(
-        editors: &crate::view_models::EditorsViewModel,
+        editors: &crate::editors::EditorsViewModel,
         outline: &crate::binder::OutlineViewModel,
     ) -> Self {
         Self::new(

@@ -30,7 +30,7 @@ use teksilo::core::widget::WidgetPlacement;
 use teksilo::prelude::*;
 use teksilo::widgets::{HStack, IconButton, TextWidget, VStack};
 
-use crate::view_models::MentionRow;
+use crate::mentions::MentionRow;
 use crate::widgets::attach_labelled_composite_tooltip;
 
 /// Persist a new confirmed-reference list for the item the list belongs to (append one id).

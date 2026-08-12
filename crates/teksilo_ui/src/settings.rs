@@ -49,7 +49,11 @@ mod defaults;
 mod fields;
 mod nav;
 pub(crate) mod panes;
+mod settings_vm;
+mod text_replacement_rules_vm;
 mod tree;
+mod tree_expansion_vm;
+mod work_settings_vm;
 
 // Re-bound here, not merely `use`d, because every pane module reaches this file
 // with `use super::super::*` — a glob that carries a private import along with
@@ -62,10 +66,15 @@ pub(crate) use fields::{
 };
 pub(crate) use nav::{Navigator, Pane, Sec, tree_spec};
 
-use crate::sessions::WorkSession;
-use crate::view_models::{
-    EditorTypography, HighlightScope, SettingsViewModel, TypewriterAnchor, WorkSettingsViewModel,
+pub use settings_vm::{
+    CorkboardDefaults, EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel,
 };
+pub use text_replacement_rules_vm::TextReplacementRulesViewModel;
+pub use tree_expansion_vm::TreeExpansionViewModel;
+pub use work_settings_vm::WorkSettingsViewModel;
+
+use crate::sessions::WorkSession;
+use crate::shared::{HighlightScope, TypewriterAnchor};
 use skribisto_model::ChapterMode;
 
 /// Card dimensions (a compact two-pane preferences window).
@@ -146,9 +155,9 @@ impl Widget for SettingsPanel {
         // Which surfaces a game covers is an app setting; whether it is being
         // played is this project's session state. Paired here, exactly as
         // `App::build` pairs them for the editors.
-        let games = crate::view_models::WritingGamesViewModel::new(
+        let games = crate::writing_session::WritingGamesViewModel::new(
             self.session.always_forward.clone(),
-            crate::view_models::WritingGameOptions::new(
+            crate::writing_session::WritingGameOptions::new(
                 vm.games_forward_prose(),
                 vm.games_forward_synopsis(),
             ),

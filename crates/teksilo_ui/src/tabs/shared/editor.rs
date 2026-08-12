@@ -48,12 +48,13 @@ use find_banner::*;
 
 const FIND_FIELD_MAX_WIDTH: f32 = 240.0;
 
+use crate::format::{EditorKind, FormatViewModel};
 use crate::intents::AppIntent;
 use crate::search::FindViewModel;
+use crate::settings::EditorTypography;
 use crate::spellcheck::SpellSession;
 use crate::tabs::TitleField;
 use crate::text_replacement::TextReplacementSession;
-use crate::view_models::{EditorKind, EditorTypography, FormatViewModel};
 
 /// Drive a document's replace-while-typing session from the frame tick.
 ///
@@ -137,22 +138,22 @@ pub fn writing_column(
     format: Option<FormatViewModel>,
     // Typewriter scrolling for this surface. `None` on the surfaces that never
     // pin (and in the widget tests, which build columns with no app around them).
-    typewriter: Option<crate::view_models::TypewriterSettings>,
+    typewriter: Option<crate::shared::TypewriterSettings>,
     // The ambient caret band for this surface — the shared preference plus this
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
     // The writing games this project is playing (currently "Always forward"),
     // which may freeze this surface while one is on. `None` on the surfaces
     // built with no app around them (the widget tests). Which surfaces a game
     // covers is the game's own decision, taken against this editor's kind.
-    games: Option<crate::view_models::WritingGamesViewModel>,
+    games: Option<crate::writing_session::WritingGamesViewModel>,
     // Where this document's caret should start, and the ports to publish this
     // editor's handle into so the position can be read back. `None` for every
     // surface that is not a tab's *main* prose column — a stream shows one
     // editor per row, so there is no single "the" caret to persist, the same
     // reason `synopsis_column` passes no handle sink there.
-    view_state: Option<crate::view_models::ViewStateBinding>,
+    view_state: Option<crate::shared::ViewStateBinding>,
     // This editor's door to the comment feature — minted by the `OpenDoc` that
     // knows which `Content` row the document came from. `None` on every surface
     // built without a project around it (the widget tests) and on any document
@@ -168,7 +169,7 @@ pub fn writing_column(
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
-    images: Option<crate::view_models::images::ImageSource>,
+    images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into.
     //
     // A **construction-time** choice, not a runtime flag: `RichTextEditor` fixes
@@ -345,7 +346,7 @@ pub fn writing_column(
     {
         let handle = editor.handle();
         editor = editor.on_image_resized(move |resize, _ctx| {
-            let Some(image) = crate::view_models::images::image_at(
+            let Some(image) = crate::shared::images::image_at(
                 &handle.to_plain_text(),
                 resize.offset,
                 &handle.to_djot(),
@@ -426,13 +427,13 @@ pub fn writing_column(
 /// resolves to an image *is* an image selection. A wider selection that happens
 /// to contain a picture is not: the writer selected prose, and prose actions are
 /// what they want.
-fn selected_image(handle: &EditorHandle) -> Option<crate::view_models::images::ImageRef> {
+fn selected_image(handle: &EditorHandle) -> Option<crate::shared::images::ImageRef> {
     let (a, b) = handle.selection();
     let (start, end) = (a.min(b), a.max(b));
     if end != start + 1 {
         return None;
     }
-    crate::view_models::images::image_at(&handle.to_plain_text(), start, &handle.to_djot())
+    crate::shared::images::image_at(&handle.to_plain_text(), start, &handle.to_djot())
 }
 
 /// The right-click menu over a selected image: move it, then act on it.
@@ -770,24 +771,24 @@ pub fn writing_section(
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
     format: Option<FormatViewModel>,
-    typewriter: Option<crate::view_models::TypewriterSettings>,
+    typewriter: Option<crate::shared::TypewriterSettings>,
     // The ambient caret band for this surface — the shared preference plus this
     // document's language. `None` on the surfaces built without an app around
     // them (the widget tests), which draw no band.
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
     // The writing games this project is playing (currently "Always forward"),
     // which may freeze this surface while one is on. `None` on the surfaces
     // built with no app around them (the widget tests). Which surfaces a game
     // covers is the game's own decision, taken against this editor's kind.
-    games: Option<crate::view_models::WritingGamesViewModel>,
-    view_state: Option<crate::view_models::ViewStateBinding>,
+    games: Option<crate::writing_session::WritingGamesViewModel>,
+    view_state: Option<crate::shared::ViewStateBinding>,
     comments: Option<crate::comments::binding::CommentBinding>,
     // Forwarded straight to [`writing_column`] — see its own note.
     footnotes: Option<crate::footnotes::FootnoteBinding>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
-    images: Option<crate::view_models::images::ImageSource>,
+    images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
 ) -> impl Widget {
@@ -1143,7 +1144,7 @@ mod tests;
 /// Typewriter scrolling reaches the editor the app actually builds.
 ///
 /// The unit tests for the preset→fraction vocabulary live with
-/// [`crate::view_models::TypewriterAnchor`]; these pin the *wiring* — that the
+/// [`crate::shared::TypewriterAnchor`]; these pin the *wiring* — that the
 /// shared setting arrives at a real `RichTextEditor` built through
 /// `writing_column`, and keeps arriving when the setting changes under it.
 #[cfg(all(test, feature = "mocks"))]

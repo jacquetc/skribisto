@@ -111,7 +111,7 @@ struct Inner {
     /// never `ctx.app_state::<TreeExpansionViewModel>()`. See `restore_expansion`'s
     /// doc for why the `app_state` lookup was wrong the moment a second Work's
     /// window exists.
-    tree_expansion: crate::view_models::TreeExpansionViewModel,
+    tree_expansion: crate::settings::TreeExpansionViewModel,
 }
 
 #[derive(Clone)]
@@ -130,7 +130,7 @@ impl OverviewViewModel {
         role: &frontend::common::entities::BinderItemRole,
         sub_role: &frontend::common::entities::BinderItemSubRole,
         counting_method: Signal<CountingMethodSetting>,
-        tree_expansion: crate::view_models::TreeExpansionViewModel,
+        tree_expansion: crate::settings::TreeExpansionViewModel,
         goal_unit: Signal<GoalUnit>,
     ) -> Option<Self> {
         if !skribisto_model::overview_capable(role, sub_role) {
@@ -236,7 +236,7 @@ impl OverviewViewModel {
     }
 
     /// This container's uid and its live expand set — what `App` gathers at a door to
-    /// hand to [`crate::view_models::TreeExpansionViewModel::capture`]. `None` before the container probe has
+    /// hand to [`crate::settings::TreeExpansionViewModel::capture`]. `None` before the container probe has
     /// resolved, which is also when there is nothing worth remembering.
     pub fn expansion_snapshot(&self) -> Option<(Uuid, Vec<Uuid>)> {
         let container_uid = self.inner.container_probe.dto().map(|d| d.uid)?;
@@ -800,7 +800,7 @@ mod tests {
             &BinderItemRole::Folder,
             &BinderItemSubRole::Book,
             Signal::new(CountingMethodSetting::default()),
-            crate::view_models::TreeExpansionViewModel::new(
+            crate::settings::TreeExpansionViewModel::new(
                 app_ctx,
                 ids,
                 crate::models::TreeExpansionService::in_memory_default(),
@@ -830,7 +830,7 @@ mod tests {
                 &role,
                 &sub_role,
                 Signal::new(CountingMethodSetting::default()),
-                crate::view_models::TreeExpansionViewModel::new(
+                crate::settings::TreeExpansionViewModel::new(
                     app_ctx,
                     ids,
                     crate::models::TreeExpansionService::in_memory_default(),
@@ -1060,7 +1060,7 @@ mod leaks {
             &BinderItemRole::Folder,
             &BinderItemSubRole::Book,
             Signal::new(CountingMethodSetting::default()),
-            crate::view_models::TreeExpansionViewModel::new(
+            crate::settings::TreeExpansionViewModel::new(
                 app_ctx,
                 ids,
                 crate::models::TreeExpansionService::in_memory_default(),

@@ -7,7 +7,7 @@
 use teksilo::prelude::*;
 
 use crate::intents::AppIntent;
-use crate::view_models::SettingsViewModel;
+use crate::settings::SettingsViewModel;
 
 use super::super::{can_save, offer_missing_dictionaries};
 use super::CommandDeps;

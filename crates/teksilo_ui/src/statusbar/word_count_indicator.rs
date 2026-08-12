@@ -8,7 +8,7 @@
 //! prose-bearing is focused (a container tab / an unopened item shows nothing and takes no
 //! width). The count is one scene, cheap to recompute, so it tracks typing live — no
 //! spinner-style hysteresis. Thin per the house rules: the decision is the pure
-//! [`crate::view_models::count_display`] table and the number comes from [`StatsModel`].
+//! [`crate::statusbar::count_display`] table and the number comes from [`StatsModel`].
 
 use std::rc::Rc;
 
@@ -22,7 +22,7 @@ use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 
 use crate::models::StatsModel;
 use crate::singles::SingleBinderItem;
-use crate::view_models::{CountDisplay, GoalDisplay, count_display, goal_display};
+use crate::statusbar::{CountDisplay, GoalDisplay, count_display, goal_display};
 
 pub struct WordCountIndicator {
     stats: StatsModel,

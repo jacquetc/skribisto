@@ -23,7 +23,7 @@
 //! persisted by its **position** in the work's ordered binder-item stream (its
 //! flat, binder-major ordinal), which *does* round-trip: the save writes the
 //! stream order, the load reproduces it, and the ordinal maps 1:1 to the new id.
-//! See [`WorkspaceLayoutViewModel`](crate::view_models::WorkspaceLayoutViewModel)
+//! See [`WorkspaceLayoutViewModel`](crate::workspace_layout::WorkspaceLayoutViewModel)
 //! for the capture/restore that translates ordinals ↔ store ids.
 //!
 //! **Cross-process safety.** Skribisto is single-instance: normally one process

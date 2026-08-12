@@ -21,8 +21,8 @@ use teksilo::widgets::{
     StandardListItem, TextInput, Toast, VStack,
 };
 
+use crate::distraction_free::DistractionFreeThemesViewModel;
 use crate::distraction_free::theme::DistractionFreeTheme;
-use crate::view_models::DistractionFreeThemesViewModel;
 
 #[allow(unused_imports)]
 use super::super::*;

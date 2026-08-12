@@ -201,12 +201,12 @@ pub fn side_synopsis_editor(
     replacement: Option<Rc<TextReplacementSession>>,
     handle_sink: Option<Rc<RefCell<Option<EditorHandle>>>>,
     format: Option<FormatViewModel>,
-    caret: Option<crate::view_models::CaretBand>,
+    caret: Option<crate::shared::CaretBand>,
     // The writing games this project is playing (currently "Always forward"),
     // which may freeze this surface while one is on. `None` on the surfaces
     // built with no app around them (the widget tests). Which surfaces a game
     // covers is the game's own decision, taken against this editor's kind.
-    games: Option<crate::view_models::WritingGamesViewModel>,
+    games: Option<crate::writing_session::WritingGamesViewModel>,
     // Threaded like every other synopsis placement. Left at `None` this column
     // would be the one surface in the app where a synopsis quietly cannot be
     // commented on — and it is a *placement* of the same `Content` row, not a
@@ -215,7 +215,7 @@ pub fn side_synopsis_editor(
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
-    images: Option<crate::view_models::images::ImageSource>,
+    images: Option<crate::shared::images::ImageSource>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
 ) -> impl Widget {
@@ -254,14 +254,14 @@ pub(crate) const SYNOPSIS_PANE: usize = 0;
 /// including on the way back to a branch that was built earlier and will not build
 /// again (a `Switcher` keeps its pages, so a second `build()` never comes).
 pub(crate) struct PageScrollPort {
-    ports: Rc<crate::view_models::ViewStatePorts>,
+    ports: Rc<crate::shared::ViewStatePorts>,
     offset: Signal<f32>,
     max: Signal<f32>,
 }
 
 impl PageScrollPort {
     pub fn new(
-        ports: Rc<crate::view_models::ViewStatePorts>,
+        ports: Rc<crate::shared::ViewStatePorts>,
         offset: Signal<f32>,
         max: Signal<f32>,
     ) -> Self {

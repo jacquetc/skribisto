@@ -306,7 +306,7 @@ impl Widget for OutlineCard {
         let pov = if self.node.point_of_view.is_empty() {
             String::new()
         } else {
-            ctx.app_state::<crate::view_models::MentionIndex>()
+            ctx.app_state::<crate::mentions::MentionIndex>()
                 .cloned()
                 .map(|mi| {
                     crate::tags::pov::pov_chips(&mi.discoverable_table(), &self.node.point_of_view)

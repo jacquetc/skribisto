@@ -14,7 +14,7 @@
 //!
 //! `EditorsViewModel`'s own save routing is **not** here: it lives in `App::build` beside
 //! the exit guards, because its completion handler also drives the deferred close/switch
-//! resumption (see `view_models::save_queue::resume_deferred`) rather than only toasting.
+//! resumption (see `crate::save::save_queue::resume_deferred`) rather than only toasting.
 
 use teksilo::prelude::*;
 
@@ -24,7 +24,9 @@ use crate::backup::{BackupRestoreViewModel, BackupSchedulerViewModel};
 use crate::export::ExportViewModel;
 use crate::import_document::ImportDocumentViewModel;
 use crate::import_plume::ImportPlumeViewModel;
-use crate::view_models::{MentionIndex, ProgressRecorder, SaveAsViewModel};
+use crate::mentions::MentionIndex;
+use crate::save::SaveAsViewModel;
+use crate::shared::ProgressRecorder;
 
 /// One row of a long-operation dispatch table: which event, and what to run on
 /// the view-model when it arrives.
@@ -194,7 +196,7 @@ pub(in crate::app) fn install(
     // different events onto one method.
     //
     // Threaded in (Tier 2, per-open-Work — it captures its own `AppIds`, see
-    // `view_models::progress_recorder`'s module doc), not resolved via
+    // `crate::shared::progress_recorder`'s module doc), not resolved via
     // `ctx.app_state::<ProgressRecorder>()`: that lookup can only ever answer with
     // whichever window built `main`'s bootstrap session, exactly the bug `export_vm`
     // and `mention_index` were fixed for above/below.

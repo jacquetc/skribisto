@@ -32,7 +32,7 @@ use skrib_format::retention;
 use crate::shell::process;
 use crate::toast_scope::ToastWorkExt;
 
-use crate::view_models::long_op::CapturedWork;
+use crate::shared::long_op::CapturedWork;
 
 /// Toast id base, so a burst of delete failures replaces rather than stacks —
 /// folded through [`crate::toast_scope::work_scoped_toast_id`] with `self.work_id`/`me.work_id` at

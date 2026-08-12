@@ -23,7 +23,7 @@ use teksilo::widgets::{
 };
 
 use crate::icons::session;
-use crate::view_models::{
+use crate::writing_session::{
     WritingSessionViewModel, format_mmss, gauge_role, remaining, words_progress,
 };
 

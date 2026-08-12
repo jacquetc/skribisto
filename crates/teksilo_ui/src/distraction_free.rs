@@ -13,9 +13,19 @@
 //! re-read the flag — so a scene opened before pressing Shift+F11 kept its
 //! normal typeface and its normal column for the whole session. A separate
 //! surface dissolves that: its tab is built once, with the flag a constant.
+//!
+//! [`DistractionFreeSurfaceViewModel`] is the single-instance live state behind
+//! [`surface::DistractionFreeSurface`] itself — the mounted pane, its caret
+//! handoff, and the control strip's wiring.
+//! [`DistractionFreeThemesViewModel`] is [`theme`]'s per-project palette
+//! picker, backing [`quick_settings`]'s popover.
 
+mod distraction_free_surface_vm;
+mod distraction_free_themes_vm;
 pub mod quick_settings;
 pub mod surface;
 pub mod theme;
 
+pub use distraction_free_surface_vm::{DistractionFreeSurfaceViewModel, SurfaceDeps};
+pub use distraction_free_themes_vm::DistractionFreeThemesViewModel;
 pub use surface::DistractionFreeSurface;

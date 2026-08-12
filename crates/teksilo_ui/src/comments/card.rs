@@ -692,7 +692,7 @@ mod tests {
     // Real formatting through a real `EditorHandle`, not a decorative button:
     // the click tests build the actual right-click menu, drive a pointer tap
     // through `WidgetTree` at its strip, and check the document's own Djot came
-    // out changed — the same proof `docks::format`'s own
+    // out changed — the same proof `format::dock`'s own
     // `opening_the_heading_picker_leaves_the_dock_standing` uses for a real
     // pointer tap rather than poking a view-model.
 

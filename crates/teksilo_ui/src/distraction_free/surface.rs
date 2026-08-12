@@ -24,8 +24,8 @@ use teksilo::core::binding::BindingLevel;
 use teksilo::prelude::*;
 use teksilo::widgets::{Expand, FixedSize, HStack, MaxSize, RectWidget, Spacer, VStack, ZStack};
 
+use crate::distraction_free::DistractionFreeSurfaceViewModel;
 use crate::tabs::{Boxed, ContentTab, tab_pane};
-use crate::view_models::DistractionFreeSurfaceViewModel;
 
 /// Breathing room between the writing column and the edge of the page it floats
 /// on, so the text is not flush against the paper's edge.

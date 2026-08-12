@@ -15,7 +15,7 @@
 //! the focused widget sees the key, so binding one would silently shadow it.
 //!
 //! Prose only, and resolved through
-//! [`FormatViewModel::footnote_target`](crate::view_models::FormatViewModel::footnote_target)
+//! [`FormatViewModel::footnote_target`](crate::format::FormatViewModel::footnote_target)
 //! — the registry that knows **which** editor holds the caret. Resolving through
 //! the focused *tab* instead is what put every marker at the top of the document:
 //! a tab's handle is whatever `writing_column` last attached to the find banner,

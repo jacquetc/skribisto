@@ -37,10 +37,11 @@ use skribisto_model::counting::CountingMethodSetting;
 use skribisto_model::{CreateType, Recommendation, Relation};
 
 use crate::app_ids::AppIds;
+use crate::format::FormatViewModel;
 use crate::intents::AppIntent;
 use crate::models::{CorkboardCard, CorkboardCardsModel, OpenDoc, OpenDocsStore};
+use crate::settings::EditorTypography;
 use crate::singles::SingleBinderItem;
-use crate::view_models::{EditorTypography, FormatViewModel};
 
 use crate::shared::binder_ops::{
     self, is_prose_bearing, opens_a_section, split_djot, update_item_dto,
@@ -100,10 +101,10 @@ struct Inner {
     /// Synopsis typography, so the card's synopsis editor renders like the scene
     /// editor.
     synopsis_typo: EditorTypography,
-    caret_band: crate::view_models::CaretBand,
+    caret_band: crate::shared::CaretBand,
     /// The writing games this project is playing — a card's synopsis editor is
     /// a synopsis surface like any other, so it follows the same option.
-    writing_games: crate::view_models::WritingGamesViewModel,
+    writing_games: crate::writing_session::WritingGamesViewModel,
     /// This window's Format surfaces — card synopsis editors register with it.
     format: FormatViewModel,
 
@@ -138,8 +139,8 @@ impl CorkboardViewModel {
         modal_size: Signal<f32>,
         counting_method: Signal<CountingMethodSetting>,
         synopsis_typo: EditorTypography,
-        caret_band: crate::view_models::CaretBand,
-        writing_games: crate::view_models::WritingGamesViewModel,
+        caret_band: crate::shared::CaretBand,
+        writing_games: crate::writing_session::WritingGamesViewModel,
         format: FormatViewModel,
     ) -> Self {
         let current_container = Signal::new(container_id);
@@ -537,7 +538,7 @@ impl CorkboardViewModel {
     }
 
     /// The ambient caret band for card synopsis editors.
-    pub fn caret_band(&self) -> crate::view_models::CaretBand {
+    pub fn caret_band(&self) -> crate::shared::CaretBand {
         self.inner.caret_band.clone()
     }
 
@@ -547,7 +548,7 @@ impl CorkboardViewModel {
     }
 
     /// The writing games this project is playing, for card synopsis editors.
-    pub fn writing_games(&self) -> crate::view_models::WritingGamesViewModel {
+    pub fn writing_games(&self) -> crate::writing_session::WritingGamesViewModel {
         self.inner.writing_games.clone()
     }
     /// Whether this card can be split — only a prose-bearing scene has two halves
@@ -1172,8 +1173,8 @@ mod tests {
             Signal::new(1.0),
             Signal::new(CountingMethodSetting::default()),
             typo(),
-            crate::view_models::CaretBand::off(),
-            crate::view_models::WritingGamesViewModel::detached(),
+            crate::shared::CaretBand::off(),
+            crate::writing_session::WritingGamesViewModel::detached(),
             FormatViewModel::detached(),
         )
     }

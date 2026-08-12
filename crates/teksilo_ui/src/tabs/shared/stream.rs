@@ -31,9 +31,9 @@ use teksilo::widgets::{
 use skribisto_model::{CreateType, SubRoleExt};
 
 use crate::models::{StreamLevel, StreamRow};
+use crate::settings::EditorTypography;
 use crate::shared::{is_prose_bearing, is_synopsis_bearing};
 use crate::stream::{SplitFlavour, StreamViewModel};
-use crate::view_models::EditorTypography;
 
 use super::{
     HEADING_PROSE_MIN_LINES, MAIN_MIN_LINES, SplitFn, centered, synopsis_column, vspace,
@@ -348,13 +348,13 @@ fn stream_row(
     typo: &EditorTypography,
     flavour: SplitFlavour,
     mark_dirty: &Rc<dyn Fn()>,
-    format: &crate::view_models::FormatViewModel,
-    typewriter: &crate::view_models::TypewriterSettings,
-    caret: &crate::view_models::CaretBand,
+    format: &crate::format::FormatViewModel,
+    typewriter: &crate::shared::TypewriterSettings,
+    caret: &crate::shared::CaretBand,
     // The writing games this project is playing — every row of a Full Chapter /
     // Part / Book is a manuscript surface like the tab's own, so they freeze
     // together or not at all.
-    games: &crate::view_models::WritingGamesViewModel,
+    games: &crate::writing_session::WritingGamesViewModel,
     // The page's gutter reservation, shared by every row so the manuscript keeps
     // one measure down the page (see `ColumnWithMargin::reserve`).
     gutter: &Signal<f32>,

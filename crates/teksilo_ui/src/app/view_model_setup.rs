@@ -12,10 +12,11 @@ use std::rc::Rc;
 
 use teksilo::prelude::*;
 
+use crate::editors::EditorsViewModel;
+use crate::save::SaveStateViewModel;
 use crate::sessions::WorkSession;
-use crate::view_models::{
-    EditorsViewModel, SaveStateViewModel, SettingsViewModel, WorkspaceLayoutViewModel,
-};
+use crate::settings::SettingsViewModel;
+use crate::workspace_layout::WorkspaceLayoutViewModel;
 
 use super::App;
 
@@ -89,7 +90,7 @@ impl App {
         // Typewriter scrolling: the two source signals, straight from the store,
         // so a settings change reaches every open tab's editors and its page's
         // scroll range together.
-        let typewriter = crate::view_models::TypewriterSettings::new(
+        let typewriter = crate::shared::TypewriterSettings::new(
             settings.typewriter(),
             settings.typewriter_anchor(),
         );
@@ -99,8 +100,8 @@ impl App {
         // current by a theme effect. Built through the shared constructor, which the Search &
         // Replace preview dock also uses; duplicating it here is how one of the two ends up not
         // following a light/dark switch.
-        let caret_highlight = crate::view_models::CaretHighlightSettings::from_context(ctx);
-        let view_memory = crate::view_models::EditorViewMemory::new(ctx.settings());
+        let caret_highlight = crate::shared::CaretHighlightSettings::from_context(ctx);
+        let view_memory = crate::settings::EditorViewMemory::new(ctx.settings());
         let corkboard_defaults = settings.corkboard_defaults();
         let ids = self.outline.ids();
         let docs = session.open_docs.clone();
@@ -133,9 +134,9 @@ impl App {
         // open project does not) paired with the two app-global "which surfaces"
         // settings. Assembled here because this is the one place both halves are
         // in hand — the same shape as the typewriter and caret-band bundles above.
-        let writing_games_for_editors = crate::view_models::WritingGamesViewModel::new(
+        let writing_games_for_editors = crate::writing_session::WritingGamesViewModel::new(
             session.always_forward.clone(),
-            crate::view_models::WritingGameOptions::new(
+            crate::writing_session::WritingGameOptions::new(
                 settings.games_forward_prose(),
                 settings.games_forward_synopsis(),
             ),
@@ -176,7 +177,7 @@ impl App {
         {
             let target = editors.clone();
             format.attach(Rc::new(move || {
-                use crate::view_models::FormatSurface;
+                use crate::format::FormatSurface;
                 // One walk answers both halves, at deliberately different
                 // strictnesses.
                 //

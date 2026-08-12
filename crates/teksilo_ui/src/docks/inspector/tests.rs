@@ -77,7 +77,7 @@ fn panel(ctx: &Rc<AppContext>, work_id: u64, focus: Signal<Option<u64>>) -> Insp
             crate::models::WorkTagsListModel::new(ctx.clone(), ids.clone()),
             ids.clone(),
         ),
-        crate::view_models::MentionIndex::new(ctx.clone(), ids.clone()),
+        crate::mentions::MentionIndex::new(ctx.clone(), ids.clone()),
         crate::models::OpenDocsStore::new(ctx.clone()),
         Signal::new(CountingMethodSetting::default()),
         Signal::new(GoalUnit::Words),

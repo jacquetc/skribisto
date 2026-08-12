@@ -40,7 +40,7 @@ fn the_extension_facing_modules_are_public() {
     // The rest of the seam's surface, reached as a downstream crate would.
     #[allow(unused_imports)]
     use teksilo_ui::{
-        app, app_ids, docks, export, icons, intents, models, panels, sessions, settings,
-        settings_keys, shell, singles, statusbar, tabs, tags, view_models, widgets,
+        app, app_ids, docks, editors, export, icons, intents, models, panels, sessions, settings,
+        settings_keys, shell, singles, statusbar, tabs, tags, widgets,
     };
 }

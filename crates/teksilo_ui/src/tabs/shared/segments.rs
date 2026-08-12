@@ -20,7 +20,7 @@
 //!   unrecoverable the next time the app starts. Every segment this crate builds pins its
 //!   id explicitly.
 //! - The derivation is one-way, so nothing can recover the string from a `SegmentId` alone.
-//!   Anything that needs to persist a selection (see [`crate::view_models::EditorViewMemory`])
+//!   Anything that needs to persist a selection (see [`crate::settings::EditorViewMemory`])
 //!   is handed the ordered `(id, SegmentId)` list to look it back up — it persists the
 //!   **string**, and re-derives the number on the next launch. That is also why the hash
 //!   below is a fixed algorithm rather than `DefaultHasher`, whose output std explicitly

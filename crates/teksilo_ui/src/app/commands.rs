@@ -41,14 +41,14 @@ use frontend::AppContext;
 
 use crate::backup::BackupSchedulerViewModel;
 use crate::binder::OutlineViewModel;
+use crate::editors::EditorsViewModel;
 use crate::export::ExportViewModel;
 use crate::models::OpenDocsStore;
+use crate::project::ProjectSwitchViewModel;
 use crate::search::SearchReplaceViewModel;
+use crate::shared::{FocusViewModel, FullscreenViewModel};
 use crate::spellcheck::{DictionariesViewModel, UserDictionaryViewModel};
 use crate::trash::TrashViewModel;
-use crate::view_models::{
-    EditorsViewModel, FocusViewModel, FullscreenViewModel, ProjectSwitchViewModel,
-};
 
 use super::PendingExit;
 
@@ -94,13 +94,13 @@ pub(super) struct CommandDeps {
     /// The app-global quit sequencer — `app.quit`'s whole implementation. Shared
     /// (not per-window) precisely because a quit spans every window: two windows
     /// running their own sequence over the same Works would prompt twice for each.
-    pub quit: crate::view_models::QuitSequencer,
+    pub quit: crate::project::QuitSequencer,
     pub outline: OutlineViewModel,
     /// This window's formatting resolver — the only thing that can answer "which editor has
     /// the caret". The template commands gate on its `has_target` and read/write through
     /// the handle it resolves, so they reach every registered editor rather than only the
     /// ones a tab happens to own.
-    pub format: crate::view_models::FormatViewModel,
+    pub format: crate::format::FormatViewModel,
     /// This window's own "was I maximized/floating before I went fullscreen"
     /// memory — minted fresh per window (never a `ctx.app_state` lookup, see
     /// `FullscreenViewModel`'s own doc for why a shared instance would answer

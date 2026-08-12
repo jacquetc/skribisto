@@ -26,11 +26,12 @@ use teksilo::widgets::{
 const SETTINGS_ACTION: DockActionId = DockActionId::named("skribisto.settings");
 
 use crate::binder::OutlineViewModel;
+use crate::editors::{EditorsViewModel, Side};
 use crate::models::TreeNode;
 use crate::search::SearchReplaceViewModel;
+use crate::settings::SettingsViewModel;
 use crate::tabs::shared::editor::VisibleWhen;
 use crate::versions::RestoreRequest;
-use crate::view_models::{EditorsViewModel, SettingsViewModel, Side};
 
 use super::{App, build_pane_tabs, drain_dropped};
 
@@ -44,7 +45,7 @@ pub(super) struct ShellParts {
     pub footnotes: crate::footnotes::FootnotesViewModel,
     pub versions: crate::versions::VersionsViewModel,
     pub timeline: crate::timeline::TimelineViewModel,
-    pub format: crate::view_models::FormatViewModel,
+    pub format: crate::format::FormatViewModel,
     pub settings: SettingsViewModel,
     pub session: crate::sessions::WorkSession,
     pub ids: crate::app_ids::AppIds,
@@ -52,7 +53,7 @@ pub(super) struct ShellParts {
     pub single_work: crate::singles::SingleWork,
     pub single_work_info: crate::singles::SingleWorkInfo,
     pub restore_vm: crate::backup::BackupRestoreViewModel,
-    pub save_as_vm: crate::view_models::SaveAsViewModel,
+    pub save_as_vm: crate::save::SaveAsViewModel,
     /// What every extension slot in this window is handed — built **once** in
     /// `App::build` and shared with `commands_ext`, not rebuilt here.
     ///
@@ -92,9 +93,9 @@ impl App {
         // settings. Assembled here, the one place both halves are in hand; the
         // dock and the status badge below share this instance, so the two can
         // never disagree about whether a game is on.
-        let writing_games = crate::view_models::WritingGamesViewModel::new(
+        let writing_games = crate::writing_session::WritingGamesViewModel::new(
             session.always_forward.clone(),
-            crate::view_models::WritingGameOptions::new(
+            crate::writing_session::WritingGameOptions::new(
                 settings.games_forward_prose(),
                 settings.games_forward_synopsis(),
             ),
@@ -473,7 +474,7 @@ impl App {
                 settings.counting_method(),
                 session.single_work.goal_unit(),
             ))
-            .dock(crate::docks::format::format_dock(
+            .dock(crate::format::dock::format_dock(
                 format.clone(),
                 self.format_dock,
             ))
@@ -495,7 +496,7 @@ impl App {
             // The writing games. Fired by name rather than holding a settings
             // handle: which window's project the settings modal opens on is
             // `App`'s decision, not this panel's.
-            .dock(crate::docks::games::games_dock(
+            .dock(crate::writing_session::dock::games_dock(
                 writing_games.clone(),
                 self.games_dock,
                 std::rc::Rc::new(|ctx: &mut EventContext| {
@@ -631,7 +632,7 @@ impl App {
         // The writing session: a play/pause sprint timer + word tracker (ephemeral —
         // only its targets persist). Sits on the right of the status bar.
         let session_vm =
-            crate::view_models::WritingSessionViewModel::new(stats.clone(), ctx.settings());
+            crate::writing_session::WritingSessionViewModel::new(stats.clone(), ctx.settings());
         let session_item = crate::statusbar::session_status_item::SessionStatusItem::new(
             session_vm.clone(),
             single_work_info.shape().map(|s| s.is_some()),
@@ -728,22 +729,23 @@ impl App {
         // Hand the surface what only exists in here. Idempotent: `build` re-runs
         // on every rebuild of the shell and re-attaching just re-points the
         // handles.
-        self.df_surface.attach(crate::view_models::SurfaceDeps {
-            editors: editors.clone(),
-            stats: stats.clone(),
-            session_vm: session_vm.clone(),
-            has_work: single_work_info.shape().map(|s| s.is_some()),
-            show_characters: settings.show_characters(),
-            goal_unit: session.single_work.goal_unit(),
-            app_ctx: self.app_ctx.clone(),
-            chrome: crate::statusbar::focus_strip::FocusStripChrome::from_settings(&settings),
-            themes: ctx
-                .app_state::<crate::view_models::DistractionFreeThemesViewModel>()
-                .cloned()
-                .expect("main registers the distraction-free theme library"),
-            theme_id: settings.distraction_free_theme(),
-            settings: settings.clone(),
-        });
+        self.df_surface
+            .attach(crate::distraction_free::SurfaceDeps {
+                editors: editors.clone(),
+                stats: stats.clone(),
+                session_vm: session_vm.clone(),
+                has_work: single_work_info.shape().map(|s| s.is_some()),
+                show_characters: settings.show_characters(),
+                goal_unit: session.single_work.goal_unit(),
+                app_ctx: self.app_ctx.clone(),
+                chrome: crate::statusbar::focus_strip::FocusStripChrome::from_settings(&settings),
+                themes: ctx
+                    .app_state::<crate::distraction_free::DistractionFreeThemesViewModel>()
+                    .cloned()
+                    .expect("main registers the distraction-free theme library"),
+                theme_id: settings.distraction_free_theme(),
+                settings: settings.clone(),
+            });
 
         // Escape-to-leave-the-mode lives on the surface itself
         // (`distraction_free::surface`), not here: this subtree is dormant while

@@ -3,13 +3,15 @@
 
 use super::*;
 use crate::app_ids::AppIds;
+use crate::distraction_free::{DistractionFreeThemesViewModel, SurfaceDeps};
+use crate::editors::{EditorsViewModel, Side};
+use crate::go::GoToViewModel;
 use crate::models::{OpenDoc, OpenDocsStore, StatsModel};
+use crate::save::SaveStateViewModel;
+use crate::settings::{EditorTypography, EditorTypographySet};
+use crate::shared::{FocusViewModel, ViewState};
 use crate::statusbar::focus_strip::FocusStripChrome;
-use crate::view_models::{
-    DistractionFreeThemesViewModel, EditorTypography, EditorTypographySet, EditorsViewModel,
-    FocusViewModel, GoToViewModel, SaveStateViewModel, Side, SurfaceDeps, ViewState,
-    WritingSessionViewModel,
-};
+use crate::writing_session::WritingSessionViewModel;
 use frontend::AppContext;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use skribisto_model::counting::CountingMethodSetting;
@@ -57,7 +59,7 @@ struct Fixture {
     /// The same handle the surface's deps carry, so a test can set the
     /// **shared** caret-band scope the way Settings does — the mode reads
     /// that one preference rather than owning a scope of its own.
-    settings: crate::view_models::SettingsViewModel,
+    settings: crate::settings::SettingsViewModel,
 }
 
 /// A surface view-model with its dependencies attached and one Scene
@@ -70,28 +72,28 @@ fn fixture() -> Fixture {
         app_ctx.clone(),
         Signal::new(NORMAL_COLUMN),
         Signal::new(false),
-        Signal::new(crate::view_models::SynopsisPlacement::default()),
+        Signal::new(crate::shared::SynopsisPlacement::default()),
         Signal::new(crate::SYNOPSIS_SIDE_WIDTH_DEFAULT),
         typography(),
-        crate::view_models::TypewriterSettings::off(),
-        crate::view_models::CaretHighlightSettings::off(),
-        crate::view_models::EditorViewMemory::detached(false),
-        crate::view_models::CorkboardDefaults::detached(),
+        crate::shared::TypewriterSettings::off(),
+        crate::shared::CaretHighlightSettings::off(),
+        crate::settings::EditorViewMemory::detached(false),
+        crate::settings::CorkboardDefaults::detached(),
         ids.clone(),
         docs.clone(),
         Signal::new(false),
         SaveStateViewModel::new(app_ctx.clone(), ids.clone()),
         Signal::new(false),
-        crate::view_models::TreeExpansionViewModel::new(
+        crate::settings::TreeExpansionViewModel::new(
             app_ctx.clone(),
             ids.clone(),
             crate::models::TreeExpansionService::in_memory_default(),
         ),
         Signal::new(false),
         Signal::new(SURFACE_COLUMN),
-        crate::view_models::GoAvailability::new(),
-        crate::view_models::FormatViewModel::detached(),
-        crate::view_models::WritingGamesViewModel::detached(),
+        crate::go::GoAvailability::new(),
+        crate::format::FormatViewModel::detached(),
+        crate::writing_session::WritingGamesViewModel::detached(),
         Signal::new(frontend::common::entities::GoalUnit::default()),
     );
     let doc = Rc::new(OpenDoc::build(
@@ -123,7 +125,7 @@ fn fixture() -> Fixture {
         ids,
     );
     let store = temp_store();
-    let settings = crate::view_models::SettingsViewModel::new(&store);
+    let settings = crate::settings::SettingsViewModel::new(&store);
     let stats = StatsModel::new(
         docs.clone(),
         editors.active_item(),
@@ -673,7 +675,7 @@ fn the_surface_band_is_the_themes_colour_not_the_app_palettes() {
     let band = fx.vm.caret_band().expect("attached");
     assert_eq!(
         band.color.get(),
-        crate::view_models::CaretHighlightSettings::document_color(t.caret_band_color()),
+        crate::shared::CaretHighlightSettings::document_color(t.caret_band_color()),
         "the mode's band did not come from the theme it is painting with"
     );
 }
@@ -702,7 +704,7 @@ fn changing_the_theme_moves_the_band_without_reopening_the_document() {
     );
     assert_eq!(
         after,
-        crate::view_models::CaretHighlightSettings::document_color(
+        crate::shared::CaretHighlightSettings::document_color(
             fx.vm.theme().unwrap().caret_band_color()
         ),
         // Same handle, deliberately: the tab built over it is not rebuilt on
@@ -721,18 +723,15 @@ fn the_band_scope_is_the_one_shared_setting_not_a_mode_of_its_own() {
     let fx = fixture();
     let _tree = mount(&fx);
     let band = fx.vm.caret_band().expect("attached");
-    assert_eq!(band.scope.get(), crate::view_models::HighlightScope::None);
+    assert_eq!(band.scope.get(), crate::shared::HighlightScope::None);
 
     // Written through the settings handle Settings itself writes, so this
     // proves the surface is on the same signal rather than a private copy.
     fx.settings
         .highlight_scope()
-        .set(crate::view_models::HighlightScope::Paragraph);
+        .set(crate::shared::HighlightScope::Paragraph);
     let again = fx.vm.caret_band().expect("attached");
-    assert_eq!(
-        again.scope.get(),
-        crate::view_models::HighlightScope::Paragraph
-    );
+    assert_eq!(again.scope.get(), crate::shared::HighlightScope::Paragraph);
     assert!(
         again.caret_highlight(None).is_some(),
         "a paragraph scope must actually ask for a band"
@@ -758,7 +757,7 @@ fn the_mode_paints_its_theme_band_onto_the_document() {
     let fx = fixture();
     fx.settings
         .highlight_scope()
-        .set(crate::view_models::HighlightScope::Sentence);
+        .set(crate::shared::HighlightScope::Sentence);
     fx.editors.active_item().set(Some(1));
     fx.focus.active_signal().set(true);
 
@@ -792,7 +791,7 @@ fn the_mode_paints_its_theme_band_onto_the_document() {
     let doc = fx.docs.peek(1).expect("seeded");
     let prose = &doc.main.as_ref().expect("a Scene has prose").doc;
 
-    let want = crate::view_models::CaretHighlightSettings::document_color(
+    let want = crate::shared::CaretHighlightSettings::document_color(
         fx.vm.theme().expect("attached").caret_band_color(),
     );
     let painted: Vec<_> = match &prose.snapshot_flow_masked(&HighlightMask::all()).elements[0] {
@@ -826,7 +825,7 @@ fn leaving_the_mode_takes_its_band_off_the_shared_document() {
     let fx = fixture();
     fx.settings
         .highlight_scope()
-        .set(crate::view_models::HighlightScope::Sentence);
+        .set(crate::shared::HighlightScope::Sentence);
     fx.editors.active_item().set(Some(1));
     fx.focus.active_signal().set(true);
 
@@ -892,13 +891,13 @@ fn the_surface_tab_carries_the_modes_band_rather_than_the_editors() {
     let _tree = mount(&fx);
     fx.settings
         .highlight_scope()
-        .set(crate::view_models::HighlightScope::Sentence);
+        .set(crate::shared::HighlightScope::Sentence);
 
     let (tab, _) = fx.vm.open_tab(1).expect("item 1 is seeded");
     let band = tab.caret_band().resolve().expect("a band");
     assert_eq!(
         band.format.background_color,
-        Some(crate::view_models::CaretHighlightSettings::document_color(
+        Some(crate::shared::CaretHighlightSettings::document_color(
             fx.vm.theme().unwrap().caret_band_color()
         )),
         "the surface's tab was built with the app palette's band — the \

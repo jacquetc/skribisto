@@ -52,8 +52,8 @@ use skribisto_model::compile::{
 
 use crate::app_ids::AppIds;
 use crate::export::choose::ChooseModel;
+use crate::shared::long_op::{CapturedWork, TrackedOp, event_id, parse_payload, payload_id};
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::long_op::{CapturedWork, TrackedOp, event_id, parse_payload, payload_id};
 
 /// Update-in-place key for the single toast an export drives (loading → progress →
 /// success / cancelled / error) — folded through [`crate::toast_scope::work_scoped_toast_id`] with

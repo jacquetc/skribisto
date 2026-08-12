@@ -30,10 +30,10 @@ use teksilo::widgets::{
 
 use frontend::common::entities::MatchField;
 
+use crate::format::{EditorKind, FormatViewModel};
 use crate::models::OpenDoc;
 use crate::search::SearchReplaceViewModel;
 use crate::tabs::ProseField;
-use crate::view_models::{EditorKind, FormatViewModel};
 
 /// An editor that paints **no background of its own**, so it sits flush on the
 /// dock's surface (rather than reading as a floating card dropped onto it).
@@ -54,7 +54,7 @@ impl RichTextEditorStyle for SeamlessEditorStyle {
 pub fn search_preview_dock(
     vm: SearchReplaceViewModel,
     format: FormatViewModel,
-    games: crate::view_models::WritingGamesViewModel,
+    games: crate::writing_session::WritingGamesViewModel,
     dock_id: DockWidgetId,
 ) -> DockWidget {
     DockWidget::new(dock_id, tr!(search_preview()), move |_id| {
@@ -78,7 +78,7 @@ struct PreviewBody {
     /// the same document** a scene tab shows, so a game that has frozen the
     /// manuscript has to freeze it here too — otherwise the band is a way to
     /// delete prose that Backspace refuses to delete two panes away.
-    games: crate::view_models::WritingGamesViewModel,
+    games: crate::writing_session::WritingGamesViewModel,
     child_id: Option<WidgetId>,
     /// The find-highlight layer over the previewed document — so the shown
     /// paragraph highlights the same query the result list matched. Recreated per
@@ -101,7 +101,7 @@ impl PreviewBody {
     fn new(
         vm: SearchReplaceViewModel,
         format: FormatViewModel,
-        games: crate::view_models::WritingGamesViewModel,
+        games: crate::writing_session::WritingGamesViewModel,
     ) -> Self {
         Self {
             vm,
@@ -214,131 +214,128 @@ impl Widget for PreviewBody {
         let field = self.vm.preview_field_signal().get();
         // Cloned into the closure below (`MatchField` is not `Copy`) so `field`
         // itself survives to be read again in the `None` arm's footnote check.
-        let child: Box<dyn Widget> =
-            match doc.as_ref().and_then(|d| editable_field(d, field.clone())) {
-                Some((open_doc, prose, spell, kind)) => {
-                    self.install_find_highlight(ctx, &prose.doc);
-                    // Cap the editor's width like a scene column, so a wide paragraph
-                    // stays readable (Settings ▸ preview width). Flowing (intrinsic
-                    // height, inner scroll off) inside an outer `ScrollArea` — the same
-                    // shape the scene tabs use — so the band scrolls a long paragraph.
-                    //
-                    // `min_lines` is what *makes* it flowing, and it is load-bearing:
-                    // without it the editor is greedy, and `centered`'s
-                    // `CenterColumnFlowing` measures its child width-only — so a
-                    // greedy editor falls through to `RichTextEditor`'s
-                    // `proposal.height.unwrap_or(100.0)` fallback instead of
-                    // growing with the prose.
-                    let width =
-                        crate::view_models::SettingsViewModel::new(ctx.settings()).preview_width();
-                    let editor = RichTextEditor::editor(prose.doc.clone())
-                        .style(SeamlessEditorStyle)
-                        .on_change(open_doc.mark_dirty_fn())
-                        .content_padding_symmetric(8.0, 8.0)
-                        .min_lines(1)
-                        .v_scroll_policy(ScrollPolicy::AlwaysOff)
-                        // The preview holds the whole document, not just the matched
-                        // paragraph, and it is laid out at full document height — so
-                        // window the render to the visible clip, exactly as the scene
-                        // tabs do, or previewing a match in a 13k-word scene would
-                        // rasterize every row of it on each paint.
-                        .window_to_clip(true);
-                    // This band edits the manuscript, so it answers to the same
-                    // writing game every other view of that prose does. Pushed at
-                    // build and re-pushed from three effects, exactly as
-                    // `TypographyBoundEditor` does — the preview deliberately
-                    // bypasses that wrapper for typography, so it has to carry
-                    // this itself. `EditorKind::Prose`: what the band shows is a
-                    // scene's text, whichever `Content` row the match came from.
+        let child: Box<dyn Widget> = match doc
+            .as_ref()
+            .and_then(|d| editable_field(d, field.clone()))
+        {
+            Some((open_doc, prose, spell, kind)) => {
+                self.install_find_highlight(ctx, &prose.doc);
+                // Cap the editor's width like a scene column, so a wide paragraph
+                // stays readable (Settings ▸ preview width). Flowing (intrinsic
+                // height, inner scroll off) inside an outer `ScrollArea` — the same
+                // shape the scene tabs use — so the band scrolls a long paragraph.
+                //
+                // `min_lines` is what *makes* it flowing, and it is load-bearing:
+                // without it the editor is greedy, and `centered`'s
+                // `CenterColumnFlowing` measures its child width-only — so a
+                // greedy editor falls through to `RichTextEditor`'s
+                // `proposal.height.unwrap_or(100.0)` fallback instead of
+                // growing with the prose.
+                let width = crate::settings::SettingsViewModel::new(ctx.settings()).preview_width();
+                let editor = RichTextEditor::editor(prose.doc.clone())
+                    .style(SeamlessEditorStyle)
+                    .on_change(open_doc.mark_dirty_fn())
+                    .content_padding_symmetric(8.0, 8.0)
+                    .min_lines(1)
+                    .v_scroll_policy(ScrollPolicy::AlwaysOff)
+                    // The preview holds the whole document, not just the matched
+                    // paragraph, and it is laid out at full document height — so
+                    // window the render to the visible clip, exactly as the scene
+                    // tabs do, or previewing a match in a 13k-word scene would
+                    // rasterize every row of it on each paint.
+                    .window_to_clip(true);
+                // This band edits the manuscript, so it answers to the same
+                // writing game every other view of that prose does. Pushed at
+                // build and re-pushed from three effects, exactly as
+                // `TypographyBoundEditor` does — the preview deliberately
+                // bypasses that wrapper for typography, so it has to carry
+                // this itself. `EditorKind::Prose`: what the band shows is a
+                // scene's text, whichever `Content` row the match came from.
+                {
+                    let handle = editor.handle();
+                    let games = self.games.clone();
+                    let push = {
+                        let (h, g) = (handle.clone(), games.clone());
+                        move || h.set_command_filter(g.filter_for(crate::format::EditorKind::Prose))
+                    };
+                    push();
                     {
-                        let handle = editor.handle();
-                        let games = self.games.clone();
-                        let push = {
-                            let (h, g) = (handle.clone(), games.clone());
-                            move || {
-                                h.set_command_filter(
-                                    g.filter_for(crate::view_models::EditorKind::Prose),
-                                )
-                            }
-                        };
-                        push();
-                        {
-                            let push = push.clone();
-                            ctx.effect(&games.always_forward(), move |_| push());
-                        }
-                        {
-                            let push = push.clone();
-                            ctx.effect(&games.forward_in_prose(), move |_| push());
-                        }
-                        ctx.effect(&games.forward_in_synopsis(), move |_| push());
+                        let push = push.clone();
+                        ctx.effect(&games.always_forward(), move |_| push());
                     }
-                    // The preview is another live view of a shared document. Feed its caret and drive
-                    // the doc's spell session's per-frame recompute — otherwise an edit here would
-                    // never re-tick the squiggles (stale), and the caret word wouldn't be exempt,
-                    // whenever no scene tab of the same document is open to tick it.
-                    if let Some(spell) = &spell {
-                        let handle = editor.handle();
-                        let token = crate::tabs::shared::editor::wire_spell(ctx, &handle, spell);
-                        self.spell_view = Some((spell.clone(), token));
-                    }
-                    // …and the ambient caret band, for the same reason: this is a real writing
-                    // surface, so the setting must reach it like every other one. Wired by hand
-                    // here because this editor deliberately bypasses `TypographyBoundEditor`, which
-                    // is where every other surface picks the band up.
                     {
-                        let handle = editor.handle();
-                        let band = crate::view_models::CaretBand::new(
-                            crate::view_models::CaretHighlightSettings::from_context(ctx),
-                            self.vm.preview_locale(open_doc.item_id),
-                        );
-                        handle.set_caret_highlight(band.resolve());
-                        {
-                            let (h, b) = (handle.clone(), band.clone());
-                            ctx.effect(&band.settings.scope, move |_| {
-                                h.set_caret_highlight(b.resolve())
-                            });
-                        }
-                        {
-                            let (h, b) = (handle.clone(), band.clone());
-                            ctx.effect(&band.settings.color, move |_| {
-                                h.set_caret_highlight(b.resolve())
-                            });
-                        }
+                        let push = push.clone();
+                        ctx.effect(&games.forward_in_prose(), move |_| push());
                     }
-                    // The preview band is a real editing surface — it writes through to
-                    // the shared document — so the formatting surfaces must reach it too.
-                    // Registered here rather than through `TypographyBoundEditor` (which
-                    // this editor deliberately does not use: it carries the seamless
-                    // style and the preview's own width, not a tab's typography), on the
-                    // same release-on-rebuild-and-drop discipline as `spell_view` above.
-                    {
-                        let format = self.format.clone();
-                        let self_id = ctx.self_id();
-                        format.register(self_id, editor.handle(), kind);
-                        self.format_view = Some((format, self_id));
-                    }
-                    Box::new(
-                        ScrollArea::new().child(
-                            Padding::symmetric(12.0, 8.0)
-                                .child(crate::tabs::shared::editor::centered(editor, &width)),
-                        ),
-                    )
+                    ctx.effect(&games.forward_in_synopsis(), move |_| push());
                 }
-                None => {
-                    // Nothing previewed — drop any highlight layer.
-                    *self.find.borrow_mut() = None;
-                    if field == Some(MatchField::Footnote) {
-                        // `SearchReplaceViewModel::select_result` deliberately never
-                        // opens a document for a footnote hit (its match is the note's
-                        // own body, never a field of any scene) — so `doc` is always
-                        // `None` here too, and this branch, not the generic empty
-                        // states below, is what actually fires for a footnote match.
-                        Box::new(footnote_empty_state(&self.vm))
-                    } else {
-                        Box::new(empty_state(&self.vm, doc.is_some()))
+                // The preview is another live view of a shared document. Feed its caret and drive
+                // the doc's spell session's per-frame recompute — otherwise an edit here would
+                // never re-tick the squiggles (stale), and the caret word wouldn't be exempt,
+                // whenever no scene tab of the same document is open to tick it.
+                if let Some(spell) = &spell {
+                    let handle = editor.handle();
+                    let token = crate::tabs::shared::editor::wire_spell(ctx, &handle, spell);
+                    self.spell_view = Some((spell.clone(), token));
+                }
+                // …and the ambient caret band, for the same reason: this is a real writing
+                // surface, so the setting must reach it like every other one. Wired by hand
+                // here because this editor deliberately bypasses `TypographyBoundEditor`, which
+                // is where every other surface picks the band up.
+                {
+                    let handle = editor.handle();
+                    let band = crate::shared::CaretBand::new(
+                        crate::shared::CaretHighlightSettings::from_context(ctx),
+                        self.vm.preview_locale(open_doc.item_id),
+                    );
+                    handle.set_caret_highlight(band.resolve());
+                    {
+                        let (h, b) = (handle.clone(), band.clone());
+                        ctx.effect(&band.settings.scope, move |_| {
+                            h.set_caret_highlight(b.resolve())
+                        });
+                    }
+                    {
+                        let (h, b) = (handle.clone(), band.clone());
+                        ctx.effect(&band.settings.color, move |_| {
+                            h.set_caret_highlight(b.resolve())
+                        });
                     }
                 }
-            };
+                // The preview band is a real editing surface — it writes through to
+                // the shared document — so the formatting surfaces must reach it too.
+                // Registered here rather than through `TypographyBoundEditor` (which
+                // this editor deliberately does not use: it carries the seamless
+                // style and the preview's own width, not a tab's typography), on the
+                // same release-on-rebuild-and-drop discipline as `spell_view` above.
+                {
+                    let format = self.format.clone();
+                    let self_id = ctx.self_id();
+                    format.register(self_id, editor.handle(), kind);
+                    self.format_view = Some((format, self_id));
+                }
+                Box::new(
+                    ScrollArea::new().child(
+                        Padding::symmetric(12.0, 8.0)
+                            .child(crate::tabs::shared::editor::centered(editor, &width)),
+                    ),
+                )
+            }
+            None => {
+                // Nothing previewed — drop any highlight layer.
+                *self.find.borrow_mut() = None;
+                if field == Some(MatchField::Footnote) {
+                    // `SearchReplaceViewModel::select_result` deliberately never
+                    // opens a document for a footnote hit (its match is the note's
+                    // own body, never a field of any scene) — so `doc` is always
+                    // `None` here too, and this branch, not the generic empty
+                    // states below, is what actually fires for a footnote match.
+                    Box::new(footnote_empty_state(&self.vm))
+                } else {
+                    Box::new(empty_state(&self.vm, doc.is_some()))
+                }
+            }
+        };
         self.child_id = Some(ctx.add_boxed(child));
         self.child_id.into_iter().collect()
     }
@@ -580,7 +577,7 @@ mod tests {
         let root = tree.add(PreviewBody::new(
             vm,
             FormatViewModel::detached(),
-            crate::view_models::WritingGamesViewModel::detached(),
+            crate::writing_session::WritingGamesViewModel::detached(),
         ));
         tree.layout(SizeProposal::exact(900.0, dock_height));
         let body = find(&tree, root, "RichTextEditorBody")
@@ -654,7 +651,7 @@ mod tests {
         let root = tree.add(PreviewBody::new(
             vm,
             FormatViewModel::detached(),
-            crate::view_models::WritingGamesViewModel::detached(),
+            crate::writing_session::WritingGamesViewModel::detached(),
         ));
         tree.layout(SizeProposal::exact(900.0, 400.0));
         let scroll = find(&tree, root, "ScrollArea").expect("the preview band scrolls");
@@ -695,7 +692,7 @@ mod tests {
         let root = tree.add(PreviewBody::new(
             vm,
             FormatViewModel::detached(),
-            crate::view_models::WritingGamesViewModel::detached(),
+            crate::writing_session::WritingGamesViewModel::detached(),
         ));
         tree.layout(SizeProposal::exact(900.0, 400.0));
 
@@ -720,7 +717,7 @@ mod tests {
         use teksilo::widgets::rich_text::CommandFilter;
 
         let (ctx, vm) = vm_previewing(2);
-        let games = crate::view_models::WritingGamesViewModel::detached();
+        let games = crate::writing_session::WritingGamesViewModel::detached();
         games.set_always_forward(true);
 
         let mut tree = crate::test_support::tree_with_settings(&ctx);
@@ -735,7 +732,7 @@ mod tests {
         // The filter is pushed onto the editor at build; the game covers prose by
         // default, so the band must be forward-only rather than freely editable.
         assert_eq!(
-            games.filter_for(crate::view_models::EditorKind::Prose),
+            games.filter_for(crate::format::EditorKind::Prose),
             CommandFilter::ForwardOnly,
             "the game covers manuscript prose, which is what this band shows"
         );

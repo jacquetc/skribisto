@@ -14,7 +14,8 @@ use teksilo::core::styles::Theme;
 use teksilo::prelude::*;
 
 use super::TEXT_SCALE_DEFAULT;
-use crate::view_models::{HighlightScope, SettingsViewModel, TypewriterAnchor};
+use crate::settings::SettingsViewModel;
+use crate::shared::{HighlightScope, TypewriterAnchor};
 use crate::{
     DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT, DISTRACTION_FREE_FONT_FAMILY_DEFAULT,
     DISTRACTION_FREE_GO_DEFAULT, DISTRACTION_FREE_GO_TO_DEFAULT,

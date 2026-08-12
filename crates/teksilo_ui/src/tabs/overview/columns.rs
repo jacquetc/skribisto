@@ -454,7 +454,7 @@ mod tests {
             &frontend::common::entities::BinderItemRole::Folder,
             &frontend::common::entities::BinderItemSubRole::Book,
             Signal::new(Default::default()),
-            crate::view_models::TreeExpansionViewModel::new(
+            crate::settings::TreeExpansionViewModel::new(
                 std::rc::Rc::new(frontend::AppContext::new()),
                 crate::app_ids::AppIds::new(),
                 crate::models::TreeExpansionService::in_memory_default(),

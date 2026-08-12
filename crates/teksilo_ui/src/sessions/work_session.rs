@@ -71,19 +71,20 @@ use frontend::AppContext;
 use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
 use crate::backup::{BackupSchedulerViewModel, BackupSettingsViewModel};
+use crate::mentions::MentionIndex;
 use crate::models::{
     DictWordListModel, OpenDocsStore, TextReplacementRuleListModel, TreeExpansionService,
     WorkNoteTemplatesListModel, WorkTagsListModel, WorkspaceLayoutService,
 };
 use crate::note_templates::NoteTemplatesViewModel;
+use crate::save::SaveStateViewModel;
+use crate::settings::{TextReplacementRulesViewModel, TreeExpansionViewModel};
+use crate::shared::ProgressRecorder;
 use crate::singles::{SingleDictWord, SingleSmartPunctuation, SingleWork, SingleWorkInfo};
 use crate::spellcheck::SpellcheckService;
 use crate::spellcheck::UserDictionaryViewModel;
 use crate::tags::TagsViewModel;
-use crate::view_models::{
-    MentionIndex, ProgressRecorder, SaveStateViewModel, TextReplacementRulesViewModel,
-    TreeExpansionViewModel, WorkspaceLayoutViewModel,
-};
+use crate::workspace_layout::WorkspaceLayoutViewModel;
 
 /// Every Tier-2 ("per open Work") view-model/single/model, bundled. Cloneable —
 /// every field is itself a cheap `Rc`-backed handle, so cloning a `WorkSession`
@@ -132,7 +133,7 @@ pub struct WorkSession {
     /// was made in reads as a broken keyboard, exactly as `FocusViewModel`
     /// argues for distraction-free mode. Paired with the app-global "which
     /// surfaces" settings into a
-    /// [`WritingGamesViewModel`](crate::view_models::WritingGamesViewModel)
+    /// [`WritingGamesViewModel`](crate::writing_session::WritingGamesViewModel)
     /// wherever both are in hand.
     pub always_forward: Signal<bool>,
     /// `true` while a *backup file* is open under this Work (Save + auto-backup

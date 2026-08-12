@@ -6,7 +6,7 @@ use super::*;
 use teksilo::core::widget_tree::WidgetTree;
 use teksilo::text_document::{Color, FlowElementSnapshot, HighlightMask};
 
-use crate::view_models::{CaretBand, CaretHighlightSettings, HighlightScope};
+use crate::shared::{CaretBand, CaretHighlightSettings, HighlightScope};
 
 const BAND: Color = Color {
     red: 255,

@@ -32,7 +32,7 @@ use frontend::common::event::Event;
 use frontend::import_management::ImportPlumeCreatorFileDto;
 
 use crate::intents::AppIntent;
-use crate::view_models::long_op::{event_id, parse_payload, payload_id};
+use crate::shared::long_op::{event_id, parse_payload, payload_id};
 
 /// Update-in-place key for the single toast the import drives through its
 /// lifecycle (loading → progress → success / cancelled / error).

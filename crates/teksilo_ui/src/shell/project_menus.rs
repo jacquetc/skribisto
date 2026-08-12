@@ -15,9 +15,12 @@ use teksilo::widgets::{MenuEntry, MenuModel, MenuNode};
 
 use crate::binder::OutlineViewModel;
 use crate::export::ExportViewModel;
+use crate::format::FormatViewModel;
+use crate::go::GoAvailability;
 use crate::note_templates::NoteTemplatesViewModel;
+use crate::save::SaveAsViewModel;
+use crate::shared::FocusViewModel;
 use crate::singles::{SingleWork, SingleWorkInfo};
-use crate::view_models::{FocusViewModel, FormatViewModel, GoAvailability, SaveAsViewModel};
 
 /// A Format-menu row that reflects document state: a reflect-only checkmark
 /// mirroring the same signal the dock's button binds, so the two surfaces

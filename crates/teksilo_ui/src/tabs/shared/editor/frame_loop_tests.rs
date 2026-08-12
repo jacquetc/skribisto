@@ -8,9 +8,9 @@ use teksilo::widgets::rich_text::CommandFilter;
 
 use crate::app_ids::AppIds;
 use crate::models::TextReplacementRuleListModel;
+use crate::settings::TextReplacementRulesViewModel;
 use crate::singles::SingleWork;
 use crate::text_replacement::typography::SmartPunctuationFlags;
-use crate::view_models::TextReplacementRulesViewModel;
 
 fn typo() -> EditorTypography {
     EditorTypography {
@@ -162,7 +162,7 @@ fn the_gate_stops_typing_and_not_the_programmatic_api() {
 
 /// A prose column carrying a game, so the wiring under test is the real one.
 fn prose_column_playing(
-    games: &crate::view_models::WritingGamesViewModel,
+    games: &crate::writing_session::WritingGamesViewModel,
 ) -> (EditorHandle, WidgetTree) {
     let doc = TextDocument::new();
     let find = crate::search::FindViewModel::new(doc.clone());
@@ -197,7 +197,7 @@ fn prose_column_playing(
 
 #[test]
 fn a_prose_editor_is_frozen_while_always_forward_is_played() {
-    let games = crate::view_models::WritingGamesViewModel::detached();
+    let games = crate::writing_session::WritingGamesViewModel::detached();
     games.set_always_forward(true);
     let (handle, _tree) = prose_column_playing(&games);
     assert_eq!(
@@ -209,7 +209,7 @@ fn a_prose_editor_is_frozen_while_always_forward_is_played() {
 
 #[test]
 fn a_prose_editor_is_untouched_while_no_game_is_played() {
-    let games = crate::view_models::WritingGamesViewModel::detached();
+    let games = crate::writing_session::WritingGamesViewModel::detached();
     let (handle, _tree) = prose_column_playing(&games);
     assert_eq!(handle.command_filter(), CommandFilter::All);
 }
@@ -218,7 +218,7 @@ fn a_prose_editor_is_untouched_while_no_game_is_played() {
 /// looking at the page*. The mounted editor must follow without a rebuild.
 #[test]
 fn switching_the_game_reaches_an_already_mounted_editor() {
-    let games = crate::view_models::WritingGamesViewModel::detached();
+    let games = crate::writing_session::WritingGamesViewModel::detached();
     let (handle, mut tree) = prose_column_playing(&games);
     assert_eq!(handle.command_filter(), CommandFilter::All);
 
@@ -243,7 +243,7 @@ fn switching_the_game_reaches_an_already_mounted_editor() {
 /// option is not merely read once when the game starts.
 #[test]
 fn the_prose_option_is_honoured_live() {
-    let games = crate::view_models::WritingGamesViewModel::detached();
+    let games = crate::writing_session::WritingGamesViewModel::detached();
     games.set_always_forward(true);
     let (handle, mut tree) = prose_column_playing(&games);
     assert_eq!(handle.command_filter(), CommandFilter::ForwardOnly);
@@ -263,7 +263,7 @@ fn the_prose_option_is_honoured_live() {
 /// the writer through `EditorHandle`, which no command filter gates.
 #[test]
 fn a_game_stops_typing_and_not_the_programmatic_api() {
-    let games = crate::view_models::WritingGamesViewModel::detached();
+    let games = crate::writing_session::WritingGamesViewModel::detached();
     games.set_always_forward(true);
     let doc = TextDocument::new();
     let find = crate::search::FindViewModel::new(doc.clone());

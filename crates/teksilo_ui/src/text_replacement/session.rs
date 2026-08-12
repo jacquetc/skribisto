@@ -56,7 +56,7 @@ use teksilo::widgets::rich_text::EditorHandle;
 
 use super::engine::TextReplacementEngine;
 use super::typography::{SmartPunctuationFlags, TypographyEngine};
-use crate::view_models::TextReplacementRulesViewModel;
+use crate::settings::TextReplacementRulesViewModel;
 
 /// What a fired rule left behind, so the next keystroke can undo it.
 ///
