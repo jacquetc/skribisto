@@ -1916,6 +1916,34 @@ features:
       - name: changed_ids
         type: uinteger
         is_list: true
+
+  # The same subtree walk as `set_descendants_exportable`, one field over: push
+  # a spellcheck language onto everything beneath an item.
+  #
+  # An **empty** `tags` is a legitimate instruction, not a missing argument. No
+  # language propagates implicitly (`skribisto_model::language::tags_in_binder`
+  # reads an item's own tag, else the Work's -- there is no container scope), so
+  # clearing the descendants is the only way to put an over-broad apply back
+  # without visiting every child.
+  - name: set_descendants_dict_language
+    entities:
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: SetDescendantsDictLanguageDto
+      fields:
+      - name: item_id
+        type: uinteger
+      - name: tags
+        type: string
+        is_list: true
+    dto_out:
+      name: SetDescendantsDictLanguageResultDto
+      fields:
+      - name: changed_ids
+        type: uinteger
+        is_list: true
 - name: handling_app_lifecycle
   use_cases:
   - name: initialize_app

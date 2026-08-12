@@ -57,3 +57,12 @@ pub struct SetDescendantsExportableDto {
 pub struct SetDescendantsExportableResultDto {
     pub changed_ids: Vec<u64>,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct SetDescendantsDictLanguageDto {
+    pub item_id: u64,
+    pub tags: Vec<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct SetDescendantsDictLanguageResultDto {
+    pub changed_ids: Vec<u64>,
+}

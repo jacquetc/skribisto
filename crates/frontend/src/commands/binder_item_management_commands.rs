@@ -9,6 +9,7 @@ use crate::app_context::AppContext;
 use anyhow::{Context, Result};
 use binder_item_management::{
     DuplicateDto, DuplicateReturnDto, MergeTwoScenesDto, MoveDto, PromoteDto,
+    SetDescendantsDictLanguageDto, SetDescendantsDictLanguageResultDto,
     SetDescendantsExportableDto, SetDescendantsExportableResultDto, SplitSceneDto,
     binder_item_management_controller,
 };
@@ -95,4 +96,20 @@ pub fn set_descendants_exportable(
         dto,
     )
     .context("set_descendants_exportable")
+}
+
+pub fn set_descendants_dict_language(
+    ctx: &AppContext,
+    stack_id: Option<u64>,
+    dto: &SetDescendantsDictLanguageDto,
+) -> Result<SetDescendantsDictLanguageResultDto> {
+    let mut undo_redo_manager = common::long_operation::lock_or_recover(&ctx.undo_redo_manager);
+    binder_item_management_controller::set_descendants_dict_language(
+        &ctx.db_context,
+        &ctx.event_hub,
+        &mut undo_redo_manager,
+        stack_id,
+        dto,
+    )
+    .context("set_descendants_dict_language")
 }

@@ -130,6 +130,7 @@ pub enum BinderItemManagementEvent {
     SplitScene,
     Promote,
     SetDescendantsExportable,
+    SetDescendantsDictLanguage,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]

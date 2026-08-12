@@ -26,7 +26,7 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole}
 use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto};
 
 use frontend::binder_item_management::{
-    DuplicateDto, MoveDto, MovePlace, SetDescendantsExportableDto,
+    DuplicateDto, MoveDto, MovePlace, SetDescendantsDictLanguageDto, SetDescendantsExportableDto,
 };
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 
@@ -808,21 +808,19 @@ impl OutlineViewModel {
     /// **empty** `tags` is a legitimate value to push: it clears the descendants back to
     /// inheriting the Work's language, which is the only way to undo an over-broad apply
     /// without visiting each child.
+    ///
+    /// One backend call, not a composite of per-item writes — the same move as
+    /// [`Self::apply_exportable_to_subtree`], and for the same reason: the subtree walk
+    /// belongs beside the write, not above it.
     pub fn apply_dict_language_to_subtree(&self, item_id: u64, tags: &[String]) {
-        let descendants = self.subtree_descendants(item_id);
-        if descendants.is_empty() {
-            return;
-        }
-        let ctx = &*self.app_ctx;
-        let stack = self.stack();
-        let _ = undo_redo_commands::begin_composite(ctx, stack);
-        for id in descendants {
-            // A probe fixed to each descendant, reusing the tested full-DTO write.
-            let probe = SingleBinderItem::new(self.app_ctx.clone());
-            probe.set_id(Some(id));
-            let _ = probe.set_dict_language(tags, stack);
-        }
-        undo_redo_commands::end_composite(ctx);
+        let _ = binder_item_management_commands::set_descendants_dict_language(
+            &self.app_ctx,
+            self.stack(),
+            &SetDescendantsDictLanguageDto {
+                item_id,
+                tags: tags.to_vec(),
+            },
+        );
         self.reload();
     }
 

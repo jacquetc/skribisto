@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! `set_descendants_exportable` — the "apply to children" write, moved out of
-//! the outline view-model so a binder screen that is not that outline can make
-//! the same gesture.
+//! `set_descendants_exportable` and `set_descendants_dict_language` — the two
+//! "apply to children" writes, moved out of the outline view-model so a binder
+//! screen that is not that outline can make the same gesture.
 //!
 //! What these tests pin is the part the move was *for*: the subtree walk. A
 //! binder has no parent/child graph, so "beneath X" is positional — X plus the
@@ -14,8 +14,8 @@
 
 use std::sync::Arc;
 
-use binder_item_management::SetDescendantsExportableDto;
 use binder_item_management::binder_item_management_controller as feature;
+use binder_item_management::{SetDescendantsDictLanguageDto, SetDescendantsExportableDto};
 use common::database::db_context::DbContext;
 use common::entities::{BinderItemRole, BinderItemSubRole};
 use common::event::EventHub;
@@ -132,6 +132,29 @@ impl Ctx {
             .expect("get")
             .expect("row still present")
             .is_exportable
+    }
+
+    fn language(&self, id: EntityId) -> Vec<String> {
+        binder_item_controller::get(&self.db, &id)
+            .expect("get")
+            .expect("row still present")
+            .dict_language
+    }
+
+    fn apply_language(&mut self, item_id: EntityId, tags: &[&str]) -> Vec<EntityId> {
+        let stack = Some(self.stack);
+        feature::set_descendants_dict_language(
+            &self.db,
+            &self.hub,
+            &mut self.undo,
+            stack,
+            &SetDescendantsDictLanguageDto {
+                item_id,
+                tags: tags.iter().map(|s| s.to_string()).collect(),
+            },
+        )
+        .expect("set_descendants_dict_language")
+        .changed_ids
     }
 
     fn apply(&mut self, item_id: EntityId, exportable: bool) -> Vec<EntityId> {
@@ -296,4 +319,101 @@ fn an_id_no_binder_holds_is_a_no_op() {
     // An absent item has no descendants — the same instruction a leaf gives.
     assert!(ctx.apply(t.after + 9_999, false).is_empty());
     assert!(ctx.exportable(t.root));
+}
+
+// ── set_descendants_dict_language ────────────────────────────────────────────
+//
+// The walk is shared with `set_descendants_exportable` (`crate::subtree`), so
+// these do not re-test the boundaries above. What is different here is the
+// inverse: the field is a list, so the prior value cannot be derived from the
+// new one the way a boolean's can, and each row's own former list has to be
+// carried.
+
+#[test]
+fn language_reaches_every_descendant_and_not_the_root() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+
+    ctx.apply_language(t.root, &["tr-TR"]);
+
+    assert!(
+        ctx.language(t.root).is_empty(),
+        "the pill field beside the button owns the root"
+    );
+    assert_eq!(ctx.language(t.child_a), vec!["tr-TR"]);
+    assert_eq!(ctx.language(t.grand), vec!["tr-TR"]);
+    assert_eq!(ctx.language(t.child_b), vec!["tr-TR"]);
+    assert!(ctx.language(t.after).is_empty());
+}
+
+#[test]
+fn an_empty_tag_list_clears_rather_than_being_ignored() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+    ctx.apply_language(t.root, &["tr-TR"]);
+
+    // With no container scope in the language model, this is the only way back
+    // from an over-broad apply — so it must be a write, not a no-op guard.
+    let cleared = ctx.apply_language(t.root, &[]);
+
+    assert_eq!(
+        cleared.len(),
+        3,
+        "all three descendants were carrying a tag"
+    );
+    assert!(ctx.language(t.child_a).is_empty());
+    assert!(ctx.language(t.grand).is_empty());
+}
+
+#[test]
+fn undo_restores_each_row_to_its_own_previous_list() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+
+    // Give one descendant a language of its own first, so a blanket restore to
+    // any single value would be caught.
+    ctx.apply_language(t.child_a, &["el-GR"]); // reaches nothing: child_a is a leaf
+    let mut lone = binder_item_controller::get(&ctx.db, &t.grand)
+        .unwrap()
+        .unwrap();
+    lone.dict_language = vec!["el-GR".to_string()];
+    binder_item_controller::update(&ctx.db, &ctx.hub, &mut ctx.undo, None, &lone.into())
+        .expect("seed a differing row");
+
+    ctx.apply_language(t.root, &["tr-TR"]);
+    ctx.undo.undo(Some(ctx.stack)).expect("undo");
+
+    assert!(ctx.language(t.child_a).is_empty());
+    assert_eq!(
+        ctx.language(t.grand),
+        vec!["el-GR"],
+        "restored to what this row held, not to what its siblings held"
+    );
+    assert!(ctx.language(t.child_b).is_empty());
+}
+
+#[test]
+fn language_redo_reapplies() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+    ctx.apply_language(t.root, &["tr-TR"]);
+    ctx.undo.undo(Some(ctx.stack)).expect("undo");
+
+    ctx.undo.redo(Some(ctx.stack)).expect("redo");
+
+    assert_eq!(ctx.language(t.child_a), vec!["tr-TR"]);
+    assert_eq!(ctx.language(t.grand), vec!["tr-TR"]);
+    assert_eq!(ctx.language(t.child_b), vec!["tr-TR"]);
+}
+
+#[test]
+fn language_changed_ids_skips_rows_that_already_agree() {
+    let mut ctx = Ctx::new();
+    let t = tree(&mut ctx);
+
+    assert_eq!(ctx.apply_language(t.root, &["tr-TR"]).len(), 3);
+    assert!(
+        ctx.apply_language(t.root, &["tr-TR"]).is_empty(),
+        "a second identical apply writes nothing"
+    );
 }

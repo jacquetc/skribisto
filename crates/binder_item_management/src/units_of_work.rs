@@ -7,5 +7,6 @@ pub(crate) mod duplicate_uow;
 pub(crate) mod merge_two_scenes_uow;
 pub(crate) mod move_items_uow;
 pub(crate) mod promote_uow;
+pub(crate) mod set_descendants_dict_language_uow;
 pub(crate) mod set_descendants_exportable_uow;
 pub(crate) mod split_scene_uow;

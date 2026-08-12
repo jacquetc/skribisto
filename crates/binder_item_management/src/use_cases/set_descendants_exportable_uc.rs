@@ -27,8 +27,8 @@
 // total and needs no stored prior state.
 use crate::SetDescendantsExportableDto;
 use crate::SetDescendantsExportableResultDto;
+use crate::subtree::{BinderWalk, descendants_of};
 use anyhow::Result;
-use binder_ordering::subtree_of;
 use common::database::CommandUnitOfWork;
 use common::direct_access::binder::BinderRelationshipField;
 use common::entities::BinderItem;
@@ -86,35 +86,32 @@ impl SetDescendantsExportableUseCase {
     }
 }
 
-/// The ids strictly *below* `item_id` in its binder, in document order.
-///
-/// Empty for a leaf, and empty for an id no binder holds — an absent item has no
-/// descendants, which is the same instruction as a leaf's and needs no error.
-pub(crate) fn descendants_of(
-    uow: &dyn SetDescendantsExportableUnitOfWorkTrait,
-    item_id: EntityId,
-) -> Result<Vec<EntityId>> {
-    let groups = uow.get_binder_relationships_from_right_ids(
-        &BinderRelationshipField::BinderItems,
-        &[item_id],
-    )?;
-    let Some((binder, _)) = groups.into_iter().next() else {
-        return Ok(Vec::new());
-    };
-
-    let order = uow.get_binder_relationship(&binder, &BinderRelationshipField::BinderItems)?;
-    let mut indent: HashMap<EntityId, i64> = HashMap::new();
-    for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
-        indent.insert(it.id, it.indent);
+/// The three reads [`crate::subtree::descendants_of`] needs, forwarded to this
+/// use case's own generated unit of work.
+impl BinderWalk for dyn SetDescendantsExportableUnitOfWorkTrait + '_ {
+    fn owning_binder(&self, item: EntityId) -> Result<Option<EntityId>> {
+        Ok(self
+            .get_binder_relationships_from_right_ids(
+                &BinderRelationshipField::BinderItems,
+                &[item],
+            )?
+            .into_iter()
+            .next()
+            .map(|(binder, _)| binder))
     }
 
-    // `subtree_of` returns the root first; the root is not ours to write.
-    let mut subtree = subtree_of(&order, &indent, item_id);
-    if subtree.is_empty() {
-        return Ok(Vec::new());
+    fn ordered_items(&self, binder: EntityId) -> Result<Vec<EntityId>> {
+        self.get_binder_relationship(&binder, &BinderRelationshipField::BinderItems)
     }
-    subtree.remove(0);
-    Ok(subtree)
+
+    fn indents(&self, ids: &[EntityId]) -> Result<HashMap<EntityId, i64>> {
+        Ok(self
+            .get_binder_item_multi(ids)?
+            .into_iter()
+            .flatten()
+            .map(|it| (it.id, it.indent))
+            .collect())
+    }
 }
 
 /// Set `is_exportable` on `ids`, writing back only the rows that actually differ.
