@@ -284,6 +284,26 @@ pub(crate) fn build_page(id: &str, ctx: &mut BuildContext) -> Option<Box<dyn Wid
     Some(build(ctx))
 }
 
+/// Serialises every test that touches the process-wide settings registry.
+///
+/// `settings_keys::dump` renders `all_specs` — the app's own table *plus*
+/// whatever is registered right now — and `a_dump_is_a_valid_pins_file` reads
+/// its own output back and asserts the key count. A registration living in
+/// another test's thread lands in that dump and its handle is dropped again
+/// before the re-read, so the file names a key the registry no longer knows.
+/// That is a one-in-five failure with a message about `t6.tolerance` that has
+/// nothing to do with the test reporting it.
+///
+/// Poisoning is stepped over deliberately: a panicking test has already failed,
+/// and turning that into a cascade of unrelated failures hides which one it was.
+#[cfg(test)]
+pub(crate) static REGISTRY_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+#[cfg(test)]
+pub(crate) fn lock_registry() -> std::sync::MutexGuard<'static, ()> {
+    REGISTRY_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -324,6 +344,7 @@ mod tests {
     /// module exists to remove, one layer out.
     #[test]
     fn a_registered_key_is_settable_and_dumpable_like_any_other() {
+        let _guard = super::lock_registry();
         assert!(settings_keys::spec("t1.enabled").is_none());
         let _h = register_settings("test.set.basic", vec![spec("t1.enabled")]).expect("register");
 
@@ -345,6 +366,7 @@ mod tests {
     /// …and dropping the handle takes it back out of every one of those.
     #[test]
     fn dropping_the_handle_unregisters_the_keys() {
+        let _guard = super::lock_registry();
         {
             let _h =
                 register_settings("test.set.drop", vec![spec("t2.enabled")]).expect("register");
@@ -364,6 +386,7 @@ mod tests {
     /// policy is a `SettingsFile<T>`, not a `general.toml` scalar.)
     #[test]
     fn no_key_under_any_app_section_is_accepted() {
+        let _guard = super::lock_registry();
         let sections = settings_keys::app_sections();
         assert!(
             sections.len() >= 5,
@@ -383,6 +406,7 @@ mod tests {
     /// its own account rather than slipping through.
     #[test]
     fn an_unnamespaced_key_is_refused() {
+        let _guard = super::lock_registry();
         let err = register_settings("test.set.flat", vec![spec("flat")])
             .expect_err("must refuse an unnamespaced key");
         assert!(err.contains("not namespaced"), "unhelpful: {err}");
@@ -391,6 +415,7 @@ mod tests {
     /// Two extensions cannot claim one key.
     #[test]
     fn a_second_extension_cannot_take_a_taken_key() {
+        let _guard = super::lock_registry();
         let _first = register_settings("test.set.first", vec![spec("t3.shared")]).expect("first");
         let err =
             register_settings("test.set.second", vec![spec("t3.shared")]).expect_err("must refuse");
@@ -402,6 +427,7 @@ mod tests {
     /// which is worse than refusing the lot.
     #[test]
     fn a_batch_with_one_bad_key_registers_none_of_them() {
+        let _guard = super::lock_registry();
         let err = register_settings(
             "test.set.batch",
             vec![spec("t4.good"), spec("editor.bad"), spec("t4.also_good")],
@@ -423,6 +449,7 @@ mod tests {
     /// problem, rather than at a writer's startup.
     #[test]
     fn a_default_that_fails_its_own_check_is_refused() {
+        let _guard = super::lock_registry();
         let bad = SettingSpec {
             key: "t5.wrong",
             ty: "bool",
@@ -442,6 +469,7 @@ mod tests {
     /// which only works because `nearest` searches the combined list.
     #[test]
     fn a_typo_in_an_extension_key_suggests_the_real_one() {
+        let _guard = super::lock_registry();
         let _h = register_settings("test.set.typo", vec![spec("t6.tolerance")]).expect("register");
         let dir = tempfile::tempdir().unwrap();
         let pins = dir.path().join("pins.toml");
@@ -458,6 +486,7 @@ mod tests {
 
     #[test]
     fn a_registered_page_is_listed_and_builds() {
+        let _guard = super::lock_registry();
         assert!(!registered_pages().iter().any(|p| p.id == "t7.page"));
         let _h = register_page("test.page.basic", page("t7.page")).expect("register");
 
@@ -476,6 +505,7 @@ mod tests {
 
     #[test]
     fn a_page_id_must_be_namespaced_and_unique() {
+        let _guard = super::lock_registry();
         let err = register_page("test.page.flat", page("flat")).expect_err("must refuse");
         assert!(err.contains("not namespaced"), "unhelpful: {err}");
 
@@ -486,6 +516,7 @@ mod tests {
 
     #[test]
     fn re_registering_a_namespace_replaces_its_page() {
+        let _guard = super::lock_registry();
         let _a = register_page("test.page.same", page("t9.old")).expect("first");
         let _b = register_page("test.page.same", page("t9.new")).expect("re-register");
         assert!(registered_pages().iter().any(|p| p.id == "t9.new"));
@@ -494,6 +525,7 @@ mod tests {
 
     #[test]
     fn dropping_the_handle_unregisters_the_page() {
+        let _guard = super::lock_registry();
         {
             let _h = register_page("test.page.drop", page("t10.page")).expect("register");
             assert!(registered_pages().iter().any(|p| p.id == "t10.page"));

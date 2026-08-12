@@ -382,6 +382,7 @@ fn merging_into_a_missing_file_creates_it() {
 /// silently breaks.
 #[test]
 fn a_dump_is_a_valid_pins_file() {
+    let _guard = crate::settings_ext::lock_registry();
     let dir = tempfile::tempdir().unwrap();
     let general = dir.path().join("general.toml");
     std::fs::write(&general, "[ui]\ndark = true\n").unwrap();
