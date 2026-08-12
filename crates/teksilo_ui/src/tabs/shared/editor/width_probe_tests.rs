@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
+use super::scroll_sync::{MODE_SIDE, MODE_TOP};
 use super::*;
 use teksilo::core::widget_tree::WidgetTree;
 
