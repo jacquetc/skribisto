@@ -111,6 +111,8 @@ zip = "8.6.0"
 # toolchain, no system library, MPL-2.0). Fed the same `.aff`/`.dic` a hunspell
 # dictionary ships.
 spellbook = "0.4"
+# The misspelling predicate and suggestion ranking, store- and widget-free.
+spellcheck_engine = { workspace = true }
 # UAX#29 word segmentation — spellbook delegates tokenisation to the caller, and
 # a naive `split_whitespace` would butcher accented words and contractions.
 unicode-segmentation = "1"

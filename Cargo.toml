@@ -23,6 +23,7 @@ members = [
     "crates/handling_app_lifecycle",
     "crates/import_management",
     "crates/plume_import",
+    "crates/spellcheck_engine",
     "crates/search_management",
     "crates/frontend",
     "crates/skribisto_model",
@@ -81,6 +82,7 @@ skribisto_model = { package = "skribisto-model", version = "0.0.1", path = "crat
 skrib_format = { package = "skribisto-skrib-format", version = "0.0.1", path = "crates/skrib_format" }
 document_ingest = { package = "skribisto-document-ingest", version = "0.0.1", path = "crates/document_ingest" }
 plume_import = { package = "skribisto-plume-import", version = "0.0.1", path = "crates/plume_import" }
+spellcheck_engine = { package = "skribisto-spellcheck-engine", version = "0.0.1", path = "crates/spellcheck_engine" }
 skribisto_compiler = { package = "skribisto-compiler", version = "0.0.1", path = "crates/skribisto_compiler" }
 skribisto_fonts = { package = "skribisto-fonts", version = "0.0.1", path = "crates/skribisto-fonts" }
 

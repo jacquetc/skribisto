@@ -262,7 +262,10 @@ mod tests {
 
         let spell = SpellSession::new(&d);
         spell.set_checker(
-            Some(SpellChecker::for_tests(&["hello", "world"], &["Skribisto"])),
+            Some(SpellChecker::from_word_lists(
+                &["hello", "world"],
+                &["Skribisto"],
+            )),
             Color::rgb(220, 50, 50),
         );
         (d, handle, spell, tree)

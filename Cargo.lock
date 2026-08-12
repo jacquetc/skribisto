@@ -5638,6 +5638,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "skribisto-spellcheck-engine"
+version = "0.0.1"
+dependencies = [
+ "encoding_rs",
+ "spellbook",
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "skribisto-tag-management"
 version = "0.0.1"
 dependencies = [
@@ -6298,6 +6307,7 @@ dependencies = [
  "skribisto-frontend",
  "skribisto-model",
  "skribisto-skrib-format",
+ "skribisto-spellcheck-engine",
  "slotmap",
  "spellbook",
  "teksilo",

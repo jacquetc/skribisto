@@ -5,6 +5,7 @@
 use skribisto_model::language::parse_legacy_list as tags;
 
 use super::*;
+use spellcheck_engine::{MAX_SUGGESTIONS, bounded_levenshtein, detect_encoding, merge_suggestions};
 
 // ── the master switch (Settings ▸ Spelling / the title-bar toggle / F7) ──
 
@@ -200,10 +201,7 @@ fn word_positions_keeps_apostrophes() {
 fn highlighter_flags_only_the_misspelling() {
     let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n")
         .expect("tiny dictionary parses");
-    let hl = SpellChecker {
-        dicts: vec![Arc::new(dict)],
-        personal: HashSet::new(),
-    };
+    let hl = SpellChecker::new(vec![Arc::new(dict)], HashSet::new());
     assert!(hl.misspelled("helo"), "a misspelling is flagged");
     assert!(!hl.misspelled("hello"), "a good word is not");
     assert!(!hl.misspelled("world"), "another good word is not");
@@ -218,10 +216,7 @@ fn personal_words_are_the_final_fallback() {
     let dict = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
     let mut personal = HashSet::new();
     personal.insert("Skribisto".to_string());
-    let hl = SpellChecker {
-        dicts: vec![Arc::new(dict)],
-        personal,
-    };
+    let hl = SpellChecker::new(vec![Arc::new(dict)], personal);
     assert!(!hl.misspelled("Skribisto"), "a personal word is accepted");
     assert!(hl.misspelled("Skrib"), "but not an unrelated unknown word");
 }
@@ -232,10 +227,7 @@ fn personal_words_are_the_final_fallback() {
 #[test]
 fn suggest_offers_dictionary_corrections() {
     let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n").unwrap();
-    let hl = SpellChecker {
-        dicts: vec![Arc::new(dict)],
-        personal: HashSet::new(),
-    };
+    let hl = SpellChecker::new(vec![Arc::new(dict)], HashSet::new());
     let got = hl.suggest("helo");
     assert!(
         got.contains(&"hello".to_string()),
@@ -257,13 +249,10 @@ fn suggest_offers_personal_words_the_dictionary_cannot_know() {
     let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n").unwrap();
     let mut personal = HashSet::new();
     personal.insert("Skribisto".to_string());
-    let hl = SpellChecker {
-        dicts: vec![Arc::new(dict)],
-        personal,
-    };
+    let hl = SpellChecker::new(vec![Arc::new(dict)], personal);
     // Sanity: the dictionary alone knows nothing of it.
     let mut raw = Vec::new();
-    hl.dicts[0].suggest("Skibisto", &mut raw);
+    hl.dictionaries()[0].suggest("Skibisto", &mut raw);
     assert!(
         !raw.contains(&"Skribisto".to_string()),
         "precondition: spellbook cannot suggest a personal word ({raw:?})"
@@ -285,10 +274,7 @@ fn suggest_corrects_the_casing_of_a_personal_word() {
     let dict = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
     let mut personal = HashSet::new();
     personal.insert("Skribisto".to_string());
-    let hl = SpellChecker {
-        dicts: vec![Arc::new(dict)],
-        personal,
-    };
+    let hl = SpellChecker::new(vec![Arc::new(dict)], personal);
     assert!(
         hl.misspelled("skribisto"),
         "precondition: exact-case matching flags it"
@@ -307,10 +293,7 @@ fn suggest_skips_the_typed_word_and_distant_personal_words() {
     let mut personal = HashSet::new();
     personal.insert("Skribisto".to_string());
     personal.insert("Teksilo".to_string());
-    let hl = SpellChecker {
-        dicts: vec![Arc::new(dict)],
-        personal,
-    };
+    let hl = SpellChecker::new(vec![Arc::new(dict)], personal);
     // "Skribisto" itself is not flagged, but even asked directly it must not echo back.
     assert!(
         !hl.suggest("Skribisto").contains(&"Skribisto".to_string()),
@@ -466,10 +449,7 @@ fn personal_suggestions_are_stable_across_runs() {
         .iter()
         .map(|s| s.to_string())
         .collect();
-    let hl = SpellChecker {
-        dicts: vec![Arc::new(dict)],
-        personal,
-    };
+    let hl = SpellChecker::new(vec![Arc::new(dict)], personal);
     let first = hl.suggest("Xan");
     assert_eq!(
         first,
@@ -517,7 +497,7 @@ fn a_candidate_is_gated_on_its_lower_cased_length() {
     assert_eq!("İ".chars().count(), 1);
     assert_eq!("İ".to_lowercase().chars().count(), 2);
     // A personal word whose lower-cased form is exactly the typed word must be found.
-    let hl = SpellChecker::for_tests(&["hello"], &["İstanbul"]);
+    let hl = SpellChecker::from_word_lists(&["hello"], &["İstanbul"]);
     let got = hl.suggest("i\u{307}stanbul"); // the lower-cased spelling, typed by the writer
     assert_eq!(
         got.first().map(String::as_str),
@@ -531,10 +511,7 @@ fn a_candidate_is_gated_on_its_lower_cased_length() {
 fn a_word_any_active_dictionary_knows_is_accepted() {
     let en = spellbook::Dictionary::new("SET UTF-8\n", "1\nhello\n").unwrap();
     let fr = spellbook::Dictionary::new("SET UTF-8\n", "1\nbonjour\n").unwrap();
-    let hl = SpellChecker {
-        dicts: vec![Arc::new(en), Arc::new(fr)],
-        personal: HashSet::new(),
-    };
+    let hl = SpellChecker::new(vec![Arc::new(en), Arc::new(fr)], HashSet::new());
     assert!(!hl.misspelled("hello"), "English word accepted");
     assert!(!hl.misspelled("bonjour"), "French word accepted");
     assert!(hl.misspelled("guten"), "a word neither knows is flagged");
@@ -588,10 +565,7 @@ fn tiny_doc(text: &str) -> TextDocument {
 /// A checker knowing `hello`/`world` — so `helo`/`wrld` are misspelled.
 fn en_checker() -> SpellChecker {
     let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\nhello\nworld\n").unwrap();
-    SpellChecker {
-        dicts: vec![Arc::new(dict)],
-        personal: HashSet::new(),
-    }
+    SpellChecker::new(vec![Arc::new(dict)], HashSet::new())
 }
 
 /// Focus a single view whose caret is read from `cell` (the closure production supplies is
@@ -799,10 +773,7 @@ fn char_offsets_are_document_absolute_through_accents() {
     // "café" is correct; "wrld" is the misspelling. A byte offset would place it at 6 (é is two
     // bytes); the char offset is 5.
     let dict = spellbook::Dictionary::new("SET UTF-8\n", "2\ncafé\nworld\n").unwrap();
-    let checker = SpellChecker {
-        dicts: vec![Arc::new(dict)],
-        personal: HashSet::new(),
-    };
+    let checker = SpellChecker::new(vec![Arc::new(dict)], HashSet::new());
     let doc = tiny_doc("café wrld");
     let session = SpellSession::new(&doc);
     session.set_checker(Some(checker), Color::rgb(220, 50, 50));
