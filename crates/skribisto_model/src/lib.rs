@@ -78,6 +78,8 @@ pub mod numbering;
 /// Line a returning manuscript up against the one the project holds: which rows are the same
 /// rows, who changed what, and where a chapter the editor inserted belongs.
 pub mod reconcile;
+/// Trigger matching for the writer's custom replacement lexicon.
+pub mod replacement;
 /// The bookmark names an export writes so a returning file can be recognised as *this*
 /// project's — and the digest that says which side changed the prose. Shared by the exporter
 /// that mints them and the scanners that read them back, because two spellings of one scheme

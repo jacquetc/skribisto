@@ -25,16 +25,13 @@
 //! convention.
 
 /// One lexicon row: a trigger string that expands to a replacement while
-/// typing (see `crate::text_replacement::engine`), and whether the rule is
-/// currently active. Deactivated rows are kept (not deleted) so a writer can
-/// temporarily disable a rule without losing it.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct TextReplacementRuleRow {
-    pub id: u64,
-    pub trigger: String,
-    pub replacement: String,
-    pub enabled: bool,
-}
+/// typing, and whether the rule is currently active. Deactivated rows are kept
+/// (not deleted) so a writer can temporarily disable a rule without losing it.
+///
+/// Declared by the matcher that consumes it
+/// ([`skribisto_model::replacement`]) rather than here: this model's job is to
+/// *produce* that shape from the store, and two definitions of it would drift.
+pub use skribisto_model::replacement::TextReplacementRuleRow;
 
 /// Sort key: case-insensitive, then exact, so equal-fold triggers keep a
 /// deterministic order.

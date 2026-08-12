@@ -18,6 +18,9 @@
 //! way. The *stateful* half — which rules a project has switched on, and the per-keystroke
 //! engine that applies them — stays in the UI crate. Only the facts moved.
 
+/// The per-keystroke engine that applies the rulesets below to live text.
+pub mod engine;
+
 use crate::language;
 
 /// How a locale opens and closes a quotation.
