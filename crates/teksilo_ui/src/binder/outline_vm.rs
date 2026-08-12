@@ -29,7 +29,7 @@ use frontend::binder_item_management::{
     ClearTitlesDto, DuplicateDto, MoveDto, MovePlace, SetDescendantsDictLanguageDto,
     SetDescendantsExportableDto,
 };
-use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
+use frontend::trash_management::TrashSelectionDto;
 
 use skribisto_compiler::headings;
 use skribisto_model::{PromoteTarget, Recommendation, Relation, SubRoleExt};
@@ -619,59 +619,37 @@ impl OutlineViewModel {
 
     /// Move the given keys to trash (binders and items both supported). Used by
     /// the context menu (operates on the right-clicked row, not the selection).
+    ///
+    /// The two kinds go down in **one** call. `trash_selection` resolves each item's
+    /// origin binder itself and opens its own undo entry, so this no longer groups by
+    /// binder or drives a composite — and a selection mixing a whole binder with items
+    /// inside it is that use case's problem to reconcile, not the tree's.
     pub fn trash_keys(&self, sel: &[BinderTreeKey]) {
-        let ctx = &*self.app_ctx;
         if sel.is_empty() {
             return;
         }
-        // Read once, outside the per-key loops below — the open Work does
-        // not change mid-selection, and every DTO built here shares it.
         let Some(work_id) = self.ids.work_id.get() else {
             return; // no project open
         };
-        let stack = self.stack();
-        let composite = sel.len() > 1;
-        if composite {
-            let _ = undo_redo_commands::begin_composite(ctx, stack);
-        }
-        // Whole binders.
-        for key in sel {
-            if matches!(key, BinderTreeKey::Binder(_))
-                && let Some(b) = self.model.binder_of(key)
-            {
-                let _ = trash_management_commands::trash_binder(
-                    ctx,
-                    stack,
-                    &TrashBinderDto {
-                        work_id,
-                        binder_id: b as i64,
-                    },
-                );
-            }
-        }
-        // Items, grouped by their origin binder.
-        let mut by_binder: HashMap<u64, Vec<i64>> = HashMap::new();
-        for key in sel {
-            if let Some(i) = self.model.item_id_of(key)
-                && let Some(b) = self.model.binder_of(key)
-            {
-                by_binder.entry(b).or_default().push(i as i64);
-            }
-        }
-        for (binder, ids) in by_binder {
-            let _ = trash_management_commands::trash_binder_items(
-                ctx,
-                stack,
-                &TrashBinderItemsDto {
-                    work_id,
-                    binder_item_ids: ids,
-                    origin_binder_id: binder as i64,
-                },
-            );
-        }
-        if composite {
-            undo_redo_commands::end_composite(ctx);
-        }
+        let binder_ids: Vec<u64> = sel
+            .iter()
+            .filter(|k| matches!(k, BinderTreeKey::Binder(_)))
+            .filter_map(|k| self.model.binder_of(k))
+            .collect();
+        let binder_item_ids: Vec<u64> = sel
+            .iter()
+            .filter_map(|k| self.model.item_id_of(k))
+            .collect();
+
+        let _ = trash_management_commands::trash_selection(
+            &self.app_ctx,
+            self.stack(),
+            &TrashSelectionDto {
+                work_id,
+                binder_ids,
+                binder_item_ids,
+            },
+        );
         self.reload();
     }
 

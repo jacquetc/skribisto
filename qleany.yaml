@@ -1582,6 +1582,61 @@ features:
         is_list: true
       - name: origin_binder_id
         type: integer
+
+  # Trash a mixed selection -- whole binders and loose items together -- as ONE
+  # undo entry.
+  #
+  # `trash_binder_items` is scoped to a single origin binder, so a caller with a
+  # selection has to resolve each item's owning binder, group by it, and wrap
+  # the resulting calls in a composite. Four view-models were each doing exactly
+  # that (outline, overview, corkboard, stream), and the grouping is not
+  # cosmetic: a flat call with a mixed list files items under the wrong origin
+  # and restores them to the wrong place.
+  #
+  # So the grouping moves here and the caller passes ungrouped ids. It is a
+  # composite in one place instead of four, which also means the undo entry is
+  # the use case's own rather than something the caller has to remember to open
+  # and close.
+  #
+  # Deliberately NOT a replacement for its two neighbours: they remain the
+  # single-purpose operations, and this addresses the case neither covers --
+  # one gesture spanning both kinds and several binders.
+  - name: trash_selection
+    entities:
+    - Work
+    - TrashInfo
+    - Binder
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: TrashSelectionDto
+      fields:
+      # Which open Work's trash_infos index receives the new entries -- see
+      # SaveWorkDto.work_id. Validated against the open Works, and every binder
+      # and item named below must belong to it.
+      - name: work_id
+        type: uinteger
+      # Whole binders, trashed with everything in them.
+      - name: binder_ids
+        type: uinteger
+        is_list: true
+      # Loose items, in any order and spanning any number of this Work's
+      # binders -- each one's origin is resolved here, not by the caller.
+      - name: binder_item_ids
+        type: uinteger
+        is_list: true
+    dto_out:
+      name: TrashSelectionResultDto
+      fields:
+      - name: trashed_binder_ids
+        type: uinteger
+        is_list: true
+      # The item *roots* that were trashed: an id already covered by a trashed
+      # ancestor's subtree is absorbed rather than filed a second time.
+      - name: trashed_item_ids
+        type: uinteger
+        is_list: true
   - name: trash_binder
     entities:
     - Work

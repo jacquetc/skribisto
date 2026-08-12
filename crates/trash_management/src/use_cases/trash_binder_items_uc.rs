@@ -11,7 +11,16 @@
 // so no cross-trunk snapshot is needed.
 //
 // dto.work_id must be validated against the open Works before use.
+//
+// The rules themselves -- `activated = !trashed`, one TrashInfo per requested
+// root, the open-Work and ownership checks -- live in `crate::trash_ops`, shared
+// with `trash_binder` and `trash_selection`. No use case calls another; they
+// call the same module.
 use crate::TrashBinderItemsDto;
+use crate::trash_ops::{
+    self, ItemStore, TrashIndex, assert_work_owns, file_trash_infos, resolve_work, set_activated,
+    unfile_trash_infos,
+};
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use common::database::CommandUnitOfWork;
@@ -20,7 +29,7 @@ use common::direct_access::trash_info::TrashInfoRelationshipField;
 use common::direct_access::work::WorkRelationshipField;
 use common::entities::{BinderItem, TrashInfo, Work};
 use common::types::EntityId;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 pub trait TrashBinderItemsUnitOfWorkFactoryTrait: Send + Sync {
     fn create(&self) -> Box<dyn TrashBinderItemsUnitOfWorkTrait>;
@@ -39,6 +48,55 @@ pub trait TrashBinderItemsUnitOfWorkFactoryTrait: Send + Sync {
 #[macros::uow_action(entity = "BinderItem", action = "UpdateMulti")]
 pub trait TrashBinderItemsUnitOfWorkTrait: CommandUnitOfWork {
     fn publish_trash_binder_items_event(&self, ids: Vec<EntityId>, data: Option<String>);
+}
+
+impl TrashIndex for dyn TrashBinderItemsUnitOfWorkTrait + '_ {
+    fn open_works(&self) -> Result<Vec<EntityId>> {
+        Ok(self.get_all_work()?.into_iter().map(|w| w.id).collect())
+    }
+    fn work_binders(&self, work: EntityId) -> Result<Vec<EntityId>> {
+        self.get_work_relationship(&work, &WorkRelationshipField::Binders)
+    }
+    fn trash_index(&self, work: EntityId) -> Result<Vec<EntityId>> {
+        self.get_work_relationship(&work, &WorkRelationshipField::TrashInfos)
+    }
+    fn set_trash_index(&self, work: EntityId, ids: &[EntityId]) -> Result<()> {
+        self.set_work_relationship(&work, &WorkRelationshipField::TrashInfos, ids)?;
+        Ok(())
+    }
+    fn new_trash_info(&self, info: &TrashInfo) -> Result<EntityId> {
+        Ok(self.create_orphan_trash_info(info)?.id)
+    }
+    fn link_trash_info(
+        &self,
+        info: EntityId,
+        field: &TrashInfoRelationshipField,
+        right: &[EntityId],
+    ) -> Result<()> {
+        self.set_trash_info_relationship(&info, field, right)?;
+        Ok(())
+    }
+    fn drop_trash_infos(&self, ids: &[EntityId]) -> Result<()> {
+        self.remove_trash_info_multi(ids)?;
+        Ok(())
+    }
+}
+
+impl ItemStore for dyn TrashBinderItemsUnitOfWorkTrait + '_ {
+    fn binder_items(&self, binder: EntityId) -> Result<Vec<EntityId>> {
+        self.get_binder_relationship(&binder, &BinderRelationshipField::BinderItems)
+    }
+    fn items(&self, ids: &[EntityId]) -> Result<Vec<BinderItem>> {
+        Ok(self
+            .get_binder_item_multi(ids)?
+            .into_iter()
+            .flatten()
+            .collect())
+    }
+    fn save_items(&self, items: &[BinderItem]) -> Result<()> {
+        self.update_binder_item_multi(items)?;
+        Ok(())
+    }
 }
 
 pub struct TrashBinderItemsUseCase {
@@ -75,15 +133,12 @@ impl TrashBinderItemsUseCase {
 
         let mut uow = self.uow_factory.create();
         uow.begin_transaction()?;
+        let store: &dyn TrashBinderItemsUnitOfWorkTrait = uow.as_ref();
 
         // Resolve the requested roots + their contiguous cascade from binder order.
-        let order =
-            uow.get_binder_relationship(&origin_binder, &BinderRelationshipField::BinderItems)?;
-        let mut indent: HashMap<EntityId, i64> = HashMap::new();
-        for it in uow.get_binder_item_multi(&order)?.into_iter().flatten() {
-            indent.insert(it.id, it.indent);
-        }
-        let (roots, cascade) = roots_and_cascade(&order, &indent, &requested);
+        let order = store.binder_items(origin_binder)?;
+        let indent = trash_ops::indents(store, &order)?;
+        let (roots, cascade) = trash_ops::roots_and_cascade(&order, &indent, &requested);
         if cascade.is_empty() {
             return Err(anyhow!(
                 "trash_binder_items: no matching items in binder {origin_binder}"
@@ -91,7 +146,7 @@ impl TrashBinderItemsUseCase {
         }
 
         self.origin_binder = origin_binder;
-        self.work_id = work_id(uow.as_ref(), dto.work_id as EntityId)?;
+        self.work_id = resolve_work(store, dto.work_id as EntityId)?;
 
         // Ownership check: origin_binder_id must be one of THIS Work's own
         // binders. The roots/cascade above are resolved purely from
@@ -99,20 +154,12 @@ impl TrashBinderItemsUseCase {
         // so without this a caller pairing Work B's origin_binder_id with
         // Work A's work_id would trash Work B's cascade while the new
         // TrashInfo landed under Work A's index.
-        if !uow
-            .get_work_relationship(&self.work_id, &WorkRelationshipField::Binders)?
-            .contains(&origin_binder)
-        {
-            return Err(anyhow!(
-                "trash_binder_items: binder {origin_binder} does not belong to work {}",
-                self.work_id
-            ));
-        }
+        assert_work_owns(store, self.work_id, &[origin_binder])?;
 
         self.trashed_at = Utc::now();
         self.roots = roots.clone();
         self.cascade = cascade;
-        self.apply(uow.as_ref())?;
+        self.apply(store)?;
 
         uow.commit()?;
         uow.publish_trash_binder_items_event(roots, None);
@@ -123,28 +170,15 @@ impl TrashBinderItemsUseCase {
     /// TrashInfo per root under Work.trash_infos, recording the new ids.
     fn apply(&mut self, uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<()> {
         set_activated(uow, &self.cascade, false)?;
-
-        let mut index =
-            uow.get_work_relationship(&self.work_id, &WorkRelationshipField::TrashInfos)?;
-        let mut created = Vec::with_capacity(self.roots.len());
-        for root in &self.roots {
-            let info = uow.create_orphan_trash_info(&TrashInfo {
-                created_at: self.trashed_at,
-                updated_at: self.trashed_at,
-                trashed_at: self.trashed_at,
-                origin_binder_id: self.origin_binder as i64,
-                ..Default::default()
-            })?;
-            uow.set_trash_info_relationship(
-                &info.id,
-                &TrashInfoRelationshipField::TrashedBinderItem,
-                &[*root],
-            )?;
-            index.push(info.id);
-            created.push(info.id);
-        }
-        uow.set_work_relationship(&self.work_id, &WorkRelationshipField::TrashInfos, &index)?;
-        self.created_trash = created;
+        let origin = self.origin_binder as i64;
+        self.created_trash = file_trash_infos(
+            uow,
+            self.work_id,
+            &self.roots,
+            &TrashInfoRelationshipField::TrashedBinderItem,
+            &|_| origin,
+            self.trashed_at,
+        )?;
         Ok(())
     }
 
@@ -152,90 +186,8 @@ impl TrashBinderItemsUseCase {
     /// rows, unlinking them from Work.trash_infos.
     fn revert(&self, uow: &dyn TrashBinderItemsUnitOfWorkTrait) -> Result<()> {
         set_activated(uow, &self.cascade, true)?;
-
-        if !self.created_trash.is_empty() {
-            let drop: HashSet<EntityId> = self.created_trash.iter().copied().collect();
-            let remaining: Vec<EntityId> = uow
-                .get_work_relationship(&self.work_id, &WorkRelationshipField::TrashInfos)?
-                .into_iter()
-                .filter(|id| !drop.contains(id))
-                .collect();
-            uow.set_work_relationship(
-                &self.work_id,
-                &WorkRelationshipField::TrashInfos,
-                &remaining,
-            )?;
-            uow.remove_trash_info_multi(&self.created_trash)?;
-        }
-        Ok(())
+        unfile_trash_infos(uow, self.work_id, &self.created_trash)
     }
-}
-
-/// Load the given items, set `activated`, write them back.
-fn set_activated(
-    uow: &dyn TrashBinderItemsUnitOfWorkTrait,
-    ids: &[EntityId],
-    value: bool,
-) -> Result<()> {
-    if ids.is_empty() {
-        return Ok(());
-    }
-    let mut items: Vec<BinderItem> = uow
-        .get_binder_item_multi(ids)?
-        .into_iter()
-        .flatten()
-        .collect();
-    for it in &mut items {
-        it.activated = value;
-    }
-    uow.update_binder_item_multi(&items)?;
-    Ok(())
-}
-
-/// Compute the requested *roots* (items not nested under another requested item)
-/// and the full *cascade* (each root plus its contiguous subtree), in binder order.
-pub(crate) fn roots_and_cascade(
-    order: &[EntityId],
-    indent: &HashMap<EntityId, i64>,
-    requested: &HashSet<EntityId>,
-) -> (Vec<EntityId>, Vec<EntityId>) {
-    let mut roots = Vec::new();
-    let mut cascade = Vec::new();
-    let mut covered: HashSet<EntityId> = HashSet::new();
-    let mut i = 0usize;
-    while i < order.len() {
-        let id = order[i];
-        if requested.contains(&id) && !covered.contains(&id) {
-            roots.push(id);
-            let root_indent = *indent.get(&id).unwrap_or(&0);
-            let mut j = i;
-            loop {
-                cascade.push(order[j]);
-                covered.insert(order[j]);
-                j += 1;
-                if j >= order.len() || *indent.get(&order[j]).unwrap_or(&0) <= root_indent {
-                    break;
-                }
-            }
-            i = j;
-        } else {
-            i += 1;
-        }
-    }
-    (roots, cascade)
-}
-
-// `get_work_relationship` doesn't validate that `id` is a real, open Work, so
-// check `dto.work_id` against the open Works first (see `empty_trash_uc.rs`).
-pub(crate) fn work_id(
-    uow: &dyn TrashBinderItemsUnitOfWorkTrait,
-    requested: EntityId,
-) -> Result<EntityId> {
-    uow.get_all_work()?
-        .into_iter()
-        .find(|w| w.id == requested)
-        .map(|w| w.id)
-        .ok_or_else(|| anyhow!("work {requested} is not open"))
 }
 
 use common::undo_redo::UndoRedoCommand;

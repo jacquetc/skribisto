@@ -105,6 +105,7 @@ pub enum ProgressManagementEvent {
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
 pub enum TrashManagementEvent {
     TrashBinderItems,
+    TrashSelection,
     TrashBinder,
     RestoreItems,
     EmptyTrash,

@@ -49,7 +49,7 @@ use frontend::commands::{
 };
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
-use frontend::trash_management::TrashBinderItemsDto;
+use frontend::trash_management::TrashSelectionDto;
 
 use crate::app_ids::AppIds;
 use crate::models::{OpenDoc, OpenDocsStore, StreamLevel, StreamRow, StreamRowsModel};
@@ -653,19 +653,17 @@ impl StreamViewModel {
         let Some(work_id) = self.inner.ids.work_id.get() else {
             return; // no project open
         };
-        if let Some((binder, _order, _pos)) =
-            binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, id)
-        {
-            let _ = trash_management_commands::trash_binder_items(
-                &self.inner.app_ctx,
-                self.stack(),
-                &TrashBinderItemsDto {
-                    work_id,
-                    binder_item_ids: vec![id as i64],
-                    origin_binder_id: binder as i64,
-                },
-            );
-        }
+        // The origin binder is resolved by the use case; the stream does not
+        // need to locate the row first.
+        let _ = trash_management_commands::trash_selection(
+            &self.inner.app_ctx,
+            self.stack(),
+            &TrashSelectionDto {
+                work_id,
+                binder_ids: Vec::new(),
+                binder_item_ids: vec![id],
+            },
+        );
     }
 
     // ── helpers ──

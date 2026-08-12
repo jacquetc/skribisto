@@ -25,7 +25,6 @@
 //! Plain Rust → headless-testable.
 
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
 use std::rc::Rc;
 
 use teksilo::core::ObserverHandle;
@@ -40,9 +39,8 @@ use frontend::AppContext;
 use frontend::binder_item_management::{DuplicateDto, MovePlace};
 use frontend::commands::{
     binder_item_commands, binder_item_management_commands, trash_management_commands,
-    undo_redo_commands,
 };
-use frontend::trash_management::TrashBinderItemsDto;
+use frontend::trash_management::TrashSelectionDto;
 
 use skribisto_model::counting::CountingMethodSetting;
 use skribisto_model::{CreateType, PromoteTarget, Recommendation};
@@ -643,47 +641,29 @@ impl OverviewViewModel {
 
     /// Move rows to the trash.
     ///
-    /// Grouped by **origin binder** because that is what `trash_binder_items` takes, and
-    /// the binder is resolved through [`crate::shared::binder_ops::locate`] (the backend),
-    /// not through any view's tree. A multi-row trash is wrapped in one composite so a
-    /// single undo puts all of it back.
+    /// One backend call: `trash_selection` resolves each item's origin binder itself
+    /// and files the whole gesture as a single undo entry. This used to group by binder
+    /// here and drive a composite — the same fifteen lines that lived in three other
+    /// view-models, and the same fifteen lines that file items under the wrong origin
+    /// if anyone gets them wrong.
     pub fn trash(&self, uids: &[Uuid]) {
-        let ctx = &*self.inner.app_ctx;
-        let mut by_binder: HashMap<u64, Vec<i64>> = HashMap::new();
-        for uid in uids {
-            if let Some(item_id) = self.item_id_of(uid)
-                && let Some((binder, _, _)) = binder_ops::locate(ctx, &self.inner.ids, item_id)
-            {
-                by_binder.entry(binder).or_default().push(item_id as i64);
-            }
-        }
-        if by_binder.is_empty() {
+        let binder_item_ids: Vec<u64> =
+            uids.iter().filter_map(|uid| self.item_id_of(uid)).collect();
+        if binder_item_ids.is_empty() {
             return;
         }
-        // Read once — the open Work does not change mid-selection, and every
-        // DTO built below shares it.
         let Some(work_id) = self.inner.ids.work_id.get() else {
             return; // no project open
         };
-        let stack = self.stack();
-        let composite = by_binder.len() > 1 || by_binder.values().map(Vec::len).sum::<usize>() > 1;
-        if composite {
-            let _ = undo_redo_commands::begin_composite(ctx, stack);
-        }
-        for (binder, binder_item_ids) in by_binder {
-            let _ = trash_management_commands::trash_binder_items(
-                ctx,
-                stack,
-                &TrashBinderItemsDto {
-                    work_id,
-                    binder_item_ids,
-                    origin_binder_id: binder as i64,
-                },
-            );
-        }
-        if composite {
-            undo_redo_commands::end_composite(ctx);
-        }
+        let _ = trash_management_commands::trash_selection(
+            &self.inner.app_ctx,
+            self.stack(),
+            &TrashSelectionDto {
+                work_id,
+                binder_ids: Vec::new(),
+                binder_item_ids,
+            },
+        );
         self.inner.selection.clear();
     }
 

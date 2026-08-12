@@ -31,7 +31,7 @@ use frontend::commands::{
     binder_item_commands, binder_item_management_commands, trash_management_commands,
     undo_redo_commands,
 };
-use frontend::trash_management::TrashBinderItemsDto;
+use frontend::trash_management::TrashSelectionDto;
 
 use skribisto_model::counting::CountingMethodSetting;
 use skribisto_model::{CreateType, Recommendation, Relation};
@@ -971,50 +971,30 @@ impl CorkboardViewModel {
 
     /// Send every id to the trash, as **one** undo entry.
     ///
-    /// `trash_binder_items` is scoped to a single origin binder, so the ids are
-    /// grouped by the binder that owns each — a `Work` may hold several, and one
-    /// flat call with a mixed list would file items under the wrong origin and
-    /// restore them to the wrong place. More than one call is wrapped in a
-    /// composite so Ctrl+Z takes the whole gesture back at once.
+    /// `trash_selection` resolves each id's origin binder itself — a `Work` may hold
+    /// several, and filing an item under the wrong one restores it to the wrong place —
+    /// and opens its own undo entry, so Ctrl+Z takes the whole gesture back at once.
     ///
     /// Deliberately **no undo toast**: that pattern belongs to the irreversible
     /// trash operations (Empty Trash / Delete Forever), and trashing is an ordinary
     /// undoable move whose safety net is the undo stack — see
     /// [`TrashViewModel::run_with_undo_toast`](crate::trash::TrashViewModel).
     pub fn trash_many(&self, _ctx: &mut EventContext, ids: &[u64]) {
+        if ids.is_empty() {
+            return;
+        }
         let Some(work_id) = self.inner.ids.work_id.get() else {
             return; // no project open
         };
-        let mut by_binder: HashMap<u64, Vec<i64>> = HashMap::new();
-        for id in ids {
-            if let Some((binder, _order, _pos)) =
-                binder_ops::locate(&self.inner.app_ctx, &self.inner.ids, *id)
-            {
-                by_binder.entry(binder).or_default().push(*id as i64);
-            }
-        }
-        if by_binder.is_empty() {
-            return;
-        }
-        let stack = self.stack();
-        let composite = by_binder.len() > 1 || by_binder.values().map(Vec::len).sum::<usize>() > 1;
-        if composite {
-            let _ = undo_redo_commands::begin_composite(&self.inner.app_ctx, stack);
-        }
-        for (binder, binder_item_ids) in by_binder {
-            let _ = trash_management_commands::trash_binder_items(
-                &self.inner.app_ctx,
-                stack,
-                &TrashBinderItemsDto {
-                    work_id,
-                    binder_item_ids,
-                    origin_binder_id: binder as i64,
-                },
-            );
-        }
-        if composite {
-            undo_redo_commands::end_composite(&self.inner.app_ctx);
-        }
+        let _ = trash_management_commands::trash_selection(
+            &self.inner.app_ctx,
+            self.stack(),
+            &TrashSelectionDto {
+                work_id,
+                binder_ids: Vec::new(),
+                binder_item_ids: ids.to_vec(),
+            },
+        );
         // The board's own selection is positional; the cards it pointed at are gone.
         self.inner.selection.clear();
     }

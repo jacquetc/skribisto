@@ -118,6 +118,7 @@ pub enum FlatEventKind {
     ProgressManagementRecordProgressSnapshot,
 
     TrashManagementTrashBinderItems,
+    TrashManagementTrashSelection,
     TrashManagementTrashBinder,
     TrashManagementRestoreItems,
     TrashManagementEmptyTrash,
@@ -367,6 +368,9 @@ impl From<Event> for FlatEvent {
             Origin::TrashManagement(fe) => match fe {
                 TrashManagementEvent::TrashBinderItems => {
                     FlatEventKind::TrashManagementTrashBinderItems
+                }
+                TrashManagementEvent::TrashSelection => {
+                    FlatEventKind::TrashManagementTrashSelection
                 }
                 TrashManagementEvent::TrashBinder => FlatEventKind::TrashManagementTrashBinder,
                 TrashManagementEvent::RestoreItems => FlatEventKind::TrashManagementRestoreItems,
