@@ -49,6 +49,383 @@ use serde::de::DeserializeOwned;
 /// `teksilo_ui::settings_keys::toml::Value` and the mismatch is unexpressible.
 pub use toml;
 
+// ── The keys themselves ──────────────────────────────────────────────────────
+//
+// Declared here rather than at the crate root because the `SETTINGS` table below
+// has to name every one of them and the drift test exists only because the two
+// used to sit a thousand lines apart, in different files. They are re-exported
+// from the crate root (`crate::DARK_KEY`, …), which is where the rest of the app
+// still reads them from.
+
+/// Persisted-setting keys (also read at startup in `main`).
+pub const DARK_KEY: &str = "ui.dark";
+
+/// What to do with a large image on insert: `"ask"` (default), `"keep"` or
+/// `"downscale"`.
+///
+/// A string rather than a bool because there are three answers, and the writer
+/// reaches the third — "stop asking, and do this from now on" — by ticking a box
+/// in the prompt. Storing "ask" separately from the two decisions is what lets
+/// the prompt come back if they ever want it to.
+pub const IMAGE_SIZE_POLICY_KEY: &str = "editor.image_size_policy";
+pub const LOCALE_KEY: &str = "ui.locale";
+/// Who is using this installation — the name a comment or reply is signed with.
+///
+/// **Not** `Work.author_name`, which is the *book's* byline: that one travels
+/// inside the `.skrib`, so signing a remark with it means an editor opening the
+/// project signs their notes with the novelist's name. This is app-level and
+/// per-installation, so it stays right whoever holds the file. Empty is the
+/// ordinary unset state — see [`crate::comments::signature`] for the fallback.
+pub const USER_NAME_KEY: &str = "user.name";
+/// The initials shown beside a comment in Word (`w:initials`), overriding what
+/// would otherwise be derived from [`USER_NAME_KEY`].
+///
+/// Explicit because no derivation rule gets every name right — "Mary-Jane
+/// O'Brien" is as plausibly `MO` as `MJO` — and initials are the sort of thing
+/// people are particular about. Empty means "derive it", not "show none".
+pub const USER_INITIALS_KEY: &str = "user.initials";
+/// Max width (px) of the centered main-text writing column.
+pub const EDITOR_WIDTH_KEY: &str = "editor.column_width";
+pub const EDITOR_WIDTH_DEFAULT: f32 = 700.0;
+/// Max width (px) of the search preview editor (bottom band), so a too-wide
+/// paragraph stays readable — same treatment as the scene column.
+pub const PREVIEW_WIDTH_KEY: &str = "search.preview_width";
+pub const PREVIEW_WIDTH_DEFAULT: f32 = 700.0;
+/// Max width (px) of the writing column while distraction-free mode is active
+/// (Settings ▸ Editor ▸ Editor Behavior). Independent from [`EDITOR_WIDTH_KEY`]
+/// — the two never share a value, so widening the normal Scene column can
+/// never silently widen (or narrow) the distraction-free one. ~68 characters
+/// is the width every typography source surveyed converges on for comfortable
+/// reading (Bringhurst ~66, Butterick 45–90, Dyson & Haselgrove ~55); 620 px is
+/// that measure at the distraction-free bundle's own default face/size.
+pub const DISTRACTION_FREE_WIDTH_KEY: &str = "editor.distraction_free.column_width";
+pub const DISTRACTION_FREE_WIDTH_DEFAULT: f32 = 620.0;
+// ── Which pieces of chrome distraction-free mode keeps ──
+//
+// The mode's job is to take chrome away, so each of these defaults to the
+// *quieter* answer and the writer opts back in — except the Exit button,
+// which is deliberately **not** a setting at all. It is the strip's
+// documented way out (see `statusbar/focus_strip.rs`), so it must survive
+// every combination of these four: a wedged Escape must never be able to
+// combine with a settings choice to leave someone stuck in the mode.
+// (There was a "keep the editor tab strip" setting here. The mode no longer
+// undresses the project shell — it covers it with its own surface, which shows
+// exactly one document and has no tab row for a setting to act on. The orphan
+// key left behind in an existing `settings.toml` is harmless: the store is plain
+// key/value with no migrator, and nothing reads it.)
+/// The **id** of the distraction-free theme in force. Resolved through
+/// `DistractionFreeThemesService::resolve`, which falls back to the first
+/// built-in — so a theme the writer deleted, or one named by a config synced
+/// from another machine and never imported here, leaves them with a working
+/// surface rather than an unpainted one.
+pub const DISTRACTION_FREE_THEME_KEY: &str = "editor.distraction_free.theme";
+pub const DISTRACTION_FREE_THEME_DEFAULT: &str = "paper";
+/// Keep the current item's **name** in the distraction-free strip (default
+/// **on**). With the tab strip and the title bar both gone, and a plain Scene
+/// carrying no title field in its own pane, this is the only thing on screen
+/// that says which document the writer is in — which matters most right after
+/// Alt+Up / Alt+Down have moved them to another one.
+pub const DISTRACTION_FREE_TITLE_KEY: &str = "editor.distraction_free.title";
+pub const DISTRACTION_FREE_TITLE_DEFAULT: bool = true;
+/// Keep the word-count readout in the distraction-free strip (default **on**).
+pub const DISTRACTION_FREE_WORD_COUNT_KEY: &str = "editor.distraction_free.word_count";
+pub const DISTRACTION_FREE_WORD_COUNT_DEFAULT: bool = true;
+/// Keep the writing-session readout in the distraction-free strip
+/// (default **on**).
+pub const DISTRACTION_FREE_SESSION_KEY: &str = "editor.distraction_free.session";
+pub const DISTRACTION_FREE_SESSION_DEFAULT: bool = true;
+/// Keep the Previous/Next pair in the distraction-free strip (default **on**).
+/// One key for both buttons: they are a single navigational affordance, and a
+/// strip offering only one direction would be a worse answer than either
+/// showing or hiding the pair.
+pub const DISTRACTION_FREE_GO_KEY: &str = "editor.distraction_free.go_buttons";
+pub const DISTRACTION_FREE_GO_DEFAULT: bool = true;
+/// Keep the "Go to…" jump button in the distraction-free strip (default **on**).
+/// Distinct from [`DISTRACTION_FREE_GO_KEY`]: the arrows step relative to where
+/// you are, this one jumps anywhere, and a writer may well want one without the
+/// other. Ctrl+G still works either way — hiding a button never removes its
+/// command.
+pub const DISTRACTION_FREE_GO_TO_KEY: &str = "editor.distraction_free.go_to";
+pub const DISTRACTION_FREE_GO_TO_DEFAULT: bool = true;
+/// When on, autosave to disk (and hide the manual Save / Ctrl+S affordances).
+pub const AUTOSAVE_KEY: &str = "editor.autosave";
+/// The master spell-check switch (default **on**) — the title-bar toggle, View ▸ Check
+/// spelling, F7, and Settings ▸ Spelling all drive this one key.
+///
+/// App-wide and persisted here rather than on the `Work`: whether squiggles are drawn is a
+/// preference of the person reading the screen, not a property of the manuscript, so it
+/// follows the writer across projects and does not travel inside a `.skrib`.
+///
+/// It is deliberately *not* the same thing as the per-language pill checkmarks, which mute one
+/// dictionary for the session. Under the union model (a word is wrong only when **every**
+/// active dictionary rejects it) unchecking one of several languages changes nothing visible —
+/// which is exactly why an unmistakable master switch has to exist beside them.
+pub const SPELLCHECK_ENABLED_KEY: &str = "editor.spellcheck";
+pub const SPELLCHECK_ENABLED_DEFAULT: bool = true;
+/// Show anchored comments in the editor (default **on**) — Tools ▸ Comments.
+///
+/// App-wide and persisted here rather than on the `Work`, for the same reason the
+/// spell-check switch is: whether the ochre marks and the margin are drawn is a
+/// preference of the person reading the screen, not a property of the manuscript, so it
+/// follows the writer across projects and does not travel inside a `.skrib`.
+///
+/// It hides the *presentation*, never the data: the two comment docks keep listing every
+/// thread, and a screen reader keeps announcing them. Hiding the marks is a way to read
+/// the prose cleanly, not a way to stop having comments — a toggle that also emptied the
+/// docks would leave a writer who decluttered the page with no way to act on the notes
+/// they just hid.
+pub const COMMENTS_VISIBLE_KEY: &str = "editor.comments";
+pub const COMMENTS_VISIBLE_DEFAULT: bool = true;
+/// When on (default) and no work was passed on the command line, a bare
+/// launch opens the Launcher window (the Welcome UI). When off, a bare launch
+/// instead opens the most recent *reachable* project directly — falling back
+/// to the Launcher only if there is none (JetBrains' "reopen last project on
+/// startup"). Toggled in Settings ▸ Appearance & Behaviour (the Launcher
+/// itself has no inline copy of this — see `welcome_panel.rs`'s module docs).
+pub const SHOW_WELCOME_KEY: &str = "ui.show_welcome";
+
+/// Show the writing-plan summary when a project with an active plan opens.
+///
+/// App-global rather than per-project, because the projects it *would* be wrong for are
+/// already excluded: a project with no active plan never shows it at all, so there is no
+/// second answer left to give.
+pub const PACE_SUMMARY_ON_OPEN_KEY: &str = "pace.summary_on_open";
+
+// ── Editor typography (Settings ▸ Editor ▸ Scene / Synopsis / Notes) ──────────
+// Non-destructive per-editor-type defaults. Font family / line height /
+// first-line indent are applied via `RichTextEditor::typography_defaults`
+// (a display-time snapshot fill that never mutates the document); size is a
+// per-editor `font_size_scale` multiplier (`1.0` = 100 %), composed with the
+// interface a11y text scale — real shaping (sharp), not page zoom. These are
+// NOT the char-format `set_font_family`/`set_font_size` (which mutate the
+// selection + document). `font_family` must resolve via the shared typesetter
+// — an installed system font or one registered by `register_editor_fonts`
+// below; the `FontPicker` control only ever offers names that will render.
+
+/// Scene / manuscript body editor typography.
+pub const SCENE_FONT_FAMILY_KEY: &str = "editor.scene.font_family";
+pub const SCENE_FONT_FAMILY_DEFAULT: &str = "Literata";
+pub const SCENE_SIZE_KEY: &str = "editor.scene.size";
+pub const SCENE_SIZE_DEFAULT: f32 = 1.0;
+pub const SCENE_LINE_HEIGHT_KEY: &str = "editor.scene.line_height";
+pub const SCENE_LINE_HEIGHT_DEFAULT: f32 = 1.6;
+pub const SCENE_FIRST_LINE_INDENT_KEY: &str = "editor.scene.first_line_indent";
+// ≈ one line-height (1.6 × 18 ≈ 29 px) is the classic book indent; 24 px reads as
+// a clear paragraph cue without shoving prose too far off the margin.
+pub const SCENE_FIRST_LINE_INDENT_DEFAULT: f32 = 24.0;
+pub const SCENE_PARA_SPACING_BEFORE_KEY: &str = "editor.scene.para_spacing_before";
+pub const SCENE_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const SCENE_PARA_SPACING_AFTER_KEY: &str = "editor.scene.para_spacing_after";
+pub const SCENE_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
+
+/// Synopsis editor typography (the subordinate summary pane).
+pub const SYNOPSIS_FONT_FAMILY_KEY: &str = "editor.synopsis.font_family";
+pub const SYNOPSIS_FONT_FAMILY_DEFAULT: &str = "Literata";
+pub const SYNOPSIS_SIZE_KEY: &str = "editor.synopsis.size";
+// 85 % of the scene face (≈ 15 px against the 18 px anchor) — clearly subordinate
+// summary text, not near-parity with the manuscript.
+pub const SYNOPSIS_SIZE_DEFAULT: f32 = 0.85;
+pub const SYNOPSIS_LINE_HEIGHT_KEY: &str = "editor.synopsis.line_height";
+pub const SYNOPSIS_LINE_HEIGHT_DEFAULT: f32 = 1.35;
+pub const SYNOPSIS_FIRST_LINE_INDENT_KEY: &str = "editor.synopsis.first_line_indent";
+pub const SYNOPSIS_FIRST_LINE_INDENT_DEFAULT: f32 = 0.0;
+pub const SYNOPSIS_PARA_SPACING_BEFORE_KEY: &str = "editor.synopsis.para_spacing_before";
+pub const SYNOPSIS_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const SYNOPSIS_PARA_SPACING_AFTER_KEY: &str = "editor.synopsis.para_spacing_after";
+// Block-style spacing: with no first-line indent, a paragraph must be delimited by
+// vertical space or multi-paragraph summaries run together into one wall of text.
+pub const SYNOPSIS_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
+
+/// Notes editor typography.
+pub const NOTES_FONT_FAMILY_KEY: &str = "editor.notes.font_family";
+pub const NOTES_FONT_FAMILY_DEFAULT: &str = "Inter";
+pub const NOTES_SIZE_KEY: &str = "editor.notes.size";
+pub const NOTES_SIZE_DEFAULT: f32 = 1.0;
+pub const NOTES_LINE_HEIGHT_KEY: &str = "editor.notes.line_height";
+pub const NOTES_LINE_HEIGHT_DEFAULT: f32 = 1.5;
+pub const NOTES_FIRST_LINE_INDENT_KEY: &str = "editor.notes.first_line_indent";
+pub const NOTES_FIRST_LINE_INDENT_DEFAULT: f32 = 0.0;
+pub const NOTES_PARA_SPACING_BEFORE_KEY: &str = "editor.notes.para_spacing_before";
+pub const NOTES_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const NOTES_PARA_SPACING_AFTER_KEY: &str = "editor.notes.para_spacing_after";
+// Block-style spacing (notes have no indent) — notes are fragments/lists, so a
+// paragraph gap is what a notes surface is expected to look like.
+pub const NOTES_PARA_SPACING_AFTER_DEFAULT: f32 = 8.0;
+
+/// Distraction-free mode's own typography (Settings ▸ Editor ▸ Typography ▸
+/// Distraction-free) — a fifth bundle alongside Scene / Synopsis / Notes /
+/// Corkboard, selected at render time by `ContentTab::main_typography` whenever
+/// the tab's window is in distraction-free mode (Shift+F11), in place of the
+/// normal Scene/Notes bundle. Independent compile-time constants like every
+/// other bundle here — deliberately **not** seeded from Scene at runtime, so
+/// there is no ordering-fragile "copy on first entry" machinery. A touch larger
+/// and more open than Scene's own defaults (a bigger zoom, taller line height):
+/// distraction-free is the one surface meant to be read at arm's length with
+/// nothing else on screen.
+pub const DISTRACTION_FREE_FONT_FAMILY_KEY: &str = "editor.distraction_free.font_family";
+pub const DISTRACTION_FREE_FONT_FAMILY_DEFAULT: &str = "Literata";
+pub const DISTRACTION_FREE_SIZE_KEY: &str = "editor.distraction_free.size";
+pub const DISTRACTION_FREE_SIZE_DEFAULT: f32 = 1.15;
+pub const DISTRACTION_FREE_LINE_HEIGHT_KEY: &str = "editor.distraction_free.line_height";
+pub const DISTRACTION_FREE_LINE_HEIGHT_DEFAULT: f32 = 1.8;
+pub const DISTRACTION_FREE_FIRST_LINE_INDENT_KEY: &str =
+    "editor.distraction_free.first_line_indent";
+pub const DISTRACTION_FREE_FIRST_LINE_INDENT_DEFAULT: f32 = 24.0;
+pub const DISTRACTION_FREE_PARA_SPACING_BEFORE_KEY: &str =
+    "editor.distraction_free.para_spacing_before";
+pub const DISTRACTION_FREE_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const DISTRACTION_FREE_PARA_SPACING_AFTER_KEY: &str =
+    "editor.distraction_free.para_spacing_after";
+pub const DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT: f32 = 0.0;
+
+// ── Editor behaviour (Settings ▸ Editor ▸ Editor Behavior) ───────────────────
+/// Show the synopsis pane above the manuscript in the dual-pane writing editor
+/// (Skribisto's signature layout). Consumed live by the `shared::prose` body.
+pub const SYNOPSIS_PANE_KEY: &str = "editor.synopsis_pane";
+pub const SYNOPSIS_PANE_DEFAULT: bool = true;
+/// Where that pane sits: above the manuscript (the default, and what every
+/// existing project looks like) or beside it in its own column. A
+/// [`crate::view_models::SynopsisPlacement`], stored by variant name.
+pub const SYNOPSIS_PLACEMENT_KEY: &str = "editor.synopsis_placement";
+/// Width (px) of the Side synopsis column. Written back when the divider is
+/// dragged, and read as the seed by every tab opened afterwards.
+pub const SYNOPSIS_SIDE_WIDTH_KEY: &str = "editor.synopsis_side_width";
+pub const SYNOPSIS_SIDE_WIDTH_DEFAULT: f32 = 280.0;
+/// Bounds the Side column can be dragged between. Wide enough to read a sentence
+/// of synopsis at the low end; never more than a third of a typical window at the
+/// high end, since the manuscript is what the writer came for.
+pub const SYNOPSIS_SIDE_WIDTH_MIN: f32 = 180.0;
+pub const SYNOPSIS_SIDE_WIDTH_MAX: f32 = 560.0;
+/// Remember, per container item type (Book / Part / Chapter), the last
+/// `SegmentedControl` view used — so opening a new chapter lands on the same view
+/// (e.g. Full Chapter) as the last chapter. The per-type indices live under
+/// `editor.last_view.*` (see [`crate::view_models::EditorViewMemory`]).
+pub const REMEMBER_VIEW_KEY: &str = "editor.remember_view";
+pub const REMEMBER_VIEW_DEFAULT: bool = true;
+/// Keep the caret line pinned at a fixed height while typing.
+pub const TYPEWRITER_KEY: &str = "editor.typewriter_scroll";
+pub const TYPEWRITER_DEFAULT: bool = true;
+/// Which height the pinned line sits at — a [`crate::view_models::TypewriterAnchor`]
+/// preset. `Option` because that is the shape a `ComboBox` selection takes; a
+/// missing value resolves to the default rather than disabling the pin.
+pub const TYPEWRITER_ANCHOR_KEY: &str = "editor.typewriter_anchor";
+
+// ── Smart punctuation, application-level ────────────────────────────────────
+//
+// The default tier. A project that has not taken the override in
+// Work ▸ Punctuation follows these, which is what `override_app_default: false`
+// on its row means.
+//
+// Dashes, the ellipsis and curled quotes default **on**: that is what "smart
+// punctuation" means to a writer, it is what Word and LibreOffice both
+// do out of the box, and every one of them is reversible with a single Ctrl+Z on
+// the keystroke that fired it.
+//
+// Pre-punctuation spacing defaults **off** even though it is equally correct for
+// French. It inserts an *invisible* character, so a writer who has not asked for
+// it would see their file change in ways they cannot see on screen — and unlike
+// the others it applies to one language only.
+pub const PUNCT_DASHES_KEY: &str = "editor.punctuation.dashes";
+pub const PUNCT_DASHES_DEFAULT: bool = true;
+pub const PUNCT_ELLIPSIS_KEY: &str = "editor.punctuation.ellipsis";
+pub const PUNCT_ELLIPSIS_DEFAULT: bool = true;
+pub const PUNCT_QUOTES_KEY: &str = "editor.punctuation.quotes";
+pub const PUNCT_QUOTES_DEFAULT: bool = true;
+pub const PUNCT_QUOTE_STYLE_KEY: &str = "editor.punctuation.quote_style";
+pub const PUNCT_SPACING_KEY: &str = "editor.punctuation.pre_punctuation_spacing";
+pub const PUNCT_SPACING_DEFAULT: bool = false;
+pub const PUNCT_DIALOGUE_KEY: &str = "editor.punctuation.dialogue_marker";
+/// Off, like the spacing rule: it rewrites the *shape* of a line rather than one
+/// glyph inside it, and it is wrong outright in the languages that quote their
+/// dialogue instead of dashing it.
+pub const PUNCT_DIALOGUE_DEFAULT: bool = false;
+/// How much text around the caret gets an ambient band — none, the sentence, or the whole
+/// paragraph. See [`crate::view_models::HighlightScope`].
+///
+/// A **new key**, not the `editor.highlight_sentence` boolean this replaces: the stored value
+/// went from a `bool` to a scope, and a key named `highlight_sentence` holding `Paragraph`
+/// would be a lie. The old key is simply never read again — it never had an effect to lose,
+/// since nothing outside the settings pane ever consumed it.
+pub const HIGHLIGHT_SCOPE_KEY: &str = "editor.highlight_scope";
+
+// ── Goals & word count (Settings ▸ Editor ▸ Goals) ────────────────────────────
+/// How words are counted for the live status-bar / focused count: `Auto` (per the
+/// scene's language — CJK-smart for zh/ja, Unicode words elsewhere) or a forced
+/// method. A global USER preference; it drives only the *displayed* live count,
+/// never the canonical progress snapshot (which is always `Auto`). Persisted as
+/// the serialized `CountingMethodSetting`; the default is supplied by the VM.
+pub const GOALS_COUNTING_METHOD_KEY: &str = "goals.counting_method";
+/// Show the character count alongside the word count in the status bar.
+pub const GOALS_SHOW_CHARACTERS_KEY: &str = "goals.show_characters";
+pub const GOALS_SHOW_CHARACTERS_DEFAULT: bool = false;
+
+// ── Writing games (Settings ▸ Editor ▸ Writing games) ────────────────────────
+//
+// Which surfaces the "Always forward" game covers **when it is being played**.
+// Only these two are settings: whether the game is *on* is deliberately session
+// state, minted per open `Work` and never persisted — see
+// [`crate::view_models::writing_games`] for why a commitment device that outlives the
+// sitting it was made in reads as a broken keyboard rather than as a rule.
+/// Does "Always forward" freeze manuscript prose? On: prose is what the game is for.
+pub const GAMES_FORWARD_PROSE_KEY: &str = "games.always_forward.prose";
+/// Does "Always forward" freeze synopses? Off: the synopsis is where a writer
+/// notes the fix the game has just forbidden them from making.
+pub const GAMES_FORWARD_SYNOPSIS_KEY: &str = "games.always_forward.synopsis";
+
+// ── Corkboard (Settings ▸ Editor ▸ Corkboard) ─────────────────────────────────
+/// Corkboard default mode: `true` = nested (a container's direct children; a
+/// folder card drills in), `false` = flat (all descendant leaves at once).
+pub const CORKBOARD_NESTED_KEY: &str = "corkboard.nested";
+pub const CORKBOARD_NESTED_DEFAULT: bool = true;
+/// Corkboard card size — the minimum tile width in px the size slider drives.
+///
+/// 480 rather than the compact 240 it started at: at 240 a card is barely wider
+/// than its own header row, so the synopsis — the thing an index card exists to
+/// show — got two or three wrapped lines before it started scrolling. Twice that
+/// gives the synopsis room to be read at a glance, which is the whole point of
+/// the board, and still fits several columns across on a normal window.
+pub const CORKBOARD_CARD_SIZE_KEY: &str = "corkboard.card_size";
+pub const CORKBOARD_CARD_SIZE_DEFAULT: f32 = 480.0;
+/// The card-size slider range (shared by the header slider and the settings pane).
+/// A wide span: compact index cards (210) up to near-full-width review cards (680).
+pub const CORKBOARD_CARD_SIZE_MIN: f32 = 210.0;
+pub const CORKBOARD_CARD_SIZE_MAX: f32 = 680.0;
+pub const CORKBOARD_CARD_SIZE_STEP: f32 = 10.0;
+/// Show a card's word count in its footer.
+pub const CORKBOARD_SHOW_WORD_COUNT_KEY: &str = "corkboard.show_word_count";
+pub const CORKBOARD_SHOW_WORD_COUNT_DEFAULT: bool = true;
+/// The **expanded** synopsis editor's own font-size scale.
+///
+/// Separate from the card's: a card's synopsis is sized to be scannable at a
+/// glance in a small tile, and the writer opens the expanded editor precisely
+/// when they want to *write* rather than scan. Defaults to 1.0 — full size,
+/// against the card's compact 0.8.
+pub const CORKBOARD_MODAL_SIZE_KEY: &str = "corkboard.modal_size";
+pub const CORKBOARD_MODAL_SIZE_DEFAULT: f32 = 1.0;
+/// Number the cards in board order, the way index cards are numbered. Off by default:
+/// the number is a reading aid for a structure pass, not something the writer
+/// needs on every card all the time.
+pub const CORKBOARD_SHOW_CARD_NUMBERS_KEY: &str = "corkboard.show_card_numbers";
+pub const CORKBOARD_SHOW_CARD_NUMBERS_DEFAULT: bool = false;
+
+/// Corkboard card synopsis typography — its own bundle (like Scene / Synopsis /
+/// Notes), so the index-card summaries can read distinctly from the manuscript's
+/// synopsis pane. Sensible defaults: the same serif as the synopsis, a touch smaller
+/// and tighter for a compact card, block-style (no indent, a little space between
+/// paragraphs).
+pub const CORKBOARD_FONT_FAMILY_KEY: &str = "corkboard.font_family";
+pub const CORKBOARD_FONT_FAMILY_DEFAULT: &str = "Literata";
+pub const CORKBOARD_SIZE_KEY: &str = "corkboard.size";
+pub const CORKBOARD_SIZE_DEFAULT: f32 = 0.8;
+pub const CORKBOARD_LINE_HEIGHT_KEY: &str = "corkboard.line_height";
+pub const CORKBOARD_LINE_HEIGHT_DEFAULT: f32 = 1.3;
+pub const CORKBOARD_FIRST_LINE_INDENT_KEY: &str = "corkboard.first_line_indent";
+pub const CORKBOARD_FIRST_LINE_INDENT_DEFAULT: f32 = 0.0;
+pub const CORKBOARD_PARA_SPACING_BEFORE_KEY: &str = "corkboard.para_spacing_before";
+pub const CORKBOARD_PARA_SPACING_BEFORE_DEFAULT: f32 = 0.0;
+pub const CORKBOARD_PARA_SPACING_AFTER_KEY: &str = "corkboard.para_spacing_after";
+pub const CORKBOARD_PARA_SPACING_AFTER_DEFAULT: f32 = 6.0;
+
 use frontend::common::entities::QuoteStyle;
 use skribisto_model::counting::CountingMethodSetting;
 
