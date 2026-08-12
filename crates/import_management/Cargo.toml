@@ -36,9 +36,8 @@ serde = "1.0"
 serde_json = "1.0"
 chrono = { workspace = true }
 uuid = { workspace = true }
-# Reading .plume containers (single-file zip) and their XML.
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
-roxmltree = "0.21.1"
+# The .plume -> .skrib conversion, a store-free crate of its own.
+plume_import = { workspace = true }
 
 [dev-dependencies]
 # The ANALYSE->APPLY integration test builds a real store through direct_access.

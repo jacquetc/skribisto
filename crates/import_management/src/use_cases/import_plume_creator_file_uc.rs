@@ -12,7 +12,11 @@
 // `progress_callback`, and honours cancellation via `cancel_flag`. The UI drives
 // a progress + cancel toast from the `Origin::LongOperation(...)` events the
 // manager emits.
-mod plume;
+// The conversion itself is `plume_import`, a crate of its own: it reads a
+// `.plume` container and writes the newest `.skrib`, touching no entity store,
+// so nothing about it needs the backend. What stays here is the use case —
+// progress, cancellation, the event the UI listens for.
+use plume_import as plume;
 
 use crate::ImportPlumeCreatorFileDto;
 use crate::ImportPlumeCreatorFileResultDto;

@@ -5506,7 +5506,6 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "chrono",
- "roxmltree 0.21.1",
  "serde",
  "serde_json",
  "skribisto-binder-ordering",
@@ -5515,11 +5514,11 @@ dependencies = [
  "skribisto-document-ingest",
  "skribisto-macros",
  "skribisto-model",
+ "skribisto-plume-import",
  "skribisto-skrib-format",
  "tempfile",
  "text-document",
  "uuid",
- "zip 8.6.0",
 ]
 
 [[package]]
@@ -5568,6 +5567,20 @@ dependencies = [
  "serde",
  "skribisto-common",
  "skribisto-macros",
+]
+
+[[package]]
+name = "skribisto-plume-import"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "roxmltree 0.21.1",
+ "skribisto-common",
+ "skribisto-model",
+ "skribisto-skrib-format",
+ "tempfile",
+ "zip 8.6.0",
 ]
 
 [[package]]

@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-FileCopyrightText: 2026 Cyril Jacquet
+
+[package]
+name = "skribisto-plume-import"
+description = "Converts a Plume Creator project of any historical schema to the newest .skrib"
+authors.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+version.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+readme = "../../README.md"
+publish = true
+
+[lib]
+name = "plume_import"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+# Only for `LongOperationProgress`/cancellation — no store, no repository.
+common = { workspace = true }
+skribisto_model = { workspace = true }
+# The output format. This crate reads .plume and writes the newest .skrib; it
+# never touches an entity store, which is what lets it sit below the backend.
+skrib_format = { workspace = true }
+chrono = { workspace = true }
+# Reading .plume containers (single-file zip) and their XML.
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+roxmltree = "0.21.1"
+
+[dev-dependencies]
+# The round-trip tests build `.plume` fixtures (zip + loose dir) in a scratch dir.
+tempfile = "3"

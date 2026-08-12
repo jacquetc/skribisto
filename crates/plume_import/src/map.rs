@@ -1105,7 +1105,7 @@ fn first_non_empty<'a>(candidates: impl IntoIterator<Item = &'a str>) -> String 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::use_cases::import_plume_creator_file_uc::plume::model::PlumeGroup;
+    use crate::model::PlumeGroup;
 
     fn node(kind: PlumeKind, number: u32, name: &str, badge: &str) -> PlumeNode {
         PlumeNode {
