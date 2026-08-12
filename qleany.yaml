@@ -1886,6 +1886,36 @@ features:
       # that isn't among them, so a stale menu can never promote to the wrong type.
       - name: target
         type: uinteger
+
+  # Push one item's `is_exportable` down onto everything beneath it, as a single
+  # undo step.
+  #
+  # The subtree walk is the part worth having down here. A binder has no
+  # parent/child graph -- "beneath X" means "the following items with a strictly
+  # greater indent" (`binder_ordering::subtree_of`) -- so a caller that does not
+  # already hold an ordered, indent-annotated view of the binder cannot compute
+  # it. The outline had one and did the walk itself; nothing else does.
+  - name: set_descendants_exportable
+    entities:
+    - Binder
+    - BinderItem
+    undoable: true
+    dto_in:
+      name: SetDescendantsExportableDto
+      fields:
+      - name: item_id
+        type: uinteger
+      - name: exportable
+        type: boolean
+    dto_out:
+      name: SetDescendantsExportableResultDto
+      fields:
+      # The descendants actually written -- those that did not already hold the
+      # requested value. Empty is a success, not an error: it means the subtree
+      # already agreed.
+      - name: changed_ids
+        type: uinteger
+        is_list: true
 - name: handling_app_lifecycle
   use_cases:
   - name: initialize_app

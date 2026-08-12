@@ -25,7 +25,9 @@ use frontend::common::direct_access::work::WorkRelationshipField;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto};
 
-use frontend::binder_item_management::{DuplicateDto, MoveDto, MovePlace};
+use frontend::binder_item_management::{
+    DuplicateDto, MoveDto, MovePlace, SetDescendantsExportableDto,
+};
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 
 use skribisto_compiler::headings;
@@ -688,24 +690,24 @@ impl OutlineViewModel {
         order[pos + 1..end].to_vec()
     }
 
-    /// Set every descendant's `is_exportable` to `value` in **one** undo step (the outline's
-    /// composite pattern). The item itself is not touched — the Inspector's own toggle owns
-    /// that; this is the "apply to children" affordance beside it.
+    /// Set every descendant's `is_exportable` to `value` in **one** undo step. The item
+    /// itself is not touched — the Inspector's own toggle owns that; this is the "apply to
+    /// children" affordance beside it.
+    ///
+    /// One backend call, not a composite of per-item writes: the subtree walk *and* the
+    /// undo step both belong to
+    /// [`binder_item_management::set_descendants_exportable`](frontend::commands::binder_item_management_commands::set_descendants_exportable),
+    /// so a binder screen that is not this outline gets the same gesture without
+    /// re-deriving "beneath" from an ordered, indent-annotated view it may not hold.
     pub fn apply_exportable_to_subtree(&self, item_id: u64, value: bool) {
-        let descendants = self.subtree_descendants(item_id);
-        if descendants.is_empty() {
-            return;
-        }
-        let ctx = &*self.app_ctx;
-        let stack = self.stack();
-        let _ = undo_redo_commands::begin_composite(ctx, stack);
-        for id in descendants {
-            // A probe fixed to each descendant, reusing the tested full-DTO write.
-            let probe = SingleBinderItem::new(self.app_ctx.clone());
-            probe.set_id(Some(id));
-            let _ = probe.set_exportable(value, stack);
-        }
-        undo_redo_commands::end_composite(ctx);
+        let _ = binder_item_management_commands::set_descendants_exportable(
+            &self.app_ctx,
+            self.stack(),
+            &SetDescendantsExportableDto {
+                item_id,
+                exportable: value,
+            },
+        );
         self.reload();
     }
 

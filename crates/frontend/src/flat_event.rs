@@ -133,6 +133,7 @@ pub enum FlatEventKind {
     BinderItemManagementMergeTwoScenes,
     BinderItemManagementSplitScene,
     BinderItemManagementPromote,
+    BinderItemManagementSetDescendantsExportable,
 
     HandlingAppLifecycleInitializeApp,
     HandlingAppLifecycleCleanUpBeforeExit,
@@ -397,6 +398,9 @@ impl From<Event> for FlatEvent {
                     FlatEventKind::BinderItemManagementSplitScene
                 }
                 BinderItemManagementEvent::Promote => FlatEventKind::BinderItemManagementPromote,
+                BinderItemManagementEvent::SetDescendantsExportable => {
+                    FlatEventKind::BinderItemManagementSetDescendantsExportable
+                }
             },
             Origin::HandlingAppLifecycle(fe) => match fe {
                 HandlingAppLifecycleEvent::InitializeApp => {

@@ -129,6 +129,7 @@ pub enum BinderItemManagementEvent {
     MergeTwoScenes,
     SplitScene,
     Promote,
+    SetDescendantsExportable,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]
