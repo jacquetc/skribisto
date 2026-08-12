@@ -92,10 +92,22 @@ impl DeleteTrashEntriesUseCase {
                 &WorkRelationshipField::TrashInfos,
                 &missing,
             )?;
-            let foreign: Vec<EntityId> = owners
+            // Each entry carries the matched Work's **whole** trash index, not
+            // the subset asked about, so it has to be intersected back with
+            // `missing`. Reporting it raw named every entry in the other Work's
+            // bin — a caller passing one wrong id was told a dozen were wrong,
+            // and none of the ids in the message had to be one it had sent.
+            let foreign_owned: HashSet<EntityId> = owners
                 .into_iter()
                 .filter(|(w, _)| *w != work_id)
                 .flat_map(|(_, ids)| ids)
+                .collect();
+            // Walked in the caller's own order, so the message is stable and
+            // reads back against the list that was sent.
+            let foreign: Vec<EntityId> = missing
+                .iter()
+                .copied()
+                .filter(|id| foreign_owned.contains(id))
                 .collect();
             if !foreign.is_empty() {
                 return Err(anyhow!(

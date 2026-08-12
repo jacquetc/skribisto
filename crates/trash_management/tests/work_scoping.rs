@@ -289,6 +289,48 @@ fn delete_trash_entries_rejects_a_trash_info_owned_by_a_different_work() {
     );
 }
 
+/// The rejection must name **the ids the caller sent**, and only those.
+///
+/// `get_work_relationships_from_right_ids` hands back each matched Work's whole
+/// trash index rather than the subset asked about, so reporting it raw listed
+/// every entry in Work B's bin — including ones Work A had never heard of. The
+/// guard fired correctly either way, which is why nothing caught this until a
+/// second entry existed to be wrongly named.
+#[test]
+fn delete_trash_entries_names_only_the_offending_ids() {
+    let mut ctx = Ctx::new();
+    let (work_a, _binder_a) = ctx.new_project();
+    let (work_b, binder_b) = ctx.new_project();
+
+    let item_one = ctx.new_item(binder_b, false);
+    let item_two = ctx.new_item(binder_b, false);
+    let named = ctx.new_trash_info_for_item(work_b, item_one, binder_b);
+    // A second entry in the same bin, which the caller never mentions.
+    let bystander = ctx.new_trash_info_for_item(work_b, item_two, binder_b);
+
+    let err = trash_management_controller::delete_trash_entries(
+        &ctx.db,
+        &ctx.hub,
+        &mut ctx.undo,
+        None,
+        &DeleteTrashEntriesDto {
+            work_id: work_a,
+            trash_info_ids: vec![named],
+        },
+    )
+    .expect_err("Work B's entry must not be purgeable under Work A's work_id");
+
+    let msg = format!("{err:#}");
+    assert!(
+        msg.contains(&named.to_string()),
+        "the offending id must be named: {msg}"
+    );
+    assert!(
+        !msg.contains(&bystander.to_string()),
+        "an entry the caller never sent must not appear in the complaint: {msg}"
+    );
+}
+
 /// Companion/control: a genuinely stale id (never existed at all) under the
 /// CORRECT work_id must still be tolerated silently — the documented
 /// "stale id -> no-op, not error" contract this file's fix must not break.
