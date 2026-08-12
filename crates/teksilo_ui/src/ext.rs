@@ -57,8 +57,8 @@ pub use crate::tabs::shared::segments::{
 };
 
 // ── Analysis categories ──────────────────────────────────────────────────────
+pub use crate::analysis::AnalysisViewModel;
 pub use crate::tabs::analysis::{AnalysisCategorySpec, CategoryHandle, register_category};
-pub use crate::view_models::AnalysisViewModel;
 
 // ── Commands, shortcuts, the Tools row ───────────────────────────────────────
 pub use crate::commands_ext::{
