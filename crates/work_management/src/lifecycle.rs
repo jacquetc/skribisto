@@ -34,7 +34,7 @@
 //!
 //! ## Threads
 //!
-//! [`LifecycleListener`] is `Send + Sync` because `Saved` fires from the save
+//! `LifecycleListener` is `Send + Sync` because `Saved` fires from the save
 //! worker thread (a long operation), while `Opened`/`Closed` fire on whichever
 //! thread ran the command — today the UI thread. A listener must work from
 //! either, must not block, and cannot fail a save: a panic is caught and
@@ -178,7 +178,7 @@ impl Drop for Handle {
 
 /// Whether anything is listening.
 ///
-/// Call this **before** building a payload, not merely inside [`notify`]: a
+/// Call this **before** building a payload, not merely inside `notify`: a
 /// vanilla install with no extension should pay one lock read, not a walk of
 /// every binder item in the project on every save.
 pub fn has_listeners() -> bool {

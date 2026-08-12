@@ -22,15 +22,15 @@
 //!
 //! **Rank by surprisal, not by frequency or length.** Scoring a word against the
 //! manuscript's own distribution — rather than against a frequency count or a per-language
-//! stopword list — is what keeps `and then he` out of a report. [`tokens::Vocabulary`]
+//! stopword list — is what keeps `and then he` out of a report. `tokens::Vocabulary`
 //! carries that distribution, and it is the reason this module is a shared vocabulary
 //! rather than three unrelated measures.
 //!
 //! ## Layout
 //!
-//! - [`tokens`](crate::analysis::tokens) — the one tokenizer and word-id vocabulary everything else shares.
+//! - `tokens` — the one tokenizer and word-id vocabulary everything else shares.
 //! - [`prose_stats`](crate::analysis::prose_stats) — sentence/paragraph lengths, punctuation density, dialogue share.
-//! - [`stats`](crate::analysis::stats) — the mean/stddev/median the measures share.
+//! - `stats` — the mean/stddev/median the measures share.
 //!
 //! ## What is deliberately *not* here
 //!
@@ -41,8 +41,8 @@
 //! every analysis run.
 //!
 //! What stays is what [`crate::analysis`]'s remaining reader needs, plus the two pieces any
-//! further measure would build on: [`tokens`] (the shared tokenizer and surprisal-bearing
-//! vocabulary) and [`stats`]. Both are public and both are complete — an out-of-tree
+//! further measure would build on: `tokens` (the shared tokenizer and surprisal-bearing
+//! vocabulary) and `stats`. Both are public and both are complete — an out-of-tree
 //! measure interns against the same vocabulary the built-in one does, so two readers of the
 //! same manuscript cannot disagree about what a word is.
 

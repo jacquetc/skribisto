@@ -45,7 +45,7 @@
 //! | changed | same | you edited it |
 //! | changed | changed | both — a conflict worth showing before choosing |
 //!
-//! Which is only as good as [`normalize`] is at cancelling what a round trip does to text that
+//! Which is only as good as `normalize` is at cancelling what a round trip does to text that
 //! nobody edited. That is an empirical question, not a design one, and it is settled by an
 //! empirical test: `document_ingest`'s round-trip suite pushes a real document through a real
 //! LibreOffice and asserts an untouched row still digests equal. Read that test before changing
@@ -108,7 +108,7 @@ fn fnv1a64(bytes: &[u8]) -> u64 {
 ///   exported to `.odt` and read straight back, nine chapters of twenty-three digested
 ///   differently, and every one of them for this reason. A break is stored as `* * *` but
 ///   *rendered* by the export preset — and the default minor break in nearly every built-in
-///   preset is [`SceneBreak::BlankLine`], which renders to nothing at all. The marker is
+///   preset is `SceneBreak::BlankLine`, which renders to nothing at all. The marker is
 ///   therefore absent from the file, absent from what comes back, and present in the prose the
 ///   project holds. Comparing the two without dropping it reports "the editor rewrote this
 ///   chapter" on a chapter nobody touched.

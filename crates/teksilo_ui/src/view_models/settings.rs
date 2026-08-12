@@ -191,7 +191,7 @@ impl EditorViewMemory {
     /// The segment a freshly-opened tab of `sub_role` should start on: the remembered one
     /// when enabled, else `None` — which the bar resolves to its first segment.
     ///
-    /// Deriving the [`SegmentId`] here rather than storing it is what makes the stored
+    /// Deriving the `SegmentId` here rather than storing it is what makes the stored
     /// string authoritative: the number is recomputed every launch, so it cannot drift, and
     /// an id whose segment no longer exists resolves to slot 0 through
     /// `segmented_control::index_signal` exactly as an absent one does.

@@ -881,7 +881,7 @@ pub struct WorkBundle {
     /// preserve data whose meaning it cannot know.
     ///
     /// Anything that *does* understand one of these files reads it from here and
-    /// writes it back here; [`super::folder_io::write_folder`] writes carried
+    /// writes it back here; `folder_io::write_folder` writes carried
     /// files **before** the modelled ones, so a file that is both carried and
     /// modelled ends up with the modelled bytes.
     #[serde(default)]
@@ -890,7 +890,7 @@ pub struct WorkBundle {
 
 /// One unmodelled bundle file, held as opaque bytes plus a digest.
 ///
-/// The split mirrors [`AssetFile`]: the bytes are `#[serde(skip)]` so the
+/// The split mirrors `AssetFile`: the bytes are `#[serde(skip)]` so the
 /// content fingerprint — which RON-serialises the whole bundle on every save —
 /// never encodes an opaque blob as a bracketed decimal list, while the `digest`
 /// *is* serialised so a change to a carried file still changes the project's

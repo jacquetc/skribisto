@@ -30,7 +30,7 @@
 //! Only a **backup** answers all four. A backup is a whole bundle: its
 //! `items.ron` files carry every row the project had and the order it had them
 //! in. The in-project history log records *prose and nothing else* — it holds an
-//! entry only for a row that had text, and [`LogVersions::index`] synthesises its
+//! entry only for a row that had text, and `LogVersions::index` synthesises its
 //! rows from a map keyed by uid, so they emerge in uid order, which is not an
 //! order anything ever had.
 //!
@@ -701,7 +701,7 @@ fn main_blob(row: &VersionRow) -> Option<String> {
 /// Every prose role there is, best-first.
 ///
 /// Exhaustive on purpose, and held to it by
-/// [`tests::every_prose_role_is_something_this_can_open`]: a role missing from
+/// `every_prose_role_is_something_this_can_open`: a role missing from
 /// here does not degrade gracefully, it makes rows that carry only that role
 /// unopenable. Adding a prose role to `ContentRole` should fail that test rather
 /// than quietly ship an empty reader.

@@ -3,7 +3,7 @@
 
 //! The Analysis segment of a Book container: a bar of categories over one `analyze_book`
 //! result, of which this application ships one — Shape — and any number may be contributed
-//! from outside through [`register_category`].
+//! from outside through `register_category`.
 //!
 //! ## What every view here promises
 //!

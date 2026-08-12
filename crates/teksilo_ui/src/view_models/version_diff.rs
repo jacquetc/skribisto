@@ -24,7 +24,7 @@
 //! would put hunk boundaries in the middle of a `[link](target)`, in a coordinate
 //! space no consumer shares. The cost is stated rather than hidden: **a change
 //! that is purely formatting produces no textual difference**, so it is detected
-//! separately and reported as such ([`DiffSummary::formatting_only`]) rather than
+//! separately and reported as such (`DiffSummary::formatting_only`) rather than
 //! shown as an empty diff under a row that claims to have changed.
 //!
 //! ## Cleaning up coincidental matches
@@ -34,7 +34,7 @@
 //! (*old line with its removals emphasised*, then *new line with its additions*).
 //! This pane renders the shape a novelist already knows instead — one paragraph,
 //! removals struck through and additions underlined, the way track changes reads —
-//! so that pass cannot be borrowed and [`absorb_islands`] does the job it exists
+//! so that pass cannot be borrowed and `absorb_islands` does the job it exists
 //! to do: a one- or two-word island of "unchanged" text stranded between two
 //! changes is not a match, it is a coincidence, and rendering it as agreement
 //! shreds both sentences into confetti.
@@ -43,14 +43,14 @@
 //!
 //! Output is ordinary Djot with `{+…+}` and `{-…-}` — which the shipped parser
 //! already maps to underline and strikeout (`content_parser.rs:2372-2375`), so the
-//! pane is a plain [`RichTextEditor::read_only`](teksilo::widgets::RichTextEditor)
+//! pane is a plain `RichTextEditor::read_only`
 //! over a normal document: no new widget, no character-format plumbing. Shape
 //! rather than colour also satisfies WCAG G182/G183 without further work.
 //!
 //! Every piece of prose is **escaped before it is spliced in**. Novels are full of
 //! asterisks, brackets, braces and backslashes, and splicing them raw into a
 //! synthesised document reparses them as markup — corrupting precisely the text
-//! the pane exists to show. [`render_block`] round-trips through the real parser
+//! the pane exists to show. `render_block` round-trips through the real parser
 //! in its own tests rather than trusting the escape table by eye.
 
 use similar::{Algorithm, ChangeTag, DiffOp, TextDiff, capture_diff_slices};
@@ -156,7 +156,7 @@ pub struct VersionDiff {
 }
 
 impl VersionDiff {
-    /// Nothing textual moved. May still be a [`DiffSummary::formatting_only`]
+    /// Nothing textual moved. May still be a `DiffSummary::formatting_only`
     /// change.
     pub fn is_empty(&self) -> bool {
         !self.blocks.iter().any(|b| b.kind != BlockKind::Equal)

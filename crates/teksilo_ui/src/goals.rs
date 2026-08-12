@@ -30,7 +30,7 @@
 //!    information. A target of literally zero words has no meaning in a writing app.
 //!
 //! The four submodules are all pure except [`measure`], which reads the store:
-//! [`progress`] turns counts into ratios and semantic colours, [`apportion`] splits one
+//! [`progress`] turns counts into ratios and semantic colours, [`mod@apportion`] splits one
 //! number into several that sum back to it exactly, [`distribute`] turns that into a plan
 //! over a container's children, and [`measure`] answers how much is actually written.
 

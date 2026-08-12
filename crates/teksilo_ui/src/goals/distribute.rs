@@ -14,7 +14,7 @@
 //!   behaves exactly like one typed by hand, and they are free to drift apart. Nothing in
 //!   the UI may imply otherwise — no reconciliation warning, no "derived" styling.
 //! * **The parts sum to the whole, exactly**, via
-//!   [`apportion`](super::apportion::apportion). The preview's footer states that sum, so
+//!   [`apportion`]. The preview's footer states that sum, so
 //!   the guarantee is something the writer can see rather than something the code claims.
 //!
 //! Pure: [`plan`] takes the children a [`measure`](super::measure) walk found and returns

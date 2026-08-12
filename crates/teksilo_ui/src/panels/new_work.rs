@@ -3,7 +3,7 @@
 
 //! The New Work modal — create a work, as a three-step wizard.
 //!
-//! Built on Teksilo's [`Stepper`](teksilo::widgets::Stepper), the same shape as
+//! Built on Teksilo's [`Stepper`], the same shape as
 //! the Import documents wizard: **Details → Language & structure → Template**,
 //! with the framework's indicator strip and Cancel / Back / Next / Create Work
 //! footer. See `teksilo` docs `widgets/stepper.md`.

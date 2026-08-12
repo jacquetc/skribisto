@@ -11,7 +11,7 @@
 //! building an event hub, a store, a settings writer or a window. The primary
 //! answers by opening — or focusing — a window of its own.
 //!
-//! That is why the election runs at the very **top** of [`main`], before
+//! That is why the election runs at the very **top** of `main`, before
 //! `AppContext::new()`. A remote that had already run `initialize_app`, pruned
 //! `window_state.toml` and opened settings handles would be doing all of it
 //! against files the primary is concurrently using, for a process about to exit.
@@ -68,6 +68,15 @@
 // It is here because CI's `-D warnings` gate cannot go green without it, and a
 // gate that has never once been green teaches nobody anything.
 #![allow(dead_code)]
+// Intra-doc links to private items, allowed rather than fixed.
+//
+// The gate documents this crate with `--document-private-items`, so these links
+// resolve and render — the lint fires on the *visibility* of the target, not on
+// whether the reader can follow it. And the targets are the interesting half:
+// `windows::window_id_for`, `open_registry::namespace`, `structure_key`. These
+// are notes from one maintainer to the next, and rewriting 133 of them as plain
+// backticks would cost the navigation and buy nothing.
+#![allow(rustdoc::private_intra_doc_links)]
 
 //! ## Module visibility
 //!

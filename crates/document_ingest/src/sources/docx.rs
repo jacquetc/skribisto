@@ -49,7 +49,7 @@
 //! ## The supplementary pass, and why it is not paranoia
 //!
 //! Three constructs a manuscript genuinely uses are invisible to the typed reader, and
-//! [`RawScan`] reads them straight out of the container's own XML — two from
+//! `RawScan` reads them straight out of the container's own XML — two from
 //! `word/document.xml`, one from `word/comments.xml`:
 //!
 //! * **A comment anchored to a point rather than a range.** LibreOffice's `.docx`
@@ -64,7 +64,7 @@
 //!   its writer can see, for the same reason the ODT scanner reads ODF's spelling.
 //! * **A comment's `skrb:uid` and `w:initials` (M-S7).** `docx_rs::Comment` (the
 //!   typed reader's own comment type) carries neither field at all — verified
-//!   against its actual source, not assumed (see [`RawScan`]'s own doc). Only
+//!   against its actual source, not assumed (see `RawScan`'s own doc). Only
 //!   Skribisto's own DOCX writer (`text-document`'s `export_docx_uc::patch_comment_extras`)
 //!   ever puts a `skrb:uid` on a `<w:comment>`, so reading it back here is what lets
 //!   `apply_document_import_uc` recognise a comment it already created on a previous
@@ -338,7 +338,7 @@ fn apply_run_property(property: &RunProperty, style: &mut RunStyle) {
 
 struct CommentMeta {
     /// Only Skribisto's own writer puts these two on a `<w:comment>` — see
-    /// [`RawScan`]'s own doc on why they need a raw pass at all, and
+    /// `RawScan`'s own doc on why they need a raw pass at all, and
     /// [`crate::sources::rich::RichAnnotation::uid`] for what recognising one lets
     /// `apply_document_import_uc` do. `initials` is empty (never `None`) for the
     /// ordinary case of a comment with no `w:initials`, mirroring

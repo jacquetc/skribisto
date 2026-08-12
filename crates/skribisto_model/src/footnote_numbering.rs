@@ -16,7 +16,7 @@
 //! up by `(item, label)`. There is no second pass to drift.
 //!
 //! Store-free and IO-free, like its siblings. It takes the same flat
-//! [`ItemMeta`](crate::compile::ItemMeta)
+//! [`crate::compile::ItemMeta`]
 //! slice its neighbours do, plus each row's prose — because where a note sits in
 //! the book is decided by where its **reference** sits in the text, not by anything
 //! stored on the note.
@@ -55,7 +55,7 @@
 //!
 //! # One collapse, shared
 //!
-//! [`number_map`](crate::footnote_numbering::number_map) is keyed by `(item_id, label)`, which is right for the count
+//! [`number_map`] is keyed by `(item_id, label)`, which is right for the count
 //! but wrong for a *marker*: a document draws one glyph per `[^label]`, and
 //! `teksilo::text_document::TextDocument::set_footnote_markers` (the call both
 //! the editor and every exporter push their answer through) takes exactly one
@@ -64,7 +64,7 @@
 //! per-item entries down to the one a label actually prints — and if the editor's
 //! live badge and an exporter each did that collapse themselves, a citation
 //! could legitimately draw two different numbers depending only on which one you
-//! looked at. [`label_homes`](crate::footnote_numbering::label_homes) is that collapse, done once, so both callers share
+//! looked at. [`label_homes`] is that collapse, done once, so both callers share
 //! it and cannot drift apart. See its own doc for the rule and why it must run
 //! over the whole manuscript, never a scope.
 

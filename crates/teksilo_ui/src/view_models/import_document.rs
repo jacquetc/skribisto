@@ -922,7 +922,7 @@ impl ImportDocumentViewModel {
     ///
     /// Already on Review when analysis was started via Next (Files → Review);
     /// `go_to` still runs so a test that only calls this lands on the right page.
-    /// The mocks Files→Review path uses [`seed_mock_review_plan`] instead, so the
+    /// The mocks Files→Review path uses `seed_mock_review_plan` instead, so the
     /// footer's single `next()` is the only advance.
     pub fn on_plan_ready(&self, plan: &ImportPlan, levels: Vec<u8>, rules: Vec<(u8, CreateType)>) {
         self.install_plan(plan, levels, rules);

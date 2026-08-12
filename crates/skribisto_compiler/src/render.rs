@@ -377,7 +377,7 @@ const TWIPS_PER_IN: f32 = 1440.0;
 /// Three populations arrive here and only two of them are the writer's problem:
 ///
 /// * A comment on a row **outside the export scope** — or on a synopsis a preset omits — is
-///   not in this document at all. [`comment_rebase::place_comments`] leaves it out of its
+///   not in this document at all. `comment_rebase::place_comments` leaves it out of its
 ///   result entirely, so it never reaches the count. Warning about it would fire on every
 ///   "Export Chapter 5" that has notes anywhere else in the book.
 /// * A comment **already orphaned at rest** has no valid quote to place, so it resolves to an

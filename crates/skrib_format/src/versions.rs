@@ -11,7 +11,7 @@
 //! * **the in-project [history log](crate::history)** — dense and shallow. It
 //!   captures every save, so it answers *"what did it say this morning"*.
 //!
-//! [`VersionSource`] is the seam between them. A consumer asks for versions of an
+//! `VersionSource` is the seam between them. A consumer asks for versions of an
 //! item and gets one merged, de-duplicated timeline; adding a third source later
 //! (or a fabricated one for the mocks build) means implementing this trait and
 //! nothing else.
@@ -591,11 +591,11 @@ impl VersionSource for LogVersions {
     /// * Silence before a row's oldest surviving entry may mean the row did not
     ///   exist yet — or that [`crate::history::thin`] dropped its older states, as
     ///   it is designed to. Answering [`RowAt::Absent`] there tells a writer
-    ///   "Didn't exist yet on <date>" about a scene they wrote years earlier.
+    ///   "Didn't exist yet on `<date>`" about a scene they wrote years earlier.
     /// * A row that is *deleted* keeps its recorded states forever (`thin` never
     ///   empties a key that had entries), so carrying the newest one forward
     ///   reports the row as present at every later save — which erased the
-    ///   "deleted after <date>" a backup had correctly established.
+    ///   "deleted after `<date>`" a backup had correctly established.
     ///
     /// [`RowAt::Silent`] is the honest answer to both, and it costs nothing: a
     /// backup **is** a complete copy of the project, so absence and deletion are

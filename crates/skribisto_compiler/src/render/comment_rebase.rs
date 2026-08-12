@@ -30,7 +30,7 @@
 //! Do not compute — **re-resolve**. `assemble` records every `Content` whose prose reached the
 //! document, in emission order. For each, find the window `[lo, hi)` its prose occupies in the
 //! compiled plain text using a **monotone forward cursor**, then run
-//! [`comment_anchor::resolve`] — the same three-tier matcher that re-anchors a comment on every
+//! `comment_anchor::resolve` — the same three-tier matcher that re-anchors a comment on every
 //! reopen and on every import — restricted to that window.
 //!
 //! The monotone cursor is what makes the result trustworthy rather than merely likely. A
@@ -39,7 +39,7 @@
 //! scene's comment cannot claim the earlier scene's text.
 //!
 //! Nothing here invents a matching rule. A comment that will not place comes back as an
-//! [`Resolution::Orphan`] with the same typed reason the editor would show, so the caller can
+//! `Resolution::Orphan` with the same typed reason the editor would show, so the caller can
 //! warn about it rather than move it somewhere plausible — the failure this whole model exists
 //! to avoid is "a comment that is mostly right", which is invisible until someone's note has
 //! silently moved.
@@ -197,7 +197,7 @@ fn find_on_block_boundary(
 /// preset and to none under `BlankLine`. Counting `span` blocks forward in compiled
 /// coordinates therefore indexes the wrong block as soon as the two diverge.
 ///
-/// It is nonetheless safe to hand the span straight to [`comment_anchor::resolve`], because
+/// It is nonetheless safe to hand the span straight to `comment_anchor::resolve`, because
 /// its paragraph branch clamps the extent to the end of the **last block it was given** — and
 /// the block list here is the window's, which [`locate`] bounds to the blocks of this row that
 /// actually survived, contiguously. An over-long span can therefore reach the end of the row's
@@ -268,7 +268,7 @@ pub(crate) fn place_comments(
 
 /// Where each emitted `Content`'s prose landed in the compiled document.
 ///
-/// Split out from [`place_comments`] because the export needs the same answer twice and must
+/// Split out from `place_comments` because the export needs the same answer twice and must
 /// not compute it twice: a comment is rebased into its row's window, and a **round-trip row
 /// mark** is anchored at that window's start. Two independent scans could disagree — the search
 /// is heuristic and cursor-dependent — and a mark that disagreed with its own row's comments

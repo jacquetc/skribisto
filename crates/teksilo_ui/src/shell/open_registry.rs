@@ -229,7 +229,7 @@ impl SocketId {
     /// ⚠ A **six-hex slug**, not the readable organization name. See
     /// [`crate::identity::AppIdentity::slug`]: this lands in a path that on macOS
     /// must fit Darwin's 104-byte `sun_path`, and `primary-skribisto-pro` does
-    /// not. Pinned by [`tests::the_macos_socket_path_fits_in_sun_path`].
+    /// not. Pinned by `the_macos_socket_path_fits_in_sun_path`.
     fn leaf(self) -> String {
         match self {
             SocketId::Primary if crate::identity::is_community() => "primary".to_string(),

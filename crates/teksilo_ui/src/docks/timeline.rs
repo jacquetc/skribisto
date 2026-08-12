@@ -356,7 +356,7 @@ impl TimelinePanel {
     /// backups saw an empty strip.
     ///
     /// The chart is handed a *bucketed* axis, so it is never asked to draw more
-    /// than [`MAX_BARS`]; the scroll-and-real-pitch answer the Pace and Analysis
+    /// than [`crate::view_models::timeline_axis::MAX_BARS`]; the scroll-and-real-pitch answer the Pace and Analysis
     /// tabs use (`tabs::shared::charts::wide_chart`) is right for a chart you
     /// read and wrong for one you aim at, because 300 bars at that pitch is 8,400
     /// dp of scrolling to reach a date.

@@ -244,7 +244,7 @@ pub fn dialog_start_in(
 
 /// Start `field` where this purpose was last answered.
 ///
-/// The build-time twin of [`dialog_start_in`], for [`FilePickerField`], which builds
+/// The build-time twin of [`dialog_start_in`], for `FilePickerField`, which builds
 /// its dialog itself when the writer presses Browse and so must be told the directory
 /// up front — there is no `EventContext` at that point, only the `BuildContext` the
 /// widget is being assembled in.

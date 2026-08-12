@@ -4,7 +4,7 @@
 //! The **Import documents** wizard: choose files, then review the tree they would
 //! make before any of it exists.
 //!
-//! Built on Teksilo's [`Stepper`](teksilo::widgets::Stepper): **Files → Review →
+//! Built on Teksilo's [`Stepper`]: **Files → Review →
 //! Destination**, with the framework's indicator strip and Back / Next / Finish
 //! footer. Analysis progress is shown inside Review while the long op runs (not
 //! as its own step). Destination is its own page so the plan tree can use the
@@ -652,7 +652,7 @@ fn action_label(action: RowAction) -> LocalizedString {
 
 /// The two sides of one row, side by side and read-only.
 ///
-/// Through the same renderer the Versions dock uses, over the shared [`DiffPane`] — one
+/// Through the same renderer the Versions dock uses, over the shared [`crate::widgets::diff_pane::DiffPane`] — one
 /// rendering with two sources rather than two implementations of "show me a diff".
 fn show_compare(ctx: &mut EventContext, vm: &ImportDocumentViewModel, row: &MergeRowView) {
     let (current, incoming) = vm.compare_prose(row);
@@ -678,7 +678,7 @@ const COMPARE_H: f32 = 520.0;
 /// One row's two versions, rendered by the same machinery the Versions dock uses.
 ///
 /// A widget rather than an inline tree because `ModalRequest::deferred` builds its content
-/// into the host's own tree — and because the [`DiffPane`] has to outlive a rebuild, or the
+/// into the host's own tree — and because the [`crate::widgets::diff_pane::DiffPane`] has to outlive a rebuild, or the
 /// comparison would reload and lose its scroll position on every repaint.
 struct ComparePanel {
     pane: crate::widgets::DiffPane,

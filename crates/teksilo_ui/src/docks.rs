@@ -219,7 +219,7 @@ pub struct DockContext {
     /// change so it joins the same unsaved-changes guard a manuscript edit does.
     ///
     /// Without it a dock that edits its own state left the project reading clean,
-    /// and Close/Quit proceeded with no save issued — see [`WorkHandle`] for the
+    /// and Close/Quit proceeded with no save issued — see `WorkHandle` for the
     /// full account.
     pub work: crate::view_models::WorkHandle,
     /// What the writer is looking at in **this** window — see

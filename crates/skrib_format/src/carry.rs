@@ -21,7 +21,7 @@
 //!
 //! ## What counts as modelled
 //!
-//! [`is_modelled`] is a **structural** predicate over the bundle-relative path,
+//! `is_modelled` is a **structural** predicate over the bundle-relative path,
 //! deliberately not "whatever the reader happened to consume". The difference
 //! matters for garbage: an orphaned prose blob — modelled in shape, referenced
 //! by nothing — must stay prunable, and a "did the reader read it?" rule would

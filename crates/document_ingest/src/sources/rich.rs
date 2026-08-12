@@ -322,7 +322,7 @@ pub struct RichAnnotation {
     /// Djot**. An editor's remark can carry the same bold/italic/underline/
     /// strikethrough a manuscript paragraph can, and it is converted the same
     /// way: [`assemble`] runs every annotation (and every reply) through
-    /// [`body_to_djot`] in the one pass that already owns the "never hand-emit
+    /// `body_to_djot` in the one pass that already owns the "never hand-emit
     /// Djot" pipeline, so a scanner never has to carry a second copy of it just
     /// to stringify a comment.
     pub paragraphs: Vec<Vec<Run>>,

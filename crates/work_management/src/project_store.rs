@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! [`ProjectStore`] — one value per **open project**, for code outside this
+//! `ProjectStore` — one value per **open project**, for code outside this
 //! workspace that has state of its own to keep beside a manuscript.
 //!
 //! ## The bug class this replaces
@@ -21,7 +21,7 @@
 //!
 //! ## Why the by-uid methods are not public
 //!
-//! [`ProjectStore::scoped`] is the only public door, and it returns `None` for
+//! `ProjectStore::scoped` is the only public door, and it returns `None` for
 //! the empty uid — which is exactly what an unsaved `Work` carries. So "a handle
 //! answering for no project" is a value that cannot be constructed, rather than a
 //! runtime check every caller has to remember (the check `uid_is_usable()` exists
@@ -164,7 +164,7 @@ impl<T> ProjectStore<T> {
     }
 }
 
-/// A [`ProjectStore`] slot bound to one project for good.
+/// A `ProjectStore` slot bound to one project for good.
 ///
 /// It cannot be repointed, which is the whole difference from the singleton it
 /// replaces: a value captured by a background command, an undo step, or a save
@@ -266,7 +266,7 @@ impl<T: Send + Sync> crate::lifecycle::ProjectSlots for ProjectStore<T> {
 }
 
 /// The one correct [`BundleContributor`](crate::bundle_contributors::BundleContributor)
-/// for a [`ProjectStore`].
+/// for a `ProjectStore`.
 ///
 /// Replaces a hand-rolled contributor plus an "is this my project?" equality
 /// check with a `HashMap` lookup: there is no current project to compare

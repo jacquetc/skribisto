@@ -11,7 +11,7 @@
 //! Overview". That works exactly as long as nothing can be inserted ahead of it, which is
 //! the property an extension slot removes.
 //!
-//! So every segment now has a stable string id, and its [`SegmentId`] is **derived** from
+//! So every segment now has a stable string id, and its `SegmentId` is **derived** from
 //! that id rather than stored. Two consequences worth stating, because both were nearly
 //! got wrong:
 //!
@@ -29,7 +29,7 @@
 //!
 //! ## Registration is a snapshot, not a subscription
 //!
-//! [`folder_segmented`](super::panes::folder_segmented) resolves the segment list once, when
+//! `folder_segmented` resolves the segment list once, when
 //! a tab is built. A segment registered afterwards reaches tabs opened *after* it, not the
 //! ones already on screen; one unregistered afterwards stays on the tabs that already have
 //! it until they are rebuilt.
@@ -65,7 +65,7 @@ pub const SEG_OVERVIEW: &str = "overview";
 /// A notes folder's own page (`folder_synopsis_with_overview`, which has no streams).
 pub const SEG_NOTES: &str = "notes";
 
-/// The [`SegmentId`] for a stable string id.
+/// The `SegmentId` for a stable string id.
 ///
 /// FNV-1a, folded into 48 bits so the result always lands below `SegmentId`'s `FRESH_BASE`
 /// (2^48) and can therefore never collide with a framework-allocated id, and `| 1` so it is

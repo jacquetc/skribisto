@@ -43,9 +43,9 @@
 //! is a kind neither format can express, and the comment UI never wires it up
 //! either (there is no surface to open one from). A comment landing on a *heading*
 //! block used to become one; it becomes a `Paragraph` comment on the row's first
-//! block instead (see [`planned_comment`]), and a comment on a row whose Djot
+//! block instead (see `planned_comment`), and a comment on a row whose Djot
 //! failed to parse becomes a `Paragraph` comment pinned to block 0 with an empty
-//! quote (see [`anchor_comments`]) — both real, storable anchors rather than a
+//! quote (see `anchor_comments`) — both real, storable anchors rather than a
 //! placeholder kind. `sources::rich` still mints `Document` for the two cases that
 //! genuinely have no text to point at (a blank paragraph, a table) — a deliberate,
 //! separate decision, not an oversight here. The enum variant itself is not

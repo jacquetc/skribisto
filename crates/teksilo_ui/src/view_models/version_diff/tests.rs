@@ -112,7 +112,7 @@ fn a_rewritten_sentence_produces_word_hunks_not_character_hunks() {
     );
 }
 
-/// The reason [`absorb_islands`] exists.
+/// The reason `absorb_islands` exists.
 #[test]
 fn coincidental_matches_do_not_shred_two_unrelated_sentences() {
     let d = diff_djot("she opened the gate", "he shut a door");

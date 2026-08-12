@@ -19,7 +19,7 @@
 //! # The rule, and its limits
 //!
 //! The first character of each name-like token, upper-cased, at most
-//! [`MAX_INITIALS`]. Tokens split on whitespace and on the separators that join compound
+//! `MAX_INITIALS`. Tokens split on whitespace and on the separators that join compound
 //! names (`-`, `'`, `.`), so "Mary-Jane O'Brien" yields `MJO` and "Jean-Luc Picard" `JLP`.
 //!
 //! It is deliberately a *seed*, not a claim to correctness. No rule gets every naming

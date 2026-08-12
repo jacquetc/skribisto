@@ -6,14 +6,14 @@
 //! **Shared means shared.** Everything here is used by more than one tab module or by more
 //! than one pane:
 //!
-//! * [`editor`] — the low-level primitives (writing / synopsis columns, the title field, the
+//! * `editor` — the low-level primitives (writing / synopsis columns, the title field, the
 //!   live typography plumbing, the editor style).
-//! * [`panes`] — the composite pane renders (heading form, dual-pane prose, no-content
+//! * `panes` — the composite pane renders (heading form, dual-pane prose, no-content
 //!   placeholder, folder synopsis) that several `(role, sub_role)` combinations share.
-//! * [`stream`] — the manuscript-stream pane the three folder containers share (Full
+//! * `stream` — the manuscript-stream pane the three folder containers share (Full
 //!   Chapter / Part / Book, and their Full Synopsis twins).
-//! * [`dictionary_menu`] — the spelling half of the editor's context menu, used by
-//!   [`editor`].
+//! * `dictionary_menu` — the spelling half of the editor's context menu, used by
+//!   `editor`.
 //!
 //! All are re-exported here, so every tab module calls `shared::foo` without caring which
 //! file it lives in. Corkboard, Pace and Analysis are whole features with one call site

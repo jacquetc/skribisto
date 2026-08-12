@@ -39,7 +39,7 @@
 //! ## Why `wake_at` and not just `frame_tick`
 //!
 //! Teksilo only pumps frames when something asks for one (see
-//! [`crate::view_models::timers`]'s module doc). An effect registered on
+//! `view_models::timers`'s module doc). An effect registered on
 //! `frame_tick` alone would run when a frame happened to be pumped for some
 //! other reason — which, for a background import into a window nobody is
 //! touching, could be never. Marking stale therefore also arms a wake for *now*,

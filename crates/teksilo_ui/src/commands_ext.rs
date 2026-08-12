@@ -39,7 +39,7 @@
 //!
 //! ## Registration
 //!
-//! ```ignore
+//! ```text
 //! let _handle = teksilo_ui::commands_ext::register_command(
 //!     "acme",
 //!     ExtensionCommand {

@@ -33,7 +33,7 @@
 //!
 //! Browsing a row's past does not require its tab to be open, and the common
 //! case while browsing is that it is not. There is no `EditorHandle` then — but
-//! there is still a document, because [`OpenDocsStore::open`] builds-or-reuses
+//! there is still a document, because `OpenDocsStore::open` builds-or-reuses
 //! one regardless of whether any widget is showing it. So the closed path is the
 //! open path plus an explicit flush and release; it needs no backend use case of
 //! its own.

@@ -8,7 +8,7 @@
 //! rows are the ones I already have, and who changed what"**. This module answers it, as a
 //! pure function over two ordered lists.
 //!
-//! Store-free and headless on purpose, the way [`binder_ordering`] and
+//! Store-free and headless on purpose, the way `binder_ordering` and
 //! [`analysis`](crate::analysis) are: the caller reads the binder and the plan, and this
 //! decides. That keeps the interesting logic — the part that is easy to get subtly wrong and
 //! impossible to eyeball in a UI — testable without a database, a document or a window.
@@ -16,8 +16,8 @@
 //! # Two passes
 //!
 //! **Pair** each incoming row with at most one existing row, by a ladder of decreasing
-//! confidence (see [`pair`]). **Align** the two streams into one ordered list of
-//! [`MergeRow`]s, each holding a current side, an incoming side, or both.
+//! confidence (see `pair`). **Align** the two streams into one ordered list of
+//! `MergeRow`s, each holding a current side, an incoming side, or both.
 //!
 //! The alignment is what makes the interesting case representable at all: *a chapter the
 //! editor inserted between two existing chapters*. It is not a row on either side alone — it
@@ -27,7 +27,7 @@
 //! # What it deliberately does not do
 //!
 //! Nothing here deletes, and nothing here decides. A row present locally and absent from the
-//! returning file comes back as [`RowStatus::Missing`] — *shown*, never acted on. An editor
+//! returning file comes back as `RowStatus::Missing` — *shown*, never acted on. An editor
 //! who deleted a chapter in Word may have been tidying their copy; the writer says what
 //! happens to theirs.
 

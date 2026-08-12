@@ -602,7 +602,7 @@ fn magnitude_bar(value: f32) -> impl Widget {
 /// Each date here is one the timeline can prove, and the sentences are worded to
 /// claim no more than that. `absent_at` is a moment the row was *observed* not to
 /// exist, not the moment it first appeared: the creation sits somewhere in the gap
-/// between the two, and "didn't exist before <first sighting>" would have asserted
+/// between the two, and "didn't exist before `<first sighting>`" would have asserted
 /// something about that gap that nothing on disk supports.
 fn boundaries(view: &TimelineView) -> impl Widget + use<> {
     let timeline = &view.timeline;
