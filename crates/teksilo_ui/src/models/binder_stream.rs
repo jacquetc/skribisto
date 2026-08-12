@@ -25,6 +25,13 @@ mod imp {
     /// Every binder item of `work_id` as `(id, title)`, binder-major, in each
     /// binder's stored relationship order (trashed items included — they stay in
     /// place, so the ordinal space is stable). Empty on any backend hiccup.
+    ///
+    /// **Deliberately not a projection of [`super::ordered_all_items`]**, though it
+    /// looks like one. It emits a row for *every* id the relationship names, falling
+    /// back to a default when the dto does not come back; the base walk drops those.
+    /// The difference only shows up when a fetch fails mid-stream, and then it decides
+    /// whether the rows after it keep their positions — which is the one thing tab
+    /// persistence reads this for.
     pub fn ordered_binder_items(ctx: &AppContext, work_id: u64) -> Vec<BinderItemRef> {
         let mut out = Vec::new();
         let binder_ids =
@@ -71,19 +78,21 @@ mod imp {
 
 pub use imp::ordered_binder_items;
 
-/// Every **activated** binder item of `work_id` paired with the binder holding it,
-/// binder-major, in each binder's stored relationship order — the same order a save
-/// writes.
+/// Every binder item of `work_id` paired with the binder holding it, binder-major, in
+/// each binder's stored relationship order — the same order a save writes. **Trashed
+/// rows included**; each caller decides.
 ///
 /// The binder id travels alongside because `indent` nests items *within* a binder: it
 /// is the only thing marking where one binder's indents stop meaning anything to the
 /// next. A caller that does not care drops it.
 ///
-/// Distinct from [`ordered_binder_items`] above in exactly one way that matters:
-/// this filters on `activated`, and that one deliberately does **not** — trashed rows
-/// stay in place so the ordinal space is stable. Two walks, two questions; the reason
-/// they cannot be one function is written here so the next person does not merge them.
-pub fn ordered_flat_items(
+/// This is the one traversal. Four call sites used to spell it out — same relationship
+/// hops, same db-key reindexing, same comment about it — and they differed only in what
+/// they kept: two filtered on `activated`, two did not, and *that* difference is real,
+/// which is why they are projections below rather than one function with a flag. A
+/// boolean parameter here would put the load-bearing decision at the call site, spelled
+/// `true`.
+pub fn ordered_all_items(
     ctx: &frontend::AppContext,
     work_id: u64,
 ) -> Vec<(u64, frontend::direct_access::BinderItemDto)> {
@@ -104,8 +113,8 @@ pub fn ordered_flat_items(
             &BinderRelationshipField::BinderItems,
         )
         .unwrap_or_default();
-        // `get_binder_item_multi` returns db-key order, so index by id and walk
-        // `item_ids` (the authoritative relationship order).
+        // `get_binder_item_multi` answers in db-key order, not request order — index by
+        // id and walk `item_ids`, which is the authoritative one.
         let by_id: HashMap<u64, BinderItemDto> =
             binder_item_commands::get_binder_item_multi(ctx, &item_ids)
                 .unwrap_or_default()
@@ -113,15 +122,29 @@ pub fn ordered_flat_items(
                 .flatten()
                 .map(|it| (it.id, it))
                 .collect();
-        for id in item_ids {
-            if let Some(it) = by_id.get(&id)
-                && it.activated
-            {
-                out.push((binder_id, it.clone()));
-            }
-        }
+        out.extend(
+            item_ids
+                .into_iter()
+                .filter_map(|id| by_id.get(&id).cloned())
+                .map(|it| (binder_id, it)),
+        );
     }
     out
+}
+
+/// [`ordered_all_items`] less the trashed rows — what a *view* of the manuscript shows.
+///
+/// The corkboard and the overview both want this. Numbering and tab persistence want the
+/// unfiltered walk instead, because a trashed row stays in place and the ordinal space
+/// has to stay stable across it.
+pub fn ordered_flat_items(
+    ctx: &frontend::AppContext,
+    work_id: u64,
+) -> Vec<(u64, frontend::direct_access::BinderItemDto)> {
+    ordered_all_items(ctx, work_id)
+        .into_iter()
+        .filter(|(_, it)| it.activated)
+        .collect()
 }
 
 /// One item of the work's flat, binder-major stream: its live store id, its **durable**

@@ -17,9 +17,7 @@
 use std::collections::HashMap;
 
 use frontend::AppContext;
-use frontend::commands::{binder_commands, binder_item_commands, work_commands};
-use frontend::common::direct_access::binder::BinderRelationshipField;
-use frontend::common::direct_access::work::WorkRelationshipField;
+use frontend::commands::work_commands;
 use frontend::direct_access::BinderItemDto;
 use skribisto_model::compile::ItemMeta;
 use skribisto_model::numbering::{self, Numbered, NumberingRules};
@@ -176,33 +174,10 @@ pub fn numbers_for_items(
 /// Trashed rows included: they stay in place, and the numbering pass filters them itself.
 /// Empty on any backend hiccup, which numbering already treats as "do not number".
 pub fn ordered_item_dtos(ctx: &AppContext, work_id: u64) -> Vec<BinderItemDto> {
-    let mut out = Vec::new();
-    let binder_ids =
-        work_commands::get_work_relationship(ctx, &work_id, &WorkRelationshipField::Binders)
-            .unwrap_or_default();
-    for binder_id in binder_ids {
-        let item_ids = binder_commands::get_binder_relationship(
-            ctx,
-            &binder_id,
-            &BinderRelationshipField::BinderItems,
-        )
-        .unwrap_or_default();
-        // `get_binder_item_multi` answers in db-key order, not request order — index by
-        // id and walk `item_ids`, which is the authoritative one.
-        let by_id: HashMap<u64, BinderItemDto> =
-            binder_item_commands::get_binder_item_multi(ctx, &item_ids)
-                .unwrap_or_default()
-                .into_iter()
-                .flatten()
-                .map(|it| (it.id, it))
-                .collect();
-        out.extend(
-            item_ids
-                .into_iter()
-                .filter_map(|id| by_id.get(&id).cloned()),
-        );
-    }
-    out
+    super::binder_stream::ordered_all_items(ctx, work_id)
+        .into_iter()
+        .map(|(_binder_id, it)| it)
+        .collect()
 }
 
 /// What the manuscript's rows are **called on screen**, read once for a whole batch.
