@@ -99,6 +99,9 @@ impl WidthProbe {
 
     /// The live page index (`0` = Top, `1` = Side). Read it before handing the
     /// probe to the tree.
+    // Read only by `width_probe_tests`, which asserts the settle/hysteresis
+    // behaviour directly rather than through a laid-out tab.
+    #[cfg(test)]
     pub fn mode_signal(&self) -> Signal<usize> {
         self.mode.clone()
     }

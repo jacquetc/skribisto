@@ -123,6 +123,11 @@ impl Pane {
     /// Deliberately not derived from the discriminant: the point is that reordering or
     /// inserting a variant must not change what a page *is*. An extension page would
     /// namespace its own (`"ext.style"`).
+    // A page's stable identity, and the vocabulary an extension-contributed page
+    // carries (`Pane::Extension`). Only the uniqueness test reads it today — the
+    // window addresses panes by value — but it is API, not scaffolding, so it is
+    // annotated rather than gated behind `cfg(test)`.
+    #[allow(dead_code)]
     pub(crate) fn id(self) -> &'static str {
         match self {
             // Prefixed, because a parent and one of its pages may well share a
@@ -297,6 +302,11 @@ pub(crate) enum Sec {
 impl Sec {
     /// Stable identity of the section's own page — `section-`-prefixed, see
     /// [`Pane::id`].
+    // A page's stable identity, and the vocabulary an extension-contributed page
+    // carries (`Pane::Extension`). Only the uniqueness test reads it today — the
+    // window addresses panes by value — but it is API, not scaffolding, so it is
+    // annotated rather than gated behind `cfg(test)`.
+    #[allow(dead_code)]
     pub(crate) fn id(self) -> &'static str {
         match self {
             Sec::AppearanceBehaviour => "section-appearance-behaviour",
@@ -365,6 +375,11 @@ pub(crate) enum GroupKind {
 impl GroupKind {
     /// Stable identity of the group's own page — `group-`-prefixed, see
     /// [`Pane::id`].
+    // A page's stable identity, and the vocabulary an extension-contributed page
+    // carries (`Pane::Extension`). Only the uniqueness test reads it today — the
+    // window addresses panes by value — but it is API, not scaffolding, so it is
+    // annotated rather than gated behind `cfg(test)`.
+    #[allow(dead_code)]
     pub(crate) fn id(self) -> &'static str {
         match self {
             GroupKind::Typography => "group-typography",
@@ -576,6 +591,9 @@ pub(crate) fn ancestors_of(spec: &[Root], pane: Pane) -> Vec<Pane> {
 
 /// Every pane the tree places, parents included — the `Switcher` must carry a
 /// body for each, and nothing may appear twice.
+// Only the uniqueness and coverage tests enumerate the tree; the window builds
+// it from tree_spec directly.
+#[cfg(test)]
 pub(crate) fn all_panes(spec: &[Root]) -> Vec<Pane> {
     let mut out = Vec::new();
     for root in spec {

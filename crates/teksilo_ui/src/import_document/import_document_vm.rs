@@ -64,8 +64,9 @@ use crate::widgets::DestinationPicker;
 /// is nothing to line it up against.
 pub const STEP_FILES: usize = 0;
 pub const STEP_REVIEW: usize = 1;
+// Named by the wizard's step-order test; the view-model advances rather than indexes.
+#[cfg(test)]
 pub const STEP_DESTINATION: usize = 2;
-pub const STEP_RECONCILE: usize = 3;
 /// How many steps the import [`StepperController`] owns.
 pub const STEP_COUNT: usize = 4;
 

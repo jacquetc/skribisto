@@ -52,22 +52,21 @@
 
 // A deliberate, blunt instrument — and worth knowing exactly what it hides.
 //
-// This is a **binary** crate, so `pub` shields nothing and every item the views
-// have not wired up yet reads as dead. Two thirds of what this silences is
-// view-model surface built ahead of the view that will consume it (the idiom
-// `singles.rs` already spells out per-impl as "public reactive surface; wired to
-// consumers incrementally"), and much of the rest is live only under
-// `--features mocks` — clippy lints each `#[cfg]` arm on its own, so a helper the
-// mock models use is dead in the default arm and vice versa. **Deleting those
-// would break the other feature set's build**, which is why this is an allow
-// rather than a cleanup.
+// Dead code is reported again, as of the triage this crate's own comment
+// promised. What silenced it was real: clippy lints each `#[cfg]` arm on its
+// own, so a helper the mock models use is dead in the default arm and vice
+// versa, and deleting from one arm's point of view breaks the other's build.
+// That is now scoped to the three files where it actually happens
+// (`models/footnote_numbering.rs`, `models/footnotes_list_model.rs`,
+// `tabs/tests.rs`), each carrying a `cfg_attr` allow that says which arm and
+// why, instead of one blanket line covering the whole crate.
 //
-// The cost is real: genuine rot in this crate now goes unreported. The honest
-// follow-up is a triage pass that deletes what is vestigial and annotates the
-// rest per item with its reason, after which this line should come back out.
-// It is here because CI's `-D warnings` gate cannot go green without it, and a
-// gate that has never once been green teaches nobody anything.
-#![allow(dead_code)]
+// Everything else was triaged item by item: vestigial code deleted, test-only
+// helpers gated behind `cfg(test)`, and the handful that is real API nothing
+// reads yet annotated where it stands. The mistake worth knowing about is the
+// one this pass made and the mocks build caught — three tree-walking helpers in
+// `tabs/tests.rs` look dead from the default arm and are not.
+
 // Intra-doc links to private items, allowed rather than fixed.
 //
 // The gate documents this crate with `--document-private-items`, so these links

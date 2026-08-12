@@ -920,10 +920,6 @@ fn span_of(block_starts: &[usize], start: usize, end: usize) -> usize {
     (last.saturating_sub(first)) + 1
 }
 
-/// `App` builds this once and shares it by `.clone()`; the `Rc` keeps the
-/// single-instance shape explicit at call sites that store it.
-pub type SharedCommentsViewModel = Rc<CommentsViewModel>;
-
 #[cfg(test)]
 mod palette_tests {
     use super::*;

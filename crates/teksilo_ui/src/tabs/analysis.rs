@@ -383,17 +383,8 @@ impl AnalysisPane {
     }
 }
 
-/// One category's body, in the same shell Pace uses.
-///
-/// A stats dashboard, not a prose column: it fills the viewport's width rather than hugging
-/// a centred reading column, with horizontal breathing room at the sides. Matching Pace
-/// matters beyond consistency — both panes show charts of the same manuscript, and two
-/// different gutters made the same book look like two different shapes.
-fn scrolled(inner: impl Widget + 'static) -> Box<dyn Widget> {
-    scrolled_boxed(Box::new(inner))
-}
-
-/// [`scrolled`] for an already-boxed body — what a category spec hands back.
+/// A padded, scrollable wrapper for an already-boxed body — what a category
+/// spec hands back. (It had an unboxed sibling, deleted as unused.)
 fn scrolled_boxed(inner: Box<dyn Widget>) -> Box<dyn Widget> {
     Box::new(ScrollArea::new().child(Padding::symmetric(0.0, 24.0).child(Boxed::new(inner))))
 }

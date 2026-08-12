@@ -26,8 +26,6 @@
 //! convention — a writer types, glances, and commits without ever reaching for
 //! the mouse or Tab.
 
-use std::rc::Rc;
-
 use teksilo::core::overlay::OverlayPlacement;
 use teksilo::data::TreeDataSource;
 use teksilo::prelude::*;
@@ -293,7 +291,3 @@ impl Widget for GoToButton {
             .unwrap_or_else(|| proposal.resolve(0.0, 0.0).into())
     }
 }
-
-/// The shared `Rc` shape `App` injects so the popup can open a document
-/// without importing `EditorsViewModel` (see the view-model's own doc).
-pub type OpenItemFn = Rc<dyn Fn(u64, &str)>;

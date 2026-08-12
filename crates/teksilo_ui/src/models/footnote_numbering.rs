@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
+// Under `--features mocks` the fabricated arm answers from a static fixture and
+// never calls the real readers below, so every one of them is dead in that build
+// and live in the other. That asymmetry is the whole reason this crate carried a
+// blanket `allow(dead_code)`; scoping it to the two files that actually have it
+// is what lets the rest of the crate report real rot again.
+#![cfg_attr(feature = "mocks", allow(dead_code))]
+
 //! Reading the open Work's **footnote** numbering: where each note's reference sits
 //! in the manuscript, and therefore what its marker prints.
 //!
@@ -91,6 +98,13 @@ pub struct FootnotePlaces {
     pub placed: HashMap<String, NotePlacement>,
     /// Labels no prose in the project references, sorted. Reported, never repaired
     /// — see [`footnote_numbering::orphaned_labels`].
+    ///
+    /// Computed on every pass and not yet surfaced anywhere: the dock lists the
+    /// notes that *are* placed. Kept rather than dropped because the pass already
+    /// knows the answer and throwing it away would mean recomputing it the day
+    /// something asks — but it is unread today, and that is what the annotation
+    /// is admitting.
+    #[allow(dead_code)]
     pub orphans: Vec<String>,
 }
 

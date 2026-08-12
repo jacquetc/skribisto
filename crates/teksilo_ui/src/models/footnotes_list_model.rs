@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
+// Under `--features mocks` the fabricated arm answers from a static fixture and
+// never calls the real readers below, so every one of them is dead in that build
+// and live in the other. That asymmetry is the whole reason this crate carried a
+// blanket `allow(dead_code)`; scoping it to the two files that actually have it
+// is what lets the rest of the crate report real rot again.
+#![cfg_attr(feature = "mocks", allow(dead_code))]
+
 //! Reactive list model over the open Work's footnotes.
 //!
 //! A row is one note: its label (machinery, never shown), its prose, the number it

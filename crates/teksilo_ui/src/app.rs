@@ -1627,7 +1627,6 @@ impl Widget for App {
             trash: trash.clone(),
             search: search.clone(),
             project_switch: project_switch.clone(),
-            backup_scheduler: backup_scheduler.clone(),
             dictionaries: dictionaries.clone(),
             spell_docs: spell_docs.clone(),
             user_dictionary: session.user_dictionary.clone(),
@@ -1639,8 +1638,6 @@ impl Widget for App {
             timeline_dock: self.timeline_dock,
             unsaved: self.unsaved.clone(),
             backup_mode: self.backup_mode.clone(),
-            pending_exit: self.pending_exit.clone(),
-            autosave: settings.autosave(),
         };
         commands::register_all(ctx, &command_deps);
 

@@ -39,7 +39,6 @@ use teksilo::widgets::DockWidgetId;
 
 use frontend::AppContext;
 
-use crate::backup::BackupSchedulerViewModel;
 use crate::binder::OutlineViewModel;
 use crate::editors::EditorsViewModel;
 use crate::export::ExportViewModel;
@@ -49,8 +48,6 @@ use crate::search::SearchReplaceViewModel;
 use crate::shared::{FocusViewModel, FullscreenViewModel};
 use crate::spellcheck::{DictionariesViewModel, UserDictionaryViewModel};
 use crate::trash::TrashViewModel;
-
-use super::PendingExit;
 
 mod binder;
 mod comments;
@@ -119,7 +116,6 @@ pub(super) struct CommandDeps {
     pub trash: TrashViewModel,
     pub search: SearchReplaceViewModel,
     pub project_switch: ProjectSwitchViewModel,
-    pub backup_scheduler: BackupSchedulerViewModel,
     pub dictionaries: DictionariesViewModel,
     pub spell_docs: OpenDocsStore,
     /// Tier-2 (per-open-Work), threaded from `sessions::WorkSession` — never via
@@ -152,9 +148,6 @@ pub(super) struct CommandDeps {
     pub unsaved: Signal<bool>,
     /// A backup file is open here — Save is off.
     pub backup_mode: Signal<bool>,
-    /// The close/quit deferred behind an in-flight save.
-    pub pending_exit: Signal<PendingExit>,
-    pub autosave: Signal<bool>,
 }
 
 /// Register every global action and shortcut.

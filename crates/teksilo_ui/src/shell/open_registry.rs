@@ -256,21 +256,6 @@ pub fn socket_path(_id: SocketId) -> Option<PathBuf> {
     None
 }
 
-/// The socket **path** for the instance owning `pid`.
-///
-/// Retained as the path-shaped view of [`SocketId::Pid`] for callers that only
-/// ever needed a file (reaping a dead owner's socket). Anything that binds or
-/// connects must use [`socket_name`] instead — a path is not an address on
-/// Windows.
-pub fn ipc_socket_for_pid(pid: u32) -> Option<PathBuf> {
-    socket_path(SocketId::Pid(pid))
-}
-
-/// This instance's own IPC socket path.
-pub fn my_ipc_socket() -> Option<PathBuf> {
-    ipc_socket_for_pid(my_pid())
-}
-
 /// The address to bind or connect `id` on, in whatever form this platform's local
 /// sockets actually take.
 ///

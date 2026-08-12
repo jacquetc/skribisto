@@ -150,6 +150,9 @@ impl ActiveContext {
 
     /// A context wired to nothing — for the standalone/test construction sites
     /// that have no window behind them. Its signals never change.
+    // Only this module's own tests build a context with nothing focused; every
+    // real one comes from a window.
+    #[cfg(test)]
     pub(crate) fn detached() -> Self {
         Self {
             inner: Rc::new(Inner {

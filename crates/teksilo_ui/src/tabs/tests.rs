@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
+// Three of the tree-walking helpers below are used only by the `mocks`-gated
+// tests, so they are dead in the default build and live in the other. Deleting
+// them from the default build's point of view is the mistake this comment
+// exists to prevent — it was made once, and the mocks build caught it.
+#![cfg_attr(not(feature = "mocks"), allow(dead_code))]
+
 use super::*;
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 use teksilo::core::widget_tree::WidgetTree;

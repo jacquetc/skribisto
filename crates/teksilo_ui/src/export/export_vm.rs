@@ -107,20 +107,6 @@ fn extension_of(f: &ExportFormat) -> &'static str {
     }
 }
 
-/// The `skribisto_model` scope kind for a DTO scope kind.
-fn to_scope_kind(s: &ExportScopeKind) -> ScopeKind {
-    match s {
-        ExportScopeKind::CurrentBook => ScopeKind::Book,
-        ExportScopeKind::CurrentPart => ScopeKind::Part,
-        ExportScopeKind::CurrentChapter => ScopeKind::Chapter,
-        ExportScopeKind::CurrentScene => ScopeKind::Scene,
-        ExportScopeKind::CurrentNote => ScopeKind::Note,
-        ExportScopeKind::CurrentParatext => ScopeKind::Paratext,
-        ExportScopeKind::CurrentFolder => ScopeKind::Folder,
-        ExportScopeKind::Custom => ScopeKind::Custom,
-    }
-}
-
 /// The DTO scope kind for a resolved `skribisto_model` scope kind.
 fn from_scope_kind(s: ScopeKind) -> ExportScopeKind {
     match s {

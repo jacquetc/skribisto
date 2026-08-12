@@ -49,6 +49,9 @@ const CARD_W: f32 = 900.0;
 const CARD_H_QUICK: f32 = 520.0;
 const CARD_H_CUSTOM: f32 = 760.0;
 /// The taller of the two — what the headless layout tests propose.
+// The taller of the two heights, as a fixed proposal for the layout tests; the
+// live panel picks between CARD_H_QUICK and CARD_H_CUSTOM per mode.
+#[cfg(test)]
 const CARD_H: f32 = CARD_H_CUSTOM;
 /// Leading column: scope control + Choose… tree (Custom mode).
 const TREE_W: f32 = 340.0;

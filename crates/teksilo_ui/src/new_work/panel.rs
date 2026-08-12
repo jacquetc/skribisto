@@ -93,7 +93,12 @@ const STEP_COUNT: usize = 4;
 
 /// The declared step indices. The last two are the branch: only one is ever
 /// visible, so the flow is always three pages long.
+// Step ordinals the wizard's own step-order test names; the panel itself walks
+// the steps rather than indexing them.
+#[cfg(test)]
 const STEP_TEMPLATE: usize = 2;
+// See STEP_TEMPLATE.
+#[cfg(test)]
 const STEP_IMPORT: usize = 3;
 
 pub struct NewWorkPanel {

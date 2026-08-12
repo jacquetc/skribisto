@@ -50,20 +50,3 @@ pub(in crate::app) fn on_own_close(
         },
     );
 }
-
-/// Subscribe `f` to `LoadWork`/`NewWork` with an [`EventContext`] (modals, toasts).
-pub(in crate::app) fn on_own_load_or_new_with_ctx(
-    ctx: &mut BuildContext,
-    ids: &AppIds,
-    f: impl Fn(&Event, &mut EventContext) + Clone + 'static,
-) {
-    for event in [WorkManagementEvent::LoadWork, WorkManagementEvent::NewWork] {
-        let ids = ids.clone();
-        let f = f.clone();
-        ctx.subscribe_event_with_ctx(Origin::WorkManagement(event), move |e: &Event, c| {
-            if ids.is_bootstrap_or_own(&e.ids) {
-                f(e, c);
-            }
-        });
-    }
-}
