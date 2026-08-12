@@ -131,6 +131,7 @@ pub enum BinderItemManagementEvent {
     Promote,
     SetDescendantsExportable,
     SetDescendantsDictLanguage,
+    ClearTitles,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize)]

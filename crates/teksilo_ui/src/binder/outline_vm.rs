@@ -26,7 +26,8 @@ use frontend::common::entities::{BinderItemRole, BinderItemSubRole, ContentRole}
 use frontend::direct_access::{CreateBinderDto, CreateBinderItemDto};
 
 use frontend::binder_item_management::{
-    DuplicateDto, MoveDto, MovePlace, SetDescendantsDictLanguageDto, SetDescendantsExportableDto,
+    ClearTitlesDto, DuplicateDto, MoveDto, MovePlace, SetDescendantsDictLanguageDto,
+    SetDescendantsExportableDto,
 };
 use frontend::trash_management::{TrashBinderDto, TrashBinderItemsDto};
 
@@ -771,27 +772,22 @@ impl OutlineViewModel {
     ///
     /// Takes explicit ids rather than re-deriving them, so the rows the writer saw in the
     /// preview are the rows that change even if something moved in between.
+    ///
+    /// The clearing itself is
+    /// [`binder_item_management::clear_titles`](frontend::commands::binder_item_management_commands::clear_titles).
+    /// A title lives in two places — `BinderItem.title` and the title `Content` row the
+    /// constraint matrix gives that combination — and pairing those two writes is exactly
+    /// the knowledge a caller should not have to hold. **Deciding** which titles are
+    /// redundant stays here in [`Self::redundant_number_titles`]: that is a read-model
+    /// question, and the writer confirms its answer before this runs.
     pub fn clear_number_titles(&self, ids: &[u64]) {
-        if ids.is_empty() {
-            return;
-        }
-        let ctx = &*self.app_ctx;
-        let stack = self.stack();
-        let _ = undo_redo_commands::begin_composite(ctx, stack);
-        for &id in ids {
-            // `set_title` writes both homes — `BinderItem.title` and the title `Content`
-            // row — so neither is left holding a number the other has dropped.
-            let probe = SingleBinderItem::new(self.app_ctx.clone());
-            probe.set_id(Some(id));
-            if let Err(e) = probe.set_title("", stack) {
-                // Keep going and close the composite: a partial clear is still one undo
-                // step, and abandoning it half-way would leave the writer with a mixture
-                // they cannot revert in one go. Reported rather than swallowed — the row
-                // simply keeps its old title, and the next tidy will offer it again.
-                eprintln!("outline: clearing the title of item {id} failed: {e}");
-            }
-        }
-        undo_redo_commands::end_composite(ctx);
+        let _ = binder_item_management_commands::clear_titles(
+            &self.app_ctx,
+            self.stack(),
+            &ClearTitlesDto {
+                item_ids: ids.to_vec(),
+            },
+        );
         self.reload();
     }
 

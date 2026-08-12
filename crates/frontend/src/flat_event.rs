@@ -135,6 +135,7 @@ pub enum FlatEventKind {
     BinderItemManagementPromote,
     BinderItemManagementSetDescendantsExportable,
     BinderItemManagementSetDescendantsDictLanguage,
+    BinderItemManagementClearTitles,
 
     HandlingAppLifecycleInitializeApp,
     HandlingAppLifecycleCleanUpBeforeExit,
@@ -404,6 +405,9 @@ impl From<Event> for FlatEvent {
                 }
                 BinderItemManagementEvent::SetDescendantsDictLanguage => {
                     FlatEventKind::BinderItemManagementSetDescendantsDictLanguage
+                }
+                BinderItemManagementEvent::ClearTitles => {
+                    FlatEventKind::BinderItemManagementClearTitles
                 }
             },
             Origin::HandlingAppLifecycle(fe) => match fe {

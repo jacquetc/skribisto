@@ -1944,6 +1944,38 @@ features:
       - name: changed_ids
         type: uinteger
         is_list: true
+
+  # Blank the titles of the named items, in one undo step.
+  #
+  # A title has **two homes** -- `BinderItem.title`, which the outline and the
+  # tab show, and the title `Content` row the constraint matrix gives that
+  # combination (`skribisto_model::title_role_of`), which is what the exporter
+  # compiles. Writing one without the other is how they drift apart, and doing
+  # it per item from the UI is how a caller forgets the second. That pairing is
+  # the whole reason this is a use case rather than a loop of scalar updates.
+  #
+  # Takes explicit ids rather than a rule: the caller decides *which* titles are
+  # redundant (a read-model question, and one the writer confirms in a preview),
+  # so the rows that were shown are the rows that change even if the tree moved
+  # in between.
+  - name: clear_titles
+    entities:
+    - BinderItem
+    - Content
+    undoable: true
+    dto_in:
+      name: ClearTitlesDto
+      fields:
+      - name: item_ids
+        type: uinteger
+        is_list: true
+    dto_out:
+      name: ClearTitlesResultDto
+      fields:
+      # Only the rows that had something to clear, in the order given.
+      - name: cleared_ids
+        type: uinteger
+        is_list: true
 - name: handling_app_lifecycle
   use_cases:
   - name: initialize_app
