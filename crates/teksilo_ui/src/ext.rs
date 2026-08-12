@@ -45,6 +45,16 @@
 // ── Docks ────────────────────────────────────────────────────────────────────
 pub use crate::docks::{DockContext, DockHandle, ExtensionDock, register_dock};
 
+// ── Marking a project dirty ──────────────────────────────────────────────────
+//
+// Published because both context types above hand one out — `DockContext::work`
+// and `ContentTab::work()` — and an extension that receives a value it cannot
+// name has to reach past this façade to spell its type, which is the one thing
+// the façade exists to prevent. It went unnoticed until the downstream edition
+// was compiled against a release that had moved it; the drift test walks
+// registration functions, and a *type* handed out by one is invisible to it.
+pub use crate::save::WorkHandle;
+
 // ── Inspector sections ───────────────────────────────────────────────────────
 pub use crate::docks::inspector_sections::{
     InspectorContext, InspectorSectionHandle, InspectorSectionSpec, register_inspector_section,
