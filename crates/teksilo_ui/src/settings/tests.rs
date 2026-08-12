@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
+use std::collections::{HashMap, HashSet};
+
+use teksilo::data::{KeyedSelectionModel, NodeId, SelectionMode, TreeModel};
+
+use super::nav::{GroupKind, all_panes, ancestors_of};
 use super::*;
+use skribisto_model::counting::CountingMethodSetting;
 
 // NOTE: `build()` reads `ctx.settings()` / `ctx.theme_signal()`, which a bare
 // `WidgetTree` can't provide (no way to register a `SettingsStore` app-state
