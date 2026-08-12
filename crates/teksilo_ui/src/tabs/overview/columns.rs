@@ -447,7 +447,7 @@ mod tests {
     #[test]
     fn the_target_column_is_in_the_set_and_sorts() {
         use crate::models::{COL_GOAL, COL_TOTAL_WORDS};
-        let vm = crate::view_models::OverviewViewModel::new(
+        let vm = crate::overview::OverviewViewModel::new(
             std::rc::Rc::new(frontend::AppContext::new()),
             crate::app_ids::AppIds::new(),
             101,

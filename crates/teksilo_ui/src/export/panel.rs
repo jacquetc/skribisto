@@ -36,7 +36,7 @@ use export_management::{ExportFormat, ExportScopeKind};
 use skribisto_compiler::Preset;
 
 use crate::export::choose::ChooseTreeWidget;
-use crate::view_models::{ExportViewModel, format_label, scope_label};
+use crate::export::{ExportViewModel, format_label, scope_label};
 
 /// Two columns now, not three — sized for what is left after the preview column went,
 /// rather than keeping a third of the card empty.
@@ -426,7 +426,7 @@ impl Widget for OptionsColumn {
         // Formats), read from app-state; it falls back to the panel VM's built-ins when the
         // styles view-model isn't registered (e.g. headless tests).
         let catalogue = ctx
-            .app_state::<crate::view_models::ExportStylesViewModel>()
+            .app_state::<crate::export::ExportStylesViewModel>()
             .cloned()
             .map(|s| s.all_presets())
             .unwrap_or_else(|| self.vm.presets());

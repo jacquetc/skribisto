@@ -98,6 +98,7 @@ pub mod binder;
 pub mod cli;
 pub mod commands_ext;
 pub mod comments;
+pub mod corkboard;
 pub mod crash_report;
 pub mod date_convert;
 pub mod distraction_free;
@@ -105,17 +106,24 @@ pub mod docks;
 pub mod export;
 pub mod ext;
 pub mod first_run;
+pub mod footnotes;
 pub mod goals;
 pub mod icons;
 pub mod identity;
+pub mod import_document;
+pub mod import_plume;
 pub mod intents;
 pub mod ipc_serve;
 pub mod locales;
 pub mod media_paths;
 pub mod models;
+pub mod new_work;
 pub mod note_templates;
+pub mod overview;
+pub mod pace;
 pub mod panels;
 pub mod read_signal;
+pub mod search;
 pub mod sessions;
 pub mod settings;
 pub mod settings_ext;
@@ -132,11 +140,14 @@ pub mod singles;
 pub mod spellcheck;
 pub mod startup;
 pub mod statusbar;
+pub mod stream;
 pub mod tabs;
 pub mod tags;
 pub mod text_replacement;
+pub mod timeline;
 pub mod toast_scope;
 pub mod trash;
+pub mod versions;
 pub mod widgets;
 // The pane tests that need fixture rows are mocks-gated, but the search preview's
 // layout tests build their own `OpenDoc`, so they run on the real backend too —
@@ -146,6 +157,7 @@ mod test_support;
 pub mod tooltip_registry;
 pub mod version;
 pub mod view_models;
+pub mod welcome;
 
 use std::rc::Rc;
 use std::sync::Arc;
@@ -162,10 +174,10 @@ use frontend::commands::work_info_commands;
 use frontend::common::event::{Event, Origin};
 
 use app_ids::AppIds;
+use binder::OutlineViewModel;
 use models::{TreeExpansionService, WorkspaceLayoutService};
 use sessions::WorkSession;
 use startup::{Tier1Services, UiConfig};
-use view_models::OutlineViewModel;
 
 /// The currently-open project's path (from its `WorkInfo`), if any.
 ///
@@ -575,7 +587,7 @@ pub fn run() {
         // window's own `window_config` call minted (see its doc, and
         // `sessions::WorkSession`'s module doc). This is a known, flagged
         // Phase-2 gap, not a full fix: a handful of widgets/panes
-        // (`tags::tag_chip`, `view_models::overview`'s tree-expansion restore,
+        // (`tags::tag_chip`, `overview`'s tree-expansion restore,
         // `app::capture_tree_expansion`, the Settings ▸ Work panes) still
         // resolve their Tier-2 view-model this way rather than via a
         // constructor-threaded handle, so they see only the *first* window's

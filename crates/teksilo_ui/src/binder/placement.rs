@@ -28,7 +28,7 @@ use skribisto_model::{Relation, SubRoleExt};
 /// need, fetched once by the caller.
 ///
 /// Carries `role` (not just `indent`/`sub_role`) so a Go-command traversal
-/// (`crate::view_models::binder_ops::go_targets`) can resolve each row's
+/// (`crate::shared::binder_ops::go_targets`) can resolve each row's
 /// `skribisto_model::GoKind` — Chapter identity spans two role encodings
 /// (`Item/ChapterScene` and `Folder/ChapterScene`), so `sub_role` alone cannot answer it.
 pub type ItemMeta = HashMap<u64, (BinderItemRole, i64, BinderItemSubRole)>;

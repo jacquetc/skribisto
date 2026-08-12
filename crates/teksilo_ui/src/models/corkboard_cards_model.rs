@@ -230,7 +230,7 @@ mod imp {
         /// model's lifetime and the model is owned by that owner — an `Rc` capture
         /// would close a cycle, the owner's `Drop` would never run, and every synopsis
         /// document the board ever opened would leak.
-        /// [`CorkboardViewModel::wire`](crate::view_models::CorkboardViewModel::wire)
+        /// [`CorkboardViewModel::wire`](crate::corkboard::CorkboardViewModel::wire)
         /// passes a `Weak`-capturing closure.
         pub fn wire(&self, ctx: &mut BuildContext, on_removed: impl Fn(&[u64]) + 'static) {
             *self.inner.on_removed.borrow_mut() = Some(Box::new(on_removed));

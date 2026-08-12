@@ -47,7 +47,7 @@ mod imp {
 
     /// A scalar-only update DTO from a fetched item (relationships untouched).
     ///
-    /// Stamps `updated_at`, matching `view_models::binder_ops::update_item_dto`.
+    /// Stamps `updated_at`, matching `shared::binder_ops::update_item_dto`.
     /// Every setter below used to stamp it by hand one line later; two vehicles
     /// with two different rules is exactly how the *other* callers came to
     /// forget, so the rule lives in both vehicles and nowhere else.
@@ -401,7 +401,7 @@ mod imp {
         /// Unlike every other writer here this is a **relationship**, so it must NOT go
         /// through `update_dto`: `UpdateBinderItemDto` deliberately carries no relationship
         /// vectors, precisely so a scalar patch cannot clobber them (see
-        /// `view_models::binder_ops::update_item_dto`). Writing the junction directly is
+        /// `shared::binder_ops::update_item_dto`). Writing the junction directly is
         /// also already undoable — `set_binder_item_relationship` is backed by
         /// `UndoableSetRelationshipUseCase`, which stores the before-list itself.
         pub fn set_tags(&self, tag_ids: &[u64], stack: Option<u64>) -> anyhow::Result<()> {

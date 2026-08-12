@@ -33,8 +33,8 @@ use skribisto_compiler::{
 };
 use skribisto_model::scene_break::SceneBreakTier;
 
+use crate::export::ExportStylesViewModel;
 use crate::settings::{field_label, group, hint};
-use crate::view_models::ExportStylesViewModel;
 
 /// One list row (built-in or user), derived from a [`Preset`].
 #[derive(Clone)]

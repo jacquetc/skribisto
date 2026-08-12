@@ -139,7 +139,7 @@ impl ActiveContext {
     /// tracking permanently stuck on its initial value, with nothing to see.
     pub(crate) fn for_window(
         editors: &crate::view_models::EditorsViewModel,
-        outline: &crate::view_models::OutlineViewModel,
+        outline: &crate::binder::OutlineViewModel,
     ) -> Self {
         Self::new(
             &editors.active_context(),

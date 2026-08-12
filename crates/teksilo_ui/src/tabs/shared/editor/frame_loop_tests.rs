@@ -63,7 +63,7 @@ fn column_with(
     // never see movement and no rule would ever fire. `writing_column` hands
     // its own handle to the find view-model, which is how the rest of the
     // app reaches it too.
-    let find = crate::view_models::FindViewModel::new(doc.clone());
+    let find = crate::search::FindViewModel::new(doc.clone());
     let col = writing_column(
         &doc,
         &Signal::new(700.0),
@@ -165,7 +165,7 @@ fn prose_column_playing(
     games: &crate::view_models::WritingGamesViewModel,
 ) -> (EditorHandle, WidgetTree) {
     let doc = TextDocument::new();
-    let find = crate::view_models::FindViewModel::new(doc.clone());
+    let find = crate::search::FindViewModel::new(doc.clone());
     let col = writing_column(
         &doc,
         &Signal::new(700.0),
@@ -266,7 +266,7 @@ fn a_game_stops_typing_and_not_the_programmatic_api() {
     let games = crate::view_models::WritingGamesViewModel::detached();
     games.set_always_forward(true);
     let doc = TextDocument::new();
-    let find = crate::view_models::FindViewModel::new(doc.clone());
+    let find = crate::search::FindViewModel::new(doc.clone());
     let col = writing_column(
         &doc,
         &Signal::new(700.0),

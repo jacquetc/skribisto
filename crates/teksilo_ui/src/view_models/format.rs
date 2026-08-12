@@ -12,7 +12,7 @@
 //! switch is enough to re-run it — a stored handle would keep addressing the
 //! editor the user *used* to be typing in. So the current editor is resolved on
 //! demand, through a closure `App` supplies, exactly as `insert_scene_break`
-//! already resolves its target. The same reason [`crate::view_models::FindViewModel`] is re-attached
+//! already resolves its target. The same reason [`crate::search::FindViewModel`] is re-attached
 //! on every rebuild rather than held.
 //!
 //! The editor **registry** below does hold handles, and does not break that
@@ -270,7 +270,7 @@ struct RegisteredEditor {
     /// typed into, not the one the tab happens to be named after. The binding
     /// rather than a bare id, because the row may not exist yet and the binding
     /// knows how to mint it.
-    footnotes: Option<crate::view_models::FootnoteBinding>,
+    footnotes: Option<crate::footnotes::FootnoteBinding>,
 }
 
 /// One gate per control group, for the dock to hang `visible_when` on.
@@ -668,7 +668,7 @@ impl FormatViewModel {
     pub fn set_registered_footnotes(
         &self,
         id: WidgetId,
-        binding: crate::view_models::FootnoteBinding,
+        binding: crate::footnotes::FootnoteBinding,
     ) {
         if let Some(entry) = self.registry.borrow_mut().iter_mut().find(|e| e.id == id) {
             entry.footnotes = Some(binding);
@@ -691,7 +691,7 @@ impl FormatViewModel {
     ///
     /// `None` for a **synopsis**: it is planning text, and a note attached there
     /// prints into a synopsis export and nowhere in the book.
-    pub fn footnote_target(&self) -> Option<(EditorHandle, crate::view_models::FootnoteBinding)> {
+    pub fn footnote_target(&self) -> Option<(EditorHandle, crate::footnotes::FootnoteBinding)> {
         let (id, handle, kind) = self.resolved_registration()?;
         if kind == EditorKind::Synopsis {
             return None;

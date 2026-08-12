@@ -60,14 +60,13 @@ use frontend::common::direct_access::work::WorkRelationshipField;
 
 use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
+use crate::binder::OutlineViewModel;
 use crate::models::OpenDocsStore;
 use crate::singles::{SingleWork, SingleWorkInfo};
 use crate::spellcheck::SpellcheckService;
+use crate::trash::TrashViewModel;
 
-use super::{
-    EditorsViewModel, OutlineViewModel, SaveStateViewModel, TrashViewModel,
-    WorkspaceLayoutViewModel,
-};
+use super::{EditorsViewModel, SaveStateViewModel, WorkspaceLayoutViewModel};
 
 /// Reload `work_id`'s Work's personal words (`DictWord`, via `Work.dict_words`) into the
 /// checker's personal set for that Work. **Not** `dict_word_commands::get_all_dict_word`,

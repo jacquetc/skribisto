@@ -59,9 +59,9 @@ use teksilo::widgets::{
     PopoverIconButton, RectWidget, Spacer, TextWidget, VStack, ZStack,
 };
 
+use crate::comments::{CommentPalette, CommentsViewModel, ThreadEntry};
 use crate::models::CommentRow;
 use crate::tabs::shared::editor::{CharacterMark, format_row};
-use crate::view_models::{CommentPalette, CommentsViewModel, ThreadEntry};
 
 /// How many lines of body a turn shows before it grows.
 const BODY_MIN_LINES: u32 = 2;
@@ -135,7 +135,7 @@ pub fn comment_card(
 /// It is also the one place in the card that knows, moment to moment, whether a
 /// caret is genuinely sitting in *this* turn's body — so `make_body` forwards
 /// `cfg.is_focused` to [`CommentsViewModel::set_editing`], exactly as
-/// `docks::footnotes::NoteBodyStyle` does for its own dock. Without this,
+/// `crate::footnotes::dock::NoteBodyStyle` does for its own dock. Without this,
 /// [`CommentsViewModel::body_doc`]'s "is someone typing into this exact turn
 /// right now" gate would have nothing truthful to read and could only guess.
 struct CommentBodyStyle {
@@ -419,7 +419,7 @@ impl Turn {
 /// at once with no single per-tab slot for any of them to be sticky in. This
 /// menu skips the resolver entirely and acts on the handle its own `Turn`
 /// already minted — the same "just use the editor I built" shape
-/// `docks::search_preview` uses for the one editor it knows about,
+/// `search::preview_dock` uses for the one editor it knows about,
 /// deliberately bypassing `TypographyBoundEditor`'s registration for the same
 /// reason.
 ///

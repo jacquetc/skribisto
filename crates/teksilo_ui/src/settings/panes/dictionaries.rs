@@ -22,8 +22,8 @@ use teksilo::widgets::{
 
 use crate::models::{DictOrigin, InstalledDictionaryRow};
 use crate::panels::license;
+use crate::spellcheck::DictionariesViewModel;
 use crate::spellcheck::dictionary_registry;
-use crate::view_models::DictionariesViewModel;
 
 /// The whole Dictionaries pane body (a two-tab widget). The caller wraps it in `pane_frame`.
 pub fn dictionaries_pane(ctx: &mut BuildContext, vm: &DictionariesViewModel) -> impl Widget {

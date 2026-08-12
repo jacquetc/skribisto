@@ -33,7 +33,7 @@ None of the plan's five CSV-round-trip assertions (write + parse the export,
 edit externally, re-import with a case-insensitive skip, 3 -> 5 -> one-undo
 -> 3) are exercised here; they cannot be, by any GUI-automation probe against
 this binary. That coverage instead lives in
-`crates/teksilo_ui/src/view_models/tags.rs::tests::csv_round_trips` and
+`crates/teksilo_ui/src/tags/tags_vm.rs::tests::csv_round_trips` and
 `::an_exported_file_is_readable_back_from_disk`, which drive the real
 `TagsViewModel` directly, bypassing only the dialog.
 
@@ -532,7 +532,7 @@ print("  plan assertion 5 (one Ctrl+Z reverts the whole import, back to 3):")
 print("    BLOCKED -- nothing was ever imported through the live app to undo.")
 print("  These are covered at the only reachable boundary -- TagsViewModel::")
 print("  export_to/import_from called directly, bypassing only the dialog --")
-print("  by crates/teksilo_ui/src/view_models/tags.rs::tests (csv_round_trips,")
+print("  by crates/teksilo_ui/src/tags/tags_vm.rs::tests (csv_round_trips,")
 print("  an_exported_file_is_readable_back_from_disk), and would need a new")
 print("  Rust-level test, not a Python probe, to cover the 3->5->undo->3 shape.")
 

@@ -13,16 +13,17 @@ use teksilo::widgets::DockWidgetId;
 
 use frontend::AppContext;
 
+use crate::binder::OutlineViewModel;
 use crate::models::OpenDocsStore;
-use crate::view_models::{OutlineViewModel, SearchReplaceViewModel};
+use crate::search::SearchReplaceViewModel;
 
 use super::super::open_search_settings;
 
 /// The three shared view-models `get_or_create` resolves.
 pub(in crate::app) struct SharedFeatureViewModels {
     pub search: SearchReplaceViewModel,
-    pub trash: crate::view_models::TrashViewModel,
-    pub comments: crate::view_models::CommentsViewModel,
+    pub trash: crate::trash::TrashViewModel,
+    pub comments: crate::comments::CommentsViewModel,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -34,8 +35,8 @@ pub(in crate::app) fn get_or_create(
     preview_dock: DockWidgetId,
     trash_dock: DockWidgetId,
     search_slot: &mut Option<SearchReplaceViewModel>,
-    trash_slot: &mut Option<crate::view_models::TrashViewModel>,
-    comments_slot: &mut Option<crate::view_models::CommentsViewModel>,
+    trash_slot: &mut Option<crate::trash::TrashViewModel>,
+    comments_slot: &mut Option<crate::comments::CommentsViewModel>,
 ) -> SharedFeatureViewModels {
     // ── The search feature's shared view-model (both docks clone it) ──────
     // Created once; it holds the results model, the persisted `search.toml`
@@ -78,7 +79,7 @@ pub(in crate::app) fn get_or_create(
             .get_or_insert_with(|| {
                 let model =
                     crate::models::TrashTreeModel::new(app_ctx.clone(), ids.work_id.clone());
-                crate::view_models::TrashViewModel::new(app_ctx, ids, model, docking, trash_dock)
+                crate::trash::TrashViewModel::new(app_ctx, ids, model, docking, trash_dock)
             })
             .clone()
     };
@@ -93,7 +94,7 @@ pub(in crate::app) fn get_or_create(
         comments_slot
             .get_or_insert_with(|| {
                 let model = crate::models::CommentsListModel::new(app_ctx.clone(), ids.clone());
-                crate::view_models::CommentsViewModel::new(model, app_ctx, ids.stack_id.clone())
+                crate::comments::CommentsViewModel::new(model, app_ctx, ids.stack_id.clone())
             })
             .clone()
     };

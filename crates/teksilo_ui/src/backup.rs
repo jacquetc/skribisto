@@ -1,9 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Shared backup helpers for the UI layer: destination reachability, and the
-//! open-a-backup detection (`is_backup_path` / `BackupContext`).
+//! The backup feature: business logic, plus the banner/choice/list views.
+//!
+//! Four view-models: [`BackupSchedulerViewModel`] drives every automatic + manual backup
+//! trigger and is the one place that starts a `backup_now` long operation;
+//! [`BackupRestoreViewModel`] is "restore this project to this backup", reusing `save_as`
+//! under an atomic-replace swap; [`BackupSettingsViewModel`] is a cloneable handle over the
+//! persisted policy (general + per-project overrides); [`BackupsListViewModel`] finds,
+//! opens, reveals and deletes the backup **files** for the open project, distinct from the
+//! destinations `BackupSettingsViewModel` configures. [`banner`]/[`choice_panel`]/
+//! [`list_panel`] are the views: the permanent warning strip shown while a backup file is
+//! open, the modal offering to open-or-restore it, and the browsable list of backup files.
+//! [`is_backup_path`]/[`BackupContext`]/[`is_destination_available`] are the shared plumbing
+//! underneath all four: open-a-backup detection and destination reachability.
 
+mod backup_restore_vm;
+mod backup_scheduler_vm;
+mod backup_settings_vm;
+mod backups_list_vm;
 pub(crate) mod banner;
 pub(crate) mod choice_panel;
 pub(crate) mod list_panel;
@@ -11,6 +26,11 @@ pub(crate) mod list_panel;
 use std::path::Path;
 
 use skrib_format::sniff_backup;
+
+pub use backup_restore_vm::BackupRestoreViewModel;
+pub use backup_scheduler_vm::{BackupSchedulerViewModel, SafetyBlocker};
+pub use backup_settings_vm::BackupSettingsViewModel;
+pub use backups_list_vm::{BackupRow, BackupsListViewModel};
 
 /// State carried while a **backup file** is open in this window: enough to drive
 /// the permanent banner and the restore flow. Held in `App`'s `backup_context`

@@ -40,8 +40,8 @@ use teksilo::widgets::{
     ScrollArea, Spacer, TextWidget, VStack,
 };
 
+use crate::export::{ParatextPresetsViewModel, PresetRow};
 use crate::models::{NEW_PRESET_TEMPLATE, ParatextPreset};
-use crate::view_models::{ParatextPresetsViewModel, PresetRow};
 
 /// Room for a preset without scrolling: the metadata block plus two lists.
 const EDITOR_W: f32 = 620.0;

@@ -8,7 +8,7 @@
 //! headline affordance. Rebuilds when the focused item changes.
 //!
 //! It reuses the shared
-//! [`promote_with_guard`](crate::docks::outline::promote_with_guard) so the button behaves exactly like
+//! [`promote_with_guard`](crate::binder::dock::promote_with_guard) so the button behaves exactly like
 //! the outline context menu (incl. the demote-empty MessageBox).
 
 use std::rc::Rc;
@@ -41,10 +41,10 @@ use skribisto_model::compile::ItemMeta;
 use skribisto_model::counting::CountingMethodSetting;
 
 use crate::app_ids::AppIds;
-use crate::docks::outline::promote_menu;
+use crate::binder::OutlineViewModel;
+use crate::binder::dock::promote_menu;
 use crate::models::BinderTreeKey;
 use crate::singles::SingleBinderItem;
-use crate::view_models::OutlineViewModel;
 
 /// The open Work's flat, ordered `ItemMeta` stream — id/role/sub_role/indent/activated/
 /// is_exportable only, **without** fetching prose (unlike `export`'s `client_gather`, which
@@ -107,7 +107,7 @@ pub fn inspector_dock(
     outline: OutlineViewModel,
     focus: Signal<Option<u64>>,
     dock_id: DockWidgetId,
-    tags: crate::view_models::TagsViewModel,
+    tags: crate::tags::TagsViewModel,
     mention_index: crate::view_models::MentionIndex,
     open_docs: crate::models::OpenDocsStore,
     counting_method: Signal<CountingMethodSetting>,
@@ -152,7 +152,7 @@ pub(super) struct Inspector {
     /// open in a second window, that lookup would silently answer with whichever
     /// Work's session was registered first — this dock's tag picker would then
     /// attach a *different* Work's tag id onto this window's own item.
-    tags: crate::view_models::TagsViewModel,
+    tags: crate::tags::TagsViewModel,
     mention_index: crate::view_models::MentionIndex,
     open_docs: crate::models::OpenDocsStore,
     /// Debounced live prose for cast suggestions — never bound at Rebuild to
@@ -168,7 +168,7 @@ impl Inspector {
         app_ctx: Rc<AppContext>,
         outline: OutlineViewModel,
         focus: Signal<Option<u64>>,
-        tags: crate::view_models::TagsViewModel,
+        tags: crate::tags::TagsViewModel,
         mention_index: crate::view_models::MentionIndex,
         open_docs: crate::models::OpenDocsStore,
         counting_method: Signal<CountingMethodSetting>,

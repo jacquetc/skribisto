@@ -24,19 +24,18 @@
 //! its own ownership shape — it highlights the shapes worth knowing before adding one:
 //!   * [`editors`] — `EditorsViewModel`: single-instance live state (owns the tab
 //!     list + selection).
-//!   * [`stream`] — `StreamViewModel`: per-container-tab live state (owns the
+//!   * [`crate::stream::StreamViewModel`] — per-container-tab live state (owns the
 //!     Full Chapter/Part/Book row list and the row mutations).
-//!   * [`outline`] — `OutlineViewModel`: single-instance live state (owns the
+//!   * [`crate::binder::OutlineViewModel`] — single-instance live state (owns the
 //!     `DockingModel` + tree model).
 //!   * [`mod@format`] — `FormatViewModel`: single-instance live state (owns the
 //!     formatting mirrors shared by the format dock, the Format menu and the
 //!     editor's context-menu row).
 //!   * [`settings`] — `SettingsViewModel`: store-backed facade over persisted UI
 //!     settings.
-//!   * [`welcome`] — `WelcomeViewModel`: store-backed facade for the start screen.
-//!   * [`new_work`] — `NewWorkViewModel`: single-instance live state (owns the New
+//!   * [`crate::new_work::NewWorkViewModel`] — single-instance live state (owns the New
 //!     Work dialog's form signals).
-//!   * [`import_plume`] — `ImportPlumeViewModel`: single-instance live state (owns
+//!   * [`crate::import_plume::ImportPlumeViewModel`] — single-instance live state (owns
 //!     the Import Plume Creator dialog's form signals).
 //!   * [`project_switch`] — `ProjectSwitchViewModel`: single-instance live state
 //!     (owns the unsaved-changes guard every in-place project switch — New Work,
@@ -69,9 +68,10 @@
 //!     `Origin::LongOperation` payload parsing, the save-coalescing state
 //!     machine, the save indicator's pure decision table, and the "couldn't
 //!     open" toast text.
-//!   * [`binder_ops`], [`project_switcher`] — shared plumbing for the four
-//!     binder-editing view-models, and the pure functions behind the
-//!     project-switcher popover.
+//!   * [`crate::shared::binder_ops`] — shared plumbing for the four
+//!     binder-editing view-models.
+//!   * [`project_switcher`] — the pure functions behind the project-switcher
+//!     popover.
 //!   * [`caret_highlight`], [`typewriter`], [`synopsis_placement`],
 //!     [`word_count_status`] — pure preference vocabulary read by both a
 //!     settings pane and the editor/status-bar wiring (each says so in its own
@@ -87,41 +87,25 @@
 //!     outline-selection → editor-open effect in `app.rs`).
 //!   * Many-to-one / distant links graduate to the intent bus.
 
-mod add_dictionary;
 pub mod analysis;
-mod backup_restore;
-mod backup_scheduler;
-mod backup_settings;
-mod backups_list;
-mod binder_ops;
 mod caret_highlight;
-mod comments;
-mod corkboard;
-mod dictionaries;
 mod distraction_free_surface;
 mod distraction_free_themes;
 mod editors;
-mod export;
-mod export_styles;
-mod find;
 mod focus;
-mod footnotes;
 mod format;
 mod fullscreen;
 mod go;
 mod go_to;
 pub mod images;
-pub(crate) mod import_document;
-mod import_plume;
-mod long_op;
+/// Shared `Origin::LongOperation` event-parsing + Work-capture helpers, used
+/// by every long-operation view-model in the crate — `pub(crate)` (not just
+/// `mod`) because several of those view-models now live in their own feature
+/// directories (e.g. `crate::backup`) rather than as descendants of this
+/// module.
+pub(crate) mod long_op;
 mod mention_index;
-mod new_work;
-mod note_templates;
 mod open_failure;
-mod outline;
-mod overview;
-mod pace;
-mod paratext_presets;
 mod progress_recorder;
 mod project_lifecycle;
 mod project_switch;
@@ -131,28 +115,13 @@ mod save_as;
 mod save_queue;
 mod save_state;
 mod save_status;
-mod search_replace;
 mod settings;
-mod stream;
 mod synopsis_placement;
-mod tags;
 mod text_replacement_rules;
-/// The project-wide past, and the way back to a row that no longer exists.
-pub mod timeline;
-pub mod timeline_axis;
 mod timers;
-mod trash;
 mod tree_expansion;
 mod typewriter;
-mod user_dictionary;
-/// Comparing two versions of one row's prose.
-pub mod version_diff;
-/// Putting a past version back.
-pub mod version_restore;
-/// One row's recorded past, for the Versions dock.
-pub mod versions;
 mod view_state;
-mod welcome;
 mod word_count_status;
 mod work_settings;
 mod workspace_layout;
@@ -160,25 +129,12 @@ mod workspace_layout;
 pub mod writing_games;
 mod writing_session;
 
-pub use add_dictionary::AddDictionaryViewModel;
 pub use analysis::{AnalysisCategory, AnalysisState, AnalysisViewModel};
-pub use backup_restore::BackupRestoreViewModel;
-pub use backup_scheduler::{BackupSchedulerViewModel, SafetyBlocker};
-pub use backup_settings::BackupSettingsViewModel;
-pub use backups_list::{BackupRow, BackupsListViewModel};
-pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};
 pub use caret_highlight::{CaretBand, CaretHighlightSettings, HighlightScope};
-pub use comments::{CommentFilter, CommentPalette, CommentSort, CommentsViewModel, ThreadEntry};
-pub use corkboard::{CorkboardViewModel, SORT_TITLE as CORKBOARD_SORT_TITLE};
-pub use dictionaries::{DictionariesViewModel, InstallDictError};
 pub use distraction_free_surface::{DistractionFreeSurfaceViewModel, SurfaceDeps};
 pub use distraction_free_themes::DistractionFreeThemesViewModel;
 pub use editors::{EditorsViewModel, Side};
-pub use export::{ExportViewModel, format_label, scope_label};
-pub use export_styles::ExportStylesViewModel;
-pub use find::FindViewModel;
 pub use focus::FocusViewModel;
-pub use footnotes::{FootnoteBinding, FootnoteFilter, FootnotesViewModel};
 pub use format::{
     ALIGN_CENTER, ALIGN_LEFT, DIR_AUTO, DIR_LTR, DIR_RTL, EditorKind, FormatSurface,
     FormatViewModel,
@@ -186,16 +142,8 @@ pub use format::{
 pub use fullscreen::FullscreenViewModel;
 pub use go::GoAvailability;
 pub use go_to::GoToViewModel;
-pub use import_document::ImportDocumentViewModel;
-pub use import_plume::ImportPlumeViewModel;
 pub use mention_index::{MentionIndex, MentionRow};
-pub use new_work::{NewWorkPurpose, NewWorkViewModel};
-pub use note_templates::NoteTemplatesViewModel;
 pub use open_failure::open_failure_toast;
-pub use outline::OutlineViewModel;
-pub use overview::OverviewViewModel;
-pub use pace::PaceViewModel;
-pub use paratext_presets::{ParatextPresetsViewModel, PresetRow};
 pub use progress_recorder::ProgressRecorder;
 pub use project_lifecycle::ProjectLifecycleViewModel;
 pub(crate) use project_lifecycle::reload_personal_words;
@@ -207,26 +155,15 @@ pub use save_as::SaveAsViewModel;
 pub(crate) use save_queue::{DeferredResume, resume_deferred};
 pub use save_state::{SaveStateViewModel, WorkHandle};
 pub use save_status::{SaveStatus, SpinnerGate, save_clickable, save_status};
-pub use search_replace::SearchReplaceViewModel;
 pub use settings::{
     CorkboardDefaults, EditorTypography, EditorTypographySet, EditorViewMemory, SettingsViewModel,
 };
-pub use stream::{SplitFlavour, StreamViewModel};
 pub use synopsis_placement::SynopsisPlacement;
-pub use tags::TagsViewModel;
 pub use text_replacement_rules::TextReplacementRulesViewModel;
-pub use timeline::{ChangeKind, RowChange, TimelineViewModel};
-pub use timeline_axis::{Axis, axis_for};
 pub(crate) use timers::{AutosaveCountdown, IntervalCountdown, IntervalTick};
-pub use trash::TrashViewModel;
 pub use tree_expansion::TreeExpansionViewModel;
 pub use typewriter::{TypewriterAnchor, TypewriterSettings};
-pub use user_dictionary::UserDictionaryViewModel;
-pub use version_diff::VersionDiff;
-pub use version_restore::RestoreRequest;
-pub use versions::VersionsViewModel;
 pub use view_state::{ViewState, ViewStateBinding, ViewStatePorts};
-pub use welcome::{DISCORD_URL, GITHUB_URL, WelcomeViewModel};
 pub use word_count_status::{CountDisplay, GoalDisplay, count_display, goal_display};
 pub use work_settings::WorkSettingsViewModel;
 pub use workspace_layout::WorkspaceLayoutViewModel;

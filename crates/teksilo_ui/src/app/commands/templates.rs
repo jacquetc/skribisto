@@ -113,7 +113,7 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 /// explains itself as it is typed, rather than being accepted and then apologised for.
 /// That is the whole reason `InputDialog::validate` exists — it was added for this.
 fn present_save_as_template(
-    templates: &crate::view_models::NoteTemplatesViewModel,
+    templates: &crate::note_templates::NoteTemplatesViewModel,
     format: crate::view_models::FormatViewModel,
     body: String,
     ctx: &mut EventContext,

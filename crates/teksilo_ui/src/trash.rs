@@ -1,12 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The trash feature's own views.
+//! The trash feature: business logic, dock and panel.
 //!
-//! Small today — the destination picker for restoring an item whose original spot is gone.
-//! It lived at the top level as `restore_target_panel.rs`, where its name and its chrome
-//! both read as *backup* restore; it depends only on [`crate::view_models::TrashViewModel`]
-//! and the binder tree model, and nothing in backup. The trash dock itself is
-//! [`crate::docks::trash`].
+//! [`TrashViewModel`] is the dock's business logic — list the trashed roots, restore (in
+//! place, with an orphan → destination-picker fallback), restore a single item to a chosen
+//! destination, permanently delete an entry, and empty the whole trash. [`dock`] builds the
+//! trash panel itself; [`restore_target_panel`] is the destination picker for restoring an
+//! item whose original spot is gone. It lived at the top level as `restore_target_panel.rs`,
+//! where its name and its chrome both read as *backup* restore; it depends only on
+//! [`TrashViewModel`] and the binder tree model, and nothing in backup.
 
+mod trash_vm;
+
+pub mod dock;
 pub(crate) mod restore_target_panel;
+
+pub use trash_vm::TrashViewModel;

@@ -18,9 +18,9 @@ use std::rc::Rc;
 use teksilo::prelude::Signal;
 use teksilo::text_document::TextDocument;
 
+use crate::comments::CommentsViewModel;
 use crate::comments::anchor;
 use crate::comments::session::{CommentHighlightSession, LiveAnchor};
-use crate::view_models::CommentsViewModel;
 
 /// A deeper shade of the wash, for a span two threads both cover.
 ///
@@ -299,7 +299,7 @@ impl CommentBinding {
     }
 
     /// The shared palette every mark and card for this document is painted with.
-    pub fn palette(&self) -> teksilo::prelude::Signal<crate::view_models::CommentPalette> {
+    pub fn palette(&self) -> teksilo::prelude::Signal<crate::comments::CommentPalette> {
         self.vm.palette_signal()
     }
 

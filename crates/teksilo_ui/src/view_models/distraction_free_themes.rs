@@ -5,7 +5,7 @@
 //! **Distraction-free themes** and the mode's own quick-access picker.
 //!
 //! **App-local, not a Qleany feature**, exactly like
-//! [`crate::view_models::ExportStylesViewModel`], which this mirrors almost
+//! [`crate::export::ExportStylesViewModel`], which this mirrors almost
 //! line for line: a theme is a machine-wide preference that outlives any `Work`,
 //! is not undoable, and never touches the entity store. Single-instance live
 //! state (the service over `distraction_free_themes.toml` plus a `changed`

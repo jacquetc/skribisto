@@ -101,7 +101,7 @@ mcp_err = tempfile.NamedTemporaryFile(suffix=".mcp.log", delete=False).name
 # spellings, with a comment naming the ftl key it came from
 # (crates/teksilo_ui/locales/{en-US,fr-FR}/{main,tags}.ftl) — all read in
 # full, not guessed.
-WELCOME_NAV = "welcome sections"  # panels/welcome.rs: access_label_literal("Welcome sections") — not tr!, same in both locales
+WELCOME_NAV = "welcome sections"  # welcome/panel.rs: access_label_literal("Welcome sections") — not tr!, same in both locales
 NEW_WORK_BTN = ("new work", "nouvelle œuvre", "nouvelle oeuvre")  # welcome-new-work
 SEC_WORK = ("work", "œuvre", "oeuvre")  # settings-sec-work
 PAGE_TAGS = ("tags", "étiquettes")  # settings-page-tags

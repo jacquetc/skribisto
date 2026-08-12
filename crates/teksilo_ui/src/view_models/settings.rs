@@ -218,7 +218,7 @@ impl EditorViewMemory {
 }
 
 /// The corkboard's default presentation, shared live into every container tab's
-/// [`CorkboardViewModel`](crate::view_models::CorkboardViewModel). Every field is a
+/// [`CorkboardViewModel`](crate::corkboard::CorkboardViewModel). Every field is a
 /// store-backed signal, so editing it in Settings fans out to open boards at once.
 #[derive(Clone)]
 pub struct CorkboardDefaults {
@@ -697,7 +697,7 @@ impl SettingsViewModel {
     }
 
     /// The corkboard defaults bundle threaded into every container tab's
-    /// [`CorkboardViewModel`](crate::view_models::CorkboardViewModel). Bundled so a
+    /// [`CorkboardViewModel`](crate::corkboard::CorkboardViewModel). Bundled so a
     /// tab constructor takes one handle rather than five signals. `counting_method`
     /// is the same live setting the status-bar word count uses.
     pub fn corkboard_defaults(&self) -> CorkboardDefaults {

@@ -68,12 +68,12 @@ fn work_with_item(ctx: &Rc<AppContext>, sub_role: BinderItemSubRole) -> (u64, u6
 fn panel(ctx: &Rc<AppContext>, work_id: u64, focus: Signal<Option<u64>>) -> Inspector {
     let ids = crate::app_ids::AppIds::new();
     ids.work_id.set(Some(work_id));
-    let outline = crate::view_models::OutlineViewModel::new_default(ctx.clone(), ids.clone());
+    let outline = crate::binder::OutlineViewModel::new_default(ctx.clone(), ids.clone());
     Inspector::new(
         ctx.clone(),
         outline,
         focus,
-        crate::view_models::TagsViewModel::new(
+        crate::tags::TagsViewModel::new(
             crate::models::WorkTagsListModel::new(ctx.clone(), ids.clone()),
             ids.clone(),
         ),

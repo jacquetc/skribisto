@@ -27,8 +27,7 @@ use teksilo::widgets::{
     TextWidget, VStack,
 };
 
-use crate::backup::BackupContext;
-use crate::view_models::BackupRestoreViewModel;
+use crate::backup::{BackupContext, BackupRestoreViewModel};
 
 /// Restore button click: dismiss this modal, then start the restore flow.
 fn on_restore(restore: &BackupRestoreViewModel, ctx: &mut EventContext) {
@@ -38,8 +37,8 @@ fn on_restore(restore: &BackupRestoreViewModel, ctx: &mut EventContext) {
 
 /// Clear backup mode entirely — split out from [`on_open_normally`] so the
 /// signal-mutation logic is unit-testable without an `EventContext` (this
-/// codebase has no `EventContext` test harness — see `backup_scheduler.rs` /
-/// `restore.rs` for the same constraint).
+/// codebase has no `EventContext` test harness — see `backup_scheduler_vm.rs` /
+/// `backup_restore_vm.rs` for the same constraint).
 fn clear_backup_mode(backup_mode: &Signal<bool>, backup_context: &Signal<Option<BackupContext>>) {
     backup_mode.set(false);
     backup_context.set(None);

@@ -24,7 +24,7 @@ use teksilo::widgets::{
 };
 
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::TrashViewModel;
+use crate::trash::TrashViewModel;
 use crate::widgets::DestinationPicker;
 
 const CARD_W: f32 = 560.0;

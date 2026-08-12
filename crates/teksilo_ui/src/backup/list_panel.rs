@@ -22,7 +22,7 @@
 use teksilo::core::styles::PanelVariant;
 use teksilo::prelude::*;
 
-use crate::view_models::{BackupRow, BackupsListViewModel};
+use crate::backup::{BackupRow, BackupsListViewModel};
 use teksilo::prelude::{EllipsisMode, TextOverflow};
 use teksilo::widgets::{
     Button, ButtonVariant, Divider, Expand, FixedSize, HStack, IconButton, ListView, MessageBox,

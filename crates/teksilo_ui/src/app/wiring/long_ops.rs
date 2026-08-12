@@ -20,10 +20,11 @@ use teksilo::prelude::*;
 
 use frontend::common::event::{Event, LongOperationEvent, Origin, WorkManagementEvent};
 
-use crate::view_models::{
-    BackupRestoreViewModel, BackupSchedulerViewModel, ExportViewModel, ImportDocumentViewModel,
-    ImportPlumeViewModel, MentionIndex, ProgressRecorder, SaveAsViewModel,
-};
+use crate::backup::{BackupRestoreViewModel, BackupSchedulerViewModel};
+use crate::export::ExportViewModel;
+use crate::import_document::ImportDocumentViewModel;
+use crate::import_plume::ImportPlumeViewModel;
+use crate::view_models::{MentionIndex, ProgressRecorder, SaveAsViewModel};
 
 /// One row of a long-operation dispatch table: which event, and what to run on
 /// the view-model when it arrives.

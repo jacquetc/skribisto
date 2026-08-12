@@ -49,10 +49,11 @@ use find_banner::*;
 const FIND_FIELD_MAX_WIDTH: f32 = 240.0;
 
 use crate::intents::AppIntent;
+use crate::search::FindViewModel;
 use crate::spellcheck::SpellSession;
 use crate::tabs::TitleField;
 use crate::text_replacement::TextReplacementSession;
-use crate::view_models::{EditorKind, EditorTypography, FindViewModel, FormatViewModel};
+use crate::view_models::{EditorKind, EditorTypography, FormatViewModel};
 
 /// Drive a document's replace-while-typing session from the frame tick.
 ///
@@ -130,7 +131,7 @@ pub fn writing_column(
     min_lines: u32,
     on_change: impl Fn() + 'static,
     split: Option<SplitFn>,
-    find: Option<crate::view_models::FindViewModel>,
+    find: Option<FindViewModel>,
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
     format: Option<FormatViewModel>,
@@ -163,7 +164,7 @@ pub fn writing_column(
     // the dock's parked "reveal this note" request on the way in, and this
     // editor's caret on the way out, so a marker the writer clicks lights up its
     // row in the dock. `None` on every surface built without a project around it.
-    footnotes: Option<crate::view_models::FootnoteBinding>,
+    footnotes: Option<crate::footnotes::FootnoteBinding>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
@@ -257,9 +258,7 @@ pub fn writing_column(
                 let note_seek = footnotes
                     .as_ref()
                     .and_then(|f| f.take_seek())
-                    .and_then(|label| {
-                        crate::view_models::FootnoteBinding::position_of(doc, &label)
-                    });
+                    .and_then(|label| crate::footnotes::FootnoteBinding::position_of(doc, &label));
                 match note_seek {
                     Some(pos) => {
                         let last = doc.character_count();
@@ -767,7 +766,7 @@ pub fn writing_section(
     column_width: &Signal<f32>,
     typo: &EditorTypography,
     on_change: impl Fn() + 'static,
-    find: Option<crate::view_models::FindViewModel>,
+    find: Option<FindViewModel>,
     spell: Option<Rc<SpellSession>>,
     replacement: Option<Rc<TextReplacementSession>>,
     format: Option<FormatViewModel>,
@@ -784,7 +783,7 @@ pub fn writing_section(
     view_state: Option<crate::view_models::ViewStateBinding>,
     comments: Option<crate::comments::binding::CommentBinding>,
     // Forwarded straight to [`writing_column`] — see its own note.
-    footnotes: Option<crate::view_models::FootnoteBinding>,
+    footnotes: Option<crate::footnotes::FootnoteBinding>,
     // Where this editor fetches an image it meets but its document does not
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.

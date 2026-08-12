@@ -18,11 +18,11 @@ use teksilo::prelude::*;
 use teksilo::res;
 use teksilo::widgets::{ButtonVariant, IconWidget, MenuItem, SplitButton};
 
+use crate::binder::OutlineViewModel;
 use crate::binder::create_labels::{
     recommendation_label, recommendation_placement, recommendation_tooltip_key,
 };
 use crate::intents::AppIntent;
-use crate::view_models::OutlineViewModel;
 
 /// The "＋ `<type>`" split button shown in the outline dock header.
 pub struct CreateSplitButton {

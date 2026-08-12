@@ -222,7 +222,7 @@ impl TreeNode {
 pub type CommitMove = Rc<dyn Fn(BinderTreeKey, BinderTreeKey, DropPosition) -> bool>;
 
 /// The reactive filter inputs that shape which rows the tree shows. Owned by
-/// [`OutlineViewModel`](crate::view_models::OutlineViewModel) and shared (by
+/// [`OutlineViewModel`](crate::binder::OutlineViewModel) and shared (by
 /// signal clone) into the tree model, which reads them in its row source and
 /// re-sources itself when any changes.
 #[derive(Clone)]

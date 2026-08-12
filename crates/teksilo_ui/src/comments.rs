@@ -12,9 +12,13 @@
 pub mod anchor;
 pub mod binding;
 pub mod card;
+mod comments_vm;
+pub mod dock;
 pub mod layout;
 pub mod margin;
 pub mod pane;
 pub mod preview;
 pub mod session;
 pub mod signature;
+
+pub use comments_vm::{CommentFilter, CommentPalette, CommentSort, CommentsViewModel, ThreadEntry};

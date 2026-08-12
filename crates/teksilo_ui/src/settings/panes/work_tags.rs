@@ -34,9 +34,8 @@ use teksilo::widgets::{
 
 use crate::app_ids::HasWorkId;
 use crate::models::TagRow;
-use crate::tags::{Preset, contrast};
+use crate::tags::{Preset, TagsViewModel, contrast};
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::TagsViewModel;
 
 const NAME_COL: &str = "name";
 const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;

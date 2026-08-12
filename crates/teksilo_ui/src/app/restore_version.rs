@@ -3,7 +3,7 @@
 
 //! Putting a past version back: the guarded sequence around the write.
 //!
-//! [`crate::view_models::version_restore`] knows *how* to replace a row's text.
+//! [`crate::versions::version_restore`] knows *how* to replace a row's text.
 //! This knows what has to be true first, and in what order — which is the part
 //! that makes the difference between a feature about not losing work and a
 //! feature that loses it.
@@ -35,13 +35,13 @@ use teksilo::widgets::{MessageBox, MessageBoxButtons, StandardButton, Toast, Toa
 use frontend::AppContext;
 use frontend::commands::undo_redo_commands;
 
+use crate::backup::{BackupSchedulerViewModel, SafetyBlocker};
 use crate::models::OpenDocsStore;
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::SafetyBlocker;
-use crate::view_models::version_restore::{
+use crate::versions::version_restore::{
     self, RestoreRefusal, RestoreRequest, content_id_for, slot_for,
 };
-use crate::view_models::{BackupSchedulerViewModel, EditorsViewModel};
+use crate::view_models::EditorsViewModel;
 
 /// One toast per feature: a second restore replaces its own snackbar rather than
 /// stacking a tower of them.

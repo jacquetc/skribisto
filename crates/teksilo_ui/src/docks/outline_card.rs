@@ -286,7 +286,7 @@ impl Widget for OutlineCard {
         let tag_rows = if self.node.tags.is_empty() {
             Vec::new()
         } else {
-            ctx.app_state::<crate::view_models::TagsViewModel>()
+            ctx.app_state::<crate::tags::TagsViewModel>()
                 .cloned()
                 .map(|vm| {
                     let lookup = vm.lookup_signal().get();

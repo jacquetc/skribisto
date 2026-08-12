@@ -128,7 +128,7 @@ pub struct CommentMargin {
     /// where it is available and stashed.
     marks: RefCell<Vec<Mark>>,
     placements: RefCell<Vec<layout::Placement>>,
-    palette: Signal<crate::view_models::CommentPalette>,
+    palette: Signal<crate::comments::CommentPalette>,
 }
 
 impl std::fmt::Debug for CommentMargin {
@@ -141,7 +141,7 @@ impl CommentMargin {
     pub fn new(
         binding: Option<CommentBinding>,
         editor: Rc<RefCell<Option<EditorHandle>>>,
-        palette: Signal<crate::view_models::CommentPalette>,
+        palette: Signal<crate::comments::CommentPalette>,
     ) -> Self {
         Self {
             binding,
@@ -508,7 +508,7 @@ mod tests {
         let m = CommentMargin::new(
             None,
             Rc::new(RefCell::new(None)),
-            Signal::new(crate::view_models::CommentPalette::default()),
+            Signal::new(crate::comments::CommentPalette::default()),
         );
         let mut tree = WidgetTree::new();
         // Under a parent, not at the root: a root widget is simply given the
@@ -534,7 +534,7 @@ mod tests {
         let m = CommentMargin::new(
             None,
             Rc::new(RefCell::new(None)),
-            Signal::new(crate::view_models::CommentPalette::default()),
+            Signal::new(crate::comments::CommentPalette::default()),
         );
         let mut tree = WidgetTree::new();
         let root = tree.add(teksilo::widgets::HStack::new().child(m));
@@ -553,7 +553,7 @@ mod tests {
         let m = CommentMargin::new(
             None,
             Rc::new(RefCell::new(None)),
-            Signal::new(crate::view_models::CommentPalette::default()),
+            Signal::new(crate::comments::CommentPalette::default()),
         );
         assert!(m.resolve_marks().is_empty());
     }
@@ -601,8 +601,8 @@ mod tests {
         use crate::app_ids::AppIds;
         use crate::comments::binding::CommentBinding;
         use crate::comments::session::{CommentHighlightSession, LiveAnchor};
+        use crate::comments::{CommentPalette, CommentsViewModel};
         use crate::models::CommentsListModel;
-        use crate::view_models::{CommentPalette, CommentsViewModel};
         use frontend::common::entities::ContentRole;
         use teksilo::text_document::TextDocument;
 

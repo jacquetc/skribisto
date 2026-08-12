@@ -14,8 +14,8 @@ use teksilo::widgets::{
 
 use frontend::AppContext;
 
-use crate::panels::welcome::WelcomePanel;
 use crate::shell::window_ids::LAUNCHER_WINDOW_ID;
+use crate::welcome::panel::WelcomePanel;
 
 /// The Launcher window: the Welcome UI hosted as a real top-level window
 /// (not a modal), reusing [`WelcomePanel`]/`WelcomeViewModel` verbatim — no

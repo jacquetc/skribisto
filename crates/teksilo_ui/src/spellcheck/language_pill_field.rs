@@ -31,9 +31,9 @@ use crate::widgets::{Pill, PillTooltip};
 use std::collections::HashMap;
 
 use crate::models::OpenDocsStore;
+use crate::spellcheck::DictionariesViewModel;
 use crate::spellcheck::SpellcheckService;
 use crate::spellcheck::dictionary_registry;
-use crate::view_models::DictionariesViewModel;
 use skribisto_model::language;
 
 /// A writer for a new `dict_language` list — the caller persists it (and mirrors it into the

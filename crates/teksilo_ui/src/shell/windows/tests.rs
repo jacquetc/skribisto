@@ -175,7 +175,7 @@ fn an_attached_window_id_is_deterministic() {
 // ── `attached_window_config` (the Work ▸ New Window factory path) ──────
 
 /// A factory over a caller-supplied registry, so a test can register a Work
-/// and then ask for a second window on it. (`view_models::welcome`'s own
+/// and then ask for a second window on it. (`welcome::welcome_vm`'s own
 /// helper builds its registry internally, which is fine there and useless
 /// here.)
 fn test_factory(app_ctx: Rc<AppContext>, registry: WorkRegistry) -> ProjectWindowFactory {

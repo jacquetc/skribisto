@@ -16,7 +16,7 @@
 //!
 //! The confirmation dialog ("open in a new window" vs "open here") stays beside the view in
 //! `project_switcher_button.rs`: it needs an `EventContext`, which is the codebase's stated
-//! reason for dialog logic living next to the widget (see `docks::search_replace_flow`).
+//! reason for dialog logic living next to the widget (see `search::replace_flow`).
 
 use teksilo::prelude::*;
 

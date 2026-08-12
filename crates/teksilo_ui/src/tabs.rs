@@ -43,10 +43,10 @@ use teksilo::widgets::{
 
 use crate::app_ids::AppIds;
 use crate::models::{OpenDoc, OpenDocsStore};
+use crate::pace::PaceViewModel;
 use crate::singles::{SingleBinderItem, SingleContent};
-use crate::view_models::{
-    EditorTypography, EditorTypographySet, PaceViewModel, StreamViewModel, SynopsisPlacement,
-};
+use crate::stream::StreamViewModel;
+use crate::view_models::{EditorTypography, EditorTypographySet, SynopsisPlacement};
 
 // One module per valid `(role, sub_role)` combination — each a single visual tab
 // (see `skribisto_model::COMBINATIONS`). `tab_pane` dispatches to them.
@@ -138,12 +138,12 @@ pub struct ContentTab {
     /// The Corkboard view-model — `Some` only for a folder container (Chapter /
     /// Part / Book), gated on the same
     /// [`StreamLevel::for_container`](crate::models::StreamLevel::for_container) as `stream`.
-    corkboard: Option<crate::view_models::CorkboardViewModel>,
+    corkboard: Option<crate::corkboard::CorkboardViewModel>,
     /// The Overview view-model — `Some` for every container that offers the segment,
     /// gated on [`skribisto_model::overview_capable`]. That is a **wider** gate than the
     /// stream's and the corkboard's: a `Folder/Note` has no manuscript extent, so it has
     /// no stream, but it does have a subtree worth tabulating.
-    overview: Option<crate::view_models::OverviewViewModel>,
+    overview: Option<crate::overview::OverviewViewModel>,
     /// The project's target unit and the window's counting method — what the container
     /// pages need to draw a target readout that agrees with the Overview beside it.
     goal_unit: Signal<GoalUnit>,
@@ -165,7 +165,7 @@ pub struct ContentTab {
     /// The per-editor find banner (Ctrl+F) — `Some` only when this tab has a main
     /// prose field to search. Persisted on the tab so it survives tab rebuilds
     /// (its `FindSession` + query outlive the widget tree it draws into).
-    find: Option<crate::view_models::FindViewModel>,
+    find: Option<crate::search::FindViewModel>,
     /// This tab's **synopsis** editor handle, re-attached on every build the way
     /// the prose one is (a tab rebuild mints a fresh editor and a fresh handle).
     ///
@@ -633,7 +633,7 @@ impl ContentTab {
         )
         .map(|_| {
             let cd = &corkboard_defaults;
-            crate::view_models::CorkboardViewModel::new(
+            crate::corkboard::CorkboardViewModel::new(
                 app_ctx.clone(),
                 ids.clone(),
                 docs.clone(),
@@ -655,7 +655,7 @@ impl ContentTab {
         // `stream` consumes `app_ctx`. It reuses the corkboard's counting-method setting
         // rather than introducing a second one: "how a word is counted" is one answer per
         // project, not one per view.
-        let overview = crate::view_models::OverviewViewModel::new(
+        let overview = crate::overview::OverviewViewModel::new(
             app_ctx.clone(),
             ids.clone(),
             open_doc.item_id,
@@ -678,7 +678,7 @@ impl ContentTab {
         let find = open_doc
             .main
             .as_ref()
-            .map(|m| crate::view_models::FindViewModel::new(m.doc.clone()));
+            .map(|m| crate::search::FindViewModel::new(m.doc.clone()));
         // Seed the container's view from the per-type memory (own page = 0 when
         // disabled or for a non-segmented type).
         let segment = Signal::new(view_memory.initial(&open_doc.sub_role));
@@ -758,18 +758,18 @@ impl ContentTab {
     }
 
     /// The Corkboard view-model — `Some` only for a folder container.
-    pub fn corkboard(&self) -> Option<&crate::view_models::CorkboardViewModel> {
+    pub fn corkboard(&self) -> Option<&crate::corkboard::CorkboardViewModel> {
         self.corkboard.as_ref()
     }
 
     /// The Overview view-model — `Some` for every Overview-capable container.
-    pub fn overview(&self) -> Option<&crate::view_models::OverviewViewModel> {
+    pub fn overview(&self) -> Option<&crate::overview::OverviewViewModel> {
         self.overview.as_ref()
     }
 
     /// The per-editor find banner's view-model — `Some` only when the tab has a
     /// main prose field (Scene / ChapterScene / Note).
-    pub fn find(&self) -> Option<&crate::view_models::FindViewModel> {
+    pub fn find(&self) -> Option<&crate::search::FindViewModel> {
         self.find.as_ref()
     }
 

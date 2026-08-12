@@ -48,7 +48,7 @@ fn column_with_document_and(
 ) -> (TextDocument, EditorHandle, WidgetTree) {
     let doc = TextDocument::new();
     doc.set_plain_text("Some prose to write in.").unwrap();
-    let find = crate::view_models::FindViewModel::new(doc.clone());
+    let find = crate::search::FindViewModel::new(doc.clone());
     let col = writing_column(
         &doc,
         &Signal::new(700.0),

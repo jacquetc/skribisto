@@ -27,7 +27,7 @@ use crate::binder::create_labels::{
     recommendation_label, recommendation_placement, recommendation_tooltip_key,
 };
 use crate::models::OverviewRow;
-use crate::view_models::OverviewViewModel;
+use crate::overview::OverviewViewModel;
 
 mod columns;
 mod header;

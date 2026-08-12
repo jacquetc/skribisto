@@ -29,9 +29,9 @@ use teksilo::widgets::{
 
 use frontend::binder_item_management::MovePlace;
 
+use crate::corkboard::CorkboardViewModel;
 use crate::models::{BinderBinderItemsTreeModel, BinderTreeKey, TreeFilters, TreeNode};
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::CorkboardViewModel;
 
 const CARD_W: f32 = 560.0;
 const CARD_H: f32 = 520.0;

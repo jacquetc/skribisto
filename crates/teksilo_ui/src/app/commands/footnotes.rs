@@ -4,7 +4,7 @@
 //! Putting a footnote into the manuscript.
 //!
 //! One command, and a thin one: the whole act lives in
-//! [`FootnotesViewModel::insert_at`](crate::view_models::FootnotesViewModel::insert_at)
+//! [`FootnotesViewModel::insert_at`](crate::footnotes::FootnotesViewModel::insert_at)
 //! so it can be tested without a window. This shell only resolves *where* —
 //! which editor holds the caret, and which `Content` row is behind it — and says
 //! so when there is nowhere to put one.

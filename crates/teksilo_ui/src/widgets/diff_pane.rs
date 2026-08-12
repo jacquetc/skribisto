@@ -6,7 +6,7 @@
 //! Shared by the two places this app puts a diff in front of a writer: the Versions dock,
 //! comparing a row against a backup of itself, and the import wizard's reconcile step,
 //! comparing what the project holds against what a returning file brings. Both ask the same
-//! question of the same renderer ([`crate::view_models::version_diff`]) and differ only in
+//! question of the same renderer ([`crate::versions::version_diff`]) and differ only in
 //! where the two sides come from, so a second copy of this would be a second set of decisions
 //! about scroll position, reload and failure — and they would drift.
 
@@ -15,7 +15,7 @@ use std::rc::Rc;
 
 use teksilo::text_document::TextDocument;
 
-use crate::view_models::version_diff;
+use crate::versions::version_diff;
 
 /// Where the comparison is shown. Owned by the panel so it survives a rebuild —
 /// a fresh document each time would reset the scroll position on every keystroke

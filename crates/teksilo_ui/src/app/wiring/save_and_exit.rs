@@ -21,10 +21,11 @@ use frontend::common::event::{Event, LongOperationEvent, Origin};
 
 use crate::app::PendingExit;
 use crate::app_ids::AppIds;
+use crate::backup::BackupSchedulerViewModel;
 use crate::toast_scope::ToastWorkExt;
 use crate::view_models::{
-    BackupSchedulerViewModel, DeferredResume, EditorsViewModel, ProjectSwitchViewModel,
-    QuitSequencer, SaveStateViewModel, WorkspaceLayoutViewModel,
+    DeferredResume, EditorsViewModel, ProjectSwitchViewModel, QuitSequencer, SaveStateViewModel,
+    WorkspaceLayoutViewModel,
 };
 
 /// Dedup id (Work-scoped — see [`crate::toast_scope`]) shared by every "the save

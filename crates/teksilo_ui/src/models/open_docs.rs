@@ -117,11 +117,11 @@ pub struct OpenDoc {
     /// open (mirroring `attach_spell`). `None` in the widget tests and in any
     /// build with no comment store behind it, which is what makes the whole
     /// feature degrade to "no comment affordances" rather than to a panic.
-    comments_vm: RefCell<Option<crate::view_models::CommentsViewModel>>,
+    comments_vm: RefCell<Option<crate::comments::CommentsViewModel>>,
     /// The footnote feature's view-model, on exactly the same footing as
     /// `comments_vm` and installed the same way. `None` degrades the feature to
     /// "no footnote affordances in this document" rather than to a panic.
-    footnotes: RefCell<Option<crate::view_models::FootnotesViewModel>>,
+    footnotes: RefCell<Option<crate::footnotes::FootnotesViewModel>>,
     /// The replace-while-typing state machine for each prose document, if the
     /// lexicon view-model was installed on the store. Set by
     /// [`attach_replacements`](Self::attach_replacements) on open, and living as
@@ -433,7 +433,7 @@ impl OpenDoc {
     /// Mirrors [`attach_spell`](Self::attach_spell): called once per open, so an
     /// item reopened after an external edit re-anchors from its stored quotes
     /// rather than trusting offsets that may have rotted.
-    pub fn attach_comments(&self, vm: crate::view_models::CommentsViewModel) {
+    pub fn attach_comments(&self, vm: crate::comments::CommentsViewModel) {
         *self.comments_vm.borrow_mut() = Some(vm);
         if let Some(b) = self.comment_binding_main() {
             b.push_live();
@@ -477,7 +477,7 @@ impl OpenDoc {
     /// chapter folder or a fresh Note nobody has typed into has none — and
     /// adding a footnote is an ordinary first thing to do there. See
     /// [`ProseField::content`](crate::tabs::ProseField::content).
-    pub fn footnote_binding_main(&self) -> Option<crate::view_models::FootnoteBinding> {
+    pub fn footnote_binding_main(&self) -> Option<crate::footnotes::FootnoteBinding> {
         Some(
             self.footnotes
                 .borrow()
@@ -487,7 +487,7 @@ impl OpenDoc {
     }
 
     /// The same for the synopsis document.
-    pub fn footnote_binding_synopsis(&self) -> Option<crate::view_models::FootnoteBinding> {
+    pub fn footnote_binding_synopsis(&self) -> Option<crate::footnotes::FootnoteBinding> {
         Some(
             self.footnotes
                 .borrow()
@@ -498,7 +498,7 @@ impl OpenDoc {
 
     /// Install the footnotes view-model on this doc (on open, and on the
     /// back-fill when `App` wires one after documents are already open).
-    pub fn attach_footnotes(&self, vm: crate::view_models::FootnotesViewModel) {
+    pub fn attach_footnotes(&self, vm: crate::footnotes::FootnotesViewModel) {
         *self.footnotes.borrow_mut() = Some(vm);
     }
 
@@ -674,10 +674,10 @@ struct Inner {
     text_replacements: RefCell<Option<TextReplacementRulesViewModel>>,
     /// The comments view-model, installed once per window and handed to every
     /// document as it opens (mirroring `text_replacements`).
-    comments: RefCell<Option<crate::view_models::CommentsViewModel>>,
+    comments: RefCell<Option<crate::comments::CommentsViewModel>>,
     /// The footnotes view-model, installed once per window and handed to every
     /// document as it opens (mirroring `comments`).
-    footnotes: RefCell<Option<crate::view_models::FootnotesViewModel>>,
+    footnotes: RefCell<Option<crate::footnotes::FootnotesViewModel>>,
     /// What each footnote label's marker prints, project-wide.
     ///
     /// Held here rather than resolved per document because the number is a fact
@@ -803,7 +803,7 @@ impl OpenDocsStore {
     /// Seeding the open ones matters: the store is populated before `App` finishes
     /// wiring, so a document opened by workspace restore would otherwise show no
     /// comment highlights until it was closed and reopened.
-    pub fn set_comments(&self, vm: crate::view_models::CommentsViewModel) {
+    pub fn set_comments(&self, vm: crate::comments::CommentsViewModel) {
         *self.inner.comments.borrow_mut() = Some(vm.clone());
         let docs: Vec<Rc<OpenDoc>> = self
             .inner
@@ -823,7 +823,7 @@ impl OpenDocsStore {
     /// restoring its remembered tabs has documents open before `App` finishes
     /// wiring, and one built before this would carry no footnote door at all —
     /// no insertion, no navigation — until it was closed and reopened.
-    pub fn set_footnotes(&self, vm: crate::view_models::FootnotesViewModel) {
+    pub fn set_footnotes(&self, vm: crate::footnotes::FootnotesViewModel) {
         *self.inner.footnotes.borrow_mut() = Some(vm.clone());
         let docs: Vec<Rc<OpenDoc>> = self
             .inner
@@ -842,7 +842,7 @@ impl OpenDocsStore {
     /// The project-wide handle, reachable **without an open document** — which is
     /// what the insert command needs: it has to tell "no project" apart from "no
     /// caret", and resolving through some document's binding collapses the two.
-    pub fn footnotes(&self) -> Option<crate::view_models::FootnotesViewModel> {
+    pub fn footnotes(&self) -> Option<crate::footnotes::FootnotesViewModel> {
         self.inner.footnotes.borrow().clone()
     }
 
@@ -883,7 +883,7 @@ impl OpenDocsStore {
     /// through here: resolving the view-model via some row's binding answers `None`
     /// on exactly the pages that need it most, and a caller that gives up at that
     /// point never subscribes at all.
-    pub fn comments(&self) -> Option<crate::view_models::CommentsViewModel> {
+    pub fn comments(&self) -> Option<crate::comments::CommentsViewModel> {
         self.inner.comments.borrow().clone()
     }
 
@@ -1754,8 +1754,8 @@ mod tests {
     #[test]
     fn hiding_comments_reaches_the_view_model_and_every_open_document() {
         use crate::app_ids::AppIds;
+        use crate::comments::CommentsViewModel;
         use crate::models::CommentsListModel;
-        use crate::view_models::CommentsViewModel;
 
         let ctx = Rc::new(AppContext::new());
         let store = OpenDocsStore::new(ctx.clone());

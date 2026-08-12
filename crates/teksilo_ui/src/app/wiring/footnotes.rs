@@ -16,8 +16,8 @@ use teksilo::prelude::*;
 use frontend::AppContext;
 
 use crate::app_ids::AppIds;
+use crate::footnotes::FootnotesViewModel;
 use crate::models::OpenDocsStore;
-use crate::view_models::FootnotesViewModel;
 
 pub(in crate::app) fn install(
     // NOT pub(crate) — matches every sibling in app/wiring/

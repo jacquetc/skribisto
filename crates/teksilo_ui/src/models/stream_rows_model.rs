@@ -31,7 +31,7 @@
 use frontend::common::entities::{BinderItemRole, BinderItemSubRole};
 // The stream-folding primitives now live in `skribisto_model::compile` (one definition,
 // shared with the backend exporter). Re-exported so this module's public surface and its
-// callers (`view_models::stream`, `tabs::shared::stream`) are unchanged. Under `mocks` the
+// callers (`stream`, `tabs::shared::stream`) are unchanged. Under `mocks` the
 // real `imp` (the only `row_indices` caller) is cfg'd out, so allow the unused re-export
 // there — exactly as the lifted functions carried `allow(dead_code)` before.
 #[cfg_attr(feature = "mocks", allow(unused_imports))]

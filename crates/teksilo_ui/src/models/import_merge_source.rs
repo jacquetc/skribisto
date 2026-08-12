@@ -28,7 +28,7 @@ use std::rc::Rc;
 use teksilo::data::{FlatEntry, TreeDataSource};
 use teksilo::prelude::Signal;
 
-use crate::view_models::import_document::{MergeRowKey, MergeRowView};
+use crate::import_document::import_document_vm::{MergeRowKey, MergeRowView};
 
 struct Inner {
     rows: RefCell<Vec<MergeRowView>>,

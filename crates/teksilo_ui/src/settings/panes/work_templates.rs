@@ -35,9 +35,8 @@ use teksilo::widgets::{
 
 use crate::app_ids::HasWorkId;
 use crate::models::TemplateRow;
-use crate::note_templates::Preset;
+use crate::note_templates::{NoteTemplatesViewModel, Preset};
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::NoteTemplatesViewModel;
 
 const NAME_COL: &str = "name";
 const FILTER_FIELD_MAX_WIDTH: f32 = 260.0;

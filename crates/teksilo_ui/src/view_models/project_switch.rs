@@ -308,7 +308,7 @@ impl ProjectSwitchViewModel {
         //
         // `ProjectSwitchViewModel` is a single, Tier-1 shared instance (see this
         // view-model's module doc) — a known, disclosed boundary, the same shape as
-        // `tags::tag_chip`/`view_models::overview`'s app_state fallback. It cannot
+        // `tags::tag_chip`/`overview`'s app_state fallback. It cannot
         // yet resolve "this window's own `WorkspaceLayoutViewModel`" the way
         // `close_work_and_return_to_launcher` does (taking it as an explicit
         // argument), so it still reaches for the process-wide `app_state`
@@ -485,7 +485,7 @@ mod tests {
     // ── the deferral (needs no `EventContext`) ───────────────────────────────
 
     /// `defer` needs an `EventContext` only for its "the save never started" toast,
-    /// and this crate has no `EventContext` harness (see `backup_scheduler.rs`).
+    /// and this crate has no `EventContext` harness (see `backup_scheduler_vm.rs`).
     /// This is the ctx-free core it is built on: ask for the save, park the switch
     /// against the edit sequence that save will cover, and the outgoing Work it
     /// will close once it fires.

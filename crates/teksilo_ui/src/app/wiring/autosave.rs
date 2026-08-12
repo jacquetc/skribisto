@@ -17,8 +17,9 @@ use frontend::AppContext;
 use frontend::common::event::{Event, Origin};
 
 use crate::app_ids::AppIds;
+use crate::backup::BackupSchedulerViewModel;
 use crate::models::OpenDocsStore;
-use crate::view_models::{BackupSchedulerViewModel, EditorsViewModel, SaveStateViewModel};
+use crate::view_models::{EditorsViewModel, SaveStateViewModel};
 
 use super::super::{mutation_ids_belong_to_work, mutation_origins};
 

@@ -271,7 +271,8 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
 mod tests {
     use super::*;
     use crate::app_ids::AppIds;
-    use crate::view_models::{FocusViewModel, OutlineViewModel};
+    use crate::binder::OutlineViewModel;
+    use crate::view_models::FocusViewModel;
     use frontend::AppContext;
     use std::rc::Rc;
 

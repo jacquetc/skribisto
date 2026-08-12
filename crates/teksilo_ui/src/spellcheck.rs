@@ -12,6 +12,12 @@
 //! *wiring* (dictionary install/remove, mute, language change, `close_work`) lives in
 //! `models::open_docs` and `app.rs`; the caret wiring lives in `tabs::shared::editor`.
 //!
+//! Three view-models sit on top of the engine: [`DictionariesViewModel`] (download/remove/
+//! licence-acceptance for the machine-wide dictionary catalogue), [`AddDictionaryViewModel`]
+//! (the "Add dictionary" form over it), and [`UserDictionaryViewModel`] (the per-project
+//! personal word list). [`add_dictionary_panel`], [`language_pill_field`] and
+//! [`toggle_button`] are their views.
+//!
 //! ## The Firefox model
 //!
 //! A document's `dict_language` is a list; a word is a mistake only when **every** active
@@ -34,9 +40,12 @@
 //! simply absent (cached as `None`), never a crash.
 
 pub(crate) mod add_dictionary_panel;
+mod add_dictionary_vm;
+mod dictionaries_vm;
 pub(crate) mod dictionary_registry;
 pub(crate) mod language_pill_field;
 pub(crate) mod toggle_button;
+mod user_dictionary_vm;
 
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
@@ -54,8 +63,12 @@ use teksilo::text_document::{
 
 use skribisto_model::language;
 
+pub use add_dictionary_vm::AddDictionaryViewModel;
+pub use dictionaries_vm::{DictionariesViewModel, InstallDictError};
+pub use user_dictionary_vm::UserDictionaryViewModel;
+
 /// `<data_dir>/dictionaries` — where our downloads live and the loader looks first. The single
-/// definition, shared by discovery ([`crate::models`]) and download ([`crate::view_models`]).
+/// definition, shared by discovery ([`crate::models`]) and download ([`crate::spellcheck`]).
 pub(crate) fn downloaded_dictionaries_dir() -> Option<PathBuf> {
     crate::identity::app_paths().map(|p| p.data_dir().join("dictionaries"))
 }

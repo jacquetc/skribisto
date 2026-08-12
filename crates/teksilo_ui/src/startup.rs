@@ -20,8 +20,11 @@ use teksilo::i18n::I18nConfig;
 use teksilo::settings::{AppPaths, WindowStateService};
 use teksilo::widgets::framework_locales;
 
+use crate::backup::BackupSettingsViewModel;
 use crate::cli;
+use crate::export::{ExportStylesViewModel, ParatextPresetsViewModel};
 use crate::first_run;
+use crate::import_plume::ImportPlumeViewModel;
 use crate::locales;
 use crate::models;
 use crate::models::{BackupSettingsService, TreeExpansionService, WorkspaceLayoutService};
@@ -29,7 +32,6 @@ use crate::sessions::WorkRegistry;
 use crate::shell::{open_registry, windows};
 use crate::spellcheck;
 use crate::view_models;
-use crate::view_models::{BackupSettingsViewModel, ImportPlumeViewModel};
 
 /// Resolve the first-run offer, sweep orphaned window-state rows, and seed the
 /// shared Root/System frame — everything that has to happen before a single
@@ -257,14 +259,14 @@ pub(crate) fn build_ui_config() -> UiConfig {
 pub(crate) struct Tier1Services {
     pub registry: WorkRegistry,
     pub spellcheck: spellcheck::SpellcheckService,
-    pub dictionaries: view_models::DictionariesViewModel,
+    pub dictionaries: spellcheck::DictionariesViewModel,
     pub workspace_layout_service: WorkspaceLayoutService,
     pub tree_expansion_service: TreeExpansionService,
     pub import_plume: ImportPlumeViewModel,
     pub folder_memory: models::FolderMemoryService,
     pub import_prefs: models::ImportPrefsService,
-    pub export_styles: view_models::ExportStylesViewModel,
-    pub paratext_presets: view_models::ParatextPresetsViewModel,
+    pub export_styles: ExportStylesViewModel,
+    pub paratext_presets: ParatextPresetsViewModel,
     pub df_themes: view_models::DistractionFreeThemesViewModel,
     pub backup_settings: BackupSettingsViewModel,
 }
@@ -305,7 +307,7 @@ pub(crate) fn open_tier1_services(
     let installed_dictionaries =
         models::InstalledDictionariesModel::new(dictionary_settings.clone());
     let dictionaries =
-        view_models::DictionariesViewModel::new(dictionary_settings, installed_dictionaries);
+        spellcheck::DictionariesViewModel::new(dictionary_settings, installed_dictionaries);
     // Per-work workspace layout (open editor tabs + dock arrangement): opened
     // eagerly here so the restore fires on the first `LoadWork`. App-local config
     // (`workspace.toml`, keyed by `Work.unique_id`), orthogonal to the `.skrib`
@@ -364,7 +366,7 @@ pub(crate) fn open_tier1_services(
                 .ok()
         })
         .unwrap_or_else(models::ExportStylesService::in_memory_default);
-    let export_styles = view_models::ExportStylesViewModel::new(export_styles_service);
+    let export_styles = ExportStylesViewModel::new(export_styles_service);
     // Paratext presets — the front/back matter structures New Work can start a project
     // with, and the Settings pane edits. Opened here for the same reason export styles
     // are: one instance, so a preset written in Settings is the one New Work offers.
@@ -375,7 +377,7 @@ pub(crate) fn open_tier1_services(
                 .ok()
         })
         .unwrap_or_else(models::ParatextPresetsService::in_memory_default);
-    let paratext_presets = view_models::ParatextPresetsViewModel::new(paratext_presets_service);
+    let paratext_presets = ParatextPresetsViewModel::new(paratext_presets_service);
     // The distraction-free theme library, on the same footing and for the same
     // reasons (a theme outlives any project, and the settings pane and the
     // mode's own picker must read one instance).

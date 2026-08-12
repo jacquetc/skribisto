@@ -70,16 +70,19 @@ use frontend::AppContext;
 
 use crate::app_ids::AppIds;
 use crate::backup::BackupContext;
+use crate::backup::{BackupSchedulerViewModel, BackupSettingsViewModel};
 use crate::models::{
     DictWordListModel, OpenDocsStore, TextReplacementRuleListModel, TreeExpansionService,
     WorkNoteTemplatesListModel, WorkTagsListModel, WorkspaceLayoutService,
 };
+use crate::note_templates::NoteTemplatesViewModel;
 use crate::singles::{SingleDictWord, SingleSmartPunctuation, SingleWork, SingleWorkInfo};
 use crate::spellcheck::SpellcheckService;
+use crate::spellcheck::UserDictionaryViewModel;
+use crate::tags::TagsViewModel;
 use crate::view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, MentionIndex, NoteTemplatesViewModel,
-    ProgressRecorder, SaveStateViewModel, TagsViewModel, TextReplacementRulesViewModel,
-    TreeExpansionViewModel, UserDictionaryViewModel, WorkspaceLayoutViewModel,
+    MentionIndex, ProgressRecorder, SaveStateViewModel, TextReplacementRulesViewModel,
+    TreeExpansionViewModel, WorkspaceLayoutViewModel,
 };
 
 /// Every Tier-2 ("per open Work") view-model/single/model, bundled. Cloneable —

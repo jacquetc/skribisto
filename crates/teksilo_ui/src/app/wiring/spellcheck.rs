@@ -27,8 +27,8 @@ use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 
 use crate::app_ids::AppIds;
 use crate::models::OpenDocsStore;
+use crate::spellcheck::DictionariesViewModel;
 use crate::spellcheck::SpellcheckService;
-use crate::view_models::DictionariesViewModel;
 
 use super::super::spell_underline_color;
 
@@ -147,7 +147,7 @@ pub(in crate::app) fn wire(
         .cloned()
         .expect("SpellcheckService registered in main");
     let dictionaries = ctx
-        .app_state::<crate::view_models::DictionariesViewModel>()
+        .app_state::<crate::spellcheck::DictionariesViewModel>()
         .cloned()
         .expect("DictionariesViewModel registered in main");
     // Dictionary / personal-word / theme changes → re-attach every open document.

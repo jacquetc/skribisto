@@ -19,7 +19,12 @@
 //! submodules of *one* feature share; `tabs/shared/` is the standing example, and
 //! nothing here supersedes it.
 
+/// Shared binder plumbing for the item-editing view-models (outline, stream,
+/// corkboard, overview) — crate-internal, not exposed past the extension seam.
+pub(crate) mod binder_ops;
 pub mod list_naming;
 pub mod slug;
 pub mod stamps;
 pub mod text;
+
+pub(crate) use binder_ops::{is_prose_bearing, is_synopsis_bearing};

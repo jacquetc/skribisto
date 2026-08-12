@@ -14,12 +14,13 @@
 use teksilo::core::modal::{ModalCloseBehavior, ModalPresentation, ModalRequest};
 use teksilo::prelude::*;
 
+use crate::import_document::panel::{ImportDocumentOptions, present_import_document};
+use crate::import_plume::ImportPlumeViewModel;
+use crate::import_plume::panel::ImportPlumePanel;
 use crate::intents::AppIntent;
-use crate::panels::import_document::{ImportDocumentOptions, present_import_document};
-use crate::panels::import_plume::ImportPlumePanel;
-use crate::panels::new_work::NewWorkPanel;
+use crate::new_work::panel::NewWorkPanel;
 use crate::settings::SettingsPanel;
-use crate::view_models::{ImportPlumeViewModel, PendingSwitch};
+use crate::view_models::PendingSwitch;
 
 use super::super::open_work_flow;
 use super::CommandDeps;

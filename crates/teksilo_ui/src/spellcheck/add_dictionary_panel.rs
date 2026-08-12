@@ -3,7 +3,7 @@
 
 //! The **Add dictionary** modal — install a Hunspell dictionary from local `.aff`/`.dic` files.
 //!
-//! Same chrome and shape as [`crate::panels::import_plume`]: a title strip, a two-column
+//! Same chrome and shape as [`crate::import_plume::panel`]: a title strip, a two-column
 //! [`FormLayout`] body, and a bottom action bar. All logic lives on [`AddDictionaryViewModel`];
 //! this view binds its signals and forwards the buttons. Presented from the Installed tab of the
 //! Dictionaries settings pane via [`present_add_dictionary`].
@@ -17,7 +17,7 @@ use teksilo::widgets::{
     HStack, IconButton, Padding, Panel, ScrollArea, Spacer, TextInput, TextWidget, VStack,
 };
 
-use crate::view_models::{AddDictionaryViewModel, DictionariesViewModel};
+use crate::spellcheck::{AddDictionaryViewModel, DictionariesViewModel};
 
 const CARD_W: f32 = 580.0;
 const CARD_H: f32 = 500.0;

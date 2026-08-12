@@ -6,7 +6,7 @@
 //! The public surface is a `teksilo::data::ListModel<DictWordRow>` a `ListView`
 //! binds to (the Settings ▸ Personal-dictionary pane), plus a `version` signal
 //! for non-`ListView` consumers (the empty-state), and the collection writes the
-//! [`UserDictionaryViewModel`](crate::view_models::UserDictionaryViewModel)
+//! [`UserDictionaryViewModel`](crate::spellcheck::UserDictionaryViewModel)
 //! drives: [`add_words`](imp::DictWordListModel::add_words) and
 //! [`remove_all`](imp::DictWordListModel::remove_all). Per-entity **rename** is
 //! [`SingleDictWord`](crate::singles::SingleDictWord)'s job.

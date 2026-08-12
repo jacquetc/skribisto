@@ -28,8 +28,8 @@ use jiff::civil::Date;
 
 use crate::date_convert::{jiff_to_naive, naive_to_jiff, naive_to_jiff_opt};
 use crate::models::{MilestoneKind, MilestoneRow};
+use crate::pace::PaceViewModel;
 use crate::tabs::ContentTab;
-use crate::view_models::PaceViewModel;
 
 use super::shared::{tab_backdrop, vspace};
 

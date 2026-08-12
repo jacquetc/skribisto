@@ -12,9 +12,9 @@ use teksilo::core::BindingLevel;
 use teksilo::prelude::*;
 use teksilo::widgets::{Banner, Button, ButtonVariant, HStack};
 
-use crate::backup::BackupContext;
+use crate::backup::{BackupContext, BackupRestoreViewModel};
 use crate::singles::SingleWork;
-use crate::view_models::{BackupRestoreViewModel, SaveAsViewModel};
+use crate::view_models::SaveAsViewModel;
 
 pub struct BackupBanner {
     backup_context: Signal<Option<BackupContext>>,

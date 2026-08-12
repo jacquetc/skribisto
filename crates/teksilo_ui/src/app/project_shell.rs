@@ -25,12 +25,12 @@ use teksilo::widgets::{
 /// never drift apart.
 const SETTINGS_ACTION: DockActionId = DockActionId::named("skribisto.settings");
 
+use crate::binder::OutlineViewModel;
 use crate::models::TreeNode;
+use crate::search::SearchReplaceViewModel;
 use crate::tabs::shared::editor::VisibleWhen;
-use crate::view_models::{
-    EditorsViewModel, OutlineViewModel, RestoreRequest, SearchReplaceViewModel, SettingsViewModel,
-    Side,
-};
+use crate::versions::RestoreRequest;
+use crate::view_models::{EditorsViewModel, SettingsViewModel, Side};
 
 use super::{App, build_pane_tabs, drain_dropped};
 
@@ -39,19 +39,19 @@ pub(super) struct ShellParts {
     pub editors: EditorsViewModel,
     pub outline: OutlineViewModel,
     pub search: SearchReplaceViewModel,
-    pub trash: crate::view_models::TrashViewModel,
-    pub comments: crate::view_models::CommentsViewModel,
-    pub footnotes: crate::view_models::FootnotesViewModel,
-    pub versions: crate::view_models::VersionsViewModel,
-    pub timeline: crate::view_models::TimelineViewModel,
+    pub trash: crate::trash::TrashViewModel,
+    pub comments: crate::comments::CommentsViewModel,
+    pub footnotes: crate::footnotes::FootnotesViewModel,
+    pub versions: crate::versions::VersionsViewModel,
+    pub timeline: crate::timeline::TimelineViewModel,
     pub format: crate::view_models::FormatViewModel,
     pub settings: SettingsViewModel,
     pub session: crate::sessions::WorkSession,
     pub ids: crate::app_ids::AppIds,
-    pub on_open: crate::docks::outline::OpenItemFn,
+    pub on_open: crate::binder::dock::OpenItemFn,
     pub single_work: crate::singles::SingleWork,
     pub single_work_info: crate::singles::SingleWorkInfo,
-    pub restore_vm: crate::view_models::BackupRestoreViewModel,
+    pub restore_vm: crate::backup::BackupRestoreViewModel,
     pub save_as_vm: crate::view_models::SaveAsViewModel,
     /// What every extension slot in this window is handed — built **once** in
     /// `App::build` and shared with `commands_ext`, not rebuilt here.
@@ -117,7 +117,7 @@ impl App {
         // believing the project had never been saved and so could have no past.
         {
             let backup_settings = ctx
-                .app_state::<crate::view_models::BackupSettingsViewModel>()
+                .app_state::<crate::backup::BackupSettingsViewModel>()
                 .cloned();
             let file_name = single_work_info.file_name();
             let unique_id = single_work.unique_id();
@@ -142,7 +142,7 @@ impl App {
                         .as_ref()
                         .map(|vm| vm.effective_for(&uid).destinations)
                         .unwrap_or_default();
-                    let handle = crate::view_models::versions::ProjectHandle {
+                    let handle = crate::versions::ProjectHandle {
                         path: file_name.get().unwrap_or_default(),
                         unique_id: uid,
                         // `search_destinations`, not `effective_destinations`:
@@ -193,7 +193,7 @@ impl App {
             // writer who added a destination in Settings saw the two surfaces keep
             // reading the old list until a save or a backup happened to fire.
             if let Some(policy_revision) = ctx
-                .app_state::<crate::view_models::BackupSettingsViewModel>()
+                .app_state::<crate::backup::BackupSettingsViewModel>()
                 .map(|vm| vm.policy_revision())
             {
                 let on_policy = push.clone();
@@ -206,7 +206,7 @@ impl App {
         // import a peer.
         {
             let settings = ctx
-                .app_state::<crate::view_models::BackupSettingsViewModel>()
+                .app_state::<crate::backup::BackupSettingsViewModel>()
                 .cloned();
             let unique_id = single_work.unique_id();
             let file_name = single_work_info.file_name();
@@ -232,7 +232,7 @@ impl App {
                     eprintln!("versions: could not record the pin: {e}");
                 }
             });
-            versions.set_pins(crate::view_models::versions::Pins {
+            versions.set_pins(crate::versions::Pins {
                 is_pinned: read,
                 set: write,
             });
@@ -250,7 +250,7 @@ impl App {
             }));
         }
 
-        let uid_of: crate::docks::versions::UidLookup = {
+        let uid_of: crate::versions::dock::UidLookup = {
             let app_ctx = self.app_ctx.clone();
             let work_id = ids.work_id.clone();
             std::rc::Rc::new(move |id: u64| {
@@ -268,7 +268,7 @@ impl App {
         // reach for itself. Every one of them is the *session's*, never
         // `ctx.app_state::<T>()`, which is one process-wide slot that answers
         // with whichever window registered last (see `app.rs`'s own note).
-        let restore: crate::docks::versions::RestoreFn = {
+        let restore: crate::versions::dock::RestoreFn = {
             let app_ctx = self.app_ctx.clone();
             let docs = session.open_docs.clone();
             let scheduler = session.backup_scheduler.clone();
@@ -401,7 +401,7 @@ impl App {
 
         // ── Leading dock: the binder tree, fronted by a VS Code-style activity
         //    bar (icon rail). The OutlineViewModel owns the DockingModel; the
-        //    dock content itself lives in `docks::outline`. ───────────────────
+        //    dock content itself lives in `binder::dock`. ───────────────────
         // The trailing side hosts the context Inspector (a rail dock, like the
         // outline), sized + rail-fronted on the shared DockingModel.
         //
@@ -455,7 +455,7 @@ impl App {
                     .divider(),
             )
             .center(center)
-            .dock(crate::docks::outline::outline_dock(
+            .dock(crate::binder::dock::outline_dock(
                 outline.clone(),
                 self.app_ctx.clone(),
                 on_open.clone(),
@@ -477,17 +477,17 @@ impl App {
                 format.clone(),
                 self.format_dock,
             ))
-            .dock(crate::docks::search::search_dock(
+            .dock(crate::search::dock::search_dock(
                 search.clone(),
                 self.search_dock,
             ))
-            .dock(crate::docks::search_preview::search_preview_dock(
+            .dock(crate::search::preview_dock::search_preview_dock(
                 search.clone(),
                 self.format.clone(),
                 writing_games.clone(),
                 self.preview_dock,
             ))
-            .dock(crate::docks::trash::trash_dock(
+            .dock(crate::trash::dock::trash_dock(
                 trash.clone(),
                 self.trash_dock,
                 on_open.clone(),
@@ -502,31 +502,31 @@ impl App {
                     ctx.send_intent(Intent::new("app.settings.games"))
                 }),
             ))
-            .dock(crate::docks::comments::comments_project_dock(
+            .dock(crate::comments::dock::comments_project_dock(
                 comments.clone(),
                 self.comments_dock,
                 on_open.clone(),
             ))
-            .dock(crate::docks::comments::comments_document_dock(
+            .dock(crate::comments::dock::comments_document_dock(
                 comments.clone(),
                 self.doc_comments_dock,
                 editors.active_item(),
                 on_open.clone(),
             ))
-            .dock(crate::docks::footnotes::footnotes_dock(
+            .dock(crate::footnotes::dock::footnotes_dock(
                 footnotes.clone(),
                 self.footnotes_dock,
                 editors.active_item(),
                 on_open,
             ))
-            .dock(crate::docks::versions::versions_dock(
+            .dock(crate::versions::dock::versions_dock(
                 versions.clone(),
                 self.versions_dock,
                 editors.active_item(),
                 uid_of,
                 restore,
             ))
-            .dock(crate::docks::timeline::timeline_dock(
+            .dock(crate::timeline::dock::timeline_dock(
                 timeline.clone(),
                 self.timeline_dock,
             ));

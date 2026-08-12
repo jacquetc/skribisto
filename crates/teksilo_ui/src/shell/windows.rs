@@ -51,6 +51,9 @@ use frontend::AppContext;
 
 use crate::app::{App, PendingAction, PendingExit, guard_unsaved_exit};
 use crate::app_ids::AppIds;
+use crate::backup::BackupSettingsViewModel;
+use crate::binder::OutlineViewModel;
+use crate::export::ExportViewModel;
 use crate::export::split_button::ExportSplitButton;
 use crate::models::{TreeExpansionService, WorkspaceLayoutService};
 use crate::sessions::{WorkRegistry, WorkSession};
@@ -58,9 +61,7 @@ use crate::shell::project_switcher_button::ProjectSwitcherButton;
 use crate::spellcheck::SpellcheckService;
 use crate::spellcheck::toggle_button::SpellcheckToggleButton;
 use crate::tabs::shared::editor::VisibleWhen;
-use crate::view_models::{
-    BackupSettingsViewModel, ExportViewModel, FormatViewModel, OutlineViewModel, SaveAsViewModel,
-};
+use crate::view_models::{FormatViewModel, SaveAsViewModel};
 
 // Re-export path→window identity so `shell::windows::*` stays the
 // stable public surface for call sites.
@@ -248,7 +249,7 @@ impl ProjectWindowFactory {
     /// Returns the freshly-built [`InitialWindowState`] alongside the
     /// `WindowConfig`: `main.rs`'s *initial* window uses it to seed the handful
     /// of remaining `app_state` registrations a few widgets still read Tier-2
-    /// state through (`tags::tag_chip`, `view_models::overview`'s tree-
+    /// state through (`tags::tag_chip`, `overview`'s tree-
     /// expansion restore, the Settings ▸ Work panes — a known, flagged Phase-2
     /// gap; see the migration report) rather than a constructor-threaded
     /// handle. Every other caller (the Welcome/New-Work flows opening a
@@ -357,7 +358,7 @@ impl ProjectWindowFactory {
         // is also what the analysis's long-operation events are routed to (see
         // `app::wiring::long_ops`), and the modal comes and goes.
         let import_document =
-            crate::view_models::ImportDocumentViewModel::new(app_ctx_root.clone(), ids.clone());
+            crate::import_document::ImportDocumentViewModel::new(app_ctx_root.clone(), ids.clone());
         let registry = self.registry.clone();
         let quit = self.quit.clone();
         // Let this Work's on-close backup hand control back to the quit sequencer
@@ -446,7 +447,7 @@ impl ProjectWindowFactory {
             backup_mode.clone(),
             backup_context.clone(),
         );
-        let restore_vm = crate::view_models::BackupRestoreViewModel::new(
+        let restore_vm = crate::backup::BackupRestoreViewModel::new(
             app_ctx_root.clone(),
             ids.clone(),
             single_work.clone(),

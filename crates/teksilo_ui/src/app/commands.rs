@@ -39,11 +39,15 @@ use teksilo::widgets::DockWidgetId;
 
 use frontend::AppContext;
 
+use crate::backup::BackupSchedulerViewModel;
+use crate::binder::OutlineViewModel;
+use crate::export::ExportViewModel;
 use crate::models::OpenDocsStore;
+use crate::search::SearchReplaceViewModel;
+use crate::spellcheck::{DictionariesViewModel, UserDictionaryViewModel};
+use crate::trash::TrashViewModel;
 use crate::view_models::{
-    BackupSchedulerViewModel, DictionariesViewModel, EditorsViewModel, ExportViewModel,
-    FocusViewModel, FullscreenViewModel, OutlineViewModel, ProjectSwitchViewModel,
-    SearchReplaceViewModel, TrashViewModel, UserDictionaryViewModel,
+    EditorsViewModel, FocusViewModel, FullscreenViewModel, ProjectSwitchViewModel,
 };
 
 use super::PendingExit;
@@ -111,7 +115,7 @@ pub(super) struct CommandDeps {
     /// This window's comment view-model — threaded only so the two "add comment"
     /// commands can ask the *resolved* signature whether the remark they just
     /// created is unsigned, rather than keeping a second copy of that rule.
-    pub comments: crate::view_models::CommentsViewModel,
+    pub comments: crate::comments::CommentsViewModel,
     pub trash: TrashViewModel,
     pub search: SearchReplaceViewModel,
     pub project_switch: ProjectSwitchViewModel,
@@ -134,7 +138,7 @@ pub(super) struct CommandDeps {
     /// same reason as `export` above, and one sharper: this wizard writes into
     /// the Work whose window it was opened from, so an `app_state` lookup could
     /// land a whole imported manuscript in the wrong project.
-    pub import_document: crate::view_models::ImportDocumentViewModel,
+    pub import_document: crate::import_document::ImportDocumentViewModel,
     /// Fixed dock ids (see [`crate::docks`]) — the reveal targets.
     pub search_dock: DockWidgetId,
     pub trash_dock: DockWidgetId,

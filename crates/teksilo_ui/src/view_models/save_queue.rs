@@ -15,7 +15,7 @@
 //! edits exist in neither the file nor the store.
 //!
 //! So: never two at once. The naive fix — *skip* a save while one is running, as
-//! [`crate::view_models::BackupSchedulerViewModel`]'s `busy()` does for backups —
+//! [`crate::backup::BackupSchedulerViewModel`]'s `busy()` does for backups —
 //! would be wrong here. A backup is periodic and losing one tick costs nothing,
 //! but the running save may have gathered the store **before** the latest flush,
 //! so dropping the new request could leave the last-typed sentence in no file at

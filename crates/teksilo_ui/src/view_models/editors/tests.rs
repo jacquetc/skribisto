@@ -989,7 +989,7 @@ fn two_editors_view_models_sharing_one_save_state_agree_on_dirty_and_clean() {
 #[test]
 fn for_window_bridges_the_seam_to_this_windows_editors() {
     use crate::active_context::ActivePane;
-    use crate::view_models::OutlineViewModel;
+    use crate::binder::OutlineViewModel;
 
     let vm = editors();
     let outline = OutlineViewModel::new_default(vm.app_ctx.clone(), vm.ids.clone());

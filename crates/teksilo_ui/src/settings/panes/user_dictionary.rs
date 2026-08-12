@@ -26,8 +26,8 @@ use teksilo::widgets::{
 
 use crate::app_ids::HasWorkId;
 use crate::models::DictWordRow;
+use crate::spellcheck::UserDictionaryViewModel;
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::UserDictionaryViewModel;
 
 const WORD_COL: &str = "word";
 

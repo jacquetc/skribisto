@@ -25,8 +25,8 @@ use teksilo::prelude::*;
 use teksilo::widgets::{MenuEntry, MenuItems};
 
 use super::ProjectMenuParts;
+use crate::export::scope_label;
 use crate::intents::AppIntent;
-use crate::view_models::scope_label;
 
 /// The rows of the menu, in the order they appear.
 pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {

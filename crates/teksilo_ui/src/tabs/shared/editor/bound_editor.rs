@@ -158,7 +158,7 @@ pub(super) struct TypographyBoundEditor {
     /// half of the two-way link: the caret's position is reported so the dock can
     /// highlight the note the writer is standing on. `None` on every surface with
     /// no project behind it, and on every editor that is not a tab's main prose.
-    pub(super) footnotes: Option<(crate::view_models::FootnoteBinding, TextDocument)>,
+    pub(super) footnotes: Option<(crate::footnotes::FootnoteBinding, TextDocument)>,
 }
 
 impl TypographyBoundEditor {
@@ -225,7 +225,7 @@ impl TypographyBoundEditor {
     /// editor per row, and a corkboard one per card.
     pub(super) fn with_footnotes(
         mut self,
-        binding: crate::view_models::FootnoteBinding,
+        binding: crate::footnotes::FootnoteBinding,
         doc: TextDocument,
     ) -> Self {
         self.footnotes = Some((binding, doc));

@@ -5,11 +5,12 @@
 //! content builder and packages it as a `DockWidget` for `App` to mount on a
 //! side; `App` only wires the cross-view-model effects around them.
 //!
-//! The roster: [`outline`] (binder tree), [`search`], [`trash`], [`comments`]
-//! (project-wide) on the leading rail; [`inspector`], [`mod@format`], a
-//! per-document comments dock, [`mod@footnotes`] and [`versions`] on the trailing
-//! rail; [`search_preview`] and [`mod@timeline`] on the bottom. See [`APP_DOCKS`]
-//! for the authoritative list and mount order.
+//! The roster: [`crate::binder::dock`] (binder tree), [`crate::search::dock`], [`crate::trash::dock`],
+//! [`crate::comments::dock`] (project-wide) on the leading rail; [`inspector`],
+//! [`mod@format`], a per-document comments dock, [`crate::footnotes::dock`] and
+//! [`crate::versions::dock`] on the trailing rail; [`crate::search::preview_dock`] and
+//! [`crate::timeline::dock`] on the bottom. See [`APP_DOCKS`] for the authoritative
+//! list and mount order.
 //!
 //! ## Stable dock ids
 //!
@@ -400,21 +401,12 @@ pub fn registered_dock_widgets(cx: &DockContext) -> Vec<DockWidget> {
     })
 }
 
-pub mod comments;
 pub mod create_split_button;
-pub mod footnotes;
 pub mod format;
 pub mod games;
 pub mod inspector;
 pub mod inspector_sections;
-pub mod outline;
 pub mod outline_card;
-pub mod search;
-pub mod search_preview;
-pub mod search_replace_flow;
-pub mod timeline;
-pub mod trash;
-pub mod versions;
 
 #[cfg(test)]
 mod extension_roster_tests {

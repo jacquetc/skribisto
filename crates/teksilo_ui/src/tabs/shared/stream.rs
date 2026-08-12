@@ -31,9 +31,9 @@ use teksilo::widgets::{
 use skribisto_model::{CreateType, SubRoleExt};
 
 use crate::models::{StreamLevel, StreamRow};
-use crate::view_models::{
-    EditorTypography, SplitFlavour, StreamViewModel, is_prose_bearing, is_synopsis_bearing,
-};
+use crate::shared::{is_prose_bearing, is_synopsis_bearing};
+use crate::stream::{SplitFlavour, StreamViewModel};
+use crate::view_models::EditorTypography;
 
 use super::{
     HEADING_PROSE_MIN_LINES, MAIN_MIN_LINES, SplitFn, centered, synopsis_column, vspace,
@@ -604,8 +604,8 @@ mod tests {
     /// is for.
     #[cfg(not(feature = "mocks"))]
     fn stream_with_comments_installed() -> StreamViewModel {
+        use crate::comments::CommentsViewModel;
         use crate::models::CommentsListModel;
-        use crate::view_models::CommentsViewModel;
         let ctx = Rc::new(AppContext::new());
         let docs = OpenDocsStore::new(ctx.clone());
         docs.set_comments(CommentsViewModel::new(

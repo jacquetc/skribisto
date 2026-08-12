@@ -48,10 +48,11 @@ use frontend::common::entities::BinderItemSubRole;
 use crate::binder::create_labels::{
     recommendation_label, recommendation_placement, recommendation_tooltip_key,
 };
+use crate::corkboard::CorkboardViewModel;
 use crate::models::{CorkboardCard, OpenDoc};
 use crate::singles::SingleCorkboardCard;
 use crate::toast_scope::ToastWorkExt;
-use crate::view_models::{CorkboardViewModel, EditorTypography};
+use crate::view_models::EditorTypography;
 
 mod card;
 mod chrome;

@@ -50,16 +50,19 @@ use frontend::work_management::{CloseWorkDto, LoadWorkDto, NewWorkDto};
 use crate::app_ids::AppIds;
 use crate::export::panel::ExportPanel;
 use crate::models::TreeNode;
-use crate::panels::new_work::NewWorkPanel;
+use crate::new_work::panel::NewWorkPanel;
 use crate::sessions::{StackTeardown, WindowTeardown, WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
 use crate::toast_scope::ToastWorkExt;
 
+use crate::backup::{BackupSchedulerViewModel, BackupSettingsViewModel};
+use crate::binder::OutlineViewModel;
+use crate::export::ExportViewModel;
+use crate::search::SearchReplaceViewModel;
 use crate::tabs::{ContentTab, tab_pane};
 use crate::view_models::{
-    BackupSchedulerViewModel, BackupSettingsViewModel, EditorsViewModel, ExportViewModel,
-    OutlineViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel,
-    SearchReplaceViewModel, Side, SpinnerGate, UnsavedDecision, unsaved_decision,
+    EditorsViewModel, PendingSwitch, ProjectSwitchViewModel, SaveAsViewModel, Side, SpinnerGate,
+    UnsavedDecision, unsaved_decision,
 };
 
 /// Narrowest an editor tab may be squeezed, in dp — well above teksilo's 96 dp
@@ -540,7 +543,7 @@ fn spell_underline_color(c: teksilo::tokens::Color) -> teksilo::text_document::C
 /// so a toast, not a modal.
 pub(crate) fn offer_missing_dictionaries(
     docs: &crate::models::OpenDocsStore,
-    dictionaries: &crate::view_models::DictionariesViewModel,
+    dictionaries: &crate::spellcheck::DictionariesViewModel,
     session: &WorkSession,
     ctx: &mut EventContext,
 ) {
@@ -590,7 +593,7 @@ pub(crate) fn offer_missing_dictionaries(
 /// filling the name in signs the *next* comment, never the ones already stored
 /// (see `comments::signature`), which is why the string says so.
 pub(crate) fn warn_unsigned_comments(
-    comments: &crate::view_models::CommentsViewModel,
+    comments: &crate::comments::CommentsViewModel,
     session: &WorkSession,
     ctx: &mut EventContext,
 ) {
@@ -657,13 +660,13 @@ pub struct App {
     focus: crate::view_models::FocusViewModel,
     /// Bound to this window's own `ids`, so an export from this window scopes
     /// to *this* Work. See `app::commands::CommandDeps::export`'s doc.
-    export: crate::view_models::ExportViewModel,
+    export: crate::export::ExportViewModel,
     /// The Import documents wizard's state, bound to this window's own `ids` —
     /// so a manuscript imported from this window lands in *this* project. Also
     /// the subscriber the analysis's long-operation events are routed to (see
     /// `app::wiring::long_ops`), which is why it must outlive the modal: the
     /// panel is built and destroyed around it, not the other way round.
-    import_document: crate::view_models::ImportDocumentViewModel,
+    import_document: crate::import_document::ImportDocumentViewModel,
     /// The Tier-1 registry every open Work registers into once its own
     /// `LoadWork`/`NewWork` resolves a real `work_id` (see the `LoadWork`/
     /// `NewWork` subscribers in `build`, which also bind this window's id to
@@ -680,7 +683,7 @@ pub struct App {
     /// Built fresh alongside `session`, bound to *this* window's own `ids`/
     /// `single_work`.
     save_as_vm: SaveAsViewModel,
-    restore_vm: crate::view_models::BackupRestoreViewModel,
+    restore_vm: crate::backup::BackupRestoreViewModel,
     /// This window's own formatting surfaces (dock + menu + editor registry).
     /// Never shared — a shared instance made the last-built window win the
     /// Format dock's live target.
@@ -813,15 +816,15 @@ pub struct App {
     /// This row's recorded past. Tier 3 — the timeline is a view of what one
     /// window is focused on, and two windows on the same Work legitimately look
     /// at different rows.
-    versions: crate::view_models::VersionsViewModel,
+    versions: crate::versions::VersionsViewModel,
     /// The whole project's past. Tier 3 for the same reason `versions` is: the
     /// selected moment and the change list are one window's place in the
     /// history, not the project's.
-    timeline: crate::view_models::TimelineViewModel,
+    timeline: crate::timeline::TimelineViewModel,
     /// The trash feature's shared view-model, created once on first build.
-    trash: Option<crate::view_models::TrashViewModel>,
-    comments: Option<crate::view_models::CommentsViewModel>,
-    footnotes: Option<crate::view_models::FootnotesViewModel>,
+    trash: Option<crate::trash::TrashViewModel>,
+    comments: Option<crate::comments::CommentsViewModel>,
+    footnotes: Option<crate::footnotes::FootnotesViewModel>,
     /// Keeps this window's `SearchSettingsService` `Reloadable` registration alive
     /// in the shared `SettingsRegistry`, so a peer process's `search.toml` writes
     /// are picked up live — the same story as [`backup_settings_reloadable`](Self::backup_settings_reloadable).
@@ -849,8 +852,8 @@ impl App {
         outline: OutlineViewModel,
         fullscreen: crate::view_models::FullscreenViewModel,
         focus: crate::view_models::FocusViewModel,
-        export: crate::view_models::ExportViewModel,
-        import_document: crate::view_models::ImportDocumentViewModel,
+        export: crate::export::ExportViewModel,
+        import_document: crate::import_document::ImportDocumentViewModel,
         autosave_menu: Signal<bool>,
         spellcheck_menu: Signal<bool>,
         comments_menu: Signal<bool>,
@@ -870,7 +873,7 @@ impl App {
         registry: WorkRegistry,
         quit: crate::view_models::QuitSequencer,
         save_as_vm: SaveAsViewModel,
-        restore_vm: crate::view_models::BackupRestoreViewModel,
+        restore_vm: crate::backup::BackupRestoreViewModel,
         format: crate::view_models::FormatViewModel,
         project_switch: ProjectSwitchViewModel,
         title_text: Signal<String>,
@@ -930,8 +933,8 @@ impl App {
             footnotes_dock: DockWidgetId::from_raw(crate::docks::FOOTNOTES_DOCK_ID),
             versions_dock: DockWidgetId::from_raw(crate::docks::VERSIONS_DOCK_ID),
             timeline_dock: DockWidgetId::from_raw(crate::docks::TIMELINE_DOCK_ID),
-            versions: crate::view_models::VersionsViewModel::new(),
-            timeline: crate::view_models::TimelineViewModel::new(),
+            versions: crate::versions::VersionsViewModel::new(),
+            timeline: crate::timeline::TimelineViewModel::new(),
             trash: None,
             search_settings_reloadable: None,
             root_child: None,
@@ -1259,7 +1262,7 @@ impl Widget for App {
         if self.export_styles_reloadable.is_none()
             && let Some(registry) = ctx.app_state::<SettingsRegistry>().cloned()
             && let Some(styles) = ctx
-                .app_state::<crate::view_models::ExportStylesViewModel>()
+                .app_state::<crate::export::ExportStylesViewModel>()
                 .cloned()
         {
             self.export_styles_reloadable = Some(registry.register(styles.settings_reloadable()));

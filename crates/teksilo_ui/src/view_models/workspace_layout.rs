@@ -46,12 +46,13 @@ use frontend::AppContext;
 use uuid::Uuid;
 
 use crate::app_ids::AppIds;
+use crate::binder::OutlineViewModel;
 use crate::models::{
     BinderItemRef, CorkboardTabState, PaneLayout, PerProjectLayout, TabViewState,
     WorkspaceLayoutService, ordered_binder_items, uid_is_usable,
 };
 use crate::singles::{SingleWork, SingleWorkInfo};
-use crate::view_models::{EditorsViewModel, OutlineViewModel, Side, TreeExpansionViewModel};
+use crate::view_models::{EditorsViewModel, Side, TreeExpansionViewModel};
 
 /// Per-work desk persistence (editor tabs + dock layout). Cloneable handle —
 /// registered as `app_state` so the close/switch doors and `App::build` reach the

@@ -160,7 +160,7 @@ pub struct SearchSettingsService {
 // Some methods (general/override/history CRUD) are the service's complete,
 // tested surface but are wired incrementally — a search-settings *panel* is a
 // natural follow-on that will consume the general/override setters. Same
-// convention as `view_models::outline`.
+// convention as `crate::binder::outline_vm`.
 #[allow(dead_code)]
 impl SearchSettingsService {
     /// Open `search.toml` under `paths` (cross-process safe).

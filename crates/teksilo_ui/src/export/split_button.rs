@@ -22,8 +22,8 @@ use teksilo::widgets::{Button, ButtonVariant, MenuItem, SplitButton};
 
 use export_management::ExportScopeKind;
 
+use crate::export::{ExportViewModel, scope_label};
 use crate::intents::AppIntent;
-use crate::view_models::{ExportViewModel, scope_label};
 
 pub struct ExportSplitButton {
     vm: ExportViewModel,

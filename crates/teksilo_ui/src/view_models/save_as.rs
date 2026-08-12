@@ -69,7 +69,7 @@ use super::long_op::{CapturedWork, TrackedOp, event_id, parse_payload};
 /// Update-in-place key for the single toast a Save As drives (starting →
 /// success / error) — folded through [`crate::toast_scope::work_scoped_toast_id`] with the
 /// captured [`Pending::tracked`]'s `work_id()` at every use, never bare, for the same
-/// reason [`super::export::ExportViewModel`]'s own toast id is: two Works
+/// reason [`crate::export::ExportViewModel`]'s own toast id is: two Works
 /// running their own Save As at once must never collide in the shared
 /// `ToastRegistry` (`ToastRegistry::enqueue` dedups on id alone). Reusing one
 /// id across the "Saving as…" → "Saved as"/error toasts also means the
@@ -194,7 +194,7 @@ impl SaveAsViewModel {
     ///
     /// Split out ctx-free so the flush-before-serialize invariant is testable
     /// headlessly (this crate has no `EventContext` harness — see the tests below
-    /// and `backup_scheduler.rs`'s).
+    /// and `backup_scheduler_vm.rs`'s).
     ///
     /// Returns the captured Work **and the operation's own id** — [`Self::begin`]
     /// needs the latter for its "starting" toast's dedup key, which is per

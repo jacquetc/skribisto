@@ -26,15 +26,18 @@ use frontend::AppContext;
 use frontend::common::event::{Event, LongOperationEvent, Origin, WorkManagementEvent};
 
 use crate::app_ids::AppIds;
+use crate::backup::{BackupRestoreViewModel, BackupSchedulerViewModel, BackupSettingsViewModel};
+use crate::binder::OutlineViewModel;
 use crate::models::OpenDocsStore;
+use crate::search::SearchReplaceViewModel;
 use crate::sessions::{WorkRegistry, WorkSession};
 use crate::settings::SettingsPanel;
 use crate::singles::SingleWork;
+use crate::spellcheck::DictionariesViewModel;
 use crate::toast_scope::ToastWorkExt;
+use crate::trash::TrashViewModel;
 use crate::view_models::{
-    BackupRestoreViewModel, BackupSchedulerViewModel, BackupSettingsViewModel,
-    DictionariesViewModel, EditorsViewModel, OutlineViewModel, ProjectLifecycleViewModel,
-    SearchReplaceViewModel, TrashViewModel, TreeExpansionViewModel, WorkspaceLayoutViewModel,
+    EditorsViewModel, ProjectLifecycleViewModel, TreeExpansionViewModel, WorkspaceLayoutViewModel,
 };
 
 pub(in crate::app) use super::guards::{on_own_close, on_own_load_or_new};
@@ -265,7 +268,7 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
                         // that count's completion, below.
                         if !pace_shown.get()
                             && summary_enabled.get()
-                            && crate::panels::pace_summary::has_active_plan(&app_ctx, &ids)
+                            && crate::pace::panel::has_active_plan(&app_ctx, &ids)
                         {
                             pace_shown.set(true);
                             pace_pending.set(true);
@@ -295,7 +298,7 @@ pub(in crate::app) fn install_backup_sniff(ctx: &mut BuildContext, deps: BackupS
                 }
                 pace_pending.set(false);
                 let editors = editors.clone();
-                crate::panels::pace_summary::present(
+                crate::pace::panel::present(
                     c,
                     app_ctx.clone(),
                     ids.clone(),
@@ -342,7 +345,7 @@ pub(in crate::app) struct LifecycleDeps {
     pub workspace_layout: Option<WorkspaceLayoutViewModel>,
     pub trash_dock: DockWidgetId,
     // cold-start import (installed after the New seed, same call)
-    pub import_document: crate::view_models::ImportDocumentViewModel,
+    pub import_document: crate::import_document::ImportDocumentViewModel,
     pub cold_start_import: ColdStartImport,
 }
 
@@ -590,10 +593,10 @@ pub(in crate::app) fn install_lifecycle(
                     return;
                 }
                 if pending.take() {
-                    crate::panels::import_document::present_import_document(
+                    crate::import_document::panel::present_import_document(
                         c,
                         import.clone(),
-                        crate::panels::import_document::ImportDocumentOptions::default(),
+                        crate::import_document::panel::ImportDocumentOptions::default(),
                     );
                 }
             },

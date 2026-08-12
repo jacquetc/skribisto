@@ -128,7 +128,7 @@ pub struct OverviewRow {
 }
 
 /// The reactive shaping inputs, owned by
-/// [`OverviewViewModel`](crate::view_models::OverviewViewModel) and shared by clone into
+/// [`OverviewViewModel`](crate::overview::OverviewViewModel) and shared by clone into
 /// the model, which reads them in its row source and re-sources when either changes.
 #[derive(Clone)]
 pub struct OverviewFilters {

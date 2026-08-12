@@ -35,10 +35,9 @@ use teksilo::widgets::{
     SegmentedControl, Spacer, SpinBox, Switcher, TextWidget, Toggle, VStack,
 };
 
-use crate::backup::is_destination_available;
+use crate::backup::{BackupSettingsViewModel, is_destination_available};
 use crate::models::{BackupPolicy, RetentionMode, uid_is_usable};
 use crate::settings::{field_label, group};
-use crate::view_models::BackupSettingsViewModel;
 
 type Get = Rc<dyn Fn() -> BackupPolicy>;
 type Set = Rc<dyn Fn(BackupPolicy)>;
@@ -145,7 +144,7 @@ impl Widget for DefaultLocationRow {
                     Button(tr!(settings_backup_reveal_root())) {
                         variant: ButtonVariant::Ghost
                         on_activate_fn: move |_c| {
-                            crate::view_models::BackupsListViewModel::reveal(&reveal_target)
+                            crate::backup::BackupsListViewModel::reveal(&reveal_target)
                         }
                     }
                 }

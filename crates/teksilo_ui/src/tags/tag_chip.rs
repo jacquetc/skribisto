@@ -360,10 +360,7 @@ impl std::fmt::Debug for TagDotsRow {
 
 impl Widget for TagDotsRow {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let Some(vm) = ctx
-            .app_state::<crate::view_models::TagsViewModel>()
-            .cloned()
-        else {
+        let Some(vm) = ctx.app_state::<crate::tags::TagsViewModel>().cloned() else {
             // No work open: nothing to resolve ids against.
             self.root_child = None;
             return Vec::new();
@@ -425,7 +422,7 @@ impl Widget for TagDotsRow {
 /// so it may rebuild freely, whereas rebuilding its parent would close the popover.
 struct ChipDots {
     value: Signal<Vec<u64>>,
-    vm: crate::view_models::TagsViewModel,
+    vm: crate::tags::TagsViewModel,
     max_visible: usize,
     root_child: Option<WidgetId>,
 }

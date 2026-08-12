@@ -21,11 +21,11 @@ use teksilo::prelude::*;
 
 use frontend::common::event::{DirectAccessEntity, EntityEvent, Event, Origin};
 
-use crate::view_models::{
-    BackupRestoreViewModel, BackupSchedulerViewModel, EditorsViewModel, ExportViewModel,
-    ImportDocumentViewModel, MentionIndex, NoteTemplatesViewModel, ProgressRecorder,
-    SaveAsViewModel, Side,
-};
+use crate::backup::{BackupRestoreViewModel, BackupSchedulerViewModel};
+use crate::export::ExportViewModel;
+use crate::import_document::ImportDocumentViewModel;
+use crate::note_templates::NoteTemplatesViewModel;
+use crate::view_models::{EditorsViewModel, MentionIndex, ProgressRecorder, SaveAsViewModel, Side};
 
 pub(in crate::app) struct FocusSyncDeps {
     pub templates_menu: Option<(
@@ -51,7 +51,7 @@ pub(in crate::app) struct FocusSyncDeps {
 pub(in crate::app) fn install(
     ctx: &mut BuildContext,
     deps: FocusSyncDeps,
-) -> crate::docks::outline::OpenItemFn {
+) -> crate::binder::dock::OpenItemFn {
     // The Image menu appears while a picture is selected and goes away
     // when it is not. Driven off the same signal the Document menu's image
     // rows used to gate on, so the menu and the commands cannot disagree
@@ -111,7 +111,7 @@ pub(in crate::app) fn install(
     // opens (or focuses) its editor tab. The tree fires this via
     // `TreeView::on_activate`; App supplies the open callback so neither
     // view-model imports the other.
-    let on_open: crate::docks::outline::OpenItemFn = {
+    let on_open: crate::binder::dock::OpenItemFn = {
         let editors = deps.editors.clone();
         Rc::new(move |item_id, title| editors.open_or_focus(item_id, &title))
     };

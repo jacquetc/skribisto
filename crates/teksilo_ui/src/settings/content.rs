@@ -29,11 +29,10 @@ use teksilo::widgets::{Expand, Padding, Switcher, VStack};
 
 use super::nav::{Branch, Navigator, Pane, Root, Sec, children_of};
 use super::{crumb, empty_pane, pane_frame, panes, section_title, tree};
+use crate::backup::BackupSettingsViewModel;
 use crate::sessions::WorkSession;
 use crate::singles::SingleWork;
-use crate::view_models::{
-    BackupSettingsViewModel, SettingsViewModel, WorkSettingsViewModel, WritingGamesViewModel,
-};
+use crate::view_models::{SettingsViewModel, WorkSettingsViewModel, WritingGamesViewModel};
 
 /// Builds the left rail and the content `Switcher`, for [`super::SettingsPanel::build`]
 /// to wrap in its header/footer chrome.
@@ -108,7 +107,7 @@ pub(super) fn build(
     // shared `pane_frame` like every other pane. Always available (dictionaries are a
     // machine-wide resource, independent of any open project).
     let dictionaries_pane: Box<dyn Widget> = match ctx
-        .app_state::<crate::view_models::DictionariesViewModel>()
+        .app_state::<crate::spellcheck::DictionariesViewModel>()
         .cloned()
     {
         Some(vm) => Box::new(pane_frame(
@@ -127,7 +126,7 @@ pub(super) fn build(
     // Compile & Export ▸ Export Formats — the export-style manager (built-in + user styles,
     // duplicate-to-edit, JSON import/export), wrapped in `pane_frame` like every other pane.
     let export_styles_pane: Box<dyn Widget> = match ctx
-        .app_state::<crate::view_models::ExportStylesViewModel>()
+        .app_state::<crate::export::ExportStylesViewModel>()
         .cloned()
     {
         Some(vm) => Box::new(pane_frame(
@@ -148,7 +147,7 @@ pub(super) fn build(
     // Work starts a project from. App-level like export styles, and resolved the same
     // way, so one instance backs both this pane and the New Work picker.
     let paratext_pane: Box<dyn Widget> = match ctx
-        .app_state::<crate::view_models::ParatextPresetsViewModel>()
+        .app_state::<crate::export::ParatextPresetsViewModel>()
         .cloned()
     {
         Some(vm) => Box::new(pane_frame(

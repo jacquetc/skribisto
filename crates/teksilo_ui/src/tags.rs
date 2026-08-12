@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! The tags feature's UI pieces: the preset catalogue, and (as they land) the pill field,
-//! the compact chip renderer and its tooltip.
+//! The tags feature: business logic and UI pieces.
 //!
-//! Business logic lives in [`TagsViewModel`](crate::view_models::TagsViewModel); this
-//! module is presentation and the data that is only meaningful to it.
+//! [`TagsViewModel`] is the tag feature's business logic, shared by the Settings ▸ Tags
+//! pane, the Inspector's tag section, and the chip popover. Everything else here —
+//! the preset catalogue, the pill field, the compact chip renderer and its tooltip — is
+//! presentation and the data that is only meaningful to it.
+
+mod tags_vm;
 
 pub mod alias_pill_field;
 pub mod cast_add;
@@ -24,3 +27,4 @@ pub use pov::{pov_add_button, pov_chip_row, pov_chips};
 pub use presets::Preset;
 pub use tag_chip::TagDotsRow;
 pub use tag_pill_field::TagPillField;
+pub use tags_vm::TagsViewModel;

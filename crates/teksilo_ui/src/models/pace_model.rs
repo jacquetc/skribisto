@@ -9,7 +9,7 @@
 //! I/O only: [`load`](imp::PaceModel::load) reads a whole [`PaceState`] in one
 //! shot; the mutators create the Pace lazily (on the first edit) and update it
 //! and its children. The reactive `Signal`s and the pure stats live one layer
-//! up in [`PaceViewModel`](crate::view_models::PaceViewModel), which calls
+//! up in [`PaceViewModel`](crate::pace::PaceViewModel), which calls
 //! [`load`](imp::PaceModel::load) after every mutation and on the matching
 //! backend `Updated` events.
 //!

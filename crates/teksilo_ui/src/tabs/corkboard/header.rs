@@ -233,7 +233,7 @@ impl std::fmt::Debug for SortControl {
 }
 impl Widget for SortControl {
     fn build(&mut self, ctx: &mut BuildContext) -> Vec<WidgetId> {
-        let title = || crate::view_models::CORKBOARD_SORT_TITLE.to_string();
+        let title = || crate::corkboard::SORT_TITLE.to_string();
         // Each button shows the order currently in force and, on activate, moves to
         // the next one: manuscript → A–Z → Z–A → manuscript. `None` *is* manuscript
         // order (what `wire`'s effect reads as `clear_sort`), so there is no fourth

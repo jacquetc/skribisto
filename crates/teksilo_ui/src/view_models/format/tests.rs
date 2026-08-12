@@ -860,7 +860,7 @@ fn clearing_formatting_also_unsets_the_direction() {
 }
 
 /// A footnote binding over a `Content` row with a known id.
-fn binding_over(content_id: u64) -> crate::view_models::FootnoteBinding {
+fn binding_over(content_id: u64) -> crate::footnotes::FootnoteBinding {
     let ctx = Rc::new(frontend::AppContext::new());
     let docs = crate::models::OpenDocsStore::new(ctx.clone());
     let model = crate::models::FootnotesListModel::new(
@@ -868,7 +868,7 @@ fn binding_over(content_id: u64) -> crate::view_models::FootnoteBinding {
         crate::app_ids::AppIds::new(),
         docs.clone(),
     );
-    let vm = crate::view_models::FootnotesViewModel::new(model, docs, Signal::new(None));
+    let vm = crate::footnotes::FootnotesViewModel::new(model, docs, Signal::new(None));
     vm.binding(crate::singles::SingleContent::from_id(ctx, content_id))
 }
 

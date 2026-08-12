@@ -5,7 +5,7 @@
 //! body — shared by every surface that shows a *summary* of a turn's text
 //! rather than its full, editable form: the AccessKit annotation summary
 //! (`comments::binding::CommentBinding::annotation_spans`), the two docks'
-//! preview line (`docks::comments::comment_card`'s `body_line`), and nothing
+//! preview line (`crate::comments::dock::comment_card`'s `body_line`), and nothing
 //! else — the card itself (`comments::card::Turn`) shows the real body in a
 //! real `RichTextEditor`, which needs no plain-text stand-in at all.
 //!

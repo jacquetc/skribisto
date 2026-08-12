@@ -33,9 +33,9 @@ use crate::app_ids::HasWorkId;
 use crate::toast_scope::ToastWorkExt;
 
 use crate::models::{TagRow, name_key};
+use crate::tags::TagsViewModel;
 use crate::tags::contrast;
 use crate::tags::tag_tooltip::tag_tooltip_body;
-use crate::view_models::TagsViewModel;
 use crate::widgets::{Pill, PillTooltip};
 
 /// Persist a new tag-id list for the item. Takes an `EventContext` so it can run a command.

@@ -32,10 +32,10 @@ use teksilo::widgets::{
 
 use frontend::AppContext;
 
+use crate::binder::OutlineViewModel;
 use crate::binder::icons::binder_icon;
 use crate::intents::AppIntent;
 use crate::models::{BinderListModel, BinderRow};
-use crate::view_models::OutlineViewModel;
 
 /// Row width for the popover, so the trailing item counts align.
 const ROW_WIDTH: f32 = 236.0;

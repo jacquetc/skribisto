@@ -29,8 +29,8 @@ use crate::models::{OpenDoc, OpenDocsStore};
 use crate::singles::SingleBinderItem;
 use crate::tabs::ContentTab;
 
-use super::binder_ops;
 use super::save_state::{SaveLanded, SaveStateViewModel};
+use crate::shared::binder_ops;
 use crate::view_models::{EditorTypographySet, GoAvailability};
 
 /// Which editor pane. `Primary` is always present; `Secondary` is the side pane,
@@ -147,7 +147,7 @@ pub struct EditorsViewModel {
     /// copy of any of this is a bug the moment a second window exists.
     save_state: SaveStateViewModel,
     /// Threaded into every `ContentTab` (its Overview pane's remembered chevron
-    /// expansion) — see `view_models::overview::OverviewViewModel::restore_expansion`'s
+    /// expansion) — see `overview::OverviewViewModel::restore_expansion`'s
     /// doc for why this is a constructor-threaded handle, not an
     /// `OverviewViewModel`-local `ctx.app_state` lookup.
     tree_expansion: crate::view_models::TreeExpansionViewModel,
@@ -410,7 +410,7 @@ impl EditorsViewModel {
 
     /// The focused prose editor's handle — `None` when nothing is open there or
     /// the active tab has no main prose field. See
-    /// [`crate::view_models::FindViewModel::editor_handle`] for why the handle lives there.
+    /// [`crate::search::FindViewModel::editor_handle`] for why the handle lives there.
     pub fn focused_prose_handle(&self) -> Option<teksilo::widgets::rich_text::EditorHandle> {
         self.focused_find()?.editor_handle()
     }
@@ -616,7 +616,7 @@ impl EditorsViewModel {
 
     /// The `FindViewModel` of the focused pane's active tab — `None` when nothing
     /// is open there or the active tab has no main prose field.
-    fn focused_find(&self) -> Option<crate::view_models::FindViewModel> {
+    fn focused_find(&self) -> Option<crate::search::FindViewModel> {
         self.with_focused_tab(|t| t.find().cloned())
     }
 
