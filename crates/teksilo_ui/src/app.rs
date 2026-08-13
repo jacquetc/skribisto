@@ -1672,6 +1672,12 @@ impl Widget for App {
             active: crate::active_context::ActiveContext::for_window(&editors, &self.outline),
         };
         crate::commands_ext::register_all_extension_commands(ctx, &seam);
+        // …and anything an extension wants done with this context that is not a
+        // verb. Same reason, same place, same re-run-per-build contract: an
+        // extension's *state* has no always-mounted widget to hang on either, and
+        // this is the only context from which a preference can be mirrored to
+        // where its own save hook, on a worker thread, can read it.
+        crate::app_wiring::run_all_wiring(ctx);
 
         // On project load/new/close/attach: lifecycle seed, backup sniff, dict offer.
         // Binder-item tab sync is not lifecycle — it rides every edit, not the boundaries —

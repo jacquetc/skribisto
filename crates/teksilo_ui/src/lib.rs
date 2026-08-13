@@ -92,6 +92,9 @@ pub mod active_context;
 pub mod analysis;
 pub mod app;
 pub mod app_ids;
+/// `App`'s own `BuildContext`, for an extension that has no widget of its own to
+/// hang state on. The `commands_ext` arrangement, for state rather than a verb.
+pub mod app_wiring;
 pub mod backup;
 pub mod backup_paths;
 pub mod binder;

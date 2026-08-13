@@ -80,6 +80,13 @@ pub use crate::settings_ext::{
     PageHandle, SettingsHandle, SettingsPage, register_page, register_settings,
 };
 
+// ── `App`'s own `BuildContext`, for state rather than a verb ─────────────────
+// The other half of what `commands_ext` solves. Registering a settings key an
+// extension's own save hook cannot read was possible before this; it is the
+// bridge from a `Rc`-backed `SettingsStore` on the UI thread to the `Send + Sync`
+// hooks that actually obey it.
+pub use crate::app_wiring::{Wiring, WiringHandle, register_wiring};
+
 // ── Locales ──────────────────────────────────────────────────────────────────
 pub use crate::locales::{LocaleBundle, LocaleHandle, register_locales};
 
