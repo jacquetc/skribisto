@@ -52,7 +52,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use teksilo::text_document::TextDocument;
-use teksilo::widgets::rich_text::EditorHandle;
+use teksilo::widgets::rich_text::{EditSource, EditorHandle};
 
 use super::engine::TextReplacementEngine;
 use super::typography::{SmartPunctuationFlags, TypographyEngine};
@@ -382,7 +382,21 @@ impl TextReplacementSession {
             let before = text_before(doc, caret, kept);
             let expected: String = pending.replacement.chars().take(kept).collect();
             if before.as_deref() == Some(expected.as_str()) {
-                self.apply(|| handle.replace_range(pending.span_start, caret, &pending.typed));
+                // ⚠ **`Keyboard`, not `Programmatic`.** What goes back is
+                // `pending.typed` — the very characters the writer pressed,
+                // being restored because they rejected what this replaced them
+                // with. Reporting a revert as the application's own insertion
+                // would credit the application with the writer's words, and
+                // would mean an autocorrect the writer *undid* still counted
+                // against them.
+                self.apply(|| {
+                    handle.replace_range_from(
+                        pending.span_start,
+                        caret,
+                        &pending.typed,
+                        EditSource::Keyboard,
+                    )
+                });
                 self.last_caret.set(Some(handle.cursor_position()));
                 self.last_revision.set(Some(doc.content_revision()));
                 return true;
@@ -399,7 +413,16 @@ impl TextReplacementSession {
         if before.as_deref() != Some(pending.replacement.as_str()) {
             return false;
         }
-        self.apply(|| handle.replace_range(pending.span_start, caret, &pending.typed));
+        // `Keyboard` for the same reason as the collapse revert above: these are
+        // the writer's own characters going back in.
+        self.apply(|| {
+            handle.replace_range_from(
+                pending.span_start,
+                caret,
+                &pending.typed,
+                EditSource::Keyboard,
+            )
+        });
         // Re-typing the delimiter now must give the writer the delimiter, not
         // the expansion they just rejected.
         *self.suppressed.borrow_mut() = Some(Suppressed {

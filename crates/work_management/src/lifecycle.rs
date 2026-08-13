@@ -94,6 +94,17 @@ pub trait LifecycleListener: Send + Sync {
     fn on_event(&self, event: &LifecycleEvent);
 }
 
+/// Emptying a project's arrival tally when the project closes.
+///
+/// The tally itself lives in `common` because both ends need it and they sit on
+/// opposite sides of this crate — see [`common::arrival`]. The `ProjectSlots`
+/// impl has to be here, where the trait is.
+impl ProjectSlots for common::arrival::Arrivals {
+    fn forget(&self, work_unique_id: &str) {
+        common::arrival::Arrivals::forget(self, work_unique_id);
+    }
+}
+
 /// A per-project slot store that should be emptied when a project closes.
 ///
 /// Object-safe so the registry can hold stores of different value types
