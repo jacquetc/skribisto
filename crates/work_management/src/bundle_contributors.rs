@@ -421,25 +421,26 @@ mod tests {
         );
     }
 
-    /// The gate every write path leans on. Registering is what makes a save pay
-    /// for a fingerprint at all, so this predicate has to track the registry
-    /// exactly — a stale `true` costs a vanilla build a hash pass per save, and
-    /// a stale `false` silently drops an extension's data from the bundle.
+    /// The gate every write path leans on: a stale `false` silently drops an
+    /// extension's data from the bundle, and a stale `true` costs a vanilla
+    /// build a hash pass per save.
+    ///
+    /// ⚠ **Only the `true` direction is assertable here, and the first cut of
+    /// this test got that wrong.** It read the predicate before registering and
+    /// required the same answer after dropping — which a sibling test
+    /// registering or dropping in the window between the two reads makes false,
+    /// because the registry is process-wide and these run in parallel. It
+    /// flaked, roughly once in twenty full runs, in a way that looked like
+    /// `has_contributors` itself was broken.
+    ///
+    /// The other direction is not lost: `dropping_the_handle_unregisters` above
+    /// proves it through `collect`, scoped to a uid that test alone owns, which
+    /// is the only way to ask the question without asking about everyone else's
+    /// contributors too.
     #[test]
-    fn has_contributors_tracks_the_registry() {
-        let before = has_contributors();
-        {
-            let _h = register("test.gate", Arc::new(Fixed(vec![("gate/a.ron", b"x")])));
-            assert!(has_contributors(), "a live registration must be visible");
-        }
-        // Not `assert!(!has_contributors())`: the registry is process-wide and
-        // these tests run in parallel, so a sibling's handle may well be alive.
-        // What this owns is that dropping ours changed nothing else.
-        assert_eq!(
-            has_contributors(),
-            before,
-            "dropping a handle must leave the registry exactly as it was found"
-        );
+    fn has_contributors_sees_a_live_registration() {
+        let _h = register("test.gate", Arc::new(Fixed(vec![("gate/a.ron", b"x")])));
+        assert!(has_contributors(), "a live registration must be visible");
     }
 
     /// The kind is the whole reason a contributor can tell "the writer saved"

@@ -892,6 +892,26 @@ impl ContentTab {
     pub fn work(&self) -> &crate::save::WorkHandle {
         &self.work
     }
+
+    /// This project's durable `Work.unique_id`, or `None` when it has none.
+    ///
+    /// `None` is an **unsaved** project — the empty uid, which is not a project
+    /// identity but the absence of one. Every per-project store in the workspace
+    /// refuses it rather than pooling every unsaved project under one key, and a
+    /// caller here gets the same answer in a shape it cannot ignore.
+    ///
+    /// Read through the store rather than held, because it is set when the
+    /// project is first saved and this tab may have been built before that.
+    /// `ids.work_id` is the authoritative "current Work" — never a model's own
+    /// cached id.
+    pub fn work_unique_id(&self) -> Option<String> {
+        let work_id = self.ids.work_id.get()?;
+        let uid = frontend::commands::work_commands::get_work(&self.app_ctx, &work_id)
+            .ok()
+            .flatten()?
+            .unique_id;
+        (!uid.is_empty()).then_some(uid)
+    }
     /// The `(role, sub_role)` pair this tab edits — what [`tab_pane`] dispatches on.
     pub fn role(&self) -> &BinderItemRole {
         &self.open_doc.role

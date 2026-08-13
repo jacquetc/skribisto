@@ -170,6 +170,19 @@ pub fn writing_column(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::shared::images::ImageSource>,
+    // Which project this surface's typing belongs to — `Work.unique_id`, from
+    // [`ContentTab::work_unique_id`].
+    //
+    // `None` on every surface built without a project around it, on an unsaved
+    // one, and in the widget tests — the same shape as `comments` / `footnotes`
+    // / `images` above, and for the same reason.
+    //
+    // The **project**, not the item and not the window: a project can have
+    // several editors open on it, and a count that meant anything per window
+    // would mean nothing at all. The tally itself is `common::arrival::shared()`,
+    // reached rather than threaded — see that module for why the end that
+    // reports and the end that reads cannot hand it to each other.
+    arrival_project: Option<String>,
     // Whether this surface may be typed into.
     //
     // A **construction-time** choice, not a runtime flag: `RichTextEditor` fixes
@@ -206,6 +219,25 @@ pub fn writing_column(
     if let Some(source) = &images {
         let resolve = source.resolver();
         editor = editor.on_image_missing(resolve);
+    }
+    if let Some(project) = arrival_project {
+        // The toolkit says which channel; what a *manuscript* makes of that is
+        // the application's to decide, so the mapping is here rather than in
+        // teksilo. `Ime` maps to `Typed` because a writer composing in Japanese
+        // is typing — the characters that land are not the keys pressed, but any
+        // other answer would be wrong about them specifically.
+        let tally = common::arrival::shared();
+        editor = editor.on_text_inserted(move |source, chars| {
+            use common::arrival::Arrival;
+            use teksilo::widgets::rich_text::EditSource;
+            let arrival = match source {
+                EditSource::Keyboard | EditSource::Ime => Arrival::Typed,
+                EditSource::Clipboard => Arrival::Pasted,
+                EditSource::Accessibility => Arrival::Dictated,
+                EditSource::Programmatic => Arrival::Programmatic,
+            };
+            tally.record(&project, arrival, chars as u64);
+        });
     }
     let mut editor = editor
         .style(WritingEditorStyle)
@@ -796,6 +828,8 @@ pub fn writing_section(
     // have — a picture pasted in from another editor, or brought back by an
     // undo. `None` on the surfaces built without a project around them.
     images: Option<crate::shared::images::ImageSource>,
+    // Forwarded straight to [`writing_column`] — see its own note.
+    arrival_project: Option<String>,
     // Whether this surface may be typed into — see `writing_column`.
     read_only: bool,
 ) -> impl Widget {
@@ -824,6 +858,7 @@ pub fn writing_section(
             comments,
             footnotes,
             images,
+            arrival_project,
             read_only,
         ))
 }

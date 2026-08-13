@@ -98,10 +98,24 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
             let band = tab.caret_band();
             let games = tab.writing_games();
             let gutter = gutter.clone();
+            // Resolved once for the page rather than per row: it is one store
+            // read, and a stream can be a hundred rows.
+            let arrival_project = tab.work_unique_id();
             move |row: &StreamRow| -> Box<dyn Widget> {
                 Box::new(stream_row(
-                    &vm, row, &header_cw, &editor_cw, &typo, flavour, &md, &format, &tw, &band,
-                    &games, &gutter,
+                    &vm,
+                    row,
+                    &header_cw,
+                    &editor_cw,
+                    &typo,
+                    flavour,
+                    &md,
+                    &format,
+                    &tw,
+                    &band,
+                    &games,
+                    &gutter,
+                    arrival_project.as_deref(),
                 ))
             }
         };
@@ -157,6 +171,7 @@ pub fn stream_pane(tab: &super::super::ContentTab, flavour: SplitFlavour) -> imp
                     // marker in a Full Book.
                     tab.open_doc.footnote_binding_main(),
                     tab.open_doc.images(),
+                    tab.work_unique_id(),
                     // The container's own prose, read-only while it is in the trash.
                     tab.open_doc.trashed.get(),
                 )),
@@ -358,6 +373,9 @@ fn stream_row(
     // The page's gutter reservation, shared by every row so the manuscript keeps
     // one measure down the page (see `ColumnWithMargin::reserve`).
     gutter: &Signal<f32>,
+    // Which project this row's typing belongs to — forwarded straight to
+    // [`writing_column`], see its own note. `None` on an unsaved project.
+    arrival_project: Option<&str>,
 ) -> impl Widget {
     let id = row.item_id;
     let is_heading = row.sub_role.opens_chapter() || row.sub_role.opens_part();
@@ -423,6 +441,10 @@ fn stream_row(
                         // above for why a stream row takes no seek.
                         doc.footnote_binding_main(),
                         doc.images(),
+                        // Every row of a stream is the same project's, so they all count
+                        // into one tally — which is the whole point of it being the
+                        // project's rather than the editor's.
+                        arrival_project.map(str::to_string),
                         // Each row answers for itself: a stream shows many items, and only the
                         // ones actually in the trash are locked.
                         doc.trashed.get(),

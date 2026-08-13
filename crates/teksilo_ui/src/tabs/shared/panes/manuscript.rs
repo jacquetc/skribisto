@@ -110,6 +110,7 @@ pub(super) fn manuscript_page(
             tab.open_doc.comment_binding_main(),
             tab.open_doc.footnote_binding_main(),
             tab.open_doc.images(),
+            tab.work_unique_id(),
             // A trashed item's text is read-only. The banner above it is a
             // statement, not a guard: before this the content beneath it was built
             // by the same editable render path as any other tab.
