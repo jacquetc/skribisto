@@ -202,21 +202,45 @@ impl Widget for LinkPanel {
     }
 }
 
+/// Whether the colon at `colon` separates a host from a **port** rather than a
+/// scheme from its body.
+///
+/// `example.com:8080` and `host:port` have the same shape as `scheme:body`, and
+/// a scheme may legally contain dots — so the colon alone cannot tell them
+/// apart. Two things together can: what follows is nothing but digits (a port
+/// number, up to the path), and what precedes looks like a host rather than a
+/// protocol name.
+///
+/// Getting this wrong is not cosmetic. A misread `example.com:8080` is stored
+/// without a scheme, and the opener's allowlist then refuses it on every click
+/// — a link that looks fine and is permanently dead.
+fn colon_separates_a_port(s: &str, colon: usize) -> bool {
+    let host = &s[..colon];
+    let after = &s[colon + 1..];
+    let digits = after.split(['/', '?', '#']).next().unwrap_or("");
+    !digits.is_empty()
+        && digits.chars().all(|c| c.is_ascii_digit())
+        // A protocol name has no dots and is not the loopback host. This is
+        // what keeps `tel:12345` a scheme while `example.com:8080` is a host.
+        && (host.contains('.') || host.eq_ignore_ascii_case("localhost"))
+}
+
 /// Give a bare address a scheme, so `example.com` reaches the web rather than
 /// being handed to the OS as a relative path.
 ///
 /// Deliberately shy: anything that already carries a scheme is left exactly as
-/// typed, and so is anything that could be one. Guessing is only safe for the
-/// two shapes that are unambiguous — an address with an `@` before any slash is
-/// mail, and everything else is web.
+/// typed. Guessing is only safe for the shapes that are unambiguous — an
+/// address with an `@` before any slash is mail, and everything else is web.
 pub(crate) fn normalize_href(raw: &str) -> String {
     let s = raw.trim();
     if s.is_empty() {
         return String::new();
     }
-    // A scheme, and not a Windows drive letter (`C:\…`), which is a path.
+    // A scheme — but not a Windows drive letter (`C:\…`), which is a path, and
+    // not a port (`example.com:8080`), which is a host.
     if let Some(colon) = s.find(':')
         && colon > 1
+        && !colon_separates_a_port(s, colon)
         && s[..colon]
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
@@ -233,7 +257,8 @@ pub(crate) fn normalize_href(raw: &str) -> String {
     if s.contains('\\') {
         return s.to_string();
     }
-    let before_slash = s.split('/').next().unwrap_or(s);
+    // `s` is non-empty, so `split` always yields at least one piece.
+    let before_slash = s.split('/').next().unwrap_or_default();
     if before_slash.contains('@') {
         return format!("mailto:{s}");
     }
@@ -295,5 +320,55 @@ mod tests {
     #[test]
     fn an_empty_address_stays_empty() {
         assert_eq!(normalize_href("   "), "");
+    }
+
+    #[test]
+    fn a_host_with_a_port_is_not_mistaken_for_a_scheme() {
+        // `example.com:8080` has the same shape as `scheme:body`. Reading it as
+        // one stored the address without a scheme, and the opener's allowlist
+        // then refused it on every click — a link that looked right and could
+        // never be followed.
+        assert_eq!(
+            normalize_href("example.com:8080"),
+            "https://example.com:8080"
+        );
+        assert_eq!(
+            normalize_href("example.com:8080/path?q=1"),
+            "https://example.com:8080/path?q=1"
+        );
+        assert_eq!(
+            normalize_href("localhost:3000"),
+            "https://localhost:3000",
+            "the loopback host has no dot, and still takes a port"
+        );
+    }
+
+    #[test]
+    fn a_scheme_whose_body_is_digits_is_still_a_scheme() {
+        // The other side of the same rule: a protocol name has no dot, so this
+        // must not be read as a host with a port.
+        assert_eq!(normalize_href("tel:12345"), "tel:12345");
+    }
+
+    #[test]
+    fn a_normalized_address_is_one_the_opener_accepts() {
+        // The property that actually matters, and the one the bug broke: what
+        // this returns for an ordinary address must survive the allowlist, or
+        // the link is dead on arrival.
+        use crate::shared::external_link::is_openable;
+        for typed in [
+            "example.com",
+            "example.com:8080",
+            "localhost:3000",
+            "www.example.com/a/b",
+            "someone@example.com",
+            "https://example.com",
+        ] {
+            assert!(
+                is_openable(&normalize_href(typed)),
+                "{typed:?} normalized to {:?}, which the opener refuses",
+                normalize_href(typed)
+            );
+        }
     }
 }

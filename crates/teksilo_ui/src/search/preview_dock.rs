@@ -233,6 +233,11 @@ impl Widget for PreviewBody {
                 // growing with the prose.
                 let width = crate::settings::SettingsViewModel::new(ctx.settings()).preview_width();
                 let editor = RichTextEditor::editor(prose.doc.clone())
+                    // Registered with the format view-model below, so the Link command
+                    // reaches this band — and a link it makes here must be followable.
+                    .on_link_activated(|href, ctx| {
+                        crate::shared::external_link::open_external_link(href, ctx);
+                    })
                     .style(SeamlessEditorStyle)
                     .on_change(open_doc.mark_dirty_fn())
                     .content_padding_symmetric(8.0, 8.0)

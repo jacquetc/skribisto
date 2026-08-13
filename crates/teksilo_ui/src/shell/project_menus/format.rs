@@ -93,8 +93,13 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
         // than this label hardcoding one.
         .item({
             let f = f.clone();
+            // `checked`, like every mark above — reflect-only, mirroring the
+            // same signal the dock's button binds, so the two surfaces agree
+            // about whether the caret is on a link.
+            let state = f.link();
             MenuEntry::new(tr!(menu_format_link()))
                 .enabled(on.clone())
+                .checked(state)
                 .shortcut("format.link")
                 .on_activate(move |c| crate::format::link_panel::present(&f, c))
         })

@@ -100,6 +100,12 @@ pub fn synopsis_editor(
     let mut editor = editor
         .style(WritingEditorStyle)
         .on_change(on_change)
+        // A synopsis is a formattable surface, so the Link command reaches it —
+        // and a link nobody can follow reads as a broken app. Same opener, same
+        // scheme allowlist, as the manuscript editors.
+        .on_link_activated(|href, ctx| {
+            crate::shared::external_link::open_external_link(href, ctx);
+        })
         .content_padding_symmetric(6.0, 30.0)
         .text_color(TextRole::Secondary)
         .typography_defaults(typo_defaults(typo))
@@ -255,6 +261,12 @@ pub fn card_synopsis_editor(
     let mut editor = editor
         .style(WritingEditorStyle)
         .on_change(on_change)
+        // A synopsis is a formattable surface, so the Link command reaches it —
+        // and a link nobody can follow reads as a broken app. Same opener, same
+        // scheme allowlist, as the manuscript editors.
+        .on_link_activated(|href, ctx| {
+            crate::shared::external_link::open_external_link(href, ctx);
+        })
         .content_padding_symmetric(4.0, 8.0)
         .v_scroll_policy(ScrollPolicy::Auto)
         .typography_defaults(typo_defaults(&typo))

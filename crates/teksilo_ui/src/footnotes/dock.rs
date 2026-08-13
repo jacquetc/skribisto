@@ -420,6 +420,12 @@ fn body_editor(row: &FootnoteRow, vm: FootnotesViewModel) -> impl Widget {
         }
     };
     RichTextEditor::editor(doc)
+        // A footnote body is where a citation's URL naturally lands, whether
+        // typed, pasted or imported. Nothing here can *make* a link, but one
+        // that arrives has to be followable rather than dead.
+        .on_link_activated(|href, ctx| {
+            crate::shared::external_link::open_external_link(href, ctx);
+        })
         .min_lines(BODY_MIN_LINES)
         .v_scroll_policy(ScrollPolicy::AlwaysOff)
         .style(NoteBodyStyle { id, vm })

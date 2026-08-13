@@ -1092,3 +1092,30 @@ fn clearing_formatting_takes_the_link_off_too() {
 
     assert_eq!(handle.to_djot().trim(), "Read the manual today");
 }
+
+#[test]
+fn the_link_mirror_is_the_signal_the_dock_and_menu_bind() {
+    // The Link command travels by intent, so it cannot use `toggle_button`'s
+    // constructor — which is how its button first shipped with no state at all,
+    // silently inert while every other mark lit up. This pins the property
+    // those two surfaces depend on: the signal a *caller* holds is the one that
+    // moves, so a button or a menu row bound to it reflects the document.
+    let (vm, _editor, handle) = vm_at("Read [the manual](https://example.com) today", 1);
+
+    // Held the way `intent_toggle_button(.., vm.link(), ..)` and the menu's
+    // `.checked(f.link())` hold it: cloned once, up front, never re-read.
+    let bound = vm.link();
+    vm.refresh();
+    assert!(!bound.get(), "the caret starts out in plain prose");
+
+    handle.select_range(10, 10);
+    vm.refresh();
+    assert!(
+        bound.get(),
+        "moving the caret into a link must reach a signal cloned before the move"
+    );
+
+    handle.select_range(1, 1);
+    vm.refresh();
+    assert!(!bound.get(), "and leaving it must clear the same signal");
+}

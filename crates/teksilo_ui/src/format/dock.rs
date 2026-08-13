@@ -127,6 +127,26 @@ fn intent_button(
         .on_activate_fn(move |ctx| ctx.send_intent(Intent::new(intent)))
 }
 
+/// An intent button that also reflects document state.
+///
+/// [`intent_button`] plus [`toggle_button`]'s mirror. Link needs both halves:
+/// it opens a dialog, so it must travel by intent to reach an `EventContext`,
+/// and it is a mark the caret can be *inside*, so the writer has to be able to
+/// see that — otherwise the only way to find out whether the caret is on a
+/// link is to invoke the command and read the dialog's title.
+///
+/// The signal is the same one the Format menu's checkmark binds, so the two
+/// surfaces cannot disagree, and it is written by the view-model re-reading the
+/// editor rather than by the button's own optimistic flip.
+fn intent_toggle_button(
+    icon: IconWidget,
+    tooltip: impl Into<teksilo::i18n::LocalizedString>,
+    state: Signal<bool>,
+    intent: &'static str,
+) -> IconButton {
+    intent_button(icon, tooltip, intent).toggle(state)
+}
+
 /// The heading picker: a glyph that opens the seven levels.
 ///
 /// Not the `ComboBox` teksilo's example toolbar uses — a combo has a minimum
@@ -307,9 +327,10 @@ fn controls(vm: &FormatViewModel) -> Padding {
             // intent bus carries one, and routing through it also means the
             // dock button, the Format menu row and Ctrl+K are literally the
             // same command rather than three copies of it.
-            .child(intent_button(
+            .child(intent_toggle_button(
                 glyph::link(),
                 tr!(format_link()),
+                vm.link(),
                 "format.link",
             ))
             .child(command_button(
