@@ -113,6 +113,56 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         }));
     }
 
+    // Text size: the keyboard half of Ctrl+Wheel. The wheel is already standing
+    // on the editor it means; these have to be told, so they resolve through the
+    // format registry's focused/sticky editor — which is what makes them work
+    // from the View menu too, where opening the menu has already taken focus off
+    // the editor.
+    //
+    // Global for the same reason as every chord above: resolved before the
+    // focused widget sees the key, so `RichTextEditor` cannot eat them.
+    ctx.register_shortcut_global(
+        Shortcut::new("editor.size.increase")
+            .name("Increase Text Size")
+            .primary(KeyStroke::ctrl(Key::Character('=')))
+            // Ctrl+Plus as an alias, because '+' is Shift+'=' on a US/ISO
+            // keyboard and half of users press it that way — the same pair
+            // every browser accepts.
+            .secondary(KeyStroke::ctrl(Key::Character('+')))
+            .build(),
+    );
+    ctx.register_shortcut_global(
+        Shortcut::new("editor.size.decrease")
+            .name("Decrease Text Size")
+            .primary(KeyStroke::ctrl(Key::Character('-')))
+            .build(),
+    );
+    ctx.register_shortcut_global(
+        Shortcut::new("editor.size.reset")
+            .name("Reset Text Size")
+            .primary(KeyStroke::ctrl(Key::Character('0')))
+            .build(),
+    );
+    for (id, notches) in [
+        ("editor.size.increase", Some(1)),
+        ("editor.size.decrease", Some(-1)),
+        ("editor.size.reset", None),
+    ] {
+        let format = deps.format.clone();
+        ctx.register_action_global(Action::new(id).on_invoke(move |_i, c| {
+            // No editor focused and none latched — or a surface with no size
+            // preference of its own — means there is nothing to resize. A
+            // no-op, like every other command that acts through this registry.
+            let Some(typo) = format.focused_typography() else {
+                return;
+            };
+            match notches {
+                Some(n) => crate::shared::editor_size::step_and_announce(c, &typo, n),
+                None => crate::shared::editor_size::reset_and_announce(c, &typo),
+            }
+        }));
+    }
+
     // Ctrl+F opens the per-editor find banner in the focused pane's active tab (its
     // `FindViewModel`). A *global* shortcut is resolved before the focused widget sees the
     // key — the editor must not eat Ctrl+F — but the action reads which tab is focused, so

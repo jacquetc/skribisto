@@ -530,9 +530,21 @@ impl CorkboardViewModel {
     /// shared, because the expanded editor is the same prose in a roomier box, not
     /// a different surface. Only the size differs, and only because the card's is
     /// chosen to be scannable in a tile while this one is chosen to be written in.
+    /// ⚠ The `size_range` override is not optional and not decoration: this is
+    /// struct-update syntax, so without it the expanded editor would silently
+    /// inherit the card's range — clamping at 1.6 instead of its own 2.0, and
+    /// naming the wrong surface in the size gesture's toast — with nothing in
+    /// the code to see.
     pub fn modal_typo(&self) -> EditorTypography {
         EditorTypography {
             size: self.inner.modal_size.clone(),
+            size_range: crate::settings::TypographySizeRange {
+                min: crate::CORKBOARD_MODAL_SIZE_MIN,
+                max: crate::CORKBOARD_MODAL_SIZE_MAX,
+                step: crate::EDITOR_TYPO_SIZE_STEP,
+                default: crate::CORKBOARD_MODAL_SIZE_DEFAULT,
+                kind: crate::settings::TypographyKind::CorkboardExpanded,
+            },
             ..self.inner.synopsis_typo.clone()
         }
     }
@@ -1132,6 +1144,7 @@ mod tests {
             first_line_indent: Signal::new(0.0),
             para_spacing_before: Signal::new(0.0),
             para_spacing_after: Signal::new(0.0),
+            size_range: crate::settings::TypographySizeRange::default(),
         }
     }
 

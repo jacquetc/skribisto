@@ -202,6 +202,19 @@ pub const PACE_SUMMARY_ON_OPEN_KEY: &str = "pace.summary_on_open";
 // — an installed system font or one registered by `register_editor_fonts`
 // below; the `FontPicker` control only ever offers names that will render.
 
+/// The size slider's range, shared by every typography bundle except the
+/// corkboard's *expanded* card editor (which has its own, wider ceiling —
+/// `CORKBOARD_MODAL_SIZE_MIN`/`_MAX` below).
+///
+/// One source for three surfaces: the Settings sliders, Ctrl+Wheel over an
+/// editor, and Ctrl+= / Ctrl+− / Ctrl+0. They were three copies of `0.7, 1.6,
+/// 0.05` until the gestures arrived and made a drift between them a real bug —
+/// a wheel that can reach a size the slider cannot show is a value the writer
+/// can set and then never get back to.
+pub const EDITOR_TYPO_SIZE_MIN: f32 = 0.7;
+pub const EDITOR_TYPO_SIZE_MAX: f32 = 1.6;
+pub const EDITOR_TYPO_SIZE_STEP: f32 = 0.05;
+
 /// Scene / manuscript body editor typography.
 pub const SCENE_FONT_FAMILY_KEY: &str = "editor.scene.font_family";
 pub const SCENE_FONT_FAMILY_DEFAULT: &str = "Literata";
@@ -402,6 +415,18 @@ pub const CORKBOARD_SHOW_WORD_COUNT_DEFAULT: bool = true;
 /// against the card's compact 0.8.
 pub const CORKBOARD_MODAL_SIZE_KEY: &str = "corkboard.modal_size";
 pub const CORKBOARD_MODAL_SIZE_DEFAULT: f32 = 1.0;
+/// …and its own, higher ceiling. The expanded editor is the one place on the
+/// board meant for sustained writing rather than scanning, so a comfortable
+/// reading size beats fitting a tile — which is why this alone goes past
+/// `EDITOR_TYPO_SIZE_MAX`. The step stays `EDITOR_TYPO_SIZE_STEP` so a wheel
+/// notch feels the same everywhere.
+pub const CORKBOARD_MODAL_SIZE_MIN: f32 = 0.7;
+pub const CORKBOARD_MODAL_SIZE_MAX: f32 = 2.0;
+/// Being *wider* than the shared range is this bundle's entire reason to carry
+/// a range of its own. Pinned at compile time rather than in a test, because if
+/// the two ever became equal the right fix would be to delete the special case,
+/// not to keep a passing test that no longer means anything.
+const _: () = assert!(CORKBOARD_MODAL_SIZE_MAX > EDITOR_TYPO_SIZE_MAX);
 /// Number the cards in board order, the way index cards are numbered. Off by default:
 /// the number is a reading aid for a structure pass, not something the writer
 /// needs on every card all the time.

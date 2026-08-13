@@ -12,6 +12,7 @@ use std::rc::Rc;
 use teksilo::core::binding::BindingLevel;
 use teksilo::core::styles::{RichTextEditorStyle, RichTextEditorStyleConfig};
 use teksilo::core::widget::WidgetPlacement;
+use teksilo::core::widget_builder::HandlerSet;
 use teksilo::prelude::*;
 use teksilo::text::EditorTypographyDefaults;
 use teksilo::text_document::TextDocument;
@@ -1200,6 +1201,13 @@ mod typewriter_tests;
 /// `writing_column` → `TypographyBoundEditor` → `EditorHandle` → the document's paint spans.
 #[cfg(all(test, feature = "mocks"))]
 mod caret_band_tests;
+
+/// Ctrl+Wheel, from the gesture to the persisted size preference.
+///
+/// Gated with the other whole-column fixtures above, and for the same reason:
+/// these build a real `writing_column` rather than a widget in isolation.
+#[cfg(all(test, feature = "mocks"))]
+mod text_size_tests;
 
 #[cfg(test)]
 mod width_probe_tests;

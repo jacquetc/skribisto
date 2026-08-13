@@ -97,4 +97,28 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             .intent("view.focus_mode")
             .shortcut("view.focus_mode"),
     )
+    .separator()
+    // Text size — the discoverable half of Ctrl+Wheel, and the reason the
+    // commands resolve through the format registry's sticky latch rather than
+    // live focus: opening this menu has already taken focus off the editor by
+    // the time a row is clicked.
+    //
+    // No `enabled` gate. The actions no-op when nothing is focused, and a row
+    // that greys itself out the instant the menu opens — which is exactly when
+    // focus leaves the editor — would read as broken.
+    .item(
+        MenuEntry::new(tr!(menu_text_size_increase()))
+            .intent("editor.size.increase")
+            .shortcut("editor.size.increase"),
+    )
+    .item(
+        MenuEntry::new(tr!(menu_text_size_decrease()))
+            .intent("editor.size.decrease")
+            .shortcut("editor.size.decrease"),
+    )
+    .item(
+        MenuEntry::new(tr!(menu_text_size_reset()))
+            .intent("editor.size.reset")
+            .shortcut("editor.size.reset"),
+    )
 }

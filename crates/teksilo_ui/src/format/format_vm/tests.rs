@@ -1119,3 +1119,99 @@ fn the_link_mirror_is_the_signal_the_dock_and_menu_bind() {
     vm.refresh();
     assert!(!bound.get(), "and leaving it must clear the same signal");
 }
+
+/// A typography bundle for a registered editor, told apart by its kind.
+fn bundle(kind: crate::settings::TypographyKind) -> crate::settings::EditorTypography {
+    crate::settings::EditorTypography {
+        font_family: Signal::new("Literata".to_string()),
+        size: Signal::new(1.0),
+        line_height: Signal::new(1.5),
+        first_line_indent: Signal::new(0.0),
+        para_spacing_before: Signal::new(0.0),
+        para_spacing_after: Signal::new(0.0),
+        size_range: crate::settings::TypographySizeRange::standard(kind, 1.0),
+    }
+}
+
+/// Ctrl+= must resize the editor the writer is actually in — which in a stream
+/// or on a corkboard is a *row*, not the tab. The registry is the only thing
+/// that can tell those apart, which is why the size commands resolve through it
+/// rather than through the focused tab.
+#[test]
+fn the_size_commands_resolve_the_focused_editors_own_bundle() {
+    let vm = vm_detached();
+    let (prose_id, synopsis_id) = two_ids();
+    let (_prose_editor, prose) = loose_editor("Manuscript prose");
+    let (_syn_editor, synopsis) = loose_editor("A summary");
+
+    vm.register(prose_id, prose.clone(), EditorKind::Prose);
+    vm.set_registered_typography(prose_id, bundle(crate::settings::TypographyKind::Scene));
+    vm.register(synopsis_id, synopsis.clone(), EditorKind::Synopsis);
+    vm.set_registered_typography(
+        synopsis_id,
+        bundle(crate::settings::TypographyKind::Synopsis),
+    );
+
+    prose.focused_signal().set(true);
+    assert_eq!(
+        vm.focused_typography().map(|t| t.size_range.kind),
+        Some(crate::settings::TypographyKind::Scene),
+    );
+
+    prose.focused_signal().set(false);
+    synopsis.focused_signal().set(true);
+    assert_eq!(
+        vm.focused_typography().map(|t| t.size_range.kind),
+        Some(crate::settings::TypographyKind::Synopsis),
+        "focus moving to the synopsis must re-point the size commands"
+    );
+}
+
+/// Reaching the command through the View menu takes focus off the editor before
+/// the action runs. The sticky latch is what keeps it working — the same latch
+/// the mark commands already rely on, reused deliberately rather than duplicated.
+#[test]
+fn the_size_commands_survive_the_menu_stealing_focus() {
+    let vm = vm_detached();
+    let (id, _other) = two_ids();
+    let (_editor, handle) = loose_editor("Manuscript prose");
+
+    vm.register(id, handle.clone(), EditorKind::Prose);
+    vm.set_registered_typography(id, bundle(crate::settings::TypographyKind::Notes));
+
+    handle.focused_signal().set(true);
+    assert!(vm.focused_typography().is_some(), "latch it while focused");
+
+    // Opening the menu blurs the editor; nothing else takes focus.
+    handle.focused_signal().set(false);
+    assert_eq!(
+        vm.focused_typography().map(|t| t.size_range.kind),
+        Some(crate::settings::TypographyKind::Notes),
+        "the latched editor must still answer once the menu has focus"
+    );
+}
+
+/// A registered surface with no size preference of its own — the search preview
+/// band registers for the formatting commands but honours no typography — must
+/// report nothing rather than let the commands resize some other editor.
+#[test]
+fn a_registered_surface_without_typography_resizes_nothing() {
+    let vm = vm_detached();
+    let (id, _other) = two_ids();
+    let (_editor, handle) = loose_editor("A search hit in context");
+
+    vm.register(id, handle.clone(), EditorKind::Prose);
+    handle.focused_signal().set(true);
+
+    assert!(
+        vm.focused_typography().is_none(),
+        "no bundle registered means nothing for the size commands to move"
+    );
+}
+
+/// Nothing focused and nothing ever latched: the commands no-op.
+#[test]
+fn nothing_focused_resizes_nothing() {
+    let vm = vm_detached();
+    assert!(vm.focused_typography().is_none());
+}

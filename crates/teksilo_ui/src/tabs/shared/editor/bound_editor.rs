@@ -280,6 +280,46 @@ impl Widget for TypographyBoundEditor {
         let handle = editor.handle();
         let id = ctx.add(editor);
         self.child_id = Some(id);
+        // Ctrl+Wheel resizes the type this editor is dressed in. One handler
+        // here reaches every writing surface in the app, because every one of
+        // them is wrapped in this widget — and each already carries the right
+        // bundle, so there is no dispatch to get wrong.
+        //
+        // `on_pointer_event`, NOT `on_scroll`: the framework fires the former in
+        // the *preview* pass on each strict ancestor of the pointer target, and
+        // the latter only in the bubble pass starting at the target itself. The
+        // wheel's target is the `RichTextEditor` below us, whose own
+        // `handle_scroll` discards modifiers and scrolls unconditionally — as
+        // does the page `ScrollArea` above us. In bubble we would arrive after
+        // one of them had already moved the page. Same reason, same shape, as
+        // teksilo's own tab-bar wheel remap.
+        {
+            let typo = self.typo.clone();
+            let mut wheel = crate::shared::editor_size::WheelAccumulator::default();
+            ctx.apply_self_handlers(HandlerSet::new().on_pointer_event(
+                move |event: &WidgetEvent, ctx: &mut EventContext| -> EventResponse {
+                    let WidgetEvent::Scroll { delta, modifiers } = event else {
+                        return EventResponse::Ignored;
+                    };
+                    // Super as well as Ctrl, so ⌘-wheel is the gesture on macOS
+                    // without a second code path.
+                    if !(modifiers.ctrl() || modifiers.super_key()) {
+                        // Ignored, so an ordinary wheel falls through to the
+                        // bubble pass and scrolls the page exactly as before.
+                        return EventResponse::Ignored;
+                    }
+                    if let Some(notches) = wheel.feed(*delta) {
+                        crate::shared::editor_size::step_and_announce(ctx, &typo, notches);
+                    }
+                    // Handled unconditionally while the modifier is down —
+                    // including at both clamp limits, and on a pixel dribble too
+                    // small to complete a notch. Returning `Ignored` in those
+                    // cases would scroll the page precisely when the writer has
+                    // reached the largest size and is still turning the wheel.
+                    EventResponse::Handled
+                },
+            ));
+        }
         // Any one field changing re-pushes the whole bundle (font/line/indent +
         // zoom) to the live editor. Separate effects — a combined `zip` signal is
         // derived and would panic on observe.
@@ -412,6 +452,11 @@ impl Widget for TypographyBoundEditor {
         if let Some(format) = self.format_vm.clone() {
             let self_id = ctx.self_id();
             format.register(self_id, handle.clone(), self.kind);
+            // …and the bundle it is dressed in, so Ctrl+= / Ctrl+− / Ctrl+0
+            // resize whichever editor holds focus. The wheel gesture above needs
+            // no such announcement — it is already standing on the editor it
+            // means; only the keyboard has to be told where the writer is.
+            format.set_registered_typography(self_id, self.typo.clone());
             // This editor's footnote door, for the command that anchors a note
             // to the row being typed into — the `OpenDoc` minted it per field,
             // so a stream row's own row wins over its container's.

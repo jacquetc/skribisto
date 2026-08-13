@@ -89,9 +89,16 @@ pub(in crate::settings) fn corkboard_pane(
         // exactly why it cannot share the card's scale.
         .line(
             field_label(tr!(corkboard_modal_size())),
-            slider_field(vm.corkboard_modal_size(), 0.7, 2.0, 0.05, |v| {
-                format!("{:.0}%", v * 100.0)
-            }),
+            // The same constants `CorkboardViewModel::modal_typo` gives the
+            // expanded editor's bundle, so this slider and Ctrl+Wheel over that
+            // editor agree on its wider ceiling.
+            slider_field(
+                vm.corkboard_modal_size(),
+                crate::CORKBOARD_MODAL_SIZE_MIN,
+                crate::CORKBOARD_MODAL_SIZE_MAX,
+                crate::EDITOR_TYPO_SIZE_STEP,
+                |v| format!("{:.0}%", v * 100.0),
+            ),
         )
         // The card's own synopsis typography — mirrors the Scene / Synopsis / Notes
         // pages, so cards can read distinctly from the Full-Synopsis pane.
@@ -102,9 +109,13 @@ pub(in crate::settings) fn corkboard_pane(
         )
         .line(
             field_label(tr!(settings_field_size())),
-            slider_field(typo.size.clone(), 0.7, 1.6, 0.05, |v| {
-                format!("{:.0}%", v * 100.0)
-            }),
+            slider_field(
+                typo.size.clone(),
+                typo.size_range.min,
+                typo.size_range.max,
+                typo.size_range.step,
+                |v| format!("{:.0}%", v * 100.0),
+            ),
         )
         .line(
             field_label(tr!(settings_field_line_height())),

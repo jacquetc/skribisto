@@ -57,9 +57,17 @@ pub(crate) fn typography_rows(
         )
         .line(
             field_label(tr!(settings_field_size())),
-            slider_field(typo.size.clone(), 0.7, 1.6, 0.05, |v| {
-                format!("{:.0}%", v * 100.0)
-            }),
+            // Range from the bundle, not a literal: Ctrl+Wheel and Ctrl+= / Ctrl+−
+            // step the same value, and a slider that offered a different span
+            // would let a gesture reach a size this control cannot show — or
+            // refuse one it can.
+            slider_field(
+                typo.size.clone(),
+                typo.size_range.min,
+                typo.size_range.max,
+                typo.size_range.step,
+                |v| format!("{:.0}%", v * 100.0),
+            ),
         )
         .line(
             field_label(tr!(settings_field_line_height())),

@@ -22,6 +22,7 @@ fn test_typography() -> EditorTypographySet {
         first_line_indent: Signal::new(0.0),
         para_spacing_before: Signal::new(0.0),
         para_spacing_after: Signal::new(0.0),
+        size_range: crate::settings::TypographySizeRange::default(),
     };
     EditorTypographySet {
         scene: bundle("Literata"),
@@ -860,6 +861,7 @@ fn a_press_in_a_card_synopsis_does_not_arm_an_ancestor_drag() {
             first_line_indent: Signal::new(0.0),
             para_spacing_before: Signal::new(0.0),
             para_spacing_after: Signal::new(0.0),
+            size_range: crate::settings::TypographySizeRange::default(),
         };
         crate::tabs::shared::editor::card_synopsis_editor(
             doc,

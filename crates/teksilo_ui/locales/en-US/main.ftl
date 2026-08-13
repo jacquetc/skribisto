@@ -288,6 +288,22 @@ settings-group-startup = Startup
 settings-group-autosave = Autosave
 settings-field-typeface = Typeface
 settings-field-size = Text size
+
+# The readout shown while Ctrl+Wheel / Ctrl+= / Ctrl+- / Ctrl+0 change an
+# editor's text size. One whole message per surface rather than a shared
+# "{ $surface }: { $percent }" template: the surface name is not a plain
+# substitution in every language, and a translator should get complete
+# sentences. $percent arrives already formatted ("110%").
+editor-size-changed-manuscript = Manuscript text size: { $percent }
+editor-size-changed-synopsis = Synopsis text size: { $percent }
+editor-size-changed-notes = Notes text size: { $percent }
+editor-size-changed-corkboard = Corkboard card text size: { $percent }
+editor-size-changed-corkboard-expanded = Expanded editor text size: { $percent }
+editor-size-changed-distraction-free = Distraction-free text size: { $percent }
+
+menu-text-size-increase = &Increase text size
+menu-text-size-decrease = &Decrease text size
+menu-text-size-reset = &Reset text size
 settings-field-line-height = Line height
 settings-field-first-line-indent = First-line indent
 settings-field-paragraph-spacing-before = Space before paragraph

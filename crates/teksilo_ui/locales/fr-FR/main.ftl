@@ -289,6 +289,21 @@ settings-group-startup = Démarrage
 settings-group-autosave = Enregistrement automatique
 settings-field-typeface = Police
 settings-field-size = Taille du texte
+
+# Le message affiché pendant que Ctrl+Molette / Ctrl+= / Ctrl+- / Ctrl+0
+# modifient la taille du texte d'un éditeur. Un message complet par surface
+# plutôt qu'un gabarit partagé : le nom de la surface ne se substitue pas de
+# la même façon dans toutes les langues. $percent arrive déjà formaté.
+editor-size-changed-manuscript = Taille du texte du manuscrit : { $percent }
+editor-size-changed-synopsis = Taille du texte du synopsis : { $percent }
+editor-size-changed-notes = Taille du texte des notes : { $percent }
+editor-size-changed-corkboard = Taille du texte des fiches : { $percent }
+editor-size-changed-corkboard-expanded = Taille du texte de l'éditeur agrandi : { $percent }
+editor-size-changed-distraction-free = Taille du texte sans distraction : { $percent }
+
+menu-text-size-increase = &Agrandir le texte
+menu-text-size-decrease = &Réduire le texte
+menu-text-size-reset = &Réinitialiser la taille du texte
 settings-field-line-height = Interligne
 settings-field-first-line-indent = Retrait de première ligne
 settings-field-paragraph-spacing-before = Espace avant le paragraphe

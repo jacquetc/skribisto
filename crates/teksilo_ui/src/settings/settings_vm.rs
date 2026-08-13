@@ -73,11 +73,79 @@ use crate::{
     TYPEWRITER_ANCHOR_KEY, TYPEWRITER_DEFAULT, TYPEWRITER_KEY, USER_INITIALS_KEY, USER_NAME_KEY,
 };
 
-/// One editor type's four typography knobs. Cheap to clone — every field is a
-/// `SettingsStore`-cached `Signal`, so all clones observe / drive the same
-/// live value. `size` is a relative font-size scale (`1.0` = 100 %), composed
-/// with interface a11y text scale; `line_height` is a multiple of the font
-/// size; `first_line_indent` is in px.
+/// Which of the six writing surfaces a typography bundle dresses.
+///
+/// The six `Signal`s below cannot say this about themselves, and two callers
+/// need it: Ctrl+0 (what does "default" mean for *this* editor?) and the
+/// size gesture's toast (which of the six did the writer just change?).
+/// Deliberately finer-grained than `format::EditorKind`, which only separates
+/// prose from synopsis — a `Prose` editor may be dressed by Scene, Notes *or*
+/// Distraction-free, and a `Synopsis` one by three different bundles again.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum TypographyKind {
+    #[default]
+    Scene,
+    Synopsis,
+    Notes,
+    Corkboard,
+    /// The corkboard's **expanded** card editor, which has its own size signal
+    /// and its own wider range — see [`TypographySizeRange`].
+    CorkboardExpanded,
+    DistractionFree,
+}
+
+/// The legal span of a bundle's `size`, and what it resets to.
+///
+/// A plain `Copy` value rather than `Signal`s: no bundle changes its own range
+/// at runtime. Carried on the bundle so the Settings slider, Ctrl+Wheel and
+/// Ctrl+= / Ctrl+− / Ctrl+0 all read one source and cannot offer each other
+/// values the others reject.
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct TypographySizeRange {
+    pub min: f32,
+    pub max: f32,
+    pub step: f32,
+    /// The compile-time default this bundle's size resets to.
+    pub default: f32,
+    pub kind: TypographyKind,
+}
+
+impl TypographySizeRange {
+    /// The range every bundle shares but the corkboard's expanded editor.
+    pub const fn standard(kind: TypographyKind, default: f32) -> Self {
+        Self {
+            min: crate::EDITOR_TYPO_SIZE_MIN,
+            max: crate::EDITOR_TYPO_SIZE_MAX,
+            step: crate::EDITOR_TYPO_SIZE_STEP,
+            default,
+            kind,
+        }
+    }
+
+    /// Clamp `value` into the range **and** snap it onto the step grid, so a
+    /// value set by the wheel or the keyboard is always one the slider can
+    /// also produce. Without the snap, `1.0 + 0.05 × 3` lands on
+    /// `1.1500001` and the slider and the gesture quietly stop agreeing.
+    pub fn snap(&self, value: f32) -> f32 {
+        let clamped = value.clamp(self.min, self.max);
+        let steps = ((clamped - self.min) / self.step).round();
+        (self.min + steps * self.step).clamp(self.min, self.max)
+    }
+}
+
+impl Default for TypographySizeRange {
+    /// Only for the widget tests, which build bundles with no settings store
+    /// behind them and never exercise the range.
+    fn default() -> Self {
+        Self::standard(TypographyKind::Scene, crate::SCENE_SIZE_DEFAULT)
+    }
+}
+
+/// One editor type's typography knobs. Cheap to clone — every `Signal` field is
+/// `SettingsStore`-cached, so all clones observe / drive the same live value.
+/// `size` is a relative font-size scale (`1.0` = 100 %), composed with the
+/// interface a11y text scale; `line_height` is a multiple of the font size;
+/// `first_line_indent` is in px.
 #[derive(Clone)]
 pub struct EditorTypography {
     pub font_family: Signal<String>,
@@ -88,6 +156,9 @@ pub struct EditorTypography {
     pub para_spacing_before: Signal<f32>,
     /// Space (px) below each body paragraph.
     pub para_spacing_after: Signal<f32>,
+    /// Which bundle this is, how far its `size` may travel, and where it
+    /// resets to. Not a `Signal` — see [`TypographySizeRange`].
+    pub size_range: TypographySizeRange,
 }
 
 /// The per-editor-type typography bundles (Scene / Synopsis / Notes / Corkboard),
@@ -342,6 +413,10 @@ impl SettingsViewModel {
                     SCENE_PARA_SPACING_AFTER_KEY,
                     SCENE_PARA_SPACING_AFTER_DEFAULT,
                 ),
+                size_range: TypographySizeRange::standard(
+                    TypographyKind::Scene,
+                    SCENE_SIZE_DEFAULT,
+                ),
             },
             synopsis_typo: EditorTypography {
                 font_family: store.signal(
@@ -362,6 +437,10 @@ impl SettingsViewModel {
                     SYNOPSIS_PARA_SPACING_AFTER_KEY,
                     SYNOPSIS_PARA_SPACING_AFTER_DEFAULT,
                 ),
+                size_range: TypographySizeRange::standard(
+                    TypographyKind::Synopsis,
+                    SYNOPSIS_SIZE_DEFAULT,
+                ),
             },
             notes_typo: EditorTypography {
                 font_family: store
@@ -377,6 +456,10 @@ impl SettingsViewModel {
                 para_spacing_after: store.signal(
                     NOTES_PARA_SPACING_AFTER_KEY,
                     NOTES_PARA_SPACING_AFTER_DEFAULT,
+                ),
+                size_range: TypographySizeRange::standard(
+                    TypographyKind::Notes,
+                    NOTES_SIZE_DEFAULT,
                 ),
             },
             corkboard_typo: EditorTypography {
@@ -397,6 +480,10 @@ impl SettingsViewModel {
                 para_spacing_after: store.signal(
                     CORKBOARD_PARA_SPACING_AFTER_KEY,
                     CORKBOARD_PARA_SPACING_AFTER_DEFAULT,
+                ),
+                size_range: TypographySizeRange::standard(
+                    TypographyKind::Corkboard,
+                    CORKBOARD_SIZE_DEFAULT,
                 ),
             },
             distraction_free_typo: EditorTypography {
@@ -420,6 +507,10 @@ impl SettingsViewModel {
                 para_spacing_after: store.signal(
                     DISTRACTION_FREE_PARA_SPACING_AFTER_KEY,
                     DISTRACTION_FREE_PARA_SPACING_AFTER_DEFAULT,
+                ),
+                size_range: TypographySizeRange::standard(
+                    TypographyKind::DistractionFree,
+                    DISTRACTION_FREE_SIZE_DEFAULT,
                 ),
             },
             distraction_free_width: store

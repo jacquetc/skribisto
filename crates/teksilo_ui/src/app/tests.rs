@@ -360,6 +360,7 @@ fn test_editors_view_model(app_ctx: &Rc<frontend::AppContext>) -> EditorsViewMod
         first_line_indent: Signal::new(0.0),
         para_spacing_before: Signal::new(0.0),
         para_spacing_after: Signal::new(0.0),
+        size_range: crate::settings::TypographySizeRange::default(),
     };
     let typography = crate::settings::EditorTypographySet {
         scene: bundle(),

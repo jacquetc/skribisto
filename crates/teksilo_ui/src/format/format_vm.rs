@@ -272,6 +272,17 @@ struct RegisteredEditor {
     /// rather than a bare id, because the row may not exist yet and the binding
     /// knows how to mint it.
     footnotes: Option<crate::footnotes::FootnoteBinding>,
+    /// The typography bundle this editor is dressed in, so Ctrl+= / Ctrl+− /
+    /// Ctrl+0 can resize *the editor the writer is in* rather than guessing from
+    /// the tab. `EditorKind` cannot answer this — it only separates prose from
+    /// synopsis, while a `Prose` editor may be dressed by Scene, Notes or
+    /// Distraction-free, and a `Synopsis` one by three bundles again.
+    ///
+    /// `None` for a registered surface with no size preference of its own: the
+    /// search preview band registers here for the formatting commands but
+    /// deliberately bypasses `TypographyBoundEditor` and honours no typography
+    /// setting, so there is nothing there for the size commands to move.
+    typo: Option<crate::settings::EditorTypography>,
 }
 
 /// One gate per control group, for the dock to hang `visible_when` on.
@@ -588,6 +599,7 @@ impl FormatViewModel {
                 handle: handle.clone(),
                 kind,
                 footnotes: None,
+                typo: None,
             }),
         }
         // A rebuild of the editor the menu is sticky on must re-point the latch
@@ -698,6 +710,37 @@ impl FormatViewModel {
         if let Some(entry) = self.registry.borrow_mut().iter_mut().find(|e| e.id == id) {
             entry.footnotes = Some(binding);
         }
+    }
+
+    /// Give an already-registered editor its typography bundle, so the size
+    /// commands can resize it. Separate from [`register`](Self::register) for the
+    /// same reason as the footnote door above: only some registered surfaces have
+    /// one, and forcing a parameter would make the search preview — which has no
+    /// typography at all — invent a bundle it does not use.
+    pub fn set_registered_typography(&self, id: WidgetId, typo: crate::settings::EditorTypography) {
+        if let Some(entry) = self.registry.borrow_mut().iter_mut().find(|e| e.id == id) {
+            entry.typo = Some(typo);
+        }
+    }
+
+    /// The typography bundle Ctrl+= / Ctrl+− / Ctrl+0 should resize: the one
+    /// dressing the focused editor, or — reaching the command through the View
+    /// menu, which takes focus away before the action runs — the last editor that
+    /// had it.
+    ///
+    /// Built on [`resolved_registration`](Self::resolved_registration) rather
+    /// than a second latch of its own, so the size commands and the mark commands
+    /// can never disagree about which editor the writer is in. `None` when
+    /// nothing has ever been focused, or when the resolved surface carries no
+    /// size preference (the search preview band) — both mean "nothing to
+    /// resize", and the commands no-op.
+    pub fn focused_typography(&self) -> Option<crate::settings::EditorTypography> {
+        let (id, _, _) = self.resolved_registration()?;
+        self.registry
+            .borrow()
+            .iter()
+            .find(|e| e.id == id)
+            .and_then(|e| e.typo.clone())
     }
 
     /// The editor a footnote reference goes into, and the `Content` row behind it.
