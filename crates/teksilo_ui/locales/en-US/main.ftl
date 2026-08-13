@@ -1596,6 +1596,27 @@ analysis-no-scenes = No scenes in this book yet.
 
 analysis-shape = Shape
 
+# ── How the text arrived ──────────────────────────────────────────────────────
+# A fact about input, never about authorship. Nothing here weighs one route
+# against another, and there is no total to reach and nothing to score.
+analysis-arrivals = Arrivals
+analysis-arrivals-explainer = How text reached this project while it has been open. It says which route the characters came down, and nothing at all about who wrote them: a writer who drafts elsewhere and pastes has pasted, and one who dictates has dictated. There is no number to aim for here.
+# The two scope caveats, said plainly rather than left to be assumed. Everything
+# else on this bar is about one book and the whole of its text; this is about the
+# whole project and only since it was opened.
+analysis-arrivals-scope = This whole project, not just this book.
+analysis-arrivals-session = Since you opened it. Closing the project starts the count again.
+analysis-arrivals-nothing = No text has arrived yet in this session.
+analysis-arrivals-typed = Typed
+analysis-arrivals-pasted = Pasted
+analysis-arrivals-dictated = Dictated
+analysis-arrivals-imported = Imported
+analysis-arrivals-programmatic = Inserted for you
+analysis-arrivals-count = { $count } characters
+# Said where a route contributed nothing, so a reader is not left wondering
+# whether it was measured at all.
+analysis-arrivals-none = none
+
 analysis-words-per-scene = Words per scene
 analysis-median-words = This book's median scene runs { $count } words.
 analysis-median-line = Median: { $count } words

@@ -73,10 +73,22 @@ use crate::shared::long_op::{TrackedOp, event_id, parse_payload};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AnalysisCategory {
     Shape = 0,
+    /// How the text of this project arrived during **this working session** —
+    /// typed, pasted, dictated, imported, or inserted by the application.
+    ///
+    /// ⚠ **Project-wide and session-wide**, unlike every other thing on this
+    /// bar, which is about the Book in front of the writer. That is not an
+    /// oversight and it is not fixable here: the count is taken where text is
+    /// inserted, and an editor knows which project it belongs to, not which Book
+    /// — a project can hold several, and resolving one per keystroke would mean
+    /// walking the binder on every character. The pane says so in as many words
+    /// rather than letting the reader assume the narrower scope the rest of the
+    /// bar has taught them.
+    Arrivals = 1,
 }
 
 impl AnalysisCategory {
-    pub const ALL: [AnalysisCategory; 1] = [Self::Shape];
+    pub const ALL: [AnalysisCategory; 2] = [Self::Shape, Self::Arrivals];
 
     /// The category at a bar position. `None` for an out-of-range index, so a widening of
     /// the bar without a matching arm mounts nothing rather than silently showing a
@@ -99,6 +111,7 @@ impl AnalysisCategory {
     pub fn id(self) -> &'static str {
         match self {
             Self::Shape => "shape",
+            Self::Arrivals => "arrivals",
         }
     }
 
@@ -106,6 +119,7 @@ impl AnalysisCategory {
     pub fn label(self) -> LocalizedString {
         match self {
             Self::Shape => tr!(analysis_shape()),
+            Self::Arrivals => tr!(analysis_arrivals()),
         }
     }
 }
@@ -237,6 +251,22 @@ impl AnalysisViewModel {
 
     pub fn scope_item_id(&self) -> u64 {
         self.scope_item_id
+    }
+
+    /// This project's durable `Work.unique_id`, or `None` when it has none.
+    ///
+    /// `None` is an **unsaved** project — the empty uid, which is the absence of
+    /// an identity rather than one, and which every per-project store refuses.
+    ///
+    /// Read through the store rather than held: it is set when the project is
+    /// first saved, and this view-model may have been built before that.
+    pub fn work_unique_id(&self) -> Option<String> {
+        let work_id = self.ids.work_id.get()?;
+        let uid = frontend::commands::work_commands::get_work(&self.ctx, &work_id)
+            .ok()
+            .flatten()?
+            .unique_id;
+        (!uid.is_empty()).then_some(uid)
     }
 
     /// The edit counter the displayed result was produced at, or `None` before any run
@@ -461,12 +491,16 @@ mod tests {
 
     #[test]
     fn categories_map_to_bar_positions_and_stop_at_the_end() {
+        // Every built-in answers at its own position, in declaration order.
+        // Derived from `ALL` rather than written out: this test hard-coded
+        // "index 1 is past the end" and became wrong the moment a second
+        // built-in arrived, which is a test failing for the one reason a test
+        // should not — the thing it describes was extended, not broken.
+        for (position, expected) in AnalysisCategory::ALL.iter().enumerate() {
+            assert_eq!(AnalysisCategory::from_index(position), Some(*expected));
+        }
         assert_eq!(
-            AnalysisCategory::from_index(0),
-            Some(AnalysisCategory::Shape)
-        );
-        assert_eq!(
-            AnalysisCategory::from_index(1),
+            AnalysisCategory::from_index(AnalysisCategory::ALL.len()),
             None,
             "a segment past the built-ins is a registered category, and nothing in this \
              enum can name one"

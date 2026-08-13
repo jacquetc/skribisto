@@ -26,14 +26,20 @@
 //! `Send + Sync`, because the save that reads it runs on a worker thread while
 //! the editor that writes it runs on the UI thread.
 //!
-//! ## Read-and-reset, not read
+//! ## Two buckets, because two consumers ask different questions
 //!
-//! [`Arrivals::take`](crate::arrival::Arrivals::take) is the only read, and it
-//! empties what it returns. A consumer records
-//! *what arrived since it last looked*, which is what a per-save figure is;
-//! leaving the totals to accumulate would mean every save reporting the whole
-//! session again, and the same characters counted once per save for the rest of
-//! the day.
+//! [`Arrivals::take`](crate::arrival::Arrivals::take) empties what it returns. A
+//! record writing an entry per save wants *what arrived since the last entry* —
+//! leaving the totals would mean every save reporting the whole session again,
+//! and the same characters counted once per save for the rest of the day.
+//!
+//! [`Arrivals::session_total`](crate::arrival::Arrivals::session_total) does not
+//! empty, and is cleared only when the project closes. A readout on screen wants
+//! *what this session has come to*, and one reading the other bucket would show
+//! the gap since the last autosave and call it a session.
+//!
+//! One counter cannot be both, and neither is derivable from the other in the
+//! direction that matters.
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -83,12 +89,30 @@ impl Arrival {
 /// does not change this type's shape for every consumer.
 pub type Counts = HashMap<Arrival, u64>;
 
+/// What one project has seen: what is waiting to be recorded, and what the whole
+/// session has seen.
+///
+/// **Two buckets, because two consumers ask different questions.** A record
+/// writing an entry per save wants *what arrived since the last entry*, and must
+/// empty what it takes or the same characters land in every entry for the rest of
+/// the day. A readout on screen wants *what this working session has come to*,
+/// and would show almost nothing if it could only see the gap since the last
+/// autosave. One counter cannot be both, and deriving either from the other is
+/// not possible in the direction that matters.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct Project {
+    /// Emptied by [`Arrivals::take`].
+    pending: Counts,
+    /// Emptied only when the project closes.
+    session: Counts,
+}
+
 /// One tally per open project, keyed by `Work.unique_id`.
 ///
 /// Cheap to clone; every clone shares one map.
 #[derive(Clone, Default)]
 pub struct Arrivals {
-    inner: Arc<RwLock<HashMap<String, Counts>>>,
+    inner: Arc<RwLock<HashMap<String, Project>>>,
 }
 
 impl std::fmt::Debug for Arrivals {
@@ -106,13 +130,13 @@ impl Arrivals {
         Self::default()
     }
 
-    fn read(&self) -> std::sync::RwLockReadGuard<'_, HashMap<String, Counts>> {
+    fn read(&self) -> std::sync::RwLockReadGuard<'_, HashMap<String, Project>> {
         // Poison-safe, like every other lock in this crate: a panic somewhere
         // unrelated must not make a manuscript unsaveable.
         self.inner.read().unwrap_or_else(|e| e.into_inner())
     }
 
-    fn write(&self) -> std::sync::RwLockWriteGuard<'_, HashMap<String, Counts>> {
+    fn write(&self) -> std::sync::RwLockWriteGuard<'_, HashMap<String, Project>> {
         self.inner.write().unwrap_or_else(|e| e.into_inner())
     }
 
@@ -134,12 +158,11 @@ impl Arrivals {
         // would overwrite the other's characters. `entry` gives the slot itself,
         // so there is nothing between the read and the add.
         let mut projects = self.write();
-        let slot = projects
-            .entry(work_unique_id.to_string())
-            .or_default()
-            .entry(arrival)
-            .or_insert(0);
-        *slot = slot.saturating_add(chars);
+        let project = projects.entry(work_unique_id.to_string()).or_default();
+        for bucket in [&mut project.pending, &mut project.session] {
+            let slot = bucket.entry(arrival).or_insert(0);
+            *slot = slot.saturating_add(chars);
+        }
     }
 
     /// This project's count for one route, without disturbing it. For tests and
@@ -147,14 +170,30 @@ impl Arrivals {
     pub fn peek(&self, work_unique_id: &str, arrival: Arrival) -> u64 {
         self.read()
             .get(work_unique_id)
-            .and_then(|c| c.get(&arrival))
+            .and_then(|p| p.pending.get(&arrival))
             .copied()
             .unwrap_or(0)
     }
 
     /// This project's whole tally, without disturbing it.
     pub fn snapshot(&self, work_unique_id: &str) -> Counts {
-        self.read().get(work_unique_id).cloned().unwrap_or_default()
+        self.read()
+            .get(work_unique_id)
+            .map(|p| p.pending.clone())
+            .unwrap_or_default()
+    }
+
+    /// Everything this project has seen **since it opened**, whatever has been
+    /// taken in between.
+    ///
+    /// What a readout on screen wants. [`Self::take`] empties the other bucket
+    /// on every save, so a surface reading that would show the gap since the
+    /// last autosave and call it a session.
+    pub fn session_total(&self, work_unique_id: &str) -> Counts {
+        self.read()
+            .get(work_unique_id)
+            .map(|p| p.session.clone())
+            .unwrap_or_default()
     }
 
     /// This project's tally, **emptied**.
@@ -164,7 +203,14 @@ impl Arrivals {
     /// — a snapshot-then-clear pair has a window in it, and the window is
     /// exactly one keystroke wide.
     pub fn take(&self, work_unique_id: &str) -> Counts {
-        self.write().remove(work_unique_id).unwrap_or_default()
+        let mut projects = self.write();
+        let Some(project) = projects.get_mut(work_unique_id) else {
+            return Counts::default();
+        };
+        // Only the pending half. Removing the whole entry — which this used to
+        // do — would take the session total with it, and every save would reset
+        // the figure a reader is watching grow.
+        std::mem::take(&mut project.pending)
     }
 
     /// Forget a project entirely — what a close does.
@@ -309,6 +355,41 @@ mod tests {
         let text = format!("{a:?}");
         assert!(text.contains('1'), "the project count is shown: {text}");
         assert!(!text.contains("12345"), "the tally is not: {text}");
+    }
+
+    /// **`take` must not take the session total with it.** It once removed the
+    /// whole entry, which meant every save reset the figure a reader on screen
+    /// was watching grow.
+    #[test]
+    fn taking_the_pending_half_leaves_the_session_total() {
+        let a = Arrivals::new();
+        a.record("uid", Arrival::Typed, 100);
+        assert_eq!(a.take("uid").get(&Arrival::Typed), Some(&100));
+        assert!(a.take("uid").is_empty(), "the pending half really is empty");
+        assert_eq!(
+            a.session_total("uid").get(&Arrival::Typed),
+            Some(&100),
+            "…and the session still knows what it saw"
+        );
+
+        a.record("uid", Arrival::Typed, 5);
+        assert_eq!(a.take("uid").get(&Arrival::Typed), Some(&5));
+        assert_eq!(
+            a.session_total("uid").get(&Arrival::Typed),
+            Some(&105),
+            "the session total accumulates across every take"
+        );
+    }
+
+    /// Closing the project is the only thing that empties the session total —
+    /// which is what makes it a *session*.
+    #[test]
+    fn closing_the_project_empties_the_session_total() {
+        let a = Arrivals::new();
+        a.record("uid", Arrival::Dictated, 42);
+        assert_eq!(a.session_total("uid").get(&Arrival::Dictated), Some(&42));
+        a.forget("uid");
+        assert!(a.session_total("uid").is_empty());
     }
 
     /// **Nothing is lost when two threads record at once.** The editor writes

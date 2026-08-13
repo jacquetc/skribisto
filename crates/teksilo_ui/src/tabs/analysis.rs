@@ -107,12 +107,13 @@ thread_local! {
 /// how a category is identified across rebuilds, so two claimants make that lookup
 /// ambiguous rather than merely crowded.
 ///
-/// ⚠ `SegmentedControl` has a documented five-segment ceiling, and with one built-in the
-/// bar reaches it at the fourth registration. Past roughly six the control stops being a
-/// segmented bar at all — which is what `TabWidget::vertical()` is for. Registration does
-/// not refuse on count, because refusing the *sixth* category would be an arbitrary line;
-/// the ceiling is a design constraint on the control, and the control is the thing that has
-/// to change.
+/// ⚠ `SegmentedControl` has a documented five-segment ceiling, and with **two**
+/// built-ins the bar reaches it at the third registration — which the downstream
+/// edition already makes, so the bar is at its ceiling today. Past roughly six the
+/// control stops being a segmented bar at all, which is what `TabWidget::vertical()` is
+/// for. Registration does not refuse on count, because refusing the *sixth* category
+/// would be an arbitrary line; the ceiling is a design constraint on the control, and the
+/// control is the thing that has to change.
 ///
 /// The returned handle unregisters on drop; re-registering a namespace replaces its entry.
 pub fn register_category(
@@ -173,6 +174,15 @@ fn builtin_categories() -> Vec<AnalysisCategorySpec> {
                     AnalysisCategory::Shape => {
                         Box::new(shape_view(dto, vm.ignore_empty(), vm.footnote_words()))
                     }
+                    // Reads nothing from `dto`: this category measures how text
+                    // *arrived*, which no analysis run produces and no scope
+                    // narrows. It is here rather than on a dock because it is a
+                    // measurement about the writing, and this is where a writer
+                    // comes to read those.
+                    AnalysisCategory::Arrivals => Box::new(arrivals_view(
+                        &common::arrival::shared()
+                            .session_total(&vm.work_unique_id().unwrap_or_default()),
+                    )),
                 }),
             }
         })
@@ -565,6 +575,77 @@ fn shape_view(
 /// `None` is shown as "still counting" rather than as `0` — the figure comes from its
 /// own long operation (see `AnalysisViewModel`'s module doc) that can still be in
 /// flight even once the rest of Shape is ready to show.
+/// **How text reached this project while it has been open.**
+///
+/// ## The two scopes, and why they are said out loud
+///
+/// Everything else on this bar is about **one Book** and about **the whole of
+/// its text**. This is about the whole **project** and only about **this
+/// session**, and both departures are stated in the pane rather than left for a
+/// reader to assume the narrower meaning the rest of the bar has taught them.
+///
+/// Neither is fixable here. The count is taken where text is inserted, and an
+/// editor knows which project it belongs to and not which Book — a project can
+/// hold several, and resolving one per inserted character would mean walking the
+/// binder on every keystroke. And nothing persists it: the tally lives in memory
+/// and goes when the project closes, so there is no earlier session to add.
+///
+/// ## What it must never become
+///
+/// A fact about **input**, never about authorship, and there is nothing here to
+/// score. No route is weighed against another, none is ordered above another,
+/// there is no total to reach and no threshold anywhere in it. A writer who
+/// drafts elsewhere and pastes chapters in has pasted; one who dictates has
+/// dictated; neither says anything about who wrote the words.
+///
+/// A route that contributed nothing says so, rather than being left out: a
+/// missing line reads as "not measured", which would be a different claim.
+fn arrivals_view(counts: &common::arrival::Counts) -> impl Widget {
+    use common::arrival::Arrival;
+
+    let mut rows = VStack::new().spacing(6.0);
+    let total: u64 = counts.values().copied().sum();
+    if total == 0 {
+        rows = rows.child(note(tr!(analysis_arrivals_nothing())));
+    } else {
+        // Fixed order, from `Arrival::ALL` — the declaration order, which is not
+        // a ranking and is not sorted by size. Sorting by count would put the
+        // largest route first and invite reading it as the finding.
+        for route in Arrival::ALL {
+            let n = counts.get(&route).copied().unwrap_or(0);
+            let label = match route {
+                Arrival::Typed => tr!(analysis_arrivals_typed()),
+                Arrival::Pasted => tr!(analysis_arrivals_pasted()),
+                Arrival::Dictated => tr!(analysis_arrivals_dictated()),
+                Arrival::Imported => tr!(analysis_arrivals_imported()),
+                Arrival::Programmatic => tr!(analysis_arrivals_programmatic()),
+            };
+            let value = if n == 0 {
+                tr!(analysis_arrivals_none())
+            } else {
+                tr!(analysis_arrivals_count(count = n as i64))
+            };
+            rows = rows.child(
+                HStack::new()
+                    .spacing(8.0)
+                    .child(TextWidget::new(label))
+                    .child(note(value)),
+            );
+        }
+    }
+
+    VStack::new()
+        .spacing(10.0)
+        .child(heading(tr!(analysis_arrivals())))
+        .child(note(tr!(analysis_arrivals_explainer())))
+        .child(rows)
+        // Below the figures, not above: they are caveats on what was just read,
+        // and a reader who takes nothing else from this pane should still take
+        // these two.
+        .child(note(tr!(analysis_arrivals_scope())))
+        .child(note(tr!(analysis_arrivals_session())))
+}
+
 fn footnote_words_section(value: Option<i64>) -> impl Widget {
     let line = match value {
         Some(n) => note(tr!(analysis_footnote_words_count(count = n))),
@@ -574,6 +655,63 @@ fn footnote_words_section(value: Option<i64>) -> impl Widget {
         .spacing(6.0)
         .child(heading(tr!(analysis_footnote_words())))
         .child(line)
+}
+
+#[cfg(test)]
+mod arrivals_tests {
+    use common::arrival::{Arrival, Counts};
+
+    /// **Every route is named, including the ones that contributed nothing.**
+    /// A missing line reads as "not measured", which is a different claim from
+    /// "none arrived that way" — and the second is the true one.
+    #[test]
+    fn every_route_is_named_even_at_zero() {
+        let mut counts = Counts::new();
+        counts.insert(Arrival::Typed, 1200);
+
+        // The view's own lookup, on a tally where four of the five routes are
+        // simply absent from the map. Each has to resolve to a number the view
+        // can render as "none" — an absent key that yielded no row at all is how
+        // "none arrived that way" would silently become "not measured".
+        let rendered: Vec<u64> = Arrival::ALL
+            .iter()
+            .map(|route| counts.get(route).copied().unwrap_or(0))
+            .collect();
+        assert_eq!(rendered, vec![1200, 0, 0, 0, 0]);
+        assert_eq!(rendered.len(), 5, "five routes, all of them shown");
+    }
+
+    /// **The order is the declaration order, and is never a ranking.** Sorting
+    /// by size would put the largest route first and invite reading it as the
+    /// finding — which is exactly the verdict this pane must not deliver.
+    #[test]
+    fn the_route_order_does_not_depend_on_the_counts() {
+        let mut lopsided = Counts::new();
+        lopsided.insert(Arrival::Programmatic, 900_000);
+        lopsided.insert(Arrival::Typed, 1);
+        // `Arrival::ALL` is what the view iterates, and it is a const array.
+        assert_eq!(
+            Arrival::ALL,
+            [
+                Arrival::Typed,
+                Arrival::Pasted,
+                Arrival::Dictated,
+                Arrival::Imported,
+                Arrival::Programmatic,
+            ],
+            "the order is fixed in the type, so no distribution of counts can reorder it"
+        );
+        assert_eq!(lopsided.get(&Arrival::Typed), Some(&1));
+    }
+
+    /// A project nothing has been typed into yet says so, rather than showing
+    /// five zeros — which would read as a measurement of an empty book rather
+    /// than as a session that has not started.
+    #[test]
+    fn an_untouched_session_has_nothing_to_report() {
+        let counts = Counts::new();
+        assert_eq!(counts.values().copied().sum::<u64>(), 0);
+    }
 }
 
 #[cfg(test)]
@@ -715,9 +853,27 @@ mod category_registry_tests {
     fn the_built_ins_are_present_and_first() {
         let ids = ids();
         assert_eq!(
-            &ids[..1],
-            &["shape"],
-            "the built-in order is what every existing writer's muscle memory keys on"
+            &ids[..2],
+            &["shape", "arrivals"],
+            "the built-in order is what every existing writer's muscle memory keys on, \
+             and Shape stays at position 0 — the segment the bar selects before anything \
+             has been chosen"
+        );
+    }
+
+    /// ⚠ **The bar is now at its ceiling with this edition's three registrations.**
+    /// `SegmentedControl` documents five segments; two built-ins plus three
+    /// contributed is exactly five. A sixth category is not refused — see
+    /// `register_category` for why counting is the wrong place to draw that line
+    /// — but it is the point at which the *control* has to change, and this test
+    /// is where somebody adding a third built-in will be told so.
+    #[test]
+    fn the_built_ins_leave_room_for_three_registrations() {
+        assert_eq!(
+            AnalysisCategory::ALL.len(),
+            2,
+            "a third built-in leaves room for only two contributed categories, and this \
+             edition already contributes three"
         );
     }
 

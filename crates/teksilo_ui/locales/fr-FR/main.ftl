@@ -1601,6 +1601,20 @@ analysis-no-scenes = Aucune scène dans ce livre pour l'instant.
 
 analysis-shape = Forme
 
+# ── Provenance du texte ───────────────────────────────────────────────────────
+analysis-arrivals = Arrivées
+analysis-arrivals-explainer = Par quelle voie le texte est arrivé dans ce projet depuis son ouverture. La mesure indique le canal emprunté par les caractères, et absolument rien sur qui les a écrits : qui rédige ailleurs puis colle a collé, qui dicte a dicté. Il n'y a ici aucune valeur à viser.
+analysis-arrivals-scope = L'ensemble du projet, et non ce seul livre.
+analysis-arrivals-session = Depuis son ouverture. Fermer le projet remet le compte à zéro.
+analysis-arrivals-nothing = Aucun texte n'est encore arrivé au cours de cette séance.
+analysis-arrivals-typed = Saisi au clavier
+analysis-arrivals-pasted = Collé
+analysis-arrivals-dictated = Dicté
+analysis-arrivals-imported = Importé
+analysis-arrivals-programmatic = Inséré pour vous
+analysis-arrivals-count = { $count } caractères
+analysis-arrivals-none = aucun
+
 analysis-words-per-scene = Mots par scène
 analysis-median-words = La scène médiane de ce livre compte { $count } mots.
 analysis-median-line = Médiane : { $count } mots
