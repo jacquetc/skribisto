@@ -377,6 +377,9 @@ fn row_to_dto(row: &PlannedRow) -> DocumentImportRow {
         // `PlannedRow::source_uid_tag`.
         source_uid_tag: row.source_uid_tag.clone().unwrap_or_default(),
         source_digest: row.source_digest.clone().unwrap_or_default(),
+        // The *document's* digest, not the row's. Both names end in `digest` and
+        // they answer different questions — see `PlannedRow::source_file_digest`.
+        source_file_digest: row.source_file_digest.clone(),
     }
 }
 

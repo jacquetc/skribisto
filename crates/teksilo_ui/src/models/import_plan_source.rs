@@ -76,9 +76,40 @@ pub struct PlanRowView {
     /// The digest that mark carried — this row's prose as it was exported. See
     /// `document_ingest::plan::PlannedRow::source_digest`.
     pub source_digest: Option<String>,
+    /// blake3 of the whole source **file**, taken while its bytes were in hand.
+    /// A different question from `source_digest` above — see
+    /// `document_ingest::plan::PlannedRow::source_file_digest`.
+    pub source_file_digest: String,
+    /// The full path the row was read from. Diagnostics and ordering only.
+    ///
+    /// ⚠ **This is the last place it is allowed.** What crosses into the apply
+    /// DTO — and therefore into the completion event, and therefore into anything
+    /// listening — is [`Self::source_file_name`]. A writer's directory tree says
+    /// where they keep their work and sometimes who they are.
     pub origin: String,
     /// Diagnostics belonging to this row.
     pub diagnostics: Vec<document_ingest::ImportDiagnostic>,
+}
+
+impl PlanRowView {
+    /// The source document's file **name**, extension included, or empty for a
+    /// row that came from no file.
+    ///
+    /// **The narrowing, and the only one.** Every call site that puts provenance
+    /// into an `ApplyImportRow` goes through here, so a whole path cannot reach
+    /// the backend by construction rather than by a downstream filter somebody
+    /// has to remember to write. Deriving it three times at three call sites is
+    /// how the fourth one forgets.
+    ///
+    /// The extension is **kept**, unlike `scanner::display_name_for`'s cleaned
+    /// stem: `chapter-3-editor.docx` is a forensic name and this is the forensic
+    /// use. A writer never reads it.
+    pub fn source_file_name(&self) -> String {
+        std::path::Path::new(&self.origin)
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    }
 }
 
 struct Inner {
@@ -186,6 +217,7 @@ impl ImportPlanSource {
             source_digest: None,
             // Empty origin marks a row the writer invented in the review step,
             // not one a scanner produced — the Source column stays blank.
+            source_file_digest: String::new(),
             origin: String::new(),
             diagnostics: Vec::new(),
         });
@@ -365,6 +397,7 @@ fn view_of(key: PlanRowKey, row: &PlannedRow) -> PlanRowView {
         comments: row.comments.clone(),
         source_uid_tag: row.source_uid_tag.clone(),
         source_digest: row.source_digest.clone(),
+        source_file_digest: row.source_file_digest.clone(),
         origin: row.origin.clone(),
         diagnostics: row.diagnostics.clone(),
     }
@@ -469,6 +502,7 @@ mod tests {
             epigraph: String::new(),
             scene_breaks: 0,
             word_count: 0,
+            source_file_digest: String::new(),
             origin: "a.md".into(),
             included: true,
             comments: Vec::new(),

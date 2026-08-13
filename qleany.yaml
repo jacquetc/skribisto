@@ -2175,7 +2175,14 @@ features:
         # folded into the prose is duplicated on every round trip and counted as manuscript
         # words. Empty for every row that heads no quotation, and for every format that
         # carries no style information to recognise one by.
-        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, epigraph: String, scene_breaks: i64, word_count: i64, comments: Vec<ImportComment>, origin: String, included: bool, source_uid_tag: String, source_digest: String }"
+        # `source_file_digest` is blake3 of the whole source **file**, taken where its bytes
+        # were already in hand, and is a different question from `source_digest` two lines
+        # up: that one is of this row's prose as it was exported, this one is of the document
+        # this row was read out of. It rides the plan for the same reason as the rest --
+        # re-deriving it at apply time would mean re-reading every file, and by then the file
+        # may have changed or gone. `origin` beside it is the full path, and stays on this
+        # side of the seam: what crosses into the apply DTO is the file name alone.
+        - "Found { indent: i64, kind: ImportRowKind, title: String, stripped_ordinal: String, djot: String, epigraph: String, scene_breaks: i64, word_count: i64, comments: Vec<ImportComment>, origin: String, included: bool, source_uid_tag: String, source_digest: String, source_file_digest: String }"
       - name: rows
         type: enum
         enum_name: DocumentImportRows
@@ -2336,7 +2343,26 @@ features:
         # two together is exactly the bug the reader-side fix exists to close, since it
         # duplicates the quotation on every round trip and adds its words to the
         # manuscript's count. Empty for every row that heads no quotation, which is most.
-        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String, epigraph: String, comments: Vec<ImportComment>, source_uid_tag: String }"
+        #
+        # `source_file_name` and `source_file_digest` are the third exception, and the
+        # first that is not about *making* the row. They are provenance: which file these
+        # words arrived in, and what that file hashed to. Nothing in the write reads them
+        # -- they exist so the completion event can say where each created row came from,
+        # which is the one moment the answer is known. The plan holds it, the store never
+        # will, and `ApplyImportRow` is the only channel between the two.
+        #
+        # A **file name, never a path**, and derived at the UI call site so the full path
+        # cannot reach here by construction rather than by a downstream filter somebody
+        # has to remember. A writer's directory tree says where they keep their work and
+        # sometimes who they are; the file name says which document this row came out of,
+        # which is all the question needs. Extension kept: `chapter-3-editor.docx` is a
+        # forensic name, not a display one.
+        #
+        # `source_file_digest` is blake3 of the **file's own bytes**, and is not the same
+        # thing as `source_uid_tag`'s companion digest one level up in the plan, which is
+        # of a single row's prose as it was exported. Both empty for a row that came from
+        # nowhere -- one the writer typed into the review step.
+        - "Create { indent: i64, kind: ImportRowKind, title: String, djot: String, epigraph: String, comments: Vec<ImportComment>, source_uid_tag: String, source_file_name: String, source_file_digest: String }"
         # A row the returning file brings home to one the project already has, named by the
         # round-trip mark it carried. `Create` makes a row; this touches one.
         #
@@ -2351,7 +2377,13 @@ features:
         # is written only when non-empty, since an absent epigraph in a returning file means
         # "this export did not carry one" (`Preset::include_epigraphs` is a choice made on the
         # way out) far more often than it means "delete the one you have".
-        - "Update { target_uid_tag: String, replace_prose: bool, djot: String, epigraph: String, comments: Vec<ImportComment> }"
+        #
+        # `source_file_name`/`source_file_digest` ride along here too, and mean the same
+        # thing: an editor's return is provenance for the prose it replaces exactly as a
+        # first arrival is provenance for the prose it creates. Carried even when
+        # `replace_prose` is false, because "this file came home and touched only the
+        # remarks" is itself worth being able to say afterwards.
+        - "Update { target_uid_tag: String, replace_prose: bool, djot: String, epigraph: String, comments: Vec<ImportComment>, source_file_name: String, source_file_digest: String }"
       - name: rows
         type: enum
         enum_name: ApplyImportRows

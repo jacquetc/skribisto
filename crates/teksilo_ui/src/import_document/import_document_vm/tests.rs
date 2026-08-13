@@ -64,6 +64,8 @@ fn planned(indent: i64, title: &str, kind: CreateType) -> PlannedRow {
         epigraph: String::new(),
         scene_breaks: 0,
         word_count: 2,
+        // A fixture, not a file: nothing was read, so nothing digests.
+        source_file_digest: String::new(),
         origin: "a.md".into(),
         included: true,
         comments: Vec::new(),

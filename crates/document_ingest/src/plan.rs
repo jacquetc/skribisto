@@ -145,8 +145,15 @@ pub struct PlannedRow {
     pub scene_breaks: usize,
     /// Words in the prose, markers excluded.
     pub word_count: usize,
-    /// Which source this came from.
+    /// Which source this came from — the full path, and it goes no further than
+    /// this crate and the review step. See [`SourceDocument::origin`].
     pub origin: String,
+    /// blake3 of that source file's own bytes. See
+    /// [`SourceDocument::source_file_digest`], and note that it answers a
+    /// different question from [`Self::source_digest`] a few fields down: this
+    /// one is of the document, that one is of this row's prose as it was
+    /// exported.
+    pub source_file_digest: String,
     /// Whether to create it. The review step unchecks rather than deletes.
     pub included: bool,
     /// Editors' comments arriving with this row's prose, already anchored against
@@ -460,6 +467,7 @@ fn append_document(
                     scene_breaks: 0,
                     word_count: 0,
                     origin: doc.origin.clone(),
+                    source_file_digest: doc.source_file_digest.clone(),
                     included: true,
                     comments: Vec::new(),
                     // Filled by the mark loop below, once this row is the current one.
@@ -761,6 +769,7 @@ fn leading_row(doc: &SourceDocument, rules: &LevelRules, base_indent: i64) -> Pl
         scene_breaks: 0,
         word_count: 0,
         origin: doc.origin.clone(),
+        source_file_digest: doc.source_file_digest.clone(),
         included: true,
         comments: Vec::new(),
         source_uid_tag: None,

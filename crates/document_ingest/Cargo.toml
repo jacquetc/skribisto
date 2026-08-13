@@ -45,6 +45,11 @@ odt = ["dep:zip", "dep:roxmltree"]
 docx = ["dep:zip", "dep:roxmltree", "dep:docx-rs"]
 
 [dependencies]
+# Every imported document's own digest, taken in `scan_bytes` where its bytes are
+# already in hand. The *same* hash `skrib_format` uses for the history log and the
+# content fingerprint — a second hash function in one project's provenance would be
+# a second thing for anything reading it to implement.
+blake3 = "1"
 common = { workspace = true }
 skribisto_model = { workspace = true }
 skrib_format = { workspace = true }

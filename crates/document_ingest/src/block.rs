@@ -276,7 +276,24 @@ pub struct SourceDocument {
     pub display_name: String,
     /// Provenance, verbatim: the path it was read from. Used for diagnostics and
     /// for the deterministic ordering of a multi-file import.
+    ///
+    /// ⚠ **A whole path, so it stays on this side of the seam.** A writer's
+    /// directory tree says where they keep their work and sometimes who they
+    /// are. What is allowed downstream of the review step is the file *name*,
+    /// derived at the one call site that builds the apply DTO.
     pub origin: String,
+    /// blake3 hex of the file's own bytes, taken where they were already in
+    /// hand — [`crate::scanner::ScannerRegistry::scan_bytes`].
+    ///
+    /// Not the same question as a row's `source_digest`, which is of one row's
+    /// prose as it was *exported*: this is of the document as it was *read*. It
+    /// answers "which file was this, exactly", including for two files with the
+    /// same name from different folders, and for the same name re-saved with
+    /// different contents.
+    ///
+    /// Empty only for a document nobody read bytes for — a fixture, or a file
+    /// that could not be opened at all.
+    pub source_file_digest: String,
     pub metadata: SourceMetadata,
     pub blocks: Vec<SourceBlock>,
     /// Editors' comments the scanner recovered, in document order. Empty for a
@@ -295,10 +312,16 @@ pub struct SourceDocument {
 
 impl SourceDocument {
     /// An empty document from `origin`, for a scanner to fill.
+    ///
+    /// [`Self::source_file_digest`] starts empty and is stamped by
+    /// [`crate::scanner::ScannerRegistry::scan_bytes`], which is the only place
+    /// the file's bytes are in scope. A scanner called directly — a test, a
+    /// fixture — has no file behind it and correctly gets none.
     pub fn new(display_name: impl Into<String>, origin: impl Into<String>) -> Self {
         SourceDocument {
             display_name: display_name.into(),
             origin: origin.into(),
+            source_file_digest: String::new(),
             metadata: SourceMetadata::default(),
             blocks: Vec::new(),
             annotations: Vec::new(),

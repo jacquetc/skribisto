@@ -102,8 +102,18 @@ impl ScannerRegistry {
             .unwrap_or_default()
             .to_ascii_lowercase();
 
+        // The one place a document's bytes are in hand, so the one place its
+        // digest can be taken without reading the file a second time — by which
+        // point it may have been edited, moved or deleted. Stamped on **every**
+        // return below, including the two failure paths: "this is the file that
+        // could not be read" is exactly as much provenance as "this is the file
+        // these words came from", and a scanner is free to build its document
+        // however it likes without having to remember.
+        let source_file_digest = blake3::hash(bytes).to_hex().to_string();
+
         let Some(scanner) = self.scanner_for_extension(&extension) else {
             let mut doc = SourceDocument::new(display_name, &origin);
+            doc.source_file_digest = source_file_digest;
             doc.diagnostics.push(ImportDiagnostic::UnsupportedFormat {
                 path: origin,
                 extension,
@@ -111,7 +121,7 @@ impl ScannerRegistry {
             return doc;
         };
 
-        match scanner.scan(bytes, &display_name, &origin) {
+        let mut doc = match scanner.scan(bytes, &display_name, &origin) {
             Ok(doc) => doc,
             Err(err) => {
                 let mut doc = SourceDocument::new(display_name, &origin);
@@ -121,7 +131,9 @@ impl ScannerRegistry {
                 });
                 doc
             }
-        }
+        };
+        doc.source_file_digest = source_file_digest;
+        doc
     }
 }
 

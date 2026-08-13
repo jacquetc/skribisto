@@ -20,6 +20,8 @@ fn planned(indent: i64, title: &str, kind: CreateType, breaks: usize) -> Planned
         scene_breaks: breaks,
         word_count: 1,
         origin: "a.md".into(),
+        // A fixture, not a file: nothing was read, so nothing digests.
+        source_file_digest: String::new(),
         included: true,
         comments: Vec::new(),
         source_uid_tag: None,

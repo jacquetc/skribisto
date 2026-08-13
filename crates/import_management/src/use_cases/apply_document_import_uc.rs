@@ -308,6 +308,11 @@ impl ApplyDocumentImportUseCase {
 
         let now = chrono::Utc::now();
         let mut created_ids: Vec<EntityId> = Vec::with_capacity(rows.len());
+        // Where each row's words came from, for the completion event. Built as
+        // the rows are written, because this is the only moment both halves are
+        // in hand: the plan knows the file, the store is about to know the row,
+        // and afterwards nothing knows the pair. See `crate::events`.
+        let mut origins: Vec<crate::events::ImportedRow> = Vec::with_capacity(rows.len());
 
         let mut created_comment_ids: Vec<EntityId> = Vec::new();
         // (before, after) pairs for every existing Comment/CommentReply this
@@ -331,6 +336,8 @@ impl ApplyDocumentImportUseCase {
                 djot,
                 epigraph,
                 comments,
+                source_file_name,
+                source_file_digest,
             } = row
             else {
                 continue;
@@ -340,9 +347,30 @@ impl ApplyDocumentImportUseCase {
             // over: the writer may have deleted the chapter locally between exporting and
             // reading the file back, which is an ordinary thing to do. The row is skipped and
             // the rest of the import lands.
-            let Some(&item_id) = by_tag.get(target_uid_tag.as_str()) else {
+            let Some(&(item_id, item_uid)) = by_tag.get(target_uid_tag.as_str()) else {
                 continue;
             };
+
+            // ⚠ **Recorded before the write, and the distinction is the point.** An
+            // update that leaves `replace_prose` false is the case the returning-file
+            // feature exists for: an editor's remarks come home and not one word of the
+            // manuscript changes. Reporting that as text arriving would describe
+            // something that did not happen.
+            origins.push(crate::events::ImportedRow {
+                item_uid: item_uid.to_string(),
+                action: if *replace_prose {
+                    crate::events::ImportAction::ProseReplaced
+                } else {
+                    crate::events::ImportAction::CommentsOnly
+                },
+                source_file_name: source_file_name.clone(),
+                source_file_digest: source_file_digest.clone(),
+                char_count: if *replace_prose {
+                    djot.chars().count() as u64
+                } else {
+                    0
+                },
+            });
 
             // Resolved against the row *as it stands now*, not as it was when exported:
             // `promote_uc` retypes an item in place, so the chapter that carried an epigraph
@@ -455,6 +483,10 @@ impl ApplyDocumentImportUseCase {
                 // history, not an instruction. Named rather than `..` so the next reader can
                 // see that it was considered and not forgotten.
                 source_uid_tag: _,
+                // Read, but not by the write: these two are provenance for the
+                // completion event, collected below once the row has its uid.
+                source_file_name,
+                source_file_digest,
             } = row
             else {
                 continue;
@@ -581,6 +613,16 @@ impl ApplyDocumentImportUseCase {
             }
 
             created_ids.push(item.id);
+            origins.push(crate::events::ImportedRow {
+                // The uid the row just minted, never `item.id`: an `EntityId` is
+                // re-minted by every `load_work`, so a listener caching one would
+                // be naming an unrelated row the next time the project opened.
+                item_uid: item.uid.to_string(),
+                action: crate::events::ImportAction::Created,
+                source_file_name: source_file_name.clone(),
+                source_file_digest: source_file_digest.clone(),
+                char_count: djot.chars().count() as u64,
+            });
         }
 
         // Comments hang off the Work, not off the row they annotate — appended to
@@ -604,9 +646,30 @@ impl ApplyDocumentImportUseCase {
             &new_order,
         )?;
 
+        // Read inside the transaction, because after `commit()` there is no
+        // transaction left to read through — and the payload below has to be
+        // self-contained. Several `Work`s are open at once, and a listener with a
+        // list of created rows and no project to attach them to has nothing.
+        let work_unique_id = uow
+            .get_work(&dto.work_id)?
+            .map(|w| w.unique_id)
+            .unwrap_or_default();
+
         let snap_after = uow.snapshot_binder(&[dto.binder_id])?;
         uow.commit()?;
-        uow.publish_apply_document_import_event(created_ids.clone(), None);
+        // **`Event.data`'s first real payload in this workspace**, and it is here
+        // because this is the only moment the answer exists: the plan knows which
+        // file each row came from, the store never will, and afterwards nothing
+        // holds the pair. See `crate::events` for what is in it and what is
+        // deliberately left out.
+        //
+        // After `commit()`, and publishing is a send on a channel another thread
+        // drains — so a listener that panics, that cannot parse this, or that is
+        // not there at all changes nothing about what was just written.
+        uow.publish_apply_document_import_event(
+            created_ids.clone(),
+            crate::events::ImportOrigins::new(work_unique_id, origins).to_payload(),
+        );
 
         self.snap_before = Some(snap_before);
         self.snap_after = Some(snap_after);
@@ -1074,16 +1137,25 @@ fn prose_role_for(
 /// another window between reviewing the merge and pressing Import — and an update that landed
 /// then would write the editor's prose and remarks into a row nothing on screen shows. The
 /// writer would find it only by restoring from the trash, or lose it by emptying it.
+/// Returns the store id **and** the durable uid, because an update needs the
+/// first to write and the completion event needs the second to say which row it
+/// was. Both come off the same fetched item, so asking for the pair costs one
+/// tuple and saves a second read of the whole binder.
 fn items_by_uid_tag(
     uow: &mut dyn ApplyDocumentImportUnitOfWorkTrait,
     order: &[EntityId],
-) -> Result<HashMap<String, EntityId>> {
+) -> Result<HashMap<String, (EntityId, uuid::Uuid)>> {
     Ok(uow
         .get_binder_item_multi(order)?
         .into_iter()
         .flatten()
         .filter(|item| !item.uid.is_nil() && item.activated)
-        .map(|item| (skribisto_model::round_trip::uid_tag(&item.uid), item.id))
+        .map(|item| {
+            (
+                skribisto_model::round_trip::uid_tag(&item.uid),
+                (item.id, item.uid),
+            )
+        })
         .collect())
 }
 
@@ -1356,6 +1428,8 @@ mod tests {
             epigraph: String::new(),
             comments: Vec::new(),
             source_uid_tag: String::new(),
+            source_file_name: String::new(),
+            source_file_digest: String::new(),
         }
     }
 

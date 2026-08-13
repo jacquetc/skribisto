@@ -113,6 +113,11 @@ impl Ctx {
             &CreateWorkDto {
                 smart_punctuation,
                 chapter_mode: ChapterMode::Folder,
+                // A durable id, as every saved project has. `Default` leaves it
+                // empty — which is what an **unsaved** project carries, and what
+                // makes it the wrong fixture for anything asking which project
+                // something happened to.
+                unique_id: "document-import-fixture-uid".to_string(),
                 ..Default::default()
             },
             root_id,
@@ -245,6 +250,8 @@ impl Ctx {
                     comments,
                     included,
                     source_uid_tag,
+                    origin,
+                    source_file_digest,
                     ..
                 } if included => Some(ApplyImportRow::Create {
                     indent,
@@ -260,6 +267,15 @@ impl Ctx {
                     epigraph,
                     comments,
                     source_uid_tag,
+                    // …and its provenance, narrowed from the path to the name here
+                    // exactly as `PlanRowView::source_file_name` does it. A helper
+                    // that sent the whole path would pass while the real UI sent
+                    // something else.
+                    source_file_name: std::path::Path::new(&origin)
+                        .file_name()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_default(),
+                    source_file_digest,
                 }),
                 _ => None,
             })
@@ -600,6 +616,8 @@ fn prose_on_a_type_that_cannot_hold_it_is_refused_not_swallowed() {
                 epigraph: String::new(),
                 comments: Vec::new(),
                 source_uid_tag: String::new(),
+                source_file_name: String::new(),
+                source_file_digest: String::new(),
             }]),
         },
     );
@@ -644,6 +662,8 @@ fn undoing_an_import_into_a_large_binder_stays_interactive() {
             epigraph: String::new(),
             comments: Vec::new(),
             source_uid_tag: String::new(),
+            source_file_name: String::new(),
+            source_file_digest: String::new(),
         })
         .collect();
     import_management_controller::apply_document_import(
@@ -746,6 +766,8 @@ fn a_batched_import_fires_at_most_one_event_per_row() {
                 epigraph: String::new(),
                 comments: Vec::new(),
                 source_uid_tag: String::new(),
+                source_file_name: String::new(),
+                source_file_digest: String::new(),
             })
             .collect();
         import_management_controller::apply_document_import(
@@ -2073,6 +2095,8 @@ fn a_row_that_stores_no_prose(ctx: &mut Ctx) -> EntityId {
         epigraph: String::new(),
         comments: Vec::new(),
         source_uid_tag: String::new(),
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
     }]);
     let book = ctx.item_named("A Book");
     assert!(
@@ -2096,6 +2120,8 @@ fn update_row(
         // below is the one that exercises the second `Content`.
         epigraph: String::new(),
         comments,
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
     }
 }
 
@@ -2417,6 +2443,8 @@ fn create_chapter_with_epigraph(title: &str, djot: &str, epigraph: &str) -> Appl
         epigraph: epigraph.into(),
         comments: Vec::new(),
         source_uid_tag: String::new(),
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
     }
 }
 
@@ -2487,6 +2515,8 @@ fn an_epigraph_retyped_onto_a_row_that_cannot_hold_one_is_folded_into_its_prose(
         epigraph: "> Every winter asks twice.".into(),
         comments: Vec::new(),
         source_uid_tag: String::new(),
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
     }]);
 
     let item = ctx.item_named("Scene A");
@@ -2520,6 +2550,8 @@ fn an_update_writes_the_editors_epigraph_when_it_takes_their_wording() {
         djot: "The editor's better wording.".into(),
         epigraph: "> As the editor corrected it.".into(),
         comments: Vec::new(),
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
     }]);
 
     assert_eq!(
@@ -2554,6 +2586,8 @@ fn a_comments_only_update_leaves_the_epigraph_alone() {
         djot: "The editor's better wording.".into(),
         epigraph: "> As the editor corrected it.".into(),
         comments: Vec::new(),
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
     }]);
 
     assert_eq!(
@@ -2607,6 +2641,8 @@ fn an_update_can_give_a_row_its_first_epigraph() {
         djot: "The editor's better wording.".into(),
         epigraph: "> Newly added by the editor.".into(),
         comments: Vec::new(),
+        source_file_name: String::new(),
+        source_file_digest: String::new(),
     }]);
 
     assert_eq!(
@@ -2618,4 +2654,257 @@ fn an_update_can_give_a_row_its_first_epigraph() {
         Some("The editor's better wording."),
         "and the prose it was appended beside is still reachable"
     );
+}
+
+// ── Where each row's words came from ────────────────────────────────────────
+//
+// The completion event's payload, and the reason it exists: the plan knows which
+// file a row was read out of, the store never will, and the moment the import
+// commits is the only one where both halves are in hand. Everything below is
+// about what an outside reader can honestly conclude from it.
+
+/// Run `rows` and return the origins payload the completion event carried.
+///
+/// Drained on this thread rather than on one of its own, unlike `events_for`
+/// above: that helper counts events over a whole run and has to keep listening,
+/// this one wants a single event that is already in the channel by the time
+/// `apply_rows` returns. No sleep to be flaky about, no thread to outlive the
+/// test, and an event that never comes fails here instead of turning into an
+/// assertion about `None` somewhere further down.
+fn origins_for(
+    ctx: &mut Ctx,
+    rows: Vec<ApplyImportRow>,
+) -> import_management::events::ImportOrigins {
+    use common::event::{ImportManagementEvent, Origin};
+
+    let rx = ctx.hub.subscribe_receiver();
+    // ⚠ **Drain what is already queued first.** The channel buffers, and a test
+    // that set its scene with an earlier `apply_rows` would otherwise read *that*
+    // import's payload and assert happily against the wrong one — which is
+    // exactly how the returning-file tests below first "passed" while reporting
+    // `Created` for an update.
+    while rx.try_recv().is_ok() {}
+
+    ctx.apply_rows(rows);
+
+    while let Ok(event) = rx.recv_timeout(std::time::Duration::from_secs(5)) {
+        if matches!(
+            event.origin,
+            Origin::ImportManagement(ImportManagementEvent::ApplyDocumentImport)
+        ) {
+            let data = event
+                .data
+                .as_deref()
+                .expect("the apply event must carry a payload");
+            return import_management::events::ImportOrigins::from_payload(data)
+                .expect("…and it must be an origins payload this build can read");
+        }
+    }
+    panic!("no ApplyDocumentImport event arrived");
+}
+
+fn create_from(title: &str, djot: &str, file: &str, digest: &str) -> ApplyImportRow {
+    ApplyImportRow::Create {
+        indent: 0,
+        kind: ImportRowKind::Scene,
+        title: title.into(),
+        djot: djot.into(),
+        epigraph: String::new(),
+        comments: Vec::new(),
+        source_uid_tag: String::new(),
+        source_file_name: file.into(),
+        source_file_digest: digest.into(),
+    }
+}
+
+/// **The false-positive control, and the whole reason this exists.** A 90,000-word
+/// import produces the same shape as a manuscript written in an afternoon. What
+/// tells them apart is a record able to say *"these rows arrived from this file"*,
+/// and this is where that becomes possible at all.
+#[test]
+fn every_created_row_says_which_file_its_words_arrived_in() {
+    let mut ctx = Ctx::new();
+    let origins = origins_for(
+        &mut ctx,
+        vec![
+            create_from("One", "First scene.", "novel-draft-3.docx", "aaa111"),
+            create_from("Two", "Second scene.", "novel-draft-3.docx", "aaa111"),
+            create_from("Three", "From elsewhere.", "notes.md", "bbb222"),
+        ],
+    );
+
+    assert_eq!(
+        origins.version,
+        import_management::events::IMPORT_ORIGINS_VERSION
+    );
+    assert_eq!(origins.rows.len(), 3);
+    assert!(
+        origins
+            .rows
+            .iter()
+            .all(|r| r.action == import_management::events::ImportAction::Created)
+    );
+    assert_eq!(
+        origins
+            .rows
+            .iter()
+            .map(|r| r.source_file_name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["novel-draft-3.docx", "novel-draft-3.docx", "notes.md"],
+        "a multi-file import must not collapse to one source"
+    );
+    assert_eq!(origins.rows[2].source_file_digest, "bbb222");
+    assert_eq!(
+        origins.rows[0].char_count,
+        "First scene.".chars().count() as u64
+    );
+}
+
+/// **The uid, never the store id.** An `EntityId` is re-minted by every
+/// `load_work`, so a listener that cached one would be naming an unrelated row
+/// the next time the project opened — silently, and with every figure it drew
+/// from it rendering perfectly.
+#[test]
+fn the_payload_names_rows_by_their_durable_uid() {
+    let mut ctx = Ctx::new();
+    let origins = origins_for(&mut ctx, vec![create_from("One", "Prose.", "a.md", "aaa")]);
+
+    let uid = origins.rows[0]
+        .item_uid
+        .parse::<uuid::Uuid>()
+        .expect("a real uid, hyphenated");
+    assert!(!uid.is_nil(), "a created row mints its own identity");
+
+    let created = ctx.binder_order();
+    let item = binder_item_controller::get(
+        &ctx.db,
+        created.last().expect("the row that was just created"),
+    )
+    .expect("item")
+    .expect("item row");
+    assert_eq!(item.uid, uid, "and the payload names that very row");
+}
+
+/// A row the writer typed into the review step came from no file, and the record
+/// must say so rather than inherit the name of whatever else was in the import.
+#[test]
+fn a_row_that_came_from_no_file_carries_no_file_name() {
+    let mut ctx = Ctx::new();
+    let origins = origins_for(
+        &mut ctx,
+        vec![
+            create_from("From a file", "Prose.", "chapter.docx", "aaa"),
+            create_from("Invented here", "Typed in the wizard.", "", ""),
+        ],
+    );
+    assert_eq!(origins.rows[0].source_file_name, "chapter.docx");
+    assert_eq!(origins.rows[1].source_file_name, "");
+    assert_eq!(origins.rows[1].source_file_digest, "");
+}
+
+/// **The payload has to name the project itself.** Several `Work`s are open at
+/// once; the event's own `ids` are the created rows and say nothing about whose
+/// binder they joined. A listener holding a list of rows and no project to attach
+/// them to has nothing it can honestly record.
+#[test]
+fn the_payload_names_the_project_the_import_landed_in() {
+    let mut ctx = Ctx::new();
+    let expected = work_controller::get(&ctx.db, &ctx.work_id)
+        .expect("work")
+        .expect("work row")
+        .unique_id;
+
+    let origins = origins_for(&mut ctx, vec![create_from("One", "Prose.", "a.md", "aaa")]);
+    assert!(!expected.is_empty(), "the fixture project has a durable id");
+    assert_eq!(origins.work_unique_id, expected);
+}
+
+/// **A returning file that touched no prose must not read as text arriving.**
+/// Bringing an editor's remarks home without a word of the manuscript changing is
+/// the whole point of the returning-file feature, and a record that counted those
+/// rows as imported would be describing something that did not happen.
+#[test]
+fn a_returning_file_that_only_brought_remarks_reports_no_characters() {
+    let mut ctx = Ctx::new();
+    // A row to bring home to, and the mark that names it.
+    let created = ctx.apply_rows(vec![create_from(
+        "Chapter one",
+        "The writer's own words.",
+        "first-draft.md",
+        "aaa",
+    )]);
+    let item = binder_item_controller::get(&ctx.db, created.last().expect("created"))
+        .expect("item")
+        .expect("item row");
+    let tag = skribisto_model::round_trip::uid_tag(&item.uid);
+
+    let origins = origins_for(
+        &mut ctx,
+        vec![ApplyImportRow::Update {
+            target_uid_tag: tag,
+            // The case the feature exists for: their notes, not their wording.
+            replace_prose: false,
+            djot: "The editor's rather different wording.".into(),
+            epigraph: String::new(),
+            comments: Vec::new(),
+            source_file_name: "chapter-1-editor.docx".into(),
+            source_file_digest: "eee555".into(),
+        }],
+    );
+
+    assert_eq!(origins.rows.len(), 1);
+    assert_eq!(
+        origins.rows[0].action,
+        import_management::events::ImportAction::CommentsOnly
+    );
+    assert_eq!(
+        origins.rows[0].char_count, 0,
+        "no prose was written, so no characters arrived — whatever the file carried"
+    );
+    assert_eq!(origins.rows[0].source_file_name, "chapter-1-editor.docx");
+    assert_eq!(
+        ctx.prose_of(item.id).as_deref(),
+        Some("The writer's own words."),
+        "…and the manuscript really is untouched, or the assertion above means nothing"
+    );
+}
+
+/// …and the same file taken *with* its wording is prose arriving, counted.
+#[test]
+fn a_returning_file_taken_with_its_wording_reports_the_characters_it_wrote() {
+    let mut ctx = Ctx::new();
+    let created = ctx.apply_rows(vec![create_from(
+        "Chapter one",
+        "The writer's own words.",
+        "first-draft.md",
+        "aaa",
+    )]);
+    let item = binder_item_controller::get(&ctx.db, created.last().expect("created"))
+        .expect("item")
+        .expect("item row");
+    let tag = skribisto_model::round_trip::uid_tag(&item.uid);
+    let editors_wording = "The editor's rather different wording.";
+
+    let origins = origins_for(
+        &mut ctx,
+        vec![ApplyImportRow::Update {
+            target_uid_tag: tag,
+            replace_prose: true,
+            djot: editors_wording.into(),
+            epigraph: String::new(),
+            comments: Vec::new(),
+            source_file_name: "chapter-1-editor.docx".into(),
+            source_file_digest: "eee555".into(),
+        }],
+    );
+
+    assert_eq!(
+        origins.rows[0].action,
+        import_management::events::ImportAction::ProseReplaced
+    );
+    assert_eq!(
+        origins.rows[0].char_count,
+        editors_wording.chars().count() as u64
+    );
+    assert_eq!(origins.rows[0].item_uid, item.uid.to_string());
 }

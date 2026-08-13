@@ -643,6 +643,8 @@ impl ImportDocumentViewModel {
                     epigraph: String::new(),
                     scene_breaks: 0,
                     word_count: 1,
+                    // A fixture, not a file: nothing was read, so nothing digests.
+                    source_file_digest: String::new(),
                     origin: "mock.md".into(),
                     included: true,
                     comments: Vec::new(),
@@ -661,6 +663,8 @@ impl ImportDocumentViewModel {
                     epigraph: "> Mock quotation.".into(),
                     scene_breaks: 1,
                     word_count: 1,
+                    // A fixture, not a file: nothing was read, so nothing digests.
+                    source_file_digest: String::new(),
                     origin: "mock.md".into(),
                     included: true,
                     comments: Vec::new(),
@@ -677,6 +681,8 @@ impl ImportDocumentViewModel {
                     epigraph: String::new(),
                     scene_breaks: 0,
                     word_count: 2,
+                    // A fixture, not a file: nothing was read, so nothing digests.
+                    source_file_digest: String::new(),
                     origin: "mock.md".into(),
                     included: true,
                     comments: Vec::new(),
@@ -1476,6 +1482,10 @@ impl ImportDocumentViewModel {
                         // places.
                         epigraph: row.epigraph.clone(),
                         comments,
+                        // Provenance, for the completion event. The **name**, never
+                        // `row.origin` — see `PlanRowView::source_file_name`.
+                        source_file_name: row.source_file_name(),
+                        source_file_digest: row.source_file_digest.clone(),
                     }]),
                     // Unreachable by construction — `reconcile` offers these two only on a row
                     // that has a destination side, and a row without one gets a key that says
@@ -1535,6 +1545,10 @@ impl ImportDocumentViewModel {
                 // The row's own identity, handed back untouched for the same reason its comments
                 // are: the review step edits titles and types, never which row a passage *is*.
                 source_uid_tag: tag.clone(),
+                // Which file these words arrived in, for the completion event. The
+                // **name**, never `row.origin` — see `PlanRowView::source_file_name`.
+                source_file_name: row.source_file_name(),
+                source_file_digest: row.source_file_digest.clone(),
             };
 
         // The epigraph stays with the **container** in every arm below, unlike the prose
@@ -1563,6 +1577,11 @@ impl ImportDocumentViewModel {
                     // The mark named the *container*, and the container has it. A paratext
                     // minted here is a row this import is creating, not one it is bringing home.
                     source_uid_tag: String::new(),
+                    // The provenance **is** the container's, unlike the mark: these words
+                    // came out of that file, and the paratext is only where they landed
+                    // once the row they arrived on turned out not to be able to hold them.
+                    source_file_name: row.source_file_name(),
+                    source_file_digest: row.source_file_digest.clone(),
                 },
             ],
         }
@@ -2095,6 +2114,7 @@ pub fn plan_from_dto(
                 included,
                 source_uid_tag,
                 source_digest,
+                source_file_digest,
             } = row
             else {
                 continue;
@@ -2118,6 +2138,7 @@ pub fn plan_from_dto(
                 // Empty on the wire means the file carried no mark for this row.
                 source_uid_tag: (!source_uid_tag.is_empty()).then(|| source_uid_tag.clone()),
                 source_digest: (!source_digest.is_empty()).then(|| source_digest.clone()),
+                source_file_digest: source_file_digest.clone(),
                 diagnostics: Vec::new(),
             });
         }
