@@ -285,6 +285,25 @@ struct RegisteredEditor {
 /// would do nothing here", not "I cannot picture wanting it here". Only
 /// [`FormatSurface::shows_scene_breaks`] clears that bar; the rest of these
 /// gates separate "there is prose" from "there is not".
+/// What the Link dialog opens with, resolved from the editor before the modal
+/// is built.
+///
+/// Resolved by the view-model rather than by the panel, so the panel never
+/// holds an `EditorHandle`: by the time a modal is on screen the editor has
+/// lost focus, and a handle grabbed then can be the wrong one — or stale, since
+/// a rebuild mints a fresh editor state.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct LinkRequest {
+    /// The words the link will cover. Pre-filled from the existing link's text,
+    /// or from whatever the writer selected.
+    pub name: String,
+    /// Where it points. Empty when making a new link.
+    pub href: String,
+    /// The caret was already inside a link, so this is an edit — which is what
+    /// decides whether the dialog offers "Remove link".
+    pub editing: bool,
+}
+
 #[derive(Clone, Debug)]
 pub struct GroupVisibility {
     pub history: Signal<bool>,
@@ -404,6 +423,10 @@ pub struct FormatViewModel {
     /// never both true.
     superscript: Signal<bool>,
     subscript: Signal<bool>,
+    /// The caret sits on a hyperlink, so the Link command edits one rather
+    /// than making one. Mirrored like every other mark, and read the same way:
+    /// from the editor after each command, never flipped optimistically.
+    link: Signal<bool>,
     blockquote: Signal<bool>,
     /// The caret sits inside a table, so the row/column commands are meaningful.
     in_table: Signal<bool>,
@@ -520,6 +543,7 @@ impl FormatViewModel {
             strikethrough: Signal::new(false),
             superscript: Signal::new(false),
             subscript: Signal::new(false),
+            link: Signal::new(false),
             blockquote: Signal::new(false),
             in_table: Signal::new(false),
             heading: Signal::new(0),
@@ -752,6 +776,9 @@ impl FormatViewModel {
     pub fn subscript(&self) -> Signal<bool> {
         self.subscript.clone()
     }
+    pub fn link(&self) -> Signal<bool> {
+        self.link.clone()
+    }
     pub fn blockquote(&self) -> Signal<bool> {
         self.blockquote.clone()
     }
@@ -905,6 +932,7 @@ impl FormatViewModel {
         set_if_changed(&self.strikethrough, handle.is_strikethrough());
         set_if_changed(&self.superscript, handle.is_superscript());
         set_if_changed(&self.subscript, handle.is_subscript());
+        set_if_changed(&self.link, handle.is_link());
         set_if_changed(&self.blockquote, handle.is_in_blockquote());
         set_if_changed(&self.in_table, handle.is_in_table());
         set_if_changed(&self.heading, handle.get_heading_level() as usize);
@@ -935,6 +963,7 @@ impl FormatViewModel {
         set_if_changed(&self.strikethrough, false);
         set_if_changed(&self.superscript, false);
         set_if_changed(&self.subscript, false);
+        set_if_changed(&self.link, false);
         set_if_changed(&self.blockquote, false);
         set_if_changed(&self.in_table, false);
         set_if_changed(&self.heading, 0);
@@ -975,6 +1004,103 @@ impl FormatViewModel {
     /// [`toggle_superscript`](Self::toggle_superscript).
     pub fn toggle_subscript(&self) {
         self.with_editor(|h| h.toggle_subscript());
+    }
+
+    // ── Hyperlinks ────────────────────────────────────────────────────────
+    //
+    // The Link command is the only formatting command that needs data from the
+    // writer, so it is the only one split in two: the dialog asks, and these
+    // apply. What the dialog needs to *ask* is resolved by
+    // [`link_request`](Self::link_request), so the panel never has to reach for
+    // an editor handle itself.
+
+    /// What the Link dialog should open with.
+    ///
+    /// Three cases, in the order they take precedence: the caret is inside a
+    /// link (edit it, whole extent), the writer has selected some text (link
+    /// that, pre-filling the name), or neither (insert a fresh link).
+    ///
+    /// `None` when there is no editor to act on at all — a menu can outlive
+    /// the editor it was opened over.
+    pub fn link_request(&self) -> Option<LinkRequest> {
+        let handle = self.handle()?;
+        if let Some(extent) = handle.link_at_caret() {
+            return Some(LinkRequest {
+                name: extent.text,
+                href: extent.href,
+                editing: true,
+            });
+        }
+        Some(LinkRequest {
+            name: handle.selected_text(),
+            href: String::new(),
+            editing: false,
+        })
+    }
+
+    /// Write the link the dialog collected.
+    ///
+    /// Applied as a character format over a range rather than by inserting
+    /// `[name](href)` markup: that keeps any bold or italic already on the
+    /// words, and means neither the name nor the destination has to be escaped
+    /// for a markup parser that never sees them.
+    ///
+    /// The text is only rewritten when the writer actually changed the name —
+    /// re-typing the same string would otherwise churn the document and cost
+    /// the run its other formatting for nothing.
+    pub fn apply_link(&self, name: &str, href: &str) {
+        let Some(handle) = self.handle() else {
+            self.clear_mirrors();
+            return;
+        };
+
+        // Where the link goes: over the link already there, else over the
+        // selection, else at the bare caret.
+        let (start, end, current) = match handle.link_at_caret() {
+            Some(extent) => (extent.start, extent.end, extent.text),
+            None => {
+                let (anchor, position) = handle.selection();
+                (
+                    anchor.min(position),
+                    anchor.max(position),
+                    handle.selected_text(),
+                )
+            }
+        };
+
+        // One undo entry for the pair, so a writer who changed both the name
+        // and the destination undoes one link edit rather than two halves.
+        handle.edit_block(|| {
+            let end = if name == current {
+                end
+            } else {
+                // `replace_range` on an empty range is an insert, which is
+                // exactly what a bare caret needs — no separate branch.
+                handle.replace_range(start, end, name);
+                start + name.chars().count()
+            };
+            handle.select_range(start, end);
+            handle.set_link(href);
+        });
+        self.sync_now();
+    }
+
+    /// Take the link off the caret's link, leaving its words.
+    ///
+    /// Selects the extent first: a collapsed caret formats nothing, so
+    /// clearing without selecting is a silent no-op — the trap the image
+    /// commands already work around the same way.
+    pub fn remove_link(&self) {
+        let Some(handle) = self.handle() else {
+            self.clear_mirrors();
+            return;
+        };
+        let Some(extent) = handle.link_at_caret() else {
+            return;
+        };
+        handle.select_range(extent.start, extent.end);
+        handle.clear_link();
+        self.sync_now();
     }
 
     /// Strip formatting back to plain prose.
@@ -1025,6 +1151,16 @@ impl FormatViewModel {
             }
             if handle.is_superscript() || handle.is_subscript() {
                 handle.set_superscript(false);
+            }
+            // A link is formatting too, and "plain prose" is exactly what a
+            // writer stripping formatting is asking for. Unlike the marks it
+            // clears over the *link's* own extent, not the selection: the
+            // caret may be sitting in a link without selecting all of it.
+            if let Some(extent) = handle.link_at_caret() {
+                let (anchor, position) = handle.selection();
+                handle.select_range(extent.start, extent.end);
+                handle.clear_link();
+                handle.select_range(anchor, position);
             }
             if handle.get_heading_level() != 0 {
                 handle.set_heading_level(0);

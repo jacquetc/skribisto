@@ -302,6 +302,16 @@ fn controls(vm: &FormatViewModel) -> Padding {
                 vm.clone(),
                 |vm| vm.toggle_subscript(),
             ))
+            // Not a `command_button`: opening the dialog needs an
+            // `EventContext`, which `fn(&FormatViewModel)` cannot supply. The
+            // intent bus carries one, and routing through it also means the
+            // dock button, the Format menu row and Ctrl+K are literally the
+            // same command rather than three copies of it.
+            .child(intent_button(
+                glyph::link(),
+                tr!(format_link()),
+                "format.link",
+            ))
             .child(command_button(
                 glyph::clear_formatting(),
                 tr!(format_clear()),

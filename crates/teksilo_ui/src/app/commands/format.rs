@@ -1,12 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // SPDX-FileCopyrightText: 2026 Cyril Jacquet
 
-//! Commands over the manuscript's typography: inserting a scene break.
+//! Commands over the manuscript's typography: inserting a scene break, and
+//! linking.
 //!
 //! A scene break is an **explicit authorial mark** — the binder is
 //! organisational, so item adjacency never implies one. These commands place the
 //! canonical mark at the caret; an export preset decides how it prints (a Shunn
 //! `#`, a dinkus, or a bare gap, per region).
+//!
+//! The link command lives here rather than with the other marks because it is
+//! the only one that needs an [`EventContext`] — it opens a dialog instead of
+//! flipping a property — and the dock's `command_button` cannot supply one. One
+//! action serves all three doors (dock button, Format menu, Ctrl+K), so they
+//! cannot drift.
 
 use skribisto_model::scene_break::SceneBreakTier;
 use teksilo::prelude::*;
@@ -53,6 +60,23 @@ pub(super) fn register(ctx: &mut BuildContext, deps: &CommandDeps) {
         ctx.register_action_global(
             Action::new("format.major_scene_break")
                 .on_invoke(move |_i, c| editors.insert_scene_break(SceneBreakTier::Major, c)),
+        );
+    }
+
+    // Ctrl+K is the near-universal binding for this, and it shadows nothing:
+    // it is absent from the app's global set and from `RichTextEditor`'s own
+    // key handling (whose Ctrl+letter arms are A/C/X/V/B/I/U/Z/Y).
+    ctx.register_shortcut_global(
+        Shortcut::new("format.link")
+            .name("Insert Link")
+            .primary(KeyStroke::new(Key::K, Modifiers::CTRL))
+            .build(),
+    );
+    {
+        let format = deps.format.clone();
+        ctx.register_action_global(
+            Action::new("format.link")
+                .on_invoke(move |_i, c| crate::format::link_panel::present(&format, c)),
         );
     }
 }

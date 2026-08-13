@@ -1357,6 +1357,22 @@ format-undo = Undo
 format-redo = Redo
 format-superscript = Superscript
 format-subscript = Subscript
+format-link = Link…
+# The Link command: a hyperlink in the prose. One command, three doors (the
+# Format dock, the Format menu and Ctrl+K), so these strings are shared.
+link-dialog-insert-title = Insert link
+link-dialog-edit-title = Edit link
+link-dialog-text-label = Text
+link-dialog-text-placeholder = the words the reader sees
+link-dialog-url-label = Links to
+link-dialog-url-placeholder = example.com
+link-dialog-insert = Insert
+link-dialog-apply = Apply
+link-dialog-cancel = Cancel
+link-dialog-remove = Remove link
+# Refused because a document could otherwise make a click launch a program.
+link-scheme-refused = Only web and email links can be opened. { $url } was left alone.
+menu-format-link = &Link…
 format-clear = Clear formatting
 format-heading = Heading level
 format-heading-normal = Normal text

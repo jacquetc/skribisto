@@ -1364,6 +1364,22 @@ format-undo = Annuler
 format-redo = Rétablir
 format-superscript = Exposant
 format-subscript = Indice
+format-link = Lien…
+# La commande Lien : un hyperlien dans le texte. Une seule commande, trois
+# portes (le dock Format, le menu Format et Ctrl+K), d'où des chaînes partagées.
+link-dialog-insert-title = Insérer un lien
+link-dialog-edit-title = Modifier le lien
+link-dialog-text-label = Texte
+link-dialog-text-placeholder = les mots que le lecteur voit
+link-dialog-url-label = Pointe vers
+link-dialog-url-placeholder = exemple.com
+link-dialog-insert = Insérer
+link-dialog-apply = Appliquer
+link-dialog-cancel = Annuler
+link-dialog-remove = Supprimer le lien
+# Refusé, sans quoi un document pourrait faire lancer un programme par un clic.
+link-scheme-refused = Seuls les liens web et e-mail peuvent être ouverts. { $url } n'a pas été ouvert.
+menu-format-link = &Lien…
 format-clear = Effacer la mise en forme
 format-heading = Niveau de titre
 format-heading-normal = Texte normal

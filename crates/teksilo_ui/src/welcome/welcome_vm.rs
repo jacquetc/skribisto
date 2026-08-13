@@ -302,22 +302,12 @@ impl WelcomeViewModel {
     /// The sidebar's GitHub / Discord links — hand the URL to the OS default
     /// handler, i.e. the user's browser.
     ///
-    /// `that_detached`, not `that`: the latter keeps the spawned opener as a
-    /// child process and waits for it to exit, and the desktop opener a browser
-    /// is launched through does not reliably return before the browser itself
-    /// does — on a cold start that is the UI thread stalled for seconds.
-    /// Detaching hands the child to the OS and returns now.
-    ///
-    /// A launch that fails is reported: a click that silently does nothing reads
-    /// as a dead button, and a launcher sidebar has no other surface to notice
-    /// it on.
+    /// Delegates to [`crate::shared::external_link`], which prose hyperlinks
+    /// also go through. These URLs are hard-coded and would not need its scheme
+    /// check, but one opener means one place where "what may a click launch" is
+    /// decided, rather than a rule that holds in the manuscript and not here.
     pub fn open_link(&self, url: &str, ctx: &mut EventContext) {
-        if let Err(e) = open::that_detached(url) {
-            ctx.show_toast(Toast::error(tr!(could_not_open_link(
-                url = url.to_string(),
-                error = e.to_string()
-            ))));
-        }
+        crate::shared::external_link::open_external_link(url, ctx);
     }
 }
 

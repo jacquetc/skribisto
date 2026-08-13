@@ -67,6 +67,11 @@ pub fn subscript() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/format/subscript.svg")).icon_size(ICON_SIZE)
 }
 
+/// Link — a hyperlink in the prose.
+pub fn link() -> IconWidget {
+    IconWidget::from_svg_icon(res!("assets/icons/format/link.svg")).icon_size(ICON_SIZE)
+}
+
 /// Clear formatting — strip marks and block structure back to plain prose.
 pub fn clear_formatting() -> IconWidget {
     IconWidget::from_svg_icon(res!("assets/icons/format/clear-formatting.svg")).icon_size(ICON_SIZE)

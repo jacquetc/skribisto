@@ -210,6 +210,13 @@ pub fn writing_column(
     let mut editor = editor
         .style(WritingEditorStyle)
         .on_change(on_change)
+        // Ctrl(⌘)+click follows a hyperlink; a plain click just puts the caret
+        // in it, because this is an editor and the writer is usually trying to
+        // edit the words. The scheme check lives in the opener: a `.skrib` can
+        // come from anywhere, and a link in one is a string someone else chose.
+        .on_link_activated(|href, ctx| {
+            crate::shared::external_link::open_external_link(href, ctx);
+        })
         .content_padding_symmetric(8.0, 12.0)
         .min_lines(min_lines)
         .v_scroll_policy(ScrollPolicy::AlwaysOff)

@@ -86,6 +86,18 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
             f.subscript(),
             FormatViewModel::toggle_subscript,
         ))
+        // Not `command(..)`: that helper takes `fn(&FormatViewModel)`, and
+        // opening a dialog needs the `EventContext` only `on_activate` has.
+        // It reaches the same registered action the dock button and Ctrl+K do,
+        // so `MenuEntry::shortcut` can render the chord per platform rather
+        // than this label hardcoding one.
+        .item({
+            let f = f.clone();
+            MenuEntry::new(tr!(menu_format_link()))
+                .enabled(on.clone())
+                .shortcut("format.link")
+                .on_activate(move |c| crate::format::link_panel::present(&f, c))
+        })
         .item(command(
             &f,
             tr!(menu_format_marks_clear()),

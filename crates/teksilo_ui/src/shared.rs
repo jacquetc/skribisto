@@ -29,6 +29,7 @@
 /// corkboard, overview) — crate-internal, not exposed past the extension seam.
 pub(crate) mod binder_ops;
 mod caret_highlight;
+pub mod external_link;
 mod focus_vm;
 mod fullscreen_vm;
 pub mod images;

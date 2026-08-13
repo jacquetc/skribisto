@@ -216,7 +216,15 @@ fn sample_bundle() -> WorkBundle {
                 ChapterScene,
                 vec![
                     content(430, ChapterTitle, "Chapter Two"),
-                    content(431, SceneText, "The light failed at midnight."),
+                    // Carries a hyperlink. Prose is stored as Djot, so a link is a
+                    // character format on the way in and out and plain `[text](url)`
+                    // on disk — this is the one place the whole chain is asserted at
+                    // once, rather than each half separately.
+                    content(
+                        431,
+                        SceneText,
+                        "The light failed at [midnight](https://example.com/logs).",
+                    ),
                     content(432, SynopsisText, "The storm hits."),
                 ],
             ),

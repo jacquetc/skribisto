@@ -937,3 +937,158 @@ fn an_editor_with_no_footnote_binding_is_not_a_target() {
     handle.focused_signal().set(true);
     assert!(vm.footnote_target().is_none());
 }
+
+// ── Links ───────────────────────────────────────────────────────
+//
+// The Link command is the only formatting command that carries data, so it is
+// the only one with real branching: link the selection, link at a bare caret,
+// edit an existing link's destination, rename its text, remove it. Each branch
+// is asserted through the document's own Djot, which is what a save writes.
+
+/// A view-model over one editor with the caret parked at `position` and
+/// nothing selected — the shape "the caret is inside a link" needs.
+fn vm_at(text: &str, position: usize) -> (FormatViewModel, RichTextEditor, EditorHandle) {
+    let doc = TextDocument::new();
+    doc.set_djot(text).expect("parse").wait().expect("import");
+    let editor = RichTextEditor::editor(doc);
+    let handle = editor.handle();
+    handle.select_range(position, position);
+    let h = handle.clone();
+    let vm = FormatViewModel::new(Rc::new(move || (Some(h.clone()), FormatSurface::Scene)));
+    (vm, editor, handle)
+}
+
+#[test]
+fn linking_a_selection_wraps_exactly_it() {
+    let (vm, _editor, handle) = vm_at("Read the manual today", 0);
+    handle.select_range(9, 15);
+
+    vm.apply_link("manual", "https://example.com");
+
+    assert_eq!(
+        handle.to_djot().trim(),
+        "Read the [manual](https://example.com) today"
+    );
+}
+
+#[test]
+fn linking_keeps_formatting_already_on_the_words() {
+    // The reason the link is applied as a format rather than by reinserting
+    // the text: retyping the words would drop the italic they carry.
+    let (vm, _editor, handle) = vm_at("Read the _manual_ today", 0);
+    handle.select_range(9, 15);
+
+    vm.apply_link("manual", "https://example.com");
+
+    assert_eq!(
+        handle.to_djot().trim(),
+        "Read the _[manual](https://example.com)_ today"
+    );
+}
+
+#[test]
+fn linking_at_a_bare_caret_inserts_the_name() {
+    let (vm, _editor, handle) = vm_at("Read  today", 5);
+
+    vm.apply_link("the manual", "https://example.com");
+
+    assert_eq!(
+        handle.to_djot().trim(),
+        "Read [the manual](https://example.com) today"
+    );
+}
+
+#[test]
+fn editing_a_links_destination_leaves_its_words_alone() {
+    let (vm, _editor, handle) = vm_at("Read [the manual](https://old.example) today", 10);
+
+    // The caret is inside the link and the name is unchanged, so this is a
+    // pure format merge — no text is rewritten.
+    vm.apply_link("the manual", "https://new.example");
+
+    assert_eq!(
+        handle.to_djot().trim(),
+        "Read [the manual](https://new.example) today"
+    );
+}
+
+#[test]
+fn renaming_a_link_replaces_only_its_own_words() {
+    let (vm, _editor, handle) = vm_at("Read [the manual](https://example.com) today", 10);
+
+    vm.apply_link("the handbook", "https://example.com");
+
+    assert_eq!(
+        handle.to_djot().trim(),
+        "Read [the handbook](https://example.com) today"
+    );
+}
+
+#[test]
+fn editing_a_link_split_by_a_mark_rewrites_the_whole_link() {
+    // The extent has to coalesce across the runs the italic split the link
+    // into, or a rename would rewrite one fragment and leave the rest linked.
+    let (vm, _editor, handle) = vm_at("Read [the _long_ manual](https://example.com) now", 12);
+
+    vm.apply_link("the handbook", "https://example.com");
+
+    assert_eq!(
+        handle.to_djot().trim(),
+        "Read [the handbook](https://example.com) now"
+    );
+}
+
+#[test]
+fn removing_a_link_keeps_its_words() {
+    let (vm, _editor, handle) = vm_at("Read [the manual](https://example.com) today", 10);
+
+    vm.remove_link();
+
+    assert_eq!(handle.to_djot().trim(), "Read the manual today");
+}
+
+#[test]
+fn the_link_mirror_reports_whether_the_caret_is_on_one() {
+    let (vm, _editor, handle) = vm_at("Read [the manual](https://example.com) today", 10);
+    vm.refresh();
+    assert!(vm.link().get(), "the caret is inside the link");
+
+    handle.select_range(1, 1);
+    vm.refresh();
+    assert!(!vm.link().get(), "the caret is out in plain prose");
+}
+
+#[test]
+fn the_link_request_pre_fills_from_the_link_under_the_caret() {
+    let (vm, _editor, _handle) = vm_at("Read [the manual](https://example.com) today", 10);
+
+    let req = vm.link_request().expect("an editor is focused");
+    assert_eq!(req.name, "the manual");
+    assert_eq!(req.href, "https://example.com");
+    assert!(
+        req.editing,
+        "an existing link is an edit, and offers removal"
+    );
+}
+
+#[test]
+fn the_link_request_pre_fills_from_the_selection_when_there_is_no_link() {
+    let (vm, _editor, handle) = vm_at("Read the manual today", 0);
+    handle.select_range(9, 15);
+
+    let req = vm.link_request().expect("an editor is focused");
+    assert_eq!(req.name, "manual", "the selected words become the name");
+    assert!(req.href.is_empty());
+    assert!(!req.editing, "a fresh link offers no removal");
+}
+
+#[test]
+fn clearing_formatting_takes_the_link_off_too() {
+    // "Plain prose" means plain: a link left behind by Clear formatting would
+    // be a surprise, and the writer has no other way to reach it from there.
+    let (vm, _editor, handle) = vm_at("Read [the manual](https://example.com) today", 10);
+
+    vm.clear_formatting();
+
+    assert_eq!(handle.to_djot().trim(), "Read the manual today");
+}
