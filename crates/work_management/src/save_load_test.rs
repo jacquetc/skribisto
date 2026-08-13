@@ -104,7 +104,11 @@ fn item(
 }
 
 /// Two binders covering scene/note/folder/title items with prose + titles.
-fn sample_bundle() -> WorkBundle {
+///
+/// `pub(crate)` so the unit tests in [`crate::bundle_contributors`] can
+/// fingerprint a manuscript that actually has one, rather than growing a second
+/// fixture that would drift away from this one.
+pub(crate) fn sample_bundle() -> WorkBundle {
     use BinderItemRole::*;
     use BinderItemSubRole::*;
     use ContentRole::*;
@@ -2982,7 +2986,7 @@ fn an_unmodelled_file_survives_a_real_save_work() {
 /// don't save" and has no error anywhere to explain it.
 #[test]
 fn a_bundle_contributor_writes_into_the_project_and_beats_the_stale_copy() {
-    use crate::bundle_contributors::{BundleContributor, register};
+    use crate::bundle_contributors::{BundleContributor, SaveContext, register};
     use std::collections::BTreeMap;
 
     let mut bundle = sample_bundle();
@@ -3009,9 +3013,9 @@ fn a_bundle_contributor_writes_into_the_project_and_beats_the_stale_copy() {
     /// would leak files into unrelated tests' bundles.
     struct OneProject(String);
     impl BundleContributor for OneProject {
-        fn files(&self, work_unique_id: &str) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+        fn files(&self, ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
             let mut out = BTreeMap::new();
-            if work_unique_id == self.0 {
+            if ctx.work_unique_id == self.0 {
                 out.insert("ext/data.ron".to_string(), b"(live)".to_vec());
             }
             Ok(out)
@@ -3047,6 +3051,162 @@ fn a_bundle_contributor_writes_into_the_project_and_beats_the_stale_copy() {
         std::fs::read(project.join("ext/data.ron")).ok().as_deref(),
         Some(b"(live)".as_slice()),
         "the contributor's current state must win over the copy read off disk"
+    );
+}
+
+/// **What a save tells its contributors, on the real write paths.**
+///
+/// Three claims, asserted together because each is worth little alone:
+///
+/// 1. Every write says *which* write it was, so a contributor can tell the
+///    writer pressing save from a scheduled backup copying a state they had
+///    already reached. Nothing exercised that fork before this test.
+/// 2. Two saves of an unedited manuscript carry the **same** fingerprint, a
+///    backup of it carries that same one again — despite being written as a zip
+///    where the project is a folder — and one edit moves it.
+/// 3. All of that holds while a *second* contributor writes different bytes on
+///    every single call.
+///
+/// The third is the ordering claim and only the real path can make it: save #2's
+/// `carry::load` reads the file save #1's contributor left on disk, so a
+/// fingerprint taken after that read folds an extension's churn into "did the
+/// book change?" and answers yes forever after. The unit tests in
+/// `bundle_contributors` can only simulate that merge; this one lives it.
+#[test]
+fn every_write_tells_its_contributors_which_write_it_is_and_what_the_book_says() {
+    use crate::bundle_contributors::{BundleContributor, SaveContext, register};
+    use crate::lifecycle::SaveKind;
+    use std::collections::BTreeMap;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    // A uid this test alone owns: the registry is process-wide and tests run in
+    // parallel, so anything wider writes files into a sibling's bundle.
+    let uid = "save-context-uid";
+    let (dir, path) = write_sample_with_uid(uid);
+
+    /// Different bytes on every call. The point of it is to be invisible to the
+    /// contributor beside it.
+    struct EverChanging(String, AtomicU64);
+    impl BundleContributor for EverChanging {
+        fn files(&self, ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+            if ctx.work_unique_id != self.0 {
+                return Ok(BTreeMap::new());
+            }
+            let n = self.1.fetch_add(1, Ordering::Relaxed);
+            Ok(BTreeMap::from([(
+                "ext/churn.ron".to_string(),
+                format!("(call: {n})").into_bytes(),
+            )]))
+        }
+    }
+
+    /// Writes nothing; just records what it was told.
+    struct Watch(String, std::sync::Mutex<Vec<(SaveKind, String)>>);
+    impl BundleContributor for Watch {
+        fn files(&self, ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+            if ctx.work_unique_id == self.0 {
+                self.1
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push((ctx.kind, ctx.manuscript_fingerprint.clone()));
+            }
+            Ok(BTreeMap::new())
+        }
+    }
+
+    let watch = Arc::new(Watch(uid.to_string(), std::sync::Mutex::new(Vec::new())));
+    let _churn = register(
+        "test.ctx.churn",
+        Arc::new(EverChanging(uid.to_string(), AtomicU64::new(0))),
+    );
+    let _watch = register("test.ctx.watch", watch.clone());
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.clone(),
+        },
+    )
+    .expect("load");
+    let work_id = live_work_id(&db);
+
+    let save = |label: &str| {
+        SaveWorkUseCase::new(
+            Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+            &SaveWorkDto {
+                media_root: String::new(),
+                work_id,
+                file_name: path.clone(),
+                overwrite: true,
+            },
+        )
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .unwrap_or_else(|e| panic!("{label}: {e}"));
+    };
+
+    save("first save");
+    save("second save, nothing edited");
+
+    let dest = dir.path().join("backups");
+    std::fs::create_dir_all(&dest).unwrap();
+    BackupNowUseCase::new(
+        Box::new(BackupNowUnitOfWorkFactory::new(&db, &hub)),
+        &plain_backup_dto(work_id, vec![dest.to_str().unwrap().to_string()], vec![]),
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("backup");
+
+    // One real edit, straight into the live store — the simplest change that is
+    // unambiguously *content* rather than bookkeeping.
+    {
+        let store = db.get_store();
+        let mut works = store.works.write().unwrap();
+        let mut w = works.get(&work_id).unwrap().clone();
+        w.title = "The Lighthouse, Revised".into();
+        works.insert(work_id, w);
+    }
+    save("save after an edit");
+
+    let seen = watch.1.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    assert_eq!(
+        seen.iter().map(|(k, _)| *k).collect::<Vec<_>>(),
+        vec![
+            SaveKind::Save,
+            SaveKind::Save,
+            SaveKind::Backup,
+            SaveKind::Save
+        ],
+        "each write path must name itself, and a backup must fire exactly once"
+    );
+    let fp: Vec<&String> = seen.iter().map(|(_, f)| f).collect();
+    assert_eq!(
+        fp[0], fp[1],
+        "a second save of an unedited manuscript must fingerprint identically, even though \
+         an extension wrote different bytes into the bundle in between"
+    );
+    assert_eq!(
+        fp[1], fp[2],
+        "a backup is a copy of the same book: being written as a zip where the project is a \
+         folder is not an edit"
+    );
+    assert_ne!(
+        fp[2], fp[3],
+        "one word changed in the manuscript must move the fingerprint"
+    );
+    // …and the churn really did reach disk, or the test above proved nothing.
+    let churned = skrib::read_bundle(&path).expect("reread the project");
+    assert_eq!(
+        churned
+            .carried
+            .get("ext/churn.ron")
+            .map(|f| f.bytes.as_slice()),
+        Some(&b"(call: 3)"[..]),
+        "the fourth call's bytes are what the last save wrote, so every earlier save wrote \
+         a different file and the fingerprints above were compared across real churn"
     );
 }
 
@@ -3294,7 +3454,7 @@ fn a_backup_fires_one_saved_per_destination_written() {
 /// every backup, and restoring one wiped it from the project.
 #[test]
 fn a_backup_carries_unmodelled_files_and_the_contributors_current_state() {
-    use crate::bundle_contributors::{BundleContributor, register};
+    use crate::bundle_contributors::{BundleContributor, SaveContext, register};
     use std::collections::BTreeMap;
 
     let uid = "backup-carry-uid";
@@ -3309,9 +3469,9 @@ fn a_backup_carries_unmodelled_files_and_the_contributors_current_state() {
 
     struct OneProject(String);
     impl BundleContributor for OneProject {
-        fn files(&self, work_unique_id: &str) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+        fn files(&self, ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
             let mut out = BTreeMap::new();
-            if work_unique_id == self.0 {
+            if ctx.work_unique_id == self.0 {
                 out.insert("ext/live.ron".to_string(), b"(from memory)".to_vec());
             }
             Ok(out)

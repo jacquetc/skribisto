@@ -287,6 +287,17 @@ fn run_backup(
         &g.binders,
         ShapeTag::Zip,
     );
+    // ⚠ Asked here, merged below — the same deliberate gap as
+    // `work_io::serialize_and_write`, and for the same reason: `bundle` is the
+    // manuscript and nothing else exactly once, between `from_entities` and the
+    // two lines that fill `carried`. `SaveKind::Backup` is what lets a
+    // contributor tell this write apart from the writer pressing save.
+    let contributed = crate::bundle_contributors::collect(
+        &bundle,
+        &unique_id,
+        crate::lifecycle::SaveKind::Backup,
+    );
+
     // Files the format does not model travel with the project on **every** write
     // path — including this one, which builds its bundle by hand instead of going
     // through `work_io::serialize_and_write` and so had neither half of the pair.
@@ -300,7 +311,7 @@ fn run_backup(
     // exactly this reason, so a project whose only change is an extension's own
     // data is not skipped as unchanged.
     bundle.carried = skrib::carry::load(&source);
-    for (path, bytes) in crate::bundle_contributors::collect(&unique_id) {
+    for (path, bytes) in contributed {
         bundle.carried.insert(path, skrib::CarriedFile::new(bytes));
     }
 

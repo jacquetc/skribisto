@@ -287,11 +287,19 @@ pub struct ProjectStoreContributor<T> {
 }
 
 impl<T: Send + Sync> crate::bundle_contributors::BundleContributor for ProjectStoreContributor<T> {
-    fn files(&self, work_unique_id: &str) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+    /// Ignores everything in the context but the project id, deliberately: a
+    /// store's contents are whatever the UI last put there, and writing them out
+    /// is the same act whether the writer saved, saved-as or a backup ran. A
+    /// contributor that *does* care which write this is — one recording history,
+    /// say — wants its own implementation, not a flag here.
+    fn files(
+        &self,
+        ctx: &crate::bundle_contributors::SaveContext,
+    ) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
         let mut out = BTreeMap::new();
         if let Some(bytes) = self
             .store
-            .with_by_uid(work_unique_id, |value| (self.serialize)(value))
+            .with_by_uid(&ctx.work_unique_id, |value| (self.serialize)(value))
             .transpose()?
         {
             out.insert(self.path.to_string(), bytes);
@@ -303,7 +311,7 @@ impl<T: Send + Sync> crate::bundle_contributors::BundleContributor for ProjectSt
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bundle_contributors::BundleContributor;
+    use crate::bundle_contributors::{BundleContributor, SaveContext};
 
     #[derive(Clone, Debug, Default, PartialEq, Eq)]
     struct Plan {
@@ -389,7 +397,11 @@ mod tests {
             store: store.clone(),
             serialize,
         };
-        assert!(c.files("uid-never-opened").unwrap().is_empty());
+        assert!(
+            c.files(&SaveContext::for_project("uid-never-opened"))
+                .unwrap()
+                .is_empty()
+        );
     }
 
     /// …but a project whose value was *emptied* still writes, or the removal
@@ -408,7 +420,7 @@ mod tests {
             store: store.clone(),
             serialize,
         };
-        let files = c.files("uid-a").unwrap();
+        let files = c.files(&SaveContext::for_project("uid-a")).unwrap();
         assert_eq!(
             files.get("test/plan.txt").map(Vec::as_slice),
             Some(&b""[..])
@@ -432,11 +444,17 @@ mod tests {
             serialize,
         };
         assert_eq!(
-            c.files("uid-a").unwrap().get("test/plan.txt").unwrap(),
+            c.files(&SaveContext::for_project("uid-a"))
+                .unwrap()
+                .get("test/plan.txt")
+                .unwrap(),
             b"a"
         );
         assert_eq!(
-            c.files("uid-b").unwrap().get("test/plan.txt").unwrap(),
+            c.files(&SaveContext::for_project("uid-b"))
+                .unwrap()
+                .get("test/plan.txt")
+                .unwrap(),
             b"b"
         );
     }

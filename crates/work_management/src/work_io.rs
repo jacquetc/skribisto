@@ -257,6 +257,15 @@ pub fn serialize_and_write(
         &g.binders,
         shape_tag,
     );
+    // ⚠ **Asked here, merged below, and the gap between the two is deliberate.**
+    // A contributor is handed a fingerprint of the manuscript, and `bundle` is
+    // the manuscript exactly once in this function: right now, between
+    // `from_entities` (which leaves `carried` empty) and the two lines below
+    // that fill it. Ask after either of them and a contributor's own bytes are
+    // inside the hash it is given, so an extension whose file differs on every
+    // save makes every save look like an edit to the book.
+    let contributed = crate::bundle_contributors::collect(&bundle, &g.work.unique_id, kind);
+
     // Files the format does not model travel with the project, on every write
     // path. Read from the *source* bundle, never the target: `save_as` and
     // `backup_now` must bring the original's unmodelled files with them, and
@@ -267,13 +276,13 @@ pub fn serialize_and_write(
     // write path forgetting the call is how a writer loses data silently.
     bundle.carried = skrib::carry::load(history.source());
 
-    // Registered contributors then have their say, **after** the on-disk read
-    // and overriding it. Order matters and this is the only correct one: what a
-    // contributor holds in memory is current, what `carry::load` found on disk
-    // is whatever the last save left there. Reading disk second would write the
-    // stale copy back over every live change, which is the exact bug this hook
-    // exists to prevent.
-    for (path, bytes) in crate::bundle_contributors::collect(&g.work.unique_id) {
+    // The contributors' files then land **over** the on-disk read. That
+    // direction is the whole point of the hook and is the only correct one:
+    // what a contributor holds in memory is current, what `carry::load` found
+    // on disk is whatever the last save left there. Merging disk second would
+    // write the stale copy back over every live change, which is the exact bug
+    // this hook exists to prevent.
+    for (path, bytes) in contributed {
         bundle.carried.insert(path, skrib::CarriedFile::new(bytes));
     }
 
