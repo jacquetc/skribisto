@@ -44,19 +44,22 @@
 //! ## What a contributor is told
 //!
 //! [`SaveContext`](crate::bundle_contributors::SaveContext) — which project,
-//! *which kind of write*, and a fingerprint of
-//! the manuscript as the store produced it. The last two exist because "write a
-//! file into the bundle" and "notice that the book changed" are different
-//! questions, and a contributor that had to answer the second from the first
-//! could only do it by re-reading the project off disk on every save.
+//! *which kind of write*, and a fingerprint of the manuscript. The last two exist
+//! because "write a file into the bundle" and "notice that the book changed" are
+//! different questions, and a contributor that had to answer the second from the
+//! first could only do it by re-reading the project off disk on every save.
 //!
-//! The fingerprint is taken at the **one** moment in a write where the bundle is
-//! the manuscript and nothing else: after the store has been mapped into a
-//! bundle, and before either the on-disk carried files or any contributor's own
-//! output has been merged in. That ordering is what stops the obvious
-//! circularity — a contributor whose output is derived from the fingerprint
-//! would otherwise change the fingerprint it is derived from, and no two
-//! consecutive saves of an untouched manuscript would ever agree.
+//! [`manuscript_fingerprint`](crate::bundle_contributors::manuscript_fingerprint)
+//! excludes `carried` outright, which is what closes the obvious circularity: a
+//! contributor's own output is in `carried`, so a contributor whose bytes differ
+//! on every save cannot move the number it is judging the book by. Without that
+//! exclusion no two consecutive saves of an untouched manuscript would ever
+//! agree, and every downstream "has this changed?" would answer yes forever.
+//!
+//! It is a free function, not a private step inside the write path, because a
+//! contributor keeping a record across sessions has to ask the same question of
+//! a bundle read straight off disk when a project *opens*. Two implementations of
+//! "the manuscript's fingerprint" would disagree for reasons nobody could see.
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, LazyLock, RwLock};
@@ -78,15 +81,14 @@ pub struct SaveContext {
     /// copy of a state the writer already reached, and a save-as is the same
     /// manuscript under a new name.
     pub kind: crate::lifecycle::SaveKind,
-    /// blake3 hex of the manuscript **as the store produced it** — before the
-    /// bundle's carried files, and before any contributor's own output,
+    /// blake3 hex of the manuscript, from
+    /// [`manuscript_fingerprint`]
+    /// — carried files excluded, so no contributor's own output is in it,
     /// including this one's.
     ///
     /// Equal across two writes of an unchanged manuscript and different after
     /// any edit, so a contributor can answer "did the book change since I last
-    /// looked?" without re-reading the project. `manifest.shape` is
-    /// canonicalised out of it, so a backup (always written as a zip) and a save
-    /// of a folder project agree.
+    /// looked?" without re-reading the project.
     ///
     /// Not a substitute for the format's own
     /// [`content_fingerprint`](skrib_format::content_fingerprint): that one
@@ -194,12 +196,42 @@ pub fn has_contributors() -> bool {
         .is_empty()
 }
 
+/// The manuscript's fingerprint: what a save puts in
+/// [`SaveContext::manuscript_fingerprint`], as a function anything can call.
+///
+/// Public because the save is not the only place the question comes up. A
+/// contributor that keeps a record across sessions has to ask it again when a
+/// project *opens* — against the bundle
+/// [`skrib_format::read_bundle`] just returned — to
+/// find out whether the book moved while this build was not watching. Two
+/// separate implementations of "the manuscript's fingerprint" would answer
+/// differently for reasons nobody could see, so there is one.
+///
+/// **`carried` is excluded and `manifest.shape` is canonicalised.** The first is
+/// what makes it *the manuscript* rather than the bundle: a contributor's own
+/// bytes, and any file this build does not model, are not the book. The second
+/// is because `backup_now_uc` writes every backup as a zip whatever the project
+/// is, and a shape conversion is not an edit.
+///
+/// Equal across two writes of an unchanged manuscript, across a save and a
+/// backup of it, and across closing the project and opening it again — that last
+/// one despite every `file_id` in the bundle being a store id re-minted by each
+/// load. `save_load_test::the_fingerprint_survives_a_close_and_a_reopen` is what
+/// holds that.
+pub fn manuscript_fingerprint(bundle: &skrib_format::WorkBundle) -> String {
+    let mut manuscript = bundle.clone();
+    manuscript.carried.clear();
+    manuscript.manifest.shape = skrib_format::ShapeTag::Zip;
+    skrib_format::content_fingerprint(&manuscript)
+}
+
 /// Everything the registered contributors want written for this project.
 ///
-/// `bundle` must be the manuscript **as the store produced it** — no carried
-/// files, no contributor output. `from_entities` returns exactly that, and the
-/// only correct call site is between it and the point where anything is merged
-/// in. See [`SaveContext::manuscript_fingerprint`] for what depends on it.
+/// Called with the bundle as the store produced it, before `carry::load` — not
+/// because the fingerprint depends on it (`manuscript_fingerprint` drops
+/// `carried` whenever it is asked) but because cloning a bundle that has not yet
+/// picked up a project's unmodelled files is cheaper, and the write paths have
+/// nothing to gain from asking later.
 ///
 /// Never returns an error and never panics: a contributor that fails, or that
 /// claims a path belonging to the manuscript, is skipped with a message on
@@ -218,24 +250,12 @@ pub(crate) fn collect(
         return out;
     }
 
-    // Canonicalise the one field that differs between write paths for the same
-    // manuscript: `backup_now_uc` hard-codes `ShapeTag::Zip` whatever the
-    // project's own shape is, and `manifest.shape` is serialised, so without
-    // this a folder project's save and its backup never agree. The field is
-    // documented as informational — the real shape is the physical layout — so
-    // neutralising it here loses nothing. The clone is what keeps this out of
-    // `strip_volatile`, where it would move every existing project's content
-    // fingerprint and re-trigger a full backup cascade on the next save.
-    //
-    // Scoped so the copy is gone before any extension code runs.
-    let ctx = {
-        let mut manuscript = bundle.clone();
-        manuscript.manifest.shape = skrib_format::ShapeTag::Zip;
-        SaveContext {
-            work_unique_id: work_unique_id.to_string(),
-            kind,
-            manuscript_fingerprint: skrib_format::content_fingerprint(&manuscript),
-        }
+    // Scoped so the copy `manuscript_fingerprint` makes is gone before any
+    // extension code runs.
+    let ctx = SaveContext {
+        work_unique_id: work_unique_id.to_string(),
+        kind,
+        manuscript_fingerprint: manuscript_fingerprint(bundle),
     };
 
     let reg = REGISTRY.read().unwrap_or_else(|e| e.into_inner());
@@ -478,40 +498,49 @@ mod tests {
         );
     }
 
-    /// **Why the call site is a rule and not a preference.**
+    /// **The circularity, closed by exclusion rather than by call order.**
     ///
-    /// The fingerprint covers whatever bundle it is handed, carried files
-    /// included — `CarriedFile` serialises its digest precisely so an
-    /// extension's own data cannot slip past a content hash unnoticed, and
-    /// backup skip-if-unchanged depends on that. Which is exactly why `collect`
-    /// may only be called while `carried` is still empty: pass it a bundle that
-    /// has already been merged and a contributor writing different bytes every
-    /// save makes every save look like an edit to the book, forever.
+    /// An extension's own bytes live in `carried`, and the format's
+    /// `content_fingerprint` sees them on purpose — `CarriedFile` serialises its
+    /// digest so backup skip-if-unchanged cannot skip a project whose only
+    /// change is an extension's data. Feed that number back to the extension as
+    /// "did the book change?" and a contributor writing different bytes every
+    /// save makes every save look like an edit the writer never made, forever,
+    /// with nothing downstream able to tell it apart from typing.
     ///
-    /// So this test asserts the sharp edge rather than pretending it is not
-    /// there. That the real write paths stay on the right side of it is what
-    /// `save_load_test::every_write_tells_its_contributors_which_write_it_is_and_what_the_book_says`
-    /// proves, and only it can: the merge that would poison the next call goes
-    /// through the file on disk.
+    /// So the manuscript fingerprint drops `carried` whenever it is asked, and
+    /// the property holds wherever the question is put — mid-save, at open, or
+    /// from a test like this one.
     #[test]
-    fn a_carried_file_would_reach_the_fingerprint_if_one_were_ever_present() {
-        let rec = Recording::watching("uid-carried");
-        let _h = register("test.carried", rec.clone());
-
+    fn a_contributors_own_output_cannot_reach_the_fingerprint() {
         let clean = bundle("untouched");
         let mut merged = clean.clone();
         merged.carried.insert(
             "ext/churn.ron".to_string(),
             skrib_format::CarriedFile::new(b"(call: 1)".to_vec()),
         );
+        let mut again = clean.clone();
+        again.carried.insert(
+            "ext/churn.ron".to_string(),
+            skrib_format::CarriedFile::new(b"(call: 2)".to_vec()),
+        );
 
-        let _ = collect(&clean, "uid-carried", SaveKind::Save);
-        let _ = collect(&merged, "uid-carried", SaveKind::Save);
-        let f = rec.fingerprints();
+        assert_eq!(
+            manuscript_fingerprint(&clean),
+            manuscript_fingerprint(&merged),
+            "an extension's file is not part of the book"
+        );
+        assert_eq!(
+            manuscript_fingerprint(&merged),
+            manuscript_fingerprint(&again),
+            "…and neither is a changed one"
+        );
+        // The format's own hash still sees it, which is the property backups need
+        // and the reason these two must be different functions.
         assert_ne!(
-            f[0], f[1],
-            "an extension's bytes must be visible to a content hash — a `collect` called \
-             after the merge would therefore report an edit the writer never made"
+            skrib_format::content_fingerprint(&clean),
+            skrib_format::content_fingerprint(&merged),
+            "backup skip-if-unchanged must never skip a project whose extension data moved"
         );
     }
 }

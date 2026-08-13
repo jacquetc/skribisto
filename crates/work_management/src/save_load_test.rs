@@ -3210,6 +3210,156 @@ fn every_write_tells_its_contributors_which_write_it_is_and_what_the_book_says()
     );
 }
 
+/// **The fingerprint has to survive closing the project and opening it again**,
+/// or it answers a question no extension asked.
+///
+/// The obvious doubt: every `*File` row carries a `file_id`, which is the store's
+/// `EntityId` **at save time** and is re-minted by every `load_work`. If those
+/// landed differently on the second load, a manuscript nobody edited would
+/// fingerprint anew on the first save of every session — and anything comparing
+/// against a stored value would read that as a change the writer never made,
+/// once per session, forever.
+#[test]
+fn the_fingerprint_survives_a_close_and_a_reopen() {
+    use crate::bundle_contributors::{BundleContributor, SaveContext, register};
+    use std::collections::BTreeMap;
+
+    let uid = "reopen-fingerprint-uid";
+    let (_dir, path) = write_sample_with_uid(uid);
+
+    struct Watch(String, std::sync::Mutex<Vec<String>>);
+    impl BundleContributor for Watch {
+        fn files(&self, ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+            if ctx.work_unique_id == self.0 {
+                self.1
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push(ctx.manuscript_fingerprint.clone());
+            }
+            Ok(BTreeMap::new())
+        }
+    }
+    let watch = Arc::new(Watch(uid.to_string(), std::sync::Mutex::new(Vec::new())));
+    let _h = register("test.reopen", watch.clone());
+
+    // Two whole store lifetimes, which is what a close and a reopen amount to:
+    // fresh entity ids, materialised from the file all over again.
+    for _session in 0..2 {
+        let db = DbContext::new().unwrap();
+        let hub = Arc::new(EventHub::new());
+        work_management_controller::load_work(
+            &db,
+            &hub,
+            &LoadWorkDto {
+                media_root: String::new(),
+                file_name: path.clone(),
+            },
+        )
+        .expect("load");
+        SaveWorkUseCase::new(
+            Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+            &SaveWorkDto {
+                media_root: String::new(),
+                work_id: live_work_id(&db),
+                file_name: path.clone(),
+                overwrite: true,
+            },
+        )
+        .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+        .expect("save");
+    }
+
+    let fp = watch.1.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    assert_eq!(fp.len(), 2, "one save per session");
+    assert_eq!(
+        fp[0], fp[1],
+        "closing a project and opening it again is not an edit to the book"
+    );
+}
+
+/// **The same number, asked of the file instead of the store.**
+///
+/// A contributor keeping a record across sessions has to find out, when a
+/// project *opens*, whether the book moved while this build was not watching.
+/// The only thing it has to ask is the bundle `read_bundle` just returned — so
+/// that has to give the same answer a save gives, or the check reports a change
+/// at the start of every session and there is no way to tell a real one from the
+/// noise.
+///
+/// The file on disk always has `carried` populated (an extension's own data, at
+/// minimum) where the store's bundle does not, which is exactly why
+/// `manuscript_fingerprint` drops it rather than leaving that to a caller who
+/// might forget.
+#[test]
+fn the_fingerprint_is_the_same_asked_of_the_saved_file() {
+    use crate::bundle_contributors::{
+        BundleContributor, SaveContext, manuscript_fingerprint, register,
+    };
+    use std::collections::BTreeMap;
+
+    let uid = "reread-fingerprint-uid";
+    let (_dir, path) = write_sample_with_uid(uid);
+
+    /// Writes a file of its own, so the saved bundle has something in `carried`
+    /// that the store's bundle never had.
+    struct WatchAndWrite(String, std::sync::Mutex<Vec<String>>);
+    impl BundleContributor for WatchAndWrite {
+        fn files(&self, ctx: &SaveContext) -> anyhow::Result<BTreeMap<String, Vec<u8>>> {
+            if ctx.work_unique_id != self.0 {
+                return Ok(BTreeMap::new());
+            }
+            self.1
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .push(ctx.manuscript_fingerprint.clone());
+            Ok(BTreeMap::from([(
+                "ext/record.ron".to_string(),
+                b"(a record of some kind)".to_vec(),
+            )]))
+        }
+    }
+    let watch = Arc::new(WatchAndWrite(
+        uid.to_string(),
+        std::sync::Mutex::new(Vec::new()),
+    ));
+    let _h = register("test.reread", watch.clone());
+
+    let db = DbContext::new().unwrap();
+    let hub = Arc::new(EventHub::new());
+    work_management_controller::load_work(
+        &db,
+        &hub,
+        &LoadWorkDto {
+            media_root: String::new(),
+            file_name: path.clone(),
+        },
+    )
+    .expect("load");
+    SaveWorkUseCase::new(
+        Box::new(SaveWorkUnitOfWorkFactory::new(&db, &hub)),
+        &SaveWorkDto {
+            media_root: String::new(),
+            work_id: live_work_id(&db),
+            file_name: path.clone(),
+            overwrite: true,
+        },
+    )
+    .execute(Box::new(|_| {}), Arc::new(AtomicBool::new(false)))
+    .expect("save");
+
+    let told = watch.1.lock().unwrap_or_else(|e| e.into_inner())[0].clone();
+    let from_disk = skrib::read_bundle(&path).expect("reread the project");
+    assert!(
+        from_disk.carried.contains_key("ext/record.ron"),
+        "the contributor's file must really be in the bundle, or this proves nothing"
+    );
+    assert_eq!(
+        manuscript_fingerprint(&from_disk),
+        told,
+        "the fingerprint of the saved file must be the one the save handed out"
+    );
+}
+
 // ── The lifecycle hook (`crate::lifecycle`) through the real use cases ───────
 
 /// A listener scoped to **one** project. The registry is process-wide and tests

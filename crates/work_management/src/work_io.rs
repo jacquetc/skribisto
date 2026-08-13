@@ -257,13 +257,12 @@ pub fn serialize_and_write(
         &g.binders,
         shape_tag,
     );
-    // ⚠ **Asked here, merged below, and the gap between the two is deliberate.**
-    // A contributor is handed a fingerprint of the manuscript, and `bundle` is
-    // the manuscript exactly once in this function: right now, between
-    // `from_entities` (which leaves `carried` empty) and the two lines below
-    // that fill it. Ask after either of them and a contributor's own bytes are
-    // inside the hash it is given, so an extension whose file differs on every
-    // save makes every save look like an edit to the book.
+    // Asked here, merged below. The gap is only an economy: `collect` clones the
+    // bundle to fingerprint it, and doing that before `carry::load` means not
+    // copying a project's unmodelled files for nothing. Correctness does not
+    // rest on it — `manuscript_fingerprint` drops `carried` wherever it is asked,
+    // which is what stops an extension's own bytes from looking like an edit to
+    // the book.
     let contributed = crate::bundle_contributors::collect(&bundle, &g.work.unique_id, kind);
 
     // Files the format does not model travel with the project, on every write

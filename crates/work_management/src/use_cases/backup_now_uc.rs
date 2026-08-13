@@ -287,11 +287,11 @@ fn run_backup(
         &g.binders,
         ShapeTag::Zip,
     );
-    // ⚠ Asked here, merged below — the same deliberate gap as
-    // `work_io::serialize_and_write`, and for the same reason: `bundle` is the
-    // manuscript and nothing else exactly once, between `from_entities` and the
-    // two lines that fill `carried`. `SaveKind::Backup` is what lets a
-    // contributor tell this write apart from the writer pressing save.
+    // Asked here, merged below — the same shape as `work_io::serialize_and_write`
+    // and for the same reason: `collect` clones the bundle to fingerprint it, so
+    // asking before `carry::load` avoids copying a project's unmodelled files for
+    // nothing. `SaveKind::Backup` is what lets a contributor tell this write apart
+    // from the writer pressing save.
     let contributed = crate::bundle_contributors::collect(
         &bundle,
         &unique_id,
