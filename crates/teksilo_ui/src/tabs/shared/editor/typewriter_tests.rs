@@ -67,8 +67,9 @@ fn column_with_document_and(
         None,
         None,
         None,
-        // No project around this tree, so no footnote binding and no image
-        // source.
+        // No project around this tree, so no footnote binding, no image
+        // source, and no project to tally typing against.
+        None,
         None,
         None,
         // Editable: this fixture is a normal, untrashed surface.

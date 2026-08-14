@@ -84,7 +84,9 @@ fn column_with(
         // No project around this tree, so no comment binding: the margin
         // collapses to nothing and the column lays out on its own.
         None,
-        // …nor a footnote binding, nor an image source, for the same reason.
+        // …nor a footnote binding, an image source, or a project to tally
+        // typing against, for the same reason.
+        None,
         None,
         None,
         read_only,
@@ -184,6 +186,8 @@ fn prose_column_playing(
         None,
         None,
         None,
+        None,
+        // No project around this tree to tally typing against.
         None,
         false,
     );
@@ -285,6 +289,8 @@ fn a_game_stops_typing_and_not_the_programmatic_api() {
         None,
         None,
         None,
+        None,
+        // No project around this tree to tally typing against.
         None,
         false,
     );
