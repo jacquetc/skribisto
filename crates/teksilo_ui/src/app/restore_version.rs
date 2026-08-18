@@ -145,7 +145,14 @@ pub fn restore_version(
                     // filling it in, so the wrong one bleeds undo across Works
                     // and `None` leaks into the never-cleared global stack 0.
                     let stack = stack_id.get();
-                    if let Err(e) = version_restore::apply(&docs, item_id, &target, &past, stack) {
+                    if let Err(e) = version_restore::apply(
+                        &docs,
+                        item_id,
+                        &target,
+                        &past,
+                        stack,
+                        editors.work_unique_id().as_deref(),
+                    ) {
                         return refuse(c, e);
                     }
                     // Immediately, not on the autosave debounce.

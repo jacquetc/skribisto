@@ -1095,6 +1095,23 @@ impl EditorsViewModel {
     /// follow-up instead of starting a second op — two ops write the same path
     /// and their completion order is unspecified, so an older snapshot could
     /// land last and silently regress the file.
+    /// This project's durable `Work.unique_id`, or `None` when it has none.
+    ///
+    /// The same answer, read the same way, as [`crate::tabs::ContentTab::work_unique_id`]:
+    /// through the store off `ids.work_id`, because the uid is set when the
+    /// project is first saved and this view-model long predates that. `None` is
+    /// an **unsaved** project, which is the absence of an identity rather than
+    /// one more identity, and every per-project store in the workspace refuses
+    /// it rather than pooling them.
+    pub fn work_unique_id(&self) -> Option<String> {
+        let work_id = self.ids.work_id.get()?;
+        let uid = frontend::commands::work_commands::get_work(&self.app_ctx, &work_id)
+            .ok()
+            .flatten()?
+            .unique_id;
+        (!uid.is_empty()).then_some(uid)
+    }
+
     pub fn request_save(&self) -> Option<u64> {
         if self.backup_mode.get() {
             return None;

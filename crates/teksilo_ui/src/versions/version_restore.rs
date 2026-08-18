@@ -181,12 +181,33 @@ pub fn content_id_for(doc: &OpenDoc, slot: Slot) -> Option<u64> {
 /// and the explicit flush is what makes the closed case land on disk — `release`
 /// only flushes on the *last* reference, which a row with a visible tab does not
 /// reach.
+/// `work_unique_id` is the project the restored characters belong to, for
+/// [`common::arrival`]. `None` on an unsaved project, which has no durable id
+/// and no tally.
+///
+/// ⚠ **Restoring a version was invisible to arrival counting entirely.** Every
+/// other way text enters a manuscript reports which channel it came through,
+/// because they all go through `RichTextEditor`, whose `on_text_inserted` is
+/// wired to the tally in `tabs::shared::editor`. A restore does not: it writes
+/// straight to a [`TextDocument`] cursor, one layer below any widget, which is
+/// exactly what lets it work on a row with no tab open.
+///
+/// The consequence was a manuscript that could grow by thousands of characters
+/// with every arrival route reading zero. Anything summarising how a text
+/// arrived would show a large unexplained change and nothing to account for it,
+/// which is worse than a rough figure: it is a gap that looks like an answer.
+///
+/// Counted as [`Arrival::Programmatic`](common::arrival::Arrival::Programmatic),
+/// because that is what it is. The application put the text there, at the
+/// writer's request, and it is neither typed nor pasted nor dictated. Folding
+/// it into any of those would be a smaller lie than zero and still a lie.
 pub fn apply(
     docs: &OpenDocsStore,
     item_id: u64,
     target: &ContentRole,
     past: &str,
     stack: Option<u64>,
+    work_unique_id: Option<&str>,
 ) -> Result<(), RestoreRefusal> {
     let Some(slot) = slot_for(target) else {
         return Err(RestoreRefusal::NotEditableText {
@@ -200,6 +221,19 @@ pub fn apply(
         let document = document_for(&doc, slot)
             .ok_or_else(|| anyhow::anyhow!("this row has no {target:?} to restore into"))?;
         replace_all(document, past)?;
+        // The characters as a reader meets them, taken from the document after
+        // the restore rather than from the Djot that produced it: `past` is
+        // markup, and counting its asterisks would report more text than the
+        // row now holds.
+        if let Some(uid) = work_unique_id
+            && let Ok(plain) = document.to_plain_text()
+        {
+            common::arrival::shared().record(
+                uid,
+                common::arrival::Arrival::Programmatic,
+                plain.chars().count() as u64,
+            );
+        }
         // Explicitly, before the release below: a row with an open tab still has
         // references, so `release` would not flush it and the restore would sit
         // in memory until something else happened to save.
@@ -239,6 +273,31 @@ mod tests {
             doc.to_plain_text().unwrap(),
             "What the scene says now.",
             "a single undo must restore the text the writer had, not half of it",
+        );
+    }
+
+    /// **What a restore reports to [`common::arrival`] is the text, not the
+    /// markup.**
+    ///
+    /// `apply` counts the document *after* the write rather than the Djot that
+    /// produced it, and this is why. The two differ by every asterisk in the
+    /// source, so counting `past` would have a restore claim more characters
+    /// than the row actually holds, in a figure that ends up inside a signed
+    /// record. Pinned here because the counting happens one line away from a
+    /// `past` that is right there and reads like the obvious thing to measure.
+    #[test]
+    fn a_restore_counts_the_characters_a_reader_meets_and_not_the_markup() {
+        let doc = TextDocument::new();
+        doc.set_djot_sync("Plain.").unwrap();
+
+        let past = "She said *nothing* at all.";
+        replace_all(&doc, past).unwrap();
+
+        let counted = doc.to_plain_text().unwrap().chars().count();
+        assert_eq!(counted, "She said nothing at all.".chars().count());
+        assert!(
+            counted < past.chars().count(),
+            "the markup must not be counted as text the writer has"
         );
     }
 
