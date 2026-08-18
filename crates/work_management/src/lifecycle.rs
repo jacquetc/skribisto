@@ -231,6 +231,12 @@ pub(crate) fn notify(event: LifecycleEvent) {
         for s in slots {
             s.forget(unique_id);
         }
+        // …and the "an extension changed something off-thread" generation with
+        // them. A Work that is closing has either been written or has been
+        // abandoned deliberately, and both are answers the writer has already
+        // given, so there is nothing here to carry into the next project that
+        // happens to reuse the id.
+        crate::external_changes::forget(unique_id);
     }
 }
 

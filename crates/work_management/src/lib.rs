@@ -9,6 +9,11 @@
 /// backend half of the extension seam.
 pub mod bundle_contributors;
 pub mod dtos;
+/// An extension saying, from a thread that cannot touch a `WorkHandle`, that a
+/// project holds something not yet on disk. The fourth part of the backend
+/// seam, and the one that keeps a Close prompt honest about state the UI never
+/// saw change.
+pub mod external_changes;
 /// Project opened / closed / saved, for code outside this workspace. The third
 /// part of the backend seam, beside `bundle_contributors` and `project_store`.
 pub mod lifecycle;

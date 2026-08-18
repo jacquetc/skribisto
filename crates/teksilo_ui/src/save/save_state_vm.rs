@@ -40,7 +40,7 @@
 //! `max`, never overwritten, so a stale or out-of-order completion can never move
 //! it backwards.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::Instant;
 
@@ -89,6 +89,24 @@ struct Inner {
     /// A `save_work` is in flight (or a follow-up is about to be). Drives every
     /// window's save indicator.
     saving: Signal<bool>,
+    /// The `work_management::external_changes` generation the last completed
+    /// save covered.
+    ///
+    /// The same pair as [`Self::dirty_seq`] and [`Self::saved_seq`], for the
+    /// half of a project's state that this side never sees change. An extension
+    /// whose own work finishes on a worker thread cannot bump `dirty_seq`,
+    /// because a `Signal` is `Rc`-backed and belongs to this thread; it bumps a
+    /// counter behind a lock instead, and this is what that counter is compared
+    /// against.
+    ///
+    /// A generation rather than a flag because a change that lands **while a
+    /// save is in flight** may or may not be in the bytes that save is writing.
+    /// Recording the number the save started from answers that correctly in
+    /// both directions; clearing a flag on completion answers it wrongly in one.
+    external_saved: Cell<u64>,
+    /// The generation the save currently in flight is writing. Promoted into
+    /// [`Self::external_saved`] when that save lands, and never read otherwise.
+    external_in_flight: Cell<u64>,
     /// One `save_work` at a time, with coalescing — see [`SaveQueue`].
     queue: RefCell<SaveQueue>,
     /// The last `LongOperation::Completed` op id this object has already turned
@@ -131,6 +149,8 @@ impl SaveStateViewModel {
                 dirty_seq: Signal::new(0),
                 saved_seq: Signal::new(0),
                 saving: Signal::new(false),
+                external_saved: Cell::new(0),
+                external_in_flight: Cell::new(0),
                 queue: RefCell::new(SaveQueue::default()),
                 last_completed: RefCell::new(None),
                 last_failed: RefCell::new(None),
@@ -160,8 +180,38 @@ impl SaveStateViewModel {
     /// Whether the work holds edits not yet on disk (`dirty_seq > saved_seq`),
     /// read synchronously (no dependence on a derived-signal effect having
     /// fired yet).
+    ///
+    /// ⚠ **Two questions, not one.** The second is whether an extension has
+    /// reported a change from a thread that could not bump `dirty_seq`. Without
+    /// it, state that only an extension knows about is invisible here, which
+    /// means Close and Quit take the `Proceed` branch and drop it with no
+    /// prompt: the exact failure `WorkHandle` exists to prevent, for the one
+    /// class of change `WorkHandle` cannot be told about. See
+    /// `work_management::external_changes`.
     pub fn is_unsaved(&self) -> bool {
         self.inner.dirty_seq.get() > self.inner.saved_seq.get()
+            || self.external_generation() > self.inner.external_saved.get()
+    }
+
+    /// This Work's [`work_management::external_changes`] generation.
+    ///
+    /// `0` when the Work has no durable id yet, which is what an **unsaved**
+    /// project carries: there is nothing on disk for an extension to be
+    /// out of step with, and nothing to key a generation by.
+    fn external_generation(&self) -> u64 {
+        self.work_unique_id()
+            .map(|uid| frontend::work_management::external_changes::generation(&uid))
+            .unwrap_or(0)
+    }
+
+    /// This Work's `unique_id`, or `None` for an unsaved project.
+    fn work_unique_id(&self) -> Option<String> {
+        let work_id = self.inner.ids.work_id.get()?;
+        let uid = frontend::commands::work_commands::get_work(&self.inner.app_ctx, &work_id)
+            .ok()
+            .flatten()?
+            .unique_id;
+        (!uid.is_empty()).then_some(uid)
     }
 
     /// A mutation happened: this window's typing, or a tree/metadata event any
@@ -232,6 +282,14 @@ impl SaveStateViewModel {
                     .queue
                     .borrow_mut()
                     .started(op_id, covers, Instant::now());
+                // What this save is about to write on the extensions' behalf.
+                // Read **here**, at the moment the bundle is collected, so a
+                // change that lands while it is in flight compares as still
+                // outstanding rather than being called written by a completion
+                // that predates it.
+                self.inner
+                    .external_in_flight
+                    .set(self.external_generation());
                 self.inner.saving.set(true);
                 true
             }
@@ -273,6 +331,15 @@ impl SaveStateViewModel {
         // overwrite: a stale or out-of-order event must never move this back.
         let saved_seq = self.inner.saved_seq.get().max(done.covers);
         self.inner.saved_seq.set(saved_seq);
+        // The extensions' half, on the same terms: `max`, never a blind
+        // overwrite, so a stale or out-of-order completion cannot move it back
+        // and call an outstanding change written.
+        self.inner.external_saved.set(
+            self.inner
+                .external_saved
+                .get()
+                .max(self.inner.external_in_flight.get()),
+        );
         let mut follow_up_failed = false;
         if done.restart {
             // Edits landed while that op was in flight, and its snapshot
@@ -455,6 +522,10 @@ impl WorkHandle {
     }
 
     /// Whether this Work holds edits not yet on disk.
+    ///
+    /// Includes anything reported through `work_management::external_changes`,
+    /// which is how an extension says so from a thread that cannot reach this
+    /// type at all. See [`SaveStateViewModel::is_unsaved`].
     pub fn is_unsaved(&self) -> bool {
         self.inner.is_unsaved()
     }
