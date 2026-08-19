@@ -24,8 +24,11 @@ language is persisted. Set SKRIBISTO_BIN to point at a worktree binary.
 """
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
-SKRIBISTO = os.environ.get("SKRIBISTO_BIN", "/home/cyril/Devel/skribisto/target/debug/skribisto")
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 OUT = os.environ.get("SHOT_DIR", "/tmp")
 
 _here = os.path.dirname(os.path.abspath(__file__))

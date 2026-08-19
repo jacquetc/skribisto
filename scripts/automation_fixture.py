@@ -12,10 +12,12 @@ its own fixture still passes, so nothing catches it.
 *that*. Cheap enough (a few MB) that there is no reason to skip it.
 """
 
+import glob
 import os
 import shutil
 import subprocess
 import tempfile
+import tomllib
 
 #: Session scratchpad when one is set, else the system temp dir. Never inside the repo.
 #: Set `SKRIBISTO_AUTOMATION_SCRATCH` to steer it.
@@ -245,3 +247,139 @@ def working_copy(src, label="fixture"):
         f"working copy landed inside the repo ({dst}) — refusing to hand it back"
     )
     return dst
+
+
+# ---------------------------------------------------------------------------
+# Where the binaries are
+# ---------------------------------------------------------------------------
+#
+# A probe that names `/home/cyril/Devel/...` is a demo of a bug, not a test of
+# one: it passes on exactly one machine and cannot be run by CI, by a
+# contributor, or from a git worktree. Both binaries are resolved here instead,
+# and both are overridable, so a probe stays a probe wherever it is checked out.
+
+#: Override the app binary (an installed build, a release build, another
+#: checkout). Absolute path.
+SKRIBISTO_BIN_ENV = "SKRIBISTO_BIN"
+
+#: Override the automation MCP server binary.
+MCP_BIN_ENV = "TEKSILO_MCP_BIN"
+
+
+def repo_root():
+    """The Skribisto checkout this file belongs to.
+
+    Derived from `__file__` rather than the working directory, so it is right
+    however the probe was invoked — and, in a `.claude/worktrees/` checkout, it
+    is that worktree's root. Guessing would silently drive the *main* checkout's
+    binary and report its behaviour as the worktree's, which is the failure this
+    is placed here to prevent.
+    """
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def repo_path(*parts):
+    """A path to something inside this checkout — a fixture, a resource, a binary.
+
+        fixture.repo_path("resources/examples/Starforgers.skrib")
+
+    The same reason as `repo_root`: a probe that spells the path out in full
+    tests one machine's filesystem, and reports its own absence as a failure of
+    the app.
+    """
+    return os.path.join(repo_root(), *parts)
+
+
+def teksilo_root():
+    """The teksilo checkout this one builds against, read from its path dependency.
+
+    A crate manifest under `crates/` already names it (`teksilo = { path = ... }`),
+    and that declaration is the only statement of the relationship that cannot go
+    stale — cargo would not build otherwise. Reading it beats guessing a sibling
+    directory: a worktree reaches teksilo through a `.claude/worktrees/teksilo`
+    symlink, which the relative path resolves through and a guess does not.
+
+    Returns None if the manifest or the dependency is missing, leaving the caller
+    to fall back to `PATH` and then to a message naming what to build.
+    """
+    for manifest in sorted(glob.glob(os.path.join(repo_root(), "crates", "*", "Cargo.toml"))):
+        try:
+            with open(manifest, "rb") as fh:
+                dep = tomllib.load(fh).get("dependencies", {}).get("teksilo")
+        except (OSError, tomllib.TOMLDecodeError):
+            continue
+        path = dep.get("path") if isinstance(dep, dict) else None
+        if not path:
+            continue
+        # The dep points at the *crate* (`<root>/crates/teksilo`); the target
+        # directory hangs off the workspace root two levels above it.
+        crate = os.path.normpath(os.path.join(os.path.dirname(manifest), path))
+        root = os.path.dirname(os.path.dirname(crate))
+        if os.path.isdir(root):
+            return root
+    return None
+
+
+def _target_dirs(root):
+    """Cargo's target directory for `root`, honouring `$CARGO_TARGET_DIR`.
+
+    A contributor or CI runner that redirects the target directory has a real
+    binary on disk that `<root>/target` never finds — and the resulting "build
+    it with cargo build" message would send them to rebuild something they had
+    already built. Checked first, since a set `CARGO_TARGET_DIR` is where cargo
+    would actually have put it.
+    """
+    override = os.environ.get("CARGO_TARGET_DIR")
+    dirs = [override] if override else []
+    return dirs + [os.path.join(root, "target")]
+
+
+def _resolve(env_var, name, candidates, build_hint):
+    """First of `candidates` that exists, else `PATH`, else a message that says what to build."""
+    override = os.environ.get(env_var)
+    if override:
+        if not os.path.exists(override):
+            raise FileNotFoundError(f"{env_var} points at {override}, which does not exist")
+        return override
+    for path in candidates:
+        if path and os.path.exists(path):
+            return path
+    found = shutil.which(name)
+    if found:
+        return found
+    tried = "\n  ".join(p for p in candidates if p) or "(nothing to try)"
+    raise FileNotFoundError(
+        f"cannot find `{name}`. Tried:\n  {tried}\nand $PATH.\n"
+        f"Build it with:\n  {build_hint}\nor set ${env_var} to an existing binary."
+    )
+
+
+def skribisto_binary():
+    """Path to this checkout's debug `skribisto`, or ``$SKRIBISTO_BIN``.
+
+    Debug and not release on purpose: the automation bridge every probe drives is
+    `#[cfg(debug_assertions)]`, so a release binary has no socket to connect to
+    and the probe would hang waiting for a line it can never print.
+    """
+    root = repo_root()
+    return _resolve(
+        SKRIBISTO_BIN_ENV, "skribisto",
+        [os.path.join(t, "debug", "skribisto") for t in _target_dirs(root)],
+        f"cargo build -p teksilo_ui   # in {root}",
+    )
+
+
+def mcp_binary():
+    """Path to `teksilo-automation-mcp`, or ``$TEKSILO_MCP_BIN``.
+
+    Lives in the *teksilo* checkout, which is a separate cargo workspace with its
+    own target directory — so it is not built by anything run in this repo, and a
+    probe failing here usually means it has simply never been built.
+    """
+    tek = teksilo_root()
+    candidates = [os.path.join(t, "debug", "teksilo-automation-mcp")
+                  for t in _target_dirs(tek)] if tek else []
+    return _resolve(
+        MCP_BIN_ENV, "teksilo-automation-mcp", candidates,
+        f"cargo build -p teksilo-automation-mcp   # in {tek or '<teksilo checkout>'}",
+    )

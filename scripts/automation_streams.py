@@ -23,8 +23,11 @@ closes the Launcher, exactly like a real recent would.
 """
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 OUT = os.environ.get("SHOT_DIR", "/tmp")
 # Everything left of this x is the binder dock; the editor pane is to its right.
 PANE_X = 300

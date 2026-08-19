@@ -25,9 +25,12 @@ The gate's real hazard — that it must survive the focus loss of opening the me
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
 import pathlib
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
 _ROOT = pathlib.Path(__file__).resolve().parent.parent  # this repo/worktree root
-SKRIBISTO = str(_ROOT / "target/debug/skribisto")
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 EXAMPLE = str(_ROOT / "resources/examples/Starforgers.skrib")
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 

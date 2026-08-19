@@ -30,9 +30,10 @@ import base64, json, os, re, select, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import isolated_config, working_copy
 
-SKRIBISTO = os.environ.get(
-    "SKRIBISTO_BIN", "/home/cyril/Devel/skribisto/target/debug/skribisto")
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 OUT = "/tmp/format-heading-popover"
 os.makedirs(OUT, exist_ok=True)
 

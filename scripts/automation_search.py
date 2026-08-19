@@ -20,8 +20,11 @@ bottom corner (binder full-height, preview starting to its right).
 """
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 PROJECT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "/tmp/p02/Starforgers.skrib")
 QUERY = sys.argv[2] if len(sys.argv) > 2 else "the"
 

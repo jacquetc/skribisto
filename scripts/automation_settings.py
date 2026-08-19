@@ -40,9 +40,12 @@ target whose x depends on an indent level. See `settings_tree_rows`.
 """
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
-EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
+EXAMPLE = fixture.repo_path("resources/examples/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 

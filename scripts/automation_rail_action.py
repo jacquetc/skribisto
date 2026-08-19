@@ -26,11 +26,11 @@ Checks:
 """
 import json, os, re, select, subprocess, sys, tempfile, time
 
-SKRIBISTO = os.environ.get(
-    "SKRIBISTO_BIN",
-    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                 "target", "debug", "skribisto"))
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 RAIL_MAX_X = 56  # the leading rail strip is ~48 dp wide
 
 project = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else None

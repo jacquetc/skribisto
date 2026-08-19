@@ -45,9 +45,11 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import isolated_config, working_copy  # noqa: E402
 
+import automation_fixture as fixture  # noqa: E402
+
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKRIBISTO = os.path.join(HERE, "target/debug/skribisto")
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 SRC = os.path.abspath(
     sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "resources/examples/Starforgers.skrib")
 )

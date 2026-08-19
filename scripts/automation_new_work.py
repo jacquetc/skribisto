@@ -43,8 +43,8 @@ import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import automation_fixture as fixture
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 

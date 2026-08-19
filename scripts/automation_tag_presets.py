@@ -59,10 +59,11 @@ import sys
 import tempfile
 import time
 
-ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
-SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 from automation_fixture import (  # noqa: E402
     SCRATCH,
     assert_no_running_instance,

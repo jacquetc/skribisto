@@ -57,10 +57,12 @@ import tempfile
 import time
 import zlib
 
-ROOT = "/home/cyril/Devel/skribisto/.claude/worktrees/tags"
-SKRIBISTO = f"{ROOT}/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+ROOT = fixture.repo_root()
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 from automation_fixture import wait_for_load, working_copy
 
 # This probe saves nothing on purpose (no Ctrl+S anywhere below) but it still

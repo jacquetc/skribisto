@@ -17,9 +17,12 @@ asserts the FIRST binder row is the selected one.
 """
 import json, os, re, select, shutil, subprocess, sys, tempfile, time, base64
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
-EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
+EXAMPLE = fixture.repo_path("resources/examples/Starforgers.skrib")
 
 sandbox = tempfile.mkdtemp(prefix="skribisto_binder_kbd_")
 env = {**os.environ, "XDG_CONFIG_HOME": os.path.join(sandbox, "config"),

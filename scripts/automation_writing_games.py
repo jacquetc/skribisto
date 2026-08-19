@@ -28,12 +28,14 @@ import base64, json, os, re, select, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import working_copy  # noqa: E402
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 SRC = os.path.abspath(
     sys.argv[1]
     if len(sys.argv) > 1
-    else "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
+    else fixture.repo_path("resources/examples/Starforgers.skrib")
 )
 # Never open the checked-in fixture: this probe types into it and autosave is real.
 PROJECT = working_copy(SRC)

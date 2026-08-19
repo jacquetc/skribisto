@@ -26,11 +26,11 @@ automation_pace_segment.py.
 """
 import base64, json, os, re, select, subprocess, sys, tempfile, time
 
-SKRIBISTO = os.environ.get(
-    "SKRIBISTO_BIN",
-    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                 "target", "debug", "skribisto"))
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 OUT = os.environ.get("SHOT_DIR", "/tmp")
 PANE_X = 300
 

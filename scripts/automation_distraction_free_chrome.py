@@ -20,11 +20,14 @@ automation_*.py scripts.
 """
 import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
 # Resolved from this script's own location, not hardcoded to the main
 # checkout — this feature was built in a worktree, which has its own `target/`.
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKRIBISTO = os.path.join(REPO, "target/debug/skribisto")
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 EXAMPLE = os.path.join(REPO, "resources/examples/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name

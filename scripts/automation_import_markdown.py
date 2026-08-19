@@ -46,8 +46,8 @@ _ROOT = pathlib.Path(__file__).resolve().parent.parent  # this repo/worktree roo
 sys.path.insert(0, str(_ROOT / "scripts"))
 import automation_fixture as fixture  # noqa: E402
 
-SKRIBISTO = str(_ROOT / "target/debug/skribisto")
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 EXAMPLE = str(_ROOT / "resources/examples/Starforgers.skrib")
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 

@@ -21,9 +21,12 @@ laid out.
 """
 import json, os, re, shutil, subprocess, sys, tempfile, time
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
-EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
+EXAMPLE = fixture.repo_path("resources/examples/Starforgers.skrib")
 
 #: Keep in step with `MIN_EDITOR_TAB_WIDTH` in `crates/teksilo_ui/src/app.rs`.
 MIN_TAB_WIDTH = 160.0

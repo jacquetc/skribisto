@@ -45,9 +45,12 @@ Saves screenshots of both settled windows to /tmp/sk-two-proc-a.png and
 """
 import base64, json, os, re, select, shutil, subprocess, sys, tempfile, time, tomllib
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
-EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
+EXAMPLE = fixture.repo_path("resources/examples/Starforgers.skrib")
 
 RESULTS = []  # (name, passed: bool, detail: str) — collected, not raised, so
               # one finding doesn't hide the rest of the evidence.

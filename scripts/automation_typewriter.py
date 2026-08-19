@@ -38,9 +38,11 @@ import base64, json, os, re, select, subprocess, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from automation_fixture import working_copy, assert_no_running_instance
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
-EXAMPLE = "/home/cyril/Devel/skribisto/resources/examples/Starforgers.skrib"
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
+EXAMPLE = fixture.repo_path("resources/examples/Starforgers.skrib")
 
 mcp_err = tempfile.NamedTemporaryFile(suffix=".mcperr", delete=False).name
 _sandbox = tempfile.mkdtemp(prefix="skribisto_typewriter_")

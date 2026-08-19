@@ -16,8 +16,11 @@ that right depends entirely on the bidi algorithm auto-detecting it.
 """
 import json, os, re, subprocess, sys, tempfile, time, base64
 
-SKRIBISTO = "/home/cyril/Devel/skribisto/target/debug/skribisto"
-MCP = "/home/cyril/Devel/teksilo/target/debug/teksilo-automation-mcp"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import automation_fixture as fixture  # noqa: E402
+
+SKRIBISTO = fixture.skribisto_binary()
+MCP = fixture.mcp_binary()
 PROJECT = os.path.expanduser("~/test_ar.skrib")
 
 # "كتب الرجل رسالة طويلة" — "the man wrote a long letter".
