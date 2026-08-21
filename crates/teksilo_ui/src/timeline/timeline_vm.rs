@@ -102,20 +102,38 @@ pub enum ChangeKind {
     Moved,
 }
 
+/// Where one row's recorded prose can be read back from, and which of its texts
+/// that is.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PastProse {
+    /// The bundle holding it.
+    pub from: VersionRef,
+    /// The bundle-relative blob path.
+    pub blob: String,
+    /// Which of the row's texts this blob is.
+    ///
+    /// Carried rather than re-derived at the point of use, because the *live*
+    /// side has to be asked for the same one. A row counts as changed when the
+    /// digest over **all** its prose moves, so a scene whose synopsis was edited
+    /// is a changed row whose body did not move — and comparing the recorded body
+    /// against the live synopsis would not be a comparison of anything.
+    pub role: ContentRole,
+}
+
 /// One row of the change list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RowChange {
     pub uid: uuid::Uuid,
     pub title: String,
     pub kind: ChangeKind,
-    /// The bundle and blob this row's prose can be read back from.
+    /// The recorded prose this row can be read back from.
     ///
     /// `None` in the two cases where there is genuinely nothing to read:
     /// [`ChangeKind::Added`], which by definition has no recorded past at that
     /// moment, and a row that existed then but held no prose — a Book, a folder,
     /// a chapter heading. The two are different sentences to a writer, which is
     /// why [`Self::kind`] is what tells them apart and not this being `None`.
-    pub source: Option<(VersionRef, String)>,
+    pub source: Option<PastProse>,
 }
 
 impl RowChange {
@@ -146,6 +164,16 @@ type Window = Option<(DateTime<Utc>, DateTime<Utc>)>;
 /// not reach into the store — the same seam the Versions dock's `UidLookup` uses.
 pub type LiveManuscriptFn = Rc<dyn Fn() -> Vec<LiveRow>>;
 
+/// Reads **one** live row's text for one content role — the "now" half of the
+/// comparison the reader draws when an edited row is opened.
+///
+/// Separate from [`LiveManuscriptFn`] rather than a field on [`LiveRow`], and
+/// deliberately: the manuscript reducer runs every time the band's selection
+/// moves, and a `LiveRow` carrying its prose would mean holding the whole book in
+/// memory on every move so that the occasional opened row could be diffed. This
+/// runs once, when a row is actually opened.
+pub type LiveProseFn = Rc<dyn Fn(uuid::Uuid, &ContentRole) -> Option<String>>;
+
 #[derive(Clone)]
 pub struct TimelineViewModel {
     /// Every recorded moment, **oldest first** — a timeline reads left to right.
@@ -171,6 +199,7 @@ pub struct TimelineViewModel {
     /// window never writes the filter back.
     range: Signal<Option<DateRange>>,
     live: Rc<RefCell<Option<LiveManuscriptFn>>>,
+    live_prose: Rc<RefCell<Option<LiveProseFn>>>,
     scanned: Rc<RefCell<Option<ScanKey>>>,
     compared: Rc<RefCell<Option<(ScanKey, usize)>>>,
     /// The range last folded into `window`, so a rebuild does not redo it.
@@ -196,6 +225,7 @@ impl TimelineViewModel {
             window: Signal::new(None),
             range: Signal::new(None),
             live: Rc::new(RefCell::new(None)),
+            live_prose: Rc::new(RefCell::new(None)),
             scanned: Rc::new(RefCell::new(None)),
             compared: Rc::new(RefCell::new(None)),
             ranged: Rc::new(RefCell::new(None)),
@@ -276,6 +306,21 @@ impl TimelineViewModel {
         let axis = self.axis();
         let bar = axis.bars.get(self.index())?;
         self.visible_moments().get(bar.moment).cloned()
+    }
+
+    /// Whether the selected moment comes from a record that holds prose alone.
+    ///
+    /// The one thing about a moment the band has to say out loud. Only a backup
+    /// is a whole bundle; the in-project history log records text and nothing
+    /// else, so against a log moment the change list can report "edited" and
+    /// nothing more — see this module's docs. Unsaid, a writer reads that silence
+    /// as a fact about their book ("nothing was deleted or moved this morning")
+    /// when it is a fact about the record.
+    ///
+    /// A view-model method rather than a `match` in the view, because it is the
+    /// rule the sentence rests on and it is worth a test of its own.
+    pub fn selected_is_prose_only(&self) -> bool {
+        self.selected().is_some_and(|m| m.source == SourceKind::Log)
     }
 
     /// Open the selected period, narrowing the window to it.
@@ -407,6 +452,32 @@ impl TimelineViewModel {
         if slot.is_none() {
             *slot = Some(live);
         }
+    }
+
+    /// Install the one-row live-prose reader (once, from the shell).
+    pub fn set_live_prose_source(&self, live: LiveProseFn) {
+        let mut slot = self.live_prose.borrow_mut();
+        if slot.is_none() {
+            *slot = Some(live);
+        }
+    }
+
+    /// The live text of one row's `role`, if the shell installed a reader and the
+    /// row still holds that text.
+    ///
+    /// `None` covers every reason the comparison cannot be drawn — no reader
+    /// (a mocks build), a row that is gone, a role it no longer has — and the
+    /// caller falls back to showing the recorded text on its own.
+    ///
+    /// **`Some("")` is not one of those reasons**, and the difference cost a
+    /// live run to find: a row whose text has since been emptied returns the
+    /// empty string, and rejecting it as "nothing to compare with" hid the one
+    /// comparison a writer would most want — the whole scene struck through.
+    /// A row that never had that text at all returns `None` instead, from the
+    /// reader itself, so the two stay distinguishable.
+    pub fn live_prose(&self, uid: uuid::Uuid, role: &ContentRole) -> Option<String> {
+        let read = self.live_prose.borrow().clone()?;
+        read(uid, role)
     }
 
     /// Scan every source for recorded moments, if the project changed.
@@ -546,10 +617,44 @@ fn collect_moments(handle: &ProjectHandle) -> Result<Vec<Moment>, String> {
             });
         }
     }
-    out.sort_by_key(|m| m.at);
-    // Two sources can hold the same instant; one tick per moment.
-    out.dedup_by(|a, b| a.at == b.at && a.bytes == b.bytes);
+    one_tick_per_moment(&mut out);
     Ok(out)
+}
+
+/// Order the moments oldest-first and collapse the ones that describe the same
+/// state, keeping the record that can say the most about it.
+///
+/// Sorted by instant, then by size, then **backup before log** — and the last of
+/// those three is not cosmetic. Two sources routinely hold one instant (a "Back
+/// up now" straight after a save records the same manuscript twice), and the
+/// dedup keeps whichever comes first. Log entries are collected first, so a
+/// stable sort on the instant alone kept the *log*: the tick silently lost the
+/// bundle standing behind it, and with it every structural claim, because
+/// [`compare`] gates removed/added/moved on the source that survived. The richer
+/// record has to win.
+///
+/// Sorting on `bytes` as well is what makes the collapse complete rather than
+/// approximate: `dedup_by` only ever looks at *adjacent* pairs, so three moments
+/// on one instant sized 100, 200, 100 left two identical-looking bars standing.
+fn one_tick_per_moment(out: &mut Vec<Moment>) {
+    out.sort_by(|a, b| {
+        a.at.cmp(&b.at)
+            .then(a.bytes.cmp(&b.bytes))
+            .then(source_rank(a.source).cmp(&source_rank(b.source)))
+    });
+    out.dedup_by(|a, b| a.at == b.at && a.bytes == b.bytes);
+}
+
+/// Which record to keep when two describe the same instant, smallest first.
+///
+/// A backup carries the whole bundle and can answer all four kinds of change; the
+/// history log carries prose alone and can only ever say "edited". Given the
+/// choice, the band keeps the one that can say more.
+fn source_rank(source: SourceKind) -> u8 {
+    match source {
+        SourceKind::Backup => 0,
+        SourceKind::Log => 1,
+    }
 }
 
 /// Compare one recorded moment against the live manuscript.
@@ -685,16 +790,22 @@ fn compare(handle: &ProjectHandle, moment: &Moment, now: &[LiveRow]) -> Vec<RowC
 ///
 /// The one place `None` is minted, so no caller can accidentally pair a real
 /// `VersionRef` with a blob path that is not one.
-fn recorded_at(moment: &Moment, row: &VersionRow) -> Option<(VersionRef, String)> {
-    main_blob(row).map(|blob| (moment.from.clone(), blob))
+fn recorded_at(moment: &Moment, row: &VersionRow) -> Option<PastProse> {
+    main_blob(row).map(|(role, blob)| PastProse {
+        from: moment.from.clone(),
+        blob,
+        role,
+    })
 }
 
-fn main_blob(row: &VersionRow) -> Option<String> {
+fn main_blob(row: &VersionRow) -> Option<(ContentRole, String)> {
     READING_ORDER
         .iter()
-        .find_map(|role| row.prose_for(role))
-        .map(|(blob, _)| blob.to_string())
-        .filter(|blob| !blob.is_empty())
+        .find_map(|role| {
+            row.prose_for(role)
+                .map(|(blob, _)| (role.clone(), blob.to_string()))
+        })
+        .filter(|(_, blob)| !blob.is_empty())
 }
 
 /// Every prose role there is, best-first.

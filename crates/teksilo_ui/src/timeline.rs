@@ -22,4 +22,6 @@ pub mod timeline_axis;
 mod timeline_vm;
 
 pub use timeline_axis::{Axis, axis_for};
-pub use timeline_vm::{ChangeKind, LiveManuscriptFn, Moment, RowChange, TimelineViewModel};
+pub use timeline_vm::{
+    ChangeKind, LiveManuscriptFn, LiveProseFn, Moment, PastProse, RowChange, TimelineViewModel,
+};

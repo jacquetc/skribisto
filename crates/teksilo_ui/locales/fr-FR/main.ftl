@@ -1961,7 +1961,9 @@ timeline-coverage = { $count ->
 timeline-loading = Recherche dans le passé du projet…
 timeline-empty = Aucune version de ce projet n'a encore été enregistrée
 timeline-no-changes = Rien n'a changé depuis
+timeline-no-text-changes = Aucun texte n'a changé depuis
 timeline-slider-label = Version enregistrée
+timeline-series-name = Taille du projet
 timeline-bars-caption = Chaque barre est une version enregistrée, aussi haute que l'était le projet alors. Celle qui est mise en évidence est celle que vous consultez.
 timeline-bars-caption-periods = Trop de versions pour les afficher une à une : chaque barre représente { $period }, aussi haute que l'était le projet à la fin de cette période.
 timeline-unit-hour = une heure
@@ -1984,7 +1986,15 @@ timeline-not-yet-written = Cela n'existait pas encore à ce moment-là
 timeline-no-text-of-its-own = Ceci n'a pas de texte propre — c'est un intitulé pour ce qu'il contient
 timeline-reader-close = Fermer
 timeline-reader-stamp = Tel quel le { $date }
+timeline-reader-loading = Ouverture de la version enregistrée…
+timeline-reader-unreadable = Cet enregistrement n'a pas pu être lu : la sauvegarde a peut-être été déplacée ou supprimée, ou se trouve sur un disque non connecté.
+timeline-reader-compared = Tel quel le { $date }, comparé à ce qu'il dit aujourd'hui
+timeline-reader-diff-legend = Le texte barré a disparu depuis ; le texte souligné a été ajouté.
+timeline-reader-view-label = Ce qui est affiché
+timeline-reader-view-diff = Modifications
+timeline-reader-view-text = Texte
 timeline-reader-deleted = Cela n'est plus dans votre projet. Vous pouvez le lire et le copier ici.
+timeline-prose-only-record = Ce point provient de l'historique interne du projet, qui ne conserve que le texte : ce qui a été supprimé ou déplacé depuis ne peut donc pas être affiché. Choisissez une sauvegarde pour cela.
 
 # The Settings tree's section for pages an extension contributed.
 settings-sec-extensions = Extensions

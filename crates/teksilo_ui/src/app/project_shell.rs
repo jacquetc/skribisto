@@ -251,6 +251,20 @@ impl App {
             }));
         }
 
+        // …and one row's live text, read only when the writer opens an edited row,
+        // so the band can show what it says *now* beside what it said then rather
+        // than leaving the writer to hold the current draft in their head.
+        // Separate from the reducer above because it is asked a thousand times
+        // less often and would otherwise cost the whole manuscript every time the
+        // slider moved — see `LiveProseFn`.
+        {
+            let app_ctx = self.app_ctx.clone();
+            let work_id = ids.work_id.clone();
+            timeline.set_live_prose_source(std::rc::Rc::new(move |uid, role| {
+                crate::models::live_prose(&app_ctx, work_id.get()?, uid, role)
+            }));
+        }
+
         let uid_of: crate::versions::dock::UidLookup = {
             let app_ctx = self.app_ctx.clone();
             let work_id = ids.work_id.clone();

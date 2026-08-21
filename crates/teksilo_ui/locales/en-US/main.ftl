@@ -1981,7 +1981,9 @@ timeline-coverage = { $count ->
 timeline-loading = Looking through your project's past…
 timeline-empty = No version of this project has been recorded yet
 timeline-no-changes = Nothing has changed since then
+timeline-no-text-changes = No text has changed since then
 timeline-slider-label = Recorded version
+timeline-series-name = Project size
 timeline-bars-caption = Each bar is a recorded version, as tall as the project was then. The highlighted one is what you're looking at.
 timeline-bars-caption-periods = Too many versions to show one by one, so each bar is a { $period }, as tall as the project was by the end of it.
 timeline-unit-hour = hour
@@ -2004,7 +2006,15 @@ timeline-not-yet-written = This didn't exist yet at that point
 timeline-no-text-of-its-own = This has no text of its own — it's a heading for what's inside it
 timeline-reader-close = Close
 timeline-reader-stamp = As it was on { $date }
+timeline-reader-loading = Opening the recorded version…
+timeline-reader-unreadable = This recording couldn't be read — the backup may have been moved, deleted, or be on a drive that isn't connected.
+timeline-reader-compared = As it was on { $date }, set against what it says now
+timeline-reader-diff-legend = Struck through has gone since; underlined has been added.
+timeline-reader-view-label = What to show
+timeline-reader-view-diff = Changes
+timeline-reader-view-text = Text
 timeline-reader-deleted = This is no longer in your project. You can read it and copy it out here.
+timeline-prose-only-record = This point comes from the project's own history, which keeps text and nothing else — so what was deleted or moved since it can't be shown. Pick a backup for that.
 
 # The Settings tree's section for pages an extension contributed.
 settings-sec-extensions = Extensions

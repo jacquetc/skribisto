@@ -72,6 +72,7 @@ mod imp {
 
     use super::{LiveRow, digest_of};
     use crate::models::NameContext;
+    use common::entities::ContentRole;
 
     /// Every live row of `work_id`, binder-major, digested.
     ///
@@ -145,6 +146,41 @@ mod imp {
             .collect();
         digest_of(&roles)
     }
+
+    /// One live row's text for **one** content role, as it stands now.
+    ///
+    /// The digest above answers "did this row change"; this answers "into what",
+    /// which is what a comparison the writer can read needs. Deliberately one
+    /// role and one row: the whole manuscript's prose is read on the UI thread
+    /// every time the band's selection moves, and carrying all of it so that the
+    /// rare opened row can be compared would pay for the manuscript to see the
+    /// scene.
+    ///
+    /// `None` when the row is gone, or holds no text in that role — both of
+    /// which are ordinary, and neither of which is an empty document.
+    pub fn live_prose(
+        ctx: &AppContext,
+        work_id: u64,
+        uid: uuid::Uuid,
+        role: &ContentRole,
+    ) -> Option<String> {
+        let item_id = crate::models::ordered_binder_items(ctx, work_id)
+            .into_iter()
+            .find(|r| r.uid == uid)?
+            .id;
+        let content_ids = binder_item_commands::get_binder_item_relationship(
+            ctx,
+            &item_id,
+            &BinderItemRelationshipField::Contents,
+        )
+        .unwrap_or_default();
+        content_commands::get_content_multi(ctx, &content_ids)
+            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .find(|c| &c.role == role)
+            .map(|c| c.data)
+    }
 }
 
 #[cfg(feature = "mocks")]
@@ -152,15 +188,27 @@ mod imp {
     use frontend::AppContext;
 
     use super::LiveRow;
+    use common::entities::ContentRole;
 
     /// No real backend under mocks. An empty manuscript makes every comparison
     /// find nothing, which is the honest answer for a build with no project.
     pub fn live_manuscript(_ctx: &AppContext, _work_id: u64) -> Vec<LiveRow> {
         Vec::new()
     }
+
+    /// Same reasoning: no backend, so no live text to compare against, and the
+    /// caller falls back to showing the recorded text on its own.
+    pub fn live_prose(
+        _ctx: &AppContext,
+        _work_id: u64,
+        _uid: uuid::Uuid,
+        _role: &ContentRole,
+    ) -> Option<String> {
+        None
+    }
 }
 
-pub use imp::live_manuscript;
+pub use imp::{live_manuscript, live_prose};
 
 #[cfg(test)]
 mod tests {

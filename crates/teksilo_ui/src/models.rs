@@ -88,7 +88,7 @@ pub use folder_memory_file::{
     remember_dialog_file, remember_pick,
 };
 pub use import_prefs_file::ImportPrefsService;
-pub use manuscript_digest::{LiveRow, digest_of, live_manuscript};
+pub use manuscript_digest::{LiveRow, digest_of, live_manuscript, live_prose};
 #[allow(unused_imports)]
 pub use numbering::{
     NameContext, fallback_label_for, item_meta_of, label_and_badge, numbers_for_items,

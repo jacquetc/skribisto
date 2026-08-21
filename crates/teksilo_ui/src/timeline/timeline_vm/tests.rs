@@ -352,7 +352,11 @@ fn coverage_says_how_much_is_kept_and_how_far_back_it_reaches() {
 #[test]
 fn the_body_is_what_opening_a_row_shows_and_a_synopsis_is_the_fallback() {
     let mut row = version_row(1, "Chapter 1");
-    assert!(main_blob(&row).is_some_and(|b| b.ends_with(".scene.djot")));
+    assert!(
+        main_blob(&row).is_some_and(|(role, b)| {
+            role == ContentRole::SceneText && b.ends_with(".scene.djot")
+        })
+    );
 
     row.prose = vec![(
         ContentRole::SynopsisText,
@@ -360,8 +364,10 @@ fn the_body_is_what_opening_a_row_shows_and_a_synopsis_is_the_fallback() {
         BlobStamp { bytes: 4 },
     )];
     assert!(
-        main_blob(&row).is_some_and(|b| b.ends_with(".synopsis.djot")),
-        "a row with only a synopsis opens on it rather than on nothing",
+        main_blob(&row).is_some_and(|(role, b)| {
+            role == ContentRole::SynopsisText && b.ends_with(".synopsis.djot")
+        }),
+        "a row with only a synopsis opens on it rather than on nothing, and says which text that is",
     );
 }
 
@@ -378,7 +384,9 @@ fn a_row_whose_only_prose_is_an_epigraph_still_opens_on_it() {
         BlobStamp { bytes: 40 },
     )];
     assert!(
-        main_blob(&row).is_some_and(|b| b.ends_with(".epigraph.djot")),
+        main_blob(&row).is_some_and(|(role, b)| {
+            role == ContentRole::EpigraphText && b.ends_with(".epigraph.djot")
+        }),
         "an epigraph is prose, and it is the only prose this row has",
     );
 }
@@ -445,4 +453,123 @@ fn every_prose_role_is_something_this_can_open() {
             "{role:?} is prose but a row carrying only it opens on nothing",
         );
     }
+}
+
+// ── one tick per moment ────────────────────────────────────────────────────
+
+fn moment_at(secs: i64, bytes: u64, source: SourceKind) -> Moment {
+    let at = DateTime::from_timestamp(secs, 0).unwrap();
+    Moment {
+        at,
+        source,
+        from: VersionRef {
+            path: PathBuf::from(match source {
+                SourceKind::Backup => "/backups/Novel.skrib",
+                SourceKind::Log => "/Novel.skrib",
+            }),
+            taken_at: at,
+            source,
+        },
+        bytes,
+    }
+}
+
+/// **The record that can say more has to be the one that survives.** A "Back up
+/// now" straight after a save records the same manuscript twice, at the same
+/// instant, at the same size. Log entries are gathered first, so collapsing the
+/// pair by instant alone kept the *log* — and against a log moment the band can
+/// only ever report "edited", so that bar silently lost the ability to say
+/// anything was deleted or moved, with a full bundle sitting right behind it.
+#[test]
+fn a_backup_outranks_a_log_entry_describing_the_same_instant() {
+    let mut moments = vec![
+        moment_at(1_700_000_000, 5_000, SourceKind::Log),
+        moment_at(1_700_000_000, 5_000, SourceKind::Backup),
+    ];
+    one_tick_per_moment(&mut moments);
+
+    assert_eq!(moments.len(), 1, "one instant, one tick");
+    assert_eq!(
+        moments[0].source,
+        SourceKind::Backup,
+        "the bundle answers all four kinds; the log answers one",
+    );
+    assert_eq!(
+        moments[0].from.source,
+        SourceKind::Backup,
+        "and the reference kept has to be the bundle's, or nothing can be read from it",
+    );
+}
+
+/// `dedup_by` only ever collapses *adjacent* pairs, so the sort has to make
+/// equals adjacent. Three records of one instant sized 100, 200, 100 left two
+/// identical-looking bars standing when the sort key was the instant alone.
+#[test]
+fn records_of_one_instant_collapse_however_their_sizes_interleave() {
+    let mut moments = vec![
+        moment_at(1_700_000_000, 100, SourceKind::Log),
+        moment_at(1_700_000_000, 200, SourceKind::Log),
+        moment_at(1_700_000_000, 100, SourceKind::Backup),
+    ];
+    one_tick_per_moment(&mut moments);
+
+    assert_eq!(
+        moments.len(),
+        2,
+        "two distinct sizes, two ticks: {moments:?}"
+    );
+    assert_eq!(
+        moments[0].source,
+        SourceKind::Backup,
+        "and the pair that collapsed still kept the richer record",
+    );
+}
+
+/// The band reads left to right, so whatever else the collapse does it has to
+/// leave the moments in order.
+#[test]
+fn the_ticks_come_out_oldest_first() {
+    let mut moments = vec![
+        moment_at(1_700_000_300, 300, SourceKind::Backup),
+        moment_at(1_700_000_100, 100, SourceKind::Log),
+        moment_at(1_700_000_200, 200, SourceKind::Backup),
+    ];
+    one_tick_per_moment(&mut moments);
+    let order: Vec<u64> = moments.iter().map(|m| m.bytes).collect();
+    assert_eq!(order, vec![100, 200, 300]);
+}
+
+/// **What the band has to say out loud.** Only a backup is a whole bundle. The
+/// in-project history log records prose and nothing else, so against a log moment
+/// the change list can report "edited" and nothing more — and a writer who is not
+/// told reads that silence as *nothing was deleted or moved this morning*, which
+/// is a claim about the record, not about their book.
+#[test]
+fn the_band_can_tell_a_prose_only_record_from_a_whole_bundle() {
+    let vm = TimelineViewModel::new();
+    vm.seed_moments_for_test(vec![
+        moment_at(1_700_000_000, 1_000, SourceKind::Backup),
+        moment_at(1_700_000_100, 1_100, SourceKind::Log),
+    ]);
+
+    // The band opens on the newest moment, which here is the save.
+    assert_eq!(vm.selected().map(|m| m.source), Some(SourceKind::Log));
+    assert!(
+        vm.selected_is_prose_only(),
+        "a save records text alone and the list beside it has to say so",
+    );
+
+    vm.position().set(0.0);
+    assert_eq!(vm.selected().map(|m| m.source), Some(SourceKind::Backup));
+    assert!(
+        !vm.selected_is_prose_only(),
+        "a bundle answers all four kinds, so the caveat would be a lie",
+    );
+}
+
+/// With nothing recorded there is no moment to qualify, and the caveat must not
+/// appear over an empty band.
+#[test]
+fn an_empty_history_makes_no_claim_about_its_records() {
+    assert!(!TimelineViewModel::new().selected_is_prose_only());
 }
