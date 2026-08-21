@@ -1469,6 +1469,19 @@ about-license = Released under the GNU General Public License, version 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Close
 
+## Native (macOS) menu bar
+# Labels for the platform-standard App and Window menus mirrored into the macOS
+# global menu bar. No `&` mnemonics here: macOS has none, and the native bridge
+# resolves these without stripping one, so an ampersand would print literally.
+# The application name is data (the running edition's own name), so it arrives
+# as an argument — same rule as the window titles below.
+native-menu-about = About { $app }
+native-menu-hide = Hide { $app }
+native-menu-quit = Quit { $app }
+native-menu-window = Window
+native-menu-minimize = Minimize
+native-menu-zoom = Zoom
+
 # Window titles. The application name is data (the running edition's own name),
 # so it arrives as an argument rather than being written into the value here.
 window-title = { $title } — { $app }

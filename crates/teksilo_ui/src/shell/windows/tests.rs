@@ -572,6 +572,57 @@ fn every_menu_bar_entry_declares_a_mnemonic() {
     }
 }
 
+/// The labels of the platform-standard (macOS) menus, which are declared in
+/// `project_menus::{app_standard_menu, window_standard_menu}`.
+const NATIVE_MENU_LABELS: &[&str] = &[
+    "native-menu-about",
+    "native-menu-hide",
+    "native-menu-quit",
+    "native-menu-window",
+    "native-menu-minimize",
+    "native-menu-zoom",
+];
+
+/// macOS has no `Alt`+letter mnemonics, and the native bridge resolves a
+/// standard menu's labels **without** stripping one — unlike every other menu
+/// label, which goes through `parse_mnemonic` on its way into the snapshot. So
+/// an `&` copied from a neighbouring key here does not quietly do nothing: it
+/// prints, and "Quit &Skribisto" ships to the one platform this whole path
+/// exists for. Nothing on Linux would ever show it.
+#[test]
+fn the_native_menu_labels_carry_no_mnemonic() {
+    for (locale, ftl) in MENU_LOCALES {
+        let labels = ftl_labels(ftl);
+        for key in NATIVE_MENU_LABELS {
+            let label = labels.get(key).unwrap_or_else(|| {
+                panic!("{locale}: `{key}` is a native menu label but is absent from main.ftl")
+            });
+            assert!(
+                mnemonic_of(label).is_none(),
+                "{locale}: native menu label `{key}` = {label:?} must not declare a mnemonic"
+            );
+        }
+    }
+}
+
+/// The three App-menu labels name the running edition, and the name is data —
+/// it arrives as `{ $app }` rather than being written into the value, the same
+/// rule the window titles follow. A locale that spells "Skribisto" out loses
+/// the name of any other edition built on this tree.
+#[test]
+fn the_app_menu_labels_take_the_application_name_as_an_argument() {
+    for (locale, ftl) in MENU_LOCALES {
+        let labels = ftl_labels(ftl);
+        for key in ["native-menu-about", "native-menu-hide", "native-menu-quit"] {
+            let label = labels[key];
+            assert!(
+                label.contains("{ $app }"),
+                "{locale}: `{key}` = {label:?} must name the app through the argument"
+            );
+        }
+    }
+}
+
 #[test]
 fn mnemonic_of_reads_markers_and_skips_escaped_ampersands() {
     assert_eq!(mnemonic_of("&Fichier"), Some('f'));

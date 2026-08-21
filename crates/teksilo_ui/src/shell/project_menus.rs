@@ -149,8 +149,16 @@ pub(crate) fn sync_insert_template_submenu(
 }
 
 /// Where the Image menu slots in among the top-level menus, counting from zero:
-/// Work, View, Document, Format, **Image**, Go, Tools, Help.
-const IMAGE_MENU_INDEX: usize = 4;
+/// **App**, Work, View, Document, Format, **Image**, Go, Tools, Window, Help.
+///
+/// The two platform-standard menus (App leading, Window before Help) are
+/// top-level nodes like any other and therefore count here, even though neither
+/// renders in the in-window bar — which is exactly the trap: a wrong index puts
+/// the Image menu one place off on macOS and *nowhere visible* on Linux, since
+/// the position is right there in the hamburger either way. Pinned by
+/// `the_image_menu_lands_between_format_and_go`, which reads the built model
+/// rather than trusting this number.
+const IMAGE_MENU_INDEX: usize = 5;
 
 /// Show or hide the whole **Image** menu, following the selection.
 ///
@@ -214,11 +222,53 @@ mod format;
 mod view;
 mod work;
 
+/// The platform's application menu — the bold app-name submenu macOS puts
+/// first, carrying About / Hide / Quit on the standard responder-chain
+/// selectors.
+///
+/// Declared rather than left to Teksilo's auto-injection: the bridge adds a
+/// default App menu when the model declares none, but with English `lit!`
+/// labels, so a French system would read "Skribisto ▸ Quit". The product name
+/// itself is **data** and arrives as an argument (same rule as the window
+/// titles), which is also what keeps the labels correct for an edition that
+/// renames itself.
+///
+/// The labels carry no `&` mnemonic: macOS has no mnemonics, and the native
+/// bridge resolves standard labels without stripping one, so an ampersand
+/// would print literally in the menu. Pinned by a test in `shell::windows`.
+fn app_standard_menu() -> teksilo::widgets::StandardMenu {
+    let app = crate::identity::display_name();
+    teksilo::widgets::StandardMenu::app()
+        .title(lit!(app.clone()))
+        .about(tr!(native_menu_about(app = app.clone())))
+        .hide(tr!(native_menu_hide(app = app.clone())))
+        .quit(tr!(native_menu_quit(app = app)))
+}
+
+/// The platform's Window menu (Minimize / Zoom, plus the live window list
+/// AppKit maintains).
+///
+/// Worth declaring for Skribisto specifically: several project windows in one
+/// process is the ordinary shape here (Work ▸ New Window, and one window per
+/// open project), so the window list is the only surface that names them all.
+fn window_standard_menu() -> teksilo::widgets::StandardMenu {
+    teksilo::widgets::StandardMenu::window()
+        .title(tr!(native_menu_window()))
+        .minimize(tr!(native_menu_minimize()))
+        .zoom(tr!(native_menu_zoom()))
+}
+
 /// Build the full File / Edit / Format / Go / Tools / Help menu model for a project window.
 ///
 /// One module per menu; each takes the parts it needs off [`ProjectMenuParts`]
 /// itself rather than through a bespoke argument list, so adding a row to one
 /// menu never touches another's signature.
+///
+/// Two of the top-level nodes are **platform-standard** menus rather than rows
+/// of our own — the App menu leading and the Window menu just before Help, the
+/// order macOS expects. Both are invisible to the in-window bar
+/// (`MenuBar::model_entries` keeps only `Submenu` nodes), so they change
+/// nothing on Linux or Windows and exist purely for the mirrored native bar.
 pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
     // The three short menus below still read their pieces here; the four long
     // ones take `&parts` and clone what they need themselves. Nothing is moved
@@ -228,6 +278,7 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
     let menu_go = parts.go.clone();
 
     MenuModel::new()
+        .standard_menu(app_standard_menu())
         .menu(tr!(menu_work()), |m| work::menu(m, &parts))
         .menu(tr!(menu_view()), |m| view::menu(m, &parts))
         // Format — marks the author places in the prose itself, as
@@ -360,6 +411,10 @@ pub(crate) fn build_project_menu(parts: ProjectMenuParts) -> MenuModel {
             }
             m
         })
+        // Window (macOS only — see `window_standard_menu`). Declared here
+        // rather than at the end because the platform's order is Window *then*
+        // Help, and the model's order is what the native bar renders.
+        .standard_menu(window_standard_menu())
         // Help sits last, as it does on every desktop platform.
         // "About" is fired by name only (no payload), so it needs
         // no `AppIntent` variant — just the global action that
@@ -488,5 +543,170 @@ mod tests {
             1,
             "exactly the placeholder while the project has no templates"
         );
+    }
+
+    // ── The platform-standard (macOS) menus ─────────────────────────────
+
+    /// A `ProjectMenuParts` with nothing open — every handle detached or
+    /// pointed at an empty `AppContext`.
+    ///
+    /// The shape of the model does not depend on any of it: the standard menus
+    /// are declared unconditionally, and the rows in between are built from
+    /// signals whose *values* only decide enabled/visible state. So a blank
+    /// project is the cheapest input that still exercises the real builder
+    /// rather than a stand-in shaped like it.
+    fn empty_parts() -> ProjectMenuParts {
+        let app_ctx = Rc::new(frontend::AppContext::new());
+        let ids = crate::app_ids::AppIds::new();
+        let single_work = SingleWork::new(app_ctx.clone());
+        let backup_mode = Signal::new(false);
+        ProjectMenuParts {
+            app_ctx: app_ctx.clone(),
+            export: ExportViewModel::new(app_ctx.clone(), ids.clone()),
+            single_work: single_work.clone(),
+            single_work_info: SingleWorkInfo::new(app_ctx.clone()),
+            ids: ids.clone(),
+            autosave_menu: Signal::new(false),
+            spellcheck_menu: Signal::new(false),
+            comments_menu: Signal::new(true),
+            scene_focused: Signal::new(false),
+            binder_has_selection: Signal::new(false),
+            templates_submenu_id: MenuItemId::next(),
+            go: crate::go::GoAvailability::new(),
+            format: FormatViewModel::detached(),
+            save_as: SaveAsViewModel::new(
+                app_ctx.clone(),
+                ids.clone(),
+                single_work,
+                backup_mode.clone(),
+                Signal::new(None),
+            ),
+            backup_mode,
+            unsaved: Signal::new(false),
+            outline: OutlineViewModel::new_default(app_ctx, ids),
+            focus: FocusViewModel::new(),
+            placement: Signal::new(teksilo::core::WindowPlacement::default()),
+        }
+    }
+
+    fn standard_role(node: &MenuNode) -> Option<teksilo::widgets::StandardMenuRole> {
+        match node {
+            MenuNode::Standard(menu) => Some(menu.role()),
+            _ => None,
+        }
+    }
+
+    /// macOS puts the application menu first — it is where a Mac user reaches
+    /// for Quit, and AppKit renders whatever leads the bar in that bold
+    /// app-name slot whether or not it belongs there. Teksilo injects a default
+    /// one when the model declares none, so the failure this pins is not "no
+    /// App menu" but "an App menu with Teksilo's English labels", which reads
+    /// as a half-translated app on a French system and is invisible from Linux.
+    #[test]
+    fn the_application_menu_leads_the_model() {
+        let model = build_project_menu(empty_parts());
+        model.modify(|nodes| {
+            assert_eq!(
+                standard_role(&nodes[0]),
+                Some(teksilo::widgets::StandardMenuRole::App),
+                "the application menu must be the leading top-level node"
+            );
+        });
+    }
+
+    /// The platform order is Window then Help, and the model's order is what
+    /// the native bar renders — there is no second sorting step between them.
+    #[test]
+    fn the_window_menu_sits_just_before_help() {
+        let model = build_project_menu(empty_parts());
+        model.modify(|nodes| {
+            let last = nodes.len() - 1;
+            assert!(
+                matches!(nodes[last], MenuNode::Submenu { .. }),
+                "Help — an ordinary submenu — stays last"
+            );
+            assert_eq!(
+                standard_role(&nodes[last - 1]),
+                Some(teksilo::widgets::StandardMenuRole::Window),
+                "the Window menu goes immediately before Help"
+            );
+        });
+    }
+
+    /// Exactly two standard nodes, and every other top-level node an ordinary
+    /// submenu. A stray `Standard` would be silently dropped by the in-window
+    /// bar (`model_entries` keeps only `Submenu`s), so it would go unnoticed
+    /// on every platform but the one it breaks.
+    #[test]
+    fn the_model_declares_exactly_two_standard_menus() {
+        let model = build_project_menu(empty_parts());
+        model.modify(|nodes| {
+            let standards: Vec<_> = nodes.iter().filter_map(standard_role).collect();
+            assert_eq!(
+                standards,
+                vec![
+                    teksilo::widgets::StandardMenuRole::App,
+                    teksilo::widgets::StandardMenuRole::Window
+                ],
+                "App and Window are standard; Help is ours (it carries About)"
+            );
+            assert!(
+                nodes
+                    .iter()
+                    .filter(|n| standard_role(n).is_none())
+                    .all(|n| matches!(n, MenuNode::Submenu { .. })),
+                "a bare item or separator at top level renders in neither bar"
+            );
+        });
+    }
+
+    /// `IMAGE_MENU_INDEX` is a raw position into the top-level nodes, and the
+    /// two standard menus count towards it — so declaring the App menu shifted
+    /// every ordinary menu one place right. Reading the built model is the only
+    /// way to notice: the constant is self-consistent whatever it says, and
+    /// off-by-one puts the Image menu between Document and Format, which looks
+    /// deliberate.
+    #[test]
+    fn the_image_menu_lands_between_format_and_go() {
+        let model = build_project_menu(empty_parts());
+        let image = MenuItemId::next();
+        sync_image_menu(&model, image, true);
+        model.modify(|nodes| {
+            let title_at = |nodes: &[MenuNode], i: usize| match &nodes[i] {
+                MenuNode::Submenu { title, .. } => title.resolve_now(),
+                _ => panic!("top-level node {i} is not an ordinary submenu"),
+            };
+            // Compared against the same `tr!` calls the model is built from, so
+            // renaming a menu re-labels the test rather than breaking it.
+            assert_eq!(
+                title_at(nodes, IMAGE_MENU_INDEX),
+                tr!(menu_image()).resolve_now(),
+                "the Image menu goes in at IMAGE_MENU_INDEX"
+            );
+            assert_eq!(
+                title_at(nodes, IMAGE_MENU_INDEX - 1),
+                tr!(menu_format()).resolve_now(),
+                "Format is the menu it follows"
+            );
+            assert_eq!(
+                title_at(nodes, IMAGE_MENU_INDEX + 1),
+                tr!(menu_go()).resolve_now(),
+                "Go is the menu it precedes"
+            );
+        });
+    }
+
+    /// The neighbours above only mean something if the menu was absent to begin
+    /// with — a model that already carried it would pass that test while
+    /// `sync_image_menu` did nothing at all.
+    #[test]
+    fn the_image_menu_is_absent_until_a_picture_is_selected() {
+        let model = build_project_menu(empty_parts());
+        let image = MenuItemId::next();
+        assert!(!model.contains(image));
+        sync_image_menu(&model, image, true);
+        assert!(model.contains(image), "selecting a picture adds the menu");
+        sync_image_menu(&model, image, false);
+        assert!(!model.contains(image), "deselecting takes it away again");
     }
 }

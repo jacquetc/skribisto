@@ -572,6 +572,19 @@ pub fn run() {
         // broken. It is per-application, not per-widget, which is why adding
         // handlers alone changed nothing.
         .install_external_dnd()
+        // The OS menu service. On macOS it registers a real `NSMenu` backend, so
+        // each project window's `MenuBar` (built `from_model`, flagged
+        // `NativeMenuMode::Suppress` in `shell::windows`) mirrors its `MenuModel`
+        // into the global bar at the top of the screen and hides the in-window
+        // strip — the platform's own convention, and the only place a Mac user
+        // looks for File/Edit. Everywhere else the backend is a no-op and the
+        // in-window hamburger is unchanged, so this call costs Linux and Windows
+        // nothing.
+        //
+        // Registered here and not per window on purpose: the handle is Tier 1
+        // (one global bar for the process, following window focus), and the
+        // widget-side bridge only ever *reads* it out of app-state.
+        .install_native_menu()
         .install_toast_default()
         // Main-thread async executor: `spawn_blocking` gets pure-filesystem work
         // (backup sniffing, destination-reachability probes) off the UI thread.

@@ -43,8 +43,8 @@ use teksilo::res;
 use teksilo::widgets::MenuModel;
 use teksilo::widgets::primitives::icon_widget::IconMode;
 use teksilo::widgets::{
-    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, IconWidget, MenuBar, Padding,
-    Slide, SlideEdge, TextWidget, TitleBar, VStack, WindowFrame, ZStack,
+    Center, CollapsePolicy, DeadZone, Expand, HStack, IconButtonSize, IconWidget, MenuBar,
+    NativeMenuMode, Padding, Slide, SlideEdge, TextWidget, TitleBar, VStack, WindowFrame, ZStack,
 };
 
 use frontend::AppContext;
@@ -649,7 +649,18 @@ impl ProjectWindowFactory {
                         // `Toolbar` (30 dp), not `Large` (40): the bar is
                         // `TITLE_BAR_HEIGHT` tall and does not grow for an oversized
                         // child — a `Large` hamburger simply overflows the strip.
+                        //
+                        // `Suppress`, not `Coexist`: on macOS the same `MenuModel`
+                        // is mirrored into the global bar at the top of the screen
+                        // (see `install_native_menu` in `lib.rs`) and the in-window
+                        // hamburger disappears, leaving the brand mark and the
+                        // window controls in the title bar. Two copies of one menu
+                        // — one of them where no Mac user looks — is what `Coexist`
+                        // would buy. The flag is inert off macOS: the hamburger and
+                        // its dropdowns render exactly as before, which is why this
+                        // is one line and not a `cfg`.
                         let menubar = MenuBar::from_model(menu)
+                            .native_on_macos(NativeMenuMode::Suppress)
                             .collapse_policy(CollapsePolicy::Always)
                             .hamburger_size(IconButtonSize::Toolbar);
 

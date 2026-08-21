@@ -1475,6 +1475,19 @@ about-license = Distribué sous la Licence publique générale GNU, version 3.
 about-copyright = © 2026 Cyril Jacquet
 about-close = Fermer
 
+## Barre de menus native (macOS)
+# Libellés des menus standard « Application » et « Fenêtre » recopiés dans la
+# barre de menus globale de macOS. Pas de mnémonique `&` ici : macOS n'en a pas,
+# et le pont natif ne les retire pas — une esperluette s'afficherait telle
+# quelle. Le nom de l'application est une donnée (le nom de l'édition en cours
+# d'exécution) : il arrive en argument, comme pour les titres de fenêtre.
+native-menu-about = À propos de { $app }
+native-menu-hide = Masquer { $app }
+native-menu-quit = Quitter { $app }
+native-menu-window = Fenêtre
+native-menu-minimize = Réduire
+native-menu-zoom = Zoom
+
 # Titres de fenêtre. Le nom de l'application est une donnée (le nom de l'édition
 # en cours d'exécution) : il arrive en argument plutôt que d'être écrit ici.
 window-title = { $title } — { $app }
