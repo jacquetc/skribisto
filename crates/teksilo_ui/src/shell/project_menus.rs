@@ -236,6 +236,15 @@ mod work;
 /// The labels carry no `&` mnemonic: macOS has no mnemonics, and the native
 /// bridge resolves standard labels without stripping one, so an ampersand
 /// would print literally in the menu. Pinned by a test in `shell::windows`.
+///
+/// **`quit_intent` is load-bearing, not decoration.** Left unset, this menu's
+/// Quit is AppKit's `terminate:` on a ⌘Q key equivalent, and AppKit dispatches
+/// main-menu key equivalents before the responder chain — so ⌘Q would exit the
+/// process without `QuitSequencer` ever running: no unsaved-changes prompt for
+/// any open Work, no on-close backup, and not even winit's exit path. Skribisto's
+/// own Ctrl+Q shortcut cannot cover for that, because the keystroke never
+/// reaches the widget tree to begin with. Routing it hands ⌘Q to the same
+/// guarded `app.quit` action Work ▸ Quit fires, which owns the exit from there.
 fn app_standard_menu() -> teksilo::widgets::StandardMenu {
     let app = crate::identity::display_name();
     teksilo::widgets::StandardMenu::app()
@@ -243,6 +252,7 @@ fn app_standard_menu() -> teksilo::widgets::StandardMenu {
         .about(tr!(native_menu_about(app = app.clone())))
         .hide(tr!(native_menu_hide(app = app.clone())))
         .quit(tr!(native_menu_quit(app = app)))
+        .quit_intent("app.quit")
 }
 
 /// The platform's Window menu (Minimize / Zoom, plus the live window list
@@ -631,6 +641,30 @@ mod tests {
                 "the Window menu goes immediately before Help"
             );
         });
+    }
+
+    /// ⌘Q on macOS must reach `QuitSequencer`, not AppKit's `terminate:`.
+    ///
+    /// Unrouted, the App menu's Quit exits the process on a key equivalent that
+    /// AppKit dispatches before the responder chain — so every open Work's
+    /// unsaved prose goes without a prompt, no on-close backup is taken, and
+    /// Skribisto's own Ctrl+Q shortcut never even sees the keystroke. None of
+    /// that is observable from Linux, which is why it is asserted on the model
+    /// rather than left to be noticed on a Mac.
+    #[test]
+    fn the_macos_quit_is_routed_through_the_guarded_action() {
+        assert_eq!(
+            app_standard_menu().quit_intent_name(),
+            Some("app.quit"),
+            "the App menu's Quit must fire the same guarded action as Work > Quit"
+        );
+    }
+
+    /// Only the App menu carries a quit item; the Window menu has no Quit to
+    /// route, and claiming one would put a second Command-Q in the bar.
+    #[test]
+    fn the_window_menu_routes_no_quit() {
+        assert_eq!(window_standard_menu().quit_intent_name(), None);
     }
 
     /// Exactly two standard nodes, and every other top-level node an ordinary
