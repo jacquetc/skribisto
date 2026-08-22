@@ -1478,6 +1478,7 @@ about-close = Close
 native-menu-about = About { $app }
 native-menu-hide = Hide { $app }
 native-menu-quit = Quit { $app }
+native-menu-settings = Settings…
 native-menu-window = Window
 native-menu-minimize = Minimize
 native-menu-zoom = Zoom

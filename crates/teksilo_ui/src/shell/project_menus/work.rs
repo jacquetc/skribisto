@@ -289,6 +289,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     // ── 5. App preferences ───────────────────────────
     .item(
         MenuEntry::new(tr!(menu_settings()))
+            .visible(super::NOT_ON_MACOS)
             .intent("app.settings")
             .shortcut("app.settings"),
     )
@@ -296,6 +297,7 @@ pub(super) fn menu(m: MenuItems, parts: &ProjectMenuParts) -> MenuItems {
     // ── 6. Exit process (always last) ────────────────
     .item(
         MenuEntry::new(tr!(menu_quit()))
+            .visible(super::NOT_ON_MACOS)
             .intent("app.quit")
             .shortcut("app.quit"),
     )

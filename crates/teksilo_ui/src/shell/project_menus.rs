@@ -222,6 +222,17 @@ mod format;
 mod view;
 mod work;
 
+/// Whether a row that the macOS App menu also carries should render here.
+///
+/// Settings and Quit live in the application menu on a Mac and nowhere else —
+/// a second copy in Work is not merely redundant, it puts two items in the bar
+/// claiming the same key equivalent, and the one AppKit picks is decided by
+/// traversal order rather than by us. `MenuEntry::visible` is the right lever:
+/// a hidden item is omitted from the native snapshot at build. Everywhere else
+/// this is `true` and the rows are exactly as they were — the App menu itself
+/// renders on no other platform.
+pub(crate) const NOT_ON_MACOS: bool = !cfg!(target_os = "macos");
+
 /// The platform's application menu — the bold app-name submenu macOS puts
 /// first, carrying About / Hide / Quit on the standard responder-chain
 /// selectors.
@@ -253,6 +264,19 @@ fn app_standard_menu() -> teksilo::widgets::StandardMenu {
         .hide(tr!(native_menu_hide(app = app.clone())))
         .quit(tr!(native_menu_quit(app = app)))
         .quit_intent("app.quit")
+        // The chord comes from the registry, not from AppKit's convention, so
+        // the row follows a rebind in Settings > Shortcuts. Hardcoded, ⌘Q would
+        // stay live after the writer moved Quit elsewhere *and* shadow wherever
+        // they moved it — a main-menu key equivalent is dispatched before the
+        // responder chain, so the new chord would never reach the app.
+        .quit_shortcut("app.quit")
+        // Settings belongs in the App menu on a Mac, at ⌘, — a placement no
+        // `MenuEntry` can reach, since the platform fills this menu in. Same
+        // intent and same registered shortcut as Work > Settings, so the two
+        // are one command with one chord rather than two that can disagree.
+        .settings(tr!(native_menu_settings()))
+        .settings_intent("app.settings")
+        .settings_shortcut("app.settings")
 }
 
 /// The platform's Window menu (Minimize / Zoom, plus the live window list
@@ -665,6 +689,45 @@ mod tests {
     #[test]
     fn the_window_menu_routes_no_quit() {
         assert_eq!(window_standard_menu().quit_intent_name(), None);
+    }
+
+    /// Both routed rows name their registered shortcut, so their chords come
+    /// from the same registry the in-window rows read.
+    ///
+    /// Without this the App menu is the one surface advertising a chord nothing
+    /// registered: hardcoded ⌘Q survives a rebind in Settings ▸ Shortcuts, stays
+    /// live for a command the writer moved, and shadows wherever they moved it —
+    /// AppKit dispatches a main-menu key equivalent before the responder chain,
+    /// so the new chord never reaches the app at all.
+    #[test]
+    fn the_routed_rows_take_their_chords_from_the_registry() {
+        let app = app_standard_menu();
+        assert_eq!(app.quit_shortcut_id(), Some("app.quit"));
+        assert_eq!(app.settings_shortcut_id(), Some("app.settings"));
+    }
+
+    /// Settings belongs in the App menu on a Mac. Routed to the same intent as
+    /// Work ▸ Settings, so the two are one command rather than two that can
+    /// drift apart.
+    #[test]
+    fn settings_is_routed_into_the_application_menu() {
+        assert_eq!(
+            app_standard_menu().settings_intent_name(),
+            Some("app.settings")
+        );
+    }
+
+    /// A row the App menu carries must not also render in Work: two items
+    /// claiming one key equivalent leave AppKit to pick by traversal order.
+    /// This asserts the *rule*, not the platform — on Linux both rows render and
+    /// there is no App menu to collide with.
+    #[test]
+    fn the_rows_the_app_menu_carries_are_hidden_from_work_on_macos() {
+        assert_eq!(
+            NOT_ON_MACOS,
+            !cfg!(target_os = "macos"),
+            "Settings and Quit render in Work exactly where no App menu exists"
+        );
     }
 
     /// Exactly two standard nodes, and every other top-level node an ordinary
