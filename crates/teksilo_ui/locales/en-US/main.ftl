@@ -1918,6 +1918,12 @@ versions-unreadable = { $count ->
     [one] { $count } backup couldn't be read
    *[other] { $count } backups couldn't be read
 }
+# Counts what the project's own history dropped, which is why it names it: a
+# backup may still hold one of those states, and then it is in the list above.
+versions-thinned = { $count ->
+    [one] Older versions thin out as they age — the project's own history has already dropped { $count } earlier state of this text.
+   *[other] Older versions thin out as they age — the project's own history has already dropped { $count } earlier states of this text.
+}
 versions-source-backup = From a backup
 versions-source-project = From the project's own history
 versions-list-caption = One entry per change, not per backup
@@ -1941,9 +1947,17 @@ versions-blocks-moved = { $count ->
     [one] { $count } paragraph moved
    *[other] { $count } paragraphs moved
 }
-versions-pin = Pin this version — automatic cleanup will never delete it
-versions-unpin = Unpin this version — automatic cleanup may delete it again
+# Names the backup, not the version: a pin is held against a file path, so it
+# keeps the whole snapshot this row's text was read out of — see versions-pin-note.
+versions-pin = Pin the backup this version came from — automatic cleanup will never delete it
+versions-unpin = Unpin the backup this version came from — automatic cleanup may delete it again
 versions-pinned-only = Show only pinned versions
+versions-pin-note = Only versions from a backup can be pinned — a pin keeps a file, and the project's own history isn't one.
+versions-pinned-empty = Nothing here is pinned yet
+# The same sentence with the reason, for a list that actually holds a version no
+# pin can reach. On an all-backup list the reason is true and irrelevant, and
+# reads as an explanation for an emptiness it did not cause.
+versions-pinned-empty-log = Nothing here is pinned yet. Only versions from a backup can be pinned — a pin keeps a file, and the project's own history isn't one.
 versions-range-filter = Show only versions between two dates
 versions-filtered-empty = No version matches the filters you've set
 versions-clear-filters = Clear the filters
@@ -1966,6 +1980,28 @@ versions-restore-failed = The restore failed: { $error }
 versions-restore-backup-busy = A backup is already running — try again in a moment
 versions-restore-in-backup-file = You're looking at a backup file; open the project itself to restore into it
 versions-restore-no-project = No project is open
+# ── Bringing a deleted row back ──
+versions-recreate-button = Bring this back…
+versions-recreate-picker-title = Where should it go?
+versions-recreate-picker-empty = This project has no binder to put it in
+versions-recreate-picker-confirm = Bring it back here
+versions-recreate-picker-cancel = Cancel
+versions-recreate-untitled = this row
+versions-recreate-confirm-title = Bring “{ $item }” back?
+versions-recreate-confirm-text = It will be added to { $destination }, with the text it had on { $date }.
+# NOT "Ctrl+Z": that undoes the focused editor's *document*, and this creates a
+# binder row. The way back is the Undo on the toast, as it is for trash and
+# comments — see versions-recreated-toast.
+versions-recreate-confirm-undo-note = Undo, on the message that follows, takes it straight back out.
+versions-recreated-toast = “{ $item }” is back in your project
+versions-recreated-partial-toast = { $count ->
+    [one] “{ $item }” is back, but one of its texts couldn't be read
+   *[other] “{ $item }” is back, but { $count } of its texts couldn't be read
+}
+versions-recreate-already-here = That row is in your project already
+versions-recreate-no-destination = Pick somewhere in the binder to put it
+versions-recreate-unreadable = That backup couldn't be read, so nothing was added
+versions-recreate-failed = Couldn't bring it back: { $error }
 versions-changed-percent = { $percent }% of this changed
 versions-hidden-paragraphs = { $count ->
     [one] … { $count } unchanged paragraph …

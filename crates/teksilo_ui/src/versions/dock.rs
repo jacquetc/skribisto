@@ -216,6 +216,20 @@ impl VersionsPanel {
             // filter row above, which appears exactly when something is
             // filtering — a second copy here would be the same control twice on
             // one screen.
+            if vm.pinned_filter_found_nothing() {
+                // "Pinned only" matching nothing is not the same situation as a
+                // date range matching nothing, and the reason only belongs on a
+                // list that actually holds a version no pin can reach: over a
+                // past the project's own history holds, the filter *cannot*
+                // match, and the generic sentence would send the writer looking
+                // for pins they could not have made. Over backups nobody has
+                // pinned yet it is simply empty.
+                return Box::new(note(if vm.has_unpinnable_versions() {
+                    tr!(versions_pinned_empty_log())
+                } else {
+                    tr!(versions_pinned_empty())
+                }));
+            }
             return Box::new(note(tr!(versions_filtered_empty())));
         }
         Box::new(
@@ -228,13 +242,7 @@ impl VersionsPanel {
                 // backup taken this afternoon over text last touched in March
                 // adds no row at all — and the entry the writer is looking at is
                 // legitimately older than a backup they just made by hand.
-                .child(
-                    Padding::symmetric(4.0, 8.0).child(
-                        TextWidget::new(tr!(versions_list_caption()))
-                            .style(TextStyleRole::Small)
-                            .color(TextRole::Secondary),
-                    ),
-                )
+                .child(captions(vm))
                 // The list is the index; the comparison is what is being read. Two
                 // to one, so a paragraph fits without scrolling in a rail that is
                 // 300 dp wide and as tall as the window.
@@ -507,6 +515,33 @@ fn visible_rows(view: &TimelineView, vm: &VersionsViewModel) -> Vec<VersionRow> 
         .collect()
 }
 
+/// What the writer has to be told before the list makes sense.
+///
+/// The first line is unconditional and always was: a row's date is the moment
+/// that exact wording *first* appeared, not the moment a file was written, so a
+/// backup made this afternoon over text last touched in March adds no row at all.
+///
+/// The second appears only where it applies — a list holding at least one version
+/// the project's own history recorded, which is the only situation in which the
+/// pin column is present on some rows and simply missing on others. See
+/// [`VersionsViewModel::shows_unpinnable`] for why that absence needs a sentence
+/// rather than a disabled icon.
+fn captions(vm: &VersionsViewModel) -> impl Widget + use<> {
+    let mut col = VStack::new().spacing(2.0).child(
+        TextWidget::new(tr!(versions_list_caption()))
+            .style(TextStyleRole::Small)
+            .color(TextRole::Secondary),
+    );
+    if vm.shows_unpinnable() {
+        col = col.child(
+            TextWidget::new(tr!(versions_pin_note()))
+                .style(TextStyleRole::Small)
+                .color(TextRole::Secondary),
+        );
+    }
+    Padding::symmetric(4.0, 8.0).child(col)
+}
+
 fn list(view: &TimelineView, vm: VersionsViewModel) -> impl Widget + use<> {
     let model = teksilo::data::ListModel::from_vec(visible_rows(view, &vm));
     let pin_vm = vm.clone();
@@ -596,13 +631,24 @@ fn magnitude_bar(value: f32) -> impl Widget {
     )
 }
 
-/// The three things a timeline has to say out loud.
+/// The four things a timeline has to say out loud.
 ///
 /// Each date here is one the timeline can prove, and the sentences are worded to
 /// claim no more than that. `absent_at` is a moment the row was *observed* not to
 /// exist, not the moment it first appeared: the creation sits somewhere in the gap
 /// between the two, and "didn't exist before `<first sighting>`" would have asserted
 /// something about that gap that nothing on disk supports.
+///
+/// The fourth is the same discipline pointed the other way. `thinned_away` is what
+/// keeps *"the earliest version on record"* — drawn one pane up, whenever the
+/// oldest entry is selected — from being read as "this is everything there ever
+/// was". Retention drops a row's older states as they age, by design and without
+/// a word anywhere, so a scene touched daily through April is down to about a
+/// dozen recorded states a year later. It is a count, not a guess: nothing in a
+/// thinned row's surviving entries reveals that anything was removed (see
+/// `skrib_format::history::HistoryEntry::thinned_away`), so this line appears
+/// only where the log actually recorded a loss, and a row whose whole past is
+/// still on record says nothing at all.
 fn boundaries(view: &TimelineView) -> impl Widget + use<> {
     let timeline = &view.timeline;
     let mut col = VStack::new().spacing(2.0);
@@ -621,14 +667,27 @@ fn boundaries(view: &TimelineView) -> impl Widget + use<> {
             count = timeline.unreadable.len() as i64
         ))));
     }
+    if timeline.thinned_away > 0 {
+        col = col.child(footnote_line(tr!(versions_thinned(
+            count = timeline.thinned_away as i64
+        ))));
+    }
     Padding::symmetric(8.0, 6.0).child(col)
 }
 
+/// One boundary sentence, left-aligned and **wrapping**.
+///
+/// `Expand::horizontal`, not a trailing `Spacer`: an `HStack` proposes an
+/// unbounded width to its children, so a `TextWidget` beside a `Spacer` measures
+/// at its full single-line intrinsic width and then clips at the rail's 300 dp
+/// rather than wrapping. It never showed while every sentence here was a date —
+/// "Deleted some time after 2026-03-14" fits — and the first longer one lost its
+/// second half off the right edge. `Expand` hands the child the width that is
+/// actually left, which is what a wrap needs to be measured against.
 fn footnote_line(text: LocalizedString) -> impl Widget {
     HStack::new()
         .spacing(6.0)
-        .child(TextWidget::new(text).color(TextRole::Secondary))
-        .child(Spacer::new())
+        .child(Expand::horizontal().child(TextWidget::new(text).color(TextRole::Secondary)))
 }
 
 use crate::shared::text::dock_note as note;
@@ -636,7 +695,7 @@ use crate::shared::text::dock_note as note;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::versions::{ProjectHandle, VersionScope};
+    use crate::versions::{Pins, ProjectHandle, VersionScope};
     use teksilo::core::widget_tree::WidgetTree;
 
     fn panel(vm: VersionsViewModel, focus: Option<u64>) -> VersionsPanel {
@@ -688,6 +747,68 @@ mod tests {
                 "the versions dock laid out to zero width in the '{name}' state",
             );
         }
+    }
+
+    /// Every line of text the panel draws, however deep.
+    fn text_lines(tree: &WidgetTree, id: WidgetId) -> usize {
+        let mine = usize::from(
+            tree.widget_type_name(id)
+                .is_some_and(|n| n.ends_with("TextWidget")),
+        );
+        mine + tree
+            .children(id)
+            .into_iter()
+            .map(|c| text_lines(tree, c))
+            .sum::<usize>()
+    }
+
+    fn laid_out(view: TimelineView, pins: Option<Pins>) -> usize {
+        let vm = VersionsViewModel::new();
+        vm.seed_for_test(uuid::Uuid::from_u128(1), view);
+        if let Some(p) = pins {
+            vm.set_pins(p);
+        }
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(panel(vm, Some(7))));
+        tree.layout(SizeProposal::exact(300.0, 600.0));
+        text_lines(&tree, id)
+    }
+
+    /// **What keeps "the earliest version on record" honest.** Retention drops a
+    /// row's older states as they age, and nothing in the surviving entries
+    /// reveals it — so the panel draws a line exactly when the log recorded a
+    /// loss, and one fewer when it did not.
+    #[test]
+    fn the_panel_says_so_when_older_states_have_been_thinned_away() {
+        let quiet = dated_view(3);
+        let mut thinned = dated_view(3);
+        thinned.timeline.thinned_away = 17;
+        assert_eq!(
+            laid_out(thinned, None),
+            laid_out(quiet, None) + 1,
+            "a thinned row draws one line the untouched one does not",
+        );
+    }
+
+    /// And the pin note appears on exactly the list that needs it: one holding a
+    /// version the project's own history recorded, which can carry no pin.
+    #[test]
+    fn the_panel_explains_the_pin_column_only_where_it_is_missing() {
+        let backups = dated_view(3);
+        let mut mixed = dated_view(3);
+        mixed.timeline.changes[1].source = SourceKind::Log;
+        mixed.timeline.changes[1].from.source = SourceKind::Log;
+        let pins = || {
+            Some(Pins {
+                is_pinned: Rc::new(|_: &std::path::Path| false),
+                set: Rc::new(|_, _| {}),
+            })
+        };
+        assert_eq!(
+            laid_out(mixed, pins()),
+            laid_out(backups, pins()) + 1,
+            "a mixed list draws the note; an all-backup list does not",
+        );
     }
 
     /// Three changes a day apart, newest first — enough to put a date filter

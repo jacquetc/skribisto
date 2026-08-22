@@ -96,6 +96,25 @@ pub struct Timeline {
     /// archive). Surfaced rather than swallowed: a gap a writer cannot see is a
     /// gap they will assume is data loss.
     pub unreadable: Vec<VersionRef>,
+    /// How many states of this row's prose the sources have **removed** as they
+    /// aged — today only the project's own history log, which thins per
+    /// `(row, role)` and keeps the count (see
+    /// [`crate::versions::VersionSource::thinned_away`]).
+    ///
+    /// The third boundary fact, and the one that could not be inferred. The other
+    /// two are read off the walk below because a moment that was *examined* proves
+    /// something; thinning leaves nothing to examine, and a silent slot is
+    /// deliberately inert so a routine sweep does not read as a gap. Without a
+    /// tally recorded at the moment of the deletion, a timeline whose oldest entry
+    /// is all that survives of a year of daily edits is indistinguishable from one
+    /// that has its row's whole past — and "the earliest version on record" then
+    /// reads as a promise it cannot keep.
+    ///
+    /// It counts what the **log** dropped, not what is missing from this list: a
+    /// backup may still hold one of those states, in which case the merge below
+    /// puts it back on screen. That is why the sentence a surface draws from this
+    /// has to name where the states were dropped from.
+    pub thinned_away: u32,
 }
 
 impl Timeline {
@@ -197,7 +216,18 @@ pub fn timeline_for(
         }
     }
 
-    Ok(assemble(resolved, unreadable))
+    let mut timeline = assemble(resolved, unreadable);
+    // Asked of every source and maxed rather than summed: each reports what *it*
+    // removed, and a row whose past two logs both thinned (a project restored from
+    // a backup carries the backup's log) has not lost the two counts added
+    // together — the states overlap, so the larger of the two is the claim that
+    // holds under either reading.
+    timeline.thinned_away = sources
+        .iter()
+        .map(|s| s.thinned_away(uid, role))
+        .max()
+        .unwrap_or(0);
+    Ok(timeline)
 }
 
 /// What one examined moment had to say about the row.
@@ -299,6 +329,9 @@ fn assemble(resolved: Vec<Slot>, unreadable: Vec<VersionRef>) -> Timeline {
         absent_at,
         deleted_after,
         unreadable: dedup_refs(unreadable),
+        // Not readable off this walk — see the field's own docs. `timeline_for`
+        // fills it from the sources themselves.
+        thinned_away: 0,
     }
 }
 

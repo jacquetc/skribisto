@@ -102,6 +102,29 @@ pub struct HistoryEntry {
     pub hash: String,
     /// Uncompressed byte length, so a size-over-time reading needs no blob reads.
     pub bytes: u64,
+    /// How many older states of this `(row, role)` retention has already removed.
+    ///
+    /// Carried by the **oldest surviving entry** of the key and zero on every
+    /// other, so the running total outlives each sweep without a second file to
+    /// keep in step with this one. [`thin`] is the only writer.
+    ///
+    /// It exists because thinning is otherwise **unprovable after the fact**. The
+    /// survivors of a GFS sweep are one per bucket, which is exactly what a row
+    /// edited once per bucket and never thinned at all looks like: nothing in the
+    /// surviving set distinguishes them. So a surface wanting to say "there was
+    /// more here once" could only have guessed, and the Versions dock's
+    /// *"the earliest version on record"* had to be read as *"this is everything
+    /// there ever was"*. This is the one fact that lets it say otherwise and be
+    /// right — and, just as much, stay quiet on a row whose whole past is still
+    /// on record.
+    ///
+    /// `#[serde(default)]`, so an `index.ron` written before this field existed
+    /// reads back as zero — the honest value for it, since those sweeps recorded
+    /// nothing about what they dropped and nothing is therefore claimed. Purely
+    /// additive, so no `FORMAT_VERSION` bump, for the same reason
+    /// `BinderItemFile::aliases` needed none.
+    #[serde(default)]
+    pub thinned_away: u32,
     //
     // There was a `pinned: bool` here, exempting one entry from `thin`, and it was
     // never set to `true` by anything: the shipped answer to "keep this version
@@ -170,6 +193,25 @@ impl HistoryLog {
     pub fn referenced_hashes(&self) -> BTreeSet<String> {
         self.entries.iter().map(|e| e.hash.clone()).collect()
     }
+
+    /// How many states of one `(row, role)` [`thin`] has removed from this log.
+    ///
+    /// `max` rather than "read the oldest entry", even though [`thin`]'s
+    /// invariant is that only the oldest carries a non-zero tally: `entries` is
+    /// append-only *in normal operation*, and a log carried through a restore has
+    /// no such guarantee — the same reason [`crate::versions::LogVersions`]
+    /// compares timestamps instead of trusting position. `max` is right under
+    /// both orderings and cannot silently report zero for a row that has lost
+    /// half its past.
+    pub fn thinned_away(&self, uid: uuid::Uuid, role: &ContentRole) -> u32 {
+        let key = role_key(uid, role);
+        self.entries
+            .iter()
+            .filter(|e| role_key(e.item_uid, &e.role) == key)
+            .map(|e| e.thinned_away)
+            .max()
+            .unwrap_or(0)
+    }
 }
 
 /// Append an entry for every prose blob whose text differs from that row's newest
@@ -208,6 +250,10 @@ pub fn record(bundle: &mut WorkBundle, now: DateTime<Utc>) {
                         role: pr.role.clone(),
                         hash,
                         bytes: text.len() as u64,
+                        // A fresh state has lost nothing behind it; `thin` moves
+                        // the key's running total onto whichever entry it leaves
+                        // oldest, and a just-appended one is the newest.
+                        thinned_away: 0,
                     },
                     text.clone(),
                 ));
@@ -235,6 +281,13 @@ pub fn record(bundle: &mut WorkBundle, now: DateTime<Utc>) {
 /// Nothing here is exempt. Keeping one particular version whatever retention
 /// decides is a promise about a **backup file**, made by pinning it in the Backups
 /// list, and there is no file behind a log entry — see [`HistoryEntry`].
+///
+/// What it removes it also **counts**, into
+/// [`HistoryEntry::thinned_away`](HistoryEntry#structfield.thinned_away) on
+/// whichever entry the sweep leaves oldest for that key. Discarding an entry
+/// outright, as this used to, made a thinned row indistinguishable from a row
+/// that had never had more — which left every surface downstream unable to say
+/// how far back its own record really reached.
 pub fn thin(log: &mut HistoryLog, policy: &RetentionPolicy, min_keep: u32, now: DateTime<Utc>) {
     let mut by_key: HashMap<Key, Vec<usize>> = HashMap::new();
     for (i, e) in log.entries.iter().enumerate() {
@@ -245,15 +298,46 @@ pub fn thin(log: &mut HistoryLog, policy: &RetentionPolicy, min_keep: u32, now: 
     }
 
     let mut keep: BTreeSet<usize> = BTreeSet::new();
-    for indices in by_key.values() {
-        // `policy_keep_indices` speaks newest-first; `entries` is oldest-first.
+    // What each key has lost in total — this sweep plus every sweep before it.
+    // A key the sweep empties outright loses its tally with its last entry; that
+    // needs an all-zero policy *and* `min_keep == 0`, under which the log holds
+    // nothing to hang a count on and has nothing to say either.
+    let mut lost: HashMap<Key, u32> = HashMap::new();
+    for (key, indices) in &by_key {
+        // `policy_keep_indices` speaks newest-first, and requires it: its bucket
+        // walk keeps the **first** entry it meets in each of the most recent N
+        // buckets, so a list that is not in that order keeps the wrong state and
+        // deletes a legitimate one.
+        //
+        // Reversing `entries` only approximates it. The log is append-only in
+        // normal operation, but a log carried through a restore has no such
+        // guarantee — the same reason [`crate::versions::LogVersions`] compares
+        // timestamps rather than trusting position, and the same reason this now
+        // sorts. The reverse stays as the seed so that the stable sort's
+        // tie-break is unchanged: a well-ordered log keeps exactly the survivors
+        // it always did, and only a scrambled one behaves differently (better).
         let mut newest_first: Vec<usize> = indices.clone();
         newest_first.reverse();
+        newest_first.sort_by_key(|&i| std::cmp::Reverse(parse_at(&log.entries[i].at)));
         let stamps: Vec<DateTime<Utc>> = newest_first
             .iter()
             .map(|&i| parse_at(&log.entries[i].at))
             .collect();
-        for k in policy_keep_indices(&stamps, policy, min_keep, now) {
+        let survivors = policy_keep_indices(&stamps, policy, min_keep, now);
+        // Carried forward rather than recomputed: an entry an earlier sweep
+        // dropped left no other trace of itself, so the only surviving record of
+        // it is the running total on whichever entry outlived it. `max` because
+        // that entry may itself be among today's casualties.
+        let carried = indices
+            .iter()
+            .map(|&i| log.entries[i].thinned_away)
+            .max()
+            .unwrap_or(0);
+        lost.insert(
+            *key,
+            carried + indices.len().saturating_sub(survivors.len()) as u32,
+        );
+        for k in survivors {
             keep.insert(newest_first[k]);
         }
     }
@@ -265,6 +349,21 @@ pub fn thin(log: &mut HistoryLog, policy: &RetentionPolicy, min_keep: u32, now: 
         }
     }
     log.entries = kept;
+
+    // Exactly one entry per key carries the tally — the **oldest**, because that
+    // is the edge a reader is standing at when they ask whether anything came
+    // before it. Every other is cleared, so a later sweep that drops the oldest
+    // cannot leave two entries each claiming the same losses. `entries` is
+    // oldest-first, so the first sighting of a key is that key's oldest.
+    let mut seen: HashMap<Key, ()> = HashMap::new();
+    for e in log.entries.iter_mut() {
+        let key = role_key(e.item_uid, &e.role);
+        e.thinned_away = if seen.insert(key, ()).is_none() {
+            lost.get(&key).copied().unwrap_or(0)
+        } else {
+            0
+        };
+    }
 
     let referenced = log.referenced_hashes();
     log.blobs.retain(|h, _| referenced.contains(h));
@@ -381,6 +480,7 @@ mod tests {
             role,
             hash: hash.to_string(),
             bytes: hash.len() as u64,
+            thinned_away: 0,
         }
     }
 
@@ -431,6 +531,204 @@ mod tests {
             log.entries.iter().filter(|e| e.item_uid == busy).count() < 40,
             "the busy row must actually thin",
         );
+    }
+
+    /// **The fact a sweep would otherwise take with it.**
+    ///
+    /// After thinning, the survivors of a busy row are one per bucket — exactly
+    /// what a row edited once per bucket and never thinned looks like. Without a
+    /// tally recorded here, nothing downstream could tell the two apart, and
+    /// "the earliest version on record" would read as "this is all there ever
+    /// was" on a row that had lost thirty states.
+    #[test]
+    fn thinning_records_how_much_it_removed() {
+        let uid = uuid::Uuid::from_u128(1);
+        let mut log = HistoryLog::default();
+        for m in 0..40 {
+            log.entries.push(entry(
+                &format!("2026-08-07T09:{m:02}:00Z"),
+                uid,
+                ContentRole::SceneText,
+                &format!("h{m}"),
+            ));
+        }
+        let before = log.entries.len();
+        thin(&mut log, &gfs(), 1, now());
+        let dropped = before - log.entries.len();
+        assert!(dropped > 0, "the fixture must actually thin");
+        assert_eq!(
+            log.thinned_away(uid, &ContentRole::SceneText),
+            dropped as u32,
+            "the tally must be exactly what the sweep removed",
+        );
+    }
+
+    /// Only the **oldest** survivor carries it, so a later sweep that drops the
+    /// oldest cannot leave two entries each claiming the same losses.
+    #[test]
+    fn only_the_oldest_surviving_entry_carries_the_tally() {
+        let uid = uuid::Uuid::from_u128(1);
+        let mut log = HistoryLog::default();
+        for m in 0..40 {
+            log.entries.push(entry(
+                &format!("2026-08-07T09:{m:02}:00Z"),
+                uid,
+                ContentRole::SceneText,
+                &format!("h{m}"),
+            ));
+        }
+        thin(&mut log, &gfs(), 1, now());
+        let carrying: Vec<&HistoryEntry> =
+            log.entries.iter().filter(|e| e.thinned_away > 0).collect();
+        assert_eq!(carrying.len(), 1, "exactly one entry holds the count");
+        assert_eq!(
+            carrying[0].at, log.entries[0].at,
+            "and it is the oldest survivor",
+        );
+    }
+
+    /// **The invariant a running total lives or dies by.** A later sweep drops
+    /// the entry the first one hung its count on, so the count has to move
+    /// forward with it or every earlier sweep's losses vanish silently.
+    #[test]
+    fn the_tally_survives_the_sweep_that_drops_the_entry_holding_it() {
+        fn monthly_entry(year: i32, month: u32, uid: uuid::Uuid) -> HistoryEntry {
+            entry(
+                &format!("{year}-{month:02}-01T09:00:00Z"),
+                uid,
+                ContentRole::SceneText,
+                &format!("h{year}{month:02}"),
+            )
+        }
+        fn at(s: &str) -> DateTime<Utc> {
+            DateTime::parse_from_rfc3339(s).unwrap().with_timezone(&Utc)
+        }
+
+        let uid = uuid::Uuid::from_u128(1);
+        let mut log = HistoryLog::default();
+        // Twenty months of history, one state each. `monthly: 12` keeps the
+        // twelve most recent month-buckets, so eight go.
+        for (y, m) in (1..=12)
+            .map(|m| (2025, m))
+            .chain((1..=8).map(|m| (2026, m)))
+        {
+            log.entries.push(monthly_entry(y, m, uid));
+        }
+        thin(&mut log, &gfs(), 3, at("2026-08-07T12:00:00Z"));
+        assert_eq!(log.entries.len(), 12, "twelve month-buckets survive");
+        assert_eq!(log.thinned_away(uid, &ContentRole::SceneText), 8);
+        let carrier = log.entries[0].hash.clone();
+
+        // A year of further saves, then another sweep: the twelve newest months
+        // are now 2026-09..2027-08, so every survivor of the first sweep goes —
+        // including the one holding its count.
+        for (y, m) in (9..=12)
+            .map(|m| (2026, m))
+            .chain((1..=8).map(|m| (2027, m)))
+        {
+            log.entries.push(monthly_entry(y, m, uid));
+        }
+        thin(&mut log, &gfs(), 3, at("2027-08-07T12:00:00Z"));
+        assert!(
+            !log.entries.iter().any(|e| e.hash == carrier),
+            "the fixture must actually drop the entry carrying the tally",
+        );
+        assert_eq!(
+            log.thinned_away(uid, &ContentRole::SceneText),
+            20,
+            "the running total must cover both sweeps, not just the last",
+        );
+    }
+
+    /// **A log carried through a restore is not in append order**, and
+    /// `policy_keep_indices` keeps the *first* entry it meets in each bucket —
+    /// so feeding it position order deletes the state a writer would have wanted
+    /// and keeps the one they would not.
+    #[test]
+    fn a_scrambled_log_still_keeps_its_newest_state_per_bucket() {
+        let uid = uuid::Uuid::from_u128(1);
+        let stamps = [
+            "2026-08-07T09:10:00Z",
+            "2026-08-07T09:50:00Z", // the newest of the 09:00 bucket…
+            "2026-08-07T09:30:00Z",
+        ];
+        let mut log = HistoryLog::default();
+        // …recorded in the middle, which append order would put in the middle too.
+        for (n, at) in stamps.iter().enumerate() {
+            log.entries
+                .push(entry(at, uid, ContentRole::SceneText, &format!("h{n}")));
+        }
+        thin(&mut log, &gfs(), 1, now());
+        assert_eq!(log.entries.len(), 1, "one hour bucket, one survivor");
+        assert_eq!(
+            log.entries[0].at, "2026-08-07T09:50:00Z",
+            "the survivor must be the bucket's newest state, whatever order the \
+             entries happen to sit in",
+        );
+        assert_eq!(log.thinned_away(uid, &ContentRole::SceneText), 2);
+    }
+
+    /// Thinning with nothing to drop must not invent a loss.
+    #[test]
+    fn a_sweep_that_removes_nothing_claims_nothing() {
+        let uid = uuid::Uuid::from_u128(1);
+        let mut log = HistoryLog::default();
+        log.entries.push(entry(
+            "2026-08-07T11:00:00Z",
+            uid,
+            ContentRole::SceneText,
+            "only",
+        ));
+        thin(&mut log, &gfs(), 3, now());
+        assert_eq!(log.entries.len(), 1);
+        assert_eq!(log.thinned_away(uid, &ContentRole::SceneText), 0);
+    }
+
+    /// The tally is per `(row, role)` like the sweep itself: a busy scene body
+    /// must not make its own synopsis look thinned.
+    #[test]
+    fn the_tally_is_per_row_and_role() {
+        let uid = uuid::Uuid::from_u128(1);
+        let mut log = HistoryLog::default();
+        for m in 0..40 {
+            log.entries.push(entry(
+                &format!("2026-08-07T09:{m:02}:00Z"),
+                uid,
+                ContentRole::SceneText,
+                &format!("body{m}"),
+            ));
+        }
+        log.entries.push(entry(
+            "2026-08-07T09:00:00Z",
+            uid,
+            ContentRole::SynopsisText,
+            "synopsis",
+        ));
+        thin(&mut log, &gfs(), 1, now());
+        assert!(log.thinned_away(uid, &ContentRole::SceneText) > 0);
+        assert_eq!(
+            log.thinned_away(uid, &ContentRole::SynopsisText),
+            0,
+            "an untouched role has lost nothing",
+        );
+    }
+
+    /// An `index.ron` written before the tally existed reads back as zero — the
+    /// honest value, since those sweeps recorded nothing about what they dropped.
+    #[test]
+    fn a_log_written_before_the_tally_existed_reads_back_as_no_claim() {
+        let written = r#"[
+            (
+                at: "2026-08-07T09:00:00Z",
+                item_uid: "00000000-0000-0000-0000-000000000001",
+                role: SceneText,
+                hash: "abc123",
+                bytes: 12,
+            ),
+        ]"#;
+        let entries: Vec<HistoryEntry> =
+            ron::from_str(written).expect("a missing additive field must default");
+        assert_eq!(entries[0].thinned_away, 0);
     }
 
     /// An `index.ron` written while [`HistoryEntry`] still carried a `pinned` flag

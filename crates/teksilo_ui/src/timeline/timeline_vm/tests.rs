@@ -22,6 +22,8 @@ fn version_row(n: u128, title: &str) -> VersionRow {
     VersionRow {
         uid: uid(n),
         title: title.to_string(),
+        sub_title: String::new(),
+        role: Default::default(),
         sub_role: Default::default(),
         indent: 0,
         prose: vec![(
@@ -440,6 +442,8 @@ fn every_prose_role_is_something_this_can_open() {
         let row = VersionRow {
             uid: uid(1),
             title: "x".into(),
+            sub_title: String::new(),
+            role: Default::default(),
             sub_role: Default::default(),
             indent: 0,
             prose: vec![(
@@ -572,4 +576,91 @@ fn the_band_can_tell_a_prose_only_record_from_a_whole_bundle() {
 #[test]
 fn an_empty_history_makes_no_claim_about_its_records() {
     assert!(!TimelineViewModel::new().selected_is_prose_only());
+}
+
+// ── the way back for a row that is gone ─────────────────────────────────────
+
+fn a_backup_moment() -> Moment {
+    moment_at(0, 0, SourceKind::Backup)
+}
+
+/// **A row is put back as itself, or not at all.** The reader opens on one text;
+/// a writer bringing back a cut chapter means the chapter — its body, its
+/// synopsis, its epigraph — and dropping the rest on the way would be a second
+/// silent loss on top of the one being recovered.
+#[test]
+fn what_a_removed_row_carries_back_is_the_whole_row() {
+    let mut row = version_row(1, "The lost chapter");
+    row.role = common::entities::BinderItemRole::Folder;
+    row.sub_role = common::entities::BinderItemSubRole::ChapterScene;
+    row.indent = 2;
+    row.prose.push((
+        ContentRole::SynopsisText,
+        "binders/01/text/1.synopsis.djot".to_string(),
+        BlobStamp { bytes: 4 },
+    ));
+
+    let gone = gone_row(&a_backup_moment(), &row);
+    assert_eq!(gone.role, common::entities::BinderItemRole::Folder);
+    assert_eq!(
+        gone.sub_role,
+        common::entities::BinderItemSubRole::ChapterScene,
+    );
+    assert_eq!(
+        gone.title, "The lost chapter",
+        "the name it had then — there is no live row to take one from",
+    );
+    assert_eq!(gone.indent, 2);
+    assert_eq!(gone.prose.len(), 2, "body and synopsis, not just the body");
+    assert!(
+        gone.prose
+            .iter()
+            .any(|(r, _)| r == &ContentRole::SynopsisText)
+    );
+}
+
+/// **A Book's subtitle is a field, not prose.** Nothing that walks `prose` would
+/// notice it missing, so a Book put back without it comes back silently untitled
+/// underneath — and there is no version left to read it out of.
+#[test]
+fn a_books_second_name_comes_back_with_it() {
+    let mut row = version_row(1, "The Novel");
+    row.role = common::entities::BinderItemRole::Folder;
+    row.sub_role = common::entities::BinderItemSubRole::Book;
+    row.sub_title = "A Story of the Forge".into();
+    let gone = gone_row(&a_backup_moment(), &row);
+    assert_eq!(gone.sub_title, "A Story of the Forge");
+}
+
+/// **`role` cannot be derived from `sub_role`.** `Part`, `ChapterScene` and
+/// `Paratext` are each valid under both `Item` and `Folder`, so a row put back
+/// without it could return as a flat marker where it was the container holding
+/// the rest of the chapter.
+#[test]
+fn the_container_axis_survives_the_round_trip() {
+    for role in [
+        common::entities::BinderItemRole::Item,
+        common::entities::BinderItemRole::Folder,
+    ] {
+        let mut row = version_row(1, "A part");
+        row.role = role.clone();
+        row.sub_role = common::entities::BinderItemSubRole::Part;
+        assert_eq!(gone_row(&a_backup_moment(), &row).role, role);
+    }
+}
+
+/// An empty blob path is not a path — the same reason `main_blob` filters one
+/// out. Carrying it would make the recreate read a blob that is not there and
+/// refuse the whole row.
+#[test]
+fn a_recorded_role_with_no_blob_behind_it_is_not_carried() {
+    let mut row = version_row(1, "A scene");
+    row.prose.push((
+        ContentRole::SynopsisText,
+        String::new(),
+        BlobStamp { bytes: 0 },
+    ));
+    let gone = gone_row(&a_backup_moment(), &row);
+    assert_eq!(gone.prose.len(), 1);
+    assert!(gone.prose.iter().all(|(_, blob)| !blob.is_empty()));
 }

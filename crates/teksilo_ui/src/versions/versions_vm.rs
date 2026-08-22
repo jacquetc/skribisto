@@ -328,6 +328,82 @@ impl VersionsViewModel {
         Some((pins.is_pinned)(&change.from.path))
     }
 
+    /// Whether the list on screen holds a version that cannot carry a pin.
+    ///
+    /// What the panel's pin note answers to. [`Self::pin_state`] leaves a log row
+    /// with no control at all — the right call, since a disabled one invites the
+    /// question "why?" without answering it — but the absence is then the *only*
+    /// thing saying so, and an absence teaches nothing. Meanwhile the tooltip on
+    /// the rows that do have one promises automatic cleanup will never delete the
+    /// version, and the toolbar offers "show only pinned", so both surfaces teach
+    /// that a version is a pinnable thing. A writer who pins the wording they love
+    /// and then finds no pin on yesterday's rows concludes the feature is broken.
+    ///
+    /// Keyed on the **source**, not on `pin_state`, and deliberately: `pin_state`
+    /// is also `None` before the shell has installed the store, and the note would
+    /// then appear over a list of backups where every pin is merely late.
+    pub fn shows_unpinnable(&self) -> bool {
+        let view = self.view.get();
+        self.visible_indices()
+            .into_iter()
+            .filter_map(|i| view.timeline.changes.get(i))
+            .any(|c| c.source != SourceKind::Backup)
+    }
+
+    /// Whether "pinned only" is what emptied the list, with nothing pinned to find.
+    ///
+    /// Separated from the general "the filters exclude everything" case because
+    /// the two need different sentences. A date range that matches nothing is a
+    /// range the writer chose and can widen; an empty pinned list is a filter
+    /// nothing in this row's past satisfies, and saying only "no version matches
+    /// the filters you've set" invites them to go looking for the pins they think
+    /// they made.
+    pub fn pinned_filter_found_nothing(&self) -> bool {
+        if !self.pinned_only.get() {
+            return false;
+        }
+        !self
+            .view
+            .get()
+            .timeline
+            .changes
+            .iter()
+            .any(|c| self.pin_state(c) == Some(true))
+    }
+
+    /// Whether this row's past holds a version no pin can reach.
+    ///
+    /// Distinct from [`Self::shows_unpinnable`], which asks about the rows
+    /// **on screen**: under "pinned only" there are none, so it would answer no
+    /// for every empty list. This asks about the whole timeline, which is what
+    /// decides whether "nothing is pinned" needs a reason attached. On a list of
+    /// backups nobody has pinned yet, the reason is true and irrelevant, and
+    /// reads as an explanation for an emptiness it did not cause.
+    pub fn has_unpinnable_versions(&self) -> bool {
+        self.view
+            .get()
+            .timeline
+            .changes
+            .iter()
+            .any(|c| c.source != SourceKind::Backup)
+    }
+
+    /// Seed a hand-built timeline, and mark it loaded so no scan is scheduled.
+    ///
+    /// `pub(crate)` and test-only: the dock's own render tests need a view the
+    /// filesystem cannot supply — a row whose past has been thinned, a list
+    /// mixing a backup with the project's own history — and `versions_vm`'s
+    /// tests reach the private fields directly because they live inside it.
+    #[cfg(test)]
+    pub(crate) fn seed_for_test(&self, uid: uuid::Uuid, view: TimelineView) {
+        *self.loaded.borrow_mut() = Some(LoadKey {
+            uid: Some(uid),
+            scope: self.scope_index.get(),
+            project: self.project.get(),
+        });
+        self.view.set(view);
+    }
+
     /// Bind this straight into a `DateRangeEdit`.
     pub fn range(&self) -> Signal<Option<DateRange>> {
         self.range.clone()

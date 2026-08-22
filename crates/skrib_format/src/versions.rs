@@ -57,7 +57,7 @@ use chrono::{DateTime, Utc};
 use super::bundle::{CommentFile, ItemsFile};
 use super::history::{self, HistoryLog};
 use super::shape::{SkribShape, detect_shape, folder_root};
-use common::entities::{BinderItemSubRole, ContentRole};
+use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 
 /// Where a version came from. Shown to the writer, because "this exists only in a
 /// backup on a drive you last plugged in a month ago" is a materially different
@@ -101,6 +101,26 @@ pub struct BlobStamp {
 pub struct VersionRow {
     pub uid: uuid::Uuid,
     pub title: String,
+    /// The second name a Book carries — its subtitle.
+    ///
+    /// Carried for the same reason [`Self::role`] is, and it is as easy to miss:
+    /// it is a plain field on `BinderItemFile`, not a prose blob, so nothing that
+    /// walks `prose` would ever notice it was gone. A Book put back without it
+    /// comes back with its subtitle silently blank, and the writer has no version
+    /// left to read it out of.
+    pub sub_title: String,
+    /// Container or leaf, as of this moment.
+    ///
+    /// Read straight off the bundle and carried rather than derived: `sub_role`
+    /// does not determine it. `Part`, `ChapterScene` and `Paratext` are each valid
+    /// under **both** `Item` and `Folder` in `skribisto_model`'s constraint
+    /// matrix, so a row put back without this could return as a flat marker where
+    /// it was the container holding the rest of the chapter.
+    ///
+    /// Defaulted, not recorded, by [`LogVersions`] — the log stores prose, not
+    /// metadata — which is why anything reconstructing a row from a version has to
+    /// come from a backup.
+    pub role: BinderItemRole,
     pub sub_role: BinderItemSubRole,
     pub indent: i64,
     /// `(role, bundle-relative blob path, stamp)` — one per prose content role.
@@ -181,6 +201,24 @@ pub trait VersionSource {
             },
             None => RowAt::Absent,
         })
+    }
+    /// How many recorded states of **one** row's **one** content role this source
+    /// has removed as they aged.
+    ///
+    /// Zero by default, and that is the honest answer for a source that does not
+    /// thin per row: a backup file is swept whole or not at all, so a backup that
+    /// is gone took every row in it and left no per-row tally to report. Only
+    /// [`LogVersions`] overrides it — [`crate::history::thin`] works one
+    /// `(row, role)` at a time and now keeps the count.
+    ///
+    /// This is the *only* way the fact is knowable. [`RowAt::Silent`] is
+    /// deliberately inert in the merge walk (see [`crate::changes`]), because a
+    /// thinned moment must not read as a gap — which leaves the survivors of a
+    /// sweep indistinguishable from a row that never had more. A tally recorded
+    /// at the moment of the deletion is what a surface can stand behind; anything
+    /// inferred from what is left would be a guess.
+    fn thinned_away(&self, _uid: uuid::Uuid, _role: &ContentRole) -> u32 {
+        0
     }
     /// One blob's prose.
     fn prose(&self, v: &VersionRef, blob_path: &str) -> Result<String>;
@@ -402,6 +440,8 @@ fn row_from(
     Ok(VersionRow {
         uid: item.uid,
         title: item.title,
+        sub_title: item.sub_title,
+        role: item.role,
         sub_role: item.sub_role,
         indent: item.indent,
         prose,
@@ -537,6 +577,8 @@ fn log_row(uid: uuid::Uuid, prose: Vec<(ContentRole, String, BlobStamp)>) -> Ver
     VersionRow {
         uid,
         title: String::new(),
+        sub_title: String::new(),
+        role: BinderItemRole::default(),
         sub_role: BinderItemSubRole::default(),
         indent: 0,
         prose,
@@ -614,6 +656,15 @@ impl VersionSource for LogVersions {
             },
             None => RowAt::Silent,
         })
+    }
+
+    /// The tally [`crate::history::thin`] left behind for this `(row, role)`.
+    ///
+    /// The counterpart to [`Self::row_at`]'s [`RowAt::Silent`]: that answer keeps
+    /// the log from *claiming* anything about a moment it no longer holds, and
+    /// this one is how the same silence can still be accounted for out loud.
+    fn thinned_away(&self, uid: uuid::Uuid, role: &ContentRole) -> u32 {
+        self.log.thinned_away(uid, role)
     }
 
     fn prose(&self, _v: &VersionRef, blob_path: &str) -> Result<String> {

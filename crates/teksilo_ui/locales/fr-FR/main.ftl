@@ -1899,6 +1899,10 @@ versions-unreadable = { $count ->
     [one] { $count } copie de secours illisible
    *[other] { $count } copies de secours illisibles
 }
+versions-thinned = { $count ->
+    [one] Les anciennes versions s'espacent avec le temps — l'historique interne du projet a déjà supprimé { $count } état antérieur de ce texte.
+   *[other] Les anciennes versions s'espacent avec le temps — l'historique interne du projet a déjà supprimé { $count } états antérieurs de ce texte.
+}
 versions-source-backup = Depuis une copie de secours
 versions-source-project = Depuis l'historique du projet
 versions-list-caption = Une entrée par changement, pas par copie de secours
@@ -1922,9 +1926,12 @@ versions-blocks-moved = { $count ->
     [one] { $count } paragraphe déplacé
    *[other] { $count } paragraphes déplacés
 }
-versions-pin = Épingler cette version — le nettoyage automatique ne la supprimera jamais
-versions-unpin = Désépingler cette version — le nettoyage automatique pourra de nouveau la supprimer
+versions-pin = Épingler la copie de secours d'où vient cette version — le nettoyage automatique ne la supprimera jamais
+versions-unpin = Désépingler la copie de secours d'où vient cette version — le nettoyage automatique pourra de nouveau la supprimer
 versions-pinned-only = N'afficher que les versions épinglées
+versions-pin-note = Seules les versions issues d'une copie de secours peuvent être épinglées — une épingle conserve un fichier, et l'historique interne du projet n'en est pas un.
+versions-pinned-empty = Rien n'est encore épinglé ici
+versions-pinned-empty-log = Rien n'est encore épinglé ici. Seules les versions issues d'une copie de secours peuvent être épinglées — une épingle conserve un fichier, et l'historique interne du projet n'en est pas un.
 versions-range-filter = N'afficher que les versions comprises entre deux dates
 versions-filtered-empty = Aucune version ne correspond aux filtres définis
 versions-clear-filters = Effacer les filtres
@@ -1946,6 +1953,24 @@ versions-restore-failed = La restauration a échoué : { $error }
 versions-restore-backup-busy = Une copie de secours est déjà en cours — réessayez dans un instant
 versions-restore-in-backup-file = Vous consultez une copie de secours ; ouvrez le projet lui-même pour y restaurer
 versions-restore-no-project = Aucun projet ouvert
+versions-recreate-button = Rétablir cet élément…
+versions-recreate-picker-title = Où le placer ?
+versions-recreate-picker-empty = Ce projet n'a aucun classeur où le placer
+versions-recreate-picker-confirm = Le rétablir ici
+versions-recreate-picker-cancel = Annuler
+versions-recreate-untitled = cet élément
+versions-recreate-confirm-title = Rétablir « { $item } » ?
+versions-recreate-confirm-text = Il sera ajouté dans { $destination }, avec le texte qu'il avait le { $date }.
+versions-recreate-confirm-undo-note = « Annuler », sur le message qui suit, le retire aussitôt.
+versions-recreated-toast = « { $item } » est de retour dans votre projet
+versions-recreated-partial-toast = { $count ->
+    [one] « { $item } » est de retour, mais l'un de ses textes n'a pas pu être lu
+   *[other] « { $item } » est de retour, mais { $count } de ses textes n'ont pas pu être lus
+}
+versions-recreate-already-here = Cet élément est déjà dans votre projet
+versions-recreate-no-destination = Choisissez un emplacement dans le classeur
+versions-recreate-unreadable = Cette copie de secours n'a pas pu être lue, rien n'a été ajouté
+versions-recreate-failed = Impossible de le rétablir : { $error }
 versions-changed-percent = { $percent } % de ce texte a changé
 versions-hidden-paragraphs = { $count ->
     [one] … { $count } paragraphe inchangé …

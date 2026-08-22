@@ -74,6 +74,66 @@ pub struct RestoreRequest {
     pub taken_at: chrono::DateTime<chrono::Utc>,
 }
 
+/// What putting a **deleted** row back is being asked to do.
+///
+/// The other half of [`RestoreRefusal::RowGone`]. A restore writes a past text
+/// into a row that still exists; this makes the row again, which is the recovery
+/// a novelist actually performs — *"bring back the chapter I cut in March"* — and
+/// the one the refusal used to end at, leaving the writer to select the prose out
+/// of the timeline reader, make a scene, paste, retitle and re-place it by hand.
+///
+/// Only a **backup** can supply one. The project's own history log records prose
+/// keyed by uid and nothing else — no title, no type, no depth — so a row it alone
+/// remembers cannot be reconstructed at all, whatever the code does. That is not a
+/// gap to close later: it is what the log is. See
+/// [`skrib_format::versions::VersionRow::role`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecreateRequest {
+    /// The row's durable identity, reused rather than minted.
+    ///
+    /// Reusing it is what makes the row come back as *itself*: its own recorded
+    /// past reappears in the Versions dock, and anything else keyed to it (a
+    /// comment sidecar in an older backup, an extension's per-row state) points at
+    /// the row again instead of at nothing. `with_identity` mints only over a nil
+    /// uid, so a supplied one is kept as given.
+    ///
+    /// The caller must first establish that no live row carries it — two rows with
+    /// one uid is a corruption the whole version feature is keyed on.
+    pub uid: uuid::Uuid,
+    pub role: BinderItemRole,
+    pub sub_role: BinderItemSubRole,
+    pub title: String,
+    /// A Book's subtitle. A plain field rather than prose, so nothing walking
+    /// [`Self::prose`] would notice it missing — and a Book put back without it
+    /// comes back silently untitled underneath.
+    pub sub_title: String,
+    /// Every recorded text, already read: `(recorded content role, Djot)`.
+    pub prose: Vec<(ContentRole, String)>,
+    /// When the row last looked like this, for the confirmation and the toast.
+    pub taken_at: chrono::DateTime<chrono::Utc>,
+}
+
+impl RecreateRequest {
+    /// The recorded texts that the row, as it is about to be made, can hold.
+    ///
+    /// The recorded `(role, sub_role)` is what the row is created as, so
+    /// [`skribisto_model::remap_content`] is an identity here — it is still asked,
+    /// because a matrix that changed under an old bundle should drop the text
+    /// rather than write it somewhere the model says it cannot go. The four title
+    /// roles have no document to insert a fragment into ([`slot_for`]) and are
+    /// filtered out with it: a book's title is the row's `title` field, and the
+    /// row is being created with it already.
+    pub fn writable_prose(&self) -> Vec<(ContentRole, String)> {
+        self.prose
+            .iter()
+            .filter_map(|(recorded, text)| {
+                let target = skribisto_model::remap_content(&self.role, &self.sub_role, recorded)?;
+                slot_for(&target).map(|_| (target, text.clone()))
+            })
+            .collect()
+    }
+}
+
 /// Why a restore is not going to happen.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RestoreRefusal {
@@ -248,6 +308,89 @@ pub fn apply(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── what a recreated row can actually hold ──────────────────────────────
+
+    fn request(
+        role: BinderItemRole,
+        sub_role: BinderItemSubRole,
+        prose: &[(ContentRole, &str)],
+    ) -> RecreateRequest {
+        RecreateRequest {
+            uid: uuid::Uuid::from_u128(1),
+            role,
+            sub_role,
+            title: "A cut chapter".into(),
+            sub_title: String::new(),
+            prose: prose
+                .iter()
+                .map(|(r, t)| (r.clone(), (*t).to_string()))
+                .collect(),
+            taken_at: chrono::Utc::now(),
+        }
+    }
+
+    /// The row is created as exactly what the version recorded, so every text it
+    /// recorded has a home in it.
+    #[test]
+    fn a_recreated_chapter_takes_back_every_text_it_had() {
+        let req = request(
+            BinderItemRole::Folder,
+            BinderItemSubRole::ChapterScene,
+            &[
+                (ContentRole::SceneText, "the body"),
+                (ContentRole::SynopsisText, "the summary"),
+                (ContentRole::EpigraphText, "a quotation"),
+            ],
+        );
+        let writable = req.writable_prose();
+        assert_eq!(writable.len(), 3);
+        assert!(
+            writable
+                .iter()
+                .any(|(r, t)| *r == ContentRole::SceneText && t == "the body")
+        );
+    }
+
+    /// A title is the row's `title` field, not a document — and the row is
+    /// created with it already. Writing it as a Djot fragment has nowhere to go.
+    #[test]
+    fn a_recorded_title_is_not_written_back_as_prose() {
+        let req = request(
+            BinderItemRole::Folder,
+            BinderItemSubRole::Book,
+            &[
+                (ContentRole::BookTitle, "The Novel"),
+                (ContentRole::SynopsisText, "the summary"),
+            ],
+        );
+        let writable = req.writable_prose();
+        assert_eq!(writable.len(), 1);
+        assert_eq!(writable[0].0, ContentRole::SynopsisText);
+    }
+
+    /// A text the model says the row cannot hold is **dropped, not written
+    /// somewhere else**. Reachable when a bundle predates a change to the
+    /// constraint matrix, which is exactly when guessing would be worst.
+    #[test]
+    fn a_text_the_row_has_no_room_for_is_left_out() {
+        // A notes folder carries a synopsis and nothing else.
+        let req = request(
+            BinderItemRole::Folder,
+            BinderItemSubRole::Note,
+            &[
+                (ContentRole::SceneText, "prose a note folder cannot hold"),
+                (ContentRole::SynopsisText, "the summary"),
+            ],
+        );
+        let writable = req.writable_prose();
+        assert!(
+            writable
+                .iter()
+                .all(|(r, _)| *r == ContentRole::SynopsisText),
+            "got {writable:?}",
+        );
+    }
 
     // ── the write itself ────────────────────────────────────────────────────
 

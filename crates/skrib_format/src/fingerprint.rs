@@ -256,6 +256,7 @@ mod tests {
                 role: common::entities::ContentRole::SceneText,
                 hash: "deadbeef".into(),
                 bytes: 8,
+                thinned_away: 0,
             }],
             blobs: [("deadbeef".to_string(), "some past prose".to_string())]
                 .into_iter()

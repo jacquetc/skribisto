@@ -15,11 +15,13 @@
 
 mod commands;
 mod project_shell;
+mod recreate_row;
 mod restore_version;
 mod view_model_setup;
 mod window_role;
 mod wiring;
 
+pub(crate) use recreate_row::{DeletedRow, RecreateContext, recreate_row};
 pub(crate) use restore_version::restore_version;
 
 pub(crate) use window_role::WindowRole;

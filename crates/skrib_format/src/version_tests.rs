@@ -178,6 +178,62 @@ fn a_renamed_binder_still_indexes_because_entries_are_enumerated_not_addressed()
     assert!(index.rows.iter().all(|r| !r.uid.is_nil()));
 }
 
+/// **A timeline reports what its sources have thrown away.**
+///
+/// The one boundary fact that cannot be read off the walk: a thinned moment
+/// leaves nothing to examine, and `RowAt::Silent` is deliberately inert so that a
+/// routine sweep does not read as a gap. Without the log's own tally reaching
+/// `Timeline`, a row down to three surviving states after a year of daily edits
+/// would be indistinguishable from one that never had more.
+#[test]
+fn a_timeline_carries_what_the_log_thinned_away() {
+    let mut b = bundle();
+    let (uid, fid) = a_scene(&b);
+
+    // Forty states of one scene inside one hour, each recorded.
+    for n in 0..40 {
+        let item = b
+            .binders
+            .iter_mut()
+            .flat_map(|bb| &mut bb.items)
+            .find(|i| i.item.uid == uid)
+            .expect("the scene");
+        item.prose.insert(fid, format!("wording {n}"));
+        history::record(&mut b, now() + chrono::Duration::minutes(n));
+    }
+    let recorded = b.history.entries.len();
+    history::thin(
+        &mut b.history,
+        &history::DEFAULT_POLICY,
+        history::DEFAULT_MIN_KEEP,
+        now() + chrono::Duration::hours(2),
+    );
+    let dropped = recorded - b.history.entries.len();
+    assert!(dropped > 0, "the fixture must actually thin");
+
+    let (_dir, path, _back) = round_trip(&b, SkribShape::ZipFile);
+    let log = LogVersions::open(&path);
+    let t = timeline_for(&[&log], uid, &ContentRole::SceneText).expect("timeline");
+    assert_eq!(
+        t.thinned_away, dropped as u32,
+        "the timeline must report exactly what the log removed for this row",
+    );
+}
+
+/// And says nothing when nothing was removed — the half that keeps the line it
+/// drives from becoming permanent background noise.
+#[test]
+fn a_timeline_claims_no_thinning_when_none_happened() {
+    let mut b = bundle();
+    let (uid, _fid) = a_scene(&b);
+    history::record(&mut b, now());
+
+    let (_dir, path, _back) = round_trip(&b, SkribShape::ZipFile);
+    let log = LogVersions::open(&path);
+    let t = timeline_for(&[&log], uid, &ContentRole::SceneText).expect("timeline");
+    assert_eq!(t.thinned_away, 0);
+}
+
 #[test]
 fn the_log_source_lists_one_version_per_distinct_save_moment() {
     let mut b = bundle();

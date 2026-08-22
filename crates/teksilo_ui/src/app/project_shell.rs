@@ -265,6 +265,49 @@ impl App {
             }));
         }
 
+        // …and the way back for a row that is gone entirely. Assembled here for
+        // the same reason the restore below is: it needs the open-documents
+        // store, this Work's undo stack and the binder at once, none of which the
+        // band may reach for — and it raises the destination picker, which is a
+        // modal over *this* window.
+        //
+        // The picker is built per invocation rather than once: it carries a
+        // selection and its own tree model, and a remembered one would open on
+        // last time's answer for a different row.
+        {
+            let app_ctx = self.app_ctx.clone();
+            let docs = session.open_docs.clone();
+            let editors_for_recreate = editors.clone();
+            let ids_for_recreate = ids.clone();
+            let backup_mode = self.backup_mode.clone();
+            let band = timeline.clone();
+            timeline.set_recreate_sink(std::rc::Rc::new(
+                move |ctx: &mut EventContext, row: crate::app::DeletedRow| {
+                    let cx = crate::app::RecreateContext {
+                        app_ctx: app_ctx.clone(),
+                        docs: docs.clone(),
+                        editors: editors_for_recreate.clone(),
+                        ids: ids_for_recreate.clone(),
+                        backup_mode: backup_mode.clone(),
+                        project: band.project().get(),
+                    };
+                    let picker = crate::widgets::DestinationPicker::new(
+                        app_ctx.clone(),
+                        ids_for_recreate.work_id.clone(),
+                    );
+                    let title = row.title.clone();
+                    crate::timeline::recreate_panel::present_recreate_target(
+                        ctx,
+                        picker,
+                        title,
+                        std::rc::Rc::new(move |c, destination| {
+                            crate::app::recreate_row(c, cx.clone(), row.clone(), destination)
+                        }),
+                    );
+                },
+            ));
+        }
+
         let uid_of: crate::versions::dock::UidLookup = {
             let app_ctx = self.app_ctx.clone();
             let work_id = ids.work_id.clone();

@@ -457,15 +457,22 @@ else:
             failures.append("STEP 5: no jump-to-next-change control")
 
     # ── STEP 6a: pinning ──────────────────────────────────────────────────────
-    # A pin protects a backup file from a retention sweep. Only a backup can
+    # A pin protects a backup **file** from a retention sweep. Only a backup can
     # carry one — a log version is an entry inside the project, not a file — so
     # the control is absent on those rows rather than present and inert.
-    pins = [n for n in nodes()
-            if n.get("role") == "Button"
-            and "Pin this version" in (n.get("label") or "")]
-    unpins = [n for n in nodes()
-              if n.get("role") == "Button"
-              and "Unpin this version" in (n.get("label") or "")]
+    #
+    # Matched on "the backup", not on "this version": the tooltip used to say the
+    # latter, which named the wrong thing. Pinning keeps the whole snapshot the
+    # version was read out of, every other row's state in it included, and a
+    # writer who read "Pin this version" had been told it protected one scene's
+    # wording. `versions-pin` / `versions-unpin`.
+    PIN, UNPIN = "Pin the backup", "Unpin the backup"
+
+    def pin_controls(needle):
+        return [n for n in nodes()
+                if n.get("role") == "Button" and needle in (n.get("label") or "")]
+
+    pins, unpins = pin_controls(PIN), pin_controls(UNPIN)
     if not pins and not unpins:
         failures.append("STEP 6a: no pin control on any backup row")
     else:
@@ -474,13 +481,27 @@ else:
         if pins and activate(pins[0]):
             time.sleep(0.8)
             settle()
-            after = len([n for n in nodes()
-                         if n.get("role") == "Button"
-                         and "Unpin this version" in (n.get("label") or "")])
+            after = len(pin_controls(UNPIN))
             if after == before + 1:
                 print("  pinning a version flips its control \u2713")
             else:
                 failures.append(f"STEP 6a: pinning changed nothing ({before} -> {after})")
+
+    # ── STEP 6a2: and the panel says why the other half has none ──────────────
+    # The absence of a control teaches nothing on its own, while the tooltip
+    # beside it promises automatic cleanup will never delete "this version". Said
+    # in words, on exactly the lists that mix the two sources.
+    blob = " ".join(texts(nodes()))
+    log_rows = [t for t in texts(nodes()) if "From the project's own history" in t]
+    note = "Only versions from a backup can be pinned" in blob
+    if log_rows and not note:
+        failures.append("STEP 6a2: the list holds an unpinnable version and does "
+                        "not say why it has no pin")
+    elif log_rows:
+        print("  the panel explains the missing pin column \u2713")
+    else:
+        print("  !! every row here is backup-sourced, so the pin note does not "
+              "apply — it was not checked")
 
     # ── STEP 6b: the marks stayed marks ───────────────────────────────────────
     # The renderer splices escaped prose between `{+`/`{-` sigils. If the escaping

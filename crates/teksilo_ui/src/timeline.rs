@@ -18,10 +18,12 @@
 //! own past, this on the project's.
 
 pub mod dock;
+pub mod recreate_panel;
 pub mod timeline_axis;
 mod timeline_vm;
 
 pub use timeline_axis::{Axis, axis_for};
 pub use timeline_vm::{
-    ChangeKind, LiveManuscriptFn, LiveProseFn, Moment, PastProse, RowChange, TimelineViewModel,
+    ChangeKind, GoneRow, LiveManuscriptFn, LiveProseFn, Moment, PastProse, RecreateFn, RowChange,
+    TimelineViewModel,
 };

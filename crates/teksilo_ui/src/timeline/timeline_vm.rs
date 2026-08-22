@@ -61,10 +61,10 @@ use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use chrono::{DateTime, Utc};
-use teksilo::prelude::{AsyncRuntimeHandle, Signal, spawn_blocking};
+use teksilo::prelude::{AsyncRuntimeHandle, EventContext, Signal, spawn_blocking};
 use teksilo::widgets::DateRange;
 
-use common::entities::ContentRole;
+use common::entities::{BinderItemRole, BinderItemSubRole, ContentRole};
 use skrib_format::versions::{
     BackupVersions, LogVersions, SourceKind, VersionRef, VersionRow, VersionSource,
 };
@@ -120,6 +120,39 @@ pub struct PastProse {
     pub role: ContentRole,
 }
 
+/// Everything needed to put a removed row back into the binder.
+///
+/// Only ever built for a [`ChangeKind::Removed`] row, which by construction comes
+/// from a **backup**: `compare` gates the removed verdict on `structural`, and only
+/// a backup is structural. That is what makes this recoverable at all — the
+/// project's own history log records prose and nothing else, so a row it alone
+/// remembers has no title, no type and no place to be put back into.
+///
+/// It carries the *whole* row, not the one text the reader happens to be showing:
+/// a writer bringing back a cut chapter means the chapter, its synopsis and its
+/// epigraph, not whichever of them was on screen.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GoneRow {
+    /// Container or leaf. Not derivable from `sub_role` — see
+    /// [`skrib_format::versions::VersionRow::role`].
+    pub role: BinderItemRole,
+    pub sub_role: BinderItemSubRole,
+    /// The name it had at that moment. There is no live row to take one from,
+    /// which is exactly why [`RowChange::title`] cannot be used here: for every
+    /// other kind that field is deliberately the row's *current* name.
+    pub title: String,
+    /// A Book's subtitle. Empty for every other kind, and empty is a legal value
+    /// there — see [`skrib_format::versions::VersionRow::sub_title`].
+    pub sub_title: String,
+    /// Its depth in the binder as recorded. A hint for the destination, not an
+    /// instruction: the tree it was indented against may be long gone.
+    pub indent: i64,
+    /// Every prose blob the moment recorded, `(role, bundle-relative path)`.
+    pub prose: Vec<(ContentRole, String)>,
+    /// The bundle those paths are relative to.
+    pub from: VersionRef,
+}
+
 /// One row of the change list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RowChange {
@@ -134,6 +167,13 @@ pub struct RowChange {
     /// a chapter heading. The two are different sentences to a writer, which is
     /// why [`Self::kind`] is what tells them apart and not this being `None`.
     pub source: Option<PastProse>,
+    /// What it would take to put this row back — `Some` only for
+    /// [`ChangeKind::Removed`].
+    ///
+    /// Held here rather than re-read at the click, because the index this comes
+    /// from is a bundle read: the change list already paid for it, and paying
+    /// again on the UI thread is the stall `open_past` had to be moved off.
+    pub gone: Option<GoneRow>,
 }
 
 impl RowChange {
@@ -174,6 +214,21 @@ pub type LiveManuscriptFn = Rc<dyn Fn() -> Vec<LiveRow>>;
 /// runs once, when a row is actually opened.
 pub type LiveProseFn = Rc<dyn Fn(uuid::Uuid, &ContentRole) -> Option<String>>;
 
+/// Puts a **deleted** row back into the binder.
+///
+/// Supplied by the shell for the same reason the two readers above are, and more
+/// so: recreating a row needs the open-documents store, this Work's undo stack
+/// and the binder tree at once, none of which a view-model may reach for. The
+/// band hands over what it recorded and knows nothing about what happens next —
+/// including the destination picker, which is the shell's to raise.
+///
+/// `None` in a build with no such wiring (mocks, headless tests), where the
+/// reader simply offers no way back. The type is deliberately the whole
+/// [`crate::app::DeletedRow`] rather than a uid: re-reading the moment's index to
+/// recover the row's type and title would be a second bundle open, on the UI
+/// thread, for facts the change list has already paid to know.
+pub type RecreateFn = Rc<dyn Fn(&mut EventContext, crate::app::DeletedRow)>;
+
 #[derive(Clone)]
 pub struct TimelineViewModel {
     /// Every recorded moment, **oldest first** — a timeline reads left to right.
@@ -200,6 +255,9 @@ pub struct TimelineViewModel {
     range: Signal<Option<DateRange>>,
     live: Rc<RefCell<Option<LiveManuscriptFn>>>,
     live_prose: Rc<RefCell<Option<LiveProseFn>>>,
+    /// Puts a removed row back — see [`RecreateFn`]. `None` until the shell
+    /// installs one, which is what the reader's "Bring this back" is gated on.
+    recreate: Rc<RefCell<Option<RecreateFn>>>,
     scanned: Rc<RefCell<Option<ScanKey>>>,
     compared: Rc<RefCell<Option<(ScanKey, usize)>>>,
     /// The range last folded into `window`, so a rebuild does not redo it.
@@ -226,6 +284,7 @@ impl TimelineViewModel {
             range: Signal::new(None),
             live: Rc::new(RefCell::new(None)),
             live_prose: Rc::new(RefCell::new(None)),
+            recreate: Rc::new(RefCell::new(None)),
             scanned: Rc::new(RefCell::new(None)),
             compared: Rc::new(RefCell::new(None)),
             ranged: Rc::new(RefCell::new(None)),
@@ -460,6 +519,23 @@ impl TimelineViewModel {
         if slot.is_none() {
             *slot = Some(live);
         }
+    }
+
+    /// Install the recreate sink (once, from the shell).
+    pub fn set_recreate_sink(&self, recreate: RecreateFn) {
+        let mut slot = self.recreate.borrow_mut();
+        if slot.is_none() {
+            *slot = Some(recreate);
+        }
+    }
+
+    /// The recreate sink, if the shell installed one.
+    ///
+    /// Read rather than called through a wrapper, because the caller is a button
+    /// handler that must also know whether to *draw* the button: an affordance
+    /// that appears and then does nothing is worse than one that never appeared.
+    pub fn recreate_sink(&self) -> Option<RecreateFn> {
+        self.recreate.borrow().clone()
     }
 
     /// The live text of one row's `role`, if the shell installed a reader and the
@@ -733,9 +809,13 @@ fn compare(handle: &ProjectHandle, moment: &Moment, now: &[LiveRow]) -> Vec<RowC
             // recorded prose, which is not the same claim at all.
             None if structural => out.push(RowChange {
                 uid: row.uid,
+                // The name it had *then* — there is no other. Every other arm
+                // takes the live one deliberately (see below); this row has no
+                // live side at all, which is the whole point of it.
                 title: row.title.clone(),
                 kind: ChangeKind::Removed,
                 source: recorded_at(moment, row),
+                gone: Some(gone_row(moment, row)),
             }),
             None => {}
             Some(live) if &live.digest != digest => out.push(RowChange {
@@ -747,12 +827,14 @@ fn compare(handle: &ProjectHandle, moment: &Moment, now: &[LiveRow]) -> Vec<RowC
                 title: live.title.clone(),
                 kind: ChangeKind::Changed,
                 source: recorded_at(moment, row),
+                gone: None,
             }),
             Some(live) if moved(&row.uid) => out.push(RowChange {
                 uid: row.uid,
                 title: live.title.clone(),
                 kind: ChangeKind::Moved,
                 source: recorded_at(moment, row),
+                gone: None,
             }),
             Some(_) => {}
         }
@@ -765,6 +847,7 @@ fn compare(handle: &ProjectHandle, moment: &Moment, now: &[LiveRow]) -> Vec<RowC
                     title: live.title.clone(),
                     kind: ChangeKind::Added,
                     source: None,
+                    gone: None,
                 });
             }
         }
@@ -796,6 +879,29 @@ fn recorded_at(moment: &Moment, row: &VersionRow) -> Option<PastProse> {
         blob,
         role,
     })
+}
+
+/// The whole of a removed row, as the moment recorded it.
+///
+/// Every prose role it carried, not just the one the reader opens on: a row is
+/// put back as itself, and dropping its synopsis on the way would be a silent
+/// second loss on top of the one being recovered. An empty blob path is dropped
+/// for the same reason [`main_blob`] filters one out — it is not a path.
+fn gone_row(moment: &Moment, row: &VersionRow) -> GoneRow {
+    GoneRow {
+        role: row.role.clone(),
+        sub_role: row.sub_role.clone(),
+        title: row.title.clone(),
+        sub_title: row.sub_title.clone(),
+        indent: row.indent,
+        prose: row
+            .prose
+            .iter()
+            .filter(|(_, blob, _)| !blob.is_empty())
+            .map(|(role, blob, _)| (role.clone(), blob.clone()))
+            .collect(),
+        from: moment.from.clone(),
+    }
 }
 
 fn main_blob(row: &VersionRow) -> Option<(ContentRole, String)> {

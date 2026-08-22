@@ -723,6 +723,21 @@ fn open_past(ctx: &mut EventContext, vm: &TimelineViewModel, index: usize) {
     };
     let title = change.title.clone();
     let Some(past) = change.source.clone() else {
+        // A **removed** row with no prose is still a row the writer lost, and
+        // recovery is the only thing left to offer it. Straight to the picker:
+        // a reader opened on an empty document purely to carry one button would
+        // be the titled panel with nothing in it that `main_blob` returning
+        // `None` exists to prevent.
+        //
+        // This is the one door a deleted chapter folder or Book has. Its scenes
+        // each have their own, and rebuilding the container by hand around them
+        // is exactly the machine's-job-done-by-the-writer this whole affordance
+        // was added to end.
+        if let Some(row) = deleted_row(change)
+            && let Some(sink) = vm.recreate_sink()
+        {
+            return sink(ctx, row);
+        }
         // Nothing to show — but *why* there is nothing is two different
         // sentences, and saying the wrong one sends a writer looking for a
         // history that never existed. An "added since" row genuinely post-dates
@@ -746,6 +761,11 @@ fn open_past(ctx: &mut EventContext, vm: &TimelineViewModel, index: usize) {
     let handle = vm.project().get();
     let when = past.from.taken_at.format("%Y-%m-%d %H:%M").to_string();
     let gone = change.is_gone();
+    // The way back, if there is one. Both halves are required and neither is
+    // inferable from the other: `gone` describes the row, the sink describes the
+    // build. Assembled before the modal is presented because the reader is built
+    // in a deferred closure that has no `vm` to ask.
+    let recreate = deleted_row(change).zip(vm.recreate_sink());
 
     // Two documents, not one swapped between: the writer switches back and forth
     // to check a passage against the comparison, and reparsing on every press
@@ -764,6 +784,7 @@ fn open_past(ctx: &mut EventContext, vm: &TimelineViewModel, index: usize) {
                     title.clone(),
                     when.clone(),
                     gone,
+                    recreate.clone(),
                     docs.clone(),
                     mode.clone(),
                     view.clone(),
@@ -816,6 +837,31 @@ fn open_past(ctx: &mut EventContext, vm: &TimelineViewModel, index: usize) {
         // own fallback does.
         None => fill(read()),
     }
+}
+
+/// What it would take to put this change's row back, if it is one that is gone.
+///
+/// `None` for every other kind, and for a build with no recreate wiring behind
+/// it — `RowChange::gone` is `Some` only on [`ChangeKind::Removed`], which
+/// `compare` only ever produces from a **structural** moment, i.e. a backup. The
+/// project's own history log records prose keyed by uid and nothing else, so a
+/// row it alone remembers has no type and no name to come back as.
+///
+/// `gone.from.taken_at` rather than the reader's own stamp: this is the moment
+/// the *row* was last seen whole, which is what the confirmation names, and it
+/// is the bundle the blobs below are relative to.
+fn deleted_row(change: &RowChange) -> Option<crate::app::DeletedRow> {
+    let g = change.gone.clone()?;
+    Some(crate::app::DeletedRow {
+        uid: change.uid,
+        role: g.role,
+        sub_role: g.sub_role,
+        title: g.title,
+        sub_title: g.sub_title,
+        taken_at: g.from.taken_at,
+        from: g.from,
+        blobs: g.prose,
+    })
 }
 
 /// The document the reader shows, and what it is.
@@ -993,6 +1039,13 @@ struct PastReader {
     title: String,
     when: String,
     gone: bool,
+    /// What it would take to put this row back, and who to hand it to.
+    ///
+    /// `Some` only when the row is gone **and** the shell installed a recreate
+    /// sink, which is exactly when the button below can do what it says. A
+    /// mocks or headless build has no sink, and then the reader is what it
+    /// always was — a place to read the text and copy it out.
+    recreate: Option<(crate::app::DeletedRow, crate::timeline::RecreateFn)>,
     /// Filled by [`open_past`] once the bundle is open — the reader is presented
     /// before the archive has been read, so these start empty on purpose.
     docs: ReaderDocs,
@@ -1016,6 +1069,7 @@ impl PastReader {
         title: String,
         when: String,
         gone: bool,
+        recreate: Option<(crate::app::DeletedRow, crate::timeline::RecreateFn)>,
         docs: ReaderDocs,
         mode: Signal<ReaderMode>,
         view: Signal<usize>,
@@ -1024,11 +1078,40 @@ impl PastReader {
             title,
             when,
             gone,
+            recreate,
             docs,
             mode,
             view,
             root_child: None,
         }
+    }
+
+    /// The way out of "you can read it and copy it out here".
+    ///
+    /// That sentence was, until this button, the *whole* answer to the most
+    /// common recovery a novelist performs — bring back the chapter I cut in
+    /// March — and it asked the writer to do the machine's job: select, copy,
+    /// make a scene, paste, retitle, re-place it in the binder. Everything the
+    /// machine needed was already in the backup it had just read the prose out
+    /// of.
+    ///
+    /// Beside the "no longer in your project" line rather than in the header,
+    /// because it is the answer to that sentence and reads as one there.
+    fn bring_back(&self) -> Box<dyn Widget> {
+        let Some((row, sink)) = self.recreate.clone() else {
+            return Box::new(Spacer::new());
+        };
+        Box::new(
+            Button::new(tr!(versions_recreate_button()))
+                .variant(ButtonVariant::Filled)
+                .on_activate_fn(move |ctx| {
+                    // Dismissed first: the destination picker is a modal of its
+                    // own, and the reader has served its purpose the moment the
+                    // writer decides this is the row.
+                    ctx.dismiss_modal();
+                    sink(ctx, row.clone());
+                }),
+        )
     }
 
     /// One read-only editor over `doc`.
@@ -1162,10 +1245,19 @@ impl Widget for PastReader {
             // The one row this surface exists for. Said plainly, because a
             // writer who deleted a scene months ago will not otherwise realise
             // that what they are reading is unreachable from anywhere else.
-            column =
-                column.child(Padding::symmetric(6.0, 0.0).child(
-                    TextWidget::new(tr!(timeline_reader_deleted())).color(TextRole::Warning),
-                ));
+            column = column.child(
+                Padding::symmetric(6.0, 0.0).child(
+                    HStack::new()
+                        .spacing(8.0)
+                        .child(
+                            Expand::horizontal().child(
+                                TextWidget::new(tr!(timeline_reader_deleted()))
+                                    .color(TextRole::Warning),
+                            ),
+                        )
+                        .child(crate::tabs::Boxed::new(self.bring_back())),
+                ),
+            );
         }
         // `FixedSize` wrapping a raised `Panel`, exactly as `panels::about` does
         // it, and both halves were missing. The size, because the modal
@@ -1454,6 +1546,7 @@ mod tests {
             title.into(),
             "2026-03-14 09:00".into(),
             gone,
+            None,
             docs,
             Signal::new(mode),
             Signal::new(view),
@@ -1532,6 +1625,86 @@ mod tests {
         assert!(tree.bounds(id).height >= READER_H);
     }
 
+    fn a_deleted_row() -> crate::app::DeletedRow {
+        crate::app::DeletedRow {
+            uid: uuid::Uuid::from_u128(1),
+            role: common::entities::BinderItemRole::Folder,
+            sub_role: common::entities::BinderItemSubRole::ChapterScene,
+            title: "The lost chapter".into(),
+            sub_title: String::new(),
+            from: VersionRef {
+                path: std::path::PathBuf::from("/backups/Novel.skrib"),
+                taken_at: chrono::Utc::now(),
+                source: SourceKind::Backup,
+            },
+            blobs: vec![(
+                common::entities::ContentRole::SceneText,
+                "binders/01/text/1.scene.djot".into(),
+            )],
+            taken_at: chrono::Utc::now(),
+        }
+    }
+
+    fn buttons(tree: &WidgetTree, id: WidgetId) -> usize {
+        let mine = usize::from(
+            tree.widget_type_name(id)
+                .is_some_and(|n| n.ends_with("Button")),
+        );
+        mine + tree
+            .children(id)
+            .into_iter()
+            .map(|c| buttons(tree, c))
+            .sum::<usize>()
+    }
+
+    fn reader_with(
+        gone: bool,
+        recreate: Option<(crate::app::DeletedRow, crate::timeline::RecreateFn)>,
+    ) -> usize {
+        let docs = ReaderDocs {
+            diff: TextDocument::new(),
+            text: TextDocument::new(),
+        };
+        let _ = docs.text.set_djot_sync("The paragraph as it was.");
+        let mut tree = WidgetTree::new();
+        let id = tree.add_boxed(Box::new(PastReader::new(
+            "The lost chapter".into(),
+            "2026-03-14 09:00".into(),
+            gone,
+            recreate,
+            docs,
+            Signal::new(ReaderMode::Recorded),
+            Signal::new(VIEW_TEXT),
+        )));
+        tree.layout(SizeProposal::unspecified());
+        buttons(&tree, id)
+    }
+
+    /// **The way out of "you can read it and copy it out here".** That sentence
+    /// was the whole answer to the most common recovery a novelist performs, and
+    /// it asked the writer to do the machine's job.
+    #[test]
+    fn a_deleted_row_offers_a_way_to_bring_it_back() {
+        let sink: crate::timeline::RecreateFn = std::rc::Rc::new(|_, _| {});
+        assert_eq!(
+            reader_with(true, Some((a_deleted_row(), sink))),
+            reader_with(true, None) + 1,
+            "the gone banner gains one control when a recreate sink is installed",
+        );
+    }
+
+    /// …and an affordance that would do nothing is never drawn. A build with no
+    /// sink (mocks, headless) is the reader it always was: read it, copy it out.
+    #[test]
+    fn a_row_that_is_still_in_the_project_is_offered_nothing() {
+        let sink: crate::timeline::RecreateFn = std::rc::Rc::new(|_, _| {});
+        assert_eq!(
+            reader_with(false, Some((a_deleted_row(), sink))),
+            reader_with(false, None),
+            "a row that is not gone has nothing to bring back, sink or no sink",
+        );
+    }
+
     /// Every line of text the reader draws, however deep.
     fn labels(tree: &WidgetTree, id: WidgetId) -> usize {
         // The name is fully qualified — `teksilo_widgets::primitives::…::TextWidget`.
@@ -1604,6 +1777,7 @@ mod tests {
             "Chapter 5".into(),
             "2026-03-14 09:00".into(),
             false,
+            None,
             docs,
             Signal::new(ReaderMode::Compared),
             view.clone(),
@@ -1646,6 +1820,7 @@ mod tests {
             "Chapter 5".into(),
             "2026-03-14 09:00".into(),
             false,
+            None,
             docs,
             Signal::new(ReaderMode::Compared),
             view.clone(),
@@ -1858,6 +2033,7 @@ mod tests {
                     title: "x".into(),
                     kind,
                     source: None,
+                    gone: None,
                 },
             ));
             marks.insert(row.mark);

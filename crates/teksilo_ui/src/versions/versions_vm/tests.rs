@@ -475,3 +475,123 @@ fn measure_texts(texts: &[&str]) -> TimelineView {
         .collect();
     view
 }
+
+// ── the pin note: what the list can and cannot promise ──────────────────────
+
+/// Same shape as [`view_with`], but every change comes from the project's own
+/// history log — the half of the list that can carry no pin at all.
+fn log_view(texts: &[&str]) -> TimelineView {
+    let mut view = view_with(texts, None);
+    for c in view.timeline.changes.iter_mut() {
+        c.source = SourceKind::Log;
+        c.from.source = SourceKind::Log;
+    }
+    view
+}
+
+/// **The confusion the note exists for.** `pin_state` leaves a log row with no
+/// control at all, which is the right call — a disabled one asks "why?" without
+/// answering — but the absence then teaches nothing, while the tooltip on the
+/// rows that *do* have one promises automatic cleanup will never delete the
+/// version.
+#[test]
+fn a_list_holding_a_version_that_cannot_be_pinned_says_so() {
+    let vm = VersionsViewModel::new();
+    vm.view.set(log_view(&["newest", "older"]));
+    assert!(
+        vm.shows_unpinnable(),
+        "a log-sourced row on screen is exactly when the note applies",
+    );
+}
+
+#[test]
+fn a_list_of_backups_alone_needs_no_note() {
+    let vm = VersionsViewModel::new();
+    vm.view.set(view_with(&["newest", "older"], None));
+    assert!(!vm.shows_unpinnable());
+}
+
+/// Keyed on the **source**, never on `pin_state`: that is also `None` before the
+/// shell has installed the pin store, and the note would then appear over a list
+/// of backups whose pins are merely late.
+#[test]
+fn the_note_does_not_appear_just_because_the_pin_store_is_not_installed_yet() {
+    let vm = VersionsViewModel::new();
+    vm.view.set(view_with(&["newest"], None));
+    assert!(vm.pin_state(&vm.view.get().timeline.changes[0]).is_none());
+    assert!(!vm.shows_unpinnable());
+}
+
+/// **"Pinned only" over a past the log holds can never match.** Saying only "no
+/// version matches the filters you've set" sends the writer looking for pins
+/// they could not have made.
+#[test]
+fn an_empty_pinned_list_says_why_it_can_be_empty() {
+    let vm = VersionsViewModel::new();
+    vm.view.set(log_view(&["newest", "older"]));
+    vm.set_pins(Pins {
+        is_pinned: Rc::new(|_: &std::path::Path| false),
+        set: Rc::new(|_, _| {}),
+    });
+    assert!(!vm.pinned_filter_found_nothing(), "no filter, no sentence");
+    vm.toggle_pinned_only();
+    assert_eq!(vm.visible_count(), 0);
+    assert!(vm.pinned_filter_found_nothing());
+}
+
+/// **And only where the reason applies.** On a list of backups nobody has pinned
+/// yet, "only versions from a backup can be pinned" is true, irrelevant, and
+/// reads as an explanation for an emptiness it did not cause.
+#[test]
+fn an_all_backup_list_is_empty_without_being_told_why() {
+    let vm = VersionsViewModel::new();
+    vm.view.set(view_with(&["newest", "older"], None));
+    vm.set_pins(Pins {
+        is_pinned: Rc::new(|_: &std::path::Path| false),
+        set: Rc::new(|_, _| {}),
+    });
+    vm.toggle_pinned_only();
+    assert!(vm.pinned_filter_found_nothing(), "nothing is pinned");
+    assert!(
+        !vm.has_unpinnable_versions(),
+        "…but every version here could have been, so the reason does not apply",
+    );
+}
+
+/// `has_unpinnable_versions` asks about the **whole** timeline, not the rows on
+/// screen — under "pinned only" there are none, so `shows_unpinnable` would
+/// answer no for every empty list and the reason would never be attached.
+#[test]
+fn the_reason_survives_the_filter_that_hid_the_rows_it_is_about() {
+    let vm = VersionsViewModel::new();
+    vm.view.set(log_view(&["newest", "older"]));
+    vm.set_pins(Pins {
+        is_pinned: Rc::new(|_: &std::path::Path| false),
+        set: Rc::new(|_, _| {}),
+    });
+    vm.toggle_pinned_only();
+    assert_eq!(vm.visible_count(), 0);
+    assert!(
+        !vm.shows_unpinnable(),
+        "nothing is on screen to be unpinnable"
+    );
+    assert!(
+        vm.has_unpinnable_versions(),
+        "but the past this list is of still holds one",
+    );
+}
+
+/// …and stays quiet when the filter is simply narrowing a list that does have
+/// pins in it, where the generic sentence is the right one.
+#[test]
+fn a_pinned_list_with_something_in_it_is_not_the_empty_case() {
+    let vm = VersionsViewModel::new();
+    vm.view.set(view_with(&["newest", "older"], None));
+    vm.set_pins(Pins {
+        is_pinned: Rc::new(|p: &std::path::Path| p.to_string_lossy() == "1"),
+        set: Rc::new(|_, _| {}),
+    });
+    vm.toggle_pinned_only();
+    assert_eq!(vm.visible_count(), 1);
+    assert!(!vm.pinned_filter_found_nothing());
+}
